@@ -1,0 +1,15 @@
+#!/bin/sh
+PKG_DIR=`pwd`/binary7-package
+TARGET=m68k-atari-mint
+
+mkdir -p "$PKG_DIR/usr/$TARGET/bin"
+
+cd "$PKG_DIR/usr/$TARGET/bin"
+for i in addr2line ar arconv as c++ nm cpp csize cstrip flags g++ gcc gcov gfortran ld ld.bfd mintbin nm objcopy objdump ranlib stack strip symex readelf; do
+	if ! test -h $i && ! test -x $i; then
+		ln -s ../../bin/$TARGET-$i $i
+	fi
+	if ! test -f ../../bin/$TARGET-$i; then
+		ln -s /usr/bin/$TARGET-$i ../../bin/$TARGET-$i
+	fi
+done

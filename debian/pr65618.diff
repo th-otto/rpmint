@@ -1,0 +1,16 @@
+# DP: Proposed patch for PR rtl-optimization/65618
+
+--- a/gcc/emit-rtl.c	
++++ a/gcc/emit-rtl.c	
+@@ -3742,6 +3742,11 @@ try_split (rtx pat, rtx_insn *trial, int last)
+ 		   next = NEXT_INSN (next))
+ 		if (NOTE_KIND (next) == NOTE_INSN_CALL_ARG_LOCATION)
+ 		  {
++		    /* Advance after to the next instruction if it is about to
++		       be removed */
++		    if (after == next)
++		      after = NEXT_INSN(after);
++
+ 		    remove_insn (next);
+ 		    add_insn_after (next, insn, NULL);
+ 		    break;

@@ -1,0 +1,140 @@
+commit f081d7b0810f26c779fd8123e42eded6839bdba5
+Author: mkuvyrkov <mkuvyrkov@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date:   Tue Nov 25 22:08:13 2008 +0000
+
+    	* config/m68k/m68k.md (extendsidi2, extendsidi2_mem): Merge, clean up.
+    	Disable unsupported alternative for ColdFire,
+    	add new alternative that ColdFire can handle.
+    
+    	* gcc.c-torture/compile/20080929-1.c: New.
+    
+    
+    git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@142205 138bc75d-0d04-0410-961f-82ee72b054a4
+
+diff --git a/gcc/ChangeLog b/gcc/ChangeLog
+index 19295b1..b29e611 100644
+--- a/gcc/ChangeLog
++++ b/gcc/ChangeLog
+@@ -1,3 +1,9 @@
++2008-11-25  Maxim Kuvyrkov  <maxim@codesourcery.com>
++
++	* config/m68k/m68k.md (extendsidi2, extendsidi2_mem): Merge, clean up.
++	Disable unsupported alternative for ColdFire,
++	add new alternative that ColdFire can handle.
++
+ 2008-11-25  Eric Botcazou  <ebotcazou@adacore.com>
+ 
+ 	* regrename.c (merge_overlapping_regs): Add registers artificially
+diff --git a/gcc/config/m68k/m68k.md b/gcc/config/m68k/m68k.md
+index 29624a4..782c7cc 100644
+--- a/gcc/config/m68k/m68k.md
++++ b/gcc/config/m68k/m68k.md
+@@ -1703,32 +1703,35 @@
+ })
+ 
+ (define_insn "extendsidi2"
+-  [(set (match_operand:DI 0 "register_operand" "=d")
+-	(sign_extend:DI (match_operand:SI 1 "nonimmediate_src_operand" "rm")))]
++  [(set (match_operand:DI 0 "nonimmediate_operand" "=d,o,o,<")
++	(sign_extend:DI
++	 (match_operand:SI 1 "nonimmediate_src_operand" "rm,rm,r<Q>,rm")))
++   (clobber (match_scratch:SI 2 "=X,d,d,d"))]
+   ""
+ {
+   CC_STATUS_INIT;
+-  if (TARGET_68020 || TARGET_COLDFIRE)
+-    return "move%.l %1,%R0\;smi %0\;extb%.l %0";
+-  else
+-    return "move%.l %1,%R0\;smi %0\;ext%.w %0\;ext%.l %0";
+-})
+ 
+-(define_insn "*extendsidi2_mem"
+-  [(set (match_operand:DI 0 "memory_operand" "=o,<")
+-	(sign_extend:DI (match_operand:SI 1 "nonimmediate_src_operand" "rm,rm")))
+-   (clobber (match_scratch:SI 2 "=d,d"))]
+-   ""
+-{
+-  CC_STATUS_INIT;
++  if (which_alternative == 0)
++    /* Handle alternative 0.  */
++    {
++      if (TARGET_68020 || TARGET_COLDFIRE)
++        return "move%.l %1,%R0\;smi %0\;extb%.l %0";
++      else
++        return "move%.l %1,%R0\;smi %0\;ext%.w %0\;ext%.l %0";
++    }
++
++  /* Handle alternatives 1, 2 and 3.  We don't need to adjust address by 4
++     in alternative 3 because autodecrement will do that for us.  */
+   operands[3] = adjust_address (operands[0], SImode,
+-				which_alternative == 0 ? 4 : 0);
++				which_alternative == 3 ? 0 : 4);
+   operands[0] = adjust_address (operands[0], SImode, 0);
++
+   if (TARGET_68020 || TARGET_COLDFIRE)
+     return "move%.l %1,%3\;smi %2\;extb%.l %2\;move%.l %2,%0";
+   else
+     return "move%.l %1,%3\;smi %2\;ext%.w %2\;ext%.l %2\;move%.l %2,%0";
+-})
++}
++  [(set_attr "ok_for_coldfire" "yes,no,yes,yes")])
+ 
+ ;; Special case when one can avoid register clobbering, copy and test
+ ;; Maybe there is a way to make that the general case, by forcing the
+diff --git a/gcc/testsuite/ChangeLog b/gcc/testsuite/ChangeLog
+index 7841b9f..a508f75 100644
+--- a/gcc/testsuite/ChangeLog
++++ b/gcc/testsuite/ChangeLog
+@@ -1,3 +1,7 @@
++2008-11-25  Maxim Kuvyrkov  <maxim@codesourcery.com>
++
++	* gcc.c-torture/compile/20080929-1.c: New.
++
+ 2008-11-25  Janis Johnson  <janis187@us.ibm.com>
+ 
+ 	* gfortran.dg/default_format_denormal_1.f90: Fix xfail for darwin.
+diff --git a/gcc/testsuite/gcc.c-torture/compile/20080929-1.c b/gcc/testsuite/gcc.c-torture/compile/20080929-1.c
+new file mode 100644
+index 0000000..1aa868c
+--- /dev/null
++++ b/gcc/testsuite/gcc.c-torture/compile/20080929-1.c
+@@ -0,0 +1,39 @@
++struct option {
++  const char *name;
++  int has_arg;
++  int *flag;
++  int val;
++};
++enum {
++  UBI_DYNAMIC_VOLUME = 3,  UBI_STATIC_VOLUME = 4, };
++typedef void * libubi_t;
++struct ubi_dev_info {
++  int leb_size;
++};
++struct args {
++  int vol_id;
++  int vol_type;
++  long long bytes;
++  int lebs;
++  int alignment;
++  const char *node;
++  int maxavs;
++  int devn;
++};
++static struct args args = {
++  .vol_type = UBI_DYNAMIC_VOLUME,  .bytes = -1,  .lebs = -1,  .alignment = 1,  .vol_id = (-1),  .devn = -1, };
++extern libubi_t libubi_open (int);
++extern int ubi_get_dev_info (libubi_t, const char *, struct ubi_dev_info *);
++int main(int argc, char * const argv[]) {
++  int err;
++  libubi_t libubi;
++  struct ubi_dev_info dev_info;
++  libubi = libubi_open(1);
++  if (!libubi)
++    return 0;
++  err = ubi_get_dev_info(libubi, args.node, &dev_info);
++  if (args.maxavs) {
++    args.bytes = dev_info.leb_size;
++  }
++  return 0;
++}

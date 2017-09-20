@@ -1,0 +1,36 @@
+From f44965deafe8b51f1375321d7eb3c15ed1fc968b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Vincent=20Rivi=C3=A8re?= <vincent.riviere@freesbee.fr>
+Date: Mon, 17 Apr 2017 17:44:55 +0200
+Subject: [PATCH 2/3] Fix compilation with texinfo 6.3
+
+Inspired from:
+https://trac.macports.org/ticket/53076#comment:19
+---
+ gcc/doc/gcc.texi | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/gcc/doc/gcc.texi b/gcc/doc/gcc.texi
+index 0e167ba..39c9375 100644
+--- a/gcc/doc/gcc.texi
++++ b/gcc/doc/gcc.texi
+@@ -86,9 +86,15 @@ Published by:
+ @item GNU Press
+ @tab Website: www.gnupress.org
+ @item a division of the
+-@tab General: @tex press@@gnu.org @end tex
++@tab General:
++@tex
++press@@gnu.org
++@end tex
+ @item Free Software Foundation
+-@tab Orders:  @tex sales@@gnu.org @end tex
++@tab Orders:
++@tex
++sales@@gnu.org
++@end tex
+ @item 51 Franklin Street, Fifth Floor
+ @tab Tel 617-542-5942
+ @item Boston, MA 02110-1301 USA
+-- 
+2.1.2
+

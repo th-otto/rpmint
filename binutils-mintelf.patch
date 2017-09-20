@@ -1,0 +1,131 @@
+From 2e919857707b04420ad0ce76237b75429cff108e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Vincent=20Rivi=C3=A8re?= <vincent.riviere@freesbee.fr>
+Date: Sun, 11 Oct 2009 12:24:42 +0200
+Subject: [PATCH] Experimental ELF support: m68k-atari-mintelf
+
+Rebase MiNT ELF patch from branch binutils-2_18-mintelf.
+
+All the tools use ELF intermediate object file format.
+
+In order to maximize compatibility with existing a.out assembler sources:
+- the % prefix is optional on registers
+- C symbols start with underscore
+
+The linker still produces standard a.out-mintprg executables.
+However, it can take both ELF and a.out object files as input,
+including libraries, and link them together.
+Debug information is not supported.
+---
+ bfd/config.bfd             |  5 +++++
+ bfd/elf.c                  |  6 +++++-
+ bfd/reloc.c                | 11 +++++++++++
+ config.sub                 |  3 +++
+ gas/config/te-mint.h       |  3 +++
+ gas/configure.tgt          |  1 +
+ ld/scripttempl/m68kmint.sc |  6 ++++++
+ 7 files changed, 34 insertions(+), 1 deletion(-)
+
+diff -rupN binutils-2.28.orig/bfd/config.bfd binutils-2.28/bfd/config.bfd
+--- binutils-2.28.orig/bfd/config.bfd	2017-09-19 18:27:42.620225848 +0200
++++ binutils-2.28/bfd/config.bfd	2017-09-19 19:40:07.652884640 +0200
+@@ -1002,6 +1002,11 @@ case "${targ}" in
+     # targ_selvecs=m68kmach3_vec
+     # targ_cflags=-DSTAT_FOR_EXEC
+     ;;
++  m68*-*-mintelf*)
++    targ_defvec=m68k_elf32_vec
++    targ_selvecs="aout0_be_vec m68k_aout_mintprg_vec"
++    targ_underscore=yes
++    ;;
+   m68*-*-mint*)
+     targ_defvec=aout0_be_vec
+     targ_selvecs=m68k_aout_mintprg_vec
+diff -rupN binutils-2.28.orig/bfd/elf.c binutils-2.28/bfd/elf.c
+--- binutils-2.28.orig/bfd/elf.c	2017-03-02 09:23:53.000000000 +0100
++++ binutils-2.28/bfd/elf.c	2017-09-19 19:12:05.412921246 +0200
+@@ -7999,7 +7999,11 @@ _bfd_elf_canonicalize_symtab (bfd *abfd,
+   long symcount = bed->s->slurp_symbol_table (abfd, allocation, FALSE);
+ 
+   if (symcount >= 0)
+-    bfd_get_symcount (abfd) = symcount;
++    {
++      bfd_get_symcount (abfd) = symcount;
++      /* Cache symbols for the generic linker.  */
++      bfd_get_outsymbols (abfd) = allocation;
++    }
+   return symcount;
+ }
+ 
+diff -rupN binutils-2.28.orig/bfd/reloc.c binutils-2.28/bfd/reloc.c
+--- binutils-2.28.orig/bfd/reloc.c	2017-03-02 09:23:53.000000000 +0100
++++ binutils-2.28/bfd/reloc.c	2017-09-19 19:43:44.824879914 +0200
+@@ -939,6 +939,17 @@ space consuming.  For each target:
+       return bfd_reloc_other;
+     }
+ 
++  extern const bfd_target m68k_aout_mintprg_vec;
++  if (flag == bfd_reloc_ok
++      && input_section->output_section->owner->xvec == &m68k_aout_mintprg_vec
++      && !howto->pc_relative && (howto->size == 2 || howto->size == -2))
++    {
++      bfd_vma tpa_address = input_section->output_section->vma
++	+ input_section->output_offset + reloc_entry->address;
++	
++      bfd_m68kmint_add_tpa_relocation_entry (input_section->output_section->owner, tpa_address);
++    }
++
+   return flag;
+ }
+ 
+diff -rupN binutils-2.28.orig/config.sub binutils-2.28/config.sub
+--- binutils-2.28.orig/config.sub	2016-12-23 09:40:17.000000000 +0100
++++ binutils-2.28/config.sub	2017-09-19 19:12:05.412921246 +0200
+@@ -1525,6 +1525,9 @@ case $os in
+ 	-xenix)
+ 		os=-xenix
+ 		;;
++	-mintelf*)
++		os=-mintelf
++		;;
+ 	-*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
+ 		os=-mint
+ 		;;
+diff -rupN binutils-2.28.orig/gas/config/te-mint.h binutils-2.28/gas/config/te-mint.h
+--- binutils-2.28.orig/gas/config/te-mint.h	2017-09-19 18:27:42.628225847 +0200
++++ binutils-2.28/gas/config/te-mint.h	2017-09-19 19:12:05.412921246 +0200
+@@ -19,6 +19,9 @@
+ 
+ #define TE_MINT
+ 
++/* The % prefix on registers is optional, even with ELF object files.  */
++#define REGISTER_PREFIX_OPTIONAL 1
++
+ #define LOCAL_LABELS_DOLLAR 1
+ #define LOCAL_LABELS_FB 1
+ 
+diff -rupN binutils-2.28.orig/gas/configure.tgt binutils-2.28/gas/configure.tgt
+--- binutils-2.28.orig/gas/configure.tgt	2017-09-19 18:27:42.628225847 +0200
++++ binutils-2.28/gas/configure.tgt	2017-09-19 19:29:34.836898410 +0200
+@@ -321,6 +321,7 @@ case ${generic_target} in
+   m68k-*-linux-*)			fmt=elf em=linux ;;
+   m68k-*-uclinux*)			fmt=elf em=uclinux ;;
+   m68k-*-gnu*)				fmt=elf ;;
++  m68k-*-mintelf*)			fmt=elf em=mint bfd_gas=yes ;;
+   m68k-*-mint*)				fmt=aout em=mint bfd_gas=yes ;;
+   m68k-*-netbsdelf*)			fmt=elf em=nbsd ;;
+   m68k-*-netbsd*)			fmt=aout em=nbsd bfd_gas=yes ;;
+diff -rupN binutils-2.28.orig/ld/scripttempl/m68kmint.sc binutils-2.28/ld/scripttempl/m68kmint.sc
+--- binutils-2.28.orig/ld/scripttempl/m68kmint.sc	2017-09-19 18:27:42.628225847 +0200
++++ binutils-2.28/ld/scripttempl/m68kmint.sc	2017-09-19 19:12:05.412921246 +0200
+@@ -43,5 +43,11 @@ SECTIONS
+     ${RELOCATING+_end = .;}
+     ${RELOCATING+__end = .;}
+   }
++
++  /* Unfortunately, stabs are not mappable from ELF to a.out.
++     It can probably be fixed with some amount of work.  */
++  /DISCARD/ :
++  { *(.stab) *(.stab*) *(.debug) *(.debug*) *(.comment) *(.gnu.warning.*) }
++
+ }
+ EOF

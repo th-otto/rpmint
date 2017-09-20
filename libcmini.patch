@@ -1,0 +1,173 @@
+diff -rupN -x '*.o' -x '*.d' libcmini.orig/Makefile libcmini/Makefile
+--- libcmini.orig/Makefile	2016-03-06 15:31:41.000000000 +0100
++++ libcmini/Makefile	2017-05-03 08:50:25.514947001 +0200
+@@ -11,8 +11,8 @@ endif
+ #
+ ONLY_68K=N
+ BUILD_CF=Y
+-BUILD_FAST=N
+-MINTLIB_COMPATIBLE=N
++BUILD_FAST=Y
++MINTLIB_COMPATIBLE=Y
+ COMPILE_ELF=N
+ STDIO_WITH_LONG_LONG=N
+ 
+@@ -39,6 +39,7 @@ CFLAGS=\
+ ifneq ($(MINTLIB_COMPATIBLE),Y)
+ INCLUDE=-Iinclude
+ else
++INCLUDE=
+ CFLAGS+=-D__MINTLIB_COMPATIBLE
+ endif
+ 
+diff -rupN -x '*.o' -x '*.d' libcmini.orig/include/stdlib.h libcmini/include/stdlib.h
+--- libcmini.orig/include/stdlib.h	2016-03-06 15:31:39.000000000 +0100
++++ libcmini/include/stdlib.h	2017-05-03 08:54:49.923947000 +0200
+@@ -34,7 +34,7 @@ extern void abort(void);
+ 
+ extern int rand(void);
+ extern long lrand(void);
+-extern void srand48(unsigned int seed);
++extern void srand48(long int seed);
+ 
+ extern long strtol(const char*, char**, int);
+ extern unsigned long strtoul(const char*, char**, int);
+diff -rupN -x '*.o' -x '*.d' libcmini.orig/sources/_normdf_fast.S libcmini/sources/_normdf_fast.S
+--- libcmini.orig/sources/_normdf_fast.S	2016-03-06 15:31:41.000000000 +0100
++++ libcmini/sources/_normdf_fast.S	2017-05-03 09:16:42.343947001 +0200
+@@ -79,11 +79,15 @@ ___normdf:
+ 	moveml	a0@+,d4-d5	| get mantissa
+ #endif
+ 
+-# ifdef __MSHORT__
++#ifdef __mcoldfire__
++	movel	d1,d0
++	movel	d2,d1
++	movel	d0,d1
++#else
+ 	exg		d1,d2
+-# else
++#endif
++# ifndef __MSHORT__
+ 	movel	a0@+,d0		| get exponent
+-	exg		d1,d2
+ 	tstl	d2
+ 	jpl	0f		| or bit 31 to bit 15 for later tests
+ 	bset	#15,d2
+@@ -312,4 +316,4 @@ oflow:
+ 
+ #endif /* __M68881__ */
+ 
+-#endif /* __FASTCALL__ */
+\ No newline at end of file
++#endif /* __FASTCALL__ */
+diff -rupN -x '*.o' -x '*.d' libcmini.orig/sources/bcopy_fast.S libcmini/sources/bcopy_fast.S
+--- libcmini.orig/sources/bcopy_fast.S	2016-03-06 15:31:41.000000000 +0100
++++ libcmini/sources/bcopy_fast.S	2017-05-03 09:10:42.832947001 +0200
+@@ -22,7 +22,13 @@
+ _bcopy:
+ ___bcopy:
+ __bcopy:
++#ifdef __mcoldfire__
++    movl    a0,d1
++    movl    a1,a0
++    movl    d1,a1
++#else
+ 	exg		a0,a1
++#endif
+ 	jra	common		| the rest is samea as memcpy
+ 
+ |	void *memcpy( void *dest, const void *src, size_t len );
+@@ -326,4 +332,4 @@ scopy_d:
+ 	jne	scopy_d
+ 	jra	exit_d2
+ 
+-#endif /* __FASTCALL__ */
+\ No newline at end of file
++#endif /* __FASTCALL__ */
+diff -rupN -x '*.o' -x '*.d' libcmini.orig/sources/open.c libcmini/sources/open.c
+--- libcmini.orig/sources/open.c	2016-03-06 15:31:41.000000000 +0100
++++ libcmini/sources/open.c	2017-05-03 09:08:13.843947002 +0200
+@@ -1,5 +1,6 @@
+ #include <stdio.h>
+ #include <stdarg.h>
++#include <osbind.h>
+ 
+ /*
+  * it should be possible to call Fopen() on filenames like "PRN:", "CON:" and "AUX", but
+diff -rupN -x '*.o' -x '*.d' libcmini.orig/sources/srand48.c libcmini/sources/srand48.c
+--- libcmini.orig/sources/srand48.c	2016-03-06 15:31:40.000000000 +0100
++++ libcmini/sources/srand48.c	2017-05-03 08:56:50.917947001 +0200
+@@ -3,18 +3,18 @@
+ 
+ static unsigned long _seed = 1;
+ 
+-int rand(void)
+-{
+-	return (int)lrand();
+-}
+-
+ long lrand(void)
+ {
+ 	_seed = (_seed >> 1) ^ (-(_seed & 1u) & 0x80200003u);
+ 	return (_seed - 1) & 0x7fffffff;
+ }
+ 
+-void srand48(unsigned int seed)
++int rand(void)
++{
++	return (int)lrand();
++}
++
++void srand48(long int seed)
+ {
+ 	if (seed == 0) seed = -1;
+ 	_seed = seed;
+diff -rupN -x '*.o' -x '*.d' libcmini.orig/sources/strerror_r.c libcmini/sources/strerror_r.c
+--- libcmini.orig/sources/strerror_r.c	2016-03-06 15:31:41.000000000 +0100
++++ libcmini/sources/strerror_r.c	2017-05-03 08:52:10.343947001 +0200
+@@ -5,6 +5,8 @@
+  *      Author: ardi
+  */
+ 
++#define _GNU_SOURCE
++
+ #include <string.h>
+ 
+ char* strerror_r (int errnum, char *buf, size_t bufsize) {
+diff -rupN -x '*.o' -x '*.d' libcmini.orig/tests/argstest/Makefile libcmini/tests/argstest/Makefile
+--- libcmini.orig/tests/argstest/Makefile	2016-03-06 15:31:39.000000000 +0100
++++ libcmini/tests/argstest/Makefile	2017-05-03 09:26:25.655947001 +0200
+@@ -4,7 +4,7 @@ CROSSBINDIR_IS_Y=m68k-atari-mint-
+ CROSSBINDIR_IS_N=
+ 
+ BUILD_CF=N
+-BUILD_FAST=N
++BUILD_FAST=Y
+ 
+ CROSSBINDIR=$(CROSSBINDIR_IS_$(CROSS))
+ 
+diff -rupN -x '*.o' -x '*.d' libcmini.orig/tests/bench/Makefile libcmini/tests/bench/Makefile
+--- libcmini.orig/tests/bench/Makefile	2016-03-06 15:31:38.000000000 +0100
++++ libcmini/tests/bench/Makefile	2017-05-03 09:28:10.996947000 +0200
+@@ -4,7 +4,7 @@ CROSSBINDIR_IS_Y=m68k-atari-mint-
+ CROSSBINDIR_IS_N=
+ 
+ #BUILD_CF=N
+-BUILD_FAST=N
++BUILD_FAST=Y
+ 
+ CROSSBINDIR=$(CROSSBINDIR_IS_$(CROSS))
+ 
+diff -rupN -x '*.o' -x '*.d' libcmini.orig/tests/malltest/Makefile libcmini/tests/malltest/Makefile
+--- libcmini.orig/tests/malltest/Makefile	2016-03-06 15:31:39.000000000 +0100
++++ libcmini/tests/malltest/Makefile	2017-05-03 09:40:43.381947001 +0200
+@@ -4,7 +4,7 @@ CROSSBINDIR_IS_Y=m68k-atari-mint-
+ CROSSBINDIR_IS_N=
+ 
+ BUILD_CF=N
+-BUILD_FAST=N
++BUILD_FAST=Y
+ 
+ CROSSBINDIR=$(CROSSBINDIR_IS_$(CROSS))
+ 

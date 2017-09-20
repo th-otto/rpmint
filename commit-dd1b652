@@ -1,0 +1,106 @@
+commit dd1b652b8a58e803fdd955eb23421e3f7c317d17
+Author: law <law@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date:   Thu Apr 24 20:45:10 2014 +0000
+
+    2014-04-24  Segher Boessenkool  <segher@kernel.crashing.org>
+    
+    	PR target/60822
+    	* config/m68k/m68k.md (extendplussidi): Don't allow memory for
+    	operand 1.
+    
+    2014-04-24  Jeff Law  <law@redhat.com>
+    
+    	PR target/60822
+    	* gcc.c-torture/pr60822.c: New test.
+    	* gcc.c-torture/pr60822.x: New test.
+    
+    git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@209759 138bc75d-0d04-0410-961f-82ee72b054a4
+
+diff --git a/gcc/ChangeLog b/gcc/ChangeLog
+index a293830..6100b75 100644
+--- a/gcc/ChangeLog
++++ b/gcc/ChangeLog
+@@ -1,3 +1,9 @@
++2014-04-24  Segher Boessenkool  <segher@kernel.crashing.org>
++
++	PR target/60822
++	* config/m68k/m68k.md (extendplussidi): Don't allow memory for
++	operand 1.
++
+ 2014-04-24  Dimitris Papavasiliou  <dpapavas@gmail.com>
+ 
+ 	* flag-types.h (enum ivar_visibility): Add.
+diff --git a/gcc/config/m68k/m68k.md b/gcc/config/m68k/m68k.md
+index e61048b..72c11f5 100644
+--- a/gcc/config/m68k/m68k.md
++++ b/gcc/config/m68k/m68k.md
+@@ -1868,9 +1868,11 @@
+ ;; Maybe there is a way to make that the general case, by forcing the
+ ;; result of the SI tree to be in the lower register of the DI target
+ 
++;; Don't allow memory for operand 1 as that would require an earlyclobber
++;; which results in worse code
+ (define_insn "extendplussidi"
+   [(set (match_operand:DI 0 "register_operand" "=d")
+-    (sign_extend:DI (plus:SI (match_operand:SI 1 "general_operand" "%rmn")
++    (sign_extend:DI (plus:SI (match_operand:SI 1 "general_operand" "%rn")
+             (match_operand:SI 2 "general_operand" "rmn"))))]
+   ""
+ {
+diff --git a/gcc/testsuite/ChangeLog b/gcc/testsuite/ChangeLog
+index 32cccf2..413d6ce 100644
+--- a/gcc/testsuite/ChangeLog
++++ b/gcc/testsuite/ChangeLog
+@@ -1,3 +1,9 @@
++2014-04-24  Jeff Law  <law@redhat.com>
++
++	PR target/60822
++	* gcc.c-torture/pr60822.c: New test.
++	* gcc.c-torture/pr60822.x: New test.
++
+ 2014-04-24  Dinar Temirbulatov  <dtemirbulatov@gmail.com>
+ 
+ 	PR c++/57958
+diff --git a/gcc/testsuite/gcc.c-torture/execute/pr60822.c b/gcc/testsuite/gcc.c-torture/execute/pr60822.c
+new file mode 100644
+index 0000000..d225331
+--- /dev/null
++++ b/gcc/testsuite/gcc.c-torture/execute/pr60822.c
+@@ -0,0 +1,24 @@
++struct X {
++    char fill0[800000];
++    int a;
++    char fill1[900000];
++    int b;
++};
++
++int __attribute__((noinline,noclone))
++Avg(struct X *p, int s)
++{
++    return (s * (long long)(p->a + p->b)) >> 17;
++}
++
++struct X x;
++
++int main()
++{
++    x.a = 1 << 17;
++    x.b = 2 << 17;
++    if (Avg(&x, 1) != 3)
++	__builtin_abort();
++    return 0;
++}
++
+diff --git a/gcc/testsuite/gcc.c-torture/execute/pr60822.x b/gcc/testsuite/gcc.c-torture/execute/pr60822.x
+new file mode 100644
+index 0000000..4efed4c
+--- /dev/null
++++ b/gcc/testsuite/gcc.c-torture/execute/pr60822.x
+@@ -0,0 +1,7 @@
++load_lib target-supports.exp
++
++if { [check_effective_target_int32plus] } {
++	return 0
++}
++
++return 1;

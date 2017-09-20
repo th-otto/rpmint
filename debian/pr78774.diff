@@ -1,0 +1,48 @@
+# DP: Fix PR c++/78774, proposed for the gcc-6-branch
+
+PR c++/78774 - [6/7 Regression] ICE in constexpr string literals and templates
+
+gcc/cp/ChangeLog:
+
+	PR c++/78774
+	* pt.c (convert_template_argument): Avoid assuming operand type
+	is non-null since that of SCOPE_REF is not.
+
+gcc/testsuite/ChangeLog:
+
+	PR c++/78774
+	* g++.dg/cpp1y/pr78774.C: New test.
+
+Index: b/src/gcc/cp/pt.c
+===================================================================
+--- a/gcc/cp/pt.c
++++ b/gcc/cp/pt.c
+@@ -7281,9 +7281,11 @@ convert_template_argument (tree parm,
+           /* Reject template arguments that are references to built-in
+              functions with no library fallbacks.  */
+           const_tree inner = TREE_OPERAND (val, 0);
+-          if (TREE_CODE (TREE_TYPE (inner)) == REFERENCE_TYPE
+-              && TREE_CODE (TREE_TYPE (TREE_TYPE (inner))) == FUNCTION_TYPE
+-              && TREE_CODE (TREE_TYPE (inner)) == REFERENCE_TYPE
++	  const_tree innertype = TREE_TYPE (inner);
++          if (innertype
++	      && TREE_CODE (innertype) == REFERENCE_TYPE
++              && TREE_CODE (TREE_TYPE (innertype)) == FUNCTION_TYPE
++              && TREE_CODE (innertype) == REFERENCE_TYPE
+               && 0 < TREE_OPERAND_LENGTH (inner)
+               && reject_gcc_builtin (TREE_OPERAND (inner, 0)))
+               return error_mark_node;
+Index: b/src/gcc/testsuite/g++.dg/cpp1y/pr78774.C
+===================================================================
+--- /dev/null
++++ b/gcc/testsuite/g++.dg/cpp1y/pr78774.C
+@@ -0,0 +1,9 @@
++// PR c++/78774 - [6/7 Regression] ICE in constexpr string literals and
++// templates
++// { dg-do compile { target c++14 } }
++
++template <int> struct ops {
++  template <int> struct A;
++  template <int *Ptr> using explode = typename A<*Ptr>::join;
++};
++template <typename Ts> typename ops<'\0'>::explode<Ts::join>::type a;
