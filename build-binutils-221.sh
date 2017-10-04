@@ -1,7 +1,7 @@
 #!/bin/sh
 
 PACKAGENAME=binutils
-VERSION=-2.28
+VERSION=-2.21.1
 VERSIONPATCH=20170919
 REVISION="GNU Binutils for MiNT $VERSIONPATCH"
 
@@ -16,22 +16,6 @@ PKG_DIR=`pwd`/binary7-package
 srcdir="$PACKAGENAME$VERSION"
 
 PATCH1="$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch"
-case "$TARGET" in
-m68k-atari-mintelf*)
-	PATCH2=binutils-2.28-mintelf.patch
-	;;
-esac
-
-if test ! -f ".patched-$PACKAGENAME$VERSION"; then
-tar jxvf "$ARCHIVES_DIR/$PACKAGENAME$VERSION.tar.bz2" || exit 1
-for f in $PATCH1 $PATCH2; do
-  if test -f "$f"; then
-    cd "$srcdir" && patch -p1 < "$BUILD_DIR/$f"
-  fi
-  cd "$BUILD_DIR"
-  touch ".patched-$PACKAGENAME$VERSION"
-done
-fi
 
 if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
@@ -56,7 +40,6 @@ test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 bfd_targets="--enable-targets=$BUILD"
 enable_plugins=--disable-plugins
 enable_lto=--disable-lto
-ranlib=ranlib
 
 # add opposite of default mingw32 target for binutils,
 # and also host target
@@ -70,7 +53,6 @@ case "$TARGET" in
     *-*-*elf* | *-*-linux*)
     	enable_lto=--enable-lto
 		enable_plugins=--enable-plugins
-    	ranlib=gcc-ranlib
 		;;
 esac
 case "$TARGET" in

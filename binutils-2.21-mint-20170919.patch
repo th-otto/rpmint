@@ -1,7 +1,66 @@
-diff -rupN binutils-2.28.orig/bfd/Makefile.am binutils-2.28/bfd/Makefile.am
---- binutils-2.28.orig/bfd/Makefile.am	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/bfd/Makefile.am	2017-05-15 16:56:55.818231991 +0200
-@@ -440,6 +440,7 @@ BFD32_BACKENDS = \
+From 41d9645412bdb97b98b3f03c440be808d5cd3c5a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Vincent=20Rivi=C3=A8re?= <vincent.riviere@freesbee.fr>
+Date: Thu, 9 Dec 2010 18:53:52 +0100
+Subject: [PATCH] Import binutils-2.21-mint-20101209.patch
+
+Rebase MiNT patch from branch binutils-2_20-mint
+---
+ bfd/Makefile.am                     |    2 +
+ bfd/Makefile.in                     |    2 +
+ bfd/acinclude.m4                    |    2 +-
+ bfd/aoutx.h                         |   12 +
+ bfd/bfd-in.h                        |    9 +
+ bfd/bfd-in2.h                       |    9 +
+ bfd/config.bfd                      |    5 +
+ bfd/configure                       |    5 +-
+ bfd/configure.in                    |    3 +-
+ bfd/libaout.h                       |    5 +
+ bfd/prg-mint.c                      | 1732 +++++++++++++++++++++++++++++++++++
+ bfd/targets.c                       |    1 +
+ binutils/configure                  |    2 +-
+ binutils/dlltool.c                  |    2 +-
+ binutils/dllwrap.c                  |    2 +-
+ binutils/readelf.c                  |    4 +
+ binutils/resrc.c                    |    4 +-
+ config.guess                        |   12 +-
+ gas/config/te-mint.h                |   30 +
+ gas/configure.tgt                   |    1 +
+ gas/testsuite/gas/all/weakref1u.d   |    2 +-
+ gas/testsuite/gas/m68k/all.exp      |    3 +-
+ gas/testsuite/gas/m68k/br-isaa.d    |    2 +-
+ gas/testsuite/gas/m68k/br-isab.d    |    2 +-
+ gas/testsuite/gas/m68k/br-isac.d    |    2 +-
+ gas/testsuite/gas/m68k/cpu32.d      |    2 +-
+ gas/testsuite/gas/m68k/mcf-coproc.d |    2 +-
+ gas/testsuite/gas/m68k/mcf-wdebug.d |    2 +-
+ gas/testsuite/gas/m68k/p3041pcrel.d |   38 +
+ gas/testsuite/gas/m68k/p3041pcrel.s |   28 +
+ include/filenames.h                 |    2 +-
+ include/getopt.h                    |    2 +-
+ ld/Makefile.am                      |    5 +
+ ld/Makefile.in                      |    6 +
+ ld/configure                        |    2 +-
+ ld/configure.tgt                    |    1 +
+ ld/emulparams/m68kmint.sh           |    6 +
+ ld/emultempl/generic.em             |    4 +-
+ ld/emultempl/mint.em                |  330 +++++++
+ ld/scripttempl/m68kmint.sc          |   35 +
+ libiberty/hex.c                     |    2 +-
+ libiberty/safe-ctype.c              |    2 +-
+ 42 files changed, 2294 insertions(+), 30 deletions(-)
+ create mode 100644 bfd/prg-mint.c
+ create mode 100644 gas/config/te-mint.h
+ create mode 100644 gas/testsuite/gas/m68k/p3041pcrel.d
+ create mode 100644 gas/testsuite/gas/m68k/p3041pcrel.s
+ create mode 100644 ld/emulparams/m68kmint.sh
+ create mode 100644 ld/emultempl/mint.em
+ create mode 100644 ld/scripttempl/m68kmint.sc
+
+diff --git a/bfd/Makefile.am b/bfd/Makefile.am
+index bf5dea4ceb..158435c4ab 100644
+--- a/bfd/Makefile.am
++++ b/bfd/Makefile.am
+@@ -379,6 +379,7 @@ BFD32_BACKENDS = \
  	peigen.lo \
  	plugin.lo \
  	ppcboot.lo \
@@ -9,7 +68,7 @@ diff -rupN binutils-2.28.orig/bfd/Makefile.am binutils-2.28/bfd/Makefile.am
  	reloc16.lo \
  	riscix.lo \
  	som.lo \
-@@ -631,6 +632,7 @@ BFD32_BACKENDS_CFILES = \
+@@ -559,6 +560,7 @@ BFD32_BACKENDS_CFILES = \
  	pei-sh.c \
  	plugin.c \
  	ppcboot.c \
@@ -17,10 +76,11 @@ diff -rupN binutils-2.28.orig/bfd/Makefile.am binutils-2.28/bfd/Makefile.am
  	reloc16.c \
  	riscix.c \
  	som.c \
-diff -rupN binutils-2.28.orig/bfd/Makefile.in binutils-2.28/bfd/Makefile.in
---- binutils-2.28.orig/bfd/Makefile.in	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/bfd/Makefile.in	2017-05-15 16:56:55.819231997 +0200
-@@ -774,6 +774,7 @@ BFD32_BACKENDS = \
+diff --git a/bfd/Makefile.in b/bfd/Makefile.in
+index b591ca6712..4dd67db4d7 100644
+--- a/bfd/Makefile.in
++++ b/bfd/Makefile.in
+@@ -679,6 +679,7 @@ BFD32_BACKENDS = \
  	peigen.lo \
  	plugin.lo \
  	ppcboot.lo \
@@ -28,7 +88,7 @@ diff -rupN binutils-2.28.orig/bfd/Makefile.in binutils-2.28/bfd/Makefile.in
  	reloc16.lo \
  	riscix.lo \
  	som.lo \
-@@ -965,6 +966,7 @@ BFD32_BACKENDS_CFILES = \
+@@ -859,6 +860,7 @@ BFD32_BACKENDS_CFILES = \
  	pei-sh.c \
  	plugin.c \
  	ppcboot.c \
@@ -36,18 +96,11 @@ diff -rupN binutils-2.28.orig/bfd/Makefile.in binutils-2.28/bfd/Makefile.in
  	reloc16.c \
  	riscix.c \
  	som.c \
-@@ -1632,6 +1634,7 @@ distclean-compile:
- @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pex64igen.Plo@am__quote@
- @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/plugin.Plo@am__quote@
- @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ppcboot.Plo@am__quote@
-+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prg-mint.Plo@am__quote@
- @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reloc.Plo@am__quote@
- @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reloc16.Plo@am__quote@
- @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/riscix.Plo@am__quote@
-diff -rupN binutils-2.28.orig/bfd/acinclude.m4 binutils-2.28/bfd/acinclude.m4
---- binutils-2.28.orig/bfd/acinclude.m4	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/bfd/acinclude.m4	2017-05-15 16:56:55.819231997 +0200
-@@ -21,7 +21,7 @@ AC_DEFUN([BFD_BINARY_FOPEN],
+diff --git a/bfd/acinclude.m4 b/bfd/acinclude.m4
+index d9813bdf14..3cb8813021 100644
+--- a/bfd/acinclude.m4
++++ b/bfd/acinclude.m4
+@@ -5,7 +5,7 @@ AC_DEFUN([BFD_BINARY_FOPEN],
  [AC_REQUIRE([AC_CANONICAL_TARGET])
  case "${host}" in
  changequote(,)dnl
@@ -56,10 +109,11 @@ diff -rupN binutils-2.28.orig/bfd/acinclude.m4 binutils-2.28/bfd/acinclude.m4
  changequote([,])dnl
    AC_DEFINE(USE_BINARY_FOPEN, 1, [Use b modifier when opening binary files?]) ;;
  esac])dnl
-diff -rupN binutils-2.28.orig/bfd/aoutx.h binutils-2.28/bfd/aoutx.h
---- binutils-2.28.orig/bfd/aoutx.h	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/bfd/aoutx.h	2017-05-15 16:56:55.820232000 +0200
-@@ -1849,6 +1849,11 @@ emit_stringtab (bfd *abfd, struct bfd_st
+diff --git a/bfd/aoutx.h b/bfd/aoutx.h
+index efa9d47431..c5473a89ce 100644
+--- a/bfd/aoutx.h
++++ b/bfd/aoutx.h
+@@ -1841,6 +1841,11 @@ emit_stringtab (bfd *abfd, struct bfd_strtab_hash *tab)
    bfd_byte buffer[BYTES_IN_WORD];
    bfd_size_type amt = BYTES_IN_WORD;
  
@@ -71,8 +125,8 @@ diff -rupN binutils-2.28.orig/bfd/aoutx.h binutils-2.28/bfd/aoutx.h
    /* The string table starts with the size.  */
    PUT_WORD (abfd, _bfd_stringtab_size (tab) + BYTES_IN_WORD, buffer);
    if (bfd_bwrite ((void *) buffer, amt, abfd) != amt)
-@@ -4275,10 +4280,17 @@ aout_link_input_section_std (struct aout
- 		(flaginfo->info, name, input_bfd, input_section, r_addr, TRUE);
+@@ -4210,10 +4215,17 @@ aout_link_input_section_std (struct aout_final_link_info *finfo,
+ 		return FALSE;
  	    }
  
 +#ifdef MY_final_link_relocate_rel
@@ -89,10 +143,11 @@ diff -rupN binutils-2.28.orig/bfd/aoutx.h binutils-2.28/bfd/aoutx.h
  	}
  
        if (r != bfd_reloc_ok)
-diff -rupN binutils-2.28.orig/bfd/bfd-in.h binutils-2.28/bfd/bfd-in.h
---- binutils-2.28.orig/bfd/bfd-in.h	2017-05-15 16:53:12.274232001 +0200
-+++ binutils-2.28/bfd/bfd-in.h	2017-05-15 16:56:55.821232001 +0200
-@@ -765,6 +765,15 @@ extern bfd_boolean bfd_m68klinux_size_dy
+diff --git a/bfd/bfd-in.h b/bfd/bfd-in.h
+index cfa5225325..f2a08d162e 100644
+--- a/bfd/bfd-in.h
++++ b/bfd/bfd-in.h
+@@ -738,6 +738,15 @@ extern bfd_boolean bfd_m68klinux_size_dynamic_sections
  extern bfd_boolean bfd_sparclinux_size_dynamic_sections
    (bfd *, struct bfd_link_info *);
  
@@ -108,10 +163,11 @@ diff -rupN binutils-2.28.orig/bfd/bfd-in.h binutils-2.28/bfd/bfd-in.h
  /* mmap hacks */
  
  struct _bfd_window_internal;
-diff -rupN binutils-2.28.orig/bfd/bfd-in2.h binutils-2.28/bfd/bfd-in2.h
---- binutils-2.28.orig/bfd/bfd-in2.h	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/bfd/bfd-in2.h	2017-05-15 16:56:55.823232001 +0200
-@@ -772,6 +772,15 @@ extern bfd_boolean bfd_m68klinux_size_dy
+diff --git a/bfd/bfd-in2.h b/bfd/bfd-in2.h
+index c6a54b5acb..b1fdbdf107 100644
+--- a/bfd/bfd-in2.h
++++ b/bfd/bfd-in2.h
+@@ -745,6 +745,15 @@ extern bfd_boolean bfd_m68klinux_size_dynamic_sections
  extern bfd_boolean bfd_sparclinux_size_dynamic_sections
    (bfd *, struct bfd_link_info *);
  
@@ -127,25 +183,36 @@ diff -rupN binutils-2.28.orig/bfd/bfd-in2.h binutils-2.28/bfd/bfd-in2.h
  /* mmap hacks */
  
  struct _bfd_window_internal;
-diff -rupN binutils-2.28.orig/bfd/config.bfd binutils-2.28/bfd/config.bfd
---- binutils-2.28.orig/bfd/config.bfd	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/bfd/config.bfd	2017-05-15 16:56:55.824232001 +0200
-@@ -1002,6 +1002,11 @@ case "${targ}" in
+diff --git a/bfd/config.bfd b/bfd/config.bfd
+index 9b719d8362..c9dd565d3c 100644
+--- a/bfd/config.bfd
++++ b/bfd/config.bfd
+@@ -823,6 +823,11 @@ case "${targ}" in
      # targ_selvecs=m68kmach3_vec
      # targ_cflags=-DSTAT_FOR_EXEC
      ;;
 +  m68*-*-mint*)
-+    targ_defvec=aout0_be_vec
-+    targ_selvecs=m68k_aout_mintprg_vec
++    targ_defvec=aout0_big_vec
++    targ_selvecs=m68kmint_prg_vec
 +    targ_underscore=yes
 +    ;;
    m68*-hp*-netbsd*)
-     targ_defvec=m68k_aout_4knbsd_vec
-     targ_selvecs="m68k_aout_nbsd_vec m68k_aout_hp300bsd_vec sparc_aout_sunos_be_vec"
-diff -rupN binutils-2.28.orig/bfd/configure binutils-2.28/bfd/configure
---- binutils-2.28.orig/bfd/configure	2017-03-02 09:55:49.000000000 +0100
-+++ binutils-2.28/bfd/configure	2017-05-15 16:56:55.827232001 +0200
-@@ -13805,7 +13805,7 @@ _ACEOF
+     targ_defvec=m68k4knetbsd_vec
+     targ_selvecs="m68knetbsd_vec hp300bsd_vec sunos_big_vec"
+diff --git a/bfd/configure b/bfd/configure
+index 7a25b7f8cb..c007c819a4 100755
+--- a/bfd/configure
++++ b/bfd/configure
+@@ -12112,7 +12112,7 @@ if test "${with_pkgversion+set}" = set; then :
+       *)   PKGVERSION="($withval) " ;;
+      esac
+ else
+-  PKGVERSION="(GNU Binutils) "
++  PKGVERSION="(GNU Binutils for MiNT 20101209) "
+ 
+ fi
+ 
+@@ -13631,7 +13631,7 @@ _ACEOF
  
  
  case "${host}" in
@@ -154,29 +221,40 @@ diff -rupN binutils-2.28.orig/bfd/configure binutils-2.28/bfd/configure
  
  $as_echo "#define USE_BINARY_FOPEN 1" >>confdefs.h
   ;;
-@@ -14385,6 +14385,7 @@ do
-     m68k_aout_hp300bsd_vec)	 tb="$tb hp300bsd.lo aout32.lo" ;;
-     m68k_aout_hp300hpux_vec)	 tb="$tb hp300hpux.lo aout32.lo" ;;
-     m68k_aout_linux_vec)	 tb="$tb m68klinux.lo aout32.lo" ;;
-+    m68k_aout_mintprg_vec)	 tb="$tb prg-mint.lo aout32.lo" ;;
-     m68k_aout_nbsd_vec)		 tb="$tb m68knetbsd.lo aout32.lo" ;;
-     m68k_aout_newsos3_vec)	 tb="$tb newsos3.lo aout32.lo" ;;
-     m68k_coff_vec)		 tb="$tb coff-m68k.lo $coff" ;;
-diff -rupN binutils-2.28.orig/bfd/configure.ac binutils-2.28/bfd/configure.ac
---- binutils-2.28.orig/bfd/configure.ac	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/bfd/configure.ac	2017-05-15 16:56:55.828232001 +0200
-@@ -516,6 +516,7 @@ do
-     m68k_aout_hp300bsd_vec)	 tb="$tb hp300bsd.lo aout32.lo" ;;
-     m68k_aout_hp300hpux_vec)	 tb="$tb hp300hpux.lo aout32.lo" ;;
-     m68k_aout_linux_vec)	 tb="$tb m68klinux.lo aout32.lo" ;;
-+    m68k_aout_mintprg_vec)	 tb="$tb prg-mint.lo aout32.lo" ;;
-     m68k_aout_nbsd_vec)		 tb="$tb m68knetbsd.lo aout32.lo" ;;
-     m68k_aout_newsos3_vec)	 tb="$tb newsos3.lo aout32.lo" ;;
-     m68k_coff_vec)		 tb="$tb coff-m68k.lo $coff" ;;
-diff -rupN binutils-2.28.orig/bfd/libaout.h binutils-2.28/bfd/libaout.h
---- binutils-2.28.orig/bfd/libaout.h	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/bfd/libaout.h	2017-05-15 16:56:55.829232001 +0200
-@@ -420,6 +420,10 @@ struct aoutdata
+@@ -15238,6 +15238,7 @@ do
+     m68kcoff_vec)		tb="$tb coff-m68k.lo cofflink.lo" ;;
+     m68kcoffun_vec)		tb="$tb coff-u68k.lo coff-m68k.lo cofflink.lo" ;;
+     m68klinux_vec)		tb="$tb m68klinux.lo aout32.lo" ;;
++    m68kmint_prg_vec)		tb="$tb prg-mint.lo aout32.lo" ;;
+     m68knetbsd_vec)		tb="$tb m68knetbsd.lo aout32.lo" ;;
+     m68ksysvcoff_vec)		tb="$tb coff-svm68k.lo cofflink.lo" ;;
+     m88kbcs_vec)		tb="$tb coff-m88k.lo" ;;
+diff --git a/bfd/configure.in b/bfd/configure.in
+index fce1dd7c92..0d67f72956 100644
+--- a/bfd/configure.in
++++ b/bfd/configure.in
+@@ -110,7 +110,7 @@ if test $want_elf_stt_common = true; then
+     [Define if we may generate symbols with ELF's STT_COMMON type])
+ fi
+ 	 
+-ACX_PKGVERSION([GNU Binutils])
++ACX_PKGVERSION([GNU Binutils for MiNT 20101209])
+ ACX_BUGURL([http://www.sourceware.org/bugzilla/])
+ 
+ AM_BINUTILS_WARNINGS
+@@ -873,6 +873,7 @@ do
+     m68kcoff_vec)		tb="$tb coff-m68k.lo cofflink.lo" ;;
+     m68kcoffun_vec)		tb="$tb coff-u68k.lo coff-m68k.lo cofflink.lo" ;;
+     m68klinux_vec)		tb="$tb m68klinux.lo aout32.lo" ;;
++    m68kmint_prg_vec)		tb="$tb prg-mint.lo aout32.lo" ;;
+     m68knetbsd_vec)		tb="$tb m68knetbsd.lo aout32.lo" ;;
+     m68ksysvcoff_vec)		tb="$tb coff-svm68k.lo cofflink.lo" ;;
+     m88kbcs_vec)		tb="$tb coff-m88k.lo" ;;
+diff --git a/bfd/libaout.h b/bfd/libaout.h
+index ed2ec45a5d..20a2d77832 100644
+--- a/bfd/libaout.h
++++ b/bfd/libaout.h
+@@ -422,6 +422,10 @@ struct aoutdata
       table, used when linking on SunOS.  This is indexed by the symbol
       index.  */
    bfd_vma *local_got_offsets;
@@ -187,7 +265,7 @@ diff -rupN binutils-2.28.orig/bfd/libaout.h binutils-2.28/bfd/libaout.h
  };
  
  struct  aout_data_struct
-@@ -447,6 +451,7 @@ struct  aout_data_struct
+@@ -449,6 +453,7 @@ struct  aout_data_struct
  #define obj_aout_string_window(bfd)        (adata (bfd).string_window)
  #define obj_aout_sym_hashes(bfd)           (adata (bfd).sym_hashes)
  #define obj_aout_dynamic_info(bfd)         (adata (bfd).dynamic_info)
@@ -195,12 +273,14 @@ diff -rupN binutils-2.28.orig/bfd/libaout.h binutils-2.28/bfd/libaout.h
  
  /* We take the address of the first element of an asymbol to ensure that the
     macro is only ever applied to an asymbol.  */
-diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
---- binutils-2.28.orig/bfd/prg-mint.c	1970-01-01 01:00:00.000000000 +0100
-+++ binutils-2.28/bfd/prg-mint.c	2017-05-15 17:16:42.330231999 +0200
-@@ -0,0 +1,1730 @@
+diff --git a/bfd/prg-mint.c b/bfd/prg-mint.c
+new file mode 100644
+index 0000000000..3d1cb4a131
+--- /dev/null
++++ b/bfd/prg-mint.c
+@@ -0,0 +1,1732 @@
 +/* BFD backend for traditional MiNT executables.
-+   Copyright (C) 1998-2017 Free Software Foundation, Inc.
++   Copyright 1998, 2007, 2008, 2009 Free Software Foundation, Inc.
 +   Originally written by Guido Flohr (guido@freemint.de).
 +   Modified by Vincent Riviere (vincent.riviere@freesbee.fr).
 +
@@ -318,7 +398,7 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +/* Do not "beautify" the CONCAT* macro args.  Traditional C will not
 +   remove whitespace added here, and thus will fail to concatenate
 +   the tokens.  */
-+#define MY(OP) CONCAT2 (m68k_aout_mintprg_,OP)
++#define MY(OP) CONCAT2 (m68kmint_prg_,OP)
 +#define TARGETNAME "a.out-mintprg"
 +#define NAME(x,y) CONCAT3 (mintprg,_32_,y)
 +
@@ -438,16 +518,16 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +   It will be used int aoutx.h.  */
 +
 +static bfd_reloc_status_type
-+MY (final_link_relocate_rel) (reloc_howto_type *howto,
-+			      bfd *input_bfd,
-+			      asection *input_section,
-+			      bfd_byte *contents,
-+			      bfd_vma address,
-+			      bfd_vma value,
-+			      bfd_vma addend,
-+			      struct reloc_std_external *rel);
++m68kmint_prg_final_link_relocate_rel (reloc_howto_type *howto,
++				      bfd *input_bfd,
++				      asection *input_section,
++				      bfd_byte *contents,
++				      bfd_vma address,
++				      bfd_vma value,
++				      bfd_vma addend,
++				      struct reloc_std_external *rel);
 +
-+#define MY_final_link_relocate_rel MY (final_link_relocate_rel)
++#define MY_final_link_relocate_rel m68kmint_prg_final_link_relocate_rel
 +
 +/* The following include contains the definitions for the NAME(...) functions.  */
 +
@@ -498,7 +578,7 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +   defined later in aout-target.h.  */
 +
 +static const bfd_target *
-+MY (callback) (bfd *abfd);
++m68kmint_prg_callback (bfd *abfd);
 +
 +static void
 +MY_final_link_callback (bfd *abfd,
@@ -506,14 +586,14 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +			file_ptr *pdreloff,
 +			file_ptr *psymoff);
 +
-+extern const bfd_target MY (vec);
++extern const bfd_target m68kmint_prg_vec;
 +
 +/* Initialize a new BFD using our file format.  */
 +
-+#define MY_mkobject MY (mkobject)
++#define MY_mkobject m68kmint_prg_mkobject
 +
 +static bfd_boolean
-+MY (mkobject) (bfd *abfd)
++m68kmint_prg_mkobject (bfd *abfd)
 +{
 +  struct mint_internal_info *myinfo;
 +
@@ -531,10 +611,10 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +
 +/* Finish up the reading of an a.out file header.  */
 +
-+#define MY_object_p MY (object_p)
++#define MY_object_p m68kmint_prg_object_p
 +
 +static const bfd_target *
-+MY (object_p) (bfd *abfd)
++m68kmint_prg_object_p (bfd *abfd)
 +{
 +  struct external_exec exec_bytes;	/* Raw exec header from file.  */
 +  struct internal_exec exec;		/* Cleaned-up exec header.  */
@@ -566,14 +646,14 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +  NAME (aout, swap_exec_header_in) (abfd, &exec_bytes, &exec);
 +
 +  /* Check a.out magic value.  */
-+  if (N_BADMAG (&exec))
++  if (N_BADMAG (exec))
 +    {
 +      bfd_set_error (bfd_error_wrong_format);
 +      return NULL;
 +    }
 +
 +  /* Initialize this BFD with the exec values.  */
-+  target = NAME (aout, some_aout_object_p) (abfd, &exec, MY (callback));
++  target = NAME (aout, some_aout_object_p) (abfd, &exec, m68kmint_prg_callback);
 +
 +  /* Allocate our private BFD data.  */
 +  myinfo = bfd_zalloc (abfd, sizeof (*myinfo));
@@ -621,10 +701,10 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +/* Free all information we have cached for this BFD.  We can always
 +   read it again later if we need it.  */
 +
-+#define MY_bfd_free_cached_info MY (bfd_free_cached_info)
++#define MY_bfd_free_cached_info m68kmint_prg_bfd_free_cached_info
 +
 +static bfd_boolean
-+MY (bfd_free_cached_info) (bfd *abfd)
++m68kmint_prg_bfd_free_cached_info (bfd *abfd)
 +{
 +  struct mint_internal_info *myinfo = obj_aout_ext (abfd);
 +
@@ -695,7 +775,7 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +
 +  myinfo->dri_symtab_size = 0;
 +
-+  for (input_bfd = info->input_bfds; input_bfd != NULL; input_bfd = input_bfd->link.next)
++  for (input_bfd = info->input_bfds; input_bfd != NULL; input_bfd = input_bfd->link_next)
 +    {
 +      bfd_size_type sym_count = obj_aout_external_sym_count (input_bfd);
 +      char *strings = obj_aout_external_strings (input_bfd);
@@ -1158,16 +1238,16 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +   offsets in the output file.  And we need to malloc some internal
 +   buffers.  */
 +
-+#define MY_bfd_final_link MY (bfd_final_link)
++#define MY_bfd_final_link m68kmint_prg_bfd_final_link
 +
 +static bfd_boolean
-+MY (bfd_final_link) (bfd *abfd, struct bfd_link_info *info)
++m68kmint_prg_bfd_final_link (bfd *abfd, struct bfd_link_info *info)
 +{
 +  struct mint_internal_info *myinfo = obj_aout_ext (abfd);
 +  struct bfd_link_hash_table *hash = info->hash;
 +  enum bfd_link_strip original_strip = info->strip;
 +
-+  if (bfd_link_relocatable (info))
++  if (info->relocatable)
 +    {
 +      _bfd_error_handler ("%B: relocatable output is not supported by format %s",
 +	abfd, bfd_get_target (abfd));
@@ -1274,15 +1354,15 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +
 +/* Copy private BFD header information from the input BFD.  */
 +
-+#define MY_bfd_copy_private_header_data MY (bfd_copy_private_header_data)
++#define MY_bfd_copy_private_header_data m68kmint_prg_bfd_copy_private_header_data
 +
 +static bfd_boolean
-+MY (bfd_copy_private_header_data) (bfd *ibfd, bfd *obfd)
++m68kmint_prg_bfd_copy_private_header_data (bfd *ibfd, bfd *obfd)
 +{
 +  (void)obfd; /* Unused.  */
 +
 +  /* We can only copy BFD files using our own file format.  */
-+  if (ibfd->xvec != &MY (vec))
++  if (ibfd->xvec != &m68kmint_prg_vec)
 +    {
 +      _bfd_error_handler ("%B: cannot convert from format %s to format %s",
 +	ibfd, bfd_get_target (ibfd), bfd_get_target (obfd));
@@ -1296,16 +1376,16 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +/* Copy backend specific data from one object module to another.
 +   This function is used by objcopy and strip.  */
 +
-+#define MY_bfd_copy_private_bfd_data MY (bfd_copy_private_bfd_data)
++#define MY_bfd_copy_private_bfd_data m68kmint_prg_bfd_copy_private_bfd_data
 +
 +static bfd_boolean
-+MY (bfd_copy_private_bfd_data) (bfd *ibfd, bfd *obfd)
++m68kmint_prg_bfd_copy_private_bfd_data (bfd *ibfd, bfd *obfd)
 +{
 +  struct mint_internal_info *myinfo_in;
 +  struct mint_internal_info *myinfo_out;
 +
 +  /* obfd uses our file format, ibfd may be foreign.  */
-+  if (ibfd->xvec != &MY (vec))
++  if (ibfd->xvec != &m68kmint_prg_vec)
 +    return TRUE;
 +
 +  myinfo_in = obj_aout_ext (ibfd);
@@ -1332,15 +1412,15 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +
 +/* Merge private BFD information from an input BFD to the output BFD when linking.  */
 +
-+#define MY_bfd_merge_private_bfd_data MY (merge_private_bfd_data)
++#define MY_bfd_merge_private_bfd_data m68kmint_prg_merge_private_bfd_data
 +
 +static bfd_boolean
-+MY (merge_private_bfd_data) (bfd *ibfd, struct bfd_link_info *info)
++m68kmint_prg_merge_private_bfd_data (bfd *ibfd, bfd *obfd)
 +{
-+  (void)info; /* Unused.  */
++  (void)obfd; /* Unused.  */
 +
 +  /* Our file format cannot be used as linker input.  */
-+  if (ibfd->xvec == &MY (vec))
++  if (ibfd->xvec == &m68kmint_prg_vec)
 +    {
 +      _bfd_error_handler ("%B: file format %s cannot be used as linker input",
 +	ibfd, bfd_get_target (ibfd));
@@ -1348,7 +1428,7 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +      return FALSE;
 +    }
 +
-+  return TRUE; /* _bfd_generic_bfd_merge_private_bfd_data (ibfd, info); */
++  return TRUE; /* _bfd_generic_bfd_merge_private_bfd_data (ibfd, obfd); */
 +}
 +
 +/* Find out the symbol name.  */
@@ -1472,14 +1552,14 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +   the relocated offset in myinfo->relocs[] for further processing.  */
 +
 +static bfd_reloc_status_type
-+MY (final_link_relocate_rel) (reloc_howto_type *howto,
-+			      bfd *input_bfd,
-+			      asection *input_section,
-+			      bfd_byte *contents,
-+			      bfd_vma address,
-+			      bfd_vma value,
-+			      bfd_vma addend,
-+			      struct reloc_std_external *rel)
++m68kmint_prg_final_link_relocate_rel (reloc_howto_type *howto,
++				      bfd *input_bfd,
++				      asection *input_section,
++				      bfd_byte *contents,
++				      bfd_vma address,
++				      bfd_vma value,
++				      bfd_vma addend,
++				      struct reloc_std_external *rel)
 +{
 +  bfd_vma relocation;
 +  bfd *output_bfd = input_section->output_section->owner;
@@ -1633,10 +1713,10 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +  struct mint_internal_info* myinfo = obj_aout_ext (abfd);
 +
 +  if (myinfo->dri_symtab_size == 0)
-+    myinfo->tparel_pos = N_STROFF (execp)
++    myinfo->tparel_pos = N_STROFF (*execp)
 +      + obj_aout_external_string_size (abfd);
 +  else
-+    myinfo->tparel_pos = N_SYMOFF (execp)
++    myinfo->tparel_pos = N_SYMOFF (*execp)
 +      + myinfo->dri_symtab_size;
 +
 +  if (bfd_seek (abfd, myinfo->tparel_pos, SEEK_SET) != 0)
@@ -1675,7 +1755,7 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +  if (myinfo->dri_symtab_size != 0)
 +    symtab_size = myinfo->dri_symtab_size;
 +  else
-+    symtab_size = myinfo->tparel_pos - N_SYMOFF (execp);
++    symtab_size = myinfo->tparel_pos - N_SYMOFF (*execp);
 +
 +  bfd_h_put_32 (abfd, symtab_size, exec_bytes->g_syms);
 +
@@ -1748,13 +1828,15 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +   Section contents have already been written.  We write the
 +   file header, symbols, and relocation.  */
 +
-+#define MY_write_object_contents MY (write_object_contents)
++#define MY_write_object_contents m68kmint_prg_write_object_contents
 +
 +static bfd_boolean
-+MY (write_object_contents) (bfd *abfd)
++m68kmint_prg_write_object_contents (bfd *abfd)
 +{
 +  struct external_exec exec_bytes;
 +  struct internal_exec *execp = exec_hdr (abfd);
++  bfd_size_type text_size;
++  file_ptr text_end;
 +
 +  BFD_ASSERT (obj_aout_ext (abfd) != NULL);
 +
@@ -1764,7 +1846,7 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +     found in libaout.h.  */
 +
 +  if (adata(abfd).magic == undecided_magic)
-+    NAME (aout, adjust_sizes_and_vmas) (abfd);
++    NAME (aout, adjust_sizes_and_vmas) (abfd, & text_size, & text_end);
 +
 +  execp->a_syms = bfd_get_symcount (abfd) * EXTERNAL_NLIST_SIZE;
 +  execp->a_entry = bfd_get_start_address (abfd);
@@ -1779,19 +1861,19 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +  if (bfd_get_outsymbols (abfd) != NULL
 +      && bfd_get_symcount (abfd) != 0)
 +    {
-+      if (bfd_seek (abfd, (file_ptr) (N_SYMOFF(execp)), SEEK_SET) != 0)
++      if (bfd_seek (abfd, (file_ptr) (N_SYMOFF(*execp)), SEEK_SET) != 0)
 +	return FALSE;
 +
 +      if (! NAME (aout, write_syms) (abfd))
 +	return FALSE;
 +    }
 +
-+  if (bfd_seek (abfd, (file_ptr) (N_TRELOFF (execp)), SEEK_SET) != 0)
++  if (bfd_seek (abfd, (file_ptr) (N_TRELOFF (*execp)), SEEK_SET) != 0)
 +    return FALSE;
 +  if (!NAME (aout, squirt_out_relocs) (abfd, obj_textsec (abfd)))
 +    return FALSE;
 +
-+  if (bfd_seek (abfd, (file_ptr) (N_DRELOFF (execp)), SEEK_SET) != 0)
++  if (bfd_seek (abfd, (file_ptr) (N_DRELOFF (*execp)), SEEK_SET) != 0)
 +    return FALSE;
 +  if (!NAME (aout, squirt_out_relocs) (abfd, obj_datasec (abfd)))
 +    return FALSE;
@@ -1807,10 +1889,10 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +
 +/* Print private BFD data. Used by objdump -p.  */
 +
-+#define MY_bfd_print_private_bfd_data MY (print_private_bfd_data)
++#define MY_bfd_print_private_bfd_data m68kmint_prg_print_private_bfd_data
 +
 +static bfd_boolean
-+MY (print_private_bfd_data) (bfd *abfd, void *ptr)
++m68kmint_prg_print_private_bfd_data (bfd *abfd, void *ptr)
 +{
 +  FILE *file = (FILE *) ptr;
 +  struct mint_internal_info *myinfo = obj_aout_ext (abfd);
@@ -1853,7 +1935,7 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +
 +#define MY_get_section_contents aout_32_get_section_contents
 +
-+/* The following include will define MY (vec)
++/* The following include will define m68kmint_prg_vec
 +   and a default implementation for all the MY_ functions
 +   not overriden here.  */
 +
@@ -1867,7 +1949,7 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +{
 +  struct mint_internal_info *myinfo;
 +
-+  BFD_ASSERT(abfd->xvec == &MY (vec));
++  BFD_ASSERT(abfd->xvec == &m68kmint_prg_vec);
 +  myinfo = obj_aout_ext (abfd);
 +  BFD_ASSERT(myinfo != NULL);
 +
@@ -1884,7 +1966,7 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +{
 +  struct mint_internal_info *myinfo;
 +
-+  BFD_ASSERT(abfd->xvec == &MY (vec));
++  BFD_ASSERT(abfd->xvec == &m68kmint_prg_vec);
 +  myinfo = obj_aout_ext (abfd);
 +  BFD_ASSERT(myinfo != NULL);
 +
@@ -1904,7 +1986,7 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +{
 +  struct mint_internal_info *myinfo;
 +
-+  BFD_ASSERT(abfd->xvec == &MY (vec));
++  BFD_ASSERT(abfd->xvec == &m68kmint_prg_vec);
 +  myinfo = obj_aout_ext (abfd);
 +  BFD_ASSERT(myinfo != NULL);
 +
@@ -1929,29 +2011,23 @@ diff -rupN binutils-2.28.orig/bfd/prg-mint.c binutils-2.28/bfd/prg-mint.c
 +
 +  return TRUE;
 +}
-diff -rupN binutils-2.28.orig/bfd/targets.c binutils-2.28/bfd/targets.c
---- binutils-2.28.orig/bfd/targets.c	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/bfd/targets.c	2017-05-15 16:56:55.831232001 +0200
-@@ -706,6 +706,7 @@ extern const bfd_target m68k_aout_4knbsd
- extern const bfd_target m68k_aout_hp300bsd_vec;
- extern const bfd_target m68k_aout_hp300hpux_vec;
- extern const bfd_target m68k_aout_linux_vec;
-+extern const bfd_target m68k_aout_mintprg_vec;
- extern const bfd_target m68k_aout_nbsd_vec;
- extern const bfd_target m68k_aout_newsos3_vec;
- extern const bfd_target m68k_coff_vec;
-@@ -1168,6 +1169,7 @@ static const bfd_target * const _bfd_tar
- 	   which kind of a.out file it is.  */
- 	&m68k_aout_linux_vec,
- #endif
-+	&m68k_aout_mintprg_vec,
- 	&m68k_aout_nbsd_vec,
- 	&m68k_aout_newsos3_vec,
- 	&m68k_coff_vec,
-diff -rupN binutils-2.28.orig/binutils/configure binutils-2.28/binutils/configure
---- binutils-2.28.orig/binutils/configure	2017-03-02 09:55:51.000000000 +0100
-+++ binutils-2.28/binutils/configure	2017-05-15 16:56:55.833232001 +0200
-@@ -13643,7 +13643,7 @@ fi
+diff --git a/bfd/targets.c b/bfd/targets.c
+index 3e99754272..85b26c798c 100644
+--- a/bfd/targets.c
++++ b/bfd/targets.c
+@@ -763,6 +763,7 @@ extern const bfd_target m68kaux_coff_vec;
+ extern const bfd_target m68kcoff_vec;
+ extern const bfd_target m68kcoffun_vec;
+ extern const bfd_target m68klinux_vec;
++extern const bfd_target m68kmint_prg_vec;
+ extern const bfd_target m68knetbsd_vec;
+ extern const bfd_target m68ksysvcoff_vec;
+ extern const bfd_target m88kbcs_vec;
+diff --git a/binutils/configure b/binutils/configure
+index 02b05fbf15..a283aec879 100755
+--- a/binutils/configure
++++ b/binutils/configure
+@@ -13049,7 +13049,7 @@ fi
  
  
  case "${host}" in
@@ -1960,10 +2036,11 @@ diff -rupN binutils-2.28.orig/binutils/configure binutils-2.28/binutils/configur
  
  $as_echo "#define USE_BINARY_FOPEN 1" >>confdefs.h
   ;;
-diff -rupN binutils-2.28.orig/binutils/dlltool.c binutils-2.28/binutils/dlltool.c
---- binutils-2.28.orig/binutils/dlltool.c	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/binutils/dlltool.c	2017-05-15 16:56:55.833232001 +0200
-@@ -4432,7 +4432,7 @@ deduce_name (const char *prog_name)
+diff --git a/binutils/dlltool.c b/binutils/dlltool.c
+index 8c72647fe1..92baccdf0f 100644
+--- a/binutils/dlltool.c
++++ b/binutils/dlltool.c
+@@ -4347,7 +4347,7 @@ deduce_name (const char *prog_name)
        if (*cp == '-')
  	dash = cp;
        if (
@@ -1972,10 +2049,11 @@ diff -rupN binutils-2.28.orig/binutils/dlltool.c binutils-2.28/binutils/dlltool.
  	  *cp == ':' || *cp == '\\' ||
  #endif
  	  *cp == '/')
-diff -rupN binutils-2.28.orig/binutils/dllwrap.c binutils-2.28/binutils/dllwrap.c
---- binutils-2.28.orig/binutils/dllwrap.c	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/binutils/dllwrap.c	2017-05-15 16:56:55.834232001 +0200
-@@ -256,7 +256,7 @@ deduce_name (const char * name)
+diff --git a/binutils/dllwrap.c b/binutils/dllwrap.c
+index 4e48f3e39d..4f5eafc619 100644
+--- a/binutils/dllwrap.c
++++ b/binutils/dllwrap.c
+@@ -263,7 +263,7 @@ deduce_name (const char * name)
  	dash = cp;
  
        if (
@@ -1984,10 +2062,11 @@ diff -rupN binutils-2.28.orig/binutils/dllwrap.c binutils-2.28/binutils/dllwrap.
  	  *cp == ':' || *cp == '\\' ||
  #endif
  	  *cp == '/')
-diff -rupN binutils-2.28.orig/binutils/readelf.c binutils-2.28/binutils/readelf.c
---- binutils-2.28.orig/binutils/readelf.c	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/binutils/readelf.c	2017-05-15 16:56:55.835232001 +0200
-@@ -12626,7 +12626,11 @@ dump_section_as_strings (Elf_Internal_Sh
+diff --git a/binutils/readelf.c b/binutils/readelf.c
+index 0ed5c7c1ed..39ece32e6c 100644
+--- a/binutils/readelf.c
++++ b/binutils/readelf.c
+@@ -9879,7 +9879,11 @@ dump_section_as_strings (Elf_Internal_Shdr * section, FILE * file)
  #ifndef __MSVCRT__
  	  /* PR 11128: Use two separate invocations in order to work
               around bugs in the Solaris 8 implementation of printf.  */
@@ -1996,13 +2075,14 @@ diff -rupN binutils-2.28.orig/binutils/readelf.c binutils-2.28/binutils/readelf.
 +#else
  	  printf ("  [%6tx]  ", data - start);
 +#endif
+ 	  printf ("%s\n", data);
  #else
- 	  printf ("  [%6Ix]  ", (size_t) (data - start));
- #endif
-diff -rupN binutils-2.28.orig/binutils/resrc.c binutils-2.28/binutils/resrc.c
---- binutils-2.28.orig/binutils/resrc.c	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/binutils/resrc.c	2017-05-15 16:56:55.835232001 +0200
-@@ -391,7 +391,7 @@ look_for_default (char *cmd, const char
+ 	  printf ("  [%6Ix]  %s\n", (size_t) (data - start), data);
+diff --git a/binutils/resrc.c b/binutils/resrc.c
+index a72a23f631..83cc2c6552 100644
+--- a/binutils/resrc.c
++++ b/binutils/resrc.c
+@@ -396,7 +396,7 @@ look_for_default (char *cmd, const char *prefix, int end_prefix,
      *space = 0;
  
    if (
@@ -2011,7 +2091,7 @@ diff -rupN binutils-2.28.orig/binutils/resrc.c binutils-2.28/binutils/resrc.c
        strchr (cmd, '\\') ||
  #endif
        strchr (cmd, '/'))
-@@ -509,7 +509,7 @@ read_rc_file (const char *filename, cons
+@@ -514,7 +514,7 @@ read_rc_file (const char *filename, const char *preprocessor,
  	  if (*cp == '-')
  	    dash = cp;
  	  if (
@@ -2020,35 +2100,46 @@ diff -rupN binutils-2.28.orig/binutils/resrc.c binutils-2.28/binutils/resrc.c
  	      *cp == ':' || *cp == '\\' ||
  #endif
  	      *cp == '/')
-diff -rupN binutils-2.28.orig/binutils/testsuite/binutils-all/copy-2.d binutils-2.28/binutils/testsuite/binutils-all/copy-2.d
---- binutils-2.28.orig/binutils/testsuite/binutils-all/copy-2.d	2013-11-04 16:33:37.000000000 +0100
-+++ binutils-2.28/binutils/testsuite/binutils-all/copy-2.d	2017-05-15 16:56:55.836232001 +0200
-@@ -3,7 +3,7 @@
- #objcopy: --set-section-flags foo=contents,alloc,load,code
- #name: copy with setting section flags 2
- #source: copytest.s
--#not-target: *-*-*aout *-*-aix* h8300-*-* hppa*-*-hpux* m68k-*-netbsd m68k-*-openbsd* mips-sony-bsd* mips-*-ultrix* mips-*-osf* mips-*-ecoff* mips-*-irix mips-*-irix[2-4] mips-*-riscos* ns32k-*-netbsd
-+#not-target: *-*-*aout *-*-aix* h8300-*-* hppa*-*-hpux* m68k-*-netbsd m68k-*-openbsd* m68k-*-mint* mips-sony-bsd* mips-*-ultrix* mips-*-osf* mips-*-ecoff* mips-*-irix mips-*-irix[2-4] mips-*-riscos* ns32k-*-netbsd
- # Note - we use copytest.s and a section named "foo" rather
- # than .text because for some file formats (eg PE) the .text
- # section has a fixed set of flags and these cannot be changed.
-diff -rupN binutils-2.28.orig/binutils/testsuite/binutils-all/copy-3.d binutils-2.28/binutils/testsuite/binutils-all/copy-3.d
---- binutils-2.28.orig/binutils/testsuite/binutils-all/copy-3.d	2016-08-03 09:36:51.000000000 +0200
-+++ binutils-2.28/binutils/testsuite/binutils-all/copy-3.d	2017-05-15 16:56:55.836232001 +0200
-@@ -3,7 +3,7 @@
- #objcopy: --set-section-flags .text=alloc,data
- #name: copy with setting section flags 3
- #source: bintest.s
--#not-target: *-*-*aout *-*-*coff *-*-cygwin* *-*-darwin *-*-mingw* *-*-go32 *-*-*pe hppa*-*-hpux* m68k-*-netbsd m68k-*-openbsd* ns32k-*-netbsd powerpc-*-aix* rs6000-*-* rx-*-*
-+#not-target: *-*-*aout *-*-*coff *-*-cygwin* *-*-darwin *-*-mingw* *-*-go32 *-*-*pe hppa*-*-hpux* m68k-*-netbsd m68k-*-openbsd* m68k-*-mint* ns32k-*-netbsd powerpc-*-aix* rs6000-*-* rx-*-*
- # The .text # section in PE/COFF has a fixed set of flags and these
- # cannot be changed.  We skip it for them.
- 
-diff -rupN binutils-2.28.orig/gas/config/te-mint.h binutils-2.28/gas/config/te-mint.h
---- binutils-2.28.orig/gas/config/te-mint.h	1970-01-01 01:00:00.000000000 +0100
-+++ binutils-2.28/gas/config/te-mint.h	2017-05-15 16:56:55.836232001 +0200
+diff --git a/config.guess b/config.guess
+index 115f944a61..d75092fa60 100755
+--- a/config.guess
++++ b/config.guess
+@@ -395,22 +395,22 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
+     # MiNT.  But MiNT is downward compatible to TOS, so this should
+     # be no problem.
+     atarist[e]:*MiNT:*:* | atarist[e]:*mint:*:* | atarist[e]:*TOS:*:*)
+-        echo m68k-atari-mint${UNAME_RELEASE}
++        echo m68k-atari-mint
+ 	exit ;;
+     atari*:*MiNT:*:* | atari*:*mint:*:* | atarist[e]:*TOS:*:*)
+-	echo m68k-atari-mint${UNAME_RELEASE}
++	echo m68k-atari-mint
+         exit ;;
+     *falcon*:*MiNT:*:* | *falcon*:*mint:*:* | *falcon*:*TOS:*:*)
+-        echo m68k-atari-mint${UNAME_RELEASE}
++        echo m68k-atari-mint
+ 	exit ;;
+     milan*:*MiNT:*:* | milan*:*mint:*:* | *milan*:*TOS:*:*)
+-        echo m68k-milan-mint${UNAME_RELEASE}
++        echo m68k-milan-mint
+         exit ;;
+     hades*:*MiNT:*:* | hades*:*mint:*:* | *hades*:*TOS:*:*)
+-        echo m68k-hades-mint${UNAME_RELEASE}
++        echo m68k-hades-mint
+         exit ;;
+     *:*MiNT:*:* | *:*mint:*:* | *:*TOS:*:*)
+-        echo m68k-unknown-mint${UNAME_RELEASE}
++        echo m68k-unknown-mint
+         exit ;;
+     m68k:machten:*:*)
+ 	echo m68k-apple-machten${UNAME_RELEASE}
+diff --git a/gas/config/te-mint.h b/gas/config/te-mint.h
+new file mode 100644
+index 0000000000..df7eea63f6
+--- /dev/null
++++ b/gas/config/te-mint.h
 @@ -0,0 +1,30 @@
-+/* Copyright (C) 2008-2017 Free Software Foundation, Inc.
++/* Copyright 2008 Free Software Foundation, Inc.
 +
 +   This file is part of GAS, the GNU Assembler.
 +
@@ -2078,10 +2169,11 @@ diff -rupN binutils-2.28.orig/gas/config/te-mint.h binutils-2.28/gas/config/te-m
 +#else
 +#include "obj-format.h"
 +#endif
-diff -rupN binutils-2.28.orig/gas/configure.tgt binutils-2.28/gas/configure.tgt
---- binutils-2.28.orig/gas/configure.tgt	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/gas/configure.tgt	2017-05-15 16:56:55.836232001 +0200
-@@ -321,6 +321,7 @@ case ${generic_target} in
+diff --git a/gas/configure.tgt b/gas/configure.tgt
+index c05a64a238..3eceb02990 100644
+--- a/gas/configure.tgt
++++ b/gas/configure.tgt
+@@ -266,6 +266,7 @@ case ${generic_target} in
    m68k-*-linux-*)			fmt=elf em=linux ;;
    m68k-*-uclinux*)			fmt=elf em=uclinux ;;
    m68k-*-gnu*)				fmt=elf ;;
@@ -2089,9 +2181,10 @@ diff -rupN binutils-2.28.orig/gas/configure.tgt binutils-2.28/gas/configure.tgt
    m68k-*-netbsdelf*)			fmt=elf em=nbsd ;;
    m68k-*-netbsd*)			fmt=aout em=nbsd bfd_gas=yes ;;
    m68k-*-openbsd*)			fmt=aout em=nbsd bfd_gas=yes ;;
-diff -rupN binutils-2.28.orig/gas/testsuite/gas/all/weakref1u.d binutils-2.28/gas/testsuite/gas/all/weakref1u.d
---- binutils-2.28.orig/gas/testsuite/gas/all/weakref1u.d	2013-11-04 16:33:38.000000000 +0100
-+++ binutils-2.28/gas/testsuite/gas/all/weakref1u.d	2017-05-15 16:56:55.836232001 +0200
+diff --git a/gas/testsuite/gas/all/weakref1u.d b/gas/testsuite/gas/all/weakref1u.d
+index 179567f7ca..95de55406c 100644
+--- a/gas/testsuite/gas/all/weakref1u.d
++++ b/gas/testsuite/gas/all/weakref1u.d
 @@ -3,7 +3,7 @@
  #source: weakref1.s
  # aout turns undefined into *ABS* symbols.
@@ -2101,21 +2194,26 @@ diff -rupN binutils-2.28.orig/gas/testsuite/gas/all/weakref1u.d binutils-2.28/ga
  
  # the rest of this file is generated with the following script:
  # # script begin
-diff -rupN binutils-2.28.orig/gas/testsuite/gas/m68k/all.exp binutils-2.28/gas/testsuite/gas/m68k/all.exp
---- binutils-2.28.orig/gas/testsuite/gas/m68k/all.exp	2017-03-02 09:23:53.000000000 +0100
-+++ binutils-2.28/gas/testsuite/gas/m68k/all.exp	2017-05-15 16:56:55.836232001 +0200
-@@ -93,7 +93,7 @@ if { [istarget m68*-*-*] || [istarget fi
-     gas_test_error "p13050-1.s" "-march=isab" "moveb (d8,An,Xi),(d16,An) unsupported on isab"
-     run_dump_test p13050-2
+diff --git a/gas/testsuite/gas/m68k/all.exp b/gas/testsuite/gas/m68k/all.exp
+index 443fdb62b4..dda75b6780 100644
+--- a/gas/testsuite/gas/m68k/all.exp
++++ b/gas/testsuite/gas/m68k/all.exp
+@@ -71,9 +71,10 @@ if { [istarget m68*-*-*] || [istarget fido*-*-*] } then {
  
--    if { [istarget *-*-*aout] || [istarget *-*-netbsd] || [istarget *-*-openbsd*] } then {
+     gas_test_error "p11673.s" "-march=isab" "movel immediate with offset unsupported on isab"
+ 
+-    if { [istarget *-*-netbsd] } then {
 +    if { [istarget *-*-*aout] || [istarget *-*-netbsd] || [istarget *-*-openbsd*] || [istarget *-*-mint*] } then {
        run_dump_test p3041
        run_dump_test p3041data
-       run_dump_test p3041pcrel
-diff -rupN binutils-2.28.orig/gas/testsuite/gas/m68k/br-isaa.d binutils-2.28/gas/testsuite/gas/m68k/br-isaa.d
---- binutils-2.28.orig/gas/testsuite/gas/m68k/br-isaa.d	2013-11-04 16:33:38.000000000 +0100
-+++ binutils-2.28/gas/testsuite/gas/m68k/br-isaa.d	2017-05-15 16:56:55.836232001 +0200
++      run_dump_test p3041pcrel
+     }
+ 
+     set testname "68000 operands"
+diff --git a/gas/testsuite/gas/m68k/br-isaa.d b/gas/testsuite/gas/m68k/br-isaa.d
+index 9e680f1b0c..69dcfc2e29 100644
+--- a/gas/testsuite/gas/m68k/br-isaa.d
++++ b/gas/testsuite/gas/m68k/br-isaa.d
 @@ -1,7 +1,7 @@
  #name: br-isaa.d
  #objdump: -dr
@@ -2125,9 +2223,10 @@ diff -rupN binutils-2.28.orig/gas/testsuite/gas/m68k/br-isaa.d binutils-2.28/gas
  
  .*:     file format .*
  
-diff -rupN binutils-2.28.orig/gas/testsuite/gas/m68k/br-isab.d binutils-2.28/gas/testsuite/gas/m68k/br-isab.d
---- binutils-2.28.orig/gas/testsuite/gas/m68k/br-isab.d	2013-11-04 16:33:38.000000000 +0100
-+++ binutils-2.28/gas/testsuite/gas/m68k/br-isab.d	2017-05-15 16:56:55.836232001 +0200
+diff --git a/gas/testsuite/gas/m68k/br-isab.d b/gas/testsuite/gas/m68k/br-isab.d
+index 94110e6c8d..853a1a3da5 100644
+--- a/gas/testsuite/gas/m68k/br-isab.d
++++ b/gas/testsuite/gas/m68k/br-isab.d
 @@ -1,7 +1,7 @@
  #name: br-isab.d
  #objdump: -dr
@@ -2137,9 +2236,10 @@ diff -rupN binutils-2.28.orig/gas/testsuite/gas/m68k/br-isab.d binutils-2.28/gas
  
  .*:     file format .*
  
-diff -rupN binutils-2.28.orig/gas/testsuite/gas/m68k/br-isac.d binutils-2.28/gas/testsuite/gas/m68k/br-isac.d
---- binutils-2.28.orig/gas/testsuite/gas/m68k/br-isac.d	2013-11-04 16:33:38.000000000 +0100
-+++ binutils-2.28/gas/testsuite/gas/m68k/br-isac.d	2017-05-15 16:56:55.836232001 +0200
+diff --git a/gas/testsuite/gas/m68k/br-isac.d b/gas/testsuite/gas/m68k/br-isac.d
+index 0af5d41808..6793796e61 100644
+--- a/gas/testsuite/gas/m68k/br-isac.d
++++ b/gas/testsuite/gas/m68k/br-isac.d
 @@ -1,7 +1,7 @@
  #name: br-isac.d
  #objdump: -dr
@@ -2149,10 +2249,121 @@ diff -rupN binutils-2.28.orig/gas/testsuite/gas/m68k/br-isac.d binutils-2.28/gas
  
  .*:     file format .*
  
-diff -rupN binutils-2.28.orig/include/filenames.h binutils-2.28/include/filenames.h
---- binutils-2.28.orig/include/filenames.h	2017-03-02 09:23:54.000000000 +0100
-+++ binutils-2.28/include/filenames.h	2017-05-15 16:56:55.836232001 +0200
-@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin Street - F
+diff --git a/gas/testsuite/gas/m68k/cpu32.d b/gas/testsuite/gas/m68k/cpu32.d
+index e7054a3947..d73b5c3d37 100644
+--- a/gas/testsuite/gas/m68k/cpu32.d
++++ b/gas/testsuite/gas/m68k/cpu32.d
+@@ -1,5 +1,5 @@
+ #name: cpu32
+-#objdump: -d
++#objdump: --architecture=m68k:cpu32 -d
+ #as: -mcpu32
+ 
+ .*:     file format .*
+diff --git a/gas/testsuite/gas/m68k/mcf-coproc.d b/gas/testsuite/gas/m68k/mcf-coproc.d
+index 86401cbbcb..0ac1b1b0e2 100644
+--- a/gas/testsuite/gas/m68k/mcf-coproc.d
++++ b/gas/testsuite/gas/m68k/mcf-coproc.d
+@@ -1,4 +1,4 @@
+-#objdump: -d
++#objdump: --architecture=m68k:547x -d
+ #as: -mcpu=5475
+ 
+ .*:     file format .*
+diff --git a/gas/testsuite/gas/m68k/mcf-wdebug.d b/gas/testsuite/gas/m68k/mcf-wdebug.d
+index 257d1e3860..98c5836e73 100644
+--- a/gas/testsuite/gas/m68k/mcf-wdebug.d
++++ b/gas/testsuite/gas/m68k/mcf-wdebug.d
+@@ -1,5 +1,5 @@
+ #name: mcf-wdebug
+-#objdump: -d
++#objdump: --architecture=m68k:5200 -d
+ #as: -m5208
+ 
+ .*:     file format .*
+diff --git a/gas/testsuite/gas/m68k/p3041pcrel.d b/gas/testsuite/gas/m68k/p3041pcrel.d
+new file mode 100644
+index 0000000000..91168cc9cd
+--- /dev/null
++++ b/gas/testsuite/gas/m68k/p3041pcrel.d
+@@ -0,0 +1,38 @@
++#name: PR 3041 pcrel
++#as: -m68000
++#objdump: -tdr
++
++.*:     file format .*
++
++SYMBOL TABLE:
++00000024  w      \.text 0000 00 0f mytext
++0000002e  w      \.data 0000 00 10 mydata
++0000003a  w      \.bss  0000 00 11 mybss
++
++Disassembly of section \.text:
++
++00000000 <.*>:
++   0:	41fa fffe      	lea %pc@\(0 <.*>\),%a0
++			2: DISP16	mytext
++   4:	41fa fffc      	lea %pc@\(2 <.*>\),%a0
++			6: DISP16	mytext
++   8:	41fa fff2      	lea %pc@\(fffffffc <.*>\),%a0
++			a: DISP16	mytext
++   c:	41fa fff2      	lea %pc@\(0 <.*>\),%a0
++			e: DISP16	mydata
++  10:	41fa fff1      	lea %pc@\(3 <.*>\),%a0
++			12: DISP16	mydata
++  14:	41fa ffe9      	lea %pc@\(ffffffff <.*>\),%a0
++			16: DISP16	mydata
++  18:	41fa ffe6      	lea %pc@\(0 <.*>\),%a0
++			1a: DISP16	mybss
++  1c:	41fa ffe3      	lea %pc@\(1 <.*>\),%a0
++			1e: DISP16	mybss
++  20:	41fa ffdc      	lea %pc@\(fffffffe <.*>\),%a0
++			22: DISP16	mybss
++
++00000024 <mytext>:
++  24:	4e71           	nop
++  26:	4e71           	nop
++  28:	4e71           	nop
++  2a:	4e71           	nop
+diff --git a/gas/testsuite/gas/m68k/p3041pcrel.s b/gas/testsuite/gas/m68k/p3041pcrel.s
+new file mode 100644
+index 0000000000..59d61ead42
+--- /dev/null
++++ b/gas/testsuite/gas/m68k/p3041pcrel.s
+@@ -0,0 +1,28 @@
++	lea	mytext(%pc),%a0
++	lea	mytext+2(%pc),%a0
++	lea	mytext-4(%pc),%a0
++	lea	mydata(%pc),%a0
++	lea	mydata+3(%pc),%a0
++	lea	mydata-1(%pc),%a0
++	lea	mybss(%pc),%a0
++	lea	mybss+1(%pc),%a0
++	lea	mybss-2(%pc),%a0
++	.weak	mytext
++mytext:
++	nop
++	nop
++	nop
++	nop
++
++	.data
++	.word	0x8081
++	.weak	mydata
++mydata:
++	.word	0x8283
++	.word	0x8485
++
++	.bss
++	.skip	6
++	.weak	mybss
++mybss:
++	.skip	2
+diff --git a/include/filenames.h b/include/filenames.h
+index ca23d32531..c2c9d02886 100644
+--- a/include/filenames.h
++++ b/include/filenames.h
+@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.
  extern "C" {
  #endif
  
@@ -2161,10 +2372,11 @@ diff -rupN binutils-2.28.orig/include/filenames.h binutils-2.28/include/filename
  #  ifndef HAVE_DOS_BASED_FILE_SYSTEM
  #    define HAVE_DOS_BASED_FILE_SYSTEM 1
  #  endif
-diff -rupN binutils-2.28.orig/include/getopt.h binutils-2.28/include/getopt.h
---- binutils-2.28.orig/include/getopt.h	2017-03-02 09:23:54.000000000 +0100
-+++ binutils-2.28/include/getopt.h	2017-05-15 16:56:55.836232001 +0200
-@@ -105,7 +105,7 @@ struct option
+diff --git a/include/getopt.h b/include/getopt.h
+index 5421cabed8..68b16651c9 100644
+--- a/include/getopt.h
++++ b/include/getopt.h
+@@ -106,7 +106,7 @@ struct option
     to find the declaration so provide a fully prototyped one.  If it
     is 1, we found it so don't provide any declaration at all.  */
  #if !HAVE_DECL_GETOPT
@@ -2173,10 +2385,11 @@ diff -rupN binutils-2.28.orig/include/getopt.h binutils-2.28/include/getopt.h
  /* Many other libraries have conflicting prototypes for getopt, with
     differences in the consts, in unistd.h.  To avoid compilation
     errors, only prototype getopt for the GNU C library.  */
-diff -rupN binutils-2.28.orig/ld/Makefile.am binutils-2.28/ld/Makefile.am
---- binutils-2.28.orig/ld/Makefile.am	2017-03-02 09:23:54.000000000 +0100
-+++ binutils-2.28/ld/Makefile.am	2017-05-15 16:56:55.837232001 +0200
-@@ -365,6 +365,7 @@ ALL_EMULATION_SOURCES = \
+diff --git a/ld/Makefile.am b/ld/Makefile.am
+index b4364be6f1..bbf6694d40 100644
+--- a/ld/Makefile.am
++++ b/ld/Makefile.am
+@@ -300,6 +300,7 @@ ALL_EMULATION_SOURCES = \
  	em68kelf.c \
  	em68kelfnbsd.c \
  	em68klinux.c \
@@ -2184,21 +2397,22 @@ diff -rupN binutils-2.28.orig/ld/Makefile.am binutils-2.28/ld/Makefile.am
  	em68knbsd.c \
  	em68kpsos.c \
  	em88kbcs.c \
-@@ -1576,6 +1577,10 @@ em68kelfnbsd.c: $(srcdir)/emulparams/m68
+@@ -1394,6 +1395,10 @@ em68kelfnbsd.c: $(srcdir)/emulparams/m68kelfnbsd.sh \
  em68klinux.c: $(srcdir)/emulparams/m68klinux.sh \
    $(srcdir)/emultempl/linux.em $(srcdir)/scripttempl/aout.sc ${GEN_DEPENDS}
- 
+ 	${GENSCRIPTS} m68klinux "$(tdir_m68klinux)"
 +em68kmint.c: $(srcdir)/emulparams/m68kmint.sh \
 +  $(srcdir)/emultempl/generic.em $(srcdir)/emultempl/mint.em \
 +  $(srcdir)/scripttempl/m68kmint.sc ${GEN_DEPENDS}
-+
++	${GENSCRIPTS} m68kmint "$(tdir_m68kmint)"
  em68knbsd.c:	$(srcdir)/emulparams/m68knbsd.sh \
    $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/aout.sc ${GEN_DEPENDS}
- 
-diff -rupN binutils-2.28.orig/ld/Makefile.in binutils-2.28/ld/Makefile.in
---- binutils-2.28.orig/ld/Makefile.in	2017-03-02 09:23:54.000000000 +0100
-+++ binutils-2.28/ld/Makefile.in	2017-05-15 16:56:55.837232001 +0200
-@@ -734,6 +734,7 @@ ALL_EMULATION_SOURCES = \
+ 	${GENSCRIPTS} m68knbsd "$(tdir_m68knbsd)"
+diff --git a/ld/Makefile.in b/ld/Makefile.in
+index dac81b3167..e313a314c0 100644
+--- a/ld/Makefile.in
++++ b/ld/Makefile.in
+@@ -600,6 +600,7 @@ ALL_EMULATION_SOURCES = \
  	em68kelf.c \
  	em68kelfnbsd.c \
  	em68klinux.c \
@@ -2206,7 +2420,7 @@ diff -rupN binutils-2.28.orig/ld/Makefile.in binutils-2.28/ld/Makefile.in
  	em68knbsd.c \
  	em68kpsos.c \
  	em88kbcs.c \
-@@ -1434,6 +1435,7 @@ distclean-compile:
+@@ -1199,6 +1200,7 @@ distclean-compile:
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/em68kelf.Po@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/em68kelfnbsd.Po@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/em68klinux.Po@am__quote@
@@ -2214,21 +2428,22 @@ diff -rupN binutils-2.28.orig/ld/Makefile.in binutils-2.28/ld/Makefile.in
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/em68knbsd.Po@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/em68kpsos.Po@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/em88kbcs.Po@am__quote@
-@@ -3169,6 +3171,10 @@ em68kelfnbsd.c: $(srcdir)/emulparams/m68
+@@ -2817,6 +2819,10 @@ em68kelfnbsd.c: $(srcdir)/emulparams/m68kelfnbsd.sh \
  em68klinux.c: $(srcdir)/emulparams/m68klinux.sh \
    $(srcdir)/emultempl/linux.em $(srcdir)/scripttempl/aout.sc ${GEN_DEPENDS}
- 
+ 	${GENSCRIPTS} m68klinux "$(tdir_m68klinux)"
 +em68kmint.c: $(srcdir)/emulparams/m68kmint.sh \
 +  $(srcdir)/emultempl/generic.em $(srcdir)/emultempl/mint.em \
 +  $(srcdir)/scripttempl/m68kmint.sc ${GEN_DEPENDS}
-+
++	${GENSCRIPTS} m68kmint "$(tdir_m68kmint)"
  em68knbsd.c:	$(srcdir)/emulparams/m68knbsd.sh \
    $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/aout.sc ${GEN_DEPENDS}
- 
-diff -rupN binutils-2.28.orig/ld/configure binutils-2.28/ld/configure
---- binutils-2.28.orig/ld/configure	2017-03-02 09:55:52.000000000 +0100
-+++ binutils-2.28/ld/configure	2017-05-15 16:56:55.839232001 +0200
-@@ -16959,7 +16959,7 @@ fi
+ 	${GENSCRIPTS} m68knbsd "$(tdir_m68knbsd)"
+diff --git a/ld/configure b/ld/configure
+index 088c721de7..42025663ad 100755
+--- a/ld/configure
++++ b/ld/configure
+@@ -12978,7 +12978,7 @@ fi
  
  
  case "${host}" in
@@ -2237,10 +2452,11 @@ diff -rupN binutils-2.28.orig/ld/configure binutils-2.28/ld/configure
  
  $as_echo "#define USE_BINARY_FOPEN 1" >>confdefs.h
   ;;
-diff -rupN binutils-2.28.orig/ld/configure.tgt binutils-2.28/ld/configure.tgt
---- binutils-2.28.orig/ld/configure.tgt	2017-03-02 09:23:54.000000000 +0100
-+++ binutils-2.28/ld/configure.tgt	2017-05-15 16:56:55.839232001 +0200
-@@ -451,6 +451,7 @@ m68k-*-linux-*) 	targ_emul=m68kelf
+diff --git a/ld/configure.tgt b/ld/configure.tgt
+index 4e90739679..1111bf9066 100644
+--- a/ld/configure.tgt
++++ b/ld/configure.tgt
+@@ -343,6 +343,7 @@ m68k-*-linux-*) 	targ_emul=m68kelf
  			tdir_m68klinux=`echo ${targ_alias} | sed -e 's/linux/linuxaout/'` ;;
  m68k-*-uclinux*)	targ_emul=m68kelf ;;
  m68*-*-gnu*)		targ_emul=m68kelf ;;
@@ -2248,9 +2464,11 @@ diff -rupN binutils-2.28.orig/ld/configure.tgt binutils-2.28/ld/configure.tgt
  m68*-*-netbsd*4k*)	targ_emul=m68k4knbsd
  			targ_extra_emuls="m68knbsd m68kelfnbsd" ;;
  m68*-*-netbsdelf*)	targ_emul=m68kelfnbsd
-diff -rupN binutils-2.28.orig/ld/emulparams/m68kmint.sh binutils-2.28/ld/emulparams/m68kmint.sh
---- binutils-2.28.orig/ld/emulparams/m68kmint.sh	1970-01-01 01:00:00.000000000 +0100
-+++ binutils-2.28/ld/emulparams/m68kmint.sh	2017-05-15 16:56:55.839232001 +0200
+diff --git a/ld/emulparams/m68kmint.sh b/ld/emulparams/m68kmint.sh
+new file mode 100644
+index 0000000000..4cb45edbeb
+--- /dev/null
++++ b/ld/emulparams/m68kmint.sh
 @@ -0,0 +1,6 @@
 +SCRIPT_NAME=m68kmint
 +OUTPUT_FORMAT="a.out-mintprg"
@@ -2258,12 +2476,29 @@ diff -rupN binutils-2.28.orig/ld/emulparams/m68kmint.sh binutils-2.28/ld/emulpar
 +TEXT_START_ADDR=0xe4
 +ARCH=m68k
 +EXTRA_EM_FILE=mint
-diff -rupN binutils-2.28.orig/ld/emultempl/mint.em binutils-2.28/ld/emultempl/mint.em
---- binutils-2.28.orig/ld/emultempl/mint.em	1970-01-01 01:00:00.000000000 +0100
-+++ binutils-2.28/ld/emultempl/mint.em	2017-05-15 16:56:55.840232001 +0200
+diff --git a/ld/emultempl/generic.em b/ld/emultempl/generic.em
+index 4a84680250..20ec35613a 100644
+--- a/ld/emultempl/generic.em
++++ b/ld/emultempl/generic.em
+@@ -138,8 +138,8 @@ struct ld_emulation_xfer_struct ld_${EMULATION_NAME}_emulation =
+   ${LDEMUL_PLACE_ORPHAN-NULL},
+   ${LDEMUL_SET_SYMBOLS-NULL},
+   ${LDEMUL_PARSE_ARGS-NULL},
+-  NULL,	/* add_options */
+-  NULL,	/* handle_option */
++  ${LDEMUL_ADD_OPTIONS-NULL},
++  ${LDEMUL_HANDLE_OPTION-NULL},
+   ${LDEMUL_UNRECOGNIZED_FILE-NULL},
+   ${LDEMUL_LIST_OPTIONS-NULL},
+   ${LDEMUL_RECOGNIZED_FILE-NULL},
+diff --git a/ld/emultempl/mint.em b/ld/emultempl/mint.em
+new file mode 100644
+index 0000000000..34f55b2cca
+--- /dev/null
++++ b/ld/emultempl/mint.em
 @@ -0,0 +1,330 @@
 +# This shell script emits a C file. -*- C -*-
-+#   Copyright (C) 2006-2017 Free Software Foundation, Inc.
++#   Copyright 2006, 2007 Free Software Foundation, Inc.
 +#
 +# This file is part of the GNU Binutils.
 +#
@@ -2592,23 +2827,13 @@ diff -rupN binutils-2.28.orig/ld/emultempl/mint.em binutils-2.28/ld/emultempl/mi
 +LDEMUL_HANDLE_OPTION=gld${EMULATION_NAME}_handle_option
 +LDEMUL_LIST_OPTIONS=gld_${EMULATION_NAME}_list_options
 +LDEMUL_FINISH=gld${EMULATION_NAME}_finish
-diff -rupN binutils-2.28.orig/ld/scripttempl/m68kmint.sc binutils-2.28/ld/scripttempl/m68kmint.sc
---- binutils-2.28.orig/ld/scripttempl/m68kmint.sc	1970-01-01 01:00:00.000000000 +0100
-+++ binutils-2.28/ld/scripttempl/m68kmint.sc	2017-05-15 16:56:55.840232001 +0200
-@@ -0,0 +1,47 @@
-+# Copyright (C) 2014-2017 Free Software Foundation, Inc.
-+#
-+# Copying and distribution of this file, with or without modification,
-+# are permitted in any medium without royalty provided the copyright
-+# notice and this notice are preserved.
-+#
+diff --git a/ld/scripttempl/m68kmint.sc b/ld/scripttempl/m68kmint.sc
+new file mode 100644
+index 0000000000..3a499c3c15
+--- /dev/null
++++ b/ld/scripttempl/m68kmint.sc
+@@ -0,0 +1,35 @@
 +cat <<EOF
-+/* Copyright (C) 2014-2017 Free Software Foundation, Inc.
-+
-+   Copying and distribution of this script, with or without modification,
-+   are permitted in any medium without royalty provided the copyright
-+   notice and this notice are preserved.  */
-+
 +${RELOCATING+OUTPUT_FORMAT(${OUTPUT_FORMAT})}
 +${RELOCATING-OUTPUT_FORMAT(${RELOCATEABLE_OUTPUT_FORMAT})}
 +${RELOCATING+${LIB_SEARCH_DIRS}}
@@ -2643,9 +2868,10 @@ diff -rupN binutils-2.28.orig/ld/scripttempl/m68kmint.sc binutils-2.28/ld/script
 +  }
 +}
 +EOF
-diff -rupN binutils-2.28.orig/libiberty/hex.c binutils-2.28/libiberty/hex.c
---- binutils-2.28.orig/libiberty/hex.c	2013-11-04 16:33:40.000000000 +0100
-+++ binutils-2.28/libiberty/hex.c	2017-05-15 16:56:55.840232001 +0200
+diff --git a/libiberty/hex.c b/libiberty/hex.c
+index 5eeafdbd15..696d914e77 100644
+--- a/libiberty/hex.c
++++ b/libiberty/hex.c
 @@ -24,7 +24,7 @@ Boston, MA 02110-1301, USA.  */
  #include "libiberty.h"
  #include "safe-ctype.h" /* for HOST_CHARSET_ASCII */
@@ -2655,9 +2881,10 @@ diff -rupN binutils-2.28.orig/libiberty/hex.c binutils-2.28/libiberty/hex.c
   #error "hex.c requires EOF == -1"
  #endif
  
-diff -rupN binutils-2.28.orig/libiberty/safe-ctype.c binutils-2.28/libiberty/safe-ctype.c
---- binutils-2.28.orig/libiberty/safe-ctype.c	2013-11-04 16:33:40.000000000 +0100
-+++ binutils-2.28/libiberty/safe-ctype.c	2017-05-15 16:56:55.840232001 +0200
+diff --git a/libiberty/safe-ctype.c b/libiberty/safe-ctype.c
+index 0972b4b354..7418139d32 100644
+--- a/libiberty/safe-ctype.c
++++ b/libiberty/safe-ctype.c
 @@ -119,7 +119,7 @@ sets of characters:
  #include <safe-ctype.h>
  #include <stdio.h>  /* for EOF */
@@ -2667,3 +2894,114 @@ diff -rupN binutils-2.28.orig/libiberty/safe-ctype.c binutils-2.28/libiberty/saf
   #error "<safe-ctype.h> requires EOF == -1"
  #endif
  
+diff --git a/bfd/config.bfd b/bfd/config.bfd
+index 40cbf8a753..3e9c37dc51 100644
+--- a/bfd/config.bfd
++++ b/bfd/config.bfd
+@@ -795,6 +795,11 @@ case "${targ}" in
+     # targ_selvecs=m68kmach3_vec
+     # targ_cflags=-DSTAT_FOR_EXEC
+     ;;
++  m68*-*-mintelf*)
++    targ_defvec=bfd_elf32_m68k_vec
++    targ_selvecs="aout0_big_vec m68kmint_prg_vec"
++    targ_underscore=yes
++    ;;
+   m68*-*-mint*)
+     targ_defvec=aout0_big_vec
+     targ_selvecs=m68kmint_prg_vec
+diff --git a/bfd/elf.c b/bfd/elf.c
+index 8639a5d565..fe1e8e388a 100644
+--- a/bfd/elf.c
++++ b/bfd/elf.c
+@@ -6530,7 +6530,11 @@ _bfd_elf_canonicalize_symtab (bfd *abfd, asymbol **allocation)
+   long symcount = bed->s->slurp_symbol_table (abfd, allocation, FALSE);
+ 
+   if (symcount >= 0)
+-    bfd_get_symcount (abfd) = symcount;
++    {
++      bfd_get_symcount (abfd) = symcount;
++      /* Cache symbols for the generic linker.  */
++      bfd_get_outsymbols (abfd) = allocation;
++    }
+   return symcount;
+ }
+ 
+diff --git a/bfd/reloc.c b/bfd/reloc.c
+index 9d993af8a3..1dbd17fa63 100644
+--- a/bfd/reloc.c
++++ b/bfd/reloc.c
+@@ -938,6 +938,17 @@ space consuming.  For each target:
+       return bfd_reloc_other;
+     }
+ 
++  extern const bfd_target m68kmint_prg_vec;
++  if (flag == bfd_reloc_ok
++      && input_section->output_section->owner->xvec == &m68kmint_prg_vec
++      && !howto->pc_relative && (howto->size == 2 || howto->size == -2))
++    {
++      bfd_vma tpa_address = input_section->output_section->vma
++	+ input_section->output_offset + reloc_entry->address;
++	
++      bfd_m68kmint_add_tpa_relocation_entry (input_section->output_section->owner, tpa_address);
++    }
++
+   return flag;
+ }
+ 
+diff --git a/config.sub b/config.sub
+index 63bfff0307..f1a03cf3e9 100755
+--- a/config.sub
++++ b/config.sub
+@@ -1384,6 +1384,9 @@ case $os in
+ 	-xenix)
+ 		os=-xenix
+ 		;;
++	-mintelf*)
++		os=-mintelf
++		;;
+ 	-*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
+ 		os=-mint
+ 		;;
+diff --git a/gas/config/te-mint.h b/gas/config/te-mint.h
+index df7eea63f6..71e964572c 100644
+--- a/gas/config/te-mint.h
++++ b/gas/config/te-mint.h
+@@ -19,6 +19,9 @@
+ 
+ #define TE_MINT
+ 
++/* The % prefix on registers is optional, even with ELF object files.  */
++#define REGISTER_PREFIX_OPTIONAL 1
++
+ #define LOCAL_LABELS_DOLLAR 1
+ #define LOCAL_LABELS_FB 1
+ 
+diff --git a/gas/configure.tgt b/gas/configure.tgt
+index 2fbd450288..e5459a1055 100644
+--- a/gas/configure.tgt
++++ b/gas/configure.tgt
+@@ -258,6 +258,7 @@ case ${generic_target} in
+   m68k-*-linux-*)			fmt=elf em=linux ;;
+   m68k-*-uclinux*)			fmt=elf ;;
+   m68k-*-gnu*)				fmt=elf ;;
++  m68k-*-mintelf*)			fmt=elf em=mint ;;
+   m68k-*-mint*)				fmt=aout em=mint bfd_gas=yes ;;
+   m68k-*-netbsdelf*)			fmt=elf em=nbsd ;;
+   m68k-*-netbsd*)			fmt=aout em=nbsd bfd_gas=yes ;;
+diff --git a/ld/scripttempl/m68kmint.sc b/ld/scripttempl/m68kmint.sc
+index 0837218450..918e5eb69e 100644
+--- a/ld/scripttempl/m68kmint.sc
++++ b/ld/scripttempl/m68kmint.sc
+@@ -27,5 +27,11 @@ SECTIONS
+     ${RELOCATING+_end = .;}
+     ${RELOCATING+__end = .;}
+   }
++
++  /* Unfortunately, stabs are not mappable from ELF to a.out.
++     It can probably be fixed with some amount of work.  */
++  /DISCARD/ :
++  { *(.stab) *(.stab*) *(.debug) *(.debug*) *(.comment) *(.gnu.warning.*) }
++
+ }
+

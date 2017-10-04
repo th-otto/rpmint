@@ -18,7 +18,7 @@ srcdir="$PACKAGENAME$VERSION"
 PATCH1="$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch"
 PATCH2="$PACKAGENAME$VERSION-fastcall.patch"
 
-if ! test -f ".patched-$PACKAGENAME$VERSION"; then
+if test ! -f ".patched-$PACKAGENAME$VERSION"; then
 tar jxvf "$ARCHIVES_DIR/$PACKAGENAME$VERSION.tar.bz2" || exit 1
 for f in "$PATCH1" "$PATCH2"; do
   if test -f "$f"; then
@@ -29,11 +29,11 @@ for f in "$PATCH1" "$PATCH2"; do
 done
 fi
 
-if ! test -d "$srcdir"; then
+if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
 	exit 1
 fi
-if ! test -f "$PREFIX/$TARGET/sys-root/usr/include/compiler.h"; then
+if test ! -f "$PREFIX/$TARGET/sys-root/usr/include/compiler.h"; then
 	echo "mintlib headers must be installed in $PREFIX/$TARGET/sys-root/usr/include" >&2
 	exit 1
 fi
@@ -116,9 +116,29 @@ make DESTDIR="$PKG_DIR" install || exit 1
 mkdir -p "$PKG_DIR/usr/$TARGET/bin"
 
 cd "$PKG_DIR/usr/$TARGET/bin"
-for i in c++ cpp g++ gcc gcov gfortran; do
-	test -h $i || ln -s ../../bin/$TARGET-$i $i
+
+for i in addr2line ar arconv as c++ nm cpp csize cstrip flags g++ gcc gcov gfortran ld ld.bfd mintbin nm objcopy objdump ranlib stack strip symex readelf; do
+	if test -x ../../bin/$TARGET-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/$TARGET-$i; then
+		rm -f $i
+		ln -s ../../bin/$TARGET-$i $i
+	fi
 done
+
+cd "$PKG_DIR/usr/bin"
+
+if test -x $TARGET-c++ && test -x $TARGET-g++ && test ! -h $TARGET-c++; then
+	rm -f $TARGET-c++
+	ln -s $TARGET-g++ $TARGET-c++
+fi
+if test -x $TARGET-g++ && test ! -x $TARGET-g++-$BASE_VER; then
+	mv $TARGET-g++ $TARGET-g++-$BASE_VER
+	ln -s $TARGET-g++--$BASE_VER $TARGET-g++
+fi
+if test -x $TARGET-gcc && test -x $TARGET-gcc-$BASE_VER && test ! -h $TARGET-gcc; then
+	rm -f $TARGET-gcc-$BASE_VER
+	ln -s $TARGET-gcc-$BASE_VER $TARGET-gcc
+fi
+
 cd "$PKG_DIR"
 
 TARNAME=$PACKAGENAME$VERSION-mint-$VERSIONPATCH
@@ -132,7 +152,12 @@ rm -rf ${PREFIX#/}/share/man
 
 strip ${PREFIX#/}/bin/*
 rm -f ${BUILD_LIBDIR#/}/libiberty.a
-strip ${BUILD_LIBDIR#/}/gcc/$TARGET/*/*
-strip ${BUILD_LIBDIR#/}/gcc/$TARGET/*/install-tools/*
+rm -f ${BUILD_LIBDIR#/}/gcc/$TARGET/*/*.la
+rm -f ${PREFIX#/}/lib/$TARGET/lib/*.la ${PREFIX#/}/lib/$TARGET/lib/*/*.la
+strip ${BUILD_LIBDIR#/}/gcc/$TARGET/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,liblto_plugin.so.*,lto-wrapper,lto1}
+strip ${BUILD_LIBDIR#/}/gcc/$TARGET/*/plugin/gengtype
+strip ${BUILD_LIBDIR#/}/gcc/$TARGET/*/install-tools/fixincl
+
+find . -name "*.a" -exec "$PKG_DIR/usr/$TARGET/bin/ranlib" {} \;
 
 tar --owner=0 --group=0 -jcvf $TARNAME.tar.bz2 ${PREFIX#/}

@@ -1,0 +1,22 @@
+#!/bin/sh
+MINTLIB=~/atari/mintlib
+TARGET=m68k-atari-mintelf
+PREFIX=/usr
+PKG_DIR=`pwd`/binary7-package
+
+mkdir -p $PKG_DIR/sys-root${PREFIX}/lib/
+mkdir -p $PKG_DIR/sys-root${PREFIX}/lib/m68020-60
+mkdir -p $PKG_DIR/sys-root${PREFIX}/lib/m5475
+
+cp -av $MINTLIB/startup/crt0.o $MINTLIB/startup/gcrt0.o $PKG_DIR${PREFIX}/$TARGET/sys-root${PREFIX}/lib/
+sudo cp -av $MINTLIB/startup/crt0.o $MINTLIB/startup/gcrt0.o ${PREFIX}/$TARGET/sys-root${PREFIX}/lib/
+
+cd $MINTLIB/lib || exit 1
+cp -av libc.a libiio.a libm.a libpthread.a librpcsvc.a $PKG_DIR${PREFIX}/$TARGET/sys-root${PREFIX}/lib/
+sudo cp -av libc.a libiio.a libm.a libpthread.a librpcsvc.a ${PREFIX}/$TARGET/sys-root${PREFIX}/lib/
+cd $MINTLIB/lib020 || exit 1
+cp -av libc.a libiio.a libm.a libpthread.a librpcsvc.a $PKG_DIR${PREFIX}/$TARGET/sys-root${PREFIX}/lib/m68020-60
+sudo cp -av libc.a libiio.a libm.a libpthread.a librpcsvc.a ${PREFIX}/$TARGET/sys-root${PREFIX}/lib/m68020-60
+cd $MINTLIB/libv4e || exit 1
+cp -av libc.a libiio.a libm.a libpthread.a librpcsvc.a $PKG_DIR${PREFIX}/$TARGET/sys-root${PREFIX}/lib/m5475
+sudo cp -av libc.a libiio.a libm.a libpthread.a librpcsvc.a ${PREFIX}/$TARGET/sys-root${PREFIX}/lib/m5475

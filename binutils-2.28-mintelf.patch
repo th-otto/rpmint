@@ -25,17 +25,68 @@ Debug information is not supported.
  ld/scripttempl/m68kmint.sc |  6 ++++++
  7 files changed, 34 insertions(+), 1 deletion(-)
 
+diff -rupN binutils-2.28.orig/bfd/aoutx.h binutils-2.28/bfd/aoutx.h
+--- binutils-2.28.orig/bfd/aoutx.h	2017-09-19 18:27:42.620225848 +0200
++++ binutils-2.28/bfd/aoutx.h	2017-09-21 16:18:42.091442625 +0200
+@@ -1301,6 +1301,8 @@ NAME (aout, set_section_contents) (bfd *
+ static bfd_boolean
+ aout_get_external_symbols (bfd *abfd)
+ {
++  if (bfd_get_flavour(abfd) != bfd_target_aout_flavour)
++    return FALSE;
+   if (obj_aout_external_syms (abfd) == NULL)
+     {
+       bfd_size_type count;
+diff -rupN binutils-2.28.orig/bfd/archive.c binutils-2.28/bfd/archive.c
+--- binutils-2.28.orig/bfd/archive.c	2017-03-02 09:23:53.000000000 +0100
++++ binutils-2.28/bfd/archive.c	2017-09-22 18:20:31.779506224 +0200
+@@ -865,7 +865,7 @@ bfd_generic_archive_p (bfd *abfd)
+       return NULL;
+     }
+ 
+-  if (abfd->target_defaulted && bfd_has_map (abfd))
++  if (bfd_has_map (abfd))
+     {
+       bfd *first;
+ 
+@@ -886,7 +886,14 @@ bfd_generic_archive_p (bfd *abfd)
+ 	  first->target_defaulted = FALSE;
+ 	  if (bfd_check_format (first, bfd_object)
+ 	      && first->xvec != abfd->xvec)
+-	    bfd_set_error (bfd_error_wrong_object_format);
++	    {
++	      bfd_set_error (bfd_error_wrong_object_format);
++	      if (abfd->is_linker_input)
++	        {
++	          bfd_ardata (abfd) = tdata_hold;
++	          return NULL;
++	        }
++	    }
+ 	  /* And we ought to close `first' here too.  */
+ 	}
+     }
+diff -rupN binutils-2.28.orig/bfd/compress.c binutils-2.28/bfd/compress.c
+--- binutils-2.28.orig/bfd/compress.c	2017-03-02 09:23:53.000000000 +0100
++++ binutils-2.28/bfd/compress.c	2017-09-22 15:15:03.311554378 +0200
+@@ -319,7 +319,7 @@ bfd_get_full_section_contents (bfd *abfd
+ 	return FALSE;
+       if (p == NULL)
+ 	{
+-	  p = (bfd_byte *) bfd_malloc (sz);
++	  p = (bfd_byte *) bfd_zmalloc (sz);
+ 	  if (p == NULL)
+ 	    return FALSE;
+ 	  *ptr = p;
 diff -rupN binutils-2.28.orig/bfd/config.bfd binutils-2.28/bfd/config.bfd
 --- binutils-2.28.orig/bfd/config.bfd	2017-09-19 18:27:42.620225848 +0200
-+++ binutils-2.28/bfd/config.bfd	2017-09-19 19:40:07.652884640 +0200
-@@ -1002,6 +1002,11 @@ case "${targ}" in
++++ binutils-2.28/bfd/config.bfd	2017-09-21 16:26:34.231432351 +0200
+@@ -1002,6 +1002,10 @@ case "${targ}" in
      # targ_selvecs=m68kmach3_vec
      # targ_cflags=-DSTAT_FOR_EXEC
      ;;
 +  m68*-*-mintelf*)
 +    targ_defvec=m68k_elf32_vec
 +    targ_selvecs="aout0_be_vec m68k_aout_mintprg_vec"
-+    targ_underscore=yes
 +    ;;
    m68*-*-mint*)
      targ_defvec=aout0_be_vec
@@ -90,19 +141,21 @@ diff -rupN binutils-2.28.orig/config.sub binutils-2.28/config.sub
  	-*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
  		os=-mint
  		;;
-diff -rupN binutils-2.28.orig/gas/config/te-mint.h binutils-2.28/gas/config/te-mint.h
---- binutils-2.28.orig/gas/config/te-mint.h	2017-09-19 18:27:42.628225847 +0200
-+++ binutils-2.28/gas/config/te-mint.h	2017-09-19 19:12:05.412921246 +0200
-@@ -19,6 +19,9 @@
+diff -rupN binutils-2.28.orig/gas/config/tc-m68k.h binutils-2.28/gas/config/tc-m68k.h
+--- binutils-2.28.orig/gas/config/tc-m68k.h	2017-03-02 09:23:53.000000000 +0100
++++ binutils-2.28/gas/config/tc-m68k.h	2017-09-21 18:48:50.894179252 +0200
+@@ -169,7 +169,11 @@ extern struct relax_type md_relax_table[
+ #define TARGET_USE_CFIPOP 1
  
- #define TE_MINT
+ #define DWARF2_DEFAULT_RETURN_COLUMN 24
++#ifdef TE_MINT
++#define DWARF2_CIE_DATA_ALIGNMENT (-2)
++#else
+ #define DWARF2_CIE_DATA_ALIGNMENT (-4)
++#endif
  
-+/* The % prefix on registers is optional, even with ELF object files.  */
-+#define REGISTER_PREFIX_OPTIONAL 1
-+
- #define LOCAL_LABELS_DOLLAR 1
- #define LOCAL_LABELS_FB 1
- 
+ #define tc_regname_to_dw2regnum tc_m68k_regname_to_dw2regnum
+ extern int tc_m68k_regname_to_dw2regnum (const char *regname);
 diff -rupN binutils-2.28.orig/gas/configure.tgt binutils-2.28/gas/configure.tgt
 --- binutils-2.28.orig/gas/configure.tgt	2017-09-19 18:27:42.628225847 +0200
 +++ binutils-2.28/gas/configure.tgt	2017-09-19 19:29:34.836898410 +0200
@@ -116,10 +169,46 @@ diff -rupN binutils-2.28.orig/gas/configure.tgt binutils-2.28/gas/configure.tgt
    m68k-*-netbsd*)			fmt=aout em=nbsd bfd_gas=yes ;;
 diff -rupN binutils-2.28.orig/ld/scripttempl/m68kmint.sc binutils-2.28/ld/scripttempl/m68kmint.sc
 --- binutils-2.28.orig/ld/scripttempl/m68kmint.sc	2017-09-19 18:27:42.628225847 +0200
-+++ binutils-2.28/ld/scripttempl/m68kmint.sc	2017-09-19 19:12:05.412921246 +0200
-@@ -43,5 +43,11 @@ SECTIONS
++++ binutils-2.28/ld/scripttempl/m68kmint.sc	2017-09-22 12:56:05.805032793 +0200
+@@ -19,29 +19,38 @@ SECTIONS
+   ${RELOCATING+/* The VMA of the .text section is ${TEXT_START_ADDR} instead of 0
+      because the extended MiNT header is just before,
+      at the beginning of the TEXT segment.  */}
+-  .text ${RELOCATING+${TEXT_START_ADDR}}:
++  .text ${RELOCATING+${TEXT_START_ADDR}}: SUBALIGN(2)
+   {
+     CREATE_OBJECT_SYMBOLS
+-    *(.text)
++    *(.text .text.*)
++    *(.rodata .rodata.*) /* Only present in ELF objects */
++    ${RELOCATING+ *(.ctors)}
++    ${RELOCATING+ *(.dtors)}
+     ${CONSTRUCTING+CONSTRUCTORS}
++    ${RELOCATING+etext = .;}
+     ${RELOCATING+_etext = .;}
+-    ${RELOCATING+__etext = .;}
+   }
+ 
+-  .data :
++  .data : SUBALIGN(2)
+   {
+-    *(.data)
++    *(.data .data.*)
++    ${RELOCATING+edata = .;}
+     ${RELOCATING+_edata = .;}
+-    ${RELOCATING+__edata = .;}
+   }
+ 
+   .bss :
+   {
+-    ${RELOCATING+__bss_start = .;}
+-    *(.bss)
++    ${RELOCATING+_bss_start = .;}
++    *(.bss .bss.*)
+     *(COMMON)
++    ${RELOCATING+end = .;}
      ${RELOCATING+_end = .;}
-     ${RELOCATING+__end = .;}
+-    ${RELOCATING+__end = .;}
    }
 +
 +  /* Unfortunately, stabs are not mappable from ELF to a.out.
