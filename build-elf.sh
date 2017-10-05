@@ -2,7 +2,7 @@
 
 PACKAGENAME=gcc
 VERSION=-7.2
-VERSIONPATCH=20170919
+VERSIONPATCH=20171004
 REVISION="MiNT $VERSIONPATCH-elf"
 
 TARGET=m68k-atari-mintelf
@@ -19,8 +19,8 @@ if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
 	exit 1
 fi
-if test ! -f "$PREFIX/$TARGET/sys-root/usr/include/compiler.h"; then
-	echo "mintlib headers must be installed in $PREFIX/$TARGET/sys-root/usr/include" >&2
+if test ! -f "${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h"; then
+	echo "mintlib headers must be installed in ${PREFIX}/${TARGET}/sys-root/usr/include" >&2
 	exit 1
 fi
 
@@ -31,6 +31,7 @@ else
 fi
 
 BASE_VER=$(cat $srcdir/gcc/BASE-VER)
+gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
 
 #
 # try config.guess from automake first to get the
@@ -41,12 +42,13 @@ BASE_VER=$(cat $srcdir/gcc/BASE-VER)
 BUILD=$(/usr/share/automake/config.guess 2>/dev/null)
 test "$BUILD" = "" && BUILD=$($srcdir/config.guess)
 
+rm -rf "$MINT_BUILD_DIR"
 mkdir -p "$MINT_BUILD_DIR"
 
 cd "$MINT_BUILD_DIR"
 
 CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer"
-CFLAGS_FOR_TARGET="-O2 -fomit-frame-pointer -finhibit-size-directive"
+CFLAGS_FOR_TARGET="-O2 -fomit-frame-pointer"
 LDFLAGS_FOR_BUILD=""
 CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 CXXFLAGS_FOR_TARGET="$CFLAGS_FOR_TARGET"
@@ -56,7 +58,7 @@ enable_lto=--disable-lto
 enable_plugin=--disable-plugin
 languages=c
 ranlib=ranlib
-case "$TARGET" in
+case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
     	enable_lto=--enable-lto
     	enable_plugin=--enable-plugin
@@ -64,12 +66,16 @@ case "$TARGET" in
     	ranlib=gcc-ranlib
 		;;
 esac
+EXEEXT=
+case `uname -s` in
+	CYGWIN* | MINGW*) EXEEXT=.exe ;;
+esac
 
 $srcdir/configure \
-	--target="$TARGET" --build="$BUILD" \
-	--prefix="$PREFIX" \
+	--target="${TARGET}" --build="$BUILD" \
+	--prefix="${PREFIX}" \
 	--libdir="$BUILD_LIBDIR" \
-	--bindir="$PREFIX/bin" \
+	--bindir="${PREFIX}/bin" \
 	--libexecdir='${libdir}' \
 	CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD" \
 	CFLAGS="$CFLAGS_FOR_BUILD" \
@@ -85,7 +91,7 @@ $srcdir/configure \
 	--disable-libmpx \
 	--disable-libcc1 \
 	--disable-werror \
-	--with-gxx-include-dir=${PREFIX}/include/c++/${gcc_dir_version} \
+	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root/usr/include/c++/${gcc_dir_version} \
 	--with-default-libstdcxx-abi=gcc4-compatible \
 	--with-gcc-major-version-only \
 	--with-gcc --with-gnu-as --with-gnu-ld \
@@ -100,9 +106,9 @@ $srcdir/configure \
 	$enable_plugin \
 	--enable-decimal-float \
 	--disable-nls \
-	--with-libiconv-prefix="$PREFIX" \
-	--with-libintl-prefix="$PREFIX" \
-	--with-sysroot="$PREFIX/$TARGET/sys-root" \
+	--with-libiconv-prefix="${PREFIX}" \
+	--with-libintl-prefix="${PREFIX}" \
+	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
 	--enable-languages="$languages"
 
 make -j8 all-gcc || exit 1
@@ -110,37 +116,37 @@ make -j8 all-target-libgcc || exit 1
 make -j8 || exit 1
 make DESTDIR="$PKG_DIR" install || exit 1
 
-mkdir -p "$PKG_DIR/usr/$TARGET/bin"
+mkdir -p "$PKG_DIR/usr/${TARGET}/bin"
 
-cd "$PKG_DIR/usr/$TARGET/bin"
+cd "$PKG_DIR/usr/${TARGET}/bin"
 
 for i in addr2line ar arconv as c++ nm cpp csize cstrip flags g++ gcc gcov gfortran ld ld.bfd mintbin nm objcopy objdump ranlib stack strip symex readelf; do
-	if test -x ../../bin/$TARGET-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/$TARGET-$i; then
+	if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
 		rm -f $i
-		ln -s ../../bin/$TARGET-$i $i
+		ln -s ../../bin/${TARGET}-$i $i
 	fi
 done
 
 cd "$PKG_DIR/usr/bin"
 
-if test -x $TARGET-c++ && test -x $TARGET-g++ && test ! -h $TARGET-c++; then
-	rm -f $TARGET-c++
-	ln -s $TARGET-g++ $TARGET-c++
+if test -x ${TARGET}-c++ && test -x ${TARGET}-g++ && test ! -h ${TARGET}-c++; then
+	rm -f ${TARGET}-c++${EXEEXT} ${TARGET}-c++
+	ln -s ${TARGET}-g++${EXEEXT} ${TARGET}-c++
 fi
-if test -x $TARGET-g++ && test ! -x $TARGET-g++; then
-	rm -f $TARGET-g++-$BASE_VER
-	mv $TARGET-g++ $TARGET-g++-$BASE_VER
-	ln -s $TARGET-g++-$BASE_VER $TARGET-g++
+if test -x ${TARGET}-g++ && test ! -x ${TARGET}-g++; then
+	rm -f ${TARGET}-g++-${BASE_VER}${EXEEXT} ${TARGET}-g++-${BASE_VER}
+	mv ${TARGET}-g++${EXEEXT} ${TARGET}-g++-${BASE_VER}${EXEEXT}
+	ln -s ${TARGET}-g++-${BASE_VER}${EXEEXT} ${TARGET}-g++
 fi
-if test -x $TARGET-gcc && test ! -h $TARGET-gcc; then
-	rm -f $TARGET-gcc-$BASE_VER
-	mv $TARGET-gcc $TARGET-gcc-$BASE_VER
-	ln -s $TARGET-gcc-$BASE_VER $TARGET-gcc
+if test -x ${TARGET}-gcc && test ! -h ${TARGET}-gcc; then
+	rm -f ${TARGET}-gcc-${BASE_VER}${EXEEXT} ${TARGET}-gcc-${BASE_VER}
+	mv ${TARGET}-gcc${EXEEXT} ${TARGET}-gcc-${BASE_VER}${EXEEXT}
+	ln -s ${TARGET}-gcc-${BASE_VER}${EXEEXT} ${TARGET}-gcc
 fi
-if test -x $TARGET-cpp && test ! -h $TARGET-cpp; then
-	rm -f $TARGET-cpp-$BASE_VER
-	mv $TARGET-cpp $TARGET-cpp-$BASE_VER
-	ln -s $TARGET-cpp-$BASE_VER $TARGET-cpp
+if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
+	rm -f ${TARGET}-cpp-${BASE_VER}${EXEEXT} ${TARGET}-cpp-${BASE_VER}
+	mv ${TARGET}-cpp${EXEEXT} ${TARGET}-cpp-${BASE_VER}${EXEEXT}
+	ln -s ${TARGET}-cpp-${BASE_VER}${EXEEXT} ${TARGET}-cpp
 fi
 
 cd "$PKG_DIR"
@@ -156,13 +162,27 @@ rm -rf ${PREFIX#/}/share/man
 
 strip ${PREFIX#/}/bin/*
 rm -f ${BUILD_LIBDIR#/}/libiberty.a
-rm -f ${BUILD_LIBDIR#/}/gcc/$TARGET/*/*.la
-rm -f ${PREFIX#/}/lib/$TARGET/lib/*.la ${PREFIX#/}/lib/$TARGET/lib/*/*.la
-strip ${BUILD_LIBDIR#/}/gcc/$TARGET/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,liblto_plugin.so.*,lto-wrapper,lto1}
-strip ${BUILD_LIBDIR#/}/gcc/$TARGET/*/plugin/gengtype
-strip ${BUILD_LIBDIR#/}/gcc/$TARGET/*/install-tools/fixincl
+rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/*.la
+rm -f ${PREFIX#/}/lib/${TARGET}/lib/*.la ${PREFIX#/}/lib/${TARGET}/lib/*/*.la
+strip ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,liblto_plugin.so.*,lto-wrapper,lto1}
+strip ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype
+strip ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl
 
-find ${PREFIX#/}/$TARGET -name "*.a" -exec "$PKG_DIR/usr/bin/${TARGET}-${ranlib}" {} \;
-find ${BUILD_LIBDIR#/}/gcc/$TARGET -name "*.a" -exec "$PKG_DIR/usr/bin/${TARGET}-${ranlib}" {} \;
+find ${PREFIX#/}/${TARGET} -name "*.a" -exec "$PKG_DIR/usr/bin/${TARGET}-${ranlib}" '{}' \;
+find ${BUILD_LIBDIR#/}/gcc/${TARGET} -name "*.a" -exec "$PKG_DIR/usr/bin/${TARGET}-${ranlib}" '{}' \;
+
+cd ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/include-fixed && {
+	for i in `find . -type f`; do
+		case $i in
+		./README | ./limits.h | ./syslimits.h) ;;
+		*) echo "removing fixed include file $i"; rm -f $i ;;
+		esac
+	done
+	for i in `find . -depth -type d`; do
+		test "$i" = "." || rmdir "$i"
+	done
+}
+
+cd "$PKG_DIR"
 
 # tar --owner=0 --group=0 -jcvf $TARNAME.tar.bz2 ${PREFIX#/}

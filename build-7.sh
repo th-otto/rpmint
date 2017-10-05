@@ -45,6 +45,7 @@ gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
 BUILD=$(/usr/share/automake/config.guess 2>/dev/null)
 test "$BUILD" = "" && BUILD=$($srcdir/config.guess)
 
+rm -rf "$MINT_BUILD_DIR"
 mkdir -p "$MINT_BUILD_DIR"
 
 cd "$MINT_BUILD_DIR"
@@ -169,6 +170,7 @@ rm -f ${PREFIX#/}/lib/${TARGET}/lib/*.la ${PREFIX#/}/lib/${TARGET}/lib/*/*.la
 strip ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,liblto_plugin.so.*,lto-wrapper,lto1}
 strip ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype
 strip ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl
+
 find ${PREFIX#/}/${TARGET} -name "*.a" -exec "$PKG_DIR/usr/bin/${TARGET}-${ranlib}" '{}' \;
 find ${BUILD_LIBDIR#/}/gcc/${TARGET} -name "*.a" -exec "$PKG_DIR/usr/bin/${TARGET}-${ranlib}" '{}' \;
 

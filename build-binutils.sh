@@ -82,6 +82,7 @@ case "$TARGET" in
 		;;
 esac
 
+rm -rf "$MINT_BUILD_DIR"
 mkdir -p "$MINT_BUILD_DIR"
 
 cd "$MINT_BUILD_DIR"
