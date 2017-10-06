@@ -59,7 +59,7 @@ LDFLAGS_FOR_TARGET=
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-languages=c,c++
+languages=c
 ranlib=ranlib
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
@@ -163,13 +163,19 @@ tar --owner=0 --group=0 -jcvf $TARNAME-doc.tar.bz2 ${PREFIX#/}/share/info ${PREF
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 
-strip ${PREFIX#/}/bin/*
+strip -p ${PREFIX#/}/bin/*
 rm -f ${BUILD_LIBDIR#/}/libiberty.a
 rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/*.la
 rm -f ${PREFIX#/}/lib/${TARGET}/lib/*.la ${PREFIX#/}/lib/${TARGET}/lib/*/*.la
-strip ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,liblto_plugin.so.*,lto-wrapper,lto1}
-strip ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype
-strip ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl
+strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,liblto_plugin.so.*,lto-wrapper,lto1}
+strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype
+strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl
+
+if test -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/liblto_plugin.so.0.0.0; then
+	mkdir -p ${PREFIX#/}/lib/bfd-plugins
+	rm -f ${PREFIX#/}/lib/bfd-plugins/liblto_plugin.so.0.0.0
+	ln -s ../../${BUILD_LIBDIR##*/}/gcc/${TARGET}/${gcc_dir_version}/liblto_plugin.so.0.0.0 ${PREFIX#/}/lib/bfd-plugins/liblto_plugin.so.0.0.0
+fi
 
 find ${PREFIX#/}/${TARGET} -name "*.a" -exec "$PKG_DIR/usr/bin/${TARGET}-${ranlib}" '{}' \;
 find ${BUILD_LIBDIR#/}/gcc/${TARGET} -name "*.a" -exec "$PKG_DIR/usr/bin/${TARGET}-${ranlib}" '{}' \;

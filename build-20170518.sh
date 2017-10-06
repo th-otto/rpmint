@@ -150,13 +150,13 @@ tar --owner=0 --group=0 -jcvf $TARNAME-doc.tar.bz2 ${PREFIX#/}/share/info ${PREF
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 
-strip ${PREFIX#/}/bin/*
+strip -p ${PREFIX#/}/bin/*
 rm -f ${BUILD_LIBDIR#/}/libiberty.a
 rm -f ${BUILD_LIBDIR#/}/gcc/$TARGET/*/*.la
 rm -f ${PREFIX#/}/lib/$TARGET/lib/*.la ${PREFIX#/}/lib/$TARGET/lib/*/*.la
-strip ${BUILD_LIBDIR#/}/gcc/$TARGET/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,liblto_plugin.so.*,lto-wrapper,lto1}
-strip ${BUILD_LIBDIR#/}/gcc/$TARGET/*/plugin/gengtype
-strip ${BUILD_LIBDIR#/}/gcc/$TARGET/*/install-tools/fixincl
+strip -p ${BUILD_LIBDIR#/}/gcc/$TARGET/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,liblto_plugin.so.*,lto-wrapper,lto1}
+strip -p ${BUILD_LIBDIR#/}/gcc/$TARGET/*/plugin/gengtype
+strip -p ${BUILD_LIBDIR#/}/gcc/$TARGET/*/install-tools/fixincl
 
 find . -name "*.a" -exec "$PKG_DIR/usr/$TARGET/bin/ranlib" {} \;
 

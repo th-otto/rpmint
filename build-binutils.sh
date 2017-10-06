@@ -1,8 +1,8 @@
 #!/bin/sh
 
 PACKAGENAME=binutils
-VERSION=-2.28
-VERSIONPATCH=20170919
+VERSION=-2.29.1
+VERSIONPATCH=20171006
 REVISION="GNU Binutils for MiNT $VERSIONPATCH"
 
 TARGET=m68k-atari-mintelf
@@ -138,7 +138,7 @@ TARNAME=$PACKAGENAME$VERSION-mint-$VERSIONPATCH
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 
-strip ${PREFIX#/}/bin/*
+strip -p ${PREFIX#/}/bin/*
 rm -f ${BUILD_LIBDIR#/}/libiberty.a
 
 # tar --owner=0 --group=0 -jcvf $TARNAME.tar.bz2 ${PREFIX#/}
