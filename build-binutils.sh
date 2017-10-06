@@ -52,7 +52,7 @@ if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	  fi
 	  cd "$BUILD_DIR"
 	done
-    touch ".patched-${PACKAGENAME}${VERSION}"
+	touch ".patched-${PACKAGENAME}${VERSION}"
 fi
 
 if test ! -d "$srcdir"; then
@@ -65,6 +65,17 @@ if test -d /usr/lib64; then
 else
 	BUILD_LIBDIR=${PREFIX}/lib
 fi
+
+JOBS=`rpm --eval '%{?jobs:%jobs}' 2>/dev/null`
+P=$(getconf _NPROCESSORS_CONF 2>/dev/null || nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null)
+if test -z "$P"; then P=$NUMBER_OF_PROCESSORS; fi
+if test -z "$P"; then P=1; fi
+if test -z "$JOBS"; then
+  JOBS=$P
+else
+  test 1 -gt "$JOBS" && JOBS=1
+fi
+JOBS=-j$JOBS
 
 #
 # try config.guess from automake first to get the
@@ -135,7 +146,7 @@ CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 	--disable-nls \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root"
 
-make -j8 || exit 1
+make $JOBS || exit 1
 make DESTDIR="$PKG_DIR" install-strip || exit 1
 
 mkdir -p "$PKG_DIR/${PREFIX}/${TARGET}/bin"

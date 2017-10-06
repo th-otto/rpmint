@@ -33,6 +33,17 @@ else
 	BUILD_LIBDIR=${PREFIX}/lib
 fi
 
+JOBS=`rpm --eval '%{?jobs:%jobs}' 2>/dev/null`
+P=$(getconf _NPROCESSORS_CONF 2>/dev/null || nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null)
+if test -z "$P"; then P=$NUMBER_OF_PROCESSORS; fi
+if test -z "$P"; then P=1; fi
+if test -z "$JOBS"; then
+  JOBS=$P
+else
+  test 1 -gt "$JOBS" && JOBS=1
+fi
+JOBS=-j$JOBS
+
 BASE_VER=$(cat $srcdir/gcc/BASE-VER)
 gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
 
@@ -59,7 +70,7 @@ LDFLAGS_FOR_TARGET=
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-languages=c
+languages=c,c++
 ranlib=ranlib
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
@@ -114,9 +125,9 @@ $srcdir/configure \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
 	--enable-languages="$languages"
 
-make -j8 all-gcc || exit 1
-make -j8 all-target-libgcc || exit 1
-make -j8 || exit 1
+make $JOBS all-gcc || exit 1
+make $JOBS all-target-libgcc || exit 1
+make $JOBS || exit 1
 make DESTDIR="$PKG_DIR" install || exit 1
 
 mkdir -p "$PKG_DIR/usr/${TARGET}/bin"

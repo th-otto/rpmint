@@ -30,6 +30,17 @@ else
 	BUILD_LIBDIR=${PREFIX}/lib
 fi
 
+JOBS=`rpm --eval '%{?jobs:%jobs}' 2>/dev/null`
+P=$(getconf _NPROCESSORS_CONF 2>/dev/null || nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null)
+if test -z "$P"; then P=$NUMBER_OF_PROCESSORS; fi
+if test -z "$P"; then P=1; fi
+if test -z "$JOBS"; then
+  JOBS=$P
+else
+  test 1 -gt "$JOBS" && JOBS=1
+fi
+JOBS=-j$JOBS
+
 BASE_VER=$(cat $srcdir/gcc/BASE-VER)
 gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
 
@@ -111,9 +122,9 @@ $srcdir/configure \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
 	--enable-languages="$languages"
 
-make -j8 all-gcc || exit 1
-make -j8 all-target-libgcc || exit 1
-make -j8 || exit 1
+make $JOBS all-gcc || exit 1
+make $JOBS all-target-libgcc || exit 1
+make $JOBS || exit 1
 make DESTDIR="$PKG_DIR" install || exit 1
 
 mkdir -p "$PKG_DIR/usr/${TARGET}/bin"
@@ -167,6 +178,12 @@ rm -f ${PREFIX#/}/lib/${TARGET}/lib/*.la ${PREFIX#/}/lib/${TARGET}/lib/*/*.la
 strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,liblto_plugin.so.*,lto-wrapper,lto1}
 strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype
 strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl
+
+if test -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/liblto_plugin.so.0.0.0; then
+	mkdir -p ${PREFIX#/}/lib/bfd-plugins
+	rm -f ${PREFIX#/}/lib/bfd-plugins/liblto_plugin.so.0.0.0
+	ln -s ../../${BUILD_LIBDIR##*/}/gcc/${TARGET}/${gcc_dir_version}/liblto_plugin.so.0.0.0 ${PREFIX#/}/lib/bfd-plugins/liblto_plugin.so.0.0.0
+fi
 
 find ${PREFIX#/}/${TARGET} -name "*.a" -exec "$PKG_DIR/usr/bin/${TARGET}-${ranlib}" '{}' \;
 find ${BUILD_LIBDIR#/}/gcc/${TARGET} -name "*.a" -exec "$PKG_DIR/usr/bin/${TARGET}-${ranlib}" '{}' \;
