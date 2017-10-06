@@ -13,24 +13,52 @@ BUILD_DIR=`pwd`
 MINT_BUILD_DIR="$BUILD_DIR/mint7-build"
 PKG_DIR=`pwd`/binary7-package
 
-srcdir="$PACKAGENAME$VERSION"
+srcdir="${PACKAGENAME}${VERSION}"
 
-PATCH1="$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch"
-case "$TARGET" in
+PATCHES="\
+        ${PACKAGENAME}${VERSION}-0001-binutils-2.29.1-branch.patch \
+        ${PACKAGENAME}${VERSION}-0003-skip-rpaths.patch \
+        ${PACKAGENAME}${VERSION}-0005-x86-64-biarch.patch \
+        ${PACKAGENAME}${VERSION}-0006-unit-at-a-time.patch \
+        ${PACKAGENAME}${VERSION}-0007-ld-dtags.patch \
+        ${PACKAGENAME}${VERSION}-0008-ld-relro.patch \
+        ${PACKAGENAME}${VERSION}-0009-testsuite.patch \
+        ${PACKAGENAME}${VERSION}-0010-enable-targets-gold.patch \
+        ${PACKAGENAME}${VERSION}-0011-use-hashtype-both-by-default.patch \
+        ${PACKAGENAME}${VERSION}-0014-build-as-needed.patch \
+        ${PACKAGENAME}${VERSION}-0018-gold-depend-on-opcodes.path \
+        ${PACKAGENAME}${VERSION}-0022-binutils-bfd_h.patch \
+        ${PACKAGENAME}${VERSION}-0201-aout.patch \
+        ${PACKAGENAME}${VERSION}-0202-ldfile.patch \
+        ${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.patch \
+"
+case "${TARGET}" in
 m68k-atari-mintelf*)
-	PATCH2=binutils-2.28-mintelf.patch
+	PATCHES="$PATCHES ${PACKAGENAME}${VERSION}-mintelf.patch"
 	;;
 esac
 
-if test ! -f ".patched-$PACKAGENAME$VERSION"; then
-tar jxvf "$ARCHIVES_DIR/$PACKAGENAME$VERSION.tar.bz2" || exit 1
-for f in $PATCH1 $PATCH2; do
-  if test -f "$f"; then
-    cd "$srcdir" && patch -p1 < "$BUILD_DIR/$f"
-  fi
-  cd "$BUILD_DIR"
-  touch ".patched-$PACKAGENAME$VERSION"
-done
+if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
+	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
+	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
+	         "${PACKAGENAME}${VERSION}.tar.xz" \
+	         "${PACKAGENAME}${VERSION}.tar.bz2"; do
+		if test -f "$f"; then tar xvf "$f" || exit 1; fi
+	done
+	if test ! -d "$srcdir"; then
+		echo "$srcdir: no such directory" >&2
+		exit 1
+	fi
+	for f in $PATCHES; do
+	  if test -f "$f"; then
+	    cd "$srcdir" && patch -p1 < "$BUILD_DIR/$f" || exit 1
+	  else
+	    echo "missing patch $f" >&2
+	    exit 1
+	  fi
+	  cd "$BUILD_DIR"
+	done
+    touch ".patched-${PACKAGENAME}${VERSION}"
 fi
 
 if test ! -d "$srcdir"; then
@@ -60,7 +88,7 @@ ranlib=ranlib
 
 # add opposite of default mingw32 target for binutils,
 # and also host target
-case "$TARGET" in
+case "${TARGET}" in
     x86_64-*-mingw32*)
 	    bfd_targets="$bfd_targets,i686-pc-mingw32"
     	;;
@@ -73,7 +101,7 @@ case "$TARGET" in
     	ranlib=gcc-ranlib
 		;;
 esac
-case "$TARGET" in
+case "${TARGET}" in
     m68k-atari-mintelf*)
     	bfd_targets="$bfd_targets,m68k-atari-mint"
 		;;
@@ -93,10 +121,10 @@ CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 
 
 ../$srcdir/configure \
-	--target="$TARGET" --build="$BUILD" \
-	--prefix="$PREFIX" \
+	--target="${TARGET}" --build="$BUILD" \
+	--prefix="${PREFIX}" \
 	--libdir="$BUILD_LIBDIR" \
-	--bindir="$PREFIX/bin" \
+	--bindir="${PREFIX}/bin" \
 	--libexecdir='${libdir}' \
 	CFLAGS="$CFLAGS_FOR_BUILD" \
 	CXXFLAGS="$CXXFLAGS_FOR_BUILD" \
@@ -111,29 +139,29 @@ CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 	$enable_lto \
 	$enable_plugins \
 	--disable-nls \
-	--with-sysroot="$PREFIX/$TARGET/sys-root"
+	--with-sysroot="${PREFIX}/${TARGET}/sys-root"
 
 make -j8 || exit 1
 make DESTDIR="$PKG_DIR" install-strip || exit 1
 
-mkdir -p "$PKG_DIR/usr/$TARGET/bin"
+mkdir -p "$PKG_DIR/${PREFIX}/${TARGET}/bin"
 
-cd "$PKG_DIR/usr/$TARGET/bin"
+cd "$PKG_DIR/${PREFIX}/${TARGET}/bin"
 
 for i in addr2line ar arconv as c++ nm cpp csize cstrip flags g++ gcc gcov gfortran ld ld.bfd mintbin nm objcopy objdump ranlib stack strip symex readelf; do
-	if test -x ../../bin/$TARGET-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/$TARGET-$i; then
+	if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
 		rm -f $i
-		ln -s ../../bin/$TARGET-$i $i
+		ln -s ../../bin/${TARGET}-$i $i
 	fi
 done
 
-cd "$PKG_DIR/usr/bin"
+cd "$PKG_DIR/${PREFIX}/bin"
 
-rm -f $TARGET-ld
-ln -s $TARGET-ld.bfd $TARGET-ld
+rm -f ${TARGET}-ld
+ln -s ${TARGET}-ld.bfd ${TARGET}-ld
 cd "$PKG_DIR"
 
-TARNAME=$PACKAGENAME$VERSION-mint-$VERSIONPATCH
+TARNAME=${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}
 
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man

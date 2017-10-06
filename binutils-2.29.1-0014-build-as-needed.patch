@@ -1,0 +1,12 @@
+diff -rupN binutils-2.29.1.orig/ld/ldmain.c binutils-2.29.1/ld/ldmain.c
+--- binutils-2.29.1.orig/ld/ldmain.c	2017-10-06 18:06:39.136752348 +0200
++++ binutils-2.29.1/ld/ldmain.c	2017-10-06 18:07:54.712750704 +0200
+@@ -303,6 +303,8 @@ main (int argc, char **argv)
+ #ifdef DEFAULT_NEW_DTAGS
+   link_info.new_dtags = DEFAULT_NEW_DTAGS;
+ #endif
++  if (getenv ("SUSE_ASNEEDED") && atoi(getenv ("SUSE_ASNEEDED")) > 0)
++    input_flags.add_DT_NEEDED_for_regular = TRUE;
+ 
+   ldfile_add_arch ("");
+   emulation = get_emulation (argc, argv);

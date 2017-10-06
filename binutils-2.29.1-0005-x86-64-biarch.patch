@@ -1,0 +1,14 @@
+diff -rupN binutils-2.29.1.orig/ld/emulparams/elf_i386.sh binutils-2.29.1/ld/emulparams/elf_i386.sh
+--- binutils-2.29.1.orig/ld/emulparams/elf_i386.sh	2017-07-10 11:54:42.000000000 +0200
++++ binutils-2.29.1/ld/emulparams/elf_i386.sh	2017-10-06 18:02:25.000757879 +0200
+@@ -33,6 +33,10 @@ case "$target" in
+ 	LIBPATH_SUFFIX=32
+ 	LIBPATH_SUFFIX_SKIP=64
+ 	;;
++      *64*)
++	LIBPATH_SUFFIX=64
++	LIBPATH_SUFFIX_SKIP=32
++	;;
+     esac
+     ;;
+ esac

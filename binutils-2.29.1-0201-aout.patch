@@ -1,0 +1,35 @@
+diff -rupN binutils-2.29.1.orig/bfd/aout-target.h binutils-2.29.1/bfd/aout-target.h
+--- binutils-2.29.1.orig/bfd/aout-target.h	2017-07-10 11:54:41.000000000 +0200
++++ binutils-2.29.1/bfd/aout-target.h	2017-10-06 18:17:33.208738115 +0200
+@@ -634,6 +634,10 @@ MY_close_and_cleanup (bfd *abfd)
+ #define AR_PAD_CHAR ' '
+ #endif
+ 
++#ifndef MY_match_priority
++#define MY_match_priority 0
++#endif
++
+ #ifndef MY_BFD_TARGET
+ const bfd_target MY (vec) =
+ {
+@@ -653,7 +657,7 @@ const bfd_target MY (vec) =
+   MY_symbol_leading_char,
+   AR_PAD_CHAR,			/* AR_pad_char.  */
+   15,				/* AR_max_namelen.  */
+-  0,				/* match priority.  */
++  MY_match_priority,				/* match priority.  */
+ #ifdef TARGET_IS_BIG_ENDIAN_P
+   bfd_getb64, bfd_getb_signed_64, bfd_putb64,
+      bfd_getb32, bfd_getb_signed_32, bfd_putb32,
+diff -rupN binutils-2.29.1.orig/bfd/sunos.c binutils-2.29.1/bfd/sunos.c
+--- binutils-2.29.1.orig/bfd/sunos.c	2017-07-10 11:54:41.000000000 +0200
++++ binutils-2.29.1/bfd/sunos.c	2017-10-06 18:17:33.212738115 +0200
+@@ -67,6 +67,8 @@ static long        sunos_get_dynamic_rel
+ static long        sunos_canonicalize_dynamic_reloc     (bfd *, arelent **, asymbol **);
+ 
+ /* Include the usual a.out support.  */
++#define MY_match_priority 1
++
+ #include "aoutf1.h"
+ 
+ /* The SunOS 4.1.4 /usr/include/locale.h defines valid as a macro.  */

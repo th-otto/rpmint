@@ -1,0 +1,14 @@
+diff -rupN binutils-2.29.1.orig/ld/testsuite/ld-selective/selective.exp binutils-2.29.1/ld/testsuite/ld-selective/selective.exp
+--- binutils-2.29.1.orig/ld/testsuite/ld-selective/selective.exp	2017-07-18 09:20:01.000000000 +0200
++++ binutils-2.29.1/ld/testsuite/ld-selective/selective.exp	2017-10-06 18:03:07.752756948 +0200
+@@ -46,8 +46,8 @@ set seltests {
+     {A::foo() B::foo() dropme1() dropme2()} {*-*-*}}
+ }
+ 
+-set cflags "-w -O -ffunction-sections -fdata-sections"
+-set cxxflags "-fno-exceptions -fno-rtti"
++set cflags "-w -O -ffunction-sections -fdata-sections -fno-unit-at-a-time"
++set cxxflags "-fno-exceptions -fno-rtti -fno-unit-at-a-time"
+ set ldflags "--gc-sections -Bstatic"
+ 
+ if [istarget mips*-*] {

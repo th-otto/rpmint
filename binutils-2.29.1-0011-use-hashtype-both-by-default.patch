@@ -1,0 +1,41 @@
+diff -rupN binutils-2.29.1.orig/ld/ldmain.c binutils-2.29.1/ld/ldmain.c
+--- binutils-2.29.1.orig/ld/ldmain.c	2017-10-06 18:03:56.404755890 +0200
++++ binutils-2.29.1/ld/ldmain.c	2017-10-06 18:06:39.136752348 +0200
+@@ -284,6 +284,7 @@ main (int argc, char **argv)
+   link_info.combreloc = TRUE;
+   link_info.strip_discarded = TRUE;
+   link_info.emit_hash = TRUE;
++  link_info.emit_gnu_hash = TRUE;
+   link_info.callbacks = &link_callbacks;
+   link_info.input_bfds_tail = &link_info.input_bfds;
+   /* SVR4 linkers seem to set DT_INIT and DT_FINI based on magic _init
+diff -rupN binutils-2.29.1.orig/ld/testsuite/config/default.exp binutils-2.29.1/ld/testsuite/config/default.exp
+--- binutils-2.29.1.orig/ld/testsuite/config/default.exp	2017-10-06 18:05:02.384754454 +0200
++++ binutils-2.29.1/ld/testsuite/config/default.exp	2017-10-06 18:06:39.136752348 +0200
+@@ -22,7 +22,7 @@
+ #
+ 
+ if ![info exists ld] then {
+-    set ld "[findfile $base_dir/ld-new $base_dir/ld-new [transform ld]] -znorelro"
++    set ld "[findfile $base_dir/ld-new $base_dir/ld-new [transform ld]] -znorelro --hash-style=sysv"
+ }
+ 
+ if ![info exists as] then {
+@@ -64,7 +64,7 @@ if {![file isdirectory tmpdir/ld]} then
+     catch "exec ln -s ld tmpdir/ld/collect-ld" status
+     catch "exec ln -s ../../../gas/as-new tmpdir/ld/as" status
+ }
+-set gcc_B_opt "-B[pwd]/tmpdir/ld/ -Wl,-z,norelro"
++set gcc_B_opt "-B[pwd]/tmpdir/ld/ -Wl,-z,norelro -Wl,--hash-style=sysv"
+ 
+ # load the linker path
+ set ld_L_opt ""
+@@ -244,7 +244,7 @@ if ![info exists READELFFLAGS] then {
+ }
+ 
+ if ![info exists LD] then {
+-    set LD "[findfile $base_dir/ld-new ./ld-new [transform ld]] -znorelro"
++    set LD "[findfile $base_dir/ld-new ./ld-new [transform ld]] -znorelro --hash-style=sysv"
+ }
+ 
+ if ![info exists LDFLAGS] then {
