@@ -17,16 +17,10 @@ srcdir="${PACKAGENAME}${VERSION}"
 
 PATCHES="\
         ${PACKAGENAME}${VERSION}-0001-binutils-2.29.1-branch.patch \
-        ${PACKAGENAME}${VERSION}-0003-skip-rpaths.patch \
         ${PACKAGENAME}${VERSION}-0005-x86-64-biarch.patch \
-        ${PACKAGENAME}${VERSION}-0006-unit-at-a-time.patch \
         ${PACKAGENAME}${VERSION}-0007-ld-dtags.patch \
         ${PACKAGENAME}${VERSION}-0008-ld-relro.patch \
-        ${PACKAGENAME}${VERSION}-0009-testsuite.patch \
-        ${PACKAGENAME}${VERSION}-0010-enable-targets-gold.patch \
         ${PACKAGENAME}${VERSION}-0011-use-hashtype-both-by-default.patch \
-        ${PACKAGENAME}${VERSION}-0014-build-as-needed.patch \
-        ${PACKAGENAME}${VERSION}-0018-gold-depend-on-opcodes.path \
         ${PACKAGENAME}${VERSION}-0022-binutils-bfd_h.patch \
         ${PACKAGENAME}${VERSION}-0201-aout.patch \
         ${PACKAGENAME}${VERSION}-0202-ldfile.patch \
