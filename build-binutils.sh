@@ -24,6 +24,7 @@ PATCHES="\
         ${PACKAGENAME}${VERSION}-0022-binutils-bfd_h.patch \
         ${PACKAGENAME}${VERSION}-0201-aout.patch \
         ${PACKAGENAME}${VERSION}-0202-ldfile.patch \
+        ${PACKAGENAME}${VERSION}-0203-config-rpath.patch \
         ${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.patch \
 "
 case "${TARGET}" in
