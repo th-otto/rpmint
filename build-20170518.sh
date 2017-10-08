@@ -15,18 +15,30 @@ PKG_DIR=`pwd`/binary-package
 
 srcdir="$PACKAGENAME$VERSION"
 
-PATCH1="$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch"
-PATCH2="$PACKAGENAME$VERSION-fastcall.patch"
+PATCHES="$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch \
+	$PACKAGENAME$VERSION-fastcall.patch"
 
-if test ! -f ".patched-$PACKAGENAME$VERSION"; then
-tar jxvf "$ARCHIVES_DIR/$PACKAGENAME$VERSION.tar.bz2" || exit 1
-for f in "$PATCH1" "$PATCH2"; do
-  if test -f "$f"; then
-    cd "$srcdir" && patch -p1 < "$BUILD_DIR/$f"
-  fi
-  cd "$BUILD_DIR"
-  touch ".patched-$PACKAGENAME$VERSION"
-done
+if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
+	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
+	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
+	         "${PACKAGENAME}${VERSION}.tar.xz" \
+	         "${PACKAGENAME}${VERSION}.tar.bz2"; do
+		if test -f "$f"; then tar xvf "$f" || exit 1; fi
+	done
+	if test ! -d "$srcdir"; then
+		echo "$srcdir: no such directory" >&2
+		exit 1
+	fi
+	for f in $PATCHES; do
+	  if test -f "$f"; then
+	    cd "$srcdir" && patch -p1 < "$BUILD_DIR/$f" || exit 1
+	  else
+	    echo "missing patch $f" >&2
+	    exit 1
+	  fi
+	  cd "$BUILD_DIR"
+	done
+	touch ".patched-${PACKAGENAME}${VERSION}"
 fi
 
 if test ! -d "$srcdir"; then
@@ -43,6 +55,8 @@ if test -d /usr/lib64; then
 else
 	BUILD_LIBDIR=${PREFIX}/lib
 fi
+
+BASE_VER=$(cat $srcdir/gcc/BASE-VER)
 
 #
 # try config.guess from automake first to get the
@@ -131,12 +145,19 @@ if test -x $TARGET-c++ && test -x $TARGET-g++ && test ! -h $TARGET-c++; then
 	ln -s $TARGET-g++ $TARGET-c++
 fi
 if test -x $TARGET-g++ && test ! -x $TARGET-g++-$BASE_VER; then
+	rm -f $TARGET-g++-$BASE_VER
 	mv $TARGET-g++ $TARGET-g++-$BASE_VER
-	ln -s $TARGET-g++--$BASE_VER $TARGET-g++
+	ln -s $TARGET-g++-$BASE_VER $TARGET-g++
 fi
 if test -x $TARGET-gcc && test -x $TARGET-gcc-$BASE_VER && test ! -h $TARGET-gcc; then
 	rm -f $TARGET-gcc-$BASE_VER
+	mv $TARGET-gcc $TARGET-gcc-$BASE_VER
 	ln -s $TARGET-gcc-$BASE_VER $TARGET-gcc
+fi
+if test -x $TARGET-cpp && test ! -h $TARGET-cpp; then
+	rm -f $TARGET-cpp-$BASE_VER
+	mv $TARGET-cpp $TARGET-cpp-$BASE_VER
+	ln -s $TARGET-cpp-$BASE_VER $TARGET-cpp
 fi
 
 cd "$PKG_DIR"

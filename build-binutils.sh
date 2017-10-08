@@ -1,17 +1,20 @@
 #!/bin/sh
 
+me="$0"
+
 PACKAGENAME=binutils
 VERSION=-2.29.1
 VERSIONPATCH=20171006
 REVISION="GNU Binutils for MiNT $VERSIONPATCH"
 
-TARGET=m68k-atari-mintelf
+TARGET=${1:-m68k-atari-mint}
 PREFIX=/usr
 
 ARCHIVES_DIR=$HOME/packages
 BUILD_DIR=`pwd`
 MINT_BUILD_DIR="$BUILD_DIR/mint7-build"
 PKG_DIR=`pwd`/binary7-package
+DIST_DIR=`pwd`/pkgs
 
 srcdir="${PACKAGENAME}${VERSION}"
 
@@ -28,9 +31,24 @@ PATCHES="\
         ${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.patch \
 "
 case "${TARGET}" in
-m68k-atari-mintelf*)
-	PATCHES="$PATCHES ${PACKAGENAME}${VERSION}-mintelf.patch"
-	;;
+    *-*-*elf* | *-*-linux*)
+		PATCHES="$PATCHES ${PACKAGENAME}${VERSION}-mintelf.patch"
+		;;
+esac
+
+EXEEXT=
+LN_S="ln -s"
+case `uname -s` in
+	CYGWIN* | MINGW* | MSYS*) EXEEXT=.exe ;;
+esac
+case `uname -s` in
+	MINGW* | MSYS*) LN_S="cp -p" ;;
+esac
+case `uname -s` in
+	MINGW*) if test "$PROCESSOR_ARCHITECTURE" = x86; then host=mingw32; else host=mingw64; fi ;;
+	MSYS*) host=msys ;;
+	CYGWIN*) if test "$PROCESSOR_ARCHITECTURE" = x86; then host=cygwin32; else host=cygwin64; fi ;;
+	*) host=linux ;;
 esac
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
@@ -148,31 +166,67 @@ CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root"
 
 make $JOBS || exit 1
-make DESTDIR="$PKG_DIR" install-strip || exit 1
 
-mkdir -p "$PKG_DIR/${PREFIX}/${TARGET}/bin"
 
-cd "$PKG_DIR/${PREFIX}/${TARGET}/bin"
+case `uname -s` in
+	MINGW*) if test "${PREFIX}" = /usr; then PREFIX=/mingw; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
+esac
 
-for i in addr2line ar arconv as c++ nm cpp csize cstrip flags g++ gcc gcov gfortran ld ld.bfd mintbin nm objcopy objdump ranlib stack strip symex readelf; do
-	if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
-		rm -f $i
-		ln -s ../../bin/${TARGET}-$i $i
-	fi
+#
+# install this package twice:
+# - once for building the binary archive for this pacakge only.
+# - once for building a complete package.
+#   This directory is also kept for later stages,
+#   eg. compiling the C-library and gcc
+#
+THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
+rm -rf "${THISPKG_DIR}"
+for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
+	
+	cd "$MINT_BUILD_DIR"
+	make DESTDIR="$INSTALL_DIR" prefix="${PREFIX}" bindir="${PREFIX}/bin" install-strip || exit 1
+	
+	mkdir -p "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
+	
+	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
+	
+	for i in addr2line ar arconv as c++ nm cpp csize cstrip flags g++ gcc gcov gfortran ld ld.bfd mintbin nm objcopy objdump ranlib stack strip symex readelf dlltool dllwrap; do
+		if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
+			rm -f ${i} ${i}${EXEEXT}
+			$LN_S ../../bin/${TARGET}-$i${EXEEXT} $i
+		fi
+	done
+	
+	cd "${INSTALL_DIR}/${PREFIX}/bin"
+	
+	rm -f ${TARGET}-ld ${TARGET}-ld${EXEEXT}
+	$LN_S ${TARGET}-ld.bfd${EXEEXT} ${TARGET}-ld${EXEEXT}
+	cd "${INSTALL_DIR}" || exit 1
+	
+	strip -p ${PREFIX#/}/bin/*
+	rm -f ${BUILD_LIBDIR#/}/libiberty.a
+
+	rm -f ${PREFIX#/}/share/info/dir
+	for f in ${PREFIX#/}/share/man/*/* ${PREFIX#/}/share/info/*; do
+		case $f in
+		*.gz) ;;
+		*) rm -f ${f}.gz; gzip -9 $f ;;
+		esac
+	done
 done
 
-cd "$PKG_DIR/${PREFIX}/bin"
+cd "${THISPKG_DIR}" || exit 1
 
-rm -f ${TARGET}-ld
-ln -s ${TARGET}-ld.bfd ${TARGET}-ld
-cd "$PKG_DIR"
+TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}-${VERSIONPATCH}
 
-TARNAME=${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}
-
+tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 
-strip -p ${PREFIX#/}/bin/*
-rm -f ${BUILD_LIBDIR#/}/libiberty.a
+tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
 
-# tar --owner=0 --group=0 -jcvf $TARNAME.tar.bz2 ${PREFIX#/}
+cd "${BUILD_DIR}"
+#rm -rf "${THISPKG_DIR}"
+
+tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.tar.xz ${PATCHES}
+cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}-${VERSIONPATCH}.sh
