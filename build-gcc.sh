@@ -295,9 +295,9 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	done
 	
 	case `uname -s` in
-		CYGWIN*) LTO_PLUGIN=cyglto_plugin.dll ;;
-		CYGWIN* | MINGW* | MSYS*) LTO_PLUGIN=liblto_plugin-0.dll ;;
-		*) LTO_PLUGIN=liblto_plugin.so.0.0.0 ;;
+		CYGWIN*) LTO_PLUGIN=cyglto_plugin-0.dll; MY_LTO_PLUGIN=cyglto_plugin_mintelf.dll ;;
+		MINGW* | MSYS*) LTO_PLUGIN=liblto_plugin-0.dll; MY_LTO_PLUGIN=liblto_plugin_mintelf.dll ;;
+		*) LTO_PLUGIN=liblto_plugin.so.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf.so.0.0.0 ;;
 	esac
 	
 	rm -f */*/libiberty.a
@@ -307,12 +307,13 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
 	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${EXEEXT}
 	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${EXEEXT}
+	rmdir ${PREFIX#/}include
 	
 	if test -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN}; then
 		mkdir -p ${PREFIX#/}/lib/bfd-plugins
-		rm -f ${PREFIX#/}/lib/bfd-plugins/${LTO_PLUGIN}
 		cd ${PREFIX#/}/lib/bfd-plugins
-		$LN_S ../../${BUILD_LIBDIR##*/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN} ${LTO_PLUGIN}
+		rm -f ${MY_LTO_PLUGIN}
+		$LN_S ../../${BUILD_LIBDIR##*/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN} ${MY_LTO_PLUGIN}
 		cd "${INSTALL_DIR}"
 	fi
 	
