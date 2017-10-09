@@ -24,17 +24,32 @@ TARGET=m68k-atari-mint
 # all relevant directories are looked up
 # relative to the executable
 #
-PREFIX=/usr
+case `uname -s` in
+	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
+	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
+	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
+	MSYS*) host=msys ;;
+	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
+	*) host=linux ;;
+esac
+case `uname -s` in
+	MINGW*) PREFIX=${MINGW_PREFIX} ;;
+	*) PREFIX=/usr ;;
+esac
 
 #
 # Where to look for the original source archives
 #
-ARCHIVES_DIR=`pwd`
+case `uname -s` in
+	MINGW* | MSYS*) here=`pwd` ;;
+	*) here=`pwd` ;;
+esac
+ARCHIVES_DIR="$here"
 
 #
 # Where to look for patches, write logs etc.
 #
-BUILD_DIR=`pwd`
+BUILD_DIR="$here"
 
 #
 # Where to configure and build gcc. This *must*
@@ -48,20 +63,17 @@ MINT_BUILD_DIR="$BUILD_DIR/mint-build"
 # This should be the same as the one configured
 # in the binutils script
 #
-PKG_DIR=`pwd`/binary-package
+PKG_DIR="$here/binary-package"
 
 #
 # Where to put the binary packages
 #
-DIST_DIR=`pwd`/pkgs
+DIST_DIR="$here/pkgs"
 
 #
 # Where to expect the unpacked source tree.
 #
-srcdir=`pwd`/"$PACKAGENAME$VERSION"
-case `uname -s` in
-	MINGW* | MSYS*) srcdir=`cmd //c echo $srcdir` ;;
-esac
+srcdir="$PACKAGENAME$VERSION"
 
 PATCHES="$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch \
 	$PACKAGENAME$VERSION-fastcall.patch"
@@ -149,7 +161,10 @@ ranlib=ranlib
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
     	enable_lto=--enable-lto
-    	enable_plugin=--enable-plugin
+		case "${BUILD}" in
+        *-*-linux*)
+    		enable_plugin=--enable-plugin
+    	esac
     	languages="$languages,lto"
     	ranlib=gcc-ranlib
 		;;
@@ -162,41 +177,23 @@ esac
 case `uname -s` in
 	MINGW* | MSYS*) LN_S="cp -p" ;;
 esac
-case `uname -s` in
-	MINGW*) if test "$PROCESSOR_ARCHITECTURE" = x86; then host=mingw32; else host=mingw64; fi ;;
-	MSYS*) host=msys ;;
-	CYGWIN*) if test "$PROCESSOR_ARCHITECTURE" = x86; then host=cygwin32; else host=cygwin64; fi ;;
-	*) host=linux ;;
-esac
 
-case `uname -s` in
-	MINGW*) try="${PKG_DIR}/mingw/bin/${TARGET}-${ranlib}" ;;
-	*) try="${PKG_DIR}/usr/bin/${TARGET}-${ranlib}" ;;
-esac
-
+try="${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"
 if test -x "$try"; then
 	ranlib="$try"
+	strip="${PKG_DIR}/${PREFIX}/bin/${TARGET}-strip"
+	as="${PKG_DIR}/${PREFIX}/bin/${TARGET}-as"
 else
 	ranlib=`which ${ranlib} 2>/dev/null`
-	if test "$ranlib" = ""; then
-		echo "${TARGET}-ranlib: not found" >&2
-		exit 1
-	fi
+	strip=`which "${TARGET}-strip"`
+	as=`which "${TARGET}-as" 2>/dev/null`
 fi
-as=`which ${TARGET}-as 2>/dev/null`
-if test -x "${PKG_DIR}/usr/bin/${TARGET}-as"; then
-	if test "$as" = ""; then
-		PATH="${PKG_DIR}/usr/bin:$PATH"
-	fi
-else
-	if test "$as" = ""; then
-		echo "${TARGET}-as: not found" >&2
-		exit 1
-	fi
+if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
+	echo "cross-binutil tools for ${TARGET} not found" >&2
+	exit 1
 fi
 
-$srcdir/configure \
-	--srcdir="$srcdir" \
+../$srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
 	--prefix="${PREFIX}" \
 	--libdir="$BUILD_LIBDIR" \
@@ -238,16 +235,12 @@ make $JOBS all-gcc || exit 1
 make $JOBS all-target-libgcc || exit 1
 make $JOBS || exit 1
 
-case `uname -s` in
-	MINGW*) if test "${PREFIX}" = /usr; then PREFIX=/mingw; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
-esac
-
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
 for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "$MINT_BUILD_DIR"
-	make DESTDIR="${INSTALL_DIR}" prefix="${PREFIX}" bindir="${PREFIX}/bin" install || exit 1
+	make DESTDIR="${INSTALL_DIR}" install || exit 1
 	
 	mkdir -p "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
@@ -261,20 +254,25 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	done
 	
 	cd "${INSTALL_DIR}/${PREFIX}/bin"
+	strip -p *
 	
-	if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
-		rm -f ${TARGET}-c++${EXEEXT} ${TARGET}-c++
-		$LN_S ${TARGET}-g++ ${TARGET}-c++
-	fi
 	if test -x ${TARGET}-g++ && test ! -h ${TARGET}-g++; then
 		rm -f ${TARGET}-g++-${BASE_VER}${EXEEXT} ${TARGET}-g++-${BASE_VER}
 		mv ${TARGET}-g++${EXEEXT} ${TARGET}-g++-${BASE_VER}${EXEEXT}
 		$LN_S ${TARGET}-g++-${BASE_VER}${EXEEXT} ${TARGET}-g++
 	fi
+	if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
+		rm -f ${TARGET}-c++${EXEEXT} ${TARGET}-c++
+		$LN_S ${TARGET}-g++ ${TARGET}-c++
+	fi
 	if test -x ${TARGET}-gcc && test ! -h ${TARGET}-gcc; then
 		rm -f ${TARGET}-gcc-${BASE_VER}${EXEEXT} ${TARGET}-gcc-${BASE_VER}
 		mv ${TARGET}-gcc${EXEEXT} ${TARGET}-gcc-${BASE_VER}${EXEEXT}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${EXEEXT} ${TARGET}-gcc
+	fi
+	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gcc-${gcc_dir_version} && test ! -h ${TARGET}-gcc-${gcc_dir_version}; then
+		rm -f ${TARGET}-gcc-${gcc_dir_version}${EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		$LN_S ${TARGET}-gcc-${BASE_VER}${EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
 	fi
 	if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
 		rm -f ${TARGET}-cpp-${BASE_VER}${EXEEXT} ${TARGET}-cpp-${BASE_VER}
@@ -293,25 +291,11 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	done
 	
 	case `uname -s` in
-	MINGW*)
-		mv usr/${TARGET}/sys-root mingw/${TARGET}
-		rmdir usr/${TARGET}
-		rm -rf mingw/lib/gcc/${TARGET}/${gcc_dir_version}
-		mkdir -p mingw/lib/gcc/${TARGET}
-		mv usr/lib/gcc/${TARGET}/${gcc_dir_version} mingw/lib/gcc/${TARGET}
-		rmdir usr/lib/gcc/${TARGET}
-		rmdir usr/lib/gcc
-		rmdir usr/lib
-		rmdir usr
-	esac
-
-	case `uname -s` in
-		CYGWIN*) LTO_PLUGIN=cyglto_plugin.dll ;;
-		CYGWIN* | MINGW* | MSYS*) LTO_PLUGIN=liblto_plugin-0.dll ;;
-		*) LTO_PLUGIN=liblto_plugin.so.0.0.0 ;;
+		CYGWIN*) LTO_PLUGIN=cyglto_plugin-0.dll; MY_LTO_PLUGIN=cyglto_plugin_mintelf.dll ;;
+		MINGW* | MSYS*) LTO_PLUGIN=liblto_plugin-0.dll; MY_LTO_PLUGIN=liblto_plugin_mintelf.dll ;;
+		*) LTO_PLUGIN=liblto_plugin.so.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf.so.0.0.0 ;;
 	esac
 	
-	strip -p ${PREFIX#/}/bin/*
 	rm -f */*/libiberty.a
 	rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/*.la
 	rm -f ${PREFIX#/}/lib/${TARGET}/lib/*.la ${PREFIX#/}/lib/${TARGET}/lib/*/*.la
@@ -319,17 +303,18 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
 	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${EXEEXT}
 	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${EXEEXT}
+	rmdir ${PREFIX#/}/include
 	
 	if test -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN}; then
 		mkdir -p ${PREFIX#/}/lib/bfd-plugins
-		rm -f ${PREFIX#/}/lib/bfd-plugins/${LTO_PLUGIN}
 		cd ${PREFIX#/}/lib/bfd-plugins
-		$LN_S ../../${BUILD_LIBDIR##*/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN} ${LTO_PLUGIN}
+		rm -f ${MY_LTO_PLUGIN}
+		$LN_S ../../${BUILD_LIBDIR##*/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN} ${MY_LTO_PLUGIN}
 		cd "${INSTALL_DIR}"
 	fi
 	
-	find ${PREFIX#/}/${TARGET} -name "*.a" -exec "${ranlib}" '{}' \;
-	find ${BUILD_LIBDIR#/}/gcc/${TARGET} -name "*.a" -exec "${ranlib}" '{}' \;
+	find ${PREFIX#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
+	find ${PREFIX#/} -name "*.a" -exec "${ranlib}" '{}' \;
 	
 	cd ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/include-fixed && {
 		for i in `find . -type f`; do

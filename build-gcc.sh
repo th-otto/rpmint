@@ -25,19 +25,31 @@ TARGET=${1:-m68k-atari-mint}
 # relative to the executable
 #
 case `uname -s` in
-	MINGW*) PREFIX=/mingw ;;
+	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
+	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
+	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
+	MSYS*) host=msys ;;
+	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
+	*) host=linux ;;
+esac
+case `uname -s` in
+	MINGW*) PREFIX=${MINGW_PREFIX} ;;
 	*) PREFIX=/usr ;;
 esac
 
 #
 # Where to look for the original source archives
 #
-ARCHIVES_DIR=`pwd`
+case `uname -s` in
+	MINGW* | MSYS*) here=`pwd` ;;
+	*) here=`pwd` ;;
+esac
+ARCHIVES_DIR="$here"
 
 #
 # Where to look for patches, write logs etc.
 #
-BUILD_DIR=`pwd`
+BUILD_DIR="$here"
 
 #
 # Where to configure and build gcc. This *must*
@@ -51,12 +63,12 @@ MINT_BUILD_DIR="$BUILD_DIR/mint7-build"
 # This should be the same as the one configured
 # in the binutils script
 #
-PKG_DIR=`pwd`/binary7-package
+PKG_DIR="$here/binary7-package"
 
 #
 # Where to put the binary packages
 #
-DIST_DIR=`pwd`/pkgs
+DIST_DIR="$here/pkgs"
 
 #
 # Where to look up the source tree.
@@ -65,12 +77,15 @@ srcdir="$HOME/m68k-atari-mint-gcc"
 if test -d "$srcdir"; then
 	touch ".patched-${PACKAGENAME}${VERSION}"
 else
-	srcdir=`pwd`/"$PACKAGENAME$VERSION"
+	srcdir="$here/$PACKAGENAME$VERSION"
 fi
-case `uname -s` in
-	MINGW* | MSYS*) srcdir=`cmd //c echo $srcdir` ;;
-esac
 
+#
+# this patch can be recreated by
+# - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
+# - checking out the gcc-7-mint branch
+# - running git diff gcc-7_2_0-release HEAD
+#
 PATCHES="$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
@@ -172,12 +187,6 @@ esac
 case `uname -s` in
 	MINGW* | MSYS*) LN_S="cp -p" ;;
 esac
-case `uname -s` in
-	MINGW*) if test "$PROCESSOR_ARCHITECTURE" = x86; then host=mingw32; else host=mingw64; fi ;;
-	MSYS*) host=msys ;;
-	CYGWIN*) if test "$PROCESSOR_ARCHITECTURE" = x86; then host=cygwin32; else host=cygwin64; fi ;;
-	*) host=linux ;;
-esac
 
 try="${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"
 if test -x "$try"; then
@@ -195,7 +204,6 @@ if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 fi
 
 $srcdir/configure \
-	--srcdir="$srcdir" \
 	--target="${TARGET}" --build="$BUILD" \
 	--prefix="${PREFIX}" \
 	--libdir="$BUILD_LIBDIR" \
@@ -307,7 +315,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
 	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${EXEEXT}
 	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${EXEEXT}
-	rmdir ${PREFIX#/}include
+	rmdir ${PREFIX#/}/include
 	
 	if test -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN}; then
 		mkdir -p ${PREFIX#/}/lib/bfd-plugins

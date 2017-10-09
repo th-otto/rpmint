@@ -10,11 +10,16 @@ REVISION="GNU Binutils for MiNT $VERSIONPATCH"
 TARGET=${1:-m68k-atari-mint}
 PREFIX=/usr
 
+case `uname -s` in
+	MINGW* | MSYS*) here=/`pwd -W | tr '\\\\' '/' | tr -d ':'` ;;
+	*) here=`pwd` ;;
+esac
+
 ARCHIVES_DIR=$HOME/packages
-BUILD_DIR=`pwd`
+BUILD_DIR="$here"
 MINT_BUILD_DIR="$BUILD_DIR/mint7-build"
-PKG_DIR=`pwd`/binary7-package
-DIST_DIR=`pwd`/pkgs
+PKG_DIR="$here/binary7-package"
+DIST_DIR="$here/pkgs"
 
 srcdir="${PACKAGENAME}${VERSION}"
 
@@ -45,9 +50,11 @@ case `uname -s` in
 	MINGW* | MSYS*) LN_S="cp -p" ;;
 esac
 case `uname -s` in
-	MINGW*) if test "$PROCESSOR_ARCHITECTURE" = x86; then host=mingw32; else host=mingw64; fi ;;
+	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
+	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
+	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	MSYS*) host=msys ;;
-	CYGWIN*) if test "$PROCESSOR_ARCHITECTURE" = x86; then host=cygwin32; else host=cygwin64; fi ;;
+	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	*) host=linux ;;
 esac
 
@@ -169,7 +176,7 @@ make $JOBS || exit 1
 
 
 case `uname -s` in
-	MINGW*) if test "${PREFIX}" = /usr; then PREFIX=/mingw; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
+	MINGW*) if test "${PREFIX}" = /usr; then PREFIX=${MINGW_PREFIX}; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
 esac
 
 #
