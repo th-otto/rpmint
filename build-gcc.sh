@@ -86,7 +86,7 @@ fi
 # - checking out the gcc-7-mint branch
 # - running git diff gcc-7_2_0-release HEAD
 #
-PATCHES="$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch"
+PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \

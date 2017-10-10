@@ -18,9 +18,9 @@ srcdir=`pwd`/"${PACKAGENAME}${VERSION}"
 BUILD_DIR=`pwd`
 MINT_BUILD_DIR="$srcdir"
 
-PATCHES="zlib-1.2.11-pkgconfig.patch \
-zlib-1.2.11-0012-format.patch \
-zlib-1.2.11-0013-segfault.patch \
+PATCHES="patches/zlib/zlib-1.2.11-pkgconfig.patch \
+patches/zlib/zlib-1.2.11-0012-format.patch \
+patches/zlib/zlib-1.2.11-0013-segfault.patch \
 "
 EXEEXT=
 LN_S="ln -s"

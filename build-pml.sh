@@ -24,7 +24,7 @@ BUILD_DIR=`pwd`
 MINT_BUILD_DIR="$srcdir/pmlsrc"
 
 PATCHES="\
-        ${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.patch \
+        patches/pml/${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.patch \
 "
 EXEEXT=
 LN_S="ln -s"

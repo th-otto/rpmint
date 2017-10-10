@@ -24,20 +24,20 @@ DIST_DIR="$here/pkgs"
 srcdir="${PACKAGENAME}${VERSION}"
 
 PATCHES="\
-        ${PACKAGENAME}${VERSION}-0001-binutils-2.29.1-branch.patch \
-        ${PACKAGENAME}${VERSION}-0005-x86-64-biarch.patch \
-        ${PACKAGENAME}${VERSION}-0007-ld-dtags.patch \
-        ${PACKAGENAME}${VERSION}-0008-ld-relro.patch \
-        ${PACKAGENAME}${VERSION}-0011-use-hashtype-both-by-default.patch \
-        ${PACKAGENAME}${VERSION}-0022-binutils-bfd_h.patch \
-        ${PACKAGENAME}${VERSION}-0201-aout.patch \
-        ${PACKAGENAME}${VERSION}-0202-ldfile.patch \
-        ${PACKAGENAME}${VERSION}-0203-config-rpath.patch \
-        ${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-0001-binutils-2.29.1-branch.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-0005-x86-64-biarch.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-0007-ld-dtags.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-0008-ld-relro.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-0011-use-hashtype-both-by-default.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-0022-binutils-bfd_h.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-0201-aout.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-0202-ldfile.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-0203-config-rpath.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.patch \
 "
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
-		PATCHES="$PATCHES ${PACKAGENAME}${VERSION}-mintelf.patch"
+		PATCHES="$PATCHES patches/binutils/${PACKAGENAME}${VERSION}-mintelf.patch"
 		;;
 esac
 

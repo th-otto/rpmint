@@ -75,8 +75,8 @@ DIST_DIR="$here/pkgs"
 #
 srcdir="$PACKAGENAME$VERSION"
 
-PATCHES="$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch \
-	$PACKAGENAME$VERSION-fastcall.patch"
+PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch \
+	patches/gcc/$PACKAGENAME$VERSION-fastcall.patch"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
