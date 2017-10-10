@@ -1,0 +1,75 @@
+diff -rupN ncurses-6.0.orig/configure ncurses-6.0/configure
+--- ncurses-6.0.orig/configure	2017-10-10 18:17:45.778836885 +0200
++++ ncurses-6.0/configure	2017-10-10 18:32:11.174818053 +0200
+@@ -22772,7 +22772,7 @@ if test "$with_termlib" != no ; then
+ 		if test "x$with_term_driver" != xno ; then
+ 			TICS_LIST="$SHLIB_LIST -l${LIB_NAME}${USE_ARG_SUFFIX}"
+ 			TICS_LIBS="$TICS_LIBS -l${LIB_NAME}${USE_ARG_SUFFIX}"
+-			TINFO_LIBS="-l${LIB_NAME}${USE_ARG_SUFFIX} $TEST_ARGS"
++			TINFO_LIBS="$TEST_ARGS -l${LIB_NAME}${USE_ARG_SUFFIX} $TEST_ARGS -l${LIB_NAME}${USE_ARG_SUFFIX}"
+ 		else
+ 			TICS_LIST="$SHLIB_LIST -l${TINFO_LIB_SUFFIX}"
+ 			TINFO_LIBS="$TEST_ARGS"
+diff -rupN ncurses-6.0.orig/configure.in ncurses-6.0/configure.in
+--- ncurses-6.0.orig/configure.in	2017-10-10 18:17:45.778836885 +0200
++++ ncurses-6.0/configure.in	2017-10-10 18:32:11.174818053 +0200
+@@ -2009,7 +2009,7 @@ if test "$with_termlib" != no ; then
+ 		if test "x$with_term_driver" != xno ; then
+ 			TICS_LIST="$SHLIB_LIST -l${LIB_NAME}${USE_ARG_SUFFIX}"
+ 			TICS_LIBS="$TICS_LIBS -l${LIB_NAME}${USE_ARG_SUFFIX}"
+-			TINFO_LIBS="-l${LIB_NAME}${USE_ARG_SUFFIX} $TEST_ARGS"
++			TINFO_LIBS="$TEST_ARGS -l${LIB_NAME}${USE_ARG_SUFFIX} $TEST_ARGS -l${LIB_NAME}${USE_ARG_SUFFIX}"
+ 		else
+ 			TICS_LIST="$SHLIB_LIST -l${TINFO_LIB_SUFFIX}"
+ 			TINFO_LIBS="$TEST_ARGS"
+diff -rupN ncurses-6.0.orig/include/termcap.h.in ncurses-6.0/include/termcap.h.in
+--- ncurses-6.0.orig/include/termcap.h.in	2017-10-10 18:14:37.398840984 +0200
++++ ncurses-6.0/include/termcap.h.in	2017-10-10 18:32:57.174817052 +0200
+@@ -47,7 +47,9 @@ extern "C"
+ #endif /* __cplusplus */
+ 
+ #include <features.h>
++#ifndef __MINGW32__
+ #include <termios.h>
++#endif
+ #include <sys/types.h>
+ 
+ #undef  NCURSES_CONST 
+diff -rupN ncurses-6.0.orig/progs/Makefile.in ncurses-6.0/progs/Makefile.in
+--- ncurses-6.0.orig/progs/Makefile.in	2017-10-10 18:14:37.402840984 +0200
++++ ncurses-6.0/progs/Makefile.in	2017-10-10 18:34:14.458815371 +0200
+@@ -255,14 +255,14 @@ DEPS_CLEAR = \
+ 	$(MODEL)/tty_settings$o
+ 
+ clear$x: $(DEPS_CLEAR) $(DEPS_CURSES)
+-	@ECHO_LD@ $(LINK) $(DEPS_CLEAR) $(LDFLAGS_TINFO) -o $@
++	@ECHO_LD@ $(LINK) $(DEPS_CLEAR) $(LDFLAGS_TINFO) $(LDFLAGS_TIC) -o $@
+ 
+ DEPS_TABS = \
+ 	$(MODEL)/tabs$o \
+ 	$(MODEL)/tty_settings$o
+ 
+ tabs$x: $(DEPS_TABS) $(DEPS_TABS)
+-	@ECHO_LD@ $(LINK) $(DEPS_TABS) $(LDFLAGS_TINFO) -o $@
++	@ECHO_LD@ $(LINK) $(DEPS_TABS) $(LDFLAGS_TINFO) $(LDFLAGS_TIC) -o $@
+ 
+ DEPS_TPUT = \
+ 	$(MODEL)/tput$o \
+@@ -273,7 +273,7 @@ DEPS_TPUT = \
+ 	$(MODEL)/tty_settings$o
+ 
+ tput$x: $(DEPS_TPUT) $(DEPS_CURSES) transform.h
+-	@ECHO_LD@ $(LINK) $(DEPS_TPUT) $(LDFLAGS_TINFO) -o $@
++	@ECHO_LD@ $(LINK) $(DEPS_TPUT) $(LDFLAGS_TINFO) $(LDFLAGS_TIC) -o $@
+ 
+ DEPS_INFOCMP = \
+ 	$(MODEL)/infocmp$o \
+@@ -289,7 +289,7 @@ DEPS_TSET = \
+ 	$(MODEL)/tty_settings$o
+ 
+ tset$x: $(DEPS_TSET) $(DEPS_CURSES) transform.h
+-	@ECHO_LD@ $(LINK) $(DEPS_TSET) $(LDFLAGS_TINFO) -o $@
++	@ECHO_LD@ $(LINK) $(DEPS_TSET) $(LDFLAGS_TINFO) $(LDFLAGS_TIC) -o $@
+ 
+ termsort.c: $(srcdir)/MKtermsort.sh
+ 	$(SHELL) $(srcdir)/MKtermsort.sh $(AWK) $(srcdir)/../include/@TERMINFO_CAPS@ >$@

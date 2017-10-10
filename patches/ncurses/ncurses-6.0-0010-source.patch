@@ -1,0 +1,145 @@
+diff -rupN ncurses-6.0.orig/configure ncurses-6.0/configure
+--- ncurses-6.0.orig/configure	2017-10-10 18:15:52.494839350 +0200
++++ ncurses-6.0/configure	2017-10-10 18:17:45.778836885 +0200
+@@ -22192,6 +22193,7 @@ fi
+ 
+ 		fi
+ 	fi
++	TINFO_ARGS="$TINFO_ARGS -L${LIB_DIR} -l${LIB_NAME}${DFT_ARG_SUFFIX}"
+ else
+ 	cf_with_ada=no
+ fi
+diff -rupN ncurses-6.0.orig/configure.in ncurses-6.0/configure.in
+--- ncurses-6.0.orig/configure.in	2017-10-10 18:15:52.494839350 +0200
++++ ncurses-6.0/configure.in	2017-10-10 18:17:45.778836885 +0200
+@@ -2017,6 +2017,7 @@ if test "$with_termlib" != no ; then
+ 		TINFO_LDFLAGS="-L${LIB_DIR}"
+ 		SHLIB_LIST="$SHLIB_LIST -l${TINFO_LIB_SUFFIX}"
+ 	fi
++	TINFO_ARGS="$TINFO_ARGS -L${LIB_DIR} -l${LIB_NAME}${DFT_ARG_SUFFIX}"
+ else
+ 	# the next lines are needed for linking libtic over libncurses
+ 	TINFO_NAME=${LIB_NAME}
+diff -rupN ncurses-6.0.orig/include/curses.h.in ncurses-6.0/include/curses.h.in
+--- ncurses-6.0.orig/include/curses.h.in	2017-10-10 18:14:37.398840984 +0200
++++ ncurses-6.0/include/curses.h.in	2017-10-10 18:17:45.778836885 +0200
+@@ -161,6 +161,8 @@
+ #undef NCURSES_WCWIDTH_GRAPHICS
+ #define NCURSES_WCWIDTH_GRAPHICS @NCURSES_WCWIDTH_GRAPHICS@
+ 
++#include <sys/types.h>
++
+ /*
+  * NCURSES_CH_T is used in building the library, but not used otherwise in
+  * this header file, since that would make the normal/wide-character versions
+diff -rupN ncurses-6.0.orig/man/man_db.renames ncurses-6.0/man/man_db.renames
+--- ncurses-6.0.orig/man/man_db.renames	2017-10-10 18:14:37.398840984 +0200
++++ ncurses-6.0/man/man_db.renames	2017-10-10 18:17:47.874836839 +0200
+@@ -169,6 +169,8 @@ toe.1m				toe.1
+ tput.1				tput.1
+ tset.1				tset.1
+ wresize.3x			wresize.3ncurses
++curs_terminfo.\\\*n		terminfo.5
++tack.1				tack.1
+ #
+ # Other:
+ tack.1				tack.1
+diff -rupN ncurses-6.0.orig/man/ncurses.3x ncurses-6.0/man/ncurses.3x
+--- ncurses-6.0.orig/man/ncurses.3x	2017-10-10 18:14:37.402840984 +0200
++++ ncurses-6.0/man/ncurses.3x	2017-10-10 18:17:47.874836839 +0200
+@@ -141,6 +141,10 @@ Beware: the terminal your program is run
+ the features you expect. Ncurses makes no attempt to check available
+ features in advance. This is upon the programmer.
+ .PP
++Beware: the terminal your program is running may or may not have
++the features you expect. Ncurses makes no attempt to check available
++features in advance. This is upto the programmer.
++.PP
+ The \fBncurses\fR library permits manipulation of data structures,
+ called \fIwindows\fR, which can be thought of as two-dimensional
+ arrays of characters representing all or part of a CRT screen.
+diff -rupN ncurses-6.0.orig/misc/ncurses-config.in ncurses-6.0/misc/ncurses-config.in
+--- ncurses-6.0.orig/misc/ncurses-config.in	2017-10-10 18:14:37.402840984 +0200
++++ ncurses-6.0/misc/ncurses-config.in	2017-10-10 18:31:05.958819472 +0200
+@@ -100,7 +100,7 @@ while test $# -gt 0; do
+ 	# compile/link
+ 	--cflags)
+ 		INCS="@PKG_CFLAGS@"
+-		if test "${THIS%[0-5]*}" = xno ; then
++		if test "${THIS%[0-5]*}" != ncurses ; then
+ 			INCS="$INCS -I${includesubdir}"
+ 		fi
+ 		if test "${includedir}" != /usr/include ; then
+diff -rupN ncurses-6.0.orig/misc/terminfo.src ncurses-6.0/misc/terminfo.src
+--- ncurses-6.0.orig/misc/terminfo.src	2017-10-10 18:15:13.198840205 +0200
++++ ncurses-6.0/misc/terminfo.src	2017-10-10 18:17:47.890836839 +0200
+@@ -5645,6 +5645,39 @@ rxvt-unicode-256color|rxvt-unicode termi
+ 	pairs#32767, 
+ 	use=rxvt-unicode, 
+ 
++# From: Thomas Dickey <dickey@clark.net> 04 Oct 1997
++# Updated: Özgür Kesim <kesim@math.fu-berlin.de> 02 Nov 1997
++# Updated: Marc Lehmann <pcg@goof.com>, 17 Feb 2005
++# Updated: Marc Lehmann <schmorp@schmorp.de>, 04 Nov 2008: change init/reset sequences
++#
++rxvt-unicode|rxvt-unicode terminal (X Window System), 
++	bw, ccc, hs, mc5i, npc, btns#5, colors#88, lm#0, ncv#0, pairs#256, 
++	acsc=+C\,D-A.B0E``aaffgghFiGjjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~, 
++	dsl=\E]2;\007, ech=\E[%p1%dX, enacs=, flash=\E[?5h$<20/>\E[?5l, 
++	fsl=^G, indn=\E[%p1%dS, 
++	initc=\E]4;%p1%d;rgb\:%p2%{65535}%*%{1000}%/%4.4X/%p3%{65535}%*%{1000}%/%4.4X/%p4%{65535}%*%{1000}%/%4.4X\E\\, 
++	is1=\E[!p, 
++	is2=\E[r\E[m\E[2J\E[?7;25h\E[?1;3;4;5;6;9;66;1000;1001;1049l\E[4l, 
++	kIC=\E2$, mc0=\E[i, mc4=\E[4i, mc5=\E[5i, op=\E[39;49m, 
++	rin=\E[%p1%dT, ritm=\E[23m, rmacs=\E(B, rmam=\E[?7l, 
++	rmcup=\E[r\E[?1049l, rmkx=\E[?1l\E>, rs1=\Ec, 
++	rs2=\E[r\E[m\E[?7;25h\E[?1;3;4;5;6;9;66;1000;1001;1049l\E[4l, 
++	s2ds=\E*B, s3ds=\E+B, 
++	setab=\E[48;5;%p1%dm, setaf=\E[38;5;%p1%dm, 
++	setb=%?%p1%{7}%>%t\E[48;5;%p1%dm%e\E[4%?%p1%{1}%=%t4%e%p1%{3}%=%t6%e%p1%{4}%=%t1%e%p1%{6}%=%t3%e%p1%d%;m%;, 
++	setf=%?%p1%{7}%>%t\E[38;5;%p1%dm%e\E[3%?%p1%{1}%=%t4%e%p1%{3}%=%t6%e%p1%{4}%=%t1%e%p1%{6}%=%t3%e%p1%d%;m%;, 
++	sgr=\E[0%?%p6%t;1%;%?%p2%t;4%;%?%p1%p3%|%t;7%;%?%p4%t;5%;%?%p7%t;8%;m%?%p9%t\E(0%e\E(B%;, 
++	sgr0=\E[m\E(B, sitm=\E[3m, smacs=\E(0, smam=\E[?7h, 
++	smcup=\E[?1049h, smkx=\E[?1h\E=, 
++	tsl=\E]2;, u6=\E[%i%d;%dR, u7=\E[6n, u8=\E[?1;2c, u9=\E[c, 
++	use=rxvt-basic, 
++
++rxvt-unicode-256color|rxvt-unicode terminal with 256 colors (X Window System),
++	colors#256, 
++	pairs#32767, 
++	use=rxvt-unicode, 
++
++
+ # This variant is supposed to work with rxvt 2.7.7 when compiled with
+ # NO_BRIGHTCOLOR defined.  rxvt needs more work...
+ rxvt-16color|rxvt with 16 colors like aixterm,
+@@ -20852,6 +20885,13 @@ gigi|vk100|dec gigi graphics terminal,
+ 	rmam=\E[?7l, rmkx=\E[?1l\E>, rmso=\E[m, rmul=\E[m,
+ 	sgr0=\E[m, smam=\E[?7h, smkx=\E[?1h\E=, smso=\E[7;31m,
+ 	smul=\E[4m,
++eterm|emacs|gnu emacs term.el terminal emulation, 
++	colors#8, pairs#64, 
++	invis=\E[8m, kcub1=\EOD, kcud1=\EOB, 
++	kcuf1=\EOC, kcuu1=\EOA, kend=\E[4~, 
++	khome=\E[1~, knp=\E[6~, kpp=\E[5~, 
++	setab=\E[%p1%{40}%+%dm, setaf=\E[%p1%{30}%+%dm, 
++	use=eterm-19, 
+ 
+ # DEC PRO-350 console (VT220-style).  The 350 was DEC's attempt to produce
+ # a PC differentiated from the IBM clones.  It was a total, ludicrous,
+diff -rupN ncurses-6.0.orig/ncurses/tinfo/MKfallback.sh ncurses-6.0/ncurses/tinfo/MKfallback.sh
+--- ncurses-6.0.orig/ncurses/tinfo/MKfallback.sh	2017-10-10 18:14:37.402840984 +0200
++++ ncurses-6.0/ncurses/tinfo/MKfallback.sh	2017-10-10 18:17:51.970836750 +0200
+@@ -74,6 +74,12 @@ else
+ 	infocmp="infocmp -v1"
+ fi
+ 
++if test -n "$TERMINFO" -a -d "$TERMINFO" ; then
++	infocmp="infocmp -v1 -A $TERMINFO"
++else
++	infocmp="infocmp -v1"
++fi
++
+ cat <<EOF
+ /* This file was generated by $0 */
+ 
