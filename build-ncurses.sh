@@ -1,28 +1,15 @@
 #!/bin/sh
 
 me="$0"
+scriptdir=${0%/*}
 
 PACKAGENAME=ncurses
 VERSION=-6.0
 #VERSIONPATCH=-20171006
 VERSIONPATCH=
 
-TARGET=${1:-m68k-atari-mint}
-export CROSS_TOOL=${TARGET}
-prefix=/usr
-sysroot=${prefix}/${TARGET}/sys-root
+. ${scriptdir}/functions.sh
 
-TARGET_PREFIX=/usr
-TARGET_LIBDIR="${TARGET_PREFIX}/lib"
-TARGET_BINDIR="${TARGET_PREFIX}/bin"
-
-ARCHIVES_DIR=$HOME/packages
-here=`pwd`
-PKG_DIR="$here/binary7-package"
-DIST_DIR="$here/pkgs"
-
-srcdir="$here/${PACKAGENAME}${VERSION}"
-BUILD_DIR="$here"
 MINT_BUILD_DIR="$srcdir/build-target"
 HOST_BUILD_DIR="$srcdir/build-host"
 
@@ -38,114 +25,11 @@ patches/ncurses/ncurses-6.0-0022-dynamic.patch \
 "
 PATCHARCHIVE=patches/ncurses/ncurses-6.0-patches.tar.bz2
 
-BUILD_EXEEXT=
-TARGET_EXEEXT=
-LN_S="ln -s"
-case `uname -s` in
-	CYGWIN* | MINGW* | MSYS*) BUILD_EXEEXT=.exe ;;
-esac
-case `uname -s` in
-	MINGW* | MSYS*) LN_S="cp -p" ;;
-esac
-case $TARGET in
- 	*-*-cygwin* | *-*-mingw* | *-*-msys*) TARGET_EXEEXT=.exe ;;
-esac
-
-
-rm -rf "$srcdir"
-if :; then
-	missing=true
-	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
-	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
-	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.gz" \
-	         "${PACKAGENAME}${VERSION}.tar.xz" \
-	         "${PACKAGENAME}${VERSION}.tar.bz2" \
-	         "${PACKAGENAME}${VERSION}.tar.gz"; do
-		if test -f "$f"; then missing=false; tar xvf "$f" || exit 1; fi
-	done
-	if $missing; then
-		echo "${PACKAGENAME}${VERSION}.*: no such file" >&2
-		exit 1
-	fi
-	if test ! -d "$srcdir"; then
-		echo "$srcdir: no such directory" >&2
-		exit 1
-	fi
-	mkdir -p "$BUILD_DIR/ncurses-patches"
-	tar -C "$BUILD_DIR/ncurses-patches" --strip-components=1 -xjf ${PATCHARCHIVE}
-	cd "$srcdir"
-	for patch in $BUILD_DIR/ncurses-patches/ncurses*.patch
-	do
-	    patch -f -T -p1 -s < $patch
-	done
-	cd "$BUILD_DIR"
-	rm -rf "$BUILD_DIR/ncurses-patches"
-	
-	for f in $PATCHES; do
-	  if test -f "$f"; then
-	    cd "$srcdir" && patch -p1 < "$BUILD_DIR/$f" || exit 1
-	  else
-	    echo "missing patch $f" >&2
-	    exit 1
-	  fi
-	  cd "$BUILD_DIR"
-	done
-fi
-
-if test ! -d "$srcdir"; then
-	echo "$srcdir: no such directory" >&2
-	exit 1
-fi
-
-JOBS=`rpm --eval '%{?jobs:%jobs}' 2>/dev/null`
-P=$(getconf _NPROCESSORS_CONF 2>/dev/null || nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null)
-if test -z "$P"; then P=$NUMBER_OF_PROCESSORS; fi
-if test -z "$P"; then P=1; fi
-if test -z "$JOBS"; then
-  JOBS=$P
-else
-  test 1 -gt "$JOBS" && JOBS=1
-fi
-JOBS=-j$JOBS
-
-#
-# try config.guess from automake first to get the
-# canonical build system name.
-# On some distros it is patched to have the
-# vendor name included.
-#
-BUILD=`/usr/share/automake/config.guess 2>/dev/null`
-test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
-
-ranlib=ranlib
-case "${TARGET}" in
-    *-*-*elf* | *-*-linux*)
-    	ranlib=gcc-ranlib
-		;;
-esac
-
-ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
-strip=`which "${TARGET}-strip"`
-gcc=`which "${TARGET}-gcc"`
-cxx=`which "${TARGET}-g++"`
-MAKE=make
-
-if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$gcc" -o ! -x "$strip"; then
-	echo "cross tools for ${TARGET} not found" >&2
-	exit 1
-fi
-
-THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
+unpack_archive
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -pipe -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
-LTO_CFLAGS=
-case "${TARGET}" in
-    *-*-*elf* | *-*-linux*)
-		# we cannot add this to CFLAGS, because then autoconf tests
-		# for missing c library functions will always succeed
-		LTO_CFLAGS="-flto"
-		;;
-esac
+
+export CROSS_TOOL=${TARGET}
 
 CC_FOR_BUILD=gcc
 CXX_FOR_BUILD=g++
@@ -303,71 +187,6 @@ configure_ncurses()
 s/^s,@CXXFLAGS@,\(.*\)$/s,@CXXFLAGS@,'"$LTO_CFLAGS"' \1/' config.status
 			./config.status
     fi
-}
-
-
-copy_pkg_configs()
-{
-	local pattern="${1:-*.pc}"
-	local build_prefix="$prefix/$TARGET"
-	local i base dst
-	
-	mkdir -p ./$build_prefix/lib/pkgconfig
-	
-	#
-	# replace absolute pathnames by their symbolic equivalents
-	# and remove unneeded -I and -L switches,
-	# since those directories are always on the
-	# default search path.
-	# remove -L${sharedlibdir}, because
-	# sharedlibdir is the bin directory, but the import libraries
-	# are in the lib directory
-	#
-	for i in .${sysroot}$TARGET_LIBDIR/pkgconfig/$pattern; do
-		test -e "$i" || continue
-		true && {
-			# from the *.pc files generated for the target,
-			# generate *.pc files that are suitable for the cross-compiler
-			base=${i##*/}
-			dst=./$build_prefix/lib/pkgconfig/$base
-			if test ! -f $dst -o $i -nt $dst; then
-				cp -a $i $dst
-				test -h "$i" && continue
-				sed -i 's,",,g
-						 s,prefix[ ]*=[ ]*'${sysroot}${TARGET_PREFIX}',prefix='${sysroot}${TARGET_PREFIX}',
-			             /^prefix[ ]*=/{p;d}
-			             s,=[ ]*'$prefix',=${prefix},
-			             s,-L'$TARGET_LIBDIR',-L${libdir},g
-			             s,-L${sharedlibdir} ,,g
-			             s,-L${libdir} ,,g
-			             s,-L${libdir}$,,
-			             s,-L'${TARGET_BINDIR}'[ ]*,,g
-			             s,-I/usr/include,-I${includedir},g
-			             s,-I'${sysroot}${TARGET_PREFIX}/include',-I${includedir},g
-			             s,-I${includedir} ,,g
-			             s,-I${includedir}$,,' $dst
-			fi
-		}
-		true && {
-			sed -e 's,",,g
-					 s,prefix[ ]*=[ ]*'${sysroot}${TARGET_PREFIX}',prefix='${TARGET_PREFIX}',
-			         /^prefix[ ]*=/{p;d}
-			         s,[ ]*=[ ]*'$prefix',=${prefix},
-			         s,-L'$TARGET_LIBDIR',-L${libdir},g
-		             s,-L${sharedlibdir} ,,g
-			         s,-L${libdir} ,,g
-			         s,-L${libdir}$,,
-		             s,-L'${TARGET_BINDIR}'[ ]*,,g
- 		             s,-I/usr/include,-I${includedir},g
-		             s,-I'${sysroot}${TARGET_PREFIX}/include',-I${includedir},g
-				     s,-I${includedir} ,,g
-				     s,-I${includedir}$,,' $i > $i.tmp
-			diff -q $i $i.tmp >/dev/null && rm -f $i.tmp || {
-				echo "fixed $i"
-				mv $i.tmp $i
-			}
-		}
-	done
 }
 
 
@@ -551,12 +370,6 @@ EOF
 	    $MAKE DESTDIR="${THISPKG_DIR}" libdir=${sysroot}${TARGET_LIBDIR}/m5475 install.libs || exit $?
 	fi
 	
-	cd "${THISPKG_DIR}"
-    copy_pkg_configs "ncurses*.pc"
-    copy_pkg_configs "form*.pc"
-    copy_pkg_configs "menu*.pc"
-    copy_pkg_configs "panel*.pc"
-    
 #   exec 0<&$safe_stdin
 #    : {safe_stdin}<&-
     
@@ -580,31 +393,19 @@ rm -vf mk-dlls.sh
 : autoheader || exit 2
 rm -rf autom4te.cache config.h.in.orig
 
-
 mkdir -p "$MINT_BUILD_DIR"
 mkdir -p "$HOST_BUILD_DIR"
 cd "$MINT_BUILD_DIR"
 
-rm -rf "${THISPKG_DIR}"
 build_ncurses
 
+configured_prefix="${sysroot}${TARGET_PREFIX}"
+copy_pkg_configs "ncurses*.pc"
+copy_pkg_configs "form*.pc"
+copy_pkg_configs "menu*.pc"
+copy_pkg_configs "panel*.pc"
+    
+make_archives
 
-cd "${THISPKG_DIR}${sysroot}" || exit 1
-
-find . -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \;
-find . -name "*.a" ! -type l -exec "${ranlib}" '{}' \;
-
-TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
-
-cd "${THISPKG_DIR}" || exit 1
-
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz usr
-
-cd "${BUILD_DIR}"
-#rm -rf "${THISPKG_DIR}"
 rm -rf "${MINT_BUILD_DIR}"
 rm -rf "${HOST_BUILD_DIR}"
-rm -rf "${srcdir}"
-
-test -z "${PATCHES}" || tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.tar.xz ${PATCHES} ${PATCHARCHIVE}
-cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh

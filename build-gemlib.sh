@@ -96,8 +96,10 @@ if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$gcc" -o ! -x "$strip"; then
 fi
 
 cd "$srcdir"
+LTO_CFLAGS=
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
+		LTO_CFLAGS="-flto"
 		sed -i "\@^DEFINITIONS =@i OPTS += -flto" CONFIGVARS
 		;;
 esac
@@ -121,7 +123,7 @@ make PREFIX=${THISPKG_DIR}${sysroot}/usr install || exit 1
 
 cd "${THISPKG_DIR}${sysroot}/usr" || exit 1
 
-find . -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \;
+test "$LTO_CFLAGS" != "" || find . -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \;
 find . -name "*.a" ! -type l -exec "${ranlib}" '{}' \;
 
 cd "${THISPKG_DIR}"
