@@ -1,6 +1,6 @@
 diff -rupN binutils-2.29.1.orig/bfd/aoutx.h binutils-2.29.1/bfd/aoutx.h
---- binutils-2.29.1.orig/bfd/aoutx.h	2017-10-06 17:49:09.916544835 +0200
-+++ binutils-2.29.1/bfd/aoutx.h	2017-10-06 17:50:05.104543634 +0200
+--- binutils-2.29.1.orig/bfd/aoutx.h	2017-10-12 01:29:48.263688119 +0200
++++ binutils-2.29.1/bfd/aoutx.h	2017-10-11 20:14:37.140758957 +0200
 @@ -1303,6 +1303,8 @@ NAME (aout, set_section_contents) (bfd *
  static bfd_boolean
  aout_get_external_symbols (bfd *abfd)
@@ -12,7 +12,7 @@ diff -rupN binutils-2.29.1.orig/bfd/aoutx.h binutils-2.29.1/bfd/aoutx.h
        bfd_size_type count;
 diff -rupN binutils-2.29.1.orig/bfd/archive.c binutils-2.29.1/bfd/archive.c
 --- binutils-2.29.1.orig/bfd/archive.c	2017-09-05 12:12:10.000000000 +0200
-+++ binutils-2.29.1/bfd/archive.c	2017-10-06 17:50:05.108543634 +0200
++++ binutils-2.29.1/bfd/archive.c	2017-10-11 20:14:37.140758957 +0200
 @@ -870,7 +870,7 @@ bfd_generic_archive_p (bfd *abfd)
        return NULL;
      }
@@ -40,7 +40,7 @@ diff -rupN binutils-2.29.1.orig/bfd/archive.c binutils-2.29.1/bfd/archive.c
      }
 diff -rupN binutils-2.29.1.orig/bfd/compress.c binutils-2.29.1/bfd/compress.c
 --- binutils-2.29.1.orig/bfd/compress.c	2017-07-10 11:54:41.000000000 +0200
-+++ binutils-2.29.1/bfd/compress.c	2017-10-06 17:50:05.108543634 +0200
++++ binutils-2.29.1/bfd/compress.c	2017-10-11 20:14:37.140758957 +0200
 @@ -319,7 +319,7 @@ bfd_get_full_section_contents (bfd *abfd
  	return FALSE;
        if (p == NULL)
@@ -51,8 +51,8 @@ diff -rupN binutils-2.29.1.orig/bfd/compress.c binutils-2.29.1/bfd/compress.c
  	    return FALSE;
  	  *ptr = p;
 diff -rupN binutils-2.29.1.orig/bfd/config.bfd binutils-2.29.1/bfd/config.bfd
---- binutils-2.29.1.orig/bfd/config.bfd	2017-10-06 17:49:09.916544835 +0200
-+++ binutils-2.29.1/bfd/config.bfd	2017-10-06 17:50:05.108543634 +0200
+--- binutils-2.29.1.orig/bfd/config.bfd	2017-10-12 01:29:48.267688119 +0200
++++ binutils-2.29.1/bfd/config.bfd	2017-10-11 20:14:37.140758957 +0200
 @@ -1005,6 +1005,10 @@ case "${targ}" in
      # targ_selvecs=m68kmach3_vec
      # targ_cflags=-DSTAT_FOR_EXEC
@@ -66,7 +66,7 @@ diff -rupN binutils-2.29.1.orig/bfd/config.bfd binutils-2.29.1/bfd/config.bfd
      targ_selvecs=m68k_aout_mintprg_vec
 diff -rupN binutils-2.29.1.orig/bfd/elf.c binutils-2.29.1/bfd/elf.c
 --- binutils-2.29.1.orig/bfd/elf.c	2017-09-05 12:12:10.000000000 +0200
-+++ binutils-2.29.1/bfd/elf.c	2017-10-06 17:50:05.108543634 +0200
++++ binutils-2.29.1/bfd/elf.c	2017-10-11 20:14:37.140758957 +0200
 @@ -8087,7 +8087,11 @@ _bfd_elf_canonicalize_symtab (bfd *abfd,
    long symcount = bed->s->slurp_symbol_table (abfd, allocation, FALSE);
  
@@ -82,7 +82,7 @@ diff -rupN binutils-2.29.1.orig/bfd/elf.c binutils-2.29.1/bfd/elf.c
  
 diff -rupN binutils-2.29.1.orig/bfd/reloc.c binutils-2.29.1/bfd/reloc.c
 --- binutils-2.29.1.orig/bfd/reloc.c	2017-07-10 11:54:41.000000000 +0200
-+++ binutils-2.29.1/bfd/reloc.c	2017-10-06 17:50:05.108543634 +0200
++++ binutils-2.29.1/bfd/reloc.c	2017-10-11 20:14:37.144758957 +0200
 @@ -952,6 +952,17 @@ space consuming.  For each target:
        return bfd_reloc_other;
      }
@@ -103,7 +103,7 @@ diff -rupN binutils-2.29.1.orig/bfd/reloc.c binutils-2.29.1/bfd/reloc.c
  
 diff -rupN binutils-2.29.1.orig/config.sub binutils-2.29.1/config.sub
 --- binutils-2.29.1.orig/config.sub	2017-07-10 11:54:41.000000000 +0200
-+++ binutils-2.29.1/config.sub	2017-10-06 17:50:05.108543634 +0200
++++ binutils-2.29.1/config.sub	2017-10-11 20:14:37.144758957 +0200
 @@ -1535,6 +1535,9 @@ case $os in
  	-xenix)
  		os=-xenix
@@ -116,7 +116,7 @@ diff -rupN binutils-2.29.1.orig/config.sub binutils-2.29.1/config.sub
  		;;
 diff -rupN binutils-2.29.1.orig/gas/config/tc-m68k.h binutils-2.29.1/gas/config/tc-m68k.h
 --- binutils-2.29.1.orig/gas/config/tc-m68k.h	2017-07-10 11:54:41.000000000 +0200
-+++ binutils-2.29.1/gas/config/tc-m68k.h	2017-10-06 17:50:05.108543634 +0200
++++ binutils-2.29.1/gas/config/tc-m68k.h	2017-10-11 20:14:37.144758957 +0200
 @@ -169,7 +169,11 @@ extern struct relax_type md_relax_table[
  #define TARGET_USE_CFIPOP 1
  
@@ -130,8 +130,8 @@ diff -rupN binutils-2.29.1.orig/gas/config/tc-m68k.h binutils-2.29.1/gas/config/
  #define tc_regname_to_dw2regnum tc_m68k_regname_to_dw2regnum
  extern int tc_m68k_regname_to_dw2regnum (const char *regname);
 diff -rupN binutils-2.29.1.orig/gas/configure.tgt binutils-2.29.1/gas/configure.tgt
---- binutils-2.29.1.orig/gas/configure.tgt	2017-10-06 17:49:09.924544835 +0200
-+++ binutils-2.29.1/gas/configure.tgt	2017-10-06 17:50:05.108543634 +0200
+--- binutils-2.29.1.orig/gas/configure.tgt	2017-10-12 01:29:48.271688119 +0200
++++ binutils-2.29.1/gas/configure.tgt	2017-10-11 20:14:37.144758957 +0200
 @@ -325,6 +325,7 @@ case ${generic_target} in
    m68k-*-linux-*)			fmt=elf em=linux ;;
    m68k-*-uclinux*)			fmt=elf em=uclinux ;;
@@ -141,9 +141,9 @@ diff -rupN binutils-2.29.1.orig/gas/configure.tgt binutils-2.29.1/gas/configure.
    m68k-*-netbsdelf*)			fmt=elf em=nbsd ;;
    m68k-*-netbsd*)			fmt=aout em=nbsd bfd_gas=yes ;;
 diff -rupN binutils-2.29.1.orig/ld/scripttempl/m68kmint.sc binutils-2.29.1/ld/scripttempl/m68kmint.sc
---- binutils-2.29.1.orig/ld/scripttempl/m68kmint.sc	2017-10-06 17:49:09.928544835 +0200
-+++ binutils-2.29.1/ld/scripttempl/m68kmint.sc	2017-10-06 17:50:05.108543634 +0200
-@@ -19,29 +19,38 @@ SECTIONS
+--- binutils-2.29.1.orig/ld/scripttempl/m68kmint.sc	2017-10-12 01:29:48.275688119 +0200
++++ binutils-2.29.1/ld/scripttempl/m68kmint.sc	2017-10-12 01:10:45.475712987 +0200
+@@ -19,29 +19,54 @@ SECTIONS
    ${RELOCATING+/* The VMA of the .text section is ${TEXT_START_ADDR} instead of 0
       because the extended MiNT header is just before,
       at the beginning of the TEXT segment.  */}
@@ -152,11 +152,28 @@ diff -rupN binutils-2.29.1.orig/ld/scripttempl/m68kmint.sc binutils-2.29.1/ld/sc
    {
      CREATE_OBJECT_SYMBOLS
 -    *(.text)
-+    *(.text .text.*)
+-    ${CONSTRUCTING+CONSTRUCTORS}
++    *(.text .text.* .gnu.linkonce.t.*)
 +    *(.rodata .rodata.*) /* Only present in ELF objects */
-+    ${RELOCATING+ *(.ctors)}
-+    ${RELOCATING+ *(.dtors)}
-     ${CONSTRUCTING+CONSTRUCTORS}
++    ${RELOCATING+*(.gnu.linkonce.r.*)} /* Only present in ELF objects */
++    ${CONSTRUCTING+ . = ALIGN(4);}
++    ${CONSTRUCTING+ SORT(CONSTRUCTORS)}
++    ${CONSTRUCTING+ ___CTOR_LIST__ = .; __CTOR_LIST__ = . ;
++	LONG((__CTOR_END__ - __CTOR_LIST__) / 4 - 2);
++	KEEP(*(.ctors))
++	KEEP(*(SORT_BY_NAME(.ctors.*)))
++	LONG(0);
++	___CTOR_END__ = .; __CTOR_END__ = . ;
++     }
++    ${CONSTRUCTING+ ___DTOR_LIST__ = .; __DTOR_LIST__ = . ;
++	LONG((__DTOR_END__ - __DTOR_LIST__) / 4 - 2);
++	KEEP(*(.dtors))
++	KEEP(*(SORT_BY_NAME(.dtors.*)))
++	LONG(0);
++	___DTOR_END__ = .; __DTOR_END__ = . ;
++     }
++    ${RELOCATING+ KEEP (*(.gcc_except_table .gcc_except_table.*))}
++    ${RELOCATING+ KEEP (*(.eh_frame))}
 +    ${RELOCATING+etext = .;}
      ${RELOCATING+_etext = .;}
 -    ${RELOCATING+__etext = .;}
@@ -166,7 +183,7 @@ diff -rupN binutils-2.29.1.orig/ld/scripttempl/m68kmint.sc binutils-2.29.1/ld/sc
 +  .data : SUBALIGN(2)
    {
 -    *(.data)
-+    *(.data .data.*)
++    *(.data .data.* .gnu.linkonce.d.*)
 +    ${RELOCATING+edata = .;}
      ${RELOCATING+_edata = .;}
 -    ${RELOCATING+__edata = .;}
@@ -177,7 +194,7 @@ diff -rupN binutils-2.29.1.orig/ld/scripttempl/m68kmint.sc binutils-2.29.1/ld/sc
 -    ${RELOCATING+__bss_start = .;}
 -    *(.bss)
 +    ${RELOCATING+_bss_start = .;}
-+    *(.bss .bss.*)
++    *(.bss .bss.* .gnu.linkonce.b.*)
      *(COMMON)
 +    ${RELOCATING+end = .;}
      ${RELOCATING+_end = .;}

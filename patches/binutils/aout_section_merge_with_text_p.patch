@@ -1,0 +1,83 @@
+diff -ru binutils-2.29.1/bfd/aout32.c binutils-2.29.1.orig/bfd/aout32.c
+--- binutils-2.29.1/bfd/aout32.c	2017-10-11 04:27:56.331328554 +0200
++++ binutils-2.29.1.orig/bfd/aout32.c	2017-07-10 11:54:41.000000000 +0200
+@@ -22,60 +22,3 @@
+ #define ARCH_SIZE 32
+ 
+ #include "aoutx.h"
+-
+-/* Test if a read-only section can be merged with .text.  This is
+-   possible if:
+-
+-   1. Section has file contents and is read-only.
+-   2. The VMA of the section is after the end of .text and before
+-      the start of .data.
+-   3. The image is demand-pageable (otherwise, a_text in the header
+-      will not reflect the gap between .text and .data).  */
+-
+-int aout_section_merge_with_text_p(bfd *abfd, sec_ptr sec)
+-{
+-	if (!((sec)->flags & SEC_HAS_CONTENTS))
+-    {
+-	   	fprintf(stderr, "aout_section_merge_with_text_p: %s: no contents: %s\n", sec->name, sec->owner->filename);
+-    	return 0;
+-    }
+-	if (!((sec)->flags & SEC_READONLY))
+-    {
+-    	fprintf(stderr, "aout_section_merge_with_text_p: %s: not readonly: %s\n", sec->name, sec->owner->filename);
+-    	return 0;
+-    }
+-   if (obj_textsec (abfd) == NULL)
+-   {
+-    	fprintf(stderr, "aout_section_merge_with_text_p: no text segment\n");
+-    	return 0;
+-   }
+-   if (obj_datasec (abfd) == NULL)
+-   {
+-    	fprintf(stderr, "aout_section_merge_with_text_p: no data segment\n");
+-    	return 0;
+-   }
+-   if ((sec)->vma < (obj_textsec (abfd)->vma + obj_textsec (abfd)->size))
+-   {
+-    	fprintf(stderr, "aout_section_merge_with_text_p: section start %x not after end of text %x\n",
+-    		(unsigned)(sec)->vma,
+-    		(unsigned)(obj_textsec (abfd)->vma + obj_textsec (abfd)->size));
+-    	return 0;
+-   }
+-   if (((sec)->vma + (sec)->size) > obj_datasec (abfd)->vma)
+-   {
+-    	fprintf(stderr, "aout_section_merge_with_text_p: section end %x after start of data %x\n",
+-    		(unsigned)((sec)->vma + (sec)->size),
+-    		(unsigned)obj_datasec (abfd)->vma);
+-		return 0;
+-   }
+-   if (((abfd)->flags & D_PAGED) == 0)
+-   {
+-    	fprintf(stderr, "aout_section_merge_with_text_p: section %s not paged\n", sec->name);
+-    	return 0;
+-   }
+-   fprintf(stderr, "aout_section_merge_with_text_p: %s %x-%x can be merged %x %x\n",
+-   	  sec->name, (unsigned)(sec)->vma, (unsigned)(sec)->size,
+-   	  (unsigned)(obj_textsec (abfd)->vma + obj_textsec (abfd)->size),
+-   	  (unsigned)obj_datasec (abfd)->vma);
+-   return 1;
+-}
+diff -ru binutils-2.29.1/bfd/libaout.h binutils-2.29.1.orig/bfd/libaout.h
+--- binutils-2.29.1/bfd/libaout.h	2017-10-11 01:20:35.577965144 +0200
++++ binutils-2.29.1.orig/bfd/libaout.h	2017-10-06 18:34:33.380715916 +0200
+@@ -678,6 +678,14 @@
+    3. The image is demand-pageable (otherwise, a_text in the header
+       will not reflect the gap between .text and .data).  */
+ 
+-int aout_section_merge_with_text_p(bfd *abfd, sec_ptr sec);
++#define aout_section_merge_with_text_p(abfd, sec)			\
++  (((sec)->flags & (SEC_HAS_CONTENTS | SEC_READONLY)) ==		\
++      (SEC_HAS_CONTENTS | SEC_READONLY)					\
++   && obj_textsec (abfd) != NULL					\
++   && obj_datasec (abfd) != NULL					\
++   && (sec)->vma >= (obj_textsec (abfd)->vma +				\
++		     obj_textsec (abfd)->size)				\
++   && ((sec)->vma + (sec)->size) <= obj_datasec (abfd)->vma		\
++   && ((abfd)->flags & D_PAGED) != 0)
+ 
+ #endif /* ! defined (LIBAOUT_H) */

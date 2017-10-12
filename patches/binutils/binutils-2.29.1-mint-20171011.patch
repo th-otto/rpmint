@@ -92,7 +92,19 @@ diff -rupN binutils-2.29.1.orig/bfd/aoutx.h binutils-2.29.1/bfd/aoutx.h
 diff -rupN binutils-2.29.1.orig/bfd/bfd-in.h binutils-2.29.1/bfd/bfd-in.h
 --- binutils-2.29.1.orig/bfd/bfd-in.h	2017-10-06 17:48:51.088545245 +0200
 +++ binutils-2.29.1/bfd/bfd-in.h	2017-10-06 17:49:09.916544835 +0200
-@@ -760,6 +760,15 @@ extern bfd_boolean bfd_m68klinux_size_dy
+@@ -23,11 +23,6 @@
+ #ifndef __BFD_H_SEEN__
+ #define __BFD_H_SEEN__
+ 
+-/* PR 14072: Ensure that config.h is included first.  */
+-#if !defined PACKAGE && !defined PACKAGE_VERSION
+-#error config.h must be included before this header
+-#endif
+-
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -765,6 +760,15 @@ extern bfd_boolean bfd_m68klinux_size_dy
  extern bfd_boolean bfd_sparclinux_size_dynamic_sections
    (bfd *, struct bfd_link_info *);
  
@@ -2667,3 +2679,79 @@ diff -rupN binutils-2.29.1.orig/libiberty/safe-ctype.c binutils-2.29.1/libiberty
   #error "<safe-ctype.h> requires EOF == -1"
  #endif
  
+diff -rupN binutils-2.29.1.orig/bfd/aout-target.h binutils-2.29.1/bfd/aout-target.h
+--- binutils-2.29.1.orig/bfd/aout-target.h	2017-07-10 11:54:41.000000000 +0200
++++ binutils-2.29.1/bfd/aout-target.h	2017-10-11 20:14:37.140758957 +0200
+@@ -634,6 +634,10 @@ MY_close_and_cleanup (bfd *abfd)
+ #define AR_PAD_CHAR ' '
+ #endif
+ 
++#ifndef MY_match_priority
++#define MY_match_priority 0
++#endif
++
+ #ifndef MY_BFD_TARGET
+ const bfd_target MY (vec) =
+ {
+@@ -653,7 +657,7 @@ const bfd_target MY (vec) =
+   MY_symbol_leading_char,
+   AR_PAD_CHAR,			/* AR_pad_char.  */
+   15,				/* AR_max_namelen.  */
+-  0,				/* match priority.  */
++  MY_match_priority,				/* match priority.  */
+ #ifdef TARGET_IS_BIG_ENDIAN_P
+   bfd_getb64, bfd_getb_signed_64, bfd_putb64,
+      bfd_getb32, bfd_getb_signed_32, bfd_putb32,
+diff -rupN binutils-2.29.1.orig/bfd/sunos.c binutils-2.29.1/bfd/sunos.c
+--- binutils-2.29.1.orig/bfd/sunos.c	2017-07-10 11:54:41.000000000 +0200
++++ binutils-2.29.1/bfd/sunos.c	2017-10-11 20:14:37.144758957 +0200
+@@ -67,6 +67,8 @@ static long        sunos_get_dynamic_rel
+ static long        sunos_canonicalize_dynamic_reloc     (bfd *, arelent **, asymbol **);
+ 
+ /* Include the usual a.out support.  */
++#define MY_match_priority 1
++
+ #include "aoutf1.h"
+ 
+ /* The SunOS 4.1.4 /usr/include/locale.h defines valid as a macro.  */
+diff -rupN binutils-2.29.1.orig/config.rpath binutils-2.29.1/config.rpath
+--- binutils-2.29.1.orig/config.rpath	2017-07-10 11:54:41.000000000 +0200
++++ binutils-2.29.1/config.rpath	2017-10-11 20:14:37.144758957 +0200
+@@ -438,7 +438,7 @@ case "$host_os" in
+   bsdi4*)
+     ;;
+   cygwin* | mingw* | pw32*)
+-    shrext=.dll
++    shrext=.dll.a
+     ;;
+   darwin* | rhapsody*)
+     shrext=.dylib
+diff -rupN binutils-2.29.1.orig/ld/emulparams/elf_i386.sh binutils-2.29.1/ld/emulparams/elf_i386.sh
+--- binutils-2.29.1.orig/ld/emulparams/elf_i386.sh	2017-07-10 11:54:42.000000000 +0200
++++ binutils-2.29.1/ld/emulparams/elf_i386.sh	2017-10-11 20:14:37.148758957 +0200
+@@ -33,6 +33,10 @@ case "$target" in
+ 	LIBPATH_SUFFIX=32
+ 	LIBPATH_SUFFIX_SKIP=64
+ 	;;
++      *64*)
++	LIBPATH_SUFFIX=64
++	LIBPATH_SUFFIX_SKIP=32
++	;;
+     esac
+     ;;
+ esac
+diff -rupN binutils-2.29.1.orig/ld/ldfile.c binutils-2.29.1/ld/ldfile.c
+--- binutils-2.29.1.orig/ld/ldfile.c	2017-07-10 11:54:42.000000000 +0200
++++ binutils-2.29.1/ld/ldfile.c	2017-10-11 20:14:37.148758957 +0200
+@@ -340,7 +340,10 @@ ldfile_open_file_search (const char *arc
+     {
+       if (entry->flags.sysrooted && IS_ABSOLUTE_PATH (entry->filename))
+ 	{
+-	  char *name = concat (ld_sysroot, entry->filename,
++	  char *name;
++	  if (strncmp(ld_sysroot, entry->filename, strlen(ld_sysroot)) == 0 && ldfile_try_open_bfd (entry->filename, entry))
++	return TRUE;
++	  name = concat (ld_sysroot, entry->filename,
+ 			       (const char *) NULL);
+ 	  if (ldfile_try_open_bfd (name, entry))
+ 	    {

@@ -1,13 +1,15 @@
 // ==== Definitions ==========================================================
 
-        .globl  _memset_fast
-        .globl  _bzero_fast
+#include "symbols.h"
+
+        .globl  SYM(memset_fast)
+        .globl  SYM(bzero_fast)
 
         .text
 //
 // void bzero(void *address, unsigned long size)
 //
-_bzero_fast:
+SYM(bzero_fast):
         move.l   d7,-(sp)
         moveq    #0,d7
         bra      memset
@@ -15,7 +17,7 @@ _bzero_fast:
 // void *memset(void *address, short c, unsigned long size)
 // fills with byte c, returns the given address.
 
-_memset_fast:
+SYM(memset_fast):
         move.l   d7,-(sp)
         move.b   d0,d7
 #ifdef __mcoldfire__

@@ -2,8 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <osbind.h>
+#include <unistd.h>
 
-
+/*
+ * this program is intended to check that functions
+ * declared with __attribute__((__fastcall__))
+ * work as intended, when compiled in standard mode
+ * (without -mfastcall option), hence the test.
+ * It must be compiled though with a gcc that supports
+ * this option.
+ */
 #ifdef __FASTCALL__
 # error "must not be compiled with -mfastcall"
 #endif
@@ -28,8 +36,8 @@ int main(void)
 	for (size = 1; size < 30000000L; size += 800000L + random() % 200000L, pattern++)
 	{
 		printf("testing memset %ld\n", size);
-		buf1 = Malloc(size);
-		buf2 = Malloc(size);
+		buf1 = (void *)Malloc(size);
+		buf2 = (void *)Malloc(size);
 		if (buf1 == NULL || buf2 == NULL)
 		{
 			fprintf(stderr, "not enough memory; stopping with err = %d\n", err);
@@ -52,8 +60,8 @@ int main(void)
 	for (size = 20; size < 30000000L; size += 800000L + random() % 200000L, pattern++)
 	{
 		printf("testing memcpy %ld\n", size);
-		buf1 = Malloc(size);
-		buf2 = Malloc(size);
+		buf1 = (void *)Malloc(size);
+		buf2 = (void *)Malloc(size);
 		if (buf1 == NULL || buf2 == NULL)
 		{
 			fprintf(stderr, "not enough memory; stopping with err = %d\n", err);

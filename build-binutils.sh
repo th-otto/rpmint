@@ -4,8 +4,8 @@ me="$0"
 
 PACKAGENAME=binutils
 VERSION=-2.29.1
-VERSIONPATCH=20171006
-REVISION="GNU Binutils for MiNT $VERSIONPATCH"
+VERSIONPATCH=-20171011
+REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
 PREFIX=/usr
@@ -17,27 +17,31 @@ esac
 
 ARCHIVES_DIR=$HOME/packages
 BUILD_DIR="$here"
-MINT_BUILD_DIR="$BUILD_DIR/mint7-build"
+MINT_BUILD_DIR="$BUILD_DIR/binutils-build"
 PKG_DIR="$here/binary7-package"
 DIST_DIR="$here/pkgs"
 
 srcdir="${PACKAGENAME}${VERSION}"
 
+#
+# The branch patch was created by
+# BINUTILS_SUPPORT_DIRS="bfd gas include libiberty opcodes ld elfcpp gold gprof intl setup.com makefile.vms cpu zlib"
+# git diff binutils-2_29_1.1 binutils-2_29-branch -- $BINUTILS_SUPPORT_DIRS
+# BINUTILS_SUPPORT_DIRS is from src-release.sh
+#
+# The mint patch can be recreated by running
+# git diff binutils-2_29-branch binutils-2_29-mint
+# in my fork (https://github.com/th-otto/binutils/tree/binutils-2_29-mint)
+#
 PATCHES="\
         patches/binutils/${PACKAGENAME}${VERSION}-0001-binutils-2.29.1-branch.patch \
-        patches/binutils/${PACKAGENAME}${VERSION}-0005-x86-64-biarch.patch \
-        patches/binutils/${PACKAGENAME}${VERSION}-0007-ld-dtags.patch \
-        patches/binutils/${PACKAGENAME}${VERSION}-0008-ld-relro.patch \
-        patches/binutils/${PACKAGENAME}${VERSION}-0011-use-hashtype-both-by-default.patch \
-        patches/binutils/${PACKAGENAME}${VERSION}-0022-binutils-bfd_h.patch \
-        patches/binutils/${PACKAGENAME}${VERSION}-0201-aout.patch \
-        patches/binutils/${PACKAGENAME}${VERSION}-0202-ldfile.patch \
-        patches/binutils/${PACKAGENAME}${VERSION}-0203-config-rpath.patch \
-        patches/binutils/${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
 "
+ELFPATCHES="patches/binutils/${PACKAGENAME}${VERSION}-mintelf.patch"
+ALLPATCHES="$PATCHES $ELFPATCHES"
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
-		PATCHES="$PATCHES patches/binutils/${PACKAGENAME}${VERSION}-mintelf.patch"
+		PATCHES="$PATCHES $ELFPATCHES"
 		;;
 esac
 
@@ -109,7 +113,10 @@ JOBS=-j$JOBS
 # On some distros it is patched to have the
 # vendor name included.
 #
-BUILD=`/usr/share/automake/config.guess 2>/dev/null`
+for a in "" -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
+	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null`
+	test "$BUILD" != "" && break
+done
 test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 
 bfd_targets="--enable-targets=$BUILD"
@@ -162,11 +169,14 @@ CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 	LDFLAGS="$LDFLAGS_FOR_BUILD" \
 	$bfd_targets \
 	--with-pkgversion="$REVISION" \
-    --with-stage1-ldflags=-s \
-    --with-boot-ldflags="$LDFLAGS_FOR_BUILD" \
+	--with-stage1-ldflags=-s \
+	--with-boot-ldflags="$LDFLAGS_FOR_BUILD" \
 	--with-gcc --with-gnu-as --with-gnu-ld \
-    --disable-werror \
+	--disable-werror \
 	--disable-threads \
+	--enable-new-dtags \
+	--enable-relro \
+	--enable-default-hash-style=both \
 	$enable_lto \
 	$enable_plugins \
 	--disable-nls \
@@ -224,7 +234,7 @@ done
 
 cd "${THISPKG_DIR}" || exit 1
 
-TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}-${VERSIONPATCH}
+TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
 
 tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
@@ -235,5 +245,5 @@ tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#
 cd "${BUILD_DIR}"
 #rm -rf "${THISPKG_DIR}"
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.tar.xz ${PATCHES}
-cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}-${VERSIONPATCH}.sh
+tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.tar.xz ${ALLPATCHES}
+cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh

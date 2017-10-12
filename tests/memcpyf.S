@@ -1,8 +1,10 @@
 #define BREAKEVEN 12    // dividing line between simple & complicated
                         // versions of memcpy(): good for 68000 & 68030
 
-        .globl  _memmove_fast
-        .globl  _memcpy_fast
+#include "symbols.h"
+
+        .globl  SYM(memmove_fast)
+        .globl  SYM(memcpy_fast)
 
         .text
 
@@ -18,7 +20,7 @@
 
 
 
-_memcpy_fast:
+SYM(memcpy_fast):
 #ifndef __mcoldfire__
         move.l   a1,d1
         cmpi.l   #BREAKEVEN,d0   // is it worth doing the complicated version?
@@ -31,7 +33,7 @@ sdecr:
         move.l   d1,a0           // return destination pointer
         rts
 #endif
-_memmove_fast:
+SYM(memmove_fast):
 memmove:
         move.l   d2,-(sp)
         move.l   a0,-(sp)
