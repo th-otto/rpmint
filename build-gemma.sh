@@ -3,7 +3,7 @@
 me="$0"
 
 PACKAGENAME=gemma
-VERSION=-git-20171006
+VERSION=-git
 VERSIONPATCH=20171006
 
 TARGET=${1:-m68k-atari-mint}
