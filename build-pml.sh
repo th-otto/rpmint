@@ -120,15 +120,17 @@ THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
 
 cd "$MINT_BUILD_DIR"
-make DESTDIR="${THISPKG_DIR}" install || exit 1
+make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 	
 cd "${THISPKG_DIR}${sysroot}" || exit 1
 find . -name "*.a" -exec "${strip}" -S -x '{}' \;
 find . -name "*.a" -exec "${ranlib}" '{}' \;
 
+cd "${THISPKG_DIR}" || exit 1
+
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}-${VERSIONPATCH}
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz .
+tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz usr
 
 cd "${BUILD_DIR}"
 #rm -rf "${THISPKG_DIR}"

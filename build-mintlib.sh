@@ -110,15 +110,15 @@ THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 #
 # ugly hack until makefiles have been ajusted
 #
-sed -i "\@^# This is where include@i prefix := ${THISPKG_DIR}/usr" configvars
+sed -i "\@^# This is where include@i prefix := ${THISPKG_DIR}${sysroot}/usr" configvars
 make $JOBS || exit 1
 
 rm -rf "${THISPKG_DIR}"
 
 cd "$MINT_BUILD_DIR"
-make install || exit 1
+make prefix=${THISPKG_DIR}${sysroot}/usr install || exit 1
 
-cd "${THISPKG_DIR}/usr" || exit 1
+cd "${THISPKG_DIR}${sysroot}/usr" || exit 1
 gzip -9 share/man/man*/*
 
 find . -name 00README | xargs rm -f
@@ -139,7 +139,7 @@ cd "${THISPKG_DIR}"
 
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}-${VERSIONPATCH}
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz .
+tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz usr
 
 cd "${BUILD_DIR}"
 #rm -rf "${THISPKG_DIR}"

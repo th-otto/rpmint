@@ -9,6 +9,7 @@ VERSIONPATCH=20171006
 TARGET=${1:-m68k-atari-mint}
 export CROSS_TOOL=${TARGET}
 prefix=/usr
+sysroot=${prefix}/${TARGET}/sys-root
 
 ARCHIVES_DIR=$HOME/packages
 PKG_DIR=`pwd`/binary7-package
@@ -119,32 +120,32 @@ make $JOBS || exit 1
 
 rm -rf "${THISPKG_DIR}"
 
-make DESTDIR="${THISPKG_DIR}" install || exit 1
+make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 make distclean
 
 CFLAGS="-m68020-60 $COMMON_CFLAGS" ./configure --prefix=${prefix} --libdir='${exec_prefix}/lib/m68020-60'
 make $JOBS || exit 1
-make DESTDIR="${THISPKG_DIR}" install-libs || exit 1
+make DESTDIR="${THISPKG_DIR}${sysroot}" install-libs || exit 1
 make distclean
 
 CFLAGS="-mcpu=5475 $COMMON_CFLAGS" ./configure --prefix=${prefix} --libdir='${exec_prefix}/lib/m5475'
 make $JOBS || exit 1
-make DESTDIR="${THISPKG_DIR}" install-libs || exit 1
+make DESTDIR="${THISPKG_DIR}${sysroot}" install-libs || exit 1
 #make distclean
 
-cd "${THISPKG_DIR}/usr" || exit 1
+cd "${THISPKG_DIR}${sysroot}/usr" || exit 1
 gzip -9 share/man/man*/*
 
 find . -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \;
 find . -name "*.a" ! -type l -exec "${ranlib}" '{}' \;
 
-rm -rf ${THISPKG_DIR}/${prefix}/lib/*/pkgconfig
+rm -rf ${THISPKG_DIR}${sysroot}${prefix}/lib/*/pkgconfig
 
 cd "${THISPKG_DIR}"
 
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}-${VERSIONPATCH}
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz .
+tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz usr
 
 cd "${BUILD_DIR}"
 #rm -rf "${THISPKG_DIR}"

@@ -2,9 +2,6 @@
 
 me="$0"
 
-set -u
-set -e
-
 PACKAGENAME=ncurses
 VERSION=-6.0
 #VERSIONPATCH=-20171006
@@ -599,7 +596,9 @@ find . -name "*.a" ! -type l -exec "${ranlib}" '{}' \;
 
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz .
+cd "${THISPKG_DIR}" || exit 1
+
+tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz usr
 
 cd "${BUILD_DIR}"
 #rm -rf "${THISPKG_DIR}"

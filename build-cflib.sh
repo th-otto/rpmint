@@ -106,7 +106,7 @@ esac
 # ugly hack until makefiles have been ajusted
 #
 cd "$srcdir"
-sed -i "\@^DEFINITIONS =@i PREFIX := ${THISPKG_DIR}/usr" CONFIGVARS
+sed -i "\@^DEFINITIONS =@i PREFIX := ${THISPKG_DIR}${sysroot}/usr" CONFIGVARS
 
 cd "$MINT_BUILD_DIR"
 
@@ -117,17 +117,17 @@ make $JOBS || exit 1
 rm -rf "${THISPKG_DIR}"
 
 cd "$MINT_BUILD_DIR"
-mkdir -p ${THISPKG_DIR}/usr/include
-mkdir -p ${THISPKG_DIR}/usr/lib
-mkdir -p ${THISPKG_DIR}/usr/lib/mshort
-mkdir -p ${THISPKG_DIR}/usr/lib/m68020-60
-mkdir -p ${THISPKG_DIR}/usr/lib/m68020-60/mshort
-mkdir -p ${THISPKG_DIR}/usr/lib/m5475
-mkdir -p ${THISPKG_DIR}/usr/lib/m5475/mshort
-mkdir -p ${THISPKG_DIR}/usr/stguide
-make PREFIX=${THISPKG_DIR}/usr install || exit 1
+mkdir -p ${THISPKG_DIR}${sysroot}/usr/include
+mkdir -p ${THISPKG_DIR}${sysroot}/usr/lib
+mkdir -p ${THISPKG_DIR}${sysroot}/usr/lib/mshort
+mkdir -p ${THISPKG_DIR}${sysroot}/usr/lib/m68020-60
+mkdir -p ${THISPKG_DIR}${sysroot}/usr/lib/m68020-60/mshort
+mkdir -p ${THISPKG_DIR}${sysroot}/usr/lib/m5475
+mkdir -p ${THISPKG_DIR}${sysroot}/usr/lib/m5475/mshort
+mkdir -p ${THISPKG_DIR}${sysroot}/usr/stguide
+make PREFIX=${THISPKG_DIR}${sysroot}/usr install || exit 1
 
-cd "${THISPKG_DIR}/usr" || exit 1
+cd "${THISPKG_DIR}${sysroot}/usr" || exit 1
 
 find . -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \;
 find . -name "*.a" ! -type l -exec "${ranlib}" '{}' \;
@@ -136,7 +136,7 @@ cd "${THISPKG_DIR}"
 
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}-${VERSIONPATCH}
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz .
+tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz usr
 
 cd "${BUILD_DIR}"
 #rm -rf "${THISPKG_DIR}"
