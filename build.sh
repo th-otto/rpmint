@@ -184,7 +184,7 @@ if test -x "$try"; then
 	strip="${PKG_DIR}/${PREFIX}/bin/${TARGET}-strip"
 	as="${PKG_DIR}/${PREFIX}/bin/${TARGET}-as"
 else
-	ranlib=`which ${ranlib} 2>/dev/null`
+	ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
 	strip=`which "${TARGET}-strip"`
 	as=`which "${TARGET}-as" 2>/dev/null`
 fi

@@ -94,7 +94,7 @@ case "${TARGET}" in
 		;;
 esac
 
-ranlib=`which ${ranlib} 2>/dev/null`
+ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
 strip=`which "${TARGET}-strip"`
 gcc=`which "${TARGET}-gcc"`
 
