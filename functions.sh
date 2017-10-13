@@ -31,6 +31,8 @@ sysroot=${prefix}/${TARGET}/sys-root
 TARGET_PREFIX=/usr
 TARGET_LIBDIR="${TARGET_PREFIX}/lib"
 TARGET_BINDIR="${TARGET_PREFIX}/bin"
+TARGET_MANDIR="${TARGET_PREFIX}/share/man"
+TARGET_INFODIR="${TARGET_PREFIX}/share/info"
 
 #
 # Where to look for the original source archives
@@ -96,6 +98,7 @@ fi
 JOBS=-j$JOBS
 
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
+BINTARNAME=${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 
 #
@@ -201,30 +204,70 @@ move_prefix()
 }
 
 
-move_arch_bins()
+gzip_docs()
 {
-	archdir=$1
-	if test -d "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/bin"; then
-		cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/bin"
-		mkdir -p ${archdir}
-		for i in *; do
-			test -h "$i" && continue
-			test -d "$i" && continue
-			"${strip}" "$i"
-			mv "$i" "${archdir}/$i" || exit 1
+	cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" || exit 1
+	rm -f share/info/dir
+	if test -d share/man; then
+		for f in share/man/*/*; do
+			case $f in
+			*.gz) ;;
+			*)
+				if test -h $f; then
+					t=$(readlink $f)
+					case $t in
+					*.gz) ;;
+					*)
+						rm -f $f $f.gz
+						$LN_S $t.gz $f.gz
+						;;
+					esac
+				else
+					rm -f ${f}.gz; gzip -9 $f
+				fi
+				;;
+			esac
 		done
 	fi
-	cd "$MINT_BUILD_DIR"
+	if test -d share/info; then
+		for f in share/info/*; do
+			case $f in
+			*.gz) ;;
+			*) rm -f ${f}.gz; gzip -9 $f ;;
+			esac
+		done
+	fi
 }
 
-move_v4e_bins()
-{
-	move_arch_bins m5475
-}
 
-move_020_bins()
+make_bin_archive()
 {
-	move_arch_bins m68020-60
+	archsuffix=${1-000}
+
+	gzip_docs
+
+	cd "${THISPKG_DIR}${sysroot}" || exit 1
+	file=""
+	for i in ${BINFILES}; do
+		i=${i#/}
+		if test -d "$i" -o -f "$i" -o -h "$i"; then
+			files="$files $i"
+			case $i in 
+			*/bin/* | */sbin/* | bin/* | sbin/*)
+				if test ! -d "$i" -a ! -h "$i"; then
+					"${strip}" "$i"
+				fi
+				;;
+			esac
+		else
+			echo "$i does not exist for packaging" >&2
+			exit 1
+		fi
+	done
+
+	tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${BINTARNAME}-${archsuffix}.tar.xz $files
+
+	cd "$MINT_BUILD_DIR" || exit 1
 }
 
 
@@ -296,25 +339,9 @@ copy_pkg_configs()
 
 make_archives()
 {
-	cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" || exit 1
-	rm -f share/info/dir
-	if test -d share/man; then
-		for f in share/man/*/*; do
-			case $f in
-			*.gz) ;;
-			*) rm -f ${f}.gz; gzip -9 $f ;;
-			esac
-		done
-	fi
-	if test -d share/info; then
-		for f in share/info/*; do
-			case $f in
-			*.gz) ;;
-			*) rm -f ${f}.gz; gzip -9 $f ;;
-			esac
-		done
-	fi
+	gzip_docs
 
+	cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" || exit 1
 	find . -name "*.la" -exec rm '{}' \;
 	test "$LTO_CFLAGS" != "" || find . -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \;
 	find . -name "*.a" ! -type l -exec "${ranlib}" '{}' \;
@@ -339,10 +366,10 @@ make_archives()
 	tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz *
 	
 	cd "${BUILD_DIR}"
-#rm -rf "${THISPKG_DIR}"
+#	rm -rf "${THISPKG_DIR}"
 	rm -rf "${srcdir}"
 
-	test -z "${PATCHES}" || tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.tar.xz ${PATCHES} ${PATCHARCHIVE}
+	test -z "${PATCHES}" || tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES} ${PATCHARCHIVE}
 	cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh
 	cp -p "${scriptdir}/functions.sh" "${DIST_DIR}"
 }

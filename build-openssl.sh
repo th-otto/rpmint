@@ -15,33 +15,46 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
+SSLETCDIR=/etc/ssl
+
+BINFILES="
+${SSLETCDIR}
+${TARGET_BINDIR}/c_rehash
+${TARGET_BINDIR}/openssl
+${TARGET_MANDIR#/}/man1/*
+${TARGET_MANDIR#/}/man3/*
+${TARGET_MANDIR#/}/man5/*
+${TARGET_MANDIR#/}/man7/*
+"
+
 
 #
 # CFLAGS have been patched in the Configure script
 #
 COMMON_CFLAGS="-O3 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--prefix=${prefix} --cross-compile-prefix=${TARGET}- --openssldir=/etc zlib"
+CONFIGURE_FLAGS="--prefix=${prefix} --cross-compile-prefix=${TARGET}- --openssldir=${SSLETCDIR} zlib"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
 "$srcdir/Configure" ${CONFIGURE_FLAGS} mint020
 make $JOBS || exit 1
-make INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install_sw || exit 1
+make MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
 make distclean
-move_020_bins
+make_bin_archive 020
 
 "$srcdir/Configure" ${CONFIGURE_FLAGS} mintv4e
 make $JOBS || exit 1
-make INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install_sw || exit 1
+make MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
 make distclean
-move_v4e_bins
+make_bin_archive v4e
 
 "$srcdir/Configure" ${CONFIGURE_FLAGS} mint
 make $JOBS || exit 1
-make INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install_sw || exit 1
+make MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
 #make distclean
+make_bin_archive 000
 
 move_prefix
 configured_prefix="${prefix}"

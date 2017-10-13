@@ -9,12 +9,37 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/bzip2/bzip2-1.0.6-patch-0001-configure.patch \
-patches/bzip2/bzip2-1.0.6-patch-0002-cygming.patch \
-patches/bzip2/bzip2-1.0.6-patch-0003-debian-bzgrep.patch \
-patches/bzip2/bzip2-1.0.6-patch-0004-unsafe-strcpy.patch \
-patches/bzip2/bzip2-1.0.6-patch-0005-progress.patch \
-patches/bzip2/bzip2-1.0.6-patch-0006-mint.patch \
+PATCHES="
+patches/bzip2/bzip2-1.0.6-patch-0001-configure.patch
+patches/bzip2/bzip2-1.0.6-patch-0002-cygming.patch
+patches/bzip2/bzip2-1.0.6-patch-0003-debian-bzgrep.patch
+patches/bzip2/bzip2-1.0.6-patch-0004-unsafe-strcpy.patch
+patches/bzip2/bzip2-1.0.6-patch-0005-progress.patch
+patches/bzip2/bzip2-1.0.6-patch-0006-mint.patch
+"
+
+BINFILES="
+${TARGET_BINDIR}/bunzip2
+${TARGET_BINDIR}/bzcat
+${TARGET_BINDIR}/bzcmp
+${TARGET_BINDIR}/bzdiff
+${TARGET_BINDIR}/bzegrep
+${TARGET_BINDIR}/bzfgrep
+${TARGET_BINDIR}/bzgrep
+${TARGET_BINDIR}/bzip2
+${TARGET_BINDIR}/bzip2recover
+${TARGET_BINDIR}/bzless
+${TARGET_BINDIR}/bzmore
+${TARGET_MANDIR}/man1/bunzip2.1.gz
+${TARGET_MANDIR}/man1/bzcat.1.gz
+${TARGET_MANDIR}/man1/bzcmp.1.gz
+${TARGET_MANDIR}/man1/bzdiff.1.gz
+${TARGET_MANDIR}/man1/bzegrep.1.gz
+${TARGET_MANDIR}/man1/bzfgrep.1.gz
+${TARGET_MANDIR}/man1/bzgrep.1.gz
+${TARGET_MANDIR}/man1/bzip2.1.gz
+${TARGET_MANDIR}/man1/bzless.1.gz
+${TARGET_MANDIR}/man1/bzmore.1.gz
 "
 
 unpack_archive
@@ -40,18 +65,19 @@ CFLAGS="-m68020-60 $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libd
 make $JOBS || exit 1
 make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 make distclean
-move_020_bins
+make_bin_archive 020
 
 CFLAGS="-mcpu=5475 $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib/m5475'
 make $JOBS || exit 1
 make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 make distclean
-move_v4e_bins
+make_bin_archive v4e
 
 CFLAGS="$COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS}
 make $JOBS || exit 1
 make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 #make distclean
+make_bin_archive 000
 
 move_prefix
 configured_prefix="${prefix}"
