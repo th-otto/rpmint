@@ -1,0 +1,384 @@
+diff -rupN bzip2-1.0.6.orig/Makefile.am bzip2-1.0.6/Makefile.am
+--- bzip2-1.0.6.orig/Makefile.am	1970-01-01 01:00:00.000000000 +0100
++++ bzip2-1.0.6/Makefile.am	2014-02-21 17:58:11.932000185 +0100
+@@ -0,0 +1,185 @@
++# ------------------------------------------------------------------
++# This file is part of bzip2/libbzip2, a program and library for
++# lossless, block-sorting data compression.
++#
++# bzip2/libbzip2 version 1.0.6 of 6 September 2010
++# Copyright (C) 1996-2010 Julian Seward <jseward@bzip.org>
++#
++# Please read the WARNING, DISCLAIMER and PATENTS sections in the 
++# README file.
++#
++# This program is released under the terms of the license contained
++# in the file LICENSE.
++# ------------------------------------------------------------------
++
++AUTOMAKE_OPTIONS = foreign
++ACLOCAL_AMFLAGS = -I m4
++
++man1dir=$(mandir)/man1
++docdir=$(datadir)/doc/bzip2-$(VERSION)
++
++AM_CPPFLAGS = -D_FILE_OFFSET_BITS=64 -I. -D_REENTRANT
++
++doc_DATA = CHANGES LICENSE README manual.html \
++	README.COMPILATION.PROBLEMS README.XML.STUFF
++
++lib_LTLIBRARIES = libbz2.la
++bin_PROGRAMS = bzip2 bzip2recover
++bin_SCRIPTS = bzgrep bzmore bzdiff
++
++man1_MANS = bzdiff.1 bzgrep.1 bzip2.1 bzmore.1
++
++pkgconfigdir = $(libdir)/pkgconfig
++pkgconfig_DATA = bzip2.pc
++
++CLEANFILES =
++DISTCLEANFILES =
++EXTRA_DIST =
++
++EXTRA_DIST += $(man1_MANS)
++EXTRA_DIST += $(bin_SCRIPTS)
++EXTRA_DIST += $(doc_DATA)
++EXTRA_DIST += $(srcdir)/bzip2.pc.in
++
++info_INFO = bzip2.info
++
++libbz2_la_SOURCES = \
++	blocksort.c \
++	bzlib.c \
++	compress.c \
++	crctable.c \
++	decompress.c \
++	huffman.c \
++	randtable.c \
++	bzlib.h \
++	bzlib_private.h
++libbz2_la_LDFLAGS = -version-info 1:6:0 -bindir $(bindir)
++if TARGET_WIN32
++libbz2_la_LDFLAGS += -no-undefined
++endif
++
++include_HEADERS = bzlib.h
++
++bzip2_SOURCES = bzip2.c
++bzip2_DEPENDENCIES = libbz2.la
++bzip2_LDADD = libbz2.la
++
++noinst_PROGRAMS = bzip2-stat
++
++bzip2_stat_SOURCES = bzip2.c
++bzip2_stat_DEPENDENCIES = libbz2.la
++bzip2_stat_LDADD = libbz2.la
++bzip2_stat_LDFLAGS = -static
++
++bzip2recover_SOURCES = bzip2recover.c
++
++bzip2.info: $(srcdir)/manual.texi
++	$(MAKEINFO) -o $@ $(srcdir)/manual.texi
++EXTRA_DIST += manual.texi bzip2.txt
++
++all: catwords0
++
++.PHONY: catwords0
++
++catwords0:
++	@cat $(srcdir)/words0
++
++
++check: test
++test: test-dyn test-stat
++	@cat $(srcdir)/words3
++
++test-dyn: bzip2$(EXEEXT)
++	@cat $(srcdir)/words1
++	./bzip2 -1  < $(srcdir)/sample1.ref > sample1.rb2
++	./bzip2 -2  < $(srcdir)/sample2.ref > sample2.rb2
++	./bzip2 -3  < $(srcdir)/sample3.ref > sample3.rb2
++	./bzip2 -d  < $(srcdir)/sample1.bz2 > sample1.tst
++	./bzip2 -d  < $(srcdir)/sample2.bz2 > sample2.tst
++	./bzip2 -ds < $(srcdir)/sample3.bz2 > sample3.tst
++	cmp $(srcdir)/sample1.bz2 sample1.rb2 
++	cmp $(srcdir)/sample2.bz2 sample2.rb2
++	cmp $(srcdir)/sample3.bz2 sample3.rb2
++	cmp sample1.tst $(srcdir)/sample1.ref
++	cmp sample2.tst $(srcdir)/sample2.ref
++	cmp sample3.tst $(srcdir)/sample3.ref
++
++test-stat: bzip2-stat$(EXEEXT)
++	@cat $(srcdir)/words1
++	./bzip2-stat -1  < $(srcdir)/sample1.ref > sample1.rb2
++	./bzip2-stat -2  < $(srcdir)/sample2.ref > sample2.rb2
++	./bzip2-stat -3  < $(srcdir)/sample3.ref > sample3.rb2
++	./bzip2-stat -d  < $(srcdir)/sample1.bz2 > sample1.tst
++	./bzip2-stat -d  < $(srcdir)/sample2.bz2 > sample2.tst
++	./bzip2-stat -ds < $(srcdir)/sample3.bz2 > sample3.tst
++	cmp $(srcdir)/sample1.bz2 sample1.rb2 
++	cmp $(srcdir)/sample2.bz2 sample2.rb2
++	cmp $(srcdir)/sample3.bz2 sample3.rb2
++	cmp sample1.tst $(srcdir)/sample1.ref
++	cmp sample2.tst $(srcdir)/sample2.ref
++	cmp sample3.tst $(srcdir)/sample3.ref
++
++EXTRA_DIST += sample1.ref sample2.ref sample3.ref
++EXTRA_DIST += sample1.bz2 sample2.bz2 sample3.bz2
++EXTRA_DIST += words0 words1 words2 words3
++
++CLEANFILES += \
++	sample1.rb2 sample2.rb2 sample3.rb2 \
++	sample1.tst sample2.tst sample3.tst
++
++install-exec-hook:
++	(cd $(DESTDIR)$(bindir); \
++	 $(RM) bunzip2$(EXEEXT) bzcat$(EXEEXT); \
++	 $(LN_S) bzip2$(EXEEXT) bunzip2$(EXEEXT); \
++	 $(LN_S) bzip2$(EXEEXT) bzcat$(EXEEXT); \
++	 $(RM) bzegrep bzfgrep bzless bzcmp; \
++	 $(LN_S) bzgrep bzegrep; \
++	 $(LN_S) bzgrep bzfgrep; \
++	 $(LN_S) bzmore bzless; \
++	 $(LN_S) bzdiff bzcmp; \
++	)
++
++install-data-hook:
++	(cd $(DESTDIR)$(man1dir); \
++	 echo ".so man1/bzgrep.1" > bzegrep.1; \
++	 echo ".so man1/bzgrep.1" > bzfgrep.1; \
++	 echo ".so man1/bzmore.1" > bzless.1; \
++	 echo ".so man1/bzdiff.1" > bzcmp.1; \
++	)
++
++uninstall-hook:
++	(cd $(DESTDIR)$(bindir); \
++	 $(RM) bunzip2$(EXEEXT) bzcat$(EXEEXT) bzegrep bzfgrep bzless bzcmp; \
++	)
++	(cd $(DESTDIR)$(man1dir); \
++	 $(RM) bzegrep.1 bzfgrep.1 bzless.1 bzcmp.1; \
++	)
++
++MANUAL_SRCS= \
++	$(srcdir)/bz-common.xsl \
++	$(srcdir)/bz-fo.xsl \
++	$(srcdir)/bz-html.xsl \
++	$(srcdir)/bzip.css \
++	$(srcdir)/entities.xml \
++	$(srcdir)/manual.xml \
++	$(srcdir)/xmlproc.sh \
++	$(srcdir)/format.pl
++
++EXTRA_DIST += $(MANUAL_SRCS)
++
++manual: manual.html manual.ps manual.pdf
++
++manual.ps: $(MANUAL_SRCS)
++	srcdir=$(srcdir) $(srcdir)/xmlproc.sh -ps $(srcdir)/manual.xml
++
++manual.pdf: $(MANUAL_SRCS)
++	srcdir=$(srcdir) $(srcdir)/xmlproc.sh -pdf $(srcdir)/manual.xml
++
++manual.html: $(MANUAL_SRCS)
++	srcdir=$(srcdir) $(srcdir)/xmlproc.sh -html $(srcdir)/manual.xml
++
++DISTCLEANFILES += manual.ps manual.html manual.pdf
++
++EXTRA_DIST += unzcrash.c mk251.c spewG.c
++
++EXTRA_DIST += dlltest.c dlltest.dsp libbz2.def libbz2.dsp
+diff -rupN bzip2-1.0.6.orig/bzip2.pc.in bzip2-1.0.6/bzip2.pc.in
+--- bzip2-1.0.6.orig/bzip2.pc.in	1970-01-01 01:00:00.000000000 +0100
++++ bzip2-1.0.6/bzip2.pc.in	2014-02-21 10:58:19.751000244 +0100
+@@ -0,0 +1,11 @@
++prefix=@prefix@
++exec_prefix=@exec_prefix@
++bindir=@bindir@
++libdir=@libdir@
++includedir=@includedir@
++
++Name: bzip2
++Description: Lossless, block-sorting data compression
++Version: @VERSION@
++Libs: -L${libdir} -lbz2
++Cflags: -I${includedir}
+diff -rupN bzip2-1.0.6.orig/bzip2recover.c bzip2-1.0.6/bzip2recover.c
+--- bzip2-1.0.6.orig/bzip2recover.c	2010-09-11 01:18:40.000000000 +0200
++++ bzip2-1.0.6/bzip2recover.c	2014-02-21 17:56:07.545000219 +0100
+@@ -35,7 +35,7 @@
+    This change occurred in version 1.0.2; all prior versions have
+    the 512MB limitation.
+ */
+-#ifdef __GNUC__
++#if defined(__GNUC__) && !defined(__MINGW32__)
+    typedef  unsigned long long int  MaybeUInt64;
+ #  define MaybeUInt64_FMT "%Lu"
+ #else
+diff -rupN bzip2-1.0.6.orig/configure.ac bzip2-1.0.6/configure.ac
+--- bzip2-1.0.6.orig/configure.ac	1970-01-01 01:00:00.000000000 +0100
++++ bzip2-1.0.6/configure.ac	2014-02-21 10:59:42.720000228 +0100
+@@ -0,0 +1,77 @@
++#                                               -*- Autoconf -*-
++# Process this file with autoconf to produce a configure script.
++
++AC_PREREQ([2.57])
++AC_INIT([bzip2], [1.0.6], [Julian Seward <jseward@bzip.org>])
++AC_CONFIG_SRCDIR([bzip2.c])
++AC_CONFIG_MACRO_DIR([m4])
++AC_CONFIG_HEADERS(config.h)
++
++AC_CANONICAL_HOST
++
++AC_PROG_CC
++
++case $host in
++  *-*-mingw*|*-*-msys*|*-*-MINGW*|*-*-MSYS*)
++     test "$CC" = "" && CC=gcc
++     test "$CXX" = "" && CXX="g++"
++     for arg in -mms-bitfields -mno-cygwin -mwin32 -mthreads; do
++        case $CC in
++        *$arg*) ;;
++        *) if $CC $arg -E - < /dev/null >/dev/null 2>&1; then
++             echo adding $arg to $CC
++             CC="$CC $arg"
++             CXX="$CXX $arg"
++           fi
++        esac
++     done
++     LTCC="$CC"
++     TARGET_OS=win32
++     CPPFLAGS="$CPPFLAGS -D_WIN32"
++     case $host in
++     x86_64-*-*) ARCH=x64 ;;
++     *) ARCH=x86 ;;
++     esac
++     ;;
++  *) TARGET_OS=unix
++     ;;
++esac
++
++AM_CONDITIONAL(TARGET_WIN32, test "$TARGET_OS" = "win32")
++AM_CONDITIONAL(TARGET_UNIX, test "$TARGET_OS" = "unix")
++
++AM_INIT_AUTOMAKE
++AC_LIBTOOL_WIN32_DLL
++AC_PROG_LIBTOOL
++
++dnl AM_MAINTAINER_MODE
++
++m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
++
++for arg in -Wall -Winline; do
++case $CFLAGS in
++*$arg*) ;;
++*) if $CC $arg -E - < /dev/null >/dev/null 2>&1; then
++     echo adding $arg to '$CFLAGS'
++     CFLAGS="$CFLAGS $arg"
++   fi
++esac
++done
++
++AC_PROG_INSTALL
++
++dnl AM_DISABLE_STATIC
++AM_PROG_LIBTOOL
++
++AC_HAVE_HEADERS(string.h unistd.h)
++AC_STDC_HEADERS
++AC_EXEEXT
++AC_OBJEXT
++PKG_PROG_PKG_CONFIG
++
++AC_CONFIG_FILES([
++Makefile
++bzip2.pc
++])
++
++AC_OUTPUT
+diff -rupN bzip2-1.0.6.orig/words3 bzip2-1.0.6/words3
+--- bzip2-1.0.6.orig/words3	2007-01-03 03:00:55.000000000 +0100
++++ bzip2-1.0.6/words3	2014-02-21 17:56:07.545000219 +0100
+@@ -9,13 +9,13 @@ To install in /usr/local/bin, /usr/local
+ 
+ To install somewhere else, eg, /xxx/yyy/{bin,lib,man,include}, type 
+ 
+-   make install PREFIX=/xxx/yyy
++   make install DESTDIR=/xxx/yyy
+ 
+ If you are (justifiably) paranoid and want to see what 'make install'
+ is going to do, you can first do
+ 
+    make -n install                      or
+-   make -n install PREFIX=/xxx/yyy      respectively.
++   make -n install DESTDIR=/xxx/yyy      respectively.
+ 
+ The -n instructs make to show the commands it would execute, but
+ not actually execute them.
+diff -rupN bzip2-1.0.6.orig/xmlproc.sh bzip2-1.0.6/xmlproc.sh
+--- bzip2-1.0.6.orig/xmlproc.sh	2010-09-11 11:09:54.000000000 +0200
++++ bzip2-1.0.6/xmlproc.sh	2014-02-21 17:56:07.546000217 +0100
+@@ -15,6 +15,7 @@
+ #  in the file LICENSE.
+ # ----------------------------------------------------------------
+ 
++srcdir=${srcdir-.}
+ 
+ usage() {
+   echo '';
+@@ -41,11 +42,10 @@ if !(test -f $xmlfile); then
+ fi
+ # some other stuff we will use
+ OUT=output
+-xsl_fo=bz-fo.xsl
+-xsl_html=bz-html.xsl
++xsl_fo=${srcdir}/bz-fo.xsl
++xsl_html=${srcdir}/bz-html.xsl
+ 
+-basename=$xmlfile
+-basename=${basename//'.xml'/''}
++basename=$(basename $xmlfile .xml)
+ 
+ fofile="${basename}.fo"
+ htmlfile="${basename}.html"
+@@ -54,7 +54,7 @@ psfile="${basename}.ps"
+ xmlfmtfile="${basename}.fmt"
+ 
+ # first process the xmlfile with CDATA tags
+-./format.pl $xmlfile $xmlfmtfile
++${srcdir}/format.pl $xmlfile $xmlfmtfile
+ # so the shell knows where the catalogs live
+ export XML_CATALOG_FILES=/etc/xml/catalog
+ 
+@@ -73,20 +73,20 @@ case $action in
+   -v)
+    flags='--noout --xinclude --noblanks --postvalid'
+    dtd='--dtdvalid http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd'
+-   xmllint $flags $dtd $xmlfmtfile 2> $OUT 
++   xmllint --path ${srcdir} $flags $dtd $xmlfmtfile 2> $OUT 
+    egrep 'error' $OUT 
+    rm $OUT
+   ;;
+ 
+   -html)
+    echo "Creating $htmlfile ..."
+-   xsltproc --nonet --xinclude  -o $htmlfile $xsl_html $xmlfmtfile
++   xsltproc --nonet --xinclude --path ${srcdir} -o $htmlfile $xsl_html $xmlfmtfile
+    cleanup $xmlfmtfile
+   ;;
+ 
+   -pdf)
+    echo "Creating $pdffile ..."
+-   xsltproc --nonet --xinclude -o $fofile $xsl_fo $xmlfmtfile
++   xsltproc --nonet --xinclude --path ${srcdir} -o $fofile $xsl_fo $xmlfmtfile
+    pdfxmltex $fofile >$OUT </dev/null
+    pdfxmltex $fofile >$OUT </dev/null
+    pdfxmltex $fofile >$OUT </dev/null
+@@ -95,7 +95,7 @@ case $action in
+ 
+   -ps)
+    echo "Creating $psfile ..."
+-   xsltproc --nonet --xinclude -o $fofile $xsl_fo $xmlfmtfile
++   xsltproc --nonet --xinclude --path ${srcdir} -o $fofile $xsl_fo $xmlfmtfile
+    pdfxmltex $fofile >$OUT </dev/null
+    pdfxmltex $fofile >$OUT </dev/null
+    pdfxmltex $fofile >$OUT </dev/null
