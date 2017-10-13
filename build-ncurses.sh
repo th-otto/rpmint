@@ -13,17 +13,34 @@ VERSIONPATCH=
 MINT_BUILD_DIR="$srcdir/build-target"
 HOST_BUILD_DIR="$srcdir/build-host"
 
-PATCHES="patches/ncurses/ncurses-6.0.dif \
-patches/ncurses/ncurses-5.9-ibm327x.dif \
-patches/ncurses/ncurses-6.0-0003-overwrite.patch \
-patches/ncurses/ncurses-6.0-0005-environment.patch \
-patches/ncurses/ncurses-6.0-0010-source.patch \
-patches/ncurses/ncurses-6.0-0011-termcap.patch \
-patches/ncurses/ncurses-6.0-0020-configure.patch \
-patches/ncurses/ncurses-6.0-0021-mintelf-config.patch \
-patches/ncurses/ncurses-6.0-0022-dynamic.patch \
+PATCHES="patches/ncurses/ncurses-6.0.dif
+patches/ncurses/ncurses-5.9-ibm327x.dif
+patches/ncurses/ncurses-6.0-0003-overwrite.patch
+patches/ncurses/ncurses-6.0-0005-environment.patch
+patches/ncurses/ncurses-6.0-0010-source.patch
+patches/ncurses/ncurses-6.0-0011-termcap.patch
+patches/ncurses/ncurses-6.0-0020-configure.patch
+patches/ncurses/ncurses-6.0-0021-mintelf-config.patch
+patches/ncurses/ncurses-6.0-0022-dynamic.patch
 "
 PATCHARCHIVE=patches/ncurses/ncurses-6.0-patches.tar.bz2
+
+BINFILES="
+${TARGET_BINDIR#/}/clear
+${TARGET_BINDIR#/}/infocmp
+${TARGET_BINDIR#/}/reset
+${TARGET_BINDIR#/}/tabs
+${TARGET_BINDIR#/}/toe
+${TARGET_BINDIR#/}/tput
+${TARGET_BINDIR#/}/tset
+${TARGET_BINDIR#/}/tic
+${TARGET_BINDIR#/}/captoinfo
+${TARGET_BINDIR#/}/infotocap
+${TARGET_MANDIR#/}/man1/*
+${TARGET_MANDIR#/}/man3/*
+${TARGET_MANDIR#/}/man5/*
+${TARGET_MANDIR#/}/man7/*
+"
 
 unpack_archive
 
@@ -307,43 +324,27 @@ EOF
 #	: {safe_stdin}<&0
 #	exec 0< /dev/null
 	
+    CPU_CFLAGS=-m68020-60
+    configure_ncurses
+    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
+    $MAKE $JOBS || exit $?
+    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncurses libdir=${sysroot}${TARGET_LIBDIR}/m68020-60 install || exit $?
+	make_bin_archive 020
+    
+    CPU_CFLAGS=-mcpu=5475
+    configure_ncurses
+    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
+    $MAKE $JOBS || exit $?
+    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncurses libdir=${sysroot}${TARGET_LIBDIR}/m5475 install || exit $?
+	make_bin_archive v4e
+    
     CPU_CFLAGS=-m68000
     configure_ncurses
     test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
     $MAKE $JOBS || exit $?
-    $MAKE DESTDIR="${THISPKG_DIR}" install includesubdir=/ncurses || exit $?
+    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncurses install || exit $?
     ( cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include"; $LN_S -f ncurses/{curses,ncurses,term,termcap}.h . )
-    
-	# the install process sometimes erroneously installs the host exes with a target prefix
-    if :; then
-    	(cd ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/bin
-    		for i in clear infocmp tabs tic toe tput tset; do
-    			if test -x ${TARGET}-${i}${TARGET_EXEEXT}; then
-    				rm -f ${i}${TARGET_EXEEXT}
-    				mv ${TARGET}-${i}${TARGET_EXEEXT} ${i}${TARGET_EXEEXT}
-    			fi
-    			$strip --strip-unneeded ${i}${TARGET_EXEEXT}
-    		done
-    		for i in captoinfo infotocap reset; do
-    			rm -f ${TARGET}-${i}${TARGET_EXEEXT} ${i}${TARGET_EXEEXT}
-    		done
-    		$LN_S tic${TARGET_EXEEXT} captoinfo${TARGET_EXEEXT}
-    		$LN_S tic${TARGET_EXEEXT} infotocap${TARGET_EXEEXT}
-    		$LN_S tset${TARGET_EXEEXT} reset${TARGET_EXEEXT}
-    	)
-    fi
-
-    CPU_CFLAGS=-m68020-60
-    configure_ncurses --without-progs
-    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
-    $MAKE $JOBS || exit $?
-    $MAKE DESTDIR="${THISPKG_DIR}" libdir=${sysroot}${TARGET_LIBDIR}/m68020-60 install.libs || exit $?
-    
-    CPU_CFLAGS=-mcpu=5475
-    configure_ncurses --without-progs
-    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
-    $MAKE $JOBS || exit $?
-    $MAKE DESTDIR="${THISPKG_DIR}" libdir=${sysroot}${TARGET_LIBDIR}/m5475 install.libs || exit $?
+	make_bin_archive 000
     
     # Now use --enable-widec for UTF8/wide character support.
     # The libs with 16 bit wide characters are binary incompatible
@@ -352,22 +353,23 @@ EOF
 	# currently does not work because mintlib lacks the wcwidth function
 	#
     if false; then
-	    configure_ncurses --enable-widec --without-progs
-	    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
-	    $MAKE $JOBS || exit $?
-	    $MAKE DESTDIR="${THISPKG_DIR}" install.libs install.includes includesubdir=/ncursesw || exit $?
-
 	    CPU_CFLAGS=-m68020-60
 	    configure_ncurses --enable-widec --without-progs
 	    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
 	    $MAKE $JOBS || exit $?
-	    $MAKE DESTDIR="${THISPKG_DIR}" libdir=${sysroot}${TARGET_LIBDIR}/m68020-60 install.libs || exit $?
+	    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncursesw libdir=${sysroot}${TARGET_LIBDIR}/m68020-60 install.libs || exit $?
 	
 	    CPU_CFLAGS=-mcpu=5475
 	    configure_ncurses --enable-widec --without-progs
 	    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
 	    $MAKE $JOBS || exit $?
-	    $MAKE DESTDIR="${THISPKG_DIR}" libdir=${sysroot}${TARGET_LIBDIR}/m5475 install.libs || exit $?
+	    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncursesw libdir=${sysroot}${TARGET_LIBDIR}/m5475 install.libs || exit $?
+
+	    CPU_CFLAGS=-m68000
+	    configure_ncurses --enable-widec --without-progs
+	    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
+	    $MAKE $JOBS || exit $?
+	    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncursesw install.libs install.includes || exit $?
 	fi
 	
 #   exec 0<&$safe_stdin
@@ -399,6 +401,7 @@ cd "$MINT_BUILD_DIR"
 
 build_ncurses
 
+move_prefix
 configured_prefix="${sysroot}${TARGET_PREFIX}"
 copy_pkg_configs "ncurses*.pc"
 copy_pkg_configs "form*.pc"

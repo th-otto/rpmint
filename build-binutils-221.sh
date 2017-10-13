@@ -2,8 +2,8 @@
 
 PACKAGENAME=binutils
 VERSION=-2.21.1
-VERSIONPATCH=20170919
-REVISION="GNU Binutils for MiNT $VERSIONPATCH"
+VERSIONPATCH=-20170919
+REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=m68k-atari-mintelf
 PREFIX=/usr
@@ -15,7 +15,7 @@ PKG_DIR=`pwd`/binary7-package
 
 srcdir="$PACKAGENAME$VERSION"
 
-PATCH1="$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch"
+PATCH1="$PACKAGENAME$VERSION-mint${VERSIONPATCH}.patch"
 
 if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
@@ -114,7 +114,7 @@ rm -f $TARGET-ld
 ln -s $TARGET-ld.bfd $TARGET-ld
 cd "$PKG_DIR"
 
-TARNAME=$PACKAGENAME$VERSION-mint-$VERSIONPATCH
+TARNAME=$PACKAGENAME$VERSION-mint${VERSIONPATCH}
 
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man

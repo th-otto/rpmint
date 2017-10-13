@@ -8,8 +8,8 @@ me="$0"
 
 PACKAGENAME=gcc
 VERSION=-4.6.4
-VERSIONPATCH=20170518
-REVISION="MiNT $VERSIONPATCH"
+VERSIONPATCH=-20170518
+REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
 # For which target we build-
@@ -75,7 +75,7 @@ DIST_DIR="$here/pkgs"
 #
 srcdir="$PACKAGENAME$VERSION"
 
-PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch \
+PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint${VERSIONPATCH}.patch \
 	patches/gcc/$PACKAGENAME$VERSION-fastcall.patch"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
@@ -331,7 +331,7 @@ done
 
 cd "${THISPKG_DIR}" || exit 1
 
-TARNAME=$PACKAGENAME$VERSION-${TARGET##*-}-$VERSIONPATCH
+TARNAME=$PACKAGENAME$VERSION-${TARGET##*-}${VERSIONPATCH}
 
 tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
@@ -342,5 +342,5 @@ tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#
 cd "${BUILD_DIR}"
 #rm -rf "${THISPKG_DIR}"
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.tar.xz ${PATCHES}
-cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}-${VERSIONPATCH}.sh
+tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.tar.xz ${PATCHES}
+cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh

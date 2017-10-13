@@ -8,8 +8,8 @@ me="$0"
 
 PACKAGENAME=gcc
 VERSION=-7.2.0
-VERSIONPATCH=20171006
-REVISION="MiNT $VERSIONPATCH"
+VERSIONPATCH=-20171006
+REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
 # For which target we build-
@@ -86,7 +86,7 @@ fi
 # - checking out the gcc-7-mint branch
 # - running git diff gcc-7_2_0-release HEAD
 #
-PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint-$VERSIONPATCH.patch"
+PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint${VERSIONPATCH}.patch"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
@@ -343,7 +343,8 @@ done
 
 cd "${THISPKG_DIR}" || exit 1
 
-TARNAME=$PACKAGENAME$VERSION-${TARGET##*-}-$VERSIONPATCH
+TARNAME=$PACKAGENAME$VERSION-${TARGET##*-}${VERSIONPATCH}
+BINTARNAME=${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}
 
 tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
@@ -354,5 +355,5 @@ tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#
 cd "${BUILD_DIR}"
 #rm -rf "${THISPKG_DIR}"
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint-${VERSIONPATCH}.tar.xz ${PATCHES}
-cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}-${VERSIONPATCH}.sh
+tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES}
+cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh

@@ -363,7 +363,7 @@ make_archives()
 	
 	cd "${THISPKG_DIR}" || exit 1
 	
-	tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin.tar.xz *
+	tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-dev.tar.xz *
 	
 	cd "${BUILD_DIR}"
 #	rm -rf "${THISPKG_DIR}"
