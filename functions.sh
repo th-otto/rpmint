@@ -201,6 +201,33 @@ move_prefix()
 }
 
 
+move_arch_bins()
+{
+	archdir=$1
+	if test -d "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/bin"; then
+		cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/bin"
+		mkdir -p ${archdir}
+		for i in *; do
+			test -h "$i" && continue
+			test -d "$i" && continue
+			"${strip}" "$i"
+			mv "$i" "${archdir}/$i" || exit 1
+		done
+	fi
+	cd "$MINT_BUILD_DIR"
+}
+
+move_v4e_bins()
+{
+	move_arch_bins m5475
+}
+
+move_020_bins()
+{
+	move_arch_bins m68020-60
+}
+
+
 copy_pkg_configs()
 {
 	local pattern="${1:-*.pc}"
@@ -291,6 +318,15 @@ make_archives()
 	find . -name "*.la" -exec rm '{}' \;
 	test "$LTO_CFLAGS" != "" || find . -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \;
 	find . -name "*.a" ! -type l -exec "${ranlib}" '{}' \;
+	
+	if test -d "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/bin"; then
+		cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/bin"
+		for i in *; do
+			test -h "$i" && continue
+			test -d "$i" && continue
+			"${strip}" "$i"
+		done
+	fi
 	
 	#
 	# remove pkgconfig dirs in architecture dependent subdirs

@@ -1,0 +1,33 @@
+diff -rupN openssl-1.0.2l.orig/Configure openssl-1.0.2l/Configure
+--- openssl-1.0.2l.orig/Configure	2017-05-25 14:54:38.000000000 +0200
++++ openssl-1.0.2l/Configure	2017-10-13 05:32:12.482670991 +0200
+@@ -683,6 +683,11 @@ my %table=(
+ "uClinux-dist","$ENV{'CC'}:\$(CFLAGS)::-D_REENTRANT::\$(LDFLAGS) \$(LDLIBS):BN_LLONG:${no_asm}:$ENV{'LIBSSL_dlfcn'}:linux-shared:-fPIC:-shared:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR):$ENV{'RANLIB'}::",
+ "uClinux-dist64","$ENV{'CC'}:\$(CFLAGS)::-D_REENTRANT::\$(LDFLAGS) \$(LDLIBS):SIXTY_FOUR_BIT_LONG:${no_asm}:$ENV{'LIBSSL_dlfcn'}:linux-shared:-fPIC:-shared:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR):$ENV{'RANLIB'}::",
+ 
++##### Atari MiNT
++"mint","gcc:-DB_ENDIAN -DOPENSSL_USE_IPV6=0 -O3 -fomit-frame-pointer -Wall::::::${no_asm}::::::::",
++"mint020","gcc:-m68020-60 -DB_ENDIAN -DOPENSSL_USE_IPV6=0 -O3 -fomit-frame-pointer -Wall::::-m68020-60::${no_asm}::::::::/m68020-60",
++"mintv4e","gcc:-mcpu=5475 -DB_ENDIAN -DOPENSSL_USE_IPV6=0 -O3 -fomit-frame-pointer -Wall::::-mcpu=5475::${no_asm}::::::::/m5475",
++
+ );
+ 
+ my @MK1MF_Builds=qw(VC-WIN64I VC-WIN64A
+diff -rupN openssl-1.0.2l.orig/crypto/rand/rand_unix.c openssl-1.0.2l/crypto/rand/rand_unix.c
+--- openssl-1.0.2l.orig/crypto/rand/rand_unix.c	2017-05-25 14:54:34.000000000 +0200
++++ openssl-1.0.2l/crypto/rand/rand_unix.c	2017-10-13 05:38:31.082662753 +0200
+@@ -335,7 +335,13 @@ int RAND_poll(void)
+                 t.tv_sec = 0;
+                 t.tv_usec = usec;
+ 
+-                if (FD_SETSIZE > 0 && (unsigned)fd >= FD_SETSIZE) {
++#ifdef __MINT__
++				/* Workaround for "PRNG is not seeded" in sshd log */
++				if (1)
++#else
++                if (FD_SETSIZE > 0 && (unsigned)fd >= FD_SETSIZE)
++#endif
++                {
+                     /*
+                      * can't use select, so just try to read once anyway
+                      */
