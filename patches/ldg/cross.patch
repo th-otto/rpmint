@@ -1,0 +1,273 @@
+Only in ldg-svn-20171014: lib
+Only in ldg-svn-20171014/src/devel: .gcc
+diff -ru ldg-svn-20171014.orig/src/devel/common.mak ldg-svn-20171014/src/devel/common.mak
+--- ldg-svn-20171014.orig/src/devel/common.mak	2013-03-04 00:18:57.000000000 +0100
++++ ldg-svn-20171014/src/devel/common.mak	2017-10-14 18:00:45.808679034 +0200
+@@ -38,15 +38,12 @@
+ 	@$(AR) $(ARFLAGS) -O=$@ $(OBJECTS)
+ else
+ $(OBJDIR)/%.o: %.c $(OBJDIR)
+-	@echo CC $(notdir $@)
+-	@$(CC) -c $(CFLAGS) $< -o $@
++	$(CC) -c $(CFLAGS) $< -o $@
+ $(OBJDIR)/%.o: %.S $(OBJDIR)
+-	@echo AS $(notdir $@)
+-	@$(CC) -c $(CFLAGS) $< -o $@
++	$(CC) -c $(CFLAGS) $< -o $@
+ $(TARGET): $(OBJECTS) $(TARGETD)
+-	@echo LD $(notdir $@)
+-	@$(RM) $(TARGET)
+-	@$(AR) $(ARFLAGS) $@ $(OBJECTS)
++	$(RM) $(TARGET)
++	$(AR) $(ARFLAGS) $@ $(OBJECTS)
+ endif
+ 
+ # dependencies
+diff -ru ldg-svn-20171014.orig/src/devel/gcc.mak ldg-svn-20171014/src/devel/gcc.mak
+--- ldg-svn-20171014.orig/src/devel/gcc.mak	2013-03-03 23:57:36.000000000 +0100
++++ ldg-svn-20171014/src/devel/gcc.mak	2017-10-14 18:07:45.756669896 +0200
+@@ -21,13 +21,9 @@
+ #
+ # $Id: gcc.mak 103 2013-03-03 22:57:36Z mikro_sk $
+ 
+-ifeq ($(CROSS),yes)
+-CC     = m68k-atari-mint-gcc
+-AR     = m68k-atari-mint-ar
+-else
+-CC     = gcc
+-AR     = ar
+-endif
++CC     = $(CROSS_PREFIX)gcc
++AR     = $(CROSS_PREFIX)ar
++UNDERSCORE = _
+ 
+ CFLAGS   = -fomit-frame-pointer -W -Wall -O2 -I../../include -I.. -I.
+ ARFLAGS  = crus
+@@ -38,5 +34,5 @@
+ include common.mak
+ 
+ stdcallgcc.S: stdcall.s
+-	sed -e 's,\;,\|,g' -e 's,@PREFIX@,_,g' stdcall.s > stdcallgcc.S
++	sed -e 's,\;,\|,g' -e 's,@PREFIX@,$(UNDERSCORE),g' stdcall.s > stdcallgcc.S
+ 
+diff -ru ldg-svn-20171014.orig/src/devel/stdcall.s ldg-svn-20171014/src/devel/stdcall.s
+--- ldg-svn-20171014.orig/src/devel/stdcall.s	2012-03-18 16:49:44.000000000 +0100
++++ ldg-svn-20171014/src/devel/stdcall.s	2017-10-14 18:15:13.220660159 +0200
+@@ -103,8 +103,8 @@
+ 
+ lock:
+ #ifdef __mcoldfire__
+-	moveq	#0,d0
+-	bset	d0, verrou
++	moveq	#0,%d0
++	bset	%d0, verrou
+ #else
+ 	bset	#0, verrou
+ #endif
+@@ -118,15 +118,15 @@
+ ;  are not saved. The original CDECL function is invoking...
+ ;  (what else can we do ? send an TERM sig ?)
+ 	
+-	move.l	#@PREFIX@_ldg_adr_regctx,a1
+-	move.l	@PREFIX@_ldg_nb_regctx,d0
++	move.l	#@PREFIX@_ldg_adr_regctx,%a1
++	move.l	@PREFIX@_ldg_nb_regctx,%d0
+ tst_ctx:
+-	tst.l		d0
++	tst.l		%d0
+ 	beq		go_to_real_function
+-	tst.l		(a1)
++	tst.l		(%a1)
+ 	beq		save_ctx
+-	subq.l	#1,d0
+-	adda.l	#16,a1
++	subq.l	#1,%d0
++	adda.l	#16,%a1
+ 	bra		tst_ctx
+ 
+ ;  A free ctxreg structure has been found (address in A1)
+@@ -137,20 +137,20 @@
+ ;    the regctx data)
+ 
+ save_ctx:
+-	adda.l	#16,a1
++	adda.l	#16,%a1
+ #ifdef __mcoldfire__
+-	lea	-12(a1),a1
+-	movem.l	d2/a2/a3,(a1)
++	lea	-12(%a1),%a1
++	movem.l	%d0/%a2/%a3,(%a1)
+ #else
+-	movem.l	d2/a2/a3,-(a1)
++	movem.l	%d0/%a2/%a3,-(%a1)
+ #endif
+-	move.l	(a7),-(a1)
+-	move.l	a1,a3
++	move.l	(%a7),-(%a1)
++	move.l	%a1,%a3
+ 
+ ;  change the return address so that __ldg_end_stdcall is invoked
+ ;  when the original CDECL function will return.
+ 
+-	move.l	#__ldg_end_stdcall,(a7)
++	move.l	#__ldg_end_stdcall,(%a7)
+ 	
+ go_to_real_function:
+ 
+@@ -158,7 +158,7 @@
+ ;  since the beginning)
+ 
+ 	clr.b	verrou
+-	jmp		(a0)
++	jmp		(%a0)
+ 
+ ;  When the original CDECL function returns, we have to restore the 
+ ;  contexte (address of the context stored in A3)
+@@ -170,23 +170,23 @@
+ ;  save address of ctxreg in A1 (because A3 will be overwritten
+ ;  when registers will be restored)
+ 	
+-	move.l	a3,a1
+-	move.l	(a1)+,a0
++	move.l	%a3,%a1
++	move.l	(%a1)+,%a0
+ #ifdef __mcoldfire__
+-	movem.l	(a1),d2/a2/a3
+-	lea	12(a1),a1
++	movem.l	(%a1),%d0/%a2/%a3
++	lea	12(%a1),%a1
+ #else
+-	movem.l	(a1)+,d2/a2/a3
++	movem.l	(%a1)+,%d0/%a2/%a3
+ #endif
+ 
+ ;  Set to 0L the first long word of the regctx to free it.
+ ;  remark: no need to use the mutex to do such operation.
+ 
+-	clr.l		-16(a1)
++	clr.l		-16(%a1)
+ 
+ ;  back to the caller
+ 
+-	jmp		(a0)
++	jmp		(%a0)
+ 	
+ 
+ ; ***************************************************************
+@@ -213,8 +213,8 @@
+ 
+ lock2:
+ #ifdef __mcoldfire__
+-	moveq	#0,d0
+-	bset	d0, verrou
++	moveq	#0,%d0
++	bset	%d0, verrou
+ #else
+ 	bset	#0, verrou
+ #endif
+@@ -225,15 +225,15 @@
+ ;  a ctxreg is considered as free is the 1st long word of this 
+ ;  structure is 0L.
+ 	
+-	move.l	#@PREFIX@_ldg_adr_regctx,a1
+-	move.l	@PREFIX@_ldg_nb_regctx,d0
++	move.l	#@PREFIX@_ldg_adr_regctx,%a1
++	move.l	@PREFIX@_ldg_nb_regctx,%d0
+ tst_ctx2:
+-	tst.l		d0
++	tst.l		%d0
+ 	beq		abort_callback
+-	tst.l		(a1)
++	tst.l		(%a1)
+ 	beq		save_ctx2
+-	subq.l	#1,d0
+-	adda.l	#16,a1
++	subq.l	#1,%d0
++	adda.l	#16,%a1
+ 	bra		tst_ctx2
+ 
+ ;  A free ctxreg structure has been found (address in A1)
+@@ -244,15 +244,15 @@
+ ;    the regctx data)
+ 
+ save_ctx2:
+-	adda.l	#16,a1
++	adda.l	#16,%a1
+ #ifdef __mcoldfire__
+-	lea	-12(a1),a1
+-	movem.l	d2/a2/a3,(a1)
++	lea	-12(%a1),%a1
++	movem.l	%d0/%a2/%a3,(%a1)
+ #else
+-	movem.l	d2/a2/a3,-(a1)
++	movem.l	%d0/%a2/%a3,-(%a1)
+ #endif
+-	move.l	(a7),-(a1)
+-	move.l	a1,a3
++	move.l	(%a7),-(%a1)
++	move.l	%a1,%a3
+ 
+ ;  free the mutex now
+ 
+@@ -260,22 +260,22 @@
+ 	
+ ;  save the address of "f" in A0
+ 
+-	move.l 4(a7),a0
++	move.l 4(%a7),%a0
+ 
+ ;  move the stack pointer so that paramters of "f" are well positionned
+ ;  in relation to A7. The consequence is we'll lose the content of (A7)
+ ;  but it's not a pb because we've already saved it in regctx.
+ 
+-	adda.l  #4,a7
++	adda.l  #4,%a7
+  
+ ;  change the return address so that "end_callback" is invoked
+ ;  when the original CDECL function will return.
+ 
+-	move.l	#end_callback,(a7)
++	move.l	#end_callback,(%a7)
+ 	
+ ;  call the "f" function (address in A0)
+ 
+-	jmp		(a0)
++	jmp		(%a0)
+ 
+ ;  When the original CDECL function returns, we have to restore the 
+ ;  contexte (address of the context stored in A3)
+@@ -287,24 +287,24 @@
+ ;  save address of ctxreg in A1 (because A3 will be overwritten
+ ;  when registers will be restored)
+ 	
+-	move.l	a3,a1
+-	move.l	(a1)+,a0
++	move.l	%a3,%a1
++	move.l	(%a1)+,%a0
+ #ifdef __mcoldfire__
+-	movem.l	(a1),d2/a2/a3
+-	lea	12(a1),a1
++	movem.l	(%a1),%d0/%a2/%a3
++	lea	12(%a1),%a1
+ #else
+-	movem.l	(a1)+,d2/a2/a3
++	movem.l	(%a1)+,%d0/%a2/%a3
+ #endif
+ 
+ ;  Set to 0L the first long word of the regctx to free it.
+ ;  remark: no need to use the mutex to do such operation.
+ 
+-	clr.l		-16(a1)
++	clr.l		-16(%a1)
+ 
+ ;  restore the original stack position and go back to the caller
+ 
+-	suba.l #4,a7
+-	move.l  a0,-(a7)
++	suba.l #4,%a7
++	move.l  %a0,-(%a7)
+ 	rts
+ 
+ ;  when context cannot be saved in regctx, the best to do is to leave now!
+Only in ldg-svn-20171014/src/devel: stdcallgcc.S
+Only in ldg-svn-20171014/src/kernel: .gcc
