@@ -1,0 +1,50 @@
+diff -ru windom-2.0.1.orig/demo/gcc.mak windom-2.0.1/demo/gcc.mak
+--- windom-2.0.1.orig/demo/gcc.mak	2006-06-22 12:00:36.000000000 +0200
++++ windom-2.0.1/demo/gcc.mak	2017-10-14 21:21:44.055853651 +0200
+@@ -26,14 +26,8 @@
+ 
+ # gcc version
+ 
+-ifeq ($(CROSS),yes)
+-CROSSPREFIX = m68k-atari-mint
+-CC     = $(CROSSPREFIX)-gcc
+-PREFIX = /usr/$(CROSSPREFIX)
+-else
+-CC = gcc
++CC     = $(CROSS_PREFIX)gcc
+ PREFIX = /usr
+-endif
+ 
+ CFLAGS = 
+ LDFLAGS = -Xlinker -L../lib/gcc $(M68K_ATARI_MINT_LDFLAGS)
+@@ -64,4 +58,8 @@
+ demo-gcc.app : $(OBJECTS)
+ 	$(CC) -o$@ $(OBJECTS) $(LDFLAGS) ../lib/gcc/libwindom.a -lgem -lldg
+ 
++install: demo-gcc.app
++	mkdir -p $(PREFIX)/bin
++	cp -p $^ $(PREFIX)/bin/windom-demo.app
++
+ $(OBJDIR):; mkdir $(OBJDIR)
+diff -ru windom-2.0.1.orig/src/gcc.mak windom-2.0.1/src/gcc.mak
+--- windom-2.0.1.orig/src/gcc.mak	2006-06-22 12:00:36.000000000 +0200
++++ windom-2.0.1/src/gcc.mak	2017-10-14 20:44:06.516694453 +0200
+@@ -30,16 +30,9 @@
+ # gcc >= 2.95.3 (sparemint) version
+ #
+ 
+-ifeq ($(CROSS),yes)
+-CROSSPREFIX = m68k-atari-mint
+-CC     = $(CROSSPREFIX)-gcc
+-AR     = $(CROSSPREFIX)-ar
+-PREFIX = /usr/$(CROSSPREFIX)
+-else
+-CC     = gcc
+-AR     = ar
++CC     = $(CROSS_PREFIX)gcc
++AR     = $(CROSS_PREFIX)ar
+ PREFIX = /usr
+-endif
+ 
+ WARN = \
+ 	-Wall \
