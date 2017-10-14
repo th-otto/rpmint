@@ -24,27 +24,40 @@ TARGET=${1:-m68k-atari-mint}
 # all relevant directories are looked up
 # relative to the executable
 #
+TAR=${TAR-tar}
+TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
 case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
 	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
 	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	MSYS*) host=msys ;;
 	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
+	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
 	*) host=linux ;;
 esac
-case `uname -s` in
-	MINGW*) PREFIX=${MINGW_PREFIX} ;;
+case $host in
+	mingw*) PREFIX=${MINGW_PREFIX} ;;
+	macos*) PREFIX=/opt/cross-mint ;;
 	*) PREFIX=/usr ;;
 esac
 
 #
 # Where to look for the original source archives
 #
-case `uname -s` in
-	MINGW* | MSYS*) here=`pwd` ;;
+case $host in
+	mingw* | msys*) here=`pwd` ;;
 	*) here=`pwd` ;;
 esac
 ARCHIVES_DIR="$here"
+
+#
+# where to look for mpfr/gmp/mpc/isl etc.
+# currently only needed on Darwin, which lacks
+# libmpc.
+# Should be a static compiled version, so the
+# compiler does not depend on non-standard shared libs
+#
+CROSSTOOL_DIR="$HOME/crosstools"
 
 #
 # Where to look for patches, write logs etc.
@@ -149,6 +162,8 @@ gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
 for a in "" -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null`
 	test "$BUILD" != "" && break
+	test "$host" = "macos" && BUILD=`/opt/local/share/automake${a}/config.guess 2>/dev/null`
+	test "$BUILD" != "" && break
 done
 test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 
@@ -168,6 +183,8 @@ enable_lto=--disable-lto
 enable_plugin=--disable-plugin
 languages=c,c++
 ranlib=ranlib
+STRIP=${STRIP-strip -p}
+
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
     	enable_lto=--enable-lto
@@ -176,16 +193,17 @@ case "${TARGET}" in
     		enable_plugin=--enable-plugin
     	esac
     	languages="$languages,lto"
-    	ranlib=gcc-ranlib
+		# not here; we are just building it
+		# ranlib=gcc-ranlib
 		;;
 esac
-EXEEXT=
+BUILD_EXEEXT=
 LN_S="ln -s"
-case `uname -s` in
-	CYGWIN* | MINGW* | MSYS*) EXEEXT=.exe ;;
+case $host in
+	cygwin* | mingw* | msys*) BUILD_EXEEXT=.exe ;;
 esac
-case `uname -s` in
-	MINGW* | MSYS*) LN_S="cp -p" ;;
+case $host in
+	mingw* | msys*) LN_S="cp -p" ;;
 esac
 
 try="${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"
@@ -202,6 +220,20 @@ if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 	echo "cross-binutil tools for ${TARGET} not found" >&2
 	exit 1
 fi
+
+mpfr_config=
+
+case $host in
+	macos*)
+		export CC=/usr/bin/clang
+		export CXX=/usr/bin/clang++
+		export MACOSX_DEPLOYMENT_TARGET=10.12
+		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
+		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
+		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
+		mpfr_config="--with-mpc=${CROSSTOOL_DIR} --with-gmp=${CROSSTOOL_DIR} --with-mpfr=${CROSSTOOL_DIR}"
+		;;
+esac
 
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
@@ -240,6 +272,7 @@ $srcdir/configure \
 	--disable-nls \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
+	$mpfr_config \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
 	--enable-languages="$languages"
 
@@ -260,36 +293,36 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	for i in addr2line ar arconv as c++ nm cpp csize cstrip flags g++ gcc gcov gfortran ld ld.bfd mintbin nm objcopy objdump ranlib stack strip symex readelf dlltool dllwrap; do
 		if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
-			rm -f ${i} ${i}${EXEEXT}
-			$LN_S ../../bin/${TARGET}-$i${EXEEXT} $i
+			rm -f ${i} ${i}${BUILD_EXEEXT}
+			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
 		fi
 	done
 	
 	cd "${INSTALL_DIR}/${PREFIX}/bin"
-	strip -p *
+	${STRIP} *
 	
 	if test -x ${TARGET}-g++ && test ! -h ${TARGET}-g++; then
-		rm -f ${TARGET}-g++-${BASE_VER}${EXEEXT} ${TARGET}-g++-${BASE_VER}
-		mv ${TARGET}-g++${EXEEXT} ${TARGET}-g++-${BASE_VER}${EXEEXT}
-		$LN_S ${TARGET}-g++-${BASE_VER}${EXEEXT} ${TARGET}-g++
+		rm -f ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}
+		mv ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT}
+		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++
 	fi
 	if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
-		rm -f ${TARGET}-c++${EXEEXT} ${TARGET}-c++
+		rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
 		$LN_S ${TARGET}-g++ ${TARGET}-c++
 	fi
 	if test -x ${TARGET}-gcc && test ! -h ${TARGET}-gcc; then
-		rm -f ${TARGET}-gcc-${BASE_VER}${EXEEXT} ${TARGET}-gcc-${BASE_VER}
-		mv ${TARGET}-gcc${EXEEXT} ${TARGET}-gcc-${BASE_VER}${EXEEXT}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${EXEEXT} ${TARGET}-gcc
+		rm -f ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}
+		mv ${TARGET}-gcc${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT}
+		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc
 	fi
 	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gcc-${gcc_dir_version} && test ! -h ${TARGET}-gcc-${gcc_dir_version}; then
-		rm -f ${TARGET}-gcc-${gcc_dir_version}${EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		rm -f ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
 	fi
 	if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
-		rm -f ${TARGET}-cpp-${BASE_VER}${EXEEXT} ${TARGET}-cpp-${BASE_VER}
-		mv ${TARGET}-cpp${EXEEXT} ${TARGET}-cpp-${BASE_VER}${EXEEXT}
-		$LN_S ${TARGET}-cpp-${BASE_VER}${EXEEXT} ${TARGET}-cpp
+		rm -f ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}
+		mv ${TARGET}-cpp${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT}
+		$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp
 	fi
 	
 	cd "${INSTALL_DIR}"
@@ -302,19 +335,20 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		esac
 	done
 	
-	case `uname -s` in
-		CYGWIN*) LTO_PLUGIN=cyglto_plugin-0.dll; MY_LTO_PLUGIN=cyglto_plugin_mintelf.dll ;;
-		MINGW* | MSYS*) LTO_PLUGIN=liblto_plugin-0.dll; MY_LTO_PLUGIN=liblto_plugin_mintelf.dll ;;
+	case $host in
+		cygwin*) LTO_PLUGIN=cyglto_plugin-0.dll; MY_LTO_PLUGIN=cyglto_plugin_mintelf.dll ;;
+		mingw* | msys*) LTO_PLUGIN=liblto_plugin-0.dll; MY_LTO_PLUGIN=liblto_plugin_mintelf.dll ;;
+		macos*) LTO_PLUGIN=liblto_plugin.dylib; MY_LTO_PLUGIN=liblto_plugin_mintelf.dylib ;;
 		*) LTO_PLUGIN=liblto_plugin.so.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf.so.0.0.0 ;;
 	esac
 	
 	rm -f */*/libiberty.a
 	rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/*.la
 	rm -f ${PREFIX#/}/lib/${TARGET}/lib/*.la ${PREFIX#/}/lib/${TARGET}/lib/*/*.la
-	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,lto-wrapper,lto1}${EXEEXT}
-	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
-	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${EXEEXT}
-	strip -p ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${EXEEXT}
+	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,lto-wrapper,lto1}${BUILD_EXEEXT}
+	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
+	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT}
+	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${BUILD_EXEEXT}
 	rmdir ${PREFIX#/}/include
 	
 	if test -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN}; then
@@ -346,14 +380,14 @@ cd "${THISPKG_DIR}" || exit 1
 TARNAME=$PACKAGENAME$VERSION-${TARGET##*-}${VERSIONPATCH}
 BINTARNAME=${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
 
 cd "${BUILD_DIR}"
 #rm -rf "${THISPKG_DIR}"
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES}
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES}
 cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh

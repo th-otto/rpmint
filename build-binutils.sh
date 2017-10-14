@@ -45,21 +45,25 @@ case "${TARGET}" in
 		;;
 esac
 
-EXEEXT=
+TAR=${TAR-tar}
+TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
+
+BUILD_EXEEXT=
 LN_S="ln -s"
-case `uname -s` in
-	CYGWIN* | MINGW* | MSYS*) EXEEXT=.exe ;;
-esac
-case `uname -s` in
-	MINGW* | MSYS*) LN_S="cp -p" ;;
-esac
 case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
 	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
 	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	MSYS*) host=msys ;;
 	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
+	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
 	*) host=linux ;;
+esac
+case $host in
+	cygwin* | mingw* | msys*) BUILD_EXEEXT=.exe ;;
+esac
+case $host in
+	mingw* | msys*) LN_S="cp -p" ;;
 esac
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
@@ -116,6 +120,8 @@ JOBS=-j$JOBS
 for a in "" -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null`
 	test "$BUILD" != "" && break
+	test "$host" = "macos" && BUILD=`/opt/local/share/automake${a}/config.guess 2>/dev/null`
+	test "$BUILD" != "" && break
 done
 test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 
@@ -123,17 +129,23 @@ bfd_targets="--enable-targets=$BUILD"
 enable_plugins=--disable-plugins
 enable_lto=--disable-lto
 ranlib=ranlib
+STRIP=${STRIP-strip -p}
+
+# binutils ld does not have support for darwin target anymore
+test "$host" = "macos" && bfd_targets=""
 
 # add opposite of default mingw32 target for binutils,
 # and also host target
 case "${TARGET}" in
     x86_64-*-mingw32*)
-	    bfd_targets="$bfd_targets,i686-pc-mingw32"
+    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
+	    bfd_targets="${bfd_targets}i686-pc-mingw32"
     	;;
     i686-*-mingw*)
-    	bfd_targets="$bfd_targets,x86_64-w64-mingw64"
+    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
+    	bfd_targets="${bfd_targets}x86_64-w64-mingw64"
 		;;
-    *-*-*elf* | *-*-linux*)
+    *-*-*elf* | *-*-linux* | *-*-darwin*)
     	enable_lto=--enable-lto
 		enable_plugins=--enable-plugins
     	ranlib=gcc-ranlib
@@ -141,10 +153,12 @@ case "${TARGET}" in
 esac
 case "${TARGET}" in
     m68k-atari-mintelf*)
-    	bfd_targets="$bfd_targets,m68k-atari-mint"
+    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
+    	bfd_targets="${bfd_targets}m68k-atari-mint"
 		;;
     m68k-atari-mint*)
-    	bfd_targets="$bfd_targets,m68k-atari-mintelf"
+    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
+    	bfd_targets="${bfd_targets}m68k-atari-mintelf"
 		;;
 esac
 
@@ -157,6 +171,16 @@ CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer"
 LDFLAGS_FOR_BUILD="-s"
 CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 
+case $host in
+	macos*)
+		export CC=/usr/bin/clang
+		export CXX=/usr/bin/clang++
+		export MACOSX_DEPLOYMENT_TARGET=10.12
+		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
+		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
+		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
+		;;
+esac
 
 ../$srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
@@ -169,7 +193,7 @@ CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 	LDFLAGS="$LDFLAGS_FOR_BUILD" \
 	$bfd_targets \
 	--with-pkgversion="$REVISION" \
-	--with-stage1-ldflags=-s \
+	--with-stage1-ldflags= \
 	--with-boot-ldflags="$LDFLAGS_FOR_BUILD" \
 	--with-gcc --with-gnu-as --with-gnu-ld \
 	--disable-werror \
@@ -185,8 +209,9 @@ CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 make $JOBS || exit 1
 
 
-case `uname -s` in
-	MINGW*) if test "${PREFIX}" = /usr; then PREFIX=${MINGW_PREFIX}; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
+case $host in
+	mingw*) if test "${PREFIX}" = /usr; then PREFIX=${MINGW_PREFIX}; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
+	macos*) if test "${PREFIX}" = /usr; then PREFIX=/opt/cross-mint; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
 esac
 
 #
@@ -209,18 +234,18 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	for i in addr2line ar arconv as c++ nm cpp csize cstrip flags g++ gcc gcov gfortran ld ld.bfd mintbin nm objcopy objdump ranlib stack strip symex readelf dlltool dllwrap; do
 		if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
-			rm -f ${i} ${i}${EXEEXT}
-			$LN_S ../../bin/${TARGET}-$i${EXEEXT} $i
+			rm -f ${i} ${i}${BUILD_EXEEXT}
+			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
 		fi
 	done
 	
 	cd "${INSTALL_DIR}/${PREFIX}/bin"
 	
-	rm -f ${TARGET}-ld ${TARGET}-ld${EXEEXT}
-	$LN_S ${TARGET}-ld.bfd${EXEEXT} ${TARGET}-ld${EXEEXT}
+	rm -f ${TARGET}-ld ${TARGET}-ld${BUILD_EXEEXT}
+	$LN_S ${TARGET}-ld.bfd${BUILD_EXEEXT} ${TARGET}-ld${BUILD_EXEEXT}
 	cd "${INSTALL_DIR}" || exit 1
 	
-	strip -p ${PREFIX#/}/bin/*
+	${STRIP} ${PREFIX#/}/bin/*
 	rm -f ${BUILD_LIBDIR#/}/libiberty.a
 
 	rm -f ${PREFIX#/}/share/info/dir
@@ -236,14 +261,14 @@ cd "${THISPKG_DIR}" || exit 1
 
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
 
 cd "${BUILD_DIR}"
 #rm -rf "${THISPKG_DIR}"
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.tar.xz ${ALLPATCHES}
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.tar.xz ${ALLPATCHES}
 cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh

@@ -11,16 +11,20 @@ TARGET=${1:-m68k-atari-mint}
 # all relevant directories are looked up
 # relative to the executable
 #
+TAR=${TAR-tar}
+TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
 case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
 	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
 	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	MSYS*) host=msys ;;
 	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
+	Darwin*) host=macos; TAR_OPTS= ;;
 	*) host=linux ;;
 esac
 case `uname -s` in
 	MINGW*) prefix=${MINGW_PREFIX} ;;
+	Darwin*) prefix=/opt/cross-mint ;;
 	*) prefix=/usr ;;
 esac
 sysroot=${prefix}/${TARGET}/sys-root
@@ -107,7 +111,12 @@ THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 # On some distros it is patched to have the
 # vendor name included.
 #
-BUILD=`/usr/share/automake/config.guess 2>/dev/null`
+for a in "" -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
+	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null`
+	test "$BUILD" != "" && break
+	test "$host" = "macos" && BUILD=`/opt/local/share/automake${a}/config.guess 2>/dev/null`
+	test "$BUILD" != "" && break
+done
 test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 
 LTO_CFLAGS=
@@ -155,7 +164,7 @@ unpack_archive()
 		fi
 		if test -n "${PATCHARCHIVE}"; then
 			mkdir -p "$BUILD_DIR/${PACKAGENAME}-patches"
-			tar -C "$BUILD_DIR/${PACKAGENAME}-patches" --strip-components=1 -xjf "${PATCHARCHIVE}"
+			${TAR} -C "$BUILD_DIR/${PACKAGENAME}-patches" --strip-components=1 -xjf "${PATCHARCHIVE}"
 			cd "$srcdir"
 			for patch in $BUILD_DIR/${PACKAGENAME}-patches/${PACKAGENAME}*.patch
 			do
@@ -265,7 +274,7 @@ make_bin_archive()
 		fi
 	done
 
-	tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${BINTARNAME}-${archsuffix}.tar.xz $files
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}-${archsuffix}.tar.xz $files
 
 	cd "$MINT_BUILD_DIR" || exit 1
 }
@@ -362,14 +371,14 @@ make_archives()
 	rm -rf ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/*/pkgconfig
 	
 	cd "${THISPKG_DIR}" || exit 1
-	
-	tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-dev.tar.xz *
+
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-dev.tar.xz *
 	
 	cd "${BUILD_DIR}"
 #	rm -rf "${THISPKG_DIR}"
 	rm -rf "${srcdir}"
 
-	test -z "${PATCHES}" || tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES} ${PATCHARCHIVE}
+	test -z "${PATCHES}" || ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES} ${PATCHARCHIVE}
 	cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh
 	cp -p "${scriptdir}/functions.sh" "${DIST_DIR}"
 }

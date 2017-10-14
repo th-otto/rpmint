@@ -28,8 +28,8 @@ strip -p *
 
 for i in arconv cnm csize cstrip flags mintbin stack symex; do
 	if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
-		rm -f ${i} ${i}${EXEEXT}
-		$LN_S ../../bin/${TARGET}-$i${EXEEXT} $i
+		rm -f ${i} ${i}${BUILD_EXEEXT}
+		$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
 	fi
 done
 	
@@ -44,7 +44,7 @@ done
 
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
 
-tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz .
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz .
 
 cd "${BUILD_DIR}"
 #rm -rf "${THISPKG_DIR}"
