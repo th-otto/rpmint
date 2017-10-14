@@ -175,7 +175,7 @@ case $host in
 	macos*)
 		export CC=/usr/bin/clang
 		export CXX=/usr/bin/clang++
-		export MACOSX_DEPLOYMENT_TARGET=10.12
+		export MACOSX_DEPLOYMENT_TARGET=10.6
 		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
 		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
 		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
