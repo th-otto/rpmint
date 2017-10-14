@@ -126,7 +126,7 @@ case "${TARGET}" in
     	ranlib=gcc-ranlib
 		# we cannot add this to CFLAGS, because then autoconf tests
 		# for missing c library functions will always succeed
-		LTO_CFLAGS="-flto"
+		LTO_CFLAGS="-flto -ffat-lto-objects"
 		;;
 esac
 
@@ -193,12 +193,16 @@ unpack_archive()
 }
 
 
-# FIXME: libtool kills it
 hack_lto_cflags()
 {
+	if test "$LTO_CFLAGS" != ""; then
         sed -i 's/^S\["CFLAGS"\]="\([^"]*\)"$/S\["CFLAGS"\]="'"$LTO_CFLAGS"' \1"/
-s/^S\["CXXFLAGS"\]="\([^"]*\)"$/S\["CXXFLAGS"\]="'"$LTO_CFLAGS"' \1"/' config.status
-			./config.status
+s/^S\["CXXFLAGS"\]="\([^"]*\)"$/S\["CXXFLAGS"\]="'"$LTO_CFLAGS"' \1"/
+s/^S\["BUILD_CFLAGS"\]="\([^"]*\)"$/S\["BUILD_CFLAGS"\]="'"$LTO_CFLAGS"' \1"/
+s/^s,@CFLAGS@,\(.*\)$/s,@CFLAGS@,'"$LTO_CFLAGS"' \1/
+s/^s,@CXXFLAGS@,\(.*\)$/s,@CXXFLAGS@,'"$LTO_CFLAGS"' \1/' config.status
+		./config.status
+	fi
 }
 
 

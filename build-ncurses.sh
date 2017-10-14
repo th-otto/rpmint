@@ -200,9 +200,7 @@ configure_ncurses()
 			$mixedcase \
 			"$@" \
             || exit $?
-        sed -i 's/^s,@CFLAGS@,\(.*\)$/s,@CFLAGS@,'"$LTO_CFLAGS"' \1/
-s/^s,@CXXFLAGS@,\(.*\)$/s,@CXXFLAGS@,'"$LTO_CFLAGS"' \1/' config.status
-			./config.status
+        hack_lto_cflags
     fi
 }
 

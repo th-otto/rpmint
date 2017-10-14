@@ -33,7 +33,7 @@ make $JOBS || exit 1
 make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 make distclean
 
-CFLAGS="$COMMON_CFLAGS" ${srcdir}/configure ${CONFIGURE_FLAGS}
+CFLAGS="-m68000 $COMMON_CFLAGS" ${srcdir}/configure ${CONFIGURE_FLAGS}
 hack_lto_cflags
 make $JOBS || exit 1
 make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
