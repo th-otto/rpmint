@@ -37,7 +37,7 @@ make $JOBS || exit 1
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/mshort
-mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}lib/m68020-60
+mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/m68020-60
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/m68020-60/mshort
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/m5475
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/m5475/mshort
