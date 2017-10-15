@@ -264,6 +264,7 @@ $srcdir/configure \
 	--without-newlib \
 	--disable-libstdcxx-pch \
 	--disable-threads \
+	--disable-win32-registry \
 	$enable_lto \
 	--enable-ssp \
 	--enable-libssp \

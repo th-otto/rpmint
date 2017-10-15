@@ -7,10 +7,6 @@ PACKAGENAME=windom
 VERSION=-2.0.1
 VERSIONPATCH=
 
-CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=
-CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=/m68020-60
-CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=/m5475
-
 . ${scriptdir}/functions.sh
 
 PATCHES="patches/windom/cross.patch"
@@ -28,10 +24,6 @@ COMMON_CFLAGS="$LTO_CFLAGS"
 SUBDIRS="src demo"
 
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include
-
-CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=
-CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=/m68020-60
-CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=m5475
 
 for CPU in 020 v4e 000; do
 	eval libdir=${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}\${CPU_LIBDIR_$CPU}

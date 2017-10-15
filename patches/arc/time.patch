@@ -1,0 +1,49 @@
+Binary files arc-5.21p.orig/arc.o and arc-5.21p/arc.o differ
+Binary files arc-5.21p.orig/arcadd.o and arc-5.21p/arcadd.o differ
+Binary files arc-5.21p.orig/arccode.o and arc-5.21p/arccode.o differ
+Binary files arc-5.21p.orig/arccvt.o and arc-5.21p/arccvt.o differ
+Binary files arc-5.21p.orig/arcdata.o and arc-5.21p/arcdata.o differ
+Binary files arc-5.21p.orig/arcdel.o and arc-5.21p/arcdel.o differ
+diff -rupN arc-5.21p.orig/arcdos.c arc-5.21p/arcdos.c
+--- arc-5.21p.orig/arcdos.c	2010-08-07 15:06:42.000000000 +0200
++++ arc-5.21p/arcdos.c	2017-10-15 05:05:18.840129089 +0200
+@@ -32,6 +32,7 @@
+ #include <sys/stat.h>
+ #if	BSD
+ #include <sys/time.h>
++#include <time.h>
+ #else	
+ #include <time.h>		/* Sys V. Bleah. */
+ #if	NEED_TIMEVAL
+Binary files arc-5.21p.orig/arcext.o and arc-5.21p/arcext.o differ
+diff -rupN arc-5.21p.orig/arclzw.c arc-5.21p/arclzw.c
+--- arc-5.21p.orig/arclzw.c	2010-08-07 15:06:42.000000000 +0200
++++ arc-5.21p/arclzw.c	2017-10-15 05:04:51.684129680 +0200
+@@ -32,6 +32,7 @@
+  */
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <string.h>
+ #include "arc.h"
+ 
+ VOID            arcdie();
+diff -rupN arc-5.21p.orig/tmclock.c arc-5.21p/tmclock.c
+--- arc-5.21p.orig/tmclock.c	2010-08-07 15:06:42.000000000 +0200
++++ arc-5.21p/tmclock.c	2017-10-15 05:05:18.840129089 +0200
+@@ -16,6 +16,7 @@
+ #define	CENTURY	19
+ #if	BSD
+ #include <sys/time.h>
++#include <time.h>
+ #else
+ #include <time.h>
+ extern long	timezone;	/* should be in <time.h>, but isn't on Sun */
+@@ -87,7 +88,7 @@ tmclock( tm )
+ struct tm *tm;
+     {
+     register long jd, sdc;
+-    long result;
++    time_t result;
+ 
+     if ( ( jd = tmjuliandate( tm ) ) == -1L )
+ 	return ( -1L );
