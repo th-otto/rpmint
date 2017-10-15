@@ -153,12 +153,13 @@ unpack_archive()
 	rm -rf "$srcdir"
 	if :; then
 		missing=true
-		for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
-		         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
-		         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.gz" \
-		         "${here}${PACKAGENAME}${VERSION}.tar.xz" \
-		         "${here}${PACKAGENAME}${VERSION}.tar.bz2" \
-		         "${here}${PACKAGENAME}${VERSION}.tar.gz"; do
+		test -z "$srcarchive" && srcarchive=${PACKAGENAME}${VERSION}
+		for f in "$ARCHIVES_DIR/${srcarchive}.tar.xz" \
+		         "$ARCHIVES_DIR/${srcarchive}.tar.bz2" \
+		         "$ARCHIVES_DIR/${srcarchive}.tar.gz" \
+		         "${here}${srcarchive}.tar.xz" \
+		         "${here}${srcarchive}.tar.bz2" \
+		         "${here}${srcarchive}.tar.gz"; do
 			if test -f "$f"; then missing=false; tar xvf "$f" || exit 1; fi
 		done
 		if $missing; then
