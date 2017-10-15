@@ -267,7 +267,7 @@ make_bin_archive()
 	gzip_docs
 
 	cd "${THISPKG_DIR}${sysroot}" || exit 1
-	file=""
+	files=""
 	for i in ${BINFILES}; do
 		i=${i#/}
 		if test -d "$i" -o -f "$i" -o -h "$i"; then
@@ -384,8 +384,30 @@ make_archives()
 	cd "${THISPKG_DIR}" || exit 1
 
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-dev.tar.xz *
+
+	if test -n "${BINFILES}"; then
+		cd "${THISPKG_DIR}${sysroot}" || exit 1
+		files=""
+		for i in ${BINFILES}; do
+			i=${i#/}
+			if test -d "$i" -o -f "$i" -o -h "$i"; then
+				files="$files $i"
+			else
+				echo "$i does not exist for packaging" >&2
+				exit 1
+			fi
+		done
+		
+		rm -f $files
+		cd "${THISPKG_DIR}" || exit 1
+		files=`find . -type f`
+		if test "$files" = ""; then
+			echo "no dev files, removing ${TARNAME}-dev.tar.xz"
+			rm -f ${DIST_DIR}/${TARNAME}-dev.tar.xz
+		fi
+	fi
 	
-	cd "${BUILD_DIR}"
+	cd "${BUILD_DIR}" || exit 1
 	if test "$KEEP_PKGDIR" != yes; then
 		rm -rf "${THISPKG_DIR}"
 	fi
