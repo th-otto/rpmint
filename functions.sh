@@ -105,6 +105,9 @@ TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
 BINTARNAME=${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 
+#
+# this could eventually be extracted from gcc -print-multi-lib
+#
 CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=
 CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=/m68020-60
 CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=/m5475
@@ -383,8 +386,12 @@ make_archives()
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-dev.tar.xz *
 	
 	cd "${BUILD_DIR}"
-#	rm -rf "${THISPKG_DIR}"
-	rm -rf "${srcdir}"
+	if test "$KEEP_PKGDIR" != yes; then
+		rm -rf "${THISPKG_DIR}"
+	fi
+	if test "$KEEP_SRCDIR" != yes; then
+		rm -rf "${srcdir}"
+	fi
 
 	test -z "${PATCHES}" || ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES} ${PATCHARCHIVE}
 	cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh

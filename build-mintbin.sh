@@ -47,8 +47,12 @@ TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz .
 
 cd "${BUILD_DIR}"
-#rm -rf "${THISPKG_DIR}"
-rm -rf "${srcdir}"
+if test "$KEEP_PKGDIR" != yes; then
+	rm -rf "${THISPKG_DIR}"
+fi
+if test "$KEEP_SRCDIR" != yes; then
+	rm -rf "${srcdir}"
+fi
 
 test -z "${PATCHES}" || tar --owner=0 --group=0 -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.tar.xz ${PATCHES}
 cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh

@@ -388,7 +388,9 @@ rm -rf ${PREFIX#/}/share/man
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
 
 cd "${BUILD_DIR}"
-#rm -rf "${THISPKG_DIR}"
+if test "$KEEP_PKGDIR" != yes; then
+	rm -rf "${THISPKG_DIR}"
+fi
 
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES}
 cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh
