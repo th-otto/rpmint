@@ -27,7 +27,8 @@ for pkg in gemlib \
 	xz \
 	zip \
 	unzip \
-	zoo
+	zoo \
+	gmp
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

@@ -50,6 +50,8 @@ for CPU in 020 v4e 000; do
 	make_bin_archive $CPU
 done
 
+# TODO: add stack-size 128k
+
 move_prefix
 configured_prefix="${prefix}"
 

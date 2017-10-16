@@ -1,0 +1,240 @@
+diff -rup -x '*.o' -x compile -x aclocal.m4 -x configure -x Makefile.in -x test-driver -x missing -x config.sub -x config.guess -x ylwrap -x install-sh -x mdate-sh -x texinfo.tex -x INSTALL gmp-6.1.2.orig/configure.ac gmp-6.1.2/configure.ac
+--- gmp-6.1.2.orig/configure.ac	2016-12-16 16:45:27.000000000 +0100
++++ gmp-6.1.2/configure.ac	2017-10-16 20:15:28.233740834 +0200
+@@ -2402,6 +2402,13 @@ GMP_CHECK_LIBM_FOR_BUILD
+ test -n "$CCAS" || CCAS="$CC -c"
+ AC_SUBST(CCAS)
+ 
++if echo "" | $CC $CFLAGS -dM -E - | grep -q __mcoldfire__; then
++   GMP_DEFINE_RAW("define_not_for_expansion(\`__mcoldfire__')", POST)
++fi
++
++if echo "" | $CC $CFLAGS -dM -E - | grep -q __mc68020__; then
++  path="m68k/mc68020 m68k $path"
++fi
+ 
+ # The C++ compiler, if desired.
+ want_cxx=no
+diff -rup -x '*.o' -x compile -x aclocal.m4 -x configure -x Makefile.in -x test-driver -x missing -x config.sub -x config.guess -x ylwrap -x install-sh -x mdate-sh -x texinfo.tex -x INSTALL gmp-6.1.2.orig/mpn/m68k/aors_n.asm gmp-6.1.2/mpn/m68k/aors_n.asm
+--- gmp-6.1.2.orig/mpn/m68k/aors_n.asm	2016-12-16 16:45:27.000000000 +0100
++++ gmp-6.1.2/mpn/m68k/aors_n.asm	2017-10-16 20:10:31.989747280 +0200
+@@ -65,8 +65,14 @@ C Copy the arguments to registers.  Bett
+ 	movel	M(sp,20), a1
+ 	movel	M(sp,24), d2
+ 
++ifdef(`__mcoldfire__',`
++	moveq   #1, d0
++	eorl	d0, d2
++	lsrl	d0, d2
++',`
+ 	eorw	#1, d2
+ 	lsrl	#1, d2
++')
+ 	bcc	L(L1)
+ 	subql	#1, d2	C clears cy as side effect
+ 
+@@ -80,12 +86,21 @@ L(L1):	movel	M(a0,+), d0
+ 	M4_inst	d1, d0
+ 	movel	d0, M(a2,+)
+ 
++ifdef(`__mcoldfire__',`
++	tstl	d2
++	beq	L(L2)			C loop until 16 lsb of %4 == -1
++	subxl	d0, d0			C d0 <= -cy; save cy as 0 or -1 in d0
++	subql	#1, d2
++	addl	d0, d0			C restore cy
++	bra	L(Loop)
++',`
+ 	dbf	d2, L(Loop)		C loop until 16 lsb of %4 == -1
+ 	subxl	d0, d0			C d0 <= -cy; save cy as 0 or -1 in d0
+ 	subl	#0x10000, d2
+ 	bcs	L(L2)
+ 	addl	d0, d0			C restore cy
+ 	bra	L(Loop)
++')
+ 
+ L(L2):
+ 	negl	d0
+diff -rup -x '*.o' -x compile -x aclocal.m4 -x configure -x Makefile.in -x test-driver -x missing -x config.sub -x config.guess -x ylwrap -x install-sh -x mdate-sh -x texinfo.tex -x INSTALL gmp-6.1.2.orig/mpn/m68k/lshift.asm gmp-6.1.2/mpn/m68k/lshift.asm
+--- gmp-6.1.2.orig/mpn/m68k/lshift.asm	2016-12-16 16:45:27.000000000 +0100
++++ gmp-6.1.2/mpn/m68k/lshift.asm	2017-10-16 20:10:31.989747280 +0200
+@@ -63,7 +63,12 @@ ifdef(`SIZEOF_UNSIGNED',,
+ 
+ PROLOGUE(mpn_lshift)
+ C Save used registers on the stack.
++ifdef(`__mcoldfire__',`
++	lea	M(sp,-24), sp
++	moveml	d2-d6/a2, M(sp)
++',`
+ 	moveml	d2-d6/a2, M(-,sp)
++')
+ 
+ C Copy the arguments to registers.
+ 	movel	M(sp,28), res_ptr
+@@ -129,15 +134,25 @@ L(L1):
+ 	movel	d2, M(-,res_ptr)
+ 	lsll	cnt, d1
+ 
++ifdef(`__mcoldfire__',`
++	subql	#1, s_size
++	bcc	L(Loop)
++',`
+ 	dbf	s_size, L(Loop)
+ 	subl	#0x10000, s_size
+ 	bcc	L(Loop)
++')
+ 
+ L(Lend):
+ 	movel	d1, M(-,res_ptr)	C store least significant limb
+ 
+ C Restore used registers from stack frame.
++ifdef(`__mcoldfire__',`
++	moveml	M(sp), d2-d6/a2
++	lea	M(sp,24), sp
++',`
+ 	moveml	M(sp,+), d2-d6/a2
++')
+ 	rts
+ 
+ C We loop from least significant end of the arrays, which is only
+@@ -146,7 +161,11 @@ C function is documented to work for ove
+ 
+ L(Lspecial):
+ 	clrl	d0			C initialize carry
++ifdef(`__mcoldfire__',`
++	eorl	#1, s_size
++',`
+ 	eorw	#1, s_size
++')
+ 	lsrl	#1, s_size
+ 	bcc	L(LL1)
+ 	subql	#1, s_size
+@@ -160,16 +179,29 @@ L(LL1):
+ 	addxl	d2, d2
+ 	movel	d2, M(res_ptr,+)
+ 
++ifdef(`__mcoldfire__',`
++	subql	#1, s_size
++	beq	L(LLend)
++	addxl	d0, d0		C save cy in lsb
++	lsrl	#1, d0		C restore cy
++	bra	L(LLoop)
++',`
+ 	dbf	s_size, L(LLoop)
+ 	addxl	d0, d0		C save cy in lsb
+ 	subl	#0x10000, s_size
+ 	bcs	L(LLend)
+ 	lsrl	#1, d0		C restore cy
+ 	bra	L(LLoop)
++')
+ 
+ L(LLend):
+ C Restore used registers from stack frame.
++ifdef(`__mcoldfire__',`
++	moveml	M(sp), d2-d6/a2
++	lea	M(sp,24), sp
++',`
+ 	moveml	M(sp,+), d2-d6/a2
++')
+ 	rts
+ 
+ EPILOGUE(mpn_lshift)
+diff -rup -x '*.o' -x compile -x aclocal.m4 -x configure -x Makefile.in -x test-driver -x missing -x config.sub -x config.guess -x ylwrap -x install-sh -x mdate-sh -x texinfo.tex -x INSTALL gmp-6.1.2.orig/mpn/m68k/rshift.asm gmp-6.1.2/mpn/m68k/rshift.asm
+--- gmp-6.1.2.orig/mpn/m68k/rshift.asm	2016-12-16 16:45:27.000000000 +0100
++++ gmp-6.1.2/mpn/m68k/rshift.asm	2017-10-16 20:10:31.989747280 +0200
+@@ -63,7 +63,12 @@ ifdef(`SIZEOF_UNSIGNED',,
+ 
+ PROLOGUE(mpn_rshift)
+ C Save used registers on the stack.
++ifdef(`__mcoldfire__',`
++	lea	M(sp,-24), sp
++	moveml	d2-d6/a2, M(sp)
++',`
+ 	moveml	d2-d6/a2, M(-,sp)
++')
+ 
+ C Copy the arguments to registers.
+ 	movel	M(sp,28), res_ptr
+@@ -119,15 +124,25 @@ L(L1):
+ 	movel	d2, M(res_ptr,+)
+ 	lsrl	cnt, d1
+ 
++ifdef(`__mcoldfire__',`
++	subql	#1, s_size
++	bcc	L(Loop)
++',`
+ 	dbf	s_size, L(Loop)
+ 	subl	#0x10000, s_size
+ 	bcc	L(Loop)
++')
+ 
+ L(Lend):
+ 	movel	d1, M(res_ptr)	C store most significant limb
+ 
+ C Restore used registers from stack frame.
++ifdef(`__mcoldfire__',`
++	moveml	M(sp), d2-d6/a2
++	lea	M(sp,24), sp
++',`
+ 	moveml	M(sp,+), d2-d6/a2
++')
+ 	rts
+ 
+ C We loop from most significant end of the arrays, which is only permissable
+@@ -146,30 +161,56 @@ ifelse(scale_available_p,1,`
+ ')
+ 
+ 	clrl	d0			C initialize carry
++ifdef(`__mcoldfire__',`
++	eorl	#1, s_size
++',`
+ 	eorw	#1, s_size
++')
+ 	lsrl	#1, s_size
+ 	bcc	L(LL1)
+ 	subql	#1, s_size
+ 
+ L(LLoop):
+ 	movel	M(-,s_ptr), d2
++ifdef(`__mcoldfire__',`
++dnl	roxrl	#1, d2
++',`
+ 	roxrl	#1, d2
++')
+ 	movel	d2, M(-,res_ptr)
+ L(LL1):
+ 	movel	M(-,s_ptr), d2
++ifdef(`__mcoldfire__',`
++dnl	roxrl	#1, d2
++',`
+ 	roxrl	#1, d2
++')
+ 	movel	d2, M(-,res_ptr)
+ 
++ifdef(`__mcoldfire__',`
++	tstl	s_size
++	beq	L(LLend)
++dnl	roxrl	#1, d0		C save cy in msb
++	subql	#1, s_size
++	addl	d0, d0		C restore cy
++	bra	L(LLoop)
++',`
+ 	dbf	s_size, L(LLoop)
+ 	roxrl	#1, d0		C save cy in msb
+ 	subl	#0x10000, s_size
+ 	bcs	L(LLend)
+ 	addl	d0, d0		C restore cy
+ 	bra	L(LLoop)
++')
+ 
+ L(LLend):
+ C Restore used registers from stack frame.
++ifdef(`__mcoldfire__',`
++	moveml	M(sp), d2-d6/a2
++	lea	M(sp,24), sp
++',`
+ 	moveml	M(sp,+), d2-d6/a2
++')
+ 	rts
+ 
+ EPILOGUE(mpn_rshift)
