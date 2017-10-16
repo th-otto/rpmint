@@ -23,6 +23,8 @@ for pkg in gemlib \
 	arj \
 	iconv \
 	lha \
+	unrar \
+	xz
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

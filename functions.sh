@@ -183,7 +183,15 @@ unpack_archive()
 		fi
 		for f in $PATCHES; do
 		  if test -f "$f"; then
-		    cd "$srcdir" && patch -p1 < "$BUILD_DIR/$f" || exit 1
+		    cd "$srcdir" || exit 1
+		    flags=
+		    if patch -N -s --dry-run -p1 -i "$BUILD_DIR/$f" > /dev/null 2>&1; then
+		    	flags="-N -p1"
+			    patch $flags -i "$BUILD_DIR/$f" || exit 1
+		    else
+		    	echo "patch $f does not apply" >&2
+		    	exit 1
+			fi
 		  else
 		    echo "missing patch $f" >&2
 		    exit 1
@@ -399,7 +407,7 @@ make_archives()
 			fi
 		done
 		
-		rm -f $files
+		rm -rf $files
 		cd "${THISPKG_DIR}" || exit 1
 		files=`find . -type f`
 		if test "$files" = ""; then
