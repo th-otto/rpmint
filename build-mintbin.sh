@@ -21,10 +21,10 @@ make $JOBS || exit 1
 make DESTDIR="${THISPKG_DIR}" install || exit 1
 
 cd "${THISPKG_DIR}/${prefix}/bin" || exit 1
-strip -p *
+${STRIP} *
 
 cd "${THISPKG_DIR}/${prefix}/${TARGET}/bin" || exit 1
-strip -p *
+${STRIP} *
 
 for i in arconv cnm csize cstrip flags mintbin stack symex; do
 	if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then

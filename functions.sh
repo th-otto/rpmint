@@ -19,12 +19,12 @@ case `uname -s` in
 	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	MSYS*) host=msys ;;
 	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
-	Darwin*) host=macos; TAR_OPTS= ;;
+	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
 	*) host=linux ;;
 esac
-case `uname -s` in
-	MINGW*) prefix=${MINGW_PREFIX} ;;
-	Darwin*) prefix=/opt/cross-mint ;;
+case $host in
+	mingw*) prefix=${MINGW_PREFIX} ;;
+	macos*) prefix=/opt/cross-mint ;;
 	*) prefix=/usr ;;
 esac
 sysroot=${prefix}/${TARGET}/sys-root
@@ -41,8 +41,8 @@ TARGET_INFODIR="${TARGET_PREFIX}/share/info"
 #
 # Where to look for the original source archives
 #
-case `uname -s` in
-	MINGW* | MSYS*) here=`pwd` ;;
+case $host in
+	mingw* | msys*) here=`pwd` ;;
 	*) here=`pwd` ;;
 esac
 ARCHIVES_DIR=$HOME/packages
@@ -80,11 +80,11 @@ DIST_DIR="$here/pkgs"
 BUILD_EXEEXT=
 TARGET_EXEEXT=
 LN_S="ln -s"
-case `uname -s` in
-	CYGWIN* | MINGW* | MSYS*) BUILD_EXEEXT=.exe ;;
+case $host in
+	cygwin* | mingw* | msys*) BUILD_EXEEXT=.exe ;;
 esac
-case `uname -s` in
-	MINGW* | MSYS*) LN_S="cp -p" ;;
+case $host in
+	mingw* | msys*) LN_S="cp -p" ;;
 esac
 case $TARGET in
  	*-*-cygwin* | *-*-mingw* | *-*-msys*) TARGET_EXEEXT=.exe ;;
@@ -128,6 +128,8 @@ test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 
 LTO_CFLAGS=
 ranlib=ranlib
+STRIP=${STRIP-strip -p}
+
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
     	ranlib=gcc-ranlib
