@@ -24,7 +24,9 @@ for pkg in gemlib \
 	iconv \
 	lha \
 	unrar \
-	xz
+	xz \
+	zip \
+	unzip
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

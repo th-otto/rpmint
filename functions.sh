@@ -157,13 +157,15 @@ unpack_archive()
 		for f in "$ARCHIVES_DIR/${srcarchive}.tar.xz" \
 		         "$ARCHIVES_DIR/${srcarchive}.tar.bz2" \
 		         "$ARCHIVES_DIR/${srcarchive}.tar.gz" \
+		         "$ARCHIVES_DIR/${srcarchive}.tgz" \
 		         "${here}${srcarchive}.tar.xz" \
 		         "${here}${srcarchive}.tar.bz2" \
-		         "${here}${srcarchive}.tar.gz"; do
+		         "${here}${srcarchive}.tar.gz" \
+		         "${here}${srcarchive}.tgz"; do
 			if test -f "$f"; then missing=false; tar xvf "$f" || exit 1; fi
 		done
 		if $missing; then
-			echo "${PACKAGENAME}${VERSION}.*: no such file" >&2
+			echo "${srcarchive}.*: no such file" >&2
 			exit 1
 		fi
 		if test ! -d "$srcdir"; then
