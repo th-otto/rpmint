@@ -3,27 +3,23 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=xz
-VERSION=-5.2.3
+PACKAGENAME=mpfr
+VERSION=-3.1.6
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/xz/mintelf-config.patch"
-
-BINFILES="
-${TARGET_BINDIR#/}/*
-${TARGET_MANDIR#/}/man1/*
-${TARGET_PREFIX#/}/share/doc/${PACKAGENAME}
-"
+PATCHES="patches/mpfr/mintelf-config.patch"
 
 unpack_archive
 
+cd "$srcdir"
+
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O3 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --docdir=${TARGET_PREFIX}/share/doc/${PACKAGENAME} --disable-threads"
+CONFIGURE_FLAGS="--prefix=${prefix} --host=${TARGET}"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -35,10 +31,9 @@ for CPU in 020 v4e 000; do
 	eval libdir=\${CPU_LIBDIR_$CPU}
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$libdir
 	hack_lto_cflags
-	make || exit 1
+	make $JOBS || exit 1
 	make DESTDIR="${THISPKG_DIR}${sysroot}" install
 	make clean
-	make_bin_archive $CPU
 done
 
 move_prefix

@@ -28,7 +28,8 @@ for pkg in gemlib \
 	zip \
 	unzip \
 	zoo \
-	gmp
+	gmp \
+	mpfr
 ; do
 	script=build-${pkg}.sh
 	ls -l $script
