@@ -42,12 +42,12 @@ for CPU in 020 v4e 000; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval libdir=\${CPU_LIBDIR_$CPU}
-	make CC="${TARGET}-gcc" MODEL="$CPU_CFLAGS $COMMON_CFLAGS -D__linux" CFLAGS=-c zoo fiz || exit 1
+	${MAKE} CC="${TARGET}-gcc" MODEL="$CPU_CFLAGS $COMMON_CFLAGS -D__linux" CFLAGS=-c zoo fiz || exit 1
 	install -Dpm 0755 zoo "${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/zoo"
 	install -Dpm 0755 fiz "${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/fiz"
 	install -Dpm 0644 zoo.1 "${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1/zoo.1"
 	install -Dpm 0644 fiz.1 "${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1/fiz.1"
-	make clean
+	${MAKE} clean
 	make_bin_archive $CPU
 done
 

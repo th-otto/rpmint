@@ -149,6 +149,7 @@ else
   test 1 -gt "$JOBS" && JOBS=1
 fi
 JOBS=-j$JOBS
+MAKE=${MAKE:-make}
 
 BASE_VER=$(cat $srcdir/gcc/BASE-VER)
 gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
@@ -277,16 +278,16 @@ $srcdir/configure \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
 	--enable-languages="$languages"
 
-make $JOBS all-gcc || exit 1
-make $JOBS all-target-libgcc || exit 1
-make $JOBS || exit 1
+${MAKE} $JOBS all-gcc || exit 1
+${MAKE} $JOBS all-target-libgcc || exit 1
+${MAKE} $JOBS || exit 1
 
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
 for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "$MINT_BUILD_DIR"
-	make DESTDIR="${INSTALL_DIR}" install || exit 1
+	${MAKE} DESTDIR="${INSTALL_DIR}" install || exit 1
 	
 	mkdir -p "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	

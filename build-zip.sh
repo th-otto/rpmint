@@ -40,9 +40,9 @@ for CPU in 020 v4e 000; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval libdir=\${CPU_LIBDIR_$CPU}
-	make -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" CPP="${TARGET}-gcc -E $CPU_CFLAGS $COMMON_CFLAGS" generic || exit 1
-	make -f unix/Makefile BINDIR="${THISPKG_DIR}${sysroot}${TARGET_BINDIR}" MANDIR=${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1 install
-	make -f unix/Makefile clean
+	${MAKE} -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" CPP="${TARGET}-gcc -E $CPU_CFLAGS $COMMON_CFLAGS" generic || exit 1
+	${MAKE} -f unix/Makefile BINDIR="${THISPKG_DIR}${sysroot}${TARGET_BINDIR}" MANDIR=${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1 install
+	${MAKE} -f unix/Makefile clean
 	make_bin_archive $CPU
 done
 

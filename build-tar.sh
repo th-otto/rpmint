@@ -129,16 +129,16 @@ for CPU in 020 v4e 000; do
 	create_config_cache
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS}
 	hack_lto_cflags
-	make || exit 1
+	${MAKE} || exit 1
 
-	make DESTDIR="${THISPKG_DIR}${sysroot}" install
+	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
 
 	install -D -m 644 scripts/backup-specs ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/../etc/backup/backup-specs
 	install -D -m 644 -t ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/share/doc/${PACKAGENAME} README* ABOUT-NLS AUTHORS NEWS THANKS \
 							ChangeLog TODO COPYING
 	(install -d -m 755 ${THISPKG_DIR}${sysroot}/bin; cd ${THISPKG_DIR}${sysroot}/bin; $LN_S ../${TARGET_BINDIR#/}/tar tar)
 
-	make clean >/dev/null
+	${MAKE} clean >/dev/null
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/charset.alias
 	make_bin_archive $CPU
 done

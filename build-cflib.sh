@@ -32,7 +32,7 @@ sed -i "\@^DEFINITIONS =@i PREFIX := ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" C
 cd "$MINT_BUILD_DIR"
 
 export CROSS_TOOL=${TARGET}
-make $JOBS || exit 1
+${MAKE} $JOBS || exit 1
 
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib
@@ -42,6 +42,6 @@ mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/m68020-60/mshort
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/m5475
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/m5475/mshort
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/stguide
-make PREFIX=${THISPKG_DIR}${sysroot}${TARGET_PREFIX} install || exit 1
+${MAKE} PREFIX=${THISPKG_DIR}${sysroot}${TARGET_PREFIX} install || exit 1
 
 make_archives

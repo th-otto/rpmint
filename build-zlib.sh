@@ -22,19 +22,19 @@ export CHOST=$TARGET
 COMMON_CFLAGS="-O3 -fomit-frame-pointer $LTO_CFLAGS"
 
 CFLAGS="-m68020-60 $COMMON_CFLAGS" ./configure --prefix=${prefix} --libdir='${exec_prefix}/lib/m68020-60'
-make $JOBS || exit 1
-make DESTDIR="${THISPKG_DIR}${sysroot}" install-libs || exit 1
-make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install-libs || exit 1
+${MAKE} distclean
 
 CFLAGS="-mcpu=5475 $COMMON_CFLAGS" ./configure --prefix=${prefix} --libdir='${exec_prefix}/lib/m5475'
-make $JOBS || exit 1
-make DESTDIR="${THISPKG_DIR}${sysroot}" install-libs || exit 1
-make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install-libs || exit 1
+${MAKE} distclean
 
 CFLAGS="$COMMON_CFLAGS" ./configure --prefix=${prefix}
-make $JOBS || exit 1
-make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-#make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+#${MAKE} distclean
 
 move_prefix
 configured_prefix="${prefix}"

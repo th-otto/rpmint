@@ -37,9 +37,9 @@ s:^OPT = .*:OPT = ${COMMON_CFLAGS} ${CPU_CFLAGS}:
 s:^CC = .*:CC = ${TARGET}-gcc:
 s:install -s:install:g" Makefile
 
-	make $JOBS || exit 1
-	make install || exit 1
-	make clean
+	${MAKE} $JOBS || exit 1
+	${MAKE} install || exit 1
+	${MAKE} clean
 	make_bin_archive $CPU
 done
 

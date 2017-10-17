@@ -16,9 +16,9 @@ unpack_archive
 cd "$MINT_BUILD_DIR"
 
 ./configure --prefix=${prefix} --disable-nls --target=$TARGET
-make $JOBS || exit 1
+${MAKE} $JOBS || exit 1
 
-make DESTDIR="${THISPKG_DIR}" install || exit 1
+${MAKE} DESTDIR="${THISPKG_DIR}" install || exit 1
 
 cd "${THISPKG_DIR}/${prefix}/bin" || exit 1
 ${STRIP} *

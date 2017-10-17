@@ -54,10 +54,10 @@ for CPU in 020 v4e 000; do
 	./configure --enable-outdir=${BASEDIR}
 
 	cd ..
-	make prepare
+	${MAKE} prepare
 	ARJ_DIR=${BASEDIR}/en/rs/arj
 	export NATIVE_ARJ=${srcdir}/${ARJ_DIR}/arj
-	make ${ARJ_DIR}/arj || exit 1
+	${MAKE} ${ARJ_DIR}/arj || exit 1
 	export NATIVE_ARJ=${MINT_BUILD_DIR}/native_arj
 	mv ${ARJ_DIR}/arj ${NATIVE_ARJ} || exit 1
 	
@@ -70,19 +70,19 @@ for CPU in 020 v4e 000; do
 	cd "$MINT_BUILD_DIR"
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$libdir
 	cd ..
-	make prepare
-	make clean
+	${MAKE} prepare
+	${MAKE} clean
 
-	make CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/msgbind
-	make CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/today
-	#make CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/make_key
-	make CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/postproc
-	make CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/join
-	make CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/packager
+	${MAKE} CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/msgbind
+	${MAKE} CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/today
+	#${MAKE} CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/make_key
+	${MAKE} CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/postproc
+	${MAKE} CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/join
+	${MAKE} CC=gcc COPT='-c -I$(BASEDIR) -I$(SRC_DIR) $(ALL_CFLAGS)' LDFLAGS='$(ADD_LDFLAGS)' ./${BASEDIR}/en/rs/tools/packager
 	
-	make || exit 1
-	make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-	make clean
+	${MAKE} || exit 1
+	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+	${MAKE} clean
 	make_bin_archive $CPU
 done
 

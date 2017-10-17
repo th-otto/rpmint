@@ -43,10 +43,10 @@ for CPU in 020 v4e 000; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval libdir=\${CPU_LIBDIR_$CPU}
-	make $JOBS CXX=${TARGET}-g++ CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" STRIP=${TARGET}-strip AR=${TARGET}-ar LDFLAGS= LIBFLAGS= DEFINES= || exit 1
+	${MAKE} $JOBS CXX=${TARGET}-g++ CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" STRIP=${TARGET}-strip AR=${TARGET}-ar LDFLAGS= LIBFLAGS= DEFINES= || exit 1
 	mkdir -p "${THISPKG_DIR}${sysroot}${TARGET_BINDIR}"
-	make DESTDIR="${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" install
-	make clean
+	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" install
+	${MAKE} clean
 	make_bin_archive $CPU
 done
 

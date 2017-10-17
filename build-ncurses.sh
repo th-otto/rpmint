@@ -96,7 +96,7 @@ configure_ncurses_for_build()
 	cd "$HOST_BUILD_DIR" || exit 1
     if true
     then
-    	test -f Makefile && $MAKE clean
+    	test -f Makefile && ${MAKE} clean
         echo "configure $NAME for $BUILD:"
             ${srcdir}/configure \
             $BUILD_CONFIGURE_ARGS \
@@ -152,7 +152,7 @@ configure_ncurses()
     cd "$MINT_BUILD_DIR"
     if true
     then
-    	test -f Makefile && $MAKE clean
+    	test -f Makefile && ${MAKE} clean
         echo "configure $NAME:"
             ${srcdir}/configure \
             $TARGET_CONFIGURE_ARGS \
@@ -229,12 +229,12 @@ build_ncurses()
     if true; then
     	withchtype=--with-chtype=long
     	configure_ncurses_for_build
-    	$MAKE $JOBS -C include &&
-    	$MAKE $JOBS -C ncurses fallback.c FALLBACK_LIST="" &&
-    	$MAKE $JOBS -C progs termsort.c &&
-    	$MAKE $JOBS -C progs transform.h &&
-    	$MAKE $JOBS -C progs infocmp$BUILD_EXEEXT &&
-    	$MAKE $JOBS -C progs tic$BUILD_EXEEXT \
+    	${MAKE} $JOBS -C include &&
+    	${MAKE} $JOBS -C ncurses fallback.c FALLBACK_LIST="" &&
+    	${MAKE} $JOBS -C progs termsort.c &&
+    	${MAKE} $JOBS -C progs transform.h &&
+    	${MAKE} $JOBS -C progs infocmp$BUILD_EXEEXT &&
+    	${MAKE} $JOBS -C progs tic$BUILD_EXEEXT \
     	|| exit $?
     	BUILD_TIC=$HOST_BUILD_DIR/progs/tic$BUILD_EXEEXT
     	BUILD_INFOCMP=$HOST_BUILD_DIR/progs/infocmp$BUILD_EXEEXT
@@ -324,23 +324,23 @@ EOF
 	
     CPU_CFLAGS=-m68020-60
     configure_ncurses
-    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
-    $MAKE $JOBS || exit $?
-    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncurses libdir=${sysroot}${TARGET_LIBDIR}/m68020-60 install || exit $?
+    test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
+    ${MAKE} $JOBS || exit $?
+    ${MAKE} DESTDIR="${THISPKG_DIR}" includesubdir=/ncurses libdir=${sysroot}${TARGET_LIBDIR}/m68020-60 install || exit $?
 	make_bin_archive 020
     
     CPU_CFLAGS=-mcpu=5475
     configure_ncurses
-    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
-    $MAKE $JOBS || exit $?
-    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncurses libdir=${sysroot}${TARGET_LIBDIR}/m5475 install || exit $?
+    test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
+    ${MAKE} $JOBS || exit $?
+    ${MAKE} DESTDIR="${THISPKG_DIR}" includesubdir=/ncurses libdir=${sysroot}${TARGET_LIBDIR}/m5475 install || exit $?
 	make_bin_archive v4e
     
     CPU_CFLAGS=-m68000
     configure_ncurses
-    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
-    $MAKE $JOBS || exit $?
-    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncurses install || exit $?
+    test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
+    ${MAKE} $JOBS || exit $?
+    ${MAKE} DESTDIR="${THISPKG_DIR}" includesubdir=/ncurses install || exit $?
     ( cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include"; $LN_S -f ncurses/{curses,ncurses,term,termcap}.h . )
 	make_bin_archive 000
     
@@ -353,21 +353,21 @@ EOF
     if false; then
 	    CPU_CFLAGS=-m68020-60
 	    configure_ncurses --enable-widec --without-progs
-	    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
-	    $MAKE $JOBS || exit $?
-	    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncursesw libdir=${sysroot}${TARGET_LIBDIR}/m68020-60 install.libs || exit $?
+	    test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
+	    ${MAKE} $JOBS || exit $?
+	    ${MAKE} DESTDIR="${THISPKG_DIR}" includesubdir=/ncursesw libdir=${sysroot}${TARGET_LIBDIR}/m68020-60 install.libs || exit $?
 	
 	    CPU_CFLAGS=-mcpu=5475
 	    configure_ncurses --enable-widec --without-progs
-	    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
-	    $MAKE $JOBS || exit $?
-	    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncursesw libdir=${sysroot}${TARGET_LIBDIR}/m5475 install.libs || exit $?
+	    test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
+	    ${MAKE} $JOBS || exit $?
+	    ${MAKE} DESTDIR="${THISPKG_DIR}" includesubdir=/ncursesw libdir=${sysroot}${TARGET_LIBDIR}/m5475 install.libs || exit $?
 
 	    CPU_CFLAGS=-m68000
 	    configure_ncurses --enable-widec --without-progs
-	    test -z "$CXX_FOR_TARGET" || $MAKE -C c++ etip.h || exit 1
-	    $MAKE $JOBS || exit $?
-	    $MAKE DESTDIR="${THISPKG_DIR}" includesubdir=/ncursesw install.libs install.includes || exit $?
+	    test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
+	    ${MAKE} $JOBS || exit $?
+	    ${MAKE} DESTDIR="${THISPKG_DIR}" includesubdir=/ncursesw install.libs install.includes || exit $?
 	fi
 	
 #   exec 0<&$safe_stdin

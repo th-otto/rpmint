@@ -32,8 +32,8 @@ sed -i "\@^DEFINITIONS =@i PREFIX := ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" C
 cd "$MINT_BUILD_DIR"
 
 export CROSS_TOOL=${TARGET}
-make $JOBS || exit 1
+${MAKE} $JOBS || exit 1
 
-make PREFIX=${THISPKG_DIR}${sysroot}${TARGET_PREFIX} install || exit 1
+${MAKE} PREFIX=${THISPKG_DIR}${sysroot}${TARGET_PREFIX} install || exit 1
 
 make_archives

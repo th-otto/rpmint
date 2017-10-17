@@ -148,7 +148,7 @@ ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
 strip=`which "${TARGET}-strip"`
 gcc=`which "${TARGET}-gcc"`
 cxx=`which "${TARGET}-g++"`
-MAKE=make
+MAKE=${MAKE:-make}
 
 if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$gcc" -o ! -x "$strip"; then
 	echo "cross tools for ${TARGET} not found" >&2

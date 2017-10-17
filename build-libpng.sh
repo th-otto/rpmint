@@ -33,23 +33,23 @@ export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 create_config_cache
 CFLAGS="-m68020-60 $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib/m68020-60'
 hack_lto_cflags
-make $JOBS || exit 1
-make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+${MAKE} distclean
 
 create_config_cache
 CFLAGS="-mcpu=5475 $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib/m5475'
 hack_lto_cflags
-make $JOBS || exit 1
-make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+${MAKE} distclean
 
 create_config_cache
 CFLAGS="$COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS}
 hack_lto_cflags
-make $JOBS || exit 1
-make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-#make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+#${MAKE} distclean
 
 move_prefix
 configured_prefix="${prefix}"

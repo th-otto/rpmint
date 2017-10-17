@@ -44,9 +44,9 @@ for CPU in 020 v4e 000; do
 	fi
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} $assembly --libdir='${exec_prefix}/lib'$libdir
 	hack_lto_cflags
-	make $JOBS || exit 1
-	make DESTDIR="${THISPKG_DIR}${sysroot}" install
-	make clean
+	${MAKE} $JOBS || exit 1
+	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
+	${MAKE} clean
 done
 
 move_prefix

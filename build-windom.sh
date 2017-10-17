@@ -33,12 +33,12 @@ for CPU in 020 v4e 000; do
 	rm -f lib/gcc/*.a
 	for dir in $SUBDIRS; do
 		cd $dir || exit 1
-		make clean
-		make -f gcc.mak \
+		${MAKE} clean
+		${MAKE} -f gcc.mak \
 			CROSS_PREFIX=${TARGET}- \
 			M68K_ATARI_MINT_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 			M68K_ATARI_MINT_LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
-		make -f gcc.mak \
+		${MAKE} -f gcc.mak \
 			PREFIX=${THISPKG_DIR}${sysroot}${TARGET_PREFIX} \
 			CROSS_PREFIX=${TARGET}- \
 			M68K_ATARI_MINT_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \

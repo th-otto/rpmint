@@ -91,6 +91,7 @@ if test ! -d "$srcdir"; then
 fi
 
 JOBS=
+MAKE=${MAKE:-make}
 
 
 # we don't want the build target in a native build
@@ -188,13 +189,13 @@ for CPU in ${ALL_CPUS}; do
 		$enable_plugins \
 		--disable-nls
 	
-	make $JOBS || exit 1
+	${MAKE} $JOBS || exit 1
 	
 	cd "$MINT_BUILD_DIR"
 
 	rm -rf "${THISPKG_DIR}${bindir}" "${THISPKG_DIR}${prefix}/${TARGET}/bin"
 
-	make DESTDIR="$THISPKG_DIR" libdir='${exec_prefix}/lib'$multilibdir install-strip || exit 1
+	${MAKE} DESTDIR="$THISPKG_DIR" libdir='${exec_prefix}/lib'$multilibdir install-strip || exit 1
 	
 	mkdir -p "${THISPKG_DIR}${prefix}/${TARGET}/bin"
 

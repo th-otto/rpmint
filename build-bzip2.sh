@@ -62,21 +62,21 @@ export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
 CFLAGS="-m68020-60 $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib/m68020-60'
-make $JOBS || exit 1
-make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+${MAKE} distclean
 make_bin_archive 020
 
 CFLAGS="-mcpu=5475 $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib/m5475'
-make $JOBS || exit 1
-make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+${MAKE} distclean
 make_bin_archive v4e
 
 CFLAGS="$COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS}
-make $JOBS || exit 1
-make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-#make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+#${MAKE} distclean
 make_bin_archive 000
 
 move_prefix

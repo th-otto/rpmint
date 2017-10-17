@@ -53,11 +53,11 @@ for CPU in 020 v4e 000; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval libdir=\${CPU_LIBDIR_$CPU}
-	make -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc" CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LD="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" unix_make || exit 1
-	make -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc" CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LD="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" unzips || exit 1
-	make -f unix/Makefile prefix="${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" MANDIR=${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1 \
+	${MAKE} -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc" CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LD="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" unix_make || exit 1
+	${MAKE} -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc" CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LD="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" unzips || exit 1
+	${MAKE} -f unix/Makefile prefix="${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" MANDIR=${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1 \
 		INSTALL=install INSTALL_D="install -d" install
-	make -f unix/Makefile clean
+	${MAKE} -f unix/Makefile clean
 	(cd "${THISPKG_DIR}${sysroot}${TARGET_BINDIR}"; rm -f zipinfo; $LN_S unzip zipinfo)
 	make_bin_archive $CPU
 done

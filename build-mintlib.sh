@@ -23,9 +23,9 @@ LTO_CFLAGS=""
 # ugly hack until makefiles have been ajusted
 #
 sed -i "\@^# This is where include@i prefix := ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" configvars
-make $JOBS || exit 1
+${MAKE} $JOBS || exit 1
 
-make prefix=${THISPKG_DIR}${sysroot}${TARGET_PREFIX} install || exit 1
+${MAKE} prefix=${THISPKG_DIR}${sysroot}${TARGET_PREFIX} install || exit 1
 
 cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" || exit 1
 

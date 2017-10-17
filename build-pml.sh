@@ -28,9 +28,9 @@ fi
 cd "$MINT_BUILD_DIR"
 export CROSS_TOOL=${TARGET}
 
-make $JOBS || exit 1
+${MAKE} $JOBS || exit 1
 
 cd "$MINT_BUILD_DIR"
-make DESTDIR="${THISPKG_DIR}" install || exit 1
+${MAKE} DESTDIR="${THISPKG_DIR}" install || exit 1
 	
 make_archives

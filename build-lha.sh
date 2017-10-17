@@ -34,9 +34,9 @@ for CPU in 020 v4e 000; do
 	eval libdir=\${CPU_LIBDIR_$CPU}
 	CFLAGS="${CPU_CFLAGS} $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$libdir
 	hack_lto_cflags
-	make $JOBS || exit 1
-	make DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-	make distclean
+	${MAKE} $JOBS || exit 1
+	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+	${MAKE} distclean
 	make_bin_archive $CPU
 done
 

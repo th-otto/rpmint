@@ -107,6 +107,7 @@ else
   test 1 -gt "$JOBS" && JOBS=1
 fi
 JOBS=-j$JOBS
+MAKE=${MAKE:-make}
 
 #
 # try config.guess from automake first to get the
@@ -216,13 +217,13 @@ for CPU in ${ALL_CPUS}; do
 		--disable-nls \
 		--with-build-sysroot="${prefix}/${TARGET}/sys-root"
 	
-	make $JOBS || exit 1
+	${MAKE} $JOBS || exit 1
 	
 	cd "$MINT_BUILD_DIR"
 
 	rm -rf "${THISPKG_DIR}${TARGET_BINDIR}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
 
-	make DESTDIR="$THISPKG_DIR" libdir='${exec_prefix}/lib'$libdir install-strip || exit 1
+	${MAKE} DESTDIR="$THISPKG_DIR" libdir='${exec_prefix}/lib'$libdir install-strip || exit 1
 	
 	mkdir -p "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
 

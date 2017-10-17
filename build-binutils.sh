@@ -115,6 +115,7 @@ else
   test 1 -gt "$JOBS" && JOBS=1
 fi
 JOBS=-j$JOBS
+MAKE=${MAKE:-make}
 
 #
 # try config.guess from automake first to get the
@@ -211,7 +212,7 @@ esac
 	--disable-nls \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root"
 
-make $JOBS || exit 1
+${MAKE} $JOBS || exit 1
 
 
 case $host in
@@ -231,7 +232,7 @@ rm -rf "${THISPKG_DIR}"
 for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "$MINT_BUILD_DIR"
-	make DESTDIR="$INSTALL_DIR" prefix="${PREFIX}" bindir="${PREFIX}/bin" install-strip || exit 1
+	${MAKE} DESTDIR="$INSTALL_DIR" prefix="${PREFIX}" bindir="${PREFIX}/bin" install-strip || exit 1
 	
 	mkdir -p "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	

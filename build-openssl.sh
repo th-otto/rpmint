@@ -39,21 +39,21 @@ export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
 "$srcdir/Configure" ${CONFIGURE_FLAGS} mint020
-make $JOBS || exit 1
-make MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
-make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
+${MAKE} distclean
 make_bin_archive 020
 
 "$srcdir/Configure" ${CONFIGURE_FLAGS} mintv4e
-make $JOBS || exit 1
-make MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
-make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
+${MAKE} distclean
 make_bin_archive v4e
 
 "$srcdir/Configure" ${CONFIGURE_FLAGS} mint
-make $JOBS || exit 1
-make MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
-#make distclean
+${MAKE} $JOBS || exit 1
+${MAKE} MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
+#${MAKE} distclean
 make_bin_archive 000
 
 move_prefix

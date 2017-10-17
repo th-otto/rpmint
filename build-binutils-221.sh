@@ -5,7 +5,7 @@ VERSION=-2.21.1
 VERSIONPATCH=-20170919
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
-TARGET=m68k-atari-mintelf
+TARGET=${1:-m68k-atari-mint}
 PREFIX=/usr
 
 ARCHIVES_DIR=$HOME/packages
@@ -27,6 +27,7 @@ if test -d /usr/lib64; then
 else
 	BUILD_LIBDIR=${PREFIX}/lib
 fi
+MAKE=${MAKE:-make}
 
 #
 # try config.guess from automake first to get the
@@ -94,8 +95,8 @@ CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 	--disable-nls \
 	--with-sysroot="$PREFIX/$TARGET/sys-root"
 
-make -j8 || exit 1
-make DESTDIR="$PKG_DIR" install-strip || exit 1
+${MAKE} -j8 || exit 1
+${MAKE} DESTDIR="$PKG_DIR" install-strip || exit 1
 
 mkdir -p "$PKG_DIR/usr/$TARGET/bin"
 
