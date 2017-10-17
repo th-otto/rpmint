@@ -1,0 +1,56 @@
+From: Alexey Svistunov <svalx@svalx.net>
+Date:  2016-03-23 11:59:33 +0300
+Subject: add return values to the backup scripts for better results monitoring.
+References: https://savannah.gnu.org/patch/?8953
+Upstream: submitted 
+
+Index: tar-1.28/scripts/backup.in
+===================================================================
+--- tar-1.28.orig/scripts/backup.in
++++ tar-1.28/scripts/backup.in
+@@ -153,9 +153,16 @@ message 20 "BACKUP_FILES=$BACKUP_FILES"
+ # piped through 'tee' to the logfile.  Doing this, instead of having
+ # multiple pipelines all over the place, is cleaner and allows access to
+ # the exit value from various commands more easily.
++set -o pipefail
+ (
+  message 1 "preparing tapes"
+  $MT_BEGIN "${TAPE_FILE}"
++ RESULT=$?
++ if [ $RESULT -ne 0 ] ; then
++        echo "Tape is not ready." 1>&2
++	exit $RESULT
++ fi 
++
+  rm -f "${VOLNO_FILE}"
+ 
+  message 1 "processing backup directories"
+@@ -245,10 +252,11 @@ message 20 "BACKUP_FILES=$BACKUP_FILES"
+  $MT_OFFLINE "${TAPE_FILE}"
+  echo "."
+ ) 2>&1 | tee -a "${LOGFILE}"
++RESULT=$?
+ 
+ if test "${ADMINISTRATOR}" != NONE; then
+      echo "Sending the dump log to ${ADMINISTRATOR}"
+      mail -s "Results of backup started ${startdate}" ${ADMINISTRATOR} < "${LOGFILE}"
+ fi
+-
++exit $RESULT 
+ # EOF
+Index: tar-1.28/scripts/backup.sh.in
+===================================================================
+--- tar-1.28.orig/scripts/backup.sh.in
++++ tar-1.28/scripts/backup.sh.in
+@@ -311,8 +311,10 @@ backup_host() {
+         CMD="exec ${TAR_PART1} -f \"${TAPE_FILE}\" $@"
+         message 10 "CMD: $CMD"
+         sh -c "$CMD"
+-        message 10 "RC: $?"
++        RC=$?
++        message 10 "RC: $RC"
+     fi
++    return $RC
+ }
+ 
+ print_level() {

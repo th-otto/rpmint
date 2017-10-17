@@ -1,0 +1,45 @@
+---
+ Makefile.in  |    2 +-
+ README-tests |   22 ++++++++++++++++++++++
+ 2 files changed, 23 insertions(+), 1 deletion(-)
+
+Index: tar-1.28/Makefile.in
+===================================================================
+--- tar-1.28.orig/Makefile.in	2014-07-27 21:33:48.000000000 +0100
++++ tar-1.28/Makefile.in	2014-08-03 00:15:17.000000000 +0100
+@@ -141,7 +141,7 @@ PRE_UNINSTALL = :
+ POST_UNINSTALL = :
+ build_triplet = @build@
+ host_triplet = @host@
+-DIST_COMMON = $(srcdir)/Make.rules INSTALL NEWS README AUTHORS \
++DIST_COMMON = $(srcdir)/Make.rules INSTALL NEWS README README-tests AUTHORS \
+ 	ChangeLog THANKS $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
+ 	$(top_srcdir)/configure $(am__configure_deps) \
+ 	$(srcdir)/config.h.in ABOUT-NLS COPYING TODO build-aux/compile \
+Index: tar-1.28/README-tests
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ tar-1.28/README-tests	2014-08-03 00:15:17.000000000 +0100
+@@ -0,0 +1,22 @@
++Subpackage tar-tests
++====================
++
++The tar-tests package contains the testsuite which is included in tar sources.
++The testsuite is normally run during make phase (make check) and is also
++automatically run when the tar rpm is being build (in %check section of spec
++file).
++
++Normally, there is no reason to need the tar-tests package. It can however be
++used to verify, that tar functions properly in an installed system (e.g. to
++find issues in tar's dependencies, problems with incompatible libraries, etc.).
++
++Testsuite is installed into /var/lib/tests/tar
++
++To run the testsuite:
++
++cd /var/lib/tests/tar
++./testsuite --help # show options
++
++# needed for genfile binary used in tests
++./testsuite AUTOTEST_PATH=/var/lib/tests/tar/bin [other options]
++
