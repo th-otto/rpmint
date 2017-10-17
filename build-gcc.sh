@@ -345,8 +345,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	esac
 	
 	rm -f */*/libiberty.a
-	rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/*.la
-	rm -f ${PREFIX#/}/lib/${TARGET}/lib/*.la ${PREFIX#/}/lib/${TARGET}/lib/*/*.la
+	find . -type f -name "*.la" -delete -print
 	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,lto-wrapper,lto1}${BUILD_EXEEXT}
 	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
 	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT}

@@ -247,7 +247,7 @@ for CPU in ${ALL_CPUS}; do
 	
 	cd "${THISPKG_DIR}" || exit 1
 	rm -f ${TARGET_LIBDIR#/}/libiberty.a
-	rm -f ${TARGET_LIBDIR#/}/*.la
+	find . -type f -name "*.la" -delete -print
 
 	rm -f ${TARGET_PREFIX#/}/share/info/dir
 	for f in ${TARGET_PREFIX#/}/share/man/*/* ${TARGET_PREFIX#/}/share/info/*; do

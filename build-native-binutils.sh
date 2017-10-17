@@ -219,7 +219,7 @@ for CPU in ${ALL_CPUS}; do
 	
 	cd "${THISPKG_DIR}" || exit 1
 	rm -f ${libdir#/}/libiberty.a
-	rm -f ${libdir#/}/*.la
+	find . -type f -name "*.la" -delete -print
 
 	rm -f ${prefix#/}/share/info/dir
 	for f in ${prefix#/}/share/man/*/* ${prefix#/}/share/info/*; do
