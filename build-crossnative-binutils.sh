@@ -1,8 +1,8 @@
 #!/bin/sh
 
 #
-# This script is for building the binutils
-# for the cross-compiler
+# This script is for using the cross-compiler to
+# build the native binutils for the target(s)
 #
 
 me="$0"
@@ -13,7 +13,10 @@ VERSIONPATCH=-20171011
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
-PREFIX=/usr
+prefix=/usr
+TARGET_PREFIX=/usr
+TARGET_LIBDIR=${TARGET_PREFIX}/lib
+TARGET_BINDIR=${TARGET_PREFIX}/bin
 
 case `uname -s` in
 	MINGW* | MSYS*) here=/`pwd -W | tr '\\\\' '/' | tr -d ':'` ;;
@@ -23,7 +26,6 @@ esac
 ARCHIVES_DIR=$HOME/packages
 BUILD_DIR="$here"
 MINT_BUILD_DIR="$BUILD_DIR/binutils-build"
-PKG_DIR="$here/binary7-package"
 DIST_DIR="$here/pkgs"
 
 srcdir="${PACKAGENAME}${VERSION}"
@@ -40,7 +42,7 @@ srcdir="${PACKAGENAME}${VERSION}"
 #
 PATCHES="\
         patches/binutils/${PACKAGENAME}${VERSION}-0001-binutils-2.29.1-branch.patch \
-        patches/binutils/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-mint.patch \
 "
 ELFPATCHES="patches/binutils/${PACKAGENAME}${VERSION}-mintelf.patch"
 ALLPATCHES="$PATCHES $ELFPATCHES"
@@ -53,19 +55,15 @@ esac
 TAR=${TAR-tar}
 TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
 
-BUILD_EXEEXT=
 LN_S="ln -s"
 case `uname -s` in
-	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
-	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
-	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
+	MINGW64*) host=mingw64; ;;
+	MINGW32*) host=mingw32; ;;
+	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; ;;
 	MSYS*) host=msys ;;
 	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
-	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
+	Darwin*) host=macos; TAR_OPTS= ;;
 	*) host=linux ;;
-esac
-case $host in
-	cygwin* | mingw* | msys*) BUILD_EXEEXT=.exe ;;
 esac
 case $host in
 	mingw* | msys*) LN_S="cp -p" ;;
@@ -99,12 +97,6 @@ if test ! -d "$srcdir"; then
 	exit 1
 fi
 
-if test -d /usr/lib64; then
-	BUILD_LIBDIR=${PREFIX}/lib64
-else
-	BUILD_LIBDIR=${PREFIX}/lib
-fi
-
 JOBS=`rpm --eval '%{?jobs:%jobs}' 2>/dev/null`
 P=$(getconf _NPROCESSORS_CONF 2>/dev/null || nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null)
 if test -z "$P"; then P=$NUMBER_OF_PROCESSORS; fi
@@ -130,14 +122,12 @@ for a in "" -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 done
 test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 
-bfd_targets="--enable-targets=$BUILD"
+# we don't want the build target in a native build
+bfd_targets=""
 enable_plugins=--disable-plugins
 enable_lto=--disable-lto
-ranlib=ranlib
-STRIP=${STRIP-strip -p}
-
-# binutils ld does not have support for darwin target anymore
-test "$host" = "macos" && bfd_targets=""
+ranlib=${TARGET}-ranlib
+strip="${TARGET}-strip -p"
 
 # add opposite of default mingw32 target for binutils,
 # and also host target
@@ -150,10 +140,14 @@ case "${TARGET}" in
     	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
     	bfd_targets="${bfd_targets}x86_64-w64-mingw64"
 		;;
+    *-*-*mintelf*)
+    	enable_lto=--enable-lto
+    	ranlib=${TARGET}-gcc-ranlib
+		;;
     *-*-*elf* | *-*-linux* | *-*-darwin*)
     	enable_lto=--enable-lto
 		enable_plugins=--enable-plugins
-    	ranlib=gcc-ranlib
+    	ranlib=${TARGET}-gcc-ranlib
 		;;
 esac
 case "${TARGET}" in
@@ -167,115 +161,121 @@ case "${TARGET}" in
 		;;
 esac
 
-rm -rf "$MINT_BUILD_DIR"
-mkdir -p "$MINT_BUILD_DIR"
-
-cd "$MINT_BUILD_DIR"
-
-CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer"
-LDFLAGS_FOR_BUILD="-s"
-CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
-
-case $host in
-	macos*)
-		export CC=/usr/bin/clang
-		export CXX=/usr/bin/clang++
-		export MACOSX_DEPLOYMENT_TARGET=10.6
-		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
-		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
-		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
-		;;
-esac
-
-../$srcdir/configure \
-	--target="${TARGET}" --build="$BUILD" \
-	--prefix="${PREFIX}" \
-	--libdir="$BUILD_LIBDIR" \
-	--bindir="${PREFIX}/bin" \
-	--libexecdir='${libdir}' \
-	CFLAGS="$CFLAGS_FOR_BUILD" \
-	CXXFLAGS="$CXXFLAGS_FOR_BUILD" \
-	LDFLAGS="$LDFLAGS_FOR_BUILD" \
-	$bfd_targets \
-	--with-pkgversion="$REVISION" \
-	--with-stage1-ldflags= \
-	--with-boot-ldflags="$LDFLAGS_FOR_BUILD" \
-	--with-gcc --with-gnu-as --with-gnu-ld \
-	--disable-werror \
-	--disable-threads \
-	--enable-new-dtags \
-	--enable-relro \
-	--enable-default-hash-style=both \
-	$enable_lto \
-	$enable_plugins \
-	--disable-nls \
-	--with-sysroot="${PREFIX}/${TARGET}/sys-root"
-
-make $JOBS || exit 1
-
-
-case $host in
-	mingw*) if test "${PREFIX}" = /usr; then PREFIX=${MINGW_PREFIX}; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
-	macos*) if test "${PREFIX}" = /usr; then PREFIX=/opt/cross-mint; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
-esac
-
 #
-# install this package twice:
-# - once for building the binary archive for this pacakge only.
-# - once for building a complete package.
-#   This directory is also kept for later stages,
-#   eg. compiling the C-library and gcc
+# this could eventually be extracted from gcc -print-multi-lib
 #
+CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=
+CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=/m68020-60
+CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=/m5475
+#
+# This should list the default target cpu last,
+# so that any files left behind are compiled for this
+#
+ALL_CPUS="020 v4e 000"
+
+
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
-for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
+
+for CPU in ${ALL_CPUS}; do
+	cd "$here" || exit 1
+	rm -rf "$MINT_BUILD_DIR"
+	mkdir -p "$MINT_BUILD_DIR"
 	
 	cd "$MINT_BUILD_DIR"
-	make DESTDIR="$INSTALL_DIR" prefix="${PREFIX}" bindir="${PREFIX}/bin" install-strip || exit 1
+	rm -rf "${THISPKG_DIR}-${CPU}"
 	
-	mkdir -p "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
+	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
+	eval libdir=\${CPU_LIBDIR_$CPU}
+
+	CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer ${CPU_CFLAGS}"
+	LDFLAGS_FOR_BUILD="-s"
+	CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD ${CPU_CFLAGS}"
 	
-	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
+	../$srcdir/configure \
+		--target="${TARGET}" --host="${TARGET}" --build="$BUILD" \
+		--prefix="${TARGET_PREFIX}" \
+		--libdir="${TARGET_PREFIX}/lib" \
+		--bindir="${TARGET_PREFIX}/bin" \
+		--libexecdir='${libdir}' \
+		CFLAGS="$CFLAGS_FOR_BUILD" \
+		CXXFLAGS="$CXXFLAGS_FOR_BUILD" \
+		LDFLAGS="$LDFLAGS_FOR_BUILD" \
+		$bfd_targets \
+		--with-pkgversion="$REVISION" \
+		--with-stage1-ldflags= \
+		--with-boot-ldflags="$LDFLAGS_FOR_BUILD" \
+		--with-gcc --with-gnu-as --with-gnu-ld \
+		--disable-werror \
+		--disable-threads \
+		--enable-new-dtags \
+		--enable-relro \
+		--enable-default-hash-style=both \
+		$enable_lto \
+		$enable_plugins \
+		--disable-nls \
+		--with-build-sysroot="${prefix}/${TARGET}/sys-root"
 	
+	make $JOBS || exit 1
+	
+	cd "$MINT_BUILD_DIR"
+
+	rm -rf "${THISPKG_DIR}${TARGET_BINDIR}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
+
+	make DESTDIR="$THISPKG_DIR" libdir='${exec_prefix}/lib'$libdir install-strip || exit 1
+	
+	mkdir -p "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
+
+	cd "${THISPKG_DIR}" || exit 1
+	${strip} ${TARGET_BINDIR#/}/*
+
 	for i in addr2line ar as nm ld ld.bfd objcopy objdump ranlib strip readelf dlltool dllwrap size strings; do
-		if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
-			rm -f ${i} ${i}${BUILD_EXEEXT}
-			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
-		fi
+		cd "${THISPKG_DIR}${TARGET_BINDIR}"
+		test -f "$i" || continue
+		rm -f ${TARGET}-${i} ${TARGET}-${i}${TARGET_EXEEXT}
+		mv $i ${TARGET}-$i
+		$LN_S ${TARGET}-$i $i
+		cd "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
+		rm -f ${i} ${i}${TARGET_EXEEXT}
+		$LN_S ../../bin/$i${TARGET_EXEEXT} $i
 	done
 	
-	cd "${INSTALL_DIR}/${PREFIX}/bin"
+	# move bin directories away wile gathering libraries
+	mkdir -p "${THISPKG_DIR}-${CPU}"
+	mv "${THISPKG_DIR}${TARGET_BINDIR}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}" "${THISPKG_DIR}-${CPU}"
 	
-	rm -f ${TARGET}-ld ${TARGET}-ld${BUILD_EXEEXT}
-	$LN_S ${TARGET}-ld.bfd${BUILD_EXEEXT} ${TARGET}-ld${BUILD_EXEEXT}
-	cd "${INSTALL_DIR}" || exit 1
-	
-	${STRIP} ${PREFIX#/}/bin/*
-	rm -f ${BUILD_LIBDIR#/}/libiberty.a
+	cd "${THISPKG_DIR}" || exit 1
+	rm -f ${TARGET_LIBDIR#/}/libiberty.a
+	rm -f ${TARGET_LIBDIR#/}/*.la
 
-	rm -f ${PREFIX#/}/share/info/dir
-	for f in ${PREFIX#/}/share/man/*/* ${PREFIX#/}/share/info/*; do
+	rm -f ${TARGET_PREFIX#/}/share/info/dir
+	for f in ${TARGET_PREFIX#/}/share/man/*/* ${TARGET_PREFIX#/}/share/info/*; do
 		case $f in
 		*.gz) ;;
 		*) rm -f ${f}.gz; gzip -9 $f ;;
 		esac
 	done
+	
+done # for CPU
+
+TARNAME=${PACKAGENAME}${VERSION}
+for CPU in ${ALL_CPUS}; do
+	cd "${THISPKG_DIR}" || exit 1
+	rm -rf "${THISPKG_DIR}${TARGET_BINDIR}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}"
+	
+	# move bin directories back
+	mv "${THISPKG_DIR}-${CPU}/bin" "${THISPKG_DIR}${TARGET_BINDIR}"
+	mv "${THISPKG_DIR}-${CPU}/${TARGET}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}"
+	rmdir "${THISPKG_DIR}-${CPU}"
+	
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-${TARGET##*-}-${CPU}.tar.xz *
 done
-
-cd "${THISPKG_DIR}" || exit 1
-
-TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
-
-${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
-rm -rf ${PREFIX#/}/share/info
-rm -rf ${PREFIX#/}/share/man
-
-${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
 
 cd "${BUILD_DIR}"
 if test "$KEEP_PKGDIR" != yes; then
 	rm -rf "${THISPKG_DIR}"
 fi
+	
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint.tar.xz ${ALLPATCHES}
 
-${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.tar.xz ${ALLPATCHES}
-cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh
+cp -p "$me" ${DIST_DIR}/build-crossnative-${PACKAGENAME}${VERSION}.sh

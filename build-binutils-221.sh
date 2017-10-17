@@ -101,7 +101,7 @@ mkdir -p "$PKG_DIR/usr/$TARGET/bin"
 
 cd "$PKG_DIR/usr/$TARGET/bin"
 
-for i in addr2line ar arconv as c++ nm cpp csize cstrip flags g++ gcc gcov gfortran ld ld.bfd mintbin nm objcopy objdump ranlib stack strip symex readelf; do
+for i in addr2line ar as nm ld ld.bfd objcopy objdump ranlib strip readelf dlltool dllwrap size strings; do
 	if test -x ../../bin/$TARGET-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/$TARGET-$i; then
 		rm -f $i
 		ln -s ../../bin/$TARGET-$i $i

@@ -55,6 +55,7 @@ $basepackages = array(
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
+		'atari' => 1,
 		'comment' => '
 The binutils are a collection of low-level language tools.<br />
 The full documentation can be found
@@ -380,8 +381,7 @@ foreach ($basepackages as $package)
 		$filename .= '.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint.tar.xz';
 		gen_link($filename, $text);
-		echo '</td>';
-		echo '</tr>';
+		echo '</td></tr>';
 	}
 	
 	if (isset($package['patchcomment']))
@@ -405,8 +405,7 @@ foreach ($basepackages as $package)
 		$filename .= '.sh';
 		$text = 'build-' . $package['name'] . '-' . $package['version'] . '-sh';
 		gen_link($filename, $text);
-		echo '</td>';
-		echo '</tr>';
+		echo '</td></tr>';
 	}
 	
 	if (isset($package['doc']) && $package['doc'])
@@ -421,8 +420,7 @@ foreach ($basepackages as $package)
 		$filename .= '-doc.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-doc.tar.xz';
 		gen_link($filename, $text);
-		echo '</td>';
-		echo '</tr>';
+		echo '</td></tr>';
 	}
 	
 	if ($package['cygwin32'])
@@ -448,8 +446,7 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-cygwin32.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td>';
-		echo '</tr>';
+		echo '</td></tr>';
 	}
 	
 	if ($package['cygwin64'])
@@ -475,8 +472,7 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-cygwin64.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td>';
-		echo '</tr>';
+		echo '</td></tr>';
 	}
 	
 	if ($package['mingw32'])
@@ -502,8 +498,7 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-mingw32.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td>';
-		echo '</tr>';
+		echo '</td></tr>';
 	}
 	
 	if ($package['mingw64'])
@@ -529,8 +524,7 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-mingw64.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td>';
-		echo '</tr>';
+		echo '</td></tr>';
 	}
 
 	if (!$package['mingw32'] && !$package['mingw64'])
@@ -565,8 +559,7 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-linux.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td>';
-		echo '</tr>';
+		echo '</td></tr>';
 	}
 	
 	if ($package['macos64'])
@@ -592,8 +585,55 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-macos.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td>';
-		echo '</tr>';
+		echo '</td></tr>';
+	}
+	
+	if (isset($package['atari']) && $package['atari'])
+	{
+		echo '<tr>';
+		echo '<td class="icon"><img src="images/os-atari.png" width="32" height="32" alt="Atari" style="background-color: #ffffff"></img></td>';
+		echo '<td class="linkdesc">Atari Package:</td>';
+		echo '<td class="sourcelink">';
+		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint-000.tar.xz';
+		$text = $package['name'] . '-' . $package['version'] . '-mint-000.tar.xz';
+		gen_link($filename, $text);
+		echo '</td></tr>';
+		echo '<tr><td></td><td></td><td class="sourcelink">';
+		if ($package['elf'])
+		{
+			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mintelf-000.tar.xz';
+			$text = $package['name'] . '-' . $package['version'] . '-mintelf-000.tar.xz';
+			gen_link($filename, $text);
+		}
+		echo '</td></tr>';
+
+		echo '<tr><td></td><td></td><td class="sourcelink">';
+		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint-020.tar.xz';
+		$text = $package['name'] . '-' . $package['version'] . '-mint-020.tar.xz';
+		gen_link($filename, $text);
+		echo '</td></tr>';
+		echo '<tr><td></td><td></td><td class="sourcelink">';
+		if ($package['elf'])
+		{
+			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mintelf-020.tar.xz';
+			$text = $package['name'] . '-' . $package['version'] . '-mintelf-020.tar.xz';
+			gen_link($filename, $text);
+		}
+		echo '</td></tr>';
+
+		echo '<tr><td></td><td></td><td class="sourcelink">';
+		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint-v4e.tar.xz';
+		$text = $package['name'] . '-' . $package['version'] . '-mint-v4e.tar.xz';
+		gen_link($filename, $text);
+		echo '</td></tr>';
+		echo '<tr><td></td><td></td><td class="sourcelink">';
+		if ($package['elf'])
+		{
+			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mintelf-v4e.tar.xz';
+			$text = $package['name'] . '-' . $package['version'] . '-mintelf-v4e.tar.xz';
+			gen_link($filename, $text);
+		}
+		echo '</td></tr>';
 	}
 	
 	echo '</table></td>';
