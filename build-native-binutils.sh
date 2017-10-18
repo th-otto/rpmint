@@ -141,11 +141,15 @@ esac
 CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=
 CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=/m68020-60
 CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=/m5475
-#
-# This should list the default target cpu last,
-# so that any files left behind are compiled for this
-#
-ALL_CPUS="020 v4e 000"
+# We cannot build the native 68k versions on cf,
+# or vice versa, because our target triplet is the
+# same, but autoconf tests will fail because
+# "the C compiler cannot create executables"
+# that can be run
+case `uname -p` in
+*V4e*) ALL_CPUS="v4e" ;;
+*) ALL_CPUS="020 000" ;;
+esac
 
 
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
@@ -241,7 +245,10 @@ for CPU in ${ALL_CPUS}; do
 	mv "${THISPKG_DIR}-${CPU}/${TARGET}" "${THISPKG_DIR}${prefix}/${TARGET}"
 	rmdir "${THISPKG_DIR}-${CPU}"
 	
-	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-${TARGET##*-}-${CPU}.tar.xz *
+	# do compression manually, too memory consuming to let it run in a pipe with tar
+	${TAR} ${TAR_OPTS} -cf ${DIST_DIR}/${TARNAME}-${TARGET##*-}-${CPU}.tar * || exit 1
+	cd ${DIST_DIR} || exit 1
+	xz ${TARNAME}-${TARGET##*-}-${CPU}.tar || exit 1
 done
 
 cd "${BUILD_DIR}"

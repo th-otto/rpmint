@@ -9,7 +9,7 @@ me="$0"
 
 PACKAGENAME=binutils
 VERSION=-2.29.1
-VERSIONPATCH=-20171011
+VERSIONPATCH=-20171018
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
@@ -68,14 +68,6 @@ esac
 case $host in
 	mingw* | msys*) LN_S="cp -p" ;;
 esac
-
-ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
-strip=`which "${TARGET}-strip"`
-as=`which "${TARGET}-as" 2>/dev/null`
-if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
-	echo "cross-binutil tools for ${TARGET} not found" >&2
-	exit 1
-fi
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
@@ -136,6 +128,7 @@ bfd_targets=""
 enable_plugins=--disable-plugins
 enable_lto=--disable-lto
 
+ranlib=ranlib
 # add opposite of default mingw32 target for binutils,
 # and also host target
 case "${TARGET}" in
@@ -168,6 +161,14 @@ case "${TARGET}" in
 		;;
 esac
 
+ranlib=`which ${TARGET}-${ranlib}`
+strip=`which "${TARGET}-strip"`
+as=`which "${TARGET}-as"`
+if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
+	echo "cross-binutil tools for ${TARGET} not found" >&2
+	exit 1
+fi
+
 #
 # this could eventually be extracted from gcc -print-multi-lib
 #
@@ -189,7 +190,7 @@ for CPU in ${ALL_CPUS}; do
 	rm -rf "$MINT_BUILD_DIR"
 	mkdir -p "$MINT_BUILD_DIR"
 	
-	cd "$MINT_BUILD_DIR"
+	cd "$MINT_BUILD_DIR" || exit 1
 	rm -rf "${THISPKG_DIR}-${CPU}"
 	
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}

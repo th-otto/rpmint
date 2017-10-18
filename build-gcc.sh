@@ -213,9 +213,9 @@ if test -x "$try"; then
 	strip="${PKG_DIR}/${PREFIX}/bin/${TARGET}-strip"
 	as="${PKG_DIR}/${PREFIX}/bin/${TARGET}-as"
 else
-	ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
+	ranlib=`which ${TARGET}-${ranlib}`
 	strip=`which "${TARGET}-strip"`
-	as=`which "${TARGET}-as" 2>/dev/null`
+	as=`which "${TARGET}-as"`
 fi
 if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 	echo "cross-binutil tools for ${TARGET} not found" >&2
@@ -293,8 +293,8 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
-	for i in addr2line ar arconv as c++ nm cpp csize cstrip flags g++ gcc gcov gfortran ld ld.bfd mintbin objcopy objdump ranlib stack strip symex readelf dlltool dllwrap; do
-		if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
+	for i in c++ cpp g++ gcc gcov gfortran; do
+		if test -x ../../bin/${TARGET}-$i && test -x; then
 			rm -f ${i} ${i}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
 		fi
@@ -360,8 +360,10 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		cd "${INSTALL_DIR}"
 	fi
 	
-	find ${PREFIX#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
-	find ${PREFIX#/} -name "*.a" -exec "${ranlib}" '{}' \;
+	find ${PREFIX#/}/${TARGET} -name "*.a" -exec "${strip}" -S -x '{}' \;
+	find ${PREFIX#/}/${TARGET} -name "*.a" -exec "${ranlib}" '{}' \;
+	find ${BUILD_LIBDIR#/}/gcc/${TARGET} -name "*.a" -exec "${strip}" -S -x '{}' \;
+	find ${BUILD_LIBDIR#/}/gcc/${TARGET} -name "*.a" -exec "${ranlib}" '{}' \;
 	
 	cd ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/include-fixed && {
 		for i in `find . -type f`; do

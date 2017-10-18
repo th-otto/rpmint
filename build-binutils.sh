@@ -239,7 +239,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
 	for i in addr2line ar as nm ld ld.bfd objcopy objdump ranlib strip readelf dlltool dllwrap size strings; do
-		if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
+		if test -x ../../bin/${TARGET}-$i; then
 			rm -f ${i} ${i}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
 		fi
@@ -251,8 +251,6 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	$LN_S ${TARGET}-ld.bfd${BUILD_EXEEXT} ${TARGET}-ld${BUILD_EXEEXT}
 	cd "${INSTALL_DIR}" || exit 1
 	
-	pwd
-	exit 0
 	${STRIP} ${PREFIX#/}/bin/*
 	rm -f ${BUILD_LIBDIR#/}/libiberty.a
 
