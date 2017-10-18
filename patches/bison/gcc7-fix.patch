@@ -1,0 +1,13 @@
+--- /home/marxin/Programming/bison-3.0.4/tests/c++.at	2015-01-20 20:39:51.000000000 +0100
++++ b/tests/c++.at	2016-12-14 10:58:00.046437207 +0100
+@@ -197,6 +197,10 @@
+ #include <list>
+ #include <string>
+ typedef std::list<std::string> strings_type;
++namespace std
++{
++  std::ostream& operator<<(std::ostream& o, const strings_type& s);
++}
+ }
+ 
+ %code // code for the .cc file

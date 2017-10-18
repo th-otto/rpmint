@@ -536,7 +536,6 @@ foreach ($libpackages as $package)
 	if (isset($package['repo']))
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"></td>' . "\n";
 		echo '<td class="linkdesc">GitHub repository:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		echo '<a href="' . $package['repo'];
@@ -560,7 +559,6 @@ foreach ($libpackages as $package)
 	if (1)
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"></td>' . "\n";
 		echo '<td class="linkdesc">Original sources:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		gen_link($source, basename($source));
@@ -571,7 +569,6 @@ foreach ($libpackages as $package)
 	if ($package['patch'])
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"></td>' . "\n";
 		echo '<td class="linkdesc">MiNT patch:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
@@ -587,7 +584,6 @@ foreach ($libpackages as $package)
 	if (isset($package['patchcomment']))
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"></td>' . "\n";
 		echo '<td class="linkdesc"></td>' . "\n";
 		echo '<td class="sourcelink" colspan="2">' . $package['patchcomment'] . '</td>' . "\n";
 		echo '</tr>' . "\n";
@@ -596,7 +592,6 @@ foreach ($libpackages as $package)
 	if ($package['script'])
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"></td>' . "\n";
 		echo '<td class="linkdesc">Build script:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . 'build-' . $package['name'] . '-' . $package['version'];
@@ -612,7 +607,6 @@ foreach ($libpackages as $package)
 	if (isset($package['doc']) && $package['doc'])
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"></td>' . "\n";
 		echo '<td class="linkdesc">Documentation:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
@@ -628,7 +622,6 @@ foreach ($libpackages as $package)
 	if (isset($package['dev']) && $package['dev'])
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/empty.png" width="32" height="32" alt=""></img></td>' . "\n";
 		echo '<td class="linkdesc">Devel Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
@@ -638,7 +631,7 @@ foreach ($libpackages as $package)
 		$text = $package['name'] . '-' . $package['version'] . '-mint.tar.xz';
 		gen_link($filename, $text);
 		echo '</td></tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
+		echo '<tr><td></td><td class="sourcelink">';
 		if (!isset($package['noelf']))
 		{
 			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mintelf';
@@ -655,7 +648,6 @@ foreach ($libpackages as $package)
 	if (isset($package['bin']) && $package['bin'])
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/empty.png" width="32" height="32" alt=""></img></td>' . "\n";
 		echo '<td class="linkdesc">Binary Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
@@ -669,7 +661,6 @@ foreach ($libpackages as $package)
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
 		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/empty.png" width="32" height="32" alt=""></img></td>' . "\n";
 		echo '<td class="linkdesc"></td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
@@ -683,7 +674,6 @@ foreach ($libpackages as $package)
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
 		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/empty.png" width="32" height="32" alt=""></img></td>' . "\n";
 		echo '<td class="linkdesc"></td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';

@@ -583,6 +583,25 @@ FLEX is a tool for generating scanners: programs that recognize lexical
 patterns in text.
 '
 	),
+	'bison' => array(
+		'name' => 'bison',
+		'upstream' => 'http://www.gnu.org/software/bison/bison.html',
+		'source' => 'http://ftp.gnu.org/gnu/bison/bison-3.0.4.tar.xz',
+		'version' => '3.0.4',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+Bison is a general-purpose parser generator that converts an annotated
+context-free grammar into a deterministic LR or generalized LR (GLR)
+parser employing LALR(1) parser tables. As an experimental feature,
+Bison can also generate IELR(1) or canonical LR(1) parser tables. Once
+you are proficient with Bison, you can use it to develop a wide range
+of language parsers, from those used in simple desk calculators to
+complex programming languages. 
+'
+	),
 );
 
 ?>

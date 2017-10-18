@@ -34,7 +34,8 @@ for pkg in gemlib \
 	tar \
 	libiconv \
 	m4 \
-	flex
+	flex \
+	bison
 ; do
 	script=build-${pkg}.sh
 	ls -l $script
