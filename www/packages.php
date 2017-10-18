@@ -555,6 +555,20 @@ systems which don&apos;t have one, or whose implementation cannot convert
 from/to Unicode.
 '
 	),
+	'm4' => array(
+		'name' => 'm4',
+		'title' => 'M4',
+		'upstream' => 'https://www.gnu.org/software/m4/m4.html',
+		'source' => 'ftp://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz',
+		'version' => '1.4.18',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'comment' => '
+GNU m4 is an implementation of the traditional Unix macro processor.
+'
+	),
 );
 
 ?>

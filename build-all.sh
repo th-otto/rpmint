@@ -32,7 +32,8 @@ for pkg in gemlib \
 	mpfr \
 	mpc \
 	tar \
-	libiconv
+	libiconv \
+	m4
 ; do
 	script=build-${pkg}.sh
 	ls -l $script
