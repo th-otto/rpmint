@@ -38,7 +38,7 @@ sed -i 's:CREATEBINARY "w+":CREATEBINARY "w+b":g' os.hpp
 sed -i 's:APPENDTEXT   "a":APPENDTEXT   "at":g' os.hpp
 sed -i 's:#define RAR_SMP:#undef RAR_SMP:g' os.hpp
 
-for CPU in 020 v4e 000; do
+for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}

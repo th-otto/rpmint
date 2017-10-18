@@ -44,7 +44,7 @@ case ${TARGET} in
 esac
 
 
-for CPU in 020 v4e 000; do
+for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 #

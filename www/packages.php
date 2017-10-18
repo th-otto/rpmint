@@ -569,6 +569,20 @@ from/to Unicode.
 GNU m4 is an implementation of the traditional Unix macro processor.
 '
 	),
+	'flex' => array(
+		'name' => 'flex',
+		'upstream' => 'http://flex.sourceforge.net/',
+		'source' => 'https://github.com/westes/flex/releases/download/v2.6.4/flex-2.6.4.tar.gz',
+		'version' => '2.6.4',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+FLEX is a tool for generating scanners: programs that recognize lexical
+patterns in text.
+'
+	),
 );
 
 ?>

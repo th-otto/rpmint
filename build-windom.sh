@@ -25,7 +25,7 @@ SUBDIRS="src demo"
 
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include
 
-for CPU in 020 v4e 000; do
+for CPU in ${ALL_CPUS}; do
 	eval multilibdir=${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}\${CPU_LIBDIR_$CPU}
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	mkdir -p "$multilibdir"
