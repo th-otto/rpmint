@@ -42,7 +42,7 @@ for CPU in 020 v4e 000; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-	eval libdir=\${CPU_LIBDIR_$CPU}
+	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	${MAKE} $JOBS CXX=${TARGET}-g++ CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" STRIP=${TARGET}-strip AR=${TARGET}-ar LDFLAGS= LIBFLAGS= DEFINES= || exit 1
 	mkdir -p "${THISPKG_DIR}${sysroot}${TARGET_BINDIR}"
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" install

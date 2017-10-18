@@ -39,7 +39,7 @@ for CPU in 020 v4e 000; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-	eval libdir=\${CPU_LIBDIR_$CPU}
+	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	${MAKE} -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" CPP="${TARGET}-gcc -E $CPU_CFLAGS $COMMON_CFLAGS" generic || exit 1
 	${MAKE} -f unix/Makefile BINDIR="${THISPKG_DIR}${sysroot}${TARGET_BINDIR}" MANDIR=${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1 install
 	${MAKE} -f unix/Makefile clean

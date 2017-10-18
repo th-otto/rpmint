@@ -52,7 +52,7 @@ for CPU in 020 v4e 000; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-	eval libdir=\${CPU_LIBDIR_$CPU}
+	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	${MAKE} -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc" CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LD="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" unix_make || exit 1
 	${MAKE} -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc" CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LD="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" unzips || exit 1
 	${MAKE} -f unix/Makefile prefix="${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" MANDIR=${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1 \

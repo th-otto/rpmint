@@ -36,13 +36,13 @@ for CPU in 020 v4e 000; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-	eval libdir=\${CPU_LIBDIR_$CPU}
+	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	# disable assembly for ColdFire for now; does not work yet
 	assembly=
 	if test $CPU = v4e; then
 		assembly="--disable-assembly --disable-fat"
 	fi
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} $assembly --libdir='${exec_prefix}/lib'$libdir
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} $assembly --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install

@@ -1304,6 +1304,14 @@ foreach ($libpackages as $package)
 
 <p></p>
 
+<h1>Changelog</h1>
+<ul>
+<li>2017/10/18 Binutils archives for native compilation have been added</li>
+
+</ul>
+
+<p></p>
+
 <h1>More information</h1>
 <p>See <a href="http://vincent.riviere.free.fr/soft/m68k-atari-mint/">Vincent Rivi&#xe8;re's</a>
 site for a history of his packages.</p>

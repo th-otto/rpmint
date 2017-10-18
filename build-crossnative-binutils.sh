@@ -69,6 +69,14 @@ case $host in
 	mingw* | msys*) LN_S="cp -p" ;;
 esac
 
+ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
+strip=`which "${TARGET}-strip"`
+as=`which "${TARGET}-as" 2>/dev/null`
+if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
+	echo "cross-binutil tools for ${TARGET} not found" >&2
+	exit 1
+fi
+
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
 	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
@@ -127,8 +135,6 @@ test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 bfd_targets=""
 enable_plugins=--disable-plugins
 enable_lto=--disable-lto
-ranlib=${TARGET}-ranlib
-strip="${TARGET}-strip -p"
 
 # add opposite of default mingw32 target for binutils,
 # and also host target
@@ -187,7 +193,7 @@ for CPU in ${ALL_CPUS}; do
 	rm -rf "${THISPKG_DIR}-${CPU}"
 	
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-	eval libdir=\${CPU_LIBDIR_$CPU}
+	eval multilibdir=\${CPU_LIBDIR_$CPU}
 
 	CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer ${CPU_CFLAGS}"
 	LDFLAGS_FOR_BUILD="-s"
@@ -196,8 +202,8 @@ for CPU in ${ALL_CPUS}; do
 	../$srcdir/configure \
 		--target="${TARGET}" --host="${TARGET}" --build="$BUILD" \
 		--prefix="${TARGET_PREFIX}" \
-		--libdir="${TARGET_PREFIX}/lib" \
-		--bindir="${TARGET_PREFIX}/bin" \
+		--libdir="${TARGET_LIBDIR}" \
+		--bindir="${TARGET_BINDIR}" \
 		--libexecdir='${libdir}' \
 		CFLAGS="$CFLAGS_FOR_BUILD" \
 		CXXFLAGS="$CXXFLAGS_FOR_BUILD" \
@@ -223,7 +229,7 @@ for CPU in ${ALL_CPUS}; do
 
 	rm -rf "${THISPKG_DIR}${TARGET_BINDIR}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
 
-	${MAKE} DESTDIR="$THISPKG_DIR" libdir='${exec_prefix}/lib'$libdir install-strip || exit 1
+	${MAKE} DESTDIR="$THISPKG_DIR" libdir='${exec_prefix}/lib'$multilibdir install-strip >/dev/null || exit 1
 	
 	mkdir -p "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
 
@@ -247,7 +253,7 @@ for CPU in ${ALL_CPUS}; do
 	
 	cd "${THISPKG_DIR}" || exit 1
 	rm -f ${TARGET_LIBDIR#/}/libiberty.a
-	find . -type f -name "*.la" -delete -print
+	find . -type f -name "*.la" -delete -printf "rm %p\n"
 
 	rm -f ${TARGET_PREFIX#/}/share/info/dir
 	for f in ${TARGET_PREFIX#/}/share/man/*/* ${TARGET_PREFIX#/}/share/info/*; do
@@ -259,7 +265,7 @@ for CPU in ${ALL_CPUS}; do
 	
 done # for CPU
 
-TARNAME=${PACKAGENAME}${VERSION}
+TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}
 for CPU in ${ALL_CPUS}; do
 	cd "${THISPKG_DIR}" || exit 1
 	rm -rf "${THISPKG_DIR}${TARGET_BINDIR}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}"
@@ -269,7 +275,7 @@ for CPU in ${ALL_CPUS}; do
 	mv "${THISPKG_DIR}-${CPU}/${TARGET}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}"
 	rmdir "${THISPKG_DIR}-${CPU}"
 	
-	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-${TARGET##*-}-${CPU}.tar.xz *
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-${CPU}.tar.xz *
 done
 
 cd "${BUILD_DIR}"

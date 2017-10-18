@@ -41,7 +41,7 @@ for CPU in 020 v4e 000; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-	eval libdir=\${CPU_LIBDIR_$CPU}
+	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	${MAKE} CC="${TARGET}-gcc" MODEL="$CPU_CFLAGS $COMMON_CFLAGS -D__linux" CFLAGS=-c zoo fiz || exit 1
 	install -Dpm 0755 zoo "${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/zoo"
 	install -Dpm 0755 fiz "${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/fiz"

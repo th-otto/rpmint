@@ -380,7 +380,7 @@ make_archives()
 	gzip_docs
 
 	cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" || exit 1
-	find . -type f -name "*.la" -delete -print
+	find . -type f -name "*.la" -delete -printf "rm %p\n"
 	test "$LTO_CFLAGS" != "" || find . -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \;
 	find . -name "*.a" ! -type l -exec "${ranlib}" '{}' \;
 	

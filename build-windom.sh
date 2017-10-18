@@ -26,10 +26,9 @@ SUBDIRS="src demo"
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include
 
 for CPU in 020 v4e 000; do
-	eval libdir=${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}\${CPU_LIBDIR_$CPU}
-	mkdir -p "$libdir"
+	eval multilibdir=${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}\${CPU_LIBDIR_$CPU}
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-	mkdir -p "$libdir"
+	mkdir -p "$multilibdir"
 	rm -f lib/gcc/*.a
 	for dir in $SUBDIRS; do
 		cd $dir || exit 1
@@ -45,7 +44,7 @@ for CPU in 020 v4e 000; do
 			M68K_ATARI_MINT_LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" install || exit 1
 		cd ..
 	done
-	mv ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/*.a "$libdir"
+	mv ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/*.a "$multilibdir"
 	make_bin_archive $CPU
 done
 
