@@ -540,6 +540,21 @@ is able to direct its output to any available devices, files or other programs,
 it may as well access remote devices or files.
 '
 	),
+	'libiconv' => array(
+		'name' => 'libiconv',
+		'upstream' => 'http://www.gnu.org/software/libiconv',
+		'source' => 'http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz',
+		'version' => '1.15',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+libiconv library provides an iconv() implementation, for use on
+systems which don&apos;t have one, or whose implementation cannot convert
+from/to Unicode.
+'
+	),
 );
 
 ?>

@@ -719,6 +719,8 @@ foreach ($libpackages as $package)
 <ul>
 <li>2017/10/18 Binutils archives for native compilation have been added</li>
 
+<li>2017/10/18 Package libiconv added</li>
+
 </ul>
 
 <p></p>
