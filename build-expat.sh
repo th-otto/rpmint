@@ -3,13 +3,16 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=libiconv
-VERSION=-1.15
+PACKAGENAME=expat
+VERSION=-2.2.4
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/libiconv/mintelf-config.patch"
+PATCHES="
+patches/expat/mintelf-config.patch
+"
+# patches/expat/expat-1.95.2-mint.patch
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
@@ -21,7 +24,7 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -Wl,--stack,128k"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --docdir=${TARGET_PREFIX}/share/doc/${PACKAGENAME}"
 
@@ -35,6 +38,7 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
+	sed -i 's/docbook2x-man/docbook-to-man/' doc/doc.mk
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
 	${MAKE} clean >/dev/null

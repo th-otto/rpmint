@@ -711,6 +711,14 @@ foreach ($libpackages as $package)
 
 <li>2017/10/18 Package libiconv added</li>
 
+<li>2017/10/18 Package m4 added</li>
+
+<li>2017/10/18 Package flex added</li>
+
+<li>2017/10/18 Package bison added</li>
+
+<li>2017/10/19 Package expat added</li>
+
 </ul>
 
 <p></p>

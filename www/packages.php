@@ -571,7 +571,7 @@ GNU m4 is an implementation of the traditional Unix macro processor.
 	),
 	'flex' => array(
 		'name' => 'flex',
-		'upstream' => 'http://flex.sourceforge.net/',
+		'upstream' => 'https://github.com/westes/flex',
 		'source' => 'https://github.com/westes/flex/releases/download/v2.6.4/flex-2.6.4.tar.gz',
 		'version' => '2.6.4',
 		'patch' => 1,
@@ -600,6 +600,21 @@ Bison can also generate IELR(1) or canonical LR(1) parser tables. Once
 you are proficient with Bison, you can use it to develop a wide range
 of language parsers, from those used in simple desk calculators to
 complex programming languages. 
+'
+	),
+	'expat' => array(
+		'name' => 'expat',
+		'upstream' => 'https://libexpat.github.io/',
+		'source' => 'http://downloads.sourceforge.net/project/expat/expat/2.2.4/expat-2.2.4.tar.bz2',
+		'version' => '2.2.4',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+Expat is an XML parser library written in C. It is a stream-oriented
+parser in which an application registers handlers for things the
+parser might find in the XML document (like start tags).
 '
 	),
 );
