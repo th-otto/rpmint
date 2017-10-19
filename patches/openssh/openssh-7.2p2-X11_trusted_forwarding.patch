@@ -1,0 +1,65 @@
+# HG changeset patch
+# Parent  7197d7a6b7c90566c68e980b5f8b937c183e79d0
+# enable trusted X11 forwarding by default in both sshd and sshsystem-wide
+# configuration
+# bnc#50836 (was suse #35836)
+Enable Trusted X11 forwarding by default, since the security benefits of
+having it disabled are negligible these days with XI2 being widely used.
+
+diff --git a/openssh-7.2p2/ssh_config b/openssh-7.2p2/ssh_config
+--- a/openssh-7.2p2/ssh_config
++++ b/openssh-7.2p2/ssh_config
+@@ -12,19 +12,30 @@
+ # Any configuration value is only changed the first time it is set.
+ # Thus, host-specific definitions should be at the beginning of the
+ # configuration file, and defaults at the end.
+ 
+ # Site-wide defaults for some commonly used options.  For a comprehensive
+ # list of available options, their meanings and defaults, please see the
+ # ssh_config(5) man page.
+ 
+-# Host *
++Host *
+ #   ForwardAgent no
+ #   ForwardX11 no
++
++# If you do not trust your remote host (or its administrator), you
++# should not forward X11 connections to your local X11-display for
++# security reasons: Someone stealing the authentification data on the
++# remote side (the "spoofed" X-server by the remote sshd) can read your
++# keystrokes as you type, just like any other X11 client could do.
++# Set this to "no" here for global effect or in your own ~/.ssh/config
++# file if you want to have the remote X11 authentification data to 
++# expire after twenty minutes after remote login.
++    ForwardX11Trusted yes
++
+ #   RhostsRSAAuthentication no
+ #   RSAAuthentication yes
+ #   PasswordAuthentication yes
+ #   HostbasedAuthentication no
+ #   GSSAPIAuthentication no
+ #   GSSAPIDelegateCredentials no
+ #   BatchMode no
+ #   CheckHostIP yes
+diff --git a/openssh-7.2p2/sshd_config b/openssh-7.2p2/sshd_config
+--- a/openssh-7.2p2/sshd_config
++++ b/openssh-7.2p2/sshd_config
+@@ -94,17 +94,17 @@ AuthorizedKeysFile	.ssh/authorized_keys
+ # If you just want the PAM account and session checks to run without
+ # PAM authentication, then enable this but set PasswordAuthentication
+ # and ChallengeResponseAuthentication to 'no'.
+ #UsePAM no
+ 
+ #AllowAgentForwarding yes
+ #AllowTcpForwarding yes
+ #GatewayPorts no
+-#X11Forwarding no
++X11Forwarding yes
+ #X11DisplayOffset 10
+ #X11UseLocalhost yes
+ #PermitTTY yes
+ #PrintMotd yes
+ #PrintLastLog yes
+ #TCPKeepAlive yes
+ #UseLogin no
+ #UsePrivilegeSeparation sandbox

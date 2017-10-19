@@ -1,0 +1,50 @@
+#!/bin/bash
+
+SESSION=
+
+case "$DESKTOP_SESSION" in
+  kde)       SESSION=kde ;;
+  gnome)     SESSION=gnome ;;
+esac
+
+if [ -z "$SESSION" ] ; then
+  WM="${WINDOWMANAGER##*/}"
+  case "$WM" in
+    *kde*)   SESSION=kde ;;
+    *gnome*) SESSION=gnome ;;
+  esac
+fi
+
+if [ -z "$SESSION" ] ; then
+  if [ -n "$KDE_FULL_SESSION" ] ; then
+    SESSION=kde
+  fi
+  if [ -n "$GNOME_DESKTOP_SESSION_ID" ] ; then
+    SESSION=gnome
+  fi
+fi
+
+GNOME_SSH_ASKPASS="@LIBEXECDIR@/ssh/gnome-ssh-askpass"
+KDE_SSH_ASKPASS="@LIBEXECDIR@/ssh/ksshaskpass"
+X11_SSH_ASKPASS="@LIBEXECDIR@/ssh/x11-ssh-askpass"
+
+case "$SESSION" in
+  gnome)
+	if [ -f $GNOME_SSH_ASKPASS ]; then
+		exec $GNOME_SSH_ASKPASS ${1+"$@"}
+	else
+		exec $X11_SSH_ASKPASS ${1+"$@"}
+	fi
+  ;;
+  kde)
+	if [ -f $KDE_SSH_ASKPASS ]; then
+		exec $KDE_SSH_ASKPASS ${1+"$@"}
+	else
+		exec $X11_SSH_ASKPASS ${1+"$@"}
+	fi
+  ;;
+  *)
+	exec $X11_SSH_ASKPASS ${1+"$@"}
+  ;;
+esac
+

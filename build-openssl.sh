@@ -9,7 +9,10 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/openssl/openssl-1.0.2l-mint.patch"
+PATCHES="
+patches/openssl/openssl-1.0.2l-mint.patch
+patches/openssl/zlib-static.patch
+"
 
 unpack_archive
 

@@ -1,0 +1,241 @@
+diff --git a/doc/man/man5/slapd-sock.5 b/doc/man/man5/slapd-sock.5
+index 1ac4f7fdd..903155fa4 100644
+--- a/doc/man/man5/slapd-sock.5
++++ b/doc/man/man5/slapd-sock.5
+@@ -49,7 +49,7 @@ be sent and from which replies are received.
+ 
+ When used as an overlay, these additional directives are defined:
+ .TP
+-.B sockops	[ bind | unbind | search | compare | modify | modrdn | add | delete ]*
++.B sockops	[ bind | unbind | search | compare | modify | modrdn | add | delete | extended ]*
+ Specify which request types to send to the external program. The default is
+ empty (no requests are sent).
+ .TP
+@@ -115,6 +115,17 @@ dn: <DN>
+ .PP
+ .RS
+ .nf
++EXTENDED
++msgid: <message id>
++<repeat { "suffix:" <database suffix DN> }>
++oid: <OID>
++value: <base64-value>
++<blank line>
++.fi
++.RE
++.PP
++.RS
++.nf
+ MODIFY
+ msgid: <message id>
+ <repeat { "suffix:" <database suffix DN> }>
+@@ -213,6 +224,11 @@ msgid: <message id>
+ .fi
+ .RE
+ 
++.SH KNOWN LIMITATIONS
++The 
++.B sock 
++backend does not process extended operation results from an external program.
++
+ .SH ACCESS CONTROL
+ The
+ .B sock
+@@ -292,6 +308,11 @@ access to the
+ pseudo_attribute of the searchBase;
+ .B search (=s)
+ access to the attributes and values used in the filter is not checked.
++.LP
++The
++.B extended
++operation does not require any access special rights.
++The external program has to implement any sort of access control.
+ 
+ .SH EXAMPLE
+ There is an example script in the slapd/back\-sock/ directory
+diff --git a/servers/slapd/back-sock/Makefile.in b/servers/slapd/back-sock/Makefile.in
+index 3e527e545..efb916246 100644
+--- a/servers/slapd/back-sock/Makefile.in
++++ b/servers/slapd/back-sock/Makefile.in
+@@ -18,9 +18,9 @@
+ ## in OpenLDAP Software.
+ 
+ SRCS	= init.c config.c opensock.c search.c bind.c unbind.c add.c \
+-		delete.c modify.c modrdn.c compare.c result.c
++		delete.c modify.c modrdn.c compare.c result.c extended.c
+ OBJS	= init.lo config.lo opensock.lo search.lo bind.lo unbind.lo add.lo \
+-		delete.lo modify.lo modrdn.lo compare.lo result.lo
++		delete.lo modify.lo modrdn.lo compare.lo result.lo extended.lo
+ 
+ LDAP_INCDIR= ../../../include       
+ LDAP_LIBDIR= ../../../libraries
+diff --git a/servers/slapd/back-sock/config.c b/servers/slapd/back-sock/config.c
+index dc3f1365c..2dcf68bf6 100644
+--- a/servers/slapd/back-sock/config.c
++++ b/servers/slapd/back-sock/config.c
+@@ -106,6 +106,7 @@ static ConfigOCs osocs[] = {
+ #define SOCK_OP_MODRDN	0x020
+ #define SOCK_OP_ADD		0x040
+ #define SOCK_OP_DELETE	0x080
++#define SOCK_OP_EXTENDED	0x100
+ 
+ #define SOCK_REP_RESULT	0x001
+ #define SOCK_REP_SEARCH	0x002
+@@ -127,6 +128,7 @@ static slap_verbmasks ov_ops[] = {
+ 	{ BER_BVC("modrdn"), SOCK_OP_MODRDN },
+ 	{ BER_BVC("add"), SOCK_OP_ADD },
+ 	{ BER_BVC("delete"), SOCK_OP_DELETE },
++	{ BER_BVC("extended"), SOCK_OP_EXTENDED },
+ 	{ BER_BVNULL, 0 }
+ };
+ 
+@@ -249,7 +251,9 @@ static BI_op_bind *sockfuncs[] = {
+ 	sock_back_modify,
+ 	sock_back_modrdn,
+ 	sock_back_add,
+-	sock_back_delete
++	sock_back_delete,
++	0,                    /* abandon not supported */
++	sock_back_extended
+ };
+ 
+ static const int sockopflags[] = {
+@@ -260,7 +264,9 @@ static const int sockopflags[] = {
+ 	SOCK_OP_MODIFY,
+ 	SOCK_OP_MODRDN,
+ 	SOCK_OP_ADD,
+-	SOCK_OP_DELETE
++	SOCK_OP_DELETE,
++	0,                    /* abandon not supported */
++	SOCK_OP_EXTENDED
+ };
+ 
+ static int sock_over_op(
+@@ -283,6 +289,7 @@ static int sock_over_op(
+ 	case LDAP_REQ_MODRDN:	which = op_modrdn; break;
+ 	case LDAP_REQ_ADD:	which = op_add; break;
+ 	case LDAP_REQ_DELETE:	which = op_delete; break;
++	case LDAP_REQ_EXTENDED:	which = op_extended; break;
+ 	default:
+ 		return SLAP_CB_CONTINUE;
+ 	}
+@@ -365,6 +372,7 @@ sock_over_setup()
+ 	sockover.on_bi.bi_op_modrdn = sock_over_op;
+ 	sockover.on_bi.bi_op_add = sock_over_op;
+ 	sockover.on_bi.bi_op_delete = sock_over_op;
++	sockover.on_bi.bi_extended = sock_over_op;
+ 	sockover.on_response = sock_over_response;
+ 
+ 	sockover.on_bi.bi_cf_ocs = osocs;
+diff --git a/servers/slapd/back-sock/extended.c b/servers/slapd/back-sock/extended.c
+new file mode 100644
+index 000000000..dfe56b32b
+--- /dev/null
++++ b/servers/slapd/back-sock/extended.c
+@@ -0,0 +1,80 @@
++/* extended.c - sock backend extended routines */
++/* $OpenLDAP$ */
++/* This work is part of OpenLDAP Software <http://www.openldap.org/>.
++ *
++ * Copyright 2000-2017 The OpenLDAP Foundation.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted only as authorized by the OpenLDAP
++ * Public License.
++ *
++ * A copy of this license is available in the file LICENSE in the
++ * top-level directory of the distribution or, alternatively, at
++ * <http://www.OpenLDAP.org/license.html>.
++ */
++
++#include "portable.h"
++
++#include <stdio.h>
++#include <ac/string.h>
++
++#include "slap.h"
++#include "back-sock.h"
++
++#include "lutil.h"
++
++int
++sock_back_extended( Operation *op, SlapReply *rs )
++{
++	int			rc;
++	struct	sockinfo	*si = (struct sockinfo *) op->o_bd->be_private;
++	FILE		*fp;
++	struct berval b64;
++
++	Debug( LDAP_DEBUG_ARGS, "==> sock_back_extended(%s)\n",
++		op->ore_reqoid.bv_val, op->o_req_dn.bv_val, 0 );
++
++	if ( (fp = opensock( si->si_sockpath )) == NULL ) {
++		send_ldap_error( op, rs, LDAP_OTHER,
++			"could not open socket" );
++		return( -1 );
++	}
++
++	/* write out the request to the extended process */
++	fprintf( fp, "EXTENDED\n" );
++	fprintf( fp, "msgid: %ld\n", (long) op->o_msgid );
++	sock_print_conn( fp, op->o_conn, si );
++	sock_print_suffixes( fp, op->o_bd );
++	fprintf( fp, "oid: %s\n", op->ore_reqoid.bv_val );
++
++  if (op->ore_reqdata) {
++
++		b64.bv_len = LUTIL_BASE64_ENCODE_LEN( op->ore_reqdata->bv_len ) + 1;
++		b64.bv_val = ber_memalloc( b64.bv_len + 1 );
++
++		if( b64.bv_val == NULL ) {
++			return LUTIL_PASSWD_ERR;
++		}
++
++		rc = lutil_b64_ntop(
++			(unsigned char *) op->ore_reqdata->bv_val, op->ore_reqdata->bv_len,
++			b64.bv_val, b64.bv_len );
++
++		b64.bv_len = rc;
++		assert( strlen(b64.bv_val) == b64.bv_len );
++
++		fprintf( fp, "value: %s\n", b64.bv_val );
++
++		ber_memfree( b64.bv_val );
++
++	}
++
++	fprintf( fp, "\n" );
++
++	/* read in the results and send them along */
++	rc = sock_read_and_send_results( op, rs, fp );
++	fclose( fp );
++
++	return( rc );
++}
+diff --git a/servers/slapd/back-sock/init.c b/servers/slapd/back-sock/init.c
+index dcfe61a44..92e68782f 100644
+--- a/servers/slapd/back-sock/init.c
++++ b/servers/slapd/back-sock/init.c
+@@ -53,7 +53,7 @@ sock_back_initialize(
+ 	bi->bi_op_delete = sock_back_delete;
+ 	bi->bi_op_abandon = 0;
+ 
+-	bi->bi_extended = 0;
++	bi->bi_extended = sock_back_extended;
+ 
+ 	bi->bi_chk_referrals = 0;
+ 
+diff --git a/servers/slapd/back-sock/proto-sock.h b/servers/slapd/back-sock/proto-sock.h
+index fa02ab896..8b3b5f3ef 100644
+--- a/servers/slapd/back-sock/proto-sock.h
++++ b/servers/slapd/back-sock/proto-sock.h
+@@ -40,6 +40,8 @@ extern BI_op_modrdn	sock_back_modrdn;
+ extern BI_op_add	sock_back_add;
+ extern BI_op_delete	sock_back_delete;
+ 
++extern BI_op_extended	sock_back_extended;
++
+ extern int sock_back_init_cf( BackendInfo *bi );
+ 
+ LDAP_END_DECL

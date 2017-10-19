@@ -1,0 +1,121 @@
+Open library file descriptors with O_CLOEXEC
+This patch is non-portable, it needs linux 2.6.23 and glibc 2.7
+or later, different combinations (old linux, new glibc and vice-versa)
+will result in a crash.
+
+To make it portable you have to test O_CLOEXEC support at *runtime*
+compile time is not enough.
+
+
+Index: lib/file.c
+===================================================================
+--- a/lib/file.c.orig
++++ b/lib/file.c
+@@ -242,7 +242,7 @@ static CURLcode file_connect(struct conn
+     return CURLE_URL_MALFORMAT;
+   }
+ 
+-  fd = open_readonly(real_path, O_RDONLY);
++  fd = open_readonly(real_path, O_RDONLY|O_CLOEXEC);
+   file->path = real_path;
+ #endif
+   file->freepath = real_path; /* free this when done */
+@@ -338,7 +338,7 @@ static CURLcode file_upload(struct conne
+   else
+     mode = MODE_DEFAULT|O_TRUNC;
+ 
+-  fd = open(file->path, mode, conn->data->set.new_file_perms);
++  fd = open(file->path, mode | O_CLOEXEC, conn->data->set.new_file_perms);
+   if(fd < 0) {
+     failf(data, "Can't open %s for writing", file->path);
+     return CURLE_WRITE_ERROR;
+Index: lib/formdata.c
+===================================================================
+--- a/lib/formdata.c.orig
++++ b/lib/formdata.c
+@@ -1306,7 +1306,7 @@ CURLcode Curl_getformdata(struct Curl_ea
+         FILE *fileread;
+ 
+         fileread = !strcmp("-", file->contents)?
+-          stdin:fopen(file->contents, "rb"); /* binary read for win32  */
++          stdin:fopen(file->contents, "rbe"); /* binary read for win32  */
+ 
+         /*
+          * VMS: This only allows for stream files on VMS.  Stream files are
+@@ -1466,7 +1466,7 @@ static size_t readfromfile(struct Form *
+   else {
+     if(!form->fp) {
+       /* this file hasn't yet been opened */
+-      form->fp = fopen_read(form->data->line, "rb"); /* b is for binary */
++      form->fp = fopen_read(form->data->line, "rbe"); /* b is for binary */
+       if(!form->fp)
+         return (size_t)-1; /* failure */
+     }
+Index: lib/hostip6.c
+===================================================================
+--- a/lib/hostip6.c.orig
++++ b/lib/hostip6.c
+@@ -39,7 +39,7 @@
+ #ifdef HAVE_PROCESS_H
+ #include <process.h>
+ #endif
+-
++#include <fcntl.h>
+ #include "urldata.h"
+ #include "sendf.h"
+ #include "hostip.h"
+@@ -103,7 +103,7 @@ bool Curl_ipv6works(void)
+   static int ipv6_works = -1;
+   if(-1 == ipv6_works) {
+     /* probe to see if we have a working IPv6 stack */
+-    curl_socket_t s = socket(PF_INET6, SOCK_DGRAM, 0);
++    curl_socket_t s = socket(PF_INET6, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+     if(s == CURL_SOCKET_BAD)
+       /* an IPv6 address was requested but we can't get/use one */
+       ipv6_works = 0;
+Index: lib/if2ip.c
+===================================================================
+--- a/lib/if2ip.c.orig
++++ b/lib/if2ip.c
+@@ -223,7 +223,7 @@ if2ip_result_t Curl_if2ip(int af, unsign
+   if(len >= sizeof(req.ifr_name))
+     return IF2IP_NOT_FOUND;
+ 
+-  dummy = socket(AF_INET, SOCK_STREAM, 0);
++  dummy = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
+   if(CURL_SOCKET_BAD == dummy)
+     return IF2IP_NOT_FOUND;
+ 
+Index: lib/connect.c
+===================================================================
+--- a/lib/connect.c.orig
++++ b/lib/connect.c
+@@ -1351,7 +1351,7 @@ CURLcode Curl_socket(struct connectdata
+                                     (struct curl_sockaddr *)addr);
+   else
+     /* opensocket callback not set, so simply create the socket now */
+-    *sockfd = socket(addr->family, addr->socktype, addr->protocol);
++    *sockfd = socket(addr->family, addr->socktype | SOCK_CLOEXEC, addr->protocol);
+ 
+   if(*sockfd == CURL_SOCKET_BAD)
+     /* no socket, no connection */
+Index: configure.ac
+===================================================================
+--- a/configure.ac.orig
++++ b/configure.ac
+@@ -185,6 +185,7 @@ AC_CANONICAL_HOST
+ dnl Get system canonical name
+ AC_DEFINE_UNQUOTED(OS, "${host}", [cpu-machine-OS])
+ 
++AC_USE_SYSTEM_EXTENSIONS
+ dnl Checks for programs.
+ 
+ dnl Our curl_off_t internal and external configure settings
+@@ -197,6 +198,7 @@ dnl Our configure and build reentrant se
+ CURL_CONFIGURE_THREAD_SAFE
+ CURL_CONFIGURE_REENTRANT
+ 
++
+ dnl check for how to do large files
+ AC_SYS_LARGEFILE
+ 

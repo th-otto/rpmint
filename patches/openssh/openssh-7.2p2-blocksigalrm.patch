@@ -1,0 +1,76 @@
+# HG changeset patch
+# Parent  0bfb5dd4b190b546a3e40a59483b2b2884a47c39
+block SIGALRM while logging through syslog to prevent deadlocks
+(through grace_alarm_handler())
+
+bnc#57354
+
+diff --git a/openssh-7.2p2/log.c b/openssh-7.2p2/log.c
+--- a/openssh-7.2p2/log.c
++++ b/openssh-7.2p2/log.c
+@@ -46,16 +46,17 @@
+ #include <syslog.h>
+ #include <unistd.h>
+ #include <errno.h>
+ #if defined(HAVE_STRNVIS) && defined(HAVE_VIS_H) && !defined(BROKEN_STRNVIS)
+ # include <vis.h>
+ #endif
+ 
+ #include "log.h"
++#include <signal.h>
+ 
+ static LogLevel log_level = SYSLOG_LEVEL_INFO;
+ static int log_on_stderr = 1;
+ static int log_stderr_fd = STDERR_FILENO;
+ static int log_facility = LOG_AUTH;
+ static char *argv0;
+ static log_handler_fn *log_handler;
+ static void *log_handler_ctx;
+@@ -383,16 +384,17 @@ do_log(LogLevel level, const char *fmt, 
+ {
+ #if defined(HAVE_OPENLOG_R) && defined(SYSLOG_DATA_INIT)
+ 	struct syslog_data sdata = SYSLOG_DATA_INIT;
+ #endif
+ 	char msgbuf[MSGBUFSIZ];
+ 	char fmtbuf[MSGBUFSIZ];
+ 	char *txt = NULL;
+ 	int pri = LOG_INFO;
++	sigset_t nset, oset;
+ 	int saved_errno = errno;
+ 	log_handler_fn *tmp_handler;
+ 
+ 	if (level > log_level)
+ 		return;
+ 
+ 	switch (level) {
+ 	case SYSLOG_LEVEL_FATAL:
+@@ -441,20 +443,29 @@ do_log(LogLevel level, const char *fmt, 
+ 		tmp_handler = log_handler;
+ 		log_handler = NULL;
+ 		tmp_handler(level, fmtbuf, log_handler_ctx);
+ 		log_handler = tmp_handler;
+ 	} else if (log_on_stderr) {
+ 		snprintf(msgbuf, sizeof msgbuf, "%s\r\n", fmtbuf);
+ 		(void)write(log_stderr_fd, msgbuf, strlen(msgbuf));
+ 	} else {
++		/* Prevent a race between the grace_alarm
++		* which writes a log message and terminates
++		* and main sshd code that leads to deadlock 
++		* as syslog is not async safe.
++		*/ 
++		sigemptyset(&nset);
++		sigaddset(&nset, SIGALRM);
++		sigprocmask(SIG_BLOCK, &nset, &oset);
+ #if defined(HAVE_OPENLOG_R) && defined(SYSLOG_DATA_INIT)
+ 		openlog_r(argv0 ? argv0 : __progname, LOG_PID, log_facility, &sdata);
+ 		syslog_r(pri, &sdata, "%.500s", fmtbuf);
+ 		closelog_r(&sdata);
+ #else
+ 		openlog(argv0 ? argv0 : __progname, LOG_PID, log_facility);
+ 		syslog(pri, "%.500s", fmtbuf);
+ 		closelog();
+ #endif
++		sigprocmask(SIG_SETMASK, &oset, NULL);
+ 	}
+ 	errno = saved_errno;
+ }

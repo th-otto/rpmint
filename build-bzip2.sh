@@ -44,7 +44,7 @@ ${TARGET_MANDIR}/man1/bzmore.1.gz
 
 unpack_archive
 
-cd "$MINT_BUILD_DIR"
+cd "$srcdir"
 
 rm -f aclocal.m4 ltmain.sh
 libtoolize --force || exit 1
@@ -53,6 +53,8 @@ autoconf || exit 1
 autoheader || exit 1
 automake --force --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
+
+cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS"
 

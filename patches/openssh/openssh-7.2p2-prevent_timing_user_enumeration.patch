@@ -1,0 +1,264 @@
+# HG changeset patch
+# Parent  4a254abf4ef391358257310ad2fe15c9e12dee34
+Prevent user enumeration through password processing timing
+CVE-2016-6210
+bsc#989363
+
+non-PAM part:
+upstream commit: 9286875a73b2de7736b5e50692739d314cd8d9dc
+
+PAM part:
+upstream commit: 283b97ff33ea2c641161950849931bd578de6946
+
+diff --git a/openssh-7.2p2/auth-pam.c b/openssh-7.2p2/auth-pam.c
+--- a/openssh-7.2p2/auth-pam.c
++++ b/openssh-7.2p2/auth-pam.c
+@@ -227,17 +227,16 @@ static pam_handle_t *sshpam_handle = NUL
+ static int sshpam_err = 0;
+ static int sshpam_authenticated = 0;
+ static int sshpam_session_open = 0;
+ static int sshpam_cred_established = 0;
+ static int sshpam_account_status = -1;
+ static char **sshpam_env = NULL;
+ static Authctxt *sshpam_authctxt = NULL;
+ static const char *sshpam_password = NULL;
+-static char badpw[] = "\b\n\r\177INCORRECT";
+ 
+ /* Some PAM implementations don't implement this */
+ #ifndef HAVE_PAM_GETENVLIST
+ static char **
+ pam_getenvlist(pam_handle_t *pamh)
+ {
+ 	/*
+ 	 * XXX - If necessary, we can still support envrionment passing
+@@ -807,22 +806,45 @@ sshpam_query(void *ctx, char **name, cha
+ 			free(msg);
+ 			ctxt->pam_done = -1;
+ 			return (-1);
+ 		}
+ 	}
+ 	return (-1);
+ }
+ 
++/*
++ * Returns a junk password of identical length to that the user supplied.
++ * Used to mitigate timing attacks against crypt(3)/PAM stacks that
++ * vary processing time in proportion to password length.
++ */
++static char *
++fake_password(const char *wire_password)
++{
++	const char junk[] = "\b\n\r\177INCORRECT";
++	char *ret = NULL;
++	size_t i, l = wire_password != NULL ? strlen(wire_password) : 0;
++
++	if (l >= INT_MAX)
++		fatal("%s: password length too long: %zu", __func__, l);
++
++	ret = xmalloc(l + 1);
++	for (i = 0; i < l; i++)
++		ret[i] = junk[i % (sizeof(junk) - 1)];
++	ret[i] = '\0';
++	return ret;
++}
++
+ /* XXX - see also comment in auth-chall.c:verify_response */
+ static int
+ sshpam_respond(void *ctx, u_int num, char **resp)
+ {
+ 	Buffer buffer;
+ 	struct pam_ctxt *ctxt = ctx;
++	char *fake;
+ 
+ 	debug2("PAM: %s entering, %u responses", __func__, num);
+ 	switch (ctxt->pam_done) {
+ 	case 1:
+ 		sshpam_authenticated = 1;
+ 		return (0);
+ 	case 0:
+ 		break;
+@@ -833,18 +855,21 @@ sshpam_respond(void *ctx, u_int num, cha
+ 		error("PAM: expected one response, got %u", num);
+ 		return (-1);
+ 	}
+ 	buffer_init(&buffer);
+ 	if (sshpam_authctxt->valid &&
+ 	    (sshpam_authctxt->pw->pw_uid != 0 ||
+ 	    options.permit_root_login == PERMIT_YES))
+ 		buffer_put_cstring(&buffer, *resp);
+-	else
+-		buffer_put_cstring(&buffer, badpw);
++	else {
++		fake = fake_password(*resp);
++		buffer_put_cstring(&buffer, fake);
++		free(fake);
++	}
+ 	if (ssh_msg_send(ctxt->pam_psock, PAM_AUTHTOK, &buffer) == -1) {
+ 		buffer_free(&buffer);
+ 		return (-1);
+ 	}
+ 	buffer_free(&buffer);
+ 	return (1);
+ }
+ 
+@@ -1178,41 +1203,43 @@ static struct pam_conv passwd_conv = { s
+ /*
+  * Attempt password authentication via PAM
+  */
+ int
+ sshpam_auth_passwd(Authctxt *authctxt, const char *password)
+ {
+ 	int flags = (options.permit_empty_passwd == 0 ?
+ 	    PAM_DISALLOW_NULL_AUTHTOK : 0);
++	char *fake = NULL;
+ 
+ 	if (!options.use_pam || sshpam_handle == NULL)
+ 		fatal("PAM: %s called when PAM disabled or failed to "
+ 		    "initialise.", __func__);
+ 
+ 	sshpam_password = password;
+ 	sshpam_authctxt = authctxt;
+ 
+ 	/*
+ 	 * If the user logging in is invalid, or is root but is not permitted
+ 	 * by PermitRootLogin, use an invalid password to prevent leaking
+ 	 * information via timing (eg if the PAM config has a delay on fail).
+ 	 */
+ 	if (!authctxt->valid || (authctxt->pw->pw_uid == 0 &&
+ 	    options.permit_root_login != PERMIT_YES))
+-		sshpam_password = badpw;
++		sshpam_password = fake = fake_password(password);
+ 
+ 	sshpam_err = pam_set_item(sshpam_handle, PAM_CONV,
+ 	    (const void *)&passwd_conv);
+ 	if (sshpam_err != PAM_SUCCESS)
+ 		fatal("PAM: %s: failed to set PAM_CONV: %s", __func__,
+ 		    pam_strerror(sshpam_handle, sshpam_err));
+ 
+ 	sshpam_err = pam_authenticate(sshpam_handle, flags);
+ 	sshpam_password = NULL;
++	free(fake);
+ 	if (sshpam_err == PAM_SUCCESS && authctxt->valid) {
+ 		debug("PAM: password authentication accepted for %.100s",
+ 		    authctxt->user);
+ 		return 1;
+ 	} else {
+ 		debug("PAM: password authentication failed for %.100s: %s",
+ 		    authctxt->valid ? authctxt->user : "an illegal user",
+ 		    pam_strerror(sshpam_handle, sshpam_err));
+diff --git a/openssh-7.2p2/auth-passwd.c b/openssh-7.2p2/auth-passwd.c
+--- a/openssh-7.2p2/auth-passwd.c
++++ b/openssh-7.2p2/auth-passwd.c
+@@ -188,28 +188,32 @@ sys_auth_passwd(Authctxt *authctxt, cons
+ 		return (auth_close(as));
+ 	}
+ }
+ #elif !defined(CUSTOM_SYS_AUTH_PASSWD)
+ int
+ sys_auth_passwd(Authctxt *authctxt, const char *password)
+ {
+ 	struct passwd *pw = authctxt->pw;
+-	char *encrypted_password;
++	char *encrypted_password, *salt = NULL;
+ 
+ 	/* Just use the supplied fake password if authctxt is invalid */
+ 	char *pw_password = authctxt->valid ? shadow_pw(pw) : pw->pw_passwd;
+ 
+ 	/* Check for users with no password. */
+ 	if (strcmp(pw_password, "") == 0 && strcmp(password, "") == 0)
+ 		return (1);
+ 
+-	/* Encrypt the candidate password using the proper salt. */
+-	encrypted_password = xcrypt(password,
+-	    (pw_password[0] && pw_password[1]) ? pw_password : "xx");
++	/*
++	 * Encrypt the candidate password using the proper salt, or pass a
++	 * NULL and let xcrypt pick one.
++	 */
++	if (authctxt->valid && pw_password[0] && pw_password[1])
++		salt = pw_password;
++	encrypted_password = xcrypt(password, salt);
+ 
+ 	/*
+ 	 * Authentication is accepted if the encrypted passwords
+ 	 * are identical.
+ 	 */
+ 	return encrypted_password != NULL &&
+ 	    strcmp(encrypted_password, pw_password) == 0;
+ }
+diff --git a/openssh-7.2p2/openbsd-compat/xcrypt.c b/openssh-7.2p2/openbsd-compat/xcrypt.c
+--- a/openssh-7.2p2/openbsd-compat/xcrypt.c
++++ b/openssh-7.2p2/openbsd-compat/xcrypt.c
+@@ -20,16 +20,17 @@
+  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+ #include "includes.h"
+ 
+ #include <sys/types.h>
++#include <string.h>
+ #include <unistd.h>
+ #include <pwd.h>
+ 
+ # if defined(HAVE_CRYPT_H) && !defined(HAVE_SECUREWARE)
+ #  include <crypt.h>
+ # endif
+ 
+ # ifdef __hpux
+@@ -57,21 +58,54 @@
+ #  include "md5crypt.h"
+ # endif
+ 
+ # if defined(WITH_OPENSSL) && !defined(HAVE_CRYPT) && defined(HAVE_DES_CRYPT)
+ #  include <openssl/des.h>
+ #  define crypt DES_crypt
+ # endif
+ 
++/*
++ * Pick an appropriate password encryption type and salt for the running
++ * system.
++ */
++static const char *
++pick_salt(void)
++{
++	struct passwd *pw;
++	char *passwd, *p;
++	size_t typelen;
++	static char salt[32];
++
++	if (salt[0] != '\0')
++		return salt;
++	strlcpy(salt, "xx", sizeof(salt));
++	if ((pw = getpwuid(0)) == NULL)
++		return salt;
++	passwd = shadow_pw(pw);
++	if (passwd[0] != '$' || (p = strrchr(passwd + 1, '$')) == NULL)
++		return salt;  /* no $, DES */
++	typelen = p - passwd + 1;
++	strlcpy(salt, passwd, MIN(typelen, sizeof(salt)));
++	explicit_bzero(passwd, strlen(passwd));
++	return salt;
++}
++
+ char *
+ xcrypt(const char *password, const char *salt)
+ {
+ 	char *crypted;
+ 
++	/*
++	 * If we don't have a salt we are encrypting a fake password for
++	 * for timing purposes.  Pick an appropriate salt.
++	 */
++	if (salt == NULL)
++		salt = pick_salt();
++
+ # ifdef HAVE_MD5_PASSWORDS
+         if (is_md5_salt(salt))
+                 crypted = md5_crypt(password, salt);
+         else
+                 crypted = crypt(password, salt);
+ # elif defined(__hpux) && !defined(HAVE_SECUREWARE)
+ 	if (iscomsec())
+                 crypted = bigcrypt(password, salt);

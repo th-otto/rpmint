@@ -1,0 +1,32 @@
+# HG changeset patch
+# Parent  b86c2190c93aeaf958c22fc7b224dcaf87100288
+# HG changeset patch
+# Parent  b262fd34c8ecd55e93d457b3ca5593abce716856
+# login-pam cannot handle the option terminator "--" as login from util-linux
+# (this is correct behaviour considering its man-page), hence use option which
+# selects the compile-time branch in the code which doesn't use the terminator
+#
+# bnc#833605
+
+diff --git a/openssh-7.2p2/configure.ac b/openssh-7.2p2/configure.ac
+--- a/openssh-7.2p2/configure.ac
++++ b/openssh-7.2p2/configure.ac
+@@ -770,16 +770,18 @@ main() { if (NSVersionOfRunTimeLibrary("
+ 	AC_DEFINE([_PATH_BTMP], ["/var/log/btmp"], [log for bad login attempts])
+ 	AC_DEFINE([USE_BTMP], [1], [Use btmp to log bad logins])
+ 	;;
+ *-*-linux*)
+ 	no_dev_ptmx=1
+ 	use_pie=auto
+ 	check_for_libcrypt_later=1
+ 	check_for_openpty_ctty_bug=1
++	AC_DEFINE([LOGIN_NO_ENDOPT], [1],
++		[Define if your login program cannot handle end of options ("--")])
+ 	AC_DEFINE([PAM_TTY_KLUDGE], [1],
+ 		[Work around problematic Linux PAM modules handling of PAM_TTY])
+ 	AC_DEFINE([LOCKED_PASSWD_PREFIX], ["!"],
+ 		[String used in /etc/passwd to denote locked account])
+ 	AC_DEFINE([SPT_TYPE], [SPT_REUSEARGV])
+ 	AC_DEFINE([LINK_OPNOTSUPP_ERRNO], [EPERM],
+ 		[Define to whatever link() returns for "not supported"
+ 		if it doesn't return EOPNOTSUPP.])

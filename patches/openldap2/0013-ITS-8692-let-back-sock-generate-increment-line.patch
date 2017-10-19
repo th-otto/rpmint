@@ -1,0 +1,28 @@
+From 6c37844c5c52b95aff5e4e547cda8a7258e92a35 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Michael=20Str=C3=B6der?= <michael@stroeder.com>
+Date: Wed, 12 Jul 2017 20:18:22 +0200
+Subject: [PATCH] ITS#8692 let back-sock generate increment: line in case of
+ LDAP_MOD_INCREMENT (see RFC 4525, section 3)
+
+---
+ servers/slapd/back-sock/modify.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/servers/slapd/back-sock/modify.c b/servers/slapd/back-sock/modify.c
+index c35d31bc6..9342d2702 100644
+--- a/servers/slapd/back-sock/modify.c
++++ b/servers/slapd/back-sock/modify.c
+@@ -85,6 +85,10 @@ sock_back_modify(
+ 		case LDAP_MOD_REPLACE:
+ 			fprintf( fp, "replace: %s\n", mod->sm_desc->ad_cname.bv_val );
+ 			break;
++
++		case LDAP_MOD_INCREMENT:
++			fprintf( fp, "increment: %s\n", mod->sm_desc->ad_cname.bv_val );
++			break;
+ 		}
+ 
+ 		if( mod->sm_values != NULL ) {
+-- 
+2.13.2
+

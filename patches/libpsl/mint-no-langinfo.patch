@@ -1,0 +1,47 @@
+diff -rup libpsl-0.18.0.orig/src/psl.c libpsl-0.18.0/src/psl.c
+--- libpsl-0.18.0.orig/src/psl.c	2017-07-19 16:59:11.000000000 +0200
++++ libpsl-0.18.0/src/psl.c	2017-10-19 20:09:51.592470157 +0200
+@@ -64,7 +64,9 @@
+ #include <time.h>
+ #include <errno.h>
+ #include <limits.h> /* for UINT_MAX */
++#ifndef __MINT__
+ #include <langinfo.h>
++#endif
+ #include <arpa/inet.h>
+ #ifdef HAVE_ALLOCA_H
+ #	include <alloca.h>
+@@ -1545,10 +1547,19 @@ int psl_check_version_number(int version
+ /* return whether hostname is an IP address or not */
+ static int _isip(const char *hostname)
+ {
++	int ret;
+ 	struct in_addr addr;
+-	struct in6_addr addr6;
+ 
+-	return inet_pton(AF_INET, hostname, &addr) || inet_pton(AF_INET6, hostname, &addr6);
++	if ((ret = inet_pton(AF_INET, hostname, &addr)) != 0)
++		return ret;
++#ifndef __MINT__
++	{
++		struct in6_addr addr6;
++		if ((ret = inet_pton(AF_INET6, hostname, &addr6)) != 0)
++			return ret;
++	}
++#endif
++	return ret;
+ }
+ 
+ /**
+@@ -1734,9 +1745,11 @@ out:
+ 	do {
+ 		/* find out local charset encoding */
+ 		if (!encoding) {
++#ifndef __MINT__
+ 			encoding = nl_langinfo(CODESET);
+ 
+ 			if (!encoding || !*encoding)
++#endif
+ 				encoding = "ASCII";
+ 		}
+ 

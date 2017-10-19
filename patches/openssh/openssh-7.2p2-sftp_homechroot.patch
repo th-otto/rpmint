@@ -1,0 +1,366 @@
+# HG changeset patch
+# Parent  fc81df6f2bf393e45e703c89976c3a0fe6e0a273
+run sftp sessions inside a chroot
+
+diff --git a/openssh-7.2p2/session.c b/openssh-7.2p2/session.c
+--- a/openssh-7.2p2/session.c
++++ b/openssh-7.2p2/session.c
+@@ -123,16 +123,18 @@ int	do_exec(Session *, const char *);
+ void	do_login(Session *, const char *);
+ #ifdef LOGIN_NEEDS_UTMPX
+ static void	do_pre_login(Session *s);
+ #endif
+ void	do_child(Session *, const char *);
+ void	do_motd(void);
+ int	check_quietlogin(Session *, const char *);
+ 
++int	chroot_no_tree = 0;
++
+ static void do_authenticated1(Authctxt *);
+ static void do_authenticated2(Authctxt *);
+ 
+ static int session_pty_req(Session *);
+ 
+ /* import */
+ extern ServerOptions options;
+ extern char *__progname;
+@@ -838,16 +840,21 @@ do_exec(Session *s, const char *command)
+ 		    "subsystem '%.900s'", s->subsys);
+ 	} else if (command == NULL) {
+ 		snprintf(session_type, sizeof(session_type), "shell");
+ 	} else {
+ 		/* NB. we don't log unforced commands to preserve privacy */
+ 		snprintf(session_type, sizeof(session_type), "command");
+ 	}
+ 
++	if ((s->is_subsystem != SUBSYSTEM_INT_SFTP) && chroot_no_tree) {
++		logit("You aren't welcomed, go away!");
++		exit (1);
++	}
++
+ 	if (s->ttyfd != -1) {
+ 		tty = s->tty;
+ 		if (strncmp(tty, "/dev/", 5) == 0)
+ 			tty += 5;
+ 	}
+ 
+ 	verbose("Starting session: %s%s%s for %s from %.200s port %d id %d",
+ 	    session_type,
+@@ -1492,58 +1499,123 @@ do_nologin(struct passwd *pw)
+  		while (fgets(buf, sizeof(buf), f))
+  			fputs(buf, stderr);
+  		fclose(f);
+  	}
+ 	exit(254);
+ }
+ 
+ /*
++ * Test if filesystem is mounted nosuid and nodev
++ */
++
++static void
++test_nosuid (char * path, dev_t fs)
++{
++	FILE *f;
++	struct stat st;
++	char buf[4096], *s, *on, *mountpoint, *opt;
++	int nodev, nosuid;
++
++	if (!(f = popen ("/bin/mount", "r")))
++		fatal ("%s: popen(\"/bin/mount\", \"r\"): %s",
++		    __func__, strerror (errno));
++	for (;;) {
++		s = fgets (buf, sizeof (buf), f);
++		if (ferror (f))
++			fatal ("%s: read from popen: %s", __func__,
++			    strerror (errno));
++		if (!s) {
++			pclose (f);
++			fatal ("cannot find filesystem with the chroot directory");
++		}
++		(void) strtok (buf, " ");
++		on = strtok (NULL, " ");
++		if (strcmp (on, "on")) {
++			pclose (f);
++			fatal ("bad format of mount output");
++		}
++		mountpoint = strtok (NULL, " ");
++		if (memcmp (path, mountpoint, strlen (mountpoint)))
++			continue;
++		if (stat(mountpoint, &st) != 0) {
++			pclose (f);
++			fatal("%s: stat(\"%s\"): %s", __func__,
++			    mountpoint, strerror(errno));
++		}
++		if (fs != st.st_dev)
++			continue;
++		nodev = nosuid = 0;
++		for (opt = strtok (NULL, "("); opt; opt = strtok (NULL, " ,)")) {
++			if (!strcmp (opt, "nodev"))
++				nodev = 1;
++			else if (!strcmp (opt, "nosuid"))
++				nosuid = 1;
++			else if (!strcmp (opt, "noexec"))
++				nosuid = 1;
++			if (nodev && nosuid) {
++				pclose (f);
++				return;
++			}
++		}
++		fatal ("chroot into directory without nodev and either noexec or nosuid");
++	}
++}
++
++/*
+  * Chroot into a directory after checking it for safety: all path components
+  * must be root-owned directories with strict permissions.
+  */
+ static void
+ safely_chroot(const char *path, uid_t uid)
+ {
+ 	const char *cp;
+ 	char component[PATH_MAX];
+ 	struct stat st;
++	int last;
+ 
+ 	if (*path != '/')
+ 		fatal("chroot path does not begin at root");
+ 	if (strlen(path) >= sizeof(component))
+ 		fatal("chroot path too long");
+ 
+ 	/*
+ 	 * Descend the path, checking that each component is a
+ 	 * root-owned directory with strict permissions.
+ 	 */
+ 	for (cp = path; cp != NULL;) {
+-		if ((cp = strchr(cp, '/')) == NULL)
++		if (last = ((cp = strchr(cp, '/')) == NULL))
+ 			strlcpy(component, path, sizeof(component));
+ 		else {
+ 			cp++;
+ 			memcpy(component, path, cp - path);
+ 			component[cp - path] = '\0';
+ 		}
+ 	
+ 		debug3("%s: checking '%s'", __func__, component);
+ 
+ 		if (stat(component, &st) != 0)
+ 			fatal("%s: stat(\"%s\"): %s", __func__,
+ 			    component, strerror(errno));
+-		if (st.st_uid != 0 || (st.st_mode & 022) != 0)
++		if ((st.st_uid != 0 || (st.st_mode & 022) != 0) && !(last && st.st_uid == uid))
+ 			fatal("bad ownership or modes for chroot "
+ 			    "directory %s\"%s\"", 
+ 			    cp == NULL ? "" : "component ", component);
+ 		if (!S_ISDIR(st.st_mode))
+ 			fatal("chroot path %s\"%s\" is not a directory",
+ 			    cp == NULL ? "" : "component ", component);
+ 
+ 	}
++	setenv ("TZ", "/etc/localtime", 0);
++	tzset();
++
++	if (st.st_uid) {
++		test_nosuid(path, st.st_dev);
++		++chroot_no_tree;
++	}
+ 
+ 	if (chdir(path) == -1)
+ 		fatal("Unable to chdir to chroot path \"%s\": "
+ 		    "%s", path, strerror(errno));
+ 	if (chroot(path) == -1)
+ 		fatal("chroot(\"%s\"): %s", path, strerror(errno));
+ 	if (chdir("/") == -1)
+ 		fatal("%s: chdir(/) after chroot: %s",
+diff --git a/openssh-7.2p2/sftp-chrootenv.h b/openssh-7.2p2/sftp-chrootenv.h
+new file mode 100644
+--- /dev/null
++++ b/openssh-7.2p2/sftp-chrootenv.h
+@@ -0,0 +1,30 @@
++/*
++ * Copyright (c) 2009 Jan F Chadima.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
++ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
++ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
++ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++#ifndef CHROOTENV_H
++#define CHROOTENV_H
++
++extern int	chroot_no_tree;
++
++#endif
++
+diff --git a/openssh-7.2p2/sftp-common.c b/openssh-7.2p2/sftp-common.c
+--- a/openssh-7.2p2/sftp-common.c
++++ b/openssh-7.2p2/sftp-common.c
+@@ -43,16 +43,17 @@
+ 
+ #include "xmalloc.h"
+ #include "ssherr.h"
+ #include "sshbuf.h"
+ #include "log.h"
+ 
+ #include "sftp.h"
+ #include "sftp-common.h"
++#include "sftp-chrootenv.h"
+ 
+ /* Clear contents of attributes structure */
+ void
+ attrib_clear(Attrib *a)
+ {
+ 	a->flags = 0;
+ 	a->size = 0;
+ 	a->uid = 0;
+@@ -216,23 +217,23 @@ ls_file(const char *name, const struct s
+ 	int ulen, glen, sz = 0;
+ 	struct tm *ltime = localtime(&st->st_mtime);
+ 	char *user, *group;
+ 	char buf[1024], mode[11+1], tbuf[12+1], ubuf[11+1], gbuf[11+1];
+ 	char sbuf[FMT_SCALED_STRSIZE];
+ 	time_t now;
+ 
+ 	strmode(st->st_mode, mode);
+-	if (!remote) {
++	if (!remote && !chroot_no_tree) {
+ 		user = user_from_uid(st->st_uid, 0);
+ 	} else {
+ 		snprintf(ubuf, sizeof ubuf, "%u", (u_int)st->st_uid);
+ 		user = ubuf;
+ 	}
+-	if (!remote) {
++	if (!remote && !chroot_no_tree) {
+ 		group = group_from_gid(st->st_gid, 0);
+ 	} else {
+ 		snprintf(gbuf, sizeof gbuf, "%u", (u_int)st->st_gid);
+ 		group = gbuf;
+ 	}
+ 	if (ltime != NULL) {
+ 		now = time(NULL);
+ 		if (now - (365*24*60*60)/2 < st->st_mtime &&
+diff --git a/openssh-7.2p2/sftp-server-main.c b/openssh-7.2p2/sftp-server-main.c
+--- a/openssh-7.2p2/sftp-server-main.c
++++ b/openssh-7.2p2/sftp-server-main.c
+@@ -17,22 +17,25 @@
+ 
+ #include "includes.h"
+ 
+ #include <sys/types.h>
+ #include <pwd.h>
+ #include <stdarg.h>
+ #include <stdio.h>
+ #include <unistd.h>
++//#include <time.h>
+ 
+ #include "log.h"
+ #include "sftp.h"
+ #include "misc.h"
+ #include "xmalloc.h"
+ 
++int chroot_no_tree = 0;
++
+ void
+ cleanup_exit(int i)
+ {
+ 	sftp_server_cleanup_exit(i);
+ }
+ 
+ int
+ main(int argc, char **argv)
+diff --git a/openssh-7.2p2/sftp.c b/openssh-7.2p2/sftp.c
+--- a/openssh-7.2p2/sftp.c
++++ b/openssh-7.2p2/sftp.c
+@@ -112,16 +112,18 @@ struct complete_ctx {
+ 	char **remote_pathp;
+ };
+ 
+ int remote_glob(struct sftp_conn *, const char *, int,
+     int (*)(const char *, int), glob_t *); /* proto for sftp-glob.c */
+ 
+ extern char *__progname;
+ 
++int chroot_no_tree = 0;
++
+ /* Separators for interactive commands */
+ #define WHITESPACE " \t\r\n"
+ 
+ /* ls flags */
+ #define LS_LONG_VIEW	0x0001	/* Full view ala ls -l */
+ #define LS_SHORT_VIEW	0x0002	/* Single row view ala ls -1 */
+ #define LS_NUMERIC_VIEW	0x0004	/* Long view with numeric uid/gid */
+ #define LS_NAME_SORT	0x0008	/* Sort by name (default) */
+diff --git a/openssh-7.2p2/sshd_config.0 b/openssh-7.2p2/sshd_config.0
+--- a/openssh-7.2p2/sshd_config.0
++++ b/openssh-7.2p2/sshd_config.0
+@@ -251,16 +251,24 @@ DESCRIPTION
+              directory on some operating systems (see sftp-server(8) for
+              details).
+ 
+              For safety, it is very important that the directory hierarchy be
+              prevented from modification by other processes on the system
+              (especially those outside the jail).  Misconfiguration can lead
+              to unsafe environments which sshd(8) cannot detect.
+ 
++             In the special case when only sftp is used, not ssh nor scp, it
++             is possible to use ChrootDirectory %h or ChrootDirectory
++             /some/path/%u. The file system containing this directory must be
++             mounted with options nodev and either nosuid or noexec. The owner
++             of the directory should be the user. The ownership of the other
++             components of the path must fulfill the usual conditions. No adi-
++             tional files are required to be present in the directory.
++
+              The default is M-bM-^@M-^\noneM-bM-^@M-^], indicating not to chroot(2).
+ 
+      Ciphers
+              Specifies the ciphers allowed.  Multiple ciphers must be comma-
+              separated.  If the specified value begins with a M-bM-^@M-^X+M-bM-^@M-^Y character,
+              then the specified ciphers will be appended to the default set
+              instead of replacing them.
+ 
+diff --git a/openssh-7.2p2/sshd_config.5 b/openssh-7.2p2/sshd_config.5
+--- a/openssh-7.2p2/sshd_config.5
++++ b/openssh-7.2p2/sshd_config.5
+@@ -424,16 +424,27 @@ for details).
+ .Pp
+ For safety, it is very important that the directory hierarchy be
+ prevented from modification by other processes on the system (especially
+ those outside the jail).
+ Misconfiguration can lead to unsafe environments which
+ .Xr sshd 8
+ cannot detect.
+ .Pp
++In the special case when only sftp is used, not ssh nor scp,
++it is possible to use
++.Cm ChrootDirectory
++%h or
++.Cm ChrootDirectory
++/some/path/%u. The file system containing this directory must be
++mounted with options nodev and either nosuid or noexec. The owner of the
++directory should be the user. The ownership of the other components of the path
++must fulfill the usual conditions. No aditional files are required to be present
++in the directory.
++.Pp
+ The default is
+ .Dq none ,
+ indicating not to
+ .Xr chroot 2 .
+ .It Cm Ciphers
+ Specifies the ciphers allowed.
+ Multiple ciphers must be comma-separated.
+ If the specified value begins with a

@@ -1,0 +1,145 @@
+# HG changeset patch
+# Parent  f7ba2081f120bd1e44dbe68737c898f078725aab
+# -- uset do be called '-xauthlocalhostname'
+handle hostname changes when forwarding X
+
+bnc#98627
+
+diff --git a/openssh-7.2p2/session.c b/openssh-7.2p2/session.c
+--- a/openssh-7.2p2/session.c
++++ b/openssh-7.2p2/session.c
+@@ -1154,17 +1154,17 @@ copy_environment(char **source, char ***
+ 		debug3("Copy environment: %s=%s", var_name, var_val);
+ 		child_set_env(env, envsize, var_name, var_val);
+ 
+ 		free(var_name);
+ 	}
+ }
+ 
+ static char **
+-do_setup_env(Session *s, const char *shell)
++do_setup_env(Session *s, const char *shell, int *env_size)
+ {
+ 	char buf[256];
+ 	u_int i, envsize;
+ 	char **env, *laddr;
+ 	struct passwd *pw = s->pw;
+ #if !defined (HAVE_LOGIN_CAP) && !defined (HAVE_CYGWIN)
+ 	char *path = NULL;
+ #endif
+@@ -1341,25 +1341,27 @@ do_setup_env(Session *s, const char *she
+ 		read_environment_file(&env, &envsize, buf);
+ 	}
+ 	if (debug_flag) {
+ 		/* dump the environment */
+ 		fprintf(stderr, "Environment:\n");
+ 		for (i = 0; env[i]; i++)
+ 			fprintf(stderr, "  %.200s\n", env[i]);
+ 	}
++
++	*env_size = envsize;
+ 	return env;
+ }
+ 
+ /*
+  * Run $HOME/.ssh/rc, /etc/ssh/sshrc, or xauth (whichever is found
+  * first in this order).
+  */
+ static void
+-do_rc_files(Session *s, const char *shell)
++do_rc_files(Session *s, const char *shell, char **env, int *env_size)
+ {
+ 	FILE *f = NULL;
+ 	char cmd[1024];
+ 	int do_xauth;
+ 	struct stat st;
+ 
+ 	do_xauth =
+ 	    s->display != NULL && s->auth_proto != NULL && s->auth_data != NULL;
+@@ -1404,22 +1406,30 @@ do_rc_files(Session *s, const char *shel
+ 			    "%.500s add %.100s %.100s %.100s\n",
+ 			    options.xauth_location, s->auth_display,
+ 			    s->auth_proto, s->auth_data);
+ 		}
+ 		snprintf(cmd, sizeof cmd, "%s -q -",
+ 		    options.xauth_location);
+ 		f = popen(cmd, "w");
+ 		if (f) {
++			char hostname[MAXHOSTNAMELEN];
++		    
+ 			fprintf(f, "remove %s\n",
+ 			    s->auth_display);
+ 			fprintf(f, "add %s %s %s\n",
+ 			    s->auth_display, s->auth_proto,
+ 			    s->auth_data);
+ 			pclose(f);
++			if (gethostname(hostname,sizeof(hostname)) >= 0)
++			    child_set_env(&env,env_size,"XAUTHLOCALHOSTNAME",
++					  hostname);
++			else
++			    debug("Cannot set up XAUTHLOCALHOSTNAME %s\n",
++				  strerror(errno));
+ 		} else {
+ 			fprintf(stderr, "Could not run %s\n",
+ 			    cmd);
+ 		}
+ 	}
+ }
+ 
+ static void
+@@ -1681,16 +1691,17 @@ child_close_fds(void)
+  * ids, and executing the command or shell.
+  */
+ #define ARGV_MAX 10
+ void
+ do_child(Session *s, const char *command)
+ {
+ 	extern char **environ;
+ 	char **env;
++	int env_size;
+ 	char *argv[ARGV_MAX];
+ 	const char *shell, *shell0, *hostname = NULL;
+ 	struct passwd *pw = s->pw;
+ 	int r = 0;
+ 
+ 	/* remove hostkey from the child's memory */
+ 	destroy_sensitive_data();
+ 
+@@ -1747,17 +1758,17 @@ do_child(Session *s, const char *command
+ 	 * legal, and means /bin/sh.
+ 	 */
+ 	shell = (pw->pw_shell[0] == '\0') ? _PATH_BSHELL : pw->pw_shell;
+ 
+ 	/*
+ 	 * Make sure $SHELL points to the shell from the password file,
+ 	 * even if shell is overridden from login.conf
+ 	 */
+-	env = do_setup_env(s, shell);
++	env = do_setup_env(s, shell, &env_size);
+ 
+ #ifdef HAVE_LOGIN_CAP
+ 	shell = login_getcapstr(lc, "shell", (char *)shell, (char *)shell);
+ #endif
+ 
+ 	/* we have to stash the hostname before we close our socket. */
+ 	if (options.use_login)
+ 		hostname = get_remote_name_or_ip(utmp_len,
+@@ -1816,17 +1827,17 @@ do_child(Session *s, const char *command
+ 		}
+ 		if (r)
+ 			exit(1);
+ 	}
+ 
+ 	closefrom(STDERR_FILENO + 1);
+ 
+ 	if (!options.use_login)
+-		do_rc_files(s, shell);
++		do_rc_files(s, shell, env, &env_size);
+ 
+ 	/* restore SIGPIPE for child */
+ 	signal(SIGPIPE, SIG_DFL);
+ 
+ 	if (s->is_subsystem == SUBSYSTEM_INT_SFTP_ERROR) {
+ 		printf("This service allows sftp connections only.\n");
+ 		fflush(NULL);
+ 		exit(1);

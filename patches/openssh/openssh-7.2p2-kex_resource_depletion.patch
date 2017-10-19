@@ -1,0 +1,30 @@
+# HG changeset patch
+# Parent  5d3b620e9c7c42bfb1d8f24eb7e0645a55d967fa
+Prevent memory depletion during key exchange
+
+CVE-2016-8858
+bsc#1005480
+
+upstream commit ec165c392ca54317dbe3064a8c200de6531e89ad
+
+diff --git a/openssh-7.2p2/kex.c b/openssh-7.2p2/kex.c
+--- a/openssh-7.2p2/kex.c
++++ b/openssh-7.2p2/kex.c
+@@ -523,16 +523,17 @@ kex_input_kexinit(int type, u_int32_t se
+ 	u_int i;
+ 	size_t dlen;
+ 	int r;
+ 
+ 	debug("SSH2_MSG_KEXINIT received");
+ 	if (kex == NULL)
+ 		return SSH_ERR_INVALID_ARGUMENT;
+ 
++	ssh_dispatch_set(ssh, SSH2_MSG_KEXINIT, NULL);
+ 	ptr = sshpkt_ptr(ssh, &dlen);
+ 	if ((r = sshbuf_put(kex->peer, ptr, dlen)) != 0)
+ 		return r;
+ 
+ 	/* discard packet */
+ 	for (i = 0; i < KEX_COOKIE_LEN; i++)
+ 		if ((r = sshpkt_get_u8(ssh, NULL)) != 0)
+ 			return r;

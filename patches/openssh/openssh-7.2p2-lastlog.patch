@@ -1,0 +1,26 @@
+# HG changeset patch
+# Parent  79c00e0f450c33b3f545ef104112b55186290e2c
+# set uid for functions that use it to seek in lastlog and wtmp files
+# bnc#18024 (was suse #3024)
+
+diff --git a/openssh-7.2p2/sshlogin.c b/openssh-7.2p2/sshlogin.c
+--- a/openssh-7.2p2/sshlogin.c
++++ b/openssh-7.2p2/sshlogin.c
+@@ -129,16 +129,17 @@ record_login(pid_t pid, const char *tty,
+ {
+ 	struct logininfo *li;
+ 
+ 	/* save previous login details before writing new */
+ 	store_lastlog_message(user, uid);
+ 
+ 	li = login_alloc_entry(pid, user, host, tty);
+ 	login_set_addr(li, addr, addrlen);
++	li->uid = uid;
+ 	login_login(li);
+ 	login_free_entry(li);
+ }
+ 
+ #ifdef LOGIN_NEEDS_UTMPX
+ void
+ record_utmp_only(pid_t pid, const char *ttyname, const char *user,
+ 		 const char *host, struct sockaddr *addr, socklen_t addrlen)

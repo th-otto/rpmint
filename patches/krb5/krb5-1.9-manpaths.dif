@@ -1,0 +1,18 @@
+Change the absolute paths included in the man pages so that the correct
+values can be dropped in by config.status.  After applying this patch,
+these files should be renamed to their ".in" counterparts, and then the
+configure scripts should be rebuilt.  Originally RT#6525
+
+Index: krb5-1.11/src/man/kpropd.man
+===================================================================
+--- krb5-1.11.orig/src/man/kpropd.man
++++ krb5-1.11/src/man/kpropd.man
+@@ -63,7 +63,7 @@ the \fB/etc/inetd.conf\fP file which loo
+ .sp
+ .nf
+ .ft C
+-kprop  stream  tcp  nowait  root  /usr/local/sbin/kpropd  kpropd
++kprop  stream  tcp  nowait  root  @SBINDIR@/kpropd  kpropd
+ .ft P
+ .fi
+ .UNINDENT

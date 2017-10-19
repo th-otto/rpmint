@@ -1,0 +1,229 @@
+# HG changeset patch
+# Parent  ac7f843cd7ebec413691d51823cdc67b611abdff
+new option UsePAMCheckLocks to enforce checking for locked accounts while
+UsePAM is used
+
+bnc#708678, FATE#312033
+
+diff --git a/openssh-7.2p2/auth.c b/openssh-7.2p2/auth.c
+--- a/openssh-7.2p2/auth.c
++++ b/openssh-7.2p2/auth.c
+@@ -104,17 +104,17 @@ allowed_user(struct passwd * pw)
+ 	struct spwd *spw = NULL;
+ #endif
+ 
+ 	/* Shouldn't be called if pw is NULL, but better safe than sorry... */
+ 	if (!pw || !pw->pw_name)
+ 		return 0;
+ 
+ #ifdef USE_SHADOW
+-	if (!options.use_pam)
++	if (!options.use_pam || options.use_pam_check_locks)
+ 		spw = getspnam(pw->pw_name);
+ #ifdef HAS_SHADOW_EXPIRE
+ 	if (!options.use_pam && spw != NULL && auth_shadow_acctexpired(spw))
+ 		return 0;
+ #endif /* HAS_SHADOW_EXPIRE */
+ #endif /* USE_SHADOW */
+ 
+ 	/* grab passwd field for locked account check */
+@@ -124,17 +124,17 @@ allowed_user(struct passwd * pw)
+ #ifdef USE_LIBIAF
+ 		passwd = get_iaf_password(pw);
+ #else
+ 		passwd = spw->sp_pwdp;
+ #endif /* USE_LIBIAF */
+ #endif
+ 
+ 	/* check for locked account */
+-	if (!options.use_pam && passwd && *passwd) {
++	if ((!options.use_pam || options.use_pam_check_locks) && passwd && *passwd) {
+ 		int locked = 0;
+ 
+ #ifdef LOCKED_PASSWD_STRING
+ 		if (strcmp(passwd, LOCKED_PASSWD_STRING) == 0)
+ 			 locked = 1;
+ #endif
+ #ifdef LOCKED_PASSWD_PREFIX
+ 		if (strncmp(passwd, LOCKED_PASSWD_PREFIX,
+diff --git a/openssh-7.2p2/servconf.c b/openssh-7.2p2/servconf.c
+--- a/openssh-7.2p2/servconf.c
++++ b/openssh-7.2p2/servconf.c
+@@ -69,16 +69,17 @@ extern Buffer cfg;
+ 
+ void
+ initialize_server_options(ServerOptions *options)
+ {
+ 	memset(options, 0, sizeof(*options));
+ 
+ 	/* Portable-specific options */
+ 	options->use_pam = -1;
++	options->use_pam_check_locks = -1;
+ 
+ 	/* Standard Options */
+ 	options->num_ports = 0;
+ 	options->ports_from_cmdline = 0;
+ 	options->queued_listen_addrs = NULL;
+ 	options->num_queued_listens = 0;
+ 	options->listen_addrs = NULL;
+ 	options->address_family = -1;
+@@ -195,16 +196,18 @@ assemble_algorithms(ServerOptions *o)
+ void
+ fill_default_server_options(ServerOptions *options)
+ {
+ 	int i;
+ 
+ 	/* Portable-specific options */
+ 	if (options->use_pam == -1)
+ 		options->use_pam = 0;
++	if (options->use_pam_check_locks == -1)
++		options->use_pam_check_locks = 0;
+ 
+ 	/* Standard Options */
+ 	if (options->protocol == SSH_PROTO_UNKNOWN)
+ 		options->protocol = SSH_PROTO_2;
+ 	if (options->num_host_key_files == 0) {
+ 		/* fill default hostkeys for protocols */
+ 		if (options->protocol & SSH_PROTO_1)
+ 			options->host_key_files[options->num_host_key_files++] =
+@@ -391,17 +394,17 @@ fill_default_server_options(ServerOption
+ #endif
+ 
+ }
+ 
+ /* Keyword tokens. */
+ typedef enum {
+ 	sBadOption,		/* == unknown option */
+ 	/* Portable-specific options */
+-	sUsePAM,
++	sUsePAM, sUsePAMChecklocks,
+ 	/* Standard Options */
+ 	sPort, sHostKeyFile, sServerKeyBits, sLoginGraceTime,
+ 	sKeyRegenerationTime, sPermitRootLogin, sLogFacility, sLogLevel,
+ 	sRhostsRSAAuthentication, sRSAAuthentication,
+ 	sKerberosAuthentication, sKerberosOrLocalPasswd, sKerberosTicketCleanup,
+ 	sKerberosGetAFSToken,
+ 	sKerberosTgtPassing, sChallengeResponseAuthentication,
+ 	sPasswordAuthentication, sKbdInteractiveAuthentication,
+@@ -441,18 +444,20 @@ typedef enum {
+ static struct {
+ 	const char *name;
+ 	ServerOpCodes opcode;
+ 	u_int flags;
+ } keywords[] = {
+ 	/* Portable-specific options */
+ #ifdef USE_PAM
+ 	{ "usepam", sUsePAM, SSHCFG_GLOBAL },
++	{ "usepamchecklocks", sUsePAMChecklocks, SSHCFG_GLOBAL },
+ #else
+ 	{ "usepam", sUnsupported, SSHCFG_GLOBAL },
++	{ "usepamchecklocks", sUnsupported, SSHCFG_GLOBAL },
+ #endif
+ 	{ "pamauthenticationviakbdint", sDeprecated, SSHCFG_GLOBAL },
+ 	/* Standard Options */
+ 	{ "port", sPort, SSHCFG_GLOBAL },
+ 	{ "hostkey", sHostKeyFile, SSHCFG_GLOBAL },
+ 	{ "hostdsakey", sHostKeyFile, SSHCFG_GLOBAL },		/* alias */
+ 	{ "hostkeyagent", sHostKeyAgent, SSHCFG_GLOBAL },
+ 	{ "pidfile", sPidFile, SSHCFG_GLOBAL },
+@@ -1005,16 +1010,19 @@ process_server_config_line(ServerOptions
+ 		}
+ 	}
+ 
+ 	switch (opcode) {
+ 	/* Portable-specific options */
+ 	case sUsePAM:
+ 		intptr = &options->use_pam;
+ 		goto parse_flag;
++	case sUsePAMChecklocks:
++		intptr = &options->use_pam_check_locks;
++		goto parse_flag;
+ 
+ 	/* Standard Options */
+ 	case sBadOption:
+ 		return -1;
+ 	case sPort:
+ 		/* ignore ports from configfile if cmdline specifies ports */
+ 		if (options->ports_from_cmdline)
+ 			return 0;
+diff --git a/openssh-7.2p2/servconf.h b/openssh-7.2p2/servconf.h
+--- a/openssh-7.2p2/servconf.h
++++ b/openssh-7.2p2/servconf.h
+@@ -167,16 +167,17 @@ typedef struct {
+ 					 */
+ 
+ 	u_int num_authkeys_files;	/* Files containing public keys */
+ 	char   *authorized_keys_files[MAX_AUTHKEYS_FILES];
+ 
+ 	char   *adm_forced_command;
+ 
+ 	int	use_pam;		/* Enable auth via PAM */
++	int	use_pam_check_locks;	/* internally check for locked accounts even when using PAM */
+ 
+ 	int	permit_tun;
+ 
+ 	int	num_permitted_opens;
+ 
+ 	char   *chroot_directory;
+ 	char   *revoked_keys_file;
+ 	char   *trusted_user_ca_keys;
+diff --git a/openssh-7.2p2/sshd_config.0 b/openssh-7.2p2/sshd_config.0
+--- a/openssh-7.2p2/sshd_config.0
++++ b/openssh-7.2p2/sshd_config.0
+@@ -946,16 +946,24 @@ DESCRIPTION
+ 
+              Because PAM challenge-response authentication usually serves an
+              equivalent role to password authentication, you should disable
+              either PasswordAuthentication or ChallengeResponseAuthentication.
+ 
+              If UsePAM is enabled, you will not be able to run sshd(8) as a
+              non-root user.  The default is M-bM-^@M-^\noM-bM-^@M-^].
+ 
++     UsePAMCheckLocks
++             When set to ``yes'', the checks whether the account has been
++             locked with `passwd -l' are performed even when PAM authentication
++             is enabled via UsePAM.  This is to ensure that it is not possible
++             to log in with e.g. a public key (in such a case PAM is used only
++             to set up the session and some PAM modules will not check whether
++             the account is locked in this scenario). The default is ``no''.
++
+      UsePrivilegeSeparation
+              Specifies whether sshd(8) separates privileges by creating an
+              unprivileged child process to deal with incoming network traffic.
+              After successful authentication, another process will be created
+              that has the privilege of the authenticated user.  The goal of
+              privilege separation is to prevent privilege escalation by
+              containing any corruption within the unprivileged processes.  The
+              argument must be M-bM-^@M-^\yesM-bM-^@M-^], M-bM-^@M-^\noM-bM-^@M-^], or M-bM-^@M-^\sandboxM-bM-^@M-^].  If
+diff --git a/openssh-7.2p2/sshd_config.5 b/openssh-7.2p2/sshd_config.5
+--- a/openssh-7.2p2/sshd_config.5
++++ b/openssh-7.2p2/sshd_config.5
+@@ -1578,16 +1578,28 @@ or
+ .Pp
+ If
+ .Cm UsePAM
+ is enabled, you will not be able to run
+ .Xr sshd 8
+ as a non-root user.
+ The default is
+ .Dq no .
++.It Cm UsePAMCheckLocks
++When set to 
++.Dq yes
++, the checks whether the account has been locked with
++.Pa passwd -l
++are performed even when PAM authentication is enabled via 
++.Cm UsePAM .
++This is to ensure that it is not possible to log in with e.g. a
++public key (in such a case PAM is used only to set up the session and some PAM
++modules will not check whether the account is locked in this scenario). The
++default is 
++.Dq no .
+ .It Cm UsePrivilegeSeparation
+ Specifies whether
+ .Xr sshd 8
+ separates privileges by creating an unprivileged child process
+ to deal with incoming network traffic.
+ After successful authentication, another process will be created that has
+ the privilege of the authenticated user.
+ The goal of privilege separation is to prevent privilege

@@ -1,0 +1,18 @@
+diff -rup curl-7.56.0.orig/include/curl/system.h curl-7.56.0/include/curl/system.h
+--- curl-7.56.0.orig/include/curl/system.h	2017-09-30 23:44:52.000000000 +0200
++++ curl-7.56.0/include/curl/system.h	2017-10-19 05:46:47.793219933 +0200
+@@ -343,7 +343,13 @@
+ /* ===================================== */
+ 
+ #elif defined(__GNUC__)
+-#  if !defined(__LP64__) &&                                             \
++#  if defined(__MINT__)
++#    define CURL_TYPEOF_CURL_OFF_T     off_t
++#    define CURL_FORMAT_CURL_OFF_T     "d"
++#    define CURL_FORMAT_CURL_OFF_TU    "u"
++#    define CURL_SUFFIX_CURL_OFF_T     
++#    define CURL_SUFFIX_CURL_OFF_TU    U
++#  elif !defined(__LP64__) &&                                             \
+   (defined(__ILP32__) || defined(__i386__) || defined(__hppa__) ||      \
+    defined(__ppc__) || defined(__powerpc__) || defined(__arm__) ||      \
+    defined(__sparc__) || defined(__mips__) || defined(__sh__) ||        \

@@ -1,0 +1,87 @@
+# HG changeset patch
+# Parent  1b99f71db584917a37c5e9140bf63dcb860e8b59
+Match hostnames in a case-insensitive manner.
+
+bsc#1017099
+
+diff --git a/openssh-7.2p2/readconf.c b/openssh-7.2p2/readconf.c
+--- a/openssh-7.2p2/readconf.c
++++ b/openssh-7.2p2/readconf.c
+@@ -526,16 +526,17 @@ execute_in_shell(const char *cmd)
+  * Parse and execute a Match directive.
+  */
+ static int
+ match_cfg_line(Options *options, char **condition, struct passwd *pw,
+     const char *host_arg, const char *original_host, int post_canon,
+     const char *filename, int linenum)
+ {
+ 	char *arg, *oattrib, *attrib, *cmd, *cp = *condition, *host, *criteria;
++	char *hostlc;
+ 	const char *ruser;
+ 	int r, port, this_result, result = 1, attributes = 0, negate;
+ 	char thishost[NI_MAXHOST], shorthost[NI_MAXHOST], portstr[NI_MAXSERV];
+ 
+ 	/*
+ 	 * Configuration is likely to be incomplete at this point so we
+ 	 * must be prepared to use default values.
+ 	 */
+@@ -546,16 +547,20 @@ match_cfg_line(Options *options, char **
+ 	} else if (options->hostname != NULL) {
+ 		/* NB. Please keep in sync with ssh.c:main() */
+ 		host = percent_expand(options->hostname,
+ 		    "h", host_arg, (char *)NULL);
+ 	} else {
+ 		host = xstrdup(host_arg);
+ 	}
+ 
++	/* match_hostname() requires the hostname to be lowercase */
++	hostlc = xstrdup(host);
++	lowercase(hostlc);
++
+ 	debug2("checking match for '%s' host %s originally %s",
+ 	    cp, host, original_host);
+ 	while ((oattrib = attrib = strdelim(&cp)) && *attrib != '\0') {
+ 		criteria = NULL;
+ 		this_result = 1;
+ 		if ((negate = attrib[0] == '!'))
+ 			attrib++;
+ 		/* criteria "all" and "canonical" have no argument */
+@@ -584,18 +589,18 @@ match_cfg_line(Options *options, char **
+ 		}
+ 		/* All other criteria require an argument */
+ 		if ((arg = strdelim(&cp)) == NULL || *arg == '\0') {
+ 			error("Missing Match criteria for %s", attrib);
+ 			result = -1;
+ 			goto out;
+ 		}
+ 		if (strcasecmp(attrib, "host") == 0) {
+-			criteria = xstrdup(host);
+-			r = match_hostname(host, arg) == 1;
++			criteria = xstrdup(hostlc);
++			r = match_hostname(hostlc, arg) == 1;
+ 			if (r == (negate ? 1 : 0))
+ 				this_result = result = 0;
+ 		} else if (strcasecmp(attrib, "originalhost") == 0) {
+ 			criteria = xstrdup(original_host);
+ 			r = match_hostname(original_host, arg) == 1;
+ 			if (r == (negate ? 1 : 0))
+ 				this_result = result = 0;
+ 		} else if (strcasecmp(attrib, "user") == 0) {
+@@ -658,16 +663,17 @@ match_cfg_line(Options *options, char **
+ 		error("One or more attributes required for Match");
+ 		result = -1;
+ 		goto out;
+ 	}
+  out:
+ 	if (result != -1)
+ 		debug2("match %sfound", result ? "" : "not ");
+ 	*condition = cp;
++	free(hostlc);
+ 	free(host);
+ 	return result;
+ }
+ 
+ /* Check and prepare a domain name: removes trailing '.' and lowercases */
+ static void
+ valid_domain(char *name, const char *filename, int linenum)
+ {

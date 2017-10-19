@@ -1,0 +1,26 @@
+We want to keep these y.tab.c files around because the debuginfo points to
+them.  It would be more elegant at the end to use symbolic links, but that
+could mess up people working in the tree on other things.
+
+--- krb5-1.15.orig/src/kadmin/cli/Makefile.in
++++ krb5-1.15/src/kadmin/cli/Makefile.in
+@@ -37,3 +37,8 @@
+ # CC_LINK is not meant for compilation and this use may break in the future.
+ datetest: getdate.c
+ 	$(CC_LINK) $(ALL_CFLAGS) -DTEST -o datetest getdate.c
++
++%.c: %.y
++	$(RM) y.tab.c $@
++	$(YACC.y) $< 
++	$(CP) y.tab.c $@
+--- krb5-1.15.orig/src/plugins/kdb/ldap/ldap_util/Makefile.in
++++ krb5-1.15/src/plugins/kdb/ldap/ldap_util/Makefile.in
+@@ -20,7 +20,7 @@
+ getdate.c: $(GETDATE)
+ 	$(RM) getdate.c y.tab.c
+ 	$(YACC) $(GETDATE)
+-	$(MV) y.tab.c getdate.c
++	$(CP) y.tab.c getdate.c
+ 
+ install:
+ 	$(INSTALL_PROGRAM) $(PROG) ${DESTDIR}$(ADMIN_BINDIR)/$(PROG)

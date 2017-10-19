@@ -1,0 +1,34 @@
+# HG changeset patch
+# Parent  2afee80335d5ef7efcf64f3a797e9b10ce0de4ae
+Do not throw away already open sockets for X11 forwarding if another socket
+family is not available for bind()
+
+diff --git a/openssh-7.2p2/channels.c b/openssh-7.2p2/channels.c
+--- a/openssh-7.2p2/channels.c
++++ b/openssh-7.2p2/channels.c
+@@ -3937,22 +3937,24 @@ x11_create_display_inet(int x11_display_
+ 			}
+ 			if (ai->ai_family == AF_INET6)
+ 				sock_set_v6only(sock);
+ 			if (x11_use_localhost)
+ 				channel_set_reuseaddr(sock);
+ 			if (bind(sock, ai->ai_addr, ai->ai_addrlen) < 0) {
+ 				debug2("bind port %d: %.100s", port, strerror(errno));
+ 				close(sock);
+-
++				continue;
++				/* do not remove successfully opened sockets
+ 				for (n = 0; n < num_socks; n++) {
+ 					close(socks[n]);
+ 				}
+ 				num_socks = 0;
+ 				break;
++				*/
+ 			}
+ 			socks[num_socks++] = sock;
+ 			if (num_socks == NUM_SOCKS)
+ 				break;
+ 		}
+ 		freeaddrinfo(aitop);
+ 		if (num_socks > 0)
+ 			break;

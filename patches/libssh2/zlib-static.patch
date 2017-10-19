@@ -1,0 +1,32 @@
+diff -rup libssh2-1.8.0.orig/configure.ac libssh2-1.8.0/configure.ac
+--- libssh2-1.8.0.orig/configure.ac	2017-10-19 15:20:18.121859533 +0200
++++ libssh2-1.8.0/configure.ac	2017-10-19 16:04:48.573556747 +0200
+@@ -113,7 +113,12 @@ support_clear_memory=no
+ 
+ # Look for OpenSSL
+ if test "$found_crypto" = "none" && test "$use_openssl" != "no"; then
+-  AC_LIB_HAVE_LINKFLAGS([ssl], [crypto], [#include <openssl/ssl.h>])
++  AC_CHECK_LIB([ssl], SSL_get_session,
++	[LIBSSL="-lssl -lcrypto -lz"
++         LIBS="$LIBS $LIBSSL"
++         ac_cv_libssl=yes],
++        ,
++	[-lcrypto -lz])
+ fi
+ if test "$ac_cv_libssl" = "yes"; then
+   AC_DEFINE(LIBSSH2_OPENSSL, 1, [Use OpenSSL])
+@@ -146,12 +151,13 @@ fi
+ 
+ # Look for Libz
+ if test "$use_libz" != "no"; then
+-  AC_LIB_HAVE_LINKFLAGS([z], [], [#include <zlib.h>])
++  AC_CHECK_LIB([z], [gzflush], ac_cv_libz=yes)
+   if test "$ac_cv_libz" != yes; then
+     AC_MSG_NOTICE([Cannot find zlib, disabling compression])
+     AC_MSG_NOTICE([Try --with-libz-prefix=PATH if you know you have it])
+   else
+     AC_DEFINE(LIBSSH2_HAVE_ZLIB, 1, [Compile in zlib support])
++    LIBS="$LIBS"
+     if test "${LIBSREQUIRED}" != ""; then
+       LIBSREQUIRED="${LIBSREQUIRED},"
+     fi

@@ -1,0 +1,21 @@
+diff -rup openssl-1.0.2l.orig/Makefile.org openssl-1.0.2l/Makefile.org
+--- openssl-1.0.2l.orig/Makefile.org	2017-05-25 14:54:38.000000000 +0200
++++ openssl-1.0.2l/Makefile.org	2017-10-19 16:32:53.925520072 +0200
+@@ -375,7 +375,7 @@ libcrypto.pc: Makefile
+ 	    echo 'Description: OpenSSL cryptography library'; \
+ 	    echo 'Version: '$(VERSION); \
+ 	    echo 'Requires: '; \
+-	    echo 'Libs: -L$${libdir} -lcrypto'; \
++	    echo 'Libs: -L$${libdir} -lcrypto $(EX_LIBS)'; \
+ 	    echo 'Libs.private: $(EX_LIBS)'; \
+ 	    echo 'Cflags: -I$${includedir} $(KRB5_INCLUDES)' ) > libcrypto.pc
+ 
+@@ -389,7 +389,7 @@ libssl.pc: Makefile
+ 	    echo 'Description: Secure Sockets Layer and cryptography libraries'; \
+ 	    echo 'Version: '$(VERSION); \
+ 	    echo 'Requires.private: libcrypto'; \
+-	    echo 'Libs: -L$${libdir} -lssl'; \
++	    echo 'Libs: -L$${libdir} -lssl $(EX_LIBS)'; \
+ 	    echo 'Libs.private: $(EX_LIBS)'; \
+ 	    echo 'Cflags: -I$${includedir} $(KRB5_INCLUDES)' ) > libssl.pc
+ 

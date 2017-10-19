@@ -493,8 +493,12 @@ a feature that is not available for a.out libraries. For some (notably mintlib) 
 
 <p>For packages that also build binaries, the *-dev packages will have
 executables in <code>&lt;sys-root&gt;/usr/bin</code> that where
-compiled for 68k. For native installation, there will also be *-bin
-packages for other machines.</p>
+compiled for 68k.</p>
+<p>&nbsp;</p>
+<p>For native installation, there will also be *-bin
+packages for other machines. <span class="important">Do not install these on
+a cross-development environment</span>(at least not to your usual installation
+directory), as this may overwrite your system binaries.</p>
 
 <p>&nbsp;</p>
 
@@ -718,6 +722,24 @@ foreach ($libpackages as $package)
 <li>2017/10/18 Package bison added</li>
 
 <li>2017/10/19 Package expat added</li>
+
+<li>2017/10/19 Package openssl updated</li>
+
+<li>2017/10/19 Package libidn2 added</li>
+
+<li>2017/10/19 Package libssh2 added</li>
+
+<li>2017/10/19 Package libnghttp2 added</li>
+
+<li>2017/10/19 Package libxml2 added</li>
+
+<li>2017/10/19 Package libmetalink added</li>
+
+<li>2017/10/19 Package libpsl added</li>
+
+<li>2017/10/19 Package libunistring added</li>
+
+<li>2017/10/19 Package curl added</li>
 
 </ul>
 

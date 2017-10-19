@@ -1,0 +1,100 @@
+# HG changeset patch
+# Parent  6d8637bec747de081eccba9874f640dcbc4fbb68
+This patch enables specific ioctl calls for ICA crypto card on s390
+platform. Without this patch, users using the IBMCA engine are not able
+to perform ssh login as the filter blocks the communication with the
+crypto card.
+
+Signed-off-by: Harald Freudenberger <freude@linux.vnet.ibm.com>
+Signed-off-by: Eduardo Barretto <ebarretto@linux.vnet.ibm.com>
+
+bsc#1016709
+
+Upstreamed as:
+5f1596e11d55539678c41f68aed358628d33d86f
+58b8cfa2a062b72139d7229ae8de567f55776f24
+
+diff --git a/openssh-7.2p2/sandbox-seccomp-filter.c b/openssh-7.2p2/sandbox-seccomp-filter.c
+--- a/openssh-7.2p2/sandbox-seccomp-filter.c
++++ b/openssh-7.2p2/sandbox-seccomp-filter.c
+@@ -54,42 +54,53 @@
+ #include <errno.h>
+ #include <signal.h>
+ #include <stdarg.h>
+ #include <stddef.h>  /* for offsetof */
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
++#include <endian.h>
++
++#ifdef __s390__
++#include <asm/zcrypt.h>
++#endif
+ 
+ #include "log.h"
+ #include "ssh-sandbox.h"
+ #include "xmalloc.h"
+ 
+ /* Linux seccomp_filter sandbox */
+ #define SECCOMP_FILTER_FAIL SECCOMP_RET_KILL
+ 
+ /* Use a signal handler to emit violations when debugging */
+ #ifdef SANDBOX_SECCOMP_FILTER_DEBUG
+ # undef SECCOMP_FILTER_FAIL
+ # define SECCOMP_FILTER_FAIL SECCOMP_RET_TRAP
+ #endif /* SANDBOX_SECCOMP_FILTER_DEBUG */
+ 
+ /* Simple helpers to avoid manual errors (but larger BPF programs). */
++#if __BYTE_ORDER == __LITTLE_ENDIAN
++#define LO_ARG(idx) offsetof(struct seccomp_data, args[(idx)])
++#elif __BYTE_ORDER == __BIG_ENDIAN
++#define LO_ARG(idx) offsetof(struct seccomp_data, args[(idx)]) + sizeof(uint32_t)
++#else
++#error "Unknown endianness"
++#endif
+ #define SC_DENY(_nr, _errno) \
+ 	BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_ ## _nr, 0, 1), \
+ 	BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_ERRNO|(_errno))
+ #define SC_ALLOW(_nr) \
+ 	BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_ ## _nr, 0, 1), \
+ 	BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_ALLOW)
+ #define SC_ALLOW_ARG(_nr, _arg_nr, _arg_val) \
+ 	BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_ ## _nr, 0, 4), \
+-	/* load first syscall argument */ \
+-	BPF_STMT(BPF_LD+BPF_W+BPF_ABS, \
+-	    offsetof(struct seccomp_data, args[(_arg_nr)])), \
++	/* load the syscall argument to check into accumulator */ \
++	BPF_STMT(BPF_LD+BPF_W+BPF_ABS, LO_ARG(_arg_nr)), \
+ 	BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, (_arg_val), 0, 1), \
+ 	BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_ALLOW), \
+ 	/* reload syscall number; all rules expect it in accumulator */ \
+ 	BPF_STMT(BPF_LD+BPF_W+BPF_ABS, \
+ 		offsetof(struct seccomp_data, nr))
+ 
+ /* Syscall filtering set for preauth. */
+ static const struct sock_filter preauth_insns[] = {
+@@ -217,16 +228,23 @@ static const struct sock_filter preauth_
+ 	SC_ALLOW(time),
+ #endif
+ #ifdef __NR_write
+ 	SC_ALLOW(write),
+ #endif
+ #ifdef __NR_socketcall
+ 	SC_ALLOW_ARG(socketcall, 0, SYS_SHUTDOWN),
+ #endif
++#ifdef __NR_ioctl
++#ifdef __s390__
++	SC_ALLOW_ARG(ioctl, 1, Z90STAT_STATUS_MASK),
++	SC_ALLOW_ARG(ioctl, 1, ICARSAMODEXPO),
++	SC_ALLOW_ARG(ioctl, 1, ICARSACRT),
++#endif
++#endif
+ 
+ 	/* Default deny */
+ 	BPF_STMT(BPF_RET+BPF_K, SECCOMP_FILTER_FAIL),
+ };
+ 
+ static const struct sock_fprog preauth_program = {
+ 	.len = (unsigned short)(sizeof(preauth_insns)/sizeof(preauth_insns[0])),
+ 	.filter = (struct sock_filter *)preauth_insns,

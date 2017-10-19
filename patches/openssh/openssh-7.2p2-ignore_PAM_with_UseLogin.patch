@@ -1,0 +1,33 @@
+# HG changeset patch
+# Parent  0f00e960e1069c6a6eec975cc184171343701077
+
+Do not import PAM environment variables when using login, since it may have
+security implications.
+
+CVE-2015-8325
+bsc#975865
+
+Backport of upstream commit 85bdcd7c92fe7ff133bbc4e10a65c91810f88755
+
+diff --git a/openssh-7.2p2/session.c b/openssh-7.2p2/session.c
+--- a/openssh-7.2p2/session.c
++++ b/openssh-7.2p2/session.c
+@@ -1351,17 +1351,17 @@ do_setup_env(Session *s, const char *she
+ 		child_set_env(&env, &envsize, "KRB5CCNAME",
+ 		    s->authctxt->krb5_ccname);
+ #endif
+ #ifdef USE_PAM
+ 	/*
+ 	 * Pull in any environment variables that may have
+ 	 * been set by PAM.
+ 	 */
+-	if (options.use_pam) {
++	if (options.use_pam && !options.use_login) {
+ 		char **p;
+ 
+ 		p = fetch_pam_child_environment();
+ 		copy_environment(p, &env, &envsize);
+ 		free_pam_environment(p);
+ 
+ 		p = fetch_pam_environment();
+ 		copy_environment(p, &env, &envsize);

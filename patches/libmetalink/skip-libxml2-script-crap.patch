@@ -1,0 +1,36 @@
+diff -rup libmetalink-0.1.3.orig/configure.ac libmetalink-0.1.3/configure.ac
+--- libmetalink-0.1.3.orig/configure.ac	2017-10-19 18:13:07.831556896 +0200
++++ libmetalink-0.1.3/configure.ac	2017-10-19 18:24:24.567542170 +0200
+@@ -89,7 +89,7 @@ if test "x$with_libexpat" = "xyes"; then
+ fi
+ 
+ if test "x$with_libxml2" = "xyes" && test "x$have_libexpat" != "xyes"; then
+-   AM_PATH_XML2([2.6.24], [have_libxml2=yes])
++   PKG_CHECK_MODULES([LIBXML2], [libxml-2.0 >= 2.6.24], [have_libxml2=yes], [have_libxml2=no])
+    if test "x$have_libxml2" = "xyes"; then
+       AC_DEFINE([HAVE_LIBXML2], [1], [Define to 1 if you have libxml2.])
+    fi
+diff -rup libmetalink-0.1.3.orig/lib/libxml2_metalink_parser.c libmetalink-0.1.3/lib/libxml2_metalink_parser.c
+--- libmetalink-0.1.3.orig/lib/libxml2_metalink_parser.c	2012-06-11 14:19:03.000000000 +0200
++++ libmetalink-0.1.3/lib/libxml2_metalink_parser.c	2017-10-19 18:26:43.643539143 +0200
+@@ -30,7 +30,7 @@
+ #include <unistd.h>
+ #include <errno.h>
+ 
+-#include <libxml/parser.h>
++#include <libxml2/libxml/parser.h>
+ 
+ #include "metalink_pstm.h"
+ #include "metalink_pstate.h"
+diff -rupN libmetalink-0.1.3.orig/lib/libmetalink.pc.in libmetalink-0.1.3/lib/libmetalink.pc.in
+--- libmetalink-0.1.3.orig/lib/libmetalink.pc.in	2012-06-11 04:39:02.000000000 +0200
++++ libmetalink-0.1.3/lib/libmetalink.pc.in	2017-10-19 20:42:19.548427768 +0200
+@@ -28,6 +28,6 @@ Name: libmetalink
+ Description: Metalink library
+ URL: https://launchpad.net/libmetalink
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -lmetalink
+-Libs.private: @XML_LIBS@ @EXPAT_LIBS@
++Libs: -L${libdir} -lmetalink @LIBXML2_LIBS@ @EXPAT_LIBS@
++Libs.private:
+ Cflags: -I${includedir}

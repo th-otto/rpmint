@@ -1,0 +1,129 @@
+# HG changeset patch
+# Parent  d33bce122aa351a56ce457be35feda52171f9088
+Enable DSS authentication by default to maintain compatibility with older
+versions.
+
+bsc#983784
+
+diff --git a/openssh-7.2p2/myproposal.h b/openssh-7.2p2/myproposal.h
+--- a/openssh-7.2p2/myproposal.h
++++ b/openssh-7.2p2/myproposal.h
+@@ -94,21 +94,23 @@
+ #define KEX_CLIENT_KEX KEX_COMMON_KEX \
+ 	"diffie-hellman-group-exchange-sha1," \
+ 	"diffie-hellman-group14-sha1"
+ 
+ #define	KEX_DEFAULT_PK_ALG	\
+ 	HOSTKEY_ECDSA_CERT_METHODS \
+ 	"ssh-ed25519-cert-v01@openssh.com," \
+ 	"ssh-rsa-cert-v01@openssh.com," \
++	"ssh-dss-cert-v01@openssh.com," \
+ 	HOSTKEY_ECDSA_METHODS \
+ 	"ssh-ed25519," \
+ 	"rsa-sha2-512," \
+ 	"rsa-sha2-256," \
+-	"ssh-rsa"
++	"ssh-rsa," \
++	"ssh-dss"
+ 
+ /* the actual algorithms */
+ 
+ #define KEX_SERVER_ENCRYPT \
+ 	"chacha20-poly1305@openssh.com," \
+ 	"aes128-ctr,aes192-ctr,aes256-ctr" \
+ 	AESGCM_CIPHER_MODES
+ 
+diff --git a/openssh-7.2p2/ssh_config.5 b/openssh-7.2p2/ssh_config.5
+--- a/openssh-7.2p2/ssh_config.5
++++ b/openssh-7.2p2/ssh_config.5
+@@ -887,19 +887,19 @@ Alternately if the specified value begin
+ character, then the specified key types will be appended to the default set
+ instead of replacing them.
+ The default for this option is:
+ .Bd -literal -offset 3n
+ ecdsa-sha2-nistp256-cert-v01@openssh.com,
+ ecdsa-sha2-nistp384-cert-v01@openssh.com,
+ ecdsa-sha2-nistp521-cert-v01@openssh.com,
+ ssh-ed25519-cert-v01@openssh.com,
+-ssh-rsa-cert-v01@openssh.com,
++ssh-rsa-cert-v01@openssh.com,ssh-dss-cert-v01@openssh.com,
+ ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
+-ssh-ed25519,ssh-rsa
++ssh-ed25519,ssh-rsa,ssh-dss
+ .Ed
+ .Pp
+ If hostkeys are known for the destination host then this default is modified
+ to prefer their algorithms.
+ .Pp
+ The list of available key types may also be obtained using the
+ .Fl Q
+ option of
+@@ -1325,19 +1325,19 @@ Alternately if the specified value begin
+ character, then the key types after it will be appended to the default
+ instead of replacing it.
+ The default for this option is:
+ .Bd -literal -offset 3n
+ ecdsa-sha2-nistp256-cert-v01@openssh.com,
+ ecdsa-sha2-nistp384-cert-v01@openssh.com,
+ ecdsa-sha2-nistp521-cert-v01@openssh.com,
+ ssh-ed25519-cert-v01@openssh.com,
+-ssh-rsa-cert-v01@openssh.com,
++ssh-rsa-cert-v01@openssh.com,ssh-dss-cert-v01@openssh.com,
+ ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
+-ssh-ed25519,ssh-rsa
++ssh-ed25519,ssh-rsa,ssh-dss
+ .Ed
+ .Pp
+ The
+ .Fl Q
+ option of
+ .Xr ssh 1
+ may be used to list supported key types.
+ .It Cm PubkeyAuthentication
+diff --git a/openssh-7.2p2/sshd_config.5 b/openssh-7.2p2/sshd_config.5
+--- a/openssh-7.2p2/sshd_config.5
++++ b/openssh-7.2p2/sshd_config.5
+@@ -651,19 +651,19 @@ Alternately if the specified value begin
+ character, then the specified key types will be appended to the default set
+ instead of replacing them.
+ The default for this option is:
+ .Bd -literal -offset 3n
+ ecdsa-sha2-nistp256-cert-v01@openssh.com,
+ ecdsa-sha2-nistp384-cert-v01@openssh.com,
+ ecdsa-sha2-nistp521-cert-v01@openssh.com,
+ ssh-ed25519-cert-v01@openssh.com,
+-ssh-rsa-cert-v01@openssh.com,
++ssh-rsa-cert-v01@openssh.com,ssh-dss-cert-v01@openssh.com,
+ ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
+-ssh-ed25519,ssh-rsa
++ssh-ed25519,ssh-rsa,ssh-dss
+ .Ed
+ .Pp
+ The
+ .Fl Q
+ option of
+ .Xr ssh 1
+ may be used to list supported key types.
+ .It Cm HostbasedAuthentication
+@@ -743,19 +743,19 @@ environment variable.
+ Specifies the host key algorithms
+ that the server offers.
+ The default for this option is:
+ .Bd -literal -offset 3n
+ ecdsa-sha2-nistp256-cert-v01@openssh.com,
+ ecdsa-sha2-nistp384-cert-v01@openssh.com,
+ ecdsa-sha2-nistp521-cert-v01@openssh.com,
+ ssh-ed25519-cert-v01@openssh.com,
+-ssh-rsa-cert-v01@openssh.com,
++ssh-rsa-cert-v01@openssh.com,ssh-dss-cert-v01@openssh.com,
+ ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,
+-ssh-ed25519,ssh-rsa
++ssh-ed25519,ssh-rsa,ssh-dss
+ .Ed
+ .Pp
+ The list of available key types may also be obtained using the
+ .Fl Q
+ option of
+ .Xr ssh 1
+ with an argument of
+ .Dq key .

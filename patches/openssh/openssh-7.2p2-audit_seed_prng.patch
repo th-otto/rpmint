@@ -1,0 +1,116 @@
+# HG changeset patch
+# Parent  e6ff441d171012183f7bd37cb7399473e8376acd
+Audit PRNG re-seeding
+
+diff --git a/openssh-7.2p2/audit-bsm.c b/openssh-7.2p2/audit-bsm.c
+--- a/openssh-7.2p2/audit-bsm.c
++++ b/openssh-7.2p2/audit-bsm.c
+@@ -504,9 +504,15 @@ audit_destroy_sensitive_data(const char 
+ 	/* not implemented */
+ }
+ 
+ void
+ audit_generate_ephemeral_server_key(const char *fp)
+ {
+ 	/* not implemented */
+ }
++
++void
++audit_linux_prng_seed(long bytes, const char *rf)
++{
++	/* not implemented */
++}
+ #endif /* BSM */
+diff --git a/openssh-7.2p2/audit-linux.c b/openssh-7.2p2/audit-linux.c
+--- a/openssh-7.2p2/audit-linux.c
++++ b/openssh-7.2p2/audit-linux.c
+@@ -402,9 +402,31 @@ audit_generate_ephemeral_server_key(cons
+ 	}
+ 	audit_ok = audit_log_user_message(audit_fd, AUDIT_CRYPTO_KEY_USER,
+ 			buf, NULL, 0, NULL, 1);
+ 	audit_close(audit_fd);
+ 	/* do not abort if the error is EPERM and sshd is run as non root user */
+ 	if ((audit_ok < 0) && ((audit_ok != -1) || (getuid() == 0)))
+ 		error("cannot write into audit");
+ }
++
++void
++audit_linux_prng_seed(long bytes, const char *rf)
++{
++	char buf[AUDIT_LOG_SIZE];
++	int audit_fd, audit_ok;
++
++	snprintf(buf, sizeof(buf), "op=prng_seed kind=server bytes=%li source=%s ", bytes, rf);
++	audit_fd = audit_open();
++	if (audit_fd < 0) {
++		if (errno != EINVAL && errno != EPROTONOSUPPORT &&
++					 errno != EAFNOSUPPORT)
++			error("cannot open audit");
++		return;
++	}
++	audit_ok = audit_log_user_message(audit_fd, AUDIT_CRYPTO_PARAM_CHANGE_USER,
++			buf, NULL, 0, NULL, 1);
++	audit_close(audit_fd);
++	/* do not abort if the error is EPERM and sshd is run as non root user */
++	if ((audit_ok < 0) && ((audit_ok != -1) || (getuid() == 0)))
++		error("cannot write into audit");
++}
+ #endif /* USE_LINUX_AUDIT */
+diff --git a/openssh-7.2p2/audit.c b/openssh-7.2p2/audit.c
+--- a/openssh-7.2p2/audit.c
++++ b/openssh-7.2p2/audit.c
+@@ -304,10 +304,16 @@ audit_destroy_sensitive_data(const char 
+ /*
+  * This will be called on generation of the ephemeral server key
+  */
+ void
+ audit_generate_ephemeral_server_key(const char *)
+ {
+ 	debug("audit create ephemeral server key euid %d fingerprint %s", geteuid(), fp);
+ }
++
++void
++audit_linux_prng_seed(long bytes, const char *rf)
++{
++	debug("audit PRNG seed euid %d bytes %li source %s", geteuid(), bytes, rf);
++}
+ # endif  /* !defined CUSTOM_SSH_AUDIT_EVENTS */
+ #endif /* SSH_AUDIT_EVENTS */
+diff --git a/openssh-7.2p2/audit.h b/openssh-7.2p2/audit.h
+--- a/openssh-7.2p2/audit.h
++++ b/openssh-7.2p2/audit.h
+@@ -69,10 +69,11 @@ void	audit_key(int, int *, const Key *);
+ void	audit_unsupported(int);
+ void	audit_kex(int, char *, char *, char *, char *);
+ void	audit_unsupported_body(int);
+ void	audit_kex_body(int, char *, char *, char *, char *, pid_t, uid_t);
+ void	audit_session_key_free(int ctos);
+ void	audit_session_key_free_body(int ctos, pid_t, uid_t);
+ void	audit_destroy_sensitive_data(const char *, pid_t, uid_t);
+ void	audit_generate_ephemeral_server_key(const char *);
++void	audit_linux_prng_seed(long, const char *);
+ 
+ #endif /* _SSH_AUDIT_H */
+diff --git a/openssh-7.2p2/sshd.c b/openssh-7.2p2/sshd.c
+--- a/openssh-7.2p2/sshd.c
++++ b/openssh-7.2p2/sshd.c
+@@ -1421,16 +1421,19 @@ server_accept_loop(int *sock_in, int *so
+ 					if (maxfd < startup_p[0])
+ 						maxfd = startup_p[0];
+ 					startups++;
+ 					break;
+ 				}
+ 			if(!(--re_seeding_counter)) {
+ 				re_seeding_counter = RESEED_AFTER;
+ 				linux_seed();
++#ifdef SSH_AUDIT_EVENTS
++				audit_linux_prng_seed(rand_bytes, rand_file);
++#endif
+ 			}
+ 
+ 			/*
+ 			 * Got connection.  Fork a child to handle it, unless
+ 			 * we are in debugging mode.
+ 			 */
+ 			if (debug_flag) {
+ 				/*

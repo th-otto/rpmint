@@ -1,0 +1,66 @@
+# HG changeset patch
+# Parent  7c29b31d3502bbf5b80e01f8d1db8b2733a3c7f4
+Add slogin back to the distribution, since it might be used downstreams
+
+Revert of cupstream commit 69fead5d7cdaa73bdece9fcba80f8e8e70b90346
+
+diff --git a/openssh-7.2p2/Makefile.in b/openssh-7.2p2/Makefile.in
+--- a/openssh-7.2p2/Makefile.in
++++ b/openssh-7.2p2/Makefile.in
+@@ -354,16 +354,20 @@ install-files:
+ 	$(INSTALL) -m 644 sftp.1.out $(DESTDIR)$(mandir)/$(mansubdir)1/sftp.1
+ 	$(INSTALL) -m 644 sftp-server.8.out $(DESTDIR)$(mandir)/$(mansubdir)8/sftp-server.8
+ 	$(INSTALL) -m 644 ssh-keysign.8.out $(DESTDIR)$(mandir)/$(mansubdir)8/ssh-keysign.8
+ 	$(INSTALL) -m 644 ssh-pkcs11-helper.8.out $(DESTDIR)$(mandir)/$(mansubdir)8/ssh-pkcs11-helper.8
+ 	if test ! -z "$(INSTALL_SSH_LDAP_HELPER)" ; then \
+ 		$(INSTALL) -m 644 ssh-ldap-helper.8.out $(DESTDIR)$(mandir)/$(mansubdir)8/ssh-ldap-helper.8 ; \
+ 		$(INSTALL) -m 644 ssh-ldap.conf.5.out $(DESTDIR)$(mandir)/$(mansubdir)5/ssh-ldap.conf.5 ; \
+ 	fi
++	-rm -f $(DESTDIR)$(bindir)/slogin
++	ln -s ./ssh$(EXEEXT) $(DESTDIR)$(bindir)/slogin
++	-rm -f $(DESTDIR)$(mandir)/$(mansubdir)1/slogin.1
++	ln -s ./ssh.1 $(DESTDIR)$(mandir)/$(mansubdir)1/slogin.1
+ 
+ install-sysconf:
+ 	if [ ! -d $(DESTDIR)$(sysconfdir) ]; then \
+ 		$(srcdir)/mkinstalldirs $(DESTDIR)$(sysconfdir); \
+ 	fi
+ 	@if [ ! -f $(DESTDIR)$(sysconfdir)/ssh_config ]; then \
+ 		$(INSTALL) -m 644 ssh_config.out $(DESTDIR)$(sysconfdir)/ssh_config; \
+ 	else \
+@@ -415,16 +419,17 @@ uninstallall:	uninstall
+ 	-rmdir $(DESTDIR)$(bindir)
+ 	-rmdir $(DESTDIR)$(sbindir)
+ 	-rmdir $(DESTDIR)$(mandir)/$(mansubdir)1
+ 	-rmdir $(DESTDIR)$(mandir)/$(mansubdir)8
+ 	-rmdir $(DESTDIR)$(mandir)
+ 	-rmdir $(DESTDIR)$(libexecdir)
+ 
+ uninstall:
++	-rm -f $(DESTDIR)$(bindir)/slogin
+ 	-rm -f $(DESTDIR)$(bindir)/ssh$(EXEEXT)
+ 	-rm -f $(DESTDIR)$(bindir)/scp$(EXEEXT)
+ 	-rm -f $(DESTDIR)$(bindir)/ssh-add$(EXEEXT)
+ 	-rm -f $(DESTDIR)$(bindir)/ssh-agent$(EXEEXT)
+ 	-rm -f $(DESTDIR)$(bindir)/ssh-keygen$(EXEEXT)
+ 	-rm -f $(DESTDIR)$(bindir)/ssh-keyscan$(EXEEXT)
+ 	-rm -f $(DESTDIR)$(bindir)/sftp$(EXEEXT)
+ 	-rm -f $(DESTDIR)$(sbindir)/sshd$(EXEEXT)
+@@ -440,16 +445,17 @@ uninstall:
+ 	-rm -f $(DESTDIR)$(mandir)/$(mansubdir)1/ssh-keygen.1
+ 	-rm -f $(DESTDIR)$(mandir)/$(mansubdir)1/sftp.1
+ 	-rm -f $(DESTDIR)$(mandir)/$(mansubdir)1/ssh-keyscan.1
+ 	-rm -f $(DESTDIR)$(mandir)/$(mansubdir)8/sshd.8
+ 	-rm -f $(DESTDIR)$(mandir)/$(mansubdir)8/sftp-server.8
+ 	-rm -f $(DESTDIR)$(mandir)/$(mansubdir)8/ssh-keysign.8
+ 	-rm -f $(DESTDIR)$(mandir)/$(mansubdir)8/ssh-pkcs11-helper.8
+ 	-rm -f $(DESTDIR)$(mandir)/$(mansubdir)8/ssh-ldap-helper.8
++	-rm -f $(DESTDIR)$(mandir)/$(mansubdir)1/slogin.1
+ 
+ regress-prep:
+ 	[ -d `pwd`/regress ] || mkdir -p `pwd`/regress
+ 	[ -d `pwd`/regress/unittests ] || mkdir -p `pwd`/regress/unittests
+ 	[ -d `pwd`/regress/unittests/test_helper ] || \
+ 		mkdir -p `pwd`/regress/unittests/test_helper
+ 	[ -d `pwd`/regress/unittests/sshbuf ] || \
+ 		mkdir -p `pwd`/regress/unittests/sshbuf

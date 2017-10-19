@@ -617,6 +617,150 @@ parser in which an application registers handlers for things the
 parser might find in the XML document (like start tags).
 '
 	),
+	'libidn2' => array(
+		'name' => 'libidn2',
+		'upstream' => 'https://www.gnu.org/software/libidn/#libidn2',
+		'source' => 'ftp://ftp.gnu.org/gnu/libidn/libidn2-2.0.4.tar.lz',
+		'version' => '2.0.4',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+Libidn2 is an implementation of the IDNA2008 + TR46 specifications (RFC
+5890, RFC 5891, RFC 5892, RFC 5893, TR 46). Libidn2 is a standalone
+library, without any dependency on Libidn. Libidn2 is believed to be a
+complete IDNA2008 / TR46 implementation, but has yet to be as
+extensively used as the original Libidn library.
+'
+	),
+/*
+	'krb5' => array(
+		'name' => 'krb5',
+		'upstream' => 'https://web.mit.edu/kerberos/www/',
+		'source' => 'http://web.mit.edu/kerberos/dist/krb5/1.15/krb5-1.15.2.tar.gz',
+		'version' => '1.15.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+Kerberos V5 is a trusted-third-party network authentication system,
+which can improve network security by eliminating the insecure
+practice of clear text passwords.
+'
+	),
+*/
+	'libssh2' => array(
+		'name' => 'libssh2',
+		'upstream' => 'http://www.libssh2.org/',
+		'source' => 'https://www.libssh2.org/download/libssh2-1.8.0.tar.gz',
+		'version' => '1.8.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+libssh2 is a library implementing the SSH2 protocol as defined by
+Internet Drafts: SECSH-TRANS, SECSH-USERAUTH, SECSH-CONNECTION,
+SECSH-ARCH, SECSH-FILEXFER, SECSH-DHGEX, SECSH-NUMBERS, and
+SECSH-PUBLICKEY.
+'
+	),
+	'nghttp2' => array(
+		'name' => 'nghttp2',
+		'upstream' => 'https://nghttp2.org/',
+		'source' => 'https://github.com/nghttp2/nghttp2/releases/download/v1.26.0/nghttp2-1.26.0.tar.xz',
+		'version' => '1.26.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPACK in C.
+'
+	),
+	'libxml2' => array(
+		'name' => 'libxml2',
+		'upstream' => 'http://xmlsoft.org',
+		'source' => 'ftp://xmlsoft.org/libxml2/libxml2-2.9.6.tar.gz',
+		'version' => '2.9.6',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+The XML C library was initially developed for the GNOME project. It is
+now used by many programs to load and save extensible data structures
+or manipulate any kind of XML files.
+'
+	),
+	'libmetalink' => array(
+		'name' => 'libmetalink',
+		'upstream' => 'https://launchpad.net/libmetalink',
+		'source' => 'https://github.com/metalink-dev/libmetalink/releases/download/release-0.1.3/libmetalink-0.1.3.tar.xz',
+		'version' => '0.1.3',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+Libmetalink is a Metalink library written in C language. It is intended to
+provide the programs written in C to add Metalink functionality such as parsing
+Metalink XML files.
+'
+	),
+	'libunistring' => array(
+		'name' => 'libunistring',
+		'upstream' => 'http://www.gnu.org/software/libunistring/',
+		'source' => 'http://ftp.gnu.org/gnu/libunistring/libunistring-0.9.7.tar.xz',
+		'version' => '0.9.7',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+This portable C library implements Unicode string types in three flavours:
+(UTF-8, UTF-16, UTF-32), together with functions for character processing
+(names, classifications, properties) and functions for string processing
+(iteration, formatted output, width, word breaks, line breaks, normalization,
+case folding and regular expressions).
+'
+	),
+	'libpsl' => array(
+		'name' => 'libpsl',
+		'upstream' => 'https://rockdaboot.github.io/libpsl',
+		'source' => 'https://github.com/rockdaboot/libpsl/releases/download/libpsl-0.18.0/libpsl-0.18.0.tar.gz',
+		'version' => '0.18.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+libpsl is a C library to handle the Public Suffix List. A "public suffix" is a
+domain name under which Internet users can directly register own names.
+
+HTTP user agents can use it to avoid privacy-leaking "supercookies" and "super
+domain" certificates. It is also use do highlight domain parts in a user interface
+and sorting domain lists by site.
+'
+	),
+	'curl' => array(
+		'name' => 'curl',
+		'upstream' => 'https://curl.haxx.se/',
+		'source' => 'https://curl.haxx.se/download/curl-7.56.0.tar.xz',
+		'version' => '7.56.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+Curl is a client to get documents and files from or send documents to a
+server using any of the supported protocols (HTTP, HTTPS, FTP, FTPS,
+TFTP, DICT, TELNET, LDAP, or FILE). The command is designed to work
+without user interaction or any kind of interactivity.
+'
+	),
 );
 
 ?>

@@ -1,0 +1,157 @@
+# HG changeset patch
+# Parent  7b45c4f3fef6836db00c5b198736cce17290c5cd
+additional option for sftp-server to force file mode for new files
+FATE#312774
+http://lists.mindrot.org/pipermail/openssh-unix-dev/2010-November/029044.html
+http://marc.info/?l=openssh-unix-dev&m=128896838930893
+
+diff --git a/openssh-7.2p2/sftp-server.8 b/openssh-7.2p2/sftp-server.8
+--- a/openssh-7.2p2/sftp-server.8
++++ b/openssh-7.2p2/sftp-server.8
+@@ -33,16 +33,17 @@
+ .Bk -words
+ .Op Fl ehR
+ .Op Fl d Ar start_directory
+ .Op Fl f Ar log_facility
+ .Op Fl l Ar log_level
+ .Op Fl P Ar blacklisted_requests
+ .Op Fl p Ar whitelisted_requests
+ .Op Fl u Ar umask
++.Op Fl m Ar force_file_permissions
+ .Ek
+ .Nm
+ .Fl Q Ar protocol_feature
+ .Sh DESCRIPTION
+ .Nm
+ is a program that speaks the server side of SFTP protocol
+ to stdout and expects client requests from stdin.
+ .Nm
+@@ -133,16 +134,20 @@ Places this instance of
+ into a read-only mode.
+ Attempts to open files for writing, as well as other operations that change
+ the state of the filesystem, will be denied.
+ .It Fl u Ar umask
+ Sets an explicit
+ .Xr umask 2
+ to be applied to newly-created files and directories, instead of the
+ user's default mask.
++.It Fl m Ar force_file_permissions
++Sets explicit file permissions to be applied to newly-created files instead
++of the default or client requested mode.  Numeric values include:
++777, 755, 750, 666, 644, 640, etc.  Option -u is ineffective if -m is set.
+ .El
+ .Pp
+ On some systems,
+ .Nm
+ must be able to access
+ .Pa /dev/log
+ for logging to work, and use of
+ .Nm
+diff --git a/openssh-7.2p2/sftp-server.c b/openssh-7.2p2/sftp-server.c
+--- a/openssh-7.2p2/sftp-server.c
++++ b/openssh-7.2p2/sftp-server.c
+@@ -73,16 +73,20 @@ static u_int version;
+ static int init_done;
+ 
+ /* Disable writes */
+ static int readonly;
+ 
+ /* Requests that are allowed/denied */
+ static char *request_whitelist, *request_blacklist;
+ 
++/* Force file permissions */
++int permforce = 0;
++long permforcemode;
++
+ /* portable attributes, etc. */
+ typedef struct Stat Stat;
+ 
+ struct Stat {
+ 	char *name;
+ 	char *long_name;
+ 	Attrib attrib;
+ };
+@@ -687,16 +691,20 @@ process_open(u_int32_t id)
+ 	if ((r = sshbuf_get_cstring(iqueue, &name, NULL)) != 0 ||
+ 	    (r = sshbuf_get_u32(iqueue, &pflags)) != 0 || /* portable flags */
+ 	    (r = decode_attrib(iqueue, &a)) != 0)
+ 		fatal("%s: buffer error: %s", __func__, ssh_err(r));
+ 
+ 	debug3("request %u: open flags %d", id, pflags);
+ 	flags = flags_from_portable(pflags);
+ 	mode = (a.flags & SSH2_FILEXFER_ATTR_PERMISSIONS) ? a.perm : 0666;
++	if (permforce == 1) {
++		mode = permforcemode;
++		(void)umask(0); /* so umask does not interfere */
++	}
+ 	logit("open \"%s\" flags %s mode 0%o",
+ 	    name, string_from_portable(pflags), mode);
+ 	if (readonly &&
+ 	    ((flags & O_ACCMODE) == O_WRONLY ||
+ 	    (flags & O_ACCMODE) == O_RDWR)) {
+ 		verbose("Refusing open request in read-only mode");
+ 		status = SSH2_FX_PERMISSION_DENIED;
+ 	} else {
+@@ -1489,17 +1497,18 @@ sftp_server_cleanup_exit(int i)
+ static void
+ sftp_server_usage(void)
+ {
+ 	extern char *__progname;
+ 
+ 	fprintf(stderr,
+ 	    "usage: %s [-ehR] [-d start_directory] [-f log_facility] "
+ 	    "[-l log_level]\n\t[-P blacklisted_requests] "
+-	    "[-p whitelisted_requests] [-u umask]\n"
++	    "[-p whitelisted_requests] [-u umask]\n\t"
++	    "[-m force_file_permissions]\n"
+ 	    "       %s -Q protocol_feature\n",
+ 	    __progname, __progname);
+ 	exit(1);
+ }
+ 
+ int
+ sftp_server_main(int argc, char **argv, struct passwd *user_pw)
+ {
+@@ -1515,17 +1524,17 @@ sftp_server_main(int argc, char **argv, 
+ 
+ 	ssh_malloc_init();	/* must be called before any mallocs */
+ 	__progname = ssh_get_progname(argv[0]);
+ 	log_init(__progname, log_level, log_facility, log_stderr);
+ 
+ 	pw = pwcopy(user_pw);
+ 
+ 	while (!skipargs && (ch = getopt(argc, argv,
+-	    "d:f:l:P:p:Q:u:cehR")) != -1) {
++	    "d:f:l:P:p:Q:u:m:cehR")) != -1) {
+ 		switch (ch) {
+ 		case 'Q':
+ 			if (strcasecmp(optarg, "requests") != 0) {
+ 				fprintf(stderr, "Invalid query type\n");
+ 				exit(1);
+ 			}
+ 			for (i = 0; handlers[i].handler != NULL; i++)
+ 				printf("%s\n", handlers[i].name);
+@@ -1575,16 +1584,23 @@ sftp_server_main(int argc, char **argv, 
+ 		case 'u':
+ 			errno = 0;
+ 			mask = strtol(optarg, &cp, 8);
+ 			if (mask < 0 || mask > 0777 || *cp != '\0' ||
+ 			    cp == optarg || (mask == 0 && errno != 0))
+ 				fatal("Invalid umask \"%s\"", optarg);
+ 			(void)umask((mode_t)mask);
+ 			break;
++		case 'm':
++			permforce = 1;
++			permforcemode = strtol(optarg, &cp, 8);
++			if (permforcemode < 0 || permforcemode > 0777 || *cp != '\0' ||
++				cp == optarg || (permforcemode == 0 && errno != 0))
++				fatal("Invalid umask \"%s\"", optarg);
++			break;
+ 		case 'h':
+ 		default:
+ 			sftp_server_usage();
+ 		}
+ 	}
+ 
+ 	log_init(__progname, log_level, log_facility, log_stderr);
+ 

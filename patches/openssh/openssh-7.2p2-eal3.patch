@@ -1,0 +1,87 @@
+# HG changeset patch
+# Parent  f19426f2fa9c634474e635bf33b86acea0518f6d
+fix paths and references in sshd man pages
+
+diff --git a/openssh-7.2p2/sshd.8 b/openssh-7.2p2/sshd.8
+--- a/openssh-7.2p2/sshd.8
++++ b/openssh-7.2p2/sshd.8
+@@ -901,17 +901,17 @@ See
+ If this file exists,
+ .Nm
+ refuses to let anyone except root log in.
+ The contents of the file
+ are displayed to anyone trying to log in, and non-root connections are
+ refused.
+ The file should be world-readable.
+ .Pp
+-.It Pa /etc/shosts.equiv
++.It Pa /etc/ssh/shosts.equiv
+ This file is used in exactly the same way as
+ .Pa hosts.equiv ,
+ but allows host-based authentication without permitting login with
+ rlogin/rsh.
+ .Pp
+ .It Pa /etc/ssh/ssh_host_key
+ .It Pa /etc/ssh/ssh_host_dsa_key
+ .It Pa /etc/ssh/ssh_host_ecdsa_key
+@@ -981,17 +981,17 @@ The content of this file is not sensitiv
+ .Xr scp 1 ,
+ .Xr sftp 1 ,
+ .Xr ssh 1 ,
+ .Xr ssh-add 1 ,
+ .Xr ssh-agent 1 ,
+ .Xr ssh-keygen 1 ,
+ .Xr ssh-keyscan 1 ,
+ .Xr chroot 2 ,
+-.Xr login.conf 5 ,
++.Xr login.defs 5 ,
+ .Xr moduli 5 ,
+ .Xr sshd_config 5 ,
+ .Xr inetd 8 ,
+ .Xr sftp-server 8
+ .Sh AUTHORS
+ OpenSSH is a derivative of the original and free
+ ssh 1.2.12 release by Tatu Ylonen.
+ Aaron Campbell, Bob Beck, Markus Friedl, Niels Provos,
+diff --git a/openssh-7.2p2/sshd_config.5 b/openssh-7.2p2/sshd_config.5
+--- a/openssh-7.2p2/sshd_config.5
++++ b/openssh-7.2p2/sshd_config.5
+@@ -370,18 +370,17 @@ for details).
+ The contents of the specified file are sent to the remote user before
+ authentication is allowed.
+ If the argument is
+ .Dq none
+ then no banner is displayed.
+ By default, no banner is displayed.
+ .It Cm ChallengeResponseAuthentication
+ Specifies whether challenge-response authentication is allowed (e.g. via
+-PAM or through authentication styles supported in
+-.Xr login.conf 5 )
++PAM)
+ The default is
+ .Dq yes .
+ .It Cm ChrootDirectory
+ Specifies the pathname of a directory to
+ .Xr chroot 2
+ to after authentication.
+ At session startup
+ .Xr sshd 8
+@@ -766,17 +765,17 @@ and
+ .Pa .shosts
+ files will not be used in
+ .Cm RhostsRSAAuthentication
+ or
+ .Cm HostbasedAuthentication .
+ .Pp
+ .Pa /etc/hosts.equiv
+ and
+-.Pa /etc/shosts.equiv
++.Pa /etc/ssh/shosts.equiv
+ are still used.
+ The default is
+ .Dq yes .
+ .It Cm IgnoreUserKnownHosts
+ Specifies whether
+ .Xr sshd 8
+ should ignore the user's
+ .Pa ~/.ssh/known_hosts

@@ -1,0 +1,29 @@
+# HG changeset patch
+# Parent  e2f9b3303b4a4ed5d0e5f01009dd1ebea166890d
+Suggest command line for removal of offending keys from known_hosts file
+
+diff --git a/openssh-7.2p2/sshconnect.c b/openssh-7.2p2/sshconnect.c
+--- a/openssh-7.2p2/sshconnect.c
++++ b/openssh-7.2p2/sshconnect.c
+@@ -1086,16 +1086,21 @@ check_host_key(char *hostname, struct so
+ 				    ip_found->file, ip_found->line);
+ 		}
+ 		/* The host key has changed. */
+ 		warn_changed_key(host_key);
+ 		error("Add correct host key in %.100s to get rid of this message.",
+ 		    user_hostfiles[0]);
+ 		error("Offending %s key in %s:%lu", key_type(host_found->key),
+ 		    host_found->file, host_found->line);
++		error("You can use following command to remove the offending key:");
++		if (host_found->file)
++			error("ssh-keygen -R %s -f %s", host, host_found->file);
++		else
++			error("ssh-keygen -R %s", host);
+ 
+ 		/*
+ 		 * If strict host key checking is in use, the user will have
+ 		 * to edit the key manually and we can only abort.
+ 		 */
+ 		if (options.strict_host_key_checking) {
+ 			error("%s host key for %.200s has changed and you have "
+ 			    "requested strict checking.", type, host);

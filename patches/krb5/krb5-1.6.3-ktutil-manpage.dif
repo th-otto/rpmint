@@ -1,0 +1,27 @@
+---
+ src/man/ktutil.man |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+Index: krb5-1.12.2/src/man/ktutil.man
+===================================================================
+--- krb5-1.12.2.orig/src/man/ktutil.man	2014-08-30 23:06:53.000000000 +0100
++++ krb5-1.12.2/src/man/ktutil.man	2014-08-30 23:07:00.000000000 +0100
+@@ -162,6 +162,18 @@ ktutil:
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
++.SH REMARKS
++Changes to the keytab are appended to the keytab file (i.e., the keytab file
++is never overwritten).  To directly modify a keytab, save the changes to a 
++temporary file and then overwrite the keytab file of interest.
++.TP
++.nf
++Example:
++ktutil> rkt /etc/krb5.keytab
++(modifications to keytab)
++ktutil> wkt /tmp/krb5.newtab
++ktutil> q
++# mv /tmp/krb5.newtab /etc/krb5.keytab
+ .SH SEE ALSO
+ .sp
+ \fIkadmin(1)\fP, \fIkdb5_util(8)\fP

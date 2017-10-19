@@ -1,0 +1,188 @@
+# HG changeset patch
+# Parent  e2a8c999f737bca97bbc330ce6683de842ba195e
+Pre-allocare buffer for private keys data to prevent leaking of sensitive data
+via heap.
+
+CVE-2016-10011
+bsc#1016369
+
+backported upstream commit 54d022026aae4f53fa74cc636e4a032d9689b64d
+backported upstream commit a9c746088787549bb5b1ae3add7d06a1b6d93d5e
+
+diff --git a/openssh-7.2p2/authfile.c b/openssh-7.2p2/authfile.c
+--- a/openssh-7.2p2/authfile.c
++++ b/openssh-7.2p2/authfile.c
+@@ -95,23 +95,35 @@ sshkey_save_private(struct sshkey *key, 
+ 
+ /* Load a key from a fd into a buffer */
+ int
+ sshkey_load_file(int fd, struct sshbuf *blob)
+ {
+ 	u_char buf[1024];
+ 	size_t len;
+ 	struct stat st;
+-	int r;
++	int r, dontmax = 0;
+ 
+ 	if (fstat(fd, &st) < 0)
+ 		return SSH_ERR_SYSTEM_ERROR;
+ 	if ((st.st_mode & (S_IFSOCK|S_IFCHR|S_IFIFO)) == 0 &&
+ 	    st.st_size > MAX_KEY_FILE_SIZE)
+ 		return SSH_ERR_INVALID_FORMAT;
++	/*
++	 * Pre-allocate the buffer used for the key contents and clamp its
++	 * maximum size. This ensures that key contents are never leaked via
++	 * implicit realloc() in the sshbuf code.
++	 */
++	if ((st.st_mode & S_IFREG) == 0 || st.st_size <= 0) {
++		st.st_size = 64*1024; /* 64k should be enough for anyone :) */
++		dontmax = 1;
++	}
++	if ((r = sshbuf_allocate(blob, st.st_size)) != 0 ||
++	    (dontmax && (r = sshbuf_set_max_size(blob, st.st_size)) != 0))
++		return r;
+ 	for (;;) {
+ 		if ((len = atomicio(read, fd, buf, sizeof(buf))) == 0) {
+ 			if (errno == EPIPE)
+ 				break;
+ 			r = SSH_ERR_SYSTEM_ERROR;
+ 			goto out;
+ 		}
+ 		if ((r = sshbuf_put(blob, buf, len)) != 0)
+diff --git a/openssh-7.2p2/sshbuf.c b/openssh-7.2p2/sshbuf.c
+--- a/openssh-7.2p2/sshbuf.c
++++ b/openssh-7.2p2/sshbuf.c
+@@ -311,63 +311,73 @@ sshbuf_check_reserve(const struct sshbuf
+ 	SSHBUF_TELL("check");
+ 	/* Check that len is reasonable and that max_size + available < len */
+ 	if (len > buf->max_size || buf->max_size - len < buf->size - buf->off)
+ 		return SSH_ERR_NO_BUFFER_SPACE;
+ 	return 0;
+ }
+ 
+ int
+-sshbuf_reserve(struct sshbuf *buf, size_t len, u_char **dpp)
++sshbuf_allocate(struct sshbuf *buf, size_t len)
+ {
+ 	size_t rlen, need;
+ 	u_char *dp;
+ 	int r;
+ 
+-	if (dpp != NULL)
+-		*dpp = NULL;
+-
+-	SSHBUF_DBG(("reserve buf = %p len = %zu", buf, len));
++	SSHBUF_DBG(("allocate buf = %p len = %zu", buf, len));
+ 	if ((r = sshbuf_check_reserve(buf, len)) != 0)
+ 		return r;
+ 	/*
+ 	 * If the requested allocation appended would push us past max_size
+ 	 * then pack the buffer, zeroing buf->off.
+ 	 */
+ 	sshbuf_maybe_pack(buf, buf->size + len > buf->max_size);
+-	SSHBUF_TELL("reserve");
+-	if (len + buf->size > buf->alloc) {
+-		/*
+-		 * Prefer to alloc in SSHBUF_SIZE_INC units, but
+-		 * allocate less if doing so would overflow max_size.
+-		 */
+-		need = len + buf->size - buf->alloc;
+-		rlen = roundup(buf->alloc + need, SSHBUF_SIZE_INC);
+-		SSHBUF_DBG(("need %zu initial rlen %zu", need, rlen));
+-		if (rlen > buf->max_size)
+-			rlen = buf->alloc + need;
+-		SSHBUF_DBG(("adjusted rlen %zu", rlen));
+-		if ((dp = realloc(buf->d, rlen)) == NULL) {
+-			SSHBUF_DBG(("realloc fail"));
+-			if (dpp != NULL)
+-				*dpp = NULL;
+-			return SSH_ERR_ALLOC_FAIL;
+-		}
+-		buf->alloc = rlen;
+-		buf->cd = buf->d = dp;
+-		if ((r = sshbuf_check_reserve(buf, len)) < 0) {
+-			/* shouldn't fail */
+-			if (dpp != NULL)
+-				*dpp = NULL;
+-			return r;
+-		}
++	SSHBUF_TELL("allocate");
++	if (len + buf->size <= buf->alloc)
++		return 0; /* already have it. */
++
++	/*
++	 * Prefer to alloc in SSHBUF_SIZE_INC units, but
++	 * allocate less if doing so would overflow max_size.
++	 */
++	need = len + buf->size - buf->alloc;
++	rlen = roundup(buf->alloc + need, SSHBUF_SIZE_INC);
++	SSHBUF_DBG(("need %zu initial rlen %zu", need, rlen));
++	if (rlen > buf->max_size)
++		rlen = buf->alloc + need;
++	SSHBUF_DBG(("adjusted rlen %zu", rlen));
++	if ((dp = realloc(buf->d, rlen)) == NULL) {
++		SSHBUF_DBG(("realloc fail"));
++		return SSH_ERR_ALLOC_FAIL;
+ 	}
++	buf->alloc = rlen;
++	buf->cd = buf->d = dp;
++	if ((r = sshbuf_check_reserve(buf, len)) < 0) {
++		/* shouldn't fail */
++		return r;
++	}
++	SSHBUF_TELL("done");
++	return 0;
++}
++
++int
++sshbuf_reserve(struct sshbuf *buf, size_t len, u_char **dpp)
++{
++	u_char *dp;
++	int r;
++
++	if (dpp != NULL)
++		*dpp = NULL;
++
++	SSHBUF_DBG(("reserve buf = %p len = %zu", buf, len));
++	if ((r = sshbuf_allocate(buf, len)) != 0)
++		return r;
++
+ 	dp = buf->d + buf->size;
+ 	buf->size += len;
+-	SSHBUF_TELL("done");
+ 	if (dpp != NULL)
+ 		*dpp = dp;
+ 	return 0;
+ }
+ 
+ int
+ sshbuf_consume(struct sshbuf *buf, size_t len)
+ {
+diff --git a/openssh-7.2p2/sshbuf.h b/openssh-7.2p2/sshbuf.h
+--- a/openssh-7.2p2/sshbuf.h
++++ b/openssh-7.2p2/sshbuf.h
+@@ -134,16 +134,24 @@ u_char *sshbuf_mutable_ptr(const struct 
+  * Check whether a reservation of size len will succeed in buf
+  * Safer to use than direct comparisons again sshbuf_avail as it copes
+  * with unsigned overflows correctly.
+  * Returns 0 on success, or a negative SSH_ERR_* error code on failure.
+  */
+ int	sshbuf_check_reserve(const struct sshbuf *buf, size_t len);
+ 
+ /*
++ * Preallocates len additional bytes in buf.
++ * Useful for cases where the caller knows how many bytes will ultimately be
++ * required to avoid realloc in the buffer code.
++ * Returns 0 on success, or a negative SSH_ERR_* error code on failure.
++ */
++int	sshbuf_allocate(struct sshbuf *buf, size_t len);
++
++/*
+  * Reserve len bytes in buf.
+  * Returns 0 on success and a pointer to the first reserved byte via the
+  * optional dpp parameter or a negative * SSH_ERR_* error code on failure.
+  */
+ int	sshbuf_reserve(struct sshbuf *buf, size_t len, u_char **dpp);
+ 
+ /*
+  * Consume len bytes from the start of buf

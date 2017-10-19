@@ -1,0 +1,82 @@
+# HG changeset patch
+# Parent  bb92b9f037cc3686a669cd84caa44a2716f34058
+Date: Tue, 9 May 2017 14:27:34 -0300
+
+[PATCH 0/3] Allow syscalls for openssl engines
+From: Eduardo Barretto <ebarretto@linux.vnet.ibm.com>
+To: openssh-unix-dev@mindrot.org
+In order to use the OpenSSL-ibmpkcs11 engine it is needed to allow flock
+and ipc calls, because this engine calls OpenCryptoki (a PKCS#11
+implementation) which calls the libraries that will communicate with the
+crypto cards. OpenCryptoki makes use of flock and ipc and, as of now,
+this is only need on s390 architecture.
+
+The EP11 crypto card also needs to make an ioctl call, which receives an
+specific argument.
+
+Signed-off-by: Eduardo Barretto <ebarretto@linux.vnet.ibm.com>
+
+related to bsc#1016709
+
+diff --git a/openssh-7.2p2/sandbox-seccomp-filter.c b/openssh-7.2p2/sandbox-seccomp-filter.c
+--- a/openssh-7.2p2/sandbox-seccomp-filter.c
++++ b/openssh-7.2p2/sandbox-seccomp-filter.c
+@@ -150,16 +150,19 @@ static const struct sock_filter preauth_
+ 	SC_ALLOW(stat),
+ #endif
+ #ifdef __NR_exit
+ 	SC_ALLOW(exit),
+ #endif
+ #ifdef __NR_exit_group
+ 	SC_ALLOW(exit_group),
+ #endif
++#if defined(__NR_flock) && defined(__s390__)
++	SC_ALLOW(flock),
++#endif
+ #ifdef __NR_getpgid
+ 	SC_ALLOW(getpgid),
+ #endif
+ #ifdef __NR_getpid
+ 	SC_ALLOW(getpid),
+ #endif
+ #ifdef __NR_getuid
+ 	SC_ALLOW(getuid),
+@@ -180,16 +183,19 @@ static const struct sock_filter preauth_
+ 	SC_ALLOW(gettimeofday),
+ #endif
+ #ifdef SSH_AUDIT_EVENTS
+ 	SC_ALLOW(getuid),
+ #ifdef __NR_getuid32 /* not defined on x86_64 */
+ 	SC_ALLOW(getuid32),
+ #endif
+ #endif
++#if defined(__NR_ipc) && defined(__s390__)
++	SC_ALLOW(ipc),
++#endif
+ #ifdef __NR_madvise
+ 	SC_ALLOW(madvise),
+ #endif
+ #ifdef __NR_mmap
+ 	SC_ALLOW(mmap),
+ #endif
+ #ifdef __NR_mmap2
+ 	SC_ALLOW(mmap2),
+@@ -233,16 +239,18 @@ static const struct sock_filter preauth_
+ #ifdef __NR_socketcall
+ 	SC_ALLOW_ARG(socketcall, 0, SYS_SHUTDOWN),
+ #endif
+ #ifdef __NR_ioctl
+ #ifdef __s390__
+ 	SC_ALLOW_ARG(ioctl, 1, Z90STAT_STATUS_MASK),
+ 	SC_ALLOW_ARG(ioctl, 1, ICARSAMODEXPO),
+ 	SC_ALLOW_ARG(ioctl, 1, ICARSACRT),
++	/* Allow ioctls for EP11 crypto card on s390 */
++	SC_ALLOW_ARG(ioctl, 1, ZSENDEP11CPRB),
+ #endif
+ #endif
+ 
+ 	/* Default deny */
+ 	BPF_STMT(BPF_RET+BPF_K, SECCOMP_FILTER_FAIL),
+ };
+ 
+ static const struct sock_fprog preauth_program = {

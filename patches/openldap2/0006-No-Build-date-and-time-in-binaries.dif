@@ -1,0 +1,33 @@
+From a7a37111026ccb9fddfeedc22606b80d8d75557f Mon Sep 17 00:00:00 2001
+From: Cristian Rodriguez <cristian.rodriguez@opensuse.org>
+Date: Tue, 5 Oct 2010 13:59:40 +0200
+Subject: No Build date and time in binaries
+
+This avoids build-compare failures and unhelpful rebuilds/republishes in
+the openSUSE buildservice.
+
+diff --git a/build/mkversion b/build/mkversion
+index 3fd9565..dd9a998 100755
+--- a/build/mkversion
++++ b/build/mkversion
+@@ -50,7 +50,7 @@ if test $# != 1 ; then
+ fi
+ 
+ APPLICATION=$1
+-WHOWHERE="$USER@`uname -n`:`pwd`"
++WHOWHERE="opensuse-buildservice@opensuse.org"
+ 
+ cat << __EOF__
+ /* This work is part of OpenLDAP Software <http://www.openldap.org/>.
+@@ -72,7 +72,7 @@ static const char copyright[] =
+ "COPYING RESTRICTIONS APPLY\n";
+ 
+ $static $const char $SYMBOL[] =
+-"@(#) \$$PACKAGE: $APPLICATION $VERSION (" __DATE__ " " __TIME__ ") \$\n"
++"@(#) \$$PACKAGE: $APPLICATION $VERSION \$\n"
+ "\t$WHOWHERE\n";
+ 
+ __EOF__
+-- 
+1.7.10.4
+

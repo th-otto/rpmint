@@ -1,0 +1,695 @@
+# HG changeset patch
+# Parent  7b5f436e0026923299fdd1994f8da8fd9948be7c
+
+Raise minimal size of DH group parameters to 2048 bits like upstream did in
+7.2. 1024b values are believed to be in breaking range for state adversaries
+and the default moduli shipped with openssh have been around long enough to
+make it more likely for them to be broken.
+
+Also provide an option that allows the client to accept shorter (RFC4419
+compliant) parameters.
+
+CVE-2015-4000 (LOGJAM)
+bsc#932483
+
+diff --git a/openssh-7.2p2/dh.c b/openssh-7.2p2/dh.c
+--- a/openssh-7.2p2/dh.c
++++ b/openssh-7.2p2/dh.c
+@@ -37,16 +37,18 @@
+ #include <limits.h>
+ 
+ #include "dh.h"
+ #include "pathnames.h"
+ #include "log.h"
+ #include "misc.h"
+ #include "ssherr.h"
+ 
++int dh_grp_min = DH_GRP_MIN;
++
+ static int
+ parse_prime(int linenum, char *line, struct dhgroup *dhg)
+ {
+ 	char *cp, *arg;
+ 	char *strsize, *gen, *prime;
+ 	const char *errstr = NULL;
+ 	long long n;
+ 
+diff --git a/openssh-7.2p2/dh.h b/openssh-7.2p2/dh.h
+--- a/openssh-7.2p2/dh.h
++++ b/openssh-7.2p2/dh.h
+@@ -43,16 +43,17 @@ int	 dh_gen_key(DH *, int);
+ int	 dh_pub_is_valid(DH *, BIGNUM *);
+ 
+ u_int	 dh_estimate(int);
+ 
+ /*
+  * Max value from RFC4419.
+  * Miniumum increased in light of DH precomputation attacks.
+  */
++#define DH_GRP_MIN_RFC	1024
+ #define DH_GRP_MIN	2048
+ #define DH_GRP_MAX	8192
+ 
+ /*
+  * Values for "type" field of moduli(5)
+  * Specifies the internal structure of the prime modulus.
+  */
+ #define MODULI_TYPE_UNKNOWN		(0)
+diff --git a/openssh-7.2p2/kexgexc.c b/openssh-7.2p2/kexgexc.c
+--- a/openssh-7.2p2/kexgexc.c
++++ b/openssh-7.2p2/kexgexc.c
+@@ -46,29 +46,32 @@
+ #include "packet.h"
+ #include "dh.h"
+ #include "ssh2.h"
+ #include "compat.h"
+ #include "dispatch.h"
+ #include "ssherr.h"
+ #include "sshbuf.h"
+ 
++/* import from dh.c */
++extern int dh_grp_min;
++
+ static int input_kex_dh_gex_group(int, u_int32_t, void *);
+ static int input_kex_dh_gex_reply(int, u_int32_t, void *);
+ 
+ int
+ kexgex_client(struct ssh *ssh)
+ {
+ 	struct kex *kex = ssh->kex;
+ 	int r;
+ 	u_int nbits;
+ 
+ 	nbits = dh_estimate(kex->dh_need * 8);
+ 
+-	kex->min = DH_GRP_MIN;
++	kex->min = dh_grp_min;
+ 	kex->max = DH_GRP_MAX;
+ 	kex->nbits = nbits;
+ 	if (datafellows & SSH_BUG_DHGEX_LARGE)
+ 		kex->nbits = MIN(kex->nbits, 4096);
+ 	/* New GEX request */
+ 	if ((r = sshpkt_start(ssh, SSH2_MSG_KEX_DH_GEX_REQUEST)) != 0 ||
+ 	    (r = sshpkt_put_u32(ssh, kex->min)) != 0 ||
+ 	    (r = sshpkt_put_u32(ssh, kex->nbits)) != 0 ||
+@@ -104,16 +107,22 @@ input_kex_dh_gex_group(int type, u_int32
+ 		goto out;
+ 	}
+ 	if ((r = sshpkt_get_bignum2(ssh, p)) != 0 ||
+ 	    (r = sshpkt_get_bignum2(ssh, g)) != 0 ||
+ 	    (r = sshpkt_get_end(ssh)) != 0)
+ 		goto out;
+ 	if ((bits = BN_num_bits(p)) < 0 ||
+ 	    (u_int)bits < kex->min || (u_int)bits > kex->max) {
++		if ((u_int)bits < kex->min && (u_int)bits >= DH_GRP_MIN_RFC)
++			logit("DH parameter offered by the server (%d bits) "
++			    "is considered insecure. "
++			    "You can lower the accepted the minimum "
++			    "via the KexDHMin option.",
++			    bits);
+ 		r = SSH_ERR_DH_GEX_OUT_OF_RANGE;
+ 		goto out;
+ 	}
+ 	if ((kex->dh = dh_new_group(g, p)) == NULL) {
+ 		r = SSH_ERR_ALLOC_FAIL;
+ 		goto out;
+ 	}
+ 	p = g = NULL; /* belong to kex->dh now */
+diff --git a/openssh-7.2p2/kexgexs.c b/openssh-7.2p2/kexgexs.c
+--- a/openssh-7.2p2/kexgexs.c
++++ b/openssh-7.2p2/kexgexs.c
+@@ -49,16 +49,19 @@
+ #ifdef GSSAPI
+ #include "ssh-gss.h"
+ #endif
+ #include "monitor_wrap.h"
+ #include "dispatch.h"
+ #include "ssherr.h"
+ #include "sshbuf.h"
+ 
++/* import from dh.c */
++extern int dh_grp_min;
++
+ static int input_kex_dh_gex_request(int, u_int32_t, void *);
+ static int input_kex_dh_gex_init(int, u_int32_t, void *);
+ 
+ int
+ kexgex_server(struct ssh *ssh)
+ {
+ 	ssh_dispatch_set(ssh, SSH2_MSG_KEX_DH_GEX_REQUEST,
+ 	    &input_kex_dh_gex_request);
+@@ -78,23 +81,29 @@ input_kex_dh_gex_request(int type, u_int
+ 	if ((r = sshpkt_get_u32(ssh, &min)) != 0 ||
+ 	    (r = sshpkt_get_u32(ssh, &nbits)) != 0 ||
+ 	    (r = sshpkt_get_u32(ssh, &max)) != 0 ||
+ 	    (r = sshpkt_get_end(ssh)) != 0)
+ 		goto out;
+ 	kex->nbits = nbits;
+ 	kex->min = min;
+ 	kex->max = max;
+-	min = MAX(DH_GRP_MIN, min);
++	min = MAX(dh_grp_min, min);
+ 	max = MIN(DH_GRP_MAX, max);
+-	nbits = MAX(DH_GRP_MIN, nbits);
++	nbits = MAX(dh_grp_min, nbits);
+ 	nbits = MIN(DH_GRP_MAX, nbits);
+ 
+ 	if (kex->max < kex->min || kex->nbits < kex->min ||
+ 	    kex->max < kex->nbits) {
++		if (kex->nbits < kex->min && kex->nbits >= DH_GRP_MIN_RFC)
++			logit("DH parameter requested by the client (%d bits) "
++			    "is considered insecure. "
++			    "You can lower the accepted minimum "
++			    "via the KexDHMin option.",
++			    kex->nbits);
+ 		r = SSH_ERR_DH_GEX_OUT_OF_RANGE;
+ 		goto out;
+ 	}
+ 
+ 	/* Contact privileged parent */
+ 	kex->dh = PRIVSEP(choose_dh(min, nbits, max));
+ 	if (kex->dh == NULL) {
+ 		sshpkt_disconnect(ssh, "no matching DH grp found");
+diff --git a/openssh-7.2p2/readconf.c b/openssh-7.2p2/readconf.c
+--- a/openssh-7.2p2/readconf.c
++++ b/openssh-7.2p2/readconf.c
+@@ -56,16 +56,17 @@
+ #include "misc.h"
+ #include "readconf.h"
+ #include "match.h"
+ #include "kex.h"
+ #include "mac.h"
+ #include "uidswap.h"
+ #include "myproposal.h"
+ #include "digest.h"
++#include "dh.h"
+ 
+ /* Format of the configuration file:
+ 
+    # Configuration data is parsed as follows:
+    #  1. command line options
+    #  2. user-specific file
+    #  3. system-wide file
+    # Any configuration value is only changed the first time it is set.
+@@ -148,17 +149,18 @@ typedef enum {
+ 	oClearAllForwardings, oNoHostAuthenticationForLocalhost,
+ 	oEnableSSHKeysign, oRekeyLimit, oVerifyHostKeyDNS, oConnectTimeout,
+ 	oAddressFamily, oGssAuthentication, oGssDelegateCreds,
+ 	oServerAliveInterval, oServerAliveCountMax, oIdentitiesOnly,
+ 	oSendEnv, oControlPath, oControlMaster, oControlPersist,
+ 	oHashKnownHosts,
+ 	oTunnel, oTunnelDevice, oLocalCommand, oPermitLocalCommand,
+ 	oVisualHostKey,
+-	oKexAlgorithms, oIPQoS, oRequestTTY, oIgnoreUnknown, oProxyUseFdpass,
++	oKexAlgorithms, oKexDHMin,
++	oIPQoS, oRequestTTY, oIgnoreUnknown, oProxyUseFdpass,
+ 	oCanonicalDomains, oCanonicalizeHostname, oCanonicalizeMaxDots,
+ 	oCanonicalizeFallbackLocal, oCanonicalizePermittedCNAMEs,
+ 	oStreamLocalBindMask, oStreamLocalBindUnlink, oRevokedHostKeys,
+ 	oFingerprintHash, oUpdateHostkeys, oHostbasedKeyTypes,
+ 	oPubkeyAcceptedKeyTypes,
+ 	oIgnoredUnknownOption, oDeprecated, oUnsupported
+ } OpCodes;
+ 
+@@ -260,16 +262,17 @@ static struct {
+ 	{ "hashknownhosts", oHashKnownHosts },
+ 	{ "tunnel", oTunnel },
+ 	{ "tunneldevice", oTunnelDevice },
+ 	{ "localcommand", oLocalCommand },
+ 	{ "permitlocalcommand", oPermitLocalCommand },
+ 	{ "visualhostkey", oVisualHostKey },
+ 	{ "useroaming", oDeprecated },
+ 	{ "kexalgorithms", oKexAlgorithms },
++	{ "kexdhmin", oKexDHMin },
+ 	{ "ipqos", oIPQoS },
+ 	{ "requesttty", oRequestTTY },
+ 	{ "proxyusefdpass", oProxyUseFdpass },
+ 	{ "canonicaldomains", oCanonicalDomains },
+ 	{ "canonicalizefallbacklocal", oCanonicalizeFallbackLocal },
+ 	{ "canonicalizehostname", oCanonicalizeHostname },
+ 	{ "canonicalizemaxdots", oCanonicalizeMaxDots },
+ 	{ "canonicalizepermittedcnames", oCanonicalizePermittedCNAMEs },
+@@ -280,16 +283,19 @@ static struct {
+ 	{ "updatehostkeys", oUpdateHostkeys },
+ 	{ "hostbasedkeytypes", oHostbasedKeyTypes },
+ 	{ "pubkeyacceptedkeytypes", oPubkeyAcceptedKeyTypes },
+ 	{ "ignoreunknown", oIgnoreUnknown },
+ 
+ 	{ NULL, oBadOption }
+ };
+ 
++/* import from dh.c */
++extern int dh_grp_min;
++
+ /*
+  * Adds a local TCP/IP port forward to options.  Never returns if there is an
+  * error.
+  */
+ 
+ void
+ add_local_forward(Options *options, const struct Forward *newfwd)
+ {
+@@ -1157,16 +1163,20 @@ parse_int:
+ 			    filename, linenum);
+ 		if (!kex_names_valid(*arg == '+' ? arg + 1 : arg))
+ 			fatal("%.200s line %d: Bad SSH2 KexAlgorithms '%s'.",
+ 			    filename, linenum, arg ? arg : "<NONE>");
+ 		if (*activep && options->kex_algorithms == NULL)
+ 			options->kex_algorithms = xstrdup(arg);
+ 		break;
+ 
++	case oKexDHMin:
++		intptr = &options->kex_dhmin;
++		goto parse_int;
++
+ 	case oHostKeyAlgorithms:
+ 		charptr = &options->hostkeyalgorithms;
+ parse_keytypes:
+ 		arg = strdelim(&s);
+ 		if (!arg || *arg == '\0')
+ 			fatal("%.200s line %d: Missing argument.",
+ 			    filename, linenum);
+ 		if (!sshkey_names_valid2(*arg == '+' ? arg + 1 : arg, 1))
+@@ -1664,16 +1674,17 @@ initialize_options(Options * options)
+ 	options->address_family = -1;
+ 	options->connection_attempts = -1;
+ 	options->connection_timeout = -1;
+ 	options->number_of_password_prompts = -1;
+ 	options->cipher = -1;
+ 	options->ciphers = NULL;
+ 	options->macs = NULL;
+ 	options->kex_algorithms = NULL;
++	options->kex_dhmin = -1;
+ 	options->hostkeyalgorithms = NULL;
+ 	options->protocol = SSH_PROTO_UNKNOWN;
+ 	options->num_identity_files = 0;
+ 	options->num_certificate_files = 0;
+ 	options->hostname = NULL;
+ 	options->host_key_alias = NULL;
+ 	options->proxy_command = NULL;
+ 	options->user = NULL;
+@@ -1805,16 +1816,23 @@ fill_default_options(Options * options)
+ 		options->address_family = AF_UNSPEC;
+ 	if (options->connection_attempts == -1)
+ 		options->connection_attempts = 1;
+ 	if (options->number_of_password_prompts == -1)
+ 		options->number_of_password_prompts = 3;
+ 	/* Selected in ssh_login(). */
+ 	if (options->cipher == -1)
+ 		options->cipher = SSH_CIPHER_NOT_SET;
++	if (options->kex_dhmin == -1)
++		options->kex_dhmin = DH_GRP_MIN_RFC;
++	else {
++		options->kex_dhmin = MAX(options->kex_dhmin, DH_GRP_MIN_RFC);
++		options->kex_dhmin = MIN(options->kex_dhmin, DH_GRP_MAX);
++	}
++	dh_grp_min = options->kex_dhmin;
+ 	/* options->hostkeyalgorithms, default set in myproposals.h */
+ 	if (options->protocol == SSH_PROTO_UNKNOWN)
+ 		options->protocol = SSH_PROTO_2;
+ 	if (options->add_keys_to_agent == -1)
+ 		options->add_keys_to_agent = 0;
+ 	if (options->num_identity_files == 0) {
+ 		if (options->protocol & SSH_PROTO_1) {
+ 			add_identity_file(options, "~/",
+diff --git a/openssh-7.2p2/readconf.h b/openssh-7.2p2/readconf.h
+--- a/openssh-7.2p2/readconf.h
++++ b/openssh-7.2p2/readconf.h
+@@ -69,16 +69,17 @@ typedef struct {
+ 					 * aborting connection attempt */
+ 	int     number_of_password_prompts;	/* Max number of password
+ 						 * prompts. */
+ 	int     cipher;		/* Cipher to use. */
+ 	char   *ciphers;	/* SSH2 ciphers in order of preference. */
+ 	char   *macs;		/* SSH2 macs in order of preference. */
+ 	char   *hostkeyalgorithms;	/* SSH2 server key types in order of preference. */
+ 	char   *kex_algorithms;	/* SSH2 kex methods in order of preference. */
++	int     kex_dhmin;	/* minimum bit length of the DH group parameter */
+ 	int	protocol;	/* Protocol in order of preference. */
+ 	char   *hostname;	/* Real host to connect. */
+ 	char   *host_key_alias;	/* hostname alias for .ssh/known_hosts */
+ 	char   *proxy_command;	/* Proxy command for connecting the host. */
+ 	char   *user;		/* User to log in as. */
+ 	int     escape_char;	/* Escape character; -2 = none */
+ 
+ 	u_int	num_system_hostfiles;	/* Paths for /etc/ssh/ssh_known_hosts */
+diff --git a/openssh-7.2p2/servconf.c b/openssh-7.2p2/servconf.c
+--- a/openssh-7.2p2/servconf.c
++++ b/openssh-7.2p2/servconf.c
+@@ -52,16 +52,20 @@
+ #include "channels.h"
+ #include "groupaccess.h"
+ #include "canohost.h"
+ #include "packet.h"
+ #include "hostfile.h"
+ #include "auth.h"
+ #include "myproposal.h"
+ #include "digest.h"
++#include "dh.h"
++
++/* import from dh.c */
++extern int dh_grp_min;
+ 
+ static void add_listen_addr(ServerOptions *, char *, int);
+ static void add_one_listen_addr(ServerOptions *, char *, int);
+ 
+ /* Use of privilege separation or not */
+ extern int use_privsep;
+ extern Buffer cfg;
+ 
+@@ -134,16 +138,17 @@ initialize_server_options(ServerOptions 
+ 	options->allow_agent_forwarding = -1;
+ 	options->num_allow_users = 0;
+ 	options->num_deny_users = 0;
+ 	options->num_allow_groups = 0;
+ 	options->num_deny_groups = 0;
+ 	options->ciphers = NULL;
+ 	options->macs = NULL;
+ 	options->kex_algorithms = NULL;
++	options->kex_dhmin = -1;
+ 	options->protocol = SSH_PROTO_UNKNOWN;
+ 	options->fwd_opts.gateway_ports = -1;
+ 	options->fwd_opts.streamlocal_bind_mask = (mode_t)-1;
+ 	options->fwd_opts.streamlocal_bind_unlink = -1;
+ 	options->num_subsystems = 0;
+ 	options->max_startups_begin = -1;
+ 	options->max_startups_rate = -1;
+ 	options->max_startups = -1;
+@@ -199,16 +204,23 @@ fill_default_server_options(ServerOption
+ 	int i;
+ 
+ 	/* Portable-specific options */
+ 	if (options->use_pam == -1)
+ 		options->use_pam = 0;
+ 	if (options->use_pam_check_locks == -1)
+ 		options->use_pam_check_locks = 0;
+ 
++	if (options->kex_dhmin == -1)
++		options->kex_dhmin = DH_GRP_MIN_RFC;
++	else {
++		options->kex_dhmin = MAX(options->kex_dhmin, DH_GRP_MIN_RFC);
++		options->kex_dhmin = MIN(options->kex_dhmin, DH_GRP_MAX);
++	}
++	dh_grp_min = options->kex_dhmin;
+ 	/* Standard Options */
+ 	if (options->protocol == SSH_PROTO_UNKNOWN)
+ 		options->protocol = SSH_PROTO_2;
+ 	if (options->num_host_key_files == 0) {
+ 		/* fill default hostkeys for protocols */
+ 		if (options->protocol & SSH_PROTO_1)
+ 			options->host_key_files[options->num_host_key_files++] =
+ 			    _PATH_HOST_KEY_FILE;
+@@ -423,17 +435,18 @@ typedef enum {
+ 	sClientAliveInterval, sClientAliveCountMax, sAuthorizedKeysFile,
+ 	sGssAuthentication, sGssCleanupCreds, sGssStrictAcceptor,
+ 	sAcceptEnv, sPermitTunnel,
+ 	sMatch, sPermitOpen, sForceCommand, sChrootDirectory,
+ 	sUsePrivilegeSeparation, sAllowAgentForwarding,
+ 	sHostCertificate,
+ 	sRevokedKeys, sTrustedUserCAKeys, sAuthorizedPrincipalsFile,
+ 	sAuthorizedPrincipalsCommand, sAuthorizedPrincipalsCommandUser,
+-	sKexAlgorithms, sIPQoS, sVersionAddendum,
++	sKexAlgorithms, sKexDHMin,
++	sIPQoS, sVersionAddendum,
+ 	sAuthorizedKeysCommand, sAuthorizedKeysCommandUser,
+ 	sAuthenticationMethods, sHostKeyAgent, sPermitUserRC,
+ 	sStreamLocalBindMask, sStreamLocalBindUnlink,
+ 	sAllowStreamLocalForwarding, sFingerprintHash,
+ 	sDeprecated, sUnsupported
+ } ServerOpCodes;
+ 
+ #define SSHCFG_GLOBAL	0x01	/* allowed in main section of sshd_config */
+@@ -561,16 +574,17 @@ static struct {
+ 	{ "permitopen", sPermitOpen, SSHCFG_ALL },
+ 	{ "forcecommand", sForceCommand, SSHCFG_ALL },
+ 	{ "chrootdirectory", sChrootDirectory, SSHCFG_ALL },
+ 	{ "hostcertificate", sHostCertificate, SSHCFG_GLOBAL },
+ 	{ "revokedkeys", sRevokedKeys, SSHCFG_ALL },
+ 	{ "trustedusercakeys", sTrustedUserCAKeys, SSHCFG_ALL },
+ 	{ "authorizedprincipalsfile", sAuthorizedPrincipalsFile, SSHCFG_ALL },
+ 	{ "kexalgorithms", sKexAlgorithms, SSHCFG_GLOBAL },
++	{ "kexdhmin", sKexDHMin },
+ 	{ "ipqos", sIPQoS, SSHCFG_ALL },
+ 	{ "authorizedkeyscommand", sAuthorizedKeysCommand, SSHCFG_ALL },
+ 	{ "authorizedkeyscommanduser", sAuthorizedKeysCommandUser, SSHCFG_ALL },
+ 	{ "authorizedprincipalscommand", sAuthorizedPrincipalsCommand, SSHCFG_ALL },
+ 	{ "authorizedprincipalscommanduser", sAuthorizedPrincipalsCommandUser, SSHCFG_ALL },
+ 	{ "versionaddendum", sVersionAddendum, SSHCFG_GLOBAL },
+ 	{ "authenticationmethods", sAuthenticationMethods, SSHCFG_ALL },
+ 	{ "streamlocalbindmask", sStreamLocalBindMask, SSHCFG_ALL },
+@@ -1481,16 +1495,20 @@ process_server_config_line(ServerOptions
+ 			    filename, linenum);
+ 		if (!kex_names_valid(*arg == '+' ? arg + 1 : arg))
+ 			fatal("%s line %d: Bad SSH2 KexAlgorithms '%s'.",
+ 			    filename, linenum, arg ? arg : "<NONE>");
+ 		if (options->kex_algorithms == NULL)
+ 			options->kex_algorithms = xstrdup(arg);
+ 		break;
+ 
++	case sKexDHMin:
++		intptr = &options->kex_dhmin;
++		goto parse_int;
++
+ 	case sProtocol:
+ 		intptr = &options->protocol;
+ 		arg = strdelim(&cp);
+ 		if (!arg || *arg == '\0')
+ 			fatal("%s line %d: Missing argument.", filename, linenum);
+ 		value = proto_spec(arg);
+ 		if (value == SSH_PROTO_UNKNOWN)
+ 			fatal("%s line %d: Bad protocol spec '%s'.",
+@@ -2247,16 +2265,17 @@ dump_config(ServerOptions *o)
+ 	dump_cfg_int(sLoginGraceTime, o->login_grace_time);
+ 	dump_cfg_int(sKeyRegenerationTime, o->key_regeneration_time);
+ 	dump_cfg_int(sX11DisplayOffset, o->x11_display_offset);
+ 	dump_cfg_int(sMaxAuthTries, o->max_authtries);
+ 	dump_cfg_int(sMaxSessions, o->max_sessions);
+ 	dump_cfg_int(sClientAliveInterval, o->client_alive_interval);
+ 	dump_cfg_int(sClientAliveCountMax, o->client_alive_count_max);
+ 	dump_cfg_oct(sStreamLocalBindMask, o->fwd_opts.streamlocal_bind_mask);
++	dump_cfg_int(sKexDHMin, o->kex_dhmin);
+ 
+ 	/* formatted integer arguments */
+ 	dump_cfg_fmtint(sPermitRootLogin, o->permit_root_login);
+ 	dump_cfg_fmtint(sIgnoreRhosts, o->ignore_rhosts);
+ 	dump_cfg_fmtint(sIgnoreUserKnownHosts, o->ignore_user_known_hosts);
+ 	dump_cfg_fmtint(sRhostsRSAAuthentication, o->rhosts_rsa_authentication);
+ 	dump_cfg_fmtint(sHostbasedAuthentication, o->hostbased_authentication);
+ 	dump_cfg_fmtint(sHostbasedUsesNameFromPacketOnly,
+diff --git a/openssh-7.2p2/servconf.h b/openssh-7.2p2/servconf.h
+--- a/openssh-7.2p2/servconf.h
++++ b/openssh-7.2p2/servconf.h
+@@ -88,16 +88,17 @@ typedef struct {
+ 	int	permit_user_rc;	/* If false, deny ~/.ssh/rc execution */
+ 	int     strict_modes;	/* If true, require string home dir modes. */
+ 	int     tcp_keep_alive;	/* If true, set SO_KEEPALIVE. */
+ 	int	ip_qos_interactive;	/* IP ToS/DSCP/class for interactive */
+ 	int	ip_qos_bulk;		/* IP ToS/DSCP/class for bulk traffic */
+ 	char   *ciphers;	/* Supported SSH2 ciphers. */
+ 	char   *macs;		/* Supported SSH2 macs. */
+ 	char   *kex_algorithms;	/* SSH2 kex methods in order of preference. */
++	int     kex_dhmin;	/* minimum bit length of the DH group parameter */
+ 	int	protocol;	/* Supported protocol versions. */
+ 	struct ForwardOptions fwd_opts;	/* forwarding options */
+ 	SyslogFacility log_facility;	/* Facility for system logging. */
+ 	LogLevel log_level;	/* Level for system logging. */
+ 	int     rhosts_rsa_authentication;	/* If true, permit rhosts RSA
+ 						 * authentication. */
+ 	int     hostbased_authentication;	/* If true, permit ssh2 hostbased auth */
+ 	int     hostbased_uses_name_from_packet_only; /* experimental */
+diff --git a/openssh-7.2p2/ssh_config b/openssh-7.2p2/ssh_config
+--- a/openssh-7.2p2/ssh_config
++++ b/openssh-7.2p2/ssh_config
+@@ -12,16 +12,21 @@
+ # Any configuration value is only changed the first time it is set.
+ # Thus, host-specific definitions should be at the beginning of the
+ # configuration file, and defaults at the end.
+ 
+ # Site-wide defaults for some commonly used options.  For a comprehensive
+ # list of available options, their meanings and defaults, please see the
+ # ssh_config(5) man page.
+ 
++# Minimum accepted size of the DH parameter p. By default this is set to 1024
++# to maintain compatibility with RFC4419, but should be set higher.
++# Upstream default is identical to setting this to 2048.
++#KexDHMin 1024
++
+ Host *
+ #   ForwardAgent no
+ #   ForwardX11 no
+ 
+ # If you do not trust your remote host (or its administrator), you
+ # should not forward X11 connections to your local X11-display for
+ # security reasons: Someone stealing the authentification data on the
+ # remote side (the "spoofed" X-server by the remote sshd) can read your
+diff --git a/openssh-7.2p2/ssh_config.0 b/openssh-7.2p2/ssh_config.0
+--- a/openssh-7.2p2/ssh_config.0
++++ b/openssh-7.2p2/ssh_config.0
+@@ -606,16 +606,33 @@ DESCRIPTION
+                    ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,
+                    diffie-hellman-group-exchange-sha256,
+                    diffie-hellman-group-exchange-sha1,
+                    diffie-hellman-group14-sha1
+ 
+              The list of available key exchange algorithms may also be
+              obtained using the -Q option of ssh(1) with an argument of M-bM-^@M-^\kexM-bM-^@M-^].
+ 
++     KexDHMin
++             Specifies the minimum accepted bit length of the DH group
++             parameter p.
++
++             As per RFC4419, this is 1024 bits, however this has increasingly
++             been seen as insecure, which prompted the change to 2048 bits.
++             Setting this option allows the client to accept parameters shorter
++             than the current minimum, down to the RFC specified 1024 bits.
++             Using this option may be needed when connecting to servers that
++             only know short DH group parameters.
++
++             Note, that while by default this option is set to 1024 to maintain
++             maximum backward compatibility, using it can severly impact
++             security and thus should be viewed as a temporary fix of last
++             resort and all efforts should be made to fix the (broken)
++             counterparty.
++
+      LocalCommand
+              Specifies a command to execute on the local machine after
+              successfully connecting to the server.  The command string
+              extends to the end of the line, and is executed with the user's
+              shell.  The following escape character substitutions will be
+              performed: M-bM-^@M-^X%dM-bM-^@M-^Y (local user's home directory), M-bM-^@M-^X%hM-bM-^@M-^Y (remote host
+              name), M-bM-^@M-^X%lM-bM-^@M-^Y (local host name), M-bM-^@M-^X%nM-bM-^@M-^Y (host name as provided on the
+              command line), M-bM-^@M-^X%pM-bM-^@M-^Y (remote port), M-bM-^@M-^X%rM-bM-^@M-^Y (remote user name) or
+diff --git a/openssh-7.2p2/ssh_config.5 b/openssh-7.2p2/ssh_config.5
+--- a/openssh-7.2p2/ssh_config.5
++++ b/openssh-7.2p2/ssh_config.5
+@@ -1092,16 +1092,32 @@ diffie-hellman-group14-sha1
+ .Ed
+ .Pp
+ The list of available key exchange algorithms may also be obtained using the
+ .Fl Q
+ option of
+ .Xr ssh 1
+ with an argument of
+ .Dq kex .
++.It Cm KexDHMin
++Specifies the minimum accepted bit length of the DH group
++parameter p.
++.Pp
++As per RFC4419, this is 1024 bits, however this has increasingly
++been seen as insecure, which prompted the change to 2048 bits.
++Setting this option allows the client to accept parameters shorter
++than the current minimum, down to the RFC specified 1024 bits.
++Using this option may be needed when connecting to servers that
++only know short DH group parameters.
++.Pp
++Note, that while by default this option is set to 1024 to maintain
++maximum backward compatibility, using it can severly impact
++security and thus should be viewed as a temporary fix of last
++resort and all efforts should be made to fix the (broken)
++counterparty.
+ .It Cm LocalCommand
+ Specifies a command to execute on the local machine after successfully
+ connecting to the server.
+ The command string extends to the end of the line, and is executed with
+ the user's shell.
+ The following escape character substitutions will be performed:
+ .Ql %d
+ (local user's home directory),
+diff --git a/openssh-7.2p2/sshd_config b/openssh-7.2p2/sshd_config
+--- a/openssh-7.2p2/sshd_config
++++ b/openssh-7.2p2/sshd_config
+@@ -21,16 +21,21 @@
+ # HostKey for protocol version 1
+ #HostKey /etc/ssh/ssh_host_key
+ # HostKeys for protocol version 2
+ #HostKey /etc/ssh/ssh_host_rsa_key
+ #HostKey /etc/ssh/ssh_host_dsa_key
+ #HostKey /etc/ssh/ssh_host_ecdsa_key
+ #HostKey /etc/ssh/ssh_host_ed25519_key
+ 
++# Minimum accepted size of the DH parameter p. By default this is set to 1024
++# to maintain compatibility with RFC4419, but should be set higher.
++# Upstream default is identical to setting this to 2048.
++#KexDHMin 1024
++
+ # Lifetime and size of ephemeral version 1 server key
+ #KeyRegenerationInterval 1h
+ #ServerKeyBits 1024
+ 
+ # Ciphers and keying
+ #RekeyLimit default none
+ 
+ # Logging
+diff --git a/openssh-7.2p2/sshd_config.0 b/openssh-7.2p2/sshd_config.0
+--- a/openssh-7.2p2/sshd_config.0
++++ b/openssh-7.2p2/sshd_config.0
+@@ -539,16 +539,33 @@ DESCRIPTION
+                    curve25519-sha256@libssh.org,
+                    ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,
+                    diffie-hellman-group-exchange-sha256,
+                    diffie-hellman-group14-sha1
+ 
+              The list of available key exchange algorithms may also be
+              obtained using the -Q option of ssh(1) with an argument of M-bM-^@M-^\kexM-bM-^@M-^].
+ 
++     KexDHMin
++             Specifies the minimum accepted bit length of the DH group
++             parameter p.
++
++             As per RFC4419, this is 1024 bits, however this has increasingly
++             been seen as insecure, which prompted the change to 2048 bits.
++             Setting this option allows the server to accept parameters shorter
++             than the current minimum, down to the RFC specified 1024 bits.
++             Using this option may be needed when some of the connectiong
++             clients only know short DH group parameters.
++
++             Note, that while by default this option is set to 1024 to maintain
++             maximum backward compatibility, using it can severly impact
++             security and thus should be viewed as a temporary fix of last
++             resort and all efforts should be made to fix the (broken)
++             counterparty.
++
+      KeyRegenerationInterval
+              In protocol version 1, the ephemeral server key is automatically
+              regenerated after this many seconds (if it has been used).  The
+              purpose of regeneration is to prevent decrypting captured
+              sessions by later breaking into the machine and stealing the
+              keys.  The key is never stored anywhere.  If the value is 0, the
+              key is never regenerated.  The default is 3600 (seconds).
+ 
+diff --git a/openssh-7.2p2/sshd_config.5 b/openssh-7.2p2/sshd_config.5
+--- a/openssh-7.2p2/sshd_config.5
++++ b/openssh-7.2p2/sshd_config.5
+@@ -895,16 +895,32 @@ diffie-hellman-group14-sha1
+ .Ed
+ .Pp
+ The list of available key exchange algorithms may also be obtained using the
+ .Fl Q
+ option of
+ .Xr ssh 1
+ with an argument of
+ .Dq kex .
++.It Cm KexDHMin
++Specifies the minimum accepted bit length of the DH group
++parameter p.
++.Pp
++As per RFC4419, this is 1024 bits, however this has increasingly
++been seen as insecure, which prompted the change to 2048 bits.
++Setting this option allows the server to accept parameters shorter
++than the current minimum, down to the RFC specified 1024 bits.
++Using this option may be needed when some of the connectiong
++clients only know short DH group parameters.
++.Pp
++Note, that while by default this option is set to 1024 to maintain
++maximum backward compatibility, using it can severly impact
++security and thus should be viewed as a temporary fix of last
++resort and all efforts should be made to fix the (broken)
++counterparty.
+ .It Cm KeyRegenerationInterval
+ In protocol version 1, the ephemeral server key is automatically regenerated
+ after this many seconds (if it has been used).
+ The purpose of regeneration is to prevent
+ decrypting captured sessions by later breaking into the machine and
+ stealing the keys.
+ The key is never stored anywhere.
+ If the value is 0, the key is never regenerated.

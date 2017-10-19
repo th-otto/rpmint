@@ -1,0 +1,28 @@
+# HG changeset patch
+# Parent  51a3a8eab1493a799c5a9df95e8e757f872886d0
+Various auditing fixes to be merged into the RH-originated patch.
+
+diff --git a/openssh-7.2p2/packet.c b/openssh-7.2p2/packet.c
+--- a/openssh-7.2p2/packet.c
++++ b/openssh-7.2p2/packet.c
+@@ -375,16 +375,20 @@ ssh_packet_start_discard(struct ssh *ssh
+ 
+ int
+ ssh_packet_connection_is_on_socket(struct ssh *ssh)
+ {
+ 	struct session_state *state = ssh->state;
+ 	struct sockaddr_storage from, to;
+ 	socklen_t fromlen, tolen;
+ 
++    /* auditing might get here without valid connection structure when
++     * destroying sensitive data on exit and thus aborting disgracefully */
++	if (!ssh)
++		return 0;
+ 	/* filedescriptors in and out are the same, so it's a socket */
+ 	if (state->connection_in == state->connection_out)
+ 		return 1;
+ 	fromlen = sizeof(from);
+ 	memset(&from, 0, sizeof(from));
+ 	if (getpeername(state->connection_in, (struct sockaddr *)&from,
+ 	    &fromlen) < 0)
+ 		return 0;

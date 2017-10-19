@@ -1,0 +1,31 @@
+# HG changeset patch
+# Parent  d75417bf0f4d50cabd84299773bab4ac68f68caa
+add 'getuid' syscall to list of allowed ones to prevent the sanboxed thread
+from being killed by the seccomp filter
+
+diff --git a/openssh-7.2p2/sandbox-seccomp-filter.c b/openssh-7.2p2/sandbox-seccomp-filter.c
+--- a/openssh-7.2p2/sandbox-seccomp-filter.c
++++ b/openssh-7.2p2/sandbox-seccomp-filter.c
+@@ -142,16 +142,22 @@ static const struct sock_filter preauth_
+ 	SC_ALLOW(exit_group),
+ #endif
+ #ifdef __NR_getpgid
+ 	SC_ALLOW(getpgid),
+ #endif
+ #ifdef __NR_getpid
+ 	SC_ALLOW(getpid),
+ #endif
++#ifdef __NR_getuid
++	SC_ALLOW(getuid),
++#endif
++#ifdef __NR_getuid32
++	SC_ALLOW(getuid32),
++#endif
+ #ifdef __NR_getrandom
+ 	SC_ALLOW(getrandom),
+ #endif
+ #ifdef __NR_gettimeofday
+ 	SC_ALLOW(gettimeofday),
+ #endif
+ #ifdef __NR_madvise
+ 	SC_ALLOW(madvise),

@@ -36,8 +36,21 @@ for pkg in gemlib \
 	m4 \
 	flex \
 	bison \
-	expat
+	expat \
+	libidn2 \
+	libssh2 \
+	nghttp2 \
+	libxml2 \
+	libmetalink \
+	libunistring \
+	libpsl \
+	curl
 ; do
 	script=build-${pkg}.sh
 	ls -l $script
 done
+
+exit 0
+
+todo: krb5 (needs shared libs)
+openldap2

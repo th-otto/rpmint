@@ -1,0 +1,34 @@
+# HG changeset patch
+# Parent  b07f00d5d805c043f5bdc7b8cf6701d924879fa6
+Add the 'geteuid' syscall to allowed list, since it may becalled on the
+mainframes when OpenSSL is using hardware crypto accelerator via libica
+(via ibmica)
+
+bsc#1004258
+
+diff --git a/openssh-7.2p2/sandbox-seccomp-filter.c b/openssh-7.2p2/sandbox-seccomp-filter.c
+--- a/openssh-7.2p2/sandbox-seccomp-filter.c
++++ b/openssh-7.2p2/sandbox-seccomp-filter.c
+@@ -148,16 +148,22 @@ static const struct sock_filter preauth_
+ 	SC_ALLOW(getpid),
+ #endif
+ #ifdef __NR_getuid
+ 	SC_ALLOW(getuid),
+ #endif
+ #ifdef __NR_getuid32
+ 	SC_ALLOW(getuid32),
+ #endif
++#ifdef __NR_geteuid
++	SC_ALLOW(geteuid),
++#endif
++#ifdef __NR_geteuid32
++	SC_ALLOW(geteuid32),
++#endif
+ #ifdef __NR_getrandom
+ 	SC_ALLOW(getrandom),
+ #endif
+ #ifdef __NR_gettimeofday
+ 	SC_ALLOW(gettimeofday),
+ #endif
+ #ifdef __NR_madvise
+ 	SC_ALLOW(madvise),

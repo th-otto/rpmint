@@ -1,0 +1,59 @@
+From 33a59a1905feb5d786e9d457f287dd9e81a9f747 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Cristian=20Rodr=C3=ADguez?= <crrodriguez@opensuse.org>
+Date: Tue, 27 Dec 2011 00:33:28 -0300
+Subject: [PATCH] Use O_CLOEXEC where needed
+
+---
+ src/agent.c     |    2 +-
+ src/knownhost.c |    4 ++--
+ src/userauth.c  |    2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+Index: libssh2-1.7.0/src/agent.c
+===================================================================
+--- libssh2-1.7.0.orig/src/agent.c	2016-02-09 22:54:08.000000000 +0100
++++ libssh2-1.7.0/src/agent.c	2016-02-23 14:36:47.133091344 +0100
+@@ -152,7 +152,7 @@ agent_connect_unix(LIBSSH2_AGENT *agent)
+         return _libssh2_error(agent->session, LIBSSH2_ERROR_BAD_USE,
+                               "no auth sock variable");
+ 
+-    agent->fd = socket(PF_UNIX, SOCK_STREAM, 0);
++    agent->fd = socket(PF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+     if (agent->fd < 0)
+         return _libssh2_error(agent->session, LIBSSH2_ERROR_BAD_SOCKET,
+                               "failed creating socket");
+Index: libssh2-1.7.0/src/knownhost.c
+===================================================================
+--- libssh2-1.7.0.orig/src/knownhost.c	2015-03-19 14:01:33.000000000 +0100
++++ libssh2-1.7.0/src/knownhost.c	2016-02-23 14:36:47.134091362 +0100
+@@ -954,7 +954,7 @@ libssh2_knownhost_readfile(LIBSSH2_KNOWN
+                               "Unsupported type of known-host information "
+                               "store");
+ 
+-    file = fopen(filename, "r");
++    file = fopen(filename, "re");
+     if(file) {
+         while(fgets(buf, sizeof(buf), file)) {
+             if(libssh2_knownhost_readline(hosts, buf, strlen(buf), type)) {
+@@ -1178,7 +1178,7 @@ libssh2_knownhost_writefile(LIBSSH2_KNOW
+                               "Unsupported type of known-host information "
+                               "store");
+ 
+-    file = fopen(filename, "w");
++    file = fopen(filename, "we");
+     if(!file)
+         return _libssh2_error(hosts->session, LIBSSH2_ERROR_FILE,
+                               "Failed to open file");
+Index: libssh2-1.7.0/src/userauth.c
+===================================================================
+--- libssh2-1.7.0.orig/src/userauth.c	2016-01-18 13:41:58.000000000 +0100
++++ libssh2-1.7.0/src/userauth.c	2016-02-23 14:36:47.134091362 +0100
+@@ -538,7 +538,7 @@ file_read_publickey(LIBSSH2_SESSION * se
+     _libssh2_debug(session, LIBSSH2_TRACE_AUTH, "Loading public key file: %s",
+                    pubkeyfile);
+     /* Read Public Key */
+-    fd = fopen(pubkeyfile, "r");
++    fd = fopen(pubkeyfile, "re");
+     if (!fd) {
+         return _libssh2_error(session, LIBSSH2_ERROR_FILE,
+                               "Unable to open public key file");

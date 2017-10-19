@@ -1,0 +1,31 @@
+From f864bd8c880d5a916379aa4f26f1c45fe370b282 Mon Sep 17 00:00:00 2001
+From: Daniel Stenberg <daniel@haxx.se>
+Date: Wed, 9 Aug 2017 10:28:06 +0200
+Subject: [PATCH] build: fix 'make install' with configure, install
+ docs/libcurl/* too
+
+Broken since d24838d4da9faa
+
+Reported-by: Bernard Spil
+---
+ Makefile.am | 2 ++
+ 1 file changed, 2 insertions(+)
+
+Index: curl-7.55.0/Makefile.am
+===================================================================
+--- curl-7.55.0.orig/Makefile.am
++++ curl-7.55.0/Makefile.am
+@@ -276,11 +276,13 @@ cygwinbin:
+ install-data-hook:
+ 	cd include && $(MAKE) install
+ 	cd docs && $(MAKE) install
++	cd docs/libcurl && $(MAKE) install
+ 
+ # We extend the standard uninstall with a custom hook:
+ uninstall-hook:
+ 	cd include && $(MAKE) uninstall
+ 	cd docs && $(MAKE) uninstall
++	cd docs/libcurl && $(MAKE) uninstall
+ 
+ ca-bundle: lib/mk-ca-bundle.pl
+ 	@echo "generating a fresh ca-bundle.crt"

@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenSSH Daemon
+After=network.target
+
+[Service]
+EnvironmentFile=-/etc/sysconfig/ssh
+ExecStartPre=/usr/sbin/sshd-gen-keys-start
+ExecStart=/usr/sbin/sshd -D $SSHD_OPTS
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=always
+TasksMax=infinity
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,297 @@
+# HG changeset patch
+# Parent  22de9aeddbde2b36da9c23475cfa5dcd42e95287
+whitelist paths for loading of PKCS#11 modules in ssh-agent
+
+CVE-2016-10009
+bsc#1016366
+
+upstream commit 786d5994da79151180cb14a6cf157ebbba61c0cc
+
+diff --git a/openssh-7.2p2/ssh-agent.1 b/openssh-7.2p2/ssh-agent.1
+--- a/openssh-7.2p2/ssh-agent.1
++++ b/openssh-7.2p2/ssh-agent.1
+@@ -1,9 +1,9 @@
+-.\" $OpenBSD: ssh-agent.1,v 1.62 2015/11/15 23:54:15 jmc Exp $
++.\" $OpenBSD: ssh-agent.1,v 1.63 2016/11/30 03:07:37 djm Exp $
+ .\"
+ .\" Author: Tatu Ylonen <ylo@cs.hut.fi>
+ .\" Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
+ .\"                    All rights reserved
+ .\"
+ .\" As far as I am concerned, the code I have written for this software
+ .\" can be used freely for any purpose.  Any derived versions of this
+ .\" software must be clearly marked as such, and if the derived work is
+@@ -29,29 +29,30 @@
+ .\" IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ .\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ .\" NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ .\" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ .\" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ .\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ .\"
+-.Dd $Mdocdate: November 15 2015 $
++.Dd $Mdocdate: November 30 2016 $
+ .Dt SSH-AGENT 1
+ .Os
+ .Sh NAME
+ .Nm ssh-agent
+ .Nd authentication agent
+ .Sh SYNOPSIS
+ .Nm ssh-agent
+ .Op Fl c | s
+ .Op Fl \&Dd
+ .Op Fl a Ar bind_address
+ .Op Fl E Ar fingerprint_hash
+ .Op Fl t Ar life
++.Op Fl P Ar pkcs11_whitelist
+ .Op Ar command Op Ar arg ...
+ .Nm ssh-agent
+ .Op Fl c | s
+ .Fl k
+ .Sh DESCRIPTION
+ .Nm
+ is a program to hold private keys used for public key authentication
+ (RSA, DSA, ECDSA, Ed25519).
+@@ -116,16 +117,28 @@ Valid options are:
+ and
+ .Dq sha256 .
+ The default is
+ .Dq sha256 .
+ .It Fl k
+ Kill the current agent (given by the
+ .Ev SSH_AGENT_PID
+ environment variable).
++.It Fl P
++Specify a pattern-list of acceptable paths for PKCS#11 shared libraries
++that may be added using the
++.Fl s
++option to
++.Xr ssh-add 1 .
++The default is to allow loading PKCS#11 libraries from
++.Dq /usr/lib/*,/usr/local/lib/* .
++PKCS#11 libraries that do not match the whitelist will be refused.
++See PATTERNS in
++.Xr ssh_config 5
++for a description of pattern-list syntax.
+ .It Fl s
+ Generate Bourne shell commands on
+ .Dv stdout .
+ This is the default if
+ .Ev SHELL
+ does not look like it's a csh style of shell.
+ .It Fl t Ar life
+ Set a default value for the maximum lifetime of identities added to the agent.
+diff --git a/openssh-7.2p2/ssh-agent.c b/openssh-7.2p2/ssh-agent.c
+--- a/openssh-7.2p2/ssh-agent.c
++++ b/openssh-7.2p2/ssh-agent.c
+@@ -78,25 +78,30 @@
+ #include "sshbuf.h"
+ #include "sshkey.h"
+ #include "authfd.h"
+ #include "compat.h"
+ #include "log.h"
+ #include "misc.h"
+ #include "digest.h"
+ #include "ssherr.h"
++#include "match.h"
+ 
+ #ifdef ENABLE_PKCS11
+ #include "ssh-pkcs11.h"
+ #endif
+ 
+ #if defined(HAVE_SYS_PRCTL_H)
+ #include <sys/prctl.h>	/* For prctl() and PR_SET_DUMPABLE */
+ #endif
+ 
++#ifndef DEFAULT_PKCS11_WHITELIST
++# define DEFAULT_PKCS11_WHITELIST "/usr/lib/*,/usr/local/lib/*"
++#endif
++
+ typedef enum {
+ 	AUTH_UNUSED,
+ 	AUTH_SOCKET,
+ 	AUTH_CONNECTION
+ } sock_type;
+ 
+ typedef struct {
+ 	int fd;
+@@ -134,16 +139,19 @@ time_t parent_alive_interval = 0;
+ 
+ /* pid of process for which cleanup_socket is applicable */
+ pid_t cleanup_pid = 0;
+ 
+ /* pathname and directory for AUTH_SOCKET */
+ char socket_name[PATH_MAX];
+ char socket_dir[PATH_MAX];
+ 
++/* PKCS#11 path whitelist */
++static char *pkcs11_whitelist;
++
+ /* locking */
+ #define LOCK_SIZE	32
+ #define LOCK_SALT_SIZE	16
+ #define LOCK_ROUNDS	1
+ int locked = 0;
+ char lock_passwd[LOCK_SIZE];
+ char lock_salt[LOCK_SALT_SIZE];
+ 
+@@ -736,17 +744,17 @@ no_identities(SocketEntry *e, u_int type
+ 		fatal("%s: buffer error: %s", __func__, ssh_err(r));
+ 	sshbuf_free(msg);
+ }
+ 
+ #ifdef ENABLE_PKCS11
+ static void
+ process_add_smartcard_key(SocketEntry *e)
+ {
+-	char *provider = NULL, *pin;
++	char *provider = NULL, *pin, canonical_provider[PATH_MAX];
+ 	int r, i, version, count = 0, success = 0, confirm = 0;
+ 	u_int seconds;
+ 	time_t death = 0;
+ 	u_char type;
+ 	struct sshkey **keys = NULL, *k;
+ 	Identity *id;
+ 	Idtab *tab;
+ 
+@@ -768,29 +776,40 @@ process_add_smartcard_key(SocketEntry *e
+ 			confirm = 1;
+ 			break;
+ 		default:
+ 			error("process_add_smartcard_key: "
+ 			    "Unknown constraint type %d", type);
+ 			goto send;
+ 		}
+ 	}
++	if (realpath(provider, canonical_provider) == NULL) {
++		verbose("failed PKCS#11 add of \"%.100s\": realpath: %s",
++		    provider, strerror(errno));
++		goto send;
++	}
++	if (match_pattern_list(canonical_provider, pkcs11_whitelist, 0) != 1) {
++		verbose("refusing PKCS#11 add of \"%.100s\": "
++		    "provider not whitelisted", canonical_provider);
++		goto send;
++	}
++	debug("%s: add %.100s", __func__, canonical_provider);
+ 	if (lifetime && !death)
+ 		death = monotime() + lifetime;
+ 
+-	count = pkcs11_add_provider(provider, pin, &keys);
++	count = pkcs11_add_provider(canonical_provider, pin, &keys);
+ 	for (i = 0; i < count; i++) {
+ 		k = keys[i];
+ 		version = k->type == KEY_RSA1 ? 1 : 2;
+ 		tab = idtab_lookup(version);
+ 		if (lookup_identity(k, version) == NULL) {
+ 			id = xcalloc(1, sizeof(Identity));
+ 			id->key = k;
+-			id->provider = xstrdup(provider);
+-			id->comment = xstrdup(provider); /* XXX */
++			id->provider = xstrdup(canonical_provider);
++			id->comment = xstrdup(canonical_provider); /* XXX */
+ 			id->death = death;
+ 			id->confirm = confirm;
+ 			TAILQ_INSERT_TAIL(&tab->idlist, id, next);
+ 			tab->nentries++;
+ 			success = 1;
+ 		} else {
+ 			sshkey_free(k);
+ 		}
+@@ -1171,17 +1190,17 @@ check_parent_exists(void)
+ 	}
+ }
+ 
+ static void
+ usage(void)
+ {
+ 	fprintf(stderr,
+ 	    "usage: ssh-agent [-c | -s] [-Dd] [-a bind_address] [-E fingerprint_hash]\n"
+-	    "                 [-t life] [command [arg ...]]\n"
++	    "                 [-P pkcs11_whitelist] [-t life] [command [arg ...]]\n"
+ 	    "       ssh-agent [-c | -s] -k\n");
+ 	exit(1);
+ }
+ 
+ int
+ main(int ac, char **av)
+ {
+ 	int c_flag = 0, d_flag = 0, D_flag = 0, k_flag = 0, s_flag = 0;
+@@ -1215,31 +1234,36 @@ main(int ac, char **av)
+ 
+ #ifdef WITH_OPENSSL
+ 	OpenSSL_add_all_algorithms();
+ #endif
+ 
+ 	__progname = ssh_get_progname(av[0]);
+ 	seed_rng();
+ 
+-	while ((ch = getopt(ac, av, "cDdksE:a:t:")) != -1) {
++	while ((ch = getopt(ac, av, "cDdksE:a:P:t:")) != -1) {
+ 		switch (ch) {
+ 		case 'E':
+ 			fingerprint_hash = ssh_digest_alg_by_name(optarg);
+ 			if (fingerprint_hash == -1)
+ 				fatal("Invalid hash algorithm \"%s\"", optarg);
+ 			break;
+ 		case 'c':
+ 			if (s_flag)
+ 				usage();
+ 			c_flag++;
+ 			break;
+ 		case 'k':
+ 			k_flag++;
+ 			break;
++		case 'P':
++			if (pkcs11_whitelist != NULL)
++				fatal("-P option already specified");
++			pkcs11_whitelist = xstrdup(optarg);
++			break;
+ 		case 's':
+ 			if (c_flag)
+ 				usage();
+ 			s_flag++;
+ 			break;
+ 		case 'd':
+ 			if (d_flag || D_flag)
+ 				usage();
+@@ -1264,16 +1288,19 @@ main(int ac, char **av)
+ 		}
+ 	}
+ 	ac -= optind;
+ 	av += optind;
+ 
+ 	if (ac > 0 && (c_flag || k_flag || s_flag || d_flag || D_flag))
+ 		usage();
+ 
++	if (pkcs11_whitelist == NULL)
++		pkcs11_whitelist = xstrdup(DEFAULT_PKCS11_WHITELIST);
++
+ 	if (ac == 0 && !c_flag && !s_flag) {
+ 		shell = getenv("SHELL");
+ 		if (shell != NULL && (len = strlen(shell)) > 2 &&
+ 		    strncmp(shell + len - 3, "csh", 3) == 0)
+ 			c_flag = 1;
+ 	}
+ 	if (k_flag) {
+ 		const char *errstr = NULL;
+@@ -1411,17 +1438,17 @@ skip:
+ 		parent_alive_interval = 10;
+ 	idtab_init();
+ 	signal(SIGPIPE, SIG_IGN);
+ 	signal(SIGINT, (d_flag | D_flag) ? cleanup_handler : SIG_IGN);
+ 	signal(SIGHUP, cleanup_handler);
+ 	signal(SIGTERM, cleanup_handler);
+ 	nalloc = 0;
+ 
+-	if (pledge("stdio cpath unix id proc exec", NULL) == -1)
++	if (pledge("stdio rpath cpath unix id proc exec", NULL) == -1)
+ 		fatal("%s: pledge: %s", __progname, strerror(errno));
+ 	platform_pledge_agent();
+ 
+ 	while (1) {
+ 		prepare_select(&readsetp, &writesetp, &max_fd, &nalloc, &tvp);
+ 		result = select(max_fd + 1, readsetp, writesetp, NULL, tvp);
+ 		saved_errno = errno;
+ 		if (parent_alive_interval != 0)

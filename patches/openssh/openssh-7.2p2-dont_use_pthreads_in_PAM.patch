@@ -1,0 +1,29 @@
+# HG changeset patch
+# Parent  e4886597a8984ae1594b6866fe1b232370b23529
+# posix threads are generally not supported nor safe
+# (see upstream log from 2005-05-24)
+# --used to be called '-pam-fix3'
+
+diff --git a/openssh-7.2p2/auth-pam.c b/openssh-7.2p2/auth-pam.c
+--- a/openssh-7.2p2/auth-pam.c
++++ b/openssh-7.2p2/auth-pam.c
+@@ -782,17 +782,19 @@ sshpam_query(void *ctx, char **name, cha
+ 			}
+ 			if (type == PAM_SUCCESS) {
+ 				if (!sshpam_authctxt->valid ||
+ 				    (sshpam_authctxt->pw->pw_uid == 0 &&
+ 				    options.permit_root_login != PERMIT_YES))
+ 					fatal("Internal error: PAM auth "
+ 					    "succeeded when it should have "
+ 					    "failed");
++#ifndef UNSUPPORTED_POSIX_THREADS_HACK
+ 				import_environments(&buffer);
++#endif
+ 				*num = 0;
+ 				**echo_on = 0;
+ 				ctxt->pam_done = 1;
+ 				free(msg);
+ 				return (0);
+ 			}
+ 			error("PAM: %s for %s%.100s from %.100s", msg,
+ 			    sshpam_authctxt->valid ? "" : "illegal user ",

@@ -1,0 +1,51 @@
+# HG changeset patch
+# Parent  4e1fd41aaa9cafe8f7b07868ac38ed4dbdf594aa
+Do not allow unix socket when running without privilege separation to prevent
+privilege escalation through a socket created with root: ownership.
+
+CVE-2016-10010
+bsc#1016368
+
+backported upstream commit b737e4d7433577403a31cff6614f6a1b0b5e22f4
+
+diff --git a/openssh-7.2p2/serverloop.c b/openssh-7.2p2/serverloop.c
+--- a/openssh-7.2p2/serverloop.c
++++ b/openssh-7.2p2/serverloop.c
+@@ -990,17 +990,17 @@ server_request_direct_streamlocal(void)
+ 	originator_port = packet_get_int();
+ 	packet_check_eom();
+ 
+ 	debug("server_request_direct_streamlocal: originator %s port %d, target %s",
+ 	    originator, originator_port, target);
+ 
+ 	/* XXX fine grained permissions */
+ 	if ((options.allow_streamlocal_forwarding & FORWARD_LOCAL) != 0 &&
+-	    !no_port_forwarding_flag) {
++	    !no_port_forwarding_flag && use_privsep) {
+ 		c = channel_connect_to_path(target,
+ 		    "direct-streamlocal@openssh.com", "direct-streamlocal");
+ 	} else {
+ 		logit("refused streamlocal port forward: "
+ 		    "originator %s port %d, target %s",
+ 		    originator, originator_port, target);
+ 	}
+ 
+@@ -1274,17 +1274,17 @@ server_input_global_request(int type, u_
+ 
+ 		memset(&fwd, 0, sizeof(fwd));
+ 		fwd.listen_path = packet_get_string(NULL);
+ 		debug("server_input_global_request: streamlocal-forward listen path %s",
+ 		    fwd.listen_path);
+ 
+ 		/* check permissions */
+ 		if ((options.allow_streamlocal_forwarding & FORWARD_REMOTE) == 0
+-		    || no_port_forwarding_flag) {
++		    || no_port_forwarding_flag || !use_privsep) {
+ 			success = 0;
+ 			packet_send_debug("Server has disabled port forwarding.");
+ 		} else {
+ 			/* Start listening on the socket */
+ 			success = channel_setup_remote_fwd_listener(
+ 			    &fwd, NULL, &options.fwd_opts);
+ 		}
+ 		free(fwd.listen_path);
