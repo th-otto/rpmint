@@ -1,0 +1,22 @@
+--- src/lharc.c.ext	Wed Jan 15 10:49:30 1997
++++ src/lharc.c	Mon Jun 28 12:37:40 1999
+@@ -963,6 +963,7 @@
+ 	}
+ 	if (p = (char *) rindex(archive_name, '.')) {
+ 		if (strucmp(".LZH", p) == 0
++		    || strucmp(".LHA", p) == 0	/* Amiga */
+ 		    || strucmp(".LZS", p) == 0
+ 		    || strucmp(".COM", p) == 0	/* DOS SFX */
+ 		    || strucmp(".EXE", p) == 0
+@@ -975,6 +976,11 @@
+ 
+ 	if (open_old_archive_1(archive_name, &fp))
+ 		return fp;
++	sprintf(expanded_archive_name, "%s%s", archive_name, ARCHIVENAME_EXTENTION);
++	if (open_old_archive_1(expanded_archive_name, &fp)) {
++		archive_name = expanded_archive_name;
++		return fp;
++	}
+ 	sprintf(expanded_archive_name, "%s.lzh", archive_name);
+ 	if (open_old_archive_1(expanded_archive_name, &fp)) {
+ 		archive_name = expanded_archive_name;

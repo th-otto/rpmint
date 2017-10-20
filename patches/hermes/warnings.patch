@@ -1,0 +1,300 @@
+diff -rup Hermes-1.3.3.orig/src/Blit.c Hermes-1.3.3/src/Blit.c
+--- Hermes-1.3.3.orig/src/Blit.c	2002-04-06 19:24:31.000000000 +0200
++++ Hermes-1.3.3/src/Blit.c	2017-10-20 09:48:49.795228273 +0200
+@@ -331,21 +331,21 @@ int HERMES_API Hermes_BlitterRequest_V2(
+ 
+     switch (source->bits) {
+       case 32: if (source->r==0xff0000 && source->g==0xff00 && source->b==0xff)
+-               searchlist=0;
+-               else
+-	     if (source->r==0xff<<20 && source->g==0xff<<10 && source->b==0xff)
+-               searchlist=3;
++                   searchlist=0;
++               else if (source->r==0xff<<20 && source->g==0xff<<10 && source->b==0xff)
++                   searchlist=3;
+                break;
+ 
+       case 24: if (source->r==0xff0000 && source->g==0xff00 && source->b==0xff)
+-               searchlist=1; break;
++                   searchlist=1;
++               break;
+ 
+       case 16: if (source->r==0xf800 && source->g==0x7e0 && source->b==0x1f)
+-               searchlist=2; 
++                   searchlist=2; 
+                break;
+ 
+        case 8: if (source->indexed)
+-               searchlist=4; 
++                   searchlist=4; 
+                break;
+     }
+ 
+@@ -353,6 +353,7 @@ int HERMES_API Hermes_BlitterRequest_V2(
+     /* We can use a quicker loop for 8 bit */
+ 
+     if (searchlist!=0xff)
++    {
+     if (source->bits==8) {
+       for (i=0;i<numConverters[searchlist];i++) {
+         if (standardConverters[searchlist][i])
+@@ -394,6 +395,7 @@ int HERMES_API Hermes_BlitterRequest_V2(
+         return 1;
+       }
+     }
++    }
+   }
+ 
+   /* Find a generic converter */
+diff -rup Hermes-1.3.3.orig/src/Clear.c Hermes-1.3.3/src/Clear.c
+--- Hermes-1.3.3.orig/src/Clear.c	2000-07-16 22:03:37.000000000 +0200
++++ Hermes-1.3.3/src/Clear.c	2017-10-20 09:53:42.107221912 +0200
+@@ -28,7 +28,7 @@ static HermesHandle currenthandle=0;
+ 
+ 
+ 
+-HermesHandle HERMES_API Hermes_ClearerInstance()
++HermesHandle HERMES_API Hermes_ClearerInstance(void)
+ { HermesListElement *element;
+   ClearerInstance *newinstance;
+ 
+diff -rup Hermes-1.3.3.orig/src/Dither.c Hermes-1.3.3/src/Dither.c
+--- Hermes-1.3.3.orig/src/Dither.c	1999-12-05 01:08:46.000000000 +0100
++++ Hermes-1.3.3/src/Dither.c	2017-10-20 09:49:34.187227307 +0200
+@@ -23,7 +23,7 @@ char8 DitherTab_g332_44[4][4][256];
+ char8 DitherTab_b332_44[4][4][256];
+ 
+ 
+-void Dither_SetupMatrices()
++void Dither_SetupMatrices(void)
+ { int i, x, y;
+   
+   for (y = 0; y < 4; y++)
+diff -rup Hermes-1.3.3.orig/src/Dither.h Hermes-1.3.3/src/Dither.h
+--- Hermes-1.3.3.orig/src/Dither.h	2000-12-06 05:55:28.000000000 +0100
++++ Hermes-1.3.3/src/Dither.h	2017-10-20 09:49:12.467227780 +0200
+@@ -20,7 +20,7 @@ extern char8 DitherTab_g332_44[4][4][256
+ extern char8 DitherTab_b332_44[4][4][256];
+ 
+ 
+-void Dither_SetupMatrices();
++void Dither_SetupMatrices(void);
+ 
+ 
+ 
+diff -rup Hermes-1.3.3.orig/src/Factory.c Hermes-1.3.3/src/Factory.c
+--- Hermes-1.3.3.orig/src/Factory.c	2017-10-20 09:34:41.395246735 +0200
++++ Hermes-1.3.3/src/Factory.c	2017-10-20 09:52:15.267223802 +0200
+@@ -31,12 +31,13 @@ int processor;
+ 
+ 
+ 
+-void Hermes_Factory_Init()
+-{ int res=0;
+-
++void Hermes_Factory_Init(void)
++{
+   processor=PROC_GENERIC;
+ 
+ #ifdef X86_ASSEMBLER
++  {
++  int res;
+   processor|=PROC_X86_PENTIUM;      /* There are no others at the moment */
+ 
+   res=_Hermes_X86_CPU();
+@@ -47,6 +48,7 @@ void Hermes_Factory_Init()
+     processor|=PROC_MMX_PENTIUM;
+     DEBUG_PRINT("MMX enabled!\n%s","");
+   }
++  }
+ #endif
+ }
+ 
+diff -rup Hermes-1.3.3.orig/src/Factory.h Hermes-1.3.3/src/Factory.h
+--- Hermes-1.3.3.orig/src/Factory.h	2000-12-06 05:55:28.000000000 +0100
++++ Hermes-1.3.3/src/Factory.h	2017-10-20 09:44:17.395234201 +0200
+@@ -17,7 +17,7 @@
+ 
+ 
+ /* Initialise factory */
+-void Hermes_Factory_Init();
++void Hermes_Factory_Init(void);
+ 
+ 
+ /* Get a clearer function for bits / pixel */
+diff -rup Hermes-1.3.3.orig/src/Format.c Hermes-1.3.3/src/Format.c
+--- Hermes-1.3.3.orig/src/Format.c	2000-01-30 19:14:32.000000000 +0100
++++ Hermes-1.3.3/src/Format.c	2017-10-20 09:53:42.107221912 +0200
+@@ -13,7 +13,7 @@
+ 
+ 
+ 
+-HermesFormat* HERMES_API Hermes_FormatNewEmpty()
++HermesFormat* HERMES_API Hermes_FormatNewEmpty(void)
+ { HermesFormat *tmp;
+ 
+   tmp=(HermesFormat *)malloc(sizeof(HermesFormat));
+diff -rup Hermes-1.3.3.orig/src/H_Config.h Hermes-1.3.3/src/H_Config.h
+--- Hermes-1.3.3.orig/src/H_Config.h	2000-12-06 05:55:28.000000000 +0100
++++ Hermes-1.3.3/src/H_Config.h	2017-10-20 09:44:38.315233745 +0200
+@@ -36,7 +36,3 @@
+ 
+ 
+ #endif
+-
+-
+-
+-
+diff -rup Hermes-1.3.3.orig/src/HermConf.h Hermes-1.3.3/src/HermConf.h
+--- Hermes-1.3.3.orig/src/HermConf.h	2003-07-06 17:47:14.000000000 +0200
++++ Hermes-1.3.3/src/HermConf.h	2017-10-20 09:43:59.347234593 +0200
+@@ -40,9 +40,9 @@
+   #define X86_ASSEMBLER 1
+ #endif /* WIN32 */
+ 
+-#if defined (__sun)
++#if defined (__sun) || defined(__mc68000__)
+   #define __BIG_ENDIAN__
+-  #undef __LITTLE_ENDIAN__ 1
++  #undef __LITTLE_ENDIAN__
+ #endif
+ 
+ #if defined(__WATCOMC__) || defined(__DJGPP__) || defined(__CYGNUS__)
+diff -rup Hermes-1.3.3.orig/src/Hermes.c Hermes-1.3.3/src/Hermes.c
+--- Hermes-1.3.3.orig/src/Hermes.c	2000-08-04 18:49:40.000000000 +0200
++++ Hermes-1.3.3/src/Hermes.c	2017-10-20 09:53:42.111221912 +0200
+@@ -109,7 +109,7 @@ static int refcount=0;
+ 
+ 
+ 
+-int  HERMES_API Hermes_Init()
++int  HERMES_API Hermes_Init(void)
+ { int i,j;
+   HermesFormat source,dest;
+ 
+@@ -176,7 +176,7 @@ int  HERMES_API Hermes_Init()
+ 
+ 
+ 
+-int HERMES_API Hermes_Done()
++int HERMES_API Hermes_Done(void)
+ { int i,j;
+ 
+   refcount--;
+diff -rup Hermes-1.3.3.orig/src/List.c Hermes-1.3.3/src/List.c
+--- Hermes-1.3.3.orig/src/List.c	1999-12-05 01:08:56.000000000 +0100
++++ Hermes-1.3.3/src/List.c	2017-10-20 09:53:42.111221912 +0200
+@@ -13,7 +13,7 @@
+ 
+ 
+ 
+-HermesList *Hermes_ListNew()
++HermesList *Hermes_ListNew(void)
+ { HermesList *tmp;
+ 
+   tmp=(HermesList *)malloc(sizeof(HermesList));
+diff -rup Hermes-1.3.3.orig/src/List.h Hermes-1.3.3/src/List.h
+--- Hermes-1.3.3.orig/src/List.h	2000-12-06 05:55:28.000000000 +0100
++++ Hermes-1.3.3/src/List.h	2017-10-20 09:44:38.315233745 +0200
+@@ -30,7 +30,7 @@ typedef struct {
+ 
+ 
+ /* Create a new linked list. Returns 0 if failed */
+-HermesList *Hermes_ListNew();
++HermesList *Hermes_ListNew(void);
+ 
+ 
+ /* Destroy the list pointed to by list */
+diff -rup Hermes-1.3.3.orig/src/Palette.c Hermes-1.3.3/src/Palette.c
+--- Hermes-1.3.3.orig/src/Palette.c	1999-12-05 01:09:00.000000000 +0100
++++ Hermes-1.3.3/src/Palette.c	2017-10-20 09:53:42.111221912 +0200
+@@ -25,7 +25,7 @@ static HermesHandle currenthandle=0;
+ 
+ 
+ 
+-HermesHandle HERMES_API Hermes_PaletteInstance()
++HermesHandle HERMES_API Hermes_PaletteInstance(void)
+ { HermesPalette *newinstance;
+   HermesListElement *newelement;
+ 
+diff -rup Hermes-1.3.3.orig/src/c_genrc_ao_blit.c Hermes-1.3.3/src/c_genrc_ao_blit.c
+--- Hermes-1.3.3.orig/src/c_genrc_ao_blit.c	2017-10-20 09:34:41.395246735 +0200
++++ Hermes-1.3.3/src/c_genrc_ao_blit.c	2017-10-20 09:50:39.691225882 +0200
+@@ -25,7 +25,7 @@
+ 
+ void ConvertC_Generic32_A_Generic32_O_Blit(HermesConverterInterface *iface)
+ {	unsigned int s_pixel, d_pixel, r, g, b, a;
+-	int sr, sg, sb, dr, dg, db, da;
++	int sr, sg, sb, dr, dg, db;
+ 	char8 *source = iface->s_pixels, *dest = iface->d_pixels;
+ 	unsigned int count;
+ 	float sa;
+@@ -101,10 +101,9 @@ void ConvertC_Generic32_A_Generic32_O_Bl
+ }
+ 
+ void ConvertC_Generic32_A_Generic24_O_Blit(HermesConverterInterface *iface)
+-{ unsigned int s_pixel, d_pixel, r, g, b, a;
+-  int sr, sg, sb, dr, dg, db, da;
++{ unsigned int s_pixel, d_pixel, r, g, b;
++  int sr, sg, sb, dr, dg, db;
+   float sa;
+-  char8 *d_ptr=(char8 *)(&s_pixel);
+   unsigned int count;
+   char8 *source=iface->s_pixels,*dest=iface->d_pixels;    
+   DEBUG_PRINT("ConvertC_Generic32_A_Generic24_O_Blit called\n","");
+diff -rup Hermes-1.3.3.orig/src/hrconfig.h.in Hermes-1.3.3/src/hrconfig.h.in
+--- Hermes-1.3.3.orig/src/hrconfig.h.in	2002-04-27 22:45:53.000000000 +0200
++++ Hermes-1.3.3/src/hrconfig.h.in	2017-10-20 09:39:48.311240056 +0200
+@@ -12,6 +12,9 @@
+ #define __LITTLE_ENDIAN__ 1
+ #endif
+ 
++/* Define if building universal (internal helper macro) */
++#undef AC_APPLE_UNIVERSAL_BUILD
++
+ /* Define to 1 if you have the <dlfcn.h> header file. */
+ #undef HAVE_DLFCN_H
+ 
+@@ -57,19 +60,22 @@
+ /* Define to the one symbol short name of this package. */
+ #undef PACKAGE_TARNAME
+ 
++/* Define to the home page for this package. */
++#undef PACKAGE_URL
++
+ /* Define to the version of this package. */
+ #undef PACKAGE_VERSION
+ 
+-/* The size of a `char', as computed by sizeof. */
++/* The size of `char', as computed by sizeof. */
+ #undef SIZEOF_CHAR
+ 
+-/* The size of a `int', as computed by sizeof. */
++/* The size of `int', as computed by sizeof. */
+ #undef SIZEOF_INT
+ 
+-/* The size of a `long', as computed by sizeof. */
++/* The size of `long', as computed by sizeof. */
+ #undef SIZEOF_LONG
+ 
+-/* The size of a `short', as computed by sizeof. */
++/* The size of `short', as computed by sizeof. */
+ #undef SIZEOF_SHORT
+ 
+ /* Define to 1 if you have the ANSI C header files. */
+@@ -77,3 +83,15 @@
+ 
+ /* Version number of package */
+ #undef VERSION
++
++/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
++   significant byte first (like Motorola and SPARC, unlike Intel). */
++#if defined AC_APPLE_UNIVERSAL_BUILD
++# if defined __BIG_ENDIAN__
++#  define WORDS_BIGENDIAN 1
++# endif
++#else
++# ifndef WORDS_BIGENDIAN
++#  undef WORDS_BIGENDIAN
++# endif
++#endif

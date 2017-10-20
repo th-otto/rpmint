@@ -790,6 +790,44 @@ asynchronously. c-ares is a fork of the library named &apos;ares&apos;, written
 by Greg Hudson at MIT.
 '
 	),
+	'jpeg' => array(
+		'name' => 'jpeg',
+		'upstream' => 'http://www.ijg.org/',
+		'source' => 'http://www.ijg.org/files/jpegsrc.v8d.tar.gz',
+		'version' => '8d',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+This package is a library of functions that manipulate jpeg images, along
+with simple clients for manipulating jpeg images.
+'
+	),
+	'hermes' => array(
+		'name' => 'Hermes',
+		'upstream' => 'http://web.archive.org/web/20040202225109/http://www.clanlib.org/hermes/',
+		'source' => $download_dir . 'Hermes-1.3.3.tar.bz2',
+		'version' => '1.3.3',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+HERMES is a library designed to convert a source buffer with a specified pixel
+format to a destination buffer with possibly a different format at the maximum
+possible speed.
+
+On x86 and MMX architectures, handwritten assembler routines are taking over
+the job and doing it lightning fast.
+
+On top of that, HERMES provides fast surface clearing, stretching and some
+dithering. Supported platforms are basically all that have an ANSI C compiler
+as there is no platform specific code but those are supported: DOS, Win32
+(Visual C), Linux, FreeBSD (IRIX, Solaris are on hold at the moment), some BeOS
+support.
+'
+	),
 );
 
 ?>

@@ -1,0 +1,60 @@
+--- a/src/H_Clear.h.orig	2012-11-07 23:02:45.000000000 +0100
++++ b/src/H_Clear.h	2012-11-07 23:05:47.000000000 +0100
+@@ -22,7 +22,7 @@
+ /*
+    Get a handle for a new clearer instance to work with. Returns 0 if failed.
+ */
+-HERMES_C HermesHandle HERMES_API Hermes_ClearerInstance();
++HERMES_C HermesHandle HERMES_API Hermes_ClearerInstance(void);
+ 
+ 
+ /*
+--- a/src/H_Format.h.orig	2012-11-07 23:02:54.000000000 +0100
++++ b/src/H_Format.h	2012-11-07 23:05:47.000000000 +0100
+@@ -17,7 +17,7 @@
+   int32 colorkey;                  /* colorkey, if has_colorkey is 1 */
+ } HermesFormat;
+ 
+-HERMES_C HermesFormat* HERMES_API Hermes_FormatNewEmpty();
++HERMES_C HermesFormat* HERMES_API Hermes_FormatNewEmpty(void);
+ 
+ /* Create a new format structure, returns 0 if failed.
+ */
+--- a/src/H_Pal.h.orig	2012-11-07 23:02:21.000000000 +0100
++++ b/src/H_Pal.h	2012-11-07 23:05:47.000000000 +0100
+@@ -21,7 +21,7 @@
+ /* Get a handle for a palette to work with. This allocates memory for an
+    internal palette. Returns 0 if failed.
+ */
+-HERMES_C HermesHandle HERMES_API Hermes_PaletteInstance();
++HERMES_C HermesHandle HERMES_API Hermes_PaletteInstance(void);
+ 
+ 
+ /*
+--- a/src/H_Types.h.orig	2012-11-07 23:03:02.000000000 +0100
++++ b/src/H_Types.h	2012-11-07 23:05:47.000000000 +0100
+@@ -16,7 +16,7 @@
+ 
+ typedef int HermesHandle;
+ 
+-#if (_MSC_VER>=1000) || defined(__VISUALC__)
++#if (defined(_MSC_VER) && (_MSC_VER>=1000)) || defined(__VISUALC__)
+ 
+ typedef unsigned __int32 int32;
+ typedef unsigned __int16 short16;
+--- a/src/Hermes.h.orig	2012-11-07 23:02:36.000000000 +0100
++++ b/src/Hermes.h	2012-11-07 23:05:47.000000000 +0100
+@@ -17,11 +17,11 @@
+ #include "H_Config.h"
+ 
+ /* Initialise Hermes, returns 0 if failed */
+-HERMES_C int  HERMES_API Hermes_Init();
++HERMES_C int  HERMES_API Hermes_Init(void);
+ 
+ 
+ /* Deinitialise Hermes, returns 0 if failed */
+-HERMES_C int HERMES_API Hermes_Done();
++HERMES_C int HERMES_API Hermes_Done(void);
+ 
+ 
+ #endif

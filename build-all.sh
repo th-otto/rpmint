@@ -45,6 +45,7 @@ for pkg in gemlib \
 	libunistring \
 	libpsl \
 	curl \
+	jpeg \
 	hermes \
 ; do
 	script=build-${pkg}.sh
