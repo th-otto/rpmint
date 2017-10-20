@@ -741,6 +741,10 @@ foreach ($libpackages as $package)
 
 <li>2017/10/19 Package curl added</li>
 
+<li>2017/10/19 Package freetype2 added</li>
+
+<li>2017/10/19 Package c-ares added</li>
+
 </ul>
 
 <p></p>

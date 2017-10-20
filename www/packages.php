@@ -761,6 +761,35 @@ TFTP, DICT, TELNET, LDAP, or FILE). The command is designed to work
 without user interaction or any kind of interactivity.
 '
 	),
+	'freetype2' => array(
+		'name' => 'freetype2',
+		'upstream' => 'http://www.freetype.org',
+		'source' => 'http://download.savannah.gnu.org/releases/freetype/freetype-2.8.1.tar.bz2',
+		'version' => '2.8.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+This library features TrueType fonts for open source projects. This
+version also contains an autohinter for producing improved output.
+'
+	),
+	'c-ares' => array(
+		'name' => 'c-ares',
+		'upstream' => 'http://daniel.haxx.se/projects/c-ares/',
+		'source' => $download_dir . 'c-ares-1.7.5.tar.gz',
+		'version' => '1.7.5',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+c-ares is a C library that performs DNS requests and name resolves 
+asynchronously. c-ares is a fork of the library named &apos;ares&apos;, written 
+by Greg Hudson at MIT.
+'
+	),
 );
 
 ?>
