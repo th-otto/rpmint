@@ -1,0 +1,499 @@
+diff -rupN jpeg-8d.orig/cjpeg.c jpeg-8d/cjpeg.c
+--- jpeg-8d.orig/cjpeg.c	2011-11-26 13:04:12.000000000 +0100
++++ jpeg-8d/cjpeg.c	2015-01-09 18:47:37.494000135 +0100
+@@ -611,7 +611,11 @@ main (int argc, char **argv)
+   file_index = parse_switches(&cinfo, argc, argv, 0, TRUE);
+ 
+   /* Specify data destination for compression */
++#ifdef JSTDIO_HANDLE_ONLY
++  jpeg_stdio_dest(&cinfo, fileno(output_file));
++#else
+   jpeg_stdio_dest(&cinfo, output_file);
++#endif
+ 
+   /* Start compressor */
+   jpeg_start_compress(&cinfo, TRUE);
+diff -rupN jpeg-8d.orig/djpeg.c jpeg-8d/djpeg.c
+--- jpeg-8d.orig/djpeg.c	2009-03-24 21:31:18.000000000 +0100
++++ jpeg-8d/djpeg.c	2015-01-09 18:47:37.494000135 +0100
+@@ -527,7 +527,11 @@ main (int argc, char **argv)
+ #endif
+ 
+   /* Specify data source for decompression */
++#ifdef JSTDIO_HANDLE_ONLY
++  jpeg_stdio_src(&cinfo, fileno(input_file));
++#else
+   jpeg_stdio_src(&cinfo, input_file);
++#endif
+ 
+   /* Read file header, set default decompression parameters */
+   (void) jpeg_read_header(&cinfo, TRUE);
+diff -rupN jpeg-8d.orig/jdatadst.c jpeg-8d/jdatadst.c
+--- jpeg-8d.orig/jdatadst.c	2012-01-02 12:14:42.000000000 +0100
++++ jpeg-8d/jdatadst.c	2015-01-09 18:47:37.494000135 +0100
+@@ -31,7 +31,11 @@ extern void free JPP((void *ptr));
+ typedef struct {
+   struct jpeg_destination_mgr pub; /* public fields */
+ 
++#ifdef JSTDIO_HANDLE_ONLY
++  int outfile;		/* target stream */
++#else
+   FILE * outfile;		/* target stream */
++#endif
+   JOCTET * buffer;		/* start of buffer */
+ } my_destination_mgr;
+ 
+@@ -170,10 +174,12 @@ term_destination (j_compress_ptr cinfo)
+     if (JFWRITE(dest->outfile, dest->buffer, datacount) != datacount)
+       ERREXIT(cinfo, JERR_FILE_WRITE);
+   }
++#ifndef JSTDIO_HANDLE_ONLY
+   fflush(dest->outfile);
+   /* Make sure we wrote the output file OK */
+   if (ferror(dest->outfile))
+     ERREXIT(cinfo, JERR_FILE_WRITE);
++#endif
+ }
+ 
+ METHODDEF(void)
+@@ -193,7 +199,11 @@ term_mem_destination (j_compress_ptr cin
+  */
+ 
+ GLOBAL(void)
++#ifdef JSTDIO_HANDLE_ONLY
++jpeg_stdio_dest (j_compress_ptr cinfo, int outfile)
++#else
+ jpeg_stdio_dest (j_compress_ptr cinfo, FILE * outfile)
++#endif
+ {
+   my_dest_ptr dest;
+ 
+diff -rupN jpeg-8d.orig/jdatasrc.c jpeg-8d/jdatasrc.c
+--- jpeg-8d.orig/jdatasrc.c	2011-08-30 11:22:50.000000000 +0200
++++ jpeg-8d/jdatasrc.c	2015-01-09 18:47:37.495000144 +0100
+@@ -26,7 +26,11 @@
+ typedef struct {
+   struct jpeg_source_mgr pub;	/* public fields */
+ 
++#ifdef JSTDIO_HANDLE_ONLY
++  int infile;		/* source stream */
++#else
+   FILE * infile;		/* source stream */
++#endif
+   JOCTET * buffer;		/* start of buffer */
+   boolean start_of_file;	/* have we gotten any data yet? */
+ } my_source_mgr;
+@@ -207,7 +211,11 @@ term_source (j_decompress_ptr cinfo)
+  */
+ 
+ GLOBAL(void)
++#ifdef JSTDIO_HANDLE_ONLY
++jpeg_stdio_src (j_decompress_ptr cinfo, int infile)
++#else
+ jpeg_stdio_src (j_decompress_ptr cinfo, FILE * infile)
++#endif
+ {
+   my_src_ptr src;
+ 
+diff -rupN jpeg-8d.orig/jdhuff.c jpeg-8d/jdhuff.c
+--- jpeg-8d.orig/jdhuff.c	2009-09-19 10:59:10.000000000 +0200
++++ jpeg-8d/jdhuff.c	2015-01-09 18:46:50.269000134 +0100
+@@ -1539,3 +1539,37 @@ jinit_huff_decoder (j_decompress_ptr cin
+     }
+   }
+ }
++
++
++/*
++ * BEWARE OF KLUDGE:  This subroutine is a hack for decoding illegal JPEG-in-
++ *                    TIFF encapsulations produced by Microsoft's Wang Imaging
++ * for Windows application with the public-domain TIFF Library.  Based upon an
++ * examination of selected output files, this program apparently divides a JPEG
++ * bit-stream into consecutive horizontal TIFF "strips", such that the JPEG
++ * encoder's/decoder's DC coefficients for each image component are reset before
++ * each "strip".  Moreover, a "strip" is not necessarily encoded in a multiple
++ * of 8 bits, so one must sometimes discard 1-7 bits at the end of each "strip"
++ * for alignment to the next input-Byte storage boundary.  IJG JPEG Library
++ * decoder state is not normally exposed to client applications, so this sub-
++ * routine provides the TIFF Library with a "hook" to make these corrections.
++ * It should be called after "jpeg_start_decompress()" and before
++ * "jpeg_finish_decompress()", just before decoding each "strip" using
++ * "jpeg_read_raw_data()" or "jpeg_read_scanlines()".
++ *
++ * This kludge is not sanctioned or supported by the Independent JPEG Group, and
++ * future changes to the IJG JPEG Library might invalidate it.  Do not send bug
++ * reports about this code to IJG developers.  Instead, contact the author for
++ * advice: Scott B. Marovich <marovich@hpl.hp.com>, Hewlett-Packard Labs, 6/01.
++ */
++GLOBAL(void)
++jpeg_reset_huff_decode (register j_decompress_ptr cinfo,register float *refbw)
++{ register huff_entropy_ptr entropy = (huff_entropy_ptr)cinfo->entropy;
++  register int ci = 0;
++
++  /* Re-initialize DC predictions */
++  do entropy->saved.last_dc_val[ci] = -refbw[ci << 1];
++  while (++ci < cinfo->comps_in_scan);
++  /* Discard encoded input bits, up to the next Byte boundary */
++  entropy->bitstate.bits_left &= ~7;
++}
+diff -rupN jpeg-8d.orig/jinclude.h jpeg-8d/jinclude.h
+--- jpeg-8d.orig/jinclude.h	1994-04-01 16:29:32.000000000 +0200
++++ jpeg-8d/jinclude.h	2015-01-09 18:47:37.495000144 +0100
+@@ -85,7 +85,32 @@
+  * CAUTION: argument order is different from underlying functions!
+  */
+ 
++#ifdef JSTDIO_HANDLE_ONLY
++
++#include <unistd.h>
++
++#if defined(__atarist__) || defined(__TOS__)
++
++#include <osbind.h>
++
++#define JFREAD(file,buf,sizeofbuf)  \
++  ((size_t) Fread((file), (size_t) (sizeofbuf), (void *) (buf)))
++#define JFWRITE(file,buf,sizeofbuf)  \
++  ((size_t) Fwrite((file), (size_t) (sizeofbuf), (const void *) (buf)))
++
++#else
++
++#define JFREAD(file,buf,sizeofbuf)  \
++  ((size_t) read((file), (void *) (buf), (size_t) (sizeofbuf)))
++#define JFWRITE(file,buf,sizeofbuf)  \
++  ((size_t) write((file), (const void *) (buf), (size_t) (sizeofbuf)))
++#endif
++
++#else
++
+ #define JFREAD(file,buf,sizeofbuf)  \
+   ((size_t) fread((void *) (buf), (size_t) 1, (size_t) (sizeofbuf), (file)))
+ #define JFWRITE(file,buf,sizeofbuf)  \
+   ((size_t) fwrite((const void *) (buf), (size_t) 1, (size_t) (sizeofbuf), (file)))
++
++#endif
+diff -rupN jpeg-8d.orig/jmorecfg.h jpeg-8d/jmorecfg.h
+--- jpeg-8d.orig/jmorecfg.h	2011-08-31 13:35:12.000000000 +0200
++++ jpeg-8d/jmorecfg.h	2015-01-09 18:49:02.695000142 +0100
+@@ -55,22 +55,9 @@
+  * You can use a signed char by having GETJSAMPLE mask it with 0xFF.
+  */
+ 
+-#ifdef HAVE_UNSIGNED_CHAR
+-
+ typedef unsigned char JSAMPLE;
+ #define GETJSAMPLE(value)  ((int) (value))
+ 
+-#else /* not HAVE_UNSIGNED_CHAR */
+-
+-typedef char JSAMPLE;
+-#ifdef CHAR_IS_UNSIGNED
+-#define GETJSAMPLE(value)  ((int) (value))
+-#else
+-#define GETJSAMPLE(value)  ((int) (value) & 0xFF)
+-#endif /* CHAR_IS_UNSIGNED */
+-
+-#endif /* HAVE_UNSIGNED_CHAR */
+-
+ #define MAXJSAMPLE	255
+ #define CENTERJSAMPLE	128
+ 
+@@ -106,22 +93,9 @@ typedef short JCOEF;
+  * managers, this is also the data type passed to fread/fwrite.
+  */
+ 
+-#ifdef HAVE_UNSIGNED_CHAR
+-
+ typedef unsigned char JOCTET;
+ #define GETJOCTET(value)  (value)
+ 
+-#else /* not HAVE_UNSIGNED_CHAR */
+-
+-typedef char JOCTET;
+-#ifdef CHAR_IS_UNSIGNED
+-#define GETJOCTET(value)  (value)
+-#else
+-#define GETJOCTET(value)  ((value) & 0xFF)
+-#endif /* CHAR_IS_UNSIGNED */
+-
+-#endif /* HAVE_UNSIGNED_CHAR */
+-
+ 
+ /* These typedefs are used for various table entries and so forth.
+  * They must be at least as wide as specified; but making them too big
+@@ -131,24 +105,10 @@ typedef char JOCTET;
+  */
+ 
+ /* UINT8 must hold at least the values 0..255. */
+-
+-#ifdef HAVE_UNSIGNED_CHAR
+ typedef unsigned char UINT8;
+-#else /* not HAVE_UNSIGNED_CHAR */
+-#ifdef CHAR_IS_UNSIGNED
+-typedef char UINT8;
+-#else /* not CHAR_IS_UNSIGNED */
+-typedef short UINT8;
+-#endif /* CHAR_IS_UNSIGNED */
+-#endif /* HAVE_UNSIGNED_CHAR */
+ 
+ /* UINT16 must hold at least the values 0..65535. */
+-
+-#ifdef HAVE_UNSIGNED_SHORT
+ typedef unsigned short UINT16;
+-#else /* not HAVE_UNSIGNED_SHORT */
+-typedef unsigned int UINT16;
+-#endif /* HAVE_UNSIGNED_SHORT */
+ 
+ /* INT16 must hold at least the values -32768..32767. */
+ 
+@@ -162,7 +122,11 @@ typedef short INT16;
+ #ifndef _BASETSD_H_		/* Microsoft defines it in basetsd.h */
+ #ifndef _BASETSD_H		/* MinGW is slightly different */
+ #ifndef QGLOBAL_H		/* Qt defines it in qglobal.h */
++#ifdef __MSHORT__
+ typedef long INT32;
++#else
++typedef int INT32;
++#endif
+ #endif
+ #endif
+ #endif
+@@ -203,11 +167,7 @@ typedef unsigned int JDIMENSION;
+  * Again, you can customize this if you need special linkage keywords.
+  */
+ 
+-#ifdef HAVE_PROTOTYPES
+ #define JMETHOD(type,methodname,arglist)  type (*methodname) arglist
+-#else
+-#define JMETHOD(type,methodname,arglist)  type (*methodname) ()
+-#endif
+ 
+ 
+ /* Here is the pseudo-keyword for declaring pointers that must be "far"
+diff -rupN jpeg-8d.orig/jpeglib.h jpeg-8d/jpeglib.h
+--- jpeg-8d.orig/jpeglib.h	2011-08-27 18:15:42.000000000 +0200
++++ jpeg-8d/jpeglib.h	2015-01-09 18:47:37.497000163 +0100
+@@ -33,6 +33,8 @@ extern "C" {
+ #endif
+ #endif
+ 
++#include <stdio.h>
++
+ /* Version IDs for the JPEG library.
+  * Might be useful for tests like "#if JPEG_LIB_VERSION >= 80".
+  */
+@@ -853,11 +855,7 @@ typedef JMETHOD(boolean, jpeg_marker_par
+  * Note JPP requires double parentheses.
+  */
+ 
+-#ifdef HAVE_PROTOTYPES
+ #define JPP(arglist)	arglist
+-#else
+-#define JPP(arglist)	()
+-#endif
+ 
+ 
+ /* Short forms of external names for systems with brain-damaged linkers.
+@@ -951,8 +949,13 @@ EXTERN(void) jpeg_destroy_decompress JPP
+ 
+ /* Standard data source and destination managers: stdio streams. */
+ /* Caller is responsible for opening the file before and closing after. */
++#ifdef JSTDIO_HANDLE_ONLY
++EXTERN(void) jpeg_stdio_dest JPP((j_compress_ptr cinfo, int outfile));
++EXTERN(void) jpeg_stdio_src JPP((j_decompress_ptr cinfo, int infile));
++#else
+ EXTERN(void) jpeg_stdio_dest JPP((j_compress_ptr cinfo, FILE * outfile));
+ EXTERN(void) jpeg_stdio_src JPP((j_decompress_ptr cinfo, FILE * infile));
++#endif
+ 
+ /* Data source and destination managers: memory buffers. */
+ EXTERN(void) jpeg_mem_dest JPP((j_compress_ptr cinfo,
+@@ -1096,6 +1099,8 @@ EXTERN(boolean) jpeg_resync_to_restart J
+ 					    int desired));
+ 
+ 
++EXTERN(void) jpeg_reset_huff_decode JPP((j_decompress_ptr cinfo, float *refbw));
++
+ /* These marker codes are exported since applications and data source modules
+  * are likely to want to use them.
+  */
+diff -rupN jpeg-8d.orig/jpegtran.c jpeg-8d/jpegtran.c
+--- jpeg-8d.orig/jpegtran.c	2011-10-26 13:26:16.000000000 +0200
++++ jpeg-8d/jpegtran.c	2015-01-09 18:47:37.497000163 +0100
+@@ -457,7 +457,11 @@ main (int argc, char **argv)
+ #endif
+ 
+   /* Specify data source for decompression */
++#ifdef JSTDIO_HANDLE_ONLY
++  jpeg_stdio_src(&srcinfo, fileno(fp));
++#else
+   jpeg_stdio_src(&srcinfo, fp);
++#endif
+ 
+   /* Enable saving of extra markers that we want to copy */
+   jcopy_markers_setup(&srcinfo, copyoption);
+@@ -525,7 +529,11 @@ main (int argc, char **argv)
+   file_index = parse_switches(&dstinfo, argc, argv, 0, TRUE);
+ 
+   /* Specify data destination for compression */
++#ifdef JSTDIO_HANDLE_ONLY
++  jpeg_stdio_dest(&dstinfo, fileno(fp));
++#else
+   jpeg_stdio_dest(&dstinfo, fp);
++#endif
+ 
+   /* Start compressor (note no image data is actually written here) */
+   jpeg_write_coefficients(&dstinfo, dst_coef_arrays);
+diff -rupN jpeg-8d.orig/rdbmp.c jpeg-8d/rdbmp.c
+--- jpeg-8d.orig/rdbmp.c	2010-02-14 16:22:22.000000000 +0100
++++ jpeg-8d/rdbmp.c	2015-01-09 18:47:37.497000163 +0100
+@@ -43,7 +43,7 @@ typedef char U_CHAR;
+ #endif /* HAVE_UNSIGNED_CHAR */
+ 
+ 
+-#define	ReadOK(file,buffer,len)	(JFREAD(file,buffer,len) == ((size_t) (len)))
++#define	ReadOK(file,buffer,len)	((size_t)fread(buffer, 1, len, file) == ((size_t) (len)))
+ 
+ 
+ /* Private version of data source object */
+diff -rupN jpeg-8d.orig/rdppm.c jpeg-8d/rdppm.c
+--- jpeg-8d.orig/rdppm.c	2009-04-02 19:44:25.000000000 +0200
++++ jpeg-8d/rdppm.c	2015-01-09 18:47:37.498000164 +0100
+@@ -53,7 +53,7 @@ typedef char U_CHAR;
+ #endif /* HAVE_UNSIGNED_CHAR */
+ 
+ 
+-#define	ReadOK(file,buffer,len)	(JFREAD(file,buffer,len) == ((size_t) (len)))
++#define	ReadOK(file,buffer,len)	((size_t)fread(buffer, 1, len, file) == ((size_t) (len)))
+ 
+ 
+ /*
+diff -rupN jpeg-8d.orig/rdtarga.c jpeg-8d/rdtarga.c
+--- jpeg-8d.orig/rdtarga.c	1996-01-07 12:42:36.000000000 +0100
++++ jpeg-8d/rdtarga.c	2015-01-09 18:47:37.498000164 +0100
+@@ -38,7 +38,7 @@ typedef char U_CHAR;
+ #endif /* HAVE_UNSIGNED_CHAR */
+ 
+ 
+-#define	ReadOK(file,buffer,len)	(JFREAD(file,buffer,len) == ((size_t) (len)))
++#define	ReadOK(file,buffer,len)	((size_t)fread(buffer, 1, len, file) == ((size_t) (len)))
+ 
+ 
+ /* Private version of data source object */
+diff -rupN jpeg-8d.orig/wrbmp.c jpeg-8d/wrbmp.c
+--- jpeg-8d.orig/wrbmp.c	1996-01-06 18:32:38.000000000 +0100
++++ jpeg-8d/wrbmp.c	2015-01-09 18:47:37.498000164 +0100
+@@ -216,9 +216,9 @@ write_bmp_header (j_decompress_ptr cinfo
+   PUT_2B(bmpinfoheader, 32, cmap_entries); /* biClrUsed */
+   /* we leave biClrImportant = 0 */
+ 
+-  if (JFWRITE(dest->pub.output_file, bmpfileheader, 14) != (size_t) 14)
++  if ((size_t)fwrite(bmpfileheader, 1, 14, dest->pub.output_file) != (size_t) 14)
+     ERREXIT(cinfo, JERR_FILE_WRITE);
+-  if (JFWRITE(dest->pub.output_file, bmpinfoheader, 40) != (size_t) 40)
++  if ((size_t)fwrite(bmpinfoheader, 1, 40, dest->pub.output_file) != (size_t) 40)
+     ERREXIT(cinfo, JERR_FILE_WRITE);
+ 
+   if (cmap_entries > 0)
+@@ -273,9 +273,9 @@ write_os2_header (j_decompress_ptr cinfo
+   PUT_2B(bmpcoreheader, 8, 1);	/* bcPlanes - must be 1 */
+   PUT_2B(bmpcoreheader, 10, bits_per_pixel); /* bcBitCount */
+ 
+-  if (JFWRITE(dest->pub.output_file, bmpfileheader, 14) != (size_t) 14)
++  if ((size_t) fwrite(bmpfileheader, 1, 14, dest->pub.output_file) != (size_t) 14)
+     ERREXIT(cinfo, JERR_FILE_WRITE);
+-  if (JFWRITE(dest->pub.output_file, bmpcoreheader, 12) != (size_t) 12)
++  if ((size_t) fwrite(bmpcoreheader, 1, 12, dest->pub.output_file) != (size_t) 12)
+     ERREXIT(cinfo, JERR_FILE_WRITE);
+ 
+   if (cmap_entries > 0)
+diff -rupN jpeg-8d.orig/wrgif.c jpeg-8d/wrgif.c
+--- jpeg-8d.orig/wrgif.c	1997-09-24 11:56:50.000000000 +0200
++++ jpeg-8d/wrgif.c	2015-01-09 18:47:37.498000164 +0100
+@@ -83,7 +83,7 @@ flush_packet (gif_dest_ptr dinfo)
+ {
+   if (dinfo->bytesinpkt > 0) {	/* never write zero-length packet */
+     dinfo->packetbuf[0] = (char) dinfo->bytesinpkt++;
+-    if (JFWRITE(dinfo->pub.output_file, dinfo->packetbuf, dinfo->bytesinpkt)
++    if ((size_t)fwrite(dinfo->packetbuf, 1, dinfo->bytesinpkt, dinfo->pub.output_file)
+ 	!= (size_t) dinfo->bytesinpkt)
+       ERREXIT(dinfo->cinfo, JERR_FILE_WRITE);
+     dinfo->bytesinpkt = 0;
+diff -rupN jpeg-8d.orig/wrppm.c jpeg-8d/wrppm.c
+--- jpeg-8d.orig/wrppm.c	2009-04-06 23:20:20.000000000 +0200
++++ jpeg-8d/wrppm.c	2015-01-09 18:47:37.499000159 +0100
+@@ -93,7 +93,7 @@ put_pixel_rows (j_decompress_ptr cinfo,
+ {
+   ppm_dest_ptr dest = (ppm_dest_ptr) dinfo;
+ 
+-  (void) JFWRITE(dest->pub.output_file, dest->iobuffer, dest->buffer_width);
++  (void) fwrite(dest->iobuffer, 1, dest->buffer_width, dest->pub.output_file);
+ }
+ 
+ 
+@@ -116,7 +116,7 @@ copy_pixel_rows (j_decompress_ptr cinfo,
+   for (col = dest->samples_per_row; col > 0; col--) {
+     PUTPPMSAMPLE(bufferptr, GETJSAMPLE(*ptr++));
+   }
+-  (void) JFWRITE(dest->pub.output_file, dest->iobuffer, dest->buffer_width);
++  (void) fwrite(dest->iobuffer, 1, dest->buffer_width, dest->pub.output_file);
+ }
+ 
+ 
+@@ -146,7 +146,7 @@ put_demapped_rgb (j_decompress_ptr cinfo
+     PUTPPMSAMPLE(bufferptr, GETJSAMPLE(color_map1[pixval]));
+     PUTPPMSAMPLE(bufferptr, GETJSAMPLE(color_map2[pixval]));
+   }
+-  (void) JFWRITE(dest->pub.output_file, dest->iobuffer, dest->buffer_width);
++  (void) fwrite(dest->iobuffer, 1, dest->buffer_width, dest->pub.output_file);
+ }
+ 
+ 
+@@ -165,7 +165,7 @@ put_demapped_gray (j_decompress_ptr cinf
+   for (col = cinfo->output_width; col > 0; col--) {
+     PUTPPMSAMPLE(bufferptr, GETJSAMPLE(color_map[GETJSAMPLE(*ptr++)]));
+   }
+-  (void) JFWRITE(dest->pub.output_file, dest->iobuffer, dest->buffer_width);
++  (void) fwrite(dest->iobuffer, 1, dest->buffer_width, dest->pub.output_file);
+ }
+ 
+ 
+diff -rupN jpeg-8d.orig/wrtarga.c jpeg-8d/wrtarga.c
+--- jpeg-8d.orig/wrtarga.c	1996-01-06 18:32:54.000000000 +0100
++++ jpeg-8d/wrtarga.c	2015-01-09 18:47:37.499000159 +0100
+@@ -85,7 +85,7 @@ write_header (j_decompress_ptr cinfo, dj
+     }
+   }
+ 
+-  if (JFWRITE(dinfo->output_file, targaheader, 18) != (size_t) 18)
++  if ((size_t)fwrite(targaheader, 1, 18, dinfo->output_file) != (size_t) 18)
+     ERREXIT(cinfo, JERR_FILE_WRITE);
+ }
+ 
+@@ -113,7 +113,7 @@ put_pixel_rows (j_decompress_ptr cinfo,
+     outptr[2] = (char) GETJSAMPLE(inptr[0]);
+     inptr += 3, outptr += 3;
+   }
+-  (void) JFWRITE(dest->pub.output_file, dest->iobuffer, dest->buffer_width);
++  (void) fwrite(dest->iobuffer, 1, dest->buffer_width, dest->pub.output_file);
+ }
+ 
+ METHODDEF(void)
+@@ -131,7 +131,7 @@ put_gray_rows (j_decompress_ptr cinfo, d
+   for (col = cinfo->output_width; col > 0; col--) {
+     *outptr++ = (char) GETJSAMPLE(*inptr++);
+   }
+-  (void) JFWRITE(dest->pub.output_file, dest->iobuffer, dest->buffer_width);
++  (void) fwrite(dest->iobuffer, 1, dest->buffer_width, dest->pub.output_file);
+ }
+ 
+ 
+@@ -155,7 +155,7 @@ put_demapped_gray (j_decompress_ptr cinf
+   for (col = cinfo->output_width; col > 0; col--) {
+     *outptr++ = (char) GETJSAMPLE(color_map0[GETJSAMPLE(*inptr++)]);
+   }
+-  (void) JFWRITE(dest->pub.output_file, dest->iobuffer, dest->buffer_width);
++  (void) fwrite(dest->iobuffer, 1, dest->buffer_width, dest->pub.output_file);
+ }
+ 
+ 

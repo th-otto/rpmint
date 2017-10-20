@@ -44,7 +44,8 @@ for pkg in gemlib \
 	libmetalink \
 	libunistring \
 	libpsl \
-	curl
+	curl \
+	hermes \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

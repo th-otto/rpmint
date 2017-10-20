@@ -9,7 +9,10 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/lha/mintelf-config.patch"
+PATCHES="
+patches/lha/mintelf-config.patch
+patches/lha/lha-1.14e-ext.patch
+"
 
 BINFILES="
 ${TARGET_BINDIR#/}/lha
