@@ -1,0 +1,22 @@
+--- freetype-2.8.1.orig/builds/unix/freetype2.in	2017-07-09 12:28:15.000000000 +0200
++++ freetype-2.8.1/builds/unix/freetype2.in	2017-10-20 01:32:54.381676077 +0200
+@@ -1,5 +1,5 @@
+ prefix=%prefix%
+-exec_prefix=%exec_prefix%
++exec_prefix=${prefix}
+ libdir=%libdir%
+ includedir=%includedir%
+ 
+@@ -7,8 +7,8 @@ Name: FreeType 2
+ URL: http://freetype.org
+ Description: A free, high-quality, and portable font engine.
+ Version: %ft_version%
+-Requires:
+-Requires.private: %REQUIRES_PRIVATE%
+-Libs: -L${libdir} -lfreetype
+-Libs.private: %LIBS_PRIVATE%
++Requires: %REQUIRES_PRIVATE%
++Requires.private: 
++Libs: -L${libdir} -lfreetype %LIBS_PRIVATE% -lpng -lbz2 -lz
++Libs.private:
+ Cflags: -I${includedir}/freetype2
