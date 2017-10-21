@@ -190,7 +190,10 @@ foreach ($basepackages as $package)
 		echo '<td class="icon"></td>';
 		echo '<td class="linkdesc">Original sources:</td>';
 		echo '<td class="sourcelink">';
-		echo '<a class="archive" href="' . $package['source'] . '">' . basename($package['source']) . '</a>';
+		$source = $package['source'];
+		$source = str_replace('%{name}', $package['name'], $source);
+		$source = str_replace('%{version}', $package['version'], $source);
+		echo '<a class="archive" href="' . $source . '">' . basename($source) . '</a>';
 		echo '</td>';
 		echo '</tr>';
 	}
@@ -556,10 +559,13 @@ foreach ($libpackages as $package)
 	if (isset($package['source']))
 	{
 		$source = $package['source'];
+		$source = str_replace('%{name}', $package['name'], $source);
+		$source = str_replace('%{version}', $package['version'], $source);
 	} else
 	{
 		$source = $download_dir . $package['name'] . '-' . $package['version'] . '.tar.xz';
 	}
+	
 	if (1)
 	{
 		echo '<tr>' . "\n";
@@ -751,6 +757,8 @@ foreach ($libpackages as $package)
 
 <li>2017/10/21 Package gzip added</li>
 
+<li>2017/10/21 Package grep added</li>
+
 </ul>
 
 <p></p>
@@ -811,7 +819,7 @@ He also maintains the <a href="http://bus-error.nokturnal.pl/tiki-list_articles.
 
 <p>
 <b>Mark Duckworth</b> has built an RPM package for native MiNT binutils, using the patch available on this page.
-He has compiled natively a lot of other RPM packages, his work is available <a href="http://storage.atari-source.org:8000/atari/personal/package_staging/"<?php echo $target ?>>here</a>.</p>
+He has compiled natively a lot of other RPM packages, his work is available <a href="http://storage.atari-source.org/atari/personal/package_staging/"<?php echo $target ?>>here</a>.</p>
 
 <p>
 <b>Dominique B&#xe9;r&#xe9;ziat</b> has written <a href="http://pequan.lip6.fr/~bereziat/softs/tos/cross-compilation/"<?php echo $target ?>>a tutorial for cross-compiling GEM applications</a>.</p>

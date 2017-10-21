@@ -48,6 +48,7 @@ for pkg in gemlib \
 	jpeg \
 	hermes \
 	gzip \
+	grep \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

@@ -3,21 +3,14 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=gzip
-VERSION=-1.8
+PACKAGENAME=grep
+VERSION=-3.1
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/gzip/zgrep.diff
-patches/gzip/zmore.diff
-patches/gzip/non-exec-stack.diff
-patches/gzip/zdiff.diff
-patches/gzip/xz_lzma.patch
-patches/gzip/manpage-no-date.patch
-patches/gzip/gzip-1.3-mint.patch
-patches/gzip/mintelf-config.patch
+patches/grep/mintelf-config.patch
 "
 
 
@@ -59,6 +52,8 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 	${MAKE} clean
+	cd ${THISPKG_DIR}${sysroot}
+	rm -f ${TARGET_LIBDIR#/}$multilibdir/charset.alias
 	make_bin_archive $CPU
 done
 

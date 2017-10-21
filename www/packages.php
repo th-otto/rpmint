@@ -8,7 +8,7 @@ $basepackages = array(
 		'date' => '20171011',
 		'repo' => 'https://github.com/th-otto/binutils',
 		'branch' => 'binutils-2_29-mint',
-		'source' => 'https://ftp.gnu.org/gnu/binutils/binutils-2.29.1.tar.xz',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'script' => 1,
 		'doc' => 1,
@@ -36,7 +36,7 @@ The full documentation can be found
 		'date' => '20170518',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-4_6-mint',
-		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-4.6.4/gcc-4.6.4.tar.bz2',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.bz2',
 		'patch' => 1,
 		'patchcomment' => 'This archive also contains an (experimental) patch for -mfastcall support.',
 		'script' => 1,
@@ -75,7 +75,7 @@ GCC contains everything to compile C programs, except a standard library and a m
 		'date' => '20171006',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-7-mint',
-		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-7.2.0/gcc-7.2.0.tar.xz',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
@@ -105,7 +105,7 @@ using this format (although it is theoretically should be possible to mix them).
 		'version' => '0.3',
 		'date' => '20171006',
 		'repo' => 'https://github.com/th-otto/mintbin',
-		'source' => $download_dir . 'mintbin-0.3.tar.xz',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
 		'patch' => 0,
 		'script' => 1,
 		'doc' => 0,
@@ -220,7 +220,7 @@ Gemma is a support library for GEM application programs.
 	'zlib' => array(
 		'name' => 'zlib',
 		'upstream' => 'http://www.zlib.net/',
-		'source' => 'http://www.zlib.net/zlib-1.2.11.tar.xz',
+		'source' => 'http://www.zlib.net/%{name}-%{version}.tar.xz',
 		'version' => '1.2.11',
 		'date' => '20171006',
 		'patch' => 1,
@@ -233,7 +233,7 @@ zlib is a compression library implementing the Deflate algorithm, used by gzip a
 	'libpng' => array(
 		'name' => 'libpng',
 		'upstream' => 'http://www.libpng.org/pub/png/libpng.html',
-		'source' => 'https://ftp-osl.osuosl.org/pub/libpng/src/libpng16/libpng-1.6.34.tar.xz',
+		'source' => 'https://ftp-osl.osuosl.org/pub/%{name}/src/libpng16/%{name}-%{version}.tar.xz',
 		'version' => '1.6.34',
 		'patch' => 1,
 		'script' => 1,
@@ -247,7 +247,7 @@ An Open, Extensible Image Format with Lossless Compression
 	'bzip2' => array(
 		'name' => 'bzip2',
 		'upstream' => 'http://www.bzip.org/',
-		'source' => 'http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz',
+		'source' => 'http://www.bzip.org/%{version}/%{name}-%{version}.tar.gz',
 		'version' => '1.0.6',
 		'patch' => 1,
 		'script' => 1,
@@ -312,7 +312,7 @@ environment variable.
 	'ncurses6' => array(
 		'name' => 'ncurses',
 		'upstream' => 'http://invisible-island.net/ncurses/ncurses.html',
-		'source' => 'ftp://ftp.gnu.org/pub/gnu/ncurses/ncurses-6.0.tar.gz',
+		'source' => 'ftp://ftp.gnu.org/pub/gnu/%{name}/%{name}-%{version}.tar.gz',
 		'version' => '6.0',
 		'patch' => 1,
 		'script' => 1,
@@ -326,7 +326,7 @@ such as <code>vim</code>, <code>less</code>, or the GDB text UI.
 	'readline' => array(
 		'name' => 'readline',
 		'upstream' => 'https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html',
-		'source' => 'ftp://ftp.gnu.org/gnu/readline/readline-7.0.tar.gz',
+		'source' => 'ftp://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.gz',
 		'version' => '7.0',
 		'patch' => 1,
 		'script' => 1,
@@ -344,7 +344,7 @@ csh-like history expansion on previous commands.
 		'name' => 'openssl',
 		'title' => 'OpenSSL',
 		'upstream' => 'https://www.openssl.org/',
-		'source' => 'https://www.openssl.org/source/openssl-1.0.2l.tar.gz',
+		'source' => 'https://www.openssl.org/source/%{name}-%{version}.tar.gz',
 		'version' => '1.0.2l',
 		'patch' => 1,
 		'script' => 1,
@@ -359,7 +359,7 @@ protocols. It is also a general-purpose cryptography library.
 	'arc' => array(
 		'name' => 'arc',
 		'upstream' => 'http://arc.sourceforge.net/',
-		'source' => $download_dir . 'arc-5.21p.tar.gz',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
 		'version' => '5.21p',
 		'patch' => 1,
 		'script' => 1,
@@ -374,7 +374,7 @@ individual files may be recovered intact.
 	'arj' => array(
 		'name' => 'arj',
 		'upstream' => 'http://arj.sourceforge.net/',
-		'source' => $download_dir . 'arj-3.10.22.tar.gz',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
 		'version' => '3.10.22',
 		'patch' => 1,
 		'script' => 1,
@@ -388,7 +388,7 @@ of DOS-like and UNIX-like platforms on a variety of architectures.
 	'lha' => array(
 		'name' => 'lha',
 		'upstream' => 'http://lha.sourceforge.jp/',
-		'source' => $download_dir . 'lha-1.14i-ac20050924p1.tar.gz',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
 		'version' => '1.14i-ac20050924p1',
 		'patch' => 1,
 		'script' => 1,
@@ -404,7 +404,7 @@ LICENSE. It is written in man/lha.n in Japanese
 		'name' => 'unrar',
 		'title' => 'UnRAR',
 		'upstream' => 'http://www.rarlab.com/',
-		'source' => 'https://www.rarlab.com/rar/unrarsrc-5.5.8.tar.gz',
+		'source' => 'https://www.rarlab.com/rar/%{name}src-%{version}.tar.gz',
 		'version' => '5.5.8',
 		'patch' => 1,
 		'script' => 1,
@@ -466,7 +466,7 @@ functionality. This version can also extract encrypted archives.
 	'zoo' => array(
 		'name' => 'zoo',
 		'upstream' => 'http://ftp.math.utah.edu/pub/zoo/',
-		'source' => 'http://ftp.math.utah.edu/pub/zoo/zoo-2-10-1.tar.bz2',
+		'source' => 'http://ftp.math.utah.edu/pub/%{name}/%{name}-%{version}.tar.bz2',
 		'version' => '2-10-1',
 		'patch' => 1,
 		'script' => 1,
@@ -482,7 +482,7 @@ for decompressing old archives.
 	'gmp' => array(
 		'name' => 'gmp',
 		'upstream' => 'https://gmplib.org/',
-		'source' => 'https://gmplib.org/download/gmp/gmp-6.1.2.tar.xz',
+		'source' => 'https://gmplib.org/download/%{name}/%{name}-%{version}.tar.xz',
 		'version' => '6.1.2',
 		'patch' => 1,
 		'script' => 1,
@@ -495,7 +495,7 @@ A library for calculating huge numbers (integer and floating point).
 	'mpfr' => array(
 		'name' => 'mpfr',
 		'upstream' => 'http://www.mpfr.org/',
-		'source' => 'http://www.mpfr.org/mpfr-current/mpfr-3.1.6.tar.xz',
+		'source' => 'http://www.mpfr.org/mpfr-current/%{name}-%{version}.tar.xz',
 		'version' => '3.1.6',
 		'patch' => 1,
 		'script' => 1,
@@ -510,7 +510,7 @@ based on the GMP multiple-precision library.
 	'mpc' => array(
 		'name' => 'mpc',
 		'upstream' => 'http://www.multiprecision.org/mpc/',
-		'source' => 'ftp://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz',
+		'source' => 'ftp://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.gz',
 		'version' => '1.0.3',
 		'patch' => 1,
 		'script' => 1,
@@ -525,7 +525,7 @@ built upon and follows the same principles as MPFR.
 	'tar' => array(
 		'name' => 'tar',
 		'upstream' => 'http://www.gnu.org/software/tar/',
-		'source' => 'https://ftp.gnu.org/gnu/tar/tar-1.29.tar.xz',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
 		'version' => '1.29',
 		'patch' => 1,
 		'script' => 1,
@@ -543,7 +543,7 @@ it may as well access remote devices or files.
 	'libiconv' => array(
 		'name' => 'libiconv',
 		'upstream' => 'http://www.gnu.org/software/libiconv',
-		'source' => 'http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.15.tar.gz',
+		'source' => 'http://ftp.gnu.org/pub/gnu/%{name}/%{name}-%{version}.tar.gz',
 		'version' => '1.15',
 		'patch' => 1,
 		'script' => 1,
@@ -559,7 +559,7 @@ from/to Unicode.
 		'name' => 'm4',
 		'title' => 'M4',
 		'upstream' => 'https://www.gnu.org/software/m4/m4.html',
-		'source' => 'ftp://ftp.gnu.org/gnu/m4/m4-1.4.18.tar.xz',
+		'source' => 'ftp://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
 		'version' => '1.4.18',
 		'patch' => 1,
 		'script' => 1,
@@ -572,7 +572,7 @@ GNU m4 is an implementation of the traditional Unix macro processor.
 	'flex' => array(
 		'name' => 'flex',
 		'upstream' => 'https://github.com/westes/flex',
-		'source' => 'https://github.com/westes/flex/releases/download/v2.6.4/flex-2.6.4.tar.gz',
+		'source' => 'https://github.com/westes/%{name}/releases/download/v%{version}/%{name}-%{version}.tar.gz',
 		'version' => '2.6.4',
 		'patch' => 1,
 		'script' => 1,
@@ -586,7 +586,7 @@ patterns in text.
 	'bison' => array(
 		'name' => 'bison',
 		'upstream' => 'http://www.gnu.org/software/bison/bison.html',
-		'source' => 'http://ftp.gnu.org/gnu/bison/bison-3.0.4.tar.xz',
+		'source' => 'http://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
 		'version' => '3.0.4',
 		'patch' => 1,
 		'script' => 1,
@@ -605,7 +605,7 @@ complex programming languages.
 	'expat' => array(
 		'name' => 'expat',
 		'upstream' => 'https://libexpat.github.io/',
-		'source' => 'http://downloads.sourceforge.net/project/expat/expat/2.2.4/expat-2.2.4.tar.bz2',
+		'source' => 'http://downloads.sourceforge.net/project/%{name}/%{name}/2.2.4/expat-%{version}.tar.bz2',
 		'version' => '2.2.4',
 		'patch' => 1,
 		'script' => 1,
@@ -620,7 +620,7 @@ parser might find in the XML document (like start tags).
 	'libidn2' => array(
 		'name' => 'libidn2',
 		'upstream' => 'https://www.gnu.org/software/libidn/#libidn2',
-		'source' => 'ftp://ftp.gnu.org/gnu/libidn/libidn2-2.0.4.tar.lz',
+		'source' => 'ftp://ftp.gnu.org/gnu/libidn/%{name}-%{version}.tar.lz',
 		'version' => '2.0.4',
 		'patch' => 1,
 		'script' => 1,
@@ -638,7 +638,7 @@ extensively used as the original Libidn library.
 	'krb5' => array(
 		'name' => 'krb5',
 		'upstream' => 'https://web.mit.edu/kerberos/www/',
-		'source' => 'http://web.mit.edu/kerberos/dist/krb5/1.15/krb5-1.15.2.tar.gz',
+		'source' => 'http://web.mit.edu/kerberos/dist/krb5/1.15/%{name}-%{version}.tar.gz',
 		'version' => '1.15.2',
 		'patch' => 1,
 		'script' => 1,
@@ -654,7 +654,7 @@ practice of clear text passwords.
 	'libssh2' => array(
 		'name' => 'libssh2',
 		'upstream' => 'http://www.libssh2.org/',
-		'source' => 'https://www.libssh2.org/download/libssh2-1.8.0.tar.gz',
+		'source' => 'https://www.libssh2.org/download/%{name}-%{version}.tar.gz',
 		'version' => '1.8.0',
 		'patch' => 1,
 		'script' => 1,
@@ -670,7 +670,7 @@ SECSH-PUBLICKEY.
 	'nghttp2' => array(
 		'name' => 'nghttp2',
 		'upstream' => 'https://nghttp2.org/',
-		'source' => 'https://github.com/nghttp2/nghttp2/releases/download/v1.26.0/nghttp2-1.26.0.tar.xz',
+		'source' => 'https://github.com/nghttp2/nghttp2/releases/download/v%{version}/%{name}-%{version}.tar.xz',
 		'version' => '1.26.0',
 		'patch' => 1,
 		'script' => 1,
@@ -683,7 +683,7 @@ nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPAC
 	'libxml2' => array(
 		'name' => 'libxml2',
 		'upstream' => 'http://xmlsoft.org',
-		'source' => 'ftp://xmlsoft.org/libxml2/libxml2-2.9.6.tar.gz',
+		'source' => 'ftp://xmlsoft.org/%{name}/%{name}-%{version}.tar.gz',
 		'version' => '2.9.6',
 		'patch' => 1,
 		'script' => 1,
@@ -698,7 +698,7 @@ or manipulate any kind of XML files.
 	'libmetalink' => array(
 		'name' => 'libmetalink',
 		'upstream' => 'https://launchpad.net/libmetalink',
-		'source' => 'https://github.com/metalink-dev/libmetalink/releases/download/release-0.1.3/libmetalink-0.1.3.tar.xz',
+		'source' => 'https://github.com/metalink-dev/%{name}/releases/download/release-%{version}/libmetalink-%{version}.tar.xz',
 		'version' => '0.1.3',
 		'patch' => 1,
 		'script' => 1,
@@ -713,7 +713,7 @@ Metalink XML files.
 	'libunistring' => array(
 		'name' => 'libunistring',
 		'upstream' => 'http://www.gnu.org/software/libunistring/',
-		'source' => 'http://ftp.gnu.org/gnu/libunistring/libunistring-0.9.7.tar.xz',
+		'source' => 'http://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
 		'version' => '0.9.7',
 		'patch' => 1,
 		'script' => 1,
@@ -730,7 +730,7 @@ case folding and regular expressions).
 	'libpsl' => array(
 		'name' => 'libpsl',
 		'upstream' => 'https://rockdaboot.github.io/libpsl',
-		'source' => 'https://github.com/rockdaboot/libpsl/releases/download/libpsl-0.18.0/libpsl-0.18.0.tar.gz',
+		'source' => 'https://github.com/rockdaboot/libpsl/releases/download/%{name}-%{version}/libpsl-%{version}.tar.gz',
 		'version' => '0.18.0',
 		'patch' => 1,
 		'script' => 1,
@@ -748,7 +748,7 @@ and sorting domain lists by site.
 	'curl' => array(
 		'name' => 'curl',
 		'upstream' => 'https://curl.haxx.se/',
-		'source' => 'https://curl.haxx.se/download/curl-7.56.0.tar.xz',
+		'source' => 'https://curl.haxx.se/download/%{name}-%{version}.tar.xz',
 		'version' => '7.56.0',
 		'patch' => 1,
 		'script' => 1,
@@ -764,7 +764,7 @@ without user interaction or any kind of interactivity.
 	'freetype2' => array(
 		'name' => 'freetype2',
 		'upstream' => 'http://www.freetype.org',
-		'source' => 'http://download.savannah.gnu.org/releases/freetype/freetype-2.8.1.tar.bz2',
+		'source' => 'http://download.savannah.gnu.org/releases/%{name}/%{name}-%{version}.tar.bz2',
 		'version' => '2.8.1',
 		'patch' => 1,
 		'script' => 1,
@@ -778,7 +778,7 @@ version also contains an autohinter for producing improved output.
 	'c-ares' => array(
 		'name' => 'c-ares',
 		'upstream' => 'http://daniel.haxx.se/projects/c-ares/',
-		'source' => $download_dir . 'c-ares-1.7.5.tar.gz',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
 		'version' => '1.7.5',
 		'patch' => 1,
 		'script' => 1,
@@ -793,7 +793,7 @@ by Greg Hudson at MIT.
 	'jpeg' => array(
 		'name' => 'jpeg',
 		'upstream' => 'http://www.ijg.org/',
-		'source' => 'http://www.ijg.org/files/jpegsrc.v8d.tar.gz',
+		'source' => 'http://www.ijg.org/files/jpegsrc.v%{version}.tar.gz',
 		'version' => '8d',
 		'patch' => 1,
 		'script' => 1,
@@ -807,7 +807,7 @@ with simple clients for manipulating jpeg images.
 	'hermes' => array(
 		'name' => 'Hermes',
 		'upstream' => 'http://web.archive.org/web/20040202225109/http://www.clanlib.org/hermes/',
-		'source' => $download_dir . 'Hermes-1.3.3.tar.bz2',
+		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
 		'version' => '1.3.3',
 		'patch' => 1,
 		'script' => 1,
@@ -831,17 +831,31 @@ support.
 	'gzip' => array(
 		'name' => 'gzip',
 		'upstream' => 'http://www.gnu.org/software/gzip/',
-		'source' => 'http://ftp.gnu.org/gnu/gzip/gzip-1.8.tar.xz',
+		'source' => 'http://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
 		'version' => '1.8',
 		'patch' => 1,
 		'script' => 1,
-		'dev' => 1,
+		'dev' => 0,
 		'bin' => 1,
 		'comment' => '
 Gzip reduces the size of the named files using Lempel-Ziv coding LZ77.
 Whenever possible, each file is replaced by one with the extension .gz,
 while keeping the same ownership modes and access and modification
 times.
+'
+	),
+	'grep' => array(
+		'name' => 'grep',
+		'upstream' => 'https://www.gnu.org/software/grep/',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
+		'version' => '3.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'comment' => '
+The grep command searches one or more input files for lines containing a
+match to a specified pattern.  By default, grep prints the matching lines.
 '
 	),
 );
