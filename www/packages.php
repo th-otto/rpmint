@@ -828,6 +828,22 @@ as there is no platform specific code but those are supported: DOS, Win32
 support.
 '
 	),
+	'gzip' => array(
+		'name' => 'gzip',
+		'upstream' => 'http://www.gnu.org/software/gzip/',
+		'source' => 'http://ftp.gnu.org/gnu/gzip/gzip-1.8.tar.xz',
+		'version' => '1.8',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+Gzip reduces the size of the named files using Lempel-Ziv coding LZ77.
+Whenever possible, each file is replaced by one with the extension .gz,
+while keeping the same ownership modes and access and modification
+times.
+'
+	),
 );
 
 ?>

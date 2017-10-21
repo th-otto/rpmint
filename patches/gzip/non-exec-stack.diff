@@ -1,0 +1,11 @@
+Index: lib/match.c
+===================================================================
+--- a/lib/match.c.orig
++++ b/lib/match.c
+@@ -770,3 +770,6 @@ match_init:
+ # endif /* __ia64__ */
+ #endif /* mc68000 || mc68020 */
+ #endif /* i386 || _I386   */
++#ifdef __ELF__
++	.section .note.GNU-stack,"",@progbits
++#endif

@@ -35,6 +35,7 @@ cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O3 -fomit-frame-pointer $LTO_CFLAGS -DANSI_HDRS=1 -DANSI_PROTO=1 $LTO_CFLAGS"
 
+export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
 for CPU in ${ALL_CPUS}; do
