@@ -49,6 +49,7 @@ for pkg in gemlib \
 	hermes \
 	gzip \
 	grep \
+	ctris \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

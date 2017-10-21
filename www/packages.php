@@ -858,6 +858,19 @@ The grep command searches one or more input files for lines containing a
 match to a specified pattern.  By default, grep prints the matching lines.
 '
 	),
+	'grep' => array(
+		'name' => 'ctris',
+		'upstream' => 'http://hackl.dhs.org/ctris/',
+		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
+		'version' => '0.42',
+		'patch' => 0,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'comment' => '
+ctris is a curses based Tetris game.
+'
+	),
 );
 
 ?>
