@@ -871,6 +871,25 @@ match to a specified pattern.  By default, grep prints the matching lines.
 ctris is a curses based Tetris game.
 '
 	),
+	'dhcp' => array(
+		'name' => 'dhcp',
+		'upstream' => 'http://www.isc.org/software/dhcp',
+		'source' => 'http://ftp.isc.org/isc/dhcp/%{version}/%{name}-%{version}.tar.gz',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'version' => '3.0.3',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+The Dynamic Host Configuration Protocol (DHCP) is a network protocol
+used to assign IP addresses and provide configuration information to
+devices such as servers, desktops, or mobile devices, so they can
+communicate on a network using the Internet Protocol (IP). ISC DHCP is
+a collection of software that implements all aspects of the DHCP
+(Dynamic Host Configuration Protocol) suite.
+'
+	),
 );
 
 ?>

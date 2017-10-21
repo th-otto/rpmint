@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<!--
+ Copyright (c) 2006 Novell, Inc.  All rights reserved.
+
+
+Service Description XML Document for dhcpd6.
+	
+This file should be placed in /etc/omc/svcinfo.d
+
+Note: The name of the service is the name of this file without the .xml
+file extension.
+ -->
+
+<serviceDescription version="1.0">
+
+	<!-- Caption for display purposes -->
+	<caption>ISC DHCPv6 4.x Server</caption>
+
+	<!-- Description of this service -->
+	<description>
+		ISC Dynamic Host Configuration Protocol for IPv6 Server
+	</description>
+
+
+	<!--
+		The startCommand tag specifies the command line that will be
+		invoked to start the service. The return code from this command
+		must be as follows:
+			0 - success
+			1 - generic or unspecified error
+			2 - invalid or excess argument(s)
+			3 - unimplemented feature (e.g. "reload")
+			4 - user had insufficient privileges
+			5 - program is not installed
+			6 - program is not configured
+			7 - program is not running
+	-->
+	<startCommand>/etc/init.d/dhcpd6 start</startCommand>
+
+	<!--
+		The reStartCommand tag specifies the command line that will be
+		invoked to restart the service. The return code from this command
+		must be as specified in the startCommand tag.
+	-->
+	<reStartCommand>/etc/init.d/dhcpd6 restart</reStartCommand>
+
+	<!--
+		The stopCommand tag specifies the command line that will be
+		invoked to stop the service. The return code from this command
+		must be as specified in the startCommand tag.
+	-->
+	<stopCommand>/etc/init.d/dhcpd6 stop</stopCommand>
+
+	<!--
+		The statusCommand specifies the command line that can be run
+		that will report on the status of the service. The return code
+		from this command line should be as follows:
+			0 - service up and running
+			1 - service dead, but /var/run/  pid  file exists
+			2 - service dead, but /var/lock/ lock file exists
+			3 - service not running (unused)
+			4 - service status unknown :-(
+	-->
+	<statusCommand>/etc/init.d/dhcpd6 status</statusCommand>
+	<!--
+                The processInformation tag allows the XML Service provider to
+                identify the processes that belong to the service. This allows
+                the ServiceProcess associations to be instrumented.
+                If the process_information tag is not specifed, the will be no
+                ServiceProcess association for the service.
+        -->
+
+	<processInformation>
+		<name>dhcpd6</name>
+		<modulePath>/usr/sbin/dhcpd6</modulePath>
+	</processInformation>
+
+	<!--
+                Define the services that this service has a dependency on.
+                There must be a corresponding Service Description XML file
+                for the antecedent service in the /etc/omc/svcinfo.d directory.
+        -->
+        <dependsOn>
+                <serviceName>network</serviceName>
+        </dependsOn>
+
+
+</serviceDescription>

@@ -50,6 +50,7 @@ for pkg in gemlib \
 	gzip \
 	grep \
 	ctris \
+	dhcp \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

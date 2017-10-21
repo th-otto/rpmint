@@ -1,0 +1,713 @@
+diff -aurN dhcp-3.0.3/client/clparse.c dhcp-3.0.3-mint-20111009/client/clparse.c
+--- dhcp-3.0.3/client/clparse.c	2004-11-24 18:39:14.000000000 +0100
++++ dhcp-3.0.3-mint-20111009/client/clparse.c	2014-08-31 15:18:21.046875000 +0200
+@@ -51,6 +51,9 @@
+ 	DHO_DOMAIN_NAME,
+ 	DHO_DOMAIN_NAME_SERVERS,
+ 	DHO_HOST_NAME,
++	DHO_NIS_DOMAIN,
++	DHO_NIS_SERVERS,
++	DHO_NTP_SERVERS,
+ 	0
+ };
+ 
+diff -aurN dhcp-3.0.3/client/scripts/freemint dhcp-3.0.3-mint-20111009/client/scripts/freemint
+--- dhcp-3.0.3/client/scripts/freemint	1970-01-01 01:00:00.000000000 +0100
++++ dhcp-3.0.3-mint-20111009/client/scripts/freemint	2014-08-31 15:30:41.718750000 +0200
+@@ -0,0 +1,263 @@
++#!/bin/sh
++
++if [ -x /usr/bin/logger ]; then
++	LOGGER="/usr/bin/logger -s -p user.notice -t dhclient"
++else
++	LOGGER=echo
++fi
++
++make_resolv_conf() {
++  if [ "x$new_domain_name" != x ] || [ x"$new_domain_name_servers" != x ]; then
++    >/etc/resolv.conf
++    if [ "x$new_domain_name" != x ]; then
++      echo search $new_domain_name >/etc/resolv.conf
++    fi
++    if [ "x$new_domain_name_servers" != x ]; then
++      for nameserver in $new_domain_name_servers; do
++        echo nameserver $nameserver >>/etc/resolv.conf
++      done
++    fi
++  fi
++}
++
++# Must be used on exit.   Invokes the local dhcp client exit hooks, if any.
++exit_with_hooks() {
++  exit_status=$1
++  if [ -f /etc/dhclient-exit-hooks ]; then
++    . /etc/dhclient-exit-hooks
++  fi
++# probably should do something with exit status of the local script
++  exit $exit_status
++}
++
++# Invoke the local dhcp client enter hooks, if they exist.
++if [ -f /etc/dhclient-enter-hooks ]; then
++  exit_status=0
++  . /etc/dhclient-enter-hooks
++  # allow the local script to abort processing of this state
++  # local script must set exit_status variable to nonzero.
++  if [ $exit_status -ne 0 ]; then
++    exit $exit_status
++  fi
++fi
++
++if [ x$new_network_number != x ]; then
++   $LOGGER New Network Number: $new_network_number
++fi
++
++if [ x$new_broadcast_address != x ]; then
++ $LOGGER New Broadcast Address: $new_broadcast_address
++  new_broadcast_arg="broadaddr $new_broadcast_address"
++fi
++if [ x$old_broadcast_address != x ]; then
++  old_broadcast_arg="broadaddr $old_broadcast_address"
++fi
++if [ x$new_subnet_mask != x ]; then
++  new_netmask_arg="netmask $new_subnet_mask"
++fi
++if [ x$old_subnet_mask != x ]; then
++  old_netmask_arg="netmask $old_subnet_mask"
++fi
++if [ x$alias_subnet_mask != x ]; then
++  alias_subnet_arg="netmask $alias_subnet_mask"
++fi
++
++if [ x$reason = xMEDIUM ]; then
++  eval "ifconfig $interface $medium"
++  eval "ifconfig $interface addr -alias 0.0.0.0 $medium" >/dev/null 2>&1
++  sleep 1
++  exit_with_hooks 0
++fi
++
++if [ x$reason = xPREINIT ]; then
++  if [ x$alias_ip_address != x ]; then
++    ifconfig $interface addr -alias $alias_ip_address > /dev/null 2>&1
++    route delete $alias_ip_address 127.0.0.1 > /dev/null 2>&1
++  fi
++  ifconfig $interface addr 0.0.0.0 netmask 0.0.0.0 \
++		broadaddr 255.255.255.255 up
++  exit_with_hooks 0
++fi
++
++if [ x$reason = xARPCHECK ] || [ x$reason = xARPSEND ]; then
++  exit_with_hooks 0;
++fi
++  
++if [ x$reason = xBOUND ] || [ x$reason = xRENEW ] || \
++   [ x$reason = xREBIND ] || [ x$reason = xREBOOT ]; then
++
++  if [ -n "$new_nis_domain" ]; then
++    domainname "$new_nis_domain"
++
++    rm -f /etc/yp.conf
++    if [ -n "$new_nis_servers" ]; then
++      for I in $new_nis_servers; do
++        echo "domain $new_nis_domain server $I" >> /etc/yp.conf
++      done
++    else
++      echo "domain $new_nis_domain broadcast" >> /etc/yp.conf
++    fi
++  elif [ -n "$new_nis_servers" ]; then
++    rm -f /etc/yp.conf
++    for I in $new_nis_servers; do
++      echo "ypserver $I" >> /etc/yp.conf
++    done
++  fi
++  
++  if [ -n "$new_ntp_servers" ]; then
++    cat <<EOF > /etc/ntp.conf
++restrict default ignore
++restrict 127.0.0.1
++driftfile /etc/ntp/drift
++broadcastdelay 0.008
++authenticate yes
++keys /etc/ntp/keys
++EOF
++    :> /etc/ntp/step-tickers
++    for I in $new_ntp_servers; do
++      echo "server $I" >> /etc/ntp.conf
++      echo "$I" >> /etc/ntp/step-tickers
++    done
++  fi
++
++  current_hostname=`hostname`
++  if [ x$current_hostname = x ] || \
++     [ x$current_hostname = x$old_host_name ]; then
++    if [ x$current_hostname = x ] || \
++       [ x$new_host_name != x$old_host_name ]; then
++      $LOGGER "New Hostname: $new_host_name"
++      hostname $new_host_name
++    fi
++  fi
++  if [ x$old_ip_address != x ] && [ x$alias_ip_address != x ] && \
++		[ x$alias_ip_address != x$old_ip_address ]; then
++    ifconfig $interface addr -alias $alias_ip_address > /dev/null 2>&1
++    route delete $alias_ip_address 127.0.0.1 > /dev/null 2>&1
++  fi
++  if [ x$old_ip_address != x ] && [ x$old_ip_address != x$new_ip_address ]
++   then
++    eval "ifconfig $interface addr -alias $old_ip_address $medium"
++    route delete $old_ip_address 127.1 >/dev/null 2>&1
++    for router in $old_routers; do
++      route delete default $router >/dev/null 2>&1
++    done
++    if [ "$old_static_routes" != "" ]; then
++      set -- $old_static_routes
++      while [ $# -gt 1 ]; do
++	route delete $1 $2
++	shift; shift
++      done
++    fi
++    arp -n -a | sed -n -e 's/^.*(\(.*\)) at .*$/arp -d \1/p' |sh
++  fi
++  if [ x$old_ip_address = x ] || [ x$old_ip_address != x$new_ip_address ] || \
++     [ x$reason = xBOUND ] || [ x$reason = xREBOOT ]; then
++    eval "ifconfig $interface addr $new_ip_address $new_netmask_arg \
++					$new_broadcast_arg $medium"
++    $LOGGER "New IP Address($interface): $new_ip_address"
++    $LOGGER "New Subnet Mask($interface): $new_subnet_mask"
++    $LOGGER "New Broadcast Address($interface): $new_broadcast_address"
++    if [ "$new_routers" != "" ]; then
++      $LOGGER "New Routers: $new_routers"
++    fi
++    route add $new_ip_address 127.1 >/dev/null 2>&1
++    for router in $new_routers; do
++      route add default $interface gw $router >/dev/null 2>&1
++    done
++    if [ "$new_static_routes" != "" ]; then
++      $LOGGER "New Static Routes: $new_static_routes"
++      set -- $new_static_routes
++      while [ $# -gt 1 ]; do
++	route add $1 $2
++	shift; shift
++      done
++    fi
++  fi
++  if [ x$new_ip_address != x$alias_ip_address ] && [ x$alias_ip_address != x ];
++   then
++    ifconfig $interface addr alias $alias_ip_address $alias_subnet_arg
++    route add $alias_ip_address 127.0.0.1
++  fi
++  make_resolv_conf
++  exit_with_hooks 0
++fi
++
++if [ x$reason = xEXPIRE ] || [ x$reason = xFAIL ] || [ x$reason = xRELEASE ] \
++   || [ x$reason = xSTOP ]; then
++  if [ x$alias_ip_address != x ]; then
++    ifconfig $interface addr -alias $alias_ip_address > /dev/null 2>&1
++    route delete $alias_ip_address 127.0.0.1 > /dev/null 2>&1
++  fi
++  if [ x$old_ip_address != x ]; then
++    eval "ifconfig $interface addr -alias $old_ip_address $medium"
++    route delete $old_ip_address 127.1 >/dev/null 2>&1
++    for router in $old_routers; do
++      route delete default $router >/dev/null 2>&1
++    done
++    if [ "$old_static_routes" != "" ]; then
++      set -- $old_static_routes
++      while [ $# -gt 1 ]; do
++	route delete $1 $2
++	shift; shift
++      done
++    fi
++    arp -n -a | sed -n -e 's/^.*(\(.*\)) at .*$/arp -n -d \1/p' \
++						|sh >/dev/null 2>&1
++  fi
++  if [ x$alias_ip_address != x ]; then
++    ifconfig $interface addr alias $alias_ip_address $alias_subnet_arg
++    route add $alias_ip_address 127.0.0.1
++  fi
++  exit_with_hooks 0
++fi
++
++if [ x$reason = xTIMEOUT ]; then
++  if [ x$alias_ip_address != x ]; then
++    ifconfig $interface addr -alias $alias_ip_address > /dev/null 2>&1
++    route delete $alias_ip_address 127.0.0.1 > /dev/null 2>&1
++  fi
++  eval "ifconfig $interface addr $new_ip_address $new_netmask_arg \
++					$new_broadcast_arg $medium"
++  $LOGGER "New IP Address($interface): $new_ip_address"
++  $LOGGER "New Subnet Mask($interface): $new_subnet_mask"
++  $LOGGER "New Broadcast Address($interface): $new_broadcast_address"
++  sleep 1
++  if [ "$new_routers" != "" ]; then
++    $LOGGER "New Routers: $new_routers"
++    set -- $new_routers
++    if ping -q -c 1 $1; then
++      if [ x$new_ip_address != x$alias_ip_address ] && \
++			[ x$alias_ip_address != x ]; then
++	ifconfig $interface addr alias $alias_ip_address $alias_subnet_arg
++	route add $alias_ip_address 127.0.0.1
++      fi
++      route add $new_ip_address 127.1 >/dev/null 2>&1
++      for router in $new_routers; do
++	route add default $interface gw $router >/dev/null 2>&1
++      done
++      set -- $new_static_routes
++      while [ $# -gt 1 ]; do
++	route add $1 $2
++	shift; shift
++      done
++      make_resolv_conf
++      exit_with_hooks 0
++    fi
++  fi
++  eval "ifconfig $interface addr -alias $new_ip_address $medium"
++  for router in $old_routers; do
++    route delete default $router >/dev/null 2>&1
++  done
++  if [ "$old_static_routes" != "" ]; then
++    set -- $old_static_routes
++    while [ $# -gt 1 ]; do
++      route delete $1 $2
++      shift; shift
++    done
++  fi
++  arp -n -a | sed -n -e 's/^.*(\(.*\)) at .*$/arp -d \1/p' \
++							|sh >/dev/null 2>&1
++  exit_with_hooks 1
++fi
++
++exit_with_hooks 0
+diff -aurN dhcp-3.0.3/client/scripts/linux dhcp-3.0.3-mint-20111009/client/scripts/linux
+--- dhcp-3.0.3/client/scripts/linux	2002-11-15 02:09:09.000000000 +0100
++++ dhcp-3.0.3-mint-20111009/client/scripts/linux	2014-08-31 15:18:21.062500000 +0200
+@@ -106,6 +106,41 @@
+   
+ if [ x$reason = xBOUND ] || [ x$reason = xRENEW ] || \
+    [ x$reason = xREBIND ] || [ x$reason = xREBOOT ]; then
++
++  if [ -n "$new_nis_domain" ]; then
++    domainname "$new_nis_domain"
++
++    rm -f /etc/yp.conf
++    if [ -n "$new_nis_servers" ]; then
++      for I in $new_nis_servers; do
++        echo "domain $new_nis_domain server $I" >> /etc/yp.conf
++      done
++    else
++      echo "domain $new_nis_domain broadcast" >> /etc/yp.conf
++    fi
++  elif [ -n "$new_nis_servers" ]; then
++    rm -f /etc/yp.conf
++    for I in $new_nis_servers; do
++      echo "ypserver $I" >> /etc/yp.conf
++    done
++  fi
++  
++  if [ -n "$new_ntp_servers" ]; then
++    cat <<EOF > /etc/ntp.conf
++restrict default ignore
++restrict 127.0.0.1
++driftfile /etc/ntp/drift
++broadcastdelay 0.008
++authenticate yes
++keys /etc/ntp/keys
++EOF
++    :> /etc/ntp/step-tickers
++    for I in $new_ntp_servers; do
++      echo "server $I" >> /etc/ntp.conf
++      echo "$I" >> /etc/ntp/step-tickers
++    done
++  fi
++
+   current_hostname=`hostname`
+   if [ x$current_hostname = x ] || \
+      [ x$current_hostname = x$old_host_name ]; then
+diff -aurN dhcp-3.0.3/common/discover.c dhcp-3.0.3-mint-20111009/common/discover.c
+--- dhcp-3.0.3/common/discover.c	2005-03-03 17:55:22.000000000 +0100
++++ dhcp-3.0.3-mint-20111009/common/discover.c	2014-08-31 15:18:21.156250000 +0200
+@@ -455,6 +455,25 @@
+ 		
+ 		sa = *(struct sockaddr *)&ifr.ifr_hwaddr;
+ 		
++#ifdef __MINT__
++		/** 
++		FreeMiNT SIOCGIFHWADDR result is this:
++
++		struct sockaddr_hw {
++			ushort		shw_family;
++			ushort		shw_type;
++			ushort		shw_len;
++			uchar		shw_addr[8];
++		};
++
++		**/
++
++		/* strip the ushort shw_len; @sa_data[2] */
++		memmove (&sa.sa_data[2], &sa.sa_data[4], 6);
++		/* strip the leading ushort shw_family as it is always AF_LINK */
++		memmove (&sa, sa.sa_data, 10);
++#endif
++
+ 		switch (sa.sa_family) {
+ #ifdef HAVE_ARPHRD_TUNNEL
+ 		      case ARPHRD_TUNNEL:
+diff -aurN dhcp-3.0.3/includes/cf/freemint.h dhcp-3.0.3-mint-20111009/includes/cf/freemint.h
+--- dhcp-3.0.3/includes/cf/freemint.h	1970-01-01 01:00:00.000000000 +0100
++++ dhcp-3.0.3-mint-20111009/includes/cf/freemint.h	2014-08-31 15:18:21.171875000 +0200
+@@ -0,0 +1,355 @@
++/* freemint.h
++ *
++ * FreeMiNT config file for clients.
++ */
++
++/*
++ * Copyright (c) 1996-1999 Internet Software Consortium.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of The Internet Software Consortium nor the names
++ *    of its contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE INTERNET SOFTWARE CONSORTIUM AND
++ * CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
++ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
++ * DISCLAIMED.  IN NO EVENT SHALL THE INTERNET SOFTWARE CONSORTIUM OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
++ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
++ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ * This software has been written for the Internet Software Consortium
++ * by Ted Lemon in cooperation with Vixie Enterprises and Nominum, Inc.
++ * To learn more about the Internet Software Consortium, see
++ * ``http://www.isc.org/''.  To learn more about Vixie Enterprises,
++ * see ``http://www.vix.com''.   To learn more about Nominum, Inc., see
++ * ``http://www.nominum.com''.
++ */
++
++/* Porting::
++
++   Some systems do not define basic integer types as shown below.
++   On some systems, you need to include <bitypes.h> or <sys/bitypes.h>.
++   If you get parse errors in dhcpd.h while compiling dhcpd.conf, try
++   including bitypes.h, and if that fails, use the hard-coded definitions
++   shown below. */
++   
++#if 0
++#include <sys/bitypes.h>
++#endif
++
++#if 0
++#define int8_t		char
++#define int16_t		short
++#define int32_t		long
++
++#define u_int8_t	unsigned char
++#define u_int16_t	unsigned short 
++#define u_int32_t	unsigned long 
++#endif
++
++#include <sys/types.h>
++
++/* Porting::
++
++   The jmp_buf type as declared in <setjmp.h> is sometimes a structure
++   and sometimes an array.   By default, we assume it's a structure.
++   If it's an array on your system, you may get compile warnings or errors
++   as a result in confpars.c.   If so, try including the following definitions,
++   which treat jmp_buf as an array: */
++
++#if 0
++#define jbp_decl(x)	jmp_buf x
++#define jref(x)		(x)
++#define jdref(x)	(x)
++#define jrefproto	jmp_buf
++#endif
++
++/* Porting::
++
++   Some older systems (e.g., Ultrix) still use the 4.2BSD-style syslog
++   API.  These differ from later versions of the syslog API in that the
++   openlog system call takes two arguments instead of three, and the
++   facility code (the third argument to modern versions of openlog())
++   is ORed into the log priority in the syslog() call.
++
++   If you are running with the 4.2BSD-style syslog interface, define
++   SYSLOG_4_2. */
++
++/* #define SYSLOG_4_2 */
++
++#include <syslog.h>
++
++#include <string.h>
++#include <errno.h>
++#include <unistd.h>
++#include <sys/wait.h>
++#include <signal.h>
++#include <setjmp.h>
++#include <limits.h>
++
++extern int h_errno;
++
++#include <net/if.h>
++#include <net/if_arp.h>
++
++/* Porting::
++
++   Some older systems do not have defines for IP type-of-service,
++   or don't define them the way we expect.   If you get undefined
++   symbol errors on the following symbols, they probably need to be
++   defined here. */
++
++#if 0
++#define IPTOS_LOWDELAY          0x10
++#define IPTOS_THROUGHPUT        0x08
++#define IPTOS_RELIABILITY       0x04
++#endif
++
++/* Porting::
++
++   Newer BSD derivatives store non-permanent daemon files in a
++   directory called /var/run.   If your system has a /var/run,
++   use it; otherwise, use /etc. */
++
++#ifndef _PATH_DHCPD_PID
++#define _PATH_DHCPD_PID	"/etc/dhcpd.pid"
++#endif
++#ifndef _PATH_DHCLIENT_PID
++#define _PATH_DHCLIENT_PID "/etc/dhclient.pid"
++#endif
++#ifndef _PATH_DHCRELAY_PID
++#define _PATH_DHCRELAY_PID "/etc/dhcrelay.pid"
++#endif
++
++/* Porting::
++
++   If your system supports standard ANSI C, it should provide the file
++   /usr/include/stdarg.h.   This contains the ANSI standard declarations
++   for functions which take a variable number of arguments.
++
++   Older systems with non-ANSI compilers cannot support this interface,
++   and generally use the older varargs interface, defined in <varargs.h>.
++   Some systems only support varargs, but define the interface in
++   <stdarg.h> anyway.
++
++   You must choose one of the two sets of definitions below.   Try
++   stdarg.h first, unless you know it won't work.   If you have
++   trouble compiling errwarn.c, try switching to the varargs.h definitions.
++   If that fails, try using stdarg.h with the varargs definitions. */
++
++#if 1
++/* Stdarg definitions for ANSI-compliant C compilers. */
++#include <stdarg.h>
++#define VA_DOTDOTDOT ...
++#define VA_start(list, last) va_start (list, last)
++#define va_dcl
++#endif
++
++#if 0
++/* Varargs definitions, for non-ANSI-compliant C compilers. */
++#include <varargs.h>
++#define VA_DOTDOTDOT va_alist
++#define VA_start(list, last) va_start (list)
++#endif
++
++/* Porting::
++
++   Some systems (notably 4.4BSD derivatives) support versions of the
++   sprintf functions which will deposit a limited number of characters
++   into the buffer; that limit is provided in an extra argument.
++   If your system doesn't support this functionality, you must include
++   the definitions below: */
++
++#if 0
++#define vsnprintf(buf, size, fmt, list) vsprintf (buf, fmt, list)
++#define NO_SNPRINTF
++#endif
++
++/* Porting::
++
++   Some systems provide a function, strerror(), which takes the unix
++   error number (see errno) and returns a pointer to a static buffer
++   containing the corresponding error message.
++
++   If your system doesn't provide strerror(), define NO_STRERROR
++   as shown below: */
++
++#if 0
++#define NO_STRERROR
++char *strerror PROTO ((int));
++#endif
++
++/* Porting::
++
++   Once dhcpd has initialized itself, it loops forever waiting for
++   packets to come in.   Since we need to support multiple input streams
++   in order to support multiple interfaces, dhcpd needs to be able to
++   do a syscall to determine which descriptors have input waiting on
++   them.
++
++   Normally, dhcpd uses the select() system call, which is a 4.2BSD
++   syscall invented precisely for this purpose.   Unfortunately, some
++   System V-based systems do not support select() properly when it
++   operates on streams.   The System V interface which does (largely)
++   the same thing as select is called poll().   In some cases, this may
++   work better than select() - if you find that dhcpd is hanging and not
++   responding to packets very consistently, you might try defining
++   USE_POLL and including <poll.h>. */
++
++#if 0
++#define USE_POLL
++#include <poll.h>
++#endif
++
++/* Porting::
++
++   You must define the default network API for your port.   This
++   will depend on whether one of the existing APIs will work for
++   you, or whether you need to implement support for a new API.
++   Currently, the following APIs are supported:
++
++   	The BSD socket API: define USE_SOCKETS.
++	The Berkeley Packet Filter: define USE_BPF.
++	The Streams Network Interface Tap (NIT): define USE_NIT.
++	Raw sockets: define USE_RAW_SOCKETS
++
++   If your system supports the BSD socket API and doesn't provide
++   one of the supported interfaces to the physical packet layer,
++   you can either provide support for the low-level API that your
++   system does support (if any) or just use the BSD socket interface.
++   The BSD socket interface doesn't support multiple network interfaces,
++   and on many systems, it does not support the all-ones broadcast
++   address, which can cause problems with some DHCP clients (e.g.
++   Microsoft Windows 95). */
++
++#if defined (USE_DEFAULT_NETWORK)
++#  define USE_SOCKETS
++#endif
++
++/* Porting::
++
++   Recent versions of BSD added a new element to the sockaddr structure:
++   sa_len.   This indicates the length of the structure, and is used
++   in a variety of places, not the least of which is the SIOCGIFCONF
++   ioctl, which is used to figure out what interfaces are attached to
++   the system.
++
++   You should be able to determine if your system has an sa_len element
++   by looking at the struct sockaddr definition in /usr/include/sys/socket.h.
++   If it does, you must define HAVE_SA_LEN.   Otherwise, you must not.
++   The most obvious symptom that you've got this wrong is either a compile
++   error complaining about the use of the sa_len structure element, or
++   the failure of dhcpd to find any interfaces. */
++
++/* #define HAVE_SA_LEN */
++
++/* Every operating system has its own way of seperating lines in a
++   sequential text file.  Most modern systems use a single character,
++   either an ASCII Newline (10) or an ASCII Carriage Return (13).
++
++   The most notable exception is MS-DOS (and consequently, Windows),
++   which uses an ASCII Carriage Return followed by a Newline to
++   seperate each line.  Fortunately, MS-DOS C compiler libraries
++   typically hide this from the programmer, returning just a Newline.
++
++   Define EOL to be whatever getc() returns for a newline. */
++
++#define EOL '\n'
++
++/* Some older C compilers don't support the void pointer type.
++   ANSI C defines void * to be a pointer type that matches
++   any other pointer type.   This is handy for returning a pointer
++   which will always need to be cast to a different value.   For
++   example, malloc() on an ANSI C-compliant system returns void *.
++
++   If your compiler doesn't support void pointers, you may need to
++   define VOIDPTR to be char *; otherwise, define it to be void *. */
++
++#define VOIDPTR void *
++
++/* Porting::
++
++   The following definitions for time should work on any unix machine.
++   They may not work (or at least, may not work well) on a variety of
++   non-unix machines.   If you are porting to a non-unix machine, you
++   probably need to change the definitions below and perhaps include
++   different headers.
++
++   I should note that dhcpd is not yet entirely clean of unix-specific
++   time references, so the list of defines shown below probably isn't
++   good enough if you're porting to a system that really doesn't support
++   unix time.   It's probably a reasonable place to start, though. */
++
++#include <time.h>
++
++#define TIME time_t
++#define GET_TIME(x)	time ((x))
++
++/* for struct timeval */
++#include <sys/time.h>
++
++/* for DIR */
++#include <sys/dirent.h>
++
++/* we don't have AF_LINK (e.g. LLADDR()) */
++#undef AF_LINK
++
++/* for SIOCGIFHWADDR */
++#include <sockios.h>
++
++#if defined (SIOCGIFHWADDR) && !defined (HAVE_SIOCGIFHWADDR)
++# define HAVE_SIOCGIFHWADDR
++# define HAVE_SIOCGIFHWADDR_ASVALID_SOCKADDR
++#endif
++
++static const char *cmds[] = {
++	"/bin/ps -axlw 2>&1",
++	"/usr/sbin/arp -an 2>&1",
++	"/usr/bin/netstat -an 2>&1",
++	"/bin/df  2>&1",
++	"/usr/bin/dig com. soa +ti=1 +retry=0 2>&1",
++	"/usr/bin/netstat -an 2>&1",
++	"/usr/bin/dig . soa +ti=1 +retry=0 2>&1",
++	"/usr/sbin/iostat  2>&1",
++	"/usr/bin/vmstat  2>&1",
++	"/usr/bin/w  2>&1",
++	NULL
++};
++
++static const char *dirs[] = {
++	"/tmp",
++	"/usr/tmp",
++	".",
++	"/",
++	"/var/spool",
++	"/dev",
++	"/var/mail",
++	"/home",
++	"/usr/home",
++	NULL
++};
++
++static const char *files[] = {
++	"/var/log/messages",
++	"/var/log/wtmp",
++	"/var/log/lastlog",
++	NULL
++};
++

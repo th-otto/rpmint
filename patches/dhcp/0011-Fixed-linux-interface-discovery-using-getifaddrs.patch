@@ -1,0 +1,110 @@
+From bd50ec560d7bec064190e4d430c066e170732c0e Mon Sep 17 00:00:00 2001
+From: Marius Tomaschewski <mt@suse.de>
+Date: Tue, 27 Nov 2012 17:44:06 +0100
+Subject: [PATCH] Fixed linux interface discovery using getifaddrs
+References: bnc#791289,[ISC-Bugs #31992]
+
+Unlike dhcp 3.x, dhcp 4.x scans interfaces from /proc/net/dev,
+which provides only true interface names. When the address set
+on the interface has a label assigned (linux 2.0 alias interface
+compatibility), then the SIOCGIFADDR requires the label / alias
+name as argument instead of the interface name to return this
+address. When this is the only address assigned to an interface,
+dhcp-server is unable to find any address and fails to start.
+
+Changed to use getifaddrs() function, which retrieves all IP
+addresses on linux systems and is available since GLIBC 2.3.
+
+---
+ common/discover.c | 51 ++++++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 44 insertions(+), 7 deletions(-)
+
+diff --git a/common/discover.c b/common/discover.c
+index 4463178..c48d67b 100644
+--- a/common/discover.c
++++ b/common/discover.c
+@@ -373,7 +373,7 @@ end_iface_scan(struct iface_conf_list *ifaces) {
+ 	ifaces->sock = -1;
+ }
+ 
+-#elif __linux /* !HAVE_SIOCGLIFCONF */
++#elif __linux && !(defined(__GNUC_PREREQ) && __GNUC_PREREQ(2,3)) /* !HAVE_SIOCGLIFCONF */
+ /* 
+  * Linux support
+  * -------------
+@@ -382,6 +382,14 @@ end_iface_scan(struct iface_conf_list *ifaces) {
+  * about interfaces, along with selected ioctl() calls.
+  *
+  * Linux low level access is documented in the netdevice man page.
++ *
++ * Note: Use getifaddrs instead
++ *   Unfortunately this discover discards all interfaces where the
++ *   only address has a label assigned (linux 2.0 alias interface
++ *   compatibility) as the SIOCGIFADDR requires the the alias name
++ *   (eth0:0) in ifr_name to fetch the address and /proc/net/dev
++ *   on linux > 2.0 lists only the interface names (eth0) without
++ *   any aliases.
+  */
+ 
+ /* 
+@@ -755,11 +763,11 @@ end_iface_scan(struct iface_conf_list *ifaces) {
+ #else
+ 
+ /* 
+- * BSD support
+- * -----------
++ * BSD & Linux support
++ * -------------------
+  *
+  * FreeBSD, NetBSD, OpenBSD, and OS X all have the getifaddrs() 
+- * function.
++ * function. Linux has it since glibc 2.3.
+  *
+  * The getifaddrs() man page describes the use.
+  */
+@@ -817,10 +825,39 @@ next_iface(struct iface_info *info, int *err, struct iface_conf_list *ifaces) {
+ 		return 0;
+ 	}
+ 	memset(info, 0, sizeof(struct iface_info));
+-	strncpy(info->name, ifaces->next->ifa_name, sizeof(info->name) - 1);
+-	memcpy(&info->addr, ifaces->next->ifa_addr, 
+-	       ifaces->next->ifa_addr->sa_len);
++	info->addr.ss_family = AF_UNSPEC;
+ 	info->flags = ifaces->next->ifa_flags;
++#ifdef __linux
++	if (strchr(ifaces->next->ifa_name, ':')) {
++		/*
++		 * the name contains a ':', which may
++		 * be a IPv4 "alias interface" label;
++		 * resolve to the true interface name
++		 */
++		if_indextoname(if_nametoindex(ifaces->next->ifa_name),
++				info->name);
++	} else {
++		strncpy(info->name, ifaces->next->ifa_name, sizeof(info->name) - 1);
++	}
++
++	if (ifaces->next->ifa_addr != NULL) {
++		if (ifaces->next->ifa_addr->sa_family == AF_INET) {
++			memcpy(&info->addr, ifaces->next->ifa_addr,
++					sizeof(struct sockaddr_in));
++		} else
++		if (ifaces->next->ifa_addr->sa_family == AF_INET6) {
++			memcpy(&info->addr, ifaces->next->ifa_addr,
++					sizeof(struct sockaddr_in6));
++		}
++		/* else e.g. AF_PACKET / link layer address  */
++	}
++#else
++	strncpy(info->name, ifaces->next->ifa_name, sizeof(info->name) - 1);
++	if (ifaces->next->ifa_addr != NULL) {
++		memcpy(&info->addr, ifaces->next->ifa_addr,
++		       ifaces->next->ifa_addr->sa_len);
++	}
++#endif
+ 	ifaces->next = ifaces->next->ifa_next;
+ 	*err = 0;
+ 	return 1;
+-- 
+2.13.1
+
