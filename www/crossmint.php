@@ -765,6 +765,8 @@ foreach ($libpackages as $package)
 
 <li>2017/10/22 Package gawk added</li>
 
+<li>2017/10/22 Package ncurses updated; it was missing the database</li>
+
 </ul>
 
 <p></p>

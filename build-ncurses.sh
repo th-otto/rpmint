@@ -40,6 +40,8 @@ ${TARGET_MANDIR#/}/man1/*
 ${TARGET_MANDIR#/}/man3/*
 ${TARGET_MANDIR#/}/man5/*
 ${TARGET_MANDIR#/}/man7/*
+${TARGET_PREFIX#/}/share/terminfo
+${TARGET_PREFIX#/}/share/tabset
 "
 
 unpack_archive
@@ -87,8 +89,11 @@ configure_ncurses_for_build()
 	# the program we build here is used to generate
 	# the terminfo database for the TARGET, not the BUILD system
 	case $TARGET in
-		*-os2-emx*|*-msdosdjgpp*|*-cygwin*|*-msys*|*-mingw*|*-uwin*|*-atari-mint*)
+		*-os2-emx*|*-msdosdjgpp*|*-cygwin*|*-msys*|*-mingw*|*-uwin*)
 			mixedcase=--enable-mixed-case=no
+			;;
+		*-atari-mint*)
+			mixedcase=--enable-mixed-case=yes
 			;;
 	esac
 	export CC CXX CFLAGS CXXFLAGS LDFLAGS TERM GZIP PATH TMPDIR
@@ -287,8 +292,11 @@ build_ncurses()
 		*) speed_t=--with-ospeed=speed_t with_gpm=--with-gpm dlsym=--with-dlsym disable_root=--disable-root-environ ;;
 	esac
 	case $TARGET in
-		*-os2-emx*|*-msdosdjgpp*|*-cygwin*|*-msys*|*-mingw*|*-uwin*|*-atari-mint*)
+		*-os2-emx*|*-msdosdjgpp*|*-cygwin*|*-msys*|*-mingw*|*-uwin*)
 			mixedcase=--enable-mixed-case=no
+			;;
+		*-atari-mint*)
+			mixedcase=--enable-mixed-case=yes
 			;;
 	esac
 	case $ENABLE_SHARED_TARGET in
