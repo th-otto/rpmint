@@ -1,0 +1,47 @@
+diff -rup gawk-4.1.4.orig/awk.h gawk-4.1.4/awk.h
+--- gawk-4.1.4.orig/awk.h	2016-08-24 21:31:55.000000000 +0200
++++ gawk-4.1.4/awk.h	2017-10-22 03:26:20.357171635 +0200
+@@ -80,6 +80,7 @@
+ #endif
+ #include <signal.h>
+ #include <time.h>
++#include <sys/time.h>
+ #include <errno.h>
+ #if ! defined(errno)
+ extern int errno;
+diff -rup gawk-4.1.4.orig/getopt.c gawk-4.1.4/getopt.c
+--- gawk-4.1.4.orig/getopt.c	2016-05-30 23:54:03.000000000 +0200
++++ gawk-4.1.4/getopt.c	2017-10-22 03:26:36.929171274 +0200
+@@ -57,7 +57,7 @@
+ 
+ /* This needs to come after some library #include
+    to get __GNU_LIBRARY__ defined.  */
+-#if defined (__GNU_LIBRARY__) || defined (__CYGWIN__) || defined(__DJGPP__) || defined(__APPLE__) || defined(__MINGW32__) || defined(__sun) /* Illumos */
++#if defined (__GNU_LIBRARY__) || defined(__MINT__) || defined (__CYGWIN__) || defined(__DJGPP__) || defined(__APPLE__) || defined(__MINGW32__) || defined(__sun) /* Illumos */
+ /* Don't include stdlib.h for
+  * non-GNU C libraries
+  * non-Cygwin
+diff -rup gawk-4.1.4.orig/getopt1.c gawk-4.1.4/getopt1.c
+--- gawk-4.1.4.orig/getopt1.c	2016-05-30 23:54:03.000000000 +0200
++++ gawk-4.1.4/getopt1.c	2017-10-22 03:26:20.357171635 +0200
+@@ -55,7 +55,7 @@
+ 
+ /* This needs to come after some library #include
+    to get __GNU_LIBRARY__ defined.  */
+-#ifdef __GNU_LIBRARY__
++#if defined(__GNU_LIBRARY__) || defined(__MINT__)
+ #include <stdlib.h>
+ #endif
+ 
+diff -rup gawk-4.1.4.orig/replace.c gawk-4.1.4/replace.c
+--- gawk-4.1.4.orig/replace.c	2015-04-27 17:01:59.000000000 +0200
++++ gawk-4.1.4/replace.c	2017-10-22 03:44:48.289147526 +0200
+@@ -111,6 +111,6 @@
+ #include "missing_d/strcoll.c"
+ #endif
+ 
+-#if defined(__DJGPP__)
++#if defined(__DJGPP__) || defined(__MINT__)
+ #include "missing_d/wcmisc.c"
+ #endif
+

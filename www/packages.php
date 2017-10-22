@@ -890,6 +890,24 @@ a collection of software that implements all aspects of the DHCP
 (Dynamic Host Configuration Protocol) suite.
 '
 	),
+	'gawk' => array(
+		'name' => 'gawk',
+		'upstream' => 'http://www.gnu.org/software/gawk/',
+		'source' => 'http://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
+		'version' => '4.1.4',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+The gawk packages contains the GNU version of awk, a text processing
+utility.  Awk interprets a special-purpose programming language to do
+quick and easy text pattern matching and reformatting jobs. Gawk should
+be upwardly compatible with the Bell Labs research version of awk and
+is almost completely compliant with the 1993 POSIX 1003.2 standard for
+awk.
+'
+	),
 );
 
 ?>

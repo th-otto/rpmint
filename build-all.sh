@@ -51,6 +51,7 @@ for pkg in gemlib \
 	grep \
 	ctris \
 	dhcp \
+	gawk \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

@@ -761,6 +761,10 @@ foreach ($libpackages as $package)
 
 <li>2017/10/21 Package ctris added</li>
 
+<li>2017/10/21 Package dhcp added</li>
+
+<li>2017/10/22 Package gawk added</li>
+
 </ul>
 
 <p></p>
