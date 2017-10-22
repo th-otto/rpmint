@@ -2,6 +2,8 @@
 
 $target = ' target="_blank"';
 $target = '';
+$linkcount = 0;
+$linkstats = array();
 
 function last_changetime($filename)
 {
@@ -28,6 +30,9 @@ function last_changetime($filename)
 function gen_link($filename, $text)
 {
 	global $download_dir;
+	global $linkcount;
+	global $linkstats;
+	
 	$stat = 0;
 	$exists = 1;
 	if (substr($filename, 0, strlen($download_dir)) == $download_dir)
@@ -38,11 +43,15 @@ function gen_link($filename, $text)
 			$exists = 0;
 		}
 	}
-	echo '<a class="archive" href="' . $filename . '"';
+	++$linkcount;
+	$id = 'tippylink' . $linkcount;
+	echo '<a class="archive tippybtn" href="' . $filename . '" id="' . $id. '"';
 	if ($exists && $stat)
 	{
 		echo ' title="size: ' . intdiv($stat['size'], 1024) . 'K&#10;"';
-		
+		$stat['id'] = $id;
+		$stat['filename'] = $filename;
+		$linkstats[$id] = $stat;
 	}
 	echo '>' . $text . '</a>';
 	if (!$exists)
@@ -58,6 +67,21 @@ function gen_link($filename, $text)
 function usertime($time, $format='YYYY/MM/DD HH:mm:ss')
 {
 	return '<script type="text/javascript">document.write(usertime("' . date('Y-m-d\TH:i:s\.0\Z', $time) . '", "' . $format . '"));</script>';
+}
+
+
+function gen_linktitles($timeformat='YYYY/MM/DD HH:mm:ss')
+{
+	global $linkstats;
+	
+	foreach ($linkstats as $stat)
+	{
+		echo '<!-- ' . $stat['filename'] . ': ' . $stat['size'] . " --!>\n";
+		echo "document.getElementById('" . $stat['id'] . "').setAttribute('title',
+			'size: " . intdiv($stat['size'], 1024) . "K\\n" .
+			"date: ' + usertime('" . date('Y-m-d\TH:i:s\.0\Z', $stat['mtime']) . "', '" . $timeformat . "') + '" .
+			"\\n');\n";
+	}
 }
 
 ?>

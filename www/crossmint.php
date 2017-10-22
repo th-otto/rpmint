@@ -6,6 +6,7 @@
 <title>m68k-atari-mint cross-tools</title>
 <meta name="keywords" content="ORCS, CAT, GC, PBEM, PBM, GC-Ork, GCORK, ARAnyM, UDO, EmuTOS, GCC" />
 <link rel="stylesheet" type="text/css" href="home.css" />
+<link rel="stylesheet" type="text/css" href="tippy/tippy.css" />
 <script type="text/javascript" src="moment.min.js" charset="UTF-8"></script>
 <script type="text/javascript" src="functions.js" charset="UTF-8"></script>
 </head>
@@ -169,9 +170,9 @@ foreach ($basepackages as $package)
 
 	if (isset($package['repo']))
 	{
-		echo '<tr>';
-		echo '<td class="icon"></td>';
-		echo '<td class="linkdesc">GitHub repository:</td>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"></td>' . "\n";
+		echo '<td class="linkdesc">GitHub repository:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		echo '<a href="' . $package['repo'];
 		if (isset($package['branch']))
@@ -180,8 +181,8 @@ foreach ($basepackages as $package)
 		$repo = str_replace('https://github.com/', '', $package['repo']);
 		echo $repo;
 		echo '</a>';
-		echo '</td>';
-		echo '</tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 
 	if (isset($package['source']))
@@ -200,33 +201,34 @@ foreach ($basepackages as $package)
 	
 	if ($package['patch'])
 	{
-		echo '<tr>';
-		echo '<td class="icon"></td>';
-		echo '<td class="linkdesc">MiNT patch:</td>';
-		echo '<td class="sourcelink">';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"></td>' . "\n";
+		echo '<td class="linkdesc">MiNT patch:</td>' . "\n";
+		echo '<td class="sourcelink">' . "\n";
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
 			$filename .= '-' . $package['date'];
 		$filename .= '.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint.tar.xz';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 	
 	if (isset($package['patchcomment']))
 	{
-		echo '<tr>';
-		echo '<td class="icon"></td>';
-		echo '<td class="linkdesc"></td>';
-		echo '<td class="sourcelink" colspan="2">' . $package['patchcomment'] . '</td>';
-		echo '</tr>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"></td>' . "\n";
+		echo '<td class="linkdesc"></td>' . "\n";
+		echo '<td class="sourcelink" colspan="2">' . $package['patchcomment'] . '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 	
 	if ($package['script'])
 	{
-		echo '<tr>';
-		echo '<td class="icon"></td>';
-		echo '<td class="linkdesc">Build script:</td>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"></td>' . "\n";
+		echo '<td class="linkdesc">Build script:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . 'build-' . $package['name'] . '-' . $package['version'];
 		if (isset($package['date']))
@@ -234,14 +236,15 @@ foreach ($basepackages as $package)
 		$filename .= '.sh';
 		$text = 'build-' . $package['name'] . '-' . $package['version'] . '-sh';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 	
 	if (isset($package['doc']) && $package['doc'])
 	{
-		echo '<tr>';
-		echo '<td class="icon"></td>';
-		echo '<td class="linkdesc">Documentation:</td>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"></td>' . "\n";
+		echo '<td class="linkdesc">Documentation:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
@@ -249,14 +252,15 @@ foreach ($basepackages as $package)
 		$filename .= '-doc.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-doc.tar.xz';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 	
 	if ($package['cygwin32'])
 	{
-		echo '<tr>';
-		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin"></img></td>';
-		echo '<td class="linkdesc">Cygwin Package:</td>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin"></img></td>' . "\n";
+		echo '<td class="linkdesc">Cygwin Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
@@ -264,7 +268,8 @@ foreach ($basepackages as $package)
 		$filename .= '-bin-cygwin32.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint-bin-cygwin32.tar.xz';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 		if ($package['elf'] && $basepackages['gcc720']['cygwin32'])
 		{
@@ -275,14 +280,15 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-cygwin32.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 	
 	if ($package['cygwin64'])
 	{
-		echo '<tr>';
-		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin"></img></td>';
-		echo '<td class="linkdesc">Cygwin Package:</td>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin"></img></td>' . "\n";
+		echo '<td class="linkdesc">Cygwin Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
@@ -290,7 +296,8 @@ foreach ($basepackages as $package)
 		$filename .= '-bin-cygwin64.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint-bin-cygwin64.tar.xz';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 		if ($package['elf'] && $basepackages['gcc720']['cygwin64'])
 		{
@@ -301,14 +308,15 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-cygwin64.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 	
 	if ($package['mingw32'])
 	{
-		echo '<tr>';
-		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW"></img></td>';
-		echo '<td class="linkdesc">MinGW Package:</td>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW"></img></td>' . "\n";
+		echo '<td class="linkdesc">MinGW Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
@@ -316,7 +324,8 @@ foreach ($basepackages as $package)
 		$filename .= '-bin-mingw32.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint-bin-mingw32.tar.xz';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 		if ($package['elf'] && $basepackages['gcc720']['mingw32'])
 		{
@@ -327,14 +336,15 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-mingw32.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 	
 	if ($package['mingw64'])
 	{
-		echo '<tr>';
-		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW"></img></td>';
-		echo '<td class="linkdesc">MinGW Package:</td>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW"></img></td>' . "\n";
+		echo '<td class="linkdesc">MinGW Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
@@ -342,7 +352,8 @@ foreach ($basepackages as $package)
 		$filename .= '-bin-mingw64.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint-bin-mingw64.tar.xz';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 		if ($package['elf'] && $basepackages['gcc720']['mingw64'])
 		{
@@ -353,23 +364,24 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-mingw64.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 
 	if (!$package['mingw32'] && !$package['mingw64'])
 	{
-		echo '<tr>';
-		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW"></img></td>';
-		echo '<td class="linkdesc">MinGW Package:</td>';
-		echo '<td class="sourcelink">(not yet available)</td>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW"></img></td>' . "\n";
+		echo '<td class="linkdesc">MinGW Package:</td>' . "\n";
+		echo '<td class="sourcelink">(not yet available)</td>' . "\n";
 		echo '</tr>';
 	}
 	
 	if ($package['linux64'])
 	{
-		echo '<tr>';
-		echo '<td class="icon"><img src="images/os-linux.png" width="32" height="32" alt="Linux"></img></td>';
-		echo '<td class="linkdesc">Linux Package:</td>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"><img src="images/os-linux.png" width="32" height="32" alt="Linux"></img></td>' . "\n";
+		echo '<td class="linkdesc">Linux Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
  		if (isset($package['date']))
@@ -377,7 +389,8 @@ foreach ($basepackages as $package)
 		$filename .= '-bin-linux.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint-bin-linux.tar.xz';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 		if ($package['elf'])
 		{
@@ -388,14 +401,15 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-linux.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 	
 	if ($package['macos64'])
 	{
-		echo '<tr>';
-		echo '<td class="icon"><img src="images/os-macos.png" width="32" height="32" alt="MacOSX"></img></td>';
-		echo '<td class="linkdesc">MacOSX Package:</td>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"><img src="images/os-macos.png" width="32" height="32" alt="MacOSX"></img></td>' . "\n";
+		echo '<td class="linkdesc">MacOSX Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
@@ -403,7 +417,8 @@ foreach ($basepackages as $package)
 		$filename .= '-bin-macos.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint-bin-macos.tar.xz';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 		if ($package['elf'])
 		{
@@ -414,19 +429,21 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-bin-macos.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 	
 	if (isset($package['atari']) && $package['atari'])
 	{
-		echo '<tr>';
-		echo '<td class="icon"><img src="images/os-atari.png" width="32" height="32" alt="Atari" style="background-color: #ffffff"></img></td>';
-		echo '<td class="linkdesc">Atari Package:</td>';
+		echo '<tr>' . "\n";
+		echo '<td class="icon"><img src="images/os-atari.png" width="32" height="32" alt="Atari" style="background-color: #ffffff"></img></td>' . "\n";
+		echo '<td class="linkdesc">Atari Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint-000.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint-000.tar.xz';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 		if ($package['elf'])
 		{
@@ -434,13 +451,15 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-000.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint-020.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint-020.tar.xz';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 		if ($package['elf'])
 		{
@@ -448,13 +467,15 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-020.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint-v4e.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint-v4e.tar.xz';
 		gen_link($filename, $text);
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 		if ($package['elf'])
 		{
@@ -462,17 +483,18 @@ foreach ($basepackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf-v4e.tar.xz';
 			gen_link($filename, $text);
 		}
-		echo '</td></tr>';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
 	}
 	
-	echo '</table></td>';
+	echo '</table></td>' . "\n";
 
 	echo '<td>';
 	if (isset($package['comment']))
 		echo $package['comment'];
-	echo '</td>';
+	echo '</td>' . "\n";
 	
-	echo '</tr>';
+	echo '</tr>' . "\n\n\n";
 }
 
 ?>
@@ -862,6 +884,12 @@ CosmosEx is a hardware extension as small as a floppy drive which brings SD-Card
 <a href="index.html"> <img src="images/home1.png" width="180" height="60" style="border:0" alt="Home" /></a>
 </p>
 </div>
+
+<script type="text/javascript" charset="UTF-8" src="tippy/tippy.min.js"></script>
+<script type="text/javascript" charset="UTF-8">
+<?php gen_linktitles(); ?>
+<!-- tippy('.tippybtn'); --!>
+</script>
 
 <!--
 Build times:
