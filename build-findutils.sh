@@ -3,20 +3,25 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=diffutils
-VERSION=-3.6
+PACKAGENAME=findutils
+VERSION=-4.6.0
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/diffutils/diff-3.6-mint.patch
-patches/diffutils/mintelf-config.patch
+patches/findutils/findutils-4.4.2-xautofs.patch
+patches/findutils/sv-bug-48030-find-exec-plus-does-not-pass-all-arguments.patch
+patches/findutils/mintelf-config.patch
 "
+
+# patches/findutils/findutils-mktemp.patch
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
+${TARGET_PREFIX#/}/libexec/find/*
 ${TARGET_MANDIR#/}/man1/*
+${TARGET_MANDIR#/}/man5/*
 ${TARGET_PREFIX#/}/share/info/*
 "
 
@@ -31,6 +36,7 @@ CONFIGURE_FLAGS="--host=${TARGET} \
 	--sysconfdir=/etc \
 	--disable-nls \
 	--disable-shared \
+	--localstatedir=/var/lib \
 	--config-cache"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
@@ -48,21 +54,16 @@ for CPU in ${ALL_CPUS}; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
+	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 	create_config_cache
 	STACKSIZE="-Wl,-stack,128k"
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	"$srcdir/configure" ${CONFIGURE_FLAGS} \
+	--libdir='${exec_prefix}/lib'$multilibdir \
+	--libexecdir='${exec_prefix}/libexec/find'$multilibexecdir
 
 	hack_lto_cflags
-
-	# ignore any PR program found on the build system
-cat << EOF >> lib/config.h
-#undef PR_PROGRAM
-#define PR_PROGRAM "/usr/bin/pr"
-EOF
-
-	# make sure man-pages are not regenerated using help2man,
-	# it tries to execute the just build programs
-	touch man/*.1
 
 	${MAKE} || exit 1
 

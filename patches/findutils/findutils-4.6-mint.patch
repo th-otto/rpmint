@@ -1,0 +1,78 @@
+diff -rup findutils-4.6.0.orig/gl/lib/mountlist.c findutils-4.6.0/gl/lib/mountlist.c
+--- findutils-4.6.0.orig/gl/lib/mountlist.c	2015-12-24 17:41:44.000000000 +0100
++++ findutils-4.6.0/gl/lib/mountlist.c	2017-10-23 06:38:27.276439834 +0200
+@@ -229,6 +229,66 @@ me_remote (char const *fs_name, char con
+ #if MOUNTED_GETMNTINFO
+ 
+ # if ! HAVE_STRUCT_STATFS_F_FSTYPENAME
++
++#ifdef __MINT__	
++#include <sys/statfs.h>
++#include <mint/dcntl.h>
++
++static char *
++fstype_to_string (long t)
++{
++  switch (t)
++    {
++    case FS_OLDTOS:
++      return "tos";
++    case FS_FAT12:
++      return "fat12";
++    case FS_FAT16:
++      return "fat16";
++    case FS_FAT32:
++      return "fat32";
++    case FS_VFAT12:
++      return "vfat12";
++    case FS_VFAT16:
++      return "vfat16";
++    case FS_VFAT32:
++      return "vfat32";
++    case FS_MINIX:
++      return "minix";
++    case FS_RAMFS:
++      return "ramfs";
++    case FS_EXT2:
++      return "ext2";
++    case FS_HSIERRA:
++      return "hsierra";
++    case FS_ISO9669:
++      return "iso9669";
++    case FS_JOLIET:
++      return "joliet";
++    case FS_HFS:
++      return "hfs";
++    case FS_CDRAW:
++      return "cdraw";
++    case FS_STONX:
++      return "stonx";
++#ifndef FS_NFS2
++#define FS_NFS2 (12L << 16)
++#endif
++    case FS_NFS2:
++      return "nfs";
++#ifndef FS_HOSTFS
++#define FS_HOSTFS (15L << 16)
++#endif
++    case FS_HOSTFS:
++      return "hostfs";
++    default:
++      return "unknown";
++    }
++    blub
++}
++
++#else /* __MINT__ */
++
+ static char *
+ fstype_to_string (short int t)
+ {
+@@ -323,6 +383,7 @@ fstype_to_string (short int t)
+     }
+ }
+ # endif
++#endif
+ 
+ static char *
+ fsp_to_string (const struct statfs *fsp)

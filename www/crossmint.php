@@ -789,9 +789,11 @@ foreach ($libpackages as $package)
 
 <li>2017/10/22 Package ncurses updated; it was missing the database</li>
 
-<li>2017/10/22 Package file added</li>
+<li>2017/10/23 Package file added</li>
 
-<li>2017/10/22 Package diffutils added</li>
+<li>2017/10/23 Package diffutils added</li>
+
+<li>2017/10/23 Package findutils added</li>
 
 </ul>
 
