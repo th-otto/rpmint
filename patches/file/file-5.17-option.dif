@@ -1,0 +1,42 @@
+---
+ src/file.c |    8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/src/file.c
++++ b/src/file.c	2016-06-01 10:13:21.169126906 +0000
+@@ -225,6 +225,8 @@ main(int argc, char *argv[])
+ 			flags |= MAGIC_ERROR;
+ 			break;
+ 		case 'e':
++			if (!optarg)
++				usage();
+ 			for (i = 0; i < sizeof(nv) / sizeof(nv[0]); i++)
+ 				if (strcmp(nv[i].name, optarg) == 0)
+ 					break;
+@@ -236,7 +238,7 @@ main(int argc, char *argv[])
+ 			break;
+ 
+ 		case 'f':
+-			if(action)
++			if(action || !optarg)
+ 				usage();
+ 			if (magic == NULL)
+ 				if ((magic = load(magicfile, flags)) == NULL)
+@@ -246,6 +248,8 @@ main(int argc, char *argv[])
+ 			++didsomefiles;
+ 			break;
+ 		case 'F':
++			if (!optarg)
++				usage();
+ 			separator = optarg;
+ 			break;
+ 		case 'i':
+@@ -258,6 +262,8 @@ main(int argc, char *argv[])
+ 			action = FILE_LIST;
+ 			break;
+ 		case 'm':
++			if (!optarg)
++				usage();
+ 			magicfile = optarg;
+ 			break;
+ 		case 'n':

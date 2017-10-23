@@ -1,0 +1,18 @@
+---
+ magic/Magdir/archive |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/magic/Magdir/archive
++++ b/magic/Magdir/archive	2016-04-18 11:39:51.791354756 +0000
+@@ -770,6 +770,11 @@
+ 0	string		PK\x07\x08PK\x03\x04	Zip multi-volume archive data, at least PKZIP v2.50 to extract
+ !:mime	application/zip
+ !:ext zip/cbz
++>30	ubelong		0x6d696d65	Zip archive data, at least v2.0 to extract
++>>34	ubelong		0x74797065	\b, mime type
++>>>38	regex		application/[a-z+-]+	\b %s
++!:mime	application/unknown+zip
++!:ext zip/cbz
+ 
+ # Zip archives (Greg Roelofs, c/o zip-bugs@wkuvx1.wku.edu)
+ 0	string		PK\005\006	Zip archive data (empty)

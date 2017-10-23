@@ -908,6 +908,22 @@ is almost completely compliant with the 1993 POSIX 1003.2 standard for
 awk.
 '
 	),
+	'file' => array(
+		'name' => 'file',
+		'upstream' => 'http://www.darwinsys.com/file/',
+		'source' => 'ftp://ftp.astron.com/pub/%{name}/%{name}-%{version}.tar.gz',
+		'version' => '5.32',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+With the file command, you can obtain information on the file type of a
+specified file. File type recognition is controlled by the file
+/etc/magic, which contains the classification criteria. This command is
+used by apsfilter to permit automatic printing of different file types.
+'
+	),
 );
 
 ?>

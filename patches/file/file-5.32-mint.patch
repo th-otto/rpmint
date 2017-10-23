@@ -1,0 +1,89 @@
+diff -rupN file-5.32.orig/magic/Magdir/atari file-5.32/magic/Magdir/atari
+--- file-5.32.orig/magic/Magdir/atari	1970-01-01 01:00:00.000000000 +0100
++++ file-5.32/magic/Magdir/atari	2017-10-23 03:26:02.237192049 +0200
+@@ -0,0 +1,74 @@
++#------------------------------------------------------------------------------
++# atari:  file(1) magic for some specific Atari files
++#
++# GEMDOS executables
++#
++0	beshort		0x601a		GEMDOS executable
++>24	byte		&0x08		(shared text)
++>25	byte		&0x01		(fload)
++>25	byte&6		0x02		(load to alt ram)
++>25	byte&6		0x04		(malloc from alt ram)
++>25	byte&6		0x06		(load/malloc alt ram)
++>25	byte&0xf0	0x00		(private)
++>25	byte&0xf0	0x10		(global)
++>25	byte&0xf0	0x20		(super)
++>25	byte&0xf0	0x30		(readable)
++0	beshort		0x0064		CPX file
++>8	beshort		x		(version %04x)
++0	string		#!/bin/sh	Bourne shell script
++0	string		#!mupfel	Mupfel script
++0	string		#!		script file
++#
++# object files
++#
++0	belong		0x4efa001c	Borland object file
++0	belong		0x00000107	GNU object file
++#
++# archive files
++#
++0	string		LZRF		LZRF archive
++>4	beshort		>0x00ff		(version %04x)
++0	string		BDIF		Binary Diff archive
++>4	beshort		>0x00ff		(version %04x)
++#
++# word processor documents
++#
++0	beshort		0x1f30		Wordplus document
++0	string		sdoc0001	Signum!2 document
++2	string		sdoc		Signum!3 document
++13	string		CDK		Calamus document
++0	string		PAP1		Papyrus document
++1	string		T_WORD		Tempus Word document
++1	string		J_WORD		Tempus Word junior document
++#
++# image files
++#
++16	string		XIMG		XIMG raster image
++>12	leshort		x		(%d width *
++>14	leshort		x		%d height)
++
++0	lelong		0x00010008	IMG-1-8-Format
++>4	leshort		x		(%1d plane,
++>12	leshort		x		%4d width *
++>14	leshort		x		%4d height)
++
++0	lelong		0xffff1800	GEM metafile
++
++#
++# AVR sound files
++#
++0	string		2BIT		AVR sound file
++>12	beshort		0x0		mono,
++>12	beshort		0xffff		stereo,
++>14	beshort		x		%d bit,
++>16	beshort		0x0		unsigned,
++>16	beshort		0xffff		signed,
++>24	beshort		x		%d Hz.
++#
++# other files
++#
++0	string		Help		Borland help file
++#34	leshort		f		GEM RSC-File
++0	string		PBAS		PureC project data base
++0	beshort		0x2771		MultiTOS AES keyboard table
++0	string		xbtoa		btoa'd file
+diff -rupN file-5.32.orig/magic/Makefile.am file-5.32/magic/Makefile.am
+--- file-5.32.orig/magic/Makefile.am	2017-08-10 13:01:38.000000000 +0200
++++ file-5.32/magic/Makefile.am	2017-10-23 03:31:34.953184809 +0200
+@@ -31,6 +31,7 @@ $(MAGIC_FRAGMENT_DIR)/archive \
+ $(MAGIC_FRAGMENT_DIR)/assembler \
+ $(MAGIC_FRAGMENT_DIR)/asterix \
+ $(MAGIC_FRAGMENT_DIR)/att3b \
++$(MAGIC_FRAGMENT_DIR)/atari \
+ $(MAGIC_FRAGMENT_DIR)/audio \
+ $(MAGIC_FRAGMENT_DIR)/basis \
+ $(MAGIC_FRAGMENT_DIR)/ber \
