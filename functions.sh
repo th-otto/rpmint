@@ -457,10 +457,14 @@ gl_cv_func_fflush_stdin=yes
 gl_cv_func_getcwd_abort_bug=no
 gl_cv_func_getcwd_path_max=yes
 gl_cv_func_getcwd_null=yes
+gl_cv_func_getdtablesize_works=yes
+gl_cv_func_getopt_gnu=yes
+gl_cv_func_getopt_posix=yes
 gl_cv_func_working_getdelim=yes
 gl_cv_func_malloc_0_nonnull=1
 gl_cv_func_memchr_works=yes
 gl_cv_func_working_mktime=yes
+gl_cv_func_perror_works=yes
 gl_cv_func_printf_sizes_c99=yes
 gl_cv_func_printf_infinite=yes
 gl_cv_func_printf_infinite_long_double=yes
@@ -475,6 +479,7 @@ gl_cv_func_printf_enomem=yes
 gl_cv_func_snprintf_truncation_c99=yes
 gl_cv_func_snprintf_retval_c99=yes
 gl_cv_func_snprintf_directive_n=yes
+gl_cv_func_symlink_works=yes
 gl_cv_func_vsnprintf_zerosize_c99=yes
 gl_cv_func_signbit=yes
 gl_cv_func_signbit_gcc=yes
@@ -501,6 +506,7 @@ gl_cv_func_unsetenv_works=yes
 gl_cv_func_vsnprintf_usable=yes
 gl_cv_func_working_utimes=yes
 gl_cv_struct_dirent_d_ino=yes
+gl_cv_func_wcwidth_works=yes
 EOF
 }
 

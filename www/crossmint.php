@@ -791,6 +791,8 @@ foreach ($libpackages as $package)
 
 <li>2017/10/22 Package file added</li>
 
+<li>2017/10/22 Package diffutils added</li>
+
 </ul>
 
 <p></p>

@@ -53,6 +53,7 @@ for pkg in gemlib \
 	dhcp \
 	gawk \
 	file \
+	diffutils \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

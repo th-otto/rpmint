@@ -70,7 +70,6 @@ CONFIGURE_FLAGS="--host=${TARGET} \
 	--datadir=${prefix}/share/misc \
 	--disable-nls \
 	--disable-shared \
-	--enable-shared \
 	--enable-fsect-man5 \
 	--config-cache"
 

@@ -924,6 +924,20 @@ specified file. File type recognition is controlled by the file
 used by apsfilter to permit automatic printing of different file types.
 '
 	),
+	'diffutils' => array(
+		'name' => 'diffutils',
+		'upstream' => 'https://www.gnu.org/software/diffutils/',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
+		'version' => '3.6',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'comment' => '
+The GNU diff utilities find differences between files. diff is used to
+make source code patches, for instance.
+'
+	),
 );
 
 ?>

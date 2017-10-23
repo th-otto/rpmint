@@ -1,0 +1,28 @@
+diff -rupN diffutils-3.6.orig/lib/cmpbuf.c diffutils-3.6/lib/cmpbuf.c
+--- diffutils-3.6.orig/lib/cmpbuf.c	2017-10-23 04:37:21.795702245 +0200
++++ diffutils-3.6/lib/cmpbuf.c	2017-10-23 04:38:43.135700475 +0200
+@@ -32,6 +32,10 @@
+ # define SSIZE_MAX TYPE_MAXIMUM (ssize_t)
+ #endif
+ 
++#ifndef SA_RESTART
++# define SA_RESTART 0
++#endif
++
+ #undef MIN
+ #define MIN(a, b) ((a) <= (b) ? (a) : (b))
+ 
+diff -rupN diffutils-3.6.orig/src/sdiff.c diffutils-3.6/src/sdiff.c
+--- diffutils-3.6.orig/src/sdiff.c	2017-10-23 04:37:21.787702246 +0200
++++ diffutils-3.6/src/sdiff.c	2017-10-23 04:38:43.135700475 +0200
+@@ -36,6 +36,10 @@
+ #include <version-etc.h>
+ #include <xalloc.h>
+ 
++#ifndef SA_RESTART
++# define SA_RESTART 0
++#endif
++
+ /* The official name of this program (e.g., no 'g' prefix).  */
+ #define PROGRAM_NAME "sdiff"
+ 
