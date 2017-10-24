@@ -1,0 +1,47 @@
+---
+ variables.c |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+--- a/variables.c
++++ b/variables.c	2016-09-14 08:51:32.306631046 +0000
+@@ -1300,6 +1300,7 @@ static unsigned long rseed = 1;
+ static int last_random_value;
+ static int seeded_subshell = 0;
+ 
++#if !defined(linux)
+ /* A linear congruential random number generator based on the example
+    one in the ANSI C standard.  This one isn't very good, but a more
+    complicated one is overkill. */
+@@ -1344,6 +1345,32 @@ seedrand ()
+   sbrand (tv.tv_sec ^ tv.tv_usec ^ getpid ());
+ }
+ 
++#else
++/* Use ISO C Random Number Functions of the glibc */
++static int
++brand (void)
++{
++  if (rseed == 0)
++    seedrand ();
++  return rand() & 32767;
++}
++
++static void
++sbrand (unsigned long seed)
++{
++  rseed = seed;
++  srand(seed);
++}
++
++static void
++seedrand (void)
++{
++  struct timeval tv;
++  gettimeofday (&tv, NULL);
++  srand (tv.tv_sec ^ tv.tv_usec ^ getpid ());
++}
++#endif
++
+ static SHELL_VAR *
+ assign_random (self, value, unused, key)
+      SHELL_VAR *self;

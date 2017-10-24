@@ -163,7 +163,9 @@ foreach ($basepackages as $package)
 	echo "</td>\n";
 
 	echo '<td>';
-	echo $package['version'] . ' <br />' . (isset($package['date']) ? $package['date'] : '');
+	$version = $package['version'];
+	if (isset($package['patchlevel'])) $version .= $package['patchlevel'];
+	echo $version . ' <br />' . (isset($package['date']) ? $package['date'] : '');
 	echo "</td>\n";
 
 	echo '<td><table>';
@@ -523,7 +525,10 @@ compiled for 68k.</p>
 <p>For native installation, there will also be *-bin
 packages for other machines. <span class="important">Do not install these on
 a cross-development environment</span>(at least not to your usual installation
-directory), as this may overwrite your system binaries.</p>
+directory), as this may overwrite your system binaries.</p> They are meant
+to be installed in a MiNT environment, and therefore where packaged with pathes
+like <code>/usr/bin</code>. In general, the binaries won't be of much use
+in a cross-development installation.
 
 <p>&nbsp;</p>
 
@@ -557,7 +562,9 @@ foreach ($libpackages as $package)
 	echo "</td>\n";
 
 	echo '<td>';
-	echo $package['version'] . ' <br />' . (isset($package['date']) ? $package['date'] : '');
+	$version = $package['version'];
+	if (isset($package['patchlevel'])) $version .= $package['patchlevel'];
+	echo $version . ' <br />' . (isset($package['date']) ? $package['date'] : '');
 	echo "</td>\n";
 
 	echo '<td><table>';
@@ -794,6 +801,10 @@ foreach ($libpackages as $package)
 <li>2017/10/23 Package diffutils added</li>
 
 <li>2017/10/23 Package findutils added</li>
+
+<li>2017/10/23 Package coreutils added</li>
+
+<li>2017/10/23 Package bash added</li>
 
 </ul>
 

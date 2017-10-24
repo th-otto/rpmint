@@ -67,7 +67,7 @@ COMMON_CFLAGS="-O2 -fomit-frame-pointer -DHOWMANY=69632"
 CONFIGURE_FLAGS="--host=${TARGET} \
 	--prefix=${prefix} \
 	--sysconfdir=/etc \
-	--datadir=${prefix}/share/misc \
+	--datadir=${prefix}/share \
 	--disable-nls \
 	--disable-shared \
 	--enable-fsect-man5 \

@@ -1,0 +1,161 @@
+diff -rupN coreutils-8.28.orig/lib/mountlist.c coreutils-8.28/lib/mountlist.c
+--- coreutils-8.28.orig/lib/mountlist.c	2017-09-01 09:12:43.000000000 +0200
++++ coreutils-8.28/lib/mountlist.c	2017-10-23 10:12:33.659194633 +0200
+@@ -130,6 +130,30 @@
+ # define MOUNTED_GETMNTTBL
+ #endif
+ 
++#ifdef __MINT__
++#include <mintbind.h>
++#include <osbind.h>
++#include <sys/statfs.h>
++#include <mint/dcntl.h>
++
++int get_fsname (const char *path, char *xfs_name, char *type_name);
++
++/* get the list of available drives */
++static long
++get_drives(void)
++{
++	long drive_bits;
++	int drv;
++	
++	drv = Dgetdrv();
++	drive_bits = Dsetdrv(drv);
++	drive_bits &= ~(1|2); /* exclude all floppies */
++		
++	return drive_bits;
++}
++
++#endif
++
+ #if HAVE_SYS_MNTENT_H
+ /* This is to get MNTOPT_IGNORE on e.g. SVR4.  */
+ # include <sys/mntent.h>
+@@ -436,6 +458,66 @@ read_file_system_list (bool need_fs_type
+   struct mount_entry **mtail = &mount_list;
+   (void) need_fs_type;
+ 
++#ifdef __MINT__
++  {
++	struct statfs fsp;
++	long drive_bits;
++	int i, j;
++	char lw[] = "a:/";
++	char mountdir[] = "u:/x";
++	char dev[] = "/dev/x";
++	
++	drive_bits = get_drives();
++	for (i = 0; i < 32; i++)
++	{
++		if (drive_bits & (1L << i))
++		{
++			if (i < 26)
++				lw[0] = 'a' + i;
++			else
++				lw[0] = '1' + i - 26;
++			
++			if(statfs(lw, &fsp) == 0)
++			{
++				char name[32];
++
++				me = xmalloc (sizeof (*me));
++				
++				dev[5] = lw[0];
++				mountdir[3] = lw[0];
++				me->me_dev = i;
++				me->me_mntroot = NULL;
++				me->me_dummy = false;
++				me->me_remote = false;
++				if (i == ('U' - 'A'))
++				{
++					me->me_devname  = xstrdup("rootfs");
++					me->me_mountdir = xstrdup("/");
++				} else
++				{
++					me->me_devname  = xstrdup(dev);
++					me->me_mountdir = xstrdup(mountdir);
++				}		
++				me->me_type = NULL;
++				
++				if (need_fs_type)
++				{
++					get_fsname(lw, NULL, name);
++					me->me_type = xstrdup(name);
++					me->me_type_malloced = 1;
++					me->me_remote = ME_REMOTE (me->me_devname, me->me_type);
++				}
++				/* Add to the linked list. */
++				*mtail = me;
++				mtail = &me->me_next;
++			}
++		}
++	}
++	*mtail = NULL;
++	return mount_list;
++  }
++#endif
++
+ #ifdef MOUNTED_LISTMNTENT
+   {
+     struct tabmntent *mntlist, *p;
+diff -rupN coreutils-8.28.orig/src/df.c coreutils-8.28/src/df.c
+--- coreutils-8.28.orig/src/df.c	2017-09-01 09:11:03.000000000 +0200
++++ coreutils-8.28/src/df.c	2017-10-23 10:16:12.107189879 +0200
+@@ -676,6 +676,9 @@ filter_mount_list (bool devices_only)
+       if ((me->me_remote && show_local_fs)
+           || (me->me_dummy && !show_all_fs && !show_listed_fs)
+           || (!selected_fstype (me->me_type) || excluded_fstype (me->me_type))
++#ifdef __MINT__
++		  || 1 /* workaround for bug in stat() in mintlib returning wrong dev */
++#endif
+           || -1 == stat (me->me_mountdir, &buf))
+         {
+           /* If remote, and showing just local, or FS type is excluded,
+@@ -1315,7 +1313,7 @@ get_point (const char *point, const stru
+      the mount point.  This avoids statting unavailable mount points,
+      which can hang df.  */
+   char *resolved = canonicalize_file_name (point);
+-  if (resolved && resolved[0] == '/')
++  if (resolved && IS_ABSOLUTE_FILE_NAME(resolved))
+     {
+       size_t resolved_len = strlen (resolved);
+       size_t best_match_len = 0;
+@@ -1368,11 +1368,13 @@
+             && !STREQ (me->me_type, "lofs")
+             && (!best_match || best_match->me_dummy || !me->me_dummy))
+           {
++#ifndef __MINT__
+             /* Skip bogus mtab entries.  */
+             if (stat (me->me_mountdir, &disk_stats) != 0
+                 || disk_stats.st_dev != me->me_dev)
+               me->me_dev = (dev_t) -2;
+             else
++#endif
+               best_match = me;
+           }
+       }
+diff -rup coreutils-8.28.orig/src/tac.c coreutils-8.28/src/tac.c
+--- coreutils-8.28.orig/src/tac.c	2017-09-01 09:11:03.000000000 +0200
++++ coreutils-8.28/src/tac.c	2017-10-23 11:31:27.386071969 +0200
+@@ -57,7 +57,7 @@ tac -r -s '.\|
+   proper_name ("Jay Lepreau"), \
+   proper_name ("David MacKenzie")
+ 
+-#if defined __MSDOS__ || defined _WIN32
++#if defined __MSDOS__ || defined _WIN32 || defined __MINT__
+ /* Define this to non-zero on systems for which the regular mechanism
+    (of unlinking an open file and expecting to be able to write, seek
+    back to the beginning, then reread it) doesn't work.  E.g., on Windows
+diff -rup coreutils-8.28.orig/lib/dosname.h coreutils-8.28/lib/dosname.h
+--- coreutils-8.28.orig/lib/dosname.h	2017-09-01 09:12:43.000000000 +0200
++++ coreutils-8.28/lib/dosname.h	2017-10-23 11:28:00.738076466 +0200
+@@ -22,7 +22,7 @@
+ 
+ #if (defined _WIN32 || defined __WIN32__ ||     \
+      defined __MSDOS__ || defined __CYGWIN__ || \
+-     defined __EMX__ || defined __DJGPP__)
++     defined __EMX__ || defined __DJGPP__ || defined __MINT__)
+    /* This internal macro assumes ASCII, but all hosts that support drive
+       letters use ASCII.  */
+ # define _IS_DRIVE_LETTER(C) (((unsigned int) (C) | ('a' - 'A')) - 'a'  \

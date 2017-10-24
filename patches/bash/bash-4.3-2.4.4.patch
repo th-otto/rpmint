@@ -1,0 +1,96 @@
+---
+ array.c                  |    2 +-
+ examples/loadables/tee.c |    3 ++-
+ hashlib.c                |    2 +-
+ jobs.c                   |    9 +++++++++
+ sig.c                    |    4 ++--
+ sig.h                    |    4 ++--
+ 6 files changed, 17 insertions(+), 7 deletions(-)
+
+--- a/array.c
++++ b/array.c	2017-01-27 17:45:42.364066849 +0000
+@@ -946,7 +946,7 @@ char	*s, *sep;
+  * To make a running version, compile -DTEST_ARRAY and link with:
+  * 	xmalloc.o syntax.o lib/malloc/libmalloc.a lib/sh/libsh.a
+  */
+-int interrupt_immediately = 0;
++volatile sig_atomic_t interrupt_immediately = 0;
+ 
+ int
+ signal_is_trapped(s)
+--- a/examples/loadables/tee.c
++++ b/examples/loadables/tee.c	2017-01-27 17:45:42.364066849 +0000
+@@ -35,6 +35,7 @@
+ #include "bashansi.h"
+ 
+ #include <stdio.h>
++#include <signal.h>
+ #include <errno.h>
+ 
+ #include "builtins.h"
+@@ -56,7 +57,7 @@ static FLIST *tee_flist;
+ 
+ #define TEE_BUFSIZE	8192
+ 
+-extern int interrupt_immediately;
++extern volatile sig_atomic_t interrupt_immediately;
+ 
+ extern char *strerror ();
+ 
+--- a/hashlib.c
++++ b/hashlib.c	2017-01-27 17:45:42.364066849 +0000
+@@ -382,7 +382,7 @@ hash_pstats (table, name)
+ 
+ HASH_TABLE *table, *ntable;
+ 
+-int interrupt_immediately = 0;
++volatile sig_atomic_t interrupt_immediately = 0;
+ 
+ int
+ signal_is_trapped (s)
+--- a/jobs.c
++++ b/jobs.c	2017-01-27 17:45:42.364066849 +0000
+@@ -1962,6 +1962,15 @@ make_child (command, async_p)
+       pid_t mypid;
+ 
+       mypid = getpid ();
++
++      if (interrupt_state)
++	{
++	  struct timeval tv;
++	  struct rusage   rx;
++	  (void) gettimeofday(&tv, NULL);
++	  (void) getrusage(RUSAGE_SELF, &rx);
++	}
++
+ #if defined (BUFFERED_INPUT)
+       /* Close default_buffered_input if it's > 0.  We don't close it if it's
+ 	 0 because that's the file descriptor used when redirecting input,
+--- a/sig.c
++++ b/sig.c	2017-01-27 17:45:42.364066849 +0000
+@@ -98,10 +98,10 @@ sigset_t top_level_mask;
+ #endif /* JOB_CONTROL */
+ 
+ /* When non-zero, we throw_to_top_level (). */
+-int interrupt_immediately = 0;
++volatile sig_atomic_t interrupt_immediately = 0;
+ 
+ /* When non-zero, we call the terminating signal handler immediately. */
+-int terminate_immediately = 0;
++volatile sig_atomic_t terminate_immediately = 0;
+ 
+ #if defined (SIGWINCH)
+ static SigHandler *old_winch = (SigHandler *)SIG_DFL;
+--- a/sig.h
++++ b/sig.h	2017-01-27 17:45:42.364066849 +0000
+@@ -109,8 +109,8 @@ do { \
+ extern volatile sig_atomic_t sigwinch_received;
+ extern volatile sig_atomic_t sigterm_received;
+ 
+-extern int interrupt_immediately;	/* no longer used */
+-extern int terminate_immediately;
++extern volatile sig_atomic_t interrupt_immediately;	/* no longer used */
++extern volatile sig_atomic_t terminate_immediately;
+ 
+ /* Functions from sig.c. */
+ extern sighandler termsig_sighandler __P((int));

@@ -1,0 +1,14 @@
+diff -urN sh-utils-1.16g/lib/human.h sh-utils-1.16g.new/lib/human.h
+--- sh-utils-1.16g/lib/human.h	Mon Jun 29 17:23:45 1998
++++ sh-utils-1.16g.new/lib/human.h	Fri Apr 30 18:31:47 1999
+@@ -1,6 +1,10 @@
+ #ifndef HUMAN_H_
+ # define HUMAN_H_ 1
+ 
++# if HAVE_INTTYPES_H
++#  include <inttypes.h> /* for uintmax_t */
++# endif
++
+ /* A conservative bound on the maximum length of a human-readable string.
+    The output can be the product of the largest uintmax_t and the largest int,
+    so add their sizes before converting to a bound on digits.  */

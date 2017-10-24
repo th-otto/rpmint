@@ -1,0 +1,176 @@
+---
+ bashline.c                 |    1 +
+ examples/loadables/finfo.c |   16 ++++++++++------
+ examples/loadables/id.c    |   37 +++++++++++++++++++++++++------------
+ lib/tilde/shell.c          |    9 +++++++++
+ lib/tilde/tilde.c          |    1 +
+ 5 files changed, 46 insertions(+), 18 deletions(-)
+
+--- bashline.c
++++ bashline.c	2011-11-21 12:41:19.831646479 +0000
+@@ -2485,6 +2485,7 @@ bash_groupname_completion_function (text
+     }
+ 
+   value = savestring (grent->gr_name);
++  endgrent ();
+   return (value);
+ #endif
+ }
+--- examples/loadables/finfo.c
++++ examples/loadables/finfo.c	2011-11-21 12:23:17.331147246 +0000
+@@ -290,6 +290,7 @@ struct stat *st;
+ 	pw = getpwuid(st->st_uid);
+ 	owner = pw ? pw->pw_name : "unknown";
+ 	printf("Uid of owner: %d (%s)\n", (int) st->st_uid, owner);
++	endpwent();
+ 	gr = getgrgid(st->st_gid);
+ 	owner = gr ? gr->gr_name : "unknown";
+ 	printf("Gid of owner: %d (%s)\n", (int) st->st_gid, owner);
+@@ -298,6 +299,7 @@ struct stat *st;
+ 	printf("File last access time: %s", ctime (&st->st_atime));
+ 	printf("File last modify time: %s", ctime (&st->st_mtime));
+ 	printf("File last status change time: %s", ctime (&st->st_ctime));
++	endgrent();
+ 	fflush(stdout);
+ 	return(0);
+ }
+@@ -366,16 +368,18 @@ int	flags;
+ 	else if (flags & OPT_PMASK)
+ 		printf("%o\n", getperm(st->st_mode) & pmask);
+ 	else if (flags & OPT_UID) {
+-		pw = getpwuid(st->st_uid);
+-		if (flags & OPT_ASCII)
++		if (flags & OPT_ASCII) {
++			pw = getpwuid(st->st_uid);
+ 			printf("%s\n", pw ? pw->pw_name : "unknown");
+-		else
++			endpwent();
++		} else
+ 			printf("%d\n", st->st_uid);
+ 	} else if (flags & OPT_GID) {
+-		gr = getgrgid(st->st_gid);
+-		if (flags & OPT_ASCII)
++		if (flags & OPT_ASCII) {
++			gr = getgrgid(st->st_gid);
+ 			printf("%s\n", gr ? gr->gr_name : "unknown");
+-		else
++			endgrent();
++		} else
+ 			printf("%d\n", st->st_gid);
+ 	} else if (flags & OPT_SIZE)
+ 		printf("%ld\n", (long) st->st_size);
+--- examples/loadables/id.c
++++ examples/loadables/id.c	2011-11-21 12:39:06.895646231 +0000
+@@ -42,6 +42,7 @@
+ 
+ #if !defined (HAVE_GETPW_DECLS)
+ extern struct passwd *getpwuid ();
++extern void endpwent ();
+ #endif
+ extern struct group *getgrgid ();
+ 
+@@ -136,18 +137,26 @@ static int
+ inituser (uname)
+      char *uname;
+ {
+-  struct passwd *pwd;
+-
+   if (uname)
+     {
++      struct passwd *pwd;
++      int r;
++
++      r = 0;
+       pwd = getpwnam (uname);
+       if (pwd == 0)
+ 	{
+ 	  builtin_error ("%s: no such user", uname);
+-	  return -1;
++	  r = -1;
+ 	}
+-      ruid = euid = pwd->pw_uid;
+-      rgid = egid = pwd->pw_gid;
++      else
++	{
++	  ruid = euid = pwd->pw_uid;
++	  rgid = egid = pwd->pw_gid;
++	}
++      endpwent ();
++      if (r < 0)
++	return r;
+     }
+   else
+     {
+@@ -172,11 +181,12 @@ id_pruser (uid)
+     {
+       pwd = getpwuid (uid);
+       if (pwd == NULL)
+-        r = 1;
++	r = 1;
++      else
++	printf ("%s", pwd->pw_name);
++      endpwent ();
+     }
+-  if (pwd)
+-    printf ("%s", pwd->pw_name);
+-  else
++  if (pwd == NULL)
+     printf ("%u", (unsigned) uid);
+       
+   return r;
+@@ -197,11 +207,12 @@ id_prgrp (gid)
+       grp = getgrgid (gid);
+       if (grp == NULL)
+ 	r = 1;
++      else
++	printf ("%s", grp->gr_name);
++      endgrent ();
+     }
+ 
+-  if (grp)
+-    printf ("%s", grp->gr_name);
+-  else
++  if (grp == NULL)
+     printf ("%u", (unsigned) gid);
+ 
+   return r;
+@@ -307,6 +318,8 @@ id_prall (uname)
+       else
+ 	printf ("(%s)", grp->gr_name);
+     }
++  endpwent ();
++  endgrent ();
+ 
+   return r;
+ }
+--- lib/tilde/shell.c
++++ lib/tilde/shell.c	2011-11-21 13:07:02.099146925 +0000
+@@ -45,9 +45,18 @@
+ #include <pwd.h>
+ 
+ #if !defined (HAVE_GETPW_DECLS)
++#  if defined (HAVE_GETPWUID)
+ extern struct passwd *getpwuid ();
++#  endif
++#  if defined (HAVE_GETPWENT)
++extern void endpwent ();
++#  endif
+ #endif /* !HAVE_GETPW_DECLS */
+ 
++#if !defined (savestring)
++#  define savestring(x) strcpy ((char *)xmalloc (1 + strlen (x)), (x))
++#endif /* !savestring */
++
+ char *
+ get_env_value (varname)
+      char *varname;
+--- lib/tilde/tilde.c
++++ lib/tilde/tilde.c	2011-11-11 13:10:07.000000000 +0000
+@@ -61,6 +61,7 @@ extern struct passwd *getpwuid PARAMS((u
+ #  endif
+ #  if defined (HAVE_GETPWNAM)
+ extern struct passwd *getpwnam PARAMS((const char *));
++extern void endpwent ();
+ #  endif
+ #endif /* !HAVE_GETPW_DECLS */
+ 

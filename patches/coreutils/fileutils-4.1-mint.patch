@@ -1,0 +1,125 @@
+--- fileutils-4.1/lib/mountlist.c.orig	Sat Feb 17 08:09:40 2001
++++ fileutils-4.1/lib/mountlist.c	Thu Sep 13 15:50:04 2001
+@@ -58,6 +58,8 @@
+ # include <sys/param.h>
+ #endif
+ 
++#ifndef __MINT__
++
+ #if defined (MOUNTED_GETFSSTAT)	/* __alpha running OSF_1 */
+ # include <sys/mount.h>
+ # include <sys/fs_types.h>
+@@ -788,3 +790,82 @@
+     return NULL;
+   }
+ }
++
++#else /* __MINT__ */
++
++#include <mintbind.h>
++#include <osbind.h>
++#include <sys/statfs.h>
++#include <mint/dcntl.h>
++
++/* get the list of available drives */
++static long
++get_drives(void)
++{
++	long drive_bits;
++	
++	drive_bits = Dsetdrv(Dgetdrv());
++	drive_bits &= ~(1|2); /* exclude all floppies */
++		
++	return drive_bits;
++}
++
++struct 
++mount_entry *read_filesystem_list(int need_fs_type)
++{
++	struct mount_entry *mount_list;
++	struct mount_entry *me;
++	struct mount_entry *mtail;
++	struct statfs fsp;
++	struct fs_info info;
++	long drive_bits;
++	int i, j;
++	char lw[] = "a:/", str[25];
++	
++	/* Start the list off with a dummy entry. */
++	me = xmalloc (sizeof (*me));
++	me->me_next = NULL;
++	mount_list = mtail = me;
++	
++	drive_bits = get_drives();
++	for (i = 0; i < 32; i++)
++	{
++		if (drive_bits & (1L << i))
++		{
++			if (i < 26)
++				lw[0] = 'a' + i;
++			else
++				lw[0] = '1' + i - 26;
++			
++			if(statfs(lw, &fsp) == 0)
++			{
++				char name[32];
++
++				me = xmalloc (sizeof (*me));
++				
++				me->me_devname  = xstrdup(lw);
++				me->me_mountdir = xstrdup("u:/");
++				
++				if (lw[0] < 'a')				/* 1: .. 6: */
++					me->me_dev = lw[0] - '1' + 27;
++				else
++					me->me_dev = lw[0] - 'a';
++				
++				get_fsname(lw, NULL, name);
++				me->me_type = xstrdup(name);
++				/* Add to the linked list. */
++				me->me_next = NULL;
++				mtail->me_next = me;
++				mtail = me;
++			}
++		}
++	}
++	
++	/* Free the dummy head. */
++	me = mount_list;
++	mount_list = mount_list->me_next;
++	free(me);
++	return mount_list;
++}
++
++#endif /* __MINT__ */
+--- fileutils-4.1/src/df.c.orig	Thu Nov 23 16:13:52 2000
++++ fileutils-4.1/src/df.c	Thu Sep 13 15:52:06 2001
+@@ -272,7 +272,12 @@
+      program reports on the filesystem that the special file is on.
+      It would be better to report on the unmounted filesystem,
+      but statfs doesn't do that on most systems.  */
++#ifndef __MINT__
+   stat_file = mount_point ? mount_point : disk;
++#else
++  /* MiNT: mount_point is always u:/, so use disk */
++  stat_file = disk;
++#endif
+ 
+   if (get_fs_usage (stat_file, disk, &fsu))
+     {
+@@ -639,6 +644,7 @@
+ 
+       if (statp->st_dev == me->me_dev)
+ 	{
++#ifndef __MINT__
+ 	  /* Skip bogus mtab entries.  */
+ 	  if (stat (me->me_mountdir, &disk_stats) != 0
+ 	      || disk_stats.st_dev != me->me_dev)
+@@ -646,6 +652,7 @@
+ 	      me->me_dev = (dev_t) -2;
+ 	      continue;
+ 	    }
++#endif
+ 
+ 	  /* Prefer non-dummy entries.  */
+ 	  if (! me->me_dummy)

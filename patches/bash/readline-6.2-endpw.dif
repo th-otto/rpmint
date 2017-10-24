@@ -1,0 +1,24 @@
+---
+ lib/readline/complete.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- lib/readline/complete.c
++++ lib/readline/complete.c	2011-11-21 12:51:35.695646715 +0000
+@@ -89,6 +89,7 @@ typedef int QSFUNC ();
+    defined. */
+ #if defined (HAVE_GETPWENT) && (!defined (HAVE_GETPW_DECLS) || defined (_POSIX_SOURCE))
+ extern struct passwd *getpwent PARAMS((void));
++extern void endpwent ();
+ #endif /* HAVE_GETPWENT && (!HAVE_GETPW_DECLS || _POSIX_SOURCE) */
+ 
+ /* If non-zero, then this is the address of a function to call when
+@@ -2316,6 +2317,9 @@ rl_username_completion_function (text, s
+       if (first_char == '~')
+ 	rl_filename_completion_desired = 1;
+ 
++#if defined (HAVE_GETPWENT)
++      /* endpwent (); */
++#endif
+       return (value);
+     }
+ #endif /* !__WIN32__ && !__OPENNT */

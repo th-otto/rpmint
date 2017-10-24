@@ -54,6 +54,8 @@ for pkg in gemlib \
 	gawk \
 	file \
 	diffutils \
+	coreutils \
+	bash \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

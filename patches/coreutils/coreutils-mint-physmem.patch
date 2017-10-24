@@ -1,0 +1,57 @@
+diff -rupN coreutils-8.28.orig/lib/physmem.c coreutils-8.28/lib/physmem.c
+--- coreutils-8.28.orig/lib/physmem.c	2017-09-01 09:12:43.000000000 +0200
++++ coreutils-8.28/lib/physmem.c	2017-10-23 08:37:58.756601455 +0200
+@@ -80,6 +80,31 @@ typedef WINBOOL (WINAPI *PFN_MS_EX) (lME
+ 
+ #define ARRAY_SIZE(a) (sizeof (a) / sizeof ((a)[0]))
+ 
++#ifdef __MINT__
++#include <mint/osbind.h>
++#include <mint/sysctl.h>
++
++static double
++freemem(void)
++{
++  int call[2] = { CTL_HW, HW_FREEPHYSMEM };
++  unsigned long free;
++  unsigned long freesize = sizeof (free);
++  long ret;
++
++  ret = sysctl (call, 2, &free, &freesize, NULL, 0);
++  if (ret == 0)
++    return free / 2;
++  
++  ret = Malloc(-1);
++  if (ret > 0)
++    return ret / 2;
++  
++  /* Guess 1 MB.  */
++  return 1024 * 1024;
++}
++#endif
++
+ /* Return the total amount of physical memory.  */
+ double
+ physmem_total (void)
+@@ -188,6 +213,10 @@ physmem_total (void)
+   }
+ #endif
+ 
++#ifdef __MINT__
++  return freemem();
++#endif
++
+   /* Guess 64 MB.  It's probably an older host, so guess small.  */
+   return 64 * 1024 * 1024;
+ }
+@@ -297,6 +326,10 @@ physmem_available (void)
+   }
+ #endif
+ 
++#ifdef __MINT__
++  return freemem();
++#endif
++
+   /* Guess 25% of physical memory.  */
+   return physmem_total () / 4;
+ }

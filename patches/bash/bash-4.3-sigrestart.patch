@@ -1,0 +1,23 @@
+---
+ sig.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- sig.c
++++ sig.c	2017-01-27 17:46:46.602829901 +0000
+@@ -739,10 +739,16 @@ set_signal_handler (sig, handler)
+   if (sig == SIGCHLD)
+     act.sa_flags |= SA_RESTART;		/* XXX */
+ #endif
++  if (handler == (trap_handler))
++    act.sa_flags |= SA_NODEFER;		/* XXX */
+   /* If we're installing a SIGTERM handler for interactive shells, we want
+      it to be as close to SIG_IGN as possible. */
+   if (sig == SIGTERM && handler == sigterm_sighandler)
+     act.sa_flags |= SA_RESTART;		/* XXX */
++  else if (handler == (termsig_sighandler))
++    act.sa_flags |= SA_NODEFER;		/* XXX */
++  if (sig == SIGTSTP || sig == SIGTTOU || sig == SIGTTIN || sig == SIGCONT)
++    act.sa_flags |= SA_NODEFER;		/* XXX */
+ 
+   sigemptyset (&act.sa_mask);
+   sigemptyset (&oact.sa_mask);

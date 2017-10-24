@@ -1,0 +1,11 @@
+--- coreutils-8.28/man/local.mk.orig	2017-10-23 09:21:16.128730257 +0200
++++ coreutils-8.28/man/local.mk	2017-10-23 09:21:22.580730116 +0200
+@@ -20,7 +20,7 @@
+ 
+ ## Graceful degradation for systems lacking perl.
+ if HAVE_PERL
+-run_help2man = $(PERL) -- $(srcdir)/man/help2man
++run_help2man = $(SHELL) $(srcdir)/man/dummy-man
+ else
+ run_help2man = $(SHELL) $(srcdir)/man/dummy-man
+ endif

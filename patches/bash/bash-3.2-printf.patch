@@ -1,0 +1,36 @@
+---
+ builtins/printf.def |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+--- a/builtins/printf.def
++++ b/builtins/printf.def	2006-07-27 15:11:19.000000000 +0000
+@@ -54,6 +54,7 @@ error occurs.
+ $END
+ 
+ #include <config.h>
++#include <locale.h>
+ 
+ #include "../bashtypes.h"
+ 
+@@ -654,12 +655,20 @@ printf_builtin (list)
+ 	    case 'A':
+ #endif
+ 	      {
+-		char *f;
++		char *f, *lce = getenv("LC_NUMERIC"), *lcl = setlocale(LC_NUMERIC, NULL);
+ 		floatmax_t p;
+ 
+ 		p = getfloatmax ();
+ 		f = mklong (start, FLOATMAX_CONV, sizeof(FLOATMAX_CONV) - 1);
++
++		if (lce && lcl)
++		    setlocale(LC_NUMERIC, lce);
++
+ 		PF (f, p);
++
++		if (lce && lcl)
++		    setlocale(LC_NUMERIC, lcl);
++
+ 		break;
+ 	      }
+ 

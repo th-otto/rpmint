@@ -1,0 +1,123 @@
+--- shell.c
++++ shell.c	2011-03-08 17:25:55.160426342 +0000
+@@ -261,6 +261,11 @@ static const struct {
+   { (char *)0x0, Int, (int *)0x0, (char **)0x0 }
+ };
+ 
++#if defined (HAVE_POSIX_SIGSETJMP)
++volatile procenv_t terminating_now;
++volatile sig_atomic_t jump_with_sig;
++#endif /* HAVE_POSIX_SIGSETJMP */
++
+ /* These are extern so execute_simple_command can set them, and then
+    longjmp back to main to execute a shell script, instead of calling
+    main () again and resulting in indefinite, possibly fatal, stack
+@@ -379,6 +384,39 @@ main (argc, argv, env)
+   if (code)
+     exit (2);
+ 
++#if defined (HAVE_POSIX_SIGSETJMP)
++  /* Catch signals here */
++  if (sigsetjmp (terminating_now, 1))
++    {
++      int sig = jump_with_sig;
++
++      /* I don't believe this condition ever tests true. */
++      if (sig == SIGINT && signal_is_trapped (SIGINT))
++	run_interrupt_trap ();
++
++# if defined (HISTORY)
++      if (interactive_shell && sig != SIGABRT)
++	maybe_save_shell_history ();
++# endif /* HISTORY */
++
++# if defined (JOB_CONTROL)
++      if (sig == SIGHUP && (interactive || (subshell_environment & (SUBSHELL_COMSUB|SUBSHELL_PROCSUB))))
++	hangup_all_jobs ();
++      end_job_control ();
++# endif /* JOB_CONTROL */
++
++# if defined (PROCESS_SUBSTITUTION)
++      unlink_fifo_list ();
++# endif /* PROCESS_SUBSTITUTION */
++
++      run_exit_trap ();
++      set_signal_handler (sig, SIG_DFL);
++      kill (getpid (), sig);
++      _exit(0);
++    }
++  jump_with_sig = 0;
++#endif /* HAVE_POSIX_SIGSETJMP */
++
+   xtrace_init ();
+ 
+ #if defined (USING_BASH_MALLOC) && defined (DEBUG) && !defined (DISABLE_MALLOC_WRAPPERS)
+--- sig.c
++++ sig.c	2011-03-08 17:26:31.627928783 +0000
+@@ -503,7 +503,7 @@ termsig_sighandler (sig)
+   /* XXX - should this also trigger when interrupt_immediately is set? */
+   if (terminate_immediately)
+     {
+-#if defined (HISTORY)
++#if defined (HISTORY) && ! defined (HAVE_POSIX_SIGSETJMP)
+       /* XXX - will inhibit history file being written */
+       history_lines_this_session = 0;
+ #endif
+@@ -514,6 +514,11 @@ termsig_sighandler (sig)
+   SIGRETURN (0);
+ }
+ 
++#if defined (HAVE_POSIX_SIGSETJMP)
++extern volatile procenv_t terminating_now;
++extern volatile sig_atomic_t jump_with_sig;
++#endif /* HAVE_POSIX_SIGSETJMP */
++
+ void
+ termsig_handler (sig)
+      int sig;
+@@ -528,32 +533,39 @@ termsig_handler (sig)
+   handling_termsig = 1;
+   terminating_signal = 0;	/* keep macro from re-testing true. */
+ 
++#if ! defined (HAVE_POSIX_SIGSETJMP)
+   /* I don't believe this condition ever tests true. */
+   if (sig == SIGINT && signal_is_trapped (SIGINT))
+     run_interrupt_trap ();
+ 
+-#if defined (HISTORY)
++# if defined (HISTORY)
+   if (interactive_shell && sig != SIGABRT)
+     maybe_save_shell_history ();
+-#endif /* HISTORY */
++# endif /* HISTORY */
+ 
+-#if defined (JOB_CONTROL)
++# if defined (JOB_CONTROL)
+   if (sig == SIGHUP && (interactive || (subshell_environment & (SUBSHELL_COMSUB|SUBSHELL_PROCSUB))))
+     hangup_all_jobs ();
+   end_job_control ();
+-#endif /* JOB_CONTROL */
++# endif /* JOB_CONTROL */
+ 
+-#if defined (PROCESS_SUBSTITUTION)
++# if defined (PROCESS_SUBSTITUTION)
+   unlink_fifo_list ();
+-#endif /* PROCESS_SUBSTITUTION */
++# endif /* PROCESS_SUBSTITUTION */
++#endif /* ! HAVE_POSIX_SIGSETJMP */
+ 
+   /* Reset execution context */
+   loop_level = continuing = breaking = funcnest = 0;
+   executing_list = comsub_ignore_return = return_catch_flag = 0;
+ 
++#if defined (HAVE_POSIX_SIGSETJMP)
++  jump_with_sig = sig;
++  siglongjmp(terminating_now, 1);
++#else /* ! HAVE_POSIX_SIGSETJMP */
+   run_exit_trap ();
+   set_signal_handler (sig, SIG_DFL);
+   kill (getpid (), sig);
++#endif /* ! HAVE_POSIX_SIGSETJMP */
+ }
+ 
+ /* What we really do when SIGINT occurs. */
