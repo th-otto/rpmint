@@ -57,6 +57,7 @@ for pkg in gemlib \
 	coreutils \
 	bash \
 	make \
+	patch \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

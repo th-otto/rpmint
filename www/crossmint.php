@@ -808,6 +808,8 @@ foreach ($libpackages as $package)
 
 <li>2017/10/24 Package make added</li>
 
+<li>2017/10/24 Package patch added</li>
+
 </ul>
 
 <p></p>
