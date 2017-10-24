@@ -998,6 +998,19 @@ be a conformant implementation of the IEEE Posix Shell and Tools
 specification (IEEE Working Group 1003.2).
 '
 	),
+	'make' => array(
+		'name' => 'make',
+		'upstream' => 'http://www.gnu.org/software/make/make.html',
+		'source' => 'http://ftp.gnu.org/gnu/make/make-%{version}.tar.bz2',
+		'version' => '4.2.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'comment' => '
+The GNU make command with extensive documentation.
+'
+	),
 );
 
 ?>

@@ -804,7 +804,9 @@ foreach ($libpackages as $package)
 
 <li>2017/10/23 Package coreutils added</li>
 
-<li>2017/10/23 Package bash added</li>
+<li>2017/10/24 Package bash added</li>
+
+<li>2017/10/24 Package make added</li>
 
 </ul>
 
