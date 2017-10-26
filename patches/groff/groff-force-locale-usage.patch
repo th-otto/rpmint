@@ -1,0 +1,64 @@
+Index: groff-1.22.3/font/devdvi/Makefile.sub
+===================================================================
+--- groff-1.22.3.orig/font/devdvi/Makefile.sub
++++ groff-1.22.3/font/devdvi/Makefile.sub
+@@ -43,9 +43,9 @@ MOSTLYCLEANADD=DESC
+ DESC: DESC.in
+ 	cat $(srcdir)/DESC.in >DESC
+ 	if test "$(PAGE)" = A4; then \
+-	  echo "papersize a4" >>DESC; \
++	  echo "papersize locale a4" >>DESC; \
+ 	else \
+-	  echo "papersize letter" >>DESC; \
++	  echo "papersize locale letter" >>DESC; \
+ 	fi
+ 	test -z '$(DVIPRINT)' || echo print '$(DVIPRINT)' >>DESC
+ 
+Index: groff-1.22.3/font/devlbp/Makefile.sub
+===================================================================
+--- groff-1.22.3.orig/font/devlbp/Makefile.sub
++++ groff-1.22.3/font/devlbp/Makefile.sub
+@@ -39,9 +39,9 @@ MOSTLYCLEANADD=DESC
+ DESC: DESC.in
+ 	cat $(srcdir)/DESC.in >DESC
+ 	if test "$(PAGE)" = A4; then \
+-	  echo "papersize a4" >>DESC; \
++	  echo "papersize locale a4" >>DESC; \
+ 	else \
+-	  echo "papersize letter" >>DESC; \
++	  echo "papersize locale letter" >>DESC; \
+ 	fi
+ 	test -z '$(LBPPRINT)' || echo print '$(LBPPRINT)' >>DESC
+ 
+Index: groff-1.22.3/font/devlj4/Makefile.sub
+===================================================================
+--- groff-1.22.3.orig/font/devlj4/Makefile.sub
++++ groff-1.22.3/font/devlj4/Makefile.sub
+@@ -58,9 +58,9 @@ DESC: DESC.in
+ 	echo "unitwidth `expr 7620000 / $(LJ4RES)`" >>DESC
+ 	cat $(srcdir)/DESC.in >>DESC
+ 	if test "$(PAGE)" = A4; then \
+-	  echo "papersize a4" >>DESC; \
++	  echo "papersize locale a4" >>DESC; \
+ 	else \
+-	  echo "papersize letter" >>DESC; \
++	  echo "papersize locale letter" >>DESC; \
+ 	fi
+ 	test -z '$(LJ4PRINT)' || echo print '$(LJ4PRINT)' >>DESC
+ 
+Index: groff-1.22.3/font/devps/Makefile.sub
+===================================================================
+--- groff-1.22.3.orig/font/devps/Makefile.sub
++++ groff-1.22.3/font/devps/Makefile.sub
+@@ -65,9 +65,9 @@ DESC: DESC.in
+ 	cat $(srcdir)/DESC.in >DESC
+ 	echo broken $(BROKEN_SPOOLER_FLAGS) >>DESC
+ 	if test "$(PAGE)" = A4; then \
+-	  echo "papersize a4" >>DESC; \
++	  echo "papersize locale a4" >>DESC; \
+ 	else \
+-	  echo "papersize letter" >>DESC; \
++	  echo "papersize locale letter" >>DESC; \
+ 	fi
+ 	test -z '$(PSPRINT)' ||	echo print '$(PSPRINT)' >>DESC
+ 

@@ -1,0 +1,676 @@
+From 10fefc49ea1116524fbafacb637de8605e303cdf Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Thu, 2 Jan 2014 13:13:09 +0000
+Subject: The *2graph scripts use $RANDOM, which is bash-specific
+
+Forwarded: no
+Last-Update: 2010-03-01
+
+Patch-Name: bash-scripts.patch
+---
+ contrib/eqn2graph/eqn2graph.sh   | 2 +-
+ contrib/grap2graph/grap2graph.sh | 2 +-
+ contrib/pic2graph/pic2graph.sh   | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/contrib/eqn2graph/eqn2graph.sh b/contrib/eqn2graph/eqn2graph.sh
+index ee7cc5f..fb6f7f5 100644
+--- a/contrib/eqn2graph/eqn2graph.sh
++++ b/contrib/eqn2graph/eqn2graph.sh
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /bin/bash
+ #
+ # eqn2graph -- compile EQN equation descriptions to bitmap images
+ #
+diff --git a/contrib/grap2graph/grap2graph.sh b/contrib/grap2graph/grap2graph.sh
+index 58544e1..721c2b0 100644
+--- a/contrib/grap2graph/grap2graph.sh
++++ b/contrib/grap2graph/grap2graph.sh
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /bin/bash
+ #
+ # grap2graph -- compile graph description descriptions to bitmap images
+ #
+diff --git a/contrib/pic2graph/pic2graph.sh b/contrib/pic2graph/pic2graph.sh
+index 72c5477..c4a7781 100644
+--- a/contrib/pic2graph/pic2graph.sh
++++ b/contrib/pic2graph/pic2graph.sh
+@@ -1,4 +1,4 @@
+-#! /bin/sh
++#! /bin/bash
+ #
+ # pic2graph -- compile PIC image descriptions to bitmap images
+ #
+From fb0bfc4eb5a8eb57554793712fee07de080678f0 Mon Sep 17 00:00:00 2001
+From: Florian Lohoff <flo@rfc822.org>
+Date: Thu, 2 Jan 2014 13:13:10 +0000
+Subject: Avoid relying on awk in mdate.sh
+
+The results were unpredictable on mips/mipsel.
+
+Bug-Debian: http://bugs.debian.org/62554
+Forwarded: no
+Last-Update: 2010-03-01
+
+Patch-Name: mdate-perl.patch
+---
+ mdate.sh | 39 +--------------------------------------
+ 1 file changed, 1 insertion(+), 38 deletions(-)
+
+diff --git a/mdate.sh b/mdate.sh
+index 2c24a00..d5ef413 100644
+--- a/mdate.sh
++++ b/mdate.sh
+@@ -19,41 +19,4 @@
+ #
+ # Print the modification date of $1 `nicely'.
+ 
+-# Don't want foreign dates.
+-
+-LANGUAGE=
+-LC_ALL=C; export LC_ALL
+-
+-
+-(date;
+-if ls -L /dev/null 1>/dev/null 2>&1; then ls -L -l $1; else ls -l $1; fi
+-) | awk '
+-BEGIN {
+-	full["Jan"] = "January"; number["Jan"] = 1;
+-	full["Feb"] = "February"; number["Feb"] = 2;
+-	full["Mar"] = "March"; number["Mar"] = 3;
+-	full["Apr"] = "April"; number["Apr"] = 4;
+-	full["May"] = "May"; number["May"] = 5;
+-	full["Jun"] = "June"; number["Jun"] = 6;
+-	full["Jul"] = "July"; number["Jul"] = 7;
+-	full["Aug"] = "August"; number["Aug"] = 8;
+-	full["Sep"] = "September"; number["Sep"] = 9;
+-	full["Oct"] = "October"; number["Oct"] = 10;
+-	full["Nov"] = "November"; number["Nov"] = 11;
+-	full["Dec"] = "December"; number["Dec"] = 12;
+-}
+-
+-NR == 1 {
+-	month = $2;
+-	year = $NF;
+-}
+-
+-NR == 2 {
+-	if ($(NF-1) ~ /:/) {
+-		if (number[$(NF-3)] > number[month])
+-			year--;
+-	}
+-	else
+-		year = $(NF-1);
+-	print $(NF-2), full[$(NF-3)], year
+-}'
++perl -MPOSIX -le 'print strftime("%d %B %Y", localtime((stat $ARGV[0])[9]))' $1
+From c5b8fb2e9c2d998677a92e73b280bbc49b87f13a Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Thu, 2 Jan 2014 13:13:12 +0000
+Subject: Unset IFS at nroff startup
+
+It's questionable whether we should forward this; as noted in the bug
+trail, there's a decent argument that this is a dash bug.
+
+Bug-Debian: http://bugs.debian.org/541621
+Forwarded: no
+Last-Update: 2010-03-01
+
+Patch-Name: nroff-ifs.patch
+---
+ src/roff/nroff/nroff.sh | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/roff/nroff/nroff.sh b/src/roff/nroff/nroff.sh
+index fb227b3..82e85fd 100644
+--- a/src/roff/nroff/nroff.sh
++++ b/src/roff/nroff/nroff.sh
+@@ -20,6 +20,8 @@
+ # You should have received a copy of the GNU General Public License
+ # along with this program. If not, see <http://www.gnu.org/licenses/>.
+ 
++unset IFS
++
+ prog="$0"
+ 
+ # Default device.
+From 4298a68066f08589ea9d68318f67cf9e63a734c7 Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Thu, 2 Jan 2014 13:13:14 +0000
+Subject: Adjust #! line of font/devlj4/generate/special.awk
+
+awk is in /usr/bin/awk on Debian, not /bin/awk.
+
+Forwarded: no
+Last-Update: 2010-03-01
+
+Patch-Name: awk-path.patch
+---
+ font/devlj4/generate/special.awk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/font/devlj4/generate/special.awk b/font/devlj4/generate/special.awk
+index 26e8b92..318c53f 100644
+--- a/font/devlj4/generate/special.awk
++++ b/font/devlj4/generate/special.awk
+@@ -1,4 +1,4 @@
+-#! /bin/awk -f
++#! /usr/bin/awk -f
+ 
+ # Correct Intellifont-based height metrics for several glyphs in
+ # special font for TrueType CG Times (LaserJet 4000 and later).
+From 9a2ccf4225d8a8d6eb92861f2e3dfc3502840cd5 Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Thu, 2 Jan 2014 13:13:16 +0000
+Subject: Add GFDL references to manual pages licensed under GFDL
+
+Bug-Debian: http://bugs.debian.org/292229
+Forwarded: not-needed
+Last-Update: 2014-11-05
+
+Patch-Name: doc-gfdl.patch
+---
+ contrib/hdtbl/groff_hdtbl.man | 4 ++++
+ contrib/pdfmark/pdfroff.man   | 4 ++++
+ man/ditroff.man               | 4 ++++
+ man/groff.man                 | 4 ++++
+ man/groff_diff.man            | 4 ++++
+ man/groff_out.man             | 4 ++++
+ man/groff_tmac.man            | 4 ++++
+ man/roff.man                  | 4 ++++
+ src/roff/groff/groff.man      | 4 ++++
+ src/roff/troff/troff.man      | 4 ++++
+ tmac/groff_trace.man          | 4 ++++
+ 11 files changed, 44 insertions(+)
+
+diff --git a/contrib/hdtbl/groff_hdtbl.man b/contrib/hdtbl/groff_hdtbl.man
+index 74012ae..e611b79 100644
+--- a/contrib/hdtbl/groff_hdtbl.man
++++ b/contrib/hdtbl/groff_hdtbl.man
+@@ -21,6 +21,10 @@ Front-Cover Texts, and with no Back-Cover Texts.
+ A copy of the Free Documentation License is included as a file called
+ FDL in the main directory of the groff source package.
+ ..
++.ig
++A copy of the GNU Free Documentation License is also available in this
++openSUSE package as /usr/share/doc/groff/copyright.
++..
+ .
+ .de au
+ This document was written by
+diff --git a/contrib/pdfmark/pdfroff.man b/contrib/pdfmark/pdfroff.man
+index ec412bb..60a75a2 100644
+--- a/contrib/pdfmark/pdfroff.man
++++ b/contrib/pdfmark/pdfroff.man
+@@ -34,6 +34,10 @@ available in the internet at
+ the GNU copyleft site
+ .UE .
+ ..
++.ig
++A copy of the GNU Free Documentation License is also available in this
++openSUSE package as /usr/share/doc/groff/copyright.
++..
+ .
+ .de au
+ It was originally written by
+diff --git a/man/ditroff.man b/man/ditroff.man
+index 16a6feb..ef01e04 100644
+--- a/man/ditroff.man
++++ b/man/ditroff.man
+@@ -23,6 +23,10 @@ available on-line at the
+ GNU copyleft site
+ .UE .
+ ..
++.ig
++A copy of the GNU Free Documentation License is also available in this
++openSUSE package as /usr/share/doc/groff/copyright.
++..
+ .de au
+ It was written by
+ .MT groff-bernd.warken-72@\:web.de
+diff --git a/man/groff.man b/man/groff.man
+index ca80f02..31b91e1 100644
+--- a/man/groff.man
++++ b/man/groff.man
+@@ -26,6 +26,10 @@ available in the internet at
+ .UR http://\:www.gnu.org/\:copyleft/\:fdl.html
+ .UE .
+ ..
++.ig
++A copy of the GNU Free Documentation License is also available in this
++openSUSE package as /usr/share/doc/groff/copyright.
++..
+ .
+ .de au
+ This documentation was written by
+diff --git a/man/groff_diff.man b/man/groff_diff.man
+index eacccd3..fb5f142 100644
+--- a/man/groff_diff.man
++++ b/man/groff_diff.man
+@@ -29,6 +29,10 @@ available in the internet at
+ GNU FDL license
+ .UE .
+ ..
++.ig
++A copy of the GNU Free Documentation License is also available in this
++openSUSE package as /usr/share/doc/groff/copyright.
++..
+ .
+ .de au
+ This document was written by
+diff --git a/man/groff_out.man b/man/groff_out.man
+index f9ef631..ce13615 100644
+--- a/man/groff_out.man
++++ b/man/groff_out.man
+@@ -32,6 +32,10 @@ available in the internet at
+ GNU FDL license
+ .UE .
+ ..
++.ig
++A copy of the GNU Free Documentation License is also available in this
++openSUSE package as /usr/share/doc/groff/copyright.
++..
+ .
+ .de au
+ In 2001, this document was rewritten from scrach by
+diff --git a/man/groff_tmac.man b/man/groff_tmac.man
+index 5017dcb..b85ab0c 100644
+--- a/man/groff_tmac.man
++++ b/man/groff_tmac.man
+@@ -28,6 +28,10 @@ available on\-line at the
+ GNU copyleft site
+ .UE .
+ ..
++.ig
++A copy of the GNU Free Documentation License is also available in this
++openSUSE package as /usr/share/doc/groff/copyright.
++..
+ .
+ .de au
+ This file was written by
+diff --git a/man/roff.man b/man/roff.man
+index 6ce18e7..b970f5b 100644
+--- a/man/roff.man
++++ b/man/roff.man
+@@ -26,6 +26,10 @@ The license text is also available on-line at the
+ GNU copyleft site
+ .UE .
+ ..
++.ig
++A copy of the GNU Free Documentation License is also available in this
++openSUSE package as /usr/share/doc/groff/copyright.
++..
+ .
+ .de au
+ This man-page was written by
+diff --git a/src/roff/groff/groff.man b/src/roff/groff/groff.man
+index e30d1b5..e5a6235 100644
+--- a/src/roff/groff/groff.man
++++ b/src/roff/groff/groff.man
+@@ -31,6 +31,10 @@ It is also available in the internet at the
+ GNU copyleft site
+ .UE .
+ ..
++.ig
++A copy of the GNU Free Documentation License is also available in this
++openSUSE package as /usr/share/doc/groff-base/copyright.
++..
+ .
+ .\" Authors
+ .de au
+diff --git a/src/roff/troff/troff.man b/src/roff/troff/troff.man
+index 684f441..07fdff1 100644
+--- a/src/roff/troff/troff.man
++++ b/src/roff/troff/troff.man
+@@ -25,6 +25,10 @@ Front-Cover Texts, and with no Back-Cover Texts.
+ A copy of the Free Documentation License is included as a file called
+ FDL in the main directory of the groff source package.
+ ..
++.ig
++A copy of the GNU Free Documentation License is also available in this
++openSUSE package as /usr/share/doc/groff-base/copyright.
++..
+ .
+ .de au
+ This file was originally written by James Clark, it was modified by
+diff --git a/tmac/groff_trace.man b/tmac/groff_trace.man
+index 7b04373..67990db 100644
+--- a/tmac/groff_trace.man
++++ b/tmac/groff_trace.man
+@@ -24,6 +24,10 @@ Front-Cover Texts, and with no Back-Cover Texts.
+ A copy of the Free Documentation License is included as a file called
+ FDL in the main directory of the groff source package.
+ ..
++.ig
++A copy of the GNU Free Documentation License is also available in this
++openSUSE package as /usr/share/doc/groff/copyright.
++..
+ .
+ .de au
+ Written by
+From 1e53207d1ee0986e9db4135bea80b5922dfaea00 Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Thu, 2 Jan 2014 13:13:17 +0000
+Subject: Adjust documentation references to account for compression
+
+Bug-Debian: http://bugs.debian.org/498356
+Forwarded: not-needed
+Last-Update: 2010-03-01
+
+Patch-Name: doc-gzipped.patch
+---
+ contrib/pdfmark/pdfroff.man | 2 +-
+ src/preproc/pic/pic.man     | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/contrib/pdfmark/pdfroff.man b/contrib/pdfmark/pdfroff.man
+index 60a75a2..ad87159 100644
+--- a/contrib/pdfmark/pdfroff.man
++++ b/contrib/pdfmark/pdfroff.man
+@@ -839,7 +839,7 @@ Detailed documentation on the use of these packages may be found,
+ in PDF format, in the reference guide
+ .BR "\*(lqPortable Document Format Publishing with GNU Troff\*(rq" ,
+ included in the installed documentation set as
+-.BR \%@PDFDOCDIR@/pdfmark.pdf .
++.BR \%@PDFDOCDIR@/pdfmark.pdf.gz .
+ .
+ .
+ .\" --------------------------------------------------------------------
+diff --git a/src/preproc/pic/pic.man b/src/preproc/pic/pic.man
+index 04ea3e0..6dd8654 100644
+--- a/src/preproc/pic/pic.man
++++ b/src/preproc/pic/pic.man
+@@ -261,7 +261,7 @@ A complete documentation is available in the file
+ .
+ .LP
+ .RS
+-.B @DOCDIR@/pic.ms
++.B @DOCDIR@/pic.ms.gz
+ .RE
+ .
+ .
+From 15e68316a5f77c1a3f6554340f21e9a4c5cd1175 Mon Sep 17 00:00:00 2001
+From: unknown <unknown>
+Date: Thu, 2 Jan 2014 13:13:18 +0000
+Subject: Adjust default recursive make targets
+
+This has been in the groff packaging since records began, and the reason
+for it is unclear.  Needs investigation.
+
+Forwarded: no
+Last-Update: 2013-01-07
+
+Patch-Name: make-targets.patch
+---
+ Makefile.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile.in b/Makefile.in
+index bc156ce..d29e856 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -793,7 +793,7 @@ ENVSETUP=\
+ 	fi
+ 
+ do=all
+-dodirs=$(ALLDIRS) $(OTHERDIRS) dot
++dodirs=$(DISTDIRS) 
+ # Default target for subdir_Makefile
+ subdir=src/roff/troff
+ 
+From 369fdcbedc7f63479c31f69cae2edc025f45b491 Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Thu, 2 Jan 2014 13:13:19 +0000
+Subject: Inhibit -wmac warnings due to pic and eqn
+
+Define .PS and .PE to empty strings in pic output to inhibit -wmac
+warnings; similarly, define .EQ and .EN to empty strings in eqn output.
+
+Bug-Debian: http://bugs.debian.org/495713
+Forwarded: no
+Last-Update: 2013-01-07
+
+Patch-Name: pic-eqn-warnings.patch
+---
+ src/preproc/eqn/main.cpp | 2 ++
+ src/preproc/pic/main.cpp | 4 ++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/src/preproc/eqn/main.cpp b/src/preproc/eqn/main.cpp
+index 57347f1..52615c4 100644
+--- a/src/preproc/eqn/main.cpp
++++ b/src/preproc/eqn/main.cpp
+@@ -373,6 +373,8 @@ int main(int argc, char **argv)
+     }
+   init_table(device);
+   init_char_table();
++  printf(".if !dEQ .ds EQ\n"
++	 ".if !dEN .ds EN\n");
+   if (output_format == troff) {
+     printf(".if !'\\*(.T'%s' "
+ 	   ".if !'\\*(.T'html' "	// the html device uses `-Tps' to render
+diff --git a/src/preproc/pic/main.cpp b/src/preproc/pic/main.cpp
+index 19065a6..236121d 100644
+--- a/src/preproc/pic/main.cpp
++++ b/src/preproc/pic/main.cpp
+@@ -615,7 +615,11 @@ int main(int argc, char **argv)
+     out = make_fig_output();
+   else
+ #endif
++  {
+     out = make_troff_output();
++    printf(".if !dPS .ds PS\n"
++	   ".if !dPE .ds PE\n");
++  }
+ #ifdef FIG_SUPPORT
+   if (whole_file_flag) {
+     if (optind >= argc)
+From dc0df203931b4509918cf978ea6674808c1f05fd Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Thu, 2 Jan 2014 13:13:20 +0000
+Subject: Allow adding a version-independent directory to the macro path
+
+This allows us to put /usr/share/groff/tmac at the end of groff's macro
+path in Debian.
+
+Forwarded: no
+Last-Update: 2013-01-07
+
+Patch-Name: extratmacdirs.patch
+---
+ Makefile.in | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Makefile.in b/Makefile.in
+index d29e856..9b9d0e0 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -199,7 +199,11 @@ referdir=@referdir@
+ # directory will be always added.
+ # `troffrc' and `troffrc-end' (and `eqnrc') are searched neither in the
+ # current nor in the home directory.
++ifeq (,$(extratmacdirs))
+ tmacpath=$(systemtmacdir)$(RT_SEP)$(localtmacdir)$(RT_SEP)$(tmacdir)
++else
++tmacpath=$(systemtmacdir)$(RT_SEP)$(localtmacdir)$(RT_SEP)$(tmacdir)$(RT_SEP)$(extratmacdirs)
++endif
+ 
+ # `sys_tmac_prefix' is prefix (if any) for system macro packages.
+ sys_tmac_prefix=@sys_tmac_prefix@
+From 293492eff0f0597dfe10d98823508ff5072e5baa Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Thu, 2 Jan 2014 13:13:22 +0000
+Subject: Display more helpful output when failing to load a device
+
+If the device is known to be one of the devices in the groff binary package
+rather than groff-base, refer the user to that.
+
+Forwarded: not-needed
+Last-Update: 2013-01-07
+
+Patch-Name: load-desc-failure.patch
+---
+ src/roff/groff/groff.cpp | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/src/roff/groff/groff.cpp b/src/roff/groff/groff.cpp
+index 9c613b1..63f620e 100644
+--- a/src/roff/groff/groff.cpp
++++ b/src/roff/groff/groff.cpp
+@@ -338,8 +338,16 @@ int main(int argc, char **argv)
+     commands[PIC_INDEX].append_arg("-U");
+   }
+   font::set_unknown_desc_command_handler(handle_unknown_desc_command);
+-  if (!font::load_desc())
+-    fatal("invalid device `%1'", device);
++  if (!font::load_desc()) {
++    if (strcmp(device, "X100") == 0 || strcmp(device, "X100-12") == 0 ||
++	strcmp(device, "X75") == 0 || strcmp(device, "X75-12") == 0 ||
++	strcmp(device, "dvi") == 0 || strcmp(device, "html") == 0 ||
++	strcmp(device, "lbp") == 0 || strcmp(device, "lj4") == 0)
++      fatal("invalid device `%1' (try installing the `groff' package?)",
++	    device);
++    else
++      fatal("invalid device `%1'", device);
++  }
+   if (!postdriver)
+     fatal("no `postpro' command in DESC file for device `%1'", device);
+   if (predriver && !zflag) {
+From eef761fe222fef4b32ce8f5b2f2e6bbad0931b80 Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Wed, 22 Jan 2014 09:46:26 +0000
+Subject: Remove the W3C validation icons from generated HTML
+
+As the Lintian privacy-breach-w3c-valid-html tag puts it:
+
+  "These badges may be displayed to tell readers that care has been
+  taken to make a page compliant with W3C standards.  Unfortunately,
+  downloading the image from www.w3.org might expose the reader's IP
+  address to potential tracking."
+
+Forwarded: no
+Last-Update: 2014-11-05
+
+Patch-Name: no-validation-icons.patch
+---
+ doc/Makefile.in  | 4 ++--
+ doc/Makefile.sub | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/doc/Makefile.in b/doc/Makefile.in
+index 759b4b2..c1da5e4 100644
+--- a/doc/Makefile.in
++++ b/doc/Makefile.in
+@@ -96,7 +96,7 @@ imagedir=img
+ 
+ .ms.html:
+ 	$(GROFF) -P-p -P-b -P-I`basename $< | sed -e 's|.ms$$||'` \
+-	         -P-D$(imagedir) -P-V -Thtml -ms >$@
++	         -P-D$(imagedir) -Thtml -ms >$@
+ .ms.txt:
+ 	$(GROFF) -Tascii -ms -mwww >$@
+ .ms.ps:
+@@ -135,7 +135,7 @@ gnu.eps: gnu.xpm
+ pic.html: pic.ms
+ 	$(GROFF) -P-p -P-I`basename $< | sed -e 's|.ms$$||'` \
+ 	         -P-D$(imagedir) -P-j`basename $< | sed -e 's|.ms$$||'` \
+-	         -Thtml -P-V -ms >$@
++	         -Thtml -ms >$@
+ 
+ webpage.html: webpage.ms gnu.eps groff.css
+ 	$(GROFF) -P-j`basename $< | sed -e 's|.ms$$||'` \
+diff --git a/doc/Makefile.sub b/doc/Makefile.sub
+index b2325f9..3c9c560 100644
+--- a/doc/Makefile.sub
++++ b/doc/Makefile.sub
+@@ -118,7 +118,7 @@ RM=rm -f
+ 
+ .ms.html:
+ 	$(GROFF) -P-p -P-b -P-I`basename $< | sed -e 's|.ms$$||'` \
+-	         -P-D$(imagedir) -P-V -Thtml -ms >$@
++	         -P-D$(imagedir) -Thtml -ms >$@
+ .ms.ps:
+ 	$(GROFF) -Tps -ms -mwww >$@
+ 
+@@ -158,7 +158,7 @@ gnu.eps: gnu.xpm
+ pic.html: pic.ms
+ 	$(GROFF) -P-p -P-I`basename $< | sed -e 's|.ms$$||'` \
+ 	         -P-D$(imagedir) -P-j`basename $< | sed -e 's|.ms$$||'` \
+-	         -Thtml -P-V -ms >$@
++	         -Thtml -ms >$@
+ 
+ webpage.html: webpage.ms gnu.eps groff.css
+ 	$(GROFF) -P-j`basename $< | sed -e 's|.ms$$||'` \
+From ec536f7cfd47346856a9966512ae2893383132e7 Mon Sep 17 00:00:00 2001
+From: Colin Watson <cjwatson@debian.org>
+Date: Sun, 26 Jan 2014 19:34:00 +0000
+Subject: Note that groff_mmse(7) is only available in Swedish locales
+
+Bug-Debian: http://bugs.debian.org/710431
+Forwarded: no
+Last-Update: 2014-11-05
+
+Patch-Name: mmse-note.patch
+---
+ contrib/mm/groff_mm.man  | 1 +
+ contrib/mm/mmroff.man    | 3 ++-
+ man/groff_tmac.man       | 3 ++-
+ src/roff/groff/groff.man | 3 ++-
+ 4 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/contrib/mm/groff_mm.man b/contrib/mm/groff_mm.man
+index a58ce5d..0321c2b 100644
+--- a/contrib/mm/groff_mm.man
++++ b/contrib/mm/groff_mm.man
+@@ -3965,6 +3965,7 @@ then assigns the argument to the string variable
+ .BR @g@eqn (@MAN1EXT@)
+ .br
+ .BR groff_mmse (@MAN7EXT@)
++(only in Swedish locales)
+ .
+ .
+ .\" --------------------------------------------------------------------
+diff --git a/contrib/mm/mmroff.man b/contrib/mm/mmroff.man
+index dbd50b9..1fc5885 100644
+--- a/contrib/mm/mmroff.man
++++ b/contrib/mm/mmroff.man
+@@ -101,7 +101,8 @@ will only be run once.
+ .\" --------------------------------------------------------------------
+ .
+ .BR groff_mm (@MAN7EXT@),
+-.BR groff_mmse (@MAN7EXT@),
++.BR groff_mmse (@MAN7EXT@)
++(only in Swedish locales),
+ .BR groff (@MAN1EXT@),
+ .BR @g@troff (@MAN1EXT@),
+ .BR @g@tbl (@MAN1EXT@),
+diff --git a/man/groff_tmac.man b/man/groff_tmac.man
+index b85ab0c..882e3b6 100644
+--- a/man/groff_tmac.man
++++ b/man/groff_tmac.man
+@@ -254,7 +254,8 @@ sets the input encoding to latin-9 to get proper support of the
+ Swedish localization support, including the me, mom, and ms macro packages.
+ .
+ Note that Swedish for the mm macros is handled separately; see
+-.BR groff_mmse (@MAN7EXT@).
++.BR groff_mmse (@MAN7EXT@)
++(only in Swedish locales).
+ .
+ It should be used as the last macro package on the command line.
+ .
+diff --git a/src/roff/groff/groff.man b/src/roff/groff/groff.man
+index e5a6235..1bb8c3a 100644
+--- a/src/roff/groff/groff.man
++++ b/src/roff/groff/groff.man
+@@ -1993,7 +1993,8 @@ Groff macro packages and macro-specific utilities:
+ .BR \%groff_mdoc (@MAN7EXT@),
+ .BR \%groff_me (@MAN7EXT@),
+ .BR \%groff_mm (@MAN7EXT@),
+-.BR \%groff_mmse (@MAN7EXT@),
++.BR \%groff_mmse (@MAN7EXT@)
++(only in Swedish locales),
+ .BR \%groff_mom (@MAN7EXT@),
+ .BR \%groff_ms (@MAN7EXT@),
+ .BR \%groff_www (@MAN7EXT@),

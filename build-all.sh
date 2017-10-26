@@ -58,6 +58,7 @@ for pkg in gemlib \
 	bash \
 	make \
 	patch \
+	groff \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

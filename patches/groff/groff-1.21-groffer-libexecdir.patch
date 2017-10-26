@@ -1,0 +1,47 @@
+Index: groff-1.22.3/contrib/groffer/Makefile.sub
+===================================================================
+--- groff-1.22.3.orig/contrib/groffer/Makefile.sub
++++ groff-1.22.3/contrib/groffer/Makefile.sub
+@@ -57,7 +57,7 @@ groffer: $(GROFFER_PERL) $(GROFFER_REST)
+ 	sed -f "$(SH_DEPS_SED_SCRIPT)" \
+ 	    -e "s|@g@|$(g)|g" \
+ 	    -e "s|@BINDIR@|$(DESTDIR)$(bindir)|g" \
+-	    -e "s|@libdir@|$(DESTDIR)$(libdir)|g" \
++	    -e "s|@libexecdir@|$(DESTDIR)$(libexecdir)|g" \
+ 	    -e "s|@groffer_dir@|$(DESTDIR)$(groffer_dir)|g" \
+ 	    -e "s|@VERSION@|$(version)$(revision)|g" \
+ 	    -e "$(SH_SCRIPT_SED_CMD)" \
+@@ -96,8 +96,8 @@ uninstall_sub:
+ 	-for f in $(GROFFER_PERL) version.sh; do \
+ 	  $(RM) $(DESTDIR)$(groffer_dir)/$$f;\
+ 	done
+-	-test -d $(DESTDIR)$(libdir)/groff/groffer && \
+-	  rmdir $(DESTDIR)$(libdir)/groff/groffer
++	-test -d $(DESTDIR)$(libexecdir)/groff/groffer && \
++	  rmdir $(DESTDIR)$(libexecdir)/groff/groffer
+ 
+ 
+ ########################################################################
+Index: groff-1.22.3/Makefile.in
+===================================================================
+--- groff-1.22.3.orig/Makefile.in
++++ groff-1.22.3/Makefile.in
+@@ -138,6 +138,9 @@ bindir=@bindir@
+ libdir=@libdir@
+ libprogramdir=$(libdir)/groff
+ 
++# `libexecdir` says where to install script not intended to run as user
++libexecdir=@libexecdir@
++
+ # `datasubdir' says where to install platform-independent data files.
+ datadir=@datadir@
+ datarootdir=@datarootdir@
+@@ -907,7 +910,7 @@ $(INCDIRS) $(PROGDEPDIRS) $(SHPROGDIRS)
+ 	fi; \
+ 	test -d $@ || $(mkinstalldirs) $@; \
+ 	cd $@; \
+-	$(MAKE) $(MAKE_K_FLAG) $(MDEFINES) srcdir=$$srcdir VPATH=$$srcdir \
++	$(MAKE) $(MAKE_K_FLAG) $(MDEFINES) srcdir=$$srcdir libexecdir=$(libexecdir) VPATH=$$srcdir \
+ 	  -f $(top_srcdir)/Makefile.comm \
+ 	  -f $$srcdir/Makefile.sub \
+ 	  -f $(top_srcdir)/Makefile.man $(do)
