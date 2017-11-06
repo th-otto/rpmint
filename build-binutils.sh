@@ -43,7 +43,9 @@ PATCHES="\
         patches/binutils/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
 "
 ELFPATCHES="patches/binutils/${PACKAGENAME}${VERSION}-mintelf.patch"
-ALLPATCHES="$PATCHES $ELFPATCHES"
+ALLPATCHES="$PATCHES $ELFPATCHES \
+        patches/binutils/m68k-segmentalign.patch \
+"
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
 		PATCHES="$PATCHES $ELFPATCHES"
