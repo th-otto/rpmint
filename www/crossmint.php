@@ -28,6 +28,11 @@ include('packages.php');
 <h1>m68k-atari-mint cross-tools</h1>
 
 <div><p>
+(Some of the text on this page was copied/pasted from Vincent Rivi&#xe8re's website, 
+with his permission.)
+</p><br />
+
+<p>
 You will find here <code>gcc</code>, <code>g++</code>, <code>as</code>, <code>ld</code>,
 and other tools configured to produce executables for the Atari ST.
 It means that you can use all the latest C++ features, such as templates,
