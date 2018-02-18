@@ -1,0 +1,224 @@
+From 16d2da761d0073f3639f0f4f90d1e121b8a94420 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Feb 2018 15:19:05 +0100
+Subject: [PATCH] Add support for m68k-atari-mintelf target
+
+---
+ bfd/aoutx.h                |  2 ++
+ bfd/archive.c              | 11 +++++++++--
+ bfd/compress.c             |  2 +-
+ bfd/config.bfd             |  4 ++++
+ bfd/elf.c                  |  6 +++++-
+ bfd/reloc.c                | 11 +++++++++++
+ config.sub                 |  3 +++
+ gas/config/tc-m68k.h       |  4 ++++
+ gas/configure.tgt          |  1 +
+ ld/scripttempl/m68kmint.sc | 27 ++++++++++++++++++---------
+ 10 files changed, 58 insertions(+), 13 deletions(-)
+
+diff --git a/bfd/aoutx.h b/bfd/aoutx.h
+index 24af92426d..77c54d4a15 100644
+--- a/bfd/aoutx.h
++++ b/bfd/aoutx.h
+@@ -1303,6 +1303,8 @@ NAME (aout, set_section_contents) (bfd *abfd,
+ static bfd_boolean
+ aout_get_external_symbols (bfd *abfd)
+ {
++  if (bfd_get_flavour(abfd) != bfd_target_aout_flavour)
++    return FALSE;
+   if (obj_aout_external_syms (abfd) == NULL)
+     {
+       bfd_size_type count;
+diff --git a/bfd/archive.c b/bfd/archive.c
+index de08b19ee4..3a5d259918 100644
+--- a/bfd/archive.c
++++ b/bfd/archive.c
+@@ -871,7 +871,7 @@ bfd_generic_archive_p (bfd *abfd)
+       return NULL;
+     }
+ 
+-  if (abfd->target_defaulted && bfd_has_map (abfd))
++  if (bfd_has_map (abfd))
+     {
+       bfd *first;
+ 
+@@ -892,7 +892,14 @@ bfd_generic_archive_p (bfd *abfd)
+ 	  first->target_defaulted = FALSE;
+ 	  if (bfd_check_format (first, bfd_object)
+ 	      && first->xvec != abfd->xvec)
+-	    bfd_set_error (bfd_error_wrong_object_format);
++	    {
++	      bfd_set_error (bfd_error_wrong_object_format);
++	      if (abfd->is_linker_input)
++	        {
++	          bfd_ardata (abfd) = tdata_hold;
++	          return NULL;
++	        }
++	    }
+ 	  /* And we ought to close `first' here too.  */
+ 	}
+     }
+diff --git a/bfd/compress.c b/bfd/compress.c
+index 1a531ead0c..88d7ccf11b 100644
+--- a/bfd/compress.c
++++ b/bfd/compress.c
+@@ -319,7 +319,7 @@ bfd_get_full_section_contents (bfd *abfd, sec_ptr sec, bfd_byte **ptr)
+ 	return FALSE;
+       if (p == NULL)
+ 	{
+-	  p = (bfd_byte *) bfd_malloc (sz);
++	  p = (bfd_byte *) bfd_zmalloc (sz);
+ 	  if (p == NULL)
+ 	    return FALSE;
+ 	  *ptr = p;
+diff --git a/bfd/config.bfd b/bfd/config.bfd
+index d89a082f3a..9e08501d9b 100644
+--- a/bfd/config.bfd
++++ b/bfd/config.bfd
+@@ -1008,6 +1008,10 @@ case "${targ}" in
+     # targ_selvecs=m68kmach3_vec
+     # targ_cflags=-DSTAT_FOR_EXEC
+     ;;
++  m68*-*-mintelf*)
++    targ_defvec=m68k_elf32_vec
++    targ_selvecs="aout0_be_vec m68k_aout_mintprg_vec"
++    ;;
+   m68*-*-mint*)
+     targ_defvec=aout0_be_vec
+     targ_selvecs=m68k_aout_mintprg_vec
+diff --git a/bfd/elf.c b/bfd/elf.c
+index c132098558..8e2b0f04d2 100644
+--- a/bfd/elf.c
++++ b/bfd/elf.c
+@@ -8130,7 +8130,11 @@ _bfd_elf_canonicalize_symtab (bfd *abfd, asymbol **allocation)
+   long symcount = bed->s->slurp_symbol_table (abfd, allocation, FALSE);
+ 
+   if (symcount >= 0)
+-    bfd_get_symcount (abfd) = symcount;
++    {
++      bfd_get_symcount (abfd) = symcount;
++      /* Cache symbols for the generic linker.  */
++      bfd_get_outsymbols (abfd) = allocation;
++    }
+   return symcount;
+ }
+ 
+diff --git a/bfd/reloc.c b/bfd/reloc.c
+index a1353a281b..f9be63130a 100644
+--- a/bfd/reloc.c
++++ b/bfd/reloc.c
+@@ -978,6 +978,17 @@ space consuming.  For each target:
+       return bfd_reloc_other;
+     }
+ 
++  extern const bfd_target m68k_aout_mintprg_vec;
++  if (flag == bfd_reloc_ok
++      && input_section->output_section->owner->xvec == &m68k_aout_mintprg_vec
++      && !howto->pc_relative && (howto->size == 2 || howto->size == -2))
++    {
++      bfd_vma tpa_address = input_section->output_section->vma
++	+ input_section->output_offset + reloc_entry->address;
++	
++      bfd_m68kmint_add_tpa_relocation_entry (input_section->output_section->owner, tpa_address);
++    }
++
+   return flag;
+ }
+ 
+diff --git a/config.sub b/config.sub
+index f2632cd8a2..67e10873d1 100755
+--- a/config.sub
++++ b/config.sub
+@@ -1534,6 +1534,9 @@ case $os in
+ 	-xenix)
+ 		os=-xenix
+ 		;;
++	-mintelf*)
++		os=-mintelf
++		;;
+ 	-*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
+ 		os=-mint
+ 		;;
+diff --git a/gas/config/tc-m68k.h b/gas/config/tc-m68k.h
+index 42f69845e7..7adb663051 100644
+--- a/gas/config/tc-m68k.h
++++ b/gas/config/tc-m68k.h
+@@ -169,7 +169,11 @@ extern struct relax_type md_relax_table[];
+ #define TARGET_USE_CFIPOP 1
+ 
+ #define DWARF2_DEFAULT_RETURN_COLUMN 24
++#ifdef TE_MINT
++#define DWARF2_CIE_DATA_ALIGNMENT (-2)
++#else
+ #define DWARF2_CIE_DATA_ALIGNMENT (-4)
++#endif
+ 
+ #define tc_regname_to_dw2regnum tc_m68k_regname_to_dw2regnum
+ extern int tc_m68k_regname_to_dw2regnum (const char *regname);
+diff --git a/gas/configure.tgt b/gas/configure.tgt
+index 21efe946a8..e30be96f7d 100644
+--- a/gas/configure.tgt
++++ b/gas/configure.tgt
+@@ -325,6 +325,7 @@ case ${generic_target} in
+   m68k-*-linux-*)			fmt=elf em=linux ;;
+   m68k-*-uclinux*)			fmt=elf em=uclinux ;;
+   m68k-*-gnu*)				fmt=elf ;;
++  m68k-*-mintelf*)			fmt=elf em=mint bfd_gas=yes ;;
+   m68k-*-mint*)				fmt=aout em=mint bfd_gas=yes ;;
+   m68k-*-netbsdelf*)			fmt=elf em=nbsd ;;
+   m68k-*-netbsd*)			fmt=aout em=nbsd bfd_gas=yes ;;
+diff --git a/ld/scripttempl/m68kmint.sc b/ld/scripttempl/m68kmint.sc
+index a0aa896b28..844c77b179 100644
+--- a/ld/scripttempl/m68kmint.sc
++++ b/ld/scripttempl/m68kmint.sc
+@@ -19,29 +19,38 @@ SECTIONS
+   ${RELOCATING+/* The VMA of the .text section is ${TEXT_START_ADDR} instead of 0
+      because the extended MiNT header is just before,
+      at the beginning of the TEXT segment.  */}
+-  .text ${RELOCATING+${TEXT_START_ADDR}}:
++  .text ${RELOCATING+${TEXT_START_ADDR}}: SUBALIGN(2)
+   {
+     CREATE_OBJECT_SYMBOLS
+-    *(.text)
++    *(.text .text.*)
++    *(.rodata .rodata.*) /* Only present in ELF objects */
++    ${RELOCATING+ *(.ctors)}
++    ${RELOCATING+ *(.dtors)}
+     ${CONSTRUCTING+CONSTRUCTORS}
++    ${RELOCATING+etext = .;}
+     ${RELOCATING+_etext = .;}
+-    ${RELOCATING+__etext = .;}
+   }
+ 
+-  .data :
++  .data : SUBALIGN(2)
+   {
+-    *(.data)
++    *(.data .data.*)
++    ${RELOCATING+edata = .;}
+     ${RELOCATING+_edata = .;}
+-    ${RELOCATING+__edata = .;}
+   }
+ 
+   .bss :
+   {
+-    ${RELOCATING+__bss_start = .;}
+-    *(.bss)
++    ${RELOCATING+_bss_start = .;}
++    *(.bss .bss.*)
+     *(COMMON)
++    ${RELOCATING+end = .;}
+     ${RELOCATING+_end = .;}
+-    ${RELOCATING+__end = .;}
+   }
++
++  /* Unfortunately, stabs are not mappable from ELF to a.out.
++     It can probably be fixed with some amount of work.  */
++  /DISCARD/ :
++  { *(.stab) *(.stab*) *(.debug) *(.debug*) *(.comment) *(.gnu.warning.*) }
++
+ }
+ EOF
+-- 
+2.16.1
+

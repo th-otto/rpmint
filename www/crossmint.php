@@ -22,6 +22,8 @@ $download_dir = 'download/mint/';
 include('functions.php');
 include('packages.php');
 
+$gccver = 'gcc730';
+
 ?>
 
 <body>
@@ -83,19 +85,19 @@ you should extract them by using <br />
 <p>&nbsp;</p>
 
 <p>
-The linux packages were built on openSUSE tumbleweed (kernel 4.13, glibc 2.26). They should
+The linux packages were built on openSUSE tumbleweed (kernel 4.15.2, glibc 2.26). They should
 work on other linux distros too, but will require at least glibc 2.14.</p>
 
 <p>&nbsp;</p>
 
 <p>
-The cygwin packages where built on a recent system (cygwin dll 2.9.0). Should there be problems,
+The cygwin packages where built on a recent system (cygwin dll 2.10.0). Should there be problems,
 you may have to upgrade your version, or recompile it yourself.</p>
 
 <p>&nbsp;</p>
 
 <p>
-The macOS packages where built on macOS Sierra, with a deployment target of 10.6 (Snow Leopard).
+The macOS packages where built on macOS 10.12 (Sierra), with a deployment target of 10.6 (Snow Leopard).
 </p>
 
 <p>&nbsp;</p>
@@ -266,7 +268,7 @@ foreach ($basepackages as $package)
 	if ($package['cygwin32'])
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin"></img></td>' . "\n";
+		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin32"></img></td>' . "\n";
 		echo '<td class="linkdesc">Cygwin Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
@@ -278,7 +280,7 @@ foreach ($basepackages as $package)
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'] && $basepackages['gcc720']['cygwin32'])
+		if ($package['elf'] && $basepackages[$gccver]['cygwin32'])
 		{
 			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mintelf';
 			if (isset($package['date']))
@@ -294,7 +296,7 @@ foreach ($basepackages as $package)
 	if ($package['cygwin64'])
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin"></img></td>' . "\n";
+		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin64"></img></td>' . "\n";
 		echo '<td class="linkdesc">Cygwin Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
@@ -306,7 +308,7 @@ foreach ($basepackages as $package)
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'] && $basepackages['gcc720']['cygwin64'])
+		if ($package['elf'] && $basepackages[$gccver]['cygwin64'])
 		{
 			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mintelf';
 			if (isset($package['date']))
@@ -322,7 +324,7 @@ foreach ($basepackages as $package)
 	if ($package['mingw32'])
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW"></img></td>' . "\n";
+		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW32"></img></td>' . "\n";
 		echo '<td class="linkdesc">MinGW Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
@@ -334,7 +336,7 @@ foreach ($basepackages as $package)
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'] && $basepackages['gcc720']['mingw32'])
+		if ($package['elf'] && $basepackages[$gccver]['mingw32'])
 		{
 			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mintelf';
 			if (isset($package['date']))
@@ -350,7 +352,7 @@ foreach ($basepackages as $package)
 	if ($package['mingw64'])
 	{
 		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW"></img></td>' . "\n";
+		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW64"></img></td>' . "\n";
 		echo '<td class="linkdesc">MinGW Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
@@ -362,7 +364,7 @@ foreach ($basepackages as $package)
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'] && $basepackages['gcc720']['mingw64'])
+		if ($package['elf'] && $basepackages[$gccver]['mingw64'])
 		{
 			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mintelf';
 			if (isset($package['date']))
@@ -507,6 +509,102 @@ foreach ($basepackages as $package)
 ?>
 
 </table>
+
+<h1>Complete toolchains</h1>
+
+<p>These archives are just repackaged from the packages above, and some packages below.
+Particularly, they contain the packages for binutils, GCC, mintbin, gemlib, pml,
+mintlib, and cflib.</p>
+
+<p>&nbsp;</p>
+
+<table border="1" cellpadding="2" cellspacing="0">
+
+<?php
+
+/* m68k-atari-mint-base-20171014-cygwin32.tar.xz */
+
+$package = $basepackages[$gccver];
+$basename = 'm68k-atari-mint-base';
+if (isset($package['date']))
+	$basename .= '-' . $package['date'];
+if ($package['cygwin32'])
+{
+	echo '<tr>' . "\n";
+	echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin32"></img></td>' . "\n";
+	echo '<td class="linkdesc">Cygwin32 Package:</td>' . "\n";
+	echo '<td class="sourcelink">';
+	$filename = $download_dir . $basename . '-cygwin32.tar.xz';
+	$text = $basename . '-cygwin32.tar.xz';
+	gen_link($filename, $text);
+	echo '</td>' . "\n";
+	echo '</tr>' . "\n";
+}
+if ($package['cygwin64'])
+{
+	echo '<tr>' . "\n";
+	echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin64"></img></td>' . "\n";
+	echo '<td class="linkdesc">Cygwin64 Package:</td>' . "\n";
+	echo '<td class="sourcelink">';
+	$filename = $download_dir . $basename . '-cygwin64.tar.xz';
+	$text = $basename . '-cygwin64.tar.xz';
+	gen_link($filename, $text);
+	echo '</td>' . "\n";
+	echo '</tr>' . "\n";
+}
+if ($package['mingw32'])
+{
+	echo '<tr>' . "\n";
+	echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MingW32"></img></td>' . "\n";
+	echo '<td class="linkdesc">MinGW Archive:</td>' . "\n";
+	echo '<td class="sourcelink">';
+	$filename = $download_dir . $basename . '-mingw32.tar.xz';
+	$text = $basename . '-mingw32.tar.xz';
+	gen_link($filename, $text);
+	echo '</td>' . "\n";
+	echo '</tr>' . "\n";
+}
+if ($package['mingw64'])
+{
+	echo '<tr>' . "\n";
+	echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW64"></img></td>' . "\n";
+	echo '<td class="linkdesc">MinGW Archive:</td>' . "\n";
+	echo '<td class="sourcelink">';
+	$filename = $download_dir . $basename . '-mingw64.tar.xz';
+	$text = $basename . '-mingw64.tar.xz';
+	gen_link($filename, $text);
+	echo '</td>' . "\n";
+	echo '</tr>' . "\n";
+}
+if ($package['linux64'])
+{
+	echo '<tr>' . "\n";
+	echo '<td class="icon"><img src="images/os-linux.png" width="32" height="32" alt="Linux"></img></td>' . "\n";
+	echo '<td class="linkdesc">Linux Archive:</td>' . "\n";
+	echo '<td class="sourcelink">';
+	$filename = $download_dir . $basename . '-linux.tar.xz';
+	$text = $basename . '-linux.tar.xz';
+	gen_link($filename, $text);
+	echo '</td>' . "\n";
+	echo '</tr>' . "\n";
+}
+if ($package['macos64'])
+{
+	echo '<tr>' . "\n";
+	echo '<td class="icon"><img src="images/os-macos.png" width="32" height="32" alt="MacOSX"></img></td>' . "\n";
+	echo '<td class="linkdesc">MacOSX Archive:</td>' . "\n";
+	echo '<td class="sourcelink">';
+	$filename = $download_dir . $basename . '-macos.tar.xz';
+	$text = $basename . '-macos.tar.xz';
+	gen_link($filename, $text);
+	echo '</td>' . "\n";
+	echo '</tr>' . "\n";
+}
+?>
+</tr>
+
+</table>
+
 
 <h1>Library packages</h1>
 
@@ -817,6 +915,12 @@ foreach ($libpackages as $package)
 
 <li>2017/10/26 Package groff added</li>
 
+<li>2018/02/15 Update binutils to version 2.30</li>
+
+<li>2018/02/15 Update GCC to version 7.3</li>
+
+<li>2018/02/17 Add cross-compiler for MinGW host</li>
+
 </ul>
 
 <p></p>
@@ -924,7 +1028,7 @@ Build times:
 binutils:
 	mingw32: 10min
 	cygwin:  8min
-	macos:   3min (ld does have support for the native platform)
+	macos:   3min (ld does not have support for the native platform)
 	linux:   30sec
 
 gcc 4.6.4:
@@ -937,6 +1041,13 @@ gcc 7.2:
 	mingw32: 32min
 	cygwin:  28min
 	macos:   23min
+	linux:   3min
+	
+gcc 7.3:
+	mingw32: 32min
+	cygwin32: 36min
+	cygwin64: 28min
+	macos:   25min
 	linux:   3min
 	
 -->

@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-7.2.0
-VERSIONPATCH=-20171006
+VERSION=-7.3.0
+VERSIONPATCH=-20180215
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -30,14 +30,14 @@ case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
 	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
 	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
-	MSYS*) host=msys ;;
+	MSYS*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
 	*) host=linux ;;
 esac
 case $host in
-	mingw*) PREFIX=${MINGW_PREFIX} ;;
-	macos*) PREFIX=/opt/cross-mint ;;
+	mingw* | msys*) PREFIX=${MINGW_PREFIX}; local_prefix=--with-local-prefix=${PREFIX}/local ;;
+	macos*) PREFIX=/opt/cross-mint; local_prefix=--with-local-prefix=${PREFIX}/local ;;
 	*) PREFIX=/usr ;;
 esac
 
@@ -97,7 +97,21 @@ fi
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
 # - checking out the gcc-7-mint branch
-# - running git diff gcc-7_2_0-release HEAD
+# - running git diff gcc-7_3_0-release HEAD
+#
+# when a new GCC is release:
+#   cd <directory where th-otto/m68k-atari-mint-gcc.git> has ben cloned
+#   fetch new commits from upstream:
+#      git checkout master
+#      git pull --rebase upstream master
+#      git push
+#   fetch new tags etc:
+#      git fetch --all
+#      git push --tags
+#   merge new release into our branch:
+#      git checkout gcc-7-mint
+#      git merge gcc-7_3_0-release (& commit)
+#      git push
 #
 PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint${VERSIONPATCH}.patch"
 
@@ -167,6 +181,10 @@ for a in "" -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 	test "$BUILD" != "" && break
 done
 test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
+case $BUILD in
+	x86_64-pc-mingw32) BUILD=x86_64-pc-msys ;;
+	i686-pc-mingw32) BUILD=i686-pc-msys ;;
+esac
 
 rm -rf "$MINT_BUILD_DIR"
 mkdir -p "$MINT_BUILD_DIR"
@@ -230,15 +248,21 @@ case $host in
 		export CXX=/usr/bin/clang++
 		export MACOSX_DEPLOYMENT_TARGET=10.6
 		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
-		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
+		CXXFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
 		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
 		mpfr_config="--with-mpc=${CROSSTOOL_DIR} --with-gmp=${CROSSTOOL_DIR} --with-mpfr=${CROSSTOOL_DIR}"
 		;;
 esac
 
+case $BUILD in
+	i686-*-msys* | x86_64-*-msys*)
+		mpfr_config="--with-mpc=${MINGW_PREFIX} --with-gmp=${MINGW_PREFIX} --with-mpfr=${MINGW_PREFIX}"
+		;;
+esac
+
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
-	--prefix="${PREFIX}" \
+	--prefix="${PREFIX}" $local_prefix \
 	--libdir="$BUILD_LIBDIR" \
 	--bindir="${PREFIX}/bin" \
 	--libexecdir='${libdir}' \
