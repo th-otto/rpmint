@@ -83,7 +83,7 @@ GCC contains everything to compile C programs, except a standard library and a m
 		'elf' => 1,
 		'cygwin32' => 1,
 		'cygwin64' => 1,
-		'mingw32' => 0,
+		'mingw32' => 1,
 		'mingw64' => 0,
 		'linux32' => 0,
 		'linux64' => 1,

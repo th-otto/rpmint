@@ -97,6 +97,19 @@ index 11d0ce77342..947835568a4 100644
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
+diff --git a/config/lthostflags.m4 b/config/lthostflags.m4
+index bc0f59ee79e..253e7aa6b06 100644
+--- a/config/lthostflags.m4
++++ b/config/lthostflags.m4
+@@ -13,7 +13,7 @@ AC_DEFUN([ACX_LT_HOST_FLAGS], [
+ AC_REQUIRE([AC_CANONICAL_SYSTEM])
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
 diff --git a/config/mmap.m4 b/config/mmap.m4
 index fba0d9d3657..5342ed8ab2c 100644
 --- a/config/mmap.m4
@@ -497,6 +510,27 @@ index 6e75bd45fb9..ac09398ea31 100644
  m68k-*-rtems*)
  	default_m68k_cpu=68020
  	default_cf_cpu=5206
+diff --git a/gcc/config.host b/gcc/config.host
+index 6b28f3033ef..d3a96fd01a0 100644
+--- a/gcc/config.host
++++ b/gcc/config.host
+@@ -234,14 +234,14 @@ case ${host} in
+     host_exeext=.exe
+     host_lto_plugin_soname=cyglto_plugin-0.dll
+     ;;
+-  i[34567]86-*-mingw32*)
++  i[34567]86-*-mingw32* | i[34567]86-*-msys*)
+     host_xm_file=i386/xm-mingw32.h
+     host_xmake_file="${host_xmake_file} i386/x-mingw32"
+     host_exeext=.exe
+     out_host_hook_obj=host-mingw32.o
+     host_lto_plugin_soname=liblto_plugin-0.dll
+     ;;
+-  x86_64-*-mingw*)
++  x86_64-*-mingw* | x86_64-*-msys*)
+     use_long_long_for_widest_fast_int=yes
+     host_xm_file=i386/xm-mingw32.h
+     host_xmake_file="${host_xmake_file} i386/x-mingw32"
 diff --git a/gcc/config/i386/cygming.opt b/gcc/config/i386/cygming.opt
 index 2d7c7d2b674..dc24530e4dd 100644
 --- a/gcc/config/i386/cygming.opt
@@ -965,10 +999,10 @@ index 6d9f8b2d4a1..9fad2950508 100644
    double temp;
 diff --git a/gcc/config/m68k/mint.h b/gcc/config/m68k/mint.h
 new file mode 100644
-index 00000000000..61385f29c83
+index 00000000000..ee6f56b4200
 --- /dev/null
 +++ b/gcc/config/m68k/mint.h
-@@ -0,0 +1,224 @@
+@@ -0,0 +1,223 @@
 +/* Definitions of target machine for GNU compiler.
 +   Atari ST TOS/MiNT.
 +   Copyright (C) 1994, 1995, 2007, 2008, 2009, 2010, 2011
@@ -1042,15 +1076,14 @@ index 00000000000..61385f29c83
 +
 +#undef CPP_SPEC
 +#define CPP_SPEC			\
-+  "%{m68000:-D__M68000__} "		\
-+  "%{mc68020:-D__M68020__} "		\
-+  "%{m68020:-D__M68020__} "		\
-+  "%{m68030:-D__M68020__} "		\
-+  "%{m68040:-D__M68020__} "		\
-+  "%{m68060:-D__M68020__} "		\
-+  "%{m68020-40:-D__M68020__} "		\
-+  "%{m68020-60:-D__M68020__} "		\
-+  "%{!m680*:%{!mc680*:-D__M68000__}} "	\
++  "%{m68000|mcpu=68000:-D__M68000__} "		\
++  "%{m68020|mcpu=68020:-D__M68020__} "		\
++  "%{m68030|mcpu=68030:-D__M68020__} "		\
++  "%{m68040|mcpu=68040:-D__M68020__} "		\
++  "%{m68060|mcpu=68060:-D__M68020__} "		\
++  "%{m68020-40|mcpu=68020-40:-D__M68020__} "		\
++  "%{m68020-60|mcpu=68020-60:-D__M68020__} "		\
++  "%{!m680*:%{!mc680*:%{!mcpu=680*:-D__M68000__}}} "	\
 +  "%{mshort:-D__MSHORT__}"
 +
 +#define STARTFILE_SPEC	"%{pg|p|profile:gcrt0.o%s;:crt0.o%s}"
@@ -3302,7 +3335,7 @@ index 00000000000..5cc7c5174a9
 +
 +#endif /* __RELOCATE_H__ */
 diff --git a/libatomic/configure b/libatomic/configure
-index c05fc9d1141..8e2c94be35d 100755
+index c05fc9d1141..8098895cd0c 100755
 --- a/libatomic/configure
 +++ b/libatomic/configure
 @@ -5048,7 +5048,7 @@ if test "$GCC" = yes; then
@@ -3367,6 +3400,15 @@ index c05fc9d1141..8e2c94be35d 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
+@@ -11462,7 +11462,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
 @@ -14740,7 +14740,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
@@ -3698,7 +3740,7 @@ index 12c1907ed40..cb7b4b80f62 100755
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
 diff --git a/libcpp/files.c b/libcpp/files.c
-index 969a531033f..1bd3e11a617 100644
+index 969a531033f..c60dbc9182a 100644
 --- a/libcpp/files.c
 +++ b/libcpp/files.c
 @@ -30,6 +30,13 @@ along with this program; see the file COPYING3.  If not see
@@ -3780,14 +3822,13 @@ index 969a531033f..1bd3e11a617 100644
 +  */
 +  if (file->fd > 0)
 +    {
-+      char filepath[MAX_PATH];
-+      strncpy (filepath, file->path, sizeof(filepath) - 1);
-+      char* dirsep = &filepath[0];
++      char *filepath = xstrdup(file->path);
++      char* dirsep = filepath;
 +      while ( (dirsep = strchr (dirsep, '\\')) != NULL)
 +        *dirsep = '/';
 +      if (strstr(file->path, "/../"))
 +	{
-+	  dirsep = &filepath[0];
++	  dirsep = filepath;
 +	  char dirsepc;
 +	  /* Check each directory in the chain. */
 +	  while ( (dirsep = strpbrk (dirsep, "\\/")) != NULL)
@@ -3796,7 +3837,7 @@ index 969a531033f..1bd3e11a617 100644
 +	      *dirsep = '\0';
 +	      if (stat_st_mode_symlink (filepath, &file->st) == -1)
 +	        {
-+	          *dirsep = dirsepc;
++	          free(filepath);
 +	          close (file->fd);
 +	          file->fd = -1;
 +	          return false;
@@ -3804,6 +3845,7 @@ index 969a531033f..1bd3e11a617 100644
 +	      *dirsep++ = dirsepc;
 +	    }
 +	}
++	free(filepath);
 +    }
 +#endif
  
@@ -3994,6 +4036,19 @@ index 74b747b3b7e..efb5505101b 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
+diff --git a/libffi/configure.host b/libffi/configure.host
+index 24fbfc438f0..f65013b2e7f 100644
+--- a/libffi/configure.host
++++ b/libffi/configure.host
+@@ -65,7 +65,7 @@ case "${host}" in
+ 	;;
+ 
+   i?86-win32* | i?86-*-cygwin* | i?86-*-mingw* | i?86-*-os2* | i?86-*-interix* \
+-  | x86_64-*-cygwin* | x86_64-*-mingw*)
++  | x86_64-*-cygwin* | x86_64-*-mingw* | *-*-msys*)
+ 	TARGETDIR=x86
+ 	if test $ac_cv_sizeof_size_t = 4; then
+ 	  TARGET=X86_WIN32
 diff --git a/libgcc/config.host b/libgcc/config.host
 index 8beb492b5fa..f8e8ae3d536 100644
 --- a/libgcc/config.host
@@ -4072,7 +4127,7 @@ index 4914a6f323f..60f123ff8a5 100644
  libcaf_single_la_LINK = $(LINK) $(libcaf_single_la_LDFLAGS)
  @IEEE_SUPPORT_TRUE@fincludedir = $(libdir)/gcc/$(target_alias)/$(gcc_version)$(MULTISUBDIR)/finclude
 diff --git a/libgfortran/configure b/libgfortran/configure
-index 81238fcb79c..99d12877488 100755
+index 81238fcb79c..f309eb2af0b 100755
 --- a/libgfortran/configure
 +++ b/libgfortran/configure
 @@ -6184,7 +6184,7 @@ if test "$GCC" = yes; then
@@ -4150,6 +4205,15 @@ index 81238fcb79c..99d12877488 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
+@@ -12768,7 +12774,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
 @@ -13977,7 +13983,7 @@ _LT_EOF
        fi
        ;;
@@ -4354,7 +4418,7 @@ index 1d3d714fc05..bf361890e72 100755
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
 diff --git a/libgomp/configure b/libgomp/configure
-index b7e9f40b852..68fc3f3fd40 100755
+index b7e9f40b852..c2981d4b116 100755
 --- a/libgomp/configure
 +++ b/libgomp/configure
 @@ -5088,7 +5088,7 @@ if test "$GCC" = yes; then
@@ -4432,6 +4496,15 @@ index b7e9f40b852..68fc3f3fd40 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
+@@ -11502,7 +11508,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
 @@ -12749,7 +12755,7 @@ _LT_EOF
        fi
        ;;
@@ -4951,9 +5024,18 @@ index 853993a522f..64448d180e3 100644
      lt_cv_dlopen_libs=
      ;;
 diff --git a/libobjc/configure b/libobjc/configure
-index abf5aed71cf..6666e4a60b9 100755
+index abf5aed71cf..3808ad74c2c 100755
 --- a/libobjc/configure
 +++ b/libobjc/configure
+@@ -3320,7 +3320,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
 @@ -3343,7 +3343,7 @@ case "${host}" in
      # Darwin needs -single_module when linking libobjc
      extra_ldflags_libobjc='$(lt_host_flags) -Wl,-single_module'
@@ -5272,7 +5354,7 @@ index 8b8c041d2bf..c243f697758 100644
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
 diff --git a/libquadmath/configure b/libquadmath/configure
-index d2f13bf7751..bd6e35df67b 100755
+index d2f13bf7751..96e2ca0b1cc 100755
 --- a/libquadmath/configure
 +++ b/libquadmath/configure
 @@ -4741,7 +4741,7 @@ if test "$GCC" = yes; then
@@ -5337,6 +5419,15 @@ index d2f13bf7751..bd6e35df67b 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
+@@ -10919,7 +10919,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
 diff --git a/libsanitizer/configure b/libsanitizer/configure
 index 8e0c47ea838..0d81026d707 100755
 --- a/libsanitizer/configure
@@ -5470,7 +5561,7 @@ index b0c485b0f7b..4fb2b8605e5 100644
     esac
  else
 diff --git a/libssp/configure b/libssp/configure
-index b14e922e6f1..31d2809af1e 100755
+index b14e922e6f1..6c2b0390b70 100755
 --- a/libssp/configure
 +++ b/libssp/configure
 @@ -4840,7 +4840,7 @@ if test "$GCC" = yes; then
@@ -5548,6 +5639,15 @@ index b14e922e6f1..31d2809af1e 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
+@@ -11018,7 +11024,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
 diff --git a/libssp/ssp.c b/libssp/ssp.c
 index 536fb917a49..1545f99d181 100644
 --- a/libssp/ssp.c
@@ -6227,7 +6327,7 @@ index 00000000000..11d2f9e1c82
 +
 +#endif
 diff --git a/libstdc++-v3/configure b/libstdc++-v3/configure
-index e70fdd6421f..828c0960822 100755
+index e70fdd6421f..d1ef38f3ad5 100755
 --- a/libstdc++-v3/configure
 +++ b/libstdc++-v3/configure
 @@ -5652,7 +5652,7 @@ if test "$GCC" = yes; then
@@ -6349,6 +6449,15 @@ index e70fdd6421f..828c0960822 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
+@@ -14973,7 +14979,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
 @@ -21831,7 +21837,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
@@ -10053,7 +10162,7 @@ index 24d13f34409..e905d58ca24 100644
          # as there is no search path for DLLs.
          _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='-L$libdir'
 diff --git a/libvtv/configure b/libvtv/configure
-index c3bed2dfc70..34bfb868962 100755
+index c3bed2dfc70..d63be7d2912 100755
 --- a/libvtv/configure
 +++ b/libvtv/configure
 @@ -6269,7 +6269,7 @@ if test "$GCC" = yes; then
@@ -10162,8 +10271,17 @@ index c3bed2dfc70..34bfb868962 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
+@@ -15429,7 +15429,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
 diff --git a/lto-plugin/configure b/lto-plugin/configure
-index cdea9eac3ee..f544459dcc2 100755
+index cdea9eac3ee..437bad465b9 100755
 --- a/lto-plugin/configure
 +++ b/lto-plugin/configure
 @@ -5671,7 +5671,7 @@ if test "$GCC" = yes; then
@@ -10228,6 +10346,15 @@ index cdea9eac3ee..f544459dcc2 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
+@@ -11816,7 +11816,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
 diff --git a/zlib/configure b/zlib/configure
 index ee5527c4a40..790129cc58e 100755
 --- a/zlib/configure

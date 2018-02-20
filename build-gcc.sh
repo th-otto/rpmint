@@ -36,8 +36,8 @@ case `uname -s` in
 	*) host=linux ;;
 esac
 case $host in
-	mingw* | msys*) PREFIX=${MINGW_PREFIX}; local_prefix=--with-local-prefix=${PREFIX}/local ;;
-	macos*) PREFIX=/opt/cross-mint; local_prefix=--with-local-prefix=${PREFIX}/local ;;
+	mingw* | msys*) PREFIX=${MINGW_PREFIX} ;;
+	macos*) PREFIX=/opt/cross-mint ;;
 	*) PREFIX=/usr ;;
 esac
 
@@ -99,8 +99,8 @@ fi
 # - checking out the gcc-7-mint branch
 # - running git diff gcc-7_3_0-release HEAD
 #
-# when a new GCC is release:
-#   cd <directory where th-otto/m68k-atari-mint-gcc.git> has ben cloned
+# when a new GCC is released:
+#   cd <directory where m68k-atari-mint-gcc.git> has been cloned
 #   fetch new commits from upstream:
 #      git checkout master
 #      git pull --rebase upstream master

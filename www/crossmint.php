@@ -56,7 +56,7 @@ with respect to their own licenses.
 <li>Install <a href="http://www.cygwin.com/" <?php echo $target ?>>Cygwin 32-bit</a>.
 This will provide you a full UNIX-like environment necessary for running the GNU tools.</li>
 <li>Install the following packages, using the Cygwin setup program: <b>libmpc3</b>.</li>
-<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20171014-cygwin32.tar.xz', 'm68k-atari-mint-base-20171014-cygwin32.tar.xz') ?> (~50 MB).</li>
+<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20180215-cygwin32.tar.xz', 'm68k-atari-mint-base-20180215-cygwin32.tar.xz') ?> (~50 MB).</li>
 <li>Now you can use any tool prefixed by <code>m68k-atari-mint-</code>,
 such as <code>m68k-atari-mint-gcc</code>, <code>m68k-atari-mint-g++</code>,
 and even read the man pages.</li>
@@ -522,8 +522,6 @@ mintlib, and cflib.</p>
 
 <?php
 
-/* m68k-atari-mint-base-20171014-cygwin32.tar.xz */
-
 $package = $basepackages[$gccver];
 $basename = 'm68k-atari-mint-base';
 if (isset($package['date']))
@@ -532,7 +530,7 @@ if ($package['cygwin32'])
 {
 	echo '<tr>' . "\n";
 	echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin32"></img></td>' . "\n";
-	echo '<td class="linkdesc">Cygwin32 Package:</td>' . "\n";
+	echo '<td class="linkdesc">Cygwin32 Archive:</td>' . "\n";
 	echo '<td class="sourcelink">';
 	$filename = $download_dir . $basename . '-cygwin32.tar.xz';
 	$text = $basename . '-cygwin32.tar.xz';
@@ -544,7 +542,7 @@ if ($package['cygwin64'])
 {
 	echo '<tr>' . "\n";
 	echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin64"></img></td>' . "\n";
-	echo '<td class="linkdesc">Cygwin64 Package:</td>' . "\n";
+	echo '<td class="linkdesc">Cygwin64 Archive:</td>' . "\n";
 	echo '<td class="sourcelink">';
 	$filename = $download_dir . $basename . '-cygwin64.tar.xz';
 	$text = $basename . '-cygwin64.tar.xz';
