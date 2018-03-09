@@ -1,0 +1,16 @@
+# default: off
+# description: The git server offers access to git repositories
+service git
+{
+        disable         = yes
+        socket_type     = stream
+        protocol        = tcp
+        wait            = no
+        user            = git-daemon
+        group           = nogroup
+        server          = /usr/bin/git
+        server_args     = daemon --syslog --inetd --base-path=/srv/git
+        type            = UNLISTED
+        port            = 9418
+        log_on_failure  += USERID
+}

@@ -1,0 +1,41 @@
+From 125e6b448b375e306eff0c11f571e024b17c9125 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 9 Mar 2018 04:32:25 +0100
+Subject: [PATCH 8/8] Do not include config.mak.uname when cross-compiling
+
+---
+ Makefile                | 2 ++
+ contrib/svn-fe/Makefile | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index de4b8f0c0..b27c32944 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1040,7 +1040,9 @@ ifeq ($(wildcard sha1collisiondetection/lib/sha1.h),sha1collisiondetection/lib/s
+ DC_SHA1_SUBMODULE = auto
+ endif
+ 
++ifndef CROSS_COMPILING
+ include config.mak.uname
++endif
+ -include config.mak.autogen
+ -include config.mak
+ 
+diff --git a/contrib/svn-fe/Makefile b/contrib/svn-fe/Makefile
+index e8651aaf4..63ed2e05f 100644
+--- a/contrib/svn-fe/Makefile
++++ b/contrib/svn-fe/Makefile
+@@ -8,7 +8,9 @@ CFLAGS = -g -O2 -Wall
+ LDFLAGS =
+ EXTLIBS = -lz
+ 
++ifndef CROSS_COMPILING
+ include ../../config.mak.uname
++endif
+ -include ../../config.mak.autogen
+ -include ../../config.mak
+ 
+-- 
+2.16.2
+

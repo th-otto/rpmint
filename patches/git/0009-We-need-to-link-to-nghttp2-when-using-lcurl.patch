@@ -1,0 +1,26 @@
+From b3cab83aa2e007bcd4e82ba86fa1c54bee74ce42 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 9 Mar 2018 19:09:41 +0100
+Subject: [PATCH] We need to link to nghttp2 when using -lcurl
+
+---
+ Makefile | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index b27c32944..e92a016f7 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1211,6 +1211,9 @@ else
+ 	else
+ 		CURL_LIBCURL = -lcurl
+ 	endif
++	ifdef NEEDS_NGHTTP2_WITH_CURL
++		CURL_LIBCURL += -lnghttp2 -lssh2
++	endif
+ 	ifdef NEEDS_SSL_WITH_CURL
+ 		CURL_LIBCURL += -lssl
+ 		ifdef NEEDS_CRYPTO_WITH_SSL
+-- 
+2.16.2
+

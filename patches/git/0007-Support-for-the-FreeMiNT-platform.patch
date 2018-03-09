@@ -1,0 +1,75 @@
+From 1b4531ea9ce1773d0a3150a72014a9433000c009 Mon Sep 17 00:00:00 2001
+From: Miro Kropacek <miro.kropacek@gmail.com>
+Date: Fri, 9 Mar 2018 04:20:15 +0100
+Subject: [PATCH 7/8] Support for the FreeMiNT platform.
+
+---
+ config.mak.uname  | 24 ++++++++++++++++++++++++
+ git-compat-util.h | 19 +++++++++++++++++++
+ 2 files changed, 43 insertions(+)
+
+diff --git a/config.mak.uname b/config.mak.uname
+index 6a1d0de0c..cc3c22dda 100644
+--- a/config.mak.uname
++++ b/config.mak.uname
+@@ -583,3 +583,27 @@ ifeq ($(uname_S),QNX)
+ 	NO_STRCASESTR = YesPlease
+ 	NO_STRLCPY = YesPlease
+ endif
++ifeq ($(uname_S),FreeMiNT)
++	CC = m68k-atari-mint-gcc
++	AR = m68k-atari-mint-ar
++	CFLAGS = -O2 -fomit-frame-pointer -Wall
++	# _BSD_SOURCE is needed for compat/stat.c compilation
++	COMPAT_CFLAGS += -DSA_RESTART=0 -D_BSD_SOURCE=1
++	NO_MMAP = YesPlease
++	NO_ICONV = YesPlease
++	NO_GETTEXT = YesPlease
++	NO_REGEX = YesPlease
++	NO_IPV6 = YesPlease
++	NEEDS_MODE_TRANSLATION = YesPlease
++	NO_PTHREADS = YesPlease
++	NO_MEMMEM = YesPlease
++	NEEDS_SSL_WITH_CURL = YesPlease
++	NO_MKDTEMP = YesPlease
++	NO_MKSTEMPS=YesPlease
++	NO_PERL_MAKEMAKER = YesPlease
++	NO_D_TYPE_IN_DIRENT = YesPlease
++	NO_LIBGEN_H = YesPlease
++	HAVE_PATHS_H = YesPlease
++	HAVE_STRINGS_H = YesPlease
++	HAVE_GETDELIM = YesPlease
++endif
+diff --git a/git-compat-util.h b/git-compat-util.h
+index 07e383257..755966eea 100644
+--- a/git-compat-util.h
++++ b/git-compat-util.h
+@@ -628,6 +628,25 @@ extern int git_munmap(void *start, size_t length);
+ #define S_IFCHR  0020000
+ #define S_IFIFO  0010000
+ #define S_IFSOCK 0140000
++
++#undef S_ISTYPE
++#define S_ISTYPE(mode, mask) (((mode) & __S_IFMT) == (mask))
++
++#undef S_ISDIR
++#undef S_ISCHR
++#undef S_ISBLK
++#undef S_ISREG
++#undef S_ISFIFO
++#undef S_ISLNK
++#undef S_ISSOCK
++#define S_ISDIR(mode)  S_ISTYPE((mode), S_IFDIR)
++#define S_ISCHR(mode)  S_ISTYPE((mode), S_IFCHR)
++#define S_ISBLK(mode)  S_ISTYPE((mode), S_IFBLK)
++#define S_ISREG(mode)  S_ISTYPE((mode), S_IFREG)
++#define S_ISFIFO(mode) S_ISTYPE((mode), S_IFIFO)
++#define S_ISLNK(mode)  S_ISTYPE((mode), S_IFLNK)
++#define S_ISSOCK(mode) S_ISTYPE((mode), S_IFSOCK)
++
+ #ifdef stat
+ #undef stat
+ #endif
+-- 
+2.16.2
+

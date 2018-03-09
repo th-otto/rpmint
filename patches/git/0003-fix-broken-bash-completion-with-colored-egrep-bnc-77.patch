@@ -1,0 +1,26 @@
+From fb86d46d4bf688305dac52343cd361fd41a38a50 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 9 Mar 2018 03:19:27 +0100
+Subject: [PATCH 3/8] fix broken bash completion with colored egrep
+ (bnc#779536)
+
+---
+ contrib/completion/git-completion.bash | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/contrib/completion/git-completion.bash b/contrib/completion/git-completion.bash
+index 73d653a18..9e3c58f86 100644
+--- a/contrib/completion/git-completion.bash
++++ b/contrib/completion/git-completion.bash
+@@ -802,7 +802,7 @@ __git_commands () {
+ 	then
+ 		printf "%s" "${GIT_TESTING_COMMAND_COMPLETION}"
+ 	else
+-		git help -a|egrep '^  [a-zA-Z0-9]'
++		git help -a|egrep --color=never '^  [a-zA-Z0-9]'
+ 	fi
+ }
+ 
+-- 
+2.16.2
+

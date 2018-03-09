@@ -919,6 +919,8 @@ foreach ($libpackages as $package)
 
 <li>2018/02/17 Add cross-compiler for MinGW host</li>
 
+<li>2018/03/08 Package git added</li>
+
 </ul>
 
 <p></p>

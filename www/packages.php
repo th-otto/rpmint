@@ -1068,6 +1068,21 @@ programs store their man pages in either <code>/usr/share/man/</code> or
 <code>/usr/X11R6/man/</code>.
 '
 	),
+	'git' => array(
+		'name' => 'git',
+		'upstream' => 'https://git-scm.com/',
+		'source' => 'https://www.kernel.org/pub/software/scm/git/%{name}-%{version}.tar.xz',
+		'version' => '2.16.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'comment' => '
+Git is a fast, scalable, distributed revision control system with an
+unusually rich command set that provides both high-level operations and
+full access to internals.
+'
+	),
 );
 
 ?>

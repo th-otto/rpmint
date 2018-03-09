@@ -395,6 +395,15 @@ make_archives()
 		done
 	fi
 	
+	if test -d "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libexec"; then
+		cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libexec"
+		for i in `find . -type f`; do
+			test -h "$i" && continue
+			test -d "$i" && continue
+			"${strip}" "$i"
+		done
+	fi
+	
 	#
 	# remove pkgconfig dirs in architecture dependent subdirs
 	# we only need the one in the toplevel directory
@@ -435,7 +444,7 @@ make_archives()
 		rm -rf "${srcdir}"
 	fi
 
-	test -z "${PATCHES}" || ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES} ${DISABLED_PATCHES} ${PATCHARCHIVE}
+	test -z "${PATCHES}" || ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES} ${DISABLED_PATCHES} ${POST_INSTALL_SCRIPTS} ${PATCHARCHIVE}
 	cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh
 	cp -p "${scriptdir}/functions.sh" "${DIST_DIR}"
 }
