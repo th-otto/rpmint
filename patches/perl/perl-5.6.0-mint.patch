@@ -1,0 +1,543 @@
+--- perl-5.6.0/Configure.~	Thu Dec  7 13:05:48 2000
++++ perl-5.6.0/Configure	Fri Dec  8 00:09:32 2000
+@@ -2275,7 +2275,7 @@
+ 			*)	osvers="$3" ;;
+ 			esac
+ 			;;
+-		MiNT) osname=mint
++		*[Mm][In][Nn][Tt]) osname=mint
+ 			;;
+ 		netbsd*) osname=netbsd
+ 			osvers="$3"
+--- perl-5.6.0-orig/MANIFEST	Wed Mar 22 20:33:22 2000
++++ perl-5.6.0/MANIFEST	Wed Apr 26 00:43:40 2000
+@@ -950,13 +950,6 @@
+ mg.h			Magic header
+ minimod.pl		Writes lib/ExtUtils/Miniperl.pm
+ miniperlmain.c		Basic perl w/o dynamic loading or extensions
+-mint/Makefile		MiNT port
+-mint/README		MiNT port
+-mint/errno.h		MiNT port
+-mint/pwd.c		MiNT port
+-mint/stdio.h		MiNT port
+-mint/sys/time.h		MiNT port
+-mint/time.h		MiNT port
+ mpeix/mpeixish.h	MPE/iX port
+ mpeix/nm		MPE/iX port
+ mpeix/relink		MPE/iX port
+--- perl-5.6.0/hints/mint.sh.mint	Sat Oct  2 00:13:16 1999
++++ perl-5.6.0/hints/mint.sh	Thu Dec  7 13:01:30 2000
+@@ -1,38 +1,27 @@
+ # hints/mint.sh
+ #
+-# talk to gufl0000@stud.uni-sb.de if you want to change this file.
++# talk to guido@freemint.de if you want to change this file.
+ # Please read the README.mint file.
+ #
+ # misc stuff
+ 
+-case `uname -m` in
+-	atarist*) archname="m68000-mint"
+-		  ;;
+-	*)	  archname="m68k-mint"
+-		  ;;
+-esac		  
+-
+-here=`pwd | tr -d '\015'`
++archname="m68k-atari-mint"
+ 
+ cc='gcc'
+-
+-# The weird include path is really to work around some bugs in
+-# broken system header files.
+-ccflags="$ccflags -D__MINT__ -Uatarist -DDEBUGGING -I$here/../mint"
++ccflags="$ccflags -D__MINT__ -Uatarist -DDEBUGGING"
+ 
+ # libs
+-
+-libpth="$prefix/lib /usr/lib /usr/local/lib"
++libpth="$prefix/lib"
+ glibpth="$libpth"
+ xlibpth="$libpth"
+ 
+-libswanted='gdbm socket port m'
++libswanted='gdbm socket m'
+ so='none'
+ 
+ #
+ # compiler & linker flags
+ #
+-optimize='-O2 -fomit-frame-pointer -fno-defer-pop -fstrength-reduce'
++optimize='-O2 -fomit-frame-pointer'
+ 
+ # The setlocale function in the MiNTLib is actually a bad joke.  We 
+ # lend a workaround from Ultrix.  If neither LC_ALL nor LANG is
+@@ -45,6 +34,7 @@
+ #
+ # Some good answers to the questions in Configure:
+ # Does Configure really get all these wrong?
++usemymalloc='n'
+ usenm='true'
+ d_suidsafe='true'
+ clocktype='long'
+@@ -58,38 +48,3 @@
+ sizetype='size_t'
+ timetype='time_t'
+ uidtype='uid_t'
+-
+-# Don't remove that leading tab character (Configure Black Magic (TM)).
+-    broken_pwd=
+-case "`/bin/pwd|tr -d xy|tr '\015\012' 'xy'`" in
+-*xy) broken_pwd=yes ;;
+-esac
+-
+-if test X"$broken_pwd" = Xyes
+-then
+-    echo " "
+-    echo "*** Building fixed 'pwd'... (as described in README.mint) ***"
+-    echo " "
+-    cd mint
+-    make pwd
+-    cd ..
+-    if test -x mint/pwd -a -w /usr/bin
+-    then
+-	echo " "
+-	echo "*** Installing fixed 'pwd'... ***"
+-	echo " "
+-	cd mint
+-	make install
+-	cd ..
+-	if cmp -s mint/pwd /usr/bin/pwd
+-	then
+-	    echo "*** Installed fixed 'pwd' successfully. ***"
+-	else
+-	    echo "*** Failed to install fixed 'pwd'.  Aborting. ***"
+-	    exit 1
+-	fi
+-    else
+-	echo "*** Cannot install fixed 'pwd'.  Aborting. ***"
+-	exit 1
+-    fi
+-fi
+--- perl-5.6.0-orig/perl.h	Sun Mar 19 06:45:32 2000
++++ perl-5.6.0/perl.h	Wed Apr 26 02:27:28 2000
+@@ -333,7 +333,7 @@
+  */
+ 
+ /* define this once if either system, instead of cluttering up the src */
+-#if defined(MSDOS) || defined(atarist) || defined(WIN32)
++#if defined(MSDOS) || defined(WIN32)
+ #define DOSISH 1
+ #endif
+ 
+diff -urN perl-5.6.0-orig/doio.c perl-5.6.0-my/doio.c
+--- perl-5.6.0-orig/doio.c	Sun Mar 19 08:18:00 2000
++++ perl-5.6.0-my/doio.c	Tue Apr 25 22:40:34 2000
+@@ -1024,18 +1024,8 @@
+ Perl_do_binmode(pTHX_ PerlIO *fp, int iotype, int mode)
+ {
+ #ifdef DOSISH
+-#  if defined(atarist) || defined(__MINT__)
+-    if (!PerlIO_flush(fp)) {
+-	if (mode & O_BINARY)
+-	    ((FILE*)fp)->_flag |= _IOBIN;
+-	else
+-	    ((FILE*)fp)->_flag &= ~ _IOBIN;
+-	return 1;
+-    }
+-    return 0;
+-#  else
+     if (PerlLIO_setmode(PerlIO_fileno(fp), mode) != -1) {
+-#    if defined(WIN32) && defined(__BORLANDC__)
++#  if defined(WIN32) && defined(__BORLANDC__)
+ 	/* The translation mode of the stream is maintained independent
+ 	 * of the translation mode of the fd in the Borland RTL (heavy
+ 	 * digging through their runtime sources reveal).  User has to
+@@ -1047,12 +1037,11 @@
+ 	    ((FILE*)fp)->flags |= _F_BIN;
+ 	else
+ 	    ((FILE*)fp)->flags &= ~ _F_BIN;
+-#    endif
++#  endif
+ 	return 1;
+     }
+     else
+ 	return 0;
+-#  endif
+ #else
+ #  if defined(USEMYBINMODE)
+     if (my_binmode(fp, iotype, mode) != FALSE)
+diff -urN perl-5.6.0-orig/malloc.c perl-5.6.0-my/malloc.c
+--- perl-5.6.0-orig/malloc.c	Sat Mar 11 17:44:24 2000
++++ perl-5.6.0-my/malloc.c	Tue Apr 25 22:43:30 2000
+@@ -188,7 +188,7 @@
+ #define MIN_BUC_POW2 (sizeof(void*) > 4 ? 3 : 2) /* Allow for 4-byte arena. */
+ #define MIN_BUCKET (MIN_BUC_POW2 * BUCKETS_PER_POW2)
+ 
+-#if !(defined(I286) || defined(atarist) || defined(__MINT__))
++#if !defined(I286)
+ 	/* take 2k unless the block is bigger than that */
+ #  define LOG_OF_MIN_ARENA 11
+ #else
+@@ -419,8 +419,8 @@
+  */
+ #define u_short unsigned short
+ 
+-/* 286 and atarist like big chunks, which gives too much overhead. */
+-#if (defined(RCHECK) || defined(I286) || defined(atarist) || defined(__MINT__)) && defined(PACK_MALLOC)
++/* 286 like big chunks, which gives too much overhead. */
++#if (defined(RCHECK) || defined(I286)) && defined(PACK_MALLOC)
+ #  undef PACK_MALLOC
+ #endif 
+ 
+@@ -1255,7 +1255,6 @@
+ 	/* Second, check alignment. */
+ 	slack = 0;
+ 
+-#if !defined(atarist) && !defined(__MINT__) /* on the atari we dont have to worry about this */
+ #  ifndef I286 	/* The sbrk(0) call on the I286 always returns the next segment */
+ 	/* WANTED_ALIGNMENT may be more than NEEDED_ALIGNMENT, but this may
+ 	   improve performance of memory access. */
+@@ -1264,7 +1263,6 @@
+ 	    add += slack;
+ 	}
+ #  endif
+-#endif /* !atarist && !MINT */
+ 		
+ 	if (add) {
+ 	    DEBUG_m(PerlIO_printf(Perl_debug_log, 
+diff -urN perl-5.6.0-orig/miniperlmain.c perl-5.6.0-my/miniperlmain.c
+--- perl-5.6.0-orig/miniperlmain.c	Sat Mar 11 17:26:34 2000
++++ perl-5.6.0-my/miniperlmain.c	Tue Apr 25 22:38:58 2000
+@@ -14,10 +14,10 @@
+ static void xs_init (pTHX);
+ static PerlInterpreter *my_perl;
+ 
+-#if defined (__MINT__) || defined (atarist)
++#if defined (__MINT__)
+ /* The Atari operating system doesn't have a dynamic stack.  The
+    stack size is determined from this value.  */
+-long _stksize = 64 * 1024;
++long _stksize = 128 * 1024;
+ #endif
+ 
+ int
+diff -urN perl-5.6.0-orig/mint/Makefile perl-5.6.0-my/mint/Makefile
+--- perl-5.6.0-orig/mint/Makefile	Tue Jul 20 19:18:04 1999
++++ perl-5.6.0-my/mint/Makefile	Thu Jan  1 01:00:00 1970
+@@ -1,15 +0,0 @@
+-# IMPORTANT:  This Makefile is not intended to build Perl itself but
+-#             only to replace a broken pwd command!
+-
+-all:	pwd
+-
+-pwd:	pwd.c
+-	$(CC) -O3 -o pwd pwd.c
+-
+-install: pwd
+-	(new_pwd=`which pwd` && cp -f $$new_pwd $$new_pwd.broken \
+-		&& cp -f pwd $$new_pwd) 
+-
+-clean:
+-	rm -f pwd.o pwd
+-
+diff -urN perl-5.6.0-orig/mint/README perl-5.6.0-my/mint/README
+--- perl-5.6.0-orig/mint/README	Tue Jul 20 19:18:04 1999
++++ perl-5.6.0-my/mint/README	Thu Jan  1 01:00:00 1970
+@@ -1,14 +0,0 @@
+-This subdirectory contains some additional files which are necessary
+-(or at least useful) when compiling Perl on MiNT.
+-
+-"Makefile" and "pwd.c" will build and install a fixed version of the
+-pwd command if your system pwd is broken.
+-
+-The header files are wrappers around broken system header files.  Make
+-sure that this directory stands at first place in your include path
+-when compiling Perl.
+-
+-The file system.c is an enhanced version of the system() function
+-in the MiNTLib.  It is strongly recommended that you insert this
+-version into your libc before you compile Perl (see README.MiNT
+-in the toplevel directory for details).
+diff -urN perl-5.6.0-orig/mint/errno.h perl-5.6.0-my/mint/errno.h
+--- perl-5.6.0-orig/mint/errno.h	Tue Jul 20 19:18:04 1999
++++ perl-5.6.0-my/mint/errno.h	Thu Jan  1 01:00:00 1970
+@@ -1,32 +0,0 @@
+-/* Wrapper around broken system errno.h.  */
+-
+-#ifndef _PERL_WRAPPER_AROUND_ERRNO_H
+-# define _PERL_WRAPPER_AROUND_ERRNO_H 1
+-
+-/* First include the system file.  */
+-#include_next <errno.h> 
+-
+-/* Now add the missing stuff.
+-#ifndef EAGAIN
+-# define EAGAIN EWOULDBLOCK
+-#endif
+-
+-/* This one is problematic.  If you open() a directory with the
+-   MiNTLib you can't detect from errno if it is really a directory
+-   or if the file simply doesn't exist.  You'll get ENOENT 
+-   ("file not found") in either case.
+-   
+-   Defining EISDIR as ENOENT is actually a bad idea but works fine
+-   in general.  In praxi, if code checks for errno == EISDIR it
+-   will attempt an opendir() call on the file in question and this
+-   call will also file if the file really can't be found.  But
+-   you may get compile-time errors if the errno checking is embedded
+-   in a switch statement ("duplicate case value in switch").
+-   
+-   Anyway, here the define works alright.  */
+-#ifndef EISDIR
+-# define EISDIR ENOENT
+-#endif
+-
+-#endif
+-
+diff -urN perl-5.6.0-orig/mint/pwd.c perl-5.6.0-my/mint/pwd.c
+--- perl-5.6.0-orig/mint/pwd.c	Tue Jul 20 19:18:04 1999
++++ perl-5.6.0-my/mint/pwd.c	Thu Jan  1 01:00:00 1970
+@@ -1,43 +0,0 @@
+-/* pwd.c - replacement for broken pwd command.
+- * Copyright 1997 Guido Flohr, <gufl0000@stud.uni-sb.de>.
+- * Do with it as you please.
+- */
+-#include <stdio.h>
+-#include <limits.h>
+-#include <unistd.h>
+-#include <string.h>
+-#include <errno.h>
+-
+-#if defined(__STDC__) || defined(__cplusplus)
+-int main (int argc, char* argv[])
+-#else
+-int main (argc, argv)
+-	int argc;
+-	char* argv[];
+-#endif
+-{
+-	char path_buf[PATH_MAX + 1];
+-	
+-	if (argc > 1) {
+-		int i;
+-		
+-		fflush (stdout);
+-		fputs (argv[0], stderr);
+-		fputs (": ignoring garbage arguments\n", stderr);
+-	}
+-	
+-	if (!getcwd (path_buf, PATH_MAX + 1)) {
+-		fflush (stdout);
+-		/* Save space, memory and the whales, avoid fprintf.  */
+-		fputs (argv[0], stderr);
+-		fputs (": can\'t get current working directory: ", stderr);
+-		fputs (strerror (errno), stderr);
+-		fputc ('\n', stderr);
+-		return 1;
+-	}
+-	if (puts (path_buf) < 0) {
+-		return 1;
+-	}
+-	return 0;
+-}
+-/* End of pwd.c.  */
+diff -urN perl-5.6.0-orig/mint/stdio.h perl-5.6.0-my/mint/stdio.h
+--- perl-5.6.0-orig/mint/stdio.h	Tue Jul 20 19:18:04 1999
++++ perl-5.6.0-my/mint/stdio.h	Thu Jan  1 01:00:00 1970
+@@ -1,21 +0,0 @@
+-/* Wrapper around broken system stdio.h.  */
+-
+-#ifndef _PERL_WRAPPER_AROUND_STDIO_H
+-# define _PERL_WRAPPER_AROUND_STDIO_H 1
+-
+-/* The MiNTLib has a macro called EOS in stdio.h.  This conflicts
+-   with regnode.h.  Who had this glorious idea.  */
+-#ifdef EOS
+-# define PERL_EOS EOS
+-#endif
+-
+-/* First include the system file.  */
+-#include_next <stdio.h> 
+-
+-#ifdef EOS
+-# undef EOS
+-# define EOS PERL_EOS
+-#endif
+-
+-#endif
+-
+diff -urN perl-5.6.0-orig/mint/sys/time.h perl-5.6.0-my/mint/sys/time.h
+--- perl-5.6.0-orig/mint/sys/time.h	Tue Jul 20 19:18:04 1999
++++ perl-5.6.0-my/mint/sys/time.h	Thu Jan  1 01:00:00 1970
+@@ -1,2 +0,0 @@
+-#include <time.h>
+-
+diff -urN perl-5.6.0-orig/mint/time.h perl-5.6.0-my/mint/time.h
+--- perl-5.6.0-orig/mint/time.h	Tue Jul 20 19:18:04 1999
++++ perl-5.6.0-my/mint/time.h	Thu Jan  1 01:00:00 1970
+@@ -1,22 +0,0 @@
+-/* Wrapper around broken system time.h.  */
+-
+-#ifndef _PERL_WRAPPER_AROUND_TIME_H
+-# define _PERL_WRAPPER_AROUND_TIME_H 1
+-
+-/* Recent versions of the MiNTLib have a macro HAS_TZNAME in 
+-   time.h resp. sys/time.h.  Wow, I wonder why they didn't
+-   define HAVE_CONFIG_H ...  */
+-#ifdef HAS_TZNAME 
+-# define PERL_HAS_TZNAME HAS_TZNAME
+-#endif
+-
+-/* First include the system file.  */
+-#include_next <time.h> 
+-
+-#ifdef HAS_TZNAME
+-# undef HAS_TZNAME
+-# define HAS_TZNAME PERL_HAS_TZNAME
+-#endif
+-
+-#endif
+-
+diff -urN perl-5.6.0-orig/perl.c perl-5.6.0-my/perl.c
+--- perl-5.6.0-orig/perl.c	Fri Mar 17 23:35:14 2000
++++ perl-5.6.0-my/perl.c	Tue Apr 25 22:36:30 2000
+@@ -2195,9 +2195,6 @@
+ 	printf("\n\nOS/2 port Copyright (c) 1990, 1991, Raymond Chen, Kai Uwe Rommel\n"
+ 	    "Version 5 port Copyright (c) 1994-1999, Andreas Kaiser, Ilya Zakharevich\n");
+ #endif
+-#ifdef atarist
+-	printf("atariST series port, ++jrb  bammi@cadence.com\n");
+-#endif
+ #ifdef __BEOS__
+ 	printf("BeOS port Copyright Tom Spindler, 1997-1999\n");
+ #endif
+diff -urN perl-5.6.0-orig/pp_sys.c perl-5.6.0-my/pp_sys.c
+--- perl-5.6.0-orig/pp_sys.c	Sun Mar 19 08:18:10 2000
++++ perl-5.6.0-my/pp_sys.c	Tue Apr 25 22:37:34 2000
+@@ -2981,14 +2981,6 @@
+     RETPUSHNO;
+ }
+ 
+-#if defined(atarist) /* this will work with atariST. Configure will
+-			make guesses for other systems. */
+-# define FILE_base(f) ((f)->_base)
+-# define FILE_ptr(f) ((f)->_ptr)
+-# define FILE_cnt(f) ((f)->_cnt)
+-# define FILE_bufsiz(f) ((f)->_cnt + ((f)->_ptr - (f)->_base))
+-#endif
+-
+ PP(pp_fttext)
+ {
+     djSP;
+@@ -5115,30 +5107,6 @@
+     case 8:
+ 	retval = syscall(a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7]);
+ 	break;
+-#ifdef atarist
+-    case 9:
+-	retval = syscall(a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[8]);
+-	break;
+-    case 10:
+-	retval = syscall(a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[8],a[9]);
+-	break;
+-    case 11:
+-	retval = syscall(a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[8],a[9],
+-	  a[10]);
+-	break;
+-    case 12:
+-	retval = syscall(a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[8],a[9],
+-	  a[10],a[11]);
+-	break;
+-    case 13:
+-	retval = syscall(a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[8],a[9],
+-	  a[10],a[11],a[12]);
+-	break;
+-    case 14:
+-	retval = syscall(a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[8],a[9],
+-	  a[10],a[11],a[12],a[13]);
+-	break;
+-#endif /* atarist */
+     }
+     SP = ORIGMARK;
+     PUSHi(retval);
+diff -urN perl-5.6.0-orig/regcomp.c perl-5.6.0-my/regcomp.c
+--- perl-5.6.0-orig/regcomp.c	Tue Mar 14 23:19:44 2000
++++ perl-5.6.0-my/regcomp.c	Tue Apr 25 22:38:12 2000
+@@ -114,11 +114,7 @@
+ #define	ISMULT1(c)	((c) == '*' || (c) == '+' || (c) == '?')
+ #define	ISMULT2(s)	((*s) == '*' || (*s) == '+' || (*s) == '?' || \
+ 	((*s) == '{' && regcurly(s)))
+-#ifdef atarist
+-#define	PERL_META	"^$.[()|?+*\\"
+-#else
+ #define	META	"^$.[()|?+*\\"
+-#endif
+ 
+ #ifdef SPSTART
+ #undef SPSTART		/* dratted cpp namespace... */
+diff -urN perl-5.6.0-orig/util.c perl-5.6.0-my/util.c
+--- perl-5.6.0-orig/util.c	Wed Mar 22 16:19:00 2000
++++ perl-5.6.0-my/util.c	Tue Apr 25 22:35:00 2000
+@@ -2409,7 +2409,7 @@
+     return PerlIO_fdopen(p[This], mode);
+ }
+ #else
+-#if defined(atarist) || defined(DJGPP)
++#if defined(DJGPP)
+ FILE *popen();
+ PerlIO *
+ Perl_my_popen(pTHX_ char *cmd, char *mode)
+@@ -2708,7 +2708,7 @@
+     return;
+ }
+ 
+-#if defined(atarist) || defined(OS2) || defined(DJGPP)
++#if defined(OS2) || defined(DJGPP)
+ int pclose();
+ #ifdef HAS_FORK
+ int					/* Cannot prototype with I32
+@@ -3075,7 +3075,7 @@
+     register char *s;
+     I32 len;
+     int retval;
+-#if defined(DOSISH) && !defined(OS2) && !defined(atarist)
++#if defined(DOSISH) && !defined(OS2)
+ #  define SEARCH_EXTS ".bat", ".cmd", NULL
+ #  define MAX_EXT_LEN 4
+ #endif
+@@ -3204,22 +3204,19 @@
+ 			',',
+ 			&len);
+ #else
+-#if defined(atarist) || defined(DOSISH)
++#if defined(DOSISH)
+ 	    for (len = 0; *s
+-#  ifdef atarist
+-		    && *s != ','
+-#  endif
+ 		    && *s != ';'; len++, s++) {
+ 		if (len < sizeof tmpbuf)
+ 		    tmpbuf[len] = *s;
+ 	    }
+ 	    if (len < sizeof tmpbuf)
+ 		tmpbuf[len] = '\0';
+-#else  /* ! (atarist || DOSISH) */
++#else  /* ! (DOSISH) */
+ 	    s = delimcpy(tmpbuf, tmpbuf + sizeof tmpbuf, s, PL_bufend,
+ 			':',
+ 			&len);
+-#endif /* ! (atarist || DOSISH) */
++#endif /* ! (DOSISH) */
+ #endif /* MACOS_TRADITIONAL */
+ 	    if (s < PL_bufend)
+ 		s++;
+@@ -3230,7 +3227,7 @@
+ 	    	tmpbuf[len++] = ':';
+ #else
+ 	    if (len
+-#if defined(atarist) || defined(__MINT__) || defined(DOSISH)
++#if defined(DOSISH)
+ 		&& tmpbuf[len - 1] != '/'
+ 		&& tmpbuf[len - 1] != '\\'
+ #endif

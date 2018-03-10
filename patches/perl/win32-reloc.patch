@@ -1,0 +1,984 @@
+diff -ru /windows/c/src/perl-5.20.2.orig/configpm /windows/c/src/perl-5.20.2/configpm
+--- /windows/c/src/perl-5.20.2.orig/configpm	2014-12-27 12:49:22.000000000 +0100
++++ /windows/c/src/perl-5.20.2/configpm	2015-03-06 17:23:28.566217500 +0100
+@@ -258,6 +258,10 @@
+ 
+     my $line = "$name=$quote$val$quote\n";
+     push(@v_others, $line);
++	if ($name eq 'ccflags' || $name eq 'ldflags') {
++		my $line = "${name}_nolargefiles=$quote$val$quote\n";
++	    push(@v_others, $line);
++	}
+     $seen_quotes{$quote}++;
+   }
+   close CONFIG_SH;
+@@ -346,36 +350,67 @@
+ 
+ if (fetch_string({},'userelocatableinc')) {
+     foreach my $what (qw(prefixexp
++			 prefix
++			 perlpath
+ 
++			 archlib
+ 			 archlibexp
++		         bin
++                         binexp
+ 			 html1direxp
++			 html1dir
++			 html3dir
+ 			 html3direxp
++			 man1dir
+ 			 man1direxp
++			 man3dir
+ 			 man3direxp
++			 privlib
+ 			 privlibexp
++			 scriptdir
+ 			 scriptdirexp
++			 sitearch
+ 			 sitearchexp
++			 sitebin
+ 			 sitebinexp
++			 sitehtml1dir
+ 			 sitehtml1direxp
++			 sitehtml3dir
+ 			 sitehtml3direxp
++			 sitelib
+ 			 sitelibexp
++			 siteman1dir
+ 			 siteman1direxp
++			 siteman3dir
+ 			 siteman3direxp
++			 sitescript
+ 			 sitescriptexp
++			 vendorarch
+ 			 vendorarchexp
++			 vendorbin
+ 			 vendorbinexp
++			 vendorhtml1dir
+ 			 vendorhtml1direxp
++			 vendorhtml3dir
+ 			 vendorhtml3direxp
++			 vendorlib
+ 			 vendorlibexp
++			 vendorman1dir
+ 			 vendorman1direxp
++			 vendorman3dir
+ 			 vendorman3direxp
++			 vendorscript
+ 			 vendorscriptexp
+ 
++			 siteprefix
+ 			 siteprefixexp
+ 			 sitelib_stem
+ 			 vendorlib_stem
+ 
+ 			 installarchlib
++			 installbin
++			 installhtmldir
++			 installhtmlhelpdir
+ 			 installhtml1dir
+ 			 installhtml3dir
+ 			 installman1dir
+@@ -400,45 +435,49 @@
+ 			 installvendorman1dir
+ 			 installvendorman3dir
+ 			 installvendorscript
++			 sysman
++			 otherlibdirs
+ 			 )) {
+-	push @need_relocation, $what if fetch_string({}, $what) =~ m!^\.\.\./!;
++	push @need_relocation, $what if fetch_string({}, $what);
+     }
+ }
+ 
+ my %need_relocation;
+ @need_relocation{@need_relocation} = @need_relocation;
+ 
+-# This can have .../ anywhere:
+-if (fetch_string({}, 'otherlibdirs') =~ m!\.\.\./!) {
+-    $need_relocation{otherlibdirs} = 'otherlibdirs';
+-}
+-
+-my $relocation_code = <<'EOT';
++my $installprefix = $ENV{INST_TOP};
++$installprefix =~ s!\\!\\\\!g;
++my $relocation_code = sprintf <<'EOT', $installprefix, $installprefix;
+ 
+ sub relocate_inc {
+   my $libdir = shift;
+-  return $libdir unless $libdir =~ s!^\.\.\./!!;
++  my $installprefix = '%s';
++  my $lenprefix = length($installprefix);
++
+   my $prefix = $^X;
+-  if ($prefix =~ s!/[^/]*$!!) {
+-    while ($libdir =~ m!^\.\./!) {
+-      # Loop while $libdir starts "../" and $prefix still has a trailing
+-      # directory
+-      last unless $prefix =~ s!/([^/]+)$!!;
+-      # but bail out if the directory we picked off the end of $prefix is .
+-      # or ..
+-      if ($1 eq '.' or $1 eq '..') {
+-	# Undo! This should be rare, hence code it this way rather than a
+-	# check each time before the s!!! above.
+-	$prefix = "$prefix/$1";
+-	last;
+-      }
+-      # Remove that leading ../ and loop again
+-      substr ($libdir, 0, 3, '');
+-    }
+-    $libdir = "$prefix/$libdir";
++  $prefix =~ s![\\/][^\\/]*$!!;
++  $prefix =~ s![\\/][^\\/]*$!!;
++  if (substr($libdir, 0, $lenprefix) eq $installprefix)
++  {
++     $libdir = $prefix . substr($libdir, $lenprefix);
+   }
+   $libdir;
+ }
++
++sub relocate_ldflags {
++  my $ldflags = shift;
++  my $installprefix = '%s';
++  my $lenprefix = length($installprefix);
++
++  my $prefix = $^X;
++  $prefix =~ s![\\/][^\\/]*$!!;
++  $prefix =~ s![\\/][^\\/]*$!!;
++  if ((my $pos = index($ldflags, '-L"' . $installprefix)) >= 0)
++  {
++     $ldflags = substr($ldflags, 0, $pos) . '-L"' . $prefix . substr($ldflags, $pos + 3 + $lenprefix);
++  }
++  $ldflags;
++}
+ EOT
+ 
+ my $osname = fetch_string({}, 'osname');
+@@ -577,6 +616,12 @@
+     s/^($what=)(['"])(.*?)\2/$1 . $2 . relocate_inc($3) . $2/me;
+ }
+ EOT
++my @need_ld = qw(lddlflags ldflags ldflags_nolargefiles);
++$heavy_txt .= 'foreach my $what (qw(' . join (' ', @need_ld) .
++      ")) {\n" . <<'EOT';
++    s/^($what=)(['"])(.*?)\2/$1 . $2 . relocate_ldflags($3) . $2/me;
++}
++EOT
+ # Currently it only makes sense to do the ... relocation on Unix, so there's
+ # no need to emulate the "which separator for this platform" logic in perl.c -
+ # ':' will always be applicable
+@@ -596,15 +641,6 @@
+ our $Config_SH_expanded = "\n$_" . << 'EOVIRTUAL';
+ EOT
+ 
+-foreach my $prefix (qw(ccflags ldflags)) {
+-    my $value = fetch_string ({}, $prefix);
+-    my $withlargefiles = fetch_string ({}, $prefix . "_uselargefiles");
+-    if (defined $withlargefiles) {
+-        $value =~ s/\Q$withlargefiles\E\b//;
+-        $heavy_txt .= "${prefix}_nolargefiles='$value'\n";
+-    }
+-}
+-
+ foreach my $prefix (qw(libs libswanted)) {
+     my $value = fetch_string ({}, $prefix);
+     my $withlf = fetch_string ({}, 'libswanted_uselargefiles');
+@@ -629,6 +665,12 @@
+ }
+ 
+ $heavy_txt .= "EOVIRTUAL\n";
++my @need_ld = qw(ldflags_nolargefiles);
++$heavy_txt .= 'foreach my $what (qw(' . join (' ', @need_ld) .
++      ")) {\n" . <<'EOT';
++    s/^($what=)(['"])(.*?)\2/$1 . $2 . relocate_ldflags($3) . $2/me;
++}
++EOT
+ 
+ $heavy_txt .= <<'ENDOFGIT';
+ eval {
+@@ -786,6 +828,8 @@
+ 	    $value = "join (':', map {relocate_inc(\$_)} split (':', $value))";
+ 	} elsif ($need_relocation{$key}) {
+ 	    $value = "relocate_inc($value)";
++	} elsif ($key eq 'ldflags') {
++	    $value = "relocate_ldflags($value)";
+ 	}
+     } else {
+ 	$value = "undef";
+@@ -813,6 +857,8 @@
+ # tie returns the object, so the value returned to require will be true.
+ tie %%Config, 'Config', {
+ %s};
++
++1;
+ ENDOFTIE
+ 
+ 
+diff -ru /windows/c/src/perl-5.20.2.orig/installperl /windows/c/src/perl-5.20.2/installperl
+--- /windows/c/src/perl-5.20.2.orig/installperl	2015-01-10 13:06:37.000000000 +0100
++++ /windows/c/src/perl-5.20.2/installperl	2015-03-04 12:09:04.919456900 +0100
+@@ -192,6 +192,8 @@
+ my $installarchlib = "$opts{destdir}$Config{installarchlib}";
+ my $installsitelib = "$opts{destdir}$Config{installsitelib}";
+ my $installsitearch = "$opts{destdir}$Config{installsitearch}";
++my $installvendorlib = "$opts{destdir}$Config{installvendorlib}";
++my $installvendorarch = "$opts{destdir}$Config{installvendorarch}";
+ my $installman1dir = "$opts{destdir}$Config{installman1dir}";
+ my $man1ext = $Config{man1ext};
+ my $libperl = $Config{libperl};
+@@ -221,7 +223,7 @@
+ 
+ if ($Is_VMS) {  # Hang in there until File::Spec hits the big time
+     foreach ( \$installbin,     \$installscript,  \$installprivlib,
+-	      \$installarchlib, \$installsitelib, \$installsitearch,
++	      \$installarchlib, \$installsitelib, \$installsitearch, \$installvendorlib, \$installvendorarch,
+ 	      \$installman1dir ) {
+ 	$$_ = unixify($$_);  $$_ =~ s:/$::;
+     }
+@@ -326,6 +328,8 @@
+ 
+ my $do_installarchlib = !samepath($installarchlib, 'lib');
+ my $do_installprivlib = !samepath($installprivlib, 'lib');
++my $do_installvendorlib = !samepath($installvendorlib, 'lib');
++my $do_installvendorarch = !samepath($installvendorarch, 'lib');
+ my $vershort = ($Is_Cygwin and !$Config{usedevel}) ? substr($ver,0,-2) : $ver;
+ $do_installprivlib = 0 if $versiononly && !($installprivlib =~ m/\Q$vershort/);
+ 
+@@ -333,6 +337,8 @@
+ mkpath($installarchlib);
+ mkpath($installsitelib, $opts{verbose}, 0777) if ($installsitelib);
+ mkpath($installsitearch, $opts{verbose}, 0777) if ($installsitearch);
++mkpath($installvendorlib, $opts{verbose}, 0777) if ($installvendorlib);
++mkpath($installvendorarch, $opts{verbose}, 0777) if ($installvendorarch);
+ 
+ if (-d 'lib') {
+     find({no_chdir => 1, wanted => \&installlib}, 'lib')
+@@ -341,6 +347,10 @@
+ else {
+     warn "Can't install lib files - 'lib/' does not exist";
+ }
++if (-d 'vendor/lib') {
++    find({no_chdir => 1, wanted => \&installvendorlib}, 'vendor/lib')
++        if $do_installvendorlib || $do_installvendorarch;
++}
+ 
+ # Install header files and libraries.
+ mkpath("$installarchlib/CORE");
+@@ -734,6 +744,107 @@
+     }
+ 
+     if ($Is_NetWare && !$opts{netware} && /\.(?:nlp|nlm|bs)$/) {
++        # Don't copy .nlp,.nlm files, doesn't make sense on Windows and also
++        # if copied will give problems when building new extensions.
++        # Has to be copied if we are installing on a NetWare server and
++        # hence the check !$opts{netware}
++        return;
++    }
++
++    if (-f $_) {
++	my $xname = "$installlib/$name";
++	$xname =~ s/^\Q$opts{destdir}\E//;
++	$packlist->{$xname} = { type => 'file' };
++        if ($opts{force} || compare($_, "$installlib/$name") || $opts{notify}) {
++	    unlink("$installlib/$name");
++	    mkpath("$installlib/$dir");
++	    # HP-UX (at least) needs to maintain execute permissions
++	    # on dynamically-loaded libraries.
++            if (copy_if_diff($_, "$installlib/$name")) {
++                strip("-S", "$installlib/$name")
++                    if $^O eq 'darwin' and /\.(?:so|$dlext|a)$/;
++                chmod(/\.(so|$dlext)$/ ? 0555 : 0444, "$installlib/$name");
++            }
++	}
++    }
++}
++
++sub installvendorlib {
++    my $dir = $File::Find::dir;
++    $dir =~ s!\Avendor/lib/?!!;
++
++    m!([^/]+)\z!;
++    my $name = $1;
++
++    # This remains ugly, and in need of refactoring.
++
++    # $name always starts as the leafname
++    # $dir is the directory *within* lib
++    # $name later has $dir pre-pended, to give the relative path in lib/
++    # which is used to create the path in the target directory.
++
++    # $_ was always the filename to use on disk. Adding no_chdir doesn't change
++    # this, as $_ becomes a pathname, and so still works. However, it's not
++    # obvious that $_ is needed later, and hence $_ must not be modified.
++
++    # Also, many of the regex exclusion tests below are now superfluous, as the
++    # files in question are either no longer in blead, or now in ext/, dist/ or
++    # cpan/ and not copied into lib/
++
++    # Ignore version control directories.
++    if ($name =~ /^(?:CVS|RCS|SCCS|\.svn)\z/ and -d $name) {
++	$File::Find::prune = 1;
++	return;
++    }
++
++    # ignore patch backups, RCS files, emacs backup & temp files and the
++    # .exists files, .PL files, and test files.
++    return if $name =~ m{\.orig$|\.rej$|~$|^#.+#$|,v$|^\.exists|\.PL$|\.plc$|\.t$|^test\.pl$|^dbm_filter_util\.pl$|^filter-util\.pl$|^uupacktool\.pl$|^\.gitignore$} ||
++	      $dir  =~ m{/t(?:/|$)};
++    # ignore the Makefiles
++    return if $name =~ /^makefile$/i;
++    # ignore the test extensions
++    return if $dir =~ m{\bXS/(?:APItest|Typemap)\b};
++    return if $name =~ m{\b(?:APItest|Typemap)\.pm$};
++    # ignore the build support code
++    return if $name =~ /\bbuildcustomize\.pl$/;
++    # ignore the demo files
++    return if $dir =~ /\b(?:demos?|eg)\b/;
++
++    # ignore READMEs, MANIFESTs, INSTALL docs, META.ymls and change logs.
++    # Changes.e2x and README.e2x are needed by enc2xs.
++    return if $name =~ m{^(?:README(?:\.\w+)?)$} && $name ne 'README.e2x';
++    return if $name =~ m{^(?:MANIFEST|META\.yml)$};
++    return if $name =~ m{^(?:INSTALL|TODO|BUGS|CREDITS)$}i;
++    return if $name =~ m{^change(?:s|log)(?:\.libnet)?$}i;
++    return if $name =~ m{^(?:SIGNATURE|PAUSE200\d\.pub)$}; # CPAN files
++    return if $name =~ m{^(?:NOTES|PATCHING)$}; # ExtUtils files
++
++    # if using a shared perl library then ignore:
++    # - static library files [of statically linked extensions];
++    # - import library files and export library files (only present on Win32
++    #   anyway?) and empty bootstrap files [of dynamically linked extensions].
++    return if $Config{useshrplib} eq 'true' and
++             ($name =~ /$Config{_a}$/ or $name =~ /\.exp$/ or ($name =~ /\.bs$/ and -z $name));
++
++    $name = "$dir/$name" if $dir ne '';
++
++    # ignore pods that are stand alone documentation from dual life modules.
++    return if /\.pod\z/ && is_duplicate_pod($_);
++
++    my $installlib = $installvendorlib;
++    if ($dir =~ /^auto\// ||
++	  ($name =~ /^(.*)\.(?:pm|pod)$/ && $archpms{$1}) ||
++	  ($name =~ /^(.*)\.(?:h|lib)$/i && ($Is_W32 || $Is_NetWare)) ||
++	  $name=~/^Config_(heavy|git)\.pl\z/
++       ) {
++	$installlib = $installvendorarch;
++	return unless $do_installvendorarch;
++    } else {
++	return unless $do_installvendorlib;
++    }
++
++    if ($Is_NetWare && !$opts{netware} && /\.(?:nlp|nlm|bs)$/) {
+         # Don't copy .nlp,.nlm files, doesn't make sense on Windows and also
+         # if copied will give problems when building new extensions.
+         # Has to be copied if we are installing on a NetWare server and
+diff -ru /windows/c/src/perl-5.20.2.orig/win32/bin/pl2bat.pl /windows/c/src/perl-5.20.2/win32/bin/pl2bat.pl
+--- /windows/c/src/perl-5.20.2.orig/win32/bin/pl2bat.pl	2014-12-27 12:49:03.000000000 +0100
++++ /windows/c/src/perl-5.20.2/win32/bin/pl2bat.pl	2015-03-04 11:21:39.628459300 +0100
+@@ -53,10 +53,24 @@
+ 	\@rem = '--*-Perl-*--
+ 	\@echo off
+ 	if "%OS%" == "Windows_NT" goto WinNT
++	IF EXIST "%~dp0perl.exe" (
++	"%~dp0perl.exe" $OPT{'o'}
++	) ELSE IF EXIST "%~dp0..\\..\\bin\\perl.exe" (
++	"%~dp0..\\..\\bin\\perl.exe" $OPT{'o'}
++	) ELSE (
+ 	perl $OPT{'o'}
++	)
++	
+ 	goto endofperl
+ 	:WinNT
++	IF EXIST "%~dp0perl.exe" (
++	"%~dp0perl.exe" $OPT{'n'}
++	) ELSE IF EXIST "%~dp0..\\..\\bin\\perl.exe" (
++	"%~dp0..\\..\\bin\\perl.exe" $OPT{'n'}
++	) ELSE (
+ 	perl $OPT{'n'}
++	)
++	
+ 	if NOT "%COMSPEC%" == "%SystemRoot%\\system32\\cmd.exe" goto endofperl
+ 	if %errorlevel% == 9009 echo You do not have Perl in your PATH.
+ 	if errorlevel 1 goto script_failed_so_exit_with_non_zero_val 2>nul
+diff -ru /windows/c/src/perl-5.20.2.orig/win32/config.gc /windows/c/src/perl-5.20.2/win32/config.gc
+--- /windows/c/src/perl-5.20.2.orig/win32/config.gc	2014-12-27 12:49:23.000000000 +0100
++++ /windows/c/src/perl-5.20.2/win32/config.gc	2015-03-06 10:42:18.701932000 +0100
+@@ -603,7 +603,7 @@
+ gidsign='-1'
+ gidsize='4'
+ gidtype='gid_t'
+-glibpth='/usr/shlib  /lib/pa1.1 /usr/lib/large /lib /usr/lib /usr/lib/386 /lib/386 /lib/large /usr/lib/small /lib/small /usr/ccs/lib /usr/ucblib /usr/shlib '
++glibpth=''
+ gmake='gmake'
+ gmtime_r_proto='0'
+ gnulibc_version=''
+@@ -725,8 +725,8 @@
+ installhtml3dir=''
+ installhtmldir='~INST_TOP~~INST_VER~\html'
+ installhtmlhelpdir='~INST_TOP~~INST_VER~\htmlhelp'
+-installman1dir='~INST_TOP~~INST_VER~\man\man1'
+-installman3dir='~INST_TOP~~INST_VER~\man\man3'
++installman1dir='~INST_TOP~~INST_VER~\share\man\man1'
++installman3dir='~INST_TOP~~INST_VER~\share\man\man3'
+ installprefix='~INST_TOP~~INST_VER~'
+ installprefixexp='~INST_TOP~~INST_VER~'
+ installprivlib='~INST_TOP~~INST_VER~\lib'
+@@ -736,19 +736,19 @@
+ installsitehtml1dir=''
+ installsitehtml3dir=''
+ installsitelib='~INST_TOP~\site~INST_VER~\lib'
+-installsiteman1dir=''
+-installsiteman3dir=''
+-installsitescript=''
++installsiteman1dir='~INST_TOP~~INST_VER~\share\man\man1'
++installsiteman3dir='~INST_TOP~~INST_VER~\share\man\man3'
++installsitescript='~INST_TOP~~INST_VER~\bin'
+ installstyle='lib'
+ installusrbinperl='undef'
+-installvendorarch=''
+ installvendorbin=''
+ installvendorhtml1dir=''
+ installvendorhtml3dir=''
+-installvendorlib=''
+-installvendorman1dir=''
+-installvendorman3dir=''
+-installvendorscript=''
++installvendorlib='~INST_TOP~\vendor~INST_VER~\lib'
++installvendorarch='~INST_TOP~\vendor~INST_VER~\lib~INST_ARCH~'
++installvendorman1dir='~INST_TOP~~INST_VER~\share\man\man1'
++installvendorman3dir='~INST_TOP~~INST_VER~\share\man\man3'
++installvendorscript='~INST_TOP~~INST_VER~\bin'
+ intsize='4'
+ issymlink=''
+ ivdformat='"ld"'
+@@ -779,8 +779,8 @@
+ ln=''
+ lns='copy'
+ localtime_r_proto='0'
+-locincpth='/usr/local/include /opt/local/include /usr/gnu/include /opt/gnu/include /usr/GNU/include /opt/GNU/include'
+-loclibpth='/usr/local/lib /opt/local/lib /usr/gnu/lib /opt/gnu/lib /usr/GNU/lib /opt/GNU/lib'
++locincpth=''
++loclibpth=''
+ longdblsize='12'
+ longlongsize='8'
+ longsize='4'
+@@ -800,11 +800,11 @@
+ mallocobj='malloc.o'
+ mallocsrc='malloc.c'
+ malloctype='void *'
+-man1dir='~INST_TOP~~INST_VER~\man\man1'
+-man1direxp='~INST_TOP~~INST_VER~\man\man1'
++man1dir='~INST_TOP~~INST_VER~\share\man\man1'
++man1direxp='~INST_TOP~~INST_VER~\share\man\man1'
+ man1ext='1'
+-man3dir='~INST_TOP~~INST_VER~\man\man3'
+-man3direxp='~INST_TOP~~INST_VER~\man\man3'
++man3dir='~INST_TOP~~INST_VER~\share\man\man3'
++man3direxp='~INST_TOP~~INST_VER~\share\man\man3'
+ man3ext='3'
+ mips_type=''
+ mistrustnm=''
+@@ -945,14 +945,14 @@
+ sitelib='~INST_TOP~\site~INST_VER~\lib'
+ sitelib_stem=''
+ sitelibexp='~INST_TOP~\site~INST_VER~\lib'
+-siteman1dir=''
+-siteman1direxp=''
+-siteman3dir=''
+-siteman3direxp=''
++siteman1dir='~INST_TOP~~INST_VER~\share\man\man1'
++siteman1direxp='~INST_TOP~~INST_VER~\share\man\man1'
++siteman3dir='~INST_TOP~~INST_VER~\share\man\man3'
++siteman3direxp='~INST_TOP~~INST_VER~\share\man\man3'
+ siteprefix='~INST_TOP~\site~INST_VER~'
+ siteprefixexp='~INST_TOP~\site~INST_VER~'
+-sitescript=''
+-sitescriptexp=''
++sitescript='~INST_TOP~~INST_VER~\bin'
++sitescriptexp='~INST_TOP~~INST_VER~\bin'
+ sizesize='4'
+ sizetype='size_t'
+ sleep=''
+@@ -981,10 +981,10 @@
+ stdio_ptr='((fp)->_ptr)'
+ stdio_stream_array=''
+ strerror_r_proto='0'
+-strings='/usr/include/string.h'
++strings='string.h'
+ submit=''
+ subversion='~PERL_SUBVERSION~'
+-sysman='/usr/man/man1'
++sysman='~INST_TOP~\share\man\man1'
+ tail=''
+ tar=''
+ targetarch=''
+@@ -992,7 +992,7 @@
+ tbl=''
+ tee=''
+ test=''
+-timeincl='/usr/include/sys/time.h '
++timeincl='time.h '
+ timetype='time_t'
+ tmpnam_r_proto='0'
+ to=':'
+@@ -1038,14 +1038,14 @@
+ useperlio='undef'
+ useposix='true'
+ usereentrant='undef'
+-userelocatableinc='undef'
++userelocatableinc='define'
+ useshrplib='true'
+ usesitecustomize='undef'
+ usesocks='undef'
+ usethreads='undef'
+-usevendorprefix='undef'
++usevendorprefix='define'
+ usevfork='false'
+-usrinc='/usr/include'
++usrinc=''
+ uuname=''
+ uvXUformat='"lX"'
+ uvoformat='"lo"'
+@@ -1065,10 +1065,10 @@
+ vendorlib=''
+ vendorlib_stem=''
+ vendorlibexp=''
+-vendorman1dir=' '
+-vendorman1direxp=''
+-vendorman3dir=' '
+-vendorman3direxp=''
++vendorman1dir='~INST_TOP~~INST_VER~\share\man\man1'
++vendorman1direxp='~INST_TOP~~INST_VER~\share\man\man1'
++vendorman3dir='~INST_TOP~~INST_VER~\share\man\man3'
++vendorman3direxp='~INST_TOP~~INST_VER~\share\man\man3'
+ vendorprefix=''
+ vendorprefixexp=''
+ vendorscript=''
+@@ -1077,7 +1077,7 @@
+ version_patchlevel_string=''
+ versiononly='undef'
+ vi=''
+-xlibpth='/usr/lib/386 /lib/386'
++xlibpth=''
+ yacc='yacc'
+ yaccflags=''
+ zcat=''
+diff -ru /windows/c/src/perl-5.20.2.orig/win32/config.vc /windows/c/src/perl-5.20.2/win32/config.vc
+--- /windows/c/src/perl-5.20.2.orig/win32/config.vc	2014-12-27 12:49:23.000000000 +0100
++++ /windows/c/src/perl-5.20.2/win32/config.vc	2015-03-04 10:01:18.876185400 +0100
+@@ -778,8 +778,8 @@
+ ln=''
+ lns='copy'
+ localtime_r_proto='0'
+-locincpth='/usr/local/include /opt/local/include /usr/gnu/include /opt/gnu/include /usr/GNU/include /opt/GNU/include'
+-loclibpth='/usr/local/lib /opt/local/lib /usr/gnu/lib /opt/gnu/lib /usr/GNU/lib /opt/GNU/lib'
++locincpth=''
++loclibpth=''
+ longdblsize='8'
+ longlongsize='8'
+ longsize='4'
+diff -ru /windows/c/src/perl-5.20.2.orig/win32/config_H.gc /windows/c/src/perl-5.20.2/win32/config_H.gc
+--- /windows/c/src/perl-5.20.2.orig/win32/config_H.gc	2014-12-27 12:49:23.000000000 +0100
++++ /windows/c/src/perl-5.20.2/win32/config_H.gc	2015-03-19 12:11:28.378828000 +0100
+@@ -9,8 +9,8 @@
+ 
+ /* Package name      : perl5
+  * Source directory  : 
+- * Configuration time: Wed Sep 18 14:03:46 2013
+- * Configured by     : shay
++ * Configuration time: Mon Mar  9 09:58:45 2015
++ * Configured by     : Sebilla
+  * Target system     : 
+  */
+ 
+@@ -805,26 +805,6 @@
+  */
+ /*#define I_SYS_WAIT	/ **/
+ 
+-/* I_TERMIO:
+- *	This symbol, if defined, indicates that the program should include
+- *	<termio.h> rather than <sgtty.h>.  There are also differences in
+- *	the ioctl() calls that depend on the value of this symbol.
+- */
+-/* I_TERMIOS:
+- *	This symbol, if defined, indicates that the program should include
+- *	the POSIX termios.h rather than sgtty.h or termio.h.
+- *	There are also differences in the ioctl() calls that depend on the
+- *	value of this symbol.
+- */
+-/* I_SGTTY:
+- *	This symbol, if defined, indicates that the program should include
+- *	<sgtty.h> rather than <termio.h>.  There are also differences in
+- *	the ioctl() calls that depend on the value of this symbol.
+- */
+-/*#define I_TERMIO		/ **/
+-/*#define I_TERMIOS		/ **/
+-/*#define I_SGTTY		/ **/
+-
+ /* I_UNISTD:
+  *	This symbol, if defined, indicates to the C program that it should
+  *	include <unistd.h>.
+@@ -884,7 +864,7 @@
+  *	feature tests from Configure are generally more reliable.
+  */
+ #define OSNAME "MSWin32"		/**/
+-#define OSVERS "6.1"		/**/
++#define OSVERS "6.3"		/**/
+ 
+ /* MULTIARCH:
+  *	This symbol, if defined, signifies that the build
+@@ -895,18 +875,6 @@
+  */
+ /*#define MULTIARCH		/ **/
+ 
+-/* USE_CROSS_COMPILE:
+- *	This symbol, if defined, indicates that Perl is being cross-compiled.
+- */
+-/* PERL_TARGETARCH:
+- *	This symbol, if defined, indicates the target architecture
+- *	Perl has been cross-compiled to.  Undefined if not a cross-compile.
+- */
+-#ifndef USE_CROSS_COMPILE
+-/*#define	USE_CROSS_COMPILE	/ **/
+-#define	PERL_TARGETARCH	""	/**/
+-#endif
+-
+ /* MEM_ALIGNBYTES:
+  *	This symbol contains the number of bytes required to align a
+  *	double, or a long double when applicable. Usual values are 2,
+@@ -928,7 +896,7 @@
+  *	This symbol contains the ~name expanded version of ARCHLIB, to be used
+  *	in programs that are not prepared to deal with ~ expansion at run-time.
+  */
+-#define ARCHLIB "c:\\perl\\lib"		/**/
++#define ARCHLIB "..\\lib"		/**/
+ /*#define ARCHLIB_EXP ""	/ **/
+ 
+ /* ARCHNAME:
+@@ -937,7 +905,7 @@
+  *	where library files may be held under a private library, for
+  *	instance.
+  */
+-#define ARCHNAME "MSWin32-x86"		/**/
++#define ARCHNAME "MSWin32-x86-multi-thread-64int"		/**/
+ 
+ /* BIN:
+  *	This symbol holds the path of the bin directory where the package will
+@@ -951,9 +919,9 @@
+  *	This symbol, if defined, indicates that we'd like to relocate entries
+  *	in @INC at run time based on the location of the perl binary.
+  */
+-#define BIN "c:\\perl\\bin"	/**/
+-#define BIN_EXP "c:\\perl\\bin"	/**/
+-#define PERL_RELOCATABLE_INC "undef" 		/**/
++#define BIN "..\\bin"	/**/
++#define BIN_EXP "..\\bin"	/**/
++#define PERL_RELOCATABLE_INC "define" 		/**/
+ 
+ /* INTSIZE:
+  *	This symbol contains the value of sizeof(int) so that the C
+@@ -1011,7 +979,7 @@
+ #    define BYTEORDER 0x4321
+ #  endif
+ #else
+-#define BYTEORDER 0x1234	/* large digits for MSB */
++#define BYTEORDER 0x12345678	/* large digits for MSB */
+ #endif /* NeXT */
+ 
+ /* CHARBITS:
+@@ -1028,7 +996,6 @@
+  */
+ #if 42 == 1
+ #define CAT2(a,b)	a/**/b
+-#undef STRINGIFY
+ #define STRINGIFY(a)	"a"
+ #endif
+ #if 42 == 42
+@@ -1036,7 +1003,6 @@
+ #define PeRl_StGiFy(a)	#a
+ #define CAT2(a,b)	PeRl_CaTiFy(a,b)
+ #define StGiFy(a)	PeRl_StGiFy(a)
+-#undef STRINGIFY
+ #define STRINGIFY(a)	PeRl_StGiFy(a)
+ #endif
+ #if 42 != 1 && 42 != 42
+@@ -1099,10 +1065,6 @@
+ /*#define HAS_ASCTIME_R	   / **/
+ #define ASCTIME_R_PROTO 0	   /**/
+ 
+-/* The HASATTRIBUTE_* defines are left undefined here because they vary from
+- * one version of GCC to another.  Instead, they are defined on the basis of
+- * the compiler version in <perl.h>.
+- */
+ /* HASATTRIBUTE_FORMAT:
+  *	Can we handle GCC attribute for checking printf-style formats
+  */
+@@ -2633,7 +2595,7 @@
+  *	This symbol, if defined, indicates that an emulation of the
+  *	fork routine is available.
+  */
+-/*#define HAS_PSEUDOFORK	/ **/
++#define HAS_PSEUDOFORK	/**/
+ 
+ /* Signal_t:
+  *	This symbol's value is either "void" or "int", corresponding to the
+@@ -2938,9 +2900,9 @@
+ /* Off_t_size:
+  *	This symbol holds the number of bytes used by the Off_t.
+  */
+-#define Off_t long		/* <offset> type */
+-#define LSEEKSIZE 4		/* <offset> size */
+-#define Off_t_size 4	/* <offset> size */
++#define Off_t long long		/* <offset> type */
++#define LSEEKSIZE 8		/* <offset> size */
++#define Off_t_size 8	/* <offset> size */
+ 
+ /* Free_t:
+  *	This variable contains the return type of free().  It is usually
+@@ -3045,7 +3007,7 @@
+  *	This symbol contains the ~name expanded version of PRIVLIB, to be used
+  *	in programs that are not prepared to deal with ~ expansion at run-time.
+  */
+-#define PRIVLIB "c:\\perl\\lib"		/**/
++#define PRIVLIB "..\\lib"		/**/
+ #define PRIVLIB_EXP (win32_get_privlib(PERL_VERSION_STRING, NULL))	/**/
+ 
+ /* CAN_PROTOTYPE:
+@@ -3189,7 +3151,7 @@
+  *	This symbol contains the ~name expanded version of SITEARCH, to be used
+  *	in programs that are not prepared to deal with ~ expansion at run-time.
+  */
+-#define SITEARCH "c:\\perl\\site\\lib"		/**/
++#define SITEARCH "..\\site\\lib"		/**/
+ /*#define SITEARCH_EXP ""	/ **/
+ 
+ /* SITELIB:
+@@ -3212,7 +3174,7 @@
+  *	removed.  The elements in inc_version_list (inc_version_list.U) can
+  *	be tacked onto this variable to generate a list of directories to search.
+  */
+-#define SITELIB "c:\\perl\\site\\lib"		/**/
++#define SITELIB "..\\site\\lib"		/**/
+ #define SITELIB_EXP (win32_get_sitelib(PERL_VERSION_STRING, NULL))	/**/
+ #define SITELIB_STEM ""		/**/
+ 
+@@ -3293,7 +3255,7 @@
+  *	This is extremely experimental.
+  */
+ /*#define	USE_5005THREADS		/ **/
+-/*#define	USE_ITHREADS		/ **/
++#define	USE_ITHREADS		/**/
+ #if defined(USE_5005THREADS) && !defined(USE_ITHREADS)
+ #define		USE_THREADS		/* until src is revised*/
+ #endif
+@@ -3330,6 +3292,38 @@
+ /*#define PERL_VENDORLIB_EXP ""		/ **/
+ /*#define PERL_VENDORLIB_STEM ""		/ **/
+ 
++/* I_TERMIO:
++ *	This symbol, if defined, indicates that the program should include
++ *	<termio.h> rather than <sgtty.h>.  There are also differences in
++ *	the ioctl() calls that depend on the value of this symbol.
++ */
++/* I_TERMIOS:
++ *	This symbol, if defined, indicates that the program should include
++ *	the POSIX termios.h rather than sgtty.h or termio.h.
++ *	There are also differences in the ioctl() calls that depend on the
++ *	value of this symbol.
++ */
++/* I_SGTTY:
++ *	This symbol, if defined, indicates that the program should include
++ *	<sgtty.h> rather than <termio.h>.  There are also differences in
++ *	the ioctl() calls that depend on the value of this symbol.
++ */
++/*#define I_TERMIO		/ **/
++/*#define I_TERMIOS		/ **/
++/*#define I_SGTTY		/ **/
++
++/* USE_CROSS_COMPILE:
++ *	This symbol, if defined, indicates that Perl is being cross-compiled.
++ */
++/* PERL_TARGETARCH:
++ *	This symbol, if defined, indicates the target architecture
++ *	Perl has been cross-compiled to.  Undefined if not a cross-compile.
++ */
++#ifndef USE_CROSS_COMPILE
++/*#define	USE_CROSS_COMPILE	/ **/
++#define	PERL_TARGETARCH	""	/**/
++#endif
++
+ /* PERL_USE_DEVEL:
+  *	This symbol, if defined, indicates that Perl was configured with
+  *	-Dusedevel, to enable development features.  This should not be
+@@ -4473,8 +4467,8 @@
+  *	This symbol, if defined, indicates that a variable of type NVTYPE
+  *	stores 0.0 in memory as all bits zero.
+  */
+-#define	IVTYPE		long		/**/
+-#define	UVTYPE		unsigned long		/**/
++#define	IVTYPE		long long		/**/
++#define	UVTYPE		unsigned long long		/**/
+ #define	I8TYPE		char		/**/
+ #define	U8TYPE		unsigned char		/**/
+ #define	I16TYPE		short	/**/
+@@ -4486,8 +4480,8 @@
+ #define	U64TYPE		unsigned long long	/**/
+ #endif
+ #define	NVTYPE		double		/**/
+-#define	IVSIZE		4		/**/
+-#define	UVSIZE		4		/**/
++#define	IVSIZE		8		/**/
++#define	UVSIZE		8		/**/
+ #define	I8SIZE		1		/**/
+ #define	U8SIZE		1		/**/
+ #define	I16SIZE		2	/**/
+@@ -4499,8 +4493,8 @@
+ #define	U64SIZE		8	/**/
+ #endif
+ #define	NVSIZE		8		/**/
+-#define	NV_PRESERVES_UV
+-#define	NV_PRESERVES_UV_BITS	32
++#undef	NV_PRESERVES_UV
++#define	NV_PRESERVES_UV_BITS	53
+ #define	NV_OVERFLOWS_INTEGERS_AT	256.0*256.0*256.0*256.0*256.0*256.0*2.0*2.0*2.0*2.0*2.0
+ #define	NV_ZERO_IS_ALLBITS_ZERO
+ #if UVSIZE == 8
+@@ -4549,11 +4543,11 @@
+  *	This symbol defines the format string used for printing a Perl NV
+  *	using %g-ish floating point format.
+  */
+-#define	IVdf		"ld"		/**/
+-#define	UVuf		"lu"		/**/
+-#define	UVof		"lo"		/**/
+-#define	UVxf		"lx"		/**/
+-#define	UVXf		"lX"		/**/
++#define	IVdf		"I64d"		/**/
++#define	UVuf		"I64u"		/**/
++#define	UVof		"I64o"		/**/
++#define	UVxf		"I64x"		/**/
++#define	UVXf		"I64X"		/**/
+ #define	NVef		"e"		/**/
+ #define	NVff		"f"		/**/
+ #define	NVgf		"g"		/**/
+@@ -4637,7 +4631,7 @@
+  *	you may need at least to reboot your OS to 64-bit mode.
+  */
+ #ifndef USE_64_BIT_INT
+-/*#define	USE_64_BIT_INT		/ **/
++#define	USE_64_BIT_INT		/**/
+ #endif
+ #ifndef USE_64_BIT_ALL
+ /*#define	USE_64_BIT_ALL		/ **/
+@@ -4670,7 +4664,7 @@
+  *	should be used when available.
+  */
+ #ifndef USE_LARGE_FILES
+-/*#define	USE_LARGE_FILES		/ **/
++#define	USE_LARGE_FILES		/**/
+ #endif
+ 
+ /* USE_LONG_DOUBLE:
+@@ -4694,7 +4688,7 @@
+  *	be built to use multiplicity.
+  */
+ #ifndef MULTIPLICITY
+-/*#define	MULTIPLICITY		/ **/
++#define	MULTIPLICITY		/**/
+ #endif
+ 
+ /* USE_NSGETEXECUTABLEPATH:
+@@ -4710,7 +4704,7 @@
+  *	used in a fully backward compatible manner.
+  */
+ #ifndef USE_PERLIO
+-/*#define	USE_PERLIO		/ **/
++#define	USE_PERLIO		/**/
+ #endif
+ 
+ /* USE_SOCKS:
+diff -ru /windows/c/src/perl-5.20.2.orig/win32/makefile.mk /windows/c/src/perl-5.20.2/win32/makefile.mk
+--- /windows/c/src/perl-5.20.2.orig/win32/makefile.mk	2015-01-28 22:08:46.000000000 +0100
++++ /windows/c/src/perl-5.20.2/win32/makefile.mk	2015-03-09 09:58:11.262247400 +0100
+@@ -27,12 +27,12 @@
+ # newly built perl.
+ #
+ INST_DRV	*= c:
+-INST_TOP	*= $(INST_DRV)\perl
++INST_TOP	:= $(INST_DRV)\perl
+ 
+ #
+ # Uncomment if you want to build a 32-bit Perl using a 32-bit compiler
+ # on a 64-bit version of Windows.
+-#WIN64		*= undef
++WIN64		*= undef
+ 
+ #
+ # Comment this out if you DON'T want your perl installation to be versioned.
+@@ -104,7 +104,7 @@
+ # (If you're building a 64-bit perl then you will have 64-bit integers whether
+ # or not this is uncommented.)
+ # Note: This option is not supported in 32-bit MSVC60 builds.
+-#USE_64_BIT_INT	*= define
++USE_64_BIT_INT	*= define
+ 
+ #
+ # uncomment exactly one of the following
+@@ -144,7 +144,7 @@
+ # If you are using GCC, 4.3 or later by default we add the -fwrapv option.
+ # See https://rt.perl.org/Ticket/Display.html?id=121505
+ #
+-#GCCWRAPV       *= define
++GCCWRAPV       *= define
+ 
+ #
+ # If you are using Intel C++ Compiler uncomment this
+@@ -474,7 +474,7 @@
+ 
+ EXTRACFLAGS	=
+ CFLAGS		= $(EXTRACFLAGS) $(INCLUDES) $(DEFINES) $(LOCDEFS) $(OPTIMIZE)
+-LINK_FLAGS	= $(LINK_DBG) -L"$(INST_COREDIR)" -L"$(CCLIBDIR)"
++LINK_FLAGS	= $(LINK_DBG) -L"$(INST_COREDIR)"
+ OBJOUT_FLAG	= -o
+ EXEOUT_FLAG	= -o
+ LIBOUT_FLAG	=
+@@ -766,7 +766,7 @@
+ PERLIMPLIB	= ..\libperl520$(a)
+ PERLSTATICLIB	= ..\libperl520s$(a)
+ INT64		= long long
+-INT64f		= ll
++INT64f		= I64
+ 
+ .ELSE
+ 
+@@ -949,9 +949,9 @@
+ 		cf_email=$(EMAIL)		~	\
+ 		d_mymalloc=$(PERL_MALLOC)	~	\
+ 		libs=$(LIBFILES:f)		~	\
+-		incpath=$(CCINCDIR)	~	\
++		incpath=	~	\
+ 		libperl=$(PERLIMPLIB:f)		~	\
+-		libpth=$(CCLIBDIR);$(EXTRALIBDIRS)	~	\
++		libpth=$(EXTRALIBDIRS)	~	\
+ 		libc=$(LIBC)			~	\
+ 		make=dmake			~	\
+ 		_o=$(o)				~	\
+@@ -1127,7 +1127,9 @@
+ 	-$(MINIPERL) -I..\lib config_h.PL "ARCHPREFIX=$(ARCHPREFIX)"
+ 	rename config.h $(CFGH_TMPL)
+ 
+-$(CONFIGPM) : $(MINIPERL) ..\config.sh config_h.PL
++.EXPORT: INST_TOP
++
++$(CONFIGPM) : $(MINIPERL) ..\config.sh config_h.PL ..\configpm
+ 	$(MINIPERL) -I..\lib ..\configpm --chdir=..
+ 	if exist lib\* $(RCOPY) lib\*.* ..\lib\$(NULL)
+ 	$(XCOPY) ..\*.h $(COREDIR)\*.*
+@@ -1651,3 +1653,7 @@
+ 
+ nokfile: utils
+ 	$(PERLEXE) -I..\lib ..\utils\perlbug -nok -s "(UNINSTALLED)" -F perl.nok
++
++
++blub:
++	perl -e print($$ENV{{INST_TOP}})

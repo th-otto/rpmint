@@ -1,0 +1,28 @@
+--- perl5.005_03/hints/linux.sh.gafton	Tue Apr  6 22:23:47 1999
++++ perl5.005_03/hints/linux.sh	Tue Apr  6 22:28:50 1999
+@@ -56,6 +56,14 @@
+ shift
+ libswanted="$*"
+ 
++# Glibc 2.1 comes with db2. If we link against that then databases created
++# with the older perl (linked with db1) will not be readable by this 
++# new perl. So we disable normal "db" and force in the link of db1.
++set `echo X "$libswanted "| sed -e 's/ db / db1 /'`
++shift
++libswanted="$*"
++locincpth="/usr/include/db1 $locincpth"
++
+ # Configure may fail to find lstat() since it's a static/inline
+ # function in <sys/stat.h>.
+ d_lstat=define
+--- perl5.005_03/Configure.gafton	Tue Apr  6 22:20:22 1999
++++ perl5.005_03/Configure	Tue Apr  6 22:43:43 1999
+@@ -9518,7 +9518,7 @@
+ 
+     exit(0);
+ #else
+-#if defined(_DB_H_) && defined(BTREEMAGIC) && defined(HASHMAGIC)
++#if defined(_DB_H) && defined(BTREEMAGIC) && defined(HASHMAGIC)
+     printf("You have Berkeley DB Version 1\n");
+     exit(0);	/* DB version < 2: the coast is clear. */
+ #else

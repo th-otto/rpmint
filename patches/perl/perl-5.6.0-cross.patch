@@ -1,0 +1,81 @@
+--- perl-5.6.0/Makefile.SH.orig	2018-03-10 15:29:28.501836561 +0100
++++ perl-5.6.0/Makefile.SH	2018-03-10 16:42:07.423488031 +0100
+@@ -23,6 +23,11 @@
+ *) suidperl='';;
+ esac
+ 
++case "$crosscompile" in
++*define*) MINIPERLEXE="perl" ;;
++*) MINIPERLEXE="./miniperl" ;;
++esac
++
+ linklibperl='$(LIBPERL)'
+ shrpldflags='$(LDDLFLAGS)'
+ ldlibpth=''
+@@ -142,6 +147,8 @@
+ RMS = rm -f
+ ranlib = $ranlib
+ 
++MINIPERLEXE = $MINIPERLEXE
++
+ # The following are mentioned only to make metaconfig include the
+ # appropriate questions in Configure.  If you want to change these,
+ # edit config.sh instead, or specify --man1dir=/wherever on
+@@ -443,7 +450,7 @@
+ miniperl: $& miniperlmain$(OBJ_EXT) $(LIBPERL) opmini$(OBJ_EXT)
+ 	$(CC) -o miniperl `echo $(obj) | sed 's/ op$(OBJ_EXT) / /'` \
+ 	    miniperlmain$(OBJ_EXT) opmini$(OBJ_EXT) perl$(OBJ_EXT) $(libs)
+-	$(LDLIBPTH) ./miniperl -w -Ilib -MExporter -e '<?>' || $(MAKE) minitest
++	$(LDLIBPTH) $(MINIPERLEXE) -w -Ilib -MExporter -e '<?>' || $(MAKE) minitest
+ !NO!SUBS!
+ 		;;
+ 	aix*)
+@@ -452,7 +459,7 @@
+ 	$(CC) -o miniperl $(CLDFLAGS) \
+ 	    `echo $(obj) | sed 's/ op$(OBJ_EXT) / /'` \
+ 	    miniperlmain$(OBJ_EXT) opmini$(OBJ_EXT) perl$(OBJ_EXT) $(libs)
+-	$(LDLIBPTH) ./miniperl -w -Ilib -MExporter -e '<?>' || $(MAKE) minitest
++	$(LDLIBPTH) $(MINIPERLEXE) -w -Ilib -MExporter -e '<?>' || $(MAKE) minitest
+ !NO!SUBS!
+ 		;;
+ 	*)
+@@ -460,7 +467,7 @@
+ miniperl: $& miniperlmain$(OBJ_EXT) $(LIBPERL) opmini$(OBJ_EXT)
+ 	$(LDLIBPTH) $(CC) $(LARGE) $(CLDFLAGS) -o miniperl \
+ 	    miniperlmain$(OBJ_EXT) opmini$(OBJ_EXT) $(LLIBPERL) $(libs)
+-	$(LDLIBPTH) ./miniperl -w -Ilib -MExporter -e '<?>' || $(MAKE) minitest
++	$(LDLIBPTH) $(MINIPERLEXE) -w -Ilib -MExporter -e '<?>' || $(MAKE) minitest
+ !NO!SUBS!
+ 		;;
+ 	esac
+@@ -505,18 +512,18 @@
+ preplibrary: miniperl lib/Config.pm
+ 	@sh ./makedir lib/auto
+ 	@echo "	AutoSplitting perl library"
+-	$(LDLIBPTH) ./miniperl -Ilib -e 'use AutoSplit; \
++	$(LDLIBPTH) $(MINIPERLEXE) -Ilib -e 'use AutoSplit; \
+ 		autosplit_lib_modules(@ARGV)' lib/*.pm lib/*/*.pm
+ 
+ # Take care to avoid modifying lib/Config.pm without reason
+ # (If trying to create a new port and having problems with the configpm script, 
+ # try 'make minitest' and/or commenting out the tests at the end of configpm.)
+ lib/Config.pm: config.sh miniperl configpm lib/re.pm
+-	$(LDLIBPTH) ./miniperl configpm configpm.tmp
++	$(LDLIBPTH) $(MINIPERLEXE) ./configpm ./configpm.tmp
+ 	sh mv-if-diff configpm.tmp $@
+ 
+ lib/ExtUtils/Miniperl.pm: miniperlmain.c miniperl minimod.pl lib/Config.pm
+-	$(LDLIBPTH) ./miniperl minimod.pl > minimod.tmp
++	$(LDLIBPTH) $(MINIPERLEXE) minimod.pl > minimod.tmp
+ 	sh mv-if-diff minimod.tmp $@
+ 
+ lib/re.pm: ext/re/re.pm
+@@ -524,7 +531,7 @@
+ 	cat ext/re/re.pm > $@
+ 
+ $(plextract):	miniperl lib/Config.pm
+-	$(LDLIBPTH) ./miniperl -Ilib $@.PL
++	$(LDLIBPTH) $(MINIPERLEXE) -Ilib $@.PL
+ 
+ extra.pods: miniperl
+ 	-@test -f extra.pods && rm -f `cat extra.pods`

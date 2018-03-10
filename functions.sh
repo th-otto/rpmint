@@ -156,6 +156,8 @@ if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$gcc" -o ! -x "$strip"; then
 	exit 1
 fi
 
+unset CDPATH
+
 unpack_archive()
 {
 	rm -rf "$srcdir"
