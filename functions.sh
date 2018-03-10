@@ -37,6 +37,7 @@ TARGET_LIBDIR="${TARGET_PREFIX}/lib"
 TARGET_BINDIR="${TARGET_PREFIX}/bin"
 TARGET_MANDIR="${TARGET_PREFIX}/share/man"
 TARGET_INFODIR="${TARGET_PREFIX}/share/info"
+TARGET_SYSCONFDIR=/etc
 
 #
 # Where to look for the original source archives

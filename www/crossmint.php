@@ -828,6 +828,23 @@ foreach ($libpackages as $package)
 		echo '</tr>' . "\n";
 	}
 	
+	if (isset($package['noarch']) && $package['noarch'])
+	{
+		echo '<tr>' . "\n";
+		echo '<td class="linkdesc">Package:</td>' . "\n";
+		echo '<td class="sourcelink">';
+		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
+		if (isset($package['date']))
+			$filename .= '-' . $package['date'];
+		$filename .= '-noarch.tar.xz';
+		$text = $package['name'] . '-' . $package['version'] . '-noarch.tar.xz';
+		gen_link($filename, $text);
+		echo '</td>' . "\n";
+		echo '<td class="sourcelink">';
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
+	}
+	
 	echo '</table></td>' . "\n";
 
 	echo '<td>';
@@ -920,6 +937,8 @@ foreach ($libpackages as $package)
 <li>2018/02/17 Add cross-compiler for MinGW host</li>
 
 <li>2018/03/08 Package git added</li>
+
+<li>2018/03/10 Package ca-certificates added</li>
 
 </ul>
 

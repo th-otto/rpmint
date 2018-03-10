@@ -1083,6 +1083,23 @@ unusually rich command set that provides both high-level operations and
 full access to internals.
 '
 	),
+	'ca-certificates' => array(
+		'name' => 'ca-certificates',
+		'upstream' => 'https://github.com/openSUSE/ca-certificates',
+		'repo' => 'https://github.com/openSUSE/ca-certificates',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => 'git10b2785',
+		'patch' => 0,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 0,
+		'noarch' => 1,
+		'comment' => '
+Update-ca-certificates is intended to keep the certificate stores of
+SSL libraries like OpenSSL or GnuTLS in sync with the system&apos;s CA
+certificate store that is managed by p11-kit.
+'
+	),
 );
 
 ?>
