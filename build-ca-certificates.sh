@@ -10,6 +10,12 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES=""
+# make-ca.sh from http://anduin.linuxfromscratch.org/BLFS/other/make-ca.sh-20170119
+# certdata.txt from http://anduin.linuxfromscratch.org/BLFS/other/certdata.txt
+POST_INSTALL_SCRIPTS="
+patches/ca-certificates/make-ca.sh
+patches/ca-certificates/certdata.txt
+"
 
 BINFILES="
 etc/*
