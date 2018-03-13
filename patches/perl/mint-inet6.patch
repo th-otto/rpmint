@@ -1,0 +1,14 @@
+--- a/cpan/Socket/Socket.xs.orig	2018-03-11 17:30:03.138804790 +0100
++++ b/cpan/Socket/Socket.xs	2018-03-11 17:31:30.570802887 +0100
+@@ -51,6 +51,11 @@
+ # include <ws2tcpip.h>
+ #endif
+ 
++#ifdef __MINT__
++/* MiNT may have AF_INET6 defined, but lacks the structures & functions */
++#undef AF_INET6
++#endif
++
+ #ifdef WIN32
+ 
+ /* VC 6 with its original headers doesn't know about sockaddr_storage, VC 2003 does*/

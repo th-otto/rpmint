@@ -1,0 +1,25 @@
+--- a/perl.h.orig	2017-08-23 22:21:01.000000000 +0200
++++ b/perl.h	2018-03-11 18:17:50.962028728 +0100
+@@ -2340,6 +2340,22 @@
+     (Perl_fp_class_pdenorm(x) || Perl_fp_class_ndenorm(x))
+ #endif
+ 
++#if !defined(Perl_fp_class_inf)
++#  define Perl_fp_class_inf(x) Perl_isinf(x)
++#endif
++#if !defined(Perl_fp_class_nan)
++#  define Perl_fp_class_nan(x) Perl_isnan(x)
++#endif
++#if !defined(Perl_fp_class_denorm)
++#  define Perl_fp_class_denorm(x) 0
++#endif
++#if !defined(Perl_fp_class_zero)
++#  define Perl_fp_class_zero(x) ((x) == 0.0)
++#endif
++#if !defined(Perl_fp_class_norm)
++#  define Perl_fp_class_norm(x) (!Perl_fp_class_inf(x) && !Perl_fp_class_nan(x))
++#endif
++
+ #ifdef UNDER_CE
+ int isnan(double d);
+ #endif

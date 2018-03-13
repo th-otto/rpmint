@@ -190,7 +190,7 @@ unpack_archive()
 			cd "$srcdir"
 			for patch in $BUILD_DIR/${PACKAGENAME}-patches/${PACKAGENAME}*.patch
 			do
-			    patch -f -T -p1 -s < $patch
+			    patch -f -T -p1 -s --read-only=ignore < $patch
 			done
 			cd "$BUILD_DIR"
 			rm -rf "$BUILD_DIR/${PACKAGENAME}-patches"
@@ -200,7 +200,7 @@ unpack_archive()
 		    cd "$srcdir" || exit 1
 		    flags=
 		    if patch -N -s --dry-run -p1 -i "$BUILD_DIR/$f" > /dev/null 2>&1; then
-		    	flags="-N -p1"
+		    	flags="-N -p1 --read-only=ignore"
 			    patch $flags -i "$BUILD_DIR/$f" || exit 1
 		    else
 		    	echo "patch $f does not apply" >&2
@@ -295,13 +295,15 @@ make_bin_archive()
 		i=${i#/}
 		if test -d "$i" -o -f "$i" -o -h "$i"; then
 			files="$files $i"
-			case $i in 
-			*/bin/* | */sbin/* | bin/* | sbin/*)
-				if test ! -d "$i" -a ! -h "$i"; then
-					"${strip}" "$i"
-				fi
-				;;
-			esac
+			if test -z "$NO_STRIP"; then
+				case $i in 
+				*/bin/* | */sbin/* | bin/* | sbin/*)
+					if test ! -d "$i" -a ! -h "$i"; then
+						"${strip}" "$i"
+					fi
+					;;
+				esac
+			fi
 		else
 			echo "$i does not exist for packaging" >&2
 			exit 1
@@ -321,6 +323,7 @@ copy_pkg_configs()
 	local i base dst
 	
 	cd "${THISPKG_DIR}"
+	if test -d .${sysroot}$TARGET_LIBDIR/pkgconfig; then
 	mkdir -p ./$build_prefix/lib/pkgconfig
 	
 	#
@@ -377,6 +380,7 @@ copy_pkg_configs()
 			}
 		}
 	done
+	fi
 }
 
 
@@ -386,15 +390,21 @@ make_archives()
 
 	cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" || exit 1
 	find . -type f -name "*.la" -delete -printf "rm %p\n"
-	test "$LTO_CFLAGS" != "" || find . -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \;
-	find . -name "*.a" ! -type l -exec "${ranlib}" '{}' \;
+	if test -z "$NO_STRIP"; then
+		test "$LTO_CFLAGS" != "" || find . -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \;
+	fi
+	if test -z "$NO_RANLIB"; then
+		find . -name "*.a" ! -type l -exec "${ranlib}" '{}' \;
+	fi
 	
 	if test -d "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/bin"; then
 		cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/bin"
 		for i in *; do
 			test -h "$i" && continue
 			test -d "$i" && continue
-			"${strip}" "$i"
+			if test -z "$NO_STRIP"; then
+				"${strip}" "$i"
+			fi
 		done
 	fi
 	
@@ -403,7 +413,9 @@ make_archives()
 		for i in `find . -type f`; do
 			test -h "$i" && continue
 			test -d "$i" && continue
-			"${strip}" "$i"
+			if test -z "$NO_STRIP"; then
+				"${strip}" "$i"
+			fi
 		done
 	fi
 	

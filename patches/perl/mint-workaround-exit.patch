@@ -1,0 +1,32 @@
+Author: Thorsten Otto <admin@th-otto.de>
+Date: 2018-03-12
+
+Work around a strange bug in MiNT that causes a priviledge
+violation when calling exit from main
+
+diff --git a/ext/ExtUtils-Miniperl/lib/ExtUtils/Miniperl.pm b/ext/ExtUtils-Miniperl/lib/ExtUtils/Miniperl.pm
+index 6090970adc..2ba2a8bbb1 100644
+--- a/ext/ExtUtils-Miniperl/lib/ExtUtils/Miniperl.pm
++++ b/ext/ExtUtils-Miniperl/lib/ExtUtils/Miniperl.pm
+@@ -79,6 +79,11 @@ sub writemain{
+ 
+ #define PERL_IN_MINIPERLMAIN_C
+ %s
++
++#ifdef __MINT__
++#include <osbind.h>
++#endif
++
+ static void xs_init (pTHX);
+ static PerlInterpreter *my_perl;
+ 
+@@ -196,6 +201,9 @@ main(int argc, char **argv, char **env)
+ #endif
+ #endif /* PERL_GLOBAL_STRUCT */
+ 
++#ifdef __MINT__
++    Pterm(exitstatus);
++#endif
+     exit(exitstatus);
+ }
+ 

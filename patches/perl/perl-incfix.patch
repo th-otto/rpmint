@@ -1,0 +1,42 @@
+Index: perl.c
+===================================================================
+--- a/perl.c.orig
++++ b/perl.c
+@@ -4579,11 +4579,13 @@ S_init_perllib(pTHX)
+ #  endif
+ #endif
+ 
++#if 0
+ #ifdef PERL_OTHERLIBDIRS
+     S_incpush_use_sep(aTHX_ STR_WITH_LEN(PERL_OTHERLIBDIRS),
+ 		      INCPUSH_ADD_VERSIONED_SUB_DIRS|INCPUSH_NOT_BASEDIR
+ 		      |INCPUSH_CAN_RELOCATE);
+ #endif
++#endif
+ 
+     if (!TAINTING_get) {
+ #ifndef VMS
+@@ -4625,20 +4627,19 @@ S_init_perllib(pTHX)
+ #if defined(SITELIB_STEM) && defined(PERL_INC_VERSION_LIST)
+     /* Search for version-specific dirs below here */
+     S_incpush_use_sep(aTHX_ STR_WITH_LEN(SITELIB_STEM),
+-		      INCPUSH_ADD_OLD_VERS|INCPUSH_CAN_RELOCATE);
++		      INCPUSH_ADD_OLD_VERS|INCPUSH_NOT_BASEDIR|INCPUSH_CAN_RELOCATE);
+ #endif
+ 
+ 
+ #if defined(PERL_VENDORLIB_STEM) && defined(PERL_INC_VERSION_LIST)
+     /* Search for version-specific dirs below here */
+     S_incpush_use_sep(aTHX_ STR_WITH_LEN(PERL_VENDORLIB_STEM),
+-		      INCPUSH_ADD_OLD_VERS|INCPUSH_CAN_RELOCATE);
++		      INCPUSH_ADD_OLD_VERS|INCPUSH_NOT_BASEDIR|INCPUSH_CAN_RELOCATE);
+ #endif
+ 
+ #ifdef PERL_OTHERLIBDIRS
+     S_incpush_use_sep(aTHX_ STR_WITH_LEN(PERL_OTHERLIBDIRS),
+-		      INCPUSH_ADD_OLD_VERS|INCPUSH_ADD_ARCHONLY_SUB_DIRS
+-		      |INCPUSH_CAN_RELOCATE);
++		      INCPUSH_CAN_RELOCATE);
+ #endif
+ #endif /* !PERL_IS_MINIPERL */
+ 

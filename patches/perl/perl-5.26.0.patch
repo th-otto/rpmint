@@ -1,0 +1,325 @@
+--- a/Configure.orig	2017-05-30 09:57:56.000000000 +0000
++++ b/Configure	2017-08-30 12:05:40.255184858 +0000
+@@ -117,7 +117,7 @@ paths="$paths /usr/5bin /etc /usr/gnu/bi
+ paths="$paths /opt/gnu/bin /opt/new /opt/new/bin /opt/nbin"
+ paths="$paths /sys5.3/bin /sys5.3/usr/bin /bsd4.3/bin /bsd4.3/usr/ucb"
+ paths="$paths /bsd4.3/usr/bin /usr/bsd /bsd43/bin /opt/ansic/bin /usr/ccs/bin"
+-paths="$paths /etc /usr/lib /usr/ucblib /lib /usr/ccs/lib"
++paths="$paths /etc /usr/lib /usr/lib64 /usr/ucblib /lib /usr/ccs/lib"
+ paths="$paths /sbin /usr/sbin /usr/libexec"
+ paths="$paths /system/gnu_library/bin"
+ 
+@@ -1464,7 +1464,7 @@ loclibpth="/usr/local/lib /opt/local/lib
+ loclibpth="$loclibpth /opt/gnu/lib /usr/GNU/lib /opt/GNU/lib"
+ 
+ : general looking path for locating libraries
+-glibpth="/lib /usr/lib $xlibpth"
++glibpth="/lib /usr/lib /lib64 /usr/lib64 $xlibpth"
+ glibpth="$glibpth /usr/ccs/lib /usr/ucblib /usr/local/lib"
+ test -f /usr/shlib/libc.so && glibpth="/usr/shlib $glibpth"
+ test -f /shlib/libc.so     && glibpth="/shlib $glibpth"
+@@ -2559,7 +2559,7 @@ uname
+ zip
+ "
+ pth=`echo $PATH | sed -e "s/$p_/ /g"`
+-pth="$pth $sysroot/lib $sysroot/usr/lib"
++pth="$pth $sysroot/lib $sysroot/usr/lib $sysroot/lib64 $sysroot/usr/lib64"
+ for file in $loclist; do
+ 	eval xxx=\$$file
+ 	case "$xxx" in
+@@ -11963,7 +11963,7 @@ void xxx(int n, ...)
+     va_start(args, n);
+     exit((unsigned long)vsprintf(buf,"%s",args) > 10L);
+ }
+-int main() { xxx(1, "foo"); }
++int main() { xxx(1, "foo"); return 0; }
+ 
+ #else /* I_VARARGS */
+ 
+@@ -11975,7 +11975,7 @@ va_dcl
+     va_start(args);
+     exit((unsigned long)vsprintf(buf,"%s",args) > 10L);
+ }
+-int main() { xxx("foo"); }
++int main() { xxx("foo"); return 0; }
+ 
+ #endif
+ 
+@@ -20516,14 +20516,20 @@ int main(int argc, char *argv[])
+ }
+ EOCP
+ 	set try
++	# this is really stupid, but we have to link in the -ldb to have
++	# the above program succeed
++	_old_libs="$libs"
++	libs="$libs -ldb"
+ 	if eval $compile_ok && $run ./try; then
+ 		echo 'Looks OK.' >&4
++		libs="$_old_libs"
+ 		set `$run ./try 1`
+ 		db_version_major=$1
+ 		db_version_minor=$2
+ 		db_version_patch=$3
+ 	else
+ 		echo "I can't use Berkeley DB with your <db.h>.  I'll disable Berkeley DB." >&4
++		libs="$_old_libs"
+ 		i_db=$undef
+ 		case " $libs " in
+ 		*"-ldb "*)
+@@ -20564,7 +20570,7 @@ int main()
+ }
+ #endif
+ EOCP
+-	if $cc $ccflags -c try.c >try.out 2>&1 ; then
++	if $cc $ccflags -c try.c -ldb >try.out 2>&1 ; then
+ 		if $contains warning try.out >>/dev/null 2>&1 ; then
+ 			db_hashtype='int'
+ 		else
+@@ -20607,7 +20613,7 @@ int main()
+ }
+ #endif
+ EOCP
+-	if $cc $ccflags -c try.c  >try.out 2>&1 ; then
++	if $cc $ccflags -c try.c -ldb >try.out 2>&1 ; then
+ 		if $contains warning try.out >>/dev/null 2>&1 ; then
+ 			db_prefixtype='int'
+ 		else
+--- a/cpan/Compress-Raw-Zlib/config.in.orig	2017-02-28 12:36:42.000000000 +0000
++++ b/cpan/Compress-Raw-Zlib/config.in	2017-08-30 12:05:40.256184858 +0000
+@@ -16,9 +16,9 @@
+ #    Setting the Gzip OS Code
+ #
+ 
+-BUILD_ZLIB      = True
+-INCLUDE         = ./zlib-src
+-LIB             = ./zlib-src
++BUILD_ZLIB      = False
++INCLUDE         = .
++LIB             = .
+ 
+ OLD_ZLIB        = False
+ GZIP_OS_CODE    = AUTO_DETECT
+--- a/cpan/Encode/bin/enc2xs.orig	2017-04-19 13:37:05.000000000 +0000
++++ b/cpan/Encode/bin/enc2xs	2017-08-30 12:05:40.257184858 +0000
+@@ -1094,7 +1094,7 @@ sub make_configlocal_pm {
+ 	    $LocalMod{$enc} ||= $mod;
+ 	}
+     };
+-    File::Find::find({wanted => $wanted}, @INC);
++    File::Find::find({wanted => $wanted}, grep {$_ ne '.'} @INC);
+     $_ModLines = "";
+     for my $enc ( sort keys %LocalMod ) {
+         $_ModLines .=
+--- a/cpan/ExtUtils-Install/lib/ExtUtils/Packlist.pm.orig	2017-04-19 13:37:05.000000000 +0000
++++ b/cpan/ExtUtils-Install/lib/ExtUtils/Packlist.pm	2017-08-30 12:05:40.257184858 +0000
+@@ -207,8 +207,11 @@ foreach my $key (sort(keys(%{$self->{dat
+    {
+    if (! -e $key)
+       {
+-      push(@missing, $key);
+-      delete($self->{data}{$key}) if ($remove);
++      if (($key !~ m!/man/!) || ! -e "$key.gz")
++	{
++        push(@missing, $key);
++        delete($self->{data}{$key}) if ($remove);
++	}
+       }
+    }
+ return(@missing);
+--- a/cpan/File-Temp/lib/File/Temp.pm.orig	2017-04-19 13:37:05.000000000 +0000
++++ b/cpan/File-Temp/lib/File/Temp.pm	2017-08-30 12:05:40.258184858 +0000
+@@ -16,7 +16,7 @@ use Fcntl 1.03;
+ use IO::Seekable;               # For SEEK_*
+ use Errno;
+ use Scalar::Util 'refaddr';
+-require VMS::Stdio if $^O eq 'VMS';
++#require VMS::Stdio if $^O eq 'VMS';
+ 
+ # pre-emptively load Carp::Heavy. If we don't when we run out of file
+ # handles and attempt to call croak() we get an error message telling
+--- a/cpan/Sys-Syslog/t/syslog.t.orig	2017-04-19 13:37:05.000000000 +0000
++++ b/cpan/Sys-Syslog/t/syslog.t	2017-08-30 12:05:40.259184858 +0000
+@@ -221,6 +221,7 @@ SKIP: {
+         }
+     }
+     else  {
++	$r = 1 unless -e '/dev/log';
+         ok( $r, "setlogsock() should return true: '$r'" );
+     }
+ 
+--- a/cpan/libnet/lib/Net/Config.pm.orig	2017-04-19 13:37:05.000000000 +0000
++++ b/cpan/libnet/lib/Net/Config.pm	2017-08-30 12:05:40.259184858 +0000
+@@ -53,7 +53,7 @@ our %NetConfig = (
+ {
+ ## no critic (BuiltinFunctions::ProhibitStringyEval)
+ $^O eq 'MacOS' and eval <<TRY_INTERNET_CONFIG;
+-use Mac::InternetConfig;
++#use Mac::InternetConfig;
+ 
+ {
+ my %nc = (
+--- a/ext/DynaLoader/hints/linux.pl.orig	2017-02-28 12:36:42.000000000 +0000
++++ b/ext/DynaLoader/hints/linux.pl	2017-08-30 12:05:40.259184858 +0000
+@@ -2,4 +2,7 @@
+ # Some Linux releases like to hide their <nlist.h>
+ $self->{CCFLAGS} = $Config{ccflags} . ' -I/usr/include/libelf'
+ 	if -f "/usr/include/libelf/nlist.h";
++# Some silly modules like mod_perl use DynaLoader.a in a shared
++# module, so add cccdlflags if we're going for a shared libperl
++$self->{CCFLAGS} = ($self->{CCFLAGS} || $Config{ccflags}) . " $Config{cccdlflags}" if $Config{'useshrplib'} eq 'true';
+ 1;
+--- a/ext/ODBM_File/Makefile.PL.orig	2017-02-28 12:36:42.000000000 +0000
++++ b/ext/ODBM_File/Makefile.PL	2017-08-30 12:05:40.260184858 +0000
+@@ -1,7 +1,7 @@
+ use ExtUtils::MakeMaker;
+ WriteMakefile(
+     NAME	=> 'ODBM_File',
+-    LIBS => ["-ldbm -lucb"],
++    LIBS => ["-lgdbm -lucb"],
+     XSPROTOARG => '-noprototypes', 		# XXX remove later?
+     VERSION_FROM => 'ODBM_File.pm', 
+ );
+--- a/ext/ODBM_File/hints/linux.pl.orig	2017-02-28 12:36:42.000000000 +0000
++++ b/ext/ODBM_File/hints/linux.pl	2017-08-30 12:05:40.259184858 +0000
+@@ -1,5 +1,5 @@
+ # uses GDBM dbm compatibility feature - at least on SuSE 8.0
+-$self->{LIBS} = ['-lgdbm'];
++$self->{LIBS} = ['-lgdbm -lgdbm_compat'];
+ 
+ # Debian/Ubuntu have libgdbm_compat.so but not this file,
+ # so linking may fail
+--- a/hints/linux.sh.orig	2017-04-19 13:37:05.000000000 +0000
++++ b/hints/linux.sh	2017-08-30 12:09:43.999184426 +0000
+@@ -53,7 +53,7 @@ ignore_versioned_solibs='y'
+ # BSD compatibility library no longer needed
+ # 'kaffe' has a /usr/lib/libnet.so which is not at all relevant for perl.
+ # bind causes issues with several reentrant functions
+-set `echo X "$libswanted "| sed -e 's/ bsd / /' -e 's/ net / /' -e 's/ bind / /'`
++set `echo X "$libswanted "| sed -e 's/ bsd / /' -e 's/ net / /' -e 's/ bind / /' -e 's/ db / /' -e 's/ gdbm / /' -e 's/ ndbm / /'`
+ shift
+ libswanted="$*"
+ 
+@@ -64,6 +64,20 @@ if echo " $libswanted " | grep -q ' gdbm
+     libswanted="$libswanted gdbm_compat"
+ fi
+ 
++if test -e /lib64/libc.so.6 ; then
++    libc=`ls -l /lib64/libc.so.6 | awk '{print $NF}'`
++    libc=/lib64/$libc
++    glibpth='/lib64 /usr/lib64 /usr/local/lib64'
++    libspath='/usr/local/lib64 /lib64 /usr/lib64'
++    loclibpth='/usr/local/lib64'
++    lddlflags='-shared -L/usr/local/lib64'
++    ldflags=' -L/usr/local/lib64'
++    libs='-lm -ldl -lcrypt'
++elif test -L /lib/libc.so.6; then
++    libc=`ls -l /lib/libc.so.6 | awk '{print $NF}'`
++    libc=/lib/$libc
++fi
++
+ # Configure may fail to find lstat() since it's a static/inline
+ # function in <sys/stat.h>.
+ d_lstat=define
+@@ -147,6 +161,7 @@ case "$optimize" in
+             esac
+         ;;
+     esac
++    optimize="$optimize --pipe"
+     ;;
+ esac
+ 
+@@ -221,6 +236,33 @@ case "$libc" in
+     ;;
+ esac
+ 
++man1dir=/usr/share/man/man1
++man3dir=/usr/share/man/man3
++man3ext=3pm
++
++case `uname -m` in
++i?86) archname='i586-linux';;
++*)    archname=`uname -m`-linux;;
++esac
++
++case $archname in
++sparc64-linux) glibpth="/lib64 /usr/lib64";;
++esac
++
++cf_email='none'
++#libs='-lgdbm -ldb -ldl -lm -lc'
++#libs='-ldl -lm -lc'
++
++usedl='true'
++dlsrc='dl_dlopen.xs'
++d_dosuid='undef'
++d_bincompat3='y'
++
++# We don't want to add /usr/local/include and /usr/local/lib to the search
++# paths, they are already searched by default.
++locincpth=
++loclibpth=
++
+ if ${sh:-/bin/sh} -c exit; then
+   echo ''
+   echo 'You appear to have a working bash.  Good.'
+@@ -268,6 +310,9 @@ else
+ 	echo "Couldn't find tcsh.  Csh-based globbing might be broken."
+     fi
+ fi
++csh=''
++d_csh='undef'
++full_csh=''
+ 
+ # Shimpei Yamashita <shimpei@socrates.patnet.caltech.edu>
+ # Message-Id: <33EF1634.B36B6500@pobox.com>
+@@ -378,6 +423,8 @@ $define|true|[yY]*)
+ 	d_localtime_r_proto="$define"
+ 	d_random_r_proto="$define"
+ 
++	test -e /lib64/libc.so.6 && libs='-lm -ldl -lcrypt -lpthread'
++
+ 	;;
+ esac
+ EOCBU
+--- a/installperl.orig	2017-04-19 13:37:05.000000000 +0000
++++ b/installperl	2017-08-30 12:05:40.261184858 +0000
+@@ -685,7 +685,7 @@ sub installlib {
+     return if $name eq 'ExtUtils/MakeMaker/version/regex.pm';
+ 
+     my $installlib = $installprivlib;
+-    if ($dir =~ /^auto\// ||
++    if (($dir =~ /^auto\// && $dir ne 'auto/Compress/Zlib') ||
+ 	  ($name =~ /^(.*)\.(?:pm|pod)$/ && $archpms{$1}) ||
+ 	  ($name =~ /^(.*)\.(?:h|lib)$/i && ($Is_W32 || $Is_NetWare)) ||
+ 	  $name=~/^Config_(heavy|git)\.pl\z/
+--- a/lib/perl5db.pl.orig	2017-04-19 13:37:05.000000000 +0000
++++ b/lib/perl5db.pl	2017-08-30 12:05:40.264184858 +0000
+@@ -2363,6 +2363,8 @@ sub _DB__handle_run_command_in_pager_com
+                 open( OUT, ">&STDOUT" )    # XXX: lost message
+                 || _db_warn("Can't restore DB::OUT");
+             }
++	    # tell readline the new OUT handle
++	    $term->Attribs()->{outstream} = *OUT if defined &Term::ReadLine::Gnu::readline;
+             next CMD;
+         } ## end unless ($piped = open(OUT,...
+ 
+@@ -2467,6 +2469,9 @@ sub _DB__at_end_of_every_command {
+             $obj->selected("");
+         }
+ 
++	# tell readline the new OUT handle
++	$term->Attribs()->{outstream} = *OUT if defined &Term::ReadLine::Gnu::readline;
++
+         # No pipes now.
+         $obj->piped("");
+     } ## end if ($piped)
+--- a/utils/perlbug.PL.orig	2017-04-19 13:37:06.000000000 +0000
++++ b/utils/perlbug.PL	2017-08-30 12:05:40.265184858 +0000
+@@ -1042,6 +1042,7 @@ sub _message_headers {
+     $headers{'Cc'}         = $cc        if ($cc);
+     $headers{'Message-Id'} = $messageid if ($messageid);
+     $headers{'Reply-To'}   = $from      if ($from);
++    $headers{'X-Webfrontend'} = 'perlbug';
+     $headers{'From'}       = $from      if ($from);
+     if ($have_attachment) {
+         $headers{'MIME-Version'} = '1.0';

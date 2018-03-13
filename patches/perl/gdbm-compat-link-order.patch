@@ -1,0 +1,62 @@
+diff --git a/ext/NDBM_File/Makefile.PL b/ext/NDBM_File/Makefile.PL
+index fe2cb407f5..7d2f235865 100644
+--- a/ext/NDBM_File/Makefile.PL
++++ b/ext/NDBM_File/Makefile.PL
+@@ -1,7 +1,7 @@
+ use ExtUtils::MakeMaker;
+ WriteMakefile(
+     NAME	=> 'NDBM_File',
+-    LIBS => ["-L/usr/local/lib -lndbm", "-ldbm -lucb"],
++    LIBS => ["-lndbm", "-ldbm -lucb"],
+     XSPROTOARG => '-noprototypes', 		# XXX remove later?
+     VERSION_FROM => 'NDBM_File.pm',
+ );
+diff --git a/ext/NDBM_File/hints/cygwin.pl b/ext/NDBM_File/hints/cygwin.pl
+index 3b8eea0411..3a69db43dc 100644
+--- a/ext/NDBM_File/hints/cygwin.pl
++++ b/ext/NDBM_File/hints/cygwin.pl
+@@ -1,2 +1,2 @@
+ # uses GDBM ndbm compatibility feature
+-$self->{LIBS} = ['-lgdbm -lgdbm_compat'];
++$self->{LIBS} = ['-lgdbm_compat -lgdbm'];
+diff --git a/ext/NDBM_File/hints/linux.pl b/ext/NDBM_File/hints/linux.pl
+index 174f913f12..db998f699b 100644
+--- a/ext/NDBM_File/hints/linux.pl
++++ b/ext/NDBM_File/hints/linux.pl
+@@ -4,5 +4,5 @@
+ # Jonathan Stowe <gellyfish@gellyfish.com>
+ use Config;
+ use ExtUtils::Liblist;
+-($self->{LIBS}) = ExtUtils::Liblist->ext('-lgdbm -lgdbm_compat')
++($self->{LIBS}) = ExtUtils::Liblist->ext('-lgdbm_compat -lgdbm')
+ 	if $Config{libs} =~ /(?:^|\s)-lgdbm(?:\s|$)/;
+diff --git a/ext/GDBM_File/Makefile.PL b/ext/GDBM_File/Makefile.PL
+index 2a44d3e1d8..4b879240ef 100644
+--- a/ext/GDBM_File/Makefile.PL
++++ b/ext/GDBM_File/Makefile.PL
+@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
+ use ExtUtils::Constant 0.11 'WriteConstants';
+ WriteMakefile(
+     NAME => 'GDBM_File',
+-    LIBS => ["-lgdbm", "-ldbm"],
++    LIBS => ["-lgdbm_compat", "-lgdbm", "-ldbm"],
+     XSPROTOARG => '-noprototypes', 		# XXX remove later?
+     VERSION_FROM => 'GDBM_File.pm',
+     realclean => {FILES=> 'const-c.inc const-xs.inc'},
+diff --git a/ext/ODBM_File/hints/cygwin.pl b/ext/ODBM_File/hints/cygwin.pl
+index 5762d4408f..9b2a5bbe44 100644
+--- a/ext/ODBM_File/hints/cygwin.pl
++++ b/ext/ODBM_File/hints/cygwin.pl
+@@ -1,2 +1,2 @@
+ # uses GDBM dbm compatibility feature
+-$self->{LIBS} = ['-lgdbm -lgdbm_compat'];
++$self->{LIBS} = ['-lgdbm_compat -lgdbm'];
+--- a/ext/ODBM_File/hints/linux.pl	2018-03-11 18:55:21.981979745 +0100
++++ b/ext/ODBM_File/hints/linux.pl	2018-03-11 18:55:30.029979570 +0100
+@@ -1,5 +1,5 @@
+ # uses GDBM dbm compatibility feature - at least on SuSE 8.0
+-$self->{LIBS} = ['-lgdbm -lgdbm_compat'];
++$self->{LIBS} = ['-lgdbm_compat -lgdbm'];
+ 
+ # Debian/Ubuntu have libgdbm_compat.so but not this file,
+ # so linking may fail

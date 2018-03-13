@@ -4,12 +4,34 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=perl
-VERSION=-5.6.0
+VERSION=-5.26.1
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
+patches/perl/perl-5.26.0.patch
+patches/perl/perl-regexp-refoverflow.patch
+patches/perl/perl-nroff.patch
+patches/perl/perl-netcmdutf8.patch
+patches/perl/perl-HiRes.t-timeout.patch
+patches/perl/perl-saverecontext.patch
+patches/perl/skip_time_hires.patch
+patches/perl/perl-incfix.patch
+patches/perl/perl-5.18.2-overflow.patch
+patches/perl/perl-reproducible.patch
+patches/perl/perl_skip_flaky_tests_powerpc.patch
+patches/perl/posix-sigaction.patch
+patches/perl/rpm-macros.patch
+patches/perl/mint-hints.patch
+patches/perl/mint-inet6.patch
+patches/perl/cpan-db-file.patch
+patches/perl/fp-classify.patch
+patches/perl/gdbm-compat-link-order.patch
+patches/perl/cross-use-correct-strip.patch
+"
+DISABLED_PATCHES="
+patches/perl/perl-5.6.0-db1.patch
 patches/perl/perl-5.6.0-buildsys.patch
 patches/perl/perl-5.6.0-installman.patch
 patches/perl/perl-5.6.0-nodb.patch
@@ -17,46 +39,60 @@ patches/perl/perl-5.6.0-prereq.patch
 patches/perl/perl-5.6.0-mint.patch
 patches/perl/perl-5.6.0-makedepend.patch
 patches/perl/perl-5.6.0-cross.patch
-"
-# Perl does not have a single entry point to define what db library to use
-# so the patch below is mostly broken...
-DISABLED_PATCHES="
-patches/perl/perl5.005_03-db1.patch
+patches/perl/mint-workaround-exit.patch
 "
 
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
-${TARGET_LIBDIR#/}/*
+${TARGET_LIBDIR#/}/perl5
 ${TARGET_MANDIR#/}/*
+${TARGET_SYSCONFDIR#/}/*
 "
 
 MINT_BUILD_DIR="$srcdir"
 
+perl_cross=perl-cross-mint.tar.gz
+if ! test -f "$ARCHIVES_DIR/$perl_cross"; then
+	curl -L --output "$ARCHIVES_DIR/$perl_cross" https://github.com/th-otto/perl-cross/archive/mint.tar.gz
+fi
 
 unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -Wall"
+tar --strip-components=1 -xf "$ARCHIVES_DIR/$perl_cross"
+
+COMMON_CFLAGS="\
+	-Wall -Wno-unused-function \
+	-fno-strict-aliasing \
+	-D_GNU_SOURCE \
+	-DPERL_USE_SAFE_PUTENV \
+	-D_LARGEFILE_SOURCE \
+	-D_FILE_OFFSET_BITS=64"
+OPT_CFLAGS="-O2 -fomit-frame-pointer -fwrapv"
 
 CONFIGURE_FLAGS=" \
-	-d -e -s -K \
-	-Dprefix=${TARGET_PREFIX} \
-	-Dinstallprefix=${THISPKG_DIR}${sysroot}${TARGET_PREFIX} \
+	--target=${TARGET} \
+	--prefix=${TARGET_PREFIX} \
+	-Dvendorprefix=${TARGET_PREFIX} \
 	-Dosname=mint \
-	-Dcf_email=\"fnaumann@freemint.de\" \
-	-Di_db \
-	-Di_gdbm \
 	-Dman1dir=${TARGET_MANDIR}/man1 \
 	-Dman3dir=${TARGET_PREFIX}/lib/perl5/man/man3"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
+#
+# installperl already takes care of that;
+# also the files are made read-only so we can't use the tools
+#
+NO_STRIP=true
+NO_RANLIB=true
+
 
 CPU_ARCHNAME_000=-000
-CPU_ACRHNAME_020=-020
+CPU_ARCHNAME_020=-020
 CPU_ARCHNAME_v4e=-v4e
 
 for CPU in ${ALL_CPUS}; do
@@ -66,125 +102,55 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 	eval archname=\${CPU_ARCHNAME_$CPU}
-	STACKSIZE="-Wl,-stack,128k"
+	STACKSIZE="-Wl,-stack,512k"
 
-cat > config.over <<EOF
-osname=mint
-osvers=
-ar=`which ${TARGET}-ar 2>/dev/null`
-full_ar=`which ${TARGET}-ar 2>/dev/null`
-ranlib='${ranlib}'
-cc="${TARGET}-gcc"
-cpp="${TARGET}-cpp"
-cppflags="-fno-strict-aliasing"
-cpprun="${TARGET}-cpp -E"
-cppstdin="${TARGET}-cpp -E"
-cpplast='-'
-cppminus='-'
-ld="${TARGET}-gcc"
-ldflags="$CPU_CFLAGS $COMMON_CFLAGS $STACKSIZE"
-archname=${TARGET}${archname}
-byteorder='4321'
-lseeksize='4'
-libc=''
-libs='-lm'
-EOF
+	case $CPU in
+		v4e) longdblsize=8; longdblkind=0 ;;
+		*) longdblsize=12; longdblkind=4 ;;
+	esac
 
-cat > Policy.sh <<EOF
-osname=mint
-osvers=
-archname=${TARGET}${archname}
-crosscompile='define'
-byteorder='4321'
-locincpth=""
-loclibpth=""
-glibpth=""
-xlibpth=""
-charsize=1
-alignbytes=2
-libswanted='gdbm socket m'
-so='none'
-usemymalloc='n'
-usrinc=''
-d_suidsafe='undef'
-usevfork='true'
-timeincl='sys/time.h time.h '
-libswanted='gdbm socket m'
-strings='string.h'
-usrinc='/none'
-i_time='define'
-i_systime='define'
-i_systimek='undef'
-doublesize='8'
-longlongsize='8'
-lseeksize='4'
-ptrsize='4'
-d_Gconvert='gcvt((x),(n),(b))'
-d_PRIEldbl='define'
-d_PRIFldbl='define'
-d_PRIGldbl='define'
-d_PRIX64='define'
-d_PRId64='define'
-d_PRIeldbl='define'
-d_PRIfldbl='define'
-d_PRIgldbl='define'
-d_PRIi64='define'
-d_PRIo64='define'
-d_PRIu64='define'
-d_PRIx64='define'
-sPRIfldbl='"llf"'
-sPRIfldbl='"llf"'
-sPRIgldbl='"llg"'
-sPRIeldbl='"lle"'
-sPRIFldbl='"llF"'
-sPRIGldbl='"llG"'
-sPRIEldbl='"llE"'
-d_Gconvert='gcvt((x),(n),(b))'
-sPRIX64='"llX"'
-sPRId64='"lld"'
-sPRIi64='"lli"'
-sPRIo64='"llo"'
-sPRIu64='"llu"'
-sPRIx64='"llx"'
-d_castneg='define'
-d_memchr='define'
-d_memcmp='define'
-d_memset='define'
-d_sigsetjmp='define'
-d_strchr='define'
-d_setresgid='undef'
-d_setresuid='undef'
-EOF
+	case $TARGET in
+		*-*-mintelf*) lddlflags="-r -Wl,--oformat,elf32-m68k" ;;
+		*) lddlflags="-r" ;;
+	esac
 
-case $CPU in
-	v4e) echo "longdblsize='8'" >> Policy.sh ;;
-	*) echo "longdblsize='12'" >> Policy.sh ;;
-esac
-
-	sh ./Configure \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS $STACKSIZE" \
+	sh ./configure \
 		${CONFIGURE_FLAGS} \
-		-Dcc="${TARGET}-gcc" \
-		-Dccflags="$CPU_CFLAGS" \
-		-Dcpp="${TARGET}-cpp" \
-		-Dcpprun="${TARGET}-cpp -E" \
-		-Dcppstdin="${TARGET}-cpp -E" \
-		-Doptimize="$CPU_CFLAGS $COMMON_CFLAGS" \
+		-Dcc="$gcc $CPU_CFLAGS" \
+		-Dccflags="$OPT_CFLAGS $COMMON_CFLAGS" \
+		-Dcppflags="$COMMON_CFLAGS" \
+		-Doptimize="$OPT_CFLAGS" \
 		-Darchname=${TARGET}${archname} \
-		-Dhintfile=Policy.sh \
+		-Dlongdblsize=${longdblsize} \
+		-Dlongdblkind=${longdblkind} \
+		-Dlddlflags="$lddlflags" \
+		-Dcccdlflags="-Wno-unused-function" \
+		-Dso='none' \
 		|| exit 1
 
-	${MAKE} $JOBS || exit 1
+	${MAKE} || exit 1
 	
+	# this is sometime not build???
+	${MAKE} pod/perlmodlib.pod
+
 	buildroot="${THISPKG_DIR}${sysroot}"
 	${MAKE} DESTDIR="${buildroot}" install
-	install -m 755 utils/pl2pm ${buildroot}${TARGET_PREFIX}/bin/pl2pm
+
+	install -d -m 755 ${buildroot}${TARGET_LIBDIR}/perl5/vendor_perl/${VERSION#-}/${TARGET}${archname}
+	install -d -m 755 ${buildroot}${TARGET_LIBDIR}/perl5/site_perl/${VERSION#-}/${TARGET}${archname}
+	
+	# install macros.perl file
+	install -D -m 644 macros.perl ${buildroot}${TARGET_SYSCONFDIR}/rpm/macros.perl
 	
 	${MAKE} clean >/dev/null
 
 	cd ${THISPKG_DIR}${sysroot}
 	rm -f ${TARGET_LIBDIR#/}$multilibdir/charset.alias	
-	exit 0
+
 	make_bin_archive $CPU
+
+	rm -rf ${buildroot}${TARGET_LIBDIR}/perl5/${VERSION#-}/${TARGET}${archname}
 done
 
 move_prefix

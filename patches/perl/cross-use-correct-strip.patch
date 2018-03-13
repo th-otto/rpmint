@@ -1,0 +1,262 @@
+diff --git a/Configure b/Configure
+index 135ba4e8b8..82ddd93d89 100755
+--- a/Configure
++++ b/Configure
+@@ -1169,6 +1169,7 @@ hostcat=''
+ passcat=''
+ orderlib=''
+ ranlib=''
++strip=''
+ d_perl_otherlibdirs=''
+ otherlibdirs=''
+ package=''
+@@ -2954,13 +2955,14 @@ $define|true|[yY]*)
+ 	    # leave out ld, choosing it is more complex
+ 	    nm=`$echo $cc|$sed 's/-g[c\+][c\+]/-nm/'`
+ 	    ranlib=`$echo $cc|$sed 's/-g[c\+][c\+]/-ranlib/'`
++	    strip=`$echo $cc|$sed 's/-g[c\+][c\+]/-strip/'`
+ 	    # We are in a weird spot. Just before us, some values
+ 	    # were 'saved', to be restored after the hints are
+ 	    # run.  This means that the changes we made to ar,
+ 	    # nm and ranlib will get reverted.
+ 	    # To avoid that, we hijack the saving mechanism and
+ 	    # have it save our new values.
+-	    for file in ar nm ranlib; do
++	    for file in ar nm ranlib strip; do
+ 		eval xxx=\$$file
+ 		eval $file=$xxx$_exe
+ 		eval _$file=$xxx
+@@ -21424,6 +21426,9 @@ else
+ 	fi
+ fi
+ $rm -f foo* bar*
++if [ "X$strip" = "X" ]; then
++    strip="strip:"
++fi
+ 
+ : Check the max offset that gmtime and localtime accept
+ echo "Checking max offsets that gmtime () accepts"
+@@ -24669,6 +24674,7 @@ randfunc='$randfunc'
+ random_r_proto='$random_r_proto'
+ randseedtype='$randseedtype'
+ ranlib='$ranlib'
++strip='$strip'
+ rd_nodata='$rd_nodata'
+ readdir64_r_proto='$readdir64_r_proto'
+ readdir_r_proto='$readdir_r_proto'
+diff --git a/Cross/config.sh-arm-linux b/Cross/config.sh-arm-linux
+index 3dcce31ab4..3ab73ef610 100644
+--- a/Cross/config.sh-arm-linux
++++ b/Cross/config.sh-arm-linux
+@@ -977,6 +977,7 @@ randfunc='Perl_drand48'
+ random_r_proto='0'
+ randseedtype='U32'
+ ranlib=':'
++strip='strip'
+ rd_nodata='-1'
+ readdir64_r_proto='0'
+ readdir_r_proto='0'
+diff --git a/Cross/config.sh-arm-linux-n770 b/Cross/config.sh-arm-linux-n770
+index b1a565da72..c1846e6c7d 100644
+--- a/Cross/config.sh-arm-linux-n770
++++ b/Cross/config.sh-arm-linux-n770
+@@ -975,6 +975,7 @@ randfunc='Perl_drand48'
+ random_r_proto='0'
+ randseedtype='U32'
+ ranlib=':'
++strip='strip'
+ rd_nodata='-1'
+ readdir64_r_proto='0'
+ readdir_r_proto='0'
+diff --git a/INSTALL b/INSTALL
+index 88d2c14bbd..03d68ceaab 100644
+--- a/INSTALL
++++ b/INSTALL
+@@ -1910,8 +1910,8 @@ through
+ 
+ If the name of C<cc> has the usual GNU C semantics for cross
+ compilers, that is, CPU-OS-gcc, the target architecture (C<targetarch>),
+-plus names of the C<ar>, C<nm>, and C<ranlib> will also be automatically
+-chosen to be CPU-OS-ar and so on.
++plus names of the C<ar>, C<nm>, C<strip>, and C<ranlib> will also be
++automatically chosen to be CPU-OS-ar and so on.
+ (The C<ld> requires more thought and will be chosen later by Configure
+ as appropriate).  This will also aid in guessing the proper
+ operating system name for the target, which has other repercussions, like
+diff --git a/NetWare/config.wc b/NetWare/config.wc
+index 83a4fb374d..bac069dc0d 100644
+--- a/NetWare/config.wc
++++ b/NetWare/config.wc
+@@ -950,6 +950,7 @@ randfunc='Perl_drand48'
+ random_r_proto='0'
+ randseedtype='U32'
+ ranlib='rem'
++strip='rem'
+ rd_nodata='-1'
+ readdir64_r_proto='0'
+ readdir_r_proto='0'
+diff --git a/hints/darwin.sh b/hints/darwin.sh
+index feb15f6b4f..c89eb403e0 100644
+--- a/hints/darwin.sh
++++ b/hints/darwin.sh
+@@ -487,6 +487,7 @@ i_dbm=undef;
+ # Configure doesn't detect ranlib on Tiger properly.
+ # NeilW says this should be acceptable on all darwin versions.
+ ranlib='ranlib'
++strip='strip'
+ 
+ # Catch MacPorts gcc/g++ extra libdir
+ case "$($cc -v 2>&1)" in
+diff --git a/install_lib.pl b/install_lib.pl
+index ac17bd81d8..c82f51c6f5 100644
+--- a/install_lib.pl
++++ b/install_lib.pl
+@@ -43,13 +43,13 @@ if ($Config{d_umask}) {
+     umask(022); # umasks like 077 aren't that useful for installations
+ }
+ 
+-$Is_VMS = $^O eq 'VMS';
+-$Is_W32 = $^O eq 'MSWin32';
+-$Is_OS2 = $^O eq 'os2';
+-$Is_Cygwin = $^O eq 'cygwin';
+-$Is_Darwin = $^O eq 'darwin';
++$Is_VMS = $Config{'osname'} eq 'VMS';
++$Is_W32 = $Config{'osname'} eq 'MSWin32';
++$Is_OS2 = $Config{'osname'} eq 'os2';
++$Is_Cygwin = $Config{'osname'} eq 'cygwin';
++$Is_Darwin = $Config{'osname'} eq 'darwin';
+ $Is_NetWare = $Config{osname} eq 'NetWare';
+-$Is_AmigaOS = $^O eq 'amigaos';
++$Is_AmigaOS = $Config{'osname'} eq 'amigaos';
+ 
+ sub unlink {
+     my(@names) = @_;
+diff --git a/installperl b/installperl
+index 3bf79d2d6f..94275f1b86 100755
+--- a/installperl
++++ b/installperl
+@@ -143,7 +143,7 @@ my %archpms = (
+     lib => 1,
+ );
+ 
+-if ($^O eq 'dos') {
++if ($Config{'osname'} eq 'dos') {
+     push(@scripts,'djgpp/fixpmain');
+     $archpms{config} = $archpms{filehand} = 1;
+ }
+@@ -299,7 +299,7 @@ if ($Is_VMS) {
+         chmod(0755, "$installbin/$ndbg$perl$exe_ext");
+     }
+ }
+-elsif ($^O ne 'dos') {
++elsif ($Config{'osname'} ne 'dos') {
+     if (!$Is_NetWare) {
+ 	safe_unlink("$installbin/$perl_verbase$ver$exe_ext");
+ 	copy("perl$exe_ext", "$installbin/$perl_verbase$ver$exe_ext");
+@@ -380,14 +380,14 @@ elsif ($Is_Cygwin) { # On Cygwin symlink it to CORE to make Makefile happy
+     @corefiles = <*.h libperl*.* perl*$Config{lib_ext}>;
+ 
+     # AIX needs perl.exp installed as well.
+-    push(@corefiles,'perl.exp') if $^O eq 'aix';
++    push(@corefiles,'perl.exp') if $Config{'osname'} eq 'aix';
+ }
+ 
+ 
+ foreach my $file (@corefiles) {
+     if (copy_if_diff($file,"$installarchlib/CORE/$file")) {
+ 	if ($file =~ /\.(\Q$so\E|\Q$dlext\E)$/) {
+-	    strip("-S", "$installarchlib/CORE/$file") if $^O eq 'darwin';
++	    strip("-S", "$installarchlib/CORE/$file") if $Is_Darwin;
+ 	    chmod($SO_MODE, "$installarchlib/CORE/$file");
+ 	} else {
+ 	    chmod($NON_SO_MODE, "$installarchlib/CORE/$file");
+@@ -715,7 +715,7 @@ sub installlib {
+ 	    # on dynamically-loaded libraries.
+             if (copy_if_diff($_, "$installlib/$name")) {
+                 strip("-S", "$installlib/$name")
+-                    if $^O eq 'darwin' and /\.(?:so|$dlext|a)$/;
++                    if $Is_Darwin and /\.(?:so|$dlext|a)$/;
+                 chmod(/\.(so|$dlext)$/ ? $SO_MODE : $NON_SO_MODE,
+                       "$installlib/$name");
+             }
+@@ -784,7 +784,7 @@ sub strip
+ 		print " " if (@opts);
+ 		print "$file\n";
+ 	    }
+-	    system("strip", @opts, $file);
++	    system($Config{'strip'}, @opts, $file);
+ 	} else {
+ 	    print "# file '$file' skipped\n" if $opts{verbose};
+ 	}
+diff --git a/plan9/config_sh.sample b/plan9/config_sh.sample
+index 55945cc38c..d2de70eec4 100644
+--- a/plan9/config_sh.sample
++++ b/plan9/config_sh.sample
+@@ -958,6 +958,7 @@ randfunc='rand'
+ random_r_proto='0'
+ randseedtype='unsigned'
+ ranlib=':'
++strip='strip'
+ rd_nodata='-1'
+ readdir64_r_proto='0'
+ readdir_r_proto='0'
+diff --git a/plan9/genconfig.pl b/plan9/genconfig.pl
+index ebd97db018..b20f05e700 100644
+--- a/plan9/genconfig.pl
++++ b/plan9/genconfig.pl
+@@ -76,6 +76,7 @@ libpth='$installprivlib'
+ ld='pcc'
+ lddlflags=''
+ ranlib=''
++strip=''
+ ar='ar'
+ nroff='/bin/nroff'
+ eunicefix=':'
+diff --git a/symbian/config.sh b/symbian/config.sh
+index a677551d83..e18071a1f5 100644
+--- a/symbian/config.sh
++++ b/symbian/config.sh
+@@ -817,6 +817,7 @@ randfunc='drand48'
+ random_r_proto='0'
+ randseedtype='int'
+ ranlib=':'
++strip='strip'
+ rd_nodata='-1'
+ readdir64_r_proto='0'
+ readdir_r_proto='0'
+diff --git a/win32/config.ce b/win32/config.ce
+index 2f2d70a567..349f73787b 100644
+--- a/win32/config.ce
++++ b/win32/config.ce
+@@ -940,6 +940,7 @@ randfunc='Perl_drand48'
+ random_r_proto='0'
+ randseedtype='U32'
+ ranlib='rem'
++strip='rem'
+ rd_nodata='-1'
+ readdir64_r_proto='0'
+ readdir_r_proto='0'
+diff --git a/win32/config.gc b/win32/config.gc
+index 46a6a7d70e..bc3a9ddd30 100644
+--- a/win32/config.gc
++++ b/win32/config.gc
+@@ -970,6 +970,7 @@ randfunc='Perl_drand48'
+ random_r_proto='0'
+ randseedtype='U32'
+ ranlib='rem'
++strip='rem'
+ rd_nodata='-1'
+ readdir64_r_proto='0'
+ readdir_r_proto='0'
+diff --git a/win32/config.vc b/win32/config.vc
+index a7cea270ce..5086b2e430 100644
+--- a/win32/config.vc
++++ b/win32/config.vc
+@@ -969,6 +969,7 @@ randfunc='Perl_drand48'
+ random_r_proto='0'
+ randseedtype='U32'
+ ranlib='rem'
++strip='rem'
+ rd_nodata='-1'
+ readdir64_r_proto='0'
+ readdir_r_proto='0'

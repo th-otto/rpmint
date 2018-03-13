@@ -1,0 +1,71 @@
+--- /dev/null	2018-03-07 17:50:42.996918236 +0100
++++ perl-5.26.1/cnf/hints/mint	2018-03-11 05:01:43.076105796 +0100
+@@ -0,0 +1,68 @@
++osname=mint
++cf_email=alanh@fairlite.co.uk
++cf_by=th-otto
++cf_time='undisclosed-time'
++myhostname=reproducible
++myuname=reproducible
++mydomain=.site
++
++i_db=define
++i_gdbm=define
++charsize=1
++shortsize=2
++intsize=4
++longsize=4
++longlongsize=8
++ptrsize=4
++ssizetype='long'
++sizesize=4
++fpossize=4
++lseeksize=4
++uidsize=4
++gidsize=4
++timesize=4
++doublesize=8
++
++# will be set depending on CPU
++#case $archname in
++#  *v4e) longdblsize=8 ;;
++#  *) longdblsize=12 ;;
++#esac
++
++# libraries to test
++libswanted='m crypt nm ndbm gdbm_compat gdbm dbm db dld'
++
++d_procselfexe='define'
++procselfexe='"/kern/self/exe"'
++
++dlsrc='dl_freemint.xs'
++dlext='o'
++# must also be given on command-line, else overriden by configure_tool.sh
++lddlflags='-r'
++ldflags='-static'
++# must also be given on command-line, else overriden by configure_tool.sh
++so='none'
++useshrplib='false'
++cppflags="-fno-strict-aliasing -D_GNU_SOURCE -DPERL_USE_SAFE_PUTENV"
++usevfork='true'
++timeincl='sys/time.h time.h '
++strings='string.h'
++d_Gconvert='gcvt((x),(n),(b))'
++d_longdbl='define'
++d_long_double_style_ieee='define'
++d_long_double_style_ieee_extended='define'
++alignbytes=2
++
++# libs
++libpth=""
++glibpth=""
++xlibpth=""
++
++#sbrk() returns -1 (failure) somewhere in lib/unicore/mktables at
++#around 14M, so we need to use system malloc() as our sbrk()
++malloc_cflags='ccflags="-DUSE_PERL_SBRK -DPERL_SBRK_VIA_MALLOC $ccflags"'
++usemymalloc='n'
++
++# to check:
++#libdb_needs_pthread='N'
++

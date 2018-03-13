@@ -940,6 +940,12 @@ foreach ($libpackages as $package)
 
 <li>2018/03/10 Package ca-certificates added</li>
 
+<li>2018/03/10 Package gdbm added</li>
+
+<li>2018/03/11 Package db added</li>
+
+<li>2018/03/13 Package perl added</li>
+
 </ul>
 
 <p></p>

@@ -1100,6 +1100,69 @@ SSL libraries like OpenSSL or GnuTLS in sync with the system&apos;s CA
 certificate store that is managed by p11-kit.
 '
 	),
+	'gdbm' => array(
+		'name' => 'gdbm',
+		'upstream' => 'https://www.gnu.org.ua/software/gdbm/',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.gz',
+		'version' => '1.12',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+GNU dbm is a library of database functions that use extensible
+hashing and work similar to the standard UNIX dbm. These routines are
+provided to a programmer needing to create and manipulate a hashed
+database.
+<br />
+The basic use of GDBM is to store key/data pairs in a data file. Each
+key must be unique and each key is paired with only one data item.
+<br />
+The library provides primitives for storing key/data pairs, searching
+and retrieving the data by its key and deleting a key along with its
+data. It also supports sequential iteration over all key/data pairs in
+a database.
+<br />
+For compatibility with programs using old UNIX dbm functions, the
+package also provides traditional dbm and ndbm interfaces.
+'
+	),
+	'db' => array(
+		'name' => 'db',
+		'upstream' => 'http://oracle.com/technetwork/products/berkeleydb/',
+		'source' => 'http://download.oracle.com/berkeley-db/db-%{version}.tar.gz',
+		'version' => '4.8.30',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+The Berkeley DB Database is a programmatic toolkit that provides
+database support for applications.
+'
+	),
+	'perl' => array(
+		'name' => 'perl',
+		'upstream' => 'http://www.perl.org/',
+		'source' => 'http://www.cpan.org/src/5.0/perl-%{version}.tar.xz',
+		'version' => '5.26.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'comment' => '
+perl - Practical Extraction and Report Language<br />
+<br />
+Perl is optimized for scanning arbitrary text files, extracting
+information from those text files, and printing reports based on that
+information.  It is also good for many system management tasks. Perl is
+intended to be practical (easy to use, efficient, and complete) rather
+than beautiful (tiny, elegant, and minimal).<br />
+<br />
+Some of the modules available on CPAN can be found in the "perl"
+series.
+'
+	),
 );
 
 ?>
