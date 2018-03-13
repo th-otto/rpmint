@@ -13,12 +13,7 @@
 
 <?php
 
-error_reporting(E_ALL & ~E_WARNING);
-ini_set("display_errors", 1);
-date_default_timezone_set('UTC');
-
-$download_dir = 'download/mint/';
-
+include('mintvars.php');
 include('functions.php');
 include('packages.php');
 
@@ -32,6 +27,10 @@ $gccver = 'gcc730';
 <div><p>
 (Some of the text on this page was copied/pasted from Vincent Rivi&#xe8re's website, 
 with his permission.)
+</p><br />
+
+<p>
+<a href="listtar.php?filename=pixman-0.32.4.tar.gz">list archive</a>
 </p><br />
 
 <p>
@@ -612,7 +611,7 @@ package of them for all host systems. They have all been built and packaged on l
 <code>tar -C &lt;your-install-dir&gt; --strip-components=1 -xf &lt;archive&gt;</code>.
 </p>
 
-<p>All of these libraries have been compiled with gcc 7.2, but they can be used with other versions, too.
+<p>All of these libraries have been compiled with gcc 7.x, but they can be used with other versions, too.
 Also, they all have been compiled also for the elf toolchain. Of these, most where compiled with -flto (link-time-optimization),
 a feature that is not available for a.out libraries. For some (notably mintlib) this is not yet possible.
 </p>

@@ -54,6 +54,21 @@ function gen_link($filename, $text)
 		$linkstats[$id] = $stat;
 	}
 	echo '>' . $text . '</a>';
+	if ($exists)
+	{
+		$ext_ok = 0;
+		
+		if (fnmatch('*.tar.gz', $filename))
+			$ext_ok = function_exists('gzopen') || $stat;
+		else if (fnmatch('*.tar.bz2', $filename))
+			$ext_ok = function_exists('bzopen') || $stat;
+		else if (fnmatch('*.tar.xz', $filename))
+			$ext_ok = function_exists('xzopen') || $stat;
+		if ($ext_ok)
+		{
+			echo '&nbsp;<a class="listtar" href="listtar.php?filename=' . $filename . '&local=' . ($stat != null) . '">&lt;file&nbsp;list&gt;</a>';
+		}
+	}
 	if (!$exists)
 	{
 		echo '<div class="error">missing</div>';
