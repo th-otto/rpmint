@@ -945,6 +945,8 @@ foreach ($libpackages as $package)
 
 <li>2018/03/13 Package perl added</li>
 
+<li>2018/03/13 Package autoconf added</li>
+
 </ul>
 
 <p></p>

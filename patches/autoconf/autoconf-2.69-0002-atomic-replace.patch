@@ -1,0 +1,49 @@
+diff -r -u autoconf-2.69.orig/bin/autom4te.in autoconf-2.69/bin/autom4te.in
+--- autoconf-2.69.orig/bin/autom4te.in	2012-04-25 04:37:26.000000000 +0200
++++ autoconf-2.69/bin/autom4te.in	2014-01-02 10:47:33.854000005 +0100
+@@ -544,13 +544,21 @@
+   # stdout is to be handled by hand :(.  Don't use fdopen as it means
+   # we will close STDOUT, which we already do in END.
+   my $out = new Autom4te::XFile;
+-  if ($output eq '-')
++  my $atomic_replace;
++  if ($output eq '-' || (-e $output && ! -f $output))
+     {
+       $out->open (">$output");
++      $atomic_replace = 0;
+     }
+   else
+     {
+-      $out->open($output, O_CREAT | O_WRONLY | O_TRUNC, oct ($mode));
++      $out->open("$output.tmp", O_CREAT | O_WRONLY | O_TRUNC, oct ($mode));
++      if ($out) {
++        $atomic_replace = 1;
++      } else {
++        $out->open($output, O_CREAT | O_WRONLY | O_TRUNC, oct ($mode));
++        $atomic_replace = 0;
++      }
+     }
+   fatal "cannot create $output: $!"
+     unless $out;
+@@ -589,6 +597,11 @@
+ 
+   $out->close();
+ 
++  if ($atomic_replace && !rename("$output.tmp", "$output")) {
++    move ("${output}.tmp", "$output")
++      or fatal "cannot rename ${output}.tmp as $output: $!";
++  }
++
+   # If no forbidden words, we're done.
+   return
+     if ! %prohibited;
+--- autoconf-2.69.orig/lib/emacs/autoconf.el	1969-12-31 19:00:00 -0500
++++ autoconf-2.69/lib/emacs/autoconf.el	2011-09-04 23:57:48 -0400
+@@ -0,0 +1,6 @@
++(autoload 'autoconf-mode "autoconf-mode" "Major mode for editing autoconf files." t)
++(setq auto-mode-alist (cons '("\\.ac\\'\\|configure\\.in\\'" . autoconf-mode) auto-mode-alist))
++
++(autoload 'autotest-mode "autotest-mode" "Major mode for editing autotest files." t)
++(setq auto-mode-alist (cons '("\\.at\\'" . autotest-mode) auto-mode-alist))
++
+

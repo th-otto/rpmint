@@ -1,0 +1,34 @@
+diff -r -u autoconf-2.69.orig/bin/autoreconf.in autoconf-2.69/bin/autoreconf.in
+--- autoconf-2.69.orig/bin/autoreconf.in	2012-04-25 00:00:28.000000000 +0200
++++ autoconf-2.69/bin/autoreconf.in	2014-01-02 10:47:33.854000005 +0100
+@@ -470,6 +470,8 @@
+ 	     'AC_CONFIG_AUX_DIR',
+ 	     'AC_CONFIG_HEADERS',
+ 	     'AC_CONFIG_SUBDIRS',
++	     'AC_LIBLTDL_CONVENIENCE',
++	     'AC_LIBLTDL_INSTALLABLE',
+ 	     'AC_INIT',
+ 	     'AC_PROG_LIBTOOL',
+ 	     'LT_INIT',
+@@ -488,6 +490,8 @@
+       $uses_libtool = 1             if $macro eq "AC_PROG_LIBTOOL"
+                                        || $macro eq "LT_INIT";
+       $uses_libltdl = 1             if $macro eq "LT_CONFIG_LTDL_DIR";
++      $uses_libltdl = 1             if $macro eq "AC_LIBLTDL_CONVENIENCE";
++      $uses_libltdl = 1             if $macro eq "AC_LIBLTDL_INSTALLABLE";
+       $uses_autoheader = 1          if $macro eq "AC_CONFIG_HEADERS";
+       $uses_automake = 1            if $macro eq "AM_INIT_AUTOMAKE";
+       push @subdir, split (' ', $args[0])
+
+diff -r -u autoconf-2.69.orig/lib/autom4te.in autoconf-2.69/lib/autom4te.in
+--- autoconf-2.69.orig/lib/autom4te.in	2012-01-21 14:46:39.000000000 +0100
++++ autoconf-2.69/lib/autom4te.in	2014-01-02 10:47:33.855000005 +0100
+@@ -91,6 +91,8 @@
+ args: --preselect AC_CONFIG_AUX_DIR
+ args: --preselect AC_CONFIG_HEADERS
+ args: --preselect AC_CONFIG_SUBDIRS
++args: --preselect AC_LIBLTDL_CONVENIENCE
++args: --preselect AC_LIBLTDL_INSTALLABLE
+ args: --preselect AC_INIT
+ args: --preselect AC_PROG_LIBTOOL
+ args: --preselect LT_INIT

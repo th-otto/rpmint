@@ -1,0 +1,26 @@
+diff -rupN autoconf-2.69.orig/bin/Makefile.am autoconf-2.69/bin/Makefile.am
+--- autoconf-2.69.orig/bin/Makefile.am	2014-02-28 09:31:39.572000094 +0100
++++ autoconf-2.69/bin/Makefile.am	2014-02-28 09:36:59.694000096 +0100
+@@ -36,9 +36,12 @@ RELEASE_YEAR = \
+ ## The scripts.  ##
+ ## ------------- ##
+ 
++TARGET_PERL = $(PERL)
++TARGET_M4 = $(M4)
++
+ edit = sed \
+ 	-e 's|@SHELL[@]|$(SHELL)|g' \
+-	-e 's|@PERL[@]|$(PERL)|g' \
++	-e 's|@PERL[@]|$(TARGET_PERL)|g' \
+ 	-e 's|@PERL_FLOCK[@]|$(PERL_FLOCK)|g' \
+ 	-e 's|@bindir[@]|$(bindir)|g' \
+ 	-e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
+@@ -46,7 +49,7 @@ edit = sed \
+ 	-e 's|@autoconf-name[@]|'`echo autoconf-$(VERSION) | sed '$(transform)'`'|g' \
+ 	-e 's|@autoheader-name[@]|'`echo autoheader-$(VERSION) | sed '$(transform)'`'|g' \
+ 	-e 's|@autom4te-name[@]|'`echo autom4te-$(VERSION) | sed '$(transform)'`'|g' \
+-	-e 's|@M4[@]|$(M4)|g' \
++	-e 's|@M4[@]|$(TARGET_M4)|g' \
+ 	-e 's|@M4_DEBUGFILE[@]|$(M4_DEBUGFILE)|g' \
+ 	-e 's|@M4_GNU[@]|$(M4_GNU)|g' \
+ 	-e 's|@AWK[@]|$(AWK)|g' \

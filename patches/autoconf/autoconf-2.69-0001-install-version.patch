@@ -1,0 +1,523 @@
+diff -rupN autoconf-2.69.orig/Makefile.in autoconf-2.69/Makefile.in
+--- autoconf-2.69.orig/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/Makefile.in	2014-02-12 03:37:51.956000071 +0100
+@@ -168,6 +168,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+diff -rupN autoconf-2.69.orig/bin/Makefile.am autoconf-2.69/bin/Makefile.am
+--- autoconf-2.69.orig/bin/Makefile.am	2014-02-12 03:12:14.073000070 +0100
++++ autoconf-2.69/bin/Makefile.am	2014-02-12 03:39:58.717000073 +0100
+@@ -17,14 +17,16 @@
+ 
+ include ../lib/freeze.mk
+ 
+-bin_SCRIPTS = autom4te \
++bin_SCRIPTS = autom4te-$(VERSION) \
++	      autoconf-$(VERSION) autoheader-$(VERSION) autoreconf-$(VERSION) ifnames-$(VERSION) autoscan-$(VERSION) autoupdate-$(VERSION)
++noinst_SCRIPTS = autom4te \
+ 	      autoconf autoheader autoreconf ifnames autoscan autoupdate
+ 
+ EXTRA_DIST = autoconf.as autoheader.in autoreconf.in autoupdate.in ifnames.in \
+ 	     autoscan.in autom4te.in
+ 
+ # Files that should be removed, but which Automake does not know.
+-MOSTLYCLEANFILES = $(bin_SCRIPTS) autoconf.in *.tmp
++MOSTLYCLEANFILES = $(bin_SCRIPTS) $(noinst_SCRIPTS) autoconf.in *.tmp
+ 
+ # Get the release year from ../ChangeLog.
+ RELEASE_YEAR = \
+@@ -41,9 +43,9 @@ edit = sed \
+ 	-e 's|@bindir[@]|$(bindir)|g' \
+ 	-e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
+ 	-e 's|@prefix[@]|$(prefix)|g' \
+-	-e 's|@autoconf-name[@]|'`echo autoconf | sed '$(transform)'`'|g' \
+-	-e 's|@autoheader-name[@]|'`echo autoheader | sed '$(transform)'`'|g' \
+-	-e 's|@autom4te-name[@]|'`echo autom4te | sed '$(transform)'`'|g' \
++	-e 's|@autoconf-name[@]|'`echo autoconf-$(VERSION) | sed '$(transform)'`'|g' \
++	-e 's|@autoheader-name[@]|'`echo autoheader-$(VERSION) | sed '$(transform)'`'|g' \
++	-e 's|@autom4te-name[@]|'`echo autom4te-$(VERSION) | sed '$(transform)'`'|g' \
+ 	-e 's|@M4[@]|$(M4)|g' \
+ 	-e 's|@M4_DEBUGFILE[@]|$(M4_DEBUGFILE)|g' \
+ 	-e 's|@M4_GNU[@]|$(M4_GNU)|g' \
+@@ -53,6 +55,7 @@ edit = sed \
+ 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
+ 	-e 's|@configure_input[@]|Generated from $@.in; do not edit by hand.|g'
+ 
++$(top_builddir)/bin/autom4te-$(VERSION): autom4te-$(VERSION)
+ $(top_builddir)/bin/autom4te: autom4te
+ 
+ # autoconf is written in M4sh.
+@@ -69,20 +72,42 @@ autoconf.in: $(srcdir)/autoconf.as $(m4s
+ $(bin_SCRIPTS): Makefile
+ 	rm -f $@ $@.tmp
+ 	srcdir=''; \
+-	  test -f ./$@.in || srcdir=$(srcdir)/; \
+-	  $(edit) $${srcdir}$@.in >$@.tmp
++	  in=$@; in=$${in%%-*}.in; \
++	  test -f ./$$in || srcdir=$(srcdir)/; \
++	  $(edit) $${srcdir}$$in >$@.tmp
+ 	chmod +x $@.tmp
+ 	chmod a-w $@.tmp
+ 	mv $@.tmp $@
+ 
+-autoconf: autoconf.in
+-autoheader: $(srcdir)/autoheader.in
+-autom4te: $(srcdir)/autom4te.in
+-autoreconf: $(srcdir)/autoreconf.in
+-autoscan: $(srcdir)/autoscan.in
+-autoupdate: $(srcdir)/autoupdate.in
+-ifnames: $(srcdir)/ifnames.in
+-
++autoconf-$(VERSION): autoconf.in
++autoheader-$(VERSION): $(srcdir)/autoheader.in
++autom4te-$(VERSION): $(srcdir)/autom4te.in
++autoreconf-$(VERSION): $(srcdir)/autoreconf.in
++autoscan-$(VERSION): $(srcdir)/autoscan.in
++autoupdate-$(VERSION): $(srcdir)/autoupdate.in
++ifnames-$(VERSION): $(srcdir)/ifnames.in
++
++autom4te: autom4te-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++autoconf: autoconf-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++autoheader: autoheader-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++autoreconf: autoreconf-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++autoscan: autoscan-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++autoupdate: autoupdate-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++ifnames: ifnames-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++
++
++install-exec-hook:
++	for i in $(bin_SCRIPTS); do \
++		x=$${i%%-*}; \
++		test -f $(DESTDIR)$(bindir)/$$x || (cd $(DESTDIR)$(bindir); $(LN_S) $$i $$x); \
++	done
+ 
+ ## --------------- ##
+ ## Building TAGS.  ##
+diff -rupN autoconf-2.69.orig/bin/Makefile.in autoconf-2.69/bin/Makefile.in
+--- autoconf-2.69.orig/bin/Makefile.in	2014-02-12 03:12:14.074000070 +0100
++++ autoconf-2.69/bin/Makefile.in	2014-02-12 03:37:51.481000070 +0100
+@@ -102,7 +102,7 @@ am__base_list = \
+   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+ am__installdirs = "$(DESTDIR)$(bindir)"
+-SCRIPTS = $(bin_SCRIPTS)
++SCRIPTS = $(bin_SCRIPTS) $(noinst_SCRIPTS)
+ SOURCES =
+ DIST_SOURCES =
+ ETAGS = etags
+@@ -132,6 +132,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+@@ -274,7 +275,10 @@ ETAGS_FOR_AUTOCONF = \
+   --regex='/\(A[CU]_DEFUN\|AU_ALIAS\)(\[\([^]]*\)\]/\2/' \
+   --regex='/AN_\(FUNCTION\|HEADER\|IDENTIFIER\|LIBRARY\|MAKEVAR\|PROGRAM\)(\[\([^]]*\)\]/\2/'
+ 
+-bin_SCRIPTS = autom4te \
++bin_SCRIPTS = autom4te-$(VERSION) \
++	      autoconf-$(VERSION) autoheader-$(VERSION) autoreconf-$(VERSION) ifnames-$(VERSION) autoscan-$(VERSION) autoupdate-$(VERSION)
++
++noinst_SCRIPTS = autom4te \
+ 	      autoconf autoheader autoreconf ifnames autoscan autoupdate
+ 
+ EXTRA_DIST = autoconf.as autoheader.in autoreconf.in autoupdate.in ifnames.in \
+@@ -282,7 +286,7 @@ EXTRA_DIST = autoconf.as autoheader.in a
+ 
+ 
+ # Files that should be removed, but which Automake does not know.
+-MOSTLYCLEANFILES = $(bin_SCRIPTS) autoconf.in *.tmp
++MOSTLYCLEANFILES = $(bin_SCRIPTS) $(noinst_SCRIPTS) autoconf.in *.tmp
+ 
+ # Get the release year from ../ChangeLog.
+ RELEASE_YEAR = \
+@@ -295,9 +299,9 @@ edit = sed \
+ 	-e 's|@bindir[@]|$(bindir)|g' \
+ 	-e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
+ 	-e 's|@prefix[@]|$(prefix)|g' \
+-	-e 's|@autoconf-name[@]|'`echo autoconf | sed '$(transform)'`'|g' \
+-	-e 's|@autoheader-name[@]|'`echo autoheader | sed '$(transform)'`'|g' \
+-	-e 's|@autom4te-name[@]|'`echo autom4te | sed '$(transform)'`'|g' \
++	-e 's|@autoconf-name[@]|'`echo autoconf-$(VERSION) | sed '$(transform)'`'|g' \
++	-e 's|@autoheader-name[@]|'`echo autoheader-$(VERSION) | sed '$(transform)'`'|g' \
++	-e 's|@autom4te-name[@]|'`echo autom4te-$(VERSION) | sed '$(transform)'`'|g' \
+ 	-e 's|@M4[@]|$(M4)|g' \
+ 	-e 's|@M4_DEBUGFILE[@]|$(M4_DEBUGFILE)|g' \
+ 	-e 's|@M4_GNU[@]|$(M4_GNU)|g' \
+@@ -546,7 +550,8 @@ install-dvi: install-dvi-am
+ install-dvi-am:
+ 
+ install-exec-am: install-binSCRIPTS
+-
++	@$(NORMAL_INSTALL)
++	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
+ install-html: install-html-am
+ 
+ install-html-am:
+@@ -585,16 +590,16 @@ ps-am:
+ 
+ uninstall-am: uninstall-binSCRIPTS
+ 
+-.MAKE: install-am install-strip
++.MAKE: install-am install-exec-am install-strip
+ 
+ .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+ 	ctags distclean distclean-generic distclean-tags distdir dvi \
+ 	dvi-am html html-am info info-am install install-am \
+ 	install-binSCRIPTS install-data install-data-am install-dvi \
+-	install-dvi-am install-exec install-exec-am install-html \
+-	install-html-am install-info install-info-am install-man \
+-	install-pdf install-pdf-am install-ps install-ps-am \
+-	install-strip installcheck installcheck-am \
++	install-dvi-am install-exec install-exec-am install-exec-hook \
++	install-html install-html-am install-info install-info-am \
++	install-man install-pdf install-pdf-am install-ps \
++	install-ps-am install-strip installcheck installcheck-am \
+ 	installcheck-binSCRIPTS installdirs maintainer-clean \
+ 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
+ 	pdf-am ps ps-am tags uninstall uninstall-am \
+@@ -631,6 +636,7 @@ check-forbidden-patterns:
+ 	  rm -f forbidden.log; \
+ 	fi
+ 
++$(top_builddir)/bin/autom4te-$(VERSION): autom4te-$(VERSION)
+ $(top_builddir)/bin/autom4te: autom4te
+ 
+ # autoconf is written in M4sh.
+@@ -643,19 +649,41 @@ autoconf.in: $(srcdir)/autoconf.as $(m4s
+ $(bin_SCRIPTS): Makefile
+ 	rm -f $@ $@.tmp
+ 	srcdir=''; \
+-	  test -f ./$@.in || srcdir=$(srcdir)/; \
+-	  $(edit) $${srcdir}$@.in >$@.tmp
++	  in=$@; in=$${in%%-*}.in; \
++	  test -f ./$$in || srcdir=$(srcdir)/; \
++	  $(edit) $${srcdir}$$in >$@.tmp
+ 	chmod +x $@.tmp
+ 	chmod a-w $@.tmp
+ 	mv $@.tmp $@
+ 
+-autoconf: autoconf.in
+-autoheader: $(srcdir)/autoheader.in
+-autom4te: $(srcdir)/autom4te.in
+-autoreconf: $(srcdir)/autoreconf.in
+-autoscan: $(srcdir)/autoscan.in
+-autoupdate: $(srcdir)/autoupdate.in
+-ifnames: $(srcdir)/ifnames.in
++autoconf-$(VERSION): autoconf.in
++autoheader-$(VERSION): $(srcdir)/autoheader.in
++autom4te-$(VERSION): $(srcdir)/autom4te.in
++autoreconf-$(VERSION): $(srcdir)/autoreconf.in
++autoscan-$(VERSION): $(srcdir)/autoscan.in
++autoupdate-$(VERSION): $(srcdir)/autoupdate.in
++ifnames-$(VERSION): $(srcdir)/ifnames.in
++
++autom4te: autom4te-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++autoconf: autoconf-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++autoheader: autoheader-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++autoreconf: autoreconf-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++autoscan: autoscan-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++autoupdate: autoupdate-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++ifnames: ifnames-$(VERSION)
++	rm -f $@; $(LN_S) $? $@
++
++install-exec-hook:
++	for i in $(bin_SCRIPTS); do \
++		x=$${i%%-*}; \
++		test -f $(DESTDIR)$(bindir)/$$x || (cd $(DESTDIR)$(bindir); $(LN_S) $$i $$x); \
++	done
+ 
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.
+diff -rupN autoconf-2.69.orig/configure autoconf-2.69/configure
+--- autoconf-2.69.orig/configure	2012-04-25 05:04:50.000000000 +0200
++++ autoconf-2.69/configure	2014-02-12 03:37:52.158000071 +0100
+@@ -589,6 +589,7 @@ ac_subst_vars='LTLIBOBJS
+ LIBOBJS
+ MAKE_CASE_SENSITIVE_FALSE
+ MAKE_CASE_SENSITIVE_TRUE
++LN_S
+ SED
+ EGREP
+ GREP
+@@ -1835,7 +1836,7 @@ case $as_dir/ in #((
+ 	      test -s conftest.dir/conftest.one &&
+ 	      test -s conftest.dir/conftest.two
+ 	    then
+-	      ac_cv_path_install="$as_dir/$ac_prog$ac_exec_ext -c"
++	      ac_cv_path_install="$as_dir/$ac_prog$ac_exec_ext -c -p"
+ 	      break 3
+ 	    fi
+ 	  fi
+@@ -3077,6 +3078,17 @@ $as_echo "$ac_cv_path_SED" >&6; }
+  SED="$ac_cv_path_SED"
+   rm -f conftest.sed
+ 
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
++$as_echo_n "checking whether ln -s works... " >&6; }
++LN_S=$as_ln_s
++if test "$LN_S" = "ln -s"; then
++  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
++$as_echo "yes" >&6; }
++else
++  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, using $LN_S" >&5
++$as_echo "no, using $LN_S" >&6; }
++fi
++
+ 
+ 
+ ## ----- ##
+diff -rupN autoconf-2.69.orig/configure.ac autoconf-2.69/configure.ac
+--- autoconf-2.69.orig/configure.ac	2012-04-25 04:38:50.000000000 +0200
++++ autoconf-2.69/configure.ac	2014-02-12 03:37:22.515000072 +0100
+@@ -193,6 +193,7 @@ AM_PATH_LISPDIR
+ AC_PROG_GREP
+ AC_PROG_EGREP
+ AC_PROG_SED
++AC_PROG_LN_S
+ 
+ 
+ ## ----- ##
+diff -rupN autoconf-2.69.orig/doc/Makefile.in autoconf-2.69/doc/Makefile.in
+--- autoconf-2.69.orig/doc/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/doc/Makefile.in	2014-02-12 03:37:51.620000070 +0100
+@@ -124,6 +124,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+diff -rupN autoconf-2.69.orig/lib/Autom4te/Makefile.in autoconf-2.69/lib/Autom4te/Makefile.in
+--- autoconf-2.69.orig/lib/Autom4te/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/lib/Autom4te/Makefile.in	2014-02-12 03:37:51.647000070 +0100
+@@ -113,6 +113,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+diff -rupN autoconf-2.69.orig/lib/Makefile.am autoconf-2.69/lib/Makefile.am
+--- autoconf-2.69.orig/lib/Makefile.am	2014-02-12 03:12:14.074000070 +0100
++++ autoconf-2.69/lib/Makefile.am	2014-02-12 03:34:44.341000072 +0100
+@@ -25,9 +25,9 @@ edit = sed \
+ 	-e 's|@bindir[@]|$(bindir)|g' \
+ 	-e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
+ 	-e 's|@prefix[@]|$(prefix)|g' \
+-	-e 's|@autoconf-name[@]|'`echo autoconf | sed '$(transform)'`'|g' \
+-	-e 's|@autoheader-name[@]|'`echo autoheader | sed '$(transform)'`'|g' \
+-	-e 's|@autom4te-name[@]|'`echo autom4te | sed '$(transform)'`'|g' \
++	-e 's|@autoconf-name[@]|'`echo autoconf-$(VERSION) | sed '$(transform)'`'|g' \
++	-e 's|@autoheader-name[@]|'`echo autoheader-$(VERSION) | sed '$(transform)'`'|g' \
++	-e 's|@autom4te-name[@]|'`echo autom4te-$(VERSION) | sed '$(transform)'`'|g' \
+ 	-e 's|@M4[@]|$(M4)|g' \
+ 	-e 's|@AWK[@]|$(AWK)|g' \
+ 	-e 's|@VERSION[@]|$(VERSION)|g' \
+diff -rupN autoconf-2.69.orig/lib/Makefile.in autoconf-2.69/lib/Makefile.in
+--- autoconf-2.69.orig/lib/Makefile.in	2014-02-12 03:12:14.075000070 +0100
++++ autoconf-2.69/lib/Makefile.in	2014-02-12 03:37:51.675000070 +0100
+@@ -152,6 +152,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+@@ -234,9 +235,9 @@ edit = sed \
+ 	-e 's|@bindir[@]|$(bindir)|g' \
+ 	-e 's|@pkgdatadir[@]|$(pkgdatadir)|g' \
+ 	-e 's|@prefix[@]|$(prefix)|g' \
+-	-e 's|@autoconf-name[@]|'`echo autoconf | sed '$(transform)'`'|g' \
+-	-e 's|@autoheader-name[@]|'`echo autoheader | sed '$(transform)'`'|g' \
+-	-e 's|@autom4te-name[@]|'`echo autom4te | sed '$(transform)'`'|g' \
++	-e 's|@autoconf-name[@]|'`echo autoconf-$(VERSION) | sed '$(transform)'`'|g' \
++	-e 's|@autoheader-name[@]|'`echo autoheader-$(VERSION) | sed '$(transform)'`'|g' \
++	-e 's|@autom4te-name[@]|'`echo autom4te-$(VERSION) | sed '$(transform)'`'|g' \
+ 	-e 's|@M4[@]|$(M4)|g' \
+ 	-e 's|@AWK[@]|$(AWK)|g' \
+ 	-e 's|@VERSION[@]|$(VERSION)|g' \
+diff -rupN autoconf-2.69.orig/lib/autoconf/Makefile.in autoconf-2.69/lib/autoconf/Makefile.in
+--- autoconf-2.69.orig/lib/autoconf/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/lib/autoconf/Makefile.in	2014-02-12 03:37:51.706000070 +0100
+@@ -134,6 +134,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+diff -rupN autoconf-2.69.orig/lib/autoscan/Makefile.in autoconf-2.69/lib/autoscan/Makefile.in
+--- autoconf-2.69.orig/lib/autoscan/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/lib/autoscan/Makefile.in	2014-02-12 03:37:51.736000070 +0100
+@@ -130,6 +130,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+diff -rupN autoconf-2.69.orig/lib/autotest/Makefile.in autoconf-2.69/lib/autotest/Makefile.in
+--- autoconf-2.69.orig/lib/autotest/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/lib/autotest/Makefile.in	2014-02-12 03:37:51.772000070 +0100
+@@ -133,6 +133,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+diff -rupN autoconf-2.69.orig/lib/emacs/Makefile.in autoconf-2.69/lib/emacs/Makefile.in
+--- autoconf-2.69.orig/lib/emacs/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/lib/emacs/Makefile.in	2014-02-12 03:37:51.828000071 +0100
+@@ -103,6 +103,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+diff -rupN autoconf-2.69.orig/lib/m4sugar/Makefile.in autoconf-2.69/lib/m4sugar/Makefile.in
+--- autoconf-2.69.orig/lib/m4sugar/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/lib/m4sugar/Makefile.in	2014-02-12 03:37:51.862000071 +0100
+@@ -133,6 +133,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+diff -rupN autoconf-2.69.orig/man/Makefile.in autoconf-2.69/man/Makefile.in
+--- autoconf-2.69.orig/man/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/man/Makefile.in	2014-02-12 03:37:51.890000071 +0100
+@@ -114,6 +114,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+diff -rupN autoconf-2.69.orig/tests/Makefile.am autoconf-2.69/tests/Makefile.am
+--- autoconf-2.69.orig/tests/Makefile.am	2014-02-12 03:12:14.075000070 +0100
++++ autoconf-2.69/tests/Makefile.am	2014-02-12 03:39:58.717000073 +0100
+@@ -55,24 +55,27 @@ package.m4: Makefile
+ ## ---------- ##
+ 
+ wrappers = autoconf autoheader autom4te autoreconf autoscan autoupdate ifnames
+-CLEANFILES = wrapper.in $(wrappers) package.m4
++wrappers_ver = autoconf-$(VERSION) autoheader-$(VERSION) autom4te-$(VERSION) autoreconf-$(VERSION) autoscan-$(VERSION) autoupdate-$(VERSION) ifnames-$(VERSION)
++CLEANFILES = wrapper.in $(wrappers) $(wrappers_ver) package.m4
+ 
+ wrapper.in: $(srcdir)/wrapper.as $(m4sh_m4f_dependencies)
+ 	$(MY_AUTOM4TE) --language=M4sh $(srcdir)/wrapper.as -o $@
+ 
+ edit = sed \
++	-e 's|@VERSION[@]|$(VERSION)|g' \
+ 	-e 's|@wrap_program[@]|$@|g' \
+ 	-e 's|@abs_top_srcdir[@]|@abs_top_srcdir@|g' \
+ 	-e 's|@abs_top_builddir[@]|@abs_top_builddir@|g' \
+ 	-e "s|@configure_input[@]|Generated from $$input.|g"
+ 
+ $(wrappers): wrapper.in
+-	rm -f $@ $@.tmp
++	rm -f $@ $@-$(VERSION) $@.tmp
+ 	input=wrapper.in; \
+-	$(edit) wrapper.in >$@.tmp
+-	chmod +x $@.tmp
+-	chmod a-w $@.tmp
+-	mv -f $@.tmp $@
++	$(edit) wrapper.in >$@.tmp; \
++	chmod +x $@.tmp && \
++	chmod a-w $@.tmp && \
++	mv -f $@.tmp $@-$(VERSION) && \
++	$(LN_S) $@-$(VERSION) $@
+ 
+ 
+ 
+diff -rupN autoconf-2.69.orig/tests/Makefile.in autoconf-2.69/tests/Makefile.in
+--- autoconf-2.69.orig/tests/Makefile.in	2014-02-12 03:12:14.075000070 +0100
++++ autoconf-2.69/tests/Makefile.in	2014-02-12 03:37:51.923000071 +0100
+@@ -106,6 +106,7 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LIBOBJS = @LIBOBJS@
+ LIBS = @LIBS@
++LN_S = @LN_S@
+ LTLIBOBJS = @LTLIBOBJS@
+ M4 = @M4@
+ M4_DEBUGFILE = @M4_DEBUGFILE@
+@@ -262,10 +263,13 @@ ETAGS_FOR_AUTOCONF = \
+   --regex='/AN_\(FUNCTION\|HEADER\|IDENTIFIER\|LIBRARY\|MAKEVAR\|PROGRAM\)(\[\([^]]*\)\]/\2/'
+ 
+ wrappers = autoconf autoheader autom4te autoreconf autoscan autoupdate ifnames
++wrappers_ver = autoconf-$(VERSION) autoheader-$(VERSION) autom4te-$(VERSION) autoreconf-$(VERSION) autoscan-$(VERSION) autoupdate-$(VERSION) ifnames-$(VERSION)
+ 
+ # The hairy heredoc is more robust than using echo.
+-CLEANFILES = wrapper.in $(wrappers) package.m4 mktests.tmp expr
++CLEANFILES = wrapper.in $(wrappers) $(wrappers_ver) package.m4 \
++	mktests.tmp expr
+ edit = sed \
++	-e 's|@VERSION[@]|$(VERSION)|g' \
+ 	-e 's|@wrap_program[@]|$@|g' \
+ 	-e 's|@abs_top_srcdir[@]|@abs_top_srcdir@|g' \
+ 	-e 's|@abs_top_builddir[@]|@abs_top_builddir@|g' \
+@@ -569,12 +573,13 @@ wrapper.in: $(srcdir)/wrapper.as $(m4sh_
+ 	$(MY_AUTOM4TE) --language=M4sh $(srcdir)/wrapper.as -o $@
+ 
+ $(wrappers): wrapper.in
+-	rm -f $@ $@.tmp
++	rm -f $@ $@-$(VERSION) $@.tmp
+ 	input=wrapper.in; \
+-	$(edit) wrapper.in >$@.tmp
+-	chmod +x $@.tmp
+-	chmod a-w $@.tmp
+-	mv -f $@.tmp $@
++	$(edit) wrapper.in >$@.tmp; \
++	chmod +x $@.tmp && \
++	chmod a-w $@.tmp && \
++	mv -f $@.tmp $@-$(VERSION) && \
++	$(LN_S) $@-$(VERSION) $@
+ $(TESTSUITE): package.m4 \
+ 	      local.at \
+ 	      $(TESTSUITE_AT) \
+diff -rupN autoconf-2.69.orig/tests/wrapper.as autoconf-2.69/tests/wrapper.as
+--- autoconf-2.69.orig/tests/wrapper.as	2014-02-12 03:12:14.075000070 +0100
++++ autoconf-2.69/tests/wrapper.as	2014-02-12 03:34:44.342000072 +0100
+@@ -27,7 +27,7 @@ autom4te_perllibdir='@abs_top_srcdir@/li
+ export AUTOCONF AUTOHEADER AUTOM4TE AUTOM4TE_CFG autom4te_perllibdir
+ 
+ case '@wrap_program@' in
+-  ifnames)
++  ifnames*)
+      # Does not have lib files.
+      exec '@abs_top_builddir@/bin/@wrap_program@' ${1+"$@"}
+      ;;

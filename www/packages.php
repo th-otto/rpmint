@@ -1163,6 +1163,30 @@ Some of the modules available on CPAN can be found in the "perl"
 series.
 '
 	),
+	'autoconf' => array(
+		'name' => 'autoconf',
+		'upstream' => 'http://www.gnu.org/software/autoconf',
+		'source' => 'http://ftp.gnu.org/gnu/autoconf/autoconf-%{version}.tar.gz',
+		'version' => '2.69',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 0,
+		'noarch' => 1,
+		'comment' => '
+GNU Autoconf is a tool for configuring source code and makefiles. Using
+autoconf, programmers can create portable and configurable packages,
+because the person building the package is allowed to specify various
+configuration options.<br />
+<br />
+You should install autoconf if you are developing software and would
+like to create shell scripts to configure your source code packages.<br />
+<br />
+Note that the autoconf package is not required for the end user who may
+be configuring software with an autoconf-generated script; autoconf is
+only required for the generation of the scripts, not their use.
+'
+	),
 );
 
 ?>

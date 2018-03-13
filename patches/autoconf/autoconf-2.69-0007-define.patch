@@ -1,0 +1,114 @@
+diff -r -u autoconf-2.69.orig/lib/autoconf/functions.m4 autoconf-2.69/lib/autoconf/functions.m4
+--- autoconf-2.69.orig/lib/autoconf/functions.m4	2012-01-21 14:46:39.000000000 +0100
++++ autoconf-2.69/lib/autoconf/functions.m4	2014-01-02 11:08:37.749000017 +0100
+@@ -73,7 +73,7 @@
+ # Prepare the autoheader snippet for FUNCTION.
+ m4_define([_AH_CHECK_FUNC],
+ [AH_TEMPLATE(AS_TR_CPP([HAVE_$1]),
+-  [Define to 1 if you have the `$1' function.])])
++  [Define to 1 if you have the '$1' function.])])
+ 
+ 
+ # AC_CHECK_FUNCS(FUNCTION..., [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
+@@ -405,7 +405,7 @@
+ 
+ if test $ac_cv_func_alloca_works = yes; then
+   AC_DEFINE(HAVE_ALLOCA, 1,
+-	    [Define to 1 if you have `alloca', as a function or macro.])
++	    [Define to 1 if you have 'alloca', as a function or macro.])
+ else
+   _AC_LIBOBJ_ALLOCA
+ fi
+@@ -817,7 +817,7 @@
+ AC_SEARCH_LIBS(getmntent, [sun seq gen],
+ 	       [ac_cv_func_getmntent=yes
+ 		AC_DEFINE([HAVE_GETMNTENT], 1,
+-			  [Define to 1 if you have the `getmntent' function.])],
++			  [Define to 1 if you have the 'getmntent' function.])],
+ 	       [ac_cv_func_getmntent=no])
+ ])
+ 
+@@ -1343,7 +1343,7 @@
+ 	       [ac_cv_func_mmap_fixed_mapped=no])])
+ if test $ac_cv_func_mmap_fixed_mapped = yes; then
+   AC_DEFINE([HAVE_MMAP], [1],
+-	    [Define to 1 if you have a working `mmap' system call.])
++	    [Define to 1 if you have a working 'mmap' system call.])
+ fi
+ rm -f conftest.mmap conftest.txt
+ ])# AC_FUNC_MMAP
+@@ -1733,7 +1733,7 @@
+ 	       ac_cv_func_strcoll_works=no)])
+ if test $ac_cv_func_strcoll_works = yes; then
+   AC_DEFINE(HAVE_STRCOLL, 1,
+-	    [Define to 1 if you have the `strcoll' function and it is properly
++	    [Define to 1 if you have the 'strcoll' function and it is properly
+ 	     defined.])
+ fi
+ ])# AC_FUNC_STRCOLL
+@@ -2019,7 +2019,7 @@
+ 	       [ac_cv_func_wait3_rusage=no])])
+ if test $ac_cv_func_wait3_rusage = yes; then
+   AC_DEFINE(HAVE_WAIT3, 1,
+-	    [Define to 1 if you have the `wait3' system call.
++	    [Define to 1 if you have the 'wait3' system call.
+ 	     Deprecated, you should no longer depend upon `wait3'.])
+ fi
+ ])# AC_FUNC_WAIT3
+diff -r -u autoconf-2.69.orig/lib/autoconf/general.m4 autoconf-2.69/lib/autoconf/general.m4
+--- autoconf-2.69.orig/lib/autoconf/general.m4	2012-04-25 04:37:26.000000000 +0200
++++ autoconf-2.69/lib/autoconf/general.m4	2014-01-02 11:08:37.750000013 +0100
+@@ -2797,7 +2797,7 @@
+ # to AC_CHECK_FILE based on FILE.
+ m4_define([_AC_CHECK_FILES],
+ [[$1], [AC_DEFINE_UNQUOTED(AS_TR_CPP([HAVE_$1]), [1],
+-  [Define to 1 if you have the file `$1'.])]])
++  [Define to 1 if you have the file '$1'.])]])
+ 
+ 
+ # AC_CHECK_FILES(FILE..., [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
+@@ -2866,7 +2866,7 @@
+ [AC_CHECK_DECL([$1], [ac_have_decl=1], [ac_have_decl=0], [$4])]dnl
+ [AC_DEFINE_UNQUOTED(AS_TR_CPP(m4_bpatsubst(HAVE_DECL_[$1],[ *(.*])),
+   [$ac_have_decl],
+-  [Define to 1 if you have the declaration of `$1',
++  [Define to 1 if you have the declaration of '$1',
+    and to 0 if you don't.])]dnl
+ [m4_ifvaln([$2$3], [AS_IF([test $ac_have_decl = 1], [$2], [$3])])])
+ 
+diff -r -u autoconf-2.69.orig/lib/autoconf/headers.m4 autoconf-2.69/lib/autoconf/headers.m4
+--- autoconf-2.69.orig/lib/autoconf/headers.m4	2012-04-25 04:37:26.000000000 +0200
++++ autoconf-2.69/lib/autoconf/headers.m4	2014-01-02 11:08:37.750000013 +0100
+@@ -477,7 +477,7 @@
+ # Like _AH_CHECK_HEADER, but tuned to a dirent provider.
+ m4_define([_AH_CHECK_HEADER_DIRENT],
+ [AH_TEMPLATE(AS_TR_CPP([HAVE_$1]),
+-  [Define to 1 if you have the <$1> header file, and it defines `DIR'.])])
++  [Define to 1 if you have the <$1> header file, and it defines 'DIR'.])])
+ 
+ 
+ # AC_HEADER_DIRENT
+diff -r -u autoconf-2.69.orig/lib/autoconf/libs.m4 autoconf-2.69/lib/autoconf/libs.m4
+--- autoconf-2.69.orig/lib/autoconf/libs.m4	2012-01-21 14:46:39.000000000 +0100
++++ autoconf-2.69/lib/autoconf/libs.m4	2014-01-02 11:08:37.750000013 +0100
+@@ -121,7 +121,7 @@
+ # ---------------------
+ m4_define([AH_CHECK_LIB],
+ [AH_TEMPLATE(AS_TR_CPP([HAVE_LIB$1]),
+-	     [Define to 1 if you have the `$1' library (-l$1).])])
++	     [Define to 1 if you have the '$1' library (-l$1).])])
+ 
+ 
+ # AC_HAVE_LIBRARY(LIBRARY,
+diff -r -u autoconf-2.69.orig/lib/autoconf/programs.m4 autoconf-2.69/lib/autoconf/programs.m4
+--- autoconf-2.69.orig/lib/autoconf/programs.m4	2012-01-21 14:46:39.000000000 +0100
++++ autoconf-2.69/lib/autoconf/programs.m4	2014-01-30 15:46:39.638000208 +0100
+@@ -573,7 +573,7 @@
+ 	      test -s conftest.dir/conftest.one &&
+ 	      test -s conftest.dir/conftest.two
+ 	    then
+-	      ac_cv_path_install="$as_dir/$ac_prog$ac_exec_ext -c"
++	      ac_cv_path_install="$as_dir/$ac_prog$ac_exec_ext -c -p"
+ 	      break 3
+ 	    fi
+ 	  fi
