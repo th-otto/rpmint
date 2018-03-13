@@ -38,7 +38,7 @@ function modestring($typeflag, $mode)
 	switch ($typeflag)
 	{
 		case '0': $str = '-'; break; /* regular file */
-		case "\0": $str = '-'; break; /* regular file */
+		case 0:   $str = '-'; break; /* regular file */
 		case 'S': $str = '-'; break; /* sparse file */
 		case '1': $str = 'h'; break; /* hard link */
 		case '2': $str = 'l'; break; /* symlink */

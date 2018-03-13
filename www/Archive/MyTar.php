@@ -795,7 +795,10 @@ class Archive_Tar extends PEAR
      */
     public function _openRead()
     {
-        if (strtolower(substr($this->_tarname, 0, 7)) == 'http://') {
+        if (0 && (strtolower(substr($this->_tarname, 0, 7)) == 'http://' ||
+            strtolower(substr($this->_tarname, 0, 8)) == 'https://' ||
+            strtolower(substr($this->_tarname, 0, 6)) == 'ftp://')
+        ) {
 
             // ----- Look if a local copy need to be done
             if ($this->_temp_tarname == '') {
