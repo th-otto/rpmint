@@ -67,6 +67,8 @@ for pkg in gemlib \
 	autoconf \
 	autoconf-archive \
 	automake \
+	libbeecrypt6 \
+	lua53 \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

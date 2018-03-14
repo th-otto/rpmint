@@ -145,10 +145,11 @@ case "${TARGET}" in
 		;;
 esac
 
-ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
-strip=`which "${TARGET}-strip"`
 gcc=`which "${TARGET}-gcc"`
 cxx=`which "${TARGET}-g++"`
+ar="${TARGET}-ar"
+ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
+strip=`which "${TARGET}-strip"`
 MAKE=${MAKE:-make}
 
 if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$gcc" -o ! -x "$strip"; then

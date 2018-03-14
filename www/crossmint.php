@@ -30,10 +30,6 @@ with his permission.)
 </p><br />
 
 <p>
-<a href="listtar.php?filename=pixman-0.32.4.tar.gz">list archive</a>
-</p><br />
-
-<p>
 You will find here <code>gcc</code>, <code>g++</code>, <code>as</code>, <code>ld</code>,
 and other tools configured to produce executables for the Atari ST.
 It means that you can use all the latest C++ features, such as templates,
@@ -952,6 +948,8 @@ foreach ($libpackages as $package)
 <li>2018/03/14 Package automake added</li>
 
 <li>2018/03/14 Package beecrypt6 added</li>
+
+<li>2018/03/14 Package lua added</li>
 
 </ul>
 

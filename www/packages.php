@@ -1247,6 +1247,28 @@ block ciphers, hash functions, message authentication codes,
 multiprecision integer routines, and public key primitives.
 '
 	),
+	'lua53' => array(
+		'name' => 'lua53',
+		'upstream' => 'http://www.lua.org',
+		'source' => 'http://www.lua.org/ftp/lua-%{version}.tar.gz',
+		'version' => '5.3.4',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+Lua is a programming language originally designed for extending
+applications, but is also frequently used as a general-purpose,
+stand-alone language.<br />
+<br />
+Lua combines procedural syntax (similar to Pascal) with
+data description constructs based on associative arrays and extensible
+semantics. Lua is dynamically typed, interpreted from byte codes, and
+has automatic memory management, making it suitable for configuration,
+scripting, and rapid prototyping. Lua is implemented as a small library
+of C functions, written in ANSI C.
+'
+	),
 );
 
 ?>
