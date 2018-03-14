@@ -1,0 +1,38 @@
+--- a/scripts/Makefile.am.orig	2017-12-01 15:44:10.626118239 +0000
++++ b/scripts/Makefile.am	2017-12-01 15:44:14.182107984 +0000
+@@ -24,6 +24,7 @@ EXTRA_DIST = \
+ 	ocaml-find-requires.sh ocaml-find-provides.sh \
+ 	pkgconfigdeps.sh libtooldeps.sh metainfo.prov \
+ 	fontconfig.prov desktop-file.prov script.req \
++	sysvinitdeps.sh \
+ 	macros.perl macros.php macros.python
+ 
+ rpmconfig_SCRIPTS = \
+@@ -43,6 +44,7 @@ rpmconfig_SCRIPTS = \
+ 	pkgconfigdeps.sh libtooldeps.sh \
+ 	ocaml-find-requires.sh ocaml-find-provides.sh \
+ 	fontconfig.prov desktop-file.prov script.req \
++	sysvinitdeps.sh \
+ 	rpmdb_loadcvt rpm2cpio.sh tgpg 
+ 
+ rpmconfig_DATA = \
+--- a/scripts/sysvinitdeps.sh.orig	2017-12-01 15:44:14.183107975 +0000
++++ b/scripts/sysvinitdeps.sh	2017-12-01 15:44:14.183107975 +0000
+@@ -0,0 +1,17 @@
++#!/bin/sh
++
++[ "$1" = '-P' -o "$1" = '--provides' ] || {
++    cat > /dev/null
++    exit 0
++}
++
++while read file; do
++	case $file in
++          */etc/init.d/*)
++		provs=`grep '^# *Provides:' $file | sed 's,^.*:,,'`
++		for p in $provs; do
++			echo "sysvinit($p)"
++		done
++	  ;;
++        esac
++done

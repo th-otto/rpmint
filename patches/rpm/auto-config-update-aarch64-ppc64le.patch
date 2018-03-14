@@ -1,0 +1,50 @@
+--- a/build/parseBuildInstallClean.c.orig	2017-09-06 15:30:16.718576546 +0200
++++ b/build/parseBuildInstallClean.c	2018-03-14 18:02:31.573078809 +0100
+@@ -8,6 +8,16 @@
+ #include "build/rpmbuild_internal.h"
+ #include "debug.h"
+ 
++#define ARGMATCH(s,token,match) \
++do { \
++    const char *os = s; \
++    char *exp = rpmExpand(token, NULL); \
++    while (*s && !risblank(*s)) s++; \
++    while (*s && risblank(*s)) s++; \
++    match = matchTok(exp, s); \
++    free(exp); \
++} while (0)
++
+ 
+ int parseBuildInstallClean(rpmSpec spec, int parsePart)
+ {
+@@ -46,7 +56,29 @@
+     } else if (rc < 0) {
+ 	goto exit;
+     }
+-    
++
++    if (parsePart == PART_BUILD) {
++    	int match_aarch64, match_ppc64le, match_riscv64;
++    	ARGMATCH("%{_target_cpu}", "aarch64", match_aarch64);
++    	ARGMATCH("%{_target_cpu}", "ppc64le", match_ppc64le);
++    	ARGMATCH("%{_target_cpu}", "riscv64", match_riscv64);
++    	if (match_aarch64 || match_ppc64le || match_riscv64) {
++        char* buf = strdup(
++            "ref=/usr/lib/rpm\n"
++            "for s in guess sub; do\n"
++            "    for c in $(find -maxdepth 8 -name \"config.$s\"); do\n"
++            "         grep -q config-patches@ $c || continue\n"
++            "         grep -q aarch64 $c || install -m 755 $ref/config.$s $c\n"
++            "         grep -q ppc64le $c || install -m 755 $ref/config.$s $c\n"
++            "         grep -q 'riscv64[-:]' $c || install -m 755 $ref/config.$s $c\n"
++            "     done\n"
++            "done\n"
++        );
++        appendLineStringBuf(*sbp, buf);
++        free(buf);
++        }
++    }
++
+     while (! (nextPart = isPart(spec->line))) {
+ 	appendStringBuf(*sbp, spec->line);
+ 	if ((rc = readLine(spec, STRIP_NOTHING)) > 0) {

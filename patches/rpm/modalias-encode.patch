@@ -1,0 +1,35 @@
+Module aliases (modinfo -F alias <module>) may contain special characters
+that rpm does not allow in dependencies, such as commas. Encode those as
+%XX to avoid generating broken dependencies.
+
+Signed-off-by: Andreas Gruenbacher <agruen@suse.de>
+
+--- a/scripts/find-supplements.ksyms.orig
++++ b/scripts/find-supplements.ksyms
+@@ -35,10 +35,26 @@ combine_modaliases() {
+     print_modaliases "$class" "$variants" "$pos"
+ }
+ 
++# Encode all characters other than [*:a-zA-Z0-9] in stdin as %XX.
++# (This includes the % character itself, which becomes %25.)
++hexenc() {
++    local line hex
++
++    while read line; do
++            set -- "" "$line"
++            while [[ "$2" =~ ([*:a-zA-Z0-9]*)([^*:a-zA-Z0-9])(.*) ]]; do
++                hex=$(echo -n "${BASH_REMATCH[2]}" | hexdump -e '"%X"')
++                set -- "$1${BASH_REMATCH[1]}%$hex" "${BASH_REMATCH[3]}"
++            done
++            echo "$1$2"
++    done
++}
++
+ for module in $(grep -E '/lib/modules/.+\.ko$' | grep -v '/lib/modules/[^/]*/kernel/'); do
+     vermagic=$(/sbin/modinfo -F vermagic "$module")
+     krel=${vermagic%% *}
+     /sbin/modinfo -F alias "$module" \
++    | hexenc \
+     | sed -nre "s,(.+:.+),modalias(kernel-${krel##*-}:\\1),p"
+ done \
+ | sort -u \

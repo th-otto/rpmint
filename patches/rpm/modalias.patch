@@ -1,0 +1,76 @@
+--- a/macros.in.orig
++++ b/macros.in
+@@ -595,7 +595,7 @@ package or when debugging this package.\
+ %__find_requires	%{_rpmconfigdir}/find-requires %name
+ #%__find_conflicts	???
+ #%__find_obsoletes	???
+-#%__find_supplements	???
++%__find_supplements	%{_rpmconfigdir}/find-supplements %name
+ #%__find_enhances	???
+ 
+ # 
+--- /dev/null
++++ b/scripts/find-supplements
+@@ -0,0 +1,14 @@
++#!/bin/bash
++
++# This script reads filenames from STDIN and outputs any relevant provides
++# information that needs to be included in the package.
++IFS=$'\n'
++filelist=($(cat))
++
++#
++# --- Kernel module hardware identifiers
++# (e.g., modalias(pci:v0000109Ed00000878sv00000070sd0000FF01bc*sc*i*)
++[ -x /usr/lib/rpm/find-supplements.ksyms ] &&
++    printf "%s\n" "${filelist[@]}" | /usr/lib/rpm/find-supplements.ksyms "$@"
++
++exit 0
+--- /dev/null
++++ b/scripts/find-supplements.ksyms
+@@ -0,0 +1,45 @@
++#!/bin/bash
++
++IFS=$'\n'
++
++print_modaliases() {
++    declare class=$1 variants=$2 pos=$3
++    if [ -n "$variants" ]; then
++	echo "${class:0:pos}[$variants]${class:pos+1}"
++    else
++	[ -z "$class" ] || echo "$class"
++    fi
++}
++
++combine_modaliases() {
++    declare tag class variants pos n
++    read class
++    while read tag; do
++	for ((n=0; n<${#class}; n++)); do
++	    if [ "*" != "${class:n:1}" -a \
++		 "${class:0:n}" = "${tag:0:n}" -a \
++		 "${class:n+1}" = "${tag:n+1}" ] &&
++	       ( [ -z "$pos" ] || [ $n = $pos ] ); then
++		variants="${variants:-${class:n:1}}${tag:n:1}"
++		pos=$n
++		break
++	    fi
++	done
++	if [ $n -eq ${#class} ]; then
++	    print_modaliases "$class" "$variants" "$pos"
++	    variants=
++	    pos=
++	    class=$tag
++	fi
++    done
++    print_modaliases "$class" "$variants" "$pos"
++}
++
++for module in $(grep -E '/lib/modules/.+\.ko$' | grep -v '/lib/modules/[^/]*/kernel/'); do
++    vermagic=$(/sbin/modinfo -F vermagic "$module")
++    krel=${vermagic%% *}
++    /sbin/modinfo -F alias "$module" \
++    | sed -nre "s,(.+:.+),modalias(kernel-${krel##*-}:\\1),p"
++done \
++| sort -u \
++| combine_modaliases

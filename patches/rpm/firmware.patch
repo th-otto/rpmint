@@ -1,0 +1,13 @@
+Index: scripts/firmware.prov
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ scripts/firmware.prov	2011-06-08 13:28:33.117204009 +0200
+@@ -0,0 +1,8 @@
++#!/bin/sh
++# Add firmware files in /lib/firmware into RPM provides
++
++while read instfile ; do
++  case $instfile in
++    */lib/firmware/*) test -f "$instfile" && echo "firmware(${instfile##*/lib/firmware/})" ;;
++  esac
++done

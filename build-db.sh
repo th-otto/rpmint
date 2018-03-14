@@ -12,6 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/db/db${VERSION}.patch
 patches/db/mintelf-config.patch
+patches/db/rpm-no-fsync.patch
 "
 
 BINFILES="
