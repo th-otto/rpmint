@@ -1231,6 +1231,22 @@ definitions (with rules occasionally thrown in).  The generated
 "Makefile.in" files are compatible with the GNU Makefile standards.
 '
 	),
+	'libbeecrypt6' => array(
+		'name' => 'libbeecrypt6',
+		'upstream' => 'http://sourceforge.net/projects/beecrypt',
+		'source' => $download_dir . 'beecrypt-%{version}.tar.bz2',
+		'version' => '4.1.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+BeeCrypt is an ongoing project to provide a strong and fast
+cryptography toolkit. Includes entropy sources, random generators,
+block ciphers, hash functions, message authentication codes,
+multiprecision integer routines, and public key primitives.
+'
+	),
 );
 
 ?>

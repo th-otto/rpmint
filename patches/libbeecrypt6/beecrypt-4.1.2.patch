@@ -1,0 +1,49 @@
+---
+ Makefile.am                 |    8 +++++++-
+ base64.c                    |    1 -
+ c++/io/DataOutputStream.cxx |    4 ++--
+ 3 files changed, 9 insertions(+), 4 deletions(-)
+
+Index: beecrypt-4.1.2/Makefile.am
+===================================================================
+--- beecrypt-4.1.2.orig/Makefile.am
++++ beecrypt-4.1.2/Makefile.am
+@@ -62,5 +62,11 @@ EXTRA_DIST = BENCHMARKS BUGS CONTRIBUTOR
+ 
+ DISTCLEANFILES = mpopt.s aesopt.s blowfishopt.s sha1opt.s
+ 
++BUILT_SOURCES = listobjs
++
++.PHONY: listobjs
++listobjs:
++	@echo $(libbeecrypt_la_OBJECTS) $(libbeecrypt_la_LIBADD) > $@
++
+ bench:
+ 	(cd tests && $(MAKE) $(AM_MAKEFLAGS) bench)
+Index: beecrypt-4.1.2/base64.c
+===================================================================
+--- beecrypt-4.1.2.orig/base64.c
++++ beecrypt-4.1.2/base64.c
+@@ -253,7 +253,6 @@ char* b64encode(const void* data, size_t
+     unsigned c;
+ 
+     if (s == NULL)	return NULL;
+-    if (*s == '\0')	return calloc(1, sizeof(*t));
+ 
+     if (ns == 0) ns = strlen((const char*) s);
+     nt = ((ns + 2) / 3) * 4;
+Index: beecrypt-4.1.2/c++/io/DataOutputStream.cxx
+===================================================================
+--- beecrypt-4.1.2.orig/c++/io/DataOutputStream.cxx
++++ beecrypt-4.1.2/c++/io/DataOutputStream.cxx
+@@ -126,8 +126,8 @@ void DataOutputStream::writeLong(javalon
+ void DataOutputStream::writeChar(javaint v) throw (IOException)
+ {
+ 	_lock.lock();
+-	out.write((v >> 8) && 0xff);
+-	out.write((v     ) && 0xff);
++	out.write((v >> 8) & 0xff);
++	out.write((v     ) & 0xff);
+ 	written += 2;
+ 	_lock.unlock();
+ }

@@ -1,0 +1,23 @@
+--- beecrypt-4.1.2/acinclude.m4.orig	2018-03-14 05:41:34.820112002 +0100
++++ beecrypt-4.1.2/acinclude.m4	2018-03-14 05:59:31.628088570 +0100
+@@ -1143,9 +1143,6 @@
+         ])
+       ;;
+     m68k)
+-      AC_CONFIG_COMMANDS([mpopt.m68k],[
+-        m4 $srcdir/gas/mpopt.m68k.m4 > mpopt.s
+-        ])
+       ;;
+     powerpc)
+       AC_CONFIG_COMMANDS([mpopt.ppc],[
+--- beecrypt-4.1.2/configure.ac.orig	2018-03-14 06:06:51.918097067 +0100
++++ beecrypt-4.1.2/configure.ac	2018-03-14 06:06:54.018097022 +0100
+@@ -521,7 +521,7 @@
+     CPPFLAGS="$CPPFLAGS -DOPTIMIZE_IA64"
+     ;;
+   m68k)
+-    CPPFLAGS="$CPPFLAGS -DOPTIMIZE_M68K"
++    dnl CPPFLAGS="$CPPFLAGS -DOPTIMIZE_M68K"
+     ;;
+   pentium)
+     CPPFLAGS="$CPPFLAGS -DOPTIMIZE_I586"

@@ -1,0 +1,268 @@
+--- beecrypt-4.1.2/./acinclude.m4.orig	2018-03-14 05:41:34.820112002 +0100
++++ beecrypt-4.1.2/./acinclude.m4	2018-03-14 05:42:26.012110888 +0100
+@@ -1110,74 +1110,74 @@
+ 
+ dnl  BEECRYPT_ASM_SOURCES
+ AC_DEFUN([BEECRYPT_ASM_SOURCES],[
+-  echo > mpopt.s
+-  echo > aesopt.s
+-  echo > blowfishopt.s
+-  echo > sha1opt.s
++  echo > mpopt.S
++  echo > aesopt.S
++  echo > blowfishopt.S
++  echo > sha1opt.S
+   if test "$ac_enable_debug" != yes; then
+     case $bc_target_arch in
+     arm)
+       AC_CONFIG_COMMANDS([mpopt.arm],[
+-        m4 $srcdir/gas/mpopt.arm.m4 > mpopt.s
++        m4 $srcdir/gas/mpopt.arm.m4 > mpopt.S
+         ])
+       ;;
+     alpha*)
+       AC_CONFIG_COMMANDS([mpopt.alpha],[
+-        m4 $srcdir/gas/mpopt.alpha.m4 > mpopt.s
++        m4 $srcdir/gas/mpopt.alpha.m4 > mpopt.S
+         ])
+       ;;
+     athlon* | i[[3456]]86 | pentium*)
+       AC_CONFIG_COMMANDS([aesopt.x86],[
+-        m4 $srcdir/gas/aesopt.x86.m4 > aesopt.s
++        m4 $srcdir/gas/aesopt.x86.m4 > aesopt.S
+         ])
+       AC_CONFIG_COMMANDS([mpopt.x86],[
+-        m4 $srcdir/gas/mpopt.x86.m4 > mpopt.s
++        m4 $srcdir/gas/mpopt.x86.m4 > mpopt.S
+         ])
+       AC_CONFIG_COMMANDS([sha1opt.x86],[
+-        m4 $srcdir/gas/sha1opt.x86.m4 > sha1opt.s
++        m4 $srcdir/gas/sha1opt.x86.m4 > sha1opt.S
+         ])
+       ;;
+     ia64)
+       AC_CONFIG_COMMANDS([mpopt.ia64],[
+-        m4 $srcdir/gas/mpopt.ia64.m4 > mpopt.s
++        m4 $srcdir/gas/mpopt.ia64.m4 > mpopt.S
+         ])
+       ;;
+     m68k)
+       AC_CONFIG_COMMANDS([mpopt.m68k],[
+-        m4 $srcdir/gas/mpopt.m68k.m4 > mpopt.s
++        m4 $srcdir/gas/mpopt.m68k.m4 > mpopt.S
+         ])
+       ;;
+     powerpc)
+       AC_CONFIG_COMMANDS([mpopt.ppc],[
+-        m4 $srcdir/gas/mpopt.ppc.m4 > mpopt.s
++        m4 $srcdir/gas/mpopt.ppc.m4 > mpopt.S
+         ])
+       AC_CONFIG_COMMANDS([blowfishopt.ppc],[
+-        m4 $srcdir/gas/blowfishopt.ppc.m4 > blowfishopt.s
++        m4 $srcdir/gas/blowfishopt.ppc.m4 > blowfishopt.S
+         ])
+       ;;
+     powerpc64)
+       AC_CONFIG_COMMANDS([mpopt.ppc64],[
+-        m4 $srcdir/gas/mpopt.ppc64.m4 > mpopt.s
++        m4 $srcdir/gas/mpopt.ppc64.m4 > mpopt.S
+         ])
+       ;;
+     s390x)
+       AC_CONFIG_COMMANDS([mpopt.s390x],[
+-        m4 $srcdir/gas/mpopt.s390x.m4 > mpopt.s
++        m4 $srcdir/gas/mpopt.s390x.m4 > mpopt.S
+         ])
+       ;;
+     sparcv8)
+       AC_CONFIG_COMMANDS([mpopt.sparcv8],[
+-        m4 $srcdir/gas/mpopt.sparcv8.m4 > mpopt.s
++        m4 $srcdir/gas/mpopt.sparcv8.m4 > mpopt.S
+         ])
+       ;;
+     sparcv8plus)
+       AC_CONFIG_COMMANDS([mpopt.sparcv8plus],[
+-        m4 $srcdir/gas/mpopt.sparcv8plus.m4 > mpopt.s
++        m4 $srcdir/gas/mpopt.sparcv8plus.m4 > mpopt.S
+         ])
+       ;;
+     x86_64)
+       AC_CONFIG_COMMANDS([mpopt.x86_64],[
+-        m4 $srcdir/gas/mpopt.x86_64.m4 > mpopt.s
++        m4 $srcdir/gas/mpopt.x86_64.m4 > mpopt.S
+         ])
+       ;;
+     esac
+@@ -1186,7 +1186,7 @@
+       case $bc_target_arch in
+       athlon* | i[[56]]86 | pentium*)
+         AC_CONFIG_COMMANDS([blowfishopt.i586],[
+-          m4 $srcdir/gas/blowfishopt.i586.m4 > blowfishopt.s
++          m4 $srcdir/gas/blowfishopt.i586.m4 > blowfishopt.S
+           ])
+         ;;
+       esac
+--- beecrypt-4.1.2/Makefile.am.orig	2018-03-14 05:43:01.748110111 +0100
++++ beecrypt-4.1.2/Makefile.am	2018-03-14 05:43:18.300109751 +0100
+@@ -36,11 +36,11 @@
+ 
+ SUBDIRS = . $(MAYBE_SUB) tests docs gas masm
+ 
+-SUFFIXES = .s
++SUFFIXES = .S
+ 
+ INCLUDES = -I$(top_srcdir)/..
+ 
+-.s.lo:
++.S.lo:
+ 	$(LTCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+ 
+ BEECRYPT_OBJECTS = aes.lo aesopt.lo base64.lo beecrypt.lo blockmode.lo blockpad.lo blowfish.lo blowfishopt.lo dhaes.lo dldp.lo dlkp.lo dlpk.lo dlsvdp-dh.lo dsa.lo elgamal.lo endianness.lo entropy.lo fips186.lo hmac.lo hmacmd5.lo hmacsha1.lo hmacsha256.lo md5.lo memchunk.lo mp.lo mpopt.lo mpbarrett.lo mpnumber.lo mpprime.lo mtprng.lo pkcs1.lo pkcs12.lo rsa.lo rsakp.lo rsapk.lo sha1.lo sha1opt.lo sha256.lo sha384.lo sha512.lo timestamp.lo
+@@ -60,7 +60,7 @@
+ 
+ EXTRA_DIST = BENCHMARKS BUGS CONTRIBUTORS README.DLL README.WIN32 Doxyheader beecrypt.rc autogen.sh Makefile.mak
+ 
+-DISTCLEANFILES = mpopt.s aesopt.s blowfishopt.s sha1opt.s
++DISTCLEANFILES = mpopt.S aesopt.S blowfishopt.S sha1opt.S
+ 
+ BUILT_SOURCES = listobjs
+ 
+--- beecrypt-4.1.2/gas/mpopt.m68k.m4.orig	2018-03-14 05:30:29.724126475 +0100
++++ beecrypt-4.1.2/gas/mpopt.m68k.m4	2018-03-14 05:49:47.780101275 +0100
+@@ -27,6 +27,10 @@
+ 	move.l 4(%sp),%d0
+ 	movea.l 8(%sp),%a0
+ 	movea.l 12(%sp),%a1
++#ifdef __mcoldfire__
++	move.l %d3,-(%sp)
++	move.l %d2,-(%sp)
++#endif
+ 	move.l %d0,%d1
+ 	lsl.l #2,%d0
+ 	subq.l #1,%d1
+@@ -36,10 +40,21 @@
+ 
+ 	.align 2
+ LOCAL(mpadd_loop):
++#ifdef __mcoldfire__
++	move.l -(%a1),%d2
++	move.l -(%a0),%d3
++	addx.l %d2,%d3
++	move.l %d3,(%a0)
++#else
+ 	addx.l -(%a1),-(%a0)
++#endif
+ 	dbf %d1,LOCAL(mpadd_loop)
+ 
+ 	addx.l %d0,%d0
++#ifdef __mcoldfire__
++	move.l (%sp)+,%d2
++	move.l (%sp)+,%d3
++#endif
+ 	rts
+ C_FUNCTION_END(mpadd)
+ 
+@@ -48,6 +63,10 @@
+ 	move.l 4(%sp),%d0
+ 	movea.l 8(%sp),%a0
+ 	movea.l 12(%sp),%a1
++#ifdef __mcoldfire__
++	move.l %d3,-(%sp)
++	move.l %d2,-(%sp)
++#endif
+ 	move.l %d0,%d1
+ 	lsl.l #2,%d0
+ 	subq.l #1,%d1
+@@ -57,16 +76,32 @@
+ 
+ 	.align 2
+ LOCAL(mpsub_loop):
++#ifdef __mcoldfire__
++	move.l -(%a1),%d2
++	move.l -(%a0),%d3
++	subx.l %d2,%d3
++	move.l %d3,(%a0)
++#else
+ 	subx.l -(%a1),-(%a0)
++#endif
+ 	dbf %d1,LOCAL(mpsub_loop)
+ 
+ 	addx.l %d0,%d0
++#ifdef __mcoldfire__
++	move.l (%sp)+,%d2
++	move.l (%sp)+,%d3
++#endif
+ 	rts
+ C_FUNCTION_END(mpsub)
+ 
+ dnl works
+ C_FUNCTION_BEGIN(mpsetmul)
++#ifdef __mcoldfire__
++	lea -16(%sp),%sp
++	movem.l %d2-%d5,(%sp)
++#else
+ 	movem.l %d2-%d5,-(%sp)
++#endif
+ 	move.l 20(%sp),%d0
+ 	movea.l 24(%sp),%a0
+ 	movea.l 28(%sp),%a1
+@@ -89,13 +124,23 @@
+ 	move.l %d0,%d3
+ 	dbf %d5,LOCAL(mpsetmul_loop)
+ 
++#ifdef __mcoldfire__
++	movem.l (%sp),%d2-%d5
++	lea 16(%sp),%sp
++#else
+ 	movem.l (%sp)+,%d2-%d5
++#endif
+ 	rts
+ C_FUNCTION_END(mpsetmul)
+ 
+ dnl works
+ C_FUNCTION_BEGIN(mpaddmul)
++#ifdef __mcoldfire__
++	lea -16(%sp),%sp
++	movem.l %d2-%d5,(%sp)
++#else
+ 	movem.l %d2-%d5,-(%sp)
++#endif
+ 	move.l 20(%sp),%d0
+ 	movea.l 24(%sp),%a0
+ 	movea.l 28(%sp),%a1
+@@ -120,13 +165,23 @@
+ 	move.l %d0,%d3
+ 	dbf %d5,LOCAL(mpaddmul_loop)
+ 
++#ifdef __mcoldfire__
++	movem.l (%sp),%d2-%d5
++	lea 16(%sp),%sp
++#else
+ 	movem.l (%sp)+,%d2-%d5
++#endif
+ 	rts
+ C_FUNCTION_END(mpaddmul)
+ 
+ 
+ C_FUNCTION_BEGIN(mpaddsqrtrc)
++#ifdef __mcoldfire__
++	lea -12(%sp),%sp
++	movem.l %d3-%d5,(%sp)
++#else
+ 	movem.l %d3-%d5,-(%sp)
++#endif
+ 	move.l 16(%sp),%d0
+ 	movea.l 20(%sp),%a0
+ 	movea.l 24(%sp),%a1
+@@ -154,6 +209,11 @@
+ 	move.l %d0,0(%a0)
+ 	dbf %d5,LOCAL(mpaddsqrtrc_loop)
+ 
++#ifdef __mcoldfire__
++	movem.l (%sp),%d3-%d5
++	lea 12(%sp),%sp
++#else
+ 	movem.l (%sp)+,%d3-%d5
++#endif
+ 	rts
+ C_FUNCTION_END(mpaddsqrtrc)

@@ -1,0 +1,81 @@
+--- beecrypt-4.1.2/configure.ac.orig	2018-03-14 07:08:01.865953363 +0100
++++ beecrypt-4.1.2/configure.ac	2018-03-14 07:15:07.089944110 +0100
+@@ -246,18 +246,18 @@
+ if test "$ac_with_cplusplus" = yes; then
+   AC_MSG_CHECKING([for IBM's ICU library version >= 2.8])
+   AC_LANG_PUSH(C)
+-  AC_RUN_IFELSE([
++  AC_COMPILE_IFELSE([
+     AC_LANG_PROGRAM([[#include <unicode/uversion.h>]],[[
+       #if U_ICU_VERSION_MAJOR_NUM < 2
+-      exit(1);
++      #error no
+       #elif U_ICU_VERSION_MAJOR_NUM == 2
+       # if U_ICU_VERSION_MINOR_NUM < 8
+-      exit(1);
++      #error no
+       # else
+-      exit(0);
++      /* yup */
+       # endif
+       #else
+-      exit(0);
++      /* yup */
+       #endif
+     ]])],[
+     AC_MSG_RESULT([yes])
+--- beecrypt-4.1.2/acinclude.m4.orig	2018-03-14 07:11:58.561948212 +0100
++++ beecrypt-4.1.2/acinclude.m4	2018-03-14 07:14:04.297945476 +0100
+@@ -1287,7 +1287,7 @@
+   AH_TEMPLATE([ENABLE_THREAD_LOCAL_STORAGE],[Define to 1 if you want to enable thread-local-storage support])
+   if test "$ac_enable_threads" = yes; then
+     AC_MSG_CHECKING([if your compiler supports thread-local-storage])
+-    AC_COMPILE_IFELSE([__thread int a = 0;],[
++    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[__thread int a = 0;]])],[
+       AC_DEFINE([ENABLE_THREAD_LOCAL_STORAGE],1)
+       AC_MSG_RESULT([yes])
+       ],[
+--- beecrypt-4.1.2/c++/beeyond/BeeCertificate.h.orig	2018-03-14 07:40:29.497910981 +0100
++++ beecrypt-4.1.2/c++/beeyond/BeeCertificate.h	2018-03-14 07:40:40.025910752 +0100
+@@ -137,7 +137,7 @@
+ 			typedef vector<Field*>::iterator fields_iterator;
+ 			typedef vector<Field*>::const_iterator fields_const_iterator;
+ 
+-		protected:
++		public:
+ 			String        issuer;
+ 			String        subject;
+ 			Date          created;
+--- beecrypt-4.1.2/c++/security/Security.h.orig	2018-03-14 07:37:43.185914600 +0100
++++ beecrypt-4.1.2/c++/security/Security.h	2018-03-14 07:39:19.757912498 +0100
+@@ -76,7 +76,7 @@
+ 			typedef vector<const Provider*> provider_vector;
+ 			typedef provider_vector::iterator provider_vector_iterator;
+ 
+-		private:
++		public:
+ 			struct spi
+ 			{
+ 				Object* cspi;
+--- beecrypt-4.1.2/c++/io/PrintStream.cxx.orig	2018-03-14 07:26:54.833928708 +0100
++++ beecrypt-4.1.2/c++/io/PrintStream.cxx	2018-03-14 07:35:47.905917108 +0100
+@@ -189,7 +189,8 @@
+ 			UErrorCode status = U_ZERO_ERROR;
+ 
+ 			// do conversion of one character
+-			size_t used = ucnv_fromUChars(_loc, buffer, 8, &ch, 1, &status);
++			UChar uch = ch;
++			size_t used = ucnv_fromUChars(_loc, buffer, 8, &uch, 1, &status);
+ 			if (U_FAILURE(status))
+ 				throw IOException("failure in ucnv_fromUChars");
+ 
+@@ -266,7 +267,8 @@
+ 
+ void PrintStream::print(const array<javachar>& chars) throw ()
+ {
+-	print(chars.data(), chars.size());
++	for (int i = 0; i < chars.size(); i++)
++		print(chars.data()[i]);
+ }
+ 
+ void PrintStream::print(const String& str) throw ()
