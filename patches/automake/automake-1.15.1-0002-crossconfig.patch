@@ -1,0 +1,39 @@
+diff -rupN automake-1.15.orig/Makefile.am automake-1.15/Makefile.am
+--- automake-1.15.orig/Makefile.am	2014-12-30 22:53:05.000000000 +0100
++++ automake-1.15/Makefile.am	2015-12-28 06:08:09.062000225 +0100
+@@ -38,6 +38,8 @@ EXTRA_DIST += \
+   HACKING \
+   PLANS
+ 
++TARGET_PERL = $(PERL)
++
+ # We want a handful of substitutions to be fully-expanded by make;
+ # then use config.status to substitute the remainder where a single
+ # expansion is sufficient.  We use a funny notation here to avoid
+@@ -52,6 +54,7 @@ do_subst = ( sed \
+   -e 's,[@]scriptdir[@],$(scriptdir),g' \
+   -e 's,[@]automake_acdir[@],$(automake_acdir),g' \
+   -e 's,[@]system_acdir[@],$(system_acdir),g' \
++  -e 's,[@]PERL[@],$(TARGET_PERL),g' \
+ ## Hack to avoid a spurious substitution in the Automake script (part 1).
+   -e 's,[@]am__isrc[@],!!@!!am__isrc!!@!!,g' \
+   | $(SHELL) ./config.status --file=- \
+diff -rupN automake-1.15.orig/Makefile.in automake-1.15/Makefile.in
+--- automake-1.15.orig/Makefile.in	2015-01-05 20:28:15.000000000 +0100
++++ automake-1.15/Makefile.in	2015-12-28 06:08:09.063000225 +0100
+@@ -652,6 +652,7 @@ dist_noinst_SCRIPTS =
+ nodist_noinst_SCRIPTS = t/wrap/aclocal-$(APIVERSION) \
+ 	t/wrap/automake-$(APIVERSION) t/ax/shell-no-trail-bslash \
+ 	t/ax/cc-no-c-o runtest
++TARGET_PERL = $(PERL)
+ 
+ # We want a handful of substitutions to be fully-expanded by make;
+ # then use config.status to substitute the remainder where a single
+@@ -667,6 +668,7 @@ do_subst = ( sed \
+   -e 's,[@]scriptdir[@],$(scriptdir),g' \
+   -e 's,[@]automake_acdir[@],$(automake_acdir),g' \
+   -e 's,[@]system_acdir[@],$(system_acdir),g' \
++  -e 's,[@]PERL[@],$(TARGET_PERL),g' \
+   -e 's,[@]am__isrc[@],!!@!!am__isrc!!@!!,g' \
+   | $(SHELL) ./config.status --file=- \
+   | sed -e 's,!!@!!am__isrc!!@!!,@''am__isrc@,g' \

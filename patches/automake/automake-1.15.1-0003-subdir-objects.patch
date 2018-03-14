@@ -1,0 +1,30 @@
+diff -rupN automake-1.15.orig/m4/make.m4 automake-1.15/m4/make.m4
+--- automake-1.15.orig/m4/make.m4	2015-01-05 20:25:55.000000000 +0100
++++ automake-1.15/m4/make.m4	2015-12-28 07:57:43.982000186 +0100
+@@ -22,6 +22,18 @@
+ am__quote=
+ _am_result=none
+ # First try GNU make style include.
++cat <<EOF > confmf
++-include confinc
++EOF
++# Ignore all kinds of additional output from 'make'.
++case `$am_make -s -f confmf 2> /dev/null` in #(
++*the\ am__doit\ target*)
++  am__include=-include
++  am__quote=
++  _am_result=GNU
++  ;;
++esac
++if test "$am__include" = "#"; then
+ echo "include confinc" > confmf
+ # Ignore all kinds of additional output from 'make'.
+ case `$am_make -s -f confmf 2> /dev/null` in #(
+@@ -31,6 +43,7 @@
+   _am_result=GNU
+   ;;
+ esac
++fi
+ # Now try BSD make style include.
+ if test "$am__include" = "#"; then
+    echo '.include "confinc"' > confmf

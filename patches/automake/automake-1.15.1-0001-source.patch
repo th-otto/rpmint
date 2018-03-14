@@ -1,0 +1,97 @@
+diff -rupN automake-1.15.orig/bin/automake.in automake-1.15/bin/automake.in
+--- automake-1.15.orig/bin/automake.in	2015-01-05 20:25:55.000000000 +0100
++++ automake-1.15/bin/automake.in	2015-12-28 06:06:46.192000224 +0100
+@@ -672,6 +672,7 @@ register_language ('name' => 'objc',
+ 		   'compiler' => 'OBJCCOMPILE',
+ 		   'compile_flag' => '-c',
+ 		   'output_flag' => '-o',
++		   'libtool_tag' => 'CC',
+ 		   'lder' => 'OBJCLD',
+ 		   'ld' => '$(OBJC)',
+ 		   'pure' => 1,
+@@ -3687,7 +3688,7 @@ sub handle_dist ()
+ 	  # The file might be absent, but if it can be built it's ok.
+ 	  || rule $cfile)
+ 	{
+-	  push_dist_common ($cfile);
++	  push_dist_common ("\$(srcdir)/$cfile");
+ 	}
+ 
+       # Don't use 'elsif' here because a file might meaningfully
+@@ -6141,16 +6142,16 @@ sub define_per_target_linker_variable
+ {
+   my ($linker, $target) = @_;
+ 
+-  # If the user wrote a custom link command, we don't define ours.
+-  return "${target}_LINK"
+-    if set_seen "${target}_LINK";
+-
+   my $xlink = $linker ? $linker : 'LINK';
+ 
+   my $lang = $link_languages{$xlink};
+   prog_error "Unknown language for linker variable '$xlink'"
+     unless $lang;
+ 
++  # If the user wrote a custom link command, we don't define ours.
++  return ("${target}_LINK", $lang->lder)
++    if set_seen "${target}_LINK";
++
+   my $link_command = $lang->link;
+   if (var 'LIBTOOL')
+     {
+@@ -7393,12 +7394,14 @@ sub required_file_check_or_copy
+   my $fullfile = "$dir/$file";
+   my $found_it = 0;
+   my $dangling_sym = 0;
++  my $thisdir = dirname ($fullfile);
++  my $thisfile = basename ($fullfile);
+ 
+   if (-l $fullfile && ! -f $fullfile)
+     {
+       $dangling_sym = 1;
+     }
+-  elsif (dir_has_case_matching_file ($dir, $file))
++  elsif (dir_has_case_matching_file ($thisdir, $thisfile))
+     {
+       $found_it = 1;
+     }
+diff -rupN automake-1.15.orig/lib/am/lisp.am automake-1.15/lib/am/lisp.am
+--- automake-1.15.orig/lib/am/lisp.am	2014-12-30 22:53:05.000000000 +0100
++++ automake-1.15/lib/am/lisp.am	2015-12-28 06:06:46.192000224 +0100
+@@ -30,7 +30,7 @@ endif %?INSTALL%
+ ## The destination file is normally determined by appending "c" to the
+ ## input (which would erronously put it in $(srcdir) in VPATH builds),
+ ## so we override that, too.
+-	if test "$(EMACS)" != "no"; then \
++	@if test "$(EMACS)" != "no"; then \
+ 	  am__dir=. am__subdir_includes=''; \
+ 	  case $@ in */*) \
+ 	    am__dir=`echo '$@' | sed 's,/[^/]*$$,,'`; \
+@@ -38,6 +38,7 @@ endif %?INSTALL%
+ 	  esac; \
+ ## Emacs byte-compilation won't create this automatically, sadly.
+ 	  test -d "$$am__dir" || $(MKDIR_P) "$$am__dir" || exit 1; \
++	  echo generating $@; \
+ 	  $(EMACS) --batch \
+ 	    $(AM_ELCFLAGS) $(ELCFLAGS) \
+ 	    $$am__subdir_includes -L $(builddir) -L $(srcdir) \
+diff -rupN automake-1.15.orig/lib/config.guess automake-1.15/lib/config.guess
+--- automake-1.15.orig/lib/config.guess	2014-12-27 18:23:54.000000000 +0100
++++ automake-1.15/lib/config.guess	2015-12-28 06:06:46.192000224 +0100
+@@ -153,6 +153,16 @@ Linux|GNU|GNU/*)
+ 	;;
+ esac
+ 
++case "${UNAME_MACHINE}" in
++  i?86)
++     test -z "$VENDOR" && VENDOR=pc
++     ;;
++  *)
++     test -z "$VENDOR" && VENDOR=unknown
++     ;;
++esac
++test -f /etc/SuSE-release -o -f /.buildenv && VENDOR=suse
++
+ # Note: order is significant - the case branches are not exclusive.
+ 
+ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in

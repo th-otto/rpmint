@@ -201,7 +201,10 @@ unpack_archive()
 		    flags=
 		    if patch -N -s --dry-run -p1 -i "$BUILD_DIR/$f" > /dev/null 2>&1; then
 		    	flags="-N -p1 --read-only=ignore"
+		    	echo "applying patch $f"
 			    patch $flags -i "$BUILD_DIR/$f" || exit 1
+		    elif patch -R -N -s --dry-run -p1 -i "$BUILD_DIR/$f" > /dev/null 2>&1; then
+		    	echo "patch $f already applied; skipping"
 		    else
 		    	echo "patch $f does not apply" >&2
 		    	exit 1

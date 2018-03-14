@@ -1214,6 +1214,23 @@ having this tool available as widely as possible outweigh the disadvantage that
 some authors may choose to use it, too, for proprietary software.
 '
 	),
+	'automake' => array(
+		'name' => 'automake',
+		'upstream' => 'https://www.gnu.org/software/automake',
+		'source' => 'https://ftp.gnu.org/gnu/automake/automake-%{version}.tar.xz',
+		'version' => '1.16',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 0,
+		'noarch' => 1,
+		'comment' => '
+Automake is a tool for automatically generating "Makefile.in" files
+from "Makefile.am" files.  "Makefile.am" is a series of "make" macro
+definitions (with rules occasionally thrown in).  The generated
+"Makefile.in" files are compatible with the GNU Makefile standards.
+'
+	),
 );
 
 ?>

@@ -64,6 +64,9 @@ for pkg in gemlib \
 	gdbm \
 	db \
 	perl \
+	autoconf \
+	autoconf-archive \
+	automake \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script
