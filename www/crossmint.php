@@ -951,6 +951,8 @@ foreach ($libpackages as $package)
 
 <li>2018/03/14 Package lua added</li>
 
+<li>2018/03/15 Package popt added</li>
+
 </ul>
 
 <p></p>

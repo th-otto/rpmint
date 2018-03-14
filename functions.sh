@@ -1,4 +1,9 @@
 #
+# our vendor name, for a few packages that display it
+#
+VENDOR=RPMint
+
+#
 # For which target we build-
 # should be either m68k-atari-mint or m68k-atari-mintelf
 #
@@ -206,7 +211,7 @@ unpack_archive()
 		    	echo "applying patch $f"
 			    patch $flags -i "$BUILD_DIR/$f" || exit 1
 		    elif patch -R -N -s --dry-run -p1 -i "$BUILD_DIR/$f" > /dev/null 2>&1; then
-		    	echo "patch $f already applied; skipping"
+		    	echo "patch $f already applied; skipping" >&2
 		    else
 		    	echo "patch $f does not apply" >&2
 		    	exit 1
@@ -315,8 +320,12 @@ make_bin_archive()
 		fi
 	done
 
-	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}-${archsuffix}.tar.xz $files
-
+	if test -z "$files"; then
+		echo "no files for bin archive; skipping" >&2
+	else
+		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}-${archsuffix}.tar.xz $files
+	fi
+	
 	cd "$MINT_BUILD_DIR" || exit 1
 }
 

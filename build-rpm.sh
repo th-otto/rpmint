@@ -130,7 +130,7 @@ CONFIGURE_FLAGS="--host=${TARGET} \
 	--with-lua \
 	--with-external-db \
 	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME} \
-	--with-vendor=RPMint \
+	--with-vendor="${VENDOR}" \
 	--without-archive \
 	--with-selinux \
 	--with-crypto=beecrypt \
