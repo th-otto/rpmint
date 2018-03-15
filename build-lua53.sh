@@ -83,7 +83,7 @@ INSTALL_CMOD=\${libdir}/lua/${major_version}
 
 Name: Lua ${major_version}
 Description: An Extensible Extension Language
-Version: ${version}
+Version: ${VERSION#-}
 Libs: -llua${major_version} -lm
 Cflags: -I\${includedir}
 EOF

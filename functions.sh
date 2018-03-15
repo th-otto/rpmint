@@ -369,9 +369,12 @@ copy_pkg_configs()
 			             s,-L${libdir}$,,
 			             s,-L'${TARGET_BINDIR}'[ ]*,,g
 			             s,-I/usr/include,-I${includedir},g
-			             s,-I'${sysroot}${TARGET_PREFIX}/include',-I${includedir},g
-			             s,-I${includedir} ,,g
+			             s,-I'${sysroot}${TARGET_PREFIX}/include',-I${includedir},g' $dst
+			   includedir=`sed -n 's/^[ ]*includedir[ ]*=[ ]*\([^ ]*\)/\1/p' $dst`
+			   if test "$includedir" = '/usr/include' -o  "$includedir" = '${prefix}/include'; then
+			       sed -i 's,-I${includedir} ,,g
 			             s,-I${includedir}$,,' $dst
+			   fi
 			fi
 		}
 		true && {
@@ -385,9 +388,12 @@ copy_pkg_configs()
 			         s,-L${libdir}$,,
 		             s,-L'${TARGET_BINDIR}'[ ]*,,g
  		             s,-I/usr/include,-I${includedir},g
-		             s,-I'${sysroot}${TARGET_PREFIX}/include',-I${includedir},g
-				     s,-I${includedir} ,,g
-				     s,-I${includedir}$,,' $i > $i.tmp
+		             s,-I'${sysroot}${TARGET_PREFIX}/include',-I${includedir},g' $i > $i.tmp
+			includedir=`sed -n 's/^[ ]*includedir[ ]*=[ ]*\([^ ]*\)/\1/p' $i.tmp`
+			if test "$includedir" = '/usr/include' -o  "$includedir" = '${prefix}/include'; then
+				sed -i 's,-I${includedir} ,,g
+				     s,-I${includedir}$,,' $i.tmp
+			fi
 			diff -q $i $i.tmp >/dev/null && rm -f $i.tmp || {
 				echo "fixed $i"
 				mv $i.tmp $i
