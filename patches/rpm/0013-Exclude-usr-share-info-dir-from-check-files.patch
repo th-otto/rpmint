@@ -1,0 +1,23 @@
+From eb5a90d4891ccddd07d017bf9a2c222596ae5ad5 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:29:06 +0100
+Subject: [PATCH 13/63] Exclude /usr/share/info/dir from check-files.
+
+---
+ scripts/check-files | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scripts/check-files b/scripts/check-files
+index ec4cf5c16..451ba46dc 100755
+--- a/scripts/check-files
++++ b/scripts/check-files
+@@ -28,5 +28,5 @@ trap "rm -f \"${FILES_DISK}\"" 0 2 3 5 10 13 15
+ # Find non-directory files in the build root and compare to the manifest.
+ # TODO: regex chars in last sed(1) expression should be escaped
+ find "${RPM_BUILD_ROOT}" -type f -o -type l | LC_ALL=C sort > "${FILES_DISK}"
+-LC_ALL=C sort | diff -d "${FILES_DISK}" - | sed -n 's|^< '"${RPM_BUILD_ROOT}"'\(.*\)$|   \1|gp'
++LC_ALL=C sort | diff -d "${FILES_DISK}" - | sed -n -e 's|^< '"${RPM_BUILD_ROOT}"'/usr/share/info/dir$||' -e 's|^< '"${RPM_BUILD_ROOT}"'\(.*\)$|   \1|gp'
+ 
+-- 
+2.16.2
+

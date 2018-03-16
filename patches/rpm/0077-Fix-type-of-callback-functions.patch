@@ -1,0 +1,56 @@
+From f0f76cc1d7ea6cf3137a825ee5cceddeb8f202d8 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 17:06:17 +0100
+Subject: [PATCH 77/81] Fix type of callback functions
+
+---
+ lib/tagexts.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/lib/tagexts.c b/lib/tagexts.c
+index 610ba32e0..91bf4c4f6 100644
+--- a/lib/tagexts.c
++++ b/lib/tagexts.c
+@@ -2,8 +2,8 @@
+  * \file lib/formats.c
+  */
+ 
+-#include <wchar.h>
+ #include "system.h"
++#include <wchar.h>
+ 
+ #include <rpm/rpmtypes.h>
+ #include <rpm/rpmlib.h>
+@@ -648,10 +648,10 @@ static int filerequireTag(Header h, rpmtd td, headerGetFlags hgflags)
+ 
+ #if defined(ENABLE_NLS)
+ extern int _nl_msg_cat_cntr;	/* XXX GNU gettext voodoo */
+-#endif
+ static const char * const language = "LANGUAGE";
+ 
+ static const char * const _macro_i18ndomains = "%{?_i18ndomains}";
++#endif
+ 
+ /**
+  * Retrieve i18n text.
+@@ -774,13 +774,15 @@ static int descriptionTag(Header h, rpmtd td, headerGetFlags hgflags)
+     return i18nTag(h, RPMTAG_DESCRIPTION, td, hgflags);
+ }
+ 
+-static int changelognameTag(Header h, rpmtd td)
++static int changelognameTag(Header h, rpmtd td, headerGetFlags hgflags)
+ {
++    (void) hgflags;
+     return localeTag(h, RPMTAG_CHANGELOGNAME, td);
+ }
+ 
+-static int changelogtextTag(Header h, rpmtd td)
++static int changelogtextTag(Header h, rpmtd td, headerGetFlags hgflags)
+ {
++    (void) hgflags;
+     return localeTag(h, RPMTAG_CHANGELOGTEXT, td);
+ }
+ 
+-- 
+2.16.2
+

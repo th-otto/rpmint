@@ -1,0 +1,25 @@
+From 7f61dce79e4392a5ff0d4f986ee5862e569223a2 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 17:06:57 +0100
+Subject: [PATCH 78/81] Avoid a warning using 64bit constant
+
+---
+ misc/fnmatch.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/misc/fnmatch.c b/misc/fnmatch.c
+index 8de22c8b0..621713696 100644
+--- a/misc/fnmatch.c
++++ b/misc/fnmatch.c
+@@ -56,7 +56,7 @@ __strchrnul (const char *s, int c)
+   switch (sizeof (longword))
+     {
+     case 4: magic_bits = 0x7efefeffL; break;
+-    case 8: magic_bits = ((0x7efefefeL << 16) << 16) | 0xfefefeffL; break;
++    case 8: magic_bits = (unsigned long)(((0x7efefefeLL << 16) << 16) | 0xfefefeffL); break;
+     default:
+       abort ();
+     }
+-- 
+2.16.2
+

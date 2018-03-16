@@ -1,0 +1,25 @@
+From 458e5db03764904cd6cd66480136b3d3f6db3300 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 16:42:05 +0100
+Subject: [PATCH 72/81] Fix test for -lmagic, which might need zlib
+
+---
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 30f2a17e9..2cbbdf4d5 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -435,7 +435,7 @@ AC_CHECK_HEADER([magic.h], [
+       WITH_MAGIC_LIB="-lmagic"
+     ],[
+       AC_MSG_ERROR([missing required library 'libmagic']) 
+-    ])
++    ], [$WITH_ZLIB_LIB])
+ ],[
+       AC_MSG_ERROR([missing required header magic.h]) 
+ ])
+-- 
+2.16.2
+

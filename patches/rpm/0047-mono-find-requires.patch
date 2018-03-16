@@ -1,0 +1,31 @@
+From 9c0b470afc608eec876d1b18cf2fa4b4082b579c Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:55:15 +0100
+Subject: [PATCH 47/63] mono find requires
+
+---
+ scripts/mono-find-requires | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/scripts/mono-find-requires b/scripts/mono-find-requires
+index ea58cae48..48968220a 100644
+--- a/scripts/mono-find-requires
++++ b/scripts/mono-find-requires
+@@ -42,8 +42,12 @@ REQUIRES=$(
+ 			(START==1) && /^\tName=/ {
+ 				sub(/Name=/, "", $1);
+ 				LIBNAME=$1
+-	
+-				print "mono(" LIBNAME ") = " VERSION
++				# Allow rpm deps to be resolved for 1.0 profile version
++				if (VERSION=="1.0.3300.0")
++					OP=">="
++				else
++					OP="="
++				print "mono(" LIBNAME ") " OP " " VERSION
+ 				START=0
+ 			}
+ 		    ') 2> /dev/null
+-- 
+2.16.2
+

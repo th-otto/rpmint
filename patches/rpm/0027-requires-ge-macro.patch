@@ -1,0 +1,26 @@
+From b274e05a0091ddabd2f65379fd1882b7712088a3 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:38:01 +0100
+Subject: [PATCH 27/63] requires ge macro
+
+---
+ macros.in | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/macros.in b/macros.in
+index 9d61a5238..4d32a21cf 100644
+--- a/macros.in
++++ b/macros.in
+@@ -1091,7 +1091,8 @@ package or when debugging this package.\
+ #	%{perl_sitearch}/Image
+ #	%dir %{perl_sitearch}/auto/Image
+ #
+-%requires_eq()	%(LC_ALL="C" echo '%*' | xargs -r rpm -q --qf 'Requires: %%{name} = %%{epoch}:%%{version}\\n' | sed -e 's/ (none):/ /' -e 's/ 0:/ /' | grep -v "is not")
++%requires_eq()	%(echo '%*' | LC_ALL=C xargs -r rpm -q --qf 'Requires: %%{name} = %%{epoch}:%%{version}\\n' | sed -e 's/ (none):/ /' -e 's/ 0:/ /' | grep -v "is not")
++%requires_ge()	%(echo '%*' | LC_ALL=C xargs -r rpm -q --qf 'Requires: %%{name} >= %%{epoch}:%%{version}\\n' | sed -e 's/ (none):/ /' -e 's/ 0:/ /' | grep -v "is not")
+ %perl_sitearch	%(eval "`%{__perl} -V:installsitearch`"; echo $installsitearch)
+ %perl_sitelib	%(eval "`%{__perl} -V:installsitelib`"; echo $installsitelib)
+ %perl_vendorarch %(eval "`%{__perl} -V:installvendorarch`"; echo $installvendorarch)
+-- 
+2.16.2
+

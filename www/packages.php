@@ -1288,6 +1288,24 @@ be aliased via configuration files and includes utility functions for
 parsing arbitrary strings into argv[] arrays using shell-like rules.
 '
 	),
+	'rpm' => array(
+		'name' => 'rpm',
+		'upstream' => 'http://www.rpm.org/',
+		'source' => 'http://ftp.rpm.org/releases/rpm-4.14.x/rpm-4.14.1.tar.bz2',
+		'version' => '4.14.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+The RPM Package Manager (RPM) is a powerful package management system capable of<br />
+<br />
+    <ul><li>building computer software from source into easily distributable packages</li>
+    <li>installing, updating and uninstalling packaged software</li>
+    <li>querying detailed information about the packaged software, whether installed or not</li>
+    <li>verifying integrity of packaged software and resulting software installation</li></ul>
+'
+	),
 );
 
 ?>

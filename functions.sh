@@ -262,7 +262,7 @@ gzip_docs()
 	cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" || exit 1
 	rm -f share/info/dir
 	if test -d share/man; then
-		for f in share/man/*/*; do
+		find share/man -type f | while read f; do
 			case $f in
 			*.gz) ;;
 			*)
@@ -283,7 +283,7 @@ gzip_docs()
 		done
 	fi
 	if test -d share/info; then
-		for f in share/info/*; do
+		find share/info -type f | while read f; do
 			case $f in
 			*.gz) ;;
 			*) rm -f ${f}.gz; gzip -9 $f ;;

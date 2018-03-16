@@ -1,0 +1,26 @@
+From 23bc1ab925f111a4e20aff5b3648b5dace7ed244 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 16:33:55 +0100
+Subject: [PATCH 70/81] Do not blindly add -fPIC to RPMCFLAGS; libtool takes
+ care of this
+
+---
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 9d242b069..5337cf0bf 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -50,7 +50,7 @@ if test "$GCC" = yes; then
+         ],[])
+         CFLAGS=$old_cflags
+     done
+-    RPMCFLAGS="-fPIC -DPIC -D_REENTRANT -Wall -Wpointer-arith -Wmissing-prototypes -Wstrict-prototypes $RPMCFLAGS"
++    RPMCFLAGS="-D_REENTRANT -Wall -Wpointer-arith -Wmissing-prototypes -Wstrict-prototypes $RPMCFLAGS"
+ fi
+ AC_SUBST(RPMCFLAGS)
+ 
+-- 
+2.16.2
+

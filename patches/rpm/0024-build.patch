@@ -1,0 +1,45 @@
+From 4b1460ce90144d019cc3c0137e44a19b9ea6da90 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:36:37 +0100
+Subject: [PATCH 24/63] build
+
+---
+ db3/configure   | 4 ++--
+ installplatform | 5 +++++
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/db3/configure b/db3/configure
+index 160b8e801..01f0456a1 100755
+--- a/db3/configure
++++ b/db3/configure
+@@ -10,9 +10,9 @@ rm -f config.cache
+ # XXX edit CFLAGS= ... out of invocation args ???
+ ARGS="`echo $* | sed -e 's% [^ ]*CFLAGS=[^ ]*%%' -e 's% -[^-][^ ]*%%g' -e 's% --param=[^ ]*%%g' -e 's%--cache-file=.*$%%'`"
+ 
+-CC="$CC" CFLAGS="$CFLAGS" $db_dist/configure $ARGS \
++CC="$CC" CFLAGS="$CFLAGS" $db_dist/configure \
+ 	--enable-shared --enable-static \
+-	--with-uniquename=_rpmdb --srcdir=$db_dist
++	--with-uniquename=_rpmdb --srcdir=$db_dist --with-pic $ARGS
+ 
+ mv Makefile Makefile.orig
+ cat Makefile.orig | sed -e '/^install[:-]/c\
+diff --git a/installplatform b/installplatform
+index 12339fcfe..0e0d8c2a0 100755
+--- a/installplatform
++++ b/installplatform
+@@ -197,6 +197,11 @@ for ARCH in noarch `grep ^arch_canon $RPMRC | cut -d: -f2`; do
+   PPD="${DESTDIR}/${platformdir}/${ARCH}-${OS}"
+   [ -d $PPD ] || mkdir -p $PPD
+ 
++  if [ "$VENDOR" = suse ] ; then
++	# suse doesn't do colors
++	CANONCOLOR=0
++  fi
++
+   cat $PLATFORM \
+   | sed -e "s,@RPMRC_OPTFLAGS@,$RPMRC_OPTFLAGS," \
+ 	-e "s,@RPMCANONARCH@,$CANONARCH,g" \
+-- 
+2.16.2
+

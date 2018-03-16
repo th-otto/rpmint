@@ -1,0 +1,46 @@
+From 435253bba11d4130d8a8a8f91c066e642d5dcbe0 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:42:30 +0100
+Subject: [PATCH 31/63] Module aliases (modinfo -F alias <module>) may contain
+ special characters that rpm does not allow in dependencies, such as commas.
+ Encode those as %XX to avoid generating broken dependencies.
+
+Signed-off-by: Andreas Gruenbacher <agruen@suse.de>
+---
+ scripts/find-supplements.ksyms | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/scripts/find-supplements.ksyms b/scripts/find-supplements.ksyms
+index 010901e4e..6d8fb7e06 100644
+--- a/scripts/find-supplements.ksyms
++++ b/scripts/find-supplements.ksyms
+@@ -35,10 +35,26 @@ combine_modaliases() {
+     print_modaliases "$class" "$variants" "$pos"
+ }
+ 
++# Encode all characters other than [*:a-zA-Z0-9] in stdin as %XX.
++# (This includes the % character itself, which becomes %25.)
++hexenc() {
++    local line hex
++
++    while read line; do
++            set -- "" "$line"
++            while [[ "$2" =~ ([*:a-zA-Z0-9]*)([^*:a-zA-Z0-9])(.*) ]]; do
++                hex=$(echo -n "${BASH_REMATCH[2]}" | hexdump -e '"%X"')
++                set -- "$1${BASH_REMATCH[1]}%$hex" "${BASH_REMATCH[3]}"
++            done
++            echo "$1$2"
++    done
++}
++
+ for module in $(grep -E '/lib/modules/.+\.ko$' | grep -v '/lib/modules/[^/]*/kernel/'); do
+     vermagic=$(/sbin/modinfo -F vermagic "$module")
+     krel=${vermagic%% *}
+     /sbin/modinfo -F alias "$module" \
++    | hexenc \
+     | sed -nre "s,(.+:.+),modalias(kernel-${krel##*-}:\\1),p"
+ done \
+ | sort -u \
+-- 
+2.16.2
+

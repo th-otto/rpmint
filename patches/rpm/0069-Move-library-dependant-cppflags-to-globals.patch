@@ -1,0 +1,27 @@
+From 22de325b9d8789c189d61efda17d2dff71ea699b Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 16:18:34 +0100
+Subject: [PATCH 69/81] Move library dependant cppflags to globals
+
+---
+ luaext/Makefile.am | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/luaext/Makefile.am b/luaext/Makefile.am
+index 65e15551f..8c95be443 100644
+--- a/luaext/Makefile.am
++++ b/luaext/Makefile.am
+@@ -5,9 +5,8 @@ EXTRA_DIST = \
+ 	userconfig.c \
+ 	linit.lua
+ 
+-AM_CPPFLAGS = -I$(top_builddir) -I$(top_builddir)/include -I.
++AM_CPPFLAGS = -I$(top_builddir) -I$(top_builddir)/include -I. -DWITH_POSIX @LUA_CFLAGS@
+ 
+-libluaext_la_CPPFLAGS = $(AM_CPPFLAGS) -DWITH_POSIX @LUA_CFLAGS@
+ libluaext_la_LIBADD = @LUA_LIBS@
+ libluaext_la_SOURCES = \
+ 		lposix.h \
+-- 
+2.16.2
+

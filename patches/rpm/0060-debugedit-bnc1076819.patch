@@ -1,0 +1,29 @@
+From 3bcd312a00015e8506ed1576821f80acc6707469 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 06:04:32 +0100
+Subject: [PATCH 60/63] debugedit bnc1076819
+
+---
+ tools/debugedit.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/tools/debugedit.c b/tools/debugedit.c
+index 0546f1dc5..41991e787 100644
+--- a/tools/debugedit.c
++++ b/tools/debugedit.c
+@@ -2192,9 +2192,9 @@ edit_dwarf2 (DSO *dso)
+ 		      /* Offset (pointing into the line program) moves
+ 			 from old to new index including the header
+ 			 size diff. */
+-		      r_offset += ((dso->lines.table[lndx].new_idx
+-				    - dso->lines.table[lndx].old_idx)
+-				   + dso->lines.table[lndx].size_diff);
++		      r_offset += (ssize_t)((dso->lines.table[lndx].new_idx
++					     - dso->lines.table[lndx].old_idx)
++					    + dso->lines.table[lndx].size_diff);
+ 
+ 		      if (rtype == SHT_RELA)
+ 			{
+-- 
+2.16.2
+

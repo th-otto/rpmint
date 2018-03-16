@@ -1,0 +1,113 @@
+From 49d6973ccf269b409bba2189570e32b3313986b5 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:37:03 +0100
+Subject: [PATCH 25/63] rpm short changelog
+
+---
+ build/pack.c           | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ build/parseChangelog.c |  5 ++++
+ 2 files changed, 71 insertions(+)
+
+diff --git a/build/pack.c b/build/pack.c
+index 1348b5f67..4bcbcfd31 100644
+--- a/build/pack.c
++++ b/build/pack.c
+@@ -641,6 +641,71 @@ static rpmRC checkPackages(char *pkgcheck)
+     return RPMRC_OK;
+ }
+ 
++static void trimChangelog(Header h)
++{
++    static int oneshot;
++    static int cuttime, minnum, maxnum;
++    rpm_count_t i, keep;
++    struct rpmtd_s timestd, namestd, textstd;
++    rpm_count_t count;
++
++    if (!oneshot) {
++	char *binarychangelogtrim = rpmExpand("%{?_binarychangelogtrim}", NULL);
++	oneshot = 1;
++	if (binarychangelogtrim && *binarychangelogtrim) {
++	    maxnum = atoi(binarychangelogtrim);
++	    binarychangelogtrim = strchr(binarychangelogtrim, ',');
++	    if (binarychangelogtrim)
++	      binarychangelogtrim++;
++	}
++	if (binarychangelogtrim && *binarychangelogtrim) {
++	    cuttime = atoi(binarychangelogtrim);
++	    binarychangelogtrim = strchr(binarychangelogtrim, ',');
++	    if (binarychangelogtrim)
++	      binarychangelogtrim++;
++	}
++	if (binarychangelogtrim && *binarychangelogtrim) {
++	    minnum = atoi(binarychangelogtrim);
++	    binarychangelogtrim = strchr(binarychangelogtrim, ',');
++	}
++    }
++    if (!cuttime && !minnum && !maxnum) {
++	return;
++    }
++
++    if (!headerGet(h, RPMTAG_CHANGELOGTIME, &timestd, HEADERGET_MINMEM))
++	return;
++    count = rpmtdCount(&timestd);
++    if ((!cuttime || count <= minnum) && (!maxnum || count <= maxnum)) {
++	rpmtdFreeData(&timestd);
++	return;
++    }
++    keep = count;
++    if (maxnum && keep > maxnum)
++	keep = maxnum;
++    if (cuttime) {
++	for (i = 0; i < keep; i++) {
++	    uint32_t *tp = rpmtdNextUint32(&timestd);
++	    if (i >= minnum && tp && *tp < cuttime)
++		break;
++	}
++	keep = i;
++    }
++    if (keep >= count) {
++	rpmtdFreeData(&timestd);
++	return;
++    }
++    headerGet(h, RPMTAG_CHANGELOGNAME, &namestd, HEADERGET_MINMEM);
++    headerGet(h, RPMTAG_CHANGELOGTEXT, &textstd, HEADERGET_MINMEM);
++    timestd.count = namestd.count = textstd.count = keep;
++    headerMod(h, &timestd);
++    headerMod(h, &namestd);
++    headerMod(h, &textstd);
++    rpmtdFreeData(&textstd);
++    rpmtdFreeData(&namestd);
++    rpmtdFreeData(&timestd);
++}
++
+ rpmRC packageBinaries(rpmSpec spec, const char *cookie, int cheating)
+ {
+     rpmRC rc;
+@@ -648,6 +713,7 @@ rpmRC packageBinaries(rpmSpec spec, const char *cookie, int cheating)
+     Package pkg;
+     char *pkglist = NULL;
+ 
++    trimChangelog(spec->packages->header);
+     for (pkg = spec->packages; pkg != NULL; pkg = pkg->next) {
+ 	char *fn;
+ 
+diff --git a/build/parseChangelog.c b/build/parseChangelog.c
+index d3d7d33b7..105bb20c3 100644
+--- a/build/parseChangelog.c
++++ b/build/parseChangelog.c
+@@ -255,6 +255,11 @@ static rpmRC addChangelog(Header h, ARGV_const_t sb)
+ 	    goto exit;
+ 	}
+ 
++        /* workaround old suse oddity */
++        if (*s == '-' && s[1] == ' ') {
++            s += 2;
++        }
++
+ 	/* name */
+ 	name = s;
+ 	while (*s != '\0') s++;
+-- 
+2.16.2
+

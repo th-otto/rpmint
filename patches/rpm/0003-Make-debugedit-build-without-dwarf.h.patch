@@ -1,0 +1,76 @@
+From 79c967c5c457884d9178324665f059edb931a812 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 04:45:34 +0100
+Subject: [PATCH 03/63] Make debugedit build without dwarf.h
+
+---
+ Makefile.am       |  2 --
+ tools/debugedit.c | 32 +++++++++++++++++++++++++++++++-
+ 2 files changed, 31 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 345adbc9e..5ec2726c9 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -154,7 +154,6 @@ rpm2archive_LDADD +=	@WITH_POPT_LIB@ @WITH_ARCHIVE_LIB@
+ 
+ 
+ if LIBELF
+-if LIBDWARF
+ if LIBDW
+ rpmconfig_SCRIPTS += scripts/find-debuginfo.sh
+ 
+@@ -168,7 +167,6 @@ else
+ debugedit_LDADD +=	@WITH_LIBDW_LIB@ -lebl
+ endif # HAVE_LIBDW_STRTAB
+ endif # LIBDW
+-endif # LIBDWARF
+ rpmlibexec_PROGRAMS +=	elfdeps
+ elfdeps_SOURCES =	tools/elfdeps.c
+ elfdeps_LDADD =		rpmio/librpmio.la
+diff --git a/tools/debugedit.c b/tools/debugedit.c
+index fa47aa5e2..4c344ceff 100644
+--- a/tools/debugedit.c
++++ b/tools/debugedit.c
+@@ -39,7 +39,37 @@
+ #include <popt.h>
+ 
+ #include <gelf.h>
+-#include <dwarf.h>
++
++
++/* some defines taken from the dwarf standard */
++
++#define DW_TAG_compile_unit	0x11
++
++#define DW_AT_name		0x03
++#define DW_AT_stmt_list		0x10
++#define DW_AT_comp_dir		0x1b
++
++#define DW_FORM_addr		0x01
++#define DW_FORM_block2		0x03
++#define DW_FORM_block4		0x04
++#define DW_FORM_data2		0x05
++#define DW_FORM_data4		0x06
++#define DW_FORM_data8		0x07
++#define DW_FORM_string		0x08
++#define DW_FORM_block		0x09
++#define DW_FORM_block1		0x0a
++#define DW_FORM_data1		0x0b
++#define DW_FORM_flag		0x0c
++#define DW_FORM_sdata		0x0d
++#define DW_FORM_strp		0x0e
++#define DW_FORM_udata		0x0f
++#define DW_FORM_ref_addr	0x10
++#define DW_FORM_ref1		0x11
++#define DW_FORM_ref2		0x12
++#define DW_FORM_ref4		0x13
++#define DW_FORM_ref8		0x14
++#define DW_FORM_ref_udata	0x15
++#define DW_FORM_indirect	0x16
+ 
+ /* Unfortunately strtab manipulation functions were only officially added
+    to elfutils libdw in 0.167.  Before that there were internal unsupported
+-- 
+2.16.2
+

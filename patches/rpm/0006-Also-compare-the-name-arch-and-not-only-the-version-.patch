@@ -1,0 +1,51 @@
+From 1e665147a165b5f31875ea5c17e9f38965b542c0 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 04:49:29 +0100
+Subject: [PATCH 06/63] Also compare the name/arch and not only the version
+ when checking if two packages are the same. rh#104066
+
+---
+ lib/depends.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/lib/depends.c b/lib/depends.c
+index 9f4db8fa9..4719b6738 100644
+--- a/lib/depends.c
++++ b/lib/depends.c
+@@ -170,6 +170,24 @@ static int skipColor(rpm_color_t tscolor, rpm_color_t color, rpm_color_t ocolor)
+     return tscolor && color && ocolor && !(color & ocolor);
+ }
+ 
++static int rpmNameVersionCompare(Header first, Header second)
++{
++    const char * one, * two;
++    int rc;
++
++    one = headerGetString(first, RPMTAG_NAME);
++    two = headerGetString(second, RPMTAG_NAME);
++    rc = strcmp(one, two);
++    if (rc)
++	return rc;
++    one = headerGetString(first, RPMTAG_ARCH);
++    two = headerGetString(second, RPMTAG_ARCH);
++    rc = strcmp(one, two);
++    if (rc)
++	return rc;
++    return rpmVersionCompare(first, second);
++}
++
+ /* Add erase elements for older packages of same color (if any). */
+ static int addSelfErasures(rpmts ts, rpm_color_t tscolor, int op,
+ 				rpmte p, rpm_color_t hcolor, Header h)
+@@ -184,7 +202,7 @@ static int addSelfErasures(rpmts ts, rpm_color_t tscolor, int op,
+ 	if (skipColor(tscolor, hcolor, headerGetNumber(oh, RPMTAG_HEADERCOLOR)))
+ 	    continue;
+ 
+-	cmp = rpmVersionCompare(h, oh);
++	cmp = rpmNameVersionCompare(h, oh);
+ 
+ 	/* On upgrade, skip packages that contain identical NEVR. */
+ 	if ((op == RPMTE_UPGRADE) && (cmp == 0))
+-- 
+2.16.2
+

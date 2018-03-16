@@ -1,0 +1,764 @@
+From 732c6f5c0afa2dcf16fa936893cc015c918e44a3 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 20:23:05 +0100
+Subject: [PATCH 1/9] Only use pthreads if available
+
+---
+ configure.ac        |  7 ++++---
+ lib/package.c       |  8 ++++++++
+ lib/rpmrc.c         | 21 ++++++++++++++++++++-
+ lib/rpmug.c         | 11 +++++++++++
+ lib/tagname.c       | 27 +++++++++++++++++++++++++++
+ misc/rpmfts.h       |  2 ++
+ rpmio/Makefile.am   |  2 +-
+ rpmio/macro.c       | 12 ++++++++++++
+ rpmio/rpmfileutil.c | 13 +++++++++++++
+ rpmio/rpmkeyring.c  | 52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ rpmio/rpmlog.c      | 24 ++++++++++++++++++++++--
+ rpmio/rpmsq.c       |  4 ++++
+ system.h            |  4 ++++
+ 13 files changed, 180 insertions(+), 7 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 2cbbdf4d5..e97ebce7a 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -243,12 +243,13 @@ AC_CHECK_FUNC(gethostname, [], [
+ 
+ AC_CHECK_HEADERS(pthread.h)
+ 
+-AC_CHECK_LIB(pthread, pthread_mutex_trylock, [], [
++AC_CHECK_LIB(pthread, pthread_mutex_trylock, [PTHREAD_LIBS=-lpthread], [
+   dnl OSF 5.0 has the the symbols prefixed with __ in libpthread.
+-  AC_CHECK_LIB(pthread, __pthread_mutex_trylock, [], [
+-    AC_CHECK_LIB(thread, mutex_lock)
++  AC_CHECK_LIB(pthread, __pthread_mutex_trylock, [PTHREAD_LIBS=-lpthread], [
++    AC_CHECK_LIB(thread, mutex_lock, [PTHREAD_LIBS=-lthread])
+   ])
+ ])
++AC_SUBST([PTHREAD_LIBS])
+ 
+ AC_SEARCH_LIBS(dlopen, [dl])
+ 
+diff --git a/lib/package.c b/lib/package.c
+index 01493eb43..688d503c0 100644
+--- a/lib/package.c
++++ b/lib/package.c
+@@ -5,7 +5,9 @@
+ #include "system.h"
+ 
+ #include <netinet/in.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ 
+ #include <rpm/rpmlib.h>			/* XXX RPMSIGTAG, other sig stuff */
+ #include <rpm/rpmts.h>
+@@ -99,7 +101,9 @@ void headerMergeLegacySigs(Header h, Header sigh)
+  */
+ static int stashKeyid(unsigned int keyid)
+ {
++#ifdef HAVE_PTHREAD_H
+     static pthread_mutex_t keyid_lock = PTHREAD_MUTEX_INITIALIZER;
++#endif
+     static const unsigned int nkeyids_max = 256;
+     static unsigned int nkeyids = 0;
+     static unsigned int nextkeyid  = 0;
+@@ -111,9 +115,11 @@ static int stashKeyid(unsigned int keyid)
+     if (keyid == 0)
+ 	return 0;
+ 
++#ifdef HAVE_PTHREAD_H
+     /* Just pretend we didn't see the keyid if we fail to lock */
+     if (pthread_mutex_lock(&keyid_lock))
+ 	return 0;
++#endif
+ 
+     if (keyids != NULL)
+     for (i = 0; i < nkeyids; i++) {
+@@ -133,7 +139,9 @@ static int stashKeyid(unsigned int keyid)
+     nextkeyid %= nkeyids_max;
+ 
+ exit:
++#ifdef HAVE_PTHREAD_H
+     pthread_mutex_unlock(&keyid_lock);
++#endif
+     return seen;
+ }
+ 
+diff --git a/lib/rpmrc.c b/lib/rpmrc.c
+index db1afb489..7ea38fd86 100644
+--- a/lib/rpmrc.c
++++ b/lib/rpmrc.c
+@@ -1,7 +1,9 @@
+ #include "system.h"
+ 
+ #include <stdarg.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ 
+ #if defined(__linux__)
+ #include <elf.h>
+@@ -146,7 +148,9 @@ struct rpmrcCtx_s {
+     struct tableType_s tables[RPM_MACHTABLE_COUNT];
+     int machDefaults;
+     int pathDefaults;
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_t lock;
++#endif
+ };
+ 
+ /* prototypes */
+@@ -163,7 +167,9 @@ static void rpmRebuildTargetVars(rpmrcCtx ctx, const char **target, const char *
+ static rpmrcCtx rpmrcCtxAcquire(int write)
+ {
+     static struct rpmrcCtx_s _globalCtx = {
++#ifdef HAVE_PTHREAD_H
+ 	.lock = PTHREAD_RWLOCK_INITIALIZER,
++#endif
+ 	.currTables = { RPM_MACHTABLE_INSTOS, RPM_MACHTABLE_INSTARCH },
+ 	.tables = {
+ 	    { "arch", 1, 0 },
+@@ -174,11 +180,13 @@ static rpmrcCtx rpmrcCtxAcquire(int write)
+     };
+     rpmrcCtx ctx = &_globalCtx;
+ 
++#ifdef HAVE_PTHREAD_H
+     /* XXX: errors should be handled */
+     if (write)
+ 	pthread_rwlock_wrlock(&ctx->lock);
+     else
+ 	pthread_rwlock_rdlock(&ctx->lock);
++#endif
+ 
+     return ctx;
+ }
+@@ -186,7 +194,9 @@ static rpmrcCtx rpmrcCtxAcquire(int write)
+ /* Release context (lock) */
+ static rpmrcCtx rpmrcCtxRelease(rpmrcCtx ctx)
+ {
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_unlock(&ctx->lock);
++#endif
+     return NULL;
+ }
+ 
+@@ -1628,11 +1638,20 @@ static void register_atexit(void)
+ 
+ int rpmReadConfigFiles(const char * file, const char * target)
+ {
+-    static pthread_once_t atexit_registered = PTHREAD_ONCE_INIT;
+     int rc = -1; /* assume failure */
+     rpmrcCtx ctx = rpmrcCtxAcquire(1);
++#ifdef HAVE_PTHREAD_H
++    static pthread_once_t atexit_registered = PTHREAD_ONCE_INIT;
+ 
+     pthread_once(&atexit_registered, register_atexit);
++#else
++	static int atexit_registered;
++	if (!atexit_registered)
++	{
++		register_atexit();
++		atexit_registered = 1;
++	}
++#endif
+ 
+     /* Force preloading of dlopen()'ed libraries in case we go chrooting */
+     if (rpmugInit())
+diff --git a/lib/rpmug.c b/lib/rpmug.c
+index cd341e958..7b5fa9aa3 100644
+--- a/lib/rpmug.c
++++ b/lib/rpmug.c
+@@ -1,6 +1,8 @@
+ #include "system.h"
+ 
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ #include <pwd.h>
+ #include <grp.h>
+ #include <netdb.h>
+@@ -242,9 +244,18 @@ static void loadLibs(void)
+ 
+ int rpmugInit(void)
+ {
++#ifdef HAVE_PTHREAD_H
+     static pthread_once_t libsLoaded = PTHREAD_ONCE_INIT;
+ 
+     pthread_once(&libsLoaded, loadLibs);
++#else
++	static int libsLoaded;
++	if (!libsLoaded)
++	{
++		loadLibs();
++		libsLoaded = 1;
++	}
++#endif
+     return 0;
+ }
+ 
+diff --git a/lib/tagname.c b/lib/tagname.c
+index 68b252991..c02073ff4 100644
+--- a/lib/tagname.c
++++ b/lib/tagname.c
+@@ -4,7 +4,9 @@
+ 
+ #include "system.h"
+ 
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ 
+ #include <rpm/header.h>
+ #include <rpm/rpmstring.h>
+@@ -61,11 +63,20 @@ static int tagCmpValue(const void * avp, const void * bvp)
+     return ret;
+ }
+ 
++#ifdef HAVE_PTHREAD_H
+ static pthread_once_t tagsLoaded = PTHREAD_ONCE_INIT;
++#else
++static int tagsLoaded;
++#endif
+ 
+ /* Initialize tag by-value and by-name lookup tables */
+ static void loadTags(void)
+ {
++#ifndef HAVE_PTHREAD_H
++	if (tagsLoaded)
++		return;
++	tagsLoaded = 1;
++#endif
+     for (int i = 0; i < rpmTagTableSize; i++) {
+ 	tagsByValue[i] = &rpmTagTable[i];
+ 	tagsByName[i] = &rpmTagTable[i];
+@@ -130,7 +141,11 @@ const char * rpmTagGetName(rpmTagVal tag)
+     const char *name = "(unknown)";
+     const struct headerTagTableEntry_s *t;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&tagsLoaded, loadTags);
++#else
++	loadTags();
++#endif
+ 
+     switch (tag) {
+     case RPMDBI_PACKAGES:
+@@ -158,7 +173,11 @@ rpmTagType rpmTagGetType(rpmTagVal tag)
+     const struct headerTagTableEntry_s *t;
+     rpmTagType tagtype = RPM_NULL_TYPE;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&tagsLoaded, loadTags);
++#else
++	loadTags();
++#endif
+ 
+     t = entryByTag(tag);
+     if (t) {
+@@ -173,7 +192,11 @@ rpmTagVal rpmTagGetValue(const char * tagstr)
+     const struct headerTagTableEntry_s *t;
+     rpmTagType tagval = RPMTAG_NOT_FOUND;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&tagsLoaded, loadTags);
++#else
++	loadTags();
++#endif
+ 
+     if (!rstrcasecmp(tagstr, "Packages"))
+ 	return RPMDBI_PACKAGES;
+@@ -232,7 +255,11 @@ int rpmTagGetNames(rpmtd tagnames, int fullname)
+     const char **names;
+     const char *name;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&tagsLoaded, loadTags);
++#else
++	loadTags();
++#endif
+ 
+     if (tagnames == NULL || tagsByName == NULL)
+ 	return 0;
+diff --git a/misc/rpmfts.h b/misc/rpmfts.h
+index 30ad0ee8e..90fdd0fda 100644
+--- a/misc/rpmfts.h
++++ b/misc/rpmfts.h
+@@ -38,7 +38,9 @@
+ #include <features.h>
+ #else
+ 
++#ifndef __THROW
+ #   define __THROW
++#endif
+ 
+ #if !defined(_LARGEFILE64_SOURCE)
+ # define	_LARGEFILE64_SOURCE
+diff --git a/rpmio/Makefile.am b/rpmio/Makefile.am
+index 6024ae4e2..00a968798 100644
+--- a/rpmio/Makefile.am
++++ b/rpmio/Makefile.am
+@@ -46,7 +46,7 @@ librpmio_la_LIBADD = \
+ 	@WITH_POPT_LIB@ \
+ 	@WITH_LZMA_LIB@ \
+ 	$(ZSTD_LIBS) \
+-	-lpthread
++	$(PTHREAD_LIBS)
+ 
+ if WITH_INTERNAL_BEECRYPT
+ librpmio_la_LIBADD += $(libbeecrypt_la)
+diff --git a/rpmio/macro.c b/rpmio/macro.c
+index 7858b10b2..e89da44bb 100644
+--- a/rpmio/macro.c
++++ b/rpmio/macro.c
+@@ -4,7 +4,9 @@
+ 
+ #include "system.h"
+ #include <stdarg.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ #include <errno.h>
+ #ifdef HAVE_GETOPT_H
+ #include <getopt.h>
+@@ -59,8 +61,10 @@ struct rpmMacroContext_s {
+     int n;      /*!< No. of macros. */
+     int depth;		 /*!< Depth tracking when recursing from Lua  */
+     int level;		 /*!< Scope level tracking when recursing from Lua  */
++#ifdef HAVE_PTHREAD_H
+     pthread_mutex_t lock;
+     pthread_mutexattr_t lockattr;
++#endif
+ };
+ 
+ 
+@@ -79,6 +83,7 @@ rpmMacroContext rpmCLIMacroContext = &rpmCLIMacroContext_s;
+  * mutexes so we need to have a separate PTHREAD_ONCE initializer just
+  * to initialize the otherwise static macro context mutexes. Pooh.
+  */
++#ifdef HAVE_PTHREAD_H
+ static pthread_once_t locksInitialized = PTHREAD_ONCE_INIT;
+ 
+ static void initLocks(void)
+@@ -92,6 +97,9 @@ static void initLocks(void)
+ 	pthread_mutex_init(&mc->lock, &mc->lockattr);
+     }
+ }
++#else
++#define initLocks()
++#endif
+ 
+ /**
+  * Macro expansion state.
+@@ -132,14 +140,18 @@ static rpmMacroContext rpmmctxAcquire(rpmMacroContext mc)
+ {
+     if (mc == NULL)
+ 	mc = rpmGlobalMacroContext;
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&locksInitialized, initLocks);
+     pthread_mutex_lock(&mc->lock);
++#endif
+     return mc;
+ }
+ 
+ static rpmMacroContext rpmmctxRelease(rpmMacroContext mc)
+ {
++#ifdef HAVE_PTHREAD_H
+     pthread_mutex_unlock(&mc->lock);
++#endif
+     return NULL;
+ }
+ 
+diff --git a/rpmio/rpmfileutil.c b/rpmio/rpmfileutil.c
+index 9e47ff8a5..c579dddd0 100644
+--- a/rpmio/rpmfileutil.c
++++ b/rpmio/rpmfileutil.c
+@@ -19,7 +19,9 @@
+ #include <errno.h>
+ #include <popt.h>
+ #include <ctype.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ 
+ #include <rpm/rpmfileutil.h>
+ #include <rpm/rpmurl.h>
+@@ -32,7 +34,9 @@
+ #include "debug.h"
+ 
+ static const char *rpm_config_dir = NULL;
++#ifdef HAVE_PTHREAD_H
+ static pthread_once_t configDirSet = PTHREAD_ONCE_INIT;
++#endif
+ 
+ static int is_prelinked(int fdno)
+ {
+@@ -626,6 +630,15 @@ static void setConfigDir(void)
+ 
+ const char *rpmConfigDir(void)
+ {
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&configDirSet, setConfigDir);
++#else
++	static int configDirSet;
++	if (!configDirSet)
++	{
++		configDirSet = 1;
++		setConfigDir();
++	}
++#endif
+     return rpm_config_dir;
+ }
+diff --git a/rpmio/rpmkeyring.c b/rpmio/rpmkeyring.c
+index 4e14de1e5..fabfcd7b5 100644
+--- a/rpmio/rpmkeyring.c
++++ b/rpmio/rpmkeyring.c
+@@ -1,6 +1,8 @@
+ #include "system.h"
+ 
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ 
+ #include <rpm/rpmstring.h>
+ #include <rpm/rpmpgp.h>
+@@ -19,14 +21,18 @@ struct rpmPubkey_s {
+     pgpKeyID_t keyid;
+     pgpDigParams pgpkey;
+     int nrefs;
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_t lock;
++#endif
+ };
+ 
+ struct rpmKeyring_s {
+     struct rpmPubkey_s **keys;
+     size_t numkeys;
+     int nrefs;
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_t lock;
++#endif
+ };
+ 
+ static int keyidcmp(const void *k1, const void *k2)
+@@ -43,7 +49,9 @@ rpmKeyring rpmKeyringNew(void)
+     keyring->keys = NULL;
+     keyring->numkeys = 0;
+     keyring->nrefs = 1;
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_init(&keyring->lock, NULL);
++#endif
+     return keyring;
+ }
+ 
+@@ -52,7 +60,9 @@ rpmKeyring rpmKeyringFree(rpmKeyring keyring)
+     if (keyring == NULL)
+ 	return NULL;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_wrlock(&keyring->lock);
++#endif
+     if (--keyring->nrefs == 0) {
+ 	if (keyring->keys) {
+ 	    for (int i = 0; i < keyring->numkeys; i++) {
+@@ -60,11 +70,15 @@ rpmKeyring rpmKeyringFree(rpmKeyring keyring)
+ 	    }
+ 	    free(keyring->keys);
+ 	}
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&keyring->lock);
+ 	pthread_rwlock_destroy(&keyring->lock);
++#endif
+ 	free(keyring);
+     } else {
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&keyring->lock);
++#endif
+     }
+     return NULL;
+ }
+@@ -83,7 +97,9 @@ int rpmKeyringAddKey(rpmKeyring keyring, rpmPubkey key)
+ 	return -1;
+ 
+     /* check if we already have this key, but always wrlock for simplicity */
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_wrlock(&keyring->lock);
++#endif
+     if (!rpmKeyringFindKeyid(keyring, key)) {
+ 	keyring->keys = xrealloc(keyring->keys,
+ 				 (keyring->numkeys + 1) * sizeof(rpmPubkey));
+@@ -93,7 +109,9 @@ int rpmKeyringAddKey(rpmKeyring keyring, rpmPubkey key)
+ 		keyidcmp);
+ 	rc = 0;
+     }
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_unlock(&keyring->lock);
++#endif
+ 
+     return rc;
+ }
+@@ -101,9 +119,13 @@ int rpmKeyringAddKey(rpmKeyring keyring, rpmPubkey key)
+ rpmKeyring rpmKeyringLink(rpmKeyring keyring)
+ {
+     if (keyring) {
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_wrlock(&keyring->lock);
++#endif
+ 	keyring->nrefs++;
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&keyring->lock);
++#endif
+     }
+     return keyring;
+ }
+@@ -146,7 +168,9 @@ rpmPubkey rpmPubkeyNew(const uint8_t *pkt, size_t pktlen)
+     key->nrefs = 1;
+     memcpy(key->pkt, pkt, pktlen);
+     memcpy(key->keyid, keyid, sizeof(keyid));
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_init(&key->lock, NULL);
++#endif
+ 
+ exit:
+     return key;
+@@ -175,7 +199,9 @@ rpmPubkey *rpmGetSubkeys(rpmPubkey mainkey, int *count)
+ 	    subkey->pgpkey = pgpsubkeys[i];
+ 	    memcpy(subkey->keyid, pgpsubkeys[i]->signid, sizeof(subkey->keyid));
+ 	    subkey->nrefs = 1;
++#ifdef HAVE_PTHREAD_H
+ 	    pthread_rwlock_init(&subkey->lock, NULL);
++#endif
+ 	}
+ 	free(pgpsubkeys);
+     }
+@@ -189,15 +215,21 @@ rpmPubkey rpmPubkeyFree(rpmPubkey key)
+     if (key == NULL)
+ 	return NULL;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_wrlock(&key->lock);
++#endif
+     if (--key->nrefs == 0) {
+ 	pgpDigParamsFree(key->pgpkey);
+ 	free(key->pkt);
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&key->lock);
+ 	pthread_rwlock_destroy(&key->lock);
++#endif
+ 	free(key);
+     } else {
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&key->lock);
++#endif
+     }
+     return NULL;
+ }
+@@ -205,9 +237,13 @@ rpmPubkey rpmPubkeyFree(rpmPubkey key)
+ rpmPubkey rpmPubkeyLink(rpmPubkey key)
+ {
+     if (key) {
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_wrlock(&key->lock);
++#endif
+ 	key->nrefs++;
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&key->lock);
++#endif
+     }
+     return key;
+ }
+@@ -223,9 +259,13 @@ pgpDig rpmPubkeyDig(rpmPubkey key)
+ 
+     dig = pgpNewDig();
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_rdlock(&key->lock);
++#endif
+     rc = pgpPrtPkts(key->pkt, key->pktlen, dig, 0);
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_unlock(&key->lock);
++#endif
+ 
+     if (rc == 0) {
+ 	pgpDigParams pubp = pgpDigGetParams(dig, PGPTAG_PUBLIC_KEY);
+@@ -246,9 +286,13 @@ char * rpmPubkeyBase64(rpmPubkey key)
+     char *enc = NULL;
+ 
+     if (key) {
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_rdlock(&key->lock);
++#endif
+ 	enc = rpmBase64Encode(key->pkt, key->pktlen, -1);
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&key->lock);
++#endif
+     }
+     return enc;
+ }
+@@ -287,7 +331,9 @@ static rpmPubkey findbySig(rpmKeyring keyring, pgpDigParams sig)
+ 
+ rpmRC rpmKeyringLookup(rpmKeyring keyring, pgpDig sig)
+ {
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_rdlock(&keyring->lock);
++#endif
+ 
+     rpmRC res = RPMRC_NOKEY;
+     pgpDigParams sigp = pgpDigGetParams(sig, PGPTAG_SIGNATURE);
+@@ -303,7 +349,9 @@ rpmRC rpmKeyringLookup(rpmKeyring keyring, pgpDig sig)
+ 	res = RPMRC_OK;
+     }
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_unlock(&keyring->lock);
++#endif
+     return res;
+ }
+ 
+@@ -312,7 +360,9 @@ rpmRC rpmKeyringVerifySig(rpmKeyring keyring, pgpDigParams sig, DIGEST_CTX ctx)
+     rpmRC rc = RPMRC_FAIL;
+ 
+     if (sig && ctx) {
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_rdlock(&keyring->lock);
++#endif
+ 
+ 	pgpDigParams pgpkey = NULL;
+ 	rpmPubkey key = findbySig(keyring, sig);
+@@ -323,7 +373,9 @@ rpmRC rpmKeyringVerifySig(rpmKeyring keyring, pgpDigParams sig, DIGEST_CTX ctx)
+ 	/* We call verify even if key not found for a signature sanity check */
+ 	rc = pgpVerifySignature(pgpkey, sig, ctx);
+ 
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&keyring->lock);
++#endif
+     }
+ 
+     return rc;
+diff --git a/rpmio/rpmlog.c b/rpmio/rpmlog.c
+index 223af32aa..1370dbd08 100644
+--- a/rpmio/rpmlog.c
++++ b/rpmio/rpmlog.c
+@@ -5,7 +5,9 @@
+ #include "system.h"
+ #include <stdarg.h>
+ #include <stdlib.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ #include <errno.h>
+ #include <rpm/rpmlog.h>
+ #include <rpm/rpmmacro.h>
+@@ -13,7 +15,9 @@
+ 
+ typedef struct rpmlogCtx_s * rpmlogCtx;
+ struct rpmlogCtx_s {
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_t lock;
++#endif
+     unsigned mask;
+     int nrecs;
+     rpmlogRec recs;
+@@ -31,17 +35,24 @@ struct rpmlogRec_s {
+ /* Force log context acquisition through a function */
+ static rpmlogCtx rpmlogCtxAcquire(int write)
+ {
+-    static struct rpmlogCtx_s _globalCtx = { PTHREAD_RWLOCK_INITIALIZER,
++    static struct rpmlogCtx_s _globalCtx = {
++#ifdef HAVE_PTHREAD_H
++    	PTHREAD_RWLOCK_INITIALIZER,
++#endif
+ 					     RPMLOG_UPTO(RPMLOG_NOTICE),
+ 					     0, NULL, NULL, NULL, NULL };
+     rpmlogCtx ctx = &_globalCtx;
+     int xx;
+ 
+     /* XXX Silently failing is bad, but we can't very well use log here... */
++#ifdef HAVE_PTHREAD_H
+     if (write)
+ 	xx = pthread_rwlock_wrlock(&ctx->lock);
+     else
+ 	xx = pthread_rwlock_rdlock(&ctx->lock);
++#else
++	xx = 0;
++#endif
+ 
+     return (xx == 0) ? ctx : NULL;
+ }
+@@ -49,8 +60,10 @@ static rpmlogCtx rpmlogCtxAcquire(int write)
+ /* Release log context */
+ static rpmlogCtx rpmlogCtxRelease(rpmlogCtx ctx)
+ {
++#ifdef HAVE_PTHREAD_H
+     if (ctx)
+ 	pthread_rwlock_unlock(&ctx->lock);
++#endif
+     return NULL;
+ }
+ 
+@@ -349,7 +362,9 @@ static int rpmlogDefault(FILE *stdlog, rpmlogRec rec)
+ /* FIX: rpmlogMsgPrefix[] may be NULL */
+ static void dolog(struct rpmlogRec_s *rec, int saverec)
+ {
++#ifdef HAVE_PTHREAD_H
+     static pthread_mutex_t serialize = PTHREAD_MUTEX_INITIALIZER;
++#endif
+ 
+     int cbrc = RPMLOG_DEFAULT;
+     int needexit = 0;
+@@ -379,7 +394,10 @@ static void dolog(struct rpmlogRec_s *rec, int saverec)
+     ctx = rpmlogCtxRelease(ctx);
+ 
+     /* Always serialize callback and output to avoid interleaved messages. */
+-    if (pthread_mutex_lock(&serialize) == 0) {
++#ifdef HAVE_PTHREAD_H
++    if (pthread_mutex_lock(&serialize) == 0)
++#endif
++    {
+ 	if (cbfunc) {
+ 	    cbrc = cbfunc(rec, cbdata);
+ 	    needexit += cbrc & RPMLOG_EXIT;
+@@ -389,7 +407,9 @@ static void dolog(struct rpmlogRec_s *rec, int saverec)
+ 	    cbrc = rpmlogDefault(clog, rec);
+ 	    needexit += cbrc & RPMLOG_EXIT;
+ 	}
++#ifdef HAVE_PTHREAD_H
+ 	pthread_mutex_unlock(&serialize);
++#endif
+     }
+     
+     if (needexit)
+diff --git a/rpmio/rpmsq.c b/rpmio/rpmsq.c
+index d157514e9..b08f294ab 100644
+--- a/rpmio/rpmsq.c
++++ b/rpmio/rpmsq.c
+@@ -20,6 +20,10 @@ static __thread int disableInterruptSafety;
+ static __thread sigset_t rpmsqCaught;
+ static __thread sigset_t rpmsqActive;
+ 
++#ifndef HAVE_PTHREAD_H
++#define pthread_sigmask sigprocmask
++#endif
++
+ typedef struct rpmsig_s * rpmsig;
+ 
+ static void rpmsqIgn(int signum, siginfo_t *info, void *context)
+diff --git a/system.h b/system.h
+index afefdedcf..06717b136 100644
+--- a/system.h
++++ b/system.h
+@@ -84,6 +84,10 @@ char * stpncpy(char * dest, const char * src, size_t n);
+ extern int fdatasync(int fildes);
+ #endif
+ 
++#ifndef HAVE_PTHREAD_H
++#define __thread
++#endif
++
+ #include "rpmio/rpmutil.h"
+ /* compatibility macros to avoid a mass-renaming all over the codebase */
+ #define xmalloc(_size) rmalloc((_size))
+-- 
+2.16.2
+

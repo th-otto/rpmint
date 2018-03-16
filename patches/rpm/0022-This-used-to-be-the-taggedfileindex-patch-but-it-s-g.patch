@@ -1,0 +1,27 @@
+From b28b2ab4add470b133a755e3066f7ad0d3ffd0c1 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:35:56 +0100
+Subject: [PATCH 22/63] This used to be the taggedfileindex patch, but it's
+ gone. The remaining part just strips off the tag.
+
+---
+ lib/backend/db3.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/lib/backend/db3.c b/lib/backend/db3.c
+index f96d62c5c..fbc2c4ce4 100644
+--- a/lib/backend/db3.c
++++ b/lib/backend/db3.c
+@@ -1027,6 +1027,9 @@ static int dbt2set(dbiIndex dbi, DBT * data, dbiIndexSet * setp)
+ 	    _DBSWAP(hdrNum);
+ 	    _DBSWAP(tagNum);
+ 	}
++	/* remove tagged directory info */
++	if (tagNum.ui & 0x80000000)
++	    tagNum.ui &= 0x0000ffff;
+ 	set->recs[i].hdrNum = hdrNum.ui;
+ 	set->recs[i].tagNum = tagNum.ui;
+     }
+-- 
+2.16.2
+

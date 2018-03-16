@@ -1,0 +1,47 @@
+From f619aaf59aa45f55e89a70e9803d48641100843c Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 04:48:56 +0100
+Subject: [PATCH 05/63] Ignore auxv
+
+---
+ lib/rpmrc.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/lib/rpmrc.c b/lib/rpmrc.c
+index cada3f788..db1afb489 100644
+--- a/lib/rpmrc.c
++++ b/lib/rpmrc.c
+@@ -79,10 +79,12 @@ struct rpmOption {
+     int localize;
+ };
+ 
++#if defined(__linux__) && (defined(__powerpc__) || defined(__sparc__) || (defined(__arm__) && defined(__ARM_PCS_VFP)))
+ static struct rpmat_s {
+     const char *platform;
+     uint64_t hwcap;
+ } rpmat;
++#endif
+ 
+ typedef struct defaultEntry_s {
+     char * name;
+@@ -949,7 +951,7 @@ static int is_geode(void)
+ #endif
+ 
+ 
+-#if defined(__linux__)
++#if defined(__linux__) && (defined(__powerpc__) || defined(__sparc__) || (defined(__arm__) && defined(__ARM_PCS_VFP)))
+ /**
+  * Populate rpmat structure with auxv values
+  */
+@@ -1005,7 +1007,7 @@ static void defaultMachine(rpmrcCtx ctx, const char ** arch, const char ** os)
+     canonEntry canon;
+     int rc;
+ 
+-#if defined(__linux__)
++#if defined(__linux__) && (defined(__powerpc__) || defined(__sparc__) || (defined(__arm__) && defined(__ARM_PCS_VFP)))
+     /* Populate rpmat struct with hw info */
+     read_auxv();
+ #endif
+-- 
+2.16.2
+

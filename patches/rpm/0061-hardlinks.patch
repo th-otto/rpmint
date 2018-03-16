@@ -1,0 +1,109 @@
+From c1d3d3860222f381a18eb327a27f38b3d3d504bc Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 06:04:58 +0100
+Subject: [PATCH 61/63] hardlinks
+
+---
+ lib/rpmfiles.h    |  2 +-
+ lib/transaction.c | 32 +++++++++++++++++++++++++++-----
+ 2 files changed, 28 insertions(+), 6 deletions(-)
+
+diff --git a/lib/rpmfiles.h b/lib/rpmfiles.h
+index 3694c652e..daf572cf4 100644
+--- a/lib/rpmfiles.h
++++ b/lib/rpmfiles.h
+@@ -125,7 +125,7 @@ typedef rpmFlags rpmfiFlags;
+ 
+ #define RPMFI_FLAGS_ERASE \
+     (RPMFI_NOFILECLASS | RPMFI_NOFILELANGS | \
+-     RPMFI_NOFILEMTIMES | RPMFI_NOFILERDEVS | RPMFI_NOFILEINODES | \
++     RPMFI_NOFILEMTIMES | RPMFI_NOFILERDEVS | \
+      RPMFI_NOFILEVERIFYFLAGS)
+ 
+ #define RPMFI_FLAGS_INSTALL \
+diff --git a/lib/transaction.c b/lib/transaction.c
+index 13c17623c..c9bb54acf 100644
+--- a/lib/transaction.c
++++ b/lib/transaction.c
+@@ -237,11 +237,11 @@ static void rpmtsUpdateDSI(const rpmts ts, dev_t dev, const char *dirName,
+ 	dsi->bneeded += bneeded;
+ 	dsi->ineeded++;
+ 	if (prevSize) {
+-	    dsi->bdelta += BLOCK_ROUND(prevSize, dsi->bsize);
++	    dsi->bdelta += BLOCK_ROUND(prevSize - 1, dsi->bsize);
+ 	    dsi->idelta++;
+ 	}
+ 	if (fixupSize) {
+-	    dsi->bdelta += BLOCK_ROUND(fixupSize, dsi->bsize);
++	    dsi->bdelta += BLOCK_ROUND(fixupSize - 1, dsi->bsize);
+ 	    dsi->idelta++;
+ 	}
+ 
+@@ -418,6 +418,9 @@ static void handleInstInstalledFile(const rpmts ts, rpmte p, rpmfiles fi, int fx
+ {
+     rpmfs fs = rpmteGetFileStates(p);
+     int isCfgFile = ((rpmfilesFFlags(otherFi, ofx) | rpmfilesFFlags(fi, fx)) & RPMFILE_CONFIG);
++    rpm_loff_t otherFileSize;
++    int nlink;
++    const int *links;
+ 
+     if (XFA_SKIPPING(rpmfsGetAction(fs, fx)))
+ 	return;
+@@ -487,7 +490,15 @@ static void handleInstInstalledFile(const rpmts ts, rpmte p, rpmfiles fi, int fx
+ 	}
+     }
+ 
+-    rpmfilesSetFReplacedSize(fi, fx, rpmfilesFSize(otherFi, ofx));
++    otherFileSize = rpmfilesFSize(otherFi, ofx);
++
++    /* Only account for the last file of a hardlink set */
++    nlink = rpmfilesFLinks(otherFi, ofx, &links);
++    if (nlink > 1 && links[nlink - 1] != ofx)
++	otherFileSize = 0;
++
++    /* Add one to make sure the size is not zero */
++    rpmfilesSetFReplacedSize(fi, fx, otherFileSize + 1);
+ }
+ 
+ /**
+@@ -512,6 +523,9 @@ static void handleOverlappedFiles(rpmts ts, fingerPrintCache fpc, rpmte p, rpmfi
+ 	rpmfileAttrs FFlags;
+ 	struct rpmffi_s * recs;
+ 	int numRecs;
++	rpm_loff_t fileSize;
++	int nlink;
++	const int *links;
+ 
+ 	if (XFA_SKIPPING(rpmfsGetAction(fs, i)))
+ 	    continue;
+@@ -634,7 +648,8 @@ assert(otherFi != NULL);
+ 		break;
+ 
+ 	    /* Try to get the disk accounting correct even if a conflict. */
+-	    fixupSize = rpmfilesFSize(otherFi, otherFileNum);
++	    /* Add one to make sure the size is not zero */
++	    fixupSize = rpmfilesFSize(otherFi, otherFileNum) + 1;
+ 
+ 	    if (rpmfilesConfigConflict(fi, i)) {
+ 		/* Here is an overlapped  pre-existing config file. */
+@@ -679,9 +694,16 @@ assert(otherFi != NULL);
+ 	}
+ 	rpmfilesFree(otherFi);
+ 
++	fileSize = rpmfilesFSize(fi, i);
++	nlink = rpmfilesFLinks(fi, i, &links);
++	if (nlink > 1 && links[nlink - 1] != i) {
++	    /* Only account for the last file of a hardlink set */
++	    fileSize = 0;
++	    fixupSize = fixupSize ? 1 : 0;
++	}
+ 	/* Update disk space info for a file. */
+ 	rpmtsUpdateDSI(ts, fpEntryDev(fpc, fiFps), fpEntryDir(fpc, fiFps),
+-		       rpmfilesFSize(fi, i), rpmfilesFReplacedSize(fi, i),
++		       fileSize, rpmfilesFReplacedSize(fi, i),
+ 		       fixupSize, rpmfsGetAction(fs, i));
+ 
+     }
+-- 
+2.16.2
+

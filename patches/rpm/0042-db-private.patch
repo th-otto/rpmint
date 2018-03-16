@@ -1,0 +1,25 @@
+From bcf7cd3b5881c43a7cae1524e8a2835a83dccb53 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:51:08 +0100
+Subject: [PATCH 42/63] db private
+
+---
+ lib/backend/db3.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/backend/db3.c b/lib/backend/db3.c
+index fbc2c4ce4..197885041 100644
+--- a/lib/backend/db3.c
++++ b/lib/backend/db3.c
+@@ -416,7 +416,7 @@ static int db_init(rpmdb rdb, const char * dbhome)
+     int rdonly = ((rdb->db_mode & O_ACCMODE) == O_RDONLY);
+     struct dbConfig_s * cfg = &rdb->cfg;
+     /* This is our setup, thou shall not have other setups before us */
+-    uint32_t eflags = (DB_CREATE|DB_INIT_MPOOL|DB_INIT_CDB);
++    uint32_t eflags = (DB_CREATE|DB_INIT_MPOOL|DB_INIT_CDB|DB_PRIVATE);
+ 
+     if (rdb->db_dbenv != NULL) {
+ 	rdb->db_opens++;
+-- 
+2.16.2
+

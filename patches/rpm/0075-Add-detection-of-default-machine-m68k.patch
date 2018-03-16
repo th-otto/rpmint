@@ -1,0 +1,50 @@
+From a3bc1395695b3aa775401027108d5121437b51d8 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 17:03:14 +0100
+Subject: [PATCH 75/81] Add detection of default machine m68k
+
+---
+ lib/rpmrc.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/lib/rpmrc.c b/lib/rpmrc.c
+index 7ea38fd86..8e3f2d48c 100644
+--- a/lib/rpmrc.c
++++ b/lib/rpmrc.c
+@@ -1042,8 +1042,10 @@ static void defaultMachine(rpmrcCtx ctx, const char ** arch, const char ** os)
+ 
+ #if !defined(__linux__)
+ 	if (rstreq(un.sysname, "AIX")) {
++		char buf[sizeof(un.version) + sizeof(un.release) + 5];
+ 	    strcpy(un.machine, __power_pc() ? "ppc" : "rs6000");
+-	    sprintf(un.sysname,"aix%s.%s", un.version, un.release);
++	    sprintf(buf, "aix%s.%s", un.version, un.release);
++	    strncpy(un.sysname, buf, sizeof(un.sysname));
+ 	}
+ 	else if (rstreq(un.sysname, "Darwin")) { 
+ #if defined(__ppc__)
+@@ -1052,10 +1054,21 @@ static void defaultMachine(rpmrcCtx ctx, const char ** arch, const char ** os)
+ 	    strcpy(un.machine, "i386");
+ #elif defined(__x86_64__)
+ 	    strcpy(un.machine, "x86_64");
++#elif defined(__m68k__)
++	    strcpy(un.machine, "m68k");
+ #else
+ 	    #warning "No architecture defined! Automatic detection may not work!"
+ #endif 
+ 	}
++#ifdef __MINT__
++	else if (rstreq(un.sysname, "FreeMiNT") || rstreq(un.sysname, "MiNT")) {
++#if defined(__m68k__)
++	    strcpy(un.machine, "m68k");
++#else
++	    #warning "No architecture defined! Automatic detection may not work!"
++#endif 
++	}
++#endif
+ 	else if (rstreq(un.sysname, "SunOS")) {
+ 	    /* Solaris 2.x: n.x.x becomes n-3.x.x */
+ 	    sprintf(un.sysname, "solaris%1d%s", atoi(un.release)-3,
+-- 
+2.16.2
+

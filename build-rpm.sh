@@ -10,73 +10,91 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/rpm/rpm-4.12.0.1-fix-bashisms.patch
-patches/rpm/usr-lib-sysimage-rpm.patch
-patches/rpm/debugedit.patch
-patches/rpm/localetag.patch
-patches/rpm/ignore-auxv.patch
-patches/rpm/nameversioncompare.patch
-patches/rpm/dbfsync.patch
-patches/rpm/dbrointerruptable.patch
-patches/rpm/refreshtestarch.patch
-patches/rpm/waitlock.patch
-patches/rpm/suspendlock.patch
-patches/rpm/brp.patch
-patches/rpm/brpcompress.patch
-patches/rpm/checkfilesnoinfodir.patch
-patches/rpm/finddebuginfo.patch
-patches/rpm/findksyms.patch
-patches/rpm/findlang.patch
-patches/rpm/macrosin.patch
-patches/rpm/modalias.patch
-patches/rpm/platformin.patch
-patches/rpm/rpmpopt.patch
-patches/rpm/rpmrc.patch
-patches/rpm/taggedfileindex.patch
-patches/rpm/rpmqpack.patch
-patches/rpm/build.patch
-patches/rpm/rpm-shorten-changelog.patch
-patches/rpm/whatrequires-doc.patch
-patches/rpm/requires-ge-macro.patch
-patches/rpm/finddebuginfo-absolute-links.patch
-patches/rpm/firmware.patch
-patches/rpm/specfilemacro.patch
-patches/rpm/modalias-encode.patch
-patches/rpm/disttag-macro.patch
-patches/rpm/debugsubpkg.patch
-patches/rpm/debuglink.patch
-patches/rpm/debuginfo-mono.patch
-patches/rpm/lazystatfs.patch
-patches/rpm/safeugid.patch
-patches/rpm/noprereqdeprec.patch
-patches/rpm/initscriptsprov.patch
-patches/rpm/remove-translations.patch
-patches/rpm/headeradddb.patch
-patches/rpm/dbprivate.patch
-patches/rpm/nobuildcolor.patch
-patches/rpm/fileattrs.patch
-patches/rpm/nomagiccheck.patch
-patches/rpm/assumeexec.patch
-patches/rpm/mono-find-requires.patch
-patches/rpm/rpm-deptracking.patch
-patches/rpm/langnoc.patch
-patches/rpm/headerchk2.patch
-patches/rpm/brp-compress-no-img.patch
-patches/rpm/weakdepscompat.patch
-patches/rpm/checksepwarn.patch
-patches/rpm/enable-postin-scripts-error.patch
-patches/rpm/rpm-findlang-inject-metainfo.patch
-patches/rpm/emptymanifest.patch
-patches/rpm/find-lang-qt-qm.patch
-patches/rpm/debugedit-macro.patch
-patches/rpm/pythondistdeps.patch
-patches/rpm/debugedit-bnc1076819.patch
-patches/rpm/hardlinks.patch
-patches/rpm/auto-config-update-aarch64-ppc64le.patch
-patches/rpm/mint.patch
+patches/rpm/0001-Fix-bashisms.patch
+patches/rpm/0002-Change-db-path-to-usr-lib-sysimage-rpm.patch
+patches/rpm/0003-Make-debugedit-build-without-dwarf.h.patch
+patches/rpm/0004-Convert-output-to-the-current-locale.-Assumes-utf8-i.patch
+patches/rpm/0005-Ignore-auxv.patch
+patches/rpm/0006-Also-compare-the-name-arch-and-not-only-the-version-.patch
+patches/rpm/0007-Support-a-database-local-fsync-setting.-Needs-berkel.patch
+patches/rpm/0008-Make-db-r-o-interruptible.patch
+patches/rpm/0009-Also-test-architecture-in-refresh-test-when-not-colo.patch
+patches/rpm/0010-Fix-global-DB_PRIVATE-lock-code-fix-recursion-counte.patch
+patches/rpm/0011-Suspend-exclusive-database-lock-when-scriptlets-get-.patch
+patches/rpm/0012-brp-compress.patch
+patches/rpm/0013-Exclude-usr-share-info-dir-from-check-files.patch
+patches/rpm/0014-find-debuginfo.patch
+patches/rpm/0015-find-ksyms.patch
+patches/rpm/0016-find-lang.patch
+patches/rpm/0017-Adjust-default-values-in-macros.in.patch
+patches/rpm/0018-modalias-find-supplements.patch
+patches/rpm/0019-Adjust-default-values-in-platform.in.patch
+patches/rpm/0020-Add-distribution-name-to-rpmpopt.patch
+patches/rpm/0021-Adjust-some-flags-in-rpmrc.patch
+patches/rpm/0022-This-used-to-be-the-taggedfileindex-patch-but-it-s-g.patch
+patches/rpm/0023-rpmqpack.patch
+patches/rpm/0024-build.patch
+patches/rpm/0025-rpm-short-changelog.patch
+patches/rpm/0026-whatrequires-doc.patch
+patches/rpm/0027-requires-ge-macro.patch
+patches/rpm/0028-From-Jan-Blunck-jblunck-suse.de.patch
+patches/rpm/0029-Add-firmware-files-in-lib-firmware-into-RPM-provides.patch
+patches/rpm/0030-specfilemacro.patch
+patches/rpm/0031-Module-aliases-modinfo-F-alias-module-may-contain-sp.patch
+patches/rpm/0032-Hmm-SUSE-doesn-t-use-it-so-what-s-the-purpose-of-thi.patch
+patches/rpm/0033-debugsubpkg.patch
+patches/rpm/0034-debuglink.patch
+patches/rpm/0035-debuginfo-mono.patch
+patches/rpm/0036-Prefer-sys-vfs.h-as-statvfs-stats-all-filesystems-ag.patch
+patches/rpm/0037-safeugid.patch
+patches/rpm/0038-no-prereq-deprec.patch
+patches/rpm/0039-sysvinitdeps.patch
+patches/rpm/0040-remove-translations.patch
+patches/rpm/0041-Add-rpmtsHeaderAddDB-and-rpmtsHeaderRemoveDB-so-that.patch
+patches/rpm/0042-db-private.patch
+patches/rpm/0043-Disable-file-coloring-for-SUSE-systems.patch
+patches/rpm/0044-fileattrs.patch
+patches/rpm/0045-Don-t-let-rpm-complain-about-a-missing-etc-magic.mgc.patch
+patches/rpm/0046-assumeexec.patch
+patches/rpm/0047-mono-find-requires.patch
+patches/rpm/0048-Disable-dependency-tracking-for-build.patch
+patches/rpm/0049-lang-no-c.patch
+patches/rpm/0050-headerchk2.patch
+patches/rpm/0051-brp-compress-no-img.patch
+patches/rpm/0052-weak-deps-compat.patch
+patches/rpm/0053-check-sep-warn.patch
+patches/rpm/0054-enable-postin-scripts-error.patch
+patches/rpm/0055-rpm-findlang-inject-metainfo.patch
+patches/rpm/0056-empty-manifest.patch
+patches/rpm/0057-find-lang-qt-qm.patch
+patches/rpm/0058-debugedit-macro.patch
+patches/rpm/0059-python-dist-deps.patch
+patches/rpm/0060-debugedit-bnc1076819.patch
+patches/rpm/0061-hardlinks.patch
+patches/rpm/0062-auto-config-update-aarch64-ppc64le.patch
+patches/rpm/0063-brp.patch
+patches/rpm/0064-Define-possible-missing-constants-for-pathconf-sysco.patch
+patches/rpm/0065-Check-wether-nanosleep-is-available.patch
+patches/rpm/0066-Check-wether-mkdtemp-is-available.patch
+patches/rpm/0067-Fix-detection-of-__progname.patch
+patches/rpm/0068-Remove-dependance-on-__errno_location.patch
+patches/rpm/0069-Move-library-dependant-cppflags-to-globals.patch
+patches/rpm/0070-Do-not-blindly-add-fPIC-to-RPMCFLAGS-libtool-takes-c.patch
+patches/rpm/0071-Fix-tests-wether-lzma-supports-multi-threading.patch
+patches/rpm/0072-Fix-test-for-lmagic-which-might-need-zlib.patch
+patches/rpm/0073-Only-use-pthreads-if-available.patch
+patches/rpm/0074-Add-missing-include-of-rpmug.h.patch
+patches/rpm/0075-Add-detection-of-default-machine-m68k.patch
+patches/rpm/0076-Add-missing-include-of-signal.h.patch
+patches/rpm/0077-Fix-type-of-callback-functions.patch
+patches/rpm/0078-Avoid-a-warning-using-64bit-constant.patch
+patches/rpm/0079-MiNT-attribute-visibility-is-not-available.patch
+patches/rpm/0080-Only-use-dlopen-if-available.patch
+patches/rpm/mintelf-config.patch
 "
 DISABLED_PATCHES="
 patches/rpm/remove-brp-strips.patch
+patches/rpm/lua-compat.patch
 "
 
 POST_INSTALL_SCRIPTS="
@@ -90,9 +108,16 @@ patches/rpm/rpmconfigcheck.service
 "
 
 BINFILES="
+bin/*
+var
+run
+${TARGET_SYSCONFDIR#/}
 ${TARGET_BINDIR#/}/*
+${TARGET_PREFIX#/}/lib/rpm
 ${TARGET_MANDIR#/}/man1/*
-${TARGET_PREFIX#/}/share/doc/${PACKAGENAME}
+${TARGET_PREFIX#/}/share/doc/packages/${PACKAGENAME}
+${TARGET_PREFIX#/}/sbin/*
+${TARGET_PREFIX#/}/src/packages
 "
 
 unpack_archive
@@ -105,6 +130,8 @@ rm -f rpmdb/db.h
 rm -f m4/libtool.m4
 rm -f m4/lt*.m4
 autoreconf -fi
+# autoreconf may have overwritten config.sub
+patch -p1 < "$BUILD_DIR/patches/rpm/mintelf-config.patch"
 
 sed -e 's/@suse_version@/%{?suse_version}%{!?suse_version:0}/' \
     -e 's/@sles_version@/%{?sles_version}%{!?sles_version:0}/' \
@@ -113,8 +140,7 @@ sed -e 's/@suse_version@/%{?suse_version}%{!?suse_version:0}/' \
     -e 's/@is_opensuse@/%{?is_opensuse}%{!?is_opensuse:0}/' \
     -e '/@leap_version@%{?leap_version:nomatch}/d' \
     -e 's/@leap_version@/%{?leap_version}%{!?leap_version:0}/' \
-  < "${BUILD_DIR}/patches/rpm/rpm-suse_macros" > suse_macros
-
+  < "${BUILD_DIR}/patches/rpm/rpm-mint_macros" > ${VENDOR}_macros
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
@@ -132,26 +158,26 @@ CONFIGURE_FLAGS="--host=${TARGET} \
 	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME} \
 	--with-vendor="${VENDOR}" \
 	--without-archive \
-	--with-selinux \
+	--without-selinux \
 	--with-crypto=beecrypt \
 	--without-internal-beecrypt \
-	--with-acl \
-	--with-cap \
+	--without-acl \
+	--without-cap \
 	--disable-shared \
 	--disable-python \
+	--disable-plugins \
 "
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
-ALL_CPUS=020
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -DLUA_COMPAT_MODULE=1" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	./configure ${CONFIGURE_FLAGS} \
 		--libdir='${exec_prefix}/lib'$multilibdir
@@ -160,10 +186,73 @@ for CPU in ${ALL_CPUS}; do
 	rm -rf autom4te.cache config.h.in.orig
 
 	${MAKE} || exit 1
-	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
+	buildroot="${THISPKG_DIR}${sysroot}"
+	_fillupdir=/var/adm/fillup-templates
+	
+	${MAKE} DESTDIR="${buildroot}" install
+	mkdir -p ${buildroot}/bin
+	ln -s ${TARGET_PREFIX}/bin/rpm ${buildroot}/bin/rpm
+	ln -s ../db4/db.h ${buildroot}${TARGET_PREFIX}/include/rpm/db.h
+	mkdir -p ${buildroot}/usr/sbin
+	mkdir -p ${buildroot}/run
+	ln -s /run ${buildroot}/var/run
+
+	install -m 755 ${BUILD_DIR}/patches/rpm/rpmconfigcheck ${buildroot}/usr/sbin
+	mkdir -p ${buildroot}/usr/lib/systemd/system
+	install -m 644 ${BUILD_DIR}/patches/rpm/rpmconfigcheck.service ${buildroot}/usr/lib/systemd/system/
+	cp -a ${VENDOR}_macros ${buildroot}/usr/lib/rpm
+	mkdir -p ${buildroot}/usr/lib/rpm/macros.d
+	mkdir -p ${buildroot}/usr/lib/rpm/${VENDOR}
+	ln -s ../${VENDOR}_macros ${buildroot}/usr/lib/rpm/${VENDOR}/macros
+	for d in BUILD RPMS SOURCES SPECS SRPMS BUILDROOT ; do
+	  mkdir -p ${buildroot}/usr/src/packages/$d
+	  chmod 755 ${buildroot}/usr/src/packages/$d
+	done
+	for d in ${buildroot}/usr/lib/rpm/platform/*-mint/macros ; do
+	  dd=${d%%-mint/macros}
+	  dd=${dd##*/}
+	  mkdir ${buildroot}/usr/src/packages/RPMS/$dd
+	  chmod 755 ${buildroot}/usr/src/packages/RPMS/$dd
+	done
+	mkdir -p ${buildroot}/usr/lib/sysimage/rpm
+	mkdir -p ${buildroot}/var/lib/rpm
+	chmod 755 doc/manual
+	mkdir -p ${buildroot}${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}
+	cp -pvr doc/manual ${buildroot}${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}
+	rm -rf ${buildroot}${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}/manual/Makefile*
+	( cd ${buildroot}${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}/ ;
+	  tar xvf ${BUILD_DIR}/patches/rpm/RPM-HOWTO.tar.bz2
+	)
+	  
+	rm -f ${buildroot}/usr/lib/rpmpopt
+	rm -rf ${buildroot}/usr/share/man/{fr,ja,ko,pl,ru,sk}
+	mkdir -p ${buildroot}${_fillupdir}
+	install -c -m 644 ${BUILD_DIR}/patches/rpm/sysconfig.services-rpm ${buildroot}${_fillupdir}/
+	rm -f ${buildroot}/usr/lib/rpm/cpanflute ${buildroot}/usr/lib/rpm/cpanflute2
+	install -m 755 ${BUILD_DIR}/patches/rpm/rpmsort ${buildroot}/usr/lib/rpm
+	install -m 755 scripts/find-supplements{,.ksyms} ${buildroot}/usr/lib/rpm
+	: install -m 755 scripts/firmware.prov ${buildroot}/usr/lib/rpm
+	install -m 755 scripts/debuginfo.prov ${buildroot}/usr/lib/rpm
+	rm -f ${buildroot}/usr/lib/locale ${buildroot}/usr/lib/rpmrc
+	mkdir -p ${buildroot}/etc/rpm
+	chmod 755 ${buildroot}/etc/rpm
+# remove some nonsense or non-working scripts
+	pushd ${buildroot}/usr/lib/rpm/
+	for f in rpm2cpio.sh rpm.daily rpmdiff* rpm.log rpm.xinetd freshen.sh u_pkg.sh \
+	         magic magic.mgc magic.mime* rpmfile *.pl javadeps brp-redhat \
+	         brp-strip-static-archive vpkg-provides*.sh http.req sql.req tcl.req \
+	         brp-sparc64-linux brp-strip-comment-note brp-java-gcjcompile
+	do
+	    rm -f $f
+	done
+	popd
+	rm -rf ${buildroot}/${TARGET_LIBDIR}/python*
+	sh ${buildroot}/usr/lib/rpm/find-lang.sh ${buildroot} rpm
+	
 	${MAKE} clean >/dev/null
 
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}$multilibdir/charset.alias
+
 	make_bin_archive $CPU
 done
 

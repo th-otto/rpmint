@@ -1,0 +1,26 @@
+From cd6a32e4c6a71a72e2b62a348de8d6eee98158d8 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:34:13 +0100
+Subject: [PATCH 20/63] Add distribution name to rpmpopt
+
+---
+ rpmpopt.in | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/rpmpopt.in b/rpmpopt.in
+index f8ce35f22..8b2e5efc3 100644
+--- a/rpmpopt.in
++++ b/rpmpopt.in
+@@ -101,7 +101,8 @@ Relocations : %|PREFIXES?{[%{PREFIXES} ]}:{(not relocatable)}|\n\
+ %|URL?{URL         : %{URL}\n}|\
+ %|BUGURL?{Bug URL     : %{BUGURL}\n}|\
+ Summary     : %{SUMMARY}\n\
+-Description :\n%{DESCRIPTION}\n' \
++Description :\n%{DESCRIPTION}\n\
++Distribution: %{DISTRIBUTION}\n' \
+ 	--POPTdesc=$"list descriptive information from package(s)"
+ 
+ rpm	alias --changelog --qf '[* %{CHANGELOGTIME:day} %{CHANGELOGNAME}\n%{CHANGELOGTEXT}\n\n]' \
+-- 
+2.16.2
+
