@@ -90,6 +90,7 @@ patches/rpm/0077-Fix-type-of-callback-functions.patch
 patches/rpm/0078-Avoid-a-warning-using-64bit-constant.patch
 patches/rpm/0079-MiNT-attribute-visibility-is-not-available.patch
 patches/rpm/0080-Only-use-dlopen-if-available.patch
+patches/rpm/0082-coldfire.patch
 patches/rpm/mintelf-config.patch
 "
 DISABLED_PATCHES="
@@ -110,7 +111,6 @@ patches/rpm/rpmconfigcheck.service
 BINFILES="
 bin/*
 var
-run
 ${TARGET_SYSCONFDIR#/}
 ${TARGET_BINDIR#/}/*
 ${TARGET_PREFIX#/}/lib/rpm
@@ -152,7 +152,7 @@ CONFIGURE_FLAGS="--host=${TARGET} \
 	--sysconfdir=${TARGET_SYSCONFDIR} \
 	--localstatedir=/var \
 	--sharedstatedir=/var/lib \
-	--with-rundir=/run \
+	--with-rundir=/var/run \
 	--with-lua \
 	--with-external-db \
 	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME} \
@@ -194,8 +194,7 @@ for CPU in ${ALL_CPUS}; do
 	ln -s ${TARGET_PREFIX}/bin/rpm ${buildroot}/bin/rpm
 	ln -s ../db4/db.h ${buildroot}${TARGET_PREFIX}/include/rpm/db.h
 	mkdir -p ${buildroot}/usr/sbin
-	mkdir -p ${buildroot}/run
-	ln -s /run ${buildroot}/var/run
+	mkdir -p ${buildroot}/var/run
 
 	install -m 755 ${BUILD_DIR}/patches/rpm/rpmconfigcheck ${buildroot}/usr/sbin
 	mkdir -p ${buildroot}/usr/lib/systemd/system
