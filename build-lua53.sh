@@ -14,6 +14,7 @@ srcarchive=lua${VERSION}
 
 PATCHES="
 patches/lua53/lua-build-system.patch
+patches/lua53/lua-buildconf.patch
 "
 
 BINFILES="
@@ -48,7 +49,7 @@ for CPU in ${ALL_CPUS}; do
 		CC="${TARGET}-gcc" \
 		AR="${ar} rcu " \
 		RANLIB=${ranlib} \
-		MYCFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -std=gnu99 -D_GNU_SOURCE -DLUA_USE_C89 -DLUA_COMPAT_MODULE $LTO_CFLAGS" \
+		MYCFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -std=gnu99 -D_GNU_SOURCE $LTO_CFLAGS" \
 		MYLIBS="$CPU_CFLAGS $LTO_CFLAGS ${STACKSIZE}" \
 		V=${major_version} \
 		all || exit 1
