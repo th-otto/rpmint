@@ -91,6 +91,7 @@ patches/rpm/0078-Avoid-a-warning-using-64bit-constant.patch
 patches/rpm/0079-MiNT-attribute-visibility-is-not-available.patch
 patches/rpm/0080-Only-use-dlopen-if-available.patch
 patches/rpm/0082-coldfire.patch
+patches/rpm/0083-Fix-some-mismatch-between-open-mode-permissions.patch
 patches/rpm/mintelf-config.patch
 "
 DISABLED_PATCHES="
