@@ -13,6 +13,8 @@ PATCHES="
 patches/db/db${VERSION}.patch
 patches/db/mintelf-config.patch
 patches/db/rpm-no-fsync.patch
+patches/db/db-malloc-align.patch
+patches/db/lockstub.patch
 "
 
 BINFILES="
@@ -28,11 +30,11 @@ cd "$MINT_BUILD_DIR/../dist"
 ./s_config
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing $LTO_CFLAGS"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing -DHAVE_DB_185_H $LTO_CFLAGS"
 STACKSIZE="-Wl,-stack,256k"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
-	 --enable-compat185 --disable-dump185 --disable-mutexsupport"
+	 --enable-compat185 --enable-dump185 --disable-mutexsupport"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -49,7 +51,7 @@ for CPU in ${ALL_CPUS}; do
 
 	hack_lto_cflags
 
-	${MAKE} $JOBS || exit 1
+	${MAKE} DB185LIB='$(DEF_LIB)' $JOBS || exit 1
 	buildroot="${THISPKG_DIR}${sysroot}"
 	${MAKE} DESTDIR="${buildroot}" install || exit 1
 

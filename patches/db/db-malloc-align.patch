@@ -1,0 +1,16 @@
+The malloc alignment checks for returned addr being aligned for uintmax_t,
+which (at least on 32-bit hosts) is larger than the requirement of malloc.
+Assume that malloc returns a region properly aligned for any type.
+
+
+--- db-4.8.30/env/env_region.c.orig	2018-03-17 03:05:18.789057015 +0100
++++ db-4.8.30/env/env_region.c	2018-03-17 03:06:06.969055966 +0100
+@@ -1180,7 +1180,7 @@
+ 	 * type.  Otherwise, multiple processes mapping the same shared region
+ 	 * would have to memcpy every value before reading it.
+ 	 */
+-	if (infop->addr != ALIGNP_INC(infop->addr, sizeof(uintmax_t))) {
++	if (infop->addr != ALIGNP_INC(infop->addr, sizeof(uintptr_t))) {
+ 		__db_errx(env, "%s", "region memory was not correctly aligned");
+ 		(void)__env_sys_detach(env, infop,
+ 		    F_ISSET(infop, REGION_CREATE));

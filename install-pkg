@@ -1,0 +1,40 @@
+#!/bin/sh
+
+TMPDIR=/tmp/t
+DESTDIR=/windows/c/atari
+
+f="$1"
+
+test "$f" = "" && {
+	echo "usage: $0 <filename>" >&2
+	exit 1
+}
+
+f=`realpath $f`
+test -f "$f" || {
+	echo "no such file: $f" >&2
+	exit 1
+}
+
+mkdir -p "$TMPDIR"
+rm -rf "$TMPDIR/usr"
+
+cd "$TMPDIR" || exit 1
+
+tar xf "$f" || exit 1
+
+if test -d usr/m68k-atari-mint/sys-root || test -d usr/m68k-atari-mintelf/sys-root; then
+	prefix="/"
+else
+	prefix="$DESTDIR/"
+fi
+
+find . -type d | while read f; do
+	sudo mkdir -p "${prefix}$f"
+done
+find . -type l | while read f; do
+	sudo cp -av "$f" "${prefix}$f"
+done
+find . -type f | while read f; do
+	sudo cp -av "$f" "${prefix}$f"
+done

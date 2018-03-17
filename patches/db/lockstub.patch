@@ -1,0 +1,15 @@
+Without mutexes, only stub functions are compiled in for shared memory
+locking functions. Some higher level api functions fail because of
+the returned DB_OPNOTSUP error code.
+
+--- db-4.8.30/lock/lock_stub.c.orig	2018-03-17 03:07:48.789053751 +0100
++++ db-4.8.30/lock/lock_stub.c	2018-03-17 03:08:16.417053150 +0100
+@@ -26,7 +26,7 @@
+ 	ENV *env;
+ {
+ 	__db_errx(env, "library build did not include support for locking");
+-	return (DB_OPNOTSUP);
++	return (0);
+ }
+ 
+ int
