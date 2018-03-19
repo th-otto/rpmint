@@ -1325,6 +1325,25 @@ verify integrity of large volumes of data for a long-term storing or
 transferring.
 '
 	),
+	'libarchive' => array(
+		'name' => 'libarchive',
+		'upstream' => 'http://rhash.anz.ru/?l=en',
+		'source' => 'http://downloads.sourceforge.net/%{name}/%{name}-%{version}-src.tar.gz',
+		'version' => '3.3.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+Libarchive is a programming library that can create and read several
+different streaming archive formats, including most popular tar
+variants and several cpio formats. It can also write shar archives and
+read ISO9660 CDROM images. The bsdtar program is an implementation of
+tar(1) that is built on top of libarchive. It started as a test
+harness, but has grown and is now the standard system tar for FreeBSD 5
+and 6.
+'
+	),
 );
 
 ?>

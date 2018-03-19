@@ -957,6 +957,8 @@ foreach ($libpackages as $package)
 
 <li>2018/03/19 Package rhash added</li>
 
+<li>2018/03/19 Package libarchive added</li>
+
 </ul>
 
 <p></p>

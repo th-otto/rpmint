@@ -330,6 +330,33 @@ make_bin_archive()
 }
 
 
+move_pkgconfig_libs_private()
+{
+	# If a *.pc has a Libs.private entry,
+	# move the flags to the Libs entry, since we only
+	# link against static libraries.
+	# Most autoconf tests only use the entry from
+	# pkg-config --libs, and would fail otherwise
+	local file="$1"
+	local lib
+	local privlib
+	local modified
+	# If a *.pc has a Libs.private entry,
+	libs=" "`sed -n 's/Libs: *\(.*\)$/\1/p' "$file"`" "
+	libs_priv=" "`sed -n 's/Libs\.private: *\(.*\)$/\1/p' "$file"`" "
+	modified=false;
+	for lib in $libs_priv; do
+		case $libs in
+		*" "$lib" "*) ;;
+		*) libs="$libs$lib "; modified=true ;;
+		esac
+	done
+	if $modified; then
+		sed -e 's/Libs: .*$/'"Libs: $libs"'/' "$file" > "$file.tmp"
+		mv "$file.tmp" "$file"
+	fi
+}
+
 copy_pkg_configs()
 {
 	local pattern="${1:-*.pc}"
@@ -359,6 +386,7 @@ copy_pkg_configs()
 			if test ! -f $dst -o $i -nt $dst; then
 				cp -a $i $dst
 				test -h "$i" && continue
+				move_pkgconfig_libs_private "$dst"
 				sed -i 's,",,g
 						 s,prefix[ ]*=[ ]*'${configured_prefix}',prefix='${sysroot}${TARGET_PREFIX}',
 			             /^prefix[ ]*=/{p;d}
@@ -370,11 +398,11 @@ copy_pkg_configs()
 			             s,-L'${TARGET_BINDIR}'[ ]*,,g
 			             s,-I/usr/include,-I${includedir},g
 			             s,-I'${sysroot}${TARGET_PREFIX}/include',-I${includedir},g' $dst
-			   includedir=`sed -n 's/^[ ]*includedir[ ]*=[ ]*\([^ ]*\)/\1/p' $dst`
-			   if test "$includedir" = '/usr/include' -o  "$includedir" = '${prefix}/include'; then
-			       sed -i 's,-I${includedir} ,,g
-			             s,-I${includedir}$,,' $dst
-			   fi
+				includedir=`sed -n 's/^[ ]*includedir[ ]*=[ ]*\([^ ]*\)/\1/p' $dst`
+				if test "$includedir" = '/usr/include' -o  "$includedir" = '${prefix}/include'; then
+					sed -i 's,-I${includedir} ,,g
+					     s,-I${includedir}$,,' $dst
+				fi
 			fi
 		}
 		true && {
@@ -394,6 +422,7 @@ copy_pkg_configs()
 				sed -i 's,-I${includedir} ,,g
 				     s,-I${includedir}$,,' $i.tmp
 			fi
+			move_pkgconfig_libs_private "$i.tmp"
 			diff -q $i $i.tmp >/dev/null && rm -f $i.tmp || {
 				echo "fixed $i"
 				mv $i.tmp $i
