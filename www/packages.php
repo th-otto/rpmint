@@ -1306,6 +1306,25 @@ The RPM Package Manager (RPM) is a powerful package management system capable of
     <li>verifying integrity of packaged software and resulting software installation</li></ul>
 '
 	),
+	'rhash' => array(
+		'name' => 'rhash',
+		'upstream' => 'http://rhash.anz.ru/?l=en',
+		'source' => 'http://downloads.sourceforge.net/%{name}/%{name}-%{version}-src.tar.gz',
+		'version' => '1.3.5',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+RHash (Recurcive Hasher) is a console utility for computing and
+verifying magnet links and hash sums of files.<br />
+It supports CRC32, MD4, MD5, SHA1/SHA2, Tiger, DC++ TTH, BitTorrent
+BTIH, AICH, eDonkey hash, GOST R 34.11-94, RIPEMD-160, HAS-160, EDON-R,
+Whirlpool and Snefru hash algorithms. Hash sums are used to ensure and
+verify integrity of large volumes of data for a long-term storing or
+transferring.
+'
+	),
 );
 
 ?>

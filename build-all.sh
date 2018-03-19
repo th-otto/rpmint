@@ -70,6 +70,7 @@ for pkg in gemlib \
 	libbeecrypt6 \
 	lua53 \
 	popt \
+	rhash \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

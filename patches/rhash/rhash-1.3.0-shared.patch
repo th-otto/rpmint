@@ -1,0 +1,36 @@
+Description: Install development files with shared library.
+Author: Kyrill Detinov <lazy.kent@opensuse.org>
+Index: RHash-1.3.5/Makefile
+===================================================================
+--- RHash-1.3.5.orig/Makefile
++++ RHash-1.3.5/Makefile
+@@ -174,7 +174,7 @@ check: version.h
+ 		echo "version=$(VERSION)" > bindings/version.properties
+ 	[ -s dist/rhash.1.html ]
+ 
+-$(TARGET): $(OBJECTS) $(LIBRHASH)
++$(TARGET): $(OBJECTS)
+ 	$(CC) $(OBJECTS) -o $@ $(ALLLDFLAGS)
+ 
+ $(SHARED_TRG): $(OBJECTS) $(SHAREDLIB)
+Index: RHash-1.3.5/librhash/Makefile
+===================================================================
+--- RHash-1.3.5.orig/librhash/Makefile
++++ RHash-1.3.5/librhash/Makefile
+@@ -49,13 +49,14 @@ dylib: $(DYNAME)
+ dll: $(DLLNAME)
+ dist-clean: clean
+ 
+-install-lib-static: $(LIBRARY) install-headers
++install-lib-static: $(LIBRARY)
+ 	$(INSTALL) -d $(DESTDIR)$(LIBDIR)
+ 	$(INSTALL_DATA) $(LIBRARY) $(DESTDIR)$(LIBDIR)/
+ 
+-install-lib-shared: $(SONAME)
++install-lib-shared: $(SONAME) install-headers
+ 	$(INSTALL) -d $(DESTDIR)$(LIBDIR)
+ 	$(INSTALL_SHARED) $(SONAME) $(DESTDIR)$(LIBDIR)/
++	cp -d  $(SOLINK) $(DESTDIR)$(LIBDIR)/
+ 
+ install-so-link:
+ 	$(INSTALL) -d $(DESTDIR)$(LIBDIR)
