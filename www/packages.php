@@ -1344,6 +1344,21 @@ harness, but has grown and is now the standard system tar for FreeBSD 5
 and 6.
 '
 	),
+	'elfutils' => array(
+		'name' => 'elfutils',
+		'upstream' => 'https://sourceware.org/elfutils/',
+		'source' => 'ftp://sourceware.org/pub/%{name}/%{version}/%{name}-%{version}.tar.bz2',
+		'version' => '0.170',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+elfutils is a collection of utilities and libraries to read, create
+and modify ELF binary files, find and handle DWARF debug data,
+symbols, thread state and stacktraces for processes and core files.
+'
+	),
 );
 
 ?>

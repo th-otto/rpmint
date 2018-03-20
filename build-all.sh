@@ -71,6 +71,8 @@ for pkg in gemlib \
 	lua53 \
 	popt \
 	rhash \
+	libarchive \
+	elfutils \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

@@ -1,0 +1,148 @@
+--- a/src/readelf.c.orig	2018-03-20 02:29:33.003247406 +0100
++++ b/src/readelf.c	2018-03-20 02:38:22.287235888 +0100
+@@ -685,7 +685,7 @@
+   /* Print the file name.  */
+   if (!a->only_one)
+     {
+-      const char *fname;
++      const char *fname = NULL;
+       dwfl_module_info (dwflmod, NULL, NULL, NULL, NULL, NULL, &fname, NULL);
+ 
+       printf ("\n%s:\n\n", fname);
+@@ -709,7 +709,7 @@
+ 		   GElf_Word debuglink_crc,
+ 		   char **debuginfo_file_name)
+ {
+-  Dwarf_Addr dwbias;
++  Dwarf_Addr dwbias = (Dwarf_Addr) -1;
+   dwfl_module_info (mod, NULL, NULL, NULL, &dwbias, NULL, NULL, NULL);
+ 
+   /* We are only interested if the Dwarf has been setup on the main
+--- elfutils-0.170/libdwfl/gzip.c.orig	2018-03-20 02:56:04.463212774 +0100
++++ elfutils-0.170/libdwfl/gzip.c	2018-03-20 02:58:13.119209975 +0100
+@@ -305,7 +305,7 @@
+       int n = gzread (state.zf, state.buffer + pos, state.size - pos);
+       if (n < 0)
+ 	{
+-	  int code;
++	  int code = 0;
+ 	  gzerror (state.zf, &code);
+ 	  gzclose (state.zf);
+ 	  return zlib_fail (&state, code);
+--- elfutils-0.170/libdwfl/dwfl_module_getdwarf.c.orig	2018-03-20 03:00:20.997320353 +0100
++++ elfutils-0.170/libdwfl/dwfl_module_getdwarf.c	2018-03-20 03:21:23.585292878 +0100
+@@ -322,6 +322,8 @@
+       .d_version = EV_CURRENT
+     };
+   Elf_Data src = *undodata;
++  if (mod->main.elf == NULL)
++    return DWFL_E_LIBELF;
+   src.d_size = gelf_fsize (mod->main.elf, ELF_T_EHDR, 1, EV_CURRENT);
+   src.d_type = ELF_T_EHDR;
+   if (unlikely (gelf_xlatetom (mod->main.elf, &dst, &src,
+--- elfutils-0.170/src/stack.c.orig	2018-03-20 03:30:34.377280892 +0100
++++ elfutils-0.170/src/stack.c	2018-03-20 03:30:50.777280535 +0100
+@@ -243,7 +243,7 @@
+     }
+ 
+   const char* fname;
+-  Dwarf_Addr start;
++  Dwarf_Addr start = 0;
+   fname = dwfl_module_info(mod, NULL, &start,
+ 			   NULL, NULL, NULL, NULL, NULL);
+   if (show_module)
+--- elfutils-0.170/src/objdump.c.orig	2018-03-20 03:28:06.521284110 +0100
++++ elfutils-0.170/src/objdump.c	2018-03-20 03:28:22.609283759 +0100
+@@ -776,7 +776,7 @@
+     memcpy (cp - 1, suffix, suffix_len + 1);
+ 
+   /* Get the section header string table index.  */
+-  size_t shstrndx;
++  size_t shstrndx = 0;
+   if (elf_getshdrstrndx (ebl->elf, &shstrndx) < 0)
+     error (EXIT_FAILURE, 0,
+ 	   gettext ("cannot get section header string table index"));
+--- elfutils-0.170/src/nm.c.orig	2018-03-20 02:58:31.087209584 +0100
++++ elfutils-0.170/src/nm.c	2018-03-20 03:12:29.665304496 +0100
+@@ -1159,7 +1159,7 @@
+ 		   GElf_Word debuglink_crc,
+ 		   char **debuginfo_file_name)
+ {
+-  Dwarf_Addr dwbias;
++  Dwarf_Addr dwbias = (Dwarf_Addr) -1;
+   dwfl_module_info (mod, NULL, NULL, NULL, &dwbias, NULL, NULL, NULL);
+ 
+   /* We are only interested if the Dwarf has been setup on the main
+--- elfutils-0.170/src/strip.c.orig	2018-03-20 03:27:18.841285147 +0100
++++ elfutils-0.170/src/strip.c	2018-03-20 03:27:46.001284556 +0100
+@@ -484,7 +484,7 @@
+   tmp_debug_fname = NULL;
+   int result = 0;
+   size_t shdridx = 0;
+-  size_t shstrndx;
++  size_t shstrndx = 0;
+   struct shdr_info
+   {
+     Elf_Scn *scn;
+--- elfutils-0.170/src/unstrip.c.orig	2018-03-20 03:28:37.573283434 +0100
++++ elfutils-0.170/src/unstrip.c	2018-03-20 03:30:17.625281257 +0100
+@@ -2127,7 +2127,7 @@
+       if (ignore)
+ 	return;
+ 
+-      const char *file;
++      const char *file = NULL;
+       const char *modname = dwfl_module_info (mod, NULL, NULL, NULL,
+ 					      NULL, NULL, &file, NULL);
+       if (file == NULL)
+@@ -2146,7 +2146,7 @@
+       if (ignore)
+ 	return;
+ 
+-      const char *file;
++      const char *file = NULL;
+       const char *modname = dwfl_module_info (mod, NULL, NULL, NULL,
+ 					      NULL, NULL, NULL, &file);
+       if (file == NULL)
+@@ -2165,7 +2165,7 @@
+ 	debug = NULL;
+       else
+ 	{
+-	  const char *file;
++	  const char *file = NULL;
+ 	  const char *modname = dwfl_module_info (mod, NULL, NULL, NULL,
+ 						  NULL, NULL, &file, NULL);
+ 	  error (EXIT_FAILURE, 0, _("module '%s' file '%s' is not stripped"),
+@@ -2219,7 +2219,7 @@
+       (void) dwfl_module_getelf (mod, &bias);
+     }
+ 
+-  const char *file;
++  const char *file = NULL;
+   const char *name = dwfl_module_info (mod, NULL, NULL, NULL,
+ 				       NULL, NULL, &file, NULL);
+ 
+@@ -2242,10 +2242,10 @@
+   bool have_elf = dwfl_module_getelf (mod, &bias) != NULL;
+   bool have_dwarf = dwfl_module_getdwarf (mod, &bias) != NULL;
+ 
+-  const char *file;
+-  const char *debug;
+-  Dwarf_Addr start;
+-  Dwarf_Addr end;
++  const char *file = NULL;
++  const char *debug = NULL;
++  Dwarf_Addr start = 0;
++  Dwarf_Addr end = 0;
+   const char *name = dwfl_module_info (mod, NULL, &start, &end,
+ 				       NULL, NULL, &file, &debug);
+   if (file != NULL && debug != NULL && (debug == file || !strcmp (debug, file)))
+@@ -2304,7 +2304,7 @@
+       GElf_Addr bias;
+       (void) dwfl_module_getelf (mod, &bias);
+ 
+-      const char *file;
++      const char *file = NULL;
+       const char *check = dwfl_module_info (mod, NULL, NULL, NULL,
+ 					    NULL, NULL, &file, NULL);
+       assert (check == name);

@@ -1,0 +1,48 @@
+From b1042ce216eaef96099f263fb81141dbdec004fd Mon Sep 17 00:00:00 2001
+From: Mark Wielaard <mark@klomp.org>
+Date: Wed, 15 Feb 2017 14:30:27 +0100
+Subject: [PATCH] backends: Add support for EM_PPC64 GNU_ATTRIBUTES.
+
+ppc64 and ppc64le ELF files can also contain a power specific
+.gnu.attributes section. Add support for those and recognize the new
+GNU_Power_ABI_FP Single-precision hard float value.
+
+Signed-off-by: Mark Wielaard <mark@klomp.org>
+---
+ backends/ChangeLog             |   6 ++++++
+ backends/ppc64_init.c          |   1 +
+ backends/ppc_attrs.c           |   1 +
+ tests/ChangeLog                |   5 +++++
+ tests/Makefile.am              |   4 ++--
+ tests/run-readelf-A.sh         |  16 +++++++++++++++-
+ tests/testfileppc64attrs.o.bz2 | Bin 0 -> 222 bytes
+ 7 files changed, 30 insertions(+), 3 deletions(-)
+ create mode 100644 tests/testfileppc64attrs.o.bz2
+
+diff --git a/backends/ppc64_init.c b/backends/ppc64_init.c
+index 2ba82327..11d3a77f 100644
+--- a/backends/ppc64_init.c
++++ b/backends/ppc64_init.c
+@@ -67,6 +67,7 @@ ppc64_init (Elf *elf __attribute__ ((unused)),
+   HOOK (eh, syscall_abi);
+   HOOK (eh, core_note);
+   HOOK (eh, auxv_info);
++  HOOK (eh, check_object_attribute);
+   HOOK (eh, abi_cfi);
+   /* gcc/config/ #define DWARF_FRAME_REGISTERS.  */
+   eh->frame_nregs = (114 - 1) + 32;
+diff --git a/backends/ppc_attrs.c b/backends/ppc_attrs.c
+index 612c5769..48d7129d 100644
+--- a/backends/ppc_attrs.c
++++ b/backends/ppc_attrs.c
+@@ -51,6 +51,7 @@ ppc_check_object_attribute (Ebl *ebl __attribute__ ((unused)),
+ 	    "Hard or soft float",
+ 	    "Hard float",
+ 	    "Soft float",
++	    "Single-precision hard float",
+ 	  };
+ 	if (value < sizeof fp_kinds / sizeof fp_kinds[0])
+ 	  *value_name = fp_kinds[value];
+-- 
+2.12.2
+

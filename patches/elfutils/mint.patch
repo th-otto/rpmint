@@ -1,0 +1,1930 @@
+diff -rupN -x Makefile.in elfutils-0.170.orig/backends/Makefile.am elfutils-0.170/backends/Makefile.am
+--- elfutils-0.170.orig/backends/Makefile.am	2017-08-02 14:06:24.000000000 +0200
++++ elfutils-0.170/backends/Makefile.am	2018-03-19 20:26:13.466094126 +0100
+@@ -40,12 +40,20 @@ libebl_pic = libebl_i386_pic.a libebl_sh
+ 	     libebl_ppc64_pic.a libebl_s390_pic.a libebl_tilegx_pic.a \
+ 	     libebl_m68k_pic.a libebl_bpf_pic.a
+ noinst_LIBRARIES = $(libebl_pic)
++if ENABLE_SHARED
+ noinst_DATA = $(libebl_pic:_pic.a=.so)
++endif
+ 
+ 
++if ENABLE_SHARED
+ libelf = ../libelf/libelf.so
+ libdw = ../libdw/libdw.so
+ libeu = ../lib/libeu.a
++else
++libelf = ../libelf/libelf.a
++libdw = ../libdw/libdw.a
++libeu = ../lib/libeu.a
++endif
+ 
+ i386_SRCS = i386_init.c i386_symbol.c i386_corenote.c i386_cfi.c \
+ 	    i386_retval.c i386_regs.c i386_auxv.c i386_syscall.c \
+@@ -150,10 +150,12 @@
+ install: install-am install-ebl-modules
+ install-ebl-modules:
+ 	$(mkinstalldirs) $(DESTDIR)$(libdir)/$(LIBEBL_SUBDIR)
++if ENABLE_SHARED
+ 	for m in $(modules); do \
+ 	  $(INSTALL_PROGRAM) libebl_$${m}.so $(DESTDIR)$(libdir)/$(LIBEBL_SUBDIR)/libebl_$${m}-$(PACKAGE_VERSION).so; \
+ 	  ln -fs libebl_$${m}-$(PACKAGE_VERSION).so $(DESTDIR)$(libdir)/$(LIBEBL_SUBDIR)/libebl_$${m}.so; \
+ 	done
++endif
+ 
+ uninstall: uninstall-am
+ 	for m in $(modules); do \
+diff -rupN -x Makefile.in elfutils-0.170.orig/config/eu.am elfutils-0.170/config/eu.am
+--- elfutils-0.170.orig/config/eu.am	2017-06-19 16:45:16.000000000 +0200
++++ elfutils-0.170/config/eu.am	2018-03-19 15:28:07.563337163 +0100
+@@ -86,14 +86,14 @@ endif
+ 
+ %.os: %.c %.o
+ if AMDEP
+-	$(AM_V_CC)if $(COMPILE.os) -c -o $@ -fPIC $(DEFS.os) -MT $@ -MD -MP \
++	$(AM_V_CC)if $(COMPILE.os) -c -o $@ $(DEFS.os) -MT $@ -MD -MP \
+ 	  -MF "$(DEPDIR)/$*.Tpo" `test -f '$<' || echo '$(srcdir)/'`$<; \
+ 	then cat "$(DEPDIR)/$*.Tpo" >> "$(DEPDIR)/$*.Po"; \
+ 	     rm -f "$(DEPDIR)/$*.Tpo"; \
+ 	else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; \
+ 	fi
+ else
+-	$(AM_V_CC)$(COMPILE.os) -c -o $@ -fPIC $(DEFS.os) $<
++	$(AM_V_CC)$(COMPILE.os) -c -o $@ $(DEFS.os) $<
+ endif
+ 
+ CLEANFILES = *.gcno *.gcda
+diff -rupN -x Makefile.in elfutils-0.170.orig/configure.ac elfutils-0.170/configure.ac
+--- elfutils-0.170.orig/configure.ac	2018-03-19 14:34:12.412408624 +0100
++++ elfutils-0.170/configure.ac	2018-03-20 01:48:20.561257974 +0100
+@@ -154,10 +154,12 @@ dnl Older glibc had a broken fts that di
+ dnl We want the version that can handler LFS, but include workaround if we
+ dnl get a bad one. Add define to CFLAGS (not AC_DEFINE it) since we need to
+ dnl check it before including config.h (which might define _FILE_OFFSET_BITS).
++AC_CHECK_HEADER(fts.h, have_fts=yes, have_fts=no)
+ AC_CACHE_CHECK([whether fts.h is bad when included (with LFS)], ac_cv_bad_fts,
+   [AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <fts.h>]])],
+ 		     ac_cv_bad_fts=no, ac_cv_bad_fts=yes)])
+ AS_IF([test "x$ac_cv_bad_fts" = "xyes"], [CFLAGS="$CFLAGS -DBAD_FTS=1"])
++AM_CONDITIONAL(HAVE_FTS, test "$have_fts" = yes)
+ 
+ # See if we can add -D_FORTIFY_SOURCE=2. Don't do it if it is already
+ # (differently) defined or if it generates warnings/errors because we
+@@ -302,6 +304,11 @@ AM_CONDITIONAL(FATAL_TEXTREL, [test "x$e
+ AS_IF([test "x$enable_textrelcheck" != "xno"],
+       [enable_textrelcheck=yes],[enable_textrelcheck=no])
+ 
++AC_ARG_ENABLE([shared],
++AS_HELP_STRING([--disable-shared],
++               [Disable shared libraries]))
++AM_CONDITIONAL(ENABLE_SHARED, [test "x$enable_shared" != "xno"])
++
+ AC_ARG_ENABLE([symbol-versioning],
+ AS_HELP_STRING([--disable-symbol-versioning],
+                [Disable symbol versioning in shared objects]))
+@@ -385,6 +392,13 @@ else
+ fi
+ AC_SUBST([argp_LDADD])
+ 
++AC_CHECK_HEADERS([sys/mman.h dlfcn.h stdio_ext.h langinfo.h])
++AC_CHECK_FUNCS([llabs lrint qsort_r futimens posix_madvise])
++AC_CHECK_DECL([llabs], AC_DEFINE([HAVE_DECL_LLABS], 1, [ ]))
++AC_CHECK_DECL([lrint], AC_DEFINE([HAVE_DECL_LRINT], 1, [ ]))
++AC_CHECK_LIB([m], [log2], AC_DEFINE([HAVE_LOG2], 1, [ ]))
++AM_CONDITIONAL(CROSS_COMPILING, test "$cross_compiling" = yes)
++
+ dnl The directories with content.
+ 
+ dnl Documentation.
+diff -rupN -x Makefile.in elfutils-0.170.orig/lib/crc32_file.c elfutils-0.170/lib/crc32_file.c
+--- elfutils-0.170.orig/lib/crc32_file.c	2018-03-19 14:34:12.256408627 +0100
++++ elfutils-0.170/lib/crc32_file.c	2018-03-19 15:15:37.707353480 +0100
+@@ -34,7 +34,9 @@
+ #include <errno.h>
+ #include <unistd.h>
+ #include <sys/stat.h>
++#ifdef HAVE_SYS_MMAN_H
+ #include <sys/mman.h>
++#endif
+ #include "system.h"
+ 
+ int
+@@ -45,6 +47,7 @@ crc32_file (int fd, uint32_t *resp)
+   off_t off = 0;
+   ssize_t count;
+ 
++#ifdef HAVE_SYS_MMAN_H
+   struct stat st;
+   if (fstat (fd, &st) == 0)
+     {
+@@ -78,6 +81,7 @@ crc32_file (int fd, uint32_t *resp)
+ 	  munmap (mapped, mapsize);
+ 	}
+     }
++#endif
+ 
+   while ((count = TEMP_FAILURE_RETRY (pread (fd, buffer, sizeof buffer,
+ 					     off))) > 0)
+diff -rupN -x Makefile.in elfutils-0.170.orig/lib/eu-config.h elfutils-0.170/lib/eu-config.h
+--- elfutils-0.170.orig/lib/eu-config.h	2018-03-19 14:34:12.252408628 +0100
++++ elfutils-0.170/lib/eu-config.h	2018-03-20 00:16:24.743443377 +0100
+@@ -68,8 +68,12 @@
+ #define internal_strong_alias(name, aliasname) \
+   extern __typeof (name) aliasname __attribute__ ((alias (#name))) internal_function;
+ 
++#if defined(__ELF__)
+ #define attribute_hidden \
+   __attribute__ ((visibility ("hidden")))
++#else
++#define attribute_hidden
++#endif
+ 
+ /* Define ALLOW_UNALIGNED if the architecture allows operations on
+    unaligned memory locations.  */
+diff -rupN -x Makefile.in elfutils-0.170.orig/libasm/Makefile.am elfutils-0.170/libasm/Makefile.am
+--- elfutils-0.170.orig/libasm/Makefile.am	2017-08-02 14:06:25.000000000 +0200
++++ elfutils-0.170/libasm/Makefile.am	2018-03-19 20:22:37.970098816 +0100
+@@ -34,8 +34,10 @@ GCC_INCLUDE = -I$(shell $(CC) -print-fil
+ VERSION = 1
+ 
+ lib_LIBRARIES = libasm.a
++if ENABLE_SHARED
+ noinst_LIBRARIES = libasm_pic.a
+ noinst_PROGRAMS = $(noinst_LIBRARIES:_pic.a=.so)
++endif
+ pkginclude_HEADERS = libasm.h
+ 
+ libasm_a_SOURCES = asm_begin.c asm_abort.c asm_end.c asm_error.c \
+@@ -72,11 +74,13 @@ libasm.so$(EXEEXT): $(srcdir)/libasm.map
+ 	@$(textrel_check)
+ 	$(AM_V_at)ln -fs $@ $@.$(VERSION)
+ 
++if ENABLE_SHARED
+ install: install-am libasm.so
+ 	$(mkinstalldirs) $(DESTDIR)$(libdir)
+ 	$(INSTALL_PROGRAM) libasm.so $(DESTDIR)$(libdir)/libasm-$(PACKAGE_VERSION).so
+ 	ln -fs libasm-$(PACKAGE_VERSION).so $(DESTDIR)$(libdir)/libasm.so.$(VERSION)
+ 	ln -fs libasm.so.$(VERSION) $(DESTDIR)$(libdir)/libasm.so
++endif
+ 
+ uninstall: uninstall-am
+ 	rm -f $(DESTDIR)$(libdir)/libasm-$(PACKAGE_VERSION).so
+diff -rupN -x Makefile.in elfutils-0.170.orig/libasm/asm_begin.c elfutils-0.170/libasm/asm_begin.c
+--- elfutils-0.170.orig/libasm/asm_begin.c	2018-03-19 14:34:12.256408627 +0100
++++ elfutils-0.170/libasm/asm_begin.c	2018-03-20 00:44:01.859407317 +0100
+@@ -34,7 +34,9 @@
+ #include <assert.h>
+ #include <errno.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+@@ -58,8 +60,10 @@ prepare_text_output (AsmCtx_t *result)
+ 	  free (result);
+ 	  result = NULL;
+ 	}
++#ifdef HAVE_STDIO_EXT_H
+       else
+ 	__fsetlocking (result->out.file, FSETLOCKING_BYCALLER);
++#endif
+     }
+ 
+   return result;
+diff -rupN -x Makefile.in elfutils-0.170.orig/libasm/libasmP.h elfutils-0.170/libasm/libasmP.h
+--- elfutils-0.170.orig/libasm/libasmP.h	2018-03-19 14:34:12.260408627 +0100
++++ elfutils-0.170/libasm/libasmP.h	2018-03-19 20:23:26.090097769 +0100
+@@ -36,7 +36,9 @@
+ #include "libdwelf.h"
+ 
+ /* gettext helper macros.  */
++#ifndef _
+ #define _(Str) dgettext ("elfutils", Str)
++#endif
+ 
+ 
+ /* Known error codes.  */
+diff -rupN -x Makefile.in elfutils-0.170.orig/libcpu/Makefile.am elfutils-0.170/libcpu/Makefile.am
+--- elfutils-0.170.orig/libcpu/Makefile.am	2017-08-02 14:06:25.000000000 +0200
++++ elfutils-0.170/libcpu/Makefile.am	2018-03-20 00:41:50.543410175 +0100
+@@ -30,7 +30,7 @@
+ include $(top_srcdir)/config/eu.am
+ AM_CPPFLAGS += -I$(srcdir)/../libelf -I$(srcdir)/../libebl \
+ 	    -I$(srcdir)/../libdw -I$(srcdir)/../libasm
+-AM_CFLAGS += -fPIC -fdollars-in-identifiers
++AM_CFLAGS += -fdollars-in-identifiers
+ LEXCOMPILE = $(LEX) $(LFLAGS) $(AM_LFLAGS) -P$(<F:lex.l=)
+ LEX_OUTPUT_ROOT = lex.$(<F:lex.l=)
+ AM_YFLAGS = -p$(<F:parse.y=)
+@@ -59,8 +59,12 @@ noinst_HEADERS = memory-access.h i386_pa
+ noinst_PROGRAMS = i386_gendis$(EXEEXT)
+ 
+ $(srcdir)/%_dis.h: %_defs i386_gendis$(EXEEXT)
++if CROSS_COMPILING
++	$(AM_V_at)echo "warning: $@ may be out of date" >&2
++else
+ 	$(AM_V_GEN)./i386_gendis$(EXEEXT) $< > $@T
+ 	$(AM_V_at)mv -f $@T $@
++endif
+ 
+ else
+ 
+diff -rupN -x Makefile.in elfutils-0.170.orig/libcpu/i386_parse.y elfutils-0.170/libcpu/i386_parse.y
+--- elfutils-0.170.orig/libcpu/i386_parse.y	2017-06-19 16:45:16.000000000 +0200
++++ elfutils-0.170/libcpu/i386_parse.y	2018-03-20 00:36:16.431417445 +0100
+@@ -58,6 +58,26 @@ extern int yylex (void);
+ extern int i386_lineno;
+ extern char *infname;
+ 
++#ifndef HAVE_DECL_LRINT
++long lrint(double x);
++#endif
++#ifndef HAVE_LRINT
++long lrint(double x)
++{
++	return (long)rint(x);
++}
++#endif
++
++#ifndef HAVE_DECL_LOG2
++double log2(double x);
++#endif
++#ifndef HAVE_LOG2
++double log2(double x)
++{
++	return log(x) * M_LOG2E;
++}
++#endif
++
+ 
+ struct known_bitfield
+ {
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdw/Makefile.am elfutils-0.170/libdw/Makefile.am
+--- elfutils-0.170.orig/libdw/Makefile.am	2017-08-02 14:06:25.000000000 +0200
++++ elfutils-0.170/libdw/Makefile.am	2018-03-19 20:22:37.970098816 +0100
+@@ -28,15 +28,14 @@
+ ## not, see <http://www.gnu.org/licenses/>.
+ ##
+ include $(top_srcdir)/config/eu.am
+-if BUILD_STATIC
+-AM_CFLAGS += -fPIC
+-endif
+ AM_CPPFLAGS += -I$(srcdir)/../libelf
+ VERSION = 1
+ 
+ lib_LIBRARIES = libdw.a
++if ENABLE_SHARED
+ noinst_LIBRARIES = libdw_pic.a
+ noinst_PROGRAMS = $(noinst_LIBRARIES:_pic.a=.so)
++endif
+ 
+ include_HEADERS = dwarf.h
+ pkginclude_HEADERS = libdw.h known-dwarf.h
+@@ -119,11 +118,13 @@ libdw.so$(EXEEXT): $(srcdir)/libdw.map $
+ 	@$(textrel_check)
+ 	$(AM_V_at)ln -fs $@ $@.$(VERSION)
+ 
++if ENABLE_SHARED
+ install: install-am libdw.so
+ 	$(mkinstalldirs) $(DESTDIR)$(libdir)
+ 	$(INSTALL_PROGRAM) libdw.so $(DESTDIR)$(libdir)/libdw-$(PACKAGE_VERSION).so
+ 	ln -fs libdw-$(PACKAGE_VERSION).so $(DESTDIR)$(libdir)/libdw.so.$(VERSION)
+ 	ln -fs libdw.so.$(VERSION) $(DESTDIR)$(libdir)/libdw.so
++endif
+ 
+ uninstall: uninstall-am
+ 	rm -f $(DESTDIR)$(libdir)/libdw-$(PACKAGE_VERSION).so
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdw/libdwP.h elfutils-0.170/libdw/libdwP.h
+--- elfutils-0.170.orig/libdw/libdwP.h	2018-03-19 14:34:12.328408626 +0100
++++ elfutils-0.170/libdw/libdwP.h	2018-03-20 00:19:43.995439042 +0100
+@@ -38,7 +38,9 @@
+ 
+ 
+ /* gettext helper macros.  */
++#ifndef _
+ #define _(Str) dgettext ("elfutils", Str)
++#endif
+ 
+ 
+ /* Known location expressions already decoded.  */
+@@ -434,7 +436,7 @@ extern void *__libdw_allocate (Dwarf *db
+      __attribute__ ((__malloc__)) __nonnull_attribute__ (1);
+ 
+ /* Default OOM handler.  */
+-extern void __libdw_oom (void) __attribute ((noreturn, visibility ("hidden")));
++extern void __libdw_oom (void) __attribute ((noreturn)) attribute_hidden;
+ 
+ /* Allocate the internal data for a unit not seen before.  */
+ extern struct Dwarf_CU *__libdw_intern_next_unit (Dwarf *dbg, bool debug_types)
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdw/libdw_alloc.c elfutils-0.170/libdw/libdw_alloc.c
+--- elfutils-0.170.orig/libdw/libdw_alloc.c	2018-03-19 14:34:12.316408626 +0100
++++ elfutils-0.170/libdw/libdw_alloc.c	2018-03-20 00:11:46.423449434 +0100
+@@ -70,7 +70,7 @@ dwarf_new_oom_handler (Dwarf *dbg, Dwarf
+ 
+ 
+ void
+-__attribute ((noreturn, visibility ("hidden")))
++__attribute ((noreturn)) attribute_hidden
+ __libdw_oom (void)
+ {
+   while (1)
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdwelf/Makefile.am elfutils-0.170/libdwelf/Makefile.am
+--- elfutils-0.170.orig/libdwelf/Makefile.am	2017-06-19 16:45:16.000000000 +0200
++++ elfutils-0.170/libdwelf/Makefile.am	2018-03-19 20:16:24.966106933 +0100
+@@ -34,7 +34,10 @@ AM_CPPFLAGS += -I$(srcdir)/../libelf -I$
+ 	       -I$(srcdir)/../libdwfl -I$(srcdir)/../libebl
+ VERSION = 1
+ 
+-noinst_LIBRARIES = libdwelf.a libdwelf_pic.a
++noinst_LIBRARIES = libdwelf.a
++if ENABLE_SHARED
++noinst_LIBRARIES += libdwelf_pic.a
++endif
+ 
+ pkginclude_HEADERS = libdwelf.h
+ noinst_HEADERS = libdwelfP.h
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdwelf/dwelf_scn_gnu_compressed_size.c elfutils-0.170/libdwelf/dwelf_scn_gnu_compressed_size.c
+--- elfutils-0.170.orig/libdwelf/dwelf_scn_gnu_compressed_size.c	2018-03-19 14:34:12.316408626 +0100
++++ elfutils-0.170/libdwelf/dwelf_scn_gnu_compressed_size.c	2018-03-19 23:32:08.352675730 +0100
+@@ -33,6 +33,20 @@
+ #include "libdwelfP.h"
+ #include "libelfP.h"
+ 
++#ifndef htobe64
++# if __BYTE_ORDER == __LITTLE_ENDIAN
++#  define htobe64(x) __bswap_64 (x)
++#  define htole64(x) (x)
++#  define be64toh(x) __bswap_64 (x)
++#  define le64toh(x) (x)
++# else
++#  define htobe64(x) (x)
++#  define htole64(x) __bswap_64 (x)
++#  define be64toh(x) (x)
++#  define le64toh(x) __bswap_64 (x)
++# endif
++#endif
++
+ ssize_t
+ dwelf_scn_gnu_compressed_size (Elf_Scn *scn)
+ {
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdwfl/Makefile.am elfutils-0.170/libdwfl/Makefile.am
+--- elfutils-0.170.orig/libdwfl/Makefile.am	2017-06-19 16:45:16.000000000 +0200
++++ elfutils-0.170/libdwfl/Makefile.am	2018-03-19 23:43:33.352660824 +0100
+@@ -35,7 +35,9 @@ AM_CPPFLAGS += -I$(srcdir) -I$(srcdir)/.
+ VERSION = 1
+ 
+ noinst_LIBRARIES = libdwfl.a
++if ENABLE_SHARED
+ noinst_LIBRARIES += libdwfl_pic.a
++endif
+ 
+ pkginclude_HEADERS = libdwfl.h
+ 
+@@ -49,7 +51,7 @@ libdwfl_a_SOURCES = dwfl_begin.c dwfl_en
+ 		    argp-std.c find-debuginfo.c \
+ 		    dwfl_build_id_find_elf.c \
+ 		    dwfl_build_id_find_debuginfo.c \
+-		    linux-kernel-modules.c linux-proc-maps.c \
++		    linux-proc-maps.c \
+ 		    dwfl_addrmodule.c dwfl_addrdwarf.c \
+ 		    cu.c dwfl_module_nextcu.c dwfl_nextcu.c dwfl_cumodule.c \
+ 		    dwfl_module_addrdie.c dwfl_addrdie.c \
+@@ -71,6 +73,10 @@ libdwfl_a_SOURCES = dwfl_begin.c dwfl_en
+ 		    linux-pid-attach.c linux-core-attach.c dwfl_frame_regs.c \
+ 		    gzip.c
+ 
++if HAVE_FTS
++libdwfl_a_SOURCES += linux-kernel-modules.c
++endif
++
+ if BZLIB
+ libdwfl_a_SOURCES += bzip2.c
+ endif
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdwfl/argp-std.c elfutils-0.170/libdwfl/argp-std.c
+--- elfutils-0.170.orig/libdwfl/argp-std.c	2018-03-19 14:34:12.348408625 +0100
++++ elfutils-0.170/libdwfl/argp-std.c	2018-03-20 01:46:44.765260059 +0100
+@@ -39,7 +39,9 @@
+ #include <unistd.h>
+ 
+ /* gettext helper macros.  */
++#ifndef _
+ #define _(Str) dgettext ("elfutils", Str)
++#endif
+ 
+ 
+ #define OPT_DEBUGINFO	0x100
+@@ -90,8 +92,10 @@ static const Dwfl_Callbacks kernel_callb
+     .find_debuginfo = INTUSE(dwfl_standard_find_debuginfo),
+     .debuginfo_path = &debuginfo_path,
+ 
++#ifdef HAVE_FTS
+     .find_elf = INTUSE(dwfl_linux_kernel_find_elf),
+     .section_address = INTUSE(dwfl_linux_kernel_module_section_address),
++#endif
+   };
+ 
+ /* Structure held at state->HOOK.  */
+@@ -232,6 +236,7 @@ parse_opt (int key, char *arg, struct ar
+ 	if (opt->dwfl == NULL)
+ 	  {
+ 	    Dwfl *dwfl = INTUSE(dwfl_begin) (&kernel_callbacks);
++#ifdef HAVE_FTS
+ 	    int result = INTUSE(dwfl_linux_kernel_report_kernel) (dwfl);
+ 	    if (result != 0)
+ 	      return fail (dwfl, result, _("cannot load kernel symbols"), state);
+@@ -240,6 +245,10 @@ parse_opt (int key, char *arg, struct ar
+ 	      /* Non-fatal to have no modules since we do have the kernel.  */
+ 	      failure (dwfl, result, _("cannot find kernel modules"), state);
+ 	    opt->dwfl = dwfl;
++#else
++	    opt->dwfl = dwfl;
++        return fail (dwfl, DWFL_E_UNKNOWN_MACHINE, _("cannot load kernel symbols"), state);
++#endif
+ 	  }
+ 	else
+ 	  goto toomany;
+@@ -252,11 +261,16 @@ parse_opt (int key, char *arg, struct ar
+ 	if (opt->dwfl == NULL)
+ 	  {
+ 	    Dwfl *dwfl = INTUSE(dwfl_begin) (&offline_callbacks);
++#ifdef HAVE_FTS
+ 	    int result = INTUSE(dwfl_linux_kernel_report_offline) (dwfl, arg,
+ 								   NULL);
+ 	    if (result != 0)
+ 	      return fail (dwfl, result, _("cannot find kernel or modules"), state);
+ 	    opt->dwfl = dwfl;
++#else
++	    opt->dwfl = dwfl;
++        return fail (dwfl, DWFL_E_UNKNOWN_MACHINE, _("cannot find or modules"), state);
++#endif
+ 	  }
+ 	else
+ 	  goto toomany;
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdwfl/frame_unwind.c elfutils-0.170/libdwfl/frame_unwind.c
+--- elfutils-0.170.orig/libdwfl/frame_unwind.c	2018-03-19 14:34:12.340408626 +0100
++++ elfutils-0.170/libdwfl/frame_unwind.c	2018-03-20 00:08:13.199454074 +0100
+@@ -36,6 +36,7 @@
+ #include "../libdw/dwarf.h"
+ #include <system.h>
+ 
++
+ /* Maximum number of DWARF expression stack slots before returning an error.  */
+ #define DWARF_EXPR_STACK_MAX 0x100
+ 
+@@ -43,6 +44,16 @@
+    error.  */
+ #define DWARF_EXPR_STEPS_MAX 0x1000
+ 
++#ifndef HAVE_DECL_LLABS
++long long llabs(long long val);
++#endif
++#ifndef HAVE_LLABS
++long long llabs(long long val)
++{
++	return val < 0 ? -val : val;
++}
++#endif
++
+ bool
+ internal_function
+ __libdwfl_frame_reg_get (Dwfl_Frame *state, unsigned regno, Dwarf_Addr *val)
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdwfl/libdwflP.h elfutils-0.170/libdwfl/libdwflP.h
+--- elfutils-0.170.orig/libdwfl/libdwflP.h	2018-03-19 14:34:12.340408626 +0100
++++ elfutils-0.170/libdwfl/libdwflP.h	2018-03-19 20:14:20.810109634 +0100
+@@ -44,7 +44,9 @@
+ typedef struct Dwfl_Process Dwfl_Process;
+ 
+ /* gettext helper macros.  */
++#ifndef _
+ #define _(Str) dgettext ("elfutils", Str)
++#endif
+ 
+ #define DWFL_ERRORS							      \
+   DWFL_ERROR (NOERROR, N_("no error"))					      \
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdwfl/linux-core-attach.c elfutils-0.170/libdwfl/linux-core-attach.c
+--- elfutils-0.170.orig/libdwfl/linux-core-attach.c	2018-03-19 14:34:12.352408625 +0100
++++ elfutils-0.170/libdwfl/linux-core-attach.c	2018-03-20 00:10:39.287450895 +0100
+@@ -36,6 +36,33 @@
+ 
+ #include "../libdw/memory-access.h"
+ 
++#ifndef htobe64
++# if __BYTE_ORDER == __LITTLE_ENDIAN
++#  define htobe64(x) __bswap_64 (x)
++#  define htole64(x) (x)
++#  define be64toh(x) __bswap_64 (x)
++#  define le64toh(x) (x)
++# else
++#  define htobe64(x) (x)
++#  define htole64(x) __bswap_64 (x)
++#  define be64toh(x) (x)
++#  define le64toh(x) __bswap_64 (x)
++# endif
++#endif
++#ifndef htobe32
++# if __BYTE_ORDER == __LITTLE_ENDIAN
++#  define htobe32(x) __bswap_32 (x)
++#  define htole32(x) (x)
++#  define be32toh(x) __bswap_32 (x)
++#  define le32toh(x) (x)
++# else
++#  define htobe32(x) (x)
++#  define htole32(x) __bswap_32 (x)
++#  define be32toh(x) (x)
++#  define le32toh(x) __bswap_32 (x)
++# endif
++#endif
++
+ struct core_arg
+ {
+   Elf *core;
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdwfl/linux-kernel-modules.c elfutils-0.170/libdwfl/linux-kernel-modules.c
+--- elfutils-0.170.orig/libdwfl/linux-kernel-modules.c	2018-03-19 14:34:12.340408626 +0100
++++ elfutils-0.170/libdwfl/linux-kernel-modules.c	2018-03-19 23:56:34.804643819 +0100
+@@ -646,6 +646,7 @@ check_module_notes (Dwfl_Module *mod)
+   return result;
+ }
+ 
++#ifdef HAVE_FTS
+ int
+ dwfl_linux_kernel_report_kernel (Dwfl *dwfl)
+ {
+@@ -684,6 +685,7 @@ dwfl_linux_kernel_report_kernel (Dwfl *d
+   return report_kernel (dwfl, NULL, NULL);
+ }
+ INTDEF (dwfl_linux_kernel_report_kernel)
++#endif
+ 
+ 
+ static inline bool
+@@ -711,6 +713,7 @@ subst_name (char from, char to,
+ 
+ /* Dwfl_Callbacks.find_elf for the running Linux kernel and its modules.  */
+ 
++#ifdef HAVE_FTS
+ int
+ dwfl_linux_kernel_find_elf (Dwfl_Module *mod,
+ 			    void **userdata __attribute__ ((unused)),
+@@ -828,6 +831,7 @@ dwfl_linux_kernel_find_elf (Dwfl_Module
+   return -1;
+ }
+ INTDEF (dwfl_linux_kernel_find_elf)
++#endif
+ 
+ 
+ /* Dwfl_Callbacks.section_address for kernel modules in the running Linux.
+@@ -935,6 +939,7 @@ dwfl_linux_kernel_module_section_address
+ }
+ INTDEF (dwfl_linux_kernel_module_section_address)
+ 
++#ifdef HAVE_FTS
+ int
+ dwfl_linux_kernel_report_modules (Dwfl *dwfl)
+ {
+@@ -977,3 +982,4 @@ dwfl_linux_kernel_report_modules (Dwfl *
+   return result;
+ }
+ INTDEF (dwfl_linux_kernel_report_modules)
++#endif
+diff -rupN -x Makefile.in elfutils-0.170.orig/libdwfl/linux-proc-maps.c elfutils-0.170/libdwfl/linux-proc-maps.c
+--- elfutils-0.170.orig/libdwfl/linux-proc-maps.c	2018-03-19 14:34:12.356408625 +0100
++++ elfutils-0.170/libdwfl/linux-proc-maps.c	2018-03-19 23:58:01.776641926 +0100
+@@ -36,7 +36,9 @@
+ #include <sys/stat.h>
+ #include <errno.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <stdbool.h>
+ #include <string.h>
+ #include <stdlib.h>
+@@ -311,7 +313,9 @@ dwfl_linux_proc_report (Dwfl *dwfl, pid_
+   if (f == NULL)
+     return errno;
+ 
++#ifdef HAVE_STDIO_EXT_H
+   (void) __fsetlocking (f, FSETLOCKING_BYCALLER);
++#endif
+ 
+   result = proc_maps_report (dwfl, f, sysinfo_ehdr, pid);
+ 
+diff -rupN -x Makefile.in elfutils-0.170.orig/libebl/Makefile.am elfutils-0.170/libebl/Makefile.am
+--- elfutils-0.170.orig/libebl/Makefile.am	2017-08-02 14:06:25.000000000 +0200
++++ elfutils-0.170/libebl/Makefile.am	2018-03-19 15:23:30.827343185 +0100
+@@ -28,7 +28,6 @@
+ ## not, see <http://www.gnu.org/licenses/>.
+ ##
+ include $(top_srcdir)/config/eu.am
+-AM_CFLAGS += -fPIC
+ AM_CPPFLAGS += -I$(srcdir)/../libelf -I$(srcdir)/../libdw -I$(srcdir)/../libasm
+ VERSION = 1
+ LIBEBL_SUBDIR = @LIBEBL_SUBDIR@
+diff -rupN -x Makefile.in elfutils-0.170.orig/libebl/eblclosebackend.c elfutils-0.170/libebl/eblclosebackend.c
+--- elfutils-0.170.orig/libebl/eblclosebackend.c	2018-03-19 14:34:12.276408627 +0100
++++ elfutils-0.170/libebl/eblclosebackend.c	2018-03-19 21:35:38.996062889 +0100
+@@ -30,7 +30,9 @@
+ # include <config.h>
+ #endif
+ 
++#ifdef HAVE_DLFCN_H
+ #include <dlfcn.h>
++#endif
+ #include <stdlib.h>
+ 
+ #include <libeblP.h>
+@@ -44,9 +46,11 @@ ebl_closebackend (Ebl *ebl)
+       /* Run the destructor.  */
+       ebl->destr (ebl);
+ 
++#ifdef HAVE_DLFCN_H
+       /* Close the dynamically loaded object.  */
+       if (ebl->dlhandle != NULL)
+ 	(void) dlclose (ebl->dlhandle);
++#endif
+ 
+       /* Free the resources.  */
+       free (ebl);
+diff -rupN -x Makefile.in elfutils-0.170.orig/libebl/eblopenbackend.c elfutils-0.170/libebl/eblopenbackend.c
+--- elfutils-0.170.orig/libebl/eblopenbackend.c	2018-03-19 14:34:12.276408627 +0100
++++ elfutils-0.170/libebl/eblopenbackend.c	2018-03-19 21:39:42.780057584 +0100
+@@ -31,7 +31,9 @@
+ #endif
+ 
+ #include <assert.h>
++#ifdef HAVE_DLFCN_H
+ #include <dlfcn.h>
++#endif
+ #include <error.h>
+ #include <libelfP.h>
+ #include <dwarf.h>
+@@ -317,6 +319,7 @@ openbackend (Elf *elf, const char *emula
+ #endif
+ #define ORIGINDIR "$ORIGIN/../$LIB/" LIBEBL_SUBDIR "/"
+ 
++#ifdef HAVE_DLFCN_H
+ 	/* Give it a try.  At least the machine type matches.  First
+            try to load the module.  */
+ 	char dsoname[100];
+@@ -378,6 +381,7 @@ openbackend (Elf *elf, const char *emula
+ 	fill_defaults (result);
+ 
+ 	return result;
++#endif
+       }
+ 
+   /* Nothing matched.  We use only the default callbacks.   */
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/Makefile.am elfutils-0.170/libelf/Makefile.am
+--- elfutils-0.170.orig/libelf/Makefile.am	2017-08-02 14:06:25.000000000 +0200
++++ elfutils-0.170/libelf/Makefile.am	2018-03-19 20:22:37.970098816 +0100
+@@ -28,16 +28,15 @@
+ ## not, see <http://www.gnu.org/licenses/>.
+ ##
+ include $(top_srcdir)/config/eu.am
+-if BUILD_STATIC
+-AM_CFLAGS += -fPIC
+-endif
+ GCC_INCLUDE = -I$(shell $(CC) -print-file-name=include)
+ VERSION = 1
+ 
+ lib_LIBRARIES = libelf.a
++if ENABLE_SHARED
+ noinst_LIBRARIES = libelf_pic.a
+ noinst_PROGRAMS = $(noinst_LIBRARIES:_pic.a=.so)
+-include_HEADERS = libelf.h gelf.h nlist.h
++endif
++include_HEADERS = libelf.h gelf.h nlist.h elf.h
+ 
+ pkginclude_HEADERS = elf-knowledge.h
+ 
+@@ -95,6 +94,7 @@ libelf_a_SOURCES = elf_version.c elf_has
+ libelf_pic_a_SOURCES =
+ am_libelf_pic_a_OBJECTS = $(libelf_a_SOURCES:.c=.os)
+ 
++if ENABLE_SHARED
+ libelf_so_DEPS = ../lib/libeu.a
+ libelf_so_LDLIBS = $(libelf_so_DEPS) -lz
+ if USE_LOCKS
+@@ -117,13 +117,14 @@ install: install-am libelf.so
+ 	$(INSTALL_PROGRAM) libelf.so $(DESTDIR)$(libdir)/libelf-$(PACKAGE_VERSION).so
+ 	ln -fs libelf-$(PACKAGE_VERSION).so $(DESTDIR)$(libdir)/libelf.so.$(VERSION)
+ 	ln -fs libelf.so.$(VERSION) $(DESTDIR)$(libdir)/libelf.so
++endif
+ 
+ uninstall: uninstall-am
+ 	rm -f $(DESTDIR)$(libdir)/libelf-$(PACKAGE_VERSION).so
+ 	rm -f $(DESTDIR)$(libdir)/libelf.so.$(VERSION)
+ 	rm -f $(DESTDIR)$(libdir)/libelf.so
+ 
+-noinst_HEADERS = elf.h abstract.h common.h exttypes.h gelf_xlate.h libelfP.h \
++noinst_HEADERS = abstract.h common.h exttypes.h gelf_xlate.h libelfP.h \
+ 		 version_xlate.h gnuhash_xlate.h note_xlate.h dl-hash.h \
+ 		 chdr_xlate.h
+ EXTRA_DIST = libelf.map
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/elf.h elfutils-0.170/libelf/elf.h
+--- elfutils-0.170.orig/libelf/elf.h	2018-03-19 14:34:12.368408625 +0100
++++ elfutils-0.170/libelf/elf.h	2018-03-19 19:44:39.956943260 +0100
+@@ -1,5 +1,5 @@
+ /* This file defines standard ELF types, structures, and macros.
+-   Copyright (C) 1995-2016 Free Software Foundation, Inc.
++   Copyright (C) 1995-2018 Free Software Foundation, Inc.
+    This file is part of the GNU C Library.
+ 
+    The GNU C Library is free software; you can redistribute it and/or
+@@ -762,8 +762,23 @@ typedef struct
+ #define NT_PPC_VMX	0x100		/* PowerPC Altivec/VMX registers */
+ #define NT_PPC_SPE	0x101		/* PowerPC SPE/EVR registers */
+ #define NT_PPC_VSX	0x102		/* PowerPC VSX registers */
++#define NT_PPC_TAR	0x103		/* Target Address Register */
++#define NT_PPC_PPR	0x104		/* Program Priority Register */
++#define NT_PPC_DSCR	0x105		/* Data Stream Control Register */
++#define NT_PPC_EBB	0x106		/* Event Based Branch Registers */
++#define NT_PPC_PMU	0x107		/* Performance Monitor Registers */
++#define NT_PPC_TM_CGPR	0x108		/* TM checkpointed GPR Registers */
++#define NT_PPC_TM_CFPR	0x109		/* TM checkpointed FPR Registers */
++#define NT_PPC_TM_CVMX	0x10a		/* TM checkpointed VMX Registers */
++#define NT_PPC_TM_CVSX	0x10b		/* TM checkpointed VSX Registers */
++#define NT_PPC_TM_SPR	0x10c		/* TM Special Purpose Registers */
++#define NT_PPC_TM_CTAR	0x10d		/* TM checkpointed Target Address
++					   Register */
++#define NT_PPC_TM_CPPR	0x10e		/* TM checkpointed Program Priority
++					   Register */
++#define NT_PPC_TM_CDSCR	0x10f		/* TM checkpointed Data Stream Control
++					   Register */
+ #define NT_386_TLS	0x200		/* i386 TLS slots (struct user_desc) */
+-#define NT_PPC_TM_SPR	0x10c		/* PowerPC HW Transactional Memory SPRs */
+ #define NT_386_IOPERM	0x201		/* x86 io permission bitmap (1=deny) */
+ #define NT_X86_XSTATE	0x202		/* x86 extended state using xsave */
+ #define NT_S390_HIGH_GPRS	0x300	/* s390 upper register halves */
+@@ -780,6 +795,8 @@ typedef struct
+ #define NT_ARM_HW_BREAK	0x402		/* ARM hardware breakpoint registers */
+ #define NT_ARM_HW_WATCH	0x403		/* ARM hardware watchpoint registers */
+ #define NT_ARM_SYSTEM_CALL	0x404	/* ARM system call number */
++#define NT_ARM_SVE	0x405		/* ARM Scalable Vector Extension
++					   registers */
+ 
+ /* Legal values for the note segment descriptor types for object files.  */
+ 
+@@ -952,6 +969,8 @@ typedef struct
+ #define	DF_1_SYMINTPOSE	0x00800000	/* Object has individual interposers.  */
+ #define	DF_1_GLOBAUDIT	0x01000000	/* Global auditing required.  */
+ #define	DF_1_SINGLETON	0x02000000	/* Singleton symbols are used.  */
++#define	DF_1_STUB	0x04000000
++#define	DF_1_PIE	0x08000000
+ 
+ /* Flags for the feature selection in DT_FEATURE_1.  */
+ #define DTF_1_PARINIT	0x00000001
+@@ -1171,6 +1190,18 @@ typedef struct
+ #define AT_L2_CACHESHAPE	36
+ #define AT_L3_CACHESHAPE	37
+ 
++/* Shapes of the caches, with more room to describe them.
++   *GEOMETRY are comprised of cache line size in bytes in the bottom 16 bits
++   and the cache associativity in the next 16 bits.  */
++#define AT_L1I_CACHESIZE	40
++#define AT_L1I_CACHEGEOMETRY	41
++#define AT_L1D_CACHESIZE	42
++#define AT_L1D_CACHEGEOMETRY	43
++#define AT_L2_CACHESIZE		44
++#define AT_L2_CACHEGEOMETRY	45
++#define AT_L3_CACHESIZE		46
++#define AT_L3_CACHEGEOMETRY	47
++
+ /* Note section contents.  Each entry in the note section begins with
+    a header of a fixed form.  */
+ 
+@@ -1236,6 +1267,62 @@ typedef struct
+ /* Version note generated by GNU gold containing a version string.  */
+ #define NT_GNU_GOLD_VERSION	4
+ 
++/* Program property.  */
++#define NT_GNU_PROPERTY_TYPE_0 5
++
++/* Note section name of program property.   */
++#define NOTE_GNU_PROPERTY_SECTION_NAME ".note.gnu.property"
++
++/* Values used in GNU .note.gnu.property notes (NT_GNU_PROPERTY_TYPE_0).  */
++
++/* Stack size.  */
++#define GNU_PROPERTY_STACK_SIZE			1
++/* No copy relocation on protected data symbol.  */
++#define GNU_PROPERTY_NO_COPY_ON_PROTECTED	2
++
++/* Processor-specific semantics, lo */
++#define GNU_PROPERTY_LOPROC			0xc0000000
++/* Processor-specific semantics, hi */
++#define GNU_PROPERTY_HIPROC			0xdfffffff
++/* Application-specific semantics, lo */
++#define GNU_PROPERTY_LOUSER			0xe0000000
++/* Application-specific semantics, hi */
++#define GNU_PROPERTY_HIUSER			0xffffffff
++
++/* The x86 instruction sets indicated by the corresponding bits are
++   used in program.  Their support in the hardware is optional.  */
++#define GNU_PROPERTY_X86_ISA_1_USED		0xc0000000
++/* The x86 instruction sets indicated by the corresponding bits are
++   used in program and they must be supported by the hardware.   */
++#define GNU_PROPERTY_X86_ISA_1_NEEDED		0xc0000001
++/* X86 processor-specific features used in program.  */
++#define GNU_PROPERTY_X86_FEATURE_1_AND		0xc0000002
++
++#define GNU_PROPERTY_X86_ISA_1_486		(1U << 0)
++#define GNU_PROPERTY_X86_ISA_1_586		(1U << 1)
++#define GNU_PROPERTY_X86_ISA_1_686		(1U << 2)
++#define GNU_PROPERTY_X86_ISA_1_SSE		(1U << 3)
++#define GNU_PROPERTY_X86_ISA_1_SSE2		(1U << 4)
++#define GNU_PROPERTY_X86_ISA_1_SSE3		(1U << 5)
++#define GNU_PROPERTY_X86_ISA_1_SSSE3		(1U << 6)
++#define GNU_PROPERTY_X86_ISA_1_SSE4_1		(1U << 7)
++#define GNU_PROPERTY_X86_ISA_1_SSE4_2		(1U << 8)
++#define GNU_PROPERTY_X86_ISA_1_AVX		(1U << 9)
++#define GNU_PROPERTY_X86_ISA_1_AVX2		(1U << 10)
++#define GNU_PROPERTY_X86_ISA_1_AVX512F		(1U << 11)
++#define GNU_PROPERTY_X86_ISA_1_AVX512CD		(1U << 12)
++#define GNU_PROPERTY_X86_ISA_1_AVX512ER		(1U << 13)
++#define GNU_PROPERTY_X86_ISA_1_AVX512PF		(1U << 14)
++#define GNU_PROPERTY_X86_ISA_1_AVX512VL		(1U << 15)
++#define GNU_PROPERTY_X86_ISA_1_AVX512DQ		(1U << 16)
++#define GNU_PROPERTY_X86_ISA_1_AVX512BW		(1U << 17)
++
++/* This indicates that all executable sections are compatible with
++   IBT.  */
++#define GNU_PROPERTY_X86_FEATURE_1_IBT		(1U << 0)
++/* This indicates that all executable sections are compatible with
++   SHSTK.  */
++#define GNU_PROPERTY_X86_FEATURE_1_SHSTK	(1U << 1)
+ 
+ /* Move records.  */
+ typedef struct
+@@ -2533,9 +2620,10 @@ enum
+ #define DT_PPC64_OPT	(DT_LOPROC + 3)
+ #define DT_PPC64_NUM    4
+ 
+-/* PowerPC64 specific values for the DT_PPC64_OPT Dyn entry.  */
++/* PowerPC64 specific bits in the DT_PPC64_OPT Dyn entry.  */
+ #define PPC64_OPT_TLS		1
+ #define PPC64_OPT_MULTI_TOC	2
++#define PPC64_OPT_LOCALENTRY	4
+ 
+ /* PowerPC64 specific values for the Elf64_Sym st_other field.  */
+ #define STO_PPC64_LOCAL_BIT	5
+@@ -3678,11 +3766,95 @@ enum
+ 
+ #define R_TILEGX_NUM		130
+ 
++/* RISC-V ELF Flags */
++#define EF_RISCV_RVC 			0x0001
++#define EF_RISCV_FLOAT_ABI 		0x0006
++#define EF_RISCV_FLOAT_ABI_SOFT 	0x0000
++#define EF_RISCV_FLOAT_ABI_SINGLE 	0x0002
++#define EF_RISCV_FLOAT_ABI_DOUBLE 	0x0004
++#define EF_RISCV_FLOAT_ABI_QUAD 	0x0006
++
++/* RISC-V relocations.  */
++#define R_RISCV_NONE          0
++#define R_RISCV_32            1
++#define R_RISCV_64            2
++#define R_RISCV_RELATIVE      3
++#define R_RISCV_COPY          4
++#define R_RISCV_JUMP_SLOT     5
++#define R_RISCV_TLS_DTPMOD32  6
++#define R_RISCV_TLS_DTPMOD64  7
++#define R_RISCV_TLS_DTPREL32  8
++#define R_RISCV_TLS_DTPREL64  9
++#define R_RISCV_TLS_TPREL32  10
++#define R_RISCV_TLS_TPREL64  11
++
+ /* BPF specific declarations.  */
+ 
+ #define R_BPF_NONE		0	/* No reloc */
+ #define R_BPF_MAP_FD		1	/* Map fd to pointer */
+ 
++/* Imagination Meta specific relocations. */
++
++#define R_METAG_HIADDR16	0
++#define R_METAG_LOADDR16	1
++#define R_METAG_ADDR32		2	/* 32bit absolute address */
++#define R_METAG_NONE		3	/* No reloc */
++#define R_METAG_RELBRANCH	4
++#define R_METAG_GETSETOFF	5
++
++/* Backward compatability */
++#define R_METAG_REG32OP1	6
++#define R_METAG_REG32OP2	7
++#define R_METAG_REG32OP3	8
++#define R_METAG_REG16OP1	9
++#define R_METAG_REG16OP2	10
++#define R_METAG_REG16OP3	11
++#define R_METAG_REG32OP4	12
++
++#define R_METAG_HIOG		13
++#define R_METAG_LOOG		14
++
++#define R_METAG_REL8		15
++#define R_METAG_REL16		16
++
++/* GNU */
++#define R_METAG_GNU_VTINHERIT	30
++#define R_METAG_GNU_VTENTRY	31
++
++/* PIC relocations */
++#define R_METAG_HI16_GOTOFF	32
++#define R_METAG_LO16_GOTOFF	33
++#define R_METAG_GETSET_GOTOFF	34
++#define R_METAG_GETSET_GOT	35
++#define R_METAG_HI16_GOTPC	36
++#define R_METAG_LO16_GOTPC	37
++#define R_METAG_HI16_PLT	38
++#define R_METAG_LO16_PLT	39
++#define R_METAG_RELBRANCH_PLT	40
++#define R_METAG_GOTOFF		41
++#define R_METAG_PLT		42
++#define R_METAG_COPY		43
++#define R_METAG_JMP_SLOT	44
++#define R_METAG_RELATIVE	45
++#define R_METAG_GLOB_DAT	46
++
++/* TLS relocations */
++#define R_METAG_TLS_GD		47
++#define R_METAG_TLS_LDM		48
++#define R_METAG_TLS_LDO_HI16	49
++#define R_METAG_TLS_LDO_LO16	50
++#define R_METAG_TLS_LDO		51
++#define R_METAG_TLS_IE		52
++#define R_METAG_TLS_IENONPIC	53
++#define R_METAG_TLS_IENONPIC_HI16 54
++#define R_METAG_TLS_IENONPIC_LO16 55
++#define R_METAG_TLS_TPOFF	56
++#define R_METAG_TLS_DTPMOD	57
++#define R_METAG_TLS_DTPOFF	58
++#define R_METAG_TLS_LE		59
++#define R_METAG_TLS_LE_HI16	60
++#define R_METAG_TLS_LE_LO16	61
++
+ __END_DECLS
+ 
+ #endif	/* elf.h */
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/elf32_updatefile.c elfutils-0.170/libelf/elf32_updatefile.c
+--- elfutils-0.170.orig/libelf/elf32_updatefile.c	2018-03-19 14:34:12.376408625 +0100
++++ elfutils-0.170/libelf/elf32_updatefile.c	2018-03-19 16:09:10.928213667 +0100
+@@ -38,7 +38,9 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
++#ifdef HAVE_SYS_MMAN_H
+ #include <sys/mman.h>
++#endif
+ 
+ #include <system.h>
+ #include "libelfP.h"
+@@ -123,6 +125,7 @@ fill_mmap (size_t offset, char *last_pos
+     }
+ }
+ 
++#ifdef HAVE_SYS_MMAN_H
+ int
+ internal_function
+ __elfw2(LIBELFBITS,updatemmap) (Elf *elf, int change_bo, size_t shnum)
+@@ -461,6 +464,7 @@ __elfw2(LIBELFBITS,updatemmap) (Elf *elf
+ 
+   return 0;
+ }
++#endif
+ 
+ 
+ /* Size of the buffer we use to generate the blocks of fill bytes.  */
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/elf_begin.c elfutils-0.170/libelf/elf_begin.c
+--- elfutils-0.170.orig/libelf/elf_begin.c	2018-03-19 14:34:12.372408625 +0100
++++ elfutils-0.170/libelf/elf_begin.c	2018-03-19 15:54:24.723302843 +0100
+@@ -39,7 +39,9 @@
+ #include <stddef.h>
+ #include <string.h>
+ #include <unistd.h>
++#ifdef HAVE_SYS_MMAN_H
+ #include <sys/mman.h>
++#endif
+ #include <sys/stat.h>
+ 
+ #include <system.h>
+@@ -500,6 +502,7 @@ file_read_elf (int fildes, void *map_add
+ }
+ 
+ 
++#ifdef HAVE_SYS_MMAN_H
+ Elf *
+ internal_function
+ __libelf_read_mmaped_file (int fildes, void *map_address,  off_t offset,
+@@ -532,6 +535,7 @@ __libelf_read_mmaped_file (int fildes, v
+   return allocate_elf (fildes, map_address, offset, maxsize, cmd, parent,
+ 		       ELF_K_NONE, 0);
+ }
++#endif
+ 
+ 
+ static Elf *
+@@ -600,10 +604,12 @@ static struct Elf *
+ read_file (int fildes, off_t offset, size_t maxsize,
+ 	   Elf_Cmd cmd, Elf *parent)
+ {
++#ifdef HAVE_SYS_MMAN_H
+   void *map_address = NULL;
+   int use_mmap = (cmd == ELF_C_READ_MMAP || cmd == ELF_C_RDWR_MMAP
+ 		  || cmd == ELF_C_WRITE_MMAP
+ 		  || cmd == ELF_C_READ_MMAP_PRIVATE);
++#endif
+ 
+   if (parent == NULL)
+     {
+@@ -625,6 +631,7 @@ read_file (int fildes, off_t offset, siz
+       assert (maxsize != ~((size_t) 0));
+     }
+ 
++#ifdef HAVE_SYS_MMAN_H
+   if (use_mmap)
+     {
+       if (parent == NULL)
+@@ -668,6 +675,7 @@ read_file (int fildes, off_t offset, siz
+ 
+       return result;
+     }
++#endif
+ 
+   /* Otherwise we have to do it the hard way.  We read as much as necessary
+      from the file whenever we need information which is not available.  */
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/elf_compress_gnu.c elfutils-0.170/libelf/elf_compress_gnu.c
+--- elfutils-0.170.orig/libelf/elf_compress_gnu.c	2018-03-19 14:34:12.368408625 +0100
++++ elfutils-0.170/libelf/elf_compress_gnu.c	2018-03-19 16:29:36.416187000 +0100
+@@ -34,6 +34,20 @@
+ #include "libelfP.h"
+ #include "common.h"
+ 
++#ifndef htobe64
++# if __BYTE_ORDER == __LITTLE_ENDIAN
++#  define htobe64(x) __bswap_64 (x)
++#  define htole64(x) (x)
++#  define be64toh(x) __bswap_64 (x)
++#  define le64toh(x) (x)
++# else
++#  define htobe64(x) (x)
++#  define htole64(x) __bswap_64 (x)
++#  define be64toh(x) (x)
++#  define le64toh(x) __bswap_64 (x)
++# endif
++#endif
++
+ int
+ elf_compress_gnu (Elf_Scn *scn, int inflate, unsigned int flags)
+ {
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/elf_end.c elfutils-0.170/libelf/elf_end.c
+--- elfutils-0.170.orig/libelf/elf_end.c	2018-03-19 14:34:12.364408625 +0100
++++ elfutils-0.170/libelf/elf_end.c	2018-03-19 15:56:26.139300201 +0100
+@@ -34,7 +34,9 @@
+ #include <assert.h>
+ #include <stddef.h>
+ #include <stdlib.h>
++#ifdef HAVE_SYS_MMAN_H
+ #include <sys/mman.h>
++#endif
+ 
+ #include "libelfP.h"
+ 
+@@ -224,7 +226,11 @@ elf_end (Elf *elf)
+       if ((elf->flags & ELF_F_MALLOCED) != 0)
+ 	free (elf->map_address);
+       else if ((elf->flags & ELF_F_MMAPPED) != 0)
++#ifdef HAVE_SYS_MMAN_H
+ 	munmap (elf->map_address, elf->maximum_size);
++#else
++    assert(0);
++#endif
+     }
+ 
+   rwlock_unlock (elf->lock);
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/elf_getaroff.c elfutils-0.170/libelf/elf_getaroff.c
+--- elfutils-0.170.orig/libelf/elf_getaroff.c	2018-03-19 14:34:12.360408625 +0100
++++ elfutils-0.170/libelf/elf_getaroff.c	2018-03-19 16:09:39.480213046 +0100
+@@ -38,7 +38,7 @@
+ #include "libelfP.h"
+ 
+ 
+-off_t
++int64_t
+ elf_getaroff (Elf *elf)
+ {
+   /* Be gratious, the specs demand it.  */
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/elf_getbase.c elfutils-0.170/libelf/elf_getbase.c
+--- elfutils-0.170.orig/libelf/elf_getbase.c	2018-03-19 14:34:12.364408625 +0100
++++ elfutils-0.170/libelf/elf_getbase.c	2018-03-19 15:57:16.259299110 +0100
+@@ -37,7 +37,7 @@
+ #include "libelfP.h"
+ 
+ 
+-off_t
++int64_t
+ elf_getbase (Elf *elf)
+ {
+   return elf == NULL ? (off_t) -1 : elf->start_offset;
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/elf_getdata_rawchunk.c elfutils-0.170/libelf/elf_getdata_rawchunk.c
+--- elfutils-0.170.orig/libelf/elf_getdata_rawchunk.c	2018-03-19 14:34:12.356408625 +0100
++++ elfutils-0.170/libelf/elf_getdata_rawchunk.c	2018-03-19 15:58:21.091297699 +0100
+@@ -41,7 +41,7 @@
+ #include "common.h"
+ 
+ Elf_Data *
+-elf_getdata_rawchunk (Elf *elf, off_t offset, size_t size, Elf_Type type)
++elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
+ {
+   if (unlikely (elf == NULL))
+     return NULL;
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/elf_memory.c elfutils-0.170/libelf/elf_memory.c
+--- elfutils-0.170.orig/libelf/elf_memory.c	2018-03-19 14:34:12.364408625 +0100
++++ elfutils-0.170/libelf/elf_memory.c	2018-03-20 01:20:55.773293766 +0100
+@@ -46,5 +46,16 @@ elf_memory (char *image, size_t size)
+       return NULL;
+     }
+ 
++#ifdef HAVE_SYS_MMAN_H
+   return __libelf_read_mmaped_file (-1, image, 0, size, ELF_C_READ, NULL);
++#else
++  Elf *elf = elf_begin(-1, ELF_C_READ, NULL);
++  if (elf)
++  {
++  	if (size > elf->maximum_size)
++  	  size = elf->maximum_size;
++  	memcpy(image, elf->map_address, size);
++  }
++  return elf;
++#endif
+ }
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/elf_update.c elfutils-0.170/libelf/elf_update.c
+--- elfutils-0.170.orig/libelf/elf_update.c	2018-03-19 14:34:12.376408625 +0100
++++ elfutils-0.170/libelf/elf_update.c	2018-03-19 16:06:44.816216847 +0100
+@@ -34,7 +34,9 @@
+ #include <libelf.h>
+ #include <fcntl.h>
+ #include <unistd.h>
++#ifdef HAVE_SYS_MMAN_H
+ #include <sys/mman.h>
++#endif
+ #include <sys/stat.h>
+ 
+ #include "libelfP.h"
+@@ -67,6 +69,7 @@ write_file (Elf *elf, off_t size, int ch
+       return -1;
+     }
+ 
++#ifdef HAVE_SYS_MMAN_H
+   /* Try to map the file if this isn't done yet.  */
+   if (elf->map_address == NULL && elf->cmd == ELF_C_WRITE_MMAP)
+     {
+@@ -109,6 +112,7 @@ write_file (Elf *elf, off_t size, int ch
+ 	size = -1;
+     }
+   else
++#endif
+     {
+       /* The file is not mmaped.  */
+       if ((class == ELFCLASS32
+@@ -148,7 +152,7 @@ write_file (Elf *elf, off_t size, int ch
+ }
+ 
+ 
+-off_t
++int64_t
+ elf_update (Elf *elf, Elf_Cmd cmd)
+ {
+   size_t shnum;
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/libelfP.h elfutils-0.170/libelf/libelfP.h
+--- elfutils-0.170.orig/libelf/libelfP.h	2018-03-19 14:34:12.376408625 +0100
++++ elfutils-0.170/libelf/libelfP.h	2018-03-19 15:50:17.547308222 +0100
+@@ -40,7 +40,9 @@
+ #include <string.h>
+ 
+ /* gettext helper macros.  */
++#ifndef _
+ #define _(Str) dgettext ("elfutils", Str)
++#endif
+ 
+ 
+ /* Helper Macros to write 32 bit and 64 bit functions.  */
+@@ -578,7 +580,7 @@ extern Elf_Data *__elf64_xlatetof_intern
+ extern unsigned int __elf_version_internal (unsigned int __version)
+      attribute_hidden;
+ extern unsigned long int __elf_hash_internal (const char *__string)
+-       __attribute__ ((__pure__, visibility ("hidden")));
++       __attribute__ ((__pure__)) attribute_hidden;
+ extern long int __elf32_checksum_internal (Elf *__elf) attribute_hidden;
+ extern long int __elf64_checksum_internal (Elf *__elf) attribute_hidden;
+ 
+diff -rupN -x Makefile.in elfutils-0.170.orig/libelf/libintl.h elfutils-0.170/libelf/libintl.h
+--- elfutils-0.170.orig/libelf/libintl.h	1970-01-01 01:00:00.000000000 +0100
++++ elfutils-0.170/libelf/libintl.h	2018-03-19 21:10:33.364095653 +0100
+@@ -0,0 +1,9 @@
++#undef _
++#undef gettext
++#undef dgettext
++#define _(x) x
++#define gettext(x) x
++#define ngettext(x, y, n) ((n) != 1 ? (y) : (x))
++#define dgettext(dom, x) x
++#define textdomain(a) (argc = argc)
++#define bindtextdomain(a, b) (argc = argc)
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/Makefile.am elfutils-0.170/src/Makefile.am
+--- elfutils-0.170.orig/src/Makefile.am	2017-06-19 16:45:16.000000000 +0200
++++ elfutils-0.170/src/Makefile.am	2018-03-20 01:01:30.037319133 +0100
+@@ -38,15 +38,23 @@ bin_SCRIPTS = make-debug-archive
+ EXTRA_DIST += make-debug-archive.in
+ CLEANFILES += make-debug-archive
+ 
++if ENABLE_SHARED
++LIB_DL = -ldl
+ if BUILD_STATIC
+ libasm = ../libasm/libasm.a
+-libdw = ../libdw/libdw.a -lz $(zip_LIBS) $(libelf) $(libebl) -ldl
++libdw = ../libdw/libdw.a -lz $(zip_LIBS) $(libelf) $(libebl) $(LIBDL)
+ libelf = ../libelf/libelf.a -lz
+ else
+ libasm = ../libasm/libasm.so
+ libdw = ../libdw/libdw.so
+ libelf = ../libelf/libelf.so
+ endif
++else
++LIB_DL = 
++libasm = ../libasm/libasm.a
++libdw = ../libdw/libdw.a -lz $(zip_LIBS) $(libelf) $(libebl)
++libelf = ../libelf/libelf.a -lz
++endif
+ libebl = ../libebl/libebl.a
+ libeu = ../lib/libeu.a
+ 
+@@ -67,21 +75,21 @@ ranlib_no_Wstack_usage = yes
+ ar_no_Wstack_usage = yes
+ unstrip_no_Wstack_usage = yes
+ 
+-readelf_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) $(argp_LDADD) -ldl
+-nm_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) $(argp_LDADD) -ldl \
++readelf_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) $(argp_LDADD) $(LIBDL)
++nm_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) $(argp_LDADD) $(LIBDL) \
+ 	   $(demanglelib)
+ size_LDADD = $(libelf) $(libeu) $(argp_LDADD)
+-strip_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD) -ldl
+-elflint_LDADD  = $(libebl) $(libelf) $(libeu) $(argp_LDADD) -ldl
++strip_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD) $(LIBDL)
++elflint_LDADD  = $(libebl) $(libelf) $(libeu) $(argp_LDADD) $(LIBDL)
+ findtextrel_LDADD = $(libdw) $(libelf) $(libeu) $(argp_LDADD)
+ addr2line_LDADD = $(libdw) $(libelf) $(libeu) $(argp_LDADD) $(demanglelib)
+-elfcmp_LDADD = $(libebl) $(libelf) $(libeu) $(argp_LDADD) -ldl
+-objdump_LDADD  = $(libasm) $(libebl) $(libelf) $(libeu) $(argp_LDADD) -ldl
++elfcmp_LDADD = $(libebl) $(libelf) $(libeu) $(argp_LDADD) $(LIBDL)
++objdump_LDADD  = $(libasm) $(libebl) $(libelf) $(libeu) $(argp_LDADD) $(LIBDL)
+ ranlib_LDADD = libar.a $(libelf) $(libeu) $(argp_LDADD)
+ strings_LDADD = $(libelf) $(libeu) $(argp_LDADD)
+ ar_LDADD = libar.a $(libelf) $(libeu) $(argp_LDADD)
+-unstrip_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD) -ldl
+-stack_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD) -ldl $(demanglelib)
++unstrip_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD) $(LIBDL)
++stack_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD) $(LIBDL) $(demanglelib)
+ elfcompress_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD)
+ 
+ installcheck-binPROGRAMS: $(bin_PROGRAMS)
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/addr2line.c elfutils-0.170/src/addr2line.c
+--- elfutils-0.170.orig/src/addr2line.c	2018-03-19 14:34:12.380408625 +0100
++++ elfutils-0.170/src/addr2line.c	2018-03-20 01:45:31.573261652 +0100
+@@ -32,7 +32,9 @@
+ #include <locale.h>
+ #include <stdbool.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+@@ -150,7 +152,9 @@ main (int argc, char *argv[])
+   int result = 0;
+ 
+   /* We use no threads here which can interfere with handling a stream.  */
++#ifdef HAVE_STDIO_EXT_H
+   (void) __fsetlocking (stdout, FSETLOCKING_BYCALLER);
++#endif
+ 
+   /* Set locale.  */
+   (void) setlocale (LC_ALL, "");
+@@ -173,7 +177,9 @@ main (int argc, char *argv[])
+   if (remaining == argc)
+     {
+       /* We use no threads here which can interfere with handling a stream.  */
++#ifdef HAVE_STDIO_EXT_H
+       (void) __fsetlocking (stdin, FSETLOCKING_BYCALLER);
++#endif
+ 
+       char *buf = NULL;
+       size_t len = 0;
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/ar.c elfutils-0.170/src/ar.c
+--- elfutils-0.170.orig/src/ar.c	2018-03-19 14:34:12.404408624 +0100
++++ elfutils-0.170/src/ar.c	2018-03-20 02:12:39.599269458 +0100
+@@ -32,11 +32,15 @@
+ #include <stdbool.h>
+ #include <stdlib.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <string.h>
+ #include <time.h>
+ #include <unistd.h>
++#ifdef HAVE_SYS_MMAN_H
+ #include <sys/mman.h>
++#endif
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ 
+@@ -141,9 +145,11 @@ int
+ main (int argc, char *argv[])
+ {
+   /* We use no threads here which can interfere with handling a stream.  */
++#ifdef HAVE_STDIO_EXT_H
+   (void) __fsetlocking (stdin, FSETLOCKING_BYCALLER);
+   (void) __fsetlocking (stdout, FSETLOCKING_BYCALLER);
+   (void) __fsetlocking (stderr, FSETLOCKING_BYCALLER);
++#endif
+ 
+   /* Set locale.  */
+   (void) setlocale (LC_ALL, "");
+@@ -429,10 +435,12 @@ copy_content (Elf *elf, int newfd, off_t
+ 
+   assert (off + n <= len);
+ 
++#ifdef HAVE_POSIX_MADVISE
+   /* Tell the kernel we will read all the pages sequentially.  */
+   size_t ps = sysconf (_SC_PAGESIZE);
+   if (n > 2 * ps)
+     posix_madvise (rawfile + (off & ~(ps - 1)), n, POSIX_MADV_SEQUENTIAL);
++#endif
+ 
+   return write_retry (newfd, rawfile + off, n) != (ssize_t) n;
+ }
+@@ -474,7 +482,7 @@ do_oper_extract (int oper, const char *a
+ 
+   for (int cnt = 0; cnt < argc; ++cnt)
+     {
+-      ENTRY entry = { .key = argv[cnt], .data = &argv[cnt] };
++      ENTRY entry = { .key = argv[cnt], .data = (void *)&argv[cnt] };
+       if (hsearch (entry, ENTER) == NULL)
+ 	error (EXIT_FAILURE, errno,
+ 	       gettext ("cannot insert into hash table"));
+@@ -665,6 +673,7 @@ do_oper_extract (int oper, const char *a
+ 
+ 	      if (preserve_dates)
+ 		{
++#ifdef HAVE_FUTIMENS
+ 		  struct timespec tv[2];
+ 		  tv[0].tv_sec = arhdr->ar_date;
+ 		  tv[0].tv_nsec = 0;
+@@ -672,6 +681,14 @@ do_oper_extract (int oper, const char *a
+ 		  tv[1].tv_nsec = 0;
+ 
+ 		  if (unlikely (futimens (xfd, tv) != 0))
++#else
++      struct timeval tv[2];
++      tv[0].tv_sec = arhdr->ar_date;
++      tv[0].tv_usec = 0;
++      tv[1].tv_sec = arhdr->ar_date;
++      tv[1].tv_usec = 0;
++      if (utimes (arhdr->ar_name, tv) != 0)
++#endif
+ 		    {
+ 		      error (0, errno,
+ 			     gettext ("cannot change modification time of %s"),
+@@ -919,7 +936,7 @@ do_oper_delete (const char *arfname, cha
+ 
+   for (int cnt = 0; cnt < argc; ++cnt)
+     {
+-      ENTRY entry = { .key = argv[cnt], .data = &argv[cnt] };
++      ENTRY entry = { .key = argv[cnt], .data = (void *)&argv[cnt] };
+       if (hsearch (entry, ENTER) == NULL)
+ 	error (EXIT_FAILURE, errno,
+ 	       gettext ("cannot insert into hash table"));
+@@ -1121,7 +1138,7 @@ do_oper_insert (int oper, const char *ar
+ 	{
+ 	  ENTRY entry;
+ 	  entry.key = full_path ? argv[cnt] : basename (argv[cnt]);
+-	  entry.data = &argv[cnt];
++	  entry.data = (void *)&argv[cnt];
+ 	  if (hsearch (entry, ENTER) == NULL)
+ 	    error (EXIT_FAILURE, errno,
+ 		   gettext ("cannot insert into hash table"));
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/elfcompress.c elfutils-0.170/src/elfcompress.c
+--- elfutils-0.170.orig/src/elfcompress.c	2018-03-19 14:34:12.404408624 +0100
++++ elfutils-0.170/src/elfcompress.c	2018-03-20 02:13:35.311268246 +0100
+@@ -54,6 +54,10 @@ static const char *foutput = NULL;
+ #define T_COMPRESS_GNU  3 /* zlib-gnu */
+ static int type = T_UNSET;
+ 
++#ifndef FNM_EXTMATCH
++#define FNM_EXTMATCH 0
++#endif
++
+ struct section_pattern
+ {
+   char *pattern;
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/nm.c elfutils-0.170/src/nm.c
+--- elfutils-0.170.orig/src/nm.c	2018-03-19 14:34:12.384408625 +0100
++++ elfutils-0.170/src/nm.c	2018-03-20 01:22:36.293291579 +0100
+@@ -37,7 +37,9 @@
+ #include <search.h>
+ #include <stdbool.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+@@ -219,9 +221,11 @@ main (int argc, char *argv[])
+   int result = 0;
+ 
+   /* We use no threads here which can interfere with handling a stream.  */
++#ifdef HAVE_STDIO_EXT_H
+   (void) __fsetlocking (stdin, FSETLOCKING_BYCALLER);
+   (void) __fsetlocking (stdout, FSETLOCKING_BYCALLER);
+   (void) __fsetlocking (stderr, FSETLOCKING_BYCALLER);
++#endif
+ 
+   /* Set locale.  */
+   (void) setlocale (LC_ALL, "");
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/objdump.c elfutils-0.170/src/objdump.c
+--- elfutils-0.170.orig/src/objdump.c	2018-03-19 14:34:12.408408624 +0100
++++ elfutils-0.170/src/objdump.c	2018-03-20 01:26:23.005286645 +0100
+@@ -28,7 +28,9 @@
+ #include <locale.h>
+ #include <stdbool.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+@@ -132,9 +134,11 @@ int
+ main (int argc, char *argv[])
+ {
+   /* We use no threads here which can interfere with handling a stream.  */
++#ifdef HAVE_STDIO_EXT_H
+   (void) __fsetlocking (stdin, FSETLOCKING_BYCALLER);
+   (void) __fsetlocking (stdout, FSETLOCKING_BYCALLER);
+   (void) __fsetlocking (stderr, FSETLOCKING_BYCALLER);
++#endif
+ 
+   /* Set locale.  */
+   (void) setlocale (LC_ALL, "");
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/ranlib.c elfutils-0.170/src/ranlib.c
+--- elfutils-0.170.orig/src/ranlib.c	2018-03-19 14:34:12.404408624 +0100
++++ elfutils-0.170/src/ranlib.c	2018-03-20 01:48:20.565257974 +0100
+@@ -32,9 +32,13 @@
+ #include <obstack.h>
+ #include <stdlib.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <unistd.h>
++#ifdef HAVE_SYS_MMAN_H
+ #include <sys/mman.h>
++#endif
+ #include <sys/stat.h>
+ 
+ #include <system.h>
+@@ -77,9 +81,11 @@ int
+ main (int argc, char *argv[])
+ {
+   /* We use no threads here which can interfere with handling a stream.  */
++#ifdef HAVE_STDIO_EXT_H
+   (void) __fsetlocking (stdin, FSETLOCKING_BYCALLER);
+   (void) __fsetlocking (stdout, FSETLOCKING_BYCALLER);
+   (void) __fsetlocking (stderr, FSETLOCKING_BYCALLER);
++#endif
+ 
+   /* Set locale.  */
+   (void) setlocale (LC_ALL, "");
+@@ -123,10 +129,12 @@ copy_content (Elf *elf, int newfd, off_t
+ 
+   assert (off + n <= len);
+ 
++#ifdef HAVE_POSIX_MADVISE
+   /* Tell the kernel we will read all the pages sequentially.  */
+   size_t ps = sysconf (_SC_PAGESIZE);
+   if (n > 2 * ps)
+     posix_madvise (rawfile + (off & ~(ps - 1)), n, POSIX_MADV_SEQUENTIAL);
++#endif
+ 
+   return write_retry (newfd, rawfile + off, n) != (ssize_t) n;
+ }
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/readelf.c elfutils-0.170/src/readelf.c
+--- elfutils-0.170.orig/src/readelf.c	2018-03-19 14:34:12.396408624 +0100
++++ elfutils-0.170/src/readelf.c	2018-03-20 00:59:57.599386520 +0100
+@@ -29,7 +29,9 @@
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <inttypes.h>
++#ifdef HAVE_LANGINFO_H
+ #include <langinfo.h>
++#endif
+ #include <libdw.h>
+ #include <libdwfl.h>
+ #include <libintl.h>
+@@ -1210,7 +1212,7 @@ There are %d section headers, starting a
+ 	      ssize_t size;
+ 	      if ((size = dwelf_scn_gnu_compressed_size (scn)) >= 0)
+ 		printf ("     [GNU ZLIB     %0*zx   ]\n",
+-			ehdr->e_ident[EI_CLASS] == ELFCLASS32 ? 6 : 8, size);
++			ehdr->e_ident[EI_CLASS] == ELFCLASS32 ? 6 : 8, (size_t)size);
+ 	      else
+ 		error (0, 0,
+ 		       gettext ("bad gnu compressed size for section %zd: %s"),
+@@ -1522,10 +1524,13 @@ print_scngrp (Ebl *ebl)
+ 			elf_ndxscn (scn));
+ 	      shdr = gelf_getshdr (scn, &shdr_mem);
+ 	      if (unlikely (shdr == NULL))
++	      {
+ 		error (EXIT_FAILURE, 0,
+ 		       gettext ("cannot get section [%zd] header: %s"),
+ 		       elf_ndxscn (scn),
+ 		       elf_errmsg (-1));
++		    abort();
++		  }
+ 	    }
+ 	  handle_scngrp (ebl, scn, shdr);
+ 	}
+@@ -3332,9 +3337,12 @@ handle_hash (Ebl *ebl)
+ 			elf_ndxscn (scn));
+ 	      shdr = gelf_getshdr (scn, &shdr_mem);
+ 	      if (unlikely (shdr == NULL))
++	      {
+ 		error (EXIT_FAILURE, 0,
+ 		       gettext ("cannot get section [%zd] header: %s"),
+ 		       elf_ndxscn (scn), elf_errmsg (-1));
++		       abort();
++		  }
+ 	    }
+ 
+ 	  if (shdr->sh_type == SHT_HASH)
+@@ -4517,10 +4525,16 @@ listptr_base (struct listptr *p)
+   return base;
+ }
+ 
++#ifdef HAVE_QSORT_R
+ static int
+-compare_listptr (const void *a, const void *b, void *arg)
++compare_listptr (const void *a, const void *b, void *compare_listptr_arg)
++#else
++static void *compare_listptr_arg;
++static int
++compare_listptr (const void *a, const void *b)
++#endif
+ {
+-  const char *name = arg;
++  const char *name = compare_listptr_arg;
+   struct listptr *p1 = (void *) a;
+   struct listptr *p2 = (void *) b;
+ 
+@@ -4616,8 +4630,16 @@ static void
+ sort_listptr (struct listptr_table *table, const char *name)
+ {
+   if (table->n > 0)
++#ifdef HAVE_QSORT_R
+     qsort_r (table->table, table->n, sizeof table->table[0],
+ 	     &compare_listptr, (void *) name);
++#else
++  {
++    compare_listptr_arg = (void *)name;
++    qsort (table->table, table->n, sizeof table->table[0],
++	     &compare_listptr);
++  }
++#endif
+ }
+ 
+ static bool
+@@ -9349,6 +9371,7 @@ handle_siginfo_note (Elf *core, GElf_Wor
+       default:
+ 	;
+       }
++#ifdef SI_USER
+   else if (si_code == SI_USER)
+     {
+       int pid, uid;
+@@ -9357,6 +9380,7 @@ handle_siginfo_note (Elf *core, GElf_Wor
+ 	goto fail;
+       printf ("    sender PID: %d, sender UID: %d\n", pid, uid);
+     }
++#endif
+ }
+ 
+ static void
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/size.c elfutils-0.170/src/size.c
+--- elfutils-0.170.orig/src/size.c	2018-03-19 14:34:12.384408625 +0100
++++ elfutils-0.170/src/size.c	2018-03-20 01:22:54.885291174 +0100
+@@ -30,7 +30,9 @@
+ #include <locale.h>
+ #include <stdbool.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+@@ -158,9 +160,11 @@ main (int argc, char *argv[])
+   int result = 0;
+ 
+   /* We use no threads here which can interfere with handling a stream.  */
++#ifdef HAVE_STDIO_EXT_H
+   __fsetlocking (stdin, FSETLOCKING_BYCALLER);
+   __fsetlocking (stdout, FSETLOCKING_BYCALLER);
+   __fsetlocking (stderr, FSETLOCKING_BYCALLER);
++#endif
+ 
+   /* Set locale.  */
+   setlocale (LC_ALL, "");
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/stack.c elfutils-0.170/src/stack.c
+--- elfutils-0.170.orig/src/stack.c	2018-03-19 14:34:12.380408625 +0100
++++ elfutils-0.170/src/stack.c	2018-03-20 01:23:52.381289923 +0100
+@@ -22,7 +22,9 @@
+ #include <stdlib.h>
+ #include <inttypes.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <string.h>
+ #include <locale.h>
+ #include <fcntl.h>
+@@ -624,9 +626,11 @@ int
+ main (int argc, char **argv)
+ {
+   /* We use no threads here which can interfere with handling a stream.  */
++#ifdef HAVE_STDIO_EXT_H
+   __fsetlocking (stdin, FSETLOCKING_BYCALLER);
+   __fsetlocking (stdout, FSETLOCKING_BYCALLER);
+   __fsetlocking (stderr, FSETLOCKING_BYCALLER);
++#endif
+ 
+   /* Set locale.  */
+   (void) setlocale (LC_ALL, "");
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/strings.c elfutils-0.170/src/strings.c
+--- elfutils-0.170.orig/src/strings.c	2018-03-19 14:34:12.388408625 +0100
++++ elfutils-0.170/src/strings.c	2018-03-20 02:07:05.247276734 +0100
+@@ -33,11 +33,15 @@
+ #include <locale.h>
+ #include <stdbool.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
++#ifdef HAVE_SYS_MMAN_H
+ #include <sys/mman.h>
++#endif
+ #include <sys/stat.h>
+ 
+ #include <libeu.h>
+@@ -136,17 +140,21 @@ static size_t ps;
+ 
+ /* Mapped parts of the ELF file.  */
+ static unsigned char *elfmap;
+-static unsigned char *elfmap_base;
++#ifdef HAVE_SYS_MMAN_H
+ static size_t elfmap_size;
++static unsigned char *elfmap_base;
+ static off_t elfmap_off;
++#endif
+ 
+ 
+ int
+ main (int argc, char *argv[])
+ {
+   /* We use no threads.  */
++#ifdef HAVE_STDIO_EXT_H
+   __fsetlocking (stdin, FSETLOCKING_BYCALLER);
+   __fsetlocking (stdout, FSETLOCKING_BYCALLER);
++#endif
+ 
+   /* Set locale.  */
+   (void) setlocale (LC_ALL, "");
+@@ -212,8 +220,10 @@ main (int argc, char *argv[])
+ 	      close (fd);
+ 	  }
+ 
++#ifdef HAVE_SYS_MMAN_H
+ 	if (elfmap != NULL && elfmap != MAP_FAILED)
+ 	  munmap (elfmap, elfmap_size);
++#endif
+ 	elfmap = NULL;
+       }
+     while (++remaining < argc);
+@@ -451,6 +461,7 @@ process_chunk (const char *fname, const
+ }
+ 
+ 
++#ifdef HAVE_SYS_MMAN_H
+ /* Map a file in as large chunks as possible.  */
+ static void *
+ map_file (int fd, off_t start_off, off_t fdlen, size_t *map_sizep)
+@@ -497,6 +508,9 @@ map_file (int fd, off_t start_off, off_t
+   *map_sizep = map_size;
+   return mem;
+ }
++#else
++#define MAP_FAILED ((void *)-1)
++#endif
+ 
+ 
+ /* Read the file without mapping.  */
+@@ -567,6 +581,7 @@ read_block (int fd, const char *fname, o
+ {
+   if (elfmap == NULL)
+     {
++#ifdef HAVE_SYS_MMAN_H
+       /* We need a completely new mapping.  */
+       elfmap_off = from & ~(ps - 1);
+       elfmap_base = elfmap = map_file (fd, elfmap_off, fdlen, &elfmap_size);
+@@ -574,6 +589,10 @@ read_block (int fd, const char *fname, o
+       if (unlikely (elfmap == MAP_FAILED))
+ 	/* Let the kernel know we are going to read everything in sequence.  */
+ 	(void) posix_fadvise (fd, 0, 0, POSIX_FADV_SEQUENTIAL);
++#else
++    elfmap = MAP_FAILED;
++    (void) fdlen;
++#endif
+     }
+ 
+   if (unlikely (elfmap == MAP_FAILED))
+@@ -588,6 +607,7 @@ read_block (int fd, const char *fname, o
+       return read_block_no_mmap (fd, fname, from, to - from);
+     }
+ 
++#ifdef HAVE_SYS_MMAN_H
+   assert ((off_t) min_len_bytes < fdlen);
+ 
+   if (to < (off_t) elfmap_off || from > (off_t) (elfmap_off + elfmap_size))
+@@ -680,6 +700,7 @@ read_block (int fd, const char *fname, o
+   /* Don't print anything we collected so far.  There is no
+      terminating NUL byte.  */
+   free (unprinted);
++#endif
+ 
+   return 0;
+ }
+@@ -737,8 +758,10 @@ read_elf (Elf *elf, int fd, const char *
+     }
+   while ((scn = elf_nextscn (elf, scn)) != NULL);
+ 
++#ifdef HAVE_SYS_MMAN_H
+   if (elfmap != NULL && elfmap != MAP_FAILED)
+     munmap (elfmap, elfmap_size);
++#endif
+   elfmap = NULL;
+ 
+   return result;
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/strip.c elfutils-0.170/src/strip.c
+--- elfutils-0.170.orig/src/strip.c	2018-03-19 14:34:12.384408625 +0100
++++ elfutils-0.170/src/strip.c	2018-03-20 02:12:23.759269803 +0100
+@@ -33,7 +33,9 @@
+ #include <locale.h>
+ #include <stdbool.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+@@ -47,6 +49,10 @@
+ #include <system.h>
+ #include <printversion.h>
+ 
++#ifndef FNM_EXTMATCH
++#define FNM_EXTMATCH 0
++#endif
++
+ typedef uint8_t GElf_Byte;
+ 
+ /* Name and version of program.  */
+@@ -220,9 +226,11 @@ main (int argc, char *argv[])
+   int result = 0;
+ 
+   /* We use no threads here which can interfere with handling a stream.  */
++#ifdef HAVE_STDIO_EXT_H
+   __fsetlocking (stdin, FSETLOCKING_BYCALLER);
+   __fsetlocking (stdout, FSETLOCKING_BYCALLER);
+   __fsetlocking (stderr, FSETLOCKING_BYCALLER);
++#endif
+ 
+   /* Set locale.  */
+   setlocale (LC_ALL, "");
+@@ -375,8 +383,15 @@ process_file (const char *fname)
+ 
+       /* If we have to preserve the timestamp, we need it in the
+ 	 format utimes() understands.  */
++#ifdef __MINT__
++      tv[0].tv_sec = pre_st.st_atime;
++      tv[0].tv_nsec = 0;
++      tv[1].tv_sec = pre_st.st_mtime;
++      tv[1].tv_nsec = 0;
++#else
+       tv[0] = pre_st.st_atim;
+       tv[1] = pre_st.st_mtim;
++#endif
+     }
+ 
+   /* Open the file.  */
+@@ -2333,7 +2348,16 @@ while computing checksum for debug infor
+   /* If requested, preserve the timestamp.  */
+   if (tvp != NULL)
+     {
++#ifdef HAVE_FUTIMENS
+       if (futimens (fd, tvp) != 0)
++#else
++      struct timeval tv[2];
++      tv[0].tv_sec = tvp[0].tv_sec;
++      tv[0].tv_usec = tvp[0].tv_nsec / 1000;
++      tv[1].tv_sec = tvp[1].tv_sec;
++      tv[1].tv_usec = tvp[1].tv_nsec / 1000;
++      if (utimes (output_fname ?: fname, tv) != 0)
++#endif
+ 	{
+ 	  error (0, errno, gettext ("\
+ cannot set access and modification date of '%s'"),
+@@ -2409,7 +2433,16 @@ handle_ar (int fd, Elf *elf, const char
+ 
+   if (tvp != NULL)
+     {
++#ifdef HAVE_FUTIMENS
+       if (unlikely (futimens (fd, tvp) != 0))
++#else
++      struct timeval tv[2];
++      tv[0].tv_sec = tvp[0].tv_sec;
++      tv[0].tv_usec = tvp[0].tv_nsec / 1000;
++      tv[1].tv_sec = tvp[1].tv_sec;
++      tv[1].tv_usec = tvp[1].tv_nsec / 1000;
++      if (utimes (fname, tv) != 0)
++#endif
+ 	{
+ 	  error (0, errno, gettext ("\
+ cannot set access and modification date of '%s'"), fname);
+diff -rupN -x Makefile.in elfutils-0.170.orig/src/unstrip.c elfutils-0.170/src/unstrip.c
+--- elfutils-0.170.orig/src/unstrip.c	2018-03-19 14:34:12.408408624 +0100
++++ elfutils-0.170/src/unstrip.c	2018-03-20 02:13:05.943268885 +0100
+@@ -38,7 +38,9 @@
+ #include <locale.h>
+ #include <stdbool.h>
+ #include <stdio.h>
++#ifdef HAVE_STDIO_EXT_H
+ #include <stdio_ext.h>
++#endif
+ #include <inttypes.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -1423,10 +1425,12 @@ more sections in stripped file than debu
+ 	}
+ 
+       if (sec == NULL)
++      {
+ 	error (EXIT_FAILURE, 0,
+ 	       _("cannot find matching section for [%zu] '%s'"),
+ 	       elf_ndxscn (scn), name);
+-
++	       abort();
++	  }
+       sec->outscn = scn;
+     }
+ 
+@@ -2353,9 +2357,11 @@ int
+ main (int argc, char **argv)
+ {
+   /* We use no threads here which can interfere with handling a stream.  */
++#ifdef HAVE_STDIO_EXT_H
+   __fsetlocking (stdin, FSETLOCKING_BYCALLER);
+   __fsetlocking (stdout, FSETLOCKING_BYCALLER);
+   __fsetlocking (stderr, FSETLOCKING_BYCALLER);
++#endif
+ 
+   /* Set locale.  */
+   setlocale (LC_ALL, "");
+diff -rupN -x Makefile.in elfutils-0.170.orig/tests/Makefile.am elfutils-0.170/tests/Makefile.am
+--- elfutils-0.170.orig/tests/Makefile.am	2018-03-19 14:34:12.244408628 +0100
++++ elfutils-0.170/tests/Makefile.am	2018-03-19 15:24:08.139342373 +0100
+@@ -485,7 +485,7 @@ debugaltlink_LDADD = $(libdw) $(libelf)
+ buildid_LDADD = $(libdw) $(libelf)
+ deleted_LDADD = ./deleted-lib.so
+ deleted_lib_so_LDFLAGS = -shared -rdynamic
+-deleted_lib_so_CFLAGS = -fPIC -fasynchronous-unwind-tables
++deleted_lib_so_CFLAGS = -fasynchronous-unwind-tables
+ aggregate_size_LDADD = $(libdw) $(libelf) $(argp_LDADD)
+ peel_type_LDADD = $(libdw) $(libelf) $(argp_LDADD)
+ vdsosyms_LDADD = $(libdw) $(libelf)

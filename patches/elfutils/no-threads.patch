@@ -1,0 +1,29 @@
+--- elfutils-0.170/configure.ac.orig	2018-03-19 14:13:56.804435077 +0100
++++ elfutils-0.170/configure.ac	2018-03-19 14:15:29.972433049 +0100
+@@ -143,7 +143,7 @@
+ CFLAGS="$save_CFLAGS"
+ LDFLAGS="$save_LDFLAGS"])
+ AS_IF([test "x$ac_cv_tls" != xyes],
+-      AC_MSG_ERROR([__thread support required]))
++      AC_DEFINE_UNQUOTED(__thread,,[ ]))
+ 
+ dnl This test must come as early as possible after the compiler configuration
+ dnl tests, because the choice of the file model can (in principle) affect
+--- elfutils-0.170/lib/Makefile.am.orig	2018-03-19 14:28:00.724416712 +0100
++++ elfutils-0.170/lib/Makefile.am	2018-03-19 14:28:26.788416145 +0100
+@@ -28,7 +28,6 @@
+ ## not, see <http://www.gnu.org/licenses/>.
+ ##
+ include $(top_srcdir)/config/eu.am
+-AM_CFLAGS += -fPIC
+ AM_CPPFLAGS += -I$(srcdir)/../libelf
+ 
+ noinst_LIBRARIES = libeu.a
+@@ -40,7 +39,3 @@
+ noinst_HEADERS = fixedsizehash.h libeu.h system.h dynamicsizehash.h list.h \
+ 		 md5.h sha1.h eu-config.h color.h printversion.h bpf.h
+ EXTRA_DIST = dynamicsizehash.c
+-
+-if !GPROF
+-xmalloc_CFLAGS = -ffunction-sections
+-endif

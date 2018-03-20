@@ -1,0 +1,41 @@
+2017-06-15  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* ppc_symbol.c (ppc_machine_flag_check): New function.
+	* ppc_init.c (ppc_init): Hook it.
+
+diff --git a/backends/ppc_init.c b/backends/ppc_init.c
+index c3e3ca3607..aea9f2d740 100644
+--- a/backends/ppc_init.c
++++ b/backends/ppc_init.c
+@@ -53,6 +53,7 @@ ppc_init (Elf *elf __attribute__ ((unused)),
+   eh->name = "PowerPC";
+   ppc_init_reloc (eh);
+   HOOK (eh, reloc_simple_type);
++  HOOK (eh, machine_flag_check);
+   HOOK (eh, dynamic_tag_name);
+   HOOK (eh, dynamic_tag_check);
+   HOOK (eh, check_special_symbol);
+diff --git a/backends/ppc_symbol.c b/backends/ppc_symbol.c
+index 1273c1d299..4b32003acc 100644
+--- a/backends/ppc_symbol.c
++++ b/backends/ppc_symbol.c
+@@ -57,6 +57,16 @@ ppc_reloc_simple_type (Ebl *ebl __attribute__ ((unused)), int type)
+ }
+ 
+ 
++/* Check whether machine flags are valid.  */
++bool
++ppc_machine_flag_check (GElf_Word flags)
++{
++  return ((flags &~ (EF_PPC_EMB
++		     | EF_PPC_RELOCATABLE
++		     | EF_PPC_RELOCATABLE_LIB)) == 0);
++}
++
++
+ const char *
+ ppc_dynamic_tag_name (int64_t tag, char *buf __attribute__ ((unused)),
+ 		      size_t len __attribute__ ((unused)))
+-- 
+2.13.1
+
