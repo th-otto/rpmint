@@ -73,6 +73,7 @@ for pkg in gemlib \
 	rhash \
 	libarchive \
 	elfutils \
+	libuv \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

@@ -961,6 +961,8 @@ foreach ($libpackages as $package)
 
 <li>2018/03/20 Package elfutils added</li>
 
+<li>2018/03/20 Package libuv added</li>
+
 </ul>
 
 <p></p>

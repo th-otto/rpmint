@@ -281,7 +281,6 @@ $srcdir/configure \
 	--disable-libcc1 \
 	--disable-werror \
 	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root/usr/include/c++/${gcc_dir_version} \
-	--with-default-libstdcxx-abi=gcc4-compatible \
 	--with-gcc-major-version-only \
 	--with-gcc --with-gnu-as --with-gnu-ld \
 	--with-system-zlib \

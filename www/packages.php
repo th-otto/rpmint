@@ -1359,6 +1359,21 @@ and modify ELF binary files, find and handle DWARF debug data,
 symbols, thread state and stacktraces for processes and core files.
 '
 	),
+	'libuv' => array(
+		'name' => 'libuv',
+		'upstream' => 'http://libuv.org',
+		'source' => 'https://github.com/libuv/libuv/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz',
+		'version' => '1.18.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+libuv is a support library with a focus on asynchronous I/O. It was
+primarily developed for use by Node.js, but it is also used by
+Mozilla&apos;s Rust language, Luvit, Julia, pyuv, and others.
+'
+	),
 );
 
 ?>

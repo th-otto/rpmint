@@ -1,0 +1,1425 @@
+diff -rupN libuv-1.18.0.orig/configure.ac libuv-1.18.0/configure.ac
+--- libuv-1.18.0.orig/configure.ac	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/configure.ac	2018-03-20 19:37:14.613673725 +0100
+@@ -41,6 +41,7 @@ AC_PROG_LIBTOOL
+ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+ LT_INIT
+ # TODO(bnoordhuis) Check for -pthread vs. -pthreads
++AC_CHECK_HEADERS([pthread.h semaphore.h dlfcn.h grp.h])
+ AC_CHECK_LIB([dl], [dlopen])
+ AC_CHECK_LIB([kstat], [kstat_lookup])
+ AC_CHECK_LIB([nsl], [gethostbyname])
+@@ -49,6 +50,7 @@ AC_CHECK_LIB([pthread], [pthread_mutex_i
+ AC_CHECK_LIB([rt], [clock_gettime])
+ AC_CHECK_LIB([sendfile], [sendfile])
+ AC_CHECK_LIB([socket], [socket])
++AC_CHECK_FUNCS([futimes mkdtemp scandir pread pwrite getnameinfo nanosleep ptsname])
+ AC_SYS_LARGEFILE
+ AM_CONDITIONAL([AIX],      [AS_CASE([$host_os],[aix*],          [true], [false])])
+ AM_CONDITIONAL([ANDROID],  [AS_CASE([$host_os],[linux-android*],[true], [false])])
+diff -rupN libuv-1.18.0.orig/include/pthread-barrier.h libuv-1.18.0/include/pthread-barrier.h
+--- libuv-1.18.0.orig/include/pthread-barrier.h	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/include/pthread-barrier.h	2018-03-20 10:13:29.931912219 +0100
+@@ -17,8 +17,10 @@ OR IN CONNECTION WITH THE USE OR PERFORM
+ #ifndef _UV_PTHREAD_BARRIER_
+ #define _UV_PTHREAD_BARRIER_
+ #include <errno.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
+-#if !defined(__MVS__)
++#endif
++#if !defined(__MVS__) && defined(HAVE_SEMAPHORE_H)
+ #include <semaphore.h> /* sem_t */
+ #endif
+ 
+@@ -47,8 +49,10 @@ OR IN CONNECTION WITH THE USE OR PERFORM
+ #endif
+ 
+ typedef struct {
++#ifdef HAVE_PTHREAD_H
+   pthread_mutex_t  mutex;
+   pthread_cond_t   cond;
++#endif
+   unsigned         threshold;
+   unsigned         in;
+   unsigned         out;
+@@ -56,7 +60,9 @@ typedef struct {
+ 
+ typedef struct {
+   _uv_barrier* b;
++#if defined(__ANDROID__) || defined(__APPLE__)
+   char _pad[UV_BARRIER_STRUCT_PADDING];
++#endif
+ } pthread_barrier_t;
+ 
+ int pthread_barrier_init(pthread_barrier_t* barrier,
+diff -rupN libuv-1.18.0.orig/include/uv-errno.h libuv-1.18.0/include/uv-errno.h
+--- libuv-1.18.0.orig/include/uv-errno.h	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/include/uv-errno.h	2018-03-20 17:34:00.437423996 +0100
+@@ -428,4 +428,11 @@
+ # define UV__ENOTTY (-4029)
+ #endif
+ 
++#if defined(__MINT__) && !defined(ENOTSUP)
++#define ENOTSUP 350
++#endif
++#if defined(__MINT__) && !defined(ECANCELED)
++#define ECANCELED 351
++#endif
++
+ #endif /* UV_ERRNO_H_ */
+diff -rupN libuv-1.18.0.orig/include/uv-unix.h libuv-1.18.0/include/uv-unix.h
+--- libuv-1.18.0.orig/include/uv-unix.h	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/include/uv-unix.h	2018-03-20 10:27:11.971894331 +0100
+@@ -36,10 +36,12 @@
+ #include <termios.h>
+ #include <pwd.h>
+ 
+-#if !defined(__MVS__)
++#if !defined(__MVS__) && defined(HAVE_SEMAPHORE_H)
+ #include <semaphore.h>
+ #endif
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ #include <signal.h>
+ 
+ #include "uv-threadpool.h"
+@@ -101,7 +103,11 @@ struct uv__io_s {
+ };
+ 
+ #ifndef UV_PLATFORM_SEM_T
+-# define UV_PLATFORM_SEM_T sem_t
++# if defined(HAVE_SEMAPHORE_H)
++#   define UV_PLATFORM_SEM_T sem_t
++# else
++#   define UV_PLATFORM_SEM_T int
++# endif
+ #endif
+ 
+ #ifndef UV_PLATFORM_LOOP_FIELDS
+@@ -127,8 +133,7 @@ typedef int uv_os_sock_t;
+ typedef int uv_os_fd_t;
+ typedef pid_t uv_pid_t;
+ 
+-#define UV_ONCE_INIT PTHREAD_ONCE_INIT
+-
++#ifdef HAVE_PTHREAD_H
+ typedef pthread_once_t uv_once_t;
+ typedef pthread_t uv_thread_t;
+ typedef pthread_mutex_t uv_mutex_t;
+@@ -137,6 +142,18 @@ typedef UV_PLATFORM_SEM_T uv_sem_t;
+ typedef pthread_cond_t uv_cond_t;
+ typedef pthread_key_t uv_key_t;
+ typedef pthread_barrier_t uv_barrier_t;
++#define UV_ONCE_INIT PTHREAD_ONCE_INIT
++#else
++typedef int uv_once_t;
++typedef int uv_thread_t;
++typedef int uv_mutex_t;
++typedef int uv_rwlock_t;
++typedef UV_PLATFORM_SEM_T uv_sem_t;
++typedef int uv_cond_t;
++typedef int uv_key_t;
++typedef int uv_barrier_t;
++#define UV_ONCE_INIT 0
++#endif
+ 
+ 
+ /* Platform-specific definitions for uv_spawn support. */
+diff -rupN libuv-1.18.0.orig/include/uv.h libuv-1.18.0/include/uv.h
+--- libuv-1.18.0.orig/include/uv.h	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/include/uv.h	2018-03-20 10:24:14.579898191 +0100
+@@ -244,6 +244,21 @@ typedef enum {
+   UV_RUN_NOWAIT
+ } uv_run_mode;
+ 
++#ifdef __MINT__
++/* Structure to contain information about address of a service provider.  */
++struct addrinfo
++{
++  int ai_flags;			/* Input flags.  */
++  int ai_family;		/* Protocol family for socket.  */
++  int ai_socktype;		/* Socket type.  */
++  int ai_protocol;		/* Protocol for socket.  */
++  socklen_t ai_addrlen;		/* Length of socket address.  */
++  struct sockaddr *ai_addr;	/* Socket address for socket.  */
++  char *ai_canonname;		/* Canonical name for service location.  */
++  struct addrinfo *ai_next;	/* Pointer to next in list.  */
++};
++#define NO_IPV6 1
++#endif
+ 
+ UV_EXTERN unsigned int uv_version(void);
+ UV_EXTERN const char* uv_version_string(void);
+@@ -1001,11 +1016,15 @@ struct uv_interface_address_s {
+   int is_internal;
+   union {
+     struct sockaddr_in address4;
++#ifndef NO_IPV6
+     struct sockaddr_in6 address6;
++#endif
+   } address;
+   union {
+     struct sockaddr_in netmask4;
++#ifndef NO_IPV6
+     struct sockaddr_in6 netmask6;
++#endif
+   } netmask;
+ };
+ 
+@@ -1401,10 +1420,14 @@ UV_EXTERN int uv_fs_event_getpath(uv_fs_
+                                   size_t* size);
+ 
+ UV_EXTERN int uv_ip4_addr(const char* ip, int port, struct sockaddr_in* addr);
++#ifndef NO_IPV6
+ UV_EXTERN int uv_ip6_addr(const char* ip, int port, struct sockaddr_in6* addr);
++#endif
+ 
+ UV_EXTERN int uv_ip4_name(const struct sockaddr_in* src, char* dst, size_t size);
++#ifndef NO_IPV6
+ UV_EXTERN int uv_ip6_name(const struct sockaddr_in6* src, char* dst, size_t size);
++#endif
+ 
+ UV_EXTERN int uv_inet_ntop(int af, const void* src, char* dst, size_t size);
+ UV_EXTERN int uv_inet_pton(int af, const char* src, void* dst);
+diff -rupN libuv-1.18.0.orig/src/inet.c libuv-1.18.0/src/inet.c
+--- libuv-1.18.0.orig/src/inet.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/inet.c	2018-03-20 10:25:59.379895911 +0100
+@@ -75,6 +75,9 @@ static int inet_ntop6(const unsigned cha
+    */
+   char tmp[UV__INET6_ADDRSTRLEN], *tp;
+   struct { int base, len; } best, cur;
++#ifdef NO_IPV6
++#define in6_addr in_addr
++#endif
+   unsigned int words[sizeof(struct in6_addr) / sizeof(uint16_t)];
+   int i;
+ 
+diff -rupN libuv-1.18.0.orig/src/threadpool.c libuv-1.18.0/src/threadpool.c
+--- libuv-1.18.0.orig/src/threadpool.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/threadpool.c	2018-03-20 10:28:34.067892545 +0100
+@@ -165,7 +165,7 @@ static void init_threads(void) {
+ }
+ 
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) && defined(HAVE_PTHREAD_H)
+ static void reset_once(void) {
+   uv_once_t child_once = UV_ONCE_INIT;
+   memcpy(&once, &child_once, sizeof(child_once));
+@@ -174,7 +174,7 @@ static void reset_once(void) {
+ 
+ 
+ static void init_once(void) {
+-#ifndef _WIN32
++#if !defined(_WIN32) && defined(HAVE_PTHREAD_H)
+   /* Re-initialize the threadpool after fork.
+    * Note that this discards the global mutex and condition as well
+    * as the work queue.
+diff -rupN libuv-1.18.0.orig/src/unix/core.c libuv-1.18.0/src/unix/core.c
+--- libuv-1.18.0.orig/src/unix/core.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/core.c	2018-03-20 10:35:03.643884067 +0100
+@@ -556,12 +556,12 @@ int uv__nonblock_ioctl(int fd, int set)
+ }
+ 
+ 
+-#if !defined(__CYGWIN__) && !defined(__MSYS__)
++#if !defined(__CYGWIN__) && !defined(__MSYS__) && !defined(__MINT__)
+ int uv__cloexec_ioctl(int fd, int set) {
+   int r;
+ 
+   do
+-    r = ioctl(fd, set ? FIOCLEX : FIONCLEX);
++    r = ioctl(fd, set ? FIOCLEX : FIONCLEX, NULL);
+   while (r == -1 && errno == EINTR);
+ 
+   if (r)
+diff -rupN libuv-1.18.0.orig/src/unix/dl.c libuv-1.18.0/src/unix/dl.c
+--- libuv-1.18.0.orig/src/unix/dl.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/dl.c	2018-03-20 10:37:20.415881091 +0100
+@@ -22,7 +22,9 @@
+ #include "uv.h"
+ #include "internal.h"
+ 
++#ifdef HAVE_DLFCN_H
+ #include <dlfcn.h>
++#endif
+ #include <errno.h>
+ #include <string.h>
+ #include <locale.h>
+@@ -31,9 +33,11 @@ static int uv__dlerror(uv_lib_t* lib);
+ 
+ 
+ int uv_dlopen(const char* filename, uv_lib_t* lib) {
+-  dlerror(); /* Reset error status. */
+   lib->errmsg = NULL;
++#ifdef HAVE_DLFCN_H
++  dlerror(); /* Reset error status. */
+   lib->handle = dlopen(filename, RTLD_LAZY);
++#endif
+   return lib->handle ? 0 : uv__dlerror(lib);
+ }
+ 
+@@ -44,15 +48,19 @@ void uv_dlclose(uv_lib_t* lib) {
+ 
+   if (lib->handle) {
+     /* Ignore errors. No good way to signal them without leaking memory. */
++#ifdef HAVE_DLFCN_H
+     dlclose(lib->handle);
++#endif
+     lib->handle = NULL;
+   }
+ }
+ 
+ 
+ int uv_dlsym(uv_lib_t* lib, const char* name, void** ptr) {
++#ifdef HAVE_DLFCN_H
+   dlerror(); /* Reset error status. */
+   *ptr = dlsym(lib->handle, name);
++#endif
+   return uv__dlerror(lib);
+ }
+ 
+@@ -67,7 +75,11 @@ static int uv__dlerror(uv_lib_t* lib) {
+ 
+   uv__free(lib->errmsg);
+ 
++#ifdef HAVE_DLFCN_H
+   errmsg = dlerror();
++#else
++  errmsg = "not supported";
++#endif
+ 
+   if (errmsg) {
+     lib->errmsg = uv__strdup(errmsg);
+diff -rupN libuv-1.18.0.orig/src/unix/fs.c libuv-1.18.0/src/unix/fs.c
+--- libuv-1.18.0.orig/src/unix/fs.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/fs.c	2018-03-20 17:30:47.513428194 +0100
+@@ -26,6 +26,8 @@
+  * getting the errno to the right place (req->result or as the return value.)
+  */
+ 
++#define _GNU_SOURCE
++
+ #include "uv.h"
+ #include "internal.h"
+ 
+@@ -40,7 +42,9 @@
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ #include <sys/uio.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <utime.h>
+@@ -225,7 +229,8 @@ skip:
+     || defined(__FreeBSD_kernel__)                                            \
+     || defined(__NetBSD__)                                                    \
+     || defined(__OpenBSD__)                                                   \
+-    || defined(__sun)
++    || defined(__sun) \
++    || defined(HAVE_FUTIMES)
+   struct timeval tv[2];
+   tv[0].tv_sec  = req->atime;
+   tv[0].tv_usec = (uint64_t)(req->atime * 1000000) % 1000000;
+@@ -259,7 +264,14 @@ skip:
+ 
+ 
+ static ssize_t uv__fs_mkdtemp(uv_fs_t* req) {
++#ifdef HAVE_MKDTEMP
+   return mkdtemp((char*) req->path) ? 0 : -1;
++#else
++  char *tmpdir = mktemp((char*) req->path);
++  if (tmpdir == NULL)
++    return -1;
++  return mkdir(tmpdir, 0700);
++#endif
+ }
+ 
+ 
+@@ -930,7 +942,7 @@ static void uv__to_stat(struct stat* src
+   dst->st_birthtim.tv_nsec = src->st_ctimensec;
+   dst->st_flags = 0;
+   dst->st_gen = 0;
+-#elif !defined(_AIX) && (       \
++#elif !defined(_AIX) && !defined(__MINT__) && (       \
+     defined(__DragonFly__)   || \
+     defined(__FreeBSD__)     || \
+     defined(__OpenBSD__)     || \
+diff -rupN libuv-1.18.0.orig/src/unix/getaddrinfo.c libuv-1.18.0/src/unix/getaddrinfo.c
+--- libuv-1.18.0.orig/src/unix/getaddrinfo.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/getaddrinfo.c	2018-03-20 19:03:57.733717179 +0100
+@@ -100,7 +100,11 @@ static void uv__getaddrinfo_work(struct
+   int err;
+ 
+   req = container_of(w, uv_getaddrinfo_t, work_req);
++#ifndef __MINT__
+   err = getaddrinfo(req->hostname, req->service, req->hints, &req->addrinfo);
++#else
++  err = 0;
++#endif
+   req->retcode = uv__getaddrinfo_translate_error(err);
+ }
+ 
+@@ -198,8 +202,12 @@ int uv_getaddrinfo(uv_loop_t* loop,
+ 
+ 
+ void uv_freeaddrinfo(struct addrinfo* ai) {
++#ifndef __MINT__
+   if (ai)
+     freeaddrinfo(ai);
++#else
++  (void) ai;
++#endif
+ }
+ 
+ 
+@@ -210,8 +218,12 @@ int uv_if_indextoname(unsigned int ifind
+   if (buffer == NULL || size == NULL || *size == 0)
+     return UV_EINVAL;
+ 
++#ifndef __MINT__
+   if (if_indextoname(ifindex, ifname_buf) == NULL)
+     return -errno;
++#else
++  strcpy(ifname_buf, "eth0");
++#endif
+ 
+   len = strnlen(ifname_buf, sizeof(ifname_buf));
+ 
+diff -rupN libuv-1.18.0.orig/src/unix/getnameinfo.c libuv-1.18.0/src/unix/getnameinfo.c
+--- libuv-1.18.0.orig/src/unix/getnameinfo.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/getnameinfo.c	2018-03-20 17:39:53.029416323 +0100
+@@ -37,11 +37,14 @@ static void uv__getnameinfo_work(struct
+ 
+   if (req->storage.ss_family == AF_INET)
+     salen = sizeof(struct sockaddr_in);
++#ifndef NO_IPV6
+   else if (req->storage.ss_family == AF_INET6)
+     salen = sizeof(struct sockaddr_in6);
++#endif
+   else
+     abort();
+ 
++#ifdef HAVE_GETNAMEINFO
+   err = getnameinfo((struct sockaddr*) &req->storage,
+                     salen,
+                     req->host,
+@@ -49,6 +52,11 @@ static void uv__getnameinfo_work(struct
+                     req->service,
+                     sizeof(req->service),
+                     req->flags);
++#else
++  (void)salen;
++  errno = ENOSYS;
++  err = -1;
++#endif
+   req->retcode = uv__getaddrinfo_translate_error(err);
+ }
+ 
+@@ -90,10 +98,12 @@ int uv_getnameinfo(uv_loop_t* loop,
+     memcpy(&req->storage,
+            addr,
+            sizeof(struct sockaddr_in));
++#ifndef NO_IPV6
+   } else if (addr->sa_family == AF_INET6) {
+     memcpy(&req->storage,
+            addr,
+            sizeof(struct sockaddr_in6));
++#endif
+   } else {
+     return UV_EINVAL;
+   }
+diff -rupN libuv-1.18.0.orig/src/unix/process.c libuv-1.18.0/src/unix/process.c
+--- libuv-1.18.0.orig/src/unix/process.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/process.c	2018-03-20 19:08:44.517710938 +0100
+@@ -40,7 +40,7 @@
+ extern char **environ;
+ #endif
+ 
+-#if defined(__linux__) || defined(__GLIBC__)
++#if defined(HAVE_GRP_H)
+ # include <grp.h>
+ #endif
+ 
+@@ -397,7 +397,11 @@ static void uv__process_child_init(const
+ 
+   /* Reset signal mask. */
+   sigemptyset(&set);
++#ifdef HAVE_PTHREAD_H
+   err = pthread_sigmask(SIG_SETMASK, &set, NULL);
++#else
++  err = sigprocmask(SIG_SETMASK, &set, NULL);
++#endif
+ 
+   if (err != 0) {
+     uv__write_int(error_fd, -err);
+diff -rupN libuv-1.18.0.orig/src/unix/signal.c libuv-1.18.0/src/unix/signal.c
+--- libuv-1.18.0.orig/src/unix/signal.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/signal.c	2018-03-20 19:23:41.157691427 +0100
+@@ -58,9 +58,27 @@ RB_GENERATE_STATIC(uv__signal_tree_s,
+                    uv_signal_s, tree_entry,
+                    uv__signal_compare)
+ 
+-static void uv__signal_global_reinit(void);
++
++#ifdef HAVE_PTHREAD_H
++static void uv__signal_global_reinit(void) {
++  /* We can only use signal-safe functions here.
++   * That includes read/write and close, fortunately.
++   * We do all of this directly here instead of resetting
++   * uv__signal_global_init_guard because
++   * uv__signal_global_once_init is only called from uv_loop_init
++   * and this needs to function in existing loops.
++   */
++  uv__close(uv__signal_lock_pipefd[0]);
++  uv__signal_lock_pipefd[0] = -1;
++  uv__close(uv__signal_lock_pipefd[1]);
++  uv__signal_lock_pipefd[1] = -1;
++  uv__signal_global_init();
++}
++#endif
++
+ 
+ static void uv__signal_global_init(void) {
++#ifdef HAVE_PTHREAD_H
+   if (!uv__signal_lock_pipefd[0])
+     /* pthread_atfork can register before and after handlers, one
+      * for each child. This only registers one for the child. That
+@@ -70,6 +88,7 @@ static void uv__signal_global_init(void)
+      */
+     if (pthread_atfork(NULL, NULL, &uv__signal_global_reinit))
+       abort();
++#endif
+ 
+   if (uv__make_pipe(uv__signal_lock_pipefd, 0))
+     abort();
+@@ -79,22 +98,6 @@ static void uv__signal_global_init(void)
+ }
+ 
+ 
+-static void uv__signal_global_reinit(void) {
+-  /* We can only use signal-safe functions here.
+-   * That includes read/write and close, fortunately.
+-   * We do all of this directly here instead of resetting
+-   * uv__signal_global_init_guard because
+-   * uv__signal_global_once_init is only called from uv_loop_init
+-   * and this needs to function in existing loops.
+-   */
+-  uv__close(uv__signal_lock_pipefd[0]);
+-  uv__signal_lock_pipefd[0] = -1;
+-  uv__close(uv__signal_lock_pipefd[1]);
+-  uv__signal_lock_pipefd[1] = -1;
+-  uv__signal_global_init();
+-}
+-
+-
+ void uv__signal_global_once_init(void) {
+   uv_once(&uv__signal_global_init_guard, uv__signal_global_init);
+ }
+@@ -131,8 +134,10 @@ static void uv__signal_block_and_lock(si
+   if (sigfillset(&new_mask))
+     abort();
+ 
++#ifdef HAVE_PTHREAD_H
+   if (pthread_sigmask(SIG_SETMASK, &new_mask, saved_sigmask))
+     abort();
++#endif
+ 
+   if (uv__signal_lock())
+     abort();
+@@ -143,8 +148,10 @@ static void uv__signal_unlock_and_unbloc
+   if (uv__signal_unlock())
+     abort();
+ 
++#ifdef HAVE_PTHREAD_H
+   if (pthread_sigmask(SIG_SETMASK, saved_sigmask, NULL))
+     abort();
++#endif
+ }
+ 
+ 
+diff -rupN libuv-1.18.0.orig/src/unix/stream.c libuv-1.18.0/src/unix/stream.c
+--- libuv-1.18.0.orig/src/unix/stream.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/stream.c	2018-03-20 19:34:40.165677086 +0100
+@@ -27,6 +27,7 @@
+ #include <string.h>
+ #include <assert.h>
+ #include <errno.h>
++#include <time.h>
+ 
+ #include <sys/types.h>
+ #include <sys/socket.h>
+@@ -561,8 +562,12 @@ void uv__server_io(uv_loop_t* loop, uv__
+ 
+     if (stream->type == UV_TCP && (stream->flags & UV_TCP_SINGLE_ACCEPT)) {
+       /* Give other processes a chance to accept connections. */
++#ifdef HAVE_NANOSLEEP
+       struct timespec timeout = { 0, 1 };
+       nanosleep(&timeout, NULL);
++#else
++      usleep(1);
++#endif
+     }
+   }
+ }
+diff -rupN libuv-1.18.0.orig/src/unix/tcp.c libuv-1.18.0/src/unix/tcp.c
+--- libuv-1.18.0.orig/src/unix/tcp.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/tcp.c	2018-03-20 17:40:52.069415038 +0100
+@@ -91,8 +91,11 @@ static int maybe_new_socket(uv_tcp_t* ha
+       if (getsockname(uv__stream_fd(handle), (struct sockaddr*) &saddr, &slen))
+         return -errno;
+ 
+-      if ((saddr.ss_family == AF_INET6 &&
++      if (
++#ifndef NO_IPV6
++          (saddr.ss_family == AF_INET6 &&
+           ((struct sockaddr_in6*) &saddr)->sin6_port != 0) ||
++#endif
+           (saddr.ss_family == AF_INET &&
+           ((struct sockaddr_in*) &saddr)->sin_port != 0)) {
+         /* Handle is already bound to a port. */
+diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
+--- libuv-1.18.0.orig/src/unix/thread.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/thread.c	2018-03-20 18:43:37.592755667 +0100
+@@ -22,7 +22,9 @@
+ #include "uv.h"
+ #include "internal.h"
+ 
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ #include <assert.h>
+ #include <errno.h>
+ 
+@@ -63,23 +65,27 @@ int pthread_barrier_init(pthread_barrier
+   b->out = 0;
+   b->threshold = count;
+ 
++#ifdef HAVE_PTHREAD_H
+   if ((rc = pthread_mutex_init(&b->mutex, NULL)) != 0)
+     goto error2;
+   if ((rc = pthread_cond_init(&b->cond, NULL)) != 0)
+     goto error;
++#endif
+ 
+   barrier->b = b;
+   return 0;
+ 
++#ifdef HAVE_PTHREAD_H
+ error:
+   pthread_mutex_destroy(&b->mutex);
+ error2:
++#endif
+   uv__free(b);
+   return rc;
+ }
+ 
+ int pthread_barrier_wait(pthread_barrier_t* barrier) {
+-  int rc;
++  int rc = 0;
+   _uv_barrier* b;
+ 
+   if (barrier == NULL || barrier->b == NULL)
+@@ -87,8 +93,10 @@ int pthread_barrier_wait(pthread_barrier
+ 
+   b = barrier->b;
+   /* Lock the mutex*/
++#ifdef HAVE_PTHREAD_H
+   if ((rc = pthread_mutex_lock(&b->mutex)) != 0)
+     return rc;
++#endif
+ 
+   /* Increment the count. If this is the first thread to reach the threshold,
+      wake up waiters, unlock the mutex, then return
+@@ -96,23 +104,29 @@ int pthread_barrier_wait(pthread_barrier
+   if (++b->in == b->threshold) {
+     b->in = 0;
+     b->out = b->threshold - 1;
++#ifdef HAVE_PTHREAD_H
+     rc = pthread_cond_signal(&b->cond);
+     assert(rc == 0);
+ 
+     pthread_mutex_unlock(&b->mutex);
++#endif
+     return PTHREAD_BARRIER_SERIAL_THREAD;
+   }
+   /* Otherwise, wait for other threads until in is set to 0,
+      then return 0 to indicate this is not the first thread. */
+   do {
++#ifdef HAVE_PTHREAD_H
+     if ((rc = pthread_cond_wait(&b->cond, &b->mutex)) != 0)
+       break;
++#endif
+   } while (b->in != 0);
+ 
+   /* mark thread exit */
+   b->out--;
++#ifdef HAVE_PTHREAD_H
+   pthread_cond_signal(&b->cond);
+   pthread_mutex_unlock(&b->mutex);
++#endif
+   return rc;
+ }
+ 
+@@ -125,19 +139,25 @@ int pthread_barrier_destroy(pthread_barr
+ 
+   b = barrier->b;
+ 
++#ifdef HAVE_PTHREAD_H
+   if ((rc = pthread_mutex_lock(&b->mutex)) != 0)
+     return rc;
++#endif
+ 
+   if (b->in > 0 || b->out > 0)
+     rc = EBUSY;
+ 
++#ifdef HAVE_PTHREAD_H
+   pthread_mutex_unlock(&b->mutex);
++#endif
+ 
+   if (rc)
+     return rc;
+ 
++#ifdef HAVE_PTHREAD_H
+   pthread_cond_destroy(&b->cond);
+   pthread_mutex_destroy(&b->mutex);
++#endif
+   uv__free(barrier->b);
+   barrier->b = NULL;
+   return 0;
+@@ -177,15 +197,17 @@ static size_t thread_stack_size(void) {
+ 
+ 
+ int uv_thread_create(uv_thread_t *tid, void (*entry)(void *arg), void *arg) {
+-  int err;
++  int err = 0;
+   size_t stack_size;
+-  pthread_attr_t* attr;
++#ifdef HAVE_PTHREAD_H
++  pthread_attr_t* attr= NULL;
+   pthread_attr_t attr_storage;
++#endif
+ 
+-  attr = NULL;
+   stack_size = thread_stack_size();
+ 
+   if (stack_size > 0) {
++#ifdef HAVE_PTHREAD_H
+     attr = &attr_storage;
+ 
+     if (pthread_attr_init(attr))
+@@ -193,32 +215,49 @@ int uv_thread_create(uv_thread_t *tid, v
+ 
+     if (pthread_attr_setstacksize(attr, stack_size))
+       abort();
++#endif
+   }
+ 
++#ifdef HAVE_PTHREAD_H
+   err = pthread_create(tid, attr, (void*(*)(void*)) entry, arg);
+ 
+   if (attr != NULL)
+     pthread_attr_destroy(attr);
++#endif
+ 
+   return -err;
+ }
+ 
+ 
+ uv_thread_t uv_thread_self(void) {
++#ifdef HAVE_PTHREAD_H
+   return pthread_self();
++#else
++  return getpid();
++#endif
+ }
+ 
+ int uv_thread_join(uv_thread_t *tid) {
++#ifdef HAVE_PTHREAD_H
+   return -pthread_join(*tid, NULL);
++#else
++  (void) tid;
++  return 0;
++#endif
+ }
+ 
+ 
+ int uv_thread_equal(const uv_thread_t* t1, const uv_thread_t* t2) {
++#ifdef HAVE_PTHREAD_H
+   return pthread_equal(*t1, *t2);
++#else
++  return *t1 == *t2;
++#endif
+ }
+ 
+ 
+ int uv_mutex_init(uv_mutex_t* mutex) {
++#ifdef HAVE_PTHREAD_H
+ #if defined(NDEBUG) || !defined(PTHREAD_MUTEX_ERRORCHECK)
+   return -pthread_mutex_init(mutex, NULL);
+ #else
+@@ -238,10 +277,15 @@ int uv_mutex_init(uv_mutex_t* mutex) {
+ 
+   return -err;
+ #endif
++#else
++  *mutex = 0;
++  return 0;
++#endif
+ }
+ 
+ 
+ int uv_mutex_init_recursive(uv_mutex_t* mutex) {
++#ifdef HAVE_PTHREAD_H
+   pthread_mutexattr_t attr;
+   int err;
+ 
+@@ -257,22 +301,35 @@ int uv_mutex_init_recursive(uv_mutex_t*
+     abort();
+ 
+   return -err;
++#else
++  *mutex = 0;
++  return 0;
++#endif
+ }
+ 
+ 
+ void uv_mutex_destroy(uv_mutex_t* mutex) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_mutex_destroy(mutex))
+     abort();
++#else
++  (void) mutex;
++#endif
+ }
+ 
+ 
+ void uv_mutex_lock(uv_mutex_t* mutex) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_mutex_lock(mutex))
+     abort();
++#else
++  (void) mutex;
++#endif
+ }
+ 
+ 
+ int uv_mutex_trylock(uv_mutex_t* mutex) {
++#ifdef HAVE_PTHREAD_H
+   int err;
+ 
+   err = pthread_mutex_trylock(mutex);
+@@ -281,35 +338,55 @@ int uv_mutex_trylock(uv_mutex_t* mutex)
+       abort();
+     return -EBUSY;
+   }
+-
++#else
++  (void) mutex;
++#endif
+   return 0;
+ }
+ 
+ 
+ void uv_mutex_unlock(uv_mutex_t* mutex) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_mutex_unlock(mutex))
+     abort();
++#else
++  (void) mutex;
++#endif
+ }
+ 
+ 
+ int uv_rwlock_init(uv_rwlock_t* rwlock) {
++#ifdef HAVE_PTHREAD_H
+   return -pthread_rwlock_init(rwlock, NULL);
++#else
++  *rwlock = 0;
++  return 0;
++#endif
+ }
+ 
+ 
+ void uv_rwlock_destroy(uv_rwlock_t* rwlock) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_rwlock_destroy(rwlock))
+     abort();
++#else
++  (void) rwlock;
++#endif
+ }
+ 
+ 
+ void uv_rwlock_rdlock(uv_rwlock_t* rwlock) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_rwlock_rdlock(rwlock))
+     abort();
++#else
++  (void) rwlock;
++#endif
+ }
+ 
+ 
+ int uv_rwlock_tryrdlock(uv_rwlock_t* rwlock) {
++#ifdef HAVE_PTHREAD_H
+   int err;
+ 
+   err = pthread_rwlock_tryrdlock(rwlock);
+@@ -318,24 +395,36 @@ int uv_rwlock_tryrdlock(uv_rwlock_t* rwl
+       abort();
+     return -EBUSY;
+   }
++#else
++  (void) rwlock;
++#endif
+ 
+   return 0;
+ }
+ 
+ 
+ void uv_rwlock_rdunlock(uv_rwlock_t* rwlock) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_rwlock_unlock(rwlock))
+     abort();
++#else
++  (void) rwlock;
++#endif
+ }
+ 
+ 
+ void uv_rwlock_wrlock(uv_rwlock_t* rwlock) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_rwlock_wrlock(rwlock))
+     abort();
++#else
++  (void) rwlock;
++#endif
+ }
+ 
+ 
+ int uv_rwlock_trywrlock(uv_rwlock_t* rwlock) {
++#ifdef HAVE_PTHREAD_H
+   int err;
+ 
+   err = pthread_rwlock_trywrlock(rwlock);
+@@ -344,20 +433,35 @@ int uv_rwlock_trywrlock(uv_rwlock_t* rwl
+       abort();
+     return -EBUSY;
+   }
++#else
++  (void) rwlock;
++#endif
+ 
+   return 0;
+ }
+ 
+ 
+ void uv_rwlock_wrunlock(uv_rwlock_t* rwlock) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_rwlock_unlock(rwlock))
+     abort();
++#else
++  (void) rwlock;
++#endif
+ }
+ 
+ 
+ void uv_once(uv_once_t* guard, void (*callback)(void)) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_once(guard, callback))
+     abort();
++#else
++  if (!(*guard))
++  {
++  	*guard = 1;
++  	callback();
++  }
++#endif
+ }
+ 
+ #if defined(__APPLE__) && defined(__MACH__)
+@@ -503,30 +607,47 @@ int uv_sem_trywait(uv_sem_t* sem) {
+ #else /* !(defined(__APPLE__) && defined(__MACH__)) */
+ 
+ int uv_sem_init(uv_sem_t* sem, unsigned int value) {
++#ifdef HAVE_SEMAPHORE_H
+   if (sem_init(sem, 0, value))
+     return -errno;
++#else
++  *sem = value;
++#endif
+   return 0;
+ }
+ 
+ 
+ void uv_sem_destroy(uv_sem_t* sem) {
++#ifdef HAVE_SEMAPHORE_H
+   if (sem_destroy(sem))
+     abort();
++#else
++  *sem = 0;
++#endif
+ }
+ 
+ 
+ void uv_sem_post(uv_sem_t* sem) {
++#ifdef HAVE_SEMAPHORE_H
+   if (sem_post(sem))
+     abort();
++#else
++  (void) sem;
++#endif
+ }
+ 
+ 
+ void uv_sem_wait(uv_sem_t* sem) {
+   int r;
+ 
+-  do
++  do {
++#ifdef HAVE_SEMAPHORE_H
+     r = sem_wait(sem);
+-  while (r == -1 && errno == EINTR);
++#else
++    (void) sem;
++    r = 0;
++#endif
++  } while (r == -1 && errno == EINTR);
+ 
+   if (r)
+     abort();
+@@ -536,9 +657,14 @@ void uv_sem_wait(uv_sem_t* sem) {
+ int uv_sem_trywait(uv_sem_t* sem) {
+   int r;
+ 
+-  do
++  do {
++#ifdef HAVE_SEMAPHORE_H
+     r = sem_trywait(sem);
+-  while (r == -1 && errno == EINTR);
++#else
++    (void) sem;
++    r = 0;
++#endif
++  } while (r == -1 && errno == EINTR);
+ 
+   if (r) {
+     if (errno == EAGAIN)
+@@ -561,6 +687,7 @@ int uv_cond_init(uv_cond_t* cond) {
+ #else /* !(defined(__APPLE__) && defined(__MACH__)) */
+ 
+ int uv_cond_init(uv_cond_t* cond) {
++#ifdef HAVE_PTHREAD_H
+   pthread_condattr_t attr;
+   int err;
+ 
+@@ -589,6 +716,10 @@ error:
+ error2:
+   pthread_condattr_destroy(&attr);
+   return -err;
++#else
++  *cond = 0;
++  return 0;
++#endif
+ }
+ 
+ #endif /* defined(__APPLE__) && defined(__MACH__) */
+@@ -623,27 +754,44 @@ void uv_cond_destroy(uv_cond_t* cond) {
+     abort();
+ #endif /* defined(__APPLE__) && defined(__MACH__) */
+ 
++#ifdef HAVE_PTHREAD_H
+   if (pthread_cond_destroy(cond))
+     abort();
++#else
++  (void) cond;
++#endif
+ }
+ 
+ void uv_cond_signal(uv_cond_t* cond) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_cond_signal(cond))
+     abort();
++#else
++  (void) cond;
++#endif
+ }
+ 
+ void uv_cond_broadcast(uv_cond_t* cond) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_cond_broadcast(cond))
+     abort();
++#else
++  (void) cond;
++#endif
+ }
+ 
+ void uv_cond_wait(uv_cond_t* cond, uv_mutex_t* mutex) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_cond_wait(cond, mutex))
+     abort();
++#else
++  (void) cond;
++#endif
+ }
+ 
+ 
+ int uv_cond_timedwait(uv_cond_t* cond, uv_mutex_t* mutex, uint64_t timeout) {
++#ifdef HAVE_PTHREAD_H
+   int r;
+   struct timespec ts;
+ 
+@@ -676,45 +824,84 @@ int uv_cond_timedwait(uv_cond_t* cond, u
+ 
+   abort();
+   return -EINVAL;  /* Satisfy the compiler. */
++#else
++  (void) cond;
++  (void) mutex;
++  (void) timeout;
++  return 0;
++#endif
+ }
+ 
+ 
+ int uv_barrier_init(uv_barrier_t* barrier, unsigned int count) {
++#ifdef HAVE_PTHREAD_H
+   return -pthread_barrier_init(barrier, NULL, count);
++#else
++  *barrier = count;
++  return 0;
++#endif
+ }
+ 
+ 
+ void uv_barrier_destroy(uv_barrier_t* barrier) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_barrier_destroy(barrier))
+     abort();
++#else
++  (void) barrier;
++#endif
+ }
+ 
+ 
+ int uv_barrier_wait(uv_barrier_t* barrier) {
++#ifdef HAVE_PTHREAD_H
+   int r = pthread_barrier_wait(barrier);
+   if (r && r != PTHREAD_BARRIER_SERIAL_THREAD)
+     abort();
+   return r == PTHREAD_BARRIER_SERIAL_THREAD;
++#else
++  (void) barrier;
++  return 0;
++#endif
+ }
+ 
+ 
+ int uv_key_create(uv_key_t* key) {
++#ifdef HAVE_PTHREAD_H
+   return -pthread_key_create(key, NULL);
++#else
++  *key = 0;
++  return 0;
++#endif
+ }
+ 
+ 
+ void uv_key_delete(uv_key_t* key) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_key_delete(*key))
+     abort();
++#else
++  (void) key;
++#endif
+ }
+ 
+ 
+ void* uv_key_get(uv_key_t* key) {
++#ifdef HAVE_PTHREAD_H
+   return pthread_getspecific(*key);
++#else
++  (void) key;
++  return NULL;
++#endif
+ }
+ 
+ 
+ void uv_key_set(uv_key_t* key, void* value) {
++#ifdef HAVE_PTHREAD_H
+   if (pthread_setspecific(*key, value))
+     abort();
++#else
++  (void) key;
++  (void) value;
++#endif
+ }
+diff -rupN libuv-1.18.0.orig/src/unix/tty.c libuv-1.18.0/src/unix/tty.c
+--- libuv-1.18.0.orig/src/unix/tty.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/tty.c	2018-03-20 19:42:17.173667141 +0100
+@@ -84,6 +84,9 @@ static int uv__tty_is_slave(const int fd
+     abort();
+ 
+   result = (pts == major(sb.st_rdev));
++#elif defined(__MINT__)
++  (void) fd;
++  result = 0;
+ #else
+   /* Fallback to ptsname
+    */
+diff -rupN libuv-1.18.0.orig/src/unix/udp.c libuv-1.18.0/src/unix/udp.c
+--- libuv-1.18.0.orig/src/unix/udp.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/udp.c	2018-03-20 18:58:27.072736311 +0100
+@@ -39,6 +39,12 @@
+ # define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
+ #endif
+ 
++#if defined(__MINT__) && !defined(IPV6_MULTICAST_HOPS)
++#define IPV6_UNICAST_HOPS	16
++#define IPV6_MULTICAST_IF	17
++#define IPV6_MULTICAST_HOPS       18
++#define IPV6_MULTICAST_LOOP       19
++#endif
+ 
+ static void uv__udp_run_completed(uv_udp_t* handle);
+ static void uv__udp_io(uv_loop_t* loop, uv__io_t* w, unsigned int revents);
+@@ -228,8 +234,11 @@ static void uv__udp_sendmsg(uv_udp_t* ha
+ 
+     memset(&h, 0, sizeof h);
+     h.msg_name = &req->addr;
+-    h.msg_namelen = (req->addr.ss_family == AF_INET6 ?
+-      sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in));
++    h.msg_namelen =
++#ifndef NO_IPV6
++	    req->addr.ss_family == AF_INET6 ? sizeof(struct sockaddr_in6) :
++#endif
++	    sizeof(struct sockaddr_in);
+     h.msg_iov = (struct iovec*) req->bufs;
+     h.msg_iovlen = req->nbufs;
+ 
+@@ -286,7 +295,6 @@ int uv__udp_bind(uv_udp_t* handle,
+                  unsigned int addrlen,
+                  unsigned int flags) {
+   int err;
+-  int yes;
+   int fd;
+ 
+   /* Check for bad flags. */
+@@ -314,7 +322,7 @@ int uv__udp_bind(uv_udp_t* handle,
+ 
+   if (flags & UV_UDP_IPV6ONLY) {
+ #ifdef IPV6_V6ONLY
+-    yes = 1;
++    int yes = 1;
+     if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof yes) == -1) {
+       err = -errno;
+       return err;
+@@ -346,7 +354,9 @@ static int uv__udp_maybe_deferred_bind(u
+                                        int domain,
+                                        unsigned int flags) {
+   union {
++#ifndef NO_IPV6
+     struct sockaddr_in6 in6;
++#endif
+     struct sockaddr_in in;
+     struct sockaddr addr;
+   } taddr;
+@@ -365,6 +375,7 @@ static int uv__udp_maybe_deferred_bind(u
+     addrlen = sizeof *addr;
+     break;
+   }
++#ifndef NO_IPV6
+   case AF_INET6:
+   {
+     struct sockaddr_in6* addr = &taddr.in6;
+@@ -374,6 +385,7 @@ static int uv__udp_maybe_deferred_bind(u
+     addrlen = sizeof *addr;
+     break;
+   }
++#endif
+   default:
+     assert(0 && "unsupported address family");
+     abort();
+@@ -531,6 +543,7 @@ static int uv__udp_set_membership4(uv_ud
+ }
+ 
+ 
++#ifndef NO_IPV6
+ static int uv__udp_set_membership6(uv_udp_t* handle,
+                                    const struct sockaddr_in6* multicast_addr,
+                                    const char* interface_addr,
+@@ -576,6 +589,7 @@ static int uv__udp_set_membership6(uv_ud
+ 
+   return 0;
+ }
++#endif
+ 
+ 
+ int uv_udp_init_ex(uv_loop_t* loop, uv_udp_t* handle, unsigned int flags) {
+@@ -643,18 +657,22 @@ int uv_udp_set_membership(uv_udp_t* hand
+                           uv_membership membership) {
+   int err;
+   struct sockaddr_in addr4;
++#ifndef NO_IPV6
+   struct sockaddr_in6 addr6;
++#endif
+ 
+   if (uv_ip4_addr(multicast_addr, 0, &addr4) == 0) {
+     err = uv__udp_maybe_deferred_bind(handle, AF_INET, UV_UDP_REUSEADDR);
+     if (err)
+       return err;
+     return uv__udp_set_membership4(handle, &addr4, interface_addr, membership);
++#ifndef NO_IPV6
+   } else if (uv_ip6_addr(multicast_addr, 0, &addr6) == 0) {
+     err = uv__udp_maybe_deferred_bind(handle, AF_INET6, UV_UDP_REUSEADDR);
+     if (err)
+       return err;
+     return uv__udp_set_membership6(handle, &addr6, interface_addr, membership);
++#endif
+   } else {
+     return -EINVAL;
+   }
+@@ -797,25 +815,29 @@ int uv_udp_set_multicast_loop(uv_udp_t*
+ 
+ int uv_udp_set_multicast_interface(uv_udp_t* handle, const char* interface_addr) {
+   struct sockaddr_storage addr_st;
+-  struct sockaddr_in* addr4;
+-  struct sockaddr_in6* addr6;
+-
+-  addr4 = (struct sockaddr_in*) &addr_st;
+-  addr6 = (struct sockaddr_in6*) &addr_st;
++  struct sockaddr_in* addr4 = (struct sockaddr_in*) &addr_st;
++#ifndef NO_IPV6
++  struct sockaddr_in6* addr6 = (struct sockaddr_in6*) &addr_st;
++#endif
+ 
+   if (!interface_addr) {
+     memset(&addr_st, 0, sizeof addr_st);
++#ifndef NO_IPV6
+     if (handle->flags & UV_HANDLE_IPV6) {
+       addr_st.ss_family = AF_INET6;
+       addr6->sin6_scope_id = 0;
+-    } else {
++    } else
++#endif
++    {
+       addr_st.ss_family = AF_INET;
+       addr4->sin_addr.s_addr = htonl(INADDR_ANY);
+     }
+   } else if (uv_ip4_addr(interface_addr, 0, addr4) == 0) {
+     /* nothing, address was parsed */
++#ifndef NO_IPV6
+   } else if (uv_ip6_addr(interface_addr, 0, addr6) == 0) {
+     /* nothing, address was parsed */
++#endif
+   } else {
+     return -EINVAL;
+   }
+@@ -828,6 +850,7 @@ int uv_udp_set_multicast_interface(uv_ud
+                    sizeof(addr4->sin_addr)) == -1) {
+       return -errno;
+     }
++#ifndef NO_IPV6
+   } else if (addr_st.ss_family == AF_INET6) {
+     if (setsockopt(handle->io_watcher.fd,
+                    IPPROTO_IPV6,
+@@ -836,6 +859,7 @@ int uv_udp_set_multicast_interface(uv_ud
+                    sizeof(addr6->sin6_scope_id)) == -1) {
+       return -errno;
+     }
++#endif
+   } else {
+     assert(0 && "unexpected address family");
+     abort();
+diff -rupN libuv-1.18.0.orig/src/uv-common.c libuv-1.18.0/src/uv-common.c
+--- libuv-1.18.0.orig/src/uv-common.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/uv-common.c	2018-03-20 10:30:20.163890236 +0100
+@@ -184,6 +184,7 @@ int uv_ip4_addr(const char* ip, int port
+ }
+ 
+ 
++#ifndef NO_IPV6
+ int uv_ip6_addr(const char* ip, int port, struct sockaddr_in6* addr) {
+   char address_part[40];
+   size_t address_part_size;
+@@ -214,6 +215,7 @@ int uv_ip6_addr(const char* ip, int port
+ 
+   return uv_inet_pton(AF_INET6, ip, &addr->sin6_addr);
+ }
++#endif
+ 
+ 
+ int uv_ip4_name(const struct sockaddr_in* src, char* dst, size_t size) {
+@@ -221,9 +223,11 @@ int uv_ip4_name(const struct sockaddr_in
+ }
+ 
+ 
++#ifndef NO_IPV6
+ int uv_ip6_name(const struct sockaddr_in6* src, char* dst, size_t size) {
+   return uv_inet_ntop(AF_INET6, &src->sin6_addr, dst, size);
+ }
++#endif
+ 
+ 
+ int uv_tcp_bind(uv_tcp_t* handle,
+@@ -236,8 +240,10 @@ int uv_tcp_bind(uv_tcp_t* handle,
+ 
+   if (addr->sa_family == AF_INET)
+     addrlen = sizeof(struct sockaddr_in);
++#ifndef NO_IPV6
+   else if (addr->sa_family == AF_INET6)
+     addrlen = sizeof(struct sockaddr_in6);
++#endif
+   else
+     return UV_EINVAL;
+ 
+@@ -255,8 +261,10 @@ int uv_udp_bind(uv_udp_t* handle,
+ 
+   if (addr->sa_family == AF_INET)
+     addrlen = sizeof(struct sockaddr_in);
++#ifndef NO_IPV6
+   else if (addr->sa_family == AF_INET6)
+     addrlen = sizeof(struct sockaddr_in6);
++#endif
+   else
+     return UV_EINVAL;
+ 
+@@ -275,8 +283,10 @@ int uv_tcp_connect(uv_connect_t* req,
+ 
+   if (addr->sa_family == AF_INET)
+     addrlen = sizeof(struct sockaddr_in);
++#ifndef NO_IPV6
+   else if (addr->sa_family == AF_INET6)
+     addrlen = sizeof(struct sockaddr_in6);
++#endif
+   else
+     return UV_EINVAL;
+ 
+@@ -297,8 +307,10 @@ int uv_udp_send(uv_udp_send_t* req,
+ 
+   if (addr->sa_family == AF_INET)
+     addrlen = sizeof(struct sockaddr_in);
++#ifndef NO_IPV6
+   else if (addr->sa_family == AF_INET6)
+     addrlen = sizeof(struct sockaddr_in6);
++#endif
+   else
+     return UV_EINVAL;
+ 
+@@ -317,8 +329,10 @@ int uv_udp_try_send(uv_udp_t* handle,
+ 
+   if (addr->sa_family == AF_INET)
+     addrlen = sizeof(struct sockaddr_in);
++#ifndef NO_IPV6
+   else if (addr->sa_family == AF_INET6)
+     addrlen = sizeof(struct sockaddr_in6);
++#endif
+   else
+     return UV_EINVAL;
+ 
