@@ -74,6 +74,7 @@ for pkg in gemlib \
 	libarchive \
 	elfutils \
 	libuv \
+	cmake \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

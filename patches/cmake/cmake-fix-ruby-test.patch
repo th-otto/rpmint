@@ -1,0 +1,11 @@
+--- a/Modules/FindRuby.cmake      2016-11-15 23:00:54.832228081 +0100
++++ b/Modules/FindRuby.cmake      2016-11-15 23:01:55.201700739 +0100
+@@ -107,7 +107,7 @@
+    _RUBY_CONFIG_VAR("sitelibdir" RUBY_SITELIB_DIR)
+ 
+    # vendor_ruby available ?
+-   execute_process(COMMAND ${RUBY_EXECUTABLE} -r vendor-specific -e "print 'true'"
++   execute_process(COMMAND ${RUBY_EXECUTABLE} -r rbconfig -e "print 'true' unless RbConfig::CONFIG['vendorarchdir'].nil?"
+       OUTPUT_VARIABLE RUBY_HAS_VENDOR_RUBY  ERROR_QUIET)
+ 
+    if(RUBY_HAS_VENDOR_RUBY)

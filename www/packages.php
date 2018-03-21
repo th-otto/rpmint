@@ -1374,6 +1374,19 @@ primarily developed for use by Node.js, but it is also used by
 Mozilla&apos;s Rust language, Luvit, Julia, pyuv, and others.
 '
 	),
+	'cmake' => array(
+		'name' => 'cmake',
+		'upstream' => 'http://www.cmake.org/',
+		'source' => 'http://www.cmake.org/files/v3.10/%{name}-%{version}.tar.gz',
+		'version' => '3.10.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+CMake is a cross-platform, open-source build system
+'
+	),
 );
 
 ?>

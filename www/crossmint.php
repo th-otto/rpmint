@@ -963,6 +963,8 @@ foreach ($libpackages as $package)
 
 <li>2018/03/20 Package libuv added</li>
 
+<li>2018/03/21 Package cmake added</li>
+
 </ul>
 
 <p></p>

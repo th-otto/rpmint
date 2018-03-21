@@ -1,0 +1,237 @@
+diff --git a/Modules/FindBoost.cmake b/Modules/FindBoost.cmake
+index 88d14ab..5db15a5 100644
+--- a/Modules/FindBoost.cmake
++++ b/Modules/FindBoost.cmake
+@@ -797,9 +797,8 @@ function(_Boost_COMPONENT_DEPENDENCIES component _ret)
+       set(_Boost_WAVE_DEPENDENCIES filesystem system serialization thread chrono date_time atomic)
+       set(_Boost_WSERIALIZATION_DEPENDENCIES serialization)
+     endif()
+-    if(NOT Boost_VERSION VERSION_LESS 106600)
++    if(NOT Boost_VERSION VERSION_LESS 106700)
+       message(WARNING "New Boost version may have incorrect or missing dependencies and imported targets")
+-      set(_Boost_IMPORTED_TARGETS FALSE)
+     endif()
+   endif()
+ 
+@@ -831,8 +830,8 @@ function(_Boost_COMPONENT_HEADERS component _hdrs)
+   set(_Boost_CONTAINER_HEADERS           "boost/container/container_fwd.hpp")
+   set(_Boost_CONTEXT_HEADERS             "boost/context/all.hpp")
+   set(_Boost_COROUTINE_HEADERS           "boost/coroutine/all.hpp")
+-  set(_Boost_EXCEPTION_HEADERS           "boost/exception/exception.hpp")
+   set(_Boost_DATE_TIME_HEADERS           "boost/date_time/date.hpp")
++  set(_Boost_EXCEPTION_HEADERS           "boost/exception/exception.hpp")
+   set(_Boost_FIBER_HEADERS               "boost/fiber/all.hpp")
+   set(_Boost_FILESYSTEM_HEADERS          "boost/filesystem/path.hpp")
+   set(_Boost_GRAPH_HEADERS               "boost/graph/adjacency_list.hpp")
+@@ -931,8 +930,8 @@ endfunction()
+ # `${Boost_ROOT}/libs/fiber/build/Jamfile.v2`.
+ #
+ function(_Boost_COMPILER_FEATURES component _ret)
+-  # Boost >= 1.62 and < 1.65
+-  if(NOT Boost_VERSION VERSION_LESS 106200 AND Boost_VERSION VERSION_LESS 106500)
++  # Boost >= 1.62 and < 1.67
++  if(NOT Boost_VERSION VERSION_LESS 106200 AND Boost_VERSION VERSION_LESS 106700)
+     set(_Boost_FIBER_COMPILER_FEATURES
+         cxx_alias_templates
+         cxx_auto_type
+@@ -951,6 +950,13 @@ function(_Boost_COMPILER_FEATURES component _ret)
+   set(${_ret} ${_Boost_${uppercomponent}_COMPILER_FEATURES} PARENT_SCOPE)
+ endfunction()
+ 
++# Architecture name will be useful for finding library names starting 1.66.0
++if(CMAKE_SIZEOF_VOID_P EQUAL 8)
++  set(_arch_suffix 64)
++else()
++  set(_arch_suffix 32)
++endif()
++
+ #
+ # Update library search directory hint variable with paths used by prebuilt boost binaries.
+ #
+@@ -961,11 +967,7 @@ endfunction()
+ #
+ function(_Boost_UPDATE_WINDOWS_LIBRARY_SEARCH_DIRS_WITH_PREBUILT_PATHS componentlibvar basedir)
+   if("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
+-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+-      set(_arch_suffix 64)
+-    else()
+-      set(_arch_suffix 32)
+-    endif()
++
+     if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.10)
+       list(APPEND ${componentlibvar} ${basedir}/lib${_arch_suffix}-msvc-14.1)
+       list(APPEND ${componentlibvar} ${basedir}/lib${_arch_suffix}-msvc-14.0)
+@@ -1038,7 +1040,7 @@ else()
+   # _Boost_COMPONENT_HEADERS.  See the instructions at the top of
+   # _Boost_COMPONENT_DEPENDENCIES.
+   set(_Boost_KNOWN_VERSIONS ${Boost_ADDITIONAL_VERSIONS}
+-    "1.65.1" "1.65.0" "1.65"
++    "1.65.1" "1.65.0" "1.65" "1.66.1" "1.66.0" "1.66"
+     "1.64.0" "1.64" "1.63.0" "1.63" "1.62.0" "1.62" "1.61.0" "1.61" "1.60.0" "1.60"
+     "1.59.0" "1.59" "1.58.0" "1.58" "1.57.0" "1.57" "1.56.0" "1.56" "1.55.0" "1.55"
+     "1.54.0" "1.54" "1.53.0" "1.53" "1.52.0" "1.52" "1.51.0" "1.51"
+@@ -1616,10 +1618,12 @@ foreach(COMPONENT ${Boost_FIND_COMPONENTS})
+   unset(_boost_RELEASE_NAMES)
+   foreach(compiler IN LISTS _boost_COMPILER)
+     list(APPEND _boost_RELEASE_NAMES
++      ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_RELEASE_ABI_TAG}-x${_arch_suffix}-${Boost_LIB_VERSION}
+       ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_RELEASE_ABI_TAG}-${Boost_LIB_VERSION}
+       ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_RELEASE_ABI_TAG} )
+   endforeach()
+   list(APPEND _boost_RELEASE_NAMES
++    ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_RELEASE_ABI_TAG}-x${_arch_suffix}-${Boost_LIB_VERSION}
+     ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_RELEASE_ABI_TAG}-${Boost_LIB_VERSION}
+     ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_RELEASE_ABI_TAG}
+     ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT} )
+@@ -1627,10 +1631,12 @@ foreach(COMPONENT ${Boost_FIND_COMPONENTS})
+     set(_boost_RELEASE_STATIC_ABI_TAG "-s${_boost_RELEASE_ABI_TAG}")
+     foreach(compiler IN LISTS _boost_COMPILER)
+       list(APPEND _boost_RELEASE_NAMES
++        ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_RELEASE_STATIC_ABI_TAG}-x${_arch_suffix}-${Boost_LIB_VERSION}
+         ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_RELEASE_STATIC_ABI_TAG}-${Boost_LIB_VERSION}
+         ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_RELEASE_STATIC_ABI_TAG} )
+     endforeach()
+     list(APPEND _boost_RELEASE_NAMES
++      ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_RELEASE_STATIC_ABI_TAG}-x${_arch_suffix}-${Boost_LIB_VERSION}
+       ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_RELEASE_STATIC_ABI_TAG}-${Boost_LIB_VERSION}
+       ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_RELEASE_STATIC_ABI_TAG} )
+   endif()
+@@ -1666,10 +1672,12 @@ foreach(COMPONENT ${Boost_FIND_COMPONENTS})
+   unset(_boost_DEBUG_NAMES)
+   foreach(compiler IN LISTS _boost_COMPILER)
+     list(APPEND _boost_DEBUG_NAMES
++      ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_DEBUG_ABI_TAG}-x${_arch_suffix}-${Boost_LIB_VERSION}
+       ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_DEBUG_ABI_TAG}-${Boost_LIB_VERSION}
+       ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_DEBUG_ABI_TAG} )
+   endforeach()
+   list(APPEND _boost_DEBUG_NAMES
++    ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_DEBUG_ABI_TAG}-x${_arch_suffix}-${Boost_LIB_VERSION}
+     ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_DEBUG_ABI_TAG}-${Boost_LIB_VERSION}
+     ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_DEBUG_ABI_TAG}
+     ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}
+@@ -1678,10 +1686,12 @@ foreach(COMPONENT ${Boost_FIND_COMPONENTS})
+     set(_boost_DEBUG_STATIC_ABI_TAG "-s${_boost_DEBUG_ABI_TAG}")
+     foreach(compiler IN LISTS _boost_COMPILER)
+       list(APPEND _boost_DEBUG_NAMES
++      ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_DEBUG_STATIC_ABI_TAG}-x${_arch_suffix}-${Boost_LIB_VERSION}
+         ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_DEBUG_STATIC_ABI_TAG}-${Boost_LIB_VERSION}
+         ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${compiler}${_boost_MULTITHREADED}${_boost_DEBUG_STATIC_ABI_TAG} )
+     endforeach()
+     list(APPEND _boost_DEBUG_NAMES
++      ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_DEBUG_STATIC_ABI_TAG}-x${_arch_suffix}-${Boost_LIB_VERSION}
+       ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_DEBUG_STATIC_ABI_TAG}-${Boost_LIB_VERSION}
+       ${Boost_LIB_PREFIX}${Boost_NAMESPACE}_${COMPONENT}${_boost_MULTITHREADED}${_boost_DEBUG_STATIC_ABI_TAG} )
+   endif()
+diff --git a/Modules/FindPkgConfig.cmake b/Modules/FindPkgConfig.cmake
+index 76afa8a..a854516 100644
+--- a/Modules/FindPkgConfig.cmake
++++ b/Modules/FindPkgConfig.cmake
+@@ -187,10 +187,10 @@ function(_pkg_create_imp_target _prefix _no_cmake_path _no_cmake_environment_pat
+   # set the options that are used as long as the .pc file does not provide a library
+   # path to look into
+   if(_no_cmake_path)
+-    set(_find_opts "NO_CMAKE_PATH")
++    list(APPEND _find_opts "NO_CMAKE_PATH")
+   endif()
+   if(_no_cmake_environment_path)
+-    string(APPEND _find_opts " NO_CMAKE_ENVIRONMENT_PATH")
++    list(APPEND _find_opts "NO_CMAKE_ENVIRONMENT_PATH")
+   endif()
+ 
+   unset(_search_paths)
+@@ -454,7 +454,7 @@ macro(_pkg_check_modules_internal _is_required _is_silent _no_cmake_path _no_cma
+       _pkgconfig_invoke_dyn("${_pkg_check_modules_packages}" "${_prefix}" CFLAGS_OTHER        ""        --cflags-only-other )
+ 
+       if (_imp_target)
+-        _pkg_create_imp_target("${_prefix}" _no_cmake_path _no_cmake_environment_path)
++        _pkg_create_imp_target("${_prefix}" ${_no_cmake_path} ${_no_cmake_environment_path})
+       endif()
+     endif()
+ 
+@@ -597,7 +597,7 @@ macro(pkg_check_modules _prefix _module0)
+       _pkgconfig_set(__pkg_config_arguments_${_prefix} "${_module0};${ARGN}")
+     endif()
+   elseif (${_prefix}_FOUND AND ${_imp_target})
+-    _pkg_create_imp_target("${_prefix}" _no_cmake_path _no_cmake_environment_path)
++    _pkg_create_imp_target("${_prefix}" ${_no_cmake_path} ${_no_cmake_environment_path})
+   endif()
+ endmacro()
+ 
+@@ -648,7 +648,7 @@ macro(pkg_search_module _prefix _module0)
+ 
+     _pkgconfig_set(__pkg_config_checked_${_prefix} ${PKG_CONFIG_VERSION})
+   elseif (${_prefix}_FOUND AND ${_imp_target})
+-    _pkg_create_imp_target("${_prefix}" _no_cmake_path _no_cmake_environment_path)
++    _pkg_create_imp_target("${_prefix}" ${_no_cmake_path} ${_no_cmake_environment_path})
+   endif()
+ endmacro()
+ 
+diff --git a/Tests/RunCMake/FindPkgConfig/FindPkgConfig_IMPORTED_TARGET.cmake b/Tests/RunCMake/FindPkgConfig/FindPkgConfig_IMPORTED_TARGET.cmake
+index 00cbb7b..606b1df 100644
+--- a/Tests/RunCMake/FindPkgConfig/FindPkgConfig_IMPORTED_TARGET.cmake
++++ b/Tests/RunCMake/FindPkgConfig/FindPkgConfig_IMPORTED_TARGET.cmake
+@@ -24,3 +24,64 @@ if (NCURSES_FOUND)
+ else ()
+   message(STATUS "skipping test; ncurses not found")
+ endif ()
++
++
++# Setup for the remaining package tests below
++set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH)
++set(fakePkgDir ${CMAKE_CURRENT_BINARY_DIR}/pc-fakepackage)
++foreach(i 1 2)
++  set(pname cmakeinternalfakepackage${i})
++  file(WRITE ${fakePkgDir}/lib/lib${pname}.a "")
++  file(WRITE ${fakePkgDir}/lib/${pname}.lib  "")
++  file(WRITE ${fakePkgDir}/lib/pkgconfig/${pname}.pc
++"Name: CMakeInternalFakePackage${i}
++Description: Dummy package (${i}) for FindPkgConfig IMPORTED_TARGET test
++Version: 1.2.3
++Libs: -l${pname}
++")
++endforeach()
++
++# Always find the .pc file in the calls further below so that we can test that
++# the import target find_library() calls handle the NO...PATH options correctly
++set(ENV{PKG_CONFIG_PATH} ${fakePkgDir}/lib/pkgconfig)
++
++# Confirm correct behavior of NO_CMAKE_PATH, ensuring we only find the library
++# for the imported target if we have both set CMAKE_PREFIX_PATH and have not
++# given the NO_CMAKE_PATH option
++unset(CMAKE_PREFIX_PATH)
++unset(ENV{CMAKE_PREFIX_PATH})
++pkg_check_modules(FakePackage1 QUIET IMPORTED_TARGET cmakeinternalfakepackage1)
++if (TARGET PkgConfig::FakePackage1)
++  message(FATAL_ERROR "Have import target for fake package 1 with no path prefix")
++endif()
++
++set(CMAKE_PREFIX_PATH ${fakePkgDir})
++pkg_check_modules(FakePackage1 QUIET IMPORTED_TARGET NO_CMAKE_PATH cmakeinternalfakepackage1)
++if (TARGET PkgConfig::FakePackage1)
++  message(FATAL_ERROR "Have import target for fake package 1 with ignored cmake path")
++endif()
++
++pkg_check_modules(FakePackage1 REQUIRED QUIET IMPORTED_TARGET cmakeinternalfakepackage1)
++if (NOT TARGET PkgConfig::FakePackage1)
++  message(FATAL_ERROR "No import target for fake package 1 with prefix path")
++endif()
++
++# And now do the same for the NO_CMAKE_ENVIRONMENT_PATH - ENV{CMAKE_PREFIX_PATH}
++# combination
++unset(CMAKE_PREFIX_PATH)
++unset(ENV{CMAKE_PREFIX_PATH})
++pkg_check_modules(FakePackage2 QUIET IMPORTED_TARGET cmakeinternalfakepackage2)
++if (TARGET PkgConfig::FakePackage2)
++  message(FATAL_ERROR "Have import target for fake package 2 with no path prefix")
++endif()
++
++set(ENV{CMAKE_PREFIX_PATH} ${fakePkgDir})
++pkg_check_modules(FakePackage2 QUIET IMPORTED_TARGET NO_CMAKE_ENVIRONMENT_PATH cmakeinternalfakepackage2)
++if (TARGET PkgConfig::FakePackage2)
++  message(FATAL_ERROR "Have import target for fake package 2 with ignored cmake path")
++endif()
++
++pkg_check_modules(FakePackage2 REQUIRED QUIET IMPORTED_TARGET cmakeinternalfakepackage2)
++if (NOT TARGET PkgConfig::FakePackage2)
++  message(FATAL_ERROR "No import target for fake package 2 with prefix path")
++endif()

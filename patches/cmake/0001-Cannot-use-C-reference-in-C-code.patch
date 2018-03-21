@@ -1,0 +1,39 @@
+From d0f3214f9ff74dddcf6390d19f17920548cb8ab6 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Tue, 20 Mar 2018 05:18:44 +0100
+Subject: [PATCH] Cannot use C++ reference in C code
+
+---
+ Source/kwsys/ProcessUNIX.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/Source/kwsys/ProcessUNIX.c b/Source/kwsys/ProcessUNIX.c
+index 1e80b39cb..61ab5c9f3 100644
+--- a/Source/kwsys/ProcessUNIX.c
++++ b/Source/kwsys/ProcessUNIX.c
+@@ -2874,10 +2874,10 @@ static void kwsysProcessesSignalHandler(int signum
+   /* Re-Install our handler.  Repeat call until it is not interrupted.  */
+   {
+     struct sigaction newSigAction;
+-    struct sigaction& oldSigAction;
++    struct sigaction *oldSigAction;
+     memset(&newSigAction, 0, sizeof(struct sigaction));
+-    newSigChldAction.sa_handler = kwsysProcessesSignalHandler;
+-    newSigChldAction.sa_flags = SA_NOCLDSTOP;
++    newSigAction.sa_handler = kwsysProcessesSignalHandler;
++    newSigAction.sa_flags = SA_NOCLDSTOP;
+     sigemptyset(&newSigAction.sa_mask);
+     switch (signum) {
+       case SIGCHLD:
+@@ -2892,7 +2892,7 @@ static void kwsysProcessesSignalHandler(int signum
+         oldSigAction = &kwsysProcessesOldSigTermAction;
+         break;
+       default:
+-        return 0;
++        return;
+     }
+     while ((sigaction(signum, &newSigAction, oldSigAction) < 0) &&
+            (errno == EINTR))
+-- 
+2.16.2
+

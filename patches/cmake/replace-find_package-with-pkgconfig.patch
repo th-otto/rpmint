@@ -1,0 +1,160 @@
+--- cmake-3.10.2/CMakeLists.txt	2018-01-18 15:48:42.000000000 +0100
++++ ./CMakeLists.txt	2018-03-21 06:52:34.852597634 +0100
+@@ -104,6 +104,7 @@
+   "Build CMake Developer Reference" OFF)
+ mark_as_advanced(CMake_BUILD_DEVELOPER_REFERENCE)
+ 
++include(Modules/FindPkgConfig.cmake)
+ #-----------------------------------------------------------------------
+ # a macro to deal with system libraries, implemented as a macro
+ # simply to improve readability of the main script
+@@ -345,12 +346,11 @@
+   endif()
+ 
+   if(CMAKE_USE_SYSTEM_LIBRHASH)
+-    find_package(LibRHash)
+-    if(NOT LibRHash_FOUND)
++    pkg_check_modules(CMAKE_LIBRHASH REQUIRED librhash)
++    if(NOT CMAKE_LIBRHASH_FOUND)
+       message(FATAL_ERROR
+         "CMAKE_USE_SYSTEM_LIBRHASH is ON but LibRHash is not found!")
+     endif()
+-    set(CMAKE_LIBRHASH_LIBRARIES LibRHash::LibRHash)
+   else()
+     set(CMAKE_LIBRHASH_LIBRARIES cmlibrhash)
+     add_subdirectory(Utilities/cmlibrhash)
+@@ -361,12 +361,12 @@
+   # Build zlib library for Curl, CMake, and CTest.
+   set(CMAKE_ZLIB_HEADER "cm_zlib.h")
+   if(CMAKE_USE_SYSTEM_ZLIB)
+-    find_package(ZLIB)
++    pkg_check_modules(ZLIB REQUIRED zlib)
+     if(NOT ZLIB_FOUND)
+       message(FATAL_ERROR
+         "CMAKE_USE_SYSTEM_ZLIB is ON but a zlib is not found!")
+     endif()
+-    set(CMAKE_ZLIB_INCLUDES ${ZLIB_INCLUDE_DIR})
++    set(CMAKE_ZLIB_INCLUDES ${ZLIB_INCLUDE_DIRS})
+     set(CMAKE_ZLIB_LIBRARIES ${ZLIB_LIBRARIES})
+   else()
+     set(CMAKE_ZLIB_INCLUDES ${CMake_SOURCE_DIR}/Utilities)
+@@ -378,13 +378,14 @@
+   #---------------------------------------------------------------------
+   # Build Curl library for CTest.
+   if(CMAKE_USE_SYSTEM_CURL)
+-    find_package(CURL)
++    pkg_check_modules(CURL REQUIRED libcurl)
+     if(NOT CURL_FOUND)
+       message(FATAL_ERROR
+         "CMAKE_USE_SYSTEM_CURL is ON but a curl is not found!")
+     endif()
+     set(CMAKE_CURL_INCLUDES ${CURL_INCLUDE_DIRS})
+     set(CMAKE_CURL_LIBRARIES ${CURL_LIBRARIES})
++    add_definitions(${CURL_CFLAGS})
+   else()
+     set(CURL_SPECIAL_ZLIB_H ${CMAKE_ZLIB_HEADER})
+     set(CURL_SPECIAL_LIBZ_INCLUDES ${CMAKE_ZLIB_INCLUDES})
+@@ -426,13 +427,14 @@
+   #---------------------------------------------------------------------
+   # Build expat library for CMake, CTest, and libarchive.
+   if(CMAKE_USE_SYSTEM_EXPAT)
+-    find_package(EXPAT)
++    pkg_check_modules(EXPAT REQUIRED expat)
+     if(NOT EXPAT_FOUND)
+       message(FATAL_ERROR
+         "CMAKE_USE_SYSTEM_EXPAT is ON but a expat is not found!")
+     endif()
+     set(CMAKE_EXPAT_INCLUDES ${EXPAT_INCLUDE_DIRS})
+     set(CMAKE_EXPAT_LIBRARIES ${EXPAT_LIBRARIES})
++    add_definitions(${EXPAT_CFLAGS})
+   else()
+     set(CMAKE_EXPAT_INCLUDES)
+     set(CMAKE_EXPAT_LIBRARIES cmexpat)
+@@ -444,7 +446,7 @@
+   # Build or use system libbz2 for libarchive.
+   if(NOT CMAKE_USE_SYSTEM_LIBARCHIVE)
+     if(CMAKE_USE_SYSTEM_BZIP2)
+-      find_package(BZip2)
++      pkg_check_modules(BZIP2 REQUIRED bzip2)
+     else()
+       set(BZIP2_INCLUDE_DIR
+         "${CMAKE_CURRENT_SOURCE_DIR}/Utilities/cmbzip2")
+@@ -458,10 +460,11 @@
+   # Build or use system liblzma for libarchive.
+   if(NOT CMAKE_USE_SYSTEM_LIBARCHIVE)
+     if(CMAKE_USE_SYSTEM_LIBLZMA)
+-      find_package(LibLZMA)
++      pkg_check_modules(LIBLZMA REQUIRED liblzma)
+       if(NOT LIBLZMA_FOUND)
+         message(FATAL_ERROR "CMAKE_USE_SYSTEM_LIBLZMA is ON but LibLZMA is not found!")
+       endif()
++      set(LIBLZMA_LIBRARY ${LIBLZMA_LIBRARIES})
+     else()
+       add_subdirectory(Utilities/cmliblzma)
+       CMAKE_SET_TARGET_FOLDER(cmliblzma "Utilities/3rdParty")
+@@ -477,12 +480,12 @@
+   #---------------------------------------------------------------------
+   # Build or use system libarchive for CMake and CTest.
+   if(CMAKE_USE_SYSTEM_LIBARCHIVE)
+-    find_package(LibArchive 3.0.0)
+-    if(NOT LibArchive_FOUND)
++    pkg_check_modules(LIBARCHIVE libarchive)
++    if(NOT LIBARCHIVE_FOUND)
+       message(FATAL_ERROR "CMAKE_USE_SYSTEM_LIBARCHIVE is ON but LibArchive is not found!")
+     endif()
+-    set(CMAKE_TAR_INCLUDES ${LibArchive_INCLUDE_DIRS})
+-    set(CMAKE_TAR_LIBRARIES ${LibArchive_LIBRARIES})
++    set(CMAKE_TAR_INCLUDES ${LIBARCHIVE_INCLUDE_DIRS})
++    set(CMAKE_TAR_LIBRARIES ${LIBARCHIVE_LIBRARIES})
+   else()
+     set(EXPAT_INCLUDE_DIR ${CMAKE_EXPAT_INCLUDES})
+     set(EXPAT_LIBRARY ${CMAKE_EXPAT_LIBRARIES})
+@@ -511,12 +514,12 @@
+   #---------------------------------------------------------------------
+   # Build jsoncpp library.
+   if(CMAKE_USE_SYSTEM_JSONCPP)
+-    find_package(JsonCpp)
+-    if(NOT JsonCpp_FOUND)
++    pkg_check_module(JSONCPP REQUIRED jsoncpp)
++    if(NOT JSONCPP_FOUND)
+       message(FATAL_ERROR
+         "CMAKE_USE_SYSTEM_JSONCPP is ON but a JsonCpp is not found!")
+     endif()
+-    set(CMAKE_JSONCPP_LIBRARIES JsonCpp::JsonCpp)
++    set(CMAKE_JSONCPP_LIBRARIES ${JSONCPP_LIBRARIES})
+   else()
+     set(CMAKE_JSONCPP_LIBRARIES cmjsoncpp)
+     add_subdirectory(Utilities/cmjsoncpp)
+@@ -526,12 +529,12 @@
+   #---------------------------------------------------------------------
+   # Build libuv library.
+   if(CMAKE_USE_SYSTEM_LIBUV)
+-    find_package(LibUV 1.0.0)
++    pkg_check_modules(LIBUV libuv)
+     if(NOT LIBUV_FOUND)
+       message(FATAL_ERROR
+         "CMAKE_USE_SYSTEM_LIBUV is ON but a libuv is not found!")
+     endif()
+-    set(CMAKE_LIBUV_LIBRARIES LibUV::LibUV)
++    set(CMAKE_LIBUV_LIBRARIES ${LIBUV_LIBRARIES})
+   else()
+     set(CMAKE_LIBUV_LIBRARIES cmlibuv)
+     add_subdirectory(Utilities/cmlibuv)
+@@ -541,7 +544,7 @@
+   #---------------------------------------------------------------------
+   # Build XMLRPC library for CMake and CTest.
+   if(CTEST_USE_XMLRPC)
+-    find_package(XMLRPC QUIET REQUIRED libwww-client)
++    pkg_check_modules(XMLRPC QUIET REQUIRED libwww-client)
+     if(NOT XMLRPC_FOUND)
+       message(FATAL_ERROR
+         "CTEST_USE_XMLRPC is ON but xmlrpc is not found!")
+@@ -556,7 +559,7 @@
+     # there is a bug in the Syllable libraries which makes linking ccmake fail, Alex
+     if(NOT CMAKE_SYSTEM_NAME MATCHES syllable)
+       set(CURSES_NEED_NCURSES TRUE)
+-      find_package(Curses QUIET)
++      pkg_check_modules(Curses QUIET ncurses)
+       if (CURSES_LIBRARY)
+         option(BUILD_CursesDialog "Build the CMake Curses Dialog ccmake" ON)
+       else ()

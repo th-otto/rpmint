@@ -1,0 +1,20 @@
+diff --git a/Utilities/cmjsoncpp/src/lib_json/json_writer.cpp b/Utilities/cmjsoncpp/src/lib_json/json_writer.cpp
+index 6e6e57e1f..7b3fa91e1 100644
+--- a/Utilities/cmjsoncpp/src/lib_json/json_writer.cpp
++++ b/Utilities/cmjsoncpp/src/lib_json/json_writer.cpp
+@@ -40,11 +40,15 @@
+ #endif
+ #endif
+ #else
++#ifdef __MINT__
++#include <math.h>
++#else
+ #include <cmath>
+ #if !(defined(__QNXNTO__)) // QNX already defines isfinite
+ #define isfinite std::isfinite
+ #endif
+ #endif
++#endif
+ 
+ #if defined(_MSC_VER)
+ #if !defined(WINCE) && defined(__STDC_SECURE_LIB__) && _MSC_VER >= 1500 // VC++ 9.0 and above

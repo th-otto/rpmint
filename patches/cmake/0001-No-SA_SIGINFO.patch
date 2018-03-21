@@ -1,0 +1,55 @@
+From 62711a35cb4d41ff57e9af0877359cae66892bef Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Tue, 20 Mar 2018 05:47:03 +0100
+Subject: [PATCH] No SA_SIGINFO
+
+---
+ Source/kwsys/SystemInformation.cxx | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/Source/kwsys/SystemInformation.cxx b/Source/kwsys/SystemInformation.cxx
+index 2b9d7b174..2af27caee 100644
+--- a/Source/kwsys/SystemInformation.cxx
++++ b/Source/kwsys/SystemInformation.cxx
+@@ -55,9 +55,6 @@
+ #if defined(KWSYS_SYS_HAS_PSAPI)
+ #include <psapi.h>
+ #endif
+-#if !defined(siginfo_t)
+-typedef int siginfo_t;
+-#endif
+ #else
+ #include <sys/types.h>
+ 
+@@ -70,6 +67,10 @@ typedef int siginfo_t;
+ #include <unistd.h>
+ #endif
+ 
++#if !defined(SA_SIGINFO)
++typedef int siginfo_t;
++#endif
++
+ #if defined(__CYGWIN__) && !defined(_WIN32)
+ #include <windows.h>
+ #undef _WIN32
+@@ -3955,10 +3956,15 @@ void SystemInformationImplementation::SetStackTraceOnError(int enable)
+ 
+     // install ours
+     struct sigaction sa;
+-    sa.sa_sigaction = (SigAction)StacktraceSignalHandler;
+-    sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
++    sa.sa_flags = SA_RESETHAND;
+ #ifdef SA_RESTART
+     sa.sa_flags |= SA_RESTART;
++#endif
++#ifdef SA_SIGINFO
++    sa.sa_flags |= SA_SIGINFO;
++    sa.sa_sigaction = (SigAction)StacktraceSignalHandler;
++#else
++    sa.sa_handler = (void (*)(int))StacktraceSignalHandler;
+ #endif
+     sigemptyset(&sa.sa_mask);
+ 
+-- 
+2.16.2
+

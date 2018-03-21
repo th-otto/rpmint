@@ -1,0 +1,17 @@
+WTF. Do not try to tell the compiler where to find system include files;
+he knows better
+
+diff --git a/Source/cmLocalGenerator.cxx b/Source/cmLocalGenerator.cxx
+index cee540bdb..e2c956b93 100644
+--- a/Source/cmLocalGenerator.cxx
++++ b/Source/cmLocalGenerator.cxx
+@@ -732,7 +732,8 @@ std::string cmLocalGenerator::GetIncludeFlags(
+     if (!flagUsed || repeatFlag) {
+       if (sysIncludeFlag && target &&
+           target->IsSystemIncludeDirectory(i, config)) {
+-        includeFlags << sysIncludeFlag;
++        // includeFlags << sysIncludeFlag;
++        continue;
+       } else {
+         includeFlags << includeFlag;
+       }

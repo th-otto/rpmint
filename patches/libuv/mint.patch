@@ -1,6 +1,20 @@
+diff -rupN libuv-1.18.0.orig/Makefile.am libuv-1.18.0/Makefile.am
+--- libuv-1.18.0.orig/Makefile.am	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/Makefile.am	2018-03-21 03:31:47.494738793 +0100
+@@ -461,6 +461,10 @@ libuv_la_SOURCES += src/unix/pthread-fix
+                     src/unix/proctitle.c
+ endif
+ 
++libuv_la_SOURCES += src/unix/no-fsevents.c
++libuv_la_SOURCES += src/unix/posix-poll.c
++include_HEADERS += include/uv-posix.h
++
+ if HAVE_PKG_CONFIG
+ pkgconfigdir = $(libdir)/pkgconfig
+ pkgconfig_DATA = @PACKAGE_NAME@.pc
 diff -rupN libuv-1.18.0.orig/configure.ac libuv-1.18.0/configure.ac
---- libuv-1.18.0.orig/configure.ac	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/configure.ac	2018-03-20 19:37:14.613673725 +0100
+--- libuv-1.18.0.orig/configure.ac	2018-03-21 03:29:23.478741927 +0100
++++ libuv-1.18.0/configure.ac	2018-03-21 03:00:45.486779312 +0100
 @@ -41,6 +41,7 @@ AC_PROG_LIBTOOL
  m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
  LT_INIT
@@ -18,8 +32,8 @@ diff -rupN libuv-1.18.0.orig/configure.ac libuv-1.18.0/configure.ac
  AM_CONDITIONAL([AIX],      [AS_CASE([$host_os],[aix*],          [true], [false])])
  AM_CONDITIONAL([ANDROID],  [AS_CASE([$host_os],[linux-android*],[true], [false])])
 diff -rupN libuv-1.18.0.orig/include/pthread-barrier.h libuv-1.18.0/include/pthread-barrier.h
---- libuv-1.18.0.orig/include/pthread-barrier.h	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/include/pthread-barrier.h	2018-03-20 10:13:29.931912219 +0100
+--- libuv-1.18.0.orig/include/pthread-barrier.h	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/include/pthread-barrier.h	2018-03-21 03:00:45.486779312 +0100
 @@ -17,8 +17,10 @@ OR IN CONNECTION WITH THE USE OR PERFORM
  #ifndef _UV_PTHREAD_BARRIER_
  #define _UV_PTHREAD_BARRIER_
@@ -54,8 +68,8 @@ diff -rupN libuv-1.18.0.orig/include/pthread-barrier.h libuv-1.18.0/include/pthr
  
  int pthread_barrier_init(pthread_barrier_t* barrier,
 diff -rupN libuv-1.18.0.orig/include/uv-errno.h libuv-1.18.0/include/uv-errno.h
---- libuv-1.18.0.orig/include/uv-errno.h	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/include/uv-errno.h	2018-03-20 17:34:00.437423996 +0100
+--- libuv-1.18.0.orig/include/uv-errno.h	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/include/uv-errno.h	2018-03-21 03:00:45.486779312 +0100
 @@ -428,4 +428,11 @@
  # define UV__ENOTTY (-4029)
  #endif
@@ -69,8 +83,8 @@ diff -rupN libuv-1.18.0.orig/include/uv-errno.h libuv-1.18.0/include/uv-errno.h
 +
  #endif /* UV_ERRNO_H_ */
 diff -rupN libuv-1.18.0.orig/include/uv-unix.h libuv-1.18.0/include/uv-unix.h
---- libuv-1.18.0.orig/include/uv-unix.h	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/include/uv-unix.h	2018-03-20 10:27:11.971894331 +0100
+--- libuv-1.18.0.orig/include/uv-unix.h	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/include/uv-unix.h	2018-03-21 03:31:24.662739290 +0100
 @@ -36,10 +36,12 @@
  #include <termios.h>
  #include <pwd.h>
@@ -85,7 +99,23 @@ diff -rupN libuv-1.18.0.orig/include/uv-unix.h libuv-1.18.0/include/uv-unix.h
  #include <signal.h>
  
  #include "uv-threadpool.h"
-@@ -101,7 +103,11 @@ struct uv__io_s {
+@@ -62,14 +64,10 @@
+       defined(__OpenBSD__)         || \
+       defined(__NetBSD__)
+ # include "uv-bsd.h"
+-#elif defined(__CYGWIN__) || defined(__MSYS__)
++#elif defined(__CYGWIN__) || defined(__MSYS__) || defined(__MINT__)
+ # include "uv-posix.h"
+ #endif
+ 
+-#ifndef PTHREAD_BARRIER_SERIAL_THREAD
+-# include "pthread-barrier.h"
+-#endif
+-
+ #ifndef NI_MAXHOST
+ # define NI_MAXHOST 1025
+ #endif
+@@ -101,7 +99,11 @@ struct uv__io_s {
  };
  
  #ifndef UV_PLATFORM_SEM_T
@@ -98,7 +128,7 @@ diff -rupN libuv-1.18.0.orig/include/uv-unix.h libuv-1.18.0/include/uv-unix.h
  #endif
  
  #ifndef UV_PLATFORM_LOOP_FIELDS
-@@ -127,8 +133,7 @@ typedef int uv_os_sock_t;
+@@ -127,8 +129,7 @@ typedef int uv_os_sock_t;
  typedef int uv_os_fd_t;
  typedef pid_t uv_pid_t;
  
@@ -108,7 +138,7 @@ diff -rupN libuv-1.18.0.orig/include/uv-unix.h libuv-1.18.0/include/uv-unix.h
  typedef pthread_once_t uv_once_t;
  typedef pthread_t uv_thread_t;
  typedef pthread_mutex_t uv_mutex_t;
-@@ -137,6 +142,18 @@ typedef UV_PLATFORM_SEM_T uv_sem_t;
+@@ -137,6 +138,18 @@ typedef UV_PLATFORM_SEM_T uv_sem_t;
  typedef pthread_cond_t uv_cond_t;
  typedef pthread_key_t uv_key_t;
  typedef pthread_barrier_t uv_barrier_t;
@@ -128,8 +158,8 @@ diff -rupN libuv-1.18.0.orig/include/uv-unix.h libuv-1.18.0/include/uv-unix.h
  
  /* Platform-specific definitions for uv_spawn support. */
 diff -rupN libuv-1.18.0.orig/include/uv.h libuv-1.18.0/include/uv.h
---- libuv-1.18.0.orig/include/uv.h	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/include/uv.h	2018-03-20 10:24:14.579898191 +0100
+--- libuv-1.18.0.orig/include/uv.h	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/include/uv.h	2018-03-21 03:00:45.486779312 +0100
 @@ -244,6 +244,21 @@ typedef enum {
    UV_RUN_NOWAIT
  } uv_run_mode;
@@ -184,8 +214,8 @@ diff -rupN libuv-1.18.0.orig/include/uv.h libuv-1.18.0/include/uv.h
  UV_EXTERN int uv_inet_ntop(int af, const void* src, char* dst, size_t size);
  UV_EXTERN int uv_inet_pton(int af, const char* src, void* dst);
 diff -rupN libuv-1.18.0.orig/src/inet.c libuv-1.18.0/src/inet.c
---- libuv-1.18.0.orig/src/inet.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/inet.c	2018-03-20 10:25:59.379895911 +0100
+--- libuv-1.18.0.orig/src/inet.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/inet.c	2018-03-21 03:00:45.486779312 +0100
 @@ -75,6 +75,9 @@ static int inet_ntop6(const unsigned cha
     */
    char tmp[UV__INET6_ADDRSTRLEN], *tp;
@@ -197,8 +227,8 @@ diff -rupN libuv-1.18.0.orig/src/inet.c libuv-1.18.0/src/inet.c
    int i;
  
 diff -rupN libuv-1.18.0.orig/src/threadpool.c libuv-1.18.0/src/threadpool.c
---- libuv-1.18.0.orig/src/threadpool.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/threadpool.c	2018-03-20 10:28:34.067892545 +0100
+--- libuv-1.18.0.orig/src/threadpool.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/threadpool.c	2018-03-21 03:00:45.486779312 +0100
 @@ -165,7 +165,7 @@ static void init_threads(void) {
  }
  
@@ -218,8 +248,8 @@ diff -rupN libuv-1.18.0.orig/src/threadpool.c libuv-1.18.0/src/threadpool.c
     * Note that this discards the global mutex and condition as well
     * as the work queue.
 diff -rupN libuv-1.18.0.orig/src/unix/core.c libuv-1.18.0/src/unix/core.c
---- libuv-1.18.0.orig/src/unix/core.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/core.c	2018-03-20 10:35:03.643884067 +0100
+--- libuv-1.18.0.orig/src/unix/core.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/core.c	2018-03-21 03:16:16.606759050 +0100
 @@ -556,12 +556,12 @@ int uv__nonblock_ioctl(int fd, int set)
  }
  
@@ -235,9 +265,22 @@ diff -rupN libuv-1.18.0.orig/src/unix/core.c libuv-1.18.0/src/unix/core.c
    while (r == -1 && errno == EINTR);
  
    if (r)
+@@ -1353,3 +1353,12 @@ uv_pid_t uv_os_getpid(void) {
+ uv_pid_t uv_os_getppid(void) {
+   return getppid();
+ }
++
++#ifdef __MINT__
++uint64_t uv__hrtime(uv_clocktype_t type) {
++	struct timeval tv;
++	if (gettimeofday(&tv, NULL) != 0)
++	  return 0;
++	return (tv.tv_sec * (uint64_t) 1000000UL + tv.tv_usec) * 1000;
++}
++#endif
 diff -rupN libuv-1.18.0.orig/src/unix/dl.c libuv-1.18.0/src/unix/dl.c
---- libuv-1.18.0.orig/src/unix/dl.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/dl.c	2018-03-20 10:37:20.415881091 +0100
+--- libuv-1.18.0.orig/src/unix/dl.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/dl.c	2018-03-21 03:00:45.486779312 +0100
 @@ -22,7 +22,9 @@
  #include "uv.h"
  #include "internal.h"
@@ -294,8 +337,8 @@ diff -rupN libuv-1.18.0.orig/src/unix/dl.c libuv-1.18.0/src/unix/dl.c
    if (errmsg) {
      lib->errmsg = uv__strdup(errmsg);
 diff -rupN libuv-1.18.0.orig/src/unix/fs.c libuv-1.18.0/src/unix/fs.c
---- libuv-1.18.0.orig/src/unix/fs.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/fs.c	2018-03-20 17:30:47.513428194 +0100
+--- libuv-1.18.0.orig/src/unix/fs.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/fs.c	2018-03-21 03:00:45.486779312 +0100
 @@ -26,6 +26,8 @@
   * getting the errno to the right place (req->result or as the return value.)
   */
@@ -350,8 +393,8 @@ diff -rupN libuv-1.18.0.orig/src/unix/fs.c libuv-1.18.0/src/unix/fs.c
      defined(__FreeBSD__)     || \
      defined(__OpenBSD__)     || \
 diff -rupN libuv-1.18.0.orig/src/unix/getaddrinfo.c libuv-1.18.0/src/unix/getaddrinfo.c
---- libuv-1.18.0.orig/src/unix/getaddrinfo.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/getaddrinfo.c	2018-03-20 19:03:57.733717179 +0100
+--- libuv-1.18.0.orig/src/unix/getaddrinfo.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/getaddrinfo.c	2018-03-21 03:00:45.486779312 +0100
 @@ -100,7 +100,11 @@ static void uv__getaddrinfo_work(struct
    int err;
  
@@ -391,8 +434,8 @@ diff -rupN libuv-1.18.0.orig/src/unix/getaddrinfo.c libuv-1.18.0/src/unix/getadd
    len = strnlen(ifname_buf, sizeof(ifname_buf));
  
 diff -rupN libuv-1.18.0.orig/src/unix/getnameinfo.c libuv-1.18.0/src/unix/getnameinfo.c
---- libuv-1.18.0.orig/src/unix/getnameinfo.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/getnameinfo.c	2018-03-20 17:39:53.029416323 +0100
+--- libuv-1.18.0.orig/src/unix/getnameinfo.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/getnameinfo.c	2018-03-21 03:00:45.486779312 +0100
 @@ -37,11 +37,14 @@ static void uv__getnameinfo_work(struct
  
    if (req->storage.ss_family == AF_INET)
@@ -433,9 +476,33 @@ diff -rupN libuv-1.18.0.orig/src/unix/getnameinfo.c libuv-1.18.0/src/unix/getnam
    } else {
      return UV_EINVAL;
    }
+diff -rupN libuv-1.18.0.orig/src/unix/posix-poll.c libuv-1.18.0/src/unix/posix-poll.c
+--- libuv-1.18.0.orig/src/unix/posix-poll.c	2017-12-01 03:07:38.000000000 +0100
++++ libuv-1.18.0/src/unix/posix-poll.c	2018-03-21 03:41:15.214726439 +0100
+@@ -173,12 +173,20 @@ void uv__io_poll(uv_loop_t* loop, int ti
+    */
+   for (;;) {
+     if (pset != NULL)
++#ifdef HAVE_PTHREAD_H
+       if (pthread_sigmask(SIG_BLOCK, pset, NULL))
+         abort();
++#else
++      sigprocmask(SIG_BLOCK, pset, NULL);
++#endif
+     nfds = poll(loop->poll_fds, (nfds_t)loop->poll_fds_used, timeout);
+     if (pset != NULL)
++#ifdef HAVE_PTHREAD_H
+       if (pthread_sigmask(SIG_UNBLOCK, pset, NULL))
+         abort();
++#else
++      sigprocmask(SIG_UNBLOCK, pset, NULL);
++#endif
+ 
+     /* Update loop->time unconditionally. It's tempting to skip the update when
+      * timeout == 0 (i.e. non-blocking poll) but there is no guarantee that the
 diff -rupN libuv-1.18.0.orig/src/unix/process.c libuv-1.18.0/src/unix/process.c
---- libuv-1.18.0.orig/src/unix/process.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/process.c	2018-03-20 19:08:44.517710938 +0100
+--- libuv-1.18.0.orig/src/unix/process.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/process.c	2018-03-21 03:00:45.486779312 +0100
 @@ -40,7 +40,7 @@
  extern char **environ;
  #endif
@@ -458,8 +525,8 @@ diff -rupN libuv-1.18.0.orig/src/unix/process.c libuv-1.18.0/src/unix/process.c
    if (err != 0) {
      uv__write_int(error_fd, -err);
 diff -rupN libuv-1.18.0.orig/src/unix/signal.c libuv-1.18.0/src/unix/signal.c
---- libuv-1.18.0.orig/src/unix/signal.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/signal.c	2018-03-20 19:23:41.157691427 +0100
+--- libuv-1.18.0.orig/src/unix/signal.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/signal.c	2018-03-21 03:38:06.598730544 +0100
 @@ -58,9 +58,27 @@ RB_GENERATE_STATIC(uv__signal_tree_s,
                     uv_signal_s, tree_entry,
                     uv__signal_compare)
@@ -520,31 +587,35 @@ diff -rupN libuv-1.18.0.orig/src/unix/signal.c libuv-1.18.0/src/unix/signal.c
  void uv__signal_global_once_init(void) {
    uv_once(&uv__signal_global_init_guard, uv__signal_global_init);
  }
-@@ -131,8 +134,10 @@ static void uv__signal_block_and_lock(si
+@@ -131,8 +134,12 @@ static void uv__signal_block_and_lock(si
    if (sigfillset(&new_mask))
      abort();
  
 +#ifdef HAVE_PTHREAD_H
    if (pthread_sigmask(SIG_SETMASK, &new_mask, saved_sigmask))
      abort();
++#else
++  sigprocmask(SIG_SETMASK, &new_mask, saved_sigmask);
 +#endif
  
    if (uv__signal_lock())
      abort();
-@@ -143,8 +148,10 @@ static void uv__signal_unlock_and_unbloc
+@@ -143,8 +150,12 @@ static void uv__signal_unlock_and_unbloc
    if (uv__signal_unlock())
      abort();
  
 +#ifdef HAVE_PTHREAD_H
    if (pthread_sigmask(SIG_SETMASK, saved_sigmask, NULL))
      abort();
++#else
++  sigprocmask(SIG_SETMASK, saved_sigmask, NULL);
 +#endif
  }
  
  
 diff -rupN libuv-1.18.0.orig/src/unix/stream.c libuv-1.18.0/src/unix/stream.c
---- libuv-1.18.0.orig/src/unix/stream.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/stream.c	2018-03-20 19:34:40.165677086 +0100
+--- libuv-1.18.0.orig/src/unix/stream.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/stream.c	2018-03-21 03:00:45.486779312 +0100
 @@ -27,6 +27,7 @@
  #include <string.h>
  #include <assert.h>
@@ -567,8 +638,8 @@ diff -rupN libuv-1.18.0.orig/src/unix/stream.c libuv-1.18.0/src/unix/stream.c
    }
  }
 diff -rupN libuv-1.18.0.orig/src/unix/tcp.c libuv-1.18.0/src/unix/tcp.c
---- libuv-1.18.0.orig/src/unix/tcp.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/tcp.c	2018-03-20 17:40:52.069415038 +0100
+--- libuv-1.18.0.orig/src/unix/tcp.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/tcp.c	2018-03-21 03:00:45.486779312 +0100
 @@ -91,8 +91,11 @@ static int maybe_new_socket(uv_tcp_t* ha
        if (getsockname(uv__stream_fd(handle), (struct sockaddr*) &saddr, &slen))
          return -errno;
@@ -583,19 +654,22 @@ diff -rupN libuv-1.18.0.orig/src/unix/tcp.c libuv-1.18.0/src/unix/tcp.c
            ((struct sockaddr_in*) &saddr)->sin_port != 0)) {
          /* Handle is already bound to a port. */
 diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
---- libuv-1.18.0.orig/src/unix/thread.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/thread.c	2018-03-20 18:43:37.592755667 +0100
-@@ -22,7 +22,9 @@
+--- libuv-1.18.0.orig/src/unix/thread.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/thread.c	2018-03-21 03:00:45.486779312 +0100
+@@ -22,7 +22,12 @@
  #include "uv.h"
  #include "internal.h"
  
 +#ifdef HAVE_PTHREAD_H
  #include <pthread.h>
 +#endif
++#ifndef PTHREAD_BARRIER_SERIAL_THREAD
++# include "pthread-barrier.h"
++#endif
  #include <assert.h>
  #include <errno.h>
  
-@@ -63,23 +65,27 @@ int pthread_barrier_init(pthread_barrier
+@@ -63,23 +68,27 @@ int pthread_barrier_init(pthread_barrier
    b->out = 0;
    b->threshold = count;
  
@@ -624,7 +698,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
    _uv_barrier* b;
  
    if (barrier == NULL || barrier->b == NULL)
-@@ -87,8 +93,10 @@ int pthread_barrier_wait(pthread_barrier
+@@ -87,8 +96,10 @@ int pthread_barrier_wait(pthread_barrier
  
    b = barrier->b;
    /* Lock the mutex*/
@@ -635,7 +709,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
  
    /* Increment the count. If this is the first thread to reach the threshold,
       wake up waiters, unlock the mutex, then return
-@@ -96,23 +104,29 @@ int pthread_barrier_wait(pthread_barrier
+@@ -96,23 +107,29 @@ int pthread_barrier_wait(pthread_barrier
    if (++b->in == b->threshold) {
      b->in = 0;
      b->out = b->threshold - 1;
@@ -665,7 +739,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
    return rc;
  }
  
-@@ -125,19 +139,25 @@ int pthread_barrier_destroy(pthread_barr
+@@ -125,19 +142,25 @@ int pthread_barrier_destroy(pthread_barr
  
    b = barrier->b;
  
@@ -691,7 +765,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
    uv__free(barrier->b);
    barrier->b = NULL;
    return 0;
-@@ -177,15 +197,17 @@ static size_t thread_stack_size(void) {
+@@ -177,15 +200,17 @@ static size_t thread_stack_size(void) {
  
  
  int uv_thread_create(uv_thread_t *tid, void (*entry)(void *arg), void *arg) {
@@ -712,7 +786,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
      attr = &attr_storage;
  
      if (pthread_attr_init(attr))
-@@ -193,32 +215,49 @@ int uv_thread_create(uv_thread_t *tid, v
+@@ -193,32 +218,49 @@ int uv_thread_create(uv_thread_t *tid, v
  
      if (pthread_attr_setstacksize(attr, stack_size))
        abort();
@@ -762,7 +836,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
  #if defined(NDEBUG) || !defined(PTHREAD_MUTEX_ERRORCHECK)
    return -pthread_mutex_init(mutex, NULL);
  #else
-@@ -238,10 +277,15 @@ int uv_mutex_init(uv_mutex_t* mutex) {
+@@ -238,10 +280,15 @@ int uv_mutex_init(uv_mutex_t* mutex) {
  
    return -err;
  #endif
@@ -778,7 +852,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
    pthread_mutexattr_t attr;
    int err;
  
-@@ -257,22 +301,35 @@ int uv_mutex_init_recursive(uv_mutex_t*
+@@ -257,22 +304,35 @@ int uv_mutex_init_recursive(uv_mutex_t*
      abort();
  
    return -err;
@@ -814,7 +888,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
    int err;
  
    err = pthread_mutex_trylock(mutex);
-@@ -281,35 +338,55 @@ int uv_mutex_trylock(uv_mutex_t* mutex)
+@@ -281,35 +341,55 @@ int uv_mutex_trylock(uv_mutex_t* mutex)
        abort();
      return -EBUSY;
    }
@@ -871,7 +945,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
    int err;
  
    err = pthread_rwlock_tryrdlock(rwlock);
-@@ -318,24 +395,36 @@ int uv_rwlock_tryrdlock(uv_rwlock_t* rwl
+@@ -318,24 +398,36 @@ int uv_rwlock_tryrdlock(uv_rwlock_t* rwl
        abort();
      return -EBUSY;
    }
@@ -908,7 +982,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
    int err;
  
    err = pthread_rwlock_trywrlock(rwlock);
-@@ -344,20 +433,35 @@ int uv_rwlock_trywrlock(uv_rwlock_t* rwl
+@@ -344,20 +436,35 @@ int uv_rwlock_trywrlock(uv_rwlock_t* rwl
        abort();
      return -EBUSY;
    }
@@ -944,7 +1018,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
  }
  
  #if defined(__APPLE__) && defined(__MACH__)
-@@ -503,30 +607,47 @@ int uv_sem_trywait(uv_sem_t* sem) {
+@@ -503,30 +610,47 @@ int uv_sem_trywait(uv_sem_t* sem) {
  #else /* !(defined(__APPLE__) && defined(__MACH__)) */
  
  int uv_sem_init(uv_sem_t* sem, unsigned int value) {
@@ -994,7 +1068,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
  
    if (r)
      abort();
-@@ -536,9 +657,14 @@ void uv_sem_wait(uv_sem_t* sem) {
+@@ -536,9 +660,14 @@ void uv_sem_wait(uv_sem_t* sem) {
  int uv_sem_trywait(uv_sem_t* sem) {
    int r;
  
@@ -1011,7 +1085,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
  
    if (r) {
      if (errno == EAGAIN)
-@@ -561,6 +687,7 @@ int uv_cond_init(uv_cond_t* cond) {
+@@ -561,6 +690,7 @@ int uv_cond_init(uv_cond_t* cond) {
  #else /* !(defined(__APPLE__) && defined(__MACH__)) */
  
  int uv_cond_init(uv_cond_t* cond) {
@@ -1019,7 +1093,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
    pthread_condattr_t attr;
    int err;
  
-@@ -589,6 +716,10 @@ error:
+@@ -589,6 +719,10 @@ error:
  error2:
    pthread_condattr_destroy(&attr);
    return -err;
@@ -1030,7 +1104,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
  }
  
  #endif /* defined(__APPLE__) && defined(__MACH__) */
-@@ -623,27 +754,44 @@ void uv_cond_destroy(uv_cond_t* cond) {
+@@ -623,27 +757,44 @@ void uv_cond_destroy(uv_cond_t* cond) {
      abort();
  #endif /* defined(__APPLE__) && defined(__MACH__) */
  
@@ -1075,7 +1149,7 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
    int r;
    struct timespec ts;
  
-@@ -676,45 +824,84 @@ int uv_cond_timedwait(uv_cond_t* cond, u
+@@ -676,45 +827,84 @@ int uv_cond_timedwait(uv_cond_t* cond, u
  
    abort();
    return -EINVAL;  /* Satisfy the compiler. */
@@ -1161,8 +1235,8 @@ diff -rupN libuv-1.18.0.orig/src/unix/thread.c libuv-1.18.0/src/unix/thread.c
 +#endif
  }
 diff -rupN libuv-1.18.0.orig/src/unix/tty.c libuv-1.18.0/src/unix/tty.c
---- libuv-1.18.0.orig/src/unix/tty.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/tty.c	2018-03-20 19:42:17.173667141 +0100
+--- libuv-1.18.0.orig/src/unix/tty.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/tty.c	2018-03-21 03:00:45.486779312 +0100
 @@ -84,6 +84,9 @@ static int uv__tty_is_slave(const int fd
      abort();
  
@@ -1174,8 +1248,8 @@ diff -rupN libuv-1.18.0.orig/src/unix/tty.c libuv-1.18.0/src/unix/tty.c
    /* Fallback to ptsname
     */
 diff -rupN libuv-1.18.0.orig/src/unix/udp.c libuv-1.18.0/src/unix/udp.c
---- libuv-1.18.0.orig/src/unix/udp.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/unix/udp.c	2018-03-20 18:58:27.072736311 +0100
+--- libuv-1.18.0.orig/src/unix/udp.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/unix/udp.c	2018-03-21 03:00:45.486779312 +0100
 @@ -39,6 +39,12 @@
  # define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
  #endif
@@ -1338,8 +1412,8 @@ diff -rupN libuv-1.18.0.orig/src/unix/udp.c libuv-1.18.0/src/unix/udp.c
      assert(0 && "unexpected address family");
      abort();
 diff -rupN libuv-1.18.0.orig/src/uv-common.c libuv-1.18.0/src/uv-common.c
---- libuv-1.18.0.orig/src/uv-common.c	2017-12-01 03:07:38.000000000 +0100
-+++ libuv-1.18.0/src/uv-common.c	2018-03-20 10:30:20.163890236 +0100
+--- libuv-1.18.0.orig/src/uv-common.c	2018-03-21 03:29:23.482741927 +0100
++++ libuv-1.18.0/src/uv-common.c	2018-03-21 03:00:45.486779312 +0100
 @@ -184,6 +184,7 @@ int uv_ip4_addr(const char* ip, int port
  }
  

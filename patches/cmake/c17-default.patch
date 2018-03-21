@@ -1,0 +1,75 @@
+Index: cmake-3.10.2/Modules/CMakeCCompilerId.c.in
+===================================================================
+--- cmake-3.10.2.orig/Modules/CMakeCCompilerId.c.in
++++ cmake-3.10.2/Modules/CMakeCCompilerId.c.in
+@@ -39,6 +39,8 @@ char const *info_cray = "INFO" ":" "comp
+ # else
+ #  define C_DIALECT
+ # endif
++#elif __STDC_VERSION__ >= 201710L
++# define C_DIALECT "17"
+ #elif __STDC_VERSION__ >= 201000L
+ # define C_DIALECT "11"
+ #elif __STDC_VERSION__ >= 199901L
+Index: cmake-3.10.2/Modules/Compiler/GNU-C.cmake
+===================================================================
+--- cmake-3.10.2.orig/Modules/Compiler/GNU-C.cmake
++++ cmake-3.10.2/Modules/Compiler/GNU-C.cmake
+@@ -22,4 +22,4 @@ elseif (NOT CMAKE_C_COMPILER_VERSION VER
+   set(CMAKE_C11_EXTENSION_COMPILE_OPTION "-std=gnu1x")
+ endif()
+ 
+-__compiler_check_default_language_standard(C 3.4 90 5.0 11)
++__compiler_check_default_language_standard(C 3.4 90 5.0 11 8.0 17)
+Index: cmake-3.10.2/Source/cmLocalGenerator.cxx
+===================================================================
+--- cmake-3.10.2.orig/Source/cmLocalGenerator.cxx
++++ cmake-3.10.2/Source/cmLocalGenerator.cxx
+@@ -1575,6 +1575,7 @@ void cmLocalGenerator::AddCompilerRequir
+     langStdMap["CXX"].push_back("11");
+     langStdMap["CXX"].push_back("98");
+ 
++    langStdMap["C"].push_back("17");
+     langStdMap["C"].push_back("11");
+     langStdMap["C"].push_back("99");
+     langStdMap["C"].push_back("90");
+Index: cmake-3.10.2/Source/cmMakefile.cxx
+===================================================================
+--- cmake-3.10.2.orig/Source/cmMakefile.cxx
++++ cmake-3.10.2/Source/cmMakefile.cxx
+@@ -4077,7 +4077,7 @@ static const char* const CXX_FEATURES[]
+   FEATURE_STRING) };
+ #undef FEATURE_STRING
+ 
+-static const char* const C_STANDARDS[] = { "90", "99", "11" };
++static const char* const C_STANDARDS[] = { "90", "99", "11", "17" };
+ static const char* const CXX_STANDARDS[] = { "98", "11", "14", "17" };
+ 
+ bool cmMakefile::AddRequiredTargetFeature(cmTarget* target,
+Index: cmake-3.10.2/Tests/CompileFeatures/CMakeLists.txt
+===================================================================
+--- cmake-3.10.2.orig/Tests/CompileFeatures/CMakeLists.txt
++++ cmake-3.10.2/Tests/CompileFeatures/CMakeLists.txt
+@@ -214,6 +214,7 @@ if (C_expected_features)
+     if (std_flag_idx EQUAL -1)
+       add_executable(default_dialect_C default_dialect.c)
+       target_compile_definitions(default_dialect_C PRIVATE
++        DEFAULT_C17=$<EQUAL:${CMAKE_C_STANDARD_DEFAULT},17>
+         DEFAULT_C11=$<EQUAL:${CMAKE_C_STANDARD_DEFAULT},11>
+         DEFAULT_C99=$<EQUAL:${CMAKE_C_STANDARD_DEFAULT},99>
+         DEFAULT_C90=$<EQUAL:${CMAKE_C_STANDARD_DEFAULT},90>
+Index: cmake-3.10.2/Tests/CompileFeatures/default_dialect.c
+===================================================================
+--- cmake-3.10.2.orig/Tests/CompileFeatures/default_dialect.c
++++ cmake-3.10.2/Tests/CompileFeatures/default_dialect.c
+@@ -1,5 +1,9 @@
+ 
+-#if DEFAULT_C11
++#if DEFAULT_C17
++#if __STDC_VERSION__ != 201710L
++#error Unexpected value for __STDC_VERSION__.
++#endif
++#elif DEFAULT_C11
+ #if __STDC_VERSION__ != 201112L
+ #error Unexpected value for __STDC_VERSION__.
+ #endif
