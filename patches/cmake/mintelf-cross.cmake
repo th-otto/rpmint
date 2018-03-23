@@ -1,7 +1,7 @@
 # this one is important
 set(MINT True)
 set(UNIX 1)
-set(CMAKE_SYSTEM_NAME mint)
+set(CMAKE_SYSTEM_NAME mintelf)
 set(CMAKE_SYSTEM_PROCESSOR m68k)
 
 #this one not so much

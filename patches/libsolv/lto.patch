@@ -1,0 +1,132 @@
+diff -rupN libsolv-0.6.33.orig/src/pool.h libsolv-0.6.33/src/pool.h
+--- libsolv-0.6.33.orig/src/pool.h	2018-01-18 13:29:06.000000000 +0100
++++ libsolv-0.6.33/src/pool.h	2018-03-23 03:21:48.284927406 +0100
+@@ -50,8 +50,6 @@ typedef struct _Datapos {
+ } Datapos;
+ 
+ 
+-#ifdef LIBSOLV_INTERNAL
+-
+ /* how many strings to maintain (round robin) */
+ #define POOL_TMPSPACEBUF 16
+ 
+@@ -61,8 +59,6 @@ struct _Pool_tmpspace {
+   int   n;
+ };
+ 
+-#endif
+-
+ struct _Pool {
+   void *appdata;		/* application private pointer */
+ 
+@@ -126,7 +122,6 @@ struct _Pool {
+ 
+   Queue pooljobs;		/* fixed jobs, like USERINSTALLED/MULTIVERSION */
+ 
+-#ifdef LIBSOLV_INTERNAL
+   /* flags to tell the library how the installed package manager works */
+   int promoteepoch;		/* true: missing epoch is replaced by epoch of dependency   */
+   int havedistepoch;		/* true: thr release part in the evr may contain a distepoch suffix */
+@@ -166,7 +161,6 @@ struct _Pool {
+   Id *whatprovidesauxdata;
+   Offset whatprovidesauxdataoff;
+ 
+-#endif
+ };
+ 
+ #define DISTTYPE_RPM	0
+diff -rupN libsolv-0.6.33.orig/src/repo.h libsolv-0.6.33/src/repo.h
+--- libsolv-0.6.33.orig/src/repo.h	2017-11-14 14:44:13.000000000 +0100
++++ libsolv-0.6.33/src/repo.h	2018-03-23 03:24:20.196924101 +0100
+@@ -45,7 +45,6 @@ typedef struct _Repo {
+ 
+   Id *rpmdbid;			/* solvable side data: rpm database id */
+ 
+-#ifdef LIBSOLV_INTERNAL
+   Repodata *repodata;		/* our stores for non-solvable related data */
+   Offset lastoff;		/* start of last array in idarraydata */
+ 
+@@ -54,7 +53,6 @@ typedef struct _Repo {
+   int lastidhash_idarraysize;
+   int lastmarker;
+   Offset lastmarkerpos;
+-#endif /* LIBSOLV_INTERNAL */
+ } Repo;
+ 
+ extern Repo *repo_create(Pool *pool, const char *name);
+diff -rupN libsolv-0.6.33.orig/src/repodata.h libsolv-0.6.33/src/repodata.h
+--- libsolv-0.6.33.orig/src/repodata.h	2017-10-10 12:39:51.000000000 +0200
++++ libsolv-0.6.33/src/repodata.h	2018-03-23 03:24:02.004924497 +0100
+@@ -21,9 +21,7 @@
+ #include "pool.h"
+ #include "dirpool.h"
+ 
+-#ifdef LIBSOLV_INTERNAL
+ #include "repopage.h"
+-#endif
+ 
+ #ifdef __cplusplus
+ extern "C" {
+@@ -49,9 +52,7 @@ typedef struct _Repokey {
+ #define KEY_STORAGE_INCORE              2
+ #define KEY_STORAGE_VERTICAL_OFFSET     3
+ 
+-#ifdef LIBSOLV_INTERNAL
+ struct dircache;
+-#endif
+ 
+ typedef struct _Repodata {
+   Id repodataid;		/* our id */
+@@ -83,7 +84,6 @@ typedef struct _Repodata {
+ 
+   Dirpool dirpool;		/* local dir pool */
+ 
+-#ifdef LIBSOLV_INTERNAL
+   FILE *fp;			/* file pointer of solv file */
+   int error;			/* corrupt solv file */
+ 
+@@ -126,7 +126,6 @@ typedef struct _Repodata {
+ 
+   /* directory cache to speed up repodata_str2dir */
+   struct dircache *dircache;
+-#endif
+ 
+ } Repodata;
+ 
+diff -rupN libsolv-0.6.33.orig/src/solver.h libsolv-0.6.33/src/solver.h
+--- libsolv-0.6.33.orig/src/solver.h	2017-11-07 16:18:37.000000000 +0100
++++ libsolv-0.6.33/src/solver.h	2018-03-23 03:25:55.180922034 +0100
+@@ -35,7 +35,6 @@ struct _Solver {
+ 
+   int pooljobcnt;			/* number of pooljob entries in job queue */
+ 
+-#ifdef LIBSOLV_INTERNAL
+   Repo *installed;			/* copy of pool->installed */
+ 
+   /* list of rules, ordered
+@@ -208,7 +207,6 @@ struct _Solver {
+   int do_extra_reordering;		/* reorder for future installed packages */
+ 
+   Queue *recommendsruleq;		/* pkg rules comming from recommends */
+-#endif	/* LIBSOLV_INTERNAL */
+ };
+ 
+ typedef struct _Solver Solver;
+diff -rupN libsolv-0.6.33.orig/src/transaction.h libsolv-0.6.33/src/transaction.h
+--- libsolv-0.6.33.orig/src/transaction.h	2017-10-10 12:39:51.000000000 +0200
++++ libsolv-0.6.33/src/transaction.h	2018-03-23 03:25:24.356922704 +0100
+@@ -30,14 +30,12 @@ typedef struct _Transaction {
+ 
+   Queue steps;			/* the transaction steps */
+ 
+-#ifdef LIBSOLV_INTERNAL
+   Queue transaction_info;
+   Id *transaction_installed;
+   Map transactsmap;
+   Map multiversionmap;
+ 
+   struct _TransactionOrderdata *orderdata;
+-#endif
+ 
+ } Transaction;
+ 

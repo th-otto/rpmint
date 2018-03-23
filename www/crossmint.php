@@ -965,6 +965,8 @@ foreach ($libpackages as $package)
 
 <li>2018/03/21 Package cmake added</li>
 
+<li>2018/03/23 Package libsolv added</li>
+
 </ul>
 
 <p></p>

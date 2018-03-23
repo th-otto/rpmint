@@ -1,0 +1,295 @@
+diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/CMakeLists.txt libsolv-0.6.33/CMakeLists.txt
+--- libsolv-0.6.33.orig/CMakeLists.txt	2018-01-29 17:09:07.000000000 +0100
++++ libsolv-0.6.33/CMakeLists.txt	2018-03-22 09:54:46.222257180 +0100
+@@ -42,6 +42,7 @@ OPTION (WITH_LIBXML2  "Build with libxml
+ IF (COMMAND cmake_policy)
+   # escape preprocessor, see -DVERSION below
+   CMAKE_POLICY (SET CMP0005 OLD)
++  CMAKE_POLICY (SET CMP0003 NEW)
+ ENDIF (COMMAND cmake_policy)
+ 
+ # Library
+@@ -78,8 +79,8 @@ ENDIF (NOT PKGCONFIG_INSTALL_DIR)
+ ####################################################################
+ 
+ # where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked
+-SET (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+-INSTALL( FILES ${CMAKE_MODULE_PATH}/FindLibSolv.cmake DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules )
++list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
++INSTALL( FILES ${CMAKE_SOURCE_DIR}/cmake/modules/FindLibSolv.cmake DESTINATION ${CMAKE_INSTALL_PREFIX}/share/cmake/Modules )
+ 
+ INCLUDE (${CMAKE_SOURCE_DIR}/VERSION.cmake)
+ 
+@@ -162,26 +163,38 @@ IF (ENABLE_ARCHREPO OR ENABLE_DEBIAN)
+ SET (ENABLE_LZMA_COMPRESSION ON)
+ ENDIF (ENABLE_ARCHREPO OR ENABLE_DEBIAN)
+ 
++MESSAGE (STATUS "Looking for modules in ${CMAKE_MODULE_PATH}")
++include(FindPkgConfig)
+ IF (ENABLE_RPMMD OR ENABLE_SUSEREPO OR ENABLE_APPDATA OR ENABLE_COMPS OR ENABLE_HELIXREPO OR ENABLE_MDKREPO)
+ IF (WITH_LIBXML2 )
+-FIND_PACKAGE (LibXml2 REQUIRED)
+-INCLUDE_DIRECTORIES (${LIBXML2_INCLUDE_DIR})
++pkg_check_modules(LIBXML2 REQUIRED libxml-2.0)
++add_definitions(${LIBXML2_CFLAGS})
++INCLUDE_DIRECTORIES (${LIBXML2_INCLUDE_DIRS})
++link_libraries(${LIBXML2_LDFLAGS})
+ ELSE(WITH_LIBXML2 )
+-FIND_PACKAGE (EXPAT REQUIRED)
++pkg_check_modoules (EXPAT REQUIRED expat)
+ INCLUDE_DIRECTORIES (${EXPAT_INCLUDE_DIRS})
++add_definitions(${EXPAT_CFLAGS})
++link_libraries(${EXPAT_LDFLAGS})
+ ENDIF (WITH_LIBXML2 )
+ ENDIF (ENABLE_RPMMD OR ENABLE_SUSEREPO OR ENABLE_APPDATA OR ENABLE_COMPS OR ENABLE_HELIXREPO OR ENABLE_MDKREPO)
+ 
+ IF (ENABLE_ZLIB_COMPRESSION)
+-FIND_PACKAGE (ZLIB REQUIRED)
++pkg_check_modules (ZLIB REQUIRED zlib)
++add_definitions(${ZLIB_CFLAGS})
++link_libraries(${ZLIB_LDFLAGS})
+ ENDIF (ENABLE_ZLIB_COMPRESSION)
+ 
+ IF (ENABLE_LZMA_COMPRESSION)
+-FIND_PACKAGE (LZMA REQUIRED)
++pkg_check_modules (LZMA REQUIRED liblzma)
++add_definitions(${LZMA_CFLAGS})
++link_libraries(${LZMA_LDFLAGS})
+ ENDIF (ENABLE_LZMA_COMPRESSION)
+ 
+ IF (ENABLE_BZIP2_COMPRESSION)
+-FIND_PACKAGE (BZip2 REQUIRED)
++pkg_check_modules (BZIP2 REQUIRED bzip2)
++add_definitions(${BZIP2_CFLAGS})
++link_libraries(${BZIP2_LDFLAGS})
+ ENDIF (ENABLE_BZIP2_COMPRESSION)
+ 
+ IF (RPM5)
+@@ -191,7 +204,8 @@ SET (ENABLE_RPMDB ON)
+ SET (ENABLE_RPMMD ON)
+ FIND_PACKAGE (PkgConfig REQUIRED)
+ PKG_CHECK_MODULES (RPM REQUIRED rpm)
+-INCLUDE_DIRECTORIES (${RPM_INCLUDE_DIRS})
++add_definitions (${RPM_CFLAGS})
++link_libraries(${RPM_LDFLAGS})
+ ENDIF (RPM5)
+ 
+ IF (MULTI_SEMANTICS)
+@@ -204,37 +218,9 @@ ENDIF (ENABLE_RPMDB)
+ 
+ INCLUDE (CheckIncludeFile)
+ IF (ENABLE_RPMDB OR ENABLE_RPMPKG_LIBRPM)
+-  FIND_LIBRARY (RPMDB_LIBRARY NAMES rpmdb)
+-
+-  IF (NOT RPMDB_LIBRARY)
+-    FIND_LIBRARY (RPMDB_LIBRARY NAMES rpm)
+-  ENDIF (NOT RPMDB_LIBRARY)
+-
+-  FIND_LIBRARY (RPMIO_LIBRARY NAMES rpmio)
+-  IF (RPMIO_LIBRARY)
+-    SET(RPMDB_LIBRARY ${RPMIO_LIBRARY} ${RPMDB_LIBRARY})
+-  ENDIF (RPMIO_LIBRARY)
+-
+-  IF (RPM5)
+-    FIND_LIBRARY (RPMMISC_LIBRARY NAMES rpmmisc)
+-    IF (RPMMISC_LIBRARY)
+-      SET (RPMDB_LIBRARY ${RPMMISC_LIBRARY} ${RPMDB_LIBRARY})
+-    ENDIF (RPMMISC_LIBRARY)
+-  ENDIF (RPM5)
+-
+-  # check if rpm contains a bundled berkeley db
+-  CHECK_INCLUDE_FILE(rpm/db.h HAVE_RPM_DB_H)
+-  IF (NOT ENABLE_RPMDB_LIBRPM)
+-    IF (NOT HAVE_RPM_DB_H)
+-      FIND_LIBRARY (DB_LIBRARY NAMES db)
+-      IF (DB_LIBRARY)
+-        SET (RPMDB_LIBRARY ${DB_LIBRARY} ${RPMDB_LIBRARY})
+-      ENDIF (DB_LIBRARY)
+-      IF (DB_INCLUDE_DIR)
+-        INCLUDE_DIRECTORIES (${DB_INCLUDE_DIR})
+-      ENDIF (DB_INCLUDE_DIR)
+-    ENDIF (NOT HAVE_RPM_DB_H)
+-  ENDIF (NOT ENABLE_RPMDB_LIBRPM)
++  PKG_CHECK_MODULES (RPM REQUIRED rpm)
++  add_definitions (${RPM_CFLAGS})
++  link_libraries(${RPM_LDFLAGS})
+   INCLUDE (CheckLibraryExists)
+   CHECK_LIBRARY_EXISTS(rpmio pgpDigGetParams "" HAVE_PGPDIGGETPARAMS)
+ ENDIF (ENABLE_RPMDB OR ENABLE_RPMPKG_LIBRPM)
+@@ -249,6 +235,8 @@ INCLUDE (TestBigEndian)
+ CHECK_FUNCTION_EXISTS (strchrnul HAVE_STRCHRNUL)
+ CHECK_FUNCTION_EXISTS (fopencookie HAVE_FOPENCOOKIE)
+ CHECK_FUNCTION_EXISTS (funopen HAVE_FUNOPEN)
++CHECK_FUNCTION_EXISTS (mkdtemp HAVE_MKDTEMP)
++CHECK_FUNCTION_EXISTS (futimens HAVE_FUTIMENS)
+ TEST_BIG_ENDIAN (WORDS_BIGENDIAN)
+ 
+ IF (${CMAKE_MAJOR_VERSION} GREATER 2)
+@@ -269,7 +257,7 @@ ENDIF (${CMAKE_MAJOR_VERSION} GREATER 2)
+ 
+ # should create config.h with #cmakedefine instead...
+ FOREACH (VAR HAVE_STRCHRNUL HAVE_FOPENCOOKIE HAVE_FUNOPEN WORDS_BIGENDIAN
+-  HAVE_RPM_DB_H HAVE_PGPDIGGETPARAMS WITH_LIBXML2 )
++  HAVE_RPM_DB_H HAVE_PGPDIGGETPARAMS WITH_LIBXML2 HAVE_MKDTEMP HAVE_FUTIMENS )
+   IF(${VAR})
+     ADD_DEFINITIONS (-D${VAR}=1)
+     SET (SWIG_FLAGS ${SWIG_FLAGS} -D${VAR})
+diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/examples/solv/checksig.c libsolv-0.6.33/examples/solv/checksig.c
+--- libsolv-0.6.33.orig/examples/solv/checksig.c	2017-10-10 12:39:51.000000000 +0200
++++ libsolv-0.6.33/examples/solv/checksig.c	2018-03-22 09:58:55.622251753 +0100
+@@ -1,3 +1,4 @@
++#define _GNU_SOURCE
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+@@ -43,7 +44,14 @@ checksig(Pool *sigpool, FILE *fp, FILE *
+   off_t posfp, possigfp;
+   int r, nkeys;
+ 
+-  gpgdir = mkdtemp(pool_tmpjoin(sigpool, "/var/tmp/solvgpg.XXXXXX", 0, 0));
++  gpgdir = pool_tmpjoin(sigpool, "/var/tmp/solvgpg.XXXXXX", 0, 0);
++#ifdef HAVE_MKDTEMP
++  gpgdir = mkdtemp(gpgdir);
++#else
++  gpgdir = mktemp(gpgdir);
++  if (gpgdir && mkdir(gpgdir, 0700) == 0)
++    gpgdir = 0;
++#endif
+   if (!gpgdir)
+     return 0;
+   keysfile = pool_tmpjoin(sigpool, gpgdir, "/keys", 0);
+diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/examples/solv/repoinfo_cache.c libsolv-0.6.33/examples/solv/repoinfo_cache.c
+--- libsolv-0.6.33.orig/examples/solv/repoinfo_cache.c	2017-10-10 12:39:51.000000000 +0200
++++ libsolv-0.6.33/examples/solv/repoinfo_cache.c	2018-03-22 10:00:36.116067251 +0100
+@@ -3,6 +3,7 @@
+ #include <unistd.h>
+ #include <sys/stat.h>
+ #include <time.h>
++#include <utime.h>
+ 
+ #include "pool.h"
+ #include "repo.h"
+@@ -92,7 +93,8 @@ usecachedrepo(struct repoinfo *cinfo, co
+   unsigned char myextcookie[32];
+   int flags;
+   int forcesystemloc;
+-
++  char *filename;
++  
+   if (repoext && !cinfo->extcookieset)
+     return 0;	/* huh? */
+   forcesystemloc = mark & 2 ? 0 : 1;
+@@ -104,7 +106,8 @@ usecachedrepo(struct repoinfo *cinfo, co
+ 	return res;
+     }
+   mark &= 1;
+-  if (!(fp = fopen(calc_cachepath(repo, repoext, forcesystemloc), "r")))
++  filename = calc_cachepath(repo, repoext, forcesystemloc);
++  if (!(fp = fopen(filename, "r")))
+     return 0;
+   if (!repoext && !cinfo->cookieset && cinfo->autorefresh && cinfo->metadata_expire != -1)
+     {
+@@ -155,7 +158,7 @@ usecachedrepo(struct repoinfo *cinfo, co
+       cinfo->extcookieset = 1;
+     }
+   if (mark)
+-    futimens(fileno(fp), 0);	/* try to set modification time */
++    utime(filename, 0);	/* try to set modification time */
+   fclose(fp);
+   return 1;
+ }
+diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/ext/CMakeLists.txt libsolv-0.6.33/ext/CMakeLists.txt
+--- libsolv-0.6.33.orig/ext/CMakeLists.txt	2017-10-10 12:39:51.000000000 +0200
++++ libsolv-0.6.33/ext/CMakeLists.txt	2018-03-22 09:56:38.590254735 +0100
+@@ -126,7 +126,7 @@ IF (ENABLE_RPMMD OR ENABLE_SUSEREPO OR E
+ 	solv_xmlparser.c)
+ ENDIF (ENABLE_RPMMD OR ENABLE_SUSEREPO OR ENABLE_APPDATA OR ENABLE_COMPS OR ENABLE_HELIXREPO OR ENABLE_MDKREPO)
+ 
+-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
++SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_COMPILE_OPTIONS_PIC}")
+ IF (HAVE_LINKER_VERSION_SCRIPT)
+ SET (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${LINK_FLAGS} -Wl,--version-script=${CMAKE_SOURCE_DIR}/ext/libsolvext.ver")
+ ENDIF (HAVE_LINKER_VERSION_SCRIPT)
+diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/src/CMakeLists.txt libsolv-0.6.33/src/CMakeLists.txt
+--- libsolv-0.6.33.orig/src/CMakeLists.txt	2017-11-07 16:18:37.000000000 +0100
++++ libsolv-0.6.33/src/CMakeLists.txt	2018-03-22 09:56:27.582254974 +0100
+@@ -29,7 +29,7 @@ SET (libsolv_HEADERS
+     strpool.h dirpool.h knownid.h transaction.h rules.h problems.h
+     chksum.h dataiterator.h ${CMAKE_BINARY_DIR}/src/solvversion.h)
+ 
+-SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
++SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_COMPILE_OPTIONS_PIC}")
+ IF (HAVE_LINKER_VERSION_SCRIPT)
+ SET (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${LINK_FLAGS} -Wl,--version-script=${CMAKE_SOURCE_DIR}/src/libsolv.ver")
+ ENDIF (HAVE_LINKER_VERSION_SCRIPT)
+diff -rup libsolv-0.6.33.orig/cmake/modules/FindLibSolv.cmake libsolv-0.6.33/cmake/modules/FindLibSolv.cmake
+--- libsolv-0.6.33.orig/cmake/modules/FindLibSolv.cmake	2017-10-10 12:39:51.000000000 +0200
++++ libsolv-0.6.33/cmake/modules/FindLibSolv.cmake	2018-03-23 03:00:26.948955289 +0100
+@@ -38,20 +38,14 @@
+ #   LIBSOLV_${COMPONENT}_LIBRARY	The libraries for the specified component
+ #
+ 
+-# Support preference of static libs by adjusting CMAKE_FIND_LIBRARY_SUFFIXES
+-IF(LibSolv_USE_STATIC_LIBS)
+-    SET( _ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+-    SET(CMAKE_FIND_LIBRARY_SUFFIXES .a )
+-ENDIF()
+-
++include(FindPkgConfig)
+ # Look for the header files
+ UNSET(LibSolv_INCLUDE_DIRS CACHE)
+ FIND_PATH(LibSolv_INCLUDE_DIRS NAMES solv/solvable.h)
+ 
+ # Look for the core library
+ UNSET(LIBSOLV_LIBRARY CACHE)
+-FIND_LIBRARY(LIBSOLV_LIBRARY NAMES solv)
+-FIND_PACKAGE_HANDLE_STANDARD_ARGS(LibSolv DEFAULT_MSG LIBSOLV_LIBRARY LibSolv_INCLUDE_DIRS)
++PKG_CHECK_MODULES(LIBSOLV solv)
+ MARK_AS_ADVANCED(
+     LIBSOLV_FOUND
+     LIBSOLV_LIBRARY
+@@ -60,36 +54,37 @@ MARK_AS_ADVANCED(
+ # Prepare return values and collectiong more components
+ SET(LibSolv_FOUND ${LIBSOLV_FOUND})
+ SET(LibSolv_LIBRARIES ${LIBSOLV_LIBRARY})
++SET(LibSolv_INCLUDE_DIRS, ${LIBSOLV_INCLUDE_DIRS})
+ MARK_AS_ADVANCED(
+     LibSolv_FOUND
+     LibSolv_LIBRARIES
+     LibSolv_INCLUDE_DIRS
+ )
++if (${LIBSOLV_FOUND})
++	add_definitions (${LIBSOLV_CFLAGS})
++	link_libraries(${LIBSOLV_LDFLAGS})
++endif()
+ 
+ # Look for components
+ FOREACH(COMPONENT ${LibSolv_FIND_COMPONENTS})
+     STRING(TOUPPER ${COMPONENT} _UPPERCOMPONENT)
+     UNSET(LIBSOLV_${_UPPERCOMPONENT}_LIBRARY CACHE)
+-    FIND_LIBRARY(LIBSOLV_${_UPPERCOMPONENT}_LIBRARY NAMES solv${COMPONENT})
++    PKG_CHECK_MODULES(LIBSOLV_${_UPPERCOMPONENT}_LIBRARY solv${COMPONENT})
+     SET(LibSolv_${COMPONENT}_FIND_REQUIRED ${LibSolv_FIND_REQUIRED})
+     SET(LibSolv_${COMPONENT}_FIND_QUIETLY ${LibSolv_FIND_QUIETLY})
+-    FIND_PACKAGE_HANDLE_STANDARD_ARGS(LibSolv_${COMPONENT} DEFAULT_MSG LIBSOLV_${_UPPERCOMPONENT}_LIBRARY)
+     MARK_AS_ADVANCED(
+ 	LIBSOLV_${_UPPERCOMPONENT}_FOUND
+ 	LIBSOLV_${_UPPERCOMPONENT}_LIBRARY
+     )
+     IF(LIBSOLV_${_UPPERCOMPONENT}_FOUND)
+ 	SET(LibSolv_LIBRARIES ${LibSolv_LIBRARIES} ${LIBSOLV_${_UPPERCOMPONENT}_LIBRARY})
++	add_definitions(${LIBSOLV_${_UPPERCOMPONENT}_CFLAGS}
++	link_libraries(${LIBSOLV_${_UPPERCOMPONENT}_LDFLAGS})
+     ELSE()
+ 	SET(LibSolv_FOUND FALSE)
+     ENDIF()
+ ENDFOREACH()
+ 
+-# restore CMAKE_FIND_LIBRARY_SUFFIXES
+-IF(Solv_USE_STATIC_LIBS)
+-    SET(CMAKE_FIND_LIBRARY_SUFFIXES ${_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES} )
+-ENDIF()
+-
+ IF(LibSolv_FOUND AND NOT LibSolv_FIND_QUIETLY)
+     MESSAGE(STATUS "Found LibSolv: ${LibSolv_INCLUDE_DIRS} ${LibSolv_LIBRARIES}")
+ ENDIF()

@@ -181,7 +181,7 @@ unpack_archive()
 		         "${here}${srcarchive}.tar.bz2" \
 		         "${here}${srcarchive}.tar.gz" \
 		         "${here}${srcarchive}.tgz"; do
-			if test -f "$f"; then missing=false; tar xvf "$f" || exit 1; fi
+			if test -f "$f"; then missing=false; tar xf "$f" || exit 1; fi
 		done
 		if $missing; then
 			echo "${srcarchive}.*: no such file" >&2

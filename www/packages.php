@@ -1387,6 +1387,20 @@ Mozilla&apos;s Rust language, Luvit, Julia, pyuv, and others.
 CMake is a cross-platform, open-source build system
 '
 	),
+	'libsolv' => array(
+		'name' => 'libsolv',
+		'upstream' => 'https://github.com/openSUSE/libsolv',
+		'source' => 'https://github.com/openSUSE/%{name}/archive/%{version}.tar.gz',
+		'version' => '0.6.33',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+libsolv is a library for solving packages and reading repositories.
+The solver uses a satisfiability algorithm.
+'
+	),
 );
 
 ?>
