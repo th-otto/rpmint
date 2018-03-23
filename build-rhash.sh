@@ -63,6 +63,23 @@ for CPU in ${ALL_CPUS}; do
 	test $CPU = 000 || rm -f "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/share/man/"*/*
 done
 
+# create pkg-config file
+mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/pkgconfig
+cat > ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/pkgconfig/librhash.pc <<-EOF
+prefix=${TARGET_PREFIX}
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: librhash
+Description: RHash is a utility for computing and verifying hash sums of files
+Version: ${VERSION#-}
+URL: http://rhash.anz.ru/
+
+Libs: -lrhash
+Cflags:
+EOF
+
 move_prefix
 configured_prefix="${prefix}"
 copy_pkg_configs
