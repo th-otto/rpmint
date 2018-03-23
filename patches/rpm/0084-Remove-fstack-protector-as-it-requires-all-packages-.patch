@@ -1,0 +1,75 @@
+From 7e844b4b3ef0b0c1b1fe43ecdb34d61c9a62aa5d Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 23 Mar 2018 05:54:23 +0100
+Subject: [PATCH] Remove -fstack-protector as it requires all packages using
+ the library to also be compiled with it Also some fixes to pkg-config file
+
+---
+ Makefile.am  | 2 ++
+ configure.ac | 9 +++++++--
+ rpm.pc.in    | 2 +-
+ 3 files changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 810adc94f..0f5f278f5 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -172,9 +172,11 @@ elfdeps_SOURCES =	tools/elfdeps.c
+ elfdeps_LDADD =		rpmio/librpmio.la
+ elfdeps_LDADD +=	@WITH_LIBELF_LIB@ @WITH_POPT_LIB@
+ 
++if HAVE_MMAP
+ rpmlibexec_PROGRAMS +=	sepdebugcrcfix
+ sepdebugcrcfix_SOURCES = tools/sepdebugcrcfix.c
+ sepdebugcrcfix_LDADD =	@WITH_LIBELF_LIB@
++endif
+ endif #LIBELF
+ 
+ rpmlibexec_PROGRAMS +=	rpmdeps
+diff --git a/configure.ac b/configure.ac
+index 6f2249d9e..ab0ab56fc 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -37,7 +37,7 @@ fi
+ AS=${AS-as}
+ AC_SUBST(AS)
+ if test "$GCC" = yes; then
+-    cflags_to_try="-fno-strict-aliasing -fstack-protector -Wempty-body"
++    cflags_to_try="-fno-strict-aliasing -Wempty-body"
+     AC_MSG_CHECKING([supported compiler flags])
+     old_cflags=$CFLAGS
+     echo
+@@ -260,7 +260,7 @@ AC_CHECK_HEADER([libelf.h])
+ AC_CHECK_HEADERS([gelf.h], [
+ 	AC_CHECK_LIB(elf, gelf_getvernaux, [
+ 	    AC_DEFINE(HAVE_LIBELF, 1, [Define to 1 if you have the 'elf' library (-lelf).])
+-	    WITH_LIBELF_LIB="-lelf"
++	    WITH_LIBELF_LIB="-lelf -lz"
+ 	    WITH_LIBELF=yes
+ 	])
+ ])
+@@ -779,6 +779,11 @@ AC_CHECK_FUNCS(setprogname, [], [], [#include <stdlib.h>])
+ AC_CHECK_FUNCS(nanosleep)
+ AC_CHECK_FUNCS(mkdtemp)
+ 
++have_mmap=yes
++AC_CHECK_FUNCS(mmap,,have_mmap=no)
++AC_CHECK_HEADERS(sys/mman.h,,have_mmap=no)
++AM_CONDITIONAL(HAVE_MMAP, test $have_mmap = yes)
++
+ AC_MSG_CHECKING([whether __progname is defined])
+ AC_LINK_IFELSE([AC_LANG_PROGRAM([extern const char *__progname;],
+ 	   [__progname = "hello";])],
+diff --git a/rpm.pc.in b/rpm.pc.in
+index d942e5165..fbcaa5ae3 100644
+--- a/rpm.pc.in
++++ b/rpm.pc.in
+@@ -12,4 +12,4 @@ Requires.private: @ZSTD_REQUIRES@ @LMDB_REQUIRES@
+ # Conflicts:
+ Cflags: -I${includedir}
+ Libs: -L${libdir} -lrpm -lrpmio
+-Libs.private: -lpopt -lrt -lpthread @WITH_LZMA_LIB@ @WITH_DB_LIB@ @WITH_BZ2_LIB@ @WITH_ZLIB_LIB@ @WITH_BEECRYPT_LIB@ @WITH_NSS_LIB@ @LUA_LIBS@
++Libs.private: -lpopt @WITH_LZMA_LIB@ @WITH_DB_LIB@ @WITH_LIBELF_LIB@ @WITH_BZ2_LIB@ @WITH_ZLIB_LIB@ @WITH_BEECRYPT_LIB@ @WITH_NSS_LIB@ @LUA_LIBS@
+-- 
+2.16.2
+

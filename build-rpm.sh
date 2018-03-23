@@ -92,6 +92,7 @@ patches/rpm/0079-MiNT-attribute-visibility-is-not-available.patch
 patches/rpm/0080-Only-use-dlopen-if-available.patch
 patches/rpm/0082-coldfire.patch
 patches/rpm/0083-Fix-some-mismatch-between-open-mode-permissions.patch
+patches/rpm/0084-Remove-fstack-protector-as-it-requires-all-packages-.patch
 patches/rpm/mintelf-config.patch
 "
 DISABLED_PATCHES="
