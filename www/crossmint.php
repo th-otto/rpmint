@@ -1073,7 +1073,8 @@ CosmosEx is a hardware extension as small as a floppy drive which brings SD-Card
 Build times:
 binutils:
 	mingw32: 10min
-	cygwin:  8min
+	cygwin32:  8min
+	cygwin64:  6min
 	macos:   3min (ld does not have support for the native platform)
 	linux:   30sec
 

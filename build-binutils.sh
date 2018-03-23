@@ -9,7 +9,7 @@ me="$0"
 
 PACKAGENAME=binutils
 VERSION=-2.30
-VERSIONPATCH=-20180215
+VERSIONPATCH=-20180323
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
@@ -41,15 +41,9 @@ srcdir="${PACKAGENAME}${VERSION}"
 PATCHES="\
         patches/binutils/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
 "
-ELFPATCHES="patches/binutils/${PACKAGENAME}${VERSION}-mintelf.patch"
-ALLPATCHES="$PATCHES $ELFPATCHES \
+ALLPATCHES="$PATCHES \
         patches/binutils/m68k-segmentalign.patch \
 "
-case "${TARGET}" in
-    *-*-*elf* | *-*-linux*)
-		PATCHES="$PATCHES $ELFPATCHES"
-		;;
-esac
 
 TAR=${TAR-tar}
 TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
