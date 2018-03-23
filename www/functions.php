@@ -4,6 +4,23 @@ $target = ' target="_blank"';
 $target = '';
 $linkcount = 0;
 $linkstats = array();
+$targets = array(
+	'all' => array('display' => 'All'),
+	'mint' => array('display' => 'MiNT'),
+	'mintelf' => array('display' => 'MiNTelf'),
+);
+$platforms = array(
+	'all' => array('display' => 'All'),
+	'cygwin32' => array('display' => 'Cygwin32'),
+	'cygwin64' => array('display' => 'Cygwin64'),
+	'mingw32' => array('display' => 'MinGW32'),
+	'mingw64' => array('display' => 'MinGW64'),
+	'linux32' => array('display' => 'Linux (x86)'),
+	'linux64' => array('display' => 'Linux'),
+	'macos32' => array('display' => 'MacOSX (x86)'),
+	'macos64' => array('display' => 'MacOSX'),
+	'atari' => array('display' => 'Atari'),
+);
 
 function last_changetime($filename)
 {

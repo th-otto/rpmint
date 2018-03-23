@@ -1,3 +1,40 @@
+<?php
+/*
+session_start();
+$target = "all";
+$platform = "all";
+if ($_SERVER['REQUEST_METHOD'] == 'POST')
+{
+	$_SESSION['target'] = $_POST['target'];
+	$_SESSION['platform'] = $_POST['platform'];
+	header('Location: ' . $_SERVER['PHP_SELF']);
+	exit();
+}
+if (isset($_SESSION['target']))
+{
+	$target = $_SESSION['target'];
+	$platform = $_SESSION['platform'];
+	$_COOKIE['target'] = $target;
+	$_COOKIE['platform'] = $platform;
+}
+include('mintvars.php');
+include('functions.php');
+if (isset($_COOKIE['target']))
+	$target = $_COOKIE['target'];
+if (!array_key_exists($target, $targets))
+	$target = "all";
+if (isset($_COOKIE['platform']))
+	$platform = $_COOKIE['platform'];
+if (!array_key_exists($platform, $platforms))
+	$platform = "all";
+*/
+include('mintvars.php');
+include('functions.php');
+$target = "all";
+$platform = "all";
+setcookie("target", $target, time() + 3600);
+setcookie("platform", $platform, time() + 3600);
+?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
           "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xml:lang="en" lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -13,8 +50,6 @@
 
 <?php
 
-include('mintvars.php');
-include('functions.php');
 include('packages.php');
 
 $gccver = 'gcc730';
@@ -126,6 +161,36 @@ and you want to produce coldfire code.
 -->
 
 <p>&nbsp;</p>
+<!--
+<a name='basicpackages'></a>
+<form action= "<?php echo $_SERVER['PHP_SELF'] . '#basicpackages'; ?>" method ="POST">
+<p>Show Target:
+<select name="target" onchange="submit();">
+<?php
+foreach ($targets as $k => $t)
+{
+	echo "<option value =\"$k\"";
+	if ($k == $target)
+		echo " selected";
+	echo ">" . $t['display'] . "</option>\n";
+}
+?>
+</select>
+Platforms:
+<select name="platform" onchange="submit();">
+<?php
+foreach ($platforms as $k => $t)
+{
+	echo "<option value =\"$k\"";
+	if ($k == $platform)
+		echo " selected";
+	echo ">" . $t['display'] . "</option>\n";
+}
+?>
+</select>
+<input type ="hidden" name="submitted" value="true"></br>
+</p></form>
+-->
 
 <h1>Basic packages</h1>
 
@@ -260,11 +325,11 @@ foreach ($basepackages as $package)
 		echo '</tr>' . "\n";
 	}
 	
-	if ($package['cygwin32'])
+	if ($package['cygwin32'] && ($platform == 'cygwin32' || $platform == 'all'))
 	{
 		echo '<tr>' . "\n";
 		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin32"></img></td>' . "\n";
-		echo '<td class="linkdesc">Cygwin Package:</td>' . "\n";
+		echo '<td class="linkdesc">Cygwin32 Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
@@ -288,11 +353,11 @@ foreach ($basepackages as $package)
 		echo '</tr>' . "\n";
 	}
 	
-	if ($package['cygwin64'])
+	if ($package['cygwin64'] && ($platform == 'cygwin64' || $platform == 'all'))
 	{
 		echo '<tr>' . "\n";
 		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin64"></img></td>' . "\n";
-		echo '<td class="linkdesc">Cygwin Package:</td>' . "\n";
+		echo '<td class="linkdesc">Cygwin64 Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
@@ -316,11 +381,11 @@ foreach ($basepackages as $package)
 		echo '</tr>' . "\n";
 	}
 	
-	if ($package['mingw32'])
+	if ($package['mingw32'] && ($platform == 'mingw32' || $platform == 'all'))
 	{
 		echo '<tr>' . "\n";
 		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW32"></img></td>' . "\n";
-		echo '<td class="linkdesc">MinGW Package:</td>' . "\n";
+		echo '<td class="linkdesc">MinGW32 Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
@@ -344,11 +409,11 @@ foreach ($basepackages as $package)
 		echo '</tr>' . "\n";
 	}
 	
-	if ($package['mingw64'])
+	if ($package['mingw64'] && ($platform == 'mingw64' || $platform == 'all'))
 	{
 		echo '<tr>' . "\n";
 		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW64"></img></td>' . "\n";
-		echo '<td class="linkdesc">MinGW Package:</td>' . "\n";
+		echo '<td class="linkdesc">MinGW64 Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
@@ -372,7 +437,7 @@ foreach ($basepackages as $package)
 		echo '</tr>' . "\n";
 	}
 
-	if (!$package['mingw32'] && !$package['mingw64'])
+	if (!$package['mingw32'] && !$package['mingw64'] && ($platform == 'mingw3232' || $platform == 'all'))
 	{
 		echo '<tr>' . "\n";
 		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW"></img></td>' . "\n";
@@ -381,7 +446,7 @@ foreach ($basepackages as $package)
 		echo '</tr>';
 	}
 	
-	if ($package['linux64'])
+	if ($package['linux64'] && ($platform == 'linux64' || $platform == 'all'))
 	{
 		echo '<tr>' . "\n";
 		echo '<td class="icon"><img src="images/os-linux.png" width="32" height="32" alt="Linux"></img></td>' . "\n";
@@ -409,7 +474,7 @@ foreach ($basepackages as $package)
 		echo '</tr>' . "\n";
 	}
 	
-	if ($package['macos64'])
+	if ($package['macos64'] && ($platform == 'macos64' || $platform == 'all'))
 	{
 		echo '<tr>' . "\n";
 		echo '<td class="icon"><img src="images/os-macos.png" width="32" height="32" alt="MacOSX"></img></td>' . "\n";
@@ -437,7 +502,7 @@ foreach ($basepackages as $package)
 		echo '</tr>' . "\n";
 	}
 	
-	if (isset($package['atari']) && $package['atari'])
+	if (isset($package['atari']) && $package['atari'] && ($platform == 'atari' || $platform == 'all'))
 	{
 		echo '<tr>' . "\n";
 		echo '<td class="icon"><img src="images/os-atari.png" width="32" height="32" alt="Atari" style="background-color: #ffffff"></img></td>' . "\n";
@@ -521,7 +586,7 @@ $package = $basepackages[$gccver];
 $basename = 'm68k-atari-mint-base';
 if (isset($package['date']))
 	$basename .= '-' . $package['date'];
-if ($package['cygwin32'])
+if ($package['cygwin32'] && ($platform == 'cygwin32' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
 	echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin32"></img></td>' . "\n";
@@ -533,7 +598,7 @@ if ($package['cygwin32'])
 	echo '</td>' . "\n";
 	echo '</tr>' . "\n";
 }
-if ($package['cygwin64'])
+if ($package['cygwin64'] && ($platform == 'cygwin64' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
 	echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin64"></img></td>' . "\n";
@@ -545,7 +610,7 @@ if ($package['cygwin64'])
 	echo '</td>' . "\n";
 	echo '</tr>' . "\n";
 }
-if ($package['mingw32'])
+if ($package['mingw32'] && ($platform == 'mingw32' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
 	echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MingW32"></img></td>' . "\n";
@@ -557,7 +622,7 @@ if ($package['mingw32'])
 	echo '</td>' . "\n";
 	echo '</tr>' . "\n";
 }
-if ($package['mingw64'])
+if ($package['mingw64'] && ($platform == 'mingw64' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
 	echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW64"></img></td>' . "\n";
@@ -569,7 +634,7 @@ if ($package['mingw64'])
 	echo '</td>' . "\n";
 	echo '</tr>' . "\n";
 }
-if ($package['linux64'])
+if ($package['linux64'] && ($platform == 'linux64' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
 	echo '<td class="icon"><img src="images/os-linux.png" width="32" height="32" alt="Linux"></img></td>' . "\n";
@@ -581,7 +646,7 @@ if ($package['linux64'])
 	echo '</td>' . "\n";
 	echo '</tr>' . "\n";
 }
-if ($package['macos64'])
+if ($package['macos64'] && ($platform == 'macos64' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
 	echo '<td class="icon"><img src="images/os-macos.png" width="32" height="32" alt="MacOSX"></img></td>' . "\n";
