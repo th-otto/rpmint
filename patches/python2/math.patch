@@ -1,0 +1,45 @@
+--- ./Include/pymath.h.orig	2018-03-24 10:11:27.222093892 +0100
++++ b/Include/pymath.h	2018-03-24 10:38:39.858058365 +0100
+@@ -18,11 +18,11 @@
+ extern double copysign(double, double);
+ #endif
+ 
+-#ifndef HAVE_ROUND
++#if !HAVE_DECL_ROUND
+ extern double round(double);
+ #endif
+ 
+-#ifndef HAVE_HYPOT
++#if !HAVE_DECL_HYPOT
+ extern double hypot(double, double);
+ #endif
+ 
+--- a/configure.ac.orig	2018-03-24 10:05:19.374101897 +0100
++++ b/configure.ac	2018-03-24 10:38:39.858058365 +0100
+@@ -2307,8 +2307,15 @@
+ 		LDSHARED="gcc -shared"
+ 		LDCXXSHARED="g++ -shared";;
+ 	MiNT*)
+-		LDSHARED='$(CC) -r'
+-		LDCXXSHARED='$(CXX) -r';;
++		if test "$host_os" = mintelf; then
++			LDSHARED='$(CC) -r -Wl,--oformat,elf32-m68k'
++			LDCXXSHARED='$(CXX) -r -Wl,--oformat,elf32-m68k'
++			LDLAST=Python/pymath.o
++		else
++			LDSHARED='$(CC) -r'
++			LDCXXSHARED='$(CXX) -r'
++		fi
++		;;
+ 	*)	LDSHARED="ld";;
+ 	esac
+ fi
+@@ -4032,7 +4032,7 @@
+ 
+ AC_CHECK_FUNCS([acosh asinh atanh copysign erf erfc expm1 finite gamma])
+ AC_CHECK_FUNCS([hypot lgamma log1p round tgamma])
+-AC_CHECK_DECLS([isinf, isnan, isfinite], [], [], [[#include <math.h>]])
++AC_CHECK_DECLS([isinf, isnan, isfinite, round, hypot], [], [], [[#include <math.h>]])
+ 
+ LIBS=$LIBS_SAVE
+ 

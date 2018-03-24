@@ -1401,6 +1401,22 @@ libsolv is a library for solving packages and reading repositories.
 The solver uses a satisfiability algorithm.
 '
 	),
+	'python2' => array(
+		'name' => 'python2',
+		'upstream' => 'http://www.python.org/',
+		'source' => 'http://www.python.org/ftp/python/%{version}/Python-%{version}.tar.xz',
+		'version' => '2.7.14',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+Python is an interpreted, object-oriented programming language, and is
+often compared to Tcl, Perl, Scheme, or Java.  You can find an overview
+of Python in the documentation and tutorials included in the python-doc
+(HTML) or python-doc-pdf (PDF) packages.
+'
+	),
 );
 
 ?>

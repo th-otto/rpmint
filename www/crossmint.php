@@ -1032,6 +1032,8 @@ foreach ($libpackages as $package)
 
 <li>2018/03/23 Package libsolv added</li>
 
+<li>2018/03/24 Package python2 added</li>
+
 </ul>
 
 <p></p>

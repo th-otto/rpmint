@@ -1,0 +1,65 @@
+diff -Nur Python-2.3b2.orig/Lib/cgi.py Python-2.3b2/Lib/cgi.py
+--- Python-2.3b2.orig/Lib/cgi.py	Thu Feb 27 21:14:32 2003
++++ Python-2.3b2/Lib/cgi.py	Tue Jul  8 17:17:37 2003
+@@ -1,4 +1,4 @@
+-#! /usr/local/bin/python
++#! /usr/bin/python
+ 
+ # NOTE: the above "/usr/local/bin/python" is NOT a mistake.  It is
+ # intentionally NOT "/usr/bin/env python".  On many systems
+diff -Nur Python-2.3b2.orig/Misc/HISTORY Python-2.3b2/Misc/HISTORY
+--- Python-2.3b2.orig/Misc/HISTORY	Tue Sep 17 22:55:31 2002
++++ Python-2.3b2/Misc/HISTORY	Tue Jul  8 17:17:37 2003
+@@ -5810,9 +5810,9 @@
+ were invoked.
+ 
+ - It is now recommended to use ``#!/usr/bin/env python'' instead of
+-``#!/usr/local/bin/python'' at the start of executable scripts, except
++``#!/usr/bin/python'' at the start of executable scripts, except
+ for CGI scripts.  It has been determined that the use of /usr/bin/env
+-is more portable than that of /usr/local/bin/python -- scripts almost
++is more portable than that of /usr/bin/python -- scripts almost
+ never have to be edited when the Python interpreter lives in a
+ non-standard place.  Note that this doesn't work for CGI scripts since
+ the python executable often doesn't live in the HTTP server's default
+@@ -9097,7 +9097,7 @@
+ Python exits or receives a SIGTERM or SIGHUP signal.
+ 
+ The interpreter is now generally assumed to live in
+-/usr/local/bin/python (as opposed to /usr/local/python).  The script
++/usr/bin/python (as opposed to /usr/local/python).  The script
+ demo/scripts/fixps.py will update old scripts in place (you can easily
+ modify it to do other similar changes).
+ 
+diff -Nur Python-2.3b2.orig/Tools/faqwiz/faqw.py Python-2.3b2/Tools/faqwiz/faqw.py
+--- Python-2.3b2.orig/Tools/faqwiz/faqw.py	Sat Apr  4 00:27:04 1998
++++ Python-2.3b2/Tools/faqwiz/faqw.py	Tue Jul  8 17:17:37 2003
+@@ -10,7 +10,7 @@
+ # executable.
+ 
+ # You need to edit the first line and the lines that define FAQDIR and
+-# SRCDIR, below: change /usr/local/bin/python to where your Python
++# SRCDIR, below: change /usr/bin/python to where your Python
+ # interpreter lives, change the value for FAQDIR to where your FAQ
+ # lives, and change the value for SRCDIR to where your faqwiz.py
+ # module lives.  The faqconf.py and faqcust.py files live there, too.
+diff -Nur Python-2.3b2.orig/Tools/scripts/fixps.py Python-2.3b2/Tools/scripts/fixps.py
+--- Python-2.3b2.orig/Tools/scripts/fixps.py	Tue May 13 20:14:24 2003
++++ Python-2.3b2/Tools/scripts/fixps.py	Tue Jul  8 17:19:48 2003
+@@ -15,13 +15,13 @@
+             print filename, ': can\'t open :', msg
+             continue
+         line = f.readline()
+-        if not re.match('^#! */usr/local/bin/python', line):
+-            print filename, ': not a /usr/local/bin/python script'
++        if not re.match('^#! */usr/bin/python', line):
++            print filename, ': not a /usr/bin/python script'
+             f.close()
+             continue
+         rest = f.read()
+         f.close()
+-        line = re.sub('/usr/local/bin/python',
++        line = re.sub('/usr/bin/python',
+                       '/usr/bin/env python', line)
+         print filename, ':', `line`
+         f = open(filename, "w")

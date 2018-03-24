@@ -1,0 +1,673 @@
+diff -rupN -x configure Python-2.7.14.orig/Include/pydebug.h Python-2.7.14/Include/pydebug.h
+--- Python-2.7.14.orig/Include/pydebug.h	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Include/pydebug.h	2018-03-24 02:49:35.804019299 +0100
+@@ -33,7 +33,7 @@ PyAPI_DATA(int) Py_HashRandomizationFlag
+    PYTHONPATH and PYTHONHOME from the environment */
+ #define Py_GETENV(s) (Py_IgnoreEnvironmentFlag ? NULL : getenv(s))
+ 
+-PyAPI_FUNC(void) Py_FatalError(const char *message);
++PyAPI_FUNC(void) Py_FatalError(const char *message) __attribute__((__noreturn__));
+ 
+ #ifdef __cplusplus
+ }
+diff -rupN -x configure Python-2.7.14.orig/Include/pyfpe.h Python-2.7.14/Include/pyfpe.h
+--- Python-2.7.14.orig/Include/pyfpe.h	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Include/pyfpe.h	2018-03-24 03:20:10.063537271 +0100
+@@ -131,7 +131,7 @@ extern "C" {
+ #include <math.h>
+ extern jmp_buf PyFPE_jbuf;
+ extern int PyFPE_counter;
+-extern double PyFPE_dummy(void *);
++extern double PyFPE_dummy(volatile void *);
+ 
+ #define PyFPE_START_PROTECT(err_string, leave_stmt) \
+ if (!PyFPE_counter++ && setjmp(PyFPE_jbuf)) { \
+diff -rupN -x configure Python-2.7.14.orig/Include/pymem.h Python-2.7.14/Include/pymem.h
+--- Python-2.7.14.orig/Include/pymem.h	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Include/pymem.h	2018-03-24 02:07:14.084074609 +0100
+@@ -72,9 +72,9 @@ PyAPI_FUNC(void) PyMem_Free(void *);
+ /* Returns NULL to indicate error if a negative size or size larger than
+    Py_ssize_t can represent is supplied.  Helps prevents security holes. */
+ #define PyMem_MALLOC(n)		((size_t)(n) > (size_t)PY_SSIZE_T_MAX ? NULL \
+-				: malloc((n) ? (n) : 1))
++				: malloc((n)))
+ #define PyMem_REALLOC(p, n)	((size_t)(n) > (size_t)PY_SSIZE_T_MAX  ? NULL \
+-				: realloc((p), (n) ? (n) : 1))
++				: realloc((p), (n)))
+ #define PyMem_FREE		free
+ 
+ #endif	/* PYMALLOC_DEBUG */
+@@ -90,11 +90,9 @@ PyAPI_FUNC(void) PyMem_Free(void *);
+  */
+ 
+ #define PyMem_New(type, n) \
+-  ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
+-	( (type *) PyMem_Malloc((n) * sizeof(type)) ) )
++	( (type *) PyMem_Malloc((n) * sizeof(type)) )
+ #define PyMem_NEW(type, n) \
+-  ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
+-	( (type *) PyMem_MALLOC((n) * sizeof(type)) ) )
++	( (type *) PyMem_MALLOC((n) * sizeof(type)) )
+ 
+ /*
+  * The value of (p) is always clobbered by this macro regardless of success.
+@@ -103,11 +101,9 @@ PyAPI_FUNC(void) PyMem_Free(void *);
+  * caller's memory error handler to not lose track of it.
+  */
+ #define PyMem_Resize(p, type, n) \
+-  ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
+-	(type *) PyMem_Realloc((p), (n) * sizeof(type)) )
++  ( (p) = (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
+ #define PyMem_RESIZE(p, type, n) \
+-  ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
+-	(type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
++  ( (p) = (type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
+ 
+ /* PyMem{Del,DEL} are left over from ancient days, and shouldn't be used
+  * anymore.  They're just confusing aliases for PyMem_{Free,FREE} now.
+diff -rupN -x configure Python-2.7.14.orig/Include/pyport.h Python-2.7.14/Include/pyport.h
+--- Python-2.7.14.orig/Include/pyport.h	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Include/pyport.h	2018-03-24 02:33:11.916040709 +0100
+@@ -180,7 +180,14 @@ typedef PY_LONG_LONG            Py_intpt
+  * unsigned integral type).  See PEP 353 for details.
+  */
+ #ifdef HAVE_SSIZE_T
++#ifdef __MINT__
++/* declared as int32_t in <sys/types.h>,
++   which is the same size but does
++   not match the "z" format specifier */
++typedef long int        Py_ssize_t;
++#else
+ typedef ssize_t         Py_ssize_t;
++#endif
+ #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
+ typedef Py_intptr_t     Py_ssize_t;
+ #else
+diff -rupN -x configure Python-2.7.14.orig/Modules/_ctypes/callproc.c Python-2.7.14/Modules/_ctypes/callproc.c
+--- Python-2.7.14.orig/Modules/_ctypes/callproc.c	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Modules/_ctypes/callproc.c	2018-03-24 03:42:22.295508280 +0100
+@@ -1449,7 +1449,7 @@ static PyObject *py_dl_close(PyObject *s
+ 
+     if (!PyArg_ParseTuple(args, "O&:dlclose", &_parse_voidp, &handle))
+         return NULL;
+-    if (dlclose(handle)) {
++    if (ctypes_dlclose(handle)) {
+         PyErr_SetString(PyExc_OSError,
+                                ctypes_dlerror());
+         return NULL;
+diff -rupN -x configure Python-2.7.14.orig/Modules/_ctypes/ctypes.h Python-2.7.14/Modules/_ctypes/ctypes.h
+--- Python-2.7.14.orig/Modules/_ctypes/ctypes.h	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Modules/_ctypes/ctypes.h	2018-03-24 03:36:21.199516138 +0100
+@@ -7,32 +7,9 @@
+ #   include <alloca.h>
+ #endif
+ 
+-#if (PY_VERSION_HEX < 0x02040000)
+-#define PyDict_CheckExact(ob) (Py_TYPE(ob) == &PyDict_Type)
+-#endif
+-
+-#if (PY_VERSION_HEX < 0x02050000)
+-typedef int Py_ssize_t;
+-#define PyInt_FromSsize_t PyInt_FromLong
+-#define PyNumber_AsSsize_t(ob, exc) PyInt_AsLong(ob)
+-#define PyIndex_Check(ob) PyInt_Check(ob)
+-typedef Py_ssize_t (*readbufferproc)(PyObject *, Py_ssize_t, void **);
+-typedef Py_ssize_t (*writebufferproc)(PyObject *, Py_ssize_t, void **);
+-typedef Py_ssize_t (*segcountproc)(PyObject *, Py_ssize_t *);
+-typedef Py_ssize_t (*charbufferproc)(PyObject *, Py_ssize_t, char **);
+-#endif
+-
+-#if (PY_VERSION_HEX < 0x02060000)
+-#define Py_TYPE(ob) (((PyObject*)(ob))->ob_type)
+-#define PyVarObject_HEAD_INIT(type, size) \
+-    PyObject_HEAD_INIT(type) size,
+-#define PyImport_ImportModuleNoBlock PyImport_ImportModule
+-#define PyLong_FromSsize_t PyInt_FromLong
+-#define Py_TPFLAGS_HAVE_NEWBUFFER 0
+-#endif
+-
+-
+ #ifndef MS_WIN32
++#undef max
++#undef min
+ #define max(a, b) ((a) > (b) ? (a) : (b))
+ #define min(a, b) ((a) < (b) ? (a) : (b))
+ 
+diff -rupN -x configure Python-2.7.14.orig/Modules/_ctypes/ctypes_dlfcn.h Python-2.7.14/Modules/_ctypes/ctypes_dlfcn.h
+--- Python-2.7.14.orig/Modules/_ctypes/ctypes_dlfcn.h	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Modules/_ctypes/ctypes_dlfcn.h	2018-03-24 03:43:48.911506395 +0100
+@@ -7,15 +7,26 @@ extern "C" {
+ 
+ #ifndef MS_WIN32
+ 
++#ifdef HAVE_DLFCN_H
+ #include <dlfcn.h>
++#endif
+ 
+ #ifndef CTYPES_DARWIN_DLFCN
+ 
++#ifdef __MINT__
++#define ctypes_dlsym(handle, name) 0
++#define ctypes_dlerror() "not supported"
++#define ctypes_dlopen(name, mode) 0
++#define ctypes_dlclose(handle) -1
++#define ctypes_dladdr(handle, info) 0
++#define RTLD_NOW 0
++#else
+ #define ctypes_dlsym dlsym
+ #define ctypes_dlerror dlerror
+ #define ctypes_dlopen dlopen
+ #define ctypes_dlclose dlclose
+ #define ctypes_dladdr dladdr
++#endif
+ 
+ #endif /* !CTYPES_DARWIN_DLFCN */
+ 
+diff -rupN -x configure Python-2.7.14.orig/Modules/_ctypes/libffi/src/m68k/ffi.c Python-2.7.14/Modules/_ctypes/libffi/src/m68k/ffi.c
+--- Python-2.7.14.orig/Modules/_ctypes/libffi/src/m68k/ffi.c	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Modules/_ctypes/libffi/src/m68k/ffi.c	2018-03-24 03:57:33.407488454 +0100
+@@ -23,7 +23,7 @@ void rtems_cache_flush_multiple_data_lin
+ 
+ void ffi_call_SYSV (extended_cif *,
+ 		    unsigned, unsigned,
+-		    void *, void (*fn) ());
++		    void *, void (*fn) (void));
+ void *ffi_prep_args (void *stack, extended_cif *ecif);
+ void ffi_closure_SYSV (ffi_closure *);
+ void ffi_closure_struct_SYSV (ffi_closure *);
+@@ -219,7 +219,7 @@ ffi_prep_cif_machdep (ffi_cif *cif)
+ }
+ 
+ void
+-ffi_call (ffi_cif *cif, void (*fn) (), void *rvalue, void **avalue)
++ffi_call (ffi_cif *cif, void (*fn) (void), void *rvalue, void **avalue)
+ {
+   extended_cif ecif;
+ 
+diff -rupN -x configure Python-2.7.14.orig/Modules/_multiprocessing/multiprocessing.h Python-2.7.14/Modules/_multiprocessing/multiprocessing.h
+--- Python-2.7.14.orig/Modules/_multiprocessing/multiprocessing.h	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Modules/_multiprocessing/multiprocessing.h	2018-03-24 02:14:59.284064486 +0100
+@@ -67,15 +67,7 @@
+  * Make sure Py_ssize_t available
+  */
+ 
+-#if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
+-   typedef int Py_ssize_t;
+-#  define PY_SSIZE_T_MAX INT_MAX
+-#  define PY_SSIZE_T_MIN INT_MIN
+-#  define F_PY_SSIZE_T "i"
+-#  define PyInt_FromSsize_t(n) PyInt_FromLong((long)n)
+-#else
+ #  define F_PY_SSIZE_T "n"
+-#endif
+ 
+ /*
+  * Format codes
+diff -rupN -x configure Python-2.7.14.orig/Modules/_sqlite/sqlitecompat.h Python-2.7.14/Modules/_sqlite/sqlitecompat.h
+--- Python-2.7.14.orig/Modules/_sqlite/sqlitecompat.h	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Modules/_sqlite/sqlitecompat.h	2018-03-24 02:18:51.108059441 +0100
+@@ -26,14 +26,6 @@
+ #ifndef PYSQLITE_COMPAT_H
+ #define PYSQLITE_COMPAT_H
+ 
+-/* define Py_ssize_t for pre-2.5 versions of Python */
+-
+-#if PY_VERSION_HEX < 0x02050000
+-typedef int Py_ssize_t;
+-typedef int (*lenfunc)(PyObject*);
+-#endif
+-
+-
+ /* define PyDict_CheckExact for pre-2.4 versions of Python */
+ #ifndef PyDict_CheckExact
+ #define PyDict_CheckExact(op) ((op)->ob_type == &PyDict_Type)
+diff -rupN -x configure Python-2.7.14.orig/Modules/expat/xmlparse.c Python-2.7.14/Modules/expat/xmlparse.c
+--- Python-2.7.14.orig/Modules/expat/xmlparse.c	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Modules/expat/xmlparse.c	2018-03-24 03:52:54.487494523 +0100
+@@ -30,6 +30,12 @@
+    USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+ 
++#ifdef _WIN32
++#include "winconfig.h"
++#elif defined(HAVE_EXPAT_CONFIG_H)
++#include <expat_config.h>
++#endif /* ndef _WIN32 */
++
+ #if !defined(_GNU_SOURCE)
+ # define _GNU_SOURCE 1                  /* syscall prototype */
+ #endif
+@@ -53,12 +59,6 @@
+ 
+ #define XML_BUILDING_EXPAT 1
+ 
+-#ifdef _WIN32
+-#include "winconfig.h"
+-#elif defined(HAVE_EXPAT_CONFIG_H)
+-#include <expat_config.h>
+-#endif /* ndef _WIN32 */
+-
+ #include "ascii.h"
+ #include "expat.h"
+ #include "siphash.h"
+diff -rupN -x configure Python-2.7.14.orig/Modules/expat/xmltok.c Python-2.7.14/Modules/expat/xmltok.c
+--- Python-2.7.14.orig/Modules/expat/xmltok.c	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Modules/expat/xmltok.c	2018-03-24 03:54:06.855492948 +0100
+@@ -30,6 +30,14 @@
+    USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+ 
++#ifdef _WIN32
++#include "winconfig.h"
++#else
++#ifdef HAVE_EXPAT_CONFIG_H
++#include <expat_config.h>
++#endif
++#endif /* ndef _WIN32 */
++
+ #include <stddef.h>
+ #include <string.h>  // memcpy
+ 
+@@ -43,13 +51,6 @@
+ #endif
+ 
+ 
+-#ifdef _WIN32
+-#include "winconfig.h"
+-#else
+-#ifdef HAVE_EXPAT_CONFIG_H
+-#include <expat_config.h>
+-#endif
+-#endif /* ndef _WIN32 */
+ 
+ #include "expat_external.h"
+ #include "internal.h"
+diff -rupN -x configure Python-2.7.14.orig/Modules/fcntlmodule.c Python-2.7.14/Modules/fcntlmodule.c
+--- Python-2.7.14.orig/Modules/fcntlmodule.c	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Modules/fcntlmodule.c	2018-03-24 03:55:49.823490708 +0100
+@@ -198,7 +198,7 @@ fcntl_ioctl(PyObject *self, PyObject *ar
+       return NULL;
+     }
+     Py_BEGIN_ALLOW_THREADS
+-#ifdef __VMS
++#if defined(__VMS) || defined(__MINT__)
+     ret = ioctl(fd, code, (void *)arg);
+ #else
+     ret = ioctl(fd, code, arg);
+diff -rupN -x configure Python-2.7.14.orig/Modules/mmapmodule.c Python-2.7.14/Modules/mmapmodule.c
+--- Python-2.7.14.orig/Modules/mmapmodule.c	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Modules/mmapmodule.c	2018-03-24 03:33:36.471519723 +0100
+@@ -50,7 +50,14 @@ my_getallocationgranularity (void)
+ #endif
+ 
+ #ifdef UNIX
++#ifdef HAVE_SYS_MMAN_H
+ #include <sys/mman.h>
++#else
++#define MAP_SHARED  0
++#define MAP_PRIVATE 1
++#define PROT_WRITE 2
++#define PROT_READ  1
++#endif
+ #include <sys/stat.h>
+ 
+ #if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
+@@ -127,13 +134,15 @@ mmap_object_dealloc(mmap_object *m_obj)
+         PyMem_Free(m_obj->tagname);
+ #endif /* MS_WINDOWS */
+ 
+-#ifdef UNIX
++#if defined(UNIX)
+     if (m_obj->fd >= 0)
+         (void) close(m_obj->fd);
+     if (m_obj->data!=NULL) {
++#if defined(HAVE_SYS_MMAP_H)
+         if (m_obj->access != ACCESS_READ && m_obj->access != ACCESS_COPY)
+             msync(m_obj->data, m_obj->size, MS_SYNC);
+         munmap(m_obj->data, m_obj->size);
++#endif
+     }
+ #endif /* UNIX */
+ 
+@@ -170,7 +179,9 @@ mmap_close_method(mmap_object *self, PyO
+         (void) close(self->fd);
+     self->fd = -1;
+     if (self->data != NULL) {
++#if defined(HAVE_SYS_MMAP_H)
+         munmap(self->data, self->size);
++#endif
+         self->data = NULL;
+     }
+ #endif
+@@ -565,10 +576,12 @@ mmap_flush_method(mmap_object *self, PyO
+ #elif defined(UNIX)
+     /* XXX semantics of return value? */
+     /* XXX flags for msync? */
++#if defined(HAVE_SYS_MMAP_H)
+     if (-1 == msync(self->data + offset, size, MS_SYNC)) {
+         PyErr_SetFromErrno(mmap_module_error);
+         return NULL;
+     }
++#endif
+     return PyInt_FromLong(0);
+ #else
+     PyErr_SetString(PyExc_ValueError, "flush not supported on this system");
+@@ -1102,7 +1115,9 @@ new_mmap_object(PyTypeObject *type, PyOb
+     Py_ssize_t map_size;
+     off_t offset = 0;
+     int fd, flags = MAP_SHARED, prot = PROT_WRITE | PROT_READ;
++#ifdef HAVE_SYS_MMAP_H
+     int devzero = -1;
++#endif
+     int access = (int)ACCESS_DEFAULT;
+     static char *keywords[] = {"fileno", "length",
+                                      "flags", "prot",
+@@ -1201,6 +1216,7 @@ new_mmap_object(PyTypeObject *type, PyOb
+     m_obj->size = map_size;
+     m_obj->pos = 0;
+     m_obj->offset = offset;
++#if defined(HAVE_SYS_MMAP_H)
+     if (fd == -1) {
+         m_obj->fd = -1;
+         /* Assume the caller wants to map anonymous memory.
+@@ -1235,6 +1251,10 @@ new_mmap_object(PyTypeObject *type, PyOb
+     if (devzero != -1) {
+         close(devzero);
+     }
++#else
++    m_obj->data = (char *)-1;
++    errno = ENOSYS;
++#endif
+ 
+     if (m_obj->data == (char *)-1) {
+         m_obj->data = NULL;
+diff -rupN -x configure Python-2.7.14.orig/Modules/posixmodule.c Python-2.7.14/Modules/posixmodule.c
+--- Python-2.7.14.orig/Modules/posixmodule.c	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Modules/posixmodule.c	2018-03-24 03:09:18.127551457 +0100
+@@ -6849,6 +6849,11 @@ PyDoc_STRVAR(posix_fstat__doc__,
+ "fstat(fd) -> stat result\n\n\
+ Like stat(), but for an open file descriptor.");
+ 
++#ifdef __MINT__
++#undef FSTAT /* defined in fcntl.h */
++#define FSTAT fstat
++#endif
++
+ static PyObject *
+ posix_fstat(PyObject *self, PyObject *args)
+ {
+@@ -7461,7 +7466,7 @@ posix_WSTOPSIG(PyObject *self, PyObject
+ #endif /* HAVE_SYS_WAIT_H */
+ 
+ 
+-#if defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)
++#if (defined(HAVE_STATVFS) || defined(HAVE_FSTATVFS)) && defined(HAVE_SYS_STATVFS_H)
+ #ifdef _SCO_DS
+ /* SCO OpenServer 5.0 and later requires _SVID3 before it reveals the
+    needed definitions in sys/statvfs.h */
+@@ -7507,7 +7512,9 @@ _pystatvfs_fromstructstatvfs(struct stat
+ 
+     return v;
+ }
++#endif
+ 
++#if defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)
+ PyDoc_STRVAR(posix_fstatvfs__doc__,
+ "fstatvfs(fd) -> statvfs result\n\n\
+ Perform an fstatvfs system call on the given fd.");
+@@ -7532,8 +7539,6 @@ posix_fstatvfs(PyObject *self, PyObject
+ 
+ 
+ #if defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H)
+-#include <sys/statvfs.h>
+-
+ PyDoc_STRVAR(posix_statvfs__doc__,
+ "statvfs(path) -> statvfs result\n\n\
+ Perform a statvfs system call on the given path.");
+diff -rupN -x configure Python-2.7.14.orig/Objects/exceptions.c Python-2.7.14/Objects/exceptions.c
+--- Python-2.7.14.orig/Objects/exceptions.c	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Objects/exceptions.c	2018-03-24 02:24:49.956051632 +0100
+@@ -1845,13 +1845,13 @@ UnicodeTranslateError_str(PyObject *self
+         else
+             PyOS_snprintf(badchar_str, sizeof(badchar_str), "U%08x", badchar);
+         result = PyString_FromFormat(
+-            "can't translate character u'\\%s' in position %zd: %.400s",
++            "can't translate character u'\\%s' in position %" PY_FORMAT_SIZE_T "d: %.400s",
+             badchar_str,
+             uself->start,
+             PyString_AS_STRING(reason_str));
+     } else {
+         result = PyString_FromFormat(
+-            "can't translate characters in position %zd-%zd: %.400s",
++            "can't translate characters in position %" PY_FORMAT_SIZE_T "d-%" PY_FORMAT_SIZE_T "d: %.400s",
+             uself->start,
+             uself->end-1,
+             PyString_AS_STRING(reason_str));
+diff -rupN -x configure Python-2.7.14.orig/Objects/stringlib/formatter.h Python-2.7.14/Objects/stringlib/formatter.h
+--- Python-2.7.14.orig/Objects/stringlib/formatter.h	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Objects/stringlib/formatter.h	2018-03-24 02:40:23.452031319 +0100
+@@ -572,7 +572,7 @@ fill_number(STRINGLIB_CHAR *buf, const N
+     if (spec->n_sign == 1) {
+         *buf++ = spec->sign;
+     }
+-    if (spec->n_prefix) {
++    if (spec->n_prefix && prefix) {
+         memmove(buf,
+                 prefix,
+                 spec->n_prefix * sizeof(STRINGLIB_CHAR));
+diff -rupN -x configure Python-2.7.14.orig/Python/marshal.c Python-2.7.14/Python/marshal.c
+--- Python-2.7.14.orig/Python/marshal.c	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Python/marshal.c	2018-03-24 02:59:01.700006985 +0100
+@@ -464,6 +464,9 @@ void
+ PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
+ {
+     WFILE wf;
++    wf.ptr = NULL;
++    wf.end = NULL;
++    wf.str = NULL;
+     wf.fp = fp;
+     wf.error = WFERR_OK;
+     wf.depth = 0;
+@@ -476,6 +479,9 @@ void
+ PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
+ {
+     WFILE wf;
++    wf.ptr = NULL;
++    wf.end = NULL;
++    wf.str = NULL;
+     wf.fp = fp;
+     wf.error = WFERR_OK;
+     wf.depth = 0;
+diff -rupN -x configure Python-2.7.14.orig/Python/pyfpe.c Python-2.7.14/Python/pyfpe.c
+--- Python-2.7.14.orig/Python/pyfpe.c	2017-09-16 19:38:35.000000000 +0200
++++ Python-2.7.14/Python/pyfpe.c	2018-03-24 03:20:30.479536826 +0100
+@@ -17,7 +17,7 @@ int PyFPE_counter = 0;
+    warning when compiling an empty file. */
+ 
+ double
+-PyFPE_dummy(void *dummy)
++PyFPE_dummy(volatile void *dummy)
+ {
+ 	return 1.0;
+ }
+diff -rupN -x configure Python-2.7.14.orig/configure.ac Python-2.7.14/configure.ac
+--- Python-2.7.14.orig/configure.ac	2018-03-23 18:45:43.132114295 +0100
++++ Python-2.7.14/configure.ac	2018-03-24 03:23:10.919533335 +0100
+@@ -322,6 +322,9 @@ then
+ 	*-*-linux*)
+ 		ac_sys_system=Linux
+ 		;;
++	*-*-mint*)
++		ac_sys_system=MiNT
++		;;
+ 	*-*-cygwin*)
+ 		ac_sys_system=Cygwin
+ 		;;
+@@ -352,6 +355,7 @@ then
+ 	darwin*) MACHDEP="darwin";;
+ 	atheos*) MACHDEP="atheos";;
+         irix646) MACHDEP="irix6";;
++	mint*) MACHDEP="mint";;
+ 	'')	MACHDEP="unknown";;
+     esac
+ fi
+@@ -371,6 +375,8 @@ if test "$cross_compiling" = yes; then
+ 	*-*-cygwin*)
+ 		_host_cpu=
+ 		;;
++	*-*-mint*)
++		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+ 		MACHDEP="unknown"
+@@ -760,7 +766,11 @@ esac
+ 
+ AC_SUBST(ARCH)
+ AC_MSG_CHECKING(ARCH)
++if test "$cross_compiling" = yes; then
++ARCH=$host_cpu
++else
+ ARCH=`uname -m`
++fi
+ case $ARCH in
+ i?86) ARCH=i386;;
+ esac
+@@ -993,6 +1003,10 @@ else # shared is disabled
+           BLDLIBRARY='$(LIBRARY)'
+           LDLIBRARY='libpython$(VERSION).dll.a'
+           ;;
++    MiNT*)
++          BLDLIBRARY='$(LIBRARY)'
++          LDLIBRARY='$(LIBRARY)'
++          ;;
+   esac
+ fi
+ 
+@@ -1734,7 +1748,7 @@ unistd.h utime.h \
+ sys/audioio.h sys/bsdtty.h sys/epoll.h sys/event.h sys/file.h sys/loadavg.h \
+ sys/lock.h sys/mkdev.h sys/modem.h \
+ sys/param.h sys/poll.h sys/random.h sys/select.h sys/socket.h sys/statvfs.h sys/stat.h \
+-sys/termio.h sys/time.h \
++sys/termio.h sys/time.h sys/mman.h \
+ sys/times.h sys/types.h sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h \
+ sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
+ bluetooth/bluetooth.h linux/tipc.h spawn.h util.h alloca.h)
+@@ -2292,6 +2306,9 @@ then
+ 	atheos*)
+ 		LDSHARED="gcc -shared"
+ 		LDCXXSHARED="g++ -shared";;
++	MiNT*)
++		LDSHARED='$(CC) -r'
++		LDCXXSHARED='$(CXX) -r';;
+ 	*)	LDSHARED="ld";;
+ 	esac
+ fi
+@@ -4524,7 +4541,7 @@ fi
+ 
+ # first curses configure check
+ ac_save_cppflags="$CPPFLAGS"
+-CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
++dnl CPPFLAGS="$CPPFLAGS -I/usr/include/ncursesw"
+ 
+ AC_CHECK_HEADERS(curses.h ncurses.h)
+ 
+diff -rupN -x configure Python-2.7.14.orig/setup.py Python-2.7.14/setup.py
+--- Python-2.7.14.orig/setup.py	2018-03-23 18:45:43.116114296 +0100
++++ Python-2.7.14/setup.py	2018-03-24 04:10:53.478907971 +0100
+@@ -1753,8 +1753,8 @@ class PyBuildExt(build_ext):
+         # Call the method for detecting whether _tkinter can be compiled
+         self.detect_tkinter(inc_dirs, lib_dirs)
+ 
+-        if '_tkinter' not in [e.name for e in self.extensions]:
+-            missing.append('_tkinter')
++##      if '_tkinter' not in [e.name for e in self.extensions]:
++##          missing.append('_tkinter')
+ 
+ ##         # Uncomment these lines if you want to play with xxmodule.c
+ ##         ext = Extension('xx', ['xxmodule.c'])
+--- a/Makefile.pre.in	2018-03-24 14:05:20.583213095 +0100
++++ b/Makefile.pre.in	2018-03-24 16:40:45.492221642 +0100
+@@ -1148,9 +1148,9 @@
+ 		$(PYTHON_FOR_BUILD) -m lib2to3.pgen2.driver $(DESTDIR)$(LIBDEST)/lib2to3/PatternGrammar.txt
+ 
+ # Create the PLATDIR source directory, if one wasn't distributed..
+-$(srcdir)/Lib/$(PLATDIR):
+-	mkdir $(srcdir)/Lib/$(PLATDIR)
+-	cp $(srcdir)/Lib/plat-generic/regen $(srcdir)/Lib/$(PLATDIR)/regen
++$(srcdir)/Lib/$(PLATDIR) regen-plat:
++	-mkdir $(srcdir)/Lib/$(PLATDIR)
++	test -f $(srcdir)/Lib/$(PLATDIR)/regen || cp $(srcdir)/Lib/plat-generic/regen $(srcdir)/Lib/$(PLATDIR)/regen
+ 	export PATH; PATH="`pwd`:$$PATH"; \
+ 	export PYTHONPATH; PYTHONPATH="$(srcdir)/Lib:$(abs_builddir)/`cat pybuilddir.txt`"; \
+ 	export DYLD_FRAMEWORK_PATH; DYLD_FRAMEWORK_PATH="`pwd`"; \
+
+--- a/Lib/plat-mint/regen	2018-03-24 14:05:09.623213333 +0100
++++ b/Lib/plat-mint/regen	2018-03-24 14:10:42.675206086 +0100
+@@ -0,0 +1,3 @@
++#! /bin/sh
++set -v
++eval $PYTHON_FOR_BUILD ../../Tools/scripts/h2py.py -i "'(u_long)'" ${SYSROOT}/usr/include/netinet/in.h
+
+--- a/Lib/compileall.py	2018-03-24 22:02:05.281405692 +0100
++++ b/Lib/compileall.py	2018-03-24 22:03:52.989403348 +0100
+@@ -36,7 +36,7 @@
+     try:
+         names = os.listdir(dir)
+     except os.error:
+-        print "Can't list", dir
++        print >>sys.stderr, "Can't list", dir
+         names = []
+     names.sort()
+     success = 1
+@@ -99,11 +99,11 @@
+                 ok = py_compile.compile(fullname, None, dfile, True)
+             except py_compile.PyCompileError,err:
+                 if quiet:
+-                    print 'Compiling', fullname, '...'
+-                print err.msg
++                    print >>sys.stderr, 'Compiling', fullname, '...'
++                print >>sys.stderr, err.msg
+                 success = 0
+             except IOError, e:
+-                print "Sorry", e
++                print >>sys.stderr, "Sorry", e
+                 success = 0
+             else:
+                 if ok == 0:
+@@ -123,7 +123,7 @@
+     success = 1
+     for dir in sys.path:
+         if (not dir or dir == os.curdir) and skip_curdir:
+-            print 'Skipping current directory'
++            print >>sys.stderr, 'Skipping current directory'
+         else:
+             success = success and compile_dir(dir, maxlevels, None,
+                                               force, quiet=quiet)
+@@ -144,7 +144,7 @@
+                     break
+                 expanded.append(line[:-1])
+         except IOError:
+-            print "Error reading file list %s" % flist
++            print >>sys.stderr, "Error reading file list %s" % flist
+             raise
+     return expanded
+ 
+@@ -196,7 +196,7 @@
+         if o == '-i': flist = a
+     if ddir:
+         if len(args) != 1 and not os.path.isdir(args[0]):
+-            print "-d destdir require exactly one directory argument"
++            print >>sys.stderr, "-d destdir require exactly one directory argument"
+             sys.exit(2)
+     success = 1
+     try:
+@@ -218,7 +218,7 @@
+         else:
+             success = compile_path()
+     except KeyboardInterrupt:
+-        print "\n[interrupted]"
++        print >>sys.stderr, "\n[interrupted]"
+         success = 0
+     return success
+ 
+

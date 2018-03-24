@@ -1,0 +1,30 @@
+--- a/Makefile.pre.in.orig	2018-03-24 05:38:29.500583332 +0100
++++ b/Makefile.pre.in	2018-03-24 05:39:22.104582187 +0100
+@@ -403,7 +403,7 @@
+ 
+ # Default target
+ all:		@DEF_MAKE_ALL_RULE@
+-build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks
++build_all:	$(BUILDPYTHON) gdbhooks
+ 
+ # Compile a binary with profile guided optimization.
+ profile-opt:
+@@ -932,7 +932,7 @@
+ 
+ commoninstall:	@FRAMEWORKALTINSTALLFIRST@ \
+ 		altbininstall libinstall inclinstall libainstall \
+-		sharedinstall oldsharedinstall altmaninstall \
++		altmaninstall \
+ 		@FRAMEWORKALTINSTALLLAST@
+ 
+ # Install shared libraries enabled by Setup
+@@ -1064,7 +1064,7 @@
+ 		unittest unittest/test \
+ 		lib-old \
+ 		curses pydoc_data $(MACHDEPS)
+-libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
++libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c pybuilddir.txt
+ 	@for i in $(SCRIPTDIR) $(LIBDEST); \
+ 	do \
+ 		if test ! -d $(DESTDIR)$$i; then \
+

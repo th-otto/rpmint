@@ -76,6 +76,7 @@ for pkg in gemlib \
 	libuv \
 	cmake \
 	libsolv \
+	python2 \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script
