@@ -17,7 +17,7 @@ test -f "$f" || {
 }
 
 mkdir -p "$TMPDIR"
-rm -rf "$TMPDIR/usr"
+rm -rf "$TMPDIR/"*
 
 cd "$TMPDIR" || exit 1
 
@@ -25,16 +25,19 @@ tar xf "$f" || exit 1
 
 if test -d usr/m68k-atari-mint/sys-root || test -d usr/m68k-atari-mintelf/sys-root; then
 	prefix="/"
+
+	find . -type d | while read f; do
+		sudo mkdir -p "${prefix}$f"
+	done
+	find . -type l | while read f; do
+		sudo cp -av "$f" "${prefix}$f"
+	done
+	find . -type f | while read f; do
+		sudo cp -av "$f" "${prefix}$f"
+	done
+
 else
 	prefix="$DESTDIR/"
+	cp -pvr . $DESTDIR/
 fi
 
-find . -type d | while read f; do
-	sudo mkdir -p "${prefix}$f"
-done
-find . -type l | while read f; do
-	sudo cp -av "$f" "${prefix}$f"
-done
-find . -type f | while read f; do
-	sudo cp -av "$f" "${prefix}$f"
-done

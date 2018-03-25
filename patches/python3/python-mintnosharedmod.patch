@@ -1,0 +1,29 @@
+--- a/Makefile.pre.in	2018-03-25 03:02:22.194348255 +0200
++++ b/Makefile.pre.in	2018-03-25 03:05:31.490344136 +0200
+@@ -443,7 +443,7 @@
+ 
+ # Default target
+ all:		@DEF_MAKE_ALL_RULE@
+-build_all:	check-clean-src $(BUILDPYTHON) oldsharedmods sharedmods gdbhooks \
++build_all:	check-clean-src $(BUILDPYTHON) gdbhooks \
+ 		Programs/_testembed python-config
+ 
+ # Check that the source is clean when building out of source.
+@@ -1114,7 +1114,7 @@
+ 
+ commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
+ 		altbininstall libinstall inclinstall libainstall \
+-		sharedinstall oldsharedinstall altmaninstall \
++		altmaninstall \
+ 		@FRAMEWORKALTINSTALLLAST@
+ 
+ # Install shared libraries enabled by Setup
+@@ -1294,7 +1294,7 @@
+ 		unittest unittest/test unittest/test/testmock \
+ 		venv venv/scripts venv/scripts/common venv/scripts/posix \
+ 		curses pydoc_data
+-libinstall:	build_all $(srcdir)/Modules/xxmodule.c
++libinstall:	build_all $(srcdir)/Modules/xxmodule.c pybuilddir.txt
+ 	@for i in $(SCRIPTDIR) $(LIBDEST); \
+ 	do \
+ 		if test ! -d $(DESTDIR)$$i; then \

@@ -1,0 +1,10 @@
+--- a/Makefile.pre.in	2018-03-25 08:26:18.501313655 +0200
++++ b/Makefile.pre.in	2018-03-25 08:31:55.193306328 +0200
+@@ -1351,6 +1351,7 @@
+ 	done
+ 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py \
+ 		$(DESTDIR)$(LIBDEST); \
++	sed -i 's,/.*\\(ranlib\),\\1,' -e 's,$(TARGET)-,,g' $(DESTDIR)$(LIBDEST)/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py; \
+ 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
+ 	if test -d $(DESTDIR)$(LIBDEST)/distutils/tests; then \
+ 		$(INSTALL_DATA) $(srcdir)/Modules/xxmodule.c \

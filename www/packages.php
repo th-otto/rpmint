@@ -1417,6 +1417,22 @@ of Python in the documentation and tutorials included in the python-doc
 (HTML) or python-doc-pdf (PDF) packages.
 '
 	),
+	'python3' => array(
+		'name' => 'python3',
+		'upstream' => 'http://www.python.org/',
+		'source' => 'http://www.python.org/ftp/python/%{version}/Python-%{version}.tar.xz',
+		'version' => '3.6.4',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+Python 3 is modern interpreted, object-oriented programming language,
+often compared to Tcl, Perl, Scheme, or Java.  You can find an overview
+of Python in the documentation and tutorials included in the python3-doc
+package.
+'
+	),
 );
 
 ?>

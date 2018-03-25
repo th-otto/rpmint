@@ -3,54 +3,48 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=python2
-VERSION=-2.7.14
+PACKAGENAME=python3
+VERSION=-3.6.4
 VERSIONPATCH=
 
 srcarchive=Python${VERSION}
 
 . ${scriptdir}/functions.sh
 
+python_version=$(echo ${VERSION#-} | head -c 3)
+
+
 PATCHES="
-patches/python2/python-2.7-dirs.patch
-patches/python2/python-distutils-rpm-8.patch
-patches/python2/python-2.7.5-multilib.patch
-patches/python2/python-2.5.1-sqlite.patch
-patches/python2/python-2.7.4-canonicalize2.patch
-patches/python2/python-2.6-gettext-plurals.patch
-patches/python2/python-2.6b3-curses-panel.patch
-patches/python2/sparc_longdouble.patch
-patches/python2/python-2.7.2-fix_date_time_compiler.patch
-patches/python2/python-bundle-lang.patch
-patches/python2/python-2.7-libffi-aarch64.patch
-patches/python2/python-bsddb6.diff
-patches/python2/python-2.7.9-ssl_ca_path.patch
-patches/python2/python-ncurses-6.0-accessors.patch
-patches/python2/reproducible.patch
-patches/python2/python-fix-shebang.patch
-patches/python2/python-skip_random_failing_tests.patch
-patches/python2/python-sorted_tar.patch
-patches/python2/python-path.patch
-patches/python2/mintelf-config.patch
-patches/python2/mint.patch
-patches/python2/python-mintnosharedmod.patch
-patches/python2/python-mintsetupdist.patch
-patches/python2/math.patch
+patches/python3/Python-3.0b1-record-rpm.patch
+patches/python3/python-3.6.0-multilib-new.patch
+patches/python3/python-3.3.0b1-localpath.patch
+patches/python3/python-3.3.0b1-fix_date_time_compiler.patch
+patches/python3/python-3.3.0b1-curses-panel.patch
+patches/python3/python-3.3.0b1-test-posix_fadvise.patch
+patches/python3/python-3.3.3-skip-distutils-test_sysconfig_module.patch
+patches/python3/subprocess-raise-timeout.patch
+patches/python3/0001-allow-for-reproducible-builds-of-python-packages.patch
+patches/python3/distutils-reproducible-compile.patch
+patches/python3/skip_random_failing_tests.patch
+patches/python3/fix-localeconv-encoding-for-LC_NUMERIC.patch
+patches/python3/python3-sorted_tar.patch
+patches/python3/ctypes-pass-by-value.patch
+patches/python3/mintelf-config.patch
+patches/python3/mint.patch
+patches/python3/python-mintnosharedmod.patch
+patches/python3/python-mintsetupdist.patch
+patches/python3/cross-config.patch
 "
 DISABLED_PATCHES="
-patches/python2/remove-static-libpython.diff
 "
 POST_INSTALL_SCRIPTS="
-patches/python2/python.csh
-patches/python2/python.sh
-patches/python2/pythonstart
+patches/python3/macros.python3
 "
 
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
-${TARGET_LIBDIR#/}/python
-${TARGET_LIBDIR#/}/python2.7
+${TARGET_LIBDIR#/}/python${python_version}
 ${TARGET_MANDIR#/}/*
 ${TARGET_SYSCONFDIR#/}/*
 "
@@ -60,16 +54,14 @@ MINT_BUILD_DIR="$srcdir"
 
 unpack_archive
 
-python_version=$(echo ${VERSION#-} | head -c 3)
-
 cd "$MINT_BUILD_DIR"
 
 # drop Autoconf version requirement
-sed -i 's/^version_required/dnl version_required/' configure.ac
+sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
 
 autoreconf -f -i
 # autoreconf may have overwritten config.sub
-# patch -p1 < "$BUILD_DIR/patches/python2/mintelf-config.patch"
+# patch -p1 < "$BUILD_DIR/patches/python3/mintelf-config.patch"
 # prevent make from trying to rebuild asdl stuff, which requires existing
 # python installation
 touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
@@ -89,6 +81,7 @@ CONFIGURE_FLAGS=" \
     --disable-shared --enable-static \
     --enable-unicode=ucs4 \
     --with-system-expat \
+    --without-ensurepip \
 	--config-cache"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
@@ -125,10 +118,18 @@ EOF
 	${MAKE} ${JOBS} || exit 1
 	
 	buildroot="${THISPKG_DIR}${sysroot}"
-	${MAKE} DESTDIR="${buildroot}" SYSROOT=${sysroot} install
+	${MAKE} DESTDIR="${buildroot}" TARGET=${TARGET} SYSROOT=${sysroot} install
 
+	# RPM macros
+	mkdir -p ${buildroot}${TARGET_SYSCONFDIR}/rpm
+	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/macros.python3 ${buildroot}${TARGET_SYSCONFDIR}/rpm
+
+	# scripts
+	install -m 755 Tools/scripts/pydoc3 ${buildroot}${prefix}/bin/pydoc3-${python_version}
+	install -m 755 Tools/scripts/2to3 ${buildroot}${prefix}/bin/2to3-${python_version}
+	install -m 755 Tools/scripts/pyvenv ${buildroot}${prefix}/bin/pyvenv-${python_version}
+	
 	${MAKE} clean >/dev/null
-
 
 	cd ${buildroot}
 	rm -f ${TARGET_LIBDIR#/}$multilibdir/charset.alias	
@@ -138,20 +139,19 @@ EOF
 		mv ${buildroot}${TARGET_LIBDIR}/*.a ${buildroot}${TARGET_LIBDIR}$multilibdir
 	fi
 	
-	# remove hard links and replace them with symlinks
+	# remove the hard links and/or symlinks,
+	# keeping python2.7 the default
 	for dir in bin include lib ; do
 	    rm -f ${buildroot}/${prefix}/$dir/python
-	    ln -s python${python_version} ${buildroot}/${prefix}/$dir/python
 	done
+	rm -f ${buildroot}/${prefix}/lib/pkgconfig/python.pc
+	
+	# remove wrapper scripts for packages not built
+	rm -f ${buildroot}/${prefix}/bin/idle*
 
-	########################################
-	# startup script
-	########################################
-	install -d -D -m 755 ${buildroot}${TARGET_SYSCONFDIR}/profile.d
-	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/pythonstart ${buildroot}${TARGET_SYSCONFDIR}
-	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/python.sh ${buildroot}${TARGET_SYSCONFDIR}/profile.d
-	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/python.csh ${buildroot}${TARGET_SYSCONFDIR}/profile.d
-
+	# the directory for modules must exist; getpath.c depends on it
+	mkdir -p ${buildroot}${TARGET_LIBDIR}/python${python_version}/lib-dynload
+	
 	make_bin_archive $CPU
 done
 

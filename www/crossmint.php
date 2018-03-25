@@ -922,6 +922,23 @@ foreach ($libpackages as $package)
 
 <p></p>
 
+<h1>Known Bugs</h1>
+<ul>
+<li>Due to lack of support from MiNT, some applications that rely on mmap()
+may not always work. Sometimes fallback implementations using malloc() are
+used, but this has not been tested for all cases.</li>
+
+<li>Due to a missing posix-compliant pthread lib for MiNT, some applications
+that rely on it may not always work.</li>
+
+<li>Some larger applications that use shared libraries to load extensions may not be fully functional.
+This notably applies to Perl and Python.
+</li>
+
+</ul>
+
+<p></p>
+
 <h1>Changelog</h1>
 <ul>
 <li>2017/10/18 Binutils archives for native compilation have been added</li>
@@ -1033,6 +1050,8 @@ foreach ($libpackages as $package)
 <li>2018/03/23 Package libsolv added</li>
 
 <li>2018/03/24 Package python2 added</li>
+
+<li>2018/03/25 Package python3 added</li>
 
 </ul>
 
