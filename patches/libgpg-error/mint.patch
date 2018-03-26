@@ -1,0 +1,105 @@
+--- /dev/null	2018-03-14 02:47:49.953611613 +0100
++++ libgpg-error-1.28/./src/syscfg/lock-obj-pub.m68k-atari-mint.h	2018-03-26 23:42:53.384684580 +0200
+@@ -0,0 +1,23 @@
++## lock-obj-pub.m68k-atari-mint.h
++## File created by gen-posix-lock-obj - DO NOT EDIT
++## To be included by mkheader into gpg-error.h
++
++typedef struct
++{
++  long _vers;
++  union {
++    volatile char _priv[24];
++    long _x_align;
++    long *_xp_align;
++  } u;
++} gpgrt_lock_t;
++
++#define GPGRT_LOCK_INITIALIZER {1,{{0,0,0,0,0,0,0,0, \
++                                    0,0,0,0,0,0,0,0, \
++                                    0,0,0,0,0,0,0,0}}}
++##
++## Local Variables:
++## mode: c
++## buffer-read-only: t
++## End:
++##
+--- /dev/null	2018-03-14 02:47:49.953611613 +0100
++++ libgpg-error-1.28/./src/syscfg/lock-obj-pub.m68k-atari-mintelf.h	2018-03-26 23:42:53.384684580 +0200
+@@ -0,0 +1,23 @@
++## lock-obj-pub.m68k-atari-mint.h
++## File created by gen-posix-lock-obj - DO NOT EDIT
++## To be included by mkheader into gpg-error.h
++
++typedef struct
++{
++  long _vers;
++  union {
++    volatile char _priv[24];
++    long _x_align;
++    long *_xp_align;
++  } u;
++} gpgrt_lock_t;
++
++#define GPGRT_LOCK_INITIALIZER {1,{{0,0,0,0,0,0,0,0, \
++                                    0,0,0,0,0,0,0,0, \
++                                    0,0,0,0,0,0,0,0}}}
++##
++## Local Variables:
++## mode: c
++## buffer-read-only: t
++## End:
++##
+diff -rupN libgpg-error-1.28.orig/tests/t-poll.c libgpg-error-1.28/tests/t-poll.c
+--- libgpg-error-1.28.orig/tests/t-poll.c	2017-11-28 12:15:10.000000000 +0100
++++ libgpg-error-1.28/tests/t-poll.c	2018-03-26 23:49:35.872675821 +0200
+@@ -421,9 +421,11 @@ main (int argc, char **argv)
+   if (es_set_nonblock (test_stderr, 1))
+     fail ("error setting test_stderr to nonblock: %s\n", strerror (errno));
+ 
++#if defined(_WIN32) || defined(USE_POSIX_THREADS)
+   launch_thread (producer_thread, &peer_stdin );
+   launch_thread (consumer_thread, &peer_stdout);
+   launch_thread (consumer_thread, &peer_stderr);
++#endif
+   test_poll ();
+   show ("Waiting for threads to terminate...\n");
+   es_fclose (test_stdin);
+diff -rupN libgpg-error-1.28.orig/src/estream.c libgpg-error-1.28/src/estream.c
+--- libgpg-error-1.28.orig/src/estream.c	2018-02-21 20:50:18.000000000 +0100
++++ libgpg-error-1.28/src/estream.c	2018-03-26 23:47:53.200678055 +0200
+@@ -52,14 +52,14 @@
+  * OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+-#ifdef USE_ESTREAM_SUPPORT_H
+-# include <estream-support.h>
+-#endif
+-
+ #ifdef HAVE_CONFIG_H
+ # include <config.h>
+ #endif
+ 
++#ifdef USE_ESTREAM_SUPPORT_H
++# include <estream-support.h>
++#endif
++
+ #if defined(_WIN32) && !defined(HAVE_W32_SYSTEM)
+ # define HAVE_W32_SYSTEM 1
+ # if defined(__MINGW32CE__) && !defined (HAVE_W32CE_SYSTEM)
+@@ -67,12 +67,12 @@
+ # endif
+ #endif
+ 
+-#ifdef HAVE_SYS_SELECT_H
+-# include <sys/select.h>
+-#endif
+ #ifdef HAVE_SYS_TIME_H
+ # include <sys/time.h>
+ #endif
++#ifdef HAVE_SYS_SELECT_H
++# include <sys/select.h>
++#endif
+ #include <sys/types.h>
+ #include <sys/file.h>
+ #include <sys/stat.h>

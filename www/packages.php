@@ -1449,6 +1449,21 @@ call any function specified by a call interface description at run
 time.
 '
 	),
+	'libgpg-error' => array(
+		'name' => 'libgpg-error',
+		'upstream' => 'http://www.gnupg.org/',
+		'source' => 'ftp://ftp.gnupg.org/gcrypt/libgpg-error/%{name}-%{version}.tar.bz2',
+		'version' => '1.28',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+This is a library that defines common error values for all GnuPG
+components.  Among these are GPG, GPGSM, GPGME, GPG-Agent, libgcrypt,
+pinentry, SmartCard Daemon, and possibly more in the future.
+'
+	),
 );
 
 ?>
