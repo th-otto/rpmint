@@ -1053,6 +1053,8 @@ This notably applies to Perl and Python.
 
 <li>2018/03/25 Package python3 added</li>
 
+<li>2018/03/26 Package libffi added</li>
+
 </ul>
 
 <p></p>

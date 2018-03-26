@@ -1433,6 +1433,22 @@ of Python in the documentation and tutorials included in the python3-doc
 package.
 '
 	),
+	'libffi' => array(
+		'name' => 'libffi',
+		'upstream' => 'http://sourceware.org/libffi',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '3.2.1.git',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+The libffi library provides a portable, high level programming
+interface to various calling conventions.  This allows a programmer to
+call any function specified by a call interface description at run
+time.
+'
+	),
 );
 
 ?>

@@ -77,6 +77,8 @@ for pkg in gemlib \
 	cmake \
 	libsolv \
 	python2 \
+	python3 \
+	libffi \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script
