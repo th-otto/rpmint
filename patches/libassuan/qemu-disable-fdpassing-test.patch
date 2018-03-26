@@ -1,0 +1,26 @@
+Index: libassuan-2.4.3/tests/Makefile.am
+===================================================================
+--- libassuan-2.4.3.orig/tests/Makefile.am
++++ libassuan-2.4.3/tests/Makefile.am
+@@ -34,7 +34,7 @@ w32cetools = ce-createpipe ce-server
+ endif
+ 
+ if USE_DESCRIPTOR_PASSING
+-TESTS += fdpassing
++#TESTS += fdpassing
+ endif
+ 
+ AM_CFLAGS = $(GPG_ERROR_CFLAGS)
+Index: libassuan-2.4.3/tests/Makefile.in
+===================================================================
+--- libassuan-2.4.3.orig/tests/Makefile.in
++++ libassuan-2.4.3/tests/Makefile.in
+@@ -116,7 +116,7 @@ mkinstalldirs = $(install_sh) -d
+ CONFIG_HEADER = $(top_builddir)/config.h
+ CONFIG_CLEAN_FILES =
+ CONFIG_CLEAN_VPATH_FILES =
+-@USE_DESCRIPTOR_PASSING_TRUE@am__EXEEXT_1 = fdpassing$(EXEEXT)
++@USE_DESCRIPTOR_PASSING_TRUE@#am__EXEEXT_1 = fdpassing$(EXEEXT)
+ am__EXEEXT_2 = version$(EXEEXT) pipeconnect$(EXEEXT) $(am__EXEEXT_1)
+ @HAVE_W32CE_SYSTEM_TRUE@am__EXEEXT_3 = ce-createpipe$(EXEEXT) \
+ @HAVE_W32CE_SYSTEM_TRUE@	ce-server$(EXEEXT)

@@ -1057,6 +1057,8 @@ This notably applies to Perl and Python.
 
 <li>2018/03/27 Package libgpg-error added</li>
 
+<li>2018/03/27 Package libassuan added</li>
+
 </ul>
 
 <p></p>

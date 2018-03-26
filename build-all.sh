@@ -80,6 +80,7 @@ for pkg in gemlib \
 	python3 \
 	libffi \
 	ligpgg-error \
+	ligassuan \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

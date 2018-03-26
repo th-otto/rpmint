@@ -1464,6 +1464,19 @@ components.  Among these are GPG, GPGSM, GPGME, GPG-Agent, libgcrypt,
 pinentry, SmartCard Daemon, and possibly more in the future.
 '
 	),
+	'libassuan' => array(
+		'name' => 'libassuan',
+		'upstream' => 'http://www.gnupg.org/related_software/libassuan/index.en.html',
+		'source' => 'ftp://ftp.gnupg.org/gcrypt/libassuan/%{name}-%{version}.tar.bz2',
+		'version' => '2.5.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+Libassuan is the IPC library used by gpg2 (GnuPG version 2)
+'
+	),
 );
 
 ?>
