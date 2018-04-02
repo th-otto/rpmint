@@ -1059,6 +1059,8 @@ This notably applies to Perl and Python.
 
 <li>2018/03/27 Package libassuan added</li>
 
+<li>2018/04/02 Package gettext added</li>
+
 </ul>
 
 <p></p>

@@ -235,13 +235,20 @@ unpack_archive()
 
 hack_lto_cflags()
 {
+	configdirs="$@"
+	if test "$configdirs" = ""; then configdirs=.; fi
 	if test "$LTO_CFLAGS" != ""; then
+		for dir in $configdirs; do
+		(
+		cd "$dir" || exit 1
         sed -i 's/^S\["CFLAGS"\]="\([^"]*\)"$/S\["CFLAGS"\]="'"$LTO_CFLAGS"' \1"/
 s/^S\["CXXFLAGS"\]="\([^"]*\)"$/S\["CXXFLAGS"\]="'"$LTO_CFLAGS"' \1"/
 s/^S\["BUILD_CFLAGS"\]="\([^"]*\)"$/S\["BUILD_CFLAGS"\]="'"$LTO_CFLAGS"' \1"/
 s/^s,@CFLAGS@,\(.*\)$/s,@CFLAGS@,'"$LTO_CFLAGS"' \1/
 s/^s,@CXXFLAGS@,\(.*\)$/s,@CXXFLAGS@,'"$LTO_CFLAGS"' \1/' config.status
 		./config.status
+		)
+		done
 	fi
 }
 

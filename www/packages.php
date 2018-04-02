@@ -1477,6 +1477,24 @@ pinentry, SmartCard Daemon, and possibly more in the future.
 Libassuan is the IPC library used by gpg2 (GnuPG version 2)
 '
 	),
+	'gettext' => array(
+		'name' => 'gettext',
+		'upstream' => 'http://www.gnu.org/software/gettext/',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '0.19.8.1-1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+This package contains the intl library as well as tools that ease the
+creation and maintenance of message catalogs. It allows you to extract
+strings from source code. The supplied Emacs mode (po-mode.el) helps
+editing these catalogs (called PO files, for portable object) and
+adding translations. A special compiler turns these PO files into
+binary catalogs.
+'
+	),
 );
 
 ?>
