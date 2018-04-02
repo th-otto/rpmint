@@ -1,0 +1,28 @@
+Index: libgcrypt-1.6.0/mpi/config.links
+===================================================================
+--- libgcrypt-1.6.0.orig/mpi/config.links
++++ libgcrypt-1.6.0/mpi/config.links
+@@ -282,12 +282,12 @@ case "${host}" in
+        ;;
+ 
+     ppc620-*-*	    | \
+-    powerpc64*-*-*)
++    powerpc64-*-*)
+ 	mpi_sflags="-Wa,-mppc"
+ 	path="powerpc64"
+         mpi_cpu_arch="ppc"
+ 	;;
+-    powerpc*-*-linux*)
++    powerpc-*-linux*)
+ 	echo '/* configured for powerpc/ELF */' >>./mpi/asm-syntax.h
+ 	echo '#define ELF_SYNTAX'               >>./mpi/asm-syntax.h
+ 	cat   $srcdir/mpi/powerpc32/syntax.h	>>./mpi/asm-syntax.h
+@@ -327,7 +327,7 @@ case "${host}" in
+ 	path="powerpc32"
+         mpi_cpu_arch="ppc"
+ 	;;
+-    powerpc*-*-*)
++    powerpc-*-*)
+ 	mpi_sflags="-Wa,-mppc"
+ 	path="powerpc32"
+         mpi_cpu_arch="ppc"

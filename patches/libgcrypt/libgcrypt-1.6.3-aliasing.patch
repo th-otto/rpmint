@@ -1,0 +1,178 @@
+Index: libgcrypt-1.8.0/cipher/bufhelp.h
+===================================================================
+--- libgcrypt-1.8.0.orig/cipher/bufhelp.h
++++ libgcrypt-1.8.0/cipher/bufhelp.h
+@@ -109,7 +109,7 @@ do_bytes:
+   for (; len; len--)
+     *dst++ = *src++;
+ #endif /*__GNUC__ >= 4 && (__x86_64__ || __i386__)*/
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ 
+ /* Optimized function for buffer xoring */
+@@ -146,7 +146,7 @@ do_bytes:
+   /* Handle tail.  */
+   for (; len; len--)
+     *dst++ = *src1++ ^ *src2++;
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ 
+ /* Optimized function for in-place buffer xoring. */
+@@ -218,7 +218,7 @@ do_bytes:
+   /* Handle tail.  */
+   for (; len; len--)
+     *dst1++ = (*dst2++ ^= *src++);
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ 
+ /* Optimized function for combined buffer xoring and copying.  Used by mainly
+@@ -271,7 +271,7 @@ do_bytes:
+       *dst_xor++ = *srcdst_cpy ^ *src_xor++;
+       *srcdst_cpy++ = temp;
+     }
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ 
+ /* Optimized function for combined buffer xoring and copying.  Used by mainly
+@@ -297,7 +297,7 @@ buf_eq_const(const void *_a, const void
+     diff -= !!(a[i] - b[i]);
+ 
+   return !diff;
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ 
+ #ifndef BUFHELP_UNALIGNED_ACCESS
+@@ -309,14 +309,14 @@ static inline u32 buf_get_be32(const voi
+   const byte *in = _buf;
+   return ((u32)in[0] << 24) | ((u32)in[1] << 16) | \
+          ((u32)in[2] << 8) | (u32)in[3];
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline u32 buf_get_le32(const void *_buf)
+ {
+   const byte *in = _buf;
+   return ((u32)in[3] << 24) | ((u32)in[2] << 16) | \
+          ((u32)in[1] << 8) | (u32)in[0];
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline void buf_put_be32(void *_buf, u32 val)
+ {
+@@ -325,7 +325,7 @@ static inline void buf_put_be32(void *_b
+   out[1] = val >> 16;
+   out[2] = val >> 8;
+   out[3] = val;
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline void buf_put_le32(void *_buf, u32 val)
+ {
+@@ -334,7 +334,7 @@ static inline void buf_put_le32(void *_b
+   out[2] = val >> 16;
+   out[1] = val >> 8;
+   out[0] = val;
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ 
+ /* Functions for loading and storing unaligned u64 values of different
+@@ -346,7 +346,7 @@ static inline u64 buf_get_be64(const voi
+          ((u64)in[2] << 40) | ((u64)in[3] << 32) | \
+          ((u64)in[4] << 24) | ((u64)in[5] << 16) | \
+          ((u64)in[6] << 8) | (u64)in[7];
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline u64 buf_get_le64(const void *_buf)
+ {
+@@ -355,7 +355,7 @@ static inline u64 buf_get_le64(const voi
+          ((u64)in[5] << 40) | ((u64)in[4] << 32) | \
+          ((u64)in[3] << 24) | ((u64)in[2] << 16) | \
+          ((u64)in[1] << 8) | (u64)in[0];
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline void buf_put_be64(void *_buf, u64 val)
+ {
+@@ -368,7 +368,7 @@ static inline void buf_put_be64(void *_b
+   out[5] = val >> 16;
+   out[6] = val >> 8;
+   out[7] = val;
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline void buf_put_le64(void *_buf, u64 val)
+ {
+@@ -381,7 +381,7 @@ static inline void buf_put_le64(void *_b
+   out[2] = val >> 16;
+   out[1] = val >> 8;
+   out[0] = val;
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ #else /*BUFHELP_UNALIGNED_ACCESS*/
+ 
+@@ -395,24 +395,24 @@ typedef struct bufhelp_u32_s
+ static inline u32 buf_get_be32(const void *_buf)
+ {
+   return be_bswap32(((const bufhelp_u32_t *)_buf)->a);
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline u32 buf_get_le32(const void *_buf)
+ {
+   return le_bswap32(((const bufhelp_u32_t *)_buf)->a);
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline void buf_put_be32(void *_buf, u32 val)
+ {
+   bufhelp_u32_t *out = _buf;
+   out->a = be_bswap32(val);
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline void buf_put_le32(void *_buf, u32 val)
+ {
+   bufhelp_u32_t *out = _buf;
+   out->a = le_bswap32(val);
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ 
+ typedef struct bufhelp_u64_s
+@@ -425,24 +425,24 @@ typedef struct bufhelp_u64_s
+ static inline u64 buf_get_be64(const void *_buf)
+ {
+   return be_bswap64(((const bufhelp_u64_t *)_buf)->a);
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline u64 buf_get_le64(const void *_buf)
+ {
+   return le_bswap64(((const bufhelp_u64_t *)_buf)->a);
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline void buf_put_be64(void *_buf, u64 val)
+ {
+   bufhelp_u64_t *out = _buf;
+   out->a = be_bswap64(val);
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ static inline void buf_put_le64(void *_buf, u64 val)
+ {
+   bufhelp_u64_t *out = _buf;
+   out->a = le_bswap64(val);
+-}
++} __attribute__ ((optimize("no-strict-aliasing")))
+ 
+ 
+ #endif /*BUFHELP_UNALIGNED_ACCESS*/

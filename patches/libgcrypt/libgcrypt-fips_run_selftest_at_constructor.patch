@@ -1,0 +1,17 @@
+Index: libgcrypt-1.6.1/src/global.c
+===================================================================
+--- libgcrypt-1.6.1.orig/src/global.c	2014-09-21 11:41:09.242948783 +0200
++++ libgcrypt-1.6.1/src/global.c	2014-09-21 11:54:49.567586644 +0200
+@@ -124,7 +124,11 @@ global_init (void)
+   err = _gcry_mpi_init ();
+   if (err)
+     goto fail;
+-
++  if (fips_mode()) {
++    err = _gcry_fips_run_selftests (0);
++    if (err)
++      goto fail;
++  }
+   return;
+ 
+  fail:

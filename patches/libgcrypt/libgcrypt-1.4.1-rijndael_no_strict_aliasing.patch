@@ -1,0 +1,16 @@
+Index: libgcrypt-1.4.1/cipher/Makefile.am
+===================================================================
+--- libgcrypt-1.4.1.orig/cipher/Makefile.am	2008-11-11 17:13:59.000000000 +0100
++++ libgcrypt-1.4.1/cipher/Makefile.am	2008-11-11 17:18:58.000000000 +0100
+@@ -92,3 +92,11 @@ ac.o: $(srcdir)/ac.c
+ 
+ ac.lo: $(srcdir)/ac.c
+ 	`echo $(LTCOMPILE) -fno-strict-aliasing -c $(srcdir)/ac.c` 
++
++# rijndael.c needs -fno-strict-aliasing
++rijndael.o: $(srcdir)/rijndael.c
++	`echo $(COMPILE) -fno-strict-aliasing -c $(srcdir)/rijndael.c`
++
++rijndael.lo: $(srcdir)/rijndael.c
++	`echo $(LTCOMPILE) -fno-strict-aliasing -c $(srcdir)/rijndael.c`
++

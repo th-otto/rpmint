@@ -1067,6 +1067,8 @@ This notably applies to Perl and Python.
 
 <li>2018/04/02 Package libksba added</li>
 
+<li>2018/04/02 Package libgrypt added</li>
+
 </ul>
 
 <p></p>

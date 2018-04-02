@@ -83,6 +83,7 @@ for pkg in gemlib \
 	libassuan \
 	gettext \
 	libksba \
+	libgcrypt \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

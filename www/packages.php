@@ -1509,6 +1509,22 @@ KSBA is a library to simplify the task of working with X.509
 certificates, CMS data, and related data.
 '
 	),
+	'libgcrypt' => array(
+		'name' => 'libgcrypt',
+		'upstream' => 'http://directory.fsf.org/wiki/Libgcrypt',
+		'source' => 'ftp://ftp.gnupg.org/gcrypt/libgcrypt/%{name}-%{version}.tar.bz2',
+		'version' => '1.8.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+Libgcrypt is a general purpose library of cryptographic building
+blocks.  It is originally based on code used by GnuPG.  It does not
+provide any implementation of OpenPGP or other protocols.  Thorough
+understanding of applied cryptography is required to use Libgcrypt.
+'
+	),
 );
 
 ?>

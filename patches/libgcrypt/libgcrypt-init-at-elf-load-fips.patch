@@ -1,0 +1,13 @@
+Index: libgcrypt-1.6.1/src/global.c
+===================================================================
+--- libgcrypt-1.6.1.orig/src/global.c
++++ libgcrypt-1.6.1/src/global.c
+@@ -76,7 +76,7 @@ static gpg_err_code_t external_lock_test
+    likely to be called at startup.  The suggested way for an
+    application to make sure that this has been called is by using
+    gcry_check_version. */
+-static void
++static void __attribute__((constructor))
+ global_init (void)
+ {
+   gcry_error_t err = 0;

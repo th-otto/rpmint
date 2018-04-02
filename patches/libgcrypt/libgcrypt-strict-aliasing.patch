@@ -1,0 +1,15 @@
+Index: cipher/Makefile.am
+===================================================================
+--- a/cipher/Makefile.am.orig	2009-12-11 16:31:38.000000000 +0100
++++ b/cipher/Makefile.am	2010-11-19 10:53:55.818890156 +0100
+@@ -80,3 +80,10 @@
+ 
+ tiger.lo: $(srcdir)/tiger.c
+ 	`echo $(LTCOMPILE) -c $(srcdir)/tiger.c | $(o_flag_munging) `
++
++# We need to build ac.c with -fno-strict-aliasing
++ac.o: $(srcdir)/ac.c
++	`echo $(COMPILE) -fno-strict-aliasing -c $(srcdir)/ac.c`
++
++ac.lo: $(srcdir)/ac.c
++	`echo $(LTCOMPILE) -fno-strict-aliasing -c $(srcdir)/ac.c` 
