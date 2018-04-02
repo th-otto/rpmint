@@ -79,8 +79,10 @@ for pkg in gemlib \
 	python2 \
 	python3 \
 	libffi \
-	ligpgg-error \
-	ligassuan \
+	libgpg-error \
+	libassuan \
+	gettext \
+	libksba \
 ; do
 	script=build-${pkg}.sh
 	ls -l $script

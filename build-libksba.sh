@@ -3,21 +3,18 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=libgpg-error
-VERSION=-1.28
+PACKAGENAME=libksba
+VERSION=-1.3.5
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 
 BINFILES="
-${TARGET_BINDIR#/}
 "
 
 PATCHES="
-patches/libgpg-error/fix_aarch64.patch
-patches/libgpg-error/mint.patch
-patches/libgpg-error/mintelf-config.patch
+patches/libksba/mintelf-config.patch
 "
 
 unpack_archive
@@ -45,14 +42,12 @@ for CPU in ${ALL_CPUS}; do
 
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
-	mkdir -p ${THISPKG_DIR}${sysroot}${prefix}/bin
+
 	${MAKE} clean >/dev/null
 	cd ${THISPKG_DIR}${sysroot}
+	rm -f ${TARGET_BINDIR#/}/ksba-config
+	rmdir ${TARGET_BINDIR#/}
 	rm -f ${TARGET_LIBDIR#/}$multilibdir/charset.alias
-	rm -f ${TARGET_BINDIR#/}/gpg-error-config
-	rm -f ${TARGET_BINDIR#/}/gpgrt-config
-	# remove useless manpage for gpg-error-config
-	rm -rf ${TARGET_PREFIX#/}/share/man
 	make_bin_archive $CPU
 done
 
@@ -65,11 +60,11 @@ libdir=\${prefix}/lib
 includedir=\${prefix}/include
 
 Name: ${PACKAGENAME}
-Description: Libgpg-error is a small library that originally defined common error values for all GnuPG components
+Description: A X.509 Library
 Version: ${VERSION#-}
-URL: http://www.gnupg.org/
+URL: http://www.gnupg.org/aegypten/
 
-Libs: -lgpg-error
+Libs: -lksba
 Cflags:
 EOF
 

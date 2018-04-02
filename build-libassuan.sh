@@ -44,9 +44,29 @@ for CPU in ${ALL_CPUS}; do
 	mkdir -p ${THISPKG_DIR}${sysroot}${prefix}/bin
 	${MAKE} clean >/dev/null
 	cd ${THISPKG_DIR}${sysroot}
+
 	rm -f ${TARGET_LIBDIR#/}$multilibdir/charset.alias
+	rm -f ${TARGET_BINDIR#/}/libassuan-config
 	make_bin_archive $CPU
 done
+
+# create pkg-config file
+mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/pkgconfig
+cat > ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/pkgconfig/${PACKAGENAME}.pc <<-EOF
+prefix=${TARGET_PREFIX}
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: ${PACKAGENAME}
+Description: Libassuan is the IPC library used by gpg2 (GnuPG version 2)
+Version: ${VERSION#-}
+URL: http://www.gnupg.org/related_software/libassuan/index.en.html
+
+Libs: -lassuan -lgpg-error
+Cflags:
+Requires: libgpg-error
+EOF
 
 move_prefix
 configured_prefix="${prefix}"

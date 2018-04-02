@@ -1457,7 +1457,7 @@ time.
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
-		'bin' => 0,
+		'bin' => 1,
 		'comment' => '
 This is a library that defines common error values for all GnuPG
 components.  Among these are GPG, GPGSM, GPGME, GPG-Agent, libgcrypt,
@@ -1493,6 +1493,20 @@ strings from source code. The supplied Emacs mode (po-mode.el) helps
 editing these catalogs (called PO files, for portable object) and
 adding translations. A special compiler turns these PO files into
 binary catalogs.
+'
+	),
+	'libksba' => array(
+		'name' => 'libksba',
+		'upstream' => 'http://www.gnupg.org/aegypten/',
+		'source' => 'ftp://ftp.gnupg.org/gcrypt/libksba/%{name}-%{version}.tar.bz2',
+		'version' => '1.3.5',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+KSBA is a library to simplify the task of working with X.509
+certificates, CMS data, and related data.
 '
 	),
 );

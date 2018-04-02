@@ -1063,6 +1063,10 @@ This notably applies to Perl and Python.
 
 <li>2018/04/02 Rebuild libiconv with --enable-extra-encodings</li>
 
+<li>2018/04/02 Update libgpg-error with missing executable</li>
+
+<li>2018/04/02 Package libksba added</li>
+
 </ul>
 
 <p></p>
