@@ -23,7 +23,9 @@ cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --docdir=${TARGET_PREFIX}/share/doc/${PACKAGENAME}"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
+	--docdir=${TARGET_PREFIX}/share/doc/${PACKAGENAME} \
+	--enable-extra-encodings"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"

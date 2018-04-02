@@ -1061,6 +1061,8 @@ This notably applies to Perl and Python.
 
 <li>2018/04/02 Package gettext added</li>
 
+<li>2018/04/02 Rebuild libiconv with --enable-extra-encodings</li>
+
 </ul>
 
 <p></p>
