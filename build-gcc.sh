@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-7.3.0
-VERSIONPATCH=-20180215
+VERSION=-7.3.1
+VERSIONPATCH=-20180410
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -409,6 +409,7 @@ BINTARNAME=${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
+rm -rf ${PREFIX#/}/share/gcc*/python
 
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
 

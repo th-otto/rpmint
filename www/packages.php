@@ -67,12 +67,12 @@ The full documentation can be found
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
-	'gcc730' => array(
+	'gcc731' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '7.3.0',
-		'date' => '20180215',
+		'version' => '7.3.1',
+		'date' => '20180410',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-7-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
@@ -95,7 +95,7 @@ flavours: one for a.out toolchain (as the previously used version
 4.6.4), and one for an elf toolchain. Elf toolchain here means that it
 will still produce the same executable format, but works with elf object
 files. To support this better, all libraries offered here were also recompiled
-using this format (although it is theoretically should be possible to mix them).
+using this format (although theoretically it should be possible to mix them).
 '
 	),
 	'gcc720' => array(
@@ -159,7 +159,7 @@ $libpackages = array(
 		'title' => 'MiNTLib',
 		'upstream' => 'https://github.com/freemint/mintlib',
 		'version' => '0.60.1',
-		'date' => '20171006',
+		'date' => '20180410',
 		'repo' => 'https://github.com/th-otto/mintlib',
 		'patch' => 0,
 		'script' => 1,

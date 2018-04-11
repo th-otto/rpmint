@@ -52,7 +52,7 @@ setcookie("platform", $platform, time() + 3600);
 
 include('packages.php');
 
-$gccver = 'gcc730';
+$gccver = 'gcc731';
 
 ?>
 
@@ -1068,6 +1068,10 @@ This notably applies to Perl and Python.
 <li>2018/04/02 Package libksba added</li>
 
 <li>2018/04/02 Package libgrypt added</li>
+
+<li>2018/04/10 Update MiNTLib</li>
+
+<li>2018/04/10 Update GCC to version 7.3.1</li>
 
 </ul>
 
