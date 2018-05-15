@@ -52,7 +52,7 @@ setcookie("platform", $platform, time() + 3600);
 
 include('packages.php');
 
-$gccver = 'gcc731';
+$gccver = 'gcc810';
 
 ?>
 
@@ -1073,6 +1073,8 @@ This notably applies to Perl and Python.
 
 <li>2018/04/10 Update GCC to version 7.3.1</li>
 
+<li>2018/05/04 Update GCC to version 8.1.0</li>
+
 </ul>
 
 <p></p>
@@ -1202,7 +1204,14 @@ gcc 7.3:
 	cygwin64: 28min
 	macos:   25min
 	linux:   3min
-	
+
+gcc 8.1:
+	mingw32: 32min
+	cygwin32: 38min
+	cygwin64: 31min
+	macos:   33min
+	linux:   3min47sec
+
 -->
 </body>
 </html>

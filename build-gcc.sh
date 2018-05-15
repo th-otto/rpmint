@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-7.3.1
-VERSIONPATCH=-20180410
+VERSION=-8.1.0
+VERSIONPATCH=-20180504
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -96,8 +96,8 @@ fi
 #
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
-# - checking out the gcc-7-mint branch
-# - running git diff gcc-7_3_0-release HEAD
+# - checking out the gcc-8-mint branch
+# - running git diff gcc-8_1_0-release HEAD
 #
 # when a new GCC is released:
 #   cd <directory where m68k-atari-mint-gcc.git> has been cloned
@@ -109,8 +109,8 @@ fi
 #      git fetch --all
 #      git push --tags
 #   merge new release into our branch:
-#      git checkout gcc-7-mint
-#      git merge gcc-7_3_0-release (& commit)
+#      git checkout gcc-8-mint
+#      git merge gcc-8_2_0-release (& commit)
 #      git push
 #
 PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint${VERSIONPATCH}.patch"
@@ -328,8 +328,10 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	if test -x ${TARGET}-g++ && test ! -h ${TARGET}-g++; then
 		rm -f ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}
+		rm -f ${TARGET}-g++-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_dir_version}
 		mv ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++
+		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_dir_version}
 	fi
 	if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
 		rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
