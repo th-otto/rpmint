@@ -4,6 +4,36 @@ $basepackages = array(
 	'binutils' => array(
 		'name' => 'binutils',
 		'upstream' => 'http://www.gnu.org/software/binutils/',
+		'version' => '2.31',
+		'date' => '20180717',
+		'repo' => 'https://github.com/th-otto/binutils',
+		'branch' => 'binutils-2_31-mint',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
+		'patch' => 1,
+		'script' => 1,
+		'doc' => 1,
+		'elf' => 1,
+		'cygwin32' => 1,
+		'cygwin64' => 1,
+		'mingw32' => 1,
+		'mingw64' => 0,
+		'linux32' => 0,
+		'linux64' => 1,
+		'macos32' => 0,
+		'macos64' => 1,
+		'atari' => 0,
+		'comment' => '
+The binutils are a collection of low-level language tools.<br />
+The full documentation can be found
+<a href="https://sourceware.org/binutils/docs-2.31/" ' . $target . '>here</a>.<br />
+<br />
+Note that official support for m68k-aout has been removed since binutils-2.31.<br />
+This is a version were that support has been added back in.
+'
+	),
+	'binutils230' => array(
+		'name' => 'binutils',
+		'upstream' => 'http://www.gnu.org/software/binutils/',
 		'version' => '2.30',
 		'date' => '20180323',
 		'repo' => 'https://github.com/th-otto/binutils',
@@ -26,6 +56,9 @@ $basepackages = array(
 The binutils are a collection of low-level language tools.<br />
 The full documentation can be found
 <a href="https://sourceware.org/binutils/docs-2.30/" ' . $target . '>here</a>.<br />
+<br />
+Note that official support for m68k-aout has been removed in binutils-2.31.<br />
+This is the last official version with support for it.
 		'
 	),
 	'gcc464' => array(
@@ -233,11 +266,11 @@ on the <a href="https://github.com/freemint/lib"' . $target . '>FreeMiNT&apos;s 
 	'cflib' => array(
 		'name' => 'cflib',
 		'title' => 'CFLIB',
-		'upstream' => 'https://github.com/freemint/lib',
+		'upstream' => 'https://github.com/freemint/cflib',
 		'version' => '21',
 		'date' => '20171006',
-		'repo' => 'https://github.com/freemint/lib',
-		'branch' => 'master/cflib',
+		'repo' => 'https://github.com/freemint/cflib',
+		'branch' => 'master',
 		'patch' => 0,
 		'script' => 1,
 		'dev' => 1,
@@ -257,11 +290,11 @@ and TOS 4.04, but crashes on TOS 1.62 and EmuTOS.
 	),
 	'gemma' => array(
 		'name' => 'gemma',
-		'upstream' => 'https://github.com/freemint/lib',
+		'upstream' => 'https://github.com/freemint/libgemma',
 		'version' => 'git',
 		'date' => '20171006',
-		'repo' => 'https://github.com/freemint/lib',
-		'branch' => 'master/gemma',
+		'repo' => 'https://github.com/freemint/libgemma',
+		'branch' => 'master',
 		'patch' => 0,
 		'script' => 1,
 		'dev' => 1,

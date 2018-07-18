@@ -1075,6 +1075,8 @@ This notably applies to Perl and Python.
 
 <li>2018/05/04 Update GCC to version 8.1.0</li>
 
+<li>2018/07/17 Update binutils to 2.31</li>
+
 </ul>
 
 <p></p>
@@ -1184,7 +1186,7 @@ binutils:
 	cygwin32:  8min
 	cygwin64:  6min
 	macos:   3min (ld does not have support for the native platform)
-	linux:   30sec
+	linux:   39sec
 
 gcc 4.6.4:
 	mingw32: 15min
