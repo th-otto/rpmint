@@ -9,9 +9,18 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/libpng/mintelf-config.patch"
+PATCHES="
+patches/libpng/mintelf-config.patch
+patches/libpng/libpng-1.6.34-0001-config.patch
+"
 
 unpack_archive
+
+cd "$srcdir"
+
+autoreconf -fiv
+# autoreconf may have overwritten config.sub
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 
@@ -30,26 +39,19 @@ EOF
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
-create_config_cache
-CFLAGS="-m68020-60 $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib/m68020-60'
-hack_lto_cflags
-${MAKE} $JOBS || exit 1
-${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-${MAKE} distclean
+for CPU in ${ALL_CPUS}; do
+	cd "$MINT_BUILD_DIR"
 
-create_config_cache
-CFLAGS="-mcpu=5475 $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib/m5475'
-hack_lto_cflags
-${MAKE} $JOBS || exit 1
-${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-${MAKE} distclean
-
-create_config_cache
-CFLAGS="$COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS}
-hack_lto_cflags
-${MAKE} $JOBS || exit 1
-${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-#${MAKE} distclean
+	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
+	eval multilibdir=\${CPU_LIBDIR_$CPU}
+	create_config_cache
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
+	hack_lto_cflags
+	${MAKE} $JOBS || exit 1
+	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+	${MAKE} distclean
+	make_bin_archive $CPU
+done
 
 move_prefix
 configured_prefix="${prefix}"

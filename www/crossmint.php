@@ -1077,6 +1077,8 @@ This notably applies to Perl and Python.
 
 <li>2018/07/17 Update binutils to 2.31</li>
 
+<li>2018/07/24 Update libpng to 1.6.34</li>
+
 </ul>
 
 <p></p>
