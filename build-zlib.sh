@@ -16,25 +16,20 @@ patches/zlib/zlib-1.2.11-0013-segfault.patch \
 
 unpack_archive
 
-cd "$MINT_BUILD_DIR"
-
 export CHOST=$TARGET
 COMMON_CFLAGS="-O3 -fomit-frame-pointer $LTO_CFLAGS"
 
-CFLAGS="-m68020-60 $COMMON_CFLAGS" ./configure --prefix=${prefix} --libdir='${exec_prefix}/lib/m68020-60'
-${MAKE} $JOBS || exit 1
-${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install-libs || exit 1
-${MAKE} distclean
+for CPU in ${ALL_CPUS}; do
+	cd "$MINT_BUILD_DIR"
 
-CFLAGS="-mcpu=5475 $COMMON_CFLAGS" ./configure --prefix=${prefix} --libdir='${exec_prefix}/lib/m5475'
-${MAKE} $JOBS || exit 1
-${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install-libs || exit 1
-${MAKE} distclean
+	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
+	eval multilibdir=\${CPU_LIBDIR_$CPU}
 
-CFLAGS="$COMMON_CFLAGS" ./configure --prefix=${prefix}
-${MAKE} $JOBS || exit 1
-${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-#${MAKE} distclean
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure --prefix=${prefix} --libdir='${exec_prefix}/lib'$multilibdir
+	${MAKE} $JOBS || exit 1
+	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+	${MAKE} distclean
+done
 
 move_prefix
 configured_prefix="${prefix}"
