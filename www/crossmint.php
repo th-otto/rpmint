@@ -1079,7 +1079,9 @@ This notably applies to Perl and Python.
 
 <li>2018/07/24 Update libpng to 1.6.34</li>
 
-<li>2018/07/24 Add WinDom 1.21.3 (needed by zView)</li>
+<li>2018/08/17 Add WinDom 1.21.3 (needed by zView)</li>
+
+<li>2018/08/18 Package giflib added</li>
 
 </ul>
 

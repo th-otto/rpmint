@@ -1597,6 +1597,20 @@ provide any implementation of OpenPGP or other protocols.  Thorough
 understanding of applied cryptography is required to use Libgcrypt.
 '
 	),
+	'giflib' => array(
+		'name' => 'giflib',
+		'upstream' => 'http://giflib.sf.net/',
+		'source' => 'http://downloads.sf.net/giflib/%{name}-%{version}.tar.bz2',
+		'version' => '5.1.4',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+This Library allows manipulating GIF Image files. Since the LZW patents
+have expired, giflib can again be used instead of libungif.
+'
+	),
 );
 
 ?>
