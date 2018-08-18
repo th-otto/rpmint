@@ -1085,6 +1085,8 @@ This notably applies to Perl and Python.
 
 <li>2018/08/18 Package libexif added</li>
 
+<li>2018/08/18 Package tiff added</li>
+
 </ul>
 
 <p></p>

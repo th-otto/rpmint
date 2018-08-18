@@ -1625,6 +1625,20 @@ This library is used to parse EXIF information from JPEGs created by
 digital cameras.
 '
 	),
+	'tiff' => array(
+		'name' => 'tiff',
+		'upstream' => 'http://www.simplesystems.org/libtiff/',
+		'source' => 'http://download.osgeo.org/libtiff/%{name}-%{version}.tar.gz',
+		'version' => '4.0.9',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+This package contains the library and support programs for the TIFF
+image format.
+'
+	),
 );
 
 ?>
