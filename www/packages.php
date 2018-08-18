@@ -1611,6 +1611,20 @@ This Library allows manipulating GIF Image files. Since the LZW patents
 have expired, giflib can again be used instead of libungif.
 '
 	),
+	'libexif' => array(
+		'name' => 'libexif',
+		'upstream' => 'http://libexif.sourceforge.net',
+		'source' => 'https://downloads.sourceforge.net/project/libexif/%{name}/%{version}/%{name}-%{version}.tar.bz2',
+		'version' => '0.6.21',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+This library is used to parse EXIF information from JPEGs created by
+digital cameras.
+'
+	),
 );
 
 ?>
