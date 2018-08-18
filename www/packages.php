@@ -379,6 +379,19 @@ application, and let windom handle complex and "automatic" GEM stuff
 (toolbar, forms, menu in windows...). 
 '
 	),
+	'windom1' => array(
+		'name' => 'windom1',
+		'title' => 'WinDom',
+		'upstream' => 'http://windom.sourceforge.net/',
+		'version' => '1.21.3',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+This is the 1.x release of windom.
+'
+	),
 	'sdl' => array(
 		'name' => 'SDL',
 		'upstream' => 'https://www.libsdl.org/',

@@ -1,0 +1,71 @@
+--- windom1-1.21.3.orig/src/gcc.mak	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/gcc.mak	2018-08-18 05:10:35.780487412 +0200
+@@ -30,13 +30,8 @@
+ # gcc >= 2.95.3 (sparemint) version
+ #
+ 
+-ifeq ($(CROSS),yes)
+-CC     = m68k-atari-mint-gcc
+-AR     = m68k-atari-mint-ar
+-else
+-CC     = gcc
+-AR     = ar
+-endif
++CC     = $(CROSS_PREFIX)gcc
++AR     = $(CROSS_PREFIX)ar
+ 
+ WARN = \
+ 	-Wall \
+@@ -47,7 +42,7 @@ WARN = \
+ 	-Wcast-qual \
+ 	-Waggregate-return
+ 	
+-CFLAGS= -O2 -fomit-frame-pointer $(WARN) -I../include -DMODIF_XEDIT $(XCFLAGS)
++CFLAGS= $(M68K_ATARI_MINT_CFLAGS) $(WARN) -I../include -DMODIF_XEDIT $(XCFLAGS)
+ 
+ # no extra objects for GCC
+ EXTRAOBJ  = 
+@@ -67,10 +62,5 @@ $(TARGET): $(WINDOMOBJ)
+ 	$(AR) cru $@ $^
+ 
+ install:
+-ifeq ($(CROSS),yes)
+-	cp -vf ../include/windom.h /usr/m68k-atari-mint/include
+-	cp -vf ../lib/gcc/libwindom.a /usr/m68k-atari-mint/lib
+-else
+-	cp -vf ../include/windom.h /usr/include
+-	cp -vf ../lib/gcc/libwindom.a /usr/lib
+-endif
++	cp -vf ../include/windom.h $(PREFIX)/include/windom1.h
++	cp -vf ../lib/gcc/libwindom.a $(PREFIX)/lib/libwindom1.a
+--- windom1-1.21.3.orig/demo/gcc.mak	2004-11-24 22:08:26.000000000 +0100
++++ windom1-1.21.3/demo/gcc.mak	2018-08-18 05:10:06.740488044 +0200
+@@ -10,11 +10,7 @@
+ 
+ # gcc version
+ 
+-ifeq ($(CROSS),yes)
+-CC = m68k-atari-mint-gcc
+-else
+-CC = gcc
+-endif
++CC = $(CROSS_PREFIX)gcc
+ 
+ CFLAGS = 
+ LDFLAGS = -Xlinker -L../lib/gcc
+@@ -28,10 +24,13 @@ WARN = \
+         -Wcast-qual \
+         -Waggregate-return
+ 
+-CFLAGS += -O2 -fomit-frame-pointer -I../include $(WARN)
++CFLAGS += $(M68K_ATARI_MINT_CFLAGS) -I../include $(WARN)
+ 
+ include files.mak
+ 
+ demo.app : $(OBJ)
+-	$(CC) -o$@ $(OBJ) $(LDFLAGS) ../lib/gcc/libwindom.a -lgem
++	$(CC) -o $@ $(OBJ) $(M68K_ATARI_MINT_LDFLAGS) $(LDFLAGS) ../lib/gcc/libwindom.a -lgem
+ 
++install: demo.app
++	mkdir -p $(PREFIX)/bin
++	cp -p $^ $(PREFIX)/bin/windom1-demo.app

@@ -1079,6 +1079,8 @@ This notably applies to Perl and Python.
 
 <li>2018/07/24 Update libpng to 1.6.34</li>
 
+<li>2018/07/24 Add WinDom 1.21.3 (needed by zView)</li>
+
 </ul>
 
 <p></p>
