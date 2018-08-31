@@ -52,7 +52,7 @@ setcookie("platform", $platform, time() + 3600);
 
 include('packages.php');
 
-$gccver = 'gcc810';
+$gccver = 'gcc820';
 
 ?>
 
@@ -86,7 +86,7 @@ with respect to their own licenses.
 <li>Install <a href="http://www.cygwin.com/" <?php echo $target ?>>Cygwin 32-bit</a>.
 This will provide you a full UNIX-like environment necessary for running the GNU tools.</li>
 <li>Install the following packages, using the Cygwin setup program: <b>libmpc3</b>.</li>
-<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20180215-cygwin32.tar.xz', 'm68k-atari-mint-base-20180215-cygwin32.tar.xz') ?> (~50 MB).</li>
+<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20180831-cygwin32.tar.xz', 'm68k-atari-mint-base-20180831-cygwin32.tar.xz') ?> (~56 MB).</li>
 <li>Now you can use any tool prefixed by <code>m68k-atari-mint-</code>,
 such as <code>m68k-atari-mint-gcc</code>, <code>m68k-atari-mint-g++</code>,
 and even read the man pages.</li>
@@ -1087,6 +1087,8 @@ This notably applies to Perl and Python.
 
 <li>2018/08/18 Package tiff added</li>
 
+<li>2018/08/31 Update GCC to version 8.2.0</li>
+
 </ul>
 
 <p></p>
@@ -1223,6 +1225,13 @@ gcc 8.1:
 	cygwin64: 31min
 	macos:   33min
 	linux:   3min47sec
+
+gcc 8.2:
+	mingw32: 32min
+	cygwin32: 39min
+	cygwin64: 35min
+	macos:   33min
+	linux:   3min54sec
 
 -->
 </body>

@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-8.1.0
-VERSIONPATCH=-20180504
+VERSION=-8.2.0
+VERSIONPATCH=-20180831
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -97,7 +97,7 @@ fi
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
 # - checking out the gcc-8-mint branch
-# - running git diff gcc-8_1_0-release HEAD
+# - running git diff gcc-8_2_0-release HEAD
 #
 # when a new GCC is released:
 #   cd <directory where m68k-atari-mint-gcc.git> has been cloned
