@@ -1124,8 +1124,11 @@ a great list of Atari-related stuff</a>.</p>
 
 <p>
 <b>Thomas Huth</b> is the author of the <a href="http://hatari.tuxfamily.org/"<?php echo $target ?>>Hatari</a> ST emulator.
+<!--
 He has sucessfully recompiled this GCC port on Linux, on his PowerMac G4,
-and has successfully compiled <a href="http://emutos.sourceforge.net/"<?php echo $target ?>>EmuTOS</a> with it!</p>
+and has successfully compiled <a href="http://emutos.sourceforge.net/"<?php echo $target ?>>EmuTOS</a> with it!
+-->
+</p>
 <!--
 <p>
 <b>Bohdan Milar</b> has (not yet ?) put a link to this page
