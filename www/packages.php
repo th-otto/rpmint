@@ -339,6 +339,8 @@ Gemma is a support library for GEM application programs.
 		'dev' => 1,
 		'comment' => '
 zlib is a compression library implementing the Deflate algorithm, used by gzip and PKZIP.
+</br>
+This library is also available as a <a href="../sharedlibs.php#zlib">shared library.</a>
 '
 	),
 	'libpng' => array(
@@ -353,6 +355,8 @@ zlib is a compression library implementing the Deflate algorithm, used by gzip a
 Portable Network Graphics
 <br />
 An Open, Extensible Image Format with Lossless Compression 
+</br>
+This library is also available as a <a href="../sharedlibs.php#libpng">shared library.</a>
 '
 	),
 	'bzip2' => array(
@@ -676,7 +680,8 @@ it may as well access remote devices or files.
 		'comment' => '
 libiconv library provides an iconv() implementation, for use on
 systems which don&apos;t have one, or whose implementation cannot convert
-from/to Unicode.
+from/to Unicode.</br>
+This library is also available as a <a href="../sharedlibs.php#libiconv">shared library.</a>
 '
 	),
 	'm4' => array(
@@ -926,6 +931,8 @@ by Greg Hudson at MIT.
 		'comment' => '
 This package is a library of functions that manipulate jpeg images, along
 with simple clients for manipulating jpeg images.
+</br>
+This library is also available as a <a href="../sharedlibs.php#jpeg">shared library.</a>
 '
 	),
 	'hermes' => array(
