@@ -1091,6 +1091,10 @@ This notably applies to Perl and Python.
 
 <li>2018/11/17 Update GCC to version 8.2.1</li>
 
+<li>2018/11/23 Update binutils to version 2.31.1</li>
+
+<li>2018/11/24 Recompile most packages</li>
+
 </ul>
 
 <p></p>

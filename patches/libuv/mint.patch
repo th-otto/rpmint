@@ -160,11 +160,12 @@ diff -rupN libuv-1.18.0.orig/include/uv-unix.h libuv-1.18.0/include/uv-unix.h
 diff -rupN libuv-1.18.0.orig/include/uv.h libuv-1.18.0/include/uv.h
 --- libuv-1.18.0.orig/include/uv.h	2018-03-21 03:29:23.482741927 +0100
 +++ libuv-1.18.0/include/uv.h	2018-03-21 03:00:45.486779312 +0100
-@@ -244,6 +244,21 @@ typedef enum {
+@@ -244,6 +244,23 @@ typedef enum {
    UV_RUN_NOWAIT
  } uv_run_mode;
  
 +#ifdef __MINT__
++#ifndef EAI_BADFLAGS
 +/* Structure to contain information about address of a service provider.  */
 +struct addrinfo
 +{
@@ -177,6 +178,7 @@ diff -rupN libuv-1.18.0.orig/include/uv.h libuv-1.18.0/include/uv.h
 +  char *ai_canonname;		/* Canonical name for service location.  */
 +  struct addrinfo *ai_next;	/* Pointer to next in list.  */
 +};
++#endif
 +#define NO_IPV6 1
 +#endif
  

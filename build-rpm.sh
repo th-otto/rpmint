@@ -93,6 +93,7 @@ patches/rpm/0080-Only-use-dlopen-if-available.patch
 patches/rpm/0082-coldfire.patch
 patches/rpm/0083-Fix-some-mismatch-between-open-mode-permissions.patch
 patches/rpm/0084-Remove-fstack-protector-as-it-requires-all-packages-.patch
+patches/rpm/0085-Remove-i18n-translation-in-rpmmalloc.c-as-it-is-refe.patch
 patches/rpm/mintelf-config.patch
 "
 DISABLED_PATCHES="

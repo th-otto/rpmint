@@ -45,6 +45,11 @@ create_config_cache()
 cat <<EOF >config.cache
 EOF
 	append_gnulib_cache
+cat <<EOF >>config.cache
+ac_cv_func_strerror_r=yes
+ac_cv_have_decl_strerror_r=yes
+gl_cv_func_strerror_r_works=yes
+EOF
 }
 
 for CPU in ${ALL_CPUS}; do

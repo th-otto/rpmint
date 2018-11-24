@@ -10,7 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/bison/gcc7-fix.patch
+patches/${PACKAGENAME}/gcc7-fix.patch
+patches/${PACKAGENAME}/mintelf-config.patch
 "
 
 BINFILES="
@@ -28,8 +29,11 @@ cd "$srcdir"
 aclocal || exit 1
 autoconf || exit 1
 autoheader || exit 1
-automake --force --add-missing || exit 1
+automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
+
+# autoreconf may have overwritten config.sub
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 
@@ -57,7 +61,7 @@ for CPU in ${ALL_CPUS}; do
 	hack_lto_cflags
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
-	${MAKE} clean
+	${MAKE} -i clean
 
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}${multilibdir}/charset.alias
 	make_bin_archive $CPU

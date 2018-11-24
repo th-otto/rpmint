@@ -11,7 +11,7 @@ VERSIONPATCH=
 
 PATCHES="
 patches/lha/mintelf-config.patch
-patches/lha/lha-1.14e-ext.patch
+patches/lha/lha-1.14i-ext.patch
 "
 
 BINFILES="

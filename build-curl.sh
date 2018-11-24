@@ -10,10 +10,11 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/curl/dont-mess-with-rpmoptflags.diff
-patches/curl/mint-build.patch
-patches/curl/curl-secure-getenv.patch
-patches/curl/staticlibs.patch
+patches/${PACKAGENAME}/dont-mess-with-rpmoptflags.diff
+patches/${PACKAGENAME}/mint-build.patch
+patches/${PACKAGENAME}/curl-secure-getenv.patch
+patches/${PACKAGENAME}/staticlibs.patch
+patches/${PACKAGENAME}/mintelf-config.patch
 "
 # patches/curl/libcurl-ocloexec.patch
 # patches/curl/curl-man3.patch
@@ -36,8 +37,11 @@ libtoolize --force || exit 1
 aclocal -I m4 || exit 1
 autoconf || exit 1
 autoheader || exit 1
-automake --force --add-missing || exit 1
+automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
+
+# autoreconf may have overwritten config.sub
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

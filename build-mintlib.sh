@@ -5,7 +5,7 @@ scriptdir=${0%/*}
 
 PACKAGENAME=mintlib
 VERSION=-0.60.1
-VERSIONPATCH=-20180410
+VERSIONPATCH=-20181123
 
 . ${scriptdir}/functions.sh
 

@@ -10,8 +10,9 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/libmetalink/libmetalink-autotools.patch
-patches/libmetalink/skip-libxml2-script-crap.patch
+patches/${PACKAGENAME}/libmetalink-autotools.patch
+patches/${PACKAGENAME}/skip-libxml2-script-crap.patch
+patches/${PACKAGENAME}/mintelf-config.patch
 "
 
 BINFILES=""
@@ -27,8 +28,11 @@ libtoolize --force || exit 1
 aclocal -I m4 || exit 1
 autoconf || exit 1
 autoheader || exit 1
-automake --force --add-missing || exit 1
+automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
+
+# autoreconf may have overwritten config.sub
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

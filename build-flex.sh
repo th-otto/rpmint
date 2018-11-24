@@ -10,7 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/flex/use-extensions.patch
+patches/${PACKAGENAME}/use-extensions.patch
+patches/${PACKAGENAME}/mintelf-config.patch
 "
 
 BINFILES="
@@ -25,8 +26,11 @@ cd "$srcdir"
 aclocal || exit 1
 autoconf || exit 1
 autoheader || exit 1
-automake --force --add-missing || exit 1
+automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
+
+# autoreconf may have overwritten config.sub
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

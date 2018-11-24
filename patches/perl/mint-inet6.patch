@@ -1,12 +1,13 @@
 --- a/cpan/Socket/Socket.xs.orig	2018-03-11 17:30:03.138804790 +0100
 +++ b/cpan/Socket/Socket.xs	2018-03-11 17:31:30.570802887 +0100
-@@ -51,6 +51,11 @@
+@@ -51,6 +51,12 @@
  # include <ws2tcpip.h>
  #endif
  
 +#ifdef __MINT__
 +/* MiNT may have AF_INET6 defined, but lacks the structures & functions */
 +#undef AF_INET6
++#undef HAS_SOCKADDR_IN6
 +#endif
 +
  #ifdef WIN32

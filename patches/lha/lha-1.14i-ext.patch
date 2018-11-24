@@ -1,0 +1,23 @@
+diff -rup lha-1.14i-ac20050924p1.orig/src/lharc.c lha-1.14i-ac20050924p1/src/lharc.c
+--- lha-1.14i-ac20050924p1.orig/src/lharc.c	2006-10-10 18:27:51.000000000 +0200
++++ lha-1.14i-ac20050924p1/src/lharc.c	2018-11-23 08:24:43.727872899 +0100
+@@ -1301,6 +1301,7 @@ open_old_archive()
+     p = strrchr(archive_name, '.');
+     if (p) {
+         if (strcasecmp(".LZH", p) == 0
++		    || strcasecmp(".LHA", p) == 0	/* Amiga */
+             || strcasecmp(".LZS", p) == 0
+             || strcasecmp(".COM", p) == 0  /* DOS SFX */
+             || strcasecmp(".EXE", p) == 0
+@@ -1313,6 +1314,11 @@ open_old_archive()
+ 
+     if (open_old_archive_1(archive_name, &fp))
+         return fp;
++	xsnprintf(expanded_archive_name, sizeof(expanded_archive_name), "%s%s", archive_name, ARCHIVENAME_EXTENTION);
++	if (open_old_archive_1(expanded_archive_name, &fp)) {
++		archive_name = expanded_archive_name;
++		return fp;
++	}
+     xsnprintf(expanded_archive_name, sizeof(expanded_archive_name),
+               "%s.lzh", archive_name);
+     if (open_old_archive_1(expanded_archive_name, &fp)) {

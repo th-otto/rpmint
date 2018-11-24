@@ -5,7 +5,7 @@ scriptdir=${0%/*}
 
 PACKAGENAME=cflib
 VERSION=-21
-VERSIONPATCH=-20171006
+VERSIONPATCH=-20181123
 
 . ${scriptdir}/functions.sh
 

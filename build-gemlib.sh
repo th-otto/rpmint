@@ -5,7 +5,7 @@ scriptdir=${0%/*}
 
 PACKAGENAME=gemlib
 VERSION=-0.44.0
-VERSIONPATCH=-20171006
+VERSIONPATCH=-20181123
 
 . ${scriptdir}/functions.sh
 

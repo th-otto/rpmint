@@ -9,9 +9,11 @@ for pkg in gemlib \
 	cflib \
 	gemma \
 	pml \
+	mintbin \
 	mintlib \
 	ldg \
 	windom \
+	windom1 \
 	bzip2 \
 	zlib \
 	libpng \
