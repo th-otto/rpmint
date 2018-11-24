@@ -52,7 +52,7 @@ setcookie("platform", $platform, time() + 3600);
 
 include('packages.php');
 
-$gccver = 'gcc820';
+$gccver = 'gcc821';
 
 ?>
 
@@ -1088,6 +1088,8 @@ This notably applies to Perl and Python.
 <li>2018/08/18 Package tiff added</li>
 
 <li>2018/08/31 Update GCC to version 8.2.0</li>
+
+<li>2018/11/17 Update GCC to version 8.2.1</li>
 
 </ul>
 

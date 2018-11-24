@@ -100,12 +100,12 @@ The full documentation can be found
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
-	'gcc820' => array(
+	'gcc821' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '8.2.0',
-		'date' => '20180831',
+		'version' => '8.2.1',
+		'date' => '20181017',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-8-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
@@ -131,6 +131,7 @@ files. To support this better, all libraries offered here were also recompiled
 using this format (although theoretically it should be possible to mix them).
 '
 	),
+/*
 	'gcc810' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
@@ -157,12 +158,13 @@ using this format (although theoretically it should be possible to mix them).
 Slightly older Version of GCC.
 '
 	),
+*/
 	'gcc731' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '7.3.1',
-		'date' => '20180410',
+		'date' => '20181017',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-7-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
@@ -183,6 +185,7 @@ Slightly older Version of GCC.
 Slightly older Version of GCC.
 '
 	),
+/*
 	'gcc720' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
@@ -209,6 +212,7 @@ Slightly older Version of GCC.
 Slightly older Version of GCC.
 '
 	),
+*/
 	'mintbin' => array(
 		'name' => 'mintbin',
 		'title' => 'MiNTBin',
@@ -989,7 +993,7 @@ The grep command searches one or more input files for lines containing a
 match to a specified pattern.  By default, grep prints the matching lines.
 '
 	),
-	'grep' => array(
+	'ctris' => array(
 		'name' => 'ctris',
 		'upstream' => 'http://hackl.dhs.org/ctris/',
 		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
