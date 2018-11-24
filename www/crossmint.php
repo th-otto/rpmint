@@ -1095,6 +1095,8 @@ This notably applies to Perl and Python.
 
 <li>2018/11/24 Recompile most packages</li>
 
+<li>2018/11/24 Update gzip to version 1.9</li>
+
 </ul>
 
 <p></p>

@@ -1,0 +1,11 @@
+--- a/lib/strerror_r.c.orig	2018-11-24 12:29:22.856465591 +0100
++++ b/lib/strerror_r.c	2018-11-24 12:29:35.852465308 +0100
+@@ -34,7 +34,7 @@
+ 
+ #include "strerror-override.h"
+ 
+-#if (__GLIBC__ >= 2 || defined __UCLIBC__ || defined __CYGWIN__) && HAVE___XPG_STRERROR_R /* glibc >= 2.3.4, cygwin >= 1.7.9 */
++#if (__GLIBC__ >= 2 || defined __UCLIBC__ || defined __CYGWIN__ || defined __MINT__) && HAVE___XPG_STRERROR_R /* glibc >= 2.3.4, cygwin >= 1.7.9 */
+ 
+ # define USE_XPG_STRERROR_R 1
+ extern

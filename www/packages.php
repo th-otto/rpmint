@@ -967,7 +967,7 @@ support.
 		'name' => 'gzip',
 		'upstream' => 'http://www.gnu.org/software/gzip/',
 		'source' => 'http://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
-		'version' => '1.8',
+		'version' => '1.9',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 0,

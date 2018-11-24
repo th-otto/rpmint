@@ -1,0 +1,122 @@
+diff -ur gzip-1.2.4-orig/match.c gzip-1.2.4/match.c
+--- gzip-1.2.4-orig/lib/match.c	Fri Jun 11 18:33:06 1993
++++ gzip-1.2.4/lib/match.c	Fri Jun 25 19:28:54 1999
+@@ -240,9 +240,9 @@
+ #  if defined(sun) || defined(mc68k)
+ #    define imm(data)		#data
+ #  else
+-#    define imm(data)		\#data
++#    define imm(data)		data
+ #  endif
+-#  define reg(register)		register
++#  define reg(register)		%register
+ 
+ #  define blos			bcss
+ #  if defined(sun) || defined(mc68k)
+@@ -309,32 +309,32 @@
+ 
+ _longest_match:
+         movel	IndBase(4,Stack_Pointer),Cur_Match
+-        moveml	imm(pushreg),predec(Stack_Pointer)
++        moveml	#imm(pushreg),predec(Stack_Pointer)
+         movel	_max_chain_length,Chain_Length
+         movel	_prev_length,Best_Len
+-        movel	imm(_prev),Prev_Address
+-        movel	imm(_window+MIN_MATCH),Match_Ini
++        movel	#imm(_prev),Prev_Address
++        movel	#imm(_window+MIN_MATCH),Match_Ini
+         movel	_strstart,Limit
+         movel	Match_Ini,Scan_Ini
+         addl	Limit,Scan_Ini
+-        subw	imm(MAX_DIST),Limit
++        subw	#imm(MAX_DIST),Limit
+         bhis	L__limit_ok
+         clrl	Limit
+ L__limit_ok:
+         cmpl	invert_maybe(_good_match,Best_Len)
+         blos	L__length_ok
+-        lsrl	imm(2),Chain_Length
++        lsrl	#imm(2),Chain_Length
+ L__length_ok:
+-        subql	imm(1),Chain_Length
++        subql	#imm(1),Chain_Length
+ #ifdef UNALIGNED_OK
+         movew	IndBase(-MIN_MATCH,Scan_Ini),Scan_Start
+         movew	IndBaseNdxw(-MIN_MATCH-1,Scan_Ini,Best_Len),Scan_End
+ #else
+         moveb	IndBase(-MIN_MATCH,Scan_Ini),Scan_Start
+-        lslw	imm(8),Scan_Start
++        lslw	#imm(8),Scan_Start
+         moveb	IndBase(-MIN_MATCH+1,Scan_Ini),Scan_Start
+         moveb	IndBaseNdxw(-MIN_MATCH-1,Scan_Ini,Best_Len),Scan_End
+-        lslw	imm(8),Scan_End
++        lslw	#imm(8),Scan_End
+         moveb	IndBaseNdxw(-MIN_MATCH,Scan_Ini,Best_Len),Scan_End
+ #endif
+         bras	L__do_scan
+@@ -344,12 +344,12 @@
+         movew	IndBaseNdxw(-MIN_MATCH-1,Scan_Ini,Best_Len),Scan_End
+ #else
+         moveb	IndBaseNdxw(-MIN_MATCH-1,Scan_Ini,Best_Len),Scan_End
+-        lslw	imm(8),Scan_End
++        lslw	#imm(8),Scan_End
+         moveb	IndBaseNdxw(-MIN_MATCH,Scan_Ini,Best_Len),Scan_End
+ #endif
+ 
+ L__short_loop:
+-        lslw	imm(1),Cur_Match
++        lslw	#imm(1),Cur_Match
+         movew	IndBaseNdxl(0,Prev_Address,Cur_Match),Cur_Match
+         cmpw	invert_maybe(Limit,Cur_Match)
+         dbls	Chain_Length,L__do_scan
+@@ -365,25 +365,25 @@
+         bne	L__short_loop
+ #else
+         moveb	IndBaseNdxw(-MIN_MATCH-1,Match,Best_Len),Scan_Test
+-        lslw	imm(8),Scan_Test
++        lslw	#imm(8),Scan_Test
+         moveb	IndBaseNdxw(-MIN_MATCH,Match,Best_Len),Scan_Test
+         cmpw	invert_maybe(Scan_Test,Scan_End)
+         bne	L__short_loop
+         moveb	IndBase(-MIN_MATCH,Match),Scan_Test
+-        lslw	imm(8),Scan_Test
++        lslw	#imm(8),Scan_Test
+         moveb	IndBase(-MIN_MATCH+1,Match),Scan_Test
+         cmpw	invert_maybe(Scan_Test,Scan_Start)
+         bne	L__short_loop
+ #endif
+ 
+-        movew	imm((MAX_MATCH-MIN_MATCH+1)-1),Loop_Counter
++        movew	#imm((MAX_MATCH-MIN_MATCH+1)-1),Loop_Counter
+         movel	Scan_Ini,Scan
+ L__scan_loop:
+         cmpmb	postinc(Match),postinc(Scan)
+         dbne	Loop_Counter,L__scan_loop
+ 
+         subl	Scan_Ini,Scan
+-        addql	imm(MIN_MATCH-1),Scan
++        addql	#imm(MIN_MATCH-1),Scan
+         cmpl	invert_maybe(Best_Len,Scan)
+         bls	L__short_loop
+         movel	Scan,Best_Len
+@@ -391,7 +391,7 @@
+         cmpl	invert_maybe(_nice_match,Best_Len)
+         blos	L__long_loop
+ L__return:
+-        moveml	postinc(Stack_Pointer),imm(popreg)
++        moveml	postinc(Stack_Pointer),#imm(popreg)
+         rts
+ 
+ #else
+--- gzip-1.8.orig/tailor.h	2016-02-29 01:36:57.000000000 +0100
++++ gzip-1.8/tailor.h	2017-10-21 07:19:59.930338933 +0200
+@@ -185,6 +185,9 @@
+ #endif
+ 
+ #if defined(ATARI) || defined(atarist)
++#  ifndef __mcoldfire__
++#    define ASMV
++#  endif
+ #  define OS_CODE  0x05
+ #  ifdef TOSFS
+ #    define PATH_SEP2 '\\'
