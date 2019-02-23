@@ -86,7 +86,7 @@ with respect to their own licenses.
 <li>Install <a href="http://www.cygwin.com/" <?php echo $target ?>>Cygwin 32-bit</a>.
 This will provide you a full UNIX-like environment necessary for running the GNU tools.</li>
 <li>Install the following packages, using the Cygwin setup program: <b>libmpc3</b>.</li>
-<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20181123-cygwin32.tar.xz', 'm68k-atari-mint-base-20181123-cygwin32.tar.xz') ?> (~56 MB).</li>
+<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20190223-cygwin32.tar.xz', 'm68k-atari-mint-base-20190223-cygwin32.tar.xz') ?> (~56 MB).</li>
 <li>Now you can use any tool prefixed by <code>m68k-atari-mint-</code>,
 such as <code>m68k-atari-mint-gcc</code>, <code>m68k-atari-mint-g++</code>,
 and even read the man pages.</li>
@@ -1099,6 +1099,8 @@ This notably applies to Perl and Python.
 
 <li>2019/02/23 Update GCC to version 8.3.0</li>
 
+<li>2019/02/23 Update binutils to version 2.32</li>
+
 </ul>
 
 <p></p>
@@ -1247,6 +1249,9 @@ gcc 8.2:
 	linux:   3min54sec
 
 gcc 8.3:
+	mingw32: 33min
+	cygwin32: 39min
+	cygwin64: 35min
 	macos:   29min
 	linux:   4min12sec
 

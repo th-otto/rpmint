@@ -1,7 +1,7 @@
 #!/bin/sh
 
 downloads=$HOME/webgo24/home/www/download/mint
-date=20181123
+date=20190223
 here=`pwd`
 
 TAR=${TAR-tar}
