@@ -52,7 +52,7 @@ setcookie("platform", $platform, time() + 3600);
 
 include('packages.php');
 
-$gccver = 'gcc821';
+$gccver = 'gcc830';
 
 ?>
 
@@ -1097,6 +1097,8 @@ This notably applies to Perl and Python.
 
 <li>2018/11/24 Update gzip to version 1.9</li>
 
+<li>2019/02/23 Update GCC to version 8.3.0</li>
+
 </ul>
 
 <p></p>
@@ -1243,6 +1245,10 @@ gcc 8.2:
 	cygwin64: 35min
 	macos:   33min
 	linux:   3min54sec
+
+gcc 8.3:
+	macos:   29min
+	linux:   4min12sec
 
 -->
 </body>
