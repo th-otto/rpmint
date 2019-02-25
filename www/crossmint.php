@@ -309,6 +309,22 @@ foreach ($basepackages as $package)
 		echo '</tr>' . "\n";
 	}
 	
+	if ($package['crossscript'])
+	{
+		echo '<tr>' . "\n";
+		echo '<td class="icon"></td>' . "\n";
+		echo '<td class="linkdesc">Build script:</td>' . "\n";
+		echo '<td class="sourcelink">';
+		$filename = $download_dir . 'build-cross-' . $package['name'] . '-' . $package['version'];
+		if (isset($package['date']))
+			$filename .= '-' . $package['date'];
+		$filename .= '.sh';
+		$text = 'build-cross-' . $package['name'] . '-' . $package['version'] . '-sh';
+		gen_link($filename, $text);
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
+	}
+	
 	if (isset($package['doc']) && $package['doc'])
 	{
 		echo '<tr>' . "\n";
@@ -1100,6 +1116,14 @@ This notably applies to Perl and Python.
 <li>2019/02/23 Update GCC to version 8.3.0</li>
 
 <li>2019/02/23 Update binutils to version 2.32</li>
+
+<li>2019/02/24 Package isl added</li>
+
+<li>2019/02/24 Update mpfr to 4.0.2</li>
+
+<li>2019/02/24 Update mpc to 1.1.0</li>
+
+<li>2019/02/24 Add scripts to build native binutils/compiler</li>
 
 </ul>
 

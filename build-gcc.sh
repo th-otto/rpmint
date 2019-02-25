@@ -200,7 +200,7 @@ LDFLAGS_FOR_TARGET=
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-languages=c,c++
+languages=c,c++,fortran
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -401,6 +401,19 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 			test "$i" = "." || rmdir "$i"
 		done
 	}
+
+	# these are currently identically compiled 2 times; FIXME
+	if test `"${INSTALL_DIR}/${PREFIX}/bin/${TARGET}-gcc" -m68000 -print-multi-directory` = "m68000"; then
+		for dir in . mshort mfastcall mfastcall/mshort; do
+			for f in libgcov.a libgcc.a libcaf_single.a; do
+				rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/$dir/$f
+			done
+		done
+		for dir in mfastcall/mshort mfastcall mshort; do
+			rmdir ${BUILD_LIBDIR#/}/gcc/${TARGET}/$dir 2>/dev/null
+		done
+	fi
+
 done
 
 cd "${THISPKG_DIR}" || exit 1

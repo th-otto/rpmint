@@ -8,8 +8,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-7.2.0
-VERSIONPATCH=-20171018
+VERSION=-8.3.0
+VERSIONPATCH=-20190223
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -61,13 +61,6 @@ BUILD_DIR="$here"
 MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
 
 #
-# Where to put the executables for later use.
-# This should be the same as the one configured
-# in the binutils script
-#
-PKG_DIR="$here/binary7-package"
-
-#
 # Where to put the binary packages
 #
 DIST_DIR="$here/pkgs"
@@ -88,7 +81,7 @@ fi
 # - checking out the gcc-7-mint branch
 # - running git diff gcc-7_2_0-release HEAD
 #
-PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint.patch"
+PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint${VERSIONPATCH}.patch"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
@@ -156,27 +149,17 @@ mkdir -p "$MINT_BUILD_DIR"
 
 cd "$MINT_BUILD_DIR"
 
-CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer"
-CFLAGS_FOR_TARGET="-O2 -fomit-frame-pointer"
-LDFLAGS_FOR_BUILD=""
-CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
-CXXFLAGS_FOR_TARGET="$CFLAGS_FOR_TARGET"
-LDFLAGS_FOR_TARGET=
-
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-languages=c,c++
+languages=c,c++,fortran
 ranlib=ranlib
 
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
     	enable_lto=--enable-lto
-		case "${BUILD}" in
-        *-*-linux*)
-    		enable_plugin=--enable-plugin
-    	esac
     	languages="$languages,lto"
-		ranlib=gcc-ranlib
+		# not here; we are just building it
+		# ranlib=gcc-ranlib
 		;;
 esac
 
@@ -207,25 +190,25 @@ fi
 
 mpfr_config=
 
+TARNAME=$PACKAGENAME$VERSION-${TARGET##*-}
+
 #
 # this could eventually be extracted from gcc -print-multi-lib
 #
-CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=
-CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=/m68020-60
-CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=/m5475
+CPU_CFLAGS_000="-m68000"    ; CPU_LIBDIR_000=/m68000    ; WITH_CPU_000=m68000
+CPU_CFLAGS_020="-m68020-60" ; CPU_LIBDIR_020=/m68020-60 ; WITH_CPU_020=m68020-60
+CPU_CFLAGS_v4e="-mcpu=5475" ; CPU_LIBDIR_v4e=/m5475     ; WITH_CPU_v4e=5475
 #
 # This should list the default target cpu last,
 # so that any files left behind are compiled for this
 #
 ALL_CPUS="020 v4e 000"
-ALL_CPUS=020
 
 export AS_FOR_TARGET="$as"
 export RANLIB_FOR_TARGET="$ranlib"
 export STRIP_FOR_TARGET="$strip"
 export CC_FOR_TARGET="${TARGET}-gcc"
 export CXX_FOR_TARGET="${TARGET}-g++"
-
 
 for CPU in ${ALL_CPUS}; do
 	cd "$here" || exit 1
@@ -236,22 +219,56 @@ for CPU in ${ALL_CPUS}; do
 	
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
+	eval with_cpu=\${WITH_CPU_$CPU}
+	STACKSIZE="-Wl,-stack,512k"
 
+cat <<'EOF' > "$MINT_BUILD_DIR/gcc-wrapper.sh"
+#!/bin/sh
+
+#
+# Wrapper to invoke the cross-compiler to generate code for the
+# intended architecture. We cannot use CFLAGS_FOR_TARGET, because
+# that would only be used for the just-built xgcc, which is already
+# a binary for the target in our case. We also cannot just add the
+# flags to $CC, because that clashes when compiling multilibs.
+# So what we do is to add the flags to $CC, use this
+# script as the compiler, and keep only the last cpu-specific flags
+#
+cpu_flags=
+args=
+for i in "$@"; do
+    case "$i" in
+		-m68*) cpu_flags=$1 ;;
+		-mcpu=*) cpu_flags=$1 ;;
+        *)
+        	i="${i//\\/\\\\}"
+		    args="$args \"${i//\"/\\\"}\""
+        	;;
+    esac
+done
+EOF
+
+cp "$MINT_BUILD_DIR/gcc-wrapper.sh" "$MINT_BUILD_DIR/gxx-wrapper.sh"
+cat <<EOF >> "$MINT_BUILD_DIR/gcc-wrapper.sh"
+eval exec "${TARGET}-gcc" \$cpu_flags \$args
+EOF
+cat <<EOF >> "$MINT_BUILD_DIR/gxx-wrapper.sh"
+eval exec "${TARGET}-g++" \$cpu_flags \$args
+EOF
+
+chmod 755 "$MINT_BUILD_DIR/gcc-wrapper.sh"
+chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
+
+	export CC="${MINT_BUILD_DIR}/gcc-wrapper.sh $CPU_CFLAGS"
+	export CXX="${MINT_BUILD_DIR}/gxx-wrapper.sh $CPU_CFLAGS"
+
+	export LDFLAGS="$STACKSIZE"
 	$srcdir/configure \
 		--target="${TARGET}" --host="${TARGET}" --build="$BUILD" \
 		--prefix="${TARGET_PREFIX}" \
 		--libdir="${TARGET_LIBDIR}" \
 		--bindir="${TARGET_BINDIR}" \
 		--libexecdir='${libdir}' \
-		CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD" \
-		CFLAGS="$CFLAGS_FOR_BUILD" \
-		CXXFLAGS_FOR_BUILD="$CXXFLAGS_FOR_BUILD" \
-		CXXFLAGS="$CXXFLAGS_FOR_BUILD" \
-		LDFLAGS_FOR_BUILD="$LDFLAGS_FOR_BUILD" \
-		LDFLAGS="$LDFLAGS_FOR_BUILD" \
-		BOOT_CFLAGS="$CFLAGS_FOR_BUILD" \
-		CFLAGS_FOR_TARGET="$CFLAGS_FOR_TARGET" \
-		CXXFLAGS_FOR_TARGET="$CXXFLAGS_FOR_TARGET" \
 		--with-pkgversion="$REVISION" \
 		--disable-libvtv \
 		--disable-libmpx \
@@ -274,6 +291,7 @@ for CPU in ${ALL_CPUS}; do
 		--enable-decimal-float \
 		--disable-nls \
 		$mpfr_config \
+		--with-cpu=$with_cpu \
 		--with-build-sysroot="${prefix}/${TARGET}/sys-root" \
 		--enable-languages="$languages"
 	
@@ -293,6 +311,9 @@ for CPU in ${ALL_CPUS}; do
 	rm -rf "${THISPKG_DIR}"
 	
 	cd "$MINT_BUILD_DIR"
+
+	rm -rf "${THISPKG_DIR}${TARGET_BINDIR}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin" "${THISPKG_DIR}${TARGET_LIBDIR}"
+
 	${MAKE} DESTDIR="${THISPKG_DIR}" install >/dev/null || exit 1
 	
 	mkdir -p "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
@@ -369,18 +390,28 @@ for CPU in ${ALL_CPUS}; do
 		done
 	}
 	
-	cd "${THISPKG_DIR}" || exit 1
+	# these are currently identically compiled 2 times; FIXME
+	if test "$CPU_LIBDIR_000" != ""; then
+		for dir in . mshort mfastcall mfastcall/mshort; do
+			for f in libgcov.a libgcc.a libcaf_single.a; do
+				rm -f ${TARGET_LIBDIR#/}/gcc/${TARGET}/$dir/$f
+			done
+		done
+		for dir in mfastcall/mshort mfastcall mshort; do
+			rmdir ${TARGET_LIBDIR#/}/gcc/${TARGET}/$dir 2>/dev/null
+		done
+	fi
 	
-	TARNAME=$PACKAGENAME$VERSION-${TARGET##*-}
-	BINTARNAME=${PACKAGENAME}${VERSION}-mint
+	cd "${THISPKG_DIR}" || exit 1
 	
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-${CPU}.tar.xz *
 done # for CPU
-	
+
 cd "${BUILD_DIR}"
 if test "$KEEP_PKGDIR" != yes; then
 	: rm -rf "${THISPKG_DIR}"
 fi
 
-${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES}
-cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}.sh
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint.tar.xz ${PATCHES}
+
+cp -p "$me" ${DIST_DIR}/build-cross-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh

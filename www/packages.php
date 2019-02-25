@@ -11,6 +11,7 @@ $basepackages = array(
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'script' => 1,
+		'crossscript' => 1,
 		'doc' => 1,
 		'elf' => 1,
 		'cygwin32' => 1,
@@ -21,7 +22,7 @@ $basepackages = array(
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
-		'atari' => 0,
+		'atari' => 1,
 		'comment' => '
 The binutils are a collection of low-level language tools.<br />
 The full documentation can be found
@@ -41,6 +42,7 @@ This is a version were that support has been added back in.
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'script' => 1,
+		'crossscript' => 0,
 		'doc' => 1,
 		'elf' => 1,
 		'cygwin32' => 1,
@@ -73,6 +75,7 @@ This is the last official version with support for it.
 		'patch' => 1,
 		'patchcomment' => 'This archive also contains an (experimental) patch for -mfastcall support.',
 		'script' => 1,
+		'crossscript' => 0,
 		'doc' => 1,
 		'elf' => 0,
 		'cygwin32' => 1,
@@ -112,6 +115,7 @@ GCC contains everything to compile C programs, except a standard library and a m
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
+		'crossscript' => 1,
 		'doc' => 1,
 		'elf' => 1,
 		'cygwin32' => 1,
@@ -122,6 +126,7 @@ GCC contains everything to compile C programs, except a standard library and a m
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
+		'atari' => 1,
 		'comment' => '
 This is the currently most recent official version of GCC. It comes in two
 flavours: one for a.out toolchain (as the previously used version
@@ -144,6 +149,7 @@ using this format (although theoretically it should be possible to mix them).
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
+		'crossscript' => 0,
 		'doc' => 1,
 		'elf' => 1,
 		'cygwin32' => 1,
@@ -172,6 +178,7 @@ Slightly older Version of GCC.
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
+		'crossscript' => 0,
 		'doc' => 1,
 		'elf' => 1,
 		'cygwin32' => 1,
@@ -199,6 +206,7 @@ Slightly older Version of GCC.
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
+		'crossscript' => 0,
 		'doc' => 1,
 		'elf' => 1,
 		'cygwin32' => 1,
@@ -226,6 +234,7 @@ Slightly older Version of GCC.
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
+		'crossscript' => 0,
 		'doc' => 1,
 		'elf' => 1,
 		'cygwin32' => 1,
@@ -251,6 +260,7 @@ Slightly older Version of GCC.
 		'source' => $download_dir . '%{name}-%{version}.tar.xz',
 		'patch' => 0,
 		'script' => 1,
+		'crossscript' => 0,
 		'doc' => 0,
 		'elf' => 1,
 		'cygwin32' => 1,
@@ -305,11 +315,11 @@ It works, but of course it is really slow on a 68000 without FPU.'
 	'gemlib' => array(
 		'name' => 'gemlib',
 		'title' => 'GEMlib',
-		'upstream' => 'https://github.com/freemint/lib',
+		'upstream' => 'https://github.com/freemint/gemlib',
 		'version' => '0.44.0',
 		'date' => '20181123',
-		'repo' => 'https://github.com/freemint/lib',
-		'branch' => 'master/gemlib',
+		'repo' => 'https://github.com/freemint/gemlib',
+		'branch' => 'master',
 		'patch' => 0,
 		'script' => 1,
 		'dev' => 1,
@@ -656,7 +666,7 @@ A library for calculating huge numbers (integer and floating point).
 		'name' => 'mpfr',
 		'upstream' => 'http://www.mpfr.org/',
 		'source' => 'http://www.mpfr.org/mpfr-current/%{name}-%{version}.tar.xz',
-		'version' => '3.1.6',
+		'version' => '4.0.2',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
@@ -671,7 +681,7 @@ based on the GMP multiple-precision library.
 		'name' => 'mpc',
 		'upstream' => 'http://www.multiprecision.org/mpc/',
 		'source' => 'ftp://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.gz',
-		'version' => '1.0.3',
+		'version' => '1.1.0',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
@@ -1702,6 +1712,21 @@ digital cameras.
 		'comment' => '
 This package contains the library and support programs for the TIFF
 image format.
+'
+	),
+	'isl' => array(
+		'name' => 'isl',
+		'upstream' => 'http://isl.gforge.inria.fr/',
+		'source' => 'http://isl.gforge.inria.fr/isl-%{version}.tar.xz',
+		'version' => '0.20',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+ISL is a library for manipulating sets and relations of integer points
+bounded by linear constraints.
+It is used by Cloog and the GCC Graphite optimization framework.
 '
 	),
 );
