@@ -8,8 +8,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-8.3.0
-VERSIONPATCH=-20190223
+VERSION=-7.4.0
+VERSIONPATCH=-20190225
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -79,7 +79,7 @@ fi
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
 # - checking out the gcc-7-mint branch
-# - running git diff gcc-7_2_0-release HEAD
+# - running git diff gcc-7_3_0-release HEAD
 #
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
 
@@ -298,7 +298,7 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 		--disable-nls \
 		$mpfr_config \
 		--with-cpu=$with_cpu \
-		--with-build-sysroot="${prefix}/${TARGET}/sys-root" \
+		--with-sysroot="${prefix}/${TARGET}/sys-root" \
 		--enable-languages="$languages"
 	
 # there seems to be a problem with thin archives

@@ -1,8 +1,7 @@
 #!/bin/sh
 
 #
-# This script is for using the cross-compiler to
-# build the native compiler for the target(s)
+# This script is for recompiling the native compiler on the target
 #
 
 me="$0"
@@ -26,17 +25,21 @@ TARGET=${1:-m68k-atari-mint}
 # relative to the executable
 #
 prefix=/usr
-TARGET_PREFIX=/usr
-TARGET_LIBDIR=${TARGET_PREFIX}/lib
-TARGET_BINDIR=${TARGET_PREFIX}/bin
+libdir=${prefix}/lib
+bindir=${prefix}/bin
 
-#
-# Where to look for the original source archives
-#
-case $host in
-	mingw* | msys*) here=`pwd` ;;
-	*) here=`pwd` ;;
+BUILD=${TARGET}
+
+case `uname -s` in
+	*MiNT | *mint | *TOS)
+		here=`pwd`
+		host=mint
+		;;
+	*)
+		echo "this script must be run native on MiNT" >&2
+		;;
 esac
+
 ARCHIVES_DIR="$here"
 
 #
@@ -58,7 +61,7 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
+MINT_BUILD_DIR="$BUILD_DIR/gcc-atari"
 
 #
 # Where to put the binary packages
@@ -68,7 +71,7 @@ DIST_DIR="$here/pkgs"
 #
 # Where to look up the source tree.
 #
-srcdir="$HOME/m68k-atari-mint-gcc"
+srcdir="/h/m68k-atari-mint-gcc"
 if test -d "$srcdir"; then
 	touch ".patched-${PACKAGENAME}${VERSION}"
 else
@@ -110,21 +113,12 @@ if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
 	exit 1
 fi
-if test ! -f "${prefix}/${TARGET}/sys-root/usr/include/compiler.h"; then
-	echo "mintlib must be installed in ${prefix}/${TARGET}/sys-root/usr/include" >&2
+if test ! -f "${prefix}/include/compiler.h"; then
+	echo "mintlib must be installed in ${prefix}/include" >&2
 	exit 1
 fi
 
-JOBS=`rpm --eval '%{?jobs:%jobs}' 2>/dev/null`
-P=$(getconf _NPROCESSORS_CONF 2>/dev/null || nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null)
-if test -z "$P"; then P=$NUMBER_OF_PROCESSORS; fi
-if test -z "$P"; then P=1; fi
-if test -z "$JOBS"; then
-  JOBS=$P
-else
-  test 1 -gt "$JOBS" && JOBS=1
-fi
-JOBS=-j$JOBS
+JOBS=
 MAKE=${MAKE:-make}
 
 BASE_VER=$(cat $srcdir/gcc/BASE-VER)
@@ -133,20 +127,6 @@ if test "$BASE_VER" != "${VERSION#-}"; then
 	exit 1
 fi
 gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
-
-#
-# try config.guess from automake first to get the
-# canonical build system name.
-# On some distros it is patched to have the
-# vendor name included.
-#
-for a in "" -1.16 -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
-	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null`
-	test "$BUILD" != "" && break
-	test "$host" = "macos" && BUILD=`/opt/local/share/automake${a}/config.guess 2>/dev/null`
-	test "$BUILD" != "" && break
-done
-test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 
 rm -rf "$MINT_BUILD_DIR"
 mkdir -p "$MINT_BUILD_DIR"
@@ -171,22 +151,10 @@ TAR=${TAR-tar}
 TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
 
 LN_S="ln -s"
-case `uname -s` in
-	MINGW64*) host=mingw64; ;;
-	MINGW32*) host=mingw32; ;;
-	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; ;;
-	MSYS*) host=msys ;;
-	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
-	Darwin*) host=macos; TAR_OPTS= ;;
-	*) host=linux ;;
-esac
-case $host in
-	mingw* | msys*) LN_S="cp -p" ;;
-esac
 
-ranlib=`which ${TARGET}-${ranlib}`
-strip=`which "${TARGET}-strip"`
-as=`which "${TARGET}-as"`
+ranlib=`type -p ${TARGET}-${ranlib}`
+strip=`type -p "${TARGET}-strip"`
+as=`type -p "${TARGET}-as"`
 if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 	echo "cross-binutil tools for ${TARGET} not found" >&2
 	exit 1
@@ -197,16 +165,29 @@ mpfr_config=
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}
 
 #
+# important setting for native build;
+# without this the compiler hangs at some point.
+# If it still hangs, you may have to also increase the stack size
+# for the shell that runs this script
+#
+export STACK_SIZE=1048576
+
+#
 # this could eventually be extracted from gcc -print-multi-lib
 #
 CPU_CFLAGS_000="-m68000"    ; CPU_LIBDIR_000=/m68000    ; WITH_CPU_000=m68000
 CPU_CFLAGS_020="-m68020-60" ; CPU_LIBDIR_020=/m68020-60 ; WITH_CPU_020=m68020-60
 CPU_CFLAGS_v4e="-mcpu=5475" ; CPU_LIBDIR_v4e=/m5475     ; WITH_CPU_v4e=5475
-#
-# This should list the default target cpu last,
-# so that any files left behind are compiled for this
-#
-ALL_CPUS="020 v4e 000"
+# We cannot build the native 68k versions on cf,
+# or vice versa, because our target triplet is the
+# same, but autoconf tests will fail because
+# "the C compiler cannot create executables"
+# that can be run
+case `uname -p` in
+*V4e*) ALL_CPUS="v4e" ;;
+*) ALL_CPUS="020 000" ;;
+esac
+ALL_CPUS="020"
 
 export AS_FOR_TARGET="$as"
 export RANLIB_FOR_TARGET="$ranlib"
@@ -271,16 +252,16 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	export CXXFLAGS="-O2 -fomit-frame-pointer"
 	$srcdir/configure \
 		--target="${TARGET}" --host="${TARGET}" --build="$BUILD" \
-		--prefix="${TARGET_PREFIX}" \
-		--libdir="${TARGET_LIBDIR}" \
-		--bindir="${TARGET_BINDIR}" \
+		--prefix="${prefix}" \
+		--libdir="${libdir}" \
+		--bindir="${bindir}" \
 		--libexecdir='${libdir}' \
 		--with-pkgversion="$REVISION" \
 		--disable-libvtv \
 		--disable-libmpx \
 		--disable-libcc1 \
 		--disable-werror \
-		--with-gxx-include-dir=${TARGET_PREFIX}/include/c++/${gcc_dir_version} \
+		--with-gxx-include-dir=${prefix}/include/c++/${gcc_dir_version} \
 		--with-default-libstdcxx-abi=gcc4-compatible \
 		--with-gcc-major-version-only \
 		--with-gcc --with-gnu-as --with-gnu-ld \
@@ -298,14 +279,10 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 		--disable-nls \
 		$mpfr_config \
 		--with-cpu=$with_cpu \
-		--with-build-sysroot="${prefix}/${TARGET}/sys-root" \
 		--enable-languages="$languages"
 	
 # there seems to be a problem with thin archives
 	${MAKE} configure-gcc || exit 1
-#	cd gcc || exit 1
-#	sed -i 's/^S\["thin_archive_support"\]="\([^"]*\)"$/S\["thin_archive_support"\]="no"/' config.status
-#	./config.status
 	
 	cd "$MINT_BUILD_DIR" || exit 1
 
@@ -318,26 +295,26 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	
 	cd "$MINT_BUILD_DIR"
 
-	rm -rf "${THISPKG_DIR}${TARGET_BINDIR}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin" "${THISPKG_DIR}${TARGET_LIBDIR}"
+	rm -rf "${THISPKG_DIR}${bindir}" "${THISPKG_DIR}${prefix}/${TARGET}/bin" "${THISPKG_DIR}${libdir}"
 
 	${MAKE} DESTDIR="${THISPKG_DIR}" install >/dev/null || exit 1
 	
-	mkdir -p "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
+	mkdir -p "${THISPKG_DIR}${prefix}/${TARGET}/bin"
 	
-	cd "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
+	cd "${THISPKG_DIR}${prefix}/${TARGET}/bin"
 	
 	for i in c++ cpp g++ gcc gcov gfortran gcc-ar gcc-nm gcc-ranlib; do
-		cd "${THISPKG_DIR}${TARGET_BINDIR}"
+		cd "${THISPKG_DIR}${bindir}"
 		test -f "$i" || continue
 		rm -f ${TARGET}-${i} ${TARGET}-${i}${TARGET_EXEEXT}
 		mv $i ${TARGET}-$i
 		$LN_S ${TARGET}-$i $i
-		cd "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
+		cd "${THISPKG_DIR}${prefix}/${TARGET}/bin"
 		rm -f ${i} ${i}${TARGET_EXEEXT}
 		$LN_S ../../bin/$i${TARGET_EXEEXT} $i
 	done
 	
-	cd "${THISPKG_DIR}${TARGET_BINDIR}"
+	cd "${THISPKG_DIR}${bindir}"
 	${strip} *
 	
 	if test -x ${TARGET}-g++; then
@@ -366,8 +343,8 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	
 	cd "${THISPKG_DIR}"
 	
-	rm -f ${TARGET_PREFIX#/}/share/info/dir
-	for f in ${TARGET_PREFIX#/}/share/man/*/* ${TARGET_PREFIX#/}/share/info/*; do
+	rm -f ${prefix#/}/share/info/dir
+	for f in ${prefix#/}/share/man/*/* ${prefix#/}/share/info/*; do
 		case $f in
 		*.gz) ;;
 		*) rm -f ${f}.gz; gzip -9 $f ;;
@@ -376,15 +353,15 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	
 	rm -f */*/libiberty.a
 	find . -type f -name "*.la" -delete -printf "rm %p\n"
-	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,lto-wrapper,lto1}${TARGET_EXEEXT}
-	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
-	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${TARGET_EXEEXT}
-	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${TARGET_EXEEXT}
+	${strip} ${libdir#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,lto-wrapper,lto1}${TARGET_EXEEXT}
+	${strip} ${libdir#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
+	${strip} ${libdir#/}/gcc/${TARGET}/*/plugin/gengtype${TARGET_EXEEXT}
+	${strip} ${libdir#/}/gcc/${TARGET}/*/install-tools/fixincl${TARGET_EXEEXT}
 	
-	find ${TARGET_PREFIX#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
-	find ${TARGET_PREFIX#/} -name "*.a" -exec "${ranlib}" '{}' \;
+	find ${prefix#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
+	find ${prefix#/} -name "*.a" -exec "${ranlib}" '{}' \;
 	
-	cd ${TARGET_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/include-fixed && {
+	cd ${libdir#/}/gcc/${TARGET}/${gcc_dir_version}/include-fixed && {
 		for i in `find . -type f`; do
 			case $i in
 			./README | ./limits.h | ./syslimits.h) ;;
@@ -400,17 +377,20 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	if test "$CPU_LIBDIR_000" != ""; then
 		for dir in . mshort mfastcall mfastcall/mshort; do
 			for f in libgcov.a libgcc.a libcaf_single.a; do
-				rm -f ${TARGET_LIBDIR#/}/gcc/${TARGET}/$dir/$f
+				rm -f ${libdir#/}/gcc/${TARGET}/$dir/$f
 			done
 		done
 		for dir in mfastcall/mshort mfastcall mshort; do
-			rmdir ${TARGET_LIBDIR#/}/gcc/${TARGET}/$dir 2>/dev/null
+			rmdir ${libdir#/}/gcc/${TARGET}/$dir 2>/dev/null
 		done
 	fi
 	
 	cd "${THISPKG_DIR}" || exit 1
 	
-	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-${CPU}.tar.xz *
+	# do compression manually, too memory consuming to let it run in a pipe with tar
+	${TAR} ${TAR_OPTS} -cf ${DIST_DIR}/${TARNAME}-${CPU}.tar * || exit 1
+	cd ${DIST_DIR} || exit 1
+	xz ${TARNAME}-${CPU}.tar || exit 1
 done # for CPU
 
 cd "${BUILD_DIR}"
@@ -420,4 +400,4 @@ fi
 
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint.tar.xz ${PATCHES}
 
-cp -p "$me" ${DIST_DIR}/build-cross-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh
+cp -p "$me" ${DIST_DIR}/build-native-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh

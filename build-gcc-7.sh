@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-7.3.1
-VERSIONPATCH=-20181017
+VERSION=-7.4.0
+VERSIONPATCH=-20190225
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -90,7 +90,7 @@ srcdir="$HOME/m68k-atari-mint-gcc"
 if test -d "$srcdir"; then
 	touch ".patched-${PACKAGENAME}${VERSION}"
 else
-	srcdir="$here/$PACKAGENAME$VERSION"
+	srcdir="$here/${PACKAGENAME}${VERSION}"
 fi
 
 #
@@ -113,7 +113,7 @@ fi
 #      git merge gcc-8_2_0-release (& commit)
 #      git push
 #
-PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint${VERSIONPATCH}.patch"
+PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
@@ -166,6 +166,10 @@ JOBS=-j$JOBS
 MAKE=${MAKE:-make}
 
 BASE_VER=$(cat $srcdir/gcc/BASE-VER)
+if test "$BASE_VER" != "${VERSION#-}"; then
+	echo "version mismatch: this script is for gcc ${VERSION#-}, but gcc source is version $BASE_VER" >&2
+	exit 1
+fi
 gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
 
 #
@@ -174,7 +178,7 @@ gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
 # On some distros it is patched to have the
 # vendor name included.
 #
-for a in "" -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
+for a in "" -1.16 -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null`
 	test "$BUILD" != "" && break
 	test "$host" = "macos" && BUILD=`/opt/local/share/automake${a}/config.guess 2>/dev/null`
@@ -200,7 +204,7 @@ LDFLAGS_FOR_TARGET=
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-languages=c,c++
+languages=c,c++,fortran
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -405,7 +409,7 @@ done
 
 cd "${THISPKG_DIR}" || exit 1
 
-TARNAME=$PACKAGENAME$VERSION-${TARGET##*-}${VERSIONPATCH}
+TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
 BINTARNAME=${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}
 
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man

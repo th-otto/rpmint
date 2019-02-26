@@ -34,7 +34,7 @@ CONFIGURE_FLAGS="--host=${TARGET} \
 	--prefix=${prefix} \
 	--sysconfdir=/etc \
 	--datadir=${prefix}/share \
-	--with-doc-dir=${prefix}/share/doc/$PACKAGENAME \
+	--with-doc-dir=${prefix}/share/doc/${PACKAGENAME} \
 	--disable-nls \
 	--disable-shared"
 

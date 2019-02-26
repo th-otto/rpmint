@@ -164,7 +164,7 @@ using this format (although theoretically it should be possible to mix them).
 Slightly older Version of GCC.
 '
 	),
-/*
+*/
 /*
 	'gcc810' => array(
 		'name' => 'gcc',
@@ -174,6 +174,35 @@ Slightly older Version of GCC.
 		'date' => '20180504',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-8-mint',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
+		'patch' => 1,
+		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
+		'script' => 1,
+		'crossscript' => 0,
+		'doc' => 1,
+		'elf' => 1,
+		'cygwin32' => 1,
+		'cygwin64' => 1,
+		'mingw32' => 1,
+		'mingw64' => 0,
+		'linux32' => 0,
+		'linux64' => 1,
+		'macos32' => 0,
+		'macos64' => 1,
+		'comment' => '
+Slightly older Version of GCC.
+'
+	),
+*/
+/*
+	'gcc740' => array(
+		'name' => 'gcc',
+		'title' => 'GCC',
+		'upstream' => 'http://gcc.gnu.org/',
+		'version' => '7.4.0',
+		'date' => '2019025',
+		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
+		'branch' => 'gcc-7-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',

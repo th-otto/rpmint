@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=binutils
-VERSION=-2.29.1
-VERSIONPATCH=-20171011
+VERSION=-2.32
+VERSIONPATCH=-20190223
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
@@ -46,16 +46,11 @@ srcdir="${PACKAGENAME}${VERSION}"
 # in my fork (https://github.com/th-otto/binutils/tree/binutils-2_29-mint)
 #
 PATCHES="\
-        patches/binutils/${PACKAGENAME}${VERSION}-0001-binutils-2.29.1-branch.patch \
-        patches/binutils/${PACKAGENAME}${VERSION}-mint.patch \
+        patches/binutils/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
 "
-ELFPATCHES="patches/binutils/${PACKAGENAME}${VERSION}-mintelf.patch"
-ALLPATCHES="$PATCHES $ELFPATCHES"
-case "${TARGET}" in
-    *-*-*elf* | *-*-linux*)
-		PATCHES="$PATCHES $ELFPATCHES"
-		;;
-esac
+ALLPATCHES="$PATCHES \
+        patches/binutils/m68k-segmentalign.patch \
+"
 
 TAR=${TAR-tar}
 TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
@@ -235,7 +230,7 @@ for CPU in ${ALL_CPUS}; do
 	
 done # for CPU
 
-TARNAME=${PACKAGENAME}${VERSION}
+TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}
 for CPU in ${ALL_CPUS}; do
 	cd "${THISPKG_DIR}" || exit 1
 	rm -rf "${THISPKG_DIR}${bindir}" "${THISPKG_DIR}${prefix}/${TARGET}"
@@ -246,9 +241,9 @@ for CPU in ${ALL_CPUS}; do
 	rmdir "${THISPKG_DIR}-${CPU}"
 	
 	# do compression manually, too memory consuming to let it run in a pipe with tar
-	${TAR} ${TAR_OPTS} -cf ${DIST_DIR}/${TARNAME}-${TARGET##*-}-${CPU}.tar * || exit 1
+	${TAR} ${TAR_OPTS} -cf ${DIST_DIR}/${TARNAME}-${CPU}.tar * || exit 1
 	cd ${DIST_DIR} || exit 1
-	xz ${TARNAME}-${TARGET##*-}-${CPU}.tar || exit 1
+	xz ${TARNAME}-${CPU}.tar || exit 1
 done
 
 cd "${BUILD_DIR}"

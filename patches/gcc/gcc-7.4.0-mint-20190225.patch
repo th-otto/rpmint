@@ -27,7 +27,7 @@ index 47f153350e4..a61d1f41b3d 100644
  mips*-*-*)
  	if [ x$enable_single_float = xno ]
 diff --git a/config.guess b/config.guess
-index 588fe82a42a..d8edbdcce50 100755
+index 69ed3e573bb..2e96c95816e 100755
 --- a/config.guess
 +++ b/config.guess
 @@ -439,22 +439,22 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
@@ -60,10 +60,10 @@ index 588fe82a42a..d8edbdcce50 100755
      m68k:machten:*:*)
  	echo m68k-apple-machten${UNAME_RELEASE}
 diff --git a/config.sub b/config.sub
-index f2632cd8a2b..ceb4b74e60f 100755
+index 62b82599d98..53c208f6954 100755
 --- a/config.sub
 +++ b/config.sub
-@@ -232,6 +232,10 @@ case $os in
+@@ -235,6 +235,10 @@ case $os in
  	-psos*)
  		os=-psos
  		;;
@@ -74,7 +74,7 @@ index f2632cd8a2b..ceb4b74e60f 100755
  	-mint | -mint[0-9]*)
  		basic_machine=m68k-atari
  		os=-mint
-@@ -1534,6 +1538,9 @@ case $os in
+@@ -1527,6 +1531,9 @@ case $os in
  	-xenix)
  		os=-xenix
  		;;
@@ -148,10 +148,10 @@ index 8b106f9af88..b136478cf36 100644
      i[[34567]]86-*-interix[[3-9]]*)
  	# Interix 3.x gcc -fpic/-fPIC options generate broken code.
 diff --git a/configure b/configure
-index 0601395512f..c4d6025f87e 100755
+index 32ee91f949e..9522779ec12 100755
 --- a/configure
 +++ b/configure
-@@ -3162,6 +3162,9 @@ if test x$enable_libgomp = x ; then
+@@ -3163,6 +3163,9 @@ if test x$enable_libgomp = x ; then
  	;;
      nvptx*-*-*)
  	;;
@@ -161,7 +161,7 @@ index 0601395512f..c4d6025f87e 100755
      *)
  	noconfigdirs="$noconfigdirs target-libgomp"
  	;;
-@@ -3501,6 +3504,9 @@ case "${target}" in
+@@ -3527,6 +3530,9 @@ case "${target}" in
    m68hc11-*-*|m6811-*-*|m68hc12-*-*|m6812-*-*)
      libgloss_dir=m68hc11
      ;;
@@ -171,7 +171,7 @@ index 0601395512f..c4d6025f87e 100755
    m68*-*-* | fido-*-*)
      libgloss_dir=m68k
      ;;
-@@ -7576,7 +7582,7 @@ case "$target" in
+@@ -7541,7 +7547,7 @@ case "$target" in
    x86_64-*mingw* | *-w64-mingw*)
    # MinGW-w64 does not use newlib, nor does it use winsup. It may,
    # however, use a symlink named 'mingw' in ${prefix} .
@@ -181,10 +181,10 @@ index 0601395512f..c4d6025f87e 100755
    *-mingw*)
    # MinGW can't be handled as Cygwin above since it does not use newlib.
 diff --git a/configure.ac b/configure.ac
-index c3433336523..dc1ff24703c 100644
+index 12377499295..27962da2ef1 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -514,6 +514,9 @@ if test x$enable_libgomp = x ; then
+@@ -515,6 +515,9 @@ if test x$enable_libgomp = x ; then
  	;;
      nvptx*-*-*)
  	;;
@@ -194,7 +194,7 @@ index c3433336523..dc1ff24703c 100644
      *)
  	noconfigdirs="$noconfigdirs target-libgomp"
  	;;
-@@ -832,6 +835,9 @@ case "${target}" in
+@@ -855,6 +858,9 @@ case "${target}" in
    m68hc11-*-*|m6811-*-*|m68hc12-*-*|m6812-*-*)
      libgloss_dir=m68hc11
      ;;
@@ -204,7 +204,7 @@ index c3433336523..dc1ff24703c 100644
    m68*-*-* | fido-*-*)
      libgloss_dir=m68k
      ;;
-@@ -3165,7 +3171,7 @@ case "$target" in
+@@ -3134,7 +3140,7 @@ case "$target" in
    x86_64-*mingw* | *-w64-mingw*)
    # MinGW-w64 does not use newlib, nor does it use winsup. It may,
    # however, use a symlink named 'mingw' in ${prefix} .
@@ -255,11 +255,24 @@ index 190f5382874..76f1d0d6a62 100644
  	*-*-beos* | \
          *-*-*vms*)
  		TARGET=twoprocess
+diff --git a/gcc/ChangeLog b/gcc/ChangeLog
+index c5eb79287f2..e41252ed6c1 100644
+--- a/gcc/ChangeLog
++++ b/gcc/ChangeLog
+@@ -502,6 +502,8 @@
+ 	* graphite.h: Include isl/id.h and isl/space.h to allow build
+ 	with ISL 0.20.
+ 
++2018-08-01 Jan Willem Jagersma  <jwjagersma@gmail.com>
++=======
+ 2018-07-29  John David Anglin  <danglin@gcc.gnu.org>
+ 
+ 	* config/pa/pa.c (pa_output_addr_vec): Align address table.
 diff --git a/gcc/Makefile.in b/gcc/Makefile.in
-index 20bee0494b1..1252801fbbf 100644
+index f675e073ecc..d9904ed280a 100644
 --- a/gcc/Makefile.in
 +++ b/gcc/Makefile.in
-@@ -442,7 +442,7 @@ USER_H_INC_NEXT_POST = @user_headers_inc_next_post@
+@@ -436,7 +436,7 @@ USER_H_INC_NEXT_POST = @user_headers_inc_next_post@
  # The GCC to use for compiling crt*.o.
  # Usually the one we just built.
  # Don't use this as a dependency--use $(GCC_PASSES).
@@ -268,7 +281,7 @@ index 20bee0494b1..1252801fbbf 100644
  
  # Set if the compiler was configured with --with-build-sysroot.
  SYSROOT_CFLAGS_FOR_TARGET = @SYSROOT_CFLAGS_FOR_TARGET@
-@@ -683,6 +683,10 @@ man7ext = .7
+@@ -674,6 +674,10 @@ man7ext = .7
  objext = .o
  exeext = @host_exeext@
  build_exeext = @build_exeext@
@@ -279,7 +292,7 @@ index 20bee0494b1..1252801fbbf 100644
  
  # Directory in which to put man pages.
  mandir = @mandir@
-@@ -896,7 +900,7 @@ REVISION_s  := "\"\""
+@@ -887,7 +891,7 @@ REVISION_s  := "\"\""
  endif
  
  # Shorthand variables for dependency lists.
@@ -288,7 +301,7 @@ index 20bee0494b1..1252801fbbf 100644
  VEC_H = vec.h statistics.h $(GGC_H)
  HASH_TABLE_H = $(HASHTAB_H) hash-table.h $(GGC_H)
  EXCEPT_H = except.h $(HASHTAB_H)
-@@ -963,21 +967,21 @@ GCC_H = gcc.h version.h $(DIAGNOSTIC_CORE_H)
+@@ -952,21 +956,21 @@ GCC_H = gcc.h version.h $(DIAGNOSTIC_CORE_H)
  GGC_H = ggc.h gtype-desc.h statistics.h
  TIMEVAR_H = timevar.h timevar.def
  INSN_ATTR_H = insn-attr.h insn-attr-common.h $(INSN_ADDR_H)
@@ -319,7 +332,7 @@ index 20bee0494b1..1252801fbbf 100644
  TREE_DUMP_H = tree-dump.h $(SPLAY_TREE_H) $(DUMPFILE_H)
  TREE_PASS_H = tree-pass.h $(TIMEVAR_H) $(DUMPFILE_H)
  TREE_SSA_H = tree-ssa.h tree-ssa-operands.h \
-@@ -1165,7 +1169,7 @@ FLAGS_TO_PASS = \
+@@ -1150,7 +1154,7 @@ FLAGS_TO_PASS = \
  	"prefix=$(prefix)" \
  	"local_prefix=$(local_prefix)" \
  	"gxx_include_dir=$(gcc_gxx_include_dir)" \
@@ -328,7 +341,7 @@ index 20bee0494b1..1252801fbbf 100644
  	"gcc_tooldir=$(gcc_tooldir)" \
  	"bindir=$(bindir)" \
  	"libexecsubdir=$(libexecsubdir)" \
-@@ -2508,9 +2512,9 @@ gimple-match.c: s-match gimple-match-head.c ; @true
+@@ -2435,9 +2439,9 @@ gimple-match.c: s-match gimple-match-head.c ; @true
  generic-match.c: s-match generic-match-head.c ; @true
  
  s-match: build/genmatch$(build_exeext) $(srcdir)/match.pd cfn-operators.pd
@@ -340,7 +353,7 @@ index 20bee0494b1..1252801fbbf 100644
  	    > tmp-generic-match.c
  	$(SHELL) $(srcdir)/../move-if-change tmp-gimple-match.c \
  	    					gimple-match.c
-@@ -2615,7 +2619,7 @@ GENGTYPE_FLAGS=
+@@ -2541,7 +2545,7 @@ GENGTYPE_FLAGS=
  
  gtyp-input.list: s-gtyp-input ; @true
  s-gtyp-input: Makefile
@@ -349,7 +362,7 @@ index 20bee0494b1..1252801fbbf 100644
  	$(SHELL) $(srcdir)/../move-if-change tmp-gi.list gtyp-input.list
  	$(STAMP) s-gtyp-input
  
-@@ -2623,7 +2627,7 @@ s-gtype: build/gengtype$(build_exeext) $(filter-out [%], $(GTFILES)) \
+@@ -2549,7 +2553,7 @@ s-gtype: build/gengtype$(build_exeext) $(filter-out [%], $(GTFILES)) \
  	 gtyp-input.list
  # First, parse all files and save a state file.
  	$(RUN_GEN) build/gengtype$(build_exeext) $(GENGTYPE_FLAGS) \
@@ -359,10 +372,10 @@ index 20bee0494b1..1252801fbbf 100644
  # gtype.state is correctly read:
  	$(SHELL) $(srcdir)/../move-if-change tmp-gtype.state gtype.state
 diff --git a/gcc/ada/adaint.c b/gcc/ada/adaint.c
-index 41434655865..9c17adeffed 100644
+index bff875a6822..2e4ce41ae5c 100644
 --- a/gcc/ada/adaint.c
 +++ b/gcc/ada/adaint.c
-@@ -112,6 +112,16 @@
+@@ -108,6 +108,16 @@
  #include "version.h"
  #endif
  
@@ -379,7 +392,7 @@ index 41434655865..9c17adeffed 100644
  #ifdef __cplusplus
  extern "C" {
  #endif
-@@ -197,6 +207,8 @@ UINT __gnat_current_ccs_encoding;
+@@ -193,6 +203,8 @@ UINT __gnat_current_ccs_encoding;
  #include <signal.h>
  #undef DIR_SEPARATOR
  #define DIR_SEPARATOR '\\'
@@ -389,10 +402,10 @@ index 41434655865..9c17adeffed 100644
  #else
  #include <utime.h>
 diff --git a/gcc/ada/gcc-interface/Makefile.in b/gcc/ada/gcc-interface/Makefile.in
-index ebb955ebce5..963be441e30 100644
+index 439347a677b..83939984d39 100644
 --- a/gcc/ada/gcc-interface/Makefile.in
 +++ b/gcc/ada/gcc-interface/Makefile.in
-@@ -2546,13 +2546,16 @@ gnatlib-shared-win32:
+@@ -2921,13 +2921,16 @@ gnatlib-shared-win32:
  		$(PICFLAG_FOR_TARGET) \
  		-o libgnat$(hyphen)$(LIBRARY_VERSION)$(soext) \
  		$(GNATRTL_NONTASKING_OBJS) $(LIBGNAT_OBJS) \
@@ -411,10 +424,10 @@ index ebb955ebce5..963be441e30 100644
  
  gnatlib-shared-darwin:
 diff --git a/gcc/c/c-decl.c b/gcc/c/c-decl.c
-index 4da9fe994f3..54f1b1ec55b 100644
+index ed609d29f96..4fe9416fb69 100644
 --- a/gcc/c/c-decl.c
 +++ b/gcc/c/c-decl.c
-@@ -9615,6 +9615,13 @@ check_for_loop_decls (location_t loc, bool turn_off_iso_c99_error)
+@@ -9443,6 +9443,13 @@ check_for_loop_decls (location_t loc, bool turn_off_iso_c99_error)
  	}
        return NULL_TREE;
      }
@@ -429,10 +442,10 @@ index 4da9fe994f3..54f1b1ec55b 100644
  
         [#3]  The  declaration  part  of  a for statement shall only
 diff --git a/gcc/cgraphclones.c b/gcc/cgraphclones.c
-index 6e84a31c1a5..0f2f245fa85 100644
+index 69572b926c4..13bcc4c999b 100644
 --- a/gcc/cgraphclones.c
 +++ b/gcc/cgraphclones.c
-@@ -515,19 +515,30 @@ cgraph_node::create_clone (tree new_decl, profile_count prof_count,
+@@ -531,19 +531,30 @@ cgraph_node::create_clone (tree new_decl, gcov_type gcov_count, int freq,
  static GTY(()) unsigned int clone_fn_id_num;
  
  /* Return a new assembler name for a clone with SUFFIX of a decl named
@@ -465,7 +478,7 @@ index 6e84a31c1a5..0f2f245fa85 100644
  }
  
 diff --git a/gcc/collect2.c b/gcc/collect2.c
-index a96af137a44..894210ae7a4 100644
+index 319fcb31e3f..d65bfeeb491 100644
 --- a/gcc/collect2.c
 +++ b/gcc/collect2.c
 @@ -156,6 +156,16 @@ int do_collecting = 0;
@@ -486,10 +499,10 @@ index a96af137a44..894210ae7a4 100644
     in linker error messages.  Set from COLLECT_NO_DEMANGLE.  */
  int no_demangle;
 diff --git a/gcc/config.gcc b/gcc/config.gcc
-index 7af8e028104..38fe6159de0 100644
+index 3e41aa5b764..1653f58f4f5 100644
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -1801,7 +1801,10 @@ i[34567]86-*-mingw* | x86_64-*-mingw*)
+@@ -1771,7 +1771,10 @@ i[34567]86-*-mingw* | x86_64-*-mingw*)
  			tmake_file="${tmake_file} i386/t-mingw-w32"
  			;;
  	esac
@@ -501,14 +514,14 @@ index 7af8e028104..38fe6159de0 100644
  	target_gtfiles="\$(srcdir)/config/i386/winnt.c"
  	extra_options="${extra_options} i386/cygming.opt i386/mingw.opt"
  	case ${target} in
-@@ -2002,6 +2005,26 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
+@@ -1972,6 +1975,26 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
  	tm_defines="${tm_defines} MOTOROLA=1"
  	tmake_file="${tmake_file} m68k/t-floatlib m68k/t-linux m68k/t-mlibs"
  	;;
 +m68k-*-mintelf*)
 +	default_m68k_cpu=68000
 +	default_cf_cpu=5475
-+	tm_file="${tm_file} dbxelf.h elfos.h m68k/mint.h m68k/mint-stdint.h"
++	tm_file="${tm_file} dbxelf.h elfos.h m68k/mint.h"
 +	tm_defines="${tm_defines} MOTOROLA=1"
 +	tmake_file="m68k/t-floatlib m68k/t-mint"
 +	xm_file=m68k/xm-mint.h
@@ -518,7 +531,7 @@ index 7af8e028104..38fe6159de0 100644
 +m68k-*-mint*)
 +	default_m68k_cpu=68000
 +	default_cf_cpu=5475
-+	tm_file="${tm_file} m68k/mint.h m68k/mint-stdint.h"
++	tm_file="${tm_file} m68k/mint.h"
 +	tm_defines="${tm_defines} MOTOROLA=1"
 +	tmake_file="m68k/t-floatlib m68k/t-mint"
 +	xm_file=m68k/xm-mint.h
@@ -529,10 +542,10 @@ index 7af8e028104..38fe6159de0 100644
  	default_m68k_cpu=68020
  	default_cf_cpu=5206
 diff --git a/gcc/config.host b/gcc/config.host
-index c65569da2e9..b223f939b09 100644
+index 6b28f3033ef..d3a96fd01a0 100644
 --- a/gcc/config.host
 +++ b/gcc/config.host
-@@ -238,7 +238,7 @@ case ${host} in
+@@ -234,14 +234,14 @@ case ${host} in
      host_exeext=.exe
      host_lto_plugin_soname=cyglto_plugin-0.dll
      ;;
@@ -541,8 +554,7 @@ index c65569da2e9..b223f939b09 100644
      host_xm_file=i386/xm-mingw32.h
      host_xmake_file="${host_xmake_file} i386/x-mingw32"
      host_exeext=.exe
-@@ -246,7 +246,7 @@ case ${host} in
-     host_extra_gcc_objs="${host_extra_gcc_objs} driver-mingw32.o"
+     out_host_hook_obj=host-mingw32.o
      host_lto_plugin_soname=liblto_plugin-0.dll
      ;;
 -  x86_64-*-mingw*)
@@ -551,7 +563,7 @@ index c65569da2e9..b223f939b09 100644
      host_xm_file=i386/xm-mingw32.h
      host_xmake_file="${host_xmake_file} i386/x-mingw32"
 diff --git a/gcc/config/i386/cygming.opt b/gcc/config/i386/cygming.opt
-index ab9d3e3ee1e..15892110b97 100644
+index 2d7c7d2b674..dc24530e4dd 100644
 --- a/gcc/config/i386/cygming.opt
 +++ b/gcc/config/i386/cygming.opt
 @@ -22,6 +22,9 @@ mconsole
@@ -565,10 +577,10 @@ index ab9d3e3ee1e..15892110b97 100644
  Target RejectNegative
  Generate code for a DLL.
 diff --git a/gcc/config/i386/host-mingw32.c b/gcc/config/i386/host-mingw32.c
-index 8bfa542e05f..3c5089f9b81 100644
+index 68100b7a226..ed663a15d6a 100644
 --- a/gcc/config/i386/host-mingw32.c
 +++ b/gcc/config/i386/host-mingw32.c
-@@ -44,9 +44,6 @@ static size_t mingw32_gt_pch_alloc_granularity (void);
+@@ -42,9 +42,6 @@ static size_t mingw32_gt_pch_alloc_granularity (void);
  
  static inline void w32_error(const char*, const char*, int, const char*);
  
@@ -578,7 +590,7 @@ index 8bfa542e05f..3c5089f9b81 100644
  /* Granularity for reserving address space.  */
  static size_t va_granularity = 0x10000;
  
-@@ -88,9 +85,6 @@ static void *
+@@ -86,9 +83,6 @@ static void *
  mingw32_gt_pch_get_address (size_t size, int)
  {
    void* res;
@@ -588,7 +600,7 @@ index 8bfa542e05f..3c5089f9b81 100644
  
    /* FIXME: We let system determine base by setting first arg to NULL.
       Allocating at top of available address space avoids unnecessary
-@@ -100,7 +94,7 @@ mingw32_gt_pch_get_address (size_t size, int)
+@@ -98,7 +92,7 @@ mingw32_gt_pch_get_address (size_t size, int)
       If we allocate at bottom we need to reserve the address as early
       as possible and at the same point in each invocation. */
   
@@ -597,7 +609,7 @@ index 8bfa542e05f..3c5089f9b81 100644
  		      MEM_RESERVE | MEM_TOP_DOWN,
  		      PAGE_NOACCESS);
    if (!res)
-@@ -150,7 +144,7 @@ mingw32_gt_pch_use_address (void *addr, size_t size, int fd,
+@@ -148,7 +142,7 @@ mingw32_gt_pch_use_address (void *addr, size_t size, int fd,
  
    /* Offset must be also be a multiple of allocation granularity for
       this to work.  We can't change the offset. */ 
@@ -607,7 +619,7 @@ index 8bfa542e05f..3c5089f9b81 100644
  
  
 diff --git a/gcc/config/i386/mingw32.h b/gcc/config/i386/mingw32.h
-index a6601089420..d1098a7e6a0 100644
+index 5f36909a8bf..b5cdf0920d4 100644
 --- a/gcc/config/i386/mingw32.h
 +++ b/gcc/config/i386/mingw32.h
 @@ -142,7 +142,7 @@ along with GCC; see the file COPYING3.  If not see
@@ -651,7 +663,7 @@ index a6601089420..d1098a7e6a0 100644
  /* Output STRING, a string representing a filename, to FILE.
     We canonicalize it to be in Unix format (backslashes are replaced
 diff --git a/gcc/config/i386/xm-mingw32.h b/gcc/config/i386/xm-mingw32.h
-index f1dbc23d80e..601b53f991c 100644
+index d4d63f58322..d75e09859fe 100644
 --- a/gcc/config/i386/xm-mingw32.h
 +++ b/gcc/config/i386/xm-mingw32.h
 @@ -25,9 +25,10 @@ along with GCC; see the file COPYING3.  If not see
@@ -667,7 +679,7 @@ index f1dbc23d80e..601b53f991c 100644
  #ifdef __MINGW32__
  #undef __USE_MINGW_ANSI_STDIO
 diff --git a/gcc/config/i386/xmmintrin.h b/gcc/config/i386/xmmintrin.h
-index f64f3f74a0b..73cc6724ec4 100644
+index 5f58d24430c..de1a832c79a 100644
 --- a/gcc/config/i386/xmmintrin.h
 +++ b/gcc/config/i386/xmmintrin.h
 @@ -64,6 +64,10 @@ _mm_prefetch (const void *__P, enum _mm_hint __I)
@@ -693,10 +705,10 @@ index f64f3f74a0b..73cc6724ec4 100644
  # include <emmintrin.h>
  
 diff --git a/gcc/config/m68k/m68k.c b/gcc/config/m68k/m68k.c
-index 495a80b759e..ae23c53b52e 100644
+index 68504b84abb..cae69a643f7 100644
 --- a/gcc/config/m68k/m68k.c
 +++ b/gcc/config/m68k/m68k.c
-@@ -65,6 +65,7 @@ along with GCC; see the file COPYING3.  If not see
+@@ -61,6 +61,7 @@ along with GCC; see the file COPYING3.  If not see
  #include "optabs.h"
  #include "builtins.h"
  #include "rtl-iter.h"
@@ -705,20 +717,9 @@ index 495a80b759e..ae23c53b52e 100644
  /* This file should be included last.  */
  #include "target-def.h"
 diff --git a/gcc/config/m68k/m68k.h b/gcc/config/m68k/m68k.h
-index 506fa4e50e7..955e7da3002 100644
+index ba7feb07cbd..a6876fb0402 100644
 --- a/gcc/config/m68k/m68k.h
 +++ b/gcc/config/m68k/m68k.h
-@@ -37,8 +37,8 @@ along with GCC; see the file COPYING3.  If not see
- 
- #define ASM_CPU_SPEC "\
- %{m68851}%{mno-68851} %{m68881}%{mno-68881} %{msoft-float:-mno-float} \
--%{m68020-40:-m68040}%{m68020-60:-m68040}\
--%{mcpu=*:-mcpu=%*}%{march=*:-march=%*}\
-+%{m68020-40:-m68040} %{m68020-60:-m68040} \
-+%{mcpu=*:-mcpu=%*} %{march=*:-march=%*}\
- "
- #define ASM_PCREL_SPEC "%{" FPIE_OR_FPIC_SPEC ":--pcrel} \
-  %{mpcrel:%{" NO_FPIE_AND_FPIC_SPEC ":--pcrel}} \
 @@ -131,7 +131,10 @@ along with GCC; see the file COPYING3.  If not see
  	}								\
  									\
@@ -1027,62 +1028,6 @@ index 6d9f8b2d4a1..9fad2950508 100644
  modf (double x, double *ip)
  {
    double temp;
-diff --git a/gcc/config/m68k/mint-stdint.h b/gcc/config/m68k/mint-stdint.h
-new file mode 100644
-index 00000000000..89538ccf0d6
---- /dev/null
-+++ b/gcc/config/m68k/mint-stdint.h
-@@ -0,0 +1,50 @@
-+/* Definitions for <stdint.h> types on systems using MiNT.
-+   Copyright (C) 2009-2018 Free Software Foundation, Inc.
-+
-+This file is part of GCC.
-+
-+GCC is free software; you can redistribute it and/or modify
-+it under the terms of the GNU General Public License as published by
-+the Free Software Foundation; either version 3, or (at your option)
-+any later version.
-+
-+GCC is distributed in the hope that it will be useful,
-+but WITHOUT ANY WARRANTY; without even the implied warranty of
-+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+GNU General Public License for more details.
-+
-+You should have received a copy of the GNU General Public License
-+along with GCC; see the file COPYING3.  If not see
-+<http://www.gnu.org/licenses/>.  */
-+
-+#define SIG_ATOMIC_TYPE "int"
-+
-+#define INT8_TYPE "signed char"
-+#define INT16_TYPE (TARGET_SHORT ? "int" : "short int")
-+#define INT32_TYPE (TARGET_SHORT ? "long int" : "int")
-+#define INT64_TYPE "long long int"
-+#define UINT8_TYPE "unsigned char"
-+#define UINT16_TYPE (TARGET_SHORT ? "unsigned int" : "short unsigned int")
-+#define UINT32_TYPE (TARGET_SHORT ? "long unsigned int" : "unsigned int")
-+#define UINT64_TYPE "long long unsigned int"
-+
-+#define INT_LEAST8_TYPE INT8_TYPE
-+#define INT_LEAST16_TYPE INT16_TYPE
-+#define INT_LEAST32_TYPE INT32_TYPE
-+#define INT_LEAST64_TYPE INT64_TYPE
-+#define UINT_LEAST8_TYPE UINT8_TYPE
-+#define UINT_LEAST16_TYPE UINT16_TYPE
-+#define UINT_LEAST32_TYPE UINT32_TYPE
-+#define UINT_LEAST64_TYPE UINT64_TYPE
-+
-+#define INT_FAST8_TYPE INT8_TYPE
-+#define INT_FAST16_TYPE INT16_TYPE
-+#define INT_FAST32_TYPE INT32_TYPE
-+#define INT_FAST64_TYPE INT64_TYPE
-+#define UINT_FAST8_TYPE UINT8_TYPE
-+#define UINT_FAST16_TYPE UINT16_TYPE
-+#define UINT_FAST32_TYPE UINT32_TYPE
-+#define UINT_FAST64_TYPE UINT64_TYPE
-+
-+#define INTPTR_TYPE "long int"
-+#define UINTPTR_TYPE "long unsigned int"
 diff --git a/gcc/config/m68k/mint.h b/gcc/config/m68k/mint.h
 new file mode 100644
 index 00000000000..e873e17d30e
@@ -1309,10 +1254,10 @@ index 00000000000..e873e17d30e
 +}} %{fmudflap|fmudflapth: --wrap=main}"
 diff --git a/gcc/config/m68k/t-mint b/gcc/config/m68k/t-mint
 new file mode 100644
-index 00000000000..dbc2491ebf1
+index 00000000000..24f3278f508
 --- /dev/null
 +++ b/gcc/config/m68k/t-mint
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,59 @@
 +# 
 +# Use multiple libraries
 +# 
@@ -1336,15 +1281,11 @@ index 00000000000..dbc2491ebf1
 +$(error Error default cpu '$(target_cpu_default)' is not in multilib set '$(M68K_MLIB_CPUS)')
 +endif
 +
-+MULTILIB_OPTIONS = m68000/m68020-60/mcpu=5475 mshort
++MULTILIB_OPTIONS = m68020-60/mcpu=5475 mshort
 +
-+MULTILIB_DIRNAMES = m68000 m68020-60 m5475 mshort
++MULTILIB_DIRNAMES = m68020-60 m5475 mshort
 +
 +MULTILIB_MATCHES = \
-+	m68000=m68000 \
-+	m68000=mc68000 \
-+	m68000=mcpu?68000 \
-+	m68000=march?68000 \
 +	m68020-60=m68881 \
 +	m68020-60=m68020 \
 +	m68020-60=m68020-40 \
@@ -1387,10 +1328,10 @@ index 00000000000..e876f251d06
 +#define HOST_BIT_BUCKET2 "nul:"
 +
 diff --git a/gcc/configure b/gcc/configure
-index 6121e163259..dc2c7e54f8e 100755
+index 5dab9142e1a..8723f587f32 100755
 --- a/gcc/configure
 +++ b/gcc/configure
-@@ -5055,7 +5055,7 @@ case "${target}" in
+@@ -5043,7 +5043,7 @@ case "${target}" in
  	;;
      i[34567]86-*-cygwin* | x86_64-*-cygwin*)
  	;;
@@ -1399,7 +1340,7 @@ index 6121e163259..dc2c7e54f8e 100755
  	;;
      i[34567]86-*-interix[3-9]*)
  	# Interix 3.x gcc -fpic/-fPIC options generate broken code.
-@@ -9806,7 +9806,7 @@ else
+@@ -9794,7 +9794,7 @@ else
     # Systems known to be in this category are Windows (all variants),
     # VMS, and Darwin.
     case "$host_os" in
@@ -1408,7 +1349,7 @@ index 6121e163259..dc2c7e54f8e 100755
          gcc_cv_func_mmap_dev_zero=no ;;
       *)
          gcc_cv_func_mmap_dev_zero=yes;;
-@@ -9863,7 +9863,7 @@ else
+@@ -9851,7 +9851,7 @@ else
     # above for use of /dev/zero.
     # Systems known to be in this category are Windows, VMS, and SCO Unix.
     case "$host_os" in
@@ -1417,7 +1358,7 @@ index 6121e163259..dc2c7e54f8e 100755
          gcc_cv_func_mmap_anon=no ;;
       *)
          gcc_cv_func_mmap_anon=yes;;
-@@ -10167,7 +10167,7 @@ if test "$GCC" = yes; then
+@@ -10155,7 +10155,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by GCC" >&5
  $as_echo_n "checking for ld used by GCC... " >&6; }
    case $host in
@@ -1426,7 +1367,7 @@ index 6121e163259..dc2c7e54f8e 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -12651,7 +12651,7 @@ if test "$GCC" = yes; then
+@@ -12636,7 +12636,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -1435,7 +1376,7 @@ index 6121e163259..dc2c7e54f8e 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -13009,6 +13009,10 @@ else
+@@ -12994,6 +12994,10 @@ else
      lt_cv_sys_max_cmd_len=8192;
      ;;
  
@@ -1446,7 +1387,7 @@ index 6121e163259..dc2c7e54f8e 100755
    netbsd* | freebsd* | openbsd* | darwin* | dragonfly*)
      # This has been around since 386BSD, at least.  Likely further.
      if test -x /sbin/sysctl; then
-@@ -16182,7 +16186,7 @@ _LT_EOF
+@@ -16167,7 +16171,7 @@ _LT_EOF
        fi
        ;;
  
@@ -1455,7 +1396,7 @@ index 6121e163259..dc2c7e54f8e 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -16613,7 +16617,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -16598,7 +16602,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -1464,7 +1405,7 @@ index 6121e163259..dc2c7e54f8e 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -17514,14 +17518,14 @@ bsdi[45]*)
+@@ -17499,14 +17503,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -1481,7 +1422,7 @@ index 6121e163259..dc2c7e54f8e 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -17545,7 +17549,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -17530,7 +17534,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -1490,7 +1431,7 @@ index 6121e163259..dc2c7e54f8e 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -18176,7 +18180,7 @@ else
+@@ -18161,7 +18165,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -1499,7 +1440,7 @@ index 6121e163259..dc2c7e54f8e 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -19050,7 +19054,7 @@ if test "$GCC" = yes; then
+@@ -19035,7 +19039,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -1508,7 +1449,7 @@ index 6121e163259..dc2c7e54f8e 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -19403,7 +19407,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -19388,7 +19392,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
          esac
          ;;
  
@@ -1517,7 +1458,7 @@ index 6121e163259..dc2c7e54f8e 100755
          # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
          # as there is no search path for DLLs.
          hardcode_libdir_flag_spec_CXX='-L$libdir'
-@@ -21176,14 +21180,14 @@ bsdi[45]*)
+@@ -21161,14 +21165,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -1534,7 +1475,7 @@ index 6121e163259..dc2c7e54f8e 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -21206,7 +21210,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -21191,7 +21195,7 @@ cygwin* | mingw* | pw32* | cegcc*)
        soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
  
        ;;
@@ -1543,30 +1484,8 @@ index 6121e163259..dc2c7e54f8e 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -28282,7 +28286,7 @@ if ($AR --version | sed 1q | grep "GNU ar" \
-     && $CC $CFLAGS -c conftest.c \
-     && $AR rcT conftest.a conftest.o \
-     && $CC $CFLAGS $LDFLAGS -o conftest conftest.a) >/dev/null 2>&1; then
--  thin_archive_support=yes
-+  thin_archive_support=no
- fi
- rm -f conftest.c conftest.o conftest.a conftest
- { $as_echo "$as_me:${as_lineno-$LINENO}: result: $thin_archive_support" >&5
-diff --git a/gcc/configure.ac b/gcc/configure.ac
-index b066cc609e1..abad178a708 100644
---- a/gcc/configure.ac
-+++ b/gcc/configure.ac
-@@ -5106,7 +5106,7 @@ if ($AR --version | sed 1q | grep "GNU ar" \
-     && $CC $CFLAGS -c conftest.c \
-     && $AR rcT conftest.a conftest.o \
-     && $CC $CFLAGS $LDFLAGS -o conftest conftest.a) >/dev/null 2>&1; then
--  thin_archive_support=yes
-+  thin_archive_support=no
- fi
- rm -f conftest.c conftest.o conftest.a conftest
- AC_MSG_RESULT($thin_archive_support)
 diff --git a/gcc/defaults.h b/gcc/defaults.h
-index 9035b333be8..b5624f0a87c 100644
+index 7ad92d920f8..74e539c8620 100644
 --- a/gcc/defaults.h
 +++ b/gcc/defaults.h
 @@ -51,7 +51,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
@@ -1579,102 +1498,65 @@ index 9035b333be8..b5624f0a87c 100644
    } while (0)
  #endif
 diff --git a/gcc/diagnostic-color.c b/gcc/diagnostic-color.c
-index 3ee21bc3fda..2f79cad39ef 100644
+index 8353fe016b7..c002331a31f 100644
 --- a/gcc/diagnostic-color.c
 +++ b/gcc/diagnostic-color.c
-@@ -24,6 +24,90 @@
- #  include <windows.h>
- #endif
+@@ -20,6 +20,10 @@
+ #include "system.h"
+ #include "diagnostic-color.h"
  
-+/* Select Graphic Rendition (SGR, "\33[...m") strings.  */
-+/* Also Erase in Line (EL) to Right ("\33[K") by default.  */
-+/*    Why have EL to Right after SGR?
-+	 -- The behavior of line-wrapping when at the bottom of the
-+	    terminal screen and at the end of the current line is often
-+	    such that a new line is introduced, entirely cleared with
-+	    the current background color which may be different from the
-+	    default one (see the boolean back_color_erase terminfo(5)
-+	    capability), thus scrolling the display by one line.
-+	    The end of this new line will stay in this background color
-+	    even after reverting to the default background color with
-+	    "\33[m', unless it is explicitly cleared again with "\33[K"
-+	    (which is the behavior the user would instinctively expect
-+	    from the whole thing).  There may be some unavoidable
-+	    background-color flicker at the end of this new line because
-+	    of this (when timing with the monitor's redraw is just right).
-+	 -- The behavior of HT (tab, "\t") is usually the same as that of
-+	    Cursor Forward Tabulation (CHT) with a default parameter
-+	    of 1 ("\33[I"), i.e., it performs pure movement to the next
-+	    tab stop, without any clearing of either content or screen
-+	    attributes (including background color); try
-+	       printf 'asdfqwerzxcv\rASDF\tZXCV\n'
-+	    in a bash(1) shell to demonstrate this.  This is not what the
-+	    user would instinctively expect of HT (but is ok for CHT).
-+	    The instinctive behavior would include clearing the terminal
-+	    cells that are skipped over by HT with blank cells in the
-+	    current screen attributes, including background color;
-+	    the boolean dest_tabs_magic_smso terminfo(5) capability
-+	    indicates this saner behavior for HT, but only some rare
-+	    terminals have it (although it also indicates a special
-+	    glitch with standout mode in the Teleray terminal for which
-+	    it was initially introduced).  The remedy is to add "\33K"
-+	    after each SGR sequence, be it START (to fix the behavior
-+	    of any HT after that before another SGR) or END (to fix the
-+	    behavior of an HT in default background color that would
-+	    follow a line-wrapping at the bottom of the screen in another
-+	    background color, and to complement doing it after START).
-+	    Piping GCC's output through a pager such as less(1) avoids
-+	    any HT problems since the pager performs tab expansion.
++#ifdef __MINGW32__
++#  include <windows.h>
++#endif
 +
-+      Generic disadvantages of this remedy are:
-+	 -- Some very rare terminals might support SGR but not EL (nobody
-+	    will use "gcc -fdiagnostics-color" on a terminal that does not
-+	    support SGR in the first place).
-+	 -- Having these extra control sequences might somewhat complicate
-+	    the task of any program trying to parse "gcc -fdiagnostics-color"
-+	    output in order to extract structuring information from it.
-+      A specific disadvantage to doing it after SGR START is:
-+	 -- Even more possible background color flicker (when timing
-+	    with the monitor's redraw is just right), even when not at the
-+	    bottom of the screen.
-+      There are no additional disadvantages specific to doing it after
-+      SGR END.
-+
-+      It would be impractical for GCC to become a full-fledged
-+      terminal program linked against ncurses or the like, so it will
-+      not detect terminfo(5) capabilities.  */
-+#define COLOR_SEPARATOR		";"
-+#define COLOR_NONE		"00"
-+#define COLOR_BOLD		"01"
-+#define COLOR_UNDERSCORE	"04"
-+#define COLOR_BLINK		"05"
-+#define COLOR_REVERSE		"07"
-+#define COLOR_FG_BLACK		"30"
-+#define COLOR_FG_RED		"31"
-+#define COLOR_FG_GREEN		"32"
-+#define COLOR_FG_YELLOW		"33"
-+#define COLOR_FG_BLUE		"34"
-+#define COLOR_FG_MAGENTA	"35"
-+#define COLOR_FG_CYAN		"36"
-+#define COLOR_FG_WHITE		"37"
-+#define COLOR_BG_BLACK		"40"
-+#define COLOR_BG_RED		"41"
-+#define COLOR_BG_GREEN		"42"
-+#define COLOR_BG_YELLOW		"43"
-+#define COLOR_BG_BLUE		"44"
-+#define COLOR_BG_MAGENTA	"45"
-+#define COLOR_BG_CYAN		"46"
-+#define COLOR_BG_WHITE		"47"
-+#define SGR_START		"\33["
-+#define SGR_END			"m\33[K"
-+#define SGR_SEQ(str)		SGR_START str SGR_END
-+#define SGR_RESET		SGR_SEQ("")
-+
- #include "color-macros.h"
+ /* Select Graphic Rendition (SGR, "\33[...m") strings.  */
+ /* Also Erase in Line (EL) to Right ("\33[K") by default.  */
+ /*    Why have EL to Right after SGR?
+@@ -273,23 +277,28 @@ parse_gcc_colors (void)
+       return true;
+ }
  
- /* The context and logic for choosing default --color screen attributes
+-#if defined(_WIN32)
+-bool
+-colorize_init (diagnostic_color_rule_t)
+-{
+-  return false;
+-}
+-#else
+-
+ /* Return true if we should use color when in auto mode, false otherwise. */
+ static bool
+ should_colorize (void)
+ {
++#ifdef __MINGW32__
++  /* For consistency reasons, one should check the handle returned by
++     _get_osfhandle(_fileno(stderr)) because the function
++     pp_write_text_to_stream() in pretty-print.c calls fputs() on
++     that stream. However, the code below for non-Windows doesn't seem
++     to care about it either... */
++  HANDLE h;
++  DWORD m;
++
++  h = GetStdHandle (STD_ERROR_HANDLE);
++  return (h != INVALID_HANDLE_VALUE) && (h != NULL)
++	  && GetConsoleMode (h, &m);
++#else
+   char const *t = getenv ("TERM");
+   return t && strcmp (t, "dumb") != 0 && isatty (STDERR_FILENO);
++#endif
+ }
+ 
+-
+ bool
+ colorize_init (diagnostic_color_rule_t rule)
+ {
+@@ -308,4 +317,3 @@ colorize_init (diagnostic_color_rule_t rule)
+       gcc_unreachable ();
+     }
+ }
+-#endif
 diff --git a/gcc/file-find.c b/gcc/file-find.c
-index d0667f2a79c..57f6337089d 100644
+index b5a1fe8494e..c3e34b4a905 100644
 --- a/gcc/file-find.c
 +++ b/gcc/file-find.c
 @@ -22,6 +22,20 @@ along with GCC; see the file COPYING3.  If not see
@@ -1699,7 +1581,7 @@ index d0667f2a79c..57f6337089d 100644
  
  void
 diff --git a/gcc/gcc.c b/gcc/gcc.c
-index a716f708259..abd3a0fe73c 100644
+index eced0d53aae..6c6f3061665 100644
 --- a/gcc/gcc.c
 +++ b/gcc/gcc.c
 @@ -44,6 +44,27 @@ compilation is specified by a string called a "spec".  */
@@ -1730,7 +1612,7 @@ index a716f708259..abd3a0fe73c 100644
  
  
  /* Manage the manipulation of env vars.
-@@ -4487,7 +4508,8 @@ process_command (unsigned int decoded_options_count,
+@@ -4462,7 +4483,8 @@ process_command (unsigned int decoded_options_count,
  
    if (output_file
        && strcmp (output_file, "-") != 0
@@ -1741,7 +1623,7 @@ index a716f708259..abd3a0fe73c 100644
        int i;
        for (i = 0; i < n_infiles; i++)
 diff --git a/gcc/gcov-tool.c b/gcc/gcov-tool.c
-index 15fd710b18c..3b5f3172011 100644
+index 74e77b90d72..117f2a8cd3a 100644
 --- a/gcc/gcov-tool.c
 +++ b/gcc/gcov-tool.c
 @@ -52,7 +52,7 @@ extern void gcov_set_verbose (void);
@@ -1763,7 +1645,7 @@ index 15fd710b18c..3b5f3172011 100644
  #else
      return -1;
 diff --git a/gcc/ggc-common.c b/gcc/ggc-common.c
-index f83fc136d04..57097502f8b 100644
+index b4c36fb0bbd..d8481d0f289 100644
 --- a/gcc/ggc-common.c
 +++ b/gcc/ggc-common.c
 @@ -598,7 +598,9 @@ gt_pch_restore (FILE *f)
@@ -1849,7 +1731,7 @@ index f83fc136d04..57097502f8b 100644
  
    gt_pch_restore_stringpool ();
 diff --git a/gcc/incpath.c b/gcc/incpath.c
-index b11c6a57939..dfa3be81161 100644
+index 98fe5ec9ab3..b9e25ce91b9 100644
 --- a/gcc/incpath.c
 +++ b/gcc/incpath.c
 @@ -27,6 +27,12 @@
@@ -1865,7 +1747,7 @@ index b11c6a57939..dfa3be81161 100644
  /* Microsoft Windows does not natively support inodes.
     VMS has non-numeric inodes.  */
  #ifdef VMS
-@@ -177,10 +183,17 @@ add_standard_paths (const char *sysroot, const char *iprefix,
+@@ -176,10 +182,17 @@ add_standard_paths (const char *sysroot, const char *iprefix,
  	    {
  	      char *sysroot_no_trailing_dir_separator = xstrdup (sysroot);
  	      size_t sysroot_len = strlen (sysroot);
@@ -1885,10 +1767,10 @@ index b11c6a57939..dfa3be81161 100644
  	    }
  	  else if (!p->add_sysroot && relocated
 diff --git a/gcc/lto-wrapper.c b/gcc/lto-wrapper.c
-index 7a3f93ab2a1..acfae838c52 100644
+index 2c81176913e..7261a56573d 100644
 --- a/gcc/lto-wrapper.c
 +++ b/gcc/lto-wrapper.c
-@@ -1262,7 +1262,8 @@ run_gcc (unsigned argc, char *argv[])
+@@ -1097,7 +1097,8 @@ run_gcc (unsigned argc, char *argv[])
    if (linker_output)
      {
        char *output_dir, *base, *name;
@@ -1898,11 +1780,694 @@ index 7a3f93ab2a1..acfae838c52 100644
  
        output_dir = xstrdup (linker_output);
        base = output_dir;
+diff --git a/gcc/pretty-print.c b/gcc/pretty-print.c
+index bcb1a70ac03..fba4ba87499 100644
+--- a/gcc/pretty-print.c
++++ b/gcc/pretty-print.c
+@@ -30,6 +30,666 @@ along with GCC; see the file COPYING3.  If not see
+ #include <iconv.h>
+ #endif
+ 
++#ifdef __MINGW32__
++
++/* Replacement for fputs() that handles ANSI escape codes on Windows NT.
++   Contributed by: Liu Hao (lh_mouse at 126 dot com)
++
++   XXX: This file is compiled into libcommon.a that will be self-contained.
++	It looks like that these functions can be put nowhere else. */
++
++#include <io.h>
++#define WIN32_LEAN_AND_MEAN 1
++#include <windows.h>
++
++/* Write all bytes in [s,s+n) into the specified stream.
++   Errors are ignored. */
++static void
++write_all (HANDLE h, const char *s, size_t n)
++{
++  size_t rem = n;
++  DWORD step;
++
++  while (rem != 0)
++    {
++      if (rem <= UINT_MAX)
++	step = rem;
++      else
++	step = UINT_MAX;
++      if (!WriteFile (h, s + n - rem, step, &step, NULL))
++	break;
++      rem -= step;
++    }
++}
++
++/* Find the beginning of an escape sequence.
++   There are two cases:
++   1. If the sequence begins with an ESC character (0x1B) and a second
++      character X in [0x40,0x5F], returns X and stores a pointer to
++      the third character into *head.
++   2. If the sequence begins with a character X in [0x80,0x9F], returns
++      (X-0x40) and stores a pointer to the second character into *head.
++   Stores the number of ESC character(s) in *prefix_len.
++   Returns 0 if no such sequence can be found. */
++static int
++find_esc_head (int *prefix_len, const char **head, const char *str)
++{
++  int c;
++  const char *r = str;
++  int escaped = 0;
++
++  for (;;)
++    {
++      c = (unsigned char)*r;
++      if (c == 0)
++	{
++	  /* Not found. */
++	  return 0;
++	}
++      if (escaped && 0x40 <= c && c <= 0x5F)
++	{
++	  /* Found (case 1). */
++	  *prefix_len = 2;
++	  *head = r + 1;
++	  return c;
++	}
++      if (0x80 <= c && c <= 0x9F)
++	{
++	  /* Found (case 2). */
++	  *prefix_len = 1;
++	  *head = r + 1;
++	  return c - 0x40;
++	}
++      ++r;
++      escaped = c == 0x1B;
++    }
++}
++
++/* Find the terminator of an escape sequence.
++   str should be the value stored in *head by a previous successful
++   call to find_esc_head().
++   Returns -1 if no such sequence can be found. */
++static int
++find_esc_terminator (const char **term, const char *str)
++{
++  int c;
++  const char *r = str;
++
++  for (;;)
++    {
++      c = (unsigned char)*r;
++      if (c == 0)
++	{
++	  /* Not found. */
++	  return 0;
++	}
++      if (0x40 <= c && c <= 0x7E)
++	{
++	  /* Found. */
++	  *term = r;
++	  return c;
++	}
++      ++r;
++    }
++}
++
++/* Handle a sequence of codes. Sequences that are invalid, reserved,
++   unrecognized or unimplemented are ignored silently.
++   There isn't much we can do because of lameness of Windows consoles. */
++static void
++eat_esc_sequence (HANDLE h, int esc_code,
++		  const char *esc_head, const char *esc_term)
++{
++  /* Numbers in an escape sequence cannot be negative, because
++     a minus sign in the middle of it would have terminated it. */
++  long n1, n2;
++  char *eptr, *delim;
++  CONSOLE_SCREEN_BUFFER_INFO sb;
++  COORD cr;
++  /* ED and EL parameters. */
++  DWORD cnt, step;
++  long rows;
++  /* SGR parameters. */
++  WORD attrib_add, attrib_rm;
++  const char *param;
++
++  switch (MAKEWORD (esc_code, *esc_term))
++    {
++    /* ESC [ n1 'A'
++	 Move the cursor up by n1 characters. */
++    case MAKEWORD ('[', 'A'):
++      if (esc_head == esc_term)
++	n1 = 1;
++      else
++	{
++	  n1 = strtol (esc_head, &eptr, 10);
++	  if (eptr != esc_term)
++	    break;
++	}
++
++      if (GetConsoleScreenBufferInfo (h, &sb))
++	{
++	  cr = sb.dwCursorPosition;
++	  /* Stop at the topmost boundary. */
++	  if (cr.Y > n1)
++	    cr.Y -= n1;
++	  else
++	    cr.Y = 0;
++	  SetConsoleCursorPosition (h, cr);
++	}
++      break;
++
++    /* ESC [ n1 'B'
++	 Move the cursor down by n1 characters. */
++    case MAKEWORD ('[', 'B'):
++      if (esc_head == esc_term)
++	n1 = 1;
++      else
++	{
++	  n1 = strtol (esc_head, &eptr, 10);
++	  if (eptr != esc_term)
++	    break;
++	}
++
++      if (GetConsoleScreenBufferInfo (h, &sb))
++	{
++	  cr = sb.dwCursorPosition;
++	  /* Stop at the bottommost boundary. */
++	  if (sb.dwSize.Y - cr.Y > n1)
++	    cr.Y += n1;
++	  else
++	    cr.Y = sb.dwSize.Y;
++	  SetConsoleCursorPosition (h, cr);
++	}
++      break;
++
++    /* ESC [ n1 'C'
++	 Move the cursor right by n1 characters. */
++    case MAKEWORD ('[', 'C'):
++      if (esc_head == esc_term)
++	n1 = 1;
++      else
++	{
++	  n1 = strtol (esc_head, &eptr, 10);
++	  if (eptr != esc_term)
++	    break;
++	}
++
++      if (GetConsoleScreenBufferInfo (h, &sb))
++	{
++	  cr = sb.dwCursorPosition;
++	  /* Stop at the rightmost boundary. */
++	  if (sb.dwSize.X - cr.X > n1)
++	    cr.X += n1;
++	  else
++	    cr.X = sb.dwSize.X;
++	  SetConsoleCursorPosition (h, cr);
++	}
++      break;
++
++    /* ESC [ n1 'D'
++	 Move the cursor left by n1 characters. */
++    case MAKEWORD ('[', 'D'):
++      if (esc_head == esc_term)
++	n1 = 1;
++      else
++	{
++	  n1 = strtol (esc_head, &eptr, 10);
++	  if (eptr != esc_term)
++	    break;
++	}
++
++      if (GetConsoleScreenBufferInfo (h, &sb))
++	{
++	  cr = sb.dwCursorPosition;
++	  /* Stop at the leftmost boundary. */
++	  if (cr.X > n1)
++	    cr.X -= n1;
++	  else
++	    cr.X = 0;
++	  SetConsoleCursorPosition (h, cr);
++	}
++      break;
++
++    /* ESC [ n1 'E'
++	 Move the cursor to the beginning of the n1-th line downwards. */
++    case MAKEWORD ('[', 'E'):
++      if (esc_head == esc_term)
++	n1 = 1;
++      else
++	{
++	  n1 = strtol (esc_head, &eptr, 10);
++	  if (eptr != esc_term)
++	    break;
++	}
++
++      if (GetConsoleScreenBufferInfo (h, &sb))
++	{
++	  cr = sb.dwCursorPosition;
++	  cr.X = 0;
++	  /* Stop at the bottommost boundary. */
++	  if (sb.dwSize.Y - cr.Y > n1)
++	    cr.Y += n1;
++	  else
++	    cr.Y = sb.dwSize.Y;
++	  SetConsoleCursorPosition (h, cr);
++	}
++      break;
++
++    /* ESC [ n1 'F'
++	 Move the cursor to the beginning of the n1-th line upwards. */
++    case MAKEWORD ('[', 'F'):
++      if (esc_head == esc_term)
++	n1 = 1;
++      else
++	{
++	  n1 = strtol (esc_head, &eptr, 10);
++	  if (eptr != esc_term)
++	    break;
++	}
++
++      if (GetConsoleScreenBufferInfo (h, &sb))
++	{
++	  cr = sb.dwCursorPosition;
++	  cr.X = 0;
++	  /* Stop at the topmost boundary. */
++	  if (cr.Y > n1)
++	    cr.Y -= n1;
++	  else
++	    cr.Y = 0;
++	  SetConsoleCursorPosition (h, cr);
++	}
++      break;
++
++    /* ESC [ n1 'G'
++	 Move the cursor to the (1-based) n1-th column. */
++    case MAKEWORD ('[', 'G'):
++      if (esc_head == esc_term)
++	n1 = 1;
++      else
++	{
++	  n1 = strtol (esc_head, &eptr, 10);
++	  if (eptr != esc_term)
++	    break;
++	}
++
++      if (GetConsoleScreenBufferInfo (h, &sb))
++	{
++	  cr = sb.dwCursorPosition;
++	  n1 -= 1;
++	  /* Stop at the leftmost or rightmost boundary. */
++	  if (n1 < 0)
++	    cr.X = 0;
++	  else if (n1 > sb.dwSize.X)
++	    cr.X = sb.dwSize.X;
++	  else
++	    cr.X = n1;
++	  SetConsoleCursorPosition (h, cr);
++	}
++      break;
++
++    /* ESC [ n1 ';' n2 'H'
++       ESC [ n1 ';' n2 'f'
++	 Move the cursor to the (1-based) n1-th row and
++	 (also 1-based) n2-th column. */
++    case MAKEWORD ('[', 'H'):
++    case MAKEWORD ('[', 'f'):
++      if (esc_head == esc_term)
++	{
++	  /* Both parameters are omitted and set to 1 by default. */
++	  n1 = 1;
++	  n2 = 1;
++	}
++      else if (!(delim = (char *)memchr (esc_head, ';',
++					 esc_term - esc_head)))
++	{
++	  /* Only the first parameter is given. The second one is
++	     set to 1 by default. */
++	  n1 = strtol (esc_head, &eptr, 10);
++	  if (eptr != esc_term)
++	    break;
++	  n2 = 1;
++	}
++      else
++	{
++	  /* Both parameters are given. The first one shall be
++	     terminated by the semicolon. */
++	  n1 = strtol (esc_head, &eptr, 10);
++	  if (eptr != delim)
++	    break;
++	  n2 = strtol (delim + 1, &eptr, 10);
++	  if (eptr != esc_term)
++	    break;
++	}
++
++      if (GetConsoleScreenBufferInfo (h, &sb))
++	{
++	  cr = sb.dwCursorPosition;
++	  n1 -= 1;
++	  n2 -= 1;
++	  /* The cursor position shall be relative to the view coord of
++	     the console window, which is usually smaller than the actual
++	     buffer. FWIW, the 'appropriate' solution will be shrinking
++	     the buffer to match the size of the console window,
++	     destroying scrollback in the process. */
++	  n1 += sb.srWindow.Top;
++	  n2 += sb.srWindow.Left;
++	  /* Stop at the topmost or bottommost boundary. */
++	  if (n1 < 0)
++	    cr.Y = 0;
++	  else if (n1 > sb.dwSize.Y)
++	    cr.Y = sb.dwSize.Y;
++	  else
++	    cr.Y = n1;
++	  /* Stop at the leftmost or rightmost boundary. */
++	  if (n2 < 0)
++	    cr.X = 0;
++	  else if (n2 > sb.dwSize.X)
++	    cr.X = sb.dwSize.X;
++	  else
++	    cr.X = n2;
++	  SetConsoleCursorPosition (h, cr);
++	}
++      break;
++
++    /* ESC [ n1 'J'
++	 Erase display. */
++    case MAKEWORD ('[', 'J'):
++      if (esc_head == esc_term)
++	/* This is one of the very few codes whose parameters have
++	   a default value of zero. */
++	n1 = 0;
++      else
++	{
++	  n1 = strtol (esc_head, &eptr, 10);
++	  if (eptr != esc_term)
++	    break;
++	}
++
++      if (GetConsoleScreenBufferInfo (h, &sb))
++	{
++	  /* The cursor is not necessarily in the console window, which
++	     makes the behavior of this code harder to define. */
++	  switch (n1)
++	    {
++	    case 0:
++	      /* If the cursor is in or above the window, erase from
++		 it to the bottom of the window; otherwise, do nothing. */
++	      cr = sb.dwCursorPosition;
++	      cnt = sb.dwSize.X - sb.dwCursorPosition.X;
++	      rows = sb.srWindow.Bottom - sb.dwCursorPosition.Y;
++	      break;
++	    case 1:
++	      /* If the cursor is in or under the window, erase from
++		 it to the top of the window; otherwise, do nothing. */
++	      cr.X = 0;
++	      cr.Y = sb.srWindow.Top;
++	      cnt = sb.dwCursorPosition.X + 1;
++	      rows = sb.dwCursorPosition.Y - sb.srWindow.Top;
++	      break;
++	    case 2:
++	      /* Erase the entire window. */
++	      cr.X = sb.srWindow.Left;
++	      cr.Y = sb.srWindow.Top;
++	      cnt = 0;
++	      rows = sb.srWindow.Bottom - sb.srWindow.Top + 1;
++	      break;
++	    default:
++	      /* Erase the entire buffer. */
++	      cr.X = 0;
++	      cr.Y = 0;
++	      cnt = 0;
++	      rows = sb.dwSize.Y;
++	      break;
++	    }
++	  if (rows < 0)
++	    break;
++	  cnt += rows * sb.dwSize.X;
++	  FillConsoleOutputCharacterW (h, L' ', cnt, cr, &step);
++	  FillConsoleOutputAttribute (h, sb.wAttributes, cnt, cr, &step);
++	}
++      break;
++
++    /* ESC [ n1 'K'
++	 Erase line. */
++    case MAKEWORD ('[', 'K'):
++      if (esc_head == esc_term)
++	/* This is one of the very few codes whose parameters have
++	   a default value of zero. */
++	n1 = 0;
++      else
++	{
++	  n1 = strtol (esc_head, &eptr, 10);
++	  if (eptr != esc_term)
++	    break;
++	}
++
++      if (GetConsoleScreenBufferInfo (h, &sb))
++	{
++	  switch (n1)
++	    {
++	    case 0:
++	      /* Erase from the cursor to the end. */
++	      cr = sb.dwCursorPosition;
++	      cnt = sb.dwSize.X - sb.dwCursorPosition.X;
++	      break;
++	    case 1:
++	      /* Erase from the cursor to the beginning. */
++	      cr = sb.dwCursorPosition;
++	      cr.X = 0;
++	      cnt = sb.dwCursorPosition.X + 1;
++	      break;
++	    default:
++	      /* Erase the entire line. */
++	      cr = sb.dwCursorPosition;
++	      cr.X = 0;
++	      cnt = sb.dwSize.X;
++	      break;
++	    }
++	  FillConsoleOutputCharacterW (h, L' ', cnt, cr, &step);
++	  FillConsoleOutputAttribute (h, sb.wAttributes, cnt, cr, &step);
++	}
++      break;
++
++    /* ESC [ n1 ';' n2 'm'
++	 Set SGR parameters. Zero or more parameters will follow. */
++    case MAKEWORD ('[', 'm'):
++      attrib_add = 0;
++      attrib_rm = 0;
++      if (esc_head == esc_term)
++	{
++	  /* When no parameter is given, reset the console. */
++	  attrib_add |= (FOREGROUND_RED | FOREGROUND_GREEN
++			 | FOREGROUND_BLUE);
++	  attrib_rm = -1; /* Removes everything. */
++	  goto sgr_set_it;
++	}
++      param = esc_head;
++      do
++	{
++	  /* Parse a parameter. */
++	  n1 = strtol (param, &eptr, 10);
++	  if (*eptr != ';' && eptr != esc_term)
++	    goto sgr_set_it;
++
++	  switch (n1)
++	    {
++	    case 0:
++	      /* Reset */
++	      attrib_add |= (FOREGROUND_RED | FOREGROUND_GREEN
++			     | FOREGROUND_BLUE);
++	      attrib_rm = -1; /* Removes everything. */
++	      break;
++	    case 1:
++	      /* Bold */
++	      attrib_add |= FOREGROUND_INTENSITY;
++	      break;
++	    case 4:
++	      /* Underline */
++	      attrib_add |= COMMON_LVB_UNDERSCORE;
++	      break;
++	    case 5:
++	      /* Blink */
++	      /* XXX: It is not BLINKING at all! */
++	      attrib_add |= BACKGROUND_INTENSITY;
++	      break;
++	    case 7:
++	      /* Reverse */
++	      attrib_add |= COMMON_LVB_REVERSE_VIDEO;
++	      break;
++	    case 22:
++	      /* No bold */
++	      attrib_add &= ~FOREGROUND_INTENSITY;
++	      attrib_rm |= FOREGROUND_INTENSITY;
++	      break;
++	    case 24:
++	      /* No underline */
++	      attrib_add &= ~COMMON_LVB_UNDERSCORE;
++	      attrib_rm |= COMMON_LVB_UNDERSCORE;
++	      break;
++	    case 25:
++	      /* No blink */
++	      /* XXX: It is not BLINKING at all! */
++	      attrib_add &= ~BACKGROUND_INTENSITY;
++	      attrib_rm |= BACKGROUND_INTENSITY;
++	      break;
++	    case 27:
++	      /* No reverse */
++	      attrib_add &= ~COMMON_LVB_REVERSE_VIDEO;
++	      attrib_rm |= COMMON_LVB_REVERSE_VIDEO;
++	      break;
++	    case 30:
++	    case 31:
++	    case 32:
++	    case 33:
++	    case 34:
++	    case 35:
++	    case 36:
++	    case 37:
++	      /* Foreground color */
++	      attrib_add &= ~(FOREGROUND_RED | FOREGROUND_GREEN
++			      | FOREGROUND_BLUE);
++	      n1 -= 30;
++	      if (n1 & 1)
++		attrib_add |= FOREGROUND_RED;
++	      if (n1 & 2)
++		attrib_add |= FOREGROUND_GREEN;
++	      if (n1 & 4)
++		attrib_add |= FOREGROUND_BLUE;
++	      attrib_rm |= (FOREGROUND_RED | FOREGROUND_GREEN
++			    | FOREGROUND_BLUE);
++	      break;
++	    case 38:
++	      /* Reserved for extended foreground color.
++		 Don't know how to handle parameters remaining.
++		 Bail out. */
++	      goto sgr_set_it;
++	    case 39:
++	      /* Reset foreground color */
++	      /* Set to grey. */
++	      attrib_add |= (FOREGROUND_RED | FOREGROUND_GREEN
++			     | FOREGROUND_BLUE);
++	      attrib_rm |= (FOREGROUND_RED | FOREGROUND_GREEN
++			    | FOREGROUND_BLUE);
++	      break;
++	    case 40:
++	    case 41:
++	    case 42:
++	    case 43:
++	    case 44:
++	    case 45:
++	    case 46:
++	    case 47:
++	      /* Background color */
++	      attrib_add &= ~(BACKGROUND_RED | BACKGROUND_GREEN
++			      | BACKGROUND_BLUE);
++	      n1 -= 40;
++	      if (n1 & 1)
++		attrib_add |= BACKGROUND_RED;
++	      if (n1 & 2)
++		attrib_add |= BACKGROUND_GREEN;
++	      if (n1 & 4)
++		attrib_add |= BACKGROUND_BLUE;
++	      attrib_rm |= (BACKGROUND_RED | BACKGROUND_GREEN
++			    | BACKGROUND_BLUE);
++	      break;
++	    case 48:
++	      /* Reserved for extended background color.
++		 Don't know how to handle parameters remaining.
++		 Bail out. */
++	      goto sgr_set_it;
++	    case 49:
++	      /* Reset background color */
++	      /* Set to black. */
++	      attrib_add &= ~(BACKGROUND_RED | BACKGROUND_GREEN
++			      | BACKGROUND_BLUE);
++	      attrib_rm |= (BACKGROUND_RED | BACKGROUND_GREEN
++			    | BACKGROUND_BLUE);
++	      break;
++	    }
++
++	  /* Prepare the next parameter. */
++	  param = eptr + 1;
++	}
++      while (param != esc_term);
++
++sgr_set_it:
++      /* 0xFFFF removes everything. If it is not the case,
++	 care must be taken to preserve old attributes. */
++      if (attrib_rm != 0xFFFF && GetConsoleScreenBufferInfo (h, &sb))
++	{
++	  attrib_add |= sb.wAttributes & ~attrib_rm;
++	}
++      SetConsoleTextAttribute (h, attrib_add);
++      break;
++    }
++}
++
++int
++mingw_ansi_fputs (const char *str, FILE *fp)
++{
++  const char *read = str;
++  HANDLE h;
++  DWORD mode;
++  int esc_code, prefix_len;
++  const char *esc_head, *esc_term;
++
++  h = (HANDLE)_get_osfhandle (_fileno (fp));
++  if (h == INVALID_HANDLE_VALUE)
++    return EOF;
++
++  /* Don't mess up stdio functions with Windows APIs. */
++  fflush (fp);
++
++  if (GetConsoleMode (h, &mode))
++    /* If it is a console, translate ANSI escape codes as needed. */
++    for (;;)
++      {
++	if ((esc_code = find_esc_head (&prefix_len, &esc_head, read)) == 0)
++	  {
++	    /* Write all remaining characters, then exit. */
++	    write_all (h, read, strlen (read));
++	    break;
++	  }
++	if (find_esc_terminator (&esc_term, esc_head) == 0)
++	  /* Ignore incomplete escape sequences at the moment.
++	     FIXME: The escape state shall be cached for further calls
++		    to this function. */
++	  break;
++	write_all (h, read, esc_head - prefix_len - read);
++	eat_esc_sequence (h, esc_code, esc_head, esc_term);
++	read = esc_term + 1;
++      }
++  else
++    /* If it is not a console, write everything as-is. */
++    write_all (h, read, strlen (read));
++
++  _close ((intptr_t)h);
++  return 1;
++}
++
++#endif /* __MINGW32__ */
++
+ static void pp_quoted_string (pretty_printer *, const char *, size_t = -1);
+ 
+ /* Overwrite the given location/range within this text_info's rich_location.
+@@ -140,7 +800,11 @@ void
+ pp_write_text_to_stream (pretty_printer *pp)
+ {
+   const char *text = pp_formatted_text (pp);
++#ifdef __MINGW32__
++  mingw_ansi_fputs (text, pp_buffer (pp)->stream);
++#else
+   fputs (text, pp_buffer (pp)->stream);
++#endif
+   pp_clear_output_area (pp);
+ }
+ 
 diff --git a/gcc/symtab.c b/gcc/symtab.c
-index 67e14d76b11..266398a8f50 100644
+index c18f1b25199..86eaaf85e1d 100644
 --- a/gcc/symtab.c
 +++ b/gcc/symtab.c
-@@ -2205,7 +2205,7 @@ increase_alignment_1 (symtab_node *n, void *v)
+@@ -2179,7 +2179,7 @@ increase_alignment_1 (symtab_node *n, void *v)
  void
  symtab_node::increase_alignment (unsigned int align)
  {
@@ -1912,7 +2477,7 @@ index 67e14d76b11..266398a8f50 100644
  						        (void *)(size_t) align,
  						        true);
 diff --git a/gcc/system.h b/gcc/system.h
-index 4abc321c71d..eba39f446c6 100644
+index 0cbf60a28d0..0859f41ef1e 100644
 --- a/gcc/system.h
 +++ b/gcc/system.h
 @@ -701,6 +701,9 @@ extern int vsnprintf (char *, size_t, const char *, va_list);
@@ -1926,10 +2491,10 @@ index 4abc321c71d..eba39f446c6 100644
  #ifndef offsetof
  #define offsetof(TYPE, MEMBER)	((size_t) &((TYPE *) 0)->MEMBER)
 diff --git a/gcc/toplev.c b/gcc/toplev.c
-index b066bcc7229..c37710af1be 100644
+index f7a753b9cbe..693276332a4 100644
 --- a/gcc/toplev.c
 +++ b/gcc/toplev.c
-@@ -99,6 +99,14 @@ along with GCC; see the file COPYING3.  If not see
+@@ -96,6 +96,14 @@ along with GCC; see the file COPYING3.  If not see
  #include <isl/version.h>
  #endif
  
@@ -1944,7 +2509,7 @@ index b066bcc7229..c37710af1be 100644
  static void general_init (const char *, bool);
  static void do_compile ();
  static void process_options (void);
-@@ -866,7 +874,8 @@ init_asm_output (const char *name)
+@@ -884,7 +892,8 @@ init_asm_output (const char *name)
        if (!strcmp (asm_file_name, "-"))
  	asm_out_file = stdout;
        else if (!canonical_filename_eq (asm_file_name, name)
@@ -2446,7 +3011,7 @@ index 00000000000..ea707bf1bdf
 +
 +#endif /* __CANONICALIZE_H__ */
 diff --git a/intl/configure b/intl/configure
-index 2abbcb5b051..7c30a346155 100755
+index d7af03fc71d..1cac03f24c1 100755
 --- a/intl/configure
 +++ b/intl/configure
 @@ -4891,7 +4891,7 @@ if test "$GCC" = yes; then
@@ -2796,10 +3361,10 @@ index 00000000000..5cc7c5174a9
 +
 +#endif /* __RELOCATE_H__ */
 diff --git a/libatomic/configure b/libatomic/configure
-index b902e2c9606..33dacc588b7 100755
+index 2ae9b8d40f3..45ceed7e6f8 100755
 --- a/libatomic/configure
 +++ b/libatomic/configure
-@@ -5053,7 +5053,7 @@ if test "$GCC" = yes; then
+@@ -5048,7 +5048,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -2808,7 +3373,7 @@ index b902e2c9606..33dacc588b7 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -8854,7 +8854,7 @@ _LT_EOF
+@@ -8849,7 +8849,7 @@ _LT_EOF
        fi
        ;;
  
@@ -2817,7 +3382,7 @@ index b902e2c9606..33dacc588b7 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -9285,7 +9285,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -9280,7 +9280,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -2826,7 +3391,7 @@ index b902e2c9606..33dacc588b7 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -10186,14 +10186,14 @@ bsdi[45]*)
+@@ -10181,14 +10181,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -2843,7 +3408,7 @@ index b902e2c9606..33dacc588b7 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -10217,7 +10217,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -10212,7 +10212,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -2852,7 +3417,7 @@ index b902e2c9606..33dacc588b7 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -10848,7 +10848,7 @@ else
+@@ -10843,7 +10843,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -2861,7 +3426,7 @@ index b902e2c9606..33dacc588b7 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -11467,7 +11467,7 @@ CC="$lt_save_CC"
+@@ -11462,7 +11462,7 @@ CC="$lt_save_CC"
  
  
  case $host in
@@ -2870,7 +3435,7 @@ index b902e2c9606..33dacc588b7 100755
      # 'host' will be top-level target in the case of a target lib,
      # we must compare to with_cross_host to decide if this is a native
      # or cross-compiler and select where to install dlls appropriately.
-@@ -14820,7 +14820,7 @@ if test "$GCC" = yes; then
+@@ -14745,7 +14745,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -2880,10 +3445,10 @@ index b902e2c9606..33dacc588b7 100755
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
 diff --git a/libbacktrace/configure b/libbacktrace/configure
-index 87cadda6c8c..32ac35f7e13 100755
+index ee90bc6dea0..d42dba80634 100755
 --- a/libbacktrace/configure
 +++ b/libbacktrace/configure
-@@ -5350,7 +5350,7 @@ if test "$GCC" = yes; then
+@@ -5333,7 +5333,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -2892,7 +3457,7 @@ index 87cadda6c8c..32ac35f7e13 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -8882,7 +8882,7 @@ _LT_EOF
+@@ -8865,7 +8865,7 @@ _LT_EOF
        fi
        ;;
  
@@ -2901,7 +3466,7 @@ index 87cadda6c8c..32ac35f7e13 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -9313,7 +9313,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -9296,7 +9296,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -2910,7 +3475,7 @@ index 87cadda6c8c..32ac35f7e13 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -10214,14 +10214,14 @@ bsdi[45]*)
+@@ -10197,14 +10197,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -2927,7 +3492,7 @@ index 87cadda6c8c..32ac35f7e13 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -10245,7 +10245,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -10228,7 +10228,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -2936,7 +3501,7 @@ index 87cadda6c8c..32ac35f7e13 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -10876,7 +10876,7 @@ else
+@@ -10859,7 +10859,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -2945,7 +3510,7 @@ index 87cadda6c8c..32ac35f7e13 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -12771,7 +12771,7 @@ fi
+@@ -12406,7 +12406,7 @@ fi
  # Check for the fcntl function.
  if test -n "${with_target_subdir}"; then
     case "${host}" in
@@ -2955,10 +3520,10 @@ index 87cadda6c8c..32ac35f7e13 100755
     *) have_fcntl=yes ;;
     esac
 diff --git a/libbacktrace/configure.ac b/libbacktrace/configure.ac
-index 6f7b5eabca6..f6d30a530e7 100644
+index f9cad214447..d5f1846754a 100644
 --- a/libbacktrace/configure.ac
 +++ b/libbacktrace/configure.ac
-@@ -366,7 +366,7 @@ fi
+@@ -328,7 +328,7 @@ fi
  # Check for the fcntl function.
  if test -n "${with_target_subdir}"; then
     case "${host}" in
@@ -2968,7 +3533,7 @@ index 6f7b5eabca6..f6d30a530e7 100644
     *) have_fcntl=yes ;;
     esac
 diff --git a/libcc1/configure b/libcc1/configure
-index f53a121611c..5b9d41cd5ed 100755
+index 962d34d9271..b16da7bed64 100755
 --- a/libcc1/configure
 +++ b/libcc1/configure
 @@ -4747,7 +4747,7 @@ if test "$GCC" = yes; then
@@ -3077,6 +3642,116 @@ index f53a121611c..5b9d41cd5ed 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
+diff --git a/libcilkrts/configure b/libcilkrts/configure
+index 503337dc4b4..844777631bc 100644
+--- a/libcilkrts/configure
++++ b/libcilkrts/configure
+@@ -6144,7 +6144,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -9675,7 +9675,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -10106,7 +10106,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -11007,14 +11007,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -11038,7 +11038,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -11669,7 +11669,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -12543,7 +12543,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -12896,7 +12896,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
+         # as there is no search path for DLLs.
+         hardcode_libdir_flag_spec_CXX='-L$libdir'
+@@ -14669,14 +14669,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -14699,7 +14699,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
 diff --git a/libcpp/configure b/libcpp/configure
 index 12c1907ed40..cb7b4b80f62 100755
 --- a/libcpp/configure
@@ -3091,7 +3766,7 @@ index 12c1907ed40..cb7b4b80f62 100755
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
 diff --git a/libcpp/files.c b/libcpp/files.c
-index e8d21b28e62..83d38fceee9 100644
+index 969a531033f..c60dbc9182a 100644
 --- a/libcpp/files.c
 +++ b/libcpp/files.c
 @@ -30,6 +30,13 @@ along with this program; see the file COPYING3.  If not see
@@ -3203,10 +3878,10 @@ index e8d21b28e62..83d38fceee9 100644
    if (file->fd != -1)
      {
 diff --git a/libcpp/macro.c b/libcpp/macro.c
-index 776af7bd00e..e75a93a547e 100644
+index de18c2210cf..daf5b64bad7 100644
 --- a/libcpp/macro.c
 +++ b/libcpp/macro.c
-@@ -3174,7 +3174,8 @@ parse_params (cpp_reader *pfile, cpp_macro *macro)
+@@ -2918,7 +2918,8 @@ parse_params (cpp_reader *pfile, cpp_macro *macro)
  			"anonymous variadic macros were introduced in C99");
  		}
  	      else if (CPP_OPTION (pfile, cpp_warn_c90_c99_compat) > 0
@@ -3217,7 +3892,7 @@ index 776af7bd00e..e75a93a547e 100644
  			   "anonymous variadic macros were introduced in C99");
  	    }
 diff --git a/libdecnumber/decNumberLocal.h b/libdecnumber/decNumberLocal.h
-index 93645b3cd02..bc2ad40abc5 100644
+index f8bcd96a446..37372e94d81 100644
 --- a/libdecnumber/decNumberLocal.h
 +++ b/libdecnumber/decNumberLocal.h
 @@ -187,7 +187,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
@@ -3415,10 +4090,10 @@ index 24fbfc438f0..f65013b2e7f 100644
  	if test $ac_cv_sizeof_size_t = 4; then
  	  TARGET=X86_WIN32
 diff --git a/libgcc/config.host b/libgcc/config.host
-index 11b4acaff55..2f7f287a1dc 100644
+index 8beb492b5fa..0510d82b3a1 100644
 --- a/libgcc/config.host
 +++ b/libgcc/config.host
-@@ -861,6 +861,9 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
+@@ -835,6 +835,9 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
  	fi
  	md_unwind_header=m68k/linux-unwind.h
  	;;
@@ -3429,7 +4104,7 @@ index 11b4acaff55..2f7f287a1dc 100644
  	tmake_file="$tmake_file m68k/t-floatlib"
  	extra_parts="$extra_parts crti.o crtn.o"
 diff --git a/libgcc/config/m68k/lb1sf68.S b/libgcc/config/m68k/lb1sf68.S
-index 1d9392a4ef7..aca906ffc31 100644
+index 9f649f636dd..c35528b91f9 100644
 --- a/libgcc/config/m68k/lb1sf68.S
 +++ b/libgcc/config/m68k/lb1sf68.S
 @@ -666,7 +666,9 @@ ROUND_TO_MINUS    = 3 | round result towards minus infinity
@@ -3688,7 +4363,7 @@ index 00000000000..c768fc121b0
 @@ -0,0 +1 @@
 +LIB2ADD_ST = $(srcdir)/config/m68k/mint-atomic.c
 diff --git a/libgcc/gthr-posix.h b/libgcc/gthr-posix.h
-index e2f952f6c1c..30c89fda4aa 100644
+index a54a32e5f9d..b1465a3911e 100644
 --- a/libgcc/gthr-posix.h
 +++ b/libgcc/gthr-posix.h
 @@ -82,7 +82,7 @@ typedef struct timespec __gthread_time_t;
@@ -3701,7 +4376,7 @@ index e2f952f6c1c..30c89fda4aa 100644
  #  define __gthrw_pragma(pragma)
  # endif
 diff --git a/libgfortran/Makefile.am b/libgfortran/Makefile.am
-index bf9dce40593..44a8158884e 100644
+index 2857af5943f..9eb6d904d3a 100644
 --- a/libgfortran/Makefile.am
 +++ b/libgfortran/Makefile.am
 @@ -46,7 +46,7 @@ libgfortran_la_DEPENDENCIES = $(version_dep) libgfortran.spec $(LIBQUADLIB_DEP)
@@ -3714,10 +4389,10 @@ index bf9dce40593..44a8158884e 100644
  libcaf_single_la_LINK = $(LINK) $(libcaf_single_la_LDFLAGS)
  
 diff --git a/libgfortran/Makefile.in b/libgfortran/Makefile.in
-index 03c3968732a..ac26db6e1f1 100644
+index 4914a6f323f..60f123ff8a5 100644
 --- a/libgfortran/Makefile.in
 +++ b/libgfortran/Makefile.in
-@@ -631,7 +631,7 @@ libgfortran_la_DEPENDENCIES = $(version_dep) libgfortran.spec $(LIBQUADLIB_DEP)
+@@ -591,7 +591,7 @@ libgfortran_la_DEPENDENCIES = $(version_dep) libgfortran.spec $(LIBQUADLIB_DEP)
  cafexeclib_LTLIBRARIES = libcaf_single.la
  cafexeclibdir = $(libdir)/gcc/$(target_alias)/$(gcc_version)$(MULTISUBDIR)
  libcaf_single_la_SOURCES = caf/single.c
@@ -3727,10 +4402,10 @@ index 03c3968732a..ac26db6e1f1 100644
  libcaf_single_la_LINK = $(LINK) $(libcaf_single_la_LDFLAGS)
  @IEEE_SUPPORT_TRUE@fincludedir = $(libdir)/gcc/$(target_alias)/$(gcc_version)$(MULTISUBDIR)/finclude
 diff --git a/libgfortran/configure b/libgfortran/configure
-index 91fce8fecd0..96961385c66 100755
+index 1db8f5f5224..b0b488973d4 100755
 --- a/libgfortran/configure
 +++ b/libgfortran/configure
-@@ -6275,7 +6275,7 @@ if test "$GCC" = yes; then
+@@ -6184,7 +6184,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -3739,7 +4414,7 @@ index 91fce8fecd0..96961385c66 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -7035,6 +7035,12 @@ else
+@@ -6944,6 +6944,12 @@ else
      lt_cv_sys_max_cmd_len=8192;
      ;;
  
@@ -3752,7 +4427,7 @@ index 91fce8fecd0..96961385c66 100755
    amigaos*)
      # On AmigaOS with pdksh, this test takes hours, literally.
      # So we just punt and use a minimum line length of 8192.
-@@ -10219,7 +10225,7 @@ _LT_EOF
+@@ -10128,7 +10134,7 @@ _LT_EOF
        fi
        ;;
  
@@ -3761,7 +4436,7 @@ index 91fce8fecd0..96961385c66 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -10656,7 +10662,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -10565,7 +10571,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -3770,7 +4445,7 @@ index 91fce8fecd0..96961385c66 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -11560,14 +11566,14 @@ bsdi[45]*)
+@@ -11469,14 +11475,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -3787,7 +4462,7 @@ index 91fce8fecd0..96961385c66 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -11591,7 +11597,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -11500,7 +11506,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -3796,7 +4471,7 @@ index 91fce8fecd0..96961385c66 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -12225,7 +12231,7 @@ else
+@@ -12134,7 +12140,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -3805,7 +4480,7 @@ index 91fce8fecd0..96961385c66 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -12859,7 +12865,7 @@ CC="$lt_save_CC"
+@@ -12768,7 +12774,7 @@ CC="$lt_save_CC"
  
  
  case $host in
@@ -3814,7 +4489,7 @@ index 91fce8fecd0..96961385c66 100755
      # 'host' will be top-level target in the case of a target lib,
      # we must compare to with_cross_host to decide if this is a native
      # or cross-compiler and select where to install dlls appropriately.
-@@ -14068,7 +14074,7 @@ _LT_EOF
+@@ -13977,7 +13983,7 @@ _LT_EOF
        fi
        ;;
  
@@ -3823,7 +4498,7 @@ index 91fce8fecd0..96961385c66 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, FC) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec_FC='-L$libdir'
-@@ -14493,7 +14499,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -14402,7 +14408,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec_FC=-rdynamic
        ;;
  
@@ -3832,7 +4507,7 @@ index 91fce8fecd0..96961385c66 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -15191,14 +15197,14 @@ bsdi[45]*)
+@@ -15100,14 +15106,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -3849,7 +4524,7 @@ index 91fce8fecd0..96961385c66 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -15221,7 +15227,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -15130,7 +15136,7 @@ cygwin* | mingw* | pw32* | cegcc*)
        soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
  
        ;;
@@ -3934,10 +4609,10 @@ index f7005947454..0b93939fd2f 100644
          # as there is no search path for DLLs.
          _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='-L$libdir'
 diff --git a/libgo/configure b/libgo/configure
-index 7138edae783..45e5388ceeb 100755
+index 94c42f67e82..1791c480f0d 100755
 --- a/libgo/configure
 +++ b/libgo/configure
-@@ -4717,7 +4717,7 @@ if test "$GCC" = yes; then
+@@ -4715,7 +4715,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -3946,7 +4621,7 @@ index 7138edae783..45e5388ceeb 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -8840,7 +8840,7 @@ _LT_EOF
+@@ -8838,7 +8838,7 @@ _LT_EOF
        fi
        ;;
  
@@ -3955,7 +4630,7 @@ index 7138edae783..45e5388ceeb 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -9271,7 +9271,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -9269,7 +9269,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -3964,7 +4639,7 @@ index 7138edae783..45e5388ceeb 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -10172,14 +10172,14 @@ bsdi[45]*)
+@@ -10170,14 +10170,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -3981,7 +4656,7 @@ index 7138edae783..45e5388ceeb 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -10203,7 +10203,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -10201,7 +10201,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -3990,7 +4665,7 @@ index 7138edae783..45e5388ceeb 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -10834,7 +10834,7 @@ else
+@@ -10832,7 +10832,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -3999,7 +4674,7 @@ index 7138edae783..45e5388ceeb 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -12257,7 +12257,7 @@ _LT_EOF
+@@ -12255,7 +12255,7 @@ _LT_EOF
        fi
        ;;
  
@@ -4008,7 +4683,7 @@ index 7138edae783..45e5388ceeb 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, GO) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec_GO='-L$libdir'
-@@ -12688,7 +12688,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -12686,7 +12686,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec_GO=-rdynamic
        ;;
  
@@ -4018,10 +4693,10 @@ index 7138edae783..45e5388ceeb 100755
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
 diff --git a/libgomp/configure b/libgomp/configure
-index ced7606b355..7d1d626dcd4 100755
+index 06166c66120..195406e7703 100755
 --- a/libgomp/configure
 +++ b/libgomp/configure
-@@ -5090,7 +5090,7 @@ if test "$GCC" = yes; then
+@@ -5088,7 +5088,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -4030,7 +4705,7 @@ index ced7606b355..7d1d626dcd4 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -5442,6 +5442,12 @@ else
+@@ -5440,6 +5440,12 @@ else
      lt_cv_sys_max_cmd_len=8192;
      ;;
  
@@ -4043,7 +4718,7 @@ index ced7606b355..7d1d626dcd4 100755
    amigaos*)
      # On AmigaOS with pdksh, this test takes hours, literally.
      # So we just punt and use a minimum line length of 8192.
-@@ -8891,7 +8897,7 @@ _LT_EOF
+@@ -8889,7 +8895,7 @@ _LT_EOF
        fi
        ;;
  
@@ -4052,7 +4727,7 @@ index ced7606b355..7d1d626dcd4 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -9322,7 +9328,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -9320,7 +9326,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -4061,7 +4736,7 @@ index ced7606b355..7d1d626dcd4 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -10223,14 +10229,14 @@ bsdi[45]*)
+@@ -10221,14 +10227,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -4078,7 +4753,7 @@ index ced7606b355..7d1d626dcd4 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -10254,7 +10260,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -10252,7 +10258,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -4087,7 +4762,7 @@ index ced7606b355..7d1d626dcd4 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -10885,7 +10891,7 @@ else
+@@ -10883,7 +10889,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -4096,7 +4771,7 @@ index ced7606b355..7d1d626dcd4 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -11504,7 +11510,7 @@ CC="$lt_save_CC"
+@@ -11502,7 +11508,7 @@ CC="$lt_save_CC"
  
  
  case $host in
@@ -4105,7 +4780,7 @@ index ced7606b355..7d1d626dcd4 100755
      # 'host' will be top-level target in the case of a target lib,
      # we must compare to with_cross_host to decide if this is a native
      # or cross-compiler and select where to install dlls appropriately.
-@@ -12751,7 +12757,7 @@ _LT_EOF
+@@ -12749,7 +12755,7 @@ _LT_EOF
        fi
        ;;
  
@@ -4114,7 +4789,7 @@ index ced7606b355..7d1d626dcd4 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, FC) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec_FC='-L$libdir'
-@@ -13170,7 +13176,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -13168,7 +13174,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec_FC=-rdynamic
        ;;
  
@@ -4123,7 +4798,7 @@ index ced7606b355..7d1d626dcd4 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -13865,14 +13871,14 @@ bsdi[45]*)
+@@ -13863,14 +13869,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -4140,7 +4815,7 @@ index ced7606b355..7d1d626dcd4 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -13895,7 +13901,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -13893,7 +13899,7 @@ cygwin* | mingw* | pw32* | cegcc*)
        soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
  
        ;;
@@ -4149,7 +4824,7 @@ index ced7606b355..7d1d626dcd4 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -16131,7 +16137,7 @@ if test "$GCC" = yes; then
+@@ -16129,7 +16135,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -4269,7 +4944,7 @@ index a4fcc10c1f9..f3334e2a3a8 100755
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
 diff --git a/libiberty/configure b/libiberty/configure
-index ccadfaa8224..78c15507558 100755
+index 868793558f0..f3839fa7422 100755
 --- a/libiberty/configure
 +++ b/libiberty/configure
 @@ -5110,7 +5110,9 @@ case "${host}" in
@@ -4283,7 +4958,7 @@ index ccadfaa8224..78c15507558 100755
  	;;
      i[34567]86-*-interix[3-9]*)
  	# Interix 3.x gcc -fpic/-fPIC options generate broken code.
-@@ -5969,7 +5971,7 @@ _ACEOF
+@@ -5959,7 +5961,7 @@ _ACEOF
    # Mingw provides and which ones we will be expected to provide.
  
    case "${host}" in
@@ -4292,7 +4967,7 @@ index ccadfaa8224..78c15507558 100755
      case " $LIBOBJS " in
    *" asprintf.$ac_objext "* ) ;;
    *) LIBOBJS="$LIBOBJS asprintf.$ac_objext"
-@@ -6185,7 +6187,7 @@ fi
+@@ -6175,7 +6177,7 @@ fi
  
  
  case "${host}" in
@@ -4301,7 +4976,7 @@ index ccadfaa8224..78c15507558 100755
      $as_echo "#define HAVE_SYS_ERRLIST 1" >>confdefs.h
  
      $as_echo "#define HAVE_SYS_NERR 1" >>confdefs.h
-@@ -6299,7 +6301,7 @@ if test -z "${setobjs}"; then
+@@ -6289,7 +6291,7 @@ if test -z "${setobjs}"; then
      ac_cv_func_getpagesize=yes
      ;;
  
@@ -4310,7 +4985,7 @@ index ccadfaa8224..78c15507558 100755
      # Under mingw32, sys_nerr and sys_errlist exist, but they are
      # macros, so the test below won't find them.
      libiberty_cv_var_sys_nerr=yes
-@@ -7077,7 +7079,7 @@ fi
+@@ -7056,7 +7058,7 @@ fi
  
  # Figure out which version of pexecute to use.
  case "${host}" in
@@ -4320,7 +4995,7 @@ index ccadfaa8224..78c15507558 100755
       *-*-msdos*)		pexecute=pex-msdos  ;;
       *)				pexecute=pex-unix   ;;
 diff --git a/libiberty/configure.ac b/libiberty/configure.ac
-index 6917cfaf4fb..ac846c9f213 100644
+index 1aa0c7c7f42..0330112ad57 100644
 --- a/libiberty/configure.ac
 +++ b/libiberty/configure.ac
 @@ -471,7 +471,7 @@ if test -n "${with_target_subdir}"; then
@@ -4350,7 +5025,7 @@ index 6917cfaf4fb..ac846c9f213 100644
      # Under mingw32, sys_nerr and sys_errlist exist, but they are
      # macros, so the test below won't find them.
      libiberty_cv_var_sys_nerr=yes
-@@ -695,7 +695,7 @@ fi
+@@ -694,7 +694,7 @@ fi
  
  # Figure out which version of pexecute to use.
  case "${host}" in
@@ -4360,7 +5035,7 @@ index 6917cfaf4fb..ac846c9f213 100644
       *-*-msdos*)		pexecute=pex-msdos  ;;
       *)				pexecute=pex-unix   ;;
 diff --git a/libiberty/hex.c b/libiberty/hex.c
-index ffc5b2ba5f0..2d116b19b43 100644
+index d93508c896a..0abd74db9b4 100644
 --- a/libiberty/hex.c
 +++ b/libiberty/hex.c
 @@ -24,7 +24,7 @@ Boston, MA 02110-1301, USA.  */
@@ -4373,7 +5048,7 @@ index ffc5b2ba5f0..2d116b19b43 100644
  #endif
  
 diff --git a/libiberty/lrealpath.c b/libiberty/lrealpath.c
-index 5fe4f16ac9e..bacdba4a67d 100644
+index 0a19a5e3185..6068f1d01e9 100644
 --- a/libiberty/lrealpath.c
 +++ b/libiberty/lrealpath.c
 @@ -138,15 +138,26 @@ lrealpath (const char *filename)
@@ -4408,7 +5083,7 @@ index 5fe4f16ac9e..bacdba4a67d 100644
        }
    }
 diff --git a/libiberty/safe-ctype.c b/libiberty/safe-ctype.c
-index e993af98ac0..7de08f35b72 100644
+index 5a13f827f8d..430c3f94598 100644
 --- a/libiberty/safe-ctype.c
 +++ b/libiberty/safe-ctype.c
 @@ -118,7 +118,7 @@ sets of characters:
@@ -4421,10 +5096,10 @@ index e993af98ac0..7de08f35b72 100644
  #endif
  
 diff --git a/libitm/configure b/libitm/configure
-index dbf386db434..6b3fca787d1 100644
+index 96c494d4a3f..109fc499cda 100644
 --- a/libitm/configure
 +++ b/libitm/configure
-@@ -5728,7 +5728,7 @@ if test "$GCC" = yes; then
+@@ -5726,7 +5726,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -4433,7 +5108,7 @@ index dbf386db434..6b3fca787d1 100644
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -9530,7 +9530,7 @@ _LT_EOF
+@@ -9528,7 +9528,7 @@ _LT_EOF
        fi
        ;;
  
@@ -4442,7 +5117,7 @@ index dbf386db434..6b3fca787d1 100644
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -9961,7 +9961,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -9959,7 +9959,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -4451,7 +5126,7 @@ index dbf386db434..6b3fca787d1 100644
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -10862,14 +10862,14 @@ bsdi[45]*)
+@@ -10860,14 +10860,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -4468,7 +5143,7 @@ index dbf386db434..6b3fca787d1 100644
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -10893,7 +10893,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -10891,7 +10891,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -4477,7 +5152,7 @@ index dbf386db434..6b3fca787d1 100644
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -11524,7 +11524,7 @@ else
+@@ -11522,7 +11522,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -4486,7 +5161,7 @@ index dbf386db434..6b3fca787d1 100644
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -12398,7 +12398,7 @@ if test "$GCC" = yes; then
+@@ -12396,7 +12396,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -4495,7 +5170,7 @@ index dbf386db434..6b3fca787d1 100644
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -12751,7 +12751,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -12749,7 +12749,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
          esac
          ;;
  
@@ -4504,7 +5179,7 @@ index dbf386db434..6b3fca787d1 100644
          # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
          # as there is no search path for DLLs.
          hardcode_libdir_flag_spec_CXX='-L$libdir'
-@@ -14524,14 +14524,14 @@ bsdi[45]*)
+@@ -14522,14 +14522,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -4521,7 +5196,7 @@ index dbf386db434..6b3fca787d1 100644
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -14554,7 +14554,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -14552,7 +14552,7 @@ cygwin* | mingw* | pw32* | cegcc*)
        soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
  
        ;;
@@ -4530,7 +5205,7 @@ index dbf386db434..6b3fca787d1 100644
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -15845,7 +15845,7 @@ else
+@@ -15843,7 +15843,7 @@ else
     # Systems known to be in this category are Windows (all variants),
     # VMS, and Darwin.
     case "$host_os" in
@@ -4539,7 +5214,7 @@ index dbf386db434..6b3fca787d1 100644
          gcc_cv_func_mmap_dev_zero=no ;;
       *)
          gcc_cv_func_mmap_dev_zero=yes;;
-@@ -15902,7 +15902,7 @@ else
+@@ -15900,7 +15900,7 @@ else
     # above for use of /dev/zero.
     # Systems known to be in this category are Windows, VMS, and SCO Unix.
     case "$host_os" in
@@ -4548,7 +5223,7 @@ index dbf386db434..6b3fca787d1 100644
          gcc_cv_func_mmap_anon=no ;;
       *)
          gcc_cv_func_mmap_anon=yes;;
-@@ -16650,7 +16650,7 @@ if test "$GCC" = yes; then
+@@ -16648,7 +16648,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -4558,10 +5233,10 @@ index dbf386db434..6b3fca787d1 100644
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
 diff --git a/libmpx/configure b/libmpx/configure
-index 70856596425..4b3e4272b8a 100644
+index 2fd71ca89f6..8fc0083fdcd 100644
 --- a/libmpx/configure
 +++ b/libmpx/configure
-@@ -5440,7 +5440,7 @@ if test "$GCC" = yes; then
+@@ -5438,7 +5438,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -4570,7 +5245,7 @@ index 70856596425..4b3e4272b8a 100644
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -8970,7 +8970,7 @@ _LT_EOF
+@@ -8968,7 +8968,7 @@ _LT_EOF
        fi
        ;;
  
@@ -4579,7 +5254,7 @@ index 70856596425..4b3e4272b8a 100644
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -9401,7 +9401,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -9399,7 +9399,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -4588,7 +5263,7 @@ index 70856596425..4b3e4272b8a 100644
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -10302,14 +10302,14 @@ bsdi[45]*)
+@@ -10300,14 +10300,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -4605,7 +5280,7 @@ index 70856596425..4b3e4272b8a 100644
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -10333,7 +10333,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -10331,7 +10331,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -4614,7 +5289,7 @@ index 70856596425..4b3e4272b8a 100644
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -10964,7 +10964,7 @@ else
+@@ -10962,7 +10962,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -4624,10 +5299,10 @@ index 70856596425..4b3e4272b8a 100644
      lt_cv_dlopen_libs=
      ;;
 diff --git a/libobjc/configure b/libobjc/configure
-index d1a032fbf6a..1ab436a6cf5 100755
+index 84862a82864..8d436d499ad 100755
 --- a/libobjc/configure
 +++ b/libobjc/configure
-@@ -3323,7 +3323,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+@@ -3320,7 +3320,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
  
  
  case $host in
@@ -4636,7 +5311,7 @@ index d1a032fbf6a..1ab436a6cf5 100755
      # 'host' will be top-level target in the case of a target lib,
      # we must compare to with_cross_host to decide if this is a native
      # or cross-compiler and select where to install dlls appropriately.
-@@ -3346,7 +3346,7 @@ case "${host}" in
+@@ -3343,7 +3343,7 @@ case "${host}" in
      # Darwin needs -single_module when linking libobjc
      extra_ldflags_libobjc='$(lt_host_flags) -Wl,-single_module'
      ;;
@@ -4645,7 +5320,7 @@ index d1a032fbf6a..1ab436a6cf5 100755
      # Tell libtool to build DLLs on Windows
      extra_ldflags_libobjc='$(lt_host_flags)'
      ;;
-@@ -4546,7 +4546,7 @@ if test "$GCC" = yes; then
+@@ -4457,7 +4457,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -4654,7 +5329,7 @@ index d1a032fbf6a..1ab436a6cf5 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -4898,6 +4898,12 @@ else
+@@ -4809,6 +4809,12 @@ else
      lt_cv_sys_max_cmd_len=8192;
      ;;
  
@@ -4667,7 +5342,7 @@ index d1a032fbf6a..1ab436a6cf5 100755
    amigaos*)
      # On AmigaOS with pdksh, this test takes hours, literally.
      # So we just punt and use a minimum line length of 8192.
-@@ -8389,7 +8395,7 @@ _LT_EOF
+@@ -8301,7 +8307,7 @@ _LT_EOF
        fi
        ;;
  
@@ -4676,7 +5351,7 @@ index d1a032fbf6a..1ab436a6cf5 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -8826,7 +8832,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -8738,7 +8744,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -4685,7 +5360,7 @@ index d1a032fbf6a..1ab436a6cf5 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -9730,14 +9736,14 @@ bsdi[45]*)
+@@ -9642,14 +9648,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -4702,7 +5377,7 @@ index d1a032fbf6a..1ab436a6cf5 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -9761,7 +9767,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -9673,7 +9679,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -4711,7 +5386,7 @@ index d1a032fbf6a..1ab436a6cf5 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -10395,7 +10401,7 @@ else
+@@ -10307,7 +10313,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -4721,7 +5396,7 @@ index d1a032fbf6a..1ab436a6cf5 100755
      lt_cv_dlopen_libs=
      ;;
 diff --git a/libobjc/configure.ac b/libobjc/configure.ac
-index 3176130c38e..b18c21d787b 100644
+index c6d48f787ae..3dab4b3d7c7 100644
 --- a/libobjc/configure.ac
 +++ b/libobjc/configure.ac
 @@ -144,7 +144,7 @@ case "${host}" in
@@ -4954,10 +5629,10 @@ index c031eb3e7fa..b7b807d6d5a 100644
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
 diff --git a/libquadmath/configure b/libquadmath/configure
-index 14610d66238..5f78c2c3654 100755
+index 76a2c20b7e1..5838dd0e7bf 100755
 --- a/libquadmath/configure
 +++ b/libquadmath/configure
-@@ -4744,7 +4744,7 @@ if test "$GCC" = yes; then
+@@ -4741,7 +4741,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -4966,7 +5641,7 @@ index 14610d66238..5f78c2c3654 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -8282,7 +8282,7 @@ _LT_EOF
+@@ -8279,7 +8279,7 @@ _LT_EOF
        fi
        ;;
  
@@ -4975,7 +5650,7 @@ index 14610d66238..5f78c2c3654 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -8719,7 +8719,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -8716,7 +8716,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -4984,7 +5659,7 @@ index 14610d66238..5f78c2c3654 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -9623,14 +9623,14 @@ bsdi[45]*)
+@@ -9620,14 +9620,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -5001,7 +5676,7 @@ index 14610d66238..5f78c2c3654 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -9654,7 +9654,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -9651,7 +9651,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -5010,7 +5685,7 @@ index 14610d66238..5f78c2c3654 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -10288,7 +10288,7 @@ else
+@@ -10285,7 +10285,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -5019,7 +5694,7 @@ index 14610d66238..5f78c2c3654 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -10922,7 +10922,7 @@ CC="$lt_save_CC"
+@@ -10919,7 +10919,7 @@ CC="$lt_save_CC"
  
  
  case $host in
@@ -5029,10 +5704,10 @@ index 14610d66238..5f78c2c3654 100755
      # we must compare to with_cross_host to decide if this is a native
      # or cross-compiler and select where to install dlls appropriately.
 diff --git a/libsanitizer/configure b/libsanitizer/configure
-index 4695bc7d4f7..d1bd02632f6 100755
+index a3a08d635f4..ee2b4d647de 100755
 --- a/libsanitizer/configure
 +++ b/libsanitizer/configure
-@@ -6240,7 +6240,7 @@ if test "$GCC" = yes; then
+@@ -6235,7 +6235,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -5041,7 +5716,7 @@ index 4695bc7d4f7..d1bd02632f6 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -9771,7 +9771,7 @@ _LT_EOF
+@@ -9766,7 +9766,7 @@ _LT_EOF
        fi
        ;;
  
@@ -5050,7 +5725,7 @@ index 4695bc7d4f7..d1bd02632f6 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -10202,7 +10202,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -10197,7 +10197,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -5059,7 +5734,7 @@ index 4695bc7d4f7..d1bd02632f6 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -11103,14 +11103,14 @@ bsdi[45]*)
+@@ -11098,14 +11098,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -5076,7 +5751,7 @@ index 4695bc7d4f7..d1bd02632f6 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -11134,7 +11134,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -11129,7 +11129,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -5085,7 +5760,7 @@ index 4695bc7d4f7..d1bd02632f6 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -11765,7 +11765,7 @@ else
+@@ -11760,7 +11760,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -5094,7 +5769,7 @@ index 4695bc7d4f7..d1bd02632f6 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -12639,7 +12639,7 @@ if test "$GCC" = yes; then
+@@ -12634,7 +12634,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -5103,7 +5778,7 @@ index 4695bc7d4f7..d1bd02632f6 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -12992,7 +12992,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -12987,7 +12987,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
          esac
          ;;
  
@@ -5112,7 +5787,7 @@ index 4695bc7d4f7..d1bd02632f6 100755
          # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
          # as there is no search path for DLLs.
          hardcode_libdir_flag_spec_CXX='-L$libdir'
-@@ -14765,14 +14765,14 @@ bsdi[45]*)
+@@ -14760,14 +14760,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -5129,7 +5804,7 @@ index 4695bc7d4f7..d1bd02632f6 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -14795,7 +14795,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -14790,7 +14790,7 @@ cygwin* | mingw* | pw32* | cegcc*)
        soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
  
        ;;
@@ -5138,7 +5813,7 @@ index 4695bc7d4f7..d1bd02632f6 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -16391,7 +16391,7 @@ fi
+@@ -16386,7 +16386,7 @@ fi
  # Check for the fcntl function.
  if test -n "${with_target_subdir}"; then
     case "${host}" in
@@ -5148,7 +5823,7 @@ index 4695bc7d4f7..d1bd02632f6 100755
     esac
  else
 diff --git a/libsanitizer/configure.ac b/libsanitizer/configure.ac
-index 0d11afd1948..a6dc2186fad 100644
+index b0c485b0f7b..4fb2b8605e5 100644
 --- a/libsanitizer/configure.ac
 +++ b/libsanitizer/configure.ac
 @@ -295,7 +295,7 @@ fi
@@ -5161,10 +5836,10 @@ index 0d11afd1948..a6dc2186fad 100644
     esac
  else
 diff --git a/libssp/configure b/libssp/configure
-index 4e88e4916cc..3b622158dbd 100755
+index ee1751d20db..0a884cb1ff5 100755
 --- a/libssp/configure
 +++ b/libssp/configure
-@@ -4928,7 +4928,7 @@ if test "$GCC" = yes; then
+@@ -4840,7 +4840,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -5173,7 +5848,7 @@ index 4e88e4916cc..3b622158dbd 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -5280,6 +5280,12 @@ else
+@@ -5192,6 +5192,12 @@ else
      lt_cv_sys_max_cmd_len=8192;
      ;;
  
@@ -5186,7 +5861,7 @@ index 4e88e4916cc..3b622158dbd 100755
    amigaos*)
      # On AmigaOS with pdksh, this test takes hours, literally.
      # So we just punt and use a minimum line length of 8192.
-@@ -8466,7 +8472,7 @@ _LT_EOF
+@@ -8378,7 +8384,7 @@ _LT_EOF
        fi
        ;;
  
@@ -5195,7 +5870,7 @@ index 4e88e4916cc..3b622158dbd 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -8903,7 +8909,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -8815,7 +8821,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -5204,7 +5879,7 @@ index 4e88e4916cc..3b622158dbd 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -9807,14 +9813,14 @@ bsdi[45]*)
+@@ -9719,14 +9725,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -5221,7 +5896,7 @@ index 4e88e4916cc..3b622158dbd 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -9838,7 +9844,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -9750,7 +9756,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -5230,7 +5905,7 @@ index 4e88e4916cc..3b622158dbd 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -10472,7 +10478,7 @@ else
+@@ -10384,7 +10390,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -5239,7 +5914,7 @@ index 4e88e4916cc..3b622158dbd 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -11106,7 +11112,7 @@ CC="$lt_save_CC"
+@@ -11018,7 +11024,7 @@ CC="$lt_save_CC"
  
  
  case $host in
@@ -5249,7 +5924,7 @@ index 4e88e4916cc..3b622158dbd 100755
      # we must compare to with_cross_host to decide if this is a native
      # or cross-compiler and select where to install dlls appropriately.
 diff --git a/libssp/ssp.c b/libssp/ssp.c
-index 741377ddd40..a3b029417ad 100644
+index 536fb917a49..1545f99d181 100644
 --- a/libssp/ssp.c
 +++ b/libssp/ssp.c
 @@ -65,6 +65,9 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
@@ -5291,10 +5966,10 @@ index 741377ddd40..a3b029417ad 100644
  
  void
 diff --git a/libstdc++-v3/config/abi/pre/gnu.ver b/libstdc++-v3/config/abi/pre/gnu.ver
-index 5e66dc5cc3f..091a67ede27 100644
+index f365da116f0..5a0c88dfcae 100644
 --- a/libstdc++-v3/config/abi/pre/gnu.ver
 +++ b/libstdc++-v3/config/abi/pre/gnu.ver
-@@ -2178,7 +2178,7 @@ CXXABI_1.3.6 {
+@@ -2171,7 +2171,7 @@ CXXABI_1.3.6 {
      __cxa_allocate_dependent_exception;
      __cxa_free_dependent_exception;
      __cxa_deleted_virtual;
@@ -5304,7 +5979,7 @@ index 5e66dc5cc3f..091a67ede27 100644
  
  CXXABI_1.3.7 {
 diff --git a/libstdc++-v3/config/locale/dragonfly/c_locale.h b/libstdc++-v3/config/locale/dragonfly/c_locale.h
-index c3a20edceba..c69735e55dc 100644
+index 0a5753208db..73fcb1281e1 100644
 --- a/libstdc++-v3/config/locale/dragonfly/c_locale.h
 +++ b/libstdc++-v3/config/locale/dragonfly/c_locale.h
 @@ -55,7 +55,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -5329,7 +6004,7 @@ index c3a20edceba..c69735e55dc 100644
  
      __builtin_va_end(__args);
 diff --git a/libstdc++-v3/config/locale/generic/c_locale.h b/libstdc++-v3/config/locale/generic/c_locale.h
-index 0d208166063..dcb17b36023 100644
+index ce9fbb80d76..7c1b19d5be8 100644
 --- a/libstdc++-v3/config/locale/generic/c_locale.h
 +++ b/libstdc++-v3/config/locale/generic/c_locale.h
 @@ -53,7 +53,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -5354,7 +6029,7 @@ index 0d208166063..dcb17b36023 100644
  
      __builtin_va_end(__args);
 diff --git a/libstdc++-v3/config/locale/gnu/c_locale.h b/libstdc++-v3/config/locale/gnu/c_locale.h
-index 1bd014a4515..deb731ddeb7 100644
+index 75b955c8312..ce1eca42b86 100644
 --- a/libstdc++-v3/config/locale/gnu/c_locale.h
 +++ b/libstdc++-v3/config/locale/gnu/c_locale.h
 @@ -67,7 +67,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -5378,6 +6053,18 @@ index 1bd014a4515..deb731ddeb7 100644
  #endif
  
      __builtin_va_end(__args);
+diff --git a/libstdc++-v3/config/os/mingw32-w64/os_defines.h b/libstdc++-v3/config/os/mingw32-w64/os_defines.h
+index 1f46103249a..b737a954f0a 100644
+--- a/libstdc++-v3/config/os/mingw32-w64/os_defines.h
++++ b/libstdc++-v3/config/os/mingw32-w64/os_defines.h
+@@ -76,6 +76,7 @@
+ 
+ #ifdef __x86_64__
+ #define _GLIBCXX_LLP64 1
++#define _GLIBCXX_USE_WEAK_REF 0
+ #endif
+ 
+ // Enable use of GetModuleHandleEx (requires Windows XP/2003) in
 diff --git a/libstdc++-v3/config/os/mint/ctype_base.h b/libstdc++-v3/config/os/mint/ctype_base.h
 new file mode 100644
 index 00000000000..c1d8f0c3ab1
@@ -5915,10 +6602,10 @@ index 00000000000..11d2f9e1c82
 +
 +#endif
 diff --git a/libstdc++-v3/configure b/libstdc++-v3/configure
-index 5535bfa2b5a..f1e48694e21 100755
+index e1c55aa72ff..7e0738f9853 100755
 --- a/libstdc++-v3/configure
 +++ b/libstdc++-v3/configure
-@@ -5659,7 +5659,7 @@ if test "$GCC" = yes; then
+@@ -5656,7 +5656,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -5927,7 +6614,7 @@ index 5535bfa2b5a..f1e48694e21 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -6000,6 +6000,12 @@ else
+@@ -5997,6 +5997,12 @@ else
      lt_cv_sys_max_cmd_len=8192;
      ;;
  
@@ -5940,7 +6627,7 @@ index 5535bfa2b5a..f1e48694e21 100755
    amigaos*)
      # On AmigaOS with pdksh, this test takes hours, literally.
      # So we just punt and use a minimum line length of 8192.
-@@ -9315,7 +9321,7 @@ _LT_EOF
+@@ -9312,7 +9318,7 @@ _LT_EOF
        fi
        ;;
  
@@ -5949,7 +6636,7 @@ index 5535bfa2b5a..f1e48694e21 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -9752,7 +9758,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -9749,7 +9755,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -5958,7 +6645,7 @@ index 5535bfa2b5a..f1e48694e21 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -10656,14 +10662,14 @@ bsdi[45]*)
+@@ -10653,14 +10659,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -5975,7 +6662,7 @@ index 5535bfa2b5a..f1e48694e21 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -10687,7 +10693,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -10684,7 +10690,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -5984,7 +6671,7 @@ index 5535bfa2b5a..f1e48694e21 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -11321,7 +11327,7 @@ else
+@@ -11318,7 +11324,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -5993,7 +6680,7 @@ index 5535bfa2b5a..f1e48694e21 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -12210,7 +12216,7 @@ if test "$GCC" = yes; then
+@@ -12207,7 +12213,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -6002,7 +6689,7 @@ index 5535bfa2b5a..f1e48694e21 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -12569,7 +12575,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -12566,7 +12572,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
          esac
          ;;
  
@@ -6011,7 +6698,7 @@ index 5535bfa2b5a..f1e48694e21 100755
          # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
          # as there is no search path for DLLs.
          hardcode_libdir_flag_spec_CXX='-L$libdir'
-@@ -14342,14 +14348,14 @@ bsdi[45]*)
+@@ -14339,14 +14345,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -6028,7 +6715,7 @@ index 5535bfa2b5a..f1e48694e21 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -14372,7 +14378,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -14369,7 +14375,7 @@ cygwin* | mingw* | pw32* | cegcc*)
        soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
  
        ;;
@@ -6037,7 +6724,7 @@ index 5535bfa2b5a..f1e48694e21 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -14980,7 +14986,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+@@ -14977,7 +14983,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
  
  
  case $host in
@@ -6046,7 +6733,7 @@ index 5535bfa2b5a..f1e48694e21 100755
      # 'host' will be top-level target in the case of a target lib,
      # we must compare to with_cross_host to decide if this is a native
      # or cross-compiler and select where to install dlls appropriately.
-@@ -21853,7 +21859,7 @@ if test "$GCC" = yes; then
+@@ -21833,7 +21839,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -6055,7 +6742,7 @@ index 5535bfa2b5a..f1e48694e21 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -28175,7 +28181,7 @@ if test "$GCC" = yes; then
+@@ -28155,7 +28161,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by GCC" >&5
  $as_echo_n "checking for ld used by GCC... " >&6; }
    case $host in
@@ -6064,20 +6751,20 @@ index 5535bfa2b5a..f1e48694e21 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -53783,7 +53789,7 @@ $as_echo "#define HAVE_TLS 1" >>confdefs.h
+@@ -53763,7 +53769,7 @@ $as_echo "#define HAVE_TLS 1" >>confdefs.h
  	;;
      esac
      ;;
--  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin* | *-solaris*)
-+  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin* | *-solaris* | *-mint*)
+-  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin*)
++  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin* | *-mint*)
  
    # All these tests are for C++; save the language and the compiler flags.
    # The CXXFLAGS thing is suspicious, but based on similar bits previously
 diff --git a/libstdc++-v3/configure.host b/libstdc++-v3/configure.host
-index 155a3cdea1b..28369401ccd 100644
+index caea9de9c76..d50502318bf 100644
 --- a/libstdc++-v3/configure.host
 +++ b/libstdc++-v3/configure.host
-@@ -289,6 +289,10 @@ case "${host_os}" in
+@@ -286,6 +286,10 @@ case "${host_os}" in
      esac
      OPT_LDFLAGS="${OPT_LDFLAGS} \$(lt_host_flags)"
      ;;
@@ -6089,23 +6776,23 @@ index 155a3cdea1b..28369401ccd 100644
      os_include_dir="os/bsd/netbsd"
      ;;
 diff --git a/libstdc++-v3/crossconfig.m4 b/libstdc++-v3/crossconfig.m4
-index cb6e3afff3d..027b420b858 100644
+index 830a00b5d2a..e30981639a3 100644
 --- a/libstdc++-v3/crossconfig.m4
 +++ b/libstdc++-v3/crossconfig.m4
 @@ -183,7 +183,7 @@ case "${host}" in
  	;;
      esac
      ;;
--  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin* | *-solaris*)
-+  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin* | *-solaris* | *-mint*)
+-  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin*)
++  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin* | *-mint*)
      GLIBCXX_CHECK_COMPILER_FEATURES
      GLIBCXX_CHECK_LINKER_FEATURES
      GLIBCXX_CHECK_MATH_SUPPORT
 diff --git a/libstdc++-v3/include/bits/basic_string.h b/libstdc++-v3/include/bits/basic_string.h
-index 0f5d398fcf2..f81843fd663 100644
+index 6443ba9192a..5ac3bb8fcc1 100644
 --- a/libstdc++-v3/include/bits/basic_string.h
 +++ b/libstdc++-v3/include/bits/basic_string.h
-@@ -6382,13 +6382,13 @@ _GLIBCXX_END_NAMESPACE_CXX11
+@@ -6343,13 +6343,13 @@ _GLIBCXX_END_NAMESPACE_CXX11
  
    template<>
      basic_istream<char>&
@@ -6122,7 +6809,7 @@ index 0f5d398fcf2..f81843fd663 100644
  #endif  
  
 diff --git a/libstdc++-v3/include/bits/basic_string.tcc b/libstdc++-v3/include/bits/basic_string.tcc
-index 04b68ca0202..f3204991ed6 100644
+index 65ff2445ff0..d001660db69 100644
 --- a/libstdc++-v3/include/bits/basic_string.tcc
 +++ b/libstdc++-v3/include/bits/basic_string.tcc
 @@ -1462,7 +1462,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -6268,7 +6955,7 @@ index 04b68ca0202..f3204991ed6 100644
  
    // Inhibit implicit instantiations for required instantiations,
 diff --git a/libstdc++-v3/include/bits/istream.tcc b/libstdc++-v3/include/bits/istream.tcc
-index 34b335896d3..fc60d410ccc 100644
+index 92df9d126ef..37810bc7c41 100644
 --- a/libstdc++-v3/include/bits/istream.tcc
 +++ b/libstdc++-v3/include/bits/istream.tcc
 @@ -44,21 +44,21 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -6453,7 +7140,7 @@ index 34b335896d3..fc60d410ccc 100644
  
    // Inhibit implicit instantiations for required instantiations,
 diff --git a/libstdc++-v3/include/bits/locale_conv.h b/libstdc++-v3/include/bits/locale_conv.h
-index 72680b94030..dd5e68971e0 100644
+index b8f77dcaca9..bf868037216 100644
 --- a/libstdc++-v3/include/bits/locale_conv.h
 +++ b/libstdc++-v3/include/bits/locale_conv.h
 @@ -249,10 +249,10 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
@@ -6503,10 +7190,10 @@ index 72680b94030..dd5e68971e0 100644
  
        typename _Wide_streambuf::int_type
 diff --git a/libstdc++-v3/include/bits/locale_facets.h b/libstdc++-v3/include/bits/locale_facets.h
-index d5384e1469e..a0250941223 100644
+index 1ad0eb5ab66..d7365de7533 100644
 --- a/libstdc++-v3/include/bits/locale_facets.h
 +++ b/libstdc++-v3/include/bits/locale_facets.h
-@@ -1988,7 +1988,7 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
+@@ -1984,7 +1984,7 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
         *  except if the value is 1, sets @a v to true, if the value is 0, sets
         *  @a v to false, and otherwise set err to ios_base::failbit.
         *
@@ -6515,7 +7202,7 @@ index d5384e1469e..a0250941223 100644
         *  @param  __end  End of input stream.
         *  @param  __io  Source of locale and flags.
         *  @param  __err  Error flags to set.
-@@ -1996,9 +1996,9 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
+@@ -1992,9 +1992,9 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
         *  @return  Iterator after reading.
        */
        iter_type
@@ -6527,7 +7214,7 @@ index d5384e1469e..a0250941223 100644
  
        //@{
        /**
-@@ -2025,7 +2025,7 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
+@@ -2021,7 +2021,7 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
         *  Otherwise, sets err to ios_base::failbit and leaves @a v unaltered.
         *  Sets err to ios_base::eofbit if the stream is emptied.
         *
@@ -6536,7 +7223,7 @@ index d5384e1469e..a0250941223 100644
         *  @param  __end  End of input stream.
         *  @param  __io  Source of locale and flags.
         *  @param  __err  Error flags to set.
-@@ -2033,35 +2033,35 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
+@@ -2029,35 +2029,35 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
         *  @return  Iterator after reading.
        */
        iter_type
@@ -6584,7 +7271,7 @@ index d5384e1469e..a0250941223 100644
  #endif
        //@}
  
-@@ -2085,7 +2085,7 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
+@@ -2081,7 +2081,7 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
         *  Otherwise, sets err to ios_base::failbit and leaves @a v unaltered.
         *  Sets err to ios_base::eofbit if the stream is emptied.
         *
@@ -6593,7 +7280,7 @@ index d5384e1469e..a0250941223 100644
         *  @param  __end  End of input stream.
         *  @param  __io  Source of locale and flags.
         *  @param  __err  Error flags to set.
-@@ -2093,19 +2093,19 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
+@@ -2089,19 +2089,19 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
         *  @return  Iterator after reading.
        */
        iter_type
@@ -6619,7 +7306,7 @@ index d5384e1469e..a0250941223 100644
        //@}
  
        /**
-@@ -2128,7 +2128,7 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
+@@ -2124,7 +2124,7 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
         *  Otherwise, sets err to ios_base::failbit and leaves @a v unaltered.
         *  Sets err to ios_base::eofbit if the stream is emptied.
         *
@@ -6628,7 +7315,7 @@ index d5384e1469e..a0250941223 100644
         *  @param  __end  End of input stream.
         *  @param  __io  Source of locale and flags.
         *  @param  __err  Error flags to set.
-@@ -2136,9 +2136,9 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
+@@ -2132,9 +2132,9 @@ _GLIBCXX_BEGIN_NAMESPACE_LDBL
         *  @return  Iterator after reading.
        */
        iter_type
@@ -6641,7 +7328,7 @@ index d5384e1469e..a0250941223 100644
      protected:
        /// Destructor.
 diff --git a/libstdc++-v3/include/bits/ostream.tcc b/libstdc++-v3/include/bits/ostream.tcc
-index e02ba55a626..316c86ef250 100644
+index e96bad81210..40f37fd265b 100644
 --- a/libstdc++-v3/include/bits/ostream.tcc
 +++ b/libstdc++-v3/include/bits/ostream.tcc
 @@ -318,10 +318,10 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -6682,7 +7369,7 @@ index e02ba55a626..316c86ef250 100644
  
    // Inhibit implicit instantiations for required instantiations,
 diff --git a/libstdc++-v3/include/bits/ostream_insert.h b/libstdc++-v3/include/bits/ostream_insert.h
-index be842e928f3..f16e554eb63 100644
+index 8c9b941a167..4a6f1ea8dfa 100644
 --- a/libstdc++-v3/include/bits/ostream_insert.h
 +++ b/libstdc++-v3/include/bits/ostream_insert.h
 @@ -41,31 +41,31 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -6783,10 +7470,10 @@ index be842e928f3..f16e554eb63 100644
  
    // Inhibit implicit instantiations for required instantiations,
 diff --git a/libstdc++-v3/include/bits/regex.h b/libstdc++-v3/include/bits/regex.h
-index 12e830b2c68..fb173d726ed 100644
+index c8e6bfcaea4..46e42a8a84f 100644
 --- a/libstdc++-v3/include/bits/regex.h
 +++ b/libstdc++-v3/include/bits/regex.h
-@@ -1817,7 +1817,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
+@@ -1819,7 +1819,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
         */
        template<typename _Out_iter>
  	_Out_iter
@@ -6795,7 +7482,7 @@ index 12e830b2c68..fb173d726ed 100644
  	       const char_type* __fmt_last,
  	       match_flag_type __flags = regex_constants::format_default) const;
  
-@@ -1826,10 +1826,10 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
+@@ -1828,10 +1828,10 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
         */
        template<typename _Out_iter, typename _St, typename _Sa>
  	_Out_iter
@@ -6808,7 +7495,7 @@ index 12e830b2c68..fb173d726ed 100644
  			__flags);
  	}
  
-@@ -2314,46 +2314,46 @@ _GLIBCXX_END_NAMESPACE_CXX11
+@@ -2319,46 +2319,46 @@ _GLIBCXX_END_NAMESPACE_CXX11
    /**
     * @brief Search for a regular expression within a range for multiple times,
     and replace the matched parts through filling a format string.
@@ -6863,10 +7550,10 @@ index 12e830b2c68..fb173d726ed 100644
  		  const _Ch_type* __fmt,
  		  regex_constants::match_flag_type __flags
 diff --git a/libstdc++-v3/include/bits/regex.tcc b/libstdc++-v3/include/bits/regex.tcc
-index b92edb9ab29..a28b4daa950 100644
+index dc32a49dcd9..2370994ed37 100644
 --- a/libstdc++-v3/include/bits/regex.tcc
 +++ b/libstdc++-v3/include/bits/regex.tcc
-@@ -353,7 +353,7 @@ namespace __detail
+@@ -357,7 +357,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
    template<typename _Bi_iter, typename _Alloc>
    template<typename _Out_iter>
      _Out_iter match_results<_Bi_iter, _Alloc>::
@@ -6875,7 +7562,7 @@ index b92edb9ab29..a28b4daa950 100644
  	   const match_results<_Bi_iter, _Alloc>::char_type* __fmt_first,
  	   const match_results<_Bi_iter, _Alloc>::char_type* __fmt_last,
  	   match_flag_type __flags) const
-@@ -368,7 +368,7 @@ namespace __detail
+@@ -372,7 +372,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  	{
  	  auto& __sub = (*this)[__idx];
  	  if (__sub.matched)
@@ -6884,29 +7571,20 @@ index b92edb9ab29..a28b4daa950 100644
  	};
  
        if (__flags & regex_constants::format_sed)
-@@ -382,7 +382,7 @@ namespace __detail
- 		  if (__fctyp.is(__ctype_type::digit, *__fmt_first))
- 		    __output(__traits.value(*__fmt_first, 10));
- 		  else
--		    *__out++ = *__fmt_first;
-+		    *___out++ = *__fmt_first;
- 		  continue;
- 		}
- 	      if (*__fmt_first == '\\')
-@@ -395,10 +395,10 @@ namespace __detail
- 		  __output(0);
- 		  continue;
- 		}
--	      *__out++ = *__fmt_first;
-+	      *___out++ = *__fmt_first;
- 	    }
- 	  if (__escaping)
--	    *__out++ = '\\';
-+	    *___out++ = '\\';
+@@ -389,10 +389,10 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+ 		    && __fctyp.is(__ctype_type::digit, *__fmt_first))
+ 		  __output(__traits.value(*__fmt_first++, 10));
+ 		else
+-		  *__out++ = '\\';
++		  *___out++ = '\\';
+ 	      }
+ 	    else
+-	      *__out++ = *__fmt_first++;
++	      *___out++ = *__fmt_first++;
  	}
        else
  	{
-@@ -408,7 +408,7 @@ namespace __detail
+@@ -402,7 +402,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  	      if (__next == __fmt_last)
  		break;
  
@@ -6915,7 +7593,7 @@ index b92edb9ab29..a28b4daa950 100644
  
  	      auto __eat = [&](char __ch) -> bool
  		{
-@@ -421,22 +421,22 @@ namespace __detail
+@@ -415,22 +415,22 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  		};
  
  	      if (++__next == __fmt_last)
@@ -6942,7 +7620,7 @@ index b92edb9ab29..a28b4daa950 100644
  		}
  	      else if (__fctyp.is(__ctype_type::digit, *__next))
  		{
-@@ -451,18 +451,18 @@ namespace __detail
+@@ -445,18 +445,18 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  		    __output(__num);
  		}
  	      else
@@ -6965,7 +7643,7 @@ index b92edb9ab29..a28b4daa950 100644
  		  const basic_regex<_Ch_type, _Rx_traits>& __e,
  		  const _Ch_type* __fmt,
  		  regex_constants::match_flag_type __flags)
-@@ -473,7 +473,7 @@ namespace __detail
+@@ -467,7 +467,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
        if (__i == __end)
  	{
  	  if (!(__flags & regex_constants::format_no_copy))
@@ -6974,7 +7652,7 @@ index b92edb9ab29..a28b4daa950 100644
  	}
        else
  	{
-@@ -482,17 +482,17 @@ namespace __detail
+@@ -476,17 +476,17 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  	  for (; __i != __end; ++__i)
  	    {
  	      if (!(__flags & regex_constants::format_no_copy))
@@ -6998,10 +7676,10 @@ index b92edb9ab29..a28b4daa950 100644
  
    template<typename _Bi_iter,
 diff --git a/libstdc++-v3/include/bits/stl_algo.h b/libstdc++-v3/include/bits/stl_algo.h
-index 753ebb7a09c..ab7913659f0 100644
+index 97370ed534e..624d90bc386 100644
 --- a/libstdc++-v3/include/bits/stl_algo.h
 +++ b/libstdc++-v3/include/bits/stl_algo.h
-@@ -5717,7 +5717,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
+@@ -5711,7 +5711,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
             typename _Size, typename _UniformRandomBitGenerator>
      _RandomAccessIterator
      __sample(_InputIterator __first, _InputIterator __last, input_iterator_tag,
@@ -7010,7 +7688,7 @@ index 753ebb7a09c..ab7913659f0 100644
  	     _Size __n, _UniformRandomBitGenerator&& __g)
      {
        using __distrib_type = uniform_int_distribution<_Size>;
-@@ -5726,7 +5726,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
+@@ -5720,7 +5720,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
        _Size __sample_sz = 0;
        while (__first != __last && __sample_sz != __n)
  	{
@@ -7019,7 +7697,7 @@ index 753ebb7a09c..ab7913659f0 100644
  	  ++__first;
  	}
        for (auto __pop_sz = __sample_sz; __first != __last;
-@@ -5734,9 +5734,9 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
+@@ -5728,9 +5728,9 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
  	{
  	  const auto __k = __d(__g, __param_type{0, __pop_sz});
  	  if (__k < __n)
@@ -7031,7 +7709,7 @@ index 753ebb7a09c..ab7913659f0 100644
      }
  
    /// Selection sampling algorithm.
-@@ -5745,7 +5745,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
+@@ -5739,7 +5739,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
      _OutputIterator
      __sample(_ForwardIterator __first, _ForwardIterator __last,
  	     forward_iterator_tag,
@@ -7040,7 +7718,7 @@ index 753ebb7a09c..ab7913659f0 100644
  	     _Size __n, _UniformRandomBitGenerator&& __g)
      {
        using __distrib_type = uniform_int_distribution<_Size>;
-@@ -5774,7 +5774,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
+@@ -5768,7 +5768,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
  	      --__unsampled_sz;
  	      if (__p.first < __n)
  		{
@@ -7049,7 +7727,7 @@ index 753ebb7a09c..ab7913659f0 100644
  		  --__n;
  		}
  
-@@ -5785,7 +5785,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
+@@ -5779,7 +5779,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
  	      --__unsampled_sz;
  	      if (__p.second < __n)
  		{
@@ -7058,7 +7736,7 @@ index 753ebb7a09c..ab7913659f0 100644
  		  --__n;
  		}
  
-@@ -5798,10 +5798,10 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
+@@ -5792,10 +5792,10 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
        for (; __n != 0; ++__first)
  	if (__d(__g, __param_type{0, --__unsampled_sz}) < __n)
  	  {
@@ -7071,7 +7749,7 @@ index 753ebb7a09c..ab7913659f0 100644
      }
  
  #if __cplusplus > 201402L
-@@ -5811,7 +5811,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
+@@ -5805,7 +5805,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
             typename _Distance, typename _UniformRandomBitGenerator>
      _SampleIterator
      sample(_PopulationIterator __first, _PopulationIterator __last,
@@ -7080,7 +7758,7 @@ index 753ebb7a09c..ab7913659f0 100644
  	   _UniformRandomBitGenerator&& __g)
      {
        using __pop_cat = typename
-@@ -5830,7 +5830,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
+@@ -5824,7 +5824,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
  
        typename iterator_traits<_PopulationIterator>::difference_type __d = __n;
        return _GLIBCXX_STD_A::
@@ -7090,7 +7768,7 @@ index 753ebb7a09c..ab7913659f0 100644
      }
  #endif // C++17
 diff --git a/libstdc++-v3/include/c_global/cctype b/libstdc++-v3/include/c_global/cctype
-index a775e4e7c6b..5a853415932 100644
+index 6710ca9407a..b5fa2921035 100644
 --- a/libstdc++-v3/include/c_global/cctype
 +++ b/libstdc++-v3/include/c_global/cctype
 @@ -41,6 +41,24 @@
@@ -7119,10 +7797,10 @@ index a775e4e7c6b..5a853415932 100644
  #define _GLIBCXX_CCTYPE 1
  
 diff --git a/libstdc++-v3/include/experimental/algorithm b/libstdc++-v3/include/experimental/algorithm
-index 4c51efb1c97..f1a077292d6 100644
+index f7c9fbe0229..989c2a21fc9 100644
 --- a/libstdc++-v3/include/experimental/algorithm
 +++ b/libstdc++-v3/include/experimental/algorithm
-@@ -58,7 +58,7 @@ inline namespace fundamentals_v2
+@@ -57,7 +57,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
             typename _Distance, typename _UniformRandomNumberGenerator>
      _SampleIterator
      sample(_PopulationIterator __first, _PopulationIterator __last,
@@ -7131,7 +7809,7 @@ index 4c51efb1c97..f1a077292d6 100644
  	   _UniformRandomNumberGenerator&& __g)
      {
        using __pop_cat = typename
-@@ -76,7 +76,7 @@ inline namespace fundamentals_v2
+@@ -75,7 +75,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  		    "sample size must be an integer type");
  
        typename iterator_traits<_PopulationIterator>::difference_type __d = __n;
@@ -7141,7 +7819,7 @@ index 4c51efb1c97..f1a077292d6 100644
  			   std::forward<_UniformRandomNumberGenerator>(__g));
      }
 diff --git a/libstdc++-v3/include/ext/algorithm b/libstdc++-v3/include/ext/algorithm
-index 8e7eb3fdc4e..554d1e8bfae 100644
+index 823456cf618..0ac7e7406a6 100644
 --- a/libstdc++-v3/include/ext/algorithm
 +++ b/libstdc++-v3/include/ext/algorithm
 @@ -265,7 +265,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -7255,7 +7933,7 @@ index 8e7eb3fdc4e..554d1e8bfae 100644
  
    /**
 diff --git a/libstdc++-v3/include/ext/pb_ds/detail/debug_map_base.hpp b/libstdc++-v3/include/ext/pb_ds/detail/debug_map_base.hpp
-index 2eed4cded23..df98f18188d 100644
+index 976cf877cd7..3a53eed733d 100644
 --- a/libstdc++-v3/include/ext/pb_ds/detail/debug_map_base.hpp
 +++ b/libstdc++-v3/include/ext/pb_ds/detail/debug_map_base.hpp
 @@ -57,9 +57,9 @@ namespace __gnu_pbds
@@ -7271,7 +7949,7 @@ index 2eed4cded23..df98f18188d 100644
  #define PB_DS_CLASS_T_DEC \
      template<typename Key, typename Eq_Fn, typename Const_Key_Reference>
 diff --git a/libstdc++-v3/include/ext/random.tcc b/libstdc++-v3/include/ext/random.tcc
-index 07857dd6c82..fcf5d837f68 100644
+index 5aa443fd800..2ddb7feb39e 100644
 --- a/libstdc++-v3/include/ext/random.tcc
 +++ b/libstdc++-v3/include/ext/random.tcc
 @@ -207,38 +207,38 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -7332,7 +8010,7 @@ index 07857dd6c82..fcf5d837f68 100644
  
  
 diff --git a/libstdc++-v3/include/ext/vstring.tcc b/libstdc++-v3/include/ext/vstring.tcc
-index f333f7b6222..6b655d628d8 100644
+index ae5be38cd99..b56d5be345b 100644
 --- a/libstdc++-v3/include/ext/vstring.tcc
 +++ b/libstdc++-v3/include/ext/vstring.tcc
 @@ -549,7 +549,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -7479,7 +8157,7 @@ index f333f7b6222..6b655d628d8 100644
  
  _GLIBCXX_END_NAMESPACE_VERSION
 diff --git a/libstdc++-v3/include/parallel/algo.h b/libstdc++-v3/include/parallel/algo.h
-index ae3dbeb9bff..82e4dd804e7 100644
+index f6d0b2ad3c2..b0386615606 100644
 --- a/libstdc++-v3/include/parallel/algo.h
 +++ b/libstdc++-v3/include/parallel/algo.h
 @@ -289,67 +289,67 @@ namespace __parallel
@@ -7819,7 +8497,7 @@ index ae3dbeb9bff..82e4dd804e7 100644
  
    // Sequential fallback
 diff --git a/libstdc++-v3/include/parallel/multiway_merge.h b/libstdc++-v3/include/parallel/multiway_merge.h
-index e684c51a326..ee285523775 100644
+index ccd8b6e9390..650d68252bb 100644
 --- a/libstdc++-v3/include/parallel/multiway_merge.h
 +++ b/libstdc++-v3/include/parallel/multiway_merge.h
 @@ -1372,7 +1372,7 @@ namespace __gnu_parallel
@@ -7841,7 +8519,7 @@ index e684c51a326..ee285523775 100644
     *   for (int __i = 0; __i < 10; ++__i)
     *     { seqs.push(std::make_pair<int*>(sequences[__i],
 diff --git a/libstdc++-v3/include/parallel/set_operations.h b/libstdc++-v3/include/parallel/set_operations.h
-index e8822078b36..988df352cd8 100644
+index b9a72b92626..9aeaf550649 100644
 --- a/libstdc++-v3/include/parallel/set_operations.h
 +++ b/libstdc++-v3/include/parallel/set_operations.h
 @@ -130,12 +130,12 @@ namespace __gnu_parallel
@@ -7913,7 +8591,7 @@ index e8822078b36..988df352cd8 100644
  
    template<typename _IIter,
 diff --git a/libstdc++-v3/include/parallel/unique_copy.h b/libstdc++-v3/include/parallel/unique_copy.h
-index f1a8ee9a103..346a7b9823b 100644
+index 8e7b5a74daa..1d3ab42277d 100644
 --- a/libstdc++-v3/include/parallel/unique_copy.h
 +++ b/libstdc++-v3/include/parallel/unique_copy.h
 @@ -85,7 +85,7 @@ namespace __gnu_parallel
@@ -7944,7 +8622,7 @@ index f1a8ee9a103..346a7b9823b 100644
                }
            }
 diff --git a/libstdc++-v3/include/std/istream b/libstdc++-v3/include/std/istream
-index 010be33e550..5adf91a350f 100644
+index 233cc6b0145..00a7e7c9e1b 100644
 --- a/libstdc++-v3/include/std/istream
 +++ b/libstdc++-v3/include/std/istream
 @@ -738,7 +738,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -8019,7 +8697,7 @@ index 010be33e550..5adf91a350f 100644
  
    /**
 diff --git a/libstdc++-v3/include/std/ostream b/libstdc++-v3/include/std/ostream
-index 448a9288188..af438f06b0e 100644
+index f7cab03c841..a4ac5693f93 100644
 --- a/libstdc++-v3/include/std/ostream
 +++ b/libstdc++-v3/include/std/ostream
 @@ -479,14 +479,14 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -8150,7 +8828,7 @@ index 448a9288188..af438f06b0e 100644
  
    // Standard basic_ostream manipulators
 diff --git a/libstdc++-v3/include/std/thread b/libstdc++-v3/include/std/thread
-index 8dba04fa8f8..65b32d57548 100644
+index 6e850bb8d12..dd7883acb7a 100644
 --- a/libstdc++-v3/include/std/thread
 +++ b/libstdc++-v3/include/std/thread
 @@ -96,7 +96,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -8162,7 +8840,7 @@ index 8dba04fa8f8..65b32d57548 100644
      };
  
    private:
-@@ -320,12 +320,12 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -310,12 +310,12 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  
    template<class _CharT, class _Traits>
      inline basic_ostream<_CharT, _Traits>&
@@ -8177,9 +8855,9 @@ index 8dba04fa8f8..65b32d57548 100644
 +	return ___out << __id._M_thread;
      }
  
-   /** @namespace std::this_thread
+ _GLIBCXX_END_NAMESPACE_VERSION
 diff --git a/libstdc++-v3/include/std/tuple b/libstdc++-v3/include/std/tuple
-index 1d0074129b1..a1932ef3b9f 100644
+index 1f5365ad026..9c427ff6bef 100644
 --- a/libstdc++-v3/include/std/tuple
 +++ b/libstdc++-v3/include/std/tuple
 @@ -220,23 +220,23 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -8871,10 +9549,10 @@ index 1d0074129b1..a1932ef3b9f 100644
  
  
 diff --git a/libstdc++-v3/include/std/utility b/libstdc++-v3/include/std/utility
-index a1cceceefb2..c0614d4432a 100644
+index 847e5184c5b..607d7d6986d 100644
 --- a/libstdc++-v3/include/std/utility
 +++ b/libstdc++-v3/include/std/utility
-@@ -213,18 +213,18 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -222,18 +222,18 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  
    template<std::size_t _Int, class _Tp1, class _Tp2>
      constexpr typename tuple_element<_Int, std::pair<_Tp1, _Tp2>>::type&
@@ -8897,13 +9575,13 @@ index a1cceceefb2..c0614d4432a 100644
 +    get(const std::pair<_Tp1, _Tp2>& ___in) noexcept
 +    { return __pair_get<_Int>::__const_get(___in); }
  
-   template<std::size_t _Int, class _Tp1, class _Tp2>
-     constexpr const typename tuple_element<_Int, std::pair<_Tp1, _Tp2>>::type&&
+ #if __cplusplus > 201103L
+ 
 diff --git a/libstdc++-v3/include/tr1/regex b/libstdc++-v3/include/tr1/regex
-index f95cc04f926..3ba85db64da 100644
+index bfb5ef770d4..f910c304d16 100644
 --- a/libstdc++-v3/include/tr1/regex
 +++ b/libstdc++-v3/include/tr1/regex
-@@ -2005,7 +2005,7 @@ namespace regex_constants
+@@ -2008,7 +2008,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
         */
        template<typename _Out_iter>
          _Out_iter
@@ -8912,7 +9590,7 @@ index f95cc04f926..3ba85db64da 100644
  	       regex_constants::match_flag_type __flags
  	       = regex_constants::format_default) const;
  
-@@ -2401,7 +2401,7 @@ namespace regex_constants
+@@ -2404,7 +2404,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
    template<typename _Out_iter, typename _Bi_iter,
  	   typename _Rx_traits, typename _Ch_type>
      inline _Out_iter
@@ -8922,10 +9600,10 @@ index f95cc04f926..3ba85db64da 100644
  		  const basic_string<_Ch_type>& __fmt,
  		  regex_constants::match_flag_type __flags
 diff --git a/libstdc++-v3/include/tr1/tuple b/libstdc++-v3/include/tr1/tuple
-index 55bfb73d18a..8ba0158574b 100644
+index fe53a8b99b0..351ad9ee282 100644
 --- a/libstdc++-v3/include/tr1/tuple
 +++ b/libstdc++-v3/include/tr1/tuple
-@@ -102,26 +102,26 @@ namespace tr1
+@@ -102,26 +102,26 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
        : _Inherited(__tail...), _M_head(__head) { }
  
        template<typename... _UElements>
@@ -8962,7 +9640,7 @@ index 55bfb73d18a..8ba0158574b 100644
  	return *this;
        }
      };
-@@ -139,24 +139,24 @@ namespace tr1
+@@ -139,24 +139,24 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
        : _Inherited(__elements...) { }
  
        template<typename... _UElements>
@@ -8995,7 +9673,7 @@ index 55bfb73d18a..8ba0158574b 100644
  	return *this;
        }
      };
-@@ -178,41 +178,41 @@ namespace tr1
+@@ -178,41 +178,41 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
        : _Inherited(__a1, __a2) { }
  
        template<typename _U1, typename _U2>
@@ -9052,10 +9730,10 @@ index 55bfb73d18a..8ba0158574b 100644
  	}
      };
 diff --git a/libstdc++-v3/include/tr1/utility b/libstdc++-v3/include/tr1/utility
-index a03d462b36f..8cc2b2835c5 100644
+index 91076d9882c..fd33b441985 100644
 --- a/libstdc++-v3/include/tr1/utility
 +++ b/libstdc++-v3/include/tr1/utility
-@@ -93,13 +93,13 @@ namespace tr1
+@@ -93,13 +93,13 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  
    template<int _Int, class _Tp1, class _Tp2>
      inline typename tuple_element<_Int, std::pair<_Tp1, _Tp2> >::type&
@@ -9070,14 +9748,14 @@ index a03d462b36f..8cc2b2835c5 100644
 -    { return __pair_get<_Int>::__const_get(__in); }
 +    get(const std::pair<_Tp1, _Tp2>& ___in)
 +    { return __pair_get<_Int>::__const_get(___in); }
- }
  
  _GLIBCXX_END_NAMESPACE_VERSION
+ }
 diff --git a/libstdc++-v3/include/tr2/bool_set b/libstdc++-v3/include/tr2/bool_set
-index 3c43aeb7a22..2db936fe184 100644
+index 9d55b3c0ebd..ce4c4921702 100644
 --- a/libstdc++-v3/include/tr2/bool_set
 +++ b/libstdc++-v3/include/tr2/bool_set
-@@ -131,18 +131,18 @@ namespace tr2
+@@ -131,18 +131,18 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  
      template<typename CharT, typename Traits>
        friend std::basic_ostream<CharT, Traits>&
@@ -9101,7 +9779,7 @@ index 3c43aeb7a22..2db936fe184 100644
  	  __b._M_b = static_cast<_Bool_set_val>(__c);
        }
 diff --git a/libstdc++-v3/include/tr2/bool_set.tcc b/libstdc++-v3/include/tr2/bool_set.tcc
-index f1168c4d88f..ce952a63220 100644
+index a5fd898a822..78fab086508 100644
 --- a/libstdc++-v3/include/tr2/bool_set.tcc
 +++ b/libstdc++-v3/include/tr2/bool_set.tcc
 @@ -100,9 +100,9 @@ _GLIBCXX_END_NAMESPACE_VERSION
@@ -9116,6 +9794,560 @@ index f1168c4d88f..ce952a63220 100644
         */
  /*
    template<typename _CharT, typename _InIter>
+diff --git a/libstdc++-v3/src/filesystem/dir.cc b/libstdc++-v3/src/filesystem/dir.cc
+index c8457bde102..ac4dda465d2 100644
+--- a/libstdc++-v3/src/filesystem/dir.cc
++++ b/libstdc++-v3/src/filesystem/dir.cc
+@@ -41,9 +41,10 @@
+ #endif
+ 
+ #ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS
+-# undef opendir
+-# define opendir _wopendir
+-#endif
++# include "fs-win32.h"
++#else
++# include "fs-posix.h"
++#endif // _GLIBCXX_FILESYSTEM_IS_WINDOWS
+ 
+ namespace fs = std::experimental::filesystem;
+ 
+@@ -51,7 +52,7 @@ struct fs::_Dir
+ {
+   _Dir() : dirp(nullptr) { }
+ 
+-  _Dir(DIR* dirp, const fs::path& path) : dirp(dirp), path(path) { }
++  _Dir(os_DIR_t* dirp, const fs::path& path) : dirp(dirp), path(path) { }
+ 
+   _Dir(_Dir&& d)
+   : dirp(std::exchange(d.dirp, nullptr)), path(std::move(d.path)),
+@@ -60,11 +61,11 @@ struct fs::_Dir
+ 
+   _Dir& operator=(_Dir&&) = delete;
+ 
+-  ~_Dir() { if (dirp) ::closedir(dirp); }
++  ~_Dir() { if (dirp) ::os_closedir(dirp); }
+ 
+   bool advance(std::error_code*, directory_options = directory_options::none);
+ 
+-  DIR*			dirp;
++  os_DIR_t*			dirp;
+   fs::path		path;
+   directory_entry	entry;
+   file_type		type = file_type::none;
+@@ -87,7 +88,7 @@ namespace
+     if (ec)
+       ec->clear();
+ 
+-    if (DIR* dirp = ::opendir(p.c_str()))
++    if (os_DIR_t* dirp = ::os_opendir(p.c_str()))
+       return {dirp, p};
+ 
+     const int err = errno;
+@@ -105,7 +106,7 @@ namespace
+   }
+ 
+   inline fs::file_type
+-  get_file_type(const ::dirent& d __attribute__((__unused__)))
++  get_file_type(const ::os_dirent_t& d __attribute__((__unused__)))
+   {
+ #ifdef _GLIBCXX_HAVE_STRUCT_DIRENT_D_TYPE
+     switch (d.d_type)
+@@ -145,13 +146,14 @@ fs::_Dir::advance(error_code* ec, directory_options options)
+     ec->clear();
+ 
+   int err = std::exchange(errno, 0);
+-  const auto entp = readdir(dirp);
++  const auto entp = ::os_readdir(dirp);
+   std::swap(errno, err);
+ 
+   if (entp)
+     {
+       // skip past dot and dot-dot
+-      if (!strcmp(entp->d_name, ".") || !strcmp(entp->d_name, ".."))
++      if (!std::char_traits<path::value_type>::compare(entp->d_name, _WS("."), 1) ||
++	    !std::char_traits<path::value_type>::compare(entp->d_name, _WS(".."), 2))
+ 	return advance(ec, options);
+       entry = fs::directory_entry{path / entp->d_name};
+       type = get_file_type(*entp);
+@@ -239,7 +241,7 @@ recursive_directory_iterator(const path& p, directory_options options,
+                              error_code* ec)
+ : _M_options(options), _M_pending(true)
+ {
+-  if (DIR* dirp = ::opendir(p.c_str()))
++  if (os_DIR_t* dirp = ::os_opendir(p.c_str()))
+     {
+       auto sp = std::make_shared<_Dir_stack>();
+       sp->push(_Dir{ dirp, p });
+diff --git a/libstdc++-v3/src/filesystem/fs-posix.h b/libstdc++-v3/src/filesystem/fs-posix.h
+new file mode 100644
+index 00000000000..08768c59c97
+--- /dev/null
++++ b/libstdc++-v3/src/filesystem/fs-posix.h
+@@ -0,0 +1,49 @@
++
++// Copyright (C) 2014-2017 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 3, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// Under Section 7 of GPL version 3, you are granted additional
++// permissions described in the GCC Runtime Library Exception, version
++// 3.1, as published by the Free Software Foundation.
++
++// You should have received a copy of the GNU General Public License and
++// a copy of the GCC Runtime Library Exception along with this program;
++// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
++// <http://www.gnu.org/licenses/>.
++
++#ifndef _GLIBCXX_EXPERIMENTAL_FS_POSIX_H
++#define _GLIBCXX_EXPERIMENTAL_FS_POSIX_H 1
++
++#define os_DIR_t DIR
++#define os_dirent_t dirent
++#define os_open open
++#define os_opendir opendir
++#define os_closedir closedir
++#define os_readdir readdir
++#define os_stat stat
++#define os_stat_t stat
++#define os_chmod chmod
++#define os_mkdir mkdir
++#define os_getcwd getcwd
++#define os_chdir chdir
++#define os_utimbuf_t utimbuf
++#define os_utime utime
++#define os_remove remove
++#define os_rename rename
++#define os_truncate truncate
++
++#define os_utime utime
++
++#define _WS(x) x
++
++#endif // _GLIBCXX_EXPERIMENTAL_FS_POSIX_H
+diff --git a/libstdc++-v3/src/filesystem/fs-win32.h b/libstdc++-v3/src/filesystem/fs-win32.h
+new file mode 100644
+index 00000000000..23053343fc0
+--- /dev/null
++++ b/libstdc++-v3/src/filesystem/fs-win32.h
+@@ -0,0 +1,64 @@
++
++// Copyright (C) 2014-2017 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 3, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// Under Section 7 of GPL version 3, you are granted additional
++// permissions described in the GCC Runtime Library Exception, version
++// 3.1, as published by the Free Software Foundation.
++
++// You should have received a copy of the GNU General Public License and
++// a copy of the GCC Runtime Library Exception along with this program;
++// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
++// <http://www.gnu.org/licenses/>.
++
++#ifndef _GLIBCXX_EXPERIMENTAL_FS_WIN32_H
++#define _GLIBCXX_EXPERIMENTAL_FS_WIN32_H 1
++
++#define os_DIR_t _WDIR
++#define os_dirent_t _wdirent
++#define os_open _wopen
++#define os_opendir _wopendir
++#define os_closedir _wclosedir
++#define os_readdir _wreaddir
++#define os_stat _wstat
++#define os_stat_t _stat
++#define os_chmod _wchmod
++#define os_mkdir _wmkdir
++#define os_getcwd _wgetcwd
++#define os_chdir _wchdir
++#define os_utimbuf_t _utimbuf
++#define os_utime _wutime
++#define os_remove _wremove
++#define os_rename _wrename
++
++#include <unistd.h>
++#include <fcntl.h>
++#include <errno.h>
++
++inline int _wtruncate(const wchar_t *fname, _off64_t size) {
++  int fd = ::os_open(fname, _O_BINARY|_O_RDWR);
++  if (fd == -1) return fd;
++  int ret = ::ftruncate64(fd, size), err=0;
++  _get_errno(&err);
++  _close(fd);
++  _set_errno(err);
++  return ret;
++}
++
++#define os_truncate _wtruncate
++
++#define os_utime _wutime
++
++#define _WS(x) L##x
++
++#endif // _GLIBCXX_EXPERIMENTAL_FS_WIN32_H
+diff --git a/libstdc++-v3/src/filesystem/ops.cc b/libstdc++-v3/src/filesystem/ops.cc
+index 397a8d7ffe7..7492a15af25 100644
+--- a/libstdc++-v3/src/filesystem/ops.cc
++++ b/libstdc++-v3/src/filesystem/ops.cc
+@@ -56,11 +56,10 @@
+ #endif
+ 
+ #ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS
+-# undef utime
+-# define utime _wutime
+-# undef chmod
+-# define chmod _wchmod
+-#endif
++# include "fs-win32.h"
++#else
++# include "fs-posix.h"
++#endif // _GLIBCXX_FILESYSTEM_IS_WINDOWS
+ 
+ namespace fs = std::experimental::filesystem;
+ 
+@@ -88,11 +87,7 @@ fs::absolute(const path& p, const path& base)
+ 
+ namespace
+ {
+-#ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS
+-  inline bool is_dot(wchar_t c) { return c == L'.'; }
+-#else
+-  inline bool is_dot(char c) { return c == '.'; }
+-#endif
++  inline bool is_dot(fs::path::value_type c) { return c == _WS('.'); }
+ 
+   inline bool is_dot(const fs::path& path)
+   {
+@@ -111,7 +106,7 @@ namespace
+     void operator()(void* p) const { ::free(p); }
+   };
+ 
+-  using char_ptr = std::unique_ptr<char[], free_as_in_malloc>;
++  using char_ptr = std::unique_ptr<fs::path::value_type[], free_as_in_malloc>;
+ }
+ 
+ fs::path
+@@ -250,7 +245,7 @@ namespace
+ #ifdef _GLIBCXX_HAVE_SYS_STAT_H
+ namespace
+ {
+-  typedef struct ::stat stat_type;
++  typedef struct ::os_stat_t stat_type;
+ 
+   inline fs::file_type
+   make_file_type(const stat_type& st) noexcept
+@@ -267,10 +262,12 @@ namespace
+       return file_type::block;
+     else if (S_ISFIFO(st.st_mode))
+       return file_type::fifo;
++#ifndef _GLIBCXX_FILESYSTEM_IS_WINDOWS
+     else if (S_ISLNK(st.st_mode))
+       return file_type::symlink;
+     else if (S_ISSOCK(st.st_mode))
+       return file_type::socket;
++#endif // _GLIBCXX_FILESYSTEM_IS_WINDOWS
+ #endif
+     return file_type::unknown;
+ 
+@@ -323,7 +320,7 @@ namespace
+ 
+     if (to_st == nullptr)
+       {
+-	if (::stat(to.c_str(), &st1))
++	if (::os_stat(to.c_str(), &st1))
+ 	  {
+ 	    int err = errno;
+ 	    if (!is_not_found_errno(err))
+@@ -345,7 +342,7 @@ namespace
+ 
+     if (from_st == nullptr)
+       {
+-	if (::stat(from.c_str(), &st2))
++	if (::os_stat(from.c_str(), &st2))
+ 	  {
+ 	    ec.assign(errno, std::generic_category());
+ 	    return false;
+@@ -410,7 +407,7 @@ namespace
+       int fd;
+     };
+ 
+-    CloseFD in = { ::open(from.c_str(), O_RDONLY) };
++    CloseFD in = { ::os_open(from.c_str(), O_RDONLY) };
+     if (in.fd == -1)
+       {
+ 	ec.assign(errno, std::generic_category());
+@@ -421,7 +418,7 @@ namespace
+       oflag |= O_TRUNC;
+     else
+       oflag |= O_EXCL;
+-    CloseFD out = { ::open(to.c_str(), oflag, S_IWUSR) };
++    CloseFD out = { ::os_open(to.c_str(), oflag, S_IWUSR) };
+     if (out.fd == -1)
+       {
+ 	if (errno == EEXIST && is_set(option, opts::skip_existing))
+@@ -436,7 +433,7 @@ namespace
+ #elif defined _GLIBCXX_USE_FCHMODAT
+     if (::fchmodat(AT_FDCWD, to.c_str(), from_st->st_mode, 0))
+ #else
+-    if (::chmod(to.c_str(), from_st->st_mode))
++    if (::os_chmod(to.c_str(), from_st->st_mode))
+ #endif
+       {
+ 	ec.assign(errno, std::generic_category());
+@@ -522,16 +519,24 @@ fs::copy(const path& from, const path& to, copy_options options,
+   stat_type from_st, to_st;
+   // _GLIBCXX_RESOLVE_LIB_DEFECTS
+   // 2681. filesystem::copy() cannot copy symlinks
++#ifndef _GLIBCXX_FILESYSTEM_IS_WINDOWS
+   if (use_lstat || copy_symlinks
+       ? ::lstat(from.c_str(), &from_st)
+       : ::stat(from.c_str(), &from_st))
++#else
++  if (::os_stat(from.c_str(), &from_st))
++#endif // _GLIBCXX_FILESYSTEM_IS_WINDOWS
+     {
+       ec.assign(errno, std::generic_category());
+       return;
+     }
++#ifndef _GLIBCXX_FILESYSTEM_IS_WINDOWS
+   if (use_lstat
+       ? ::lstat(to.c_str(), &to_st)
+       : ::stat(to.c_str(), &to_st))
++#else
++  if (::os_stat(to.c_str(), &to_st))
++#endif // _GLIBCXX_FILESYSTEM_IS_WINDOWS
+     {
+       if (!is_not_found_errno(errno))
+ 	{
+@@ -716,8 +721,12 @@ namespace
+   {
+     bool created = false;
+ #ifdef _GLIBCXX_HAVE_SYS_STAT_H
++#ifndef _GLIBCXX_FILESYSTEM_IS_WINDOWS
+     ::mode_t mode = static_cast<std::underlying_type_t<fs::perms>>(perm);
+-    if (::mkdir(p.c_str(), mode))
++    if (::os_mkdir(p.c_str(), mode))
++#else
++    if (::os_mkdir(p.c_str()))
++#endif // _GLIBCXX_FILESYSTEM_IS_WINDOWS
+       {
+ 	const int err = errno;
+ 	if (err != EEXIST || !is_directory(p, ec))
+@@ -770,7 +779,7 @@ fs::create_directory(const path& p, const path& attributes,
+ {
+ #ifdef _GLIBCXX_HAVE_SYS_STAT_H
+   stat_type st;
+-  if (::stat(attributes.c_str(), &st))
++  if (::os_stat(attributes.c_str(), &st))
+     {
+       ec.assign(errno, std::generic_category());
+       return false;
+@@ -819,7 +828,7 @@ void
+ fs::create_hard_link(const path& to, const path& new_hard_link,
+ 		     error_code& ec) noexcept
+ {
+-#ifdef _GLIBCXX_HAVE_UNISTD_H
++#if !defined(_GLIBCXX_FILESYSTEM_IS_WINDOWS) && defined(_GLIBCXX_HAVE_UNISTD_H)
+   if (::link(to.c_str(), new_hard_link.c_str()))
+     ec.assign(errno, std::generic_category());
+   else
+@@ -843,7 +852,7 @@ void
+ fs::create_symlink(const path& to, const path& new_symlink,
+ 		   error_code& ec) noexcept
+ {
+-#ifdef _GLIBCXX_HAVE_UNISTD_H
++#if !defined(_GLIBCXX_FILESYSTEM_IS_WINDOWS) && defined(_GLIBCXX_HAVE_UNISTD_H)
+   if (::symlink(to.c_str(), new_symlink.c_str()))
+     ec.assign(errno, std::generic_category());
+   else
+@@ -869,8 +878,8 @@ fs::current_path(error_code& ec)
+ {
+   path p;
+ #ifdef _GLIBCXX_HAVE_UNISTD_H
+-#ifdef __GLIBC__
+-  if (char_ptr cwd = char_ptr{::getcwd(nullptr, 0)})
++#if defined(__GLIBC__) || defined(_GLIBCXX_FILESYSTEM_IS_WINDOWS)
++  if (char_ptr cwd = char_ptr{::os_getcwd(nullptr, 0)})
+     {
+       p.assign(cwd.get());
+       ec.clear();
+@@ -928,7 +937,7 @@ void
+ fs::current_path(const path& p, error_code& ec) noexcept
+ {
+ #ifdef _GLIBCXX_HAVE_UNISTD_H
+-  if (::chdir(p.c_str()))
++  if (::os_chdir(p.c_str()))
+     ec.assign(errno, std::generic_category());
+   else
+     ec.clear();
+@@ -955,14 +964,14 @@ fs::equivalent(const path& p1, const path& p2, error_code& ec) noexcept
+   int err = 0;
+   file_status s1, s2;
+   stat_type st1, st2;
+-  if (::stat(p1.c_str(), &st1) == 0)
++  if (::os_stat(p1.c_str(), &st1) == 0)
+     s1 = make_file_status(st1);
+   else if (is_not_found_errno(errno))
+     s1.type(file_type::not_found);
+   else
+     err = errno;
+ 
+-  if (::stat(p2.c_str(), &st2) == 0)
++  if (::os_stat(p2.c_str(), &st2) == 0)
+     s2 = make_file_status(st2);
+   else if (is_not_found_errno(errno))
+     s2.type(file_type::not_found);
+@@ -1012,7 +1021,7 @@ namespace
+     {
+ #ifdef _GLIBCXX_HAVE_SYS_STAT_H
+       stat_type st;
+-      if (::stat(p.c_str(), &st))
++      if (::os_stat(p.c_str(), &st))
+ 	{
+ 	  ec.assign(errno, std::generic_category());
+ 	  return deflt;
+@@ -1062,8 +1071,14 @@ fs::hard_link_count(const path& p)
+ std::uintmax_t
+ fs::hard_link_count(const path& p, error_code& ec) noexcept
+ {
++#ifndef _GLIBCXX_FILESYSTEM_IS_WINDOWS
+   return do_stat(p, ec, std::mem_fn(&stat::st_nlink),
+ 		 static_cast<uintmax_t>(-1));
++#else
++  ec = std::make_error_code(std::errc::not_supported);
++
++  return static_cast<uintmax_t>(-1);
++#endif // _GLIBCXX_FILESYSTEM_IS_WINDOWS
+ }
+ 
+ bool
+@@ -1138,11 +1153,11 @@ fs::last_write_time(const path& p __attribute__((__unused__)),
+   else
+     ec.clear();
+ #elif _GLIBCXX_HAVE_UTIME_H
+-  ::utimbuf times;
++  ::os_utimbuf_t times;
+   times.modtime = s.count();
+   times.actime = do_stat(p, ec, [](const auto& st) { return st.st_atime; },
+ 			 times.modtime);
+-  if (::utime(p.c_str(), &times))
++  if (::os_utime(p.c_str(), &times))
+     ec.assign(errno, std::generic_category());
+   else
+     ec.clear();
+@@ -1195,7 +1210,7 @@ fs::permissions(const path& p, perms prms, error_code& ec) noexcept
+ #else
+   if (nofollow && is_symlink(st))
+     ec = std::make_error_code(std::errc::operation_not_supported);
+-  else if (::chmod(p.c_str(), static_cast<mode_t>(prms)))
++  else if (::os_chmod(p.c_str(), static_cast<mode_t>(prms)))
+     err = errno;
+ #endif
+ 
+@@ -1218,7 +1233,7 @@ fs::read_symlink(const path& p)
+ fs::path fs::read_symlink(const path& p, error_code& ec)
+ {
+   path result;
+-#ifdef _GLIBCXX_HAVE_SYS_STAT_H
++#if !defined(_GLIBCXX_FILESYSTEM_IS_WINDOWS) && defined(_GLIBCXX_HAVE_SYS_STAT_H)
+   stat_type st;
+   if (::lstat(p.c_str(), &st))
+     {
+@@ -1272,7 +1287,7 @@ fs::remove(const path& p)
+ bool
+ fs::remove(const path& p, error_code& ec) noexcept
+ {
+-  if (::remove(p.c_str()) == 0)
++  if (::os_remove(p.c_str()) == 0)
+     {
+       ec.clear();
+       return true;
+@@ -1334,7 +1349,7 @@ fs::rename(const path& from, const path& to)
+ void
+ fs::rename(const path& from, const path& to, error_code& ec) noexcept
+ {
+-  if (::rename(from.c_str(), to.c_str()))
++  if (::os_rename(from.c_str(), to.c_str()))
+     ec.assign(errno, std::generic_category());
+   else
+     ec.clear();
+@@ -1355,7 +1370,7 @@ fs::resize_file(const path& p, uintmax_t size, error_code& ec) noexcept
+ #ifdef _GLIBCXX_HAVE_UNISTD_H
+   if (size > static_cast<uintmax_t>(std::numeric_limits<off_t>::max()))
+     ec.assign(EINVAL, std::generic_category());
+-  else if (::truncate(p.c_str(), size))
++  else if (::os_truncate(p.c_str(), size))
+     ec.assign(errno, std::generic_category());
+   else
+     ec.clear();
+@@ -1409,7 +1424,7 @@ fs::status(const fs::path& p, error_code& ec) noexcept
+ {
+   file_status status;
+   stat_type st;
+-  if (::stat(p.c_str(), &st))
++  if (::os_stat(p.c_str(), &st))
+     {
+       int err = errno;
+       ec.assign(err, std::generic_category());
+@@ -1427,11 +1442,13 @@ fs::status(const fs::path& p, error_code& ec) noexcept
+     }
+   return status;
+ }
++#endif // _GLIBCXX_FILESYSTEM_IS_WINDOWS
+ 
+ fs::file_status
+ fs::symlink_status(const fs::path& p, std::error_code& ec) noexcept
+ {
+   file_status status;
++#if !defined(_GLIBCXX_FILESYSTEM_IS_WINDOWS) && defined(_GLIBCXX_HAVE_SYS_STAT_H)
+   stat_type st;
+   if (::lstat(p.c_str(), &st))
+     {
+@@ -1445,9 +1462,11 @@ fs::symlink_status(const fs::path& p, std::error_code& ec) noexcept
+       status = make_file_status(st);
+       ec.clear();
+     }
++#else
++  ec = std::make_error_code(std::errc::not_supported);
++#endif
+   return status;
+ }
+-#endif
+ 
+ fs::file_status
+ fs::status(const fs::path& p)
+diff --git a/libstdc++-v3/src/filesystem/path.cc b/libstdc++-v3/src/filesystem/path.cc
+index c66d52bf4b0..c0ecb1e37d3 100644
+--- a/libstdc++-v3/src/filesystem/path.cc
++++ b/libstdc++-v3/src/filesystem/path.cc
+@@ -296,7 +296,7 @@ path::has_filename() const
+ std::pair<const path::string_type*, std::size_t>
+ path::_M_find_extension() const
+ {
+-  const std::string* s = nullptr;
++  const path::string_type* s = nullptr;
+ 
+   if (_M_type != _Type::_Multi)
+     s = &_M_pathname;
 diff --git a/libtool.m4 b/libtool.m4
 index 24d13f34409..e905d58ca24 100644
 --- a/libtool.m4
@@ -9205,10 +10437,10 @@ index 24d13f34409..e905d58ca24 100644
          # as there is no search path for DLLs.
          _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='-L$libdir'
 diff --git a/libvtv/configure b/libvtv/configure
-index a197f750453..b740678615d 100755
+index dfb9162c79f..b65e8148211 100755
 --- a/libvtv/configure
 +++ b/libvtv/configure
-@@ -6271,7 +6271,7 @@ if test "$GCC" = yes; then
+@@ -6269,7 +6269,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -9217,7 +10449,7 @@ index a197f750453..b740678615d 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -9802,7 +9802,7 @@ _LT_EOF
+@@ -9800,7 +9800,7 @@ _LT_EOF
        fi
        ;;
  
@@ -9226,7 +10458,7 @@ index a197f750453..b740678615d 100755
        # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
        # as there is no search path for DLLs.
        hardcode_libdir_flag_spec='-L$libdir'
-@@ -10233,7 +10233,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -10231,7 +10231,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
        export_dynamic_flag_spec=-rdynamic
        ;;
  
@@ -9235,7 +10467,7 @@ index a197f750453..b740678615d 100755
        # When not using gcc, we currently assume that we are using
        # Microsoft Visual C++.
        # hardcode_libdir_flag_spec is actually meaningless, as there is
-@@ -11134,14 +11134,14 @@ bsdi[45]*)
+@@ -11132,14 +11132,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -9252,7 +10484,7 @@ index a197f750453..b740678615d 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -11165,7 +11165,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -11163,7 +11163,7 @@ cygwin* | mingw* | pw32* | cegcc*)
  
        sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
        ;;
@@ -9261,7 +10493,7 @@ index a197f750453..b740678615d 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -11796,7 +11796,7 @@ else
+@@ -11794,7 +11794,7 @@ else
      lt_cv_dlopen_self=yes
      ;;
  
@@ -9270,7 +10502,7 @@ index a197f750453..b740678615d 100755
      lt_cv_dlopen="LoadLibrary"
      lt_cv_dlopen_libs=
      ;;
-@@ -12670,7 +12670,7 @@ if test "$GCC" = yes; then
+@@ -12668,7 +12668,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
    case $host in
@@ -9279,7 +10511,7 @@ index a197f750453..b740678615d 100755
      # gcc leaves a trailing carriage return which upsets mingw
      ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
    *)
-@@ -13023,7 +13023,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+@@ -13021,7 +13021,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
          esac
          ;;
  
@@ -9288,7 +10520,7 @@ index a197f750453..b740678615d 100755
          # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
          # as there is no search path for DLLs.
          hardcode_libdir_flag_spec_CXX='-L$libdir'
-@@ -14796,14 +14796,14 @@ bsdi[45]*)
+@@ -14794,14 +14794,14 @@ bsdi[45]*)
    # libtool to hard-code these into programs
    ;;
  
@@ -9305,7 +10537,7 @@ index a197f750453..b740678615d 100755
      library_names_spec='$libname.dll.a'
      # DLL is installed to $(libdir)/../bin by postinstall_cmds
      postinstall_cmds='base_file=`basename \${file}`~
-@@ -14826,7 +14826,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+@@ -14824,7 +14824,7 @@ cygwin* | mingw* | pw32* | cegcc*)
        soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
  
        ;;
@@ -9314,7 +10546,7 @@ index a197f750453..b740678615d 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
-@@ -15431,7 +15431,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+@@ -15429,7 +15429,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
  
  
  case $host in
@@ -9324,7 +10556,7 @@ index a197f750453..b740678615d 100755
      # we must compare to with_cross_host to decide if this is a native
      # or cross-compiler and select where to install dlls appropriately.
 diff --git a/lto-plugin/configure b/lto-plugin/configure
-index 7843cd7f6a3..a7afcc6832a 100755
+index cdea9eac3ee..437bad465b9 100755
 --- a/lto-plugin/configure
 +++ b/lto-plugin/configure
 @@ -5671,7 +5671,7 @@ if test "$GCC" = yes; then

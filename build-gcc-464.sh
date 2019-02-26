@@ -30,13 +30,13 @@ case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
 	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
 	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
-	MSYS*) host=msys ;;
+	MSYS*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
 	*) host=linux ;;
 esac
 case $host in
-	mingw*) PREFIX=${MINGW_PREFIX} ;;
+	mingw* | msys*) PREFIX=${MINGW_PREFIX} ;;
 	macos*) PREFIX=/opt/cross-mint ;;
 	*) PREFIX=/usr ;;
 esac
@@ -86,10 +86,10 @@ DIST_DIR="$here/pkgs"
 #
 # Where to expect the unpacked source tree.
 #
-srcdir="$PACKAGENAME$VERSION"
+srcdir="${PACKAGENAME}${VERSION}"
 
-PATCHES="patches/gcc/$PACKAGENAME$VERSION-mint${VERSIONPATCH}.patch \
-	patches/gcc/$PACKAGENAME$VERSION-fastcall.patch"
+PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
+	patches/gcc/${PACKAGENAME}${VERSION}-fastcall.patch"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
@@ -150,13 +150,17 @@ gcc_dir_version=${BASE_VER}
 # On some distros it is patched to have the
 # vendor name included.
 #
-for a in "" -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
+for a in "" -1.16 -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null`
 	test "$BUILD" != "" && break
 	test "$host" = "macos" && BUILD=`/opt/local/share/automake${a}/config.guess 2>/dev/null`
 	test "$BUILD" != "" && break
 done
 test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
+case $BUILD in
+	x86_64-pc-mingw32) BUILD=x86_64-pc-msys ;;
+	i686-pc-mingw32) BUILD=i686-pc-msys ;;
+esac
 
 rm -rf "$MINT_BUILD_DIR"
 mkdir -p "$MINT_BUILD_DIR"
@@ -280,7 +284,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
 	for i in c++ cpp g++ gcc gcov gfortran; do
-		if test -x ../../bin/${TARGET}-$i && test -x; then
+		if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
 			rm -f ${i} ${i}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
 		fi
@@ -364,7 +368,7 @@ done
 
 cd "${THISPKG_DIR}" || exit 1
 
-TARNAME=$PACKAGENAME$VERSION-${TARGET##*-}${VERSIONPATCH}
+TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
 BINTARNAME=${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}
 
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
