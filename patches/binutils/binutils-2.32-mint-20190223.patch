@@ -3235,6 +3235,20 @@ index 3a58e5fe07..301bc5f917 100644
  	  *cp == ':' || *cp == '\\' ||
  #endif
  	  *cp == '/')
+diff --git a/binutils/objcopy.c b/binutils/objcopy.c
+index 0e17b863d5..889f27fa05 100644
+--- a/binutils/objcopy.c
++++ b/binutils/objcopy.c
+@@ -1625,6 +1625,9 @@ filter_symbols (bfd *abfd, bfd *obfd, asymbol **osyms,
+       if (keep && is_strip_section (abfd, bfd_get_section (sym)))
+ 	keep = FALSE;
+ 
++      if (strip_symbols != STRIP_ALL && (flags & BSF_CONSTRUCTOR))
++         keep = TRUE;
++
+       if (keep)
+ 	{
+ 	  if ((flags & BSF_GLOBAL) != 0
 diff --git a/binutils/readelf.c b/binutils/readelf.c
 index b13eb6a43b..e40f9b7be5 100644
 --- a/binutils/readelf.c

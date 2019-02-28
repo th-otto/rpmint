@@ -76,6 +76,11 @@ else
 fi
 
 #
+# whether to include the fortran backend
+#
+with_fortran=true
+
+#
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
 # - checking out the gcc-7-mint branch
@@ -155,7 +160,8 @@ cd "$MINT_BUILD_DIR"
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-languages=c,c++,fortran
+languages=c,c++
+$with_fortran && languages="$languages,fortran"
 ranlib=ranlib
 
 case "${TARGET}" in
@@ -199,9 +205,16 @@ TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}
 #
 # this could eventually be extracted from gcc -print-multi-lib
 #
+if grep -q 'MULTILIB_DIRNAMES = m68000' "$srcdir/gcc/config/m68k/t-mint"; then
 CPU_CFLAGS_000="-m68000"    ; CPU_LIBDIR_000=/m68000    ; WITH_CPU_000=m68000
 CPU_CFLAGS_020="-m68020-60" ; CPU_LIBDIR_020=/m68020-60 ; WITH_CPU_020=m68020-60
 CPU_CFLAGS_v4e="-mcpu=5475" ; CPU_LIBDIR_v4e=/m5475     ; WITH_CPU_v4e=5475
+else
+CPU_CFLAGS_000="-m68000"    ; CPU_LIBDIR_000=           ; WITH_CPU_000=m68000
+CPU_CFLAGS_020="-m68020-60" ; CPU_LIBDIR_020=           ; WITH_CPU_020=m68020-60
+CPU_CFLAGS_v4e="-mcpu=5475" ; CPU_LIBDIR_v4e=           ; WITH_CPU_v4e=5475
+fi
+
 #
 # This should list the default target cpu last,
 # so that any files left behind are compiled for this
@@ -319,6 +332,7 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	cd "$MINT_BUILD_DIR"
 
 	rm -rf "${THISPKG_DIR}${TARGET_BINDIR}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin" "${THISPKG_DIR}${TARGET_LIBDIR}"
+	rm -rf "${THISPKG_DIR}${TARGET_LIBDIR}/gcc/${TARGET}/${gcc_dir_version}"
 
 	${MAKE} DESTDIR="${THISPKG_DIR}" install >/dev/null || exit 1
 	
@@ -342,21 +356,30 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	
 	if test -x ${TARGET}-g++; then
 		rm -f ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-g++-${BASE_VER}
-		$LN_S ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-g++
+		rm -f ${TARGET}-g++-${gcc_dir_version}${TARGET_EXEEXT} ${TARGET}-g++-${gcc_dir_version}
+		mv ${TARGET}-g++${TARGET_EXEEXT} ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT}
+		$LN_S ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-g++${TARGET_EXEEXT}
+		$LN_S ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-g++-${gcc_dir_version}${TARGET_EXEEXT}
 		rm -f g++-${BASE_VER}${TARGET_EXEEXT} g++-${BASE_VER}
-		$LN_S ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-g++
+		rm -f g++-${gcc_dir_version}${TARGET_EXEEXT} g++-${gcc_dir_version}${TARGET_EXEEXT}
+		$LN_S ${TARGET}-g++-${gcc_dir_version}${TARGET_EXEEXT} g++-${gcc_dir_version}${TARGET_EXEEXT}
+		$LN_S g++-${gcc_dir_version}${TARGET_EXEEXT} g++-${BASE_VER}{TARGET_EXEEXT}
 	fi
 	
 	if test -x ${TARGET}-c++; then
 		rm -f ${TARGET}-c++${TARGET_EXEEXT} ${TARGET}-c++
 		$LN_S ${TARGET}-g++ ${TARGET}-c++
 	fi
-	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gcc-${gcc_dir_version}; then
+	if test -x ${TARGET}-gcc; then
 		rm -f ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc-${BASE_VER}
-		mv ${TARGET}-gcc-${gcc_dir_version} ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		rm -f ${TARGET}-gcc-${gcc_dir_version}${TARGET_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		mv ${TARGET}-gcc${TARGET_EXEEXT} ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT}
+		$LN_S ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc${TARGET_EXEEXT}
+		$LN_S ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${TARGET_EXEEXT}
 		rm -f gcc-${BASE_VER}${TARGET_EXEEXT} gcc-${BASE_VER}
-		$LN_S gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		rm -f gcc-${gcc_dir_version}${TARGET_EXEEXT} gcc-${gcc_dir_version}${TARGET_EXEEXT}
+		$LN_S ${TARGET}-gcc-${gcc_dir_version}${TARGET_EXEEXT} gcc-${gcc_dir_version}${TARGET_EXEEXT}
+		$LN_S gcc-${gcc_dir_version}${TARGET_EXEEXT} gcc-${BASE_VER}{TARGET_EXEEXT}
 	fi
 	if test -x ${TARGET}-cpp; then
 		rm -f ${TARGET}-cpp-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-cpp-${BASE_VER}
@@ -396,20 +419,61 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 		done
 	}
 	
-	# these are currently identically compiled 2 times; FIXME
-	if test "$CPU_LIBDIR_000" != ""; then
+	cd "${THISPKG_DIR}" || exit 1
+	
+	# these get still wrong, if the host cross-compiler
+	# has a different configuration than the target
+	if test "${CPU_LIBDIR_000}" != ""; then
+		cd ${THISPKG_DIR}${TARGET_LIBDIR}/gcc/${TARGET}/${gcc_dir_version} || exit 1
 		for dir in . mshort mfastcall mfastcall/mshort; do
 			for f in libgcov.a libgcc.a libcaf_single.a; do
-				rm -f ${TARGET_LIBDIR#/}/gcc/${TARGET}/$dir/$f
+				if test -f $dir/$f -a -f ${CPU_LIBDIR_000#/}/$dir/$f; then
+					rm -f $dir/$f
+				elif test -f $dir/$f; then
+					mkdir -p ${CPU_LIBDIR_000#/}/$dir
+					mv $dir/$f ${CPU_LIBDIR_000#/}/$dir/$f
+				fi
 			done
 		done
 		for dir in mfastcall/mshort mfastcall mshort; do
-			rmdir ${TARGET_LIBDIR#/}/gcc/${TARGET}/$dir 2>/dev/null
+			rmdir $dir 2>/dev/null
+		done
+
+		cd ${THISPKG_DIR}${TARGET_LIBDIR} || exit 1
+		for dir in . mshort mfastcall mfastcall/mshort; do
+			for f in libssp.a libssp_nonshared.a libsupc++.a libstdc++.a libstdc++.a-gdb.py libgfortran.a libgfortran.spec; do
+				if test -f $dir/$f -a -f ${CPU_LIBDIR_000#/}/$dir/$f; then
+					rm -f $dir/$f
+				elif test -f $dir/$f; then
+					mkdir -p ${CPU_LIBDIR_000#/}/$dir
+					mv $dir/$f ${CPU_LIBDIR_000#/}/$dir/$f
+				fi
+			done
+		done
+		for dir in mfastcall/mshort mfastcall mshort; do
+			rmdir $dir 2>/dev/null
 		done
 	fi
 	
 	cd "${THISPKG_DIR}" || exit 1
 	
+	#
+	# create a separate archive for the fortran backend
+	#
+	if $with_fortran; then
+fortran="
+${TARGET_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/finclude
+${TARGET_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/f951
+"
+		fortran="$fortran "`find ${TARGET_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version} -name libcaf_single.a`
+		fortran="$fortran "`find ${prefix#/} -name "*gfortran*"`
+		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${CPU}.tar.xz $fortran || exit 1
+		rm -f $fortran
+	fi
+
+	#
+	# create archive for all others
+	#
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-${CPU}.tar.xz *
 done # for CPU
 

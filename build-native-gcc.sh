@@ -170,14 +170,21 @@ TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}
 # If it still hangs, you may have to also increase the stack size
 # for the shell that runs this script
 #
-export STACK_SIZE=1048576
+export STACK_SIZE=4194304
 
 #
 # this could eventually be extracted from gcc -print-multi-lib
 #
+if grep -q 'MULTILIB_DIRNAMES = m68000' "$srcdir/gcc/config/m68k/t-mint"; then
 CPU_CFLAGS_000="-m68000"    ; CPU_LIBDIR_000=/m68000    ; WITH_CPU_000=m68000
 CPU_CFLAGS_020="-m68020-60" ; CPU_LIBDIR_020=/m68020-60 ; WITH_CPU_020=m68020-60
 CPU_CFLAGS_v4e="-mcpu=5475" ; CPU_LIBDIR_v4e=/m5475     ; WITH_CPU_v4e=5475
+else
+CPU_CFLAGS_000="-m68000"    ; CPU_LIBDIR_000=           ; WITH_CPU_000=m68000
+CPU_CFLAGS_020="-m68020-60" ; CPU_LIBDIR_020=           ; WITH_CPU_020=m68020-60
+CPU_CFLAGS_v4e="-mcpu=5475" ; CPU_LIBDIR_v4e=           ; WITH_CPU_v4e=5475
+fi
+
 # We cannot build the native 68k versions on cf,
 # or vice versa, because our target triplet is the
 # same, but autoconf tests will fail because
@@ -319,9 +326,10 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	
 	if test -x ${TARGET}-g++; then
 		rm -f ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-g++-${BASE_VER}
-		$LN_S ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-g++
-		rm -f g++-${BASE_VER}${TARGET_EXEEXT} g++-${BASE_VER}
-		$LN_S ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-g++
+		rm -f ${TARGET}-g++-${gcc_dir_version}${TARGET_EXEEXT} ${TARGET}-g++-${gcc_dir_version}
+		mv ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT}
+		$LN_S ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-g++${TARGET_EXEEXT}
+		$LN_S ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-g++${gcc_dir_version}${TARGET_EXEEXT}
 	fi
 	
 	if test -x ${TARGET}-c++; then
@@ -331,14 +339,14 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gcc-${gcc_dir_version}; then
 		rm -f ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc-${BASE_VER}
 		mv ${TARGET}-gcc-${gcc_dir_version} ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		$LN_S ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${TARGET_EXEEXT}
 		rm -f gcc-${BASE_VER}${TARGET_EXEEXT} gcc-${BASE_VER}
-		$LN_S gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		$LN_S gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${TARGET_EXEEXT}
 	fi
 	if test -x ${TARGET}-cpp; then
 		rm -f ${TARGET}-cpp-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-cpp-${BASE_VER}
 		mv ${TARGET}-cpp${TARGET_EXEEXT} ${TARGET}-cpp-${BASE_VER}${TARGET_EXEEXT}
-		$LN_S ${TARGET}-cpp-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-cpp
+		$LN_S ${TARGET}-cpp-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-cpp${TARGET_EXEEXT}
 	fi
 	
 	cd "${THISPKG_DIR}"
@@ -373,15 +381,39 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 		done
 	}
 	
-	# these are currently identically compiled 2 times; FIXME
+	cd "${THISPKG_DIR}" || exit 1
+	
+	# these get still wrong, if the host cross-compiler
+	# has a different configuration than the target
 	if test "$CPU_LIBDIR_000" != ""; then
+		cd ${THISPKG_DIR}${libdir}/gcc/${TARGET}/${gcc_dir_version} || exit 1
 		for dir in . mshort mfastcall mfastcall/mshort; do
 			for f in libgcov.a libgcc.a libcaf_single.a; do
-				rm -f ${libdir#/}/gcc/${TARGET}/$dir/$f
+				if test -f $dir/$f -a -f ${CPU_LIBDIR_000#/}/$dir/$f; then
+					rm -f $dir/$f
+				elif test -f $dir/$f; then
+					mkdir -p ${CPU_LIBDIR_000#/}/$dir
+					mv $dir/$f ${CPU_LIBDIR_000#/}/$dir/$f
+				fi
 			done
 		done
 		for dir in mfastcall/mshort mfastcall mshort; do
-			rmdir ${libdir#/}/gcc/${TARGET}/$dir 2>/dev/null
+			rmdir $dir 2>/dev/null
+		done
+
+		cd ${THISPKG_DIR}${libdir} || exit 1
+		for dir in . mshort mfastcall mfastcall/mshort; do
+			for f in libssp.a libssp_nonshared.a libsupc++.a libstdc++.a libstdc++.a-gdb.py libgfortran.a libgfortran.spec; do
+				if test -f $dir/$f -a -f ${CPU_LIBDIR_000#/}/$dir/$f; then
+					rm -f $dir/$f
+				elif test -f $dir/$f; then
+					mkdir -p ${CPU_LIBDIR_000#/}/$dir
+					mv $dir/$f ${CPU_LIBDIR_000#/}/$dir/$f
+				fi
+			done
+		done
+		for dir in mfastcall/mshort mfastcall mshort; do
+			rmdir $dir 2>/dev/null
 		done
 	fi
 	

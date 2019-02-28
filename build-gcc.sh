@@ -94,6 +94,11 @@ else
 fi
 
 #
+# whether to include the fortran backend
+#
+with_fortran=true
+
+#
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
 # - checking out the gcc-8-mint branch
@@ -204,7 +209,8 @@ LDFLAGS_FOR_TARGET=
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-languages=c,c++,fortran
+languages=c,c++
+$with_fortran && languages="$languages,fortran"
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -322,7 +328,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
 	for i in c++ cpp g++ gcc gcov gfortran; do
-		if test -x ../../bin/${TARGET}-$i && test -x; then
+		if test -x ../../bin/${TARGET}-$i; then
 			rm -f ${i} ${i}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
 		fi
@@ -335,8 +341,8 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		rm -f ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}
 		rm -f ${TARGET}-g++-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_dir_version}
 		mv ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT}
-		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++
-		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_dir_version}
+		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++${BUILD_EXEEXT}
+		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_dir_version}${BUILD_EXEEXT}
 	fi
 	if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
 		rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
@@ -345,16 +351,16 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	if test -x ${TARGET}-gcc && test ! -h ${TARGET}-gcc; then
 		rm -f ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}
 		mv ${TARGET}-gcc${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc
+		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc${BUILD_EXEEXT}
 	fi
 	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gcc-${gcc_dir_version} && test ! -h ${TARGET}-gcc-${gcc_dir_version}; then
 		rm -f ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT}
 	fi
 	if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
 		rm -f ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}
 		mv ${TARGET}-cpp${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT}
-		$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp
+		$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp${BUILD_EXEEXT}
 	fi
 	
 	cd "${INSTALL_DIR}"
@@ -431,6 +437,23 @@ rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/gcc*/python
 
+#
+# create a separate archive for the fortran backend
+#
+if $with_fortran; then
+fortran="
+${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/finclude
+${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/f951
+"
+fortran="$fortran "`find ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version} -name libcaf_single.a`
+fortran="$fortran "`find ${PREFIX#/} -name "*gfortran*"`
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
+rm -f $fortran
+fi
+
+#
+# create archive for all others
+#
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
 
 cd "${BUILD_DIR}"

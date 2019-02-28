@@ -205,6 +205,8 @@ esac
 	$enable_lto \
 	$enable_plugins \
 	--disable-nls \
+	--with-system-zlib \
+	--with-system-readline \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root"
 
 ${MAKE} $JOBS || exit 1

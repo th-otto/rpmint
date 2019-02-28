@@ -173,6 +173,9 @@ fi
 CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=/m68000    ; WITH_CPU_000=m68000
 CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=/m68020-60 ; WITH_CPU_020=m68020-60
 CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=/m5475     ; WITH_CPU_v4e=5475
+CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=           ; WITH_CPU_000=m68000
+CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=           ; WITH_CPU_020=m68020-60
+CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=           ; WITH_CPU_v4e=5475
 #
 # This should list the default target cpu last,
 # so that any files left behind are compiled for this

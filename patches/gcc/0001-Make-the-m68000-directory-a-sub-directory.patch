@@ -1,0 +1,51 @@
+diff --git a/config-ml.in b/config-ml.in
+index a61d1f41b3d..9acc9b419a2 100644
+--- a/config-ml.in
++++ b/config-ml.in
+@@ -214,6 +214,9 @@ fi
+ 
+ if [ "${ml_toplevel_p}" = yes ]; then
+ 
++# FIXME: this is wrong; when cross-compiling,
++# it will use the multi-lib configuration of the cross-compiler,
++# not the one we are building
+ multidirs=
+ for i in `${CC-gcc} --print-multi-lib 2>/dev/null`; do
+   dir=`echo $i | sed -e 's/;.*$//'`
+@@ -228,6 +231,14 @@ for i in `${CC-gcc} --print-multi-lib 2>/dev/null`; do
+   fi
+ done
+ 
++case "${host}" in
++  *-*-mint*)
++   if grep -q 'MULTILIB_DIRNAMES = m68000' "$srcdir/../gcc/config/m68k/t-mint"; then
++      multidirs="m68000 m68020-60 m5475 mshort m68000/mshort m68020-60/mshort m5475/mshort"
++   fi
++   ;;
++esac
++
+ # Target libraries are configured for the host they run on, so we check
+ # $host here, not $target.
+ 
+diff --git a/gcc/config/m68k/t-mint b/gcc/config/m68k/t-mint
+index 24f3278f508..dbc2491ebf1 100644
+--- a/gcc/config/m68k/t-mint
++++ b/gcc/config/m68k/t-mint
+@@ -21,11 +21,15 @@ ifeq ($(filter m$(M68K_MLIB_DEFAULT),$(M68K_MLIB_CPUS)),)
+ $(error Error default cpu '$(target_cpu_default)' is not in multilib set '$(M68K_MLIB_CPUS)')
+ endif
+ 
+-MULTILIB_OPTIONS = m68020-60/mcpu=5475 mshort
++MULTILIB_OPTIONS = m68000/m68020-60/mcpu=5475 mshort
+ 
+-MULTILIB_DIRNAMES = m68020-60 m5475 mshort
++MULTILIB_DIRNAMES = m68000 m68020-60 m5475 mshort
+ 
+ MULTILIB_MATCHES = \
++	m68000=m68000 \
++	m68000=mc68000 \
++	m68000=mcpu?68000 \
++	m68000=march?68000 \
+ 	m68020-60=m68881 \
+ 	m68020-60=m68020 \
+ 	m68020-60=m68020-40 \
