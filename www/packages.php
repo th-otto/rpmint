@@ -326,7 +326,7 @@ $libpackages = array(
 		'upstream' => 'https://github.com/freemint/mintlib',
 		'version' => '0.60.1',
 		'date' => '20181123',
-		'repo' => 'https://github.com/th-otto/mintlib',
+		'repo' => 'https://github.com/freemint/mintlib',
 		'patch' => 0,
 		'script' => 1,
 		'dev' => 1,
@@ -350,6 +350,22 @@ instead of the latest official release.
 		'comment' => '
 PML stands for Portable Math Library.<br />
 It works, but of course it is really slow on a 68000 without FPU.'
+	),
+	'fdlibm' => array(
+		'name' => 'fdlibm',
+		'upstream' => 'https://www.netlib.org/fdlibm/',
+		'version' => '20190228',
+		'repo' => 'https://github.com/freemint/fdlibm/',
+		'branch' => 'master',
+		'patch' => 0,
+		'script' => 1,
+		'dev' => 1,
+		'comment' => '
+fdlibm is a portable math library that was originally <br />
+developed by Sun Microsystem. <br />
+You should be able to use it at a replacement for PML,
+but note that all packages provided here were compiled using PML.
+'
 	),
 	'gemlib' => array(
 		'name' => 'gemlib',

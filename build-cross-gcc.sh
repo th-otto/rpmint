@@ -363,7 +363,7 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 		rm -f g++-${BASE_VER}${TARGET_EXEEXT} g++-${BASE_VER}
 		rm -f g++-${gcc_dir_version}${TARGET_EXEEXT} g++-${gcc_dir_version}${TARGET_EXEEXT}
 		$LN_S ${TARGET}-g++-${gcc_dir_version}${TARGET_EXEEXT} g++-${gcc_dir_version}${TARGET_EXEEXT}
-		$LN_S g++-${gcc_dir_version}${TARGET_EXEEXT} g++-${BASE_VER}{TARGET_EXEEXT}
+		$LN_S g++-${BASE_VER}${TARGET_EXEEXT} g++-${BASE_VER}${TARGET_EXEEXT}
 	fi
 	
 	if test -x ${TARGET}-c++; then
@@ -379,7 +379,7 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 		rm -f gcc-${BASE_VER}${TARGET_EXEEXT} gcc-${BASE_VER}
 		rm -f gcc-${gcc_dir_version}${TARGET_EXEEXT} gcc-${gcc_dir_version}${TARGET_EXEEXT}
 		$LN_S ${TARGET}-gcc-${gcc_dir_version}${TARGET_EXEEXT} gcc-${gcc_dir_version}${TARGET_EXEEXT}
-		$LN_S gcc-${gcc_dir_version}${TARGET_EXEEXT} gcc-${BASE_VER}{TARGET_EXEEXT}
+		$LN_S gcc-${BASE_VER}${TARGET_EXEEXT} gcc-${BASE_VER}${TARGET_EXEEXT}
 	fi
 	if test -x ${TARGET}-cpp; then
 		rm -f ${TARGET}-cpp-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-cpp-${BASE_VER}

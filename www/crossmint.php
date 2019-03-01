@@ -1325,6 +1325,8 @@ This notably applies to Perl and Python.
 
 <li>2019/02/27 Fortran backend added for all platforms</li>
 
+<li>2019/02/27 Package fdlibm added</li>
+
 </ul>
 
 <p></p>
