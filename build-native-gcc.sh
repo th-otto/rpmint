@@ -168,9 +168,9 @@ TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}
 # important setting for native build;
 # without this the compiler hangs at some point.
 # If it still hangs, you may have to also increase the stack size
-# for the shell that runs this script
+# for the shell that runs this script, and maybe for make
 #
-export STACK_SIZE=4194304
+export STACKSIZE=4194304
 
 #
 # this could eventually be extracted from gcc -print-multi-lib
@@ -212,7 +212,7 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval with_cpu=\${WITH_CPU_$CPU}
-	STACKSIZE="-Wl,-stack,512k"
+	STACKSIZE_OPT="-Wl,-stack,512k"
 
 cat <<'EOF' > "$MINT_BUILD_DIR/gcc-wrapper.sh"
 #!/bin/sh
@@ -254,7 +254,7 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	export CC="${MINT_BUILD_DIR}/gcc-wrapper.sh $CPU_CFLAGS"
 	export CXX="${MINT_BUILD_DIR}/gxx-wrapper.sh $CPU_CFLAGS"
 
-	export LDFLAGS="$STACKSIZE"
+	export LDFLAGS="$STACKSIZE_OPT"
 	export CFLAGS="-O2 -fomit-frame-pointer"
 	export CXXFLAGS="-O2 -fomit-frame-pointer"
 	$srcdir/configure \

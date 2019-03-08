@@ -405,7 +405,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		for i in `find . -type f`; do
 			case $i in
 			./README | ./limits.h | ./syslimits.h) ;;
-			*) echo "removing fixed include file $i"; rm -f $i ;;
+			*) echo "removing fixed include file $i"; echo rm -f $i ;;
 			esac
 		done
 		for i in `find . -depth -type d`; do
