@@ -219,7 +219,7 @@ esac
 
 #
 # install this package twice:
-# - once for building the binary archive for this pacakge only.
+# - once for building the binary archive for this package only.
 # - once for building a complete package.
 #   This directory is also kept for later stages,
 #   eg. compiling the C-library and gcc
