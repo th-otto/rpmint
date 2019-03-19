@@ -1331,6 +1331,8 @@ This notably applies to Perl and Python.
 
 <li>2019/03/19 Package libogg added</li>
 
+<li>2019/03/19 Package flac added</li>
+
 </ul>
 
 <p></p>

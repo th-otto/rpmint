@@ -1818,6 +1818,24 @@ Ogg is the native bitstream format of libvorbis (Ogg Vorbis audio
 codec) and libtheora (Theora video codec).
 '
 	),
+	'flac' => array(
+		'name' => 'flac',
+		'upstream' => 'https://xiph.org/flac/',
+		'source' => 'http://downloads.xiph.org/releases/flac/%{name}-%{version}.tar.xz',
+		'version' => '1.3.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+FLAC is an audio coding format for lossless compression of digital
+audio, and is also the name of the reference software package that
+includes a codec implementation. Digital audio compressed by FLAC&apos;s
+algorithm can typically be reduced to between 50 and 70 percent of
+its original size, and decompresses to an identical copy of the
+original audio data.
+'
+	),
 );
 
 ?>

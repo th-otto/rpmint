@@ -1,0 +1,11 @@
+--- a/src/test_streams/main.c.orig	2019-03-19 16:35:22.494570712 +0100
++++ b/src/test_streams/main.c	2019-03-19 16:35:55.206570000 +0100
+@@ -973,7 +973,7 @@
+ 
+ 		sample += sin (2.0 * k * M_PI * 1.0 / 32.0);
+ 		sample *= 0.4;
+-#if !defined _MSC_VER
++#if !defined _MSC_VER && !defined(__MINT__)
+ 		write_little_endian_int16(f, lrintf(sample * 32700.0));
+ #else
+ 		write_little_endian_int16(f, (FLAC__int16)(sample * 32700.0));
