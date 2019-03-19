@@ -1854,6 +1854,24 @@ The native bitstream format of Vorbis is libogg (Ogg). Alternatively,
 libmatroska (matroska) can also be used.
 '
 	),
+	'vorbis-tools' => array(
+		'name' => 'vorbis-tools',
+		'upstream' => 'http://www.xiph.org/',
+		'source' => 'http://downloads.xiph.org/releases/vorbis/%{name}-%{version}.tar.gz',
+		'version' => '1.4.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'comment' => '
+This package contains some tools for Ogg Vorbis:
+</br>
+oggenc (an encoder) and ogg123 (a playback tool). It also has vorbiscomment (to
+add comments to Vorbis files), ogginfo (to give all useful information about an
+Ogg file, including streams in it), oggdec (a simple command line decoder), and
+vcut (which allows you to cut up Vorbis files).
+'
+	),
 );
 
 ?>
