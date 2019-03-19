@@ -1784,6 +1784,23 @@ bounded by linear constraints.
 It is used by Cloog and the GCC Graphite optimization framework.
 '
 	),
+	'libmikmod' => array(
+		'name' => 'libmikmod',
+		'upstream' => 'http://mikmod.raphnet.net/',
+		'source' => 'http://sourceforge.net/projects/mikmod/files/%{name}/%{version}/%{name}-%{version}.tar.gz',
+		'version' => '3.3.7',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+Libmikmod is a portable sound library, capable of playing samples as
+well as module files. It was originally written by Jean-Paul Mikkers
+(MikMak) for DOS. It supports OSS /dev/dsp, ALSA, and Esound and can
+also write wav files. Supported file formats include mod, stm, s3m,
+mtm, xm, and it.
+'
+	),
 );
 
 ?>

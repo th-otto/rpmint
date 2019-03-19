@@ -1327,6 +1327,8 @@ This notably applies to Perl and Python.
 
 <li>2019/02/27 Package fdlibm added</li>
 
+<li>2019/03/19 Package libmikmod added</li>
+
 </ul>
 
 <p></p>
