@@ -1329,6 +1329,8 @@ This notably applies to Perl and Python.
 
 <li>2019/03/19 Package libmikmod added</li>
 
+<li>2019/03/19 Package libogg added</li>
+
 </ul>
 
 <p></p>

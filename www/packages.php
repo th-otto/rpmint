@@ -1801,6 +1801,23 @@ also write wav files. Supported file formats include mod, stm, s3m,
 mtm, xm, and it.
 '
 	),
+	'libogg' => array(
+		'name' => 'libogg',
+		'upstream' => 'http://www.vorbis.com/',
+		'source' => 'http://downloads.xiph.org/releases/ogg/%{name}-%{version}.tar.xz',
+		'version' => '1.3.3',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+Libogg is a library for manipulating Ogg bitstreams.  It handles both
+making Ogg bitstreams and getting packets from Ogg bitstreams.
+</br>
+Ogg is the native bitstream format of libvorbis (Ogg Vorbis audio
+codec) and libtheora (Theora video codec).
+'
+	),
 );
 
 ?>
