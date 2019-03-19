@@ -1836,6 +1836,24 @@ its original size, and decompresses to an identical copy of the
 original audio data.
 '
 	),
+	'libvorbis' => array(
+		'name' => 'libvorbis',
+		'upstream' => 'http://www.vorbis.com/',
+		'source' => 'http://downloads.xiph.org/releases/vorbis/%{name}-%{version}.tar.xz',
+		'version' => '1.3.6',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+Vorbis is a fully open, nonproprietary, patent-and-royalty-free, and
+general-purpose compressed audio format for audio and music at fixed
+and variable bit rates from 16 to 128 kbps/channel.
+</br>
+The native bitstream format of Vorbis is libogg (Ogg). Alternatively,
+libmatroska (matroska) can also be used.
+'
+	),
 );
 
 ?>
