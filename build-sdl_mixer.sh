@@ -3,33 +3,32 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=vorbis-tools
-VERSION=-1.4.0
+PACKAGENAME=SDL_mixer
+VERSION=-1.2.12
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/vorbis-tools/warning-fixes.diff
-patches/vorbis-tools/vorbis-tools-cflags.diff
-patches/vorbis-tools/vcut-fix-segfault.diff
-patches/vorbis-tools/vorbis-tools-r19117-CVE-2014-9640.patch
-patches/vorbis-tools/vorbis-tools-oggenc-CVE-2014-9639.patch
-patches/vorbis-tools/oggenc-Fix-large-alloca-on-bad-AIFF-input.patch
-patches/vorbis-tools/mintelf-config.patch
+patches/sdl_mixer/double-free-crash.patch
+patches/sdl_mixer/mikmod1.patch
+patches/sdl_mixer/mikmod2.patch
+patches/sdl_mixer/config.patch
+patches/sdl_mixer/mintelf-config.patch
 "
-
-BINFILES="
-${TARGET_BINDIR#/}/*
-${TARGET_MANDIR#/}/man1/*
-"
-
 
 unpack_archive
 
+cd "$srcdir"
+
+rm -f aclocal.m4 ltmain.sh
+#libtoolize --force || exit 1
+aclocal -I acinclude || exit 1
+autoconf || exit 1
+
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-nls"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"

@@ -382,7 +382,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	rm -f */*/libiberty.a
 	find . -type f -name "*.la" -delete -printf "rm %p\n"
-	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,lto-wrapper,lto1}${BUILD_EXEEXT}
+	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT}
 	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
 	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT}
 	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${BUILD_EXEEXT}

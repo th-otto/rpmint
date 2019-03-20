@@ -1872,6 +1872,21 @@ Ogg file, including streams in it), oggdec (a simple command line decoder), and
 vcut (which allows you to cut up Vorbis files).
 '
 	),
+	'sdl_mixer' => array(
+		'name' => 'SDL_mixer',
+		'upstream' => 'http://libsdl.org/projects/SDL_mixer/release-1.2.html',
+		'source' => 'http://libsdl.org/projects/SDL_mixer/release/%{name}-%{version}.tar.gz',
+		'version' => '1.2.12',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+A multichannel audio mixer. It supports four channels of 16-bit stereo
+audio, plus a single channel of music, mixed by the popular MikMod MOD,
+Timidity MIDI, and SMPEG MP3 libraries.
+'
+	),
 );
 
 ?>

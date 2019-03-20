@@ -15,6 +15,7 @@ patches/libvorbis/libvorbis-lib64.dif
 patches/libvorbis/vorbis-CVE-2017-14160.patch
 patches/libvorbis/vorbis-CVE-2018-10393.patch
 patches/libvorbis/vorbis-CVE-2018-10392.patch
+patches/libvorbis/staticlibs.patch
 patches/libvorbis/mintelf-config.patch
 "
 
@@ -33,7 +34,10 @@ for CPU in ${ALL_CPUS}; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
 	${MAKE} || exit 1
 

@@ -233,6 +233,10 @@ unpack_archive()
 }
 
 
+#
+# FIXME: does not work if arguments are too long
+# and are split to several lines in config.status
+#
 hack_lto_cflags()
 {
 	configdirs="$@"

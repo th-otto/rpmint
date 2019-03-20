@@ -1337,6 +1337,8 @@ This notably applies to Perl and Python.
 
 <li>2019/03/19 Package vorbis-tools added</li>
 
+<li>2019/03/20 Package SDL_mixer added</li>
+
 </ul>
 
 <p></p>
