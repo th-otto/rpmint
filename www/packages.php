@@ -1916,6 +1916,19 @@ This is a sample library that allows you to use TrueType fonts in your
 SDL applications.
 '
 	),
+	'sdl_net' => array(
+		'name' => 'SDL_net',
+		'upstream' => 'http://libsdl.org/projects/SDL_net/release-1.2.html',
+		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
+		'version' => '1.2.8',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+This is a small cross-platform networking library for use with SDL.
+'
+	),
 );
 
 ?>

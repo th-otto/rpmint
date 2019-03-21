@@ -1343,6 +1343,8 @@ This notably applies to Perl and Python.
 
 <li>2019/03/21 Package SDL_ttf added</li>
 
+<li>2019/03/21 Package SDL_net added</li>
+
 </ul>
 
 <p></p>
