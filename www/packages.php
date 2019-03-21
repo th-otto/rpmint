@@ -1887,6 +1887,21 @@ audio, plus a single channel of music, mixed by the popular MikMod MOD,
 Timidity MIDI, and SMPEG MP3 libraries.
 '
 	),
+	'sdl_image' => array(
+		'name' => 'SDL_image',
+		'upstream' => 'http://libsdl.org/projects/SDL_image/release-1.2.html',
+		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
+		'version' => '1.2.12',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+This is a simple library to load images of various formats as SDL
+surfaces. This library supports the BMP, PPM, PCX, GIF, JPEG, PNG,
+TIFF and WEBP formats.
+'
+	),
 );
 
 ?>
