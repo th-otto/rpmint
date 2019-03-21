@@ -1902,6 +1902,20 @@ surfaces. This library supports the BMP, PPM, PCX, GIF, JPEG, PNG,
 TIFF and WEBP formats.
 '
 	),
+	'sdl_ttf' => array(
+		'name' => 'SDL_ttf',
+		'upstream' => 'http://libsdl.org/projects/SDL_ttf/release-1.2.html',
+		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
+		'version' => '2.0.11',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+This is a sample library that allows you to use TrueType fonts in your
+SDL applications.
+'
+	),
 );
 
 ?>

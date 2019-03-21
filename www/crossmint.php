@@ -1341,6 +1341,8 @@ This notably applies to Perl and Python.
 
 <li>2019/03/21 Package SDL_image added</li>
 
+<li>2019/03/21 Package SDL_ttf added</li>
+
 </ul>
 
 <p></p>
