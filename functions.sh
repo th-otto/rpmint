@@ -326,7 +326,8 @@ make_bin_archive()
 				esac
 			fi
 		else
-			echo "$i does not exist for packaging" >&2
+			pwd
+			echo "make_bin_archive: $i does not exist for packaging" >&2
 			exit 1
 		fi
 	done
@@ -497,7 +498,7 @@ make_archives()
 			if test -d "$i" -o -f "$i" -o -h "$i"; then
 				files="$files $i"
 			else
-				echo "$i does not exist for packaging" >&2
+				echo "make_archives: $i does not exist for packaging" >&2
 				exit 1
 			fi
 		done

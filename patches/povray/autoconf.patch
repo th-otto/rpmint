@@ -1,0 +1,65 @@
+--- a/unix/prebuild.sh	2019-03-23 10:40:39.009419652 +0100
++++ b/unix/prebuild.sh	2019-03-23 10:41:58.317417927 +0100
+@@ -723,7 +723,7 @@
+ autoheader --warnings=all
+ 
+ # Create all Makefile.in's from Makefile.am's
+-automake --add-missing --warnings=all
++automake --add-missing --warnings=all --copy
+ 
+ # Create configure from configure.ac
+ autoconf --warnings=all
+--- a/unix/configure.ac	2019-03-23 10:54:00.357402214 +0100
++++ b/unix/configure.ac	2019-03-23 10:54:57.117400979 +0100
+@@ -299,6 +299,7 @@
+ # Boost; required library
+ # the following macro stops with error when boost is not found
+ AX_BOOST_BASE([$required_libboost_version])
++if test "$with_boost" != no; then
+ AX_BOOST_THREAD
+ if test x"$ax_cv_boost_thread" != x"yes"; then
+   AC_MSG_ERROR([cannot find a suitable boost thread library])
+@@ -337,6 +338,7 @@
+   AC_MSG_RESULT([no])
+   AC_MSG_FAILURE([cannot link with the boost thread library])
+ fi
++fi
+ 
+ AC_DEFINE([USE_OFFICIAL_BOOST], [], [Use the official Boost libraries.])
+ 
+--- a/unix/config/ax_check_lib.m4	2019-03-23 11:01:29.703485146 +0100
++++ b/unix/config/ax_check_lib.m4	2019-03-23 11:02:29.727483839 +0100
+@@ -62,7 +62,8 @@
+               ax_check_lib="unknown"
+               AC_MSG_RESULT([$ax_check_lib])
+             ],
+-            [AC_MSG_RESULT([cross-compiling, forced])]
++            [ax_check_lib="ok"
++             AC_MSG_RESULT([cross-compiling, assumed ok])]
+           )  # AC_RUN_IFELSE
+         ],
+         [ax_check_lib="no headers"]
+--- a/unix/config/ax_check_libjpeg.m4	2019-03-23 11:06:14.635478945 +0100
++++ b/unix/config/ax_check_libjpeg.m4	2019-03-23 11:06:22.759478769 +0100
+@@ -66,7 +66,8 @@
+               ax_check_libjpeg="unknown"
+               AC_MSG_RESULT([$ax_check_libjpeg])
+             ],
+-            [AC_MSG_RESULT([cross-compiling, forced])]
++            [ax_check_libjpeg="ok"
++             AC_MSG_RESULT([cross-compiling, assumed ok])]
+           )  # AC_RUN_IFELSE
+         ],
+         [ax_check_libjpeg="no headers"]
+--- a/unix/config/ax_check_libtiff.m4	2019-03-23 11:07:10.687477726 +0100
++++ b/unix/config/ax_check_libtiff.m4	2019-03-23 11:07:42.903477025 +0100
+@@ -70,7 +70,8 @@
+               ax_check_libtiff="unknown"
+               AC_MSG_RESULT([$ax_check_libtiff])
+             ],
+-            [AC_MSG_RESULT([cross-compiling, forced])]
++            [ax_check_libtiff="ok"
++             AC_MSG_RESULT([cross-compiling, assumed ok])]
+           )  # AC_RUN_IFELSE
+         ],
+         [ax_check_libtiff="no headers"]

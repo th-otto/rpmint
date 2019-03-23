@@ -1,0 +1,78 @@
+--- a/libraries/png/configure.ac	2019-03-23 13:55:34.645639774 +0100
++++ b/libraries/png/configure.ac	2019-03-23 13:55:47.917639485 +0100
+@@ -41,6 +41,7 @@
+ AC_PROG_CC
+ AC_PROG_MAKE_SET
+ AC_PROG_RANLIB
++AM_PROG_AR
+ 
+ # Checks for libraries.
+ 
+--- a/libraries/tiff/configure	2019-03-23 14:40:27.259916991 +0100
++++ b/libraries/tiff/configure	2019-03-23 14:44:43.591911413 +0100
+@@ -111,6 +111,7 @@
+ # with GNU autoconf.
+ #
+ ac_prev=
++DIR_LIB=
+ for ac_option
+ do
+     if [ -n "$ac_prev" ]; then		# assign the argument to previous option
+@@ -144,6 +145,7 @@
+     -site=*|--site=*)		SITE="$ac_optarg";;
+     -srcdir|--srcdir)		ac_prev=SRCDIR;;
+     -srcdir=*|--srcdir=*)	SRCDIR="$ac_optarg";;
++    -libdir=*|--libdir=*)	DIR_LIB="$ac_optarg";;
+     --exec-prefix)		ac_prev=EPREFIX;;
+     --exec-prefix=*)		EPREFIX="$ac_optarg" ;;
+     --prefix)			ac_prev=PREFIX;;
+@@ -171,7 +173,9 @@
+ done
+ 
+ DIR_BIN=${EPREFIX}/bin		# destination for applications
++if test -z "$DIR_LIB"; then
+ DIR_LIB=${EPREFIX}/lib		# destination for library
++fi
+ DIR_INC=${PREFIX}/include		# destination for include files
+ DIR_HTML=${PREFIX}/doc/libtiff		# destination for HTML files
+ 
+--- a/libraries/tiff/libtiff/Makefile.in	2019-03-23 14:57:58.835894108 +0100
++++ b/libraries/tiff/libtiff/Makefile.in	2019-03-23 14:58:02.523894028 +0100
+@@ -265,7 +265,7 @@
+ RELEASE_DATE = @RELEASE_DATE_FILE@
+ 
+ ${SRCDIR}/tiffvers.h: ${VERSION} ${SRCDIR}/mkversion.c
+-	${CC} -o mkversion ${CFLAGS} ${SRCDIR}/mkversion.c
++	gcc -o mkversion ${SRCDIR}/mkversion.c
+ 	rm -f ${SRCDIR}/tiffvers.h
+ 	./mkversion -v ${VERSION} -r ${RELEASE_DATE} ${SRCDIR}/tiffvers.h
+ 
+@@ -277,7 +277,7 @@
+ # make these rules have to be manually carried out.
+ #
+ tif_fax3sm.c: ${SRCDIR}/mkg3states.c ${SRCDIR}/tif_fax3.h
+-	${CC} -o mkg3states ${CFLAGS} ${SRCDIR}/mkg3states.c
++	gcc -o mkg3states ${SRCDIR}/mkg3states.c
+ 	rm -f tif_fax3sm.c; ./mkg3states -c const tif_fax3sm.c
+ 
+ tif_aux.o: ${SRCDIR}/tif_aux.c
+--- a/libraries/zlib/configure.ac	2019-03-23 16:51:29.545105735 +0100
++++ b/libraries/zlib/configure.ac	2019-03-23 16:51:31.597105690 +0100
+@@ -41,6 +41,7 @@
+ AC_PROG_CC
+ AC_PROG_MAKE_SET
+ AC_PROG_RANLIB
++AM_PROG_AR
+ 
+ # Checks for libraries.
+ 
+--- a/configure.ac	2019-03-23 16:53:49.305102693 +0100
++++ b/configure.ac	2019-03-23 16:53:55.469102559 +0100
+@@ -223,6 +223,7 @@
+ ###AC_PROG_MAKE_SET
+ 
+ AC_PROG_RANLIB
++AM_PROG_AR
+ 
+ 
+ ###############################################################################

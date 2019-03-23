@@ -1929,6 +1929,54 @@ SDL applications.
 This is a small cross-platform networking library for use with SDL.
 '
 	),
+	'povray36pml' => array(
+		'name' => 'povray',
+		'upstream' => 'http://www.povray.org',
+		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
+		'version' => '3.6.1',
+		'date' => 'pml',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'comment' => '
+The Persistence of Vision Ray tracer creates three-dimensional,
+photo-realistic images using a rendering technique called ray tracing.
+It reads in a text file containing information describing the objects
+and lighting in a scene and generates an image of that scene from the
+view point of a camera also described in the text file. Ray tracing is
+not a fast process by any means, (the generation of a complex image can
+take several hours) but it produces very high quality images with
+realistic reflections, shading, perspective, and other effects.
+</br></br>
+<span style="color:red">Note:</span> for testing purposes, povray 3.6 comes in 2 flavours. This
+version was compiled with the pml math library.
+'
+	),
+	'povray36fdlibm' => array(
+		'name' => 'povray',
+		'upstream' => 'http://www.povray.org',
+		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
+		'version' => '3.6.1',
+		'date' => 'fdlibm',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'comment' => '
+The Persistence of Vision Ray tracer creates three-dimensional,
+photo-realistic images using a rendering technique called ray tracing.
+It reads in a text file containing information describing the objects
+and lighting in a scene and generates an image of that scene from the
+view point of a camera also described in the text file. Ray tracing is
+not a fast process by any means, (the generation of a complex image can
+take several hours) but it produces very high quality images with
+realistic reflections, shading, perspective, and other effects.
+</br></br>
+<span style="color:red">Note:</span> for testing purposes, povray 3.6 comes in 2 flavours. This
+version was compiled with the fdlibm math library.
+'
+	),
 );
 
 ?>

@@ -1347,6 +1347,8 @@ This notably applies to Perl and Python.
 
 <li>2019/03/22 Update SDL from upstream</li>
 
+<li>2019/03/23 Package povray 3.6 added</li>
+
 </ul>
 
 <p></p>
