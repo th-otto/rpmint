@@ -1,0 +1,210 @@
+diff -ur pine4.30-orig/build pine4.30/build
+--- pine4.30-orig/build	Wed Dec  6 19:00:12 2000
++++ pine4.30/build	Wed Dec  6 19:05:40 2000
+@@ -340,7 +340,7 @@
+         size bin/pine bin/mtest bin/imapd bin/pico bin/pilot
+ 	case $maketarg in
+ 	    mnt)    echo "Fixing stacksizes ..."
+-		    fixstk 64K bin/pine bin/pico bin/imapd bin/mtest bin/pilot
++		    stack --fix=64K bin/pine bin/pico bin/imapd bin/mtest bin/pilot
+ 	esac
+         echo "Done"
+         ;;
+diff -ur pine4.30-orig/imap/src/osdep/unix/Makefile pine4.30/imap/src/osdep/unix/Makefile
+--- pine4.30-orig/imap/src/osdep/unix/Makefile	Wed Dec  6 19:00:12 2000
++++ pine4.30/imap/src/osdep/unix/Makefile	Wed Dec  6 19:05:40 2000
+@@ -416,7 +416,8 @@
+ 	 SPOOLDIR=/var/spool \
+ 	 ACTIVEFILE=/var/lib/news/active \
+ 	 RSHPATH=/usr/bin/rsh \
+-	 BASECFLAGS="-g -O"
++	 BASECFLAGS="-O2 -fomit-frame-pointer" \
++	 BASELDFLAGS="-lsocket"
+ 
+ neb:	# NetBSD
+ 	$(BUILD) `$(CAT) SPECIALS` OS=bsi \
+diff -ur pine4.30-orig/imap/src/osdep/unix/os_mnt.c pine4.30/imap/src/osdep/unix/os_mnt.c
+--- pine4.30-orig/imap/src/osdep/unix/os_mnt.c	Wed Oct 25 03:46:42 2000
++++ pine4.30/imap/src/osdep/unix/os_mnt.c	Wed Dec  6 20:12:12 2000
+@@ -30,7 +30,6 @@
+ #include <netdb.h>
+ #include <ctype.h>
+ #include <errno.h>
+-extern int errno;		/* just in case */
+ #include <pwd.h>
+ #include "misc.h"
+ 
+@@ -39,7 +38,6 @@
+ #include "ftl_unix.c"
+ #include "nl_unix.c"
+ #include "env_unix.c"
+-#define fork vfork
+ #include "tcp_unix.c"
+ #include "gr_waitp.c"
+-#include "tz_nul.c"
++#include "tz_sv4.c"
+diff -ur pine4.30-orig/imap/src/osdep/unix/os_mnt.h pine4.30/imap/src/osdep/unix/os_mnt.h
+--- pine4.30-orig/imap/src/osdep/unix/os_mnt.h	Wed Oct 25 03:46:44 2000
++++ pine4.30/imap/src/osdep/unix/os_mnt.h	Wed Dec  6 19:13:36 2000
+@@ -27,11 +27,10 @@
+ #include <syslog.h>
+ #include <sys/file.h>
+ #include <time.h>
+-#include <portlib.h>
+- 
+-#define EAGAIN EWOULDBLOCK
+-#define FNDELAY O_NDELAY 
+- 
++
++#define FNDELAY O_NDELAY
++#define L_SET SEEK_SET  /* missing since MINTLIB > 0.50 */
++
+ /* MiNT gets this wrong */
+  
+ #define setpgrp setpgid
+diff -ur pine4.30-orig/pico/makefile.mnt pine4.30/pico/makefile.mnt
+--- pine4.30-orig/pico/makefile.mnt	Sat Feb 20 00:54:14 1999
++++ pine4.30/pico/makefile.mnt	Wed Dec  6 19:05:40 2000
+@@ -42,7 +42,7 @@
+ LIBARGS=	ru
+ RANLIB=		ranlib
+ 
+-LIBS=		$(EXTRALIBES) -ltermcap
++LIBS=		$(EXTRALIBES) -lncurses
+ 
+ OFILES=		attach.o basic.o bind.o browse.o buffer.o \
+ 		composer.o display.o file.o fileio.o line.o pico_os.o \
+diff -ur pine4.30-orig/pico/osdep/os-mnt.h pine4.30/pico/osdep/os-mnt.h
+--- pine4.30-orig/pico/osdep/os-mnt.h	Sat Feb 20 00:53:34 1999
++++ pine4.30/pico/osdep/os-mnt.h	Wed Dec  6 19:05:40 2000
+@@ -13,13 +13,9 @@
+  ----*/
+ 
+ 
+-
+ /*----------------- Are we ANSI? ---------------------------------------*/
+ #define ANSI          /* this is an ANSI compiler */
+ 
+-/*------ If our compiler doesn't understand type void ------------------*/
+-/* #define void char */  /* no void in compiler */
+-
+ 
+ #include <stdlib.h>
+ #include <string.h>
+@@ -37,20 +33,17 @@
+ #include <netdb.h>
+ 
+ 
+-
+ /*----------------- locale.h -------------------------------------------*/
+ #include <locale.h>  /* To make matching and sorting work right */
+ #define collator strcoll
+ 
+ 
+-
+ /*----------------- time.h ---------------------------------------------*/
+ #include <time.h>
+ /* plain time.h isn't enough on some systems */
+ #include <sys/time.h>  /* For struct timeval usually in time.h */ 
+ 
+ 
+-
+ /*--------------- signal.h ---------------------------------------------*/
+ #include <signal.h>      /* sometimes both required, sometimes */
+ /* #include <sys/signal.h> */ /* only one or the other */
+@@ -72,25 +65,17 @@
+ #define	SIG_PROTO(args) ()
+ 
+ 
+-
+ /*-------------- A couple typedef's for integer sizes ------------------*/
+ typedef unsigned int usign32_t;
+ typedef unsigned short usign16_t;
+ 
+ 
+-
+ /*-------------- qsort argument type -----------------------------------*/
+ #define QSType void  /* qsort arg is of type void * */
+-/* #define QSType char */ /* qsort arg is of type char * */
+-
+ 
+ 
+ /*-------------- fcntl flag to set non-blocking IO ---------------------*/
+ #define	NON_BLOCKING_IO	O_NDELAY
+-/*#define	NON_BLOCKING_IO	FNDELAY */	/* good ol' bsd style  */
+-
+-/*-------------- MiNT needs also this -----------------------------------*/
+-#define EAGAIN EWOULDBLOCK
+ 
+ 
+ /*
+@@ -109,12 +94,10 @@
+ /* #include <termios.h> */ /* POSIX */
+ 
+ 
+-
+ /* Don't need to define this but do need to use either read.sel or read.pol
+  * in osdep. */
+ /*-------- Use poll system call instead of select ----------------------*/
+-/* #define USE_POLL */     /* use the poll() system call instead of select() */
+-
++#define USE_POLL /* use the poll() system call instead of select() */
+ 
+ 
+ /*-------- Use terminfo database instead of termcap --------------------*/
+@@ -122,24 +105,20 @@
+ #define USE_TERMCAP    /* use termcap */
+ 
+ 
+-
+ /*-- What argument does wait(2) take? Define this if it is a union -----*/
+ #define HAVE_WAIT_UNION /* the arg to wait is a union wait * */
+ 
+ 
+-
+ /*-------- Is window resizing available? -------------------------------*/
+ #if defined(TIOCGWINSZ) && defined(SIGWINCH)
+ #define RESIZING  /* SIGWINCH and friends */
+ #endif
+ 
+ 
+-
+ /*-------- If no vfork, use regular fork -------------------------------*/
+ /* #define vfork fork */ /* vfork is just a lightweight fork, so can use fork */
+ 
+ 
+-
+ /*---- When no screen size can be discovered this is the size used -----*/
+ #define DEFAULT_LINES_ON_TERMINAL	(24)
+ #define DEFAULT_COLUMNS_ON_TERMINAL	(80)
+@@ -154,7 +133,6 @@
+    Pico OS dependencies.
+ 
+  ----*/
+-
+ 
+ /*
+  * File name separator, as a char and string
+diff -ur pine4.30-orig/pine/makefile.mnt pine4.30/pine/makefile.mnt
+--- pine4.30-orig/pine/makefile.mnt	Sat Feb 20 00:53:06 1999
++++ pine4.30/pine/makefile.mnt	Wed Dec  6 19:05:40 2000
+@@ -60,7 +60,7 @@
+ LDAPOFILES=   addrbook.o adrbkcmd.o args.o bldaddr.o init.o \
+ 	      other.o pine.o takeaddr.o
+ 
+-STDLIBS=     -ltermcap -lportlib -lsocket
++STDLIBS=     -lncurses
+ LOCLIBS=     $(PICODIR)/libpico.a $(CCLIENTDIR)/c-client.a
+ LIBS=        $(EXTRALIBES) $(LOCLIBS) $(LDAPLIBS) $(STDLIBS) \
+              `cat $(CCLIENTDIR)/LDFLAGS`
+--- pine4.30/imap/src/osdep/unix/Makefile.ssl.~	Wed Dec  6 19:02:42 2000
++++ pine4.30/imap/src/osdep/unix/Makefile.ssl	Wed Dec  6 21:08:04 2000
+@@ -36,7 +36,7 @@
+ 
+ SSLCFLAGS= -I$(SSLINCLUDE) -I$(SSLINCLUDE)/openssl\
+  -DSSL_CERT_DIRECTORY=\"$(SSLCERTS)\"
+-SSLLDFLAGS= -L$(SSLLIB) -lssl $(SSLCRYPTO) $(SSLRSA)
++SSLLDFLAGS= -L$(SSLLIB) -lssl $(SSLCRYPTO) $(SSLRSA) -lsocket
+ 
+ 
+ ssl:	# SSL flags

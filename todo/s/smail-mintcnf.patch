@@ -1,0 +1,1655 @@
+--- smail-3.2.0.101/conf/os/mint.mintcnf	Sun Aug  1 13:50:37 1999
++++ smail-3.2.0.101/conf/os/mint	Mon Aug  2 02:17:03 1999
+@@ -0,0 +1,89 @@
++# @(#)smail/conf/os/mint
++#
++#	mint - describe characteristics of MiNT systems
++#
++# Original by Guido Flohr <gufl0000@stud.uni-sb.de>.  Based on the 
++# os file for GNU linux.
++
++/bin/echo -n "conf/os/posix ... "
++. $ROOT/conf/os/posix
++
++# lie through our teeth....
++OSNAMES=MINT:UNIX:$OSNAMES
++
++ARCH_TYPE=32bit
++
++LOCKING_PROTOCOL="\
++#define SPOOL_MODE 0600
++#define LOCK_REQUIRES_WRITE
++#include <unistd.h>
++#include <sys/file.h>
++#define lock_fd(fd)	      (flock((fd), LOCK_EX|LOCK_NB) < 0? FAIL: SUCCEED)
++#define lock_fd_wait(fd)	(flock((fd), LOCK_EX) < 0? FAIL: SUCCEED)
++#define unlock_fd(fd)		((void) flock((fd), LOCK_UN))
++#define unlock_fd_wait(fd)	((void) flock((fd), LOCK_UN))
++#define lock_fd_rd_wait(fd)	(flock((fd), LOCK_SH) < 0? FAIL: SUCCEED)
++"
++
++#LOCK_BY_NAME=TRUE
++FLOCK_MAILBOX=TRUE
++
++# This used to be /var/spool/mail.  For FHS-compliancy I changed it.
++# Set symlinks for the transition period.
++MAILBOX_DIR=/var/mail
++
++DRIVER_CONFIGURATION=arpa-network		# includes BIND/DNS router
++
++RANLIB=ranlib				# Behavior compatible with BSD
++
++# We choose NDBM in assumption 4.4BSD db(3) with ndbm.h emulation is
++# available in libdb.  Most MiNT systems have GDBM too, but so
++# far as I know it's bigger and slower than db -- even sdbm may be
++# better.  If your ndbm.h doesn't include db.h, then this won't work
++# and you should look at EDITME-dist for further hints.
++#
++# OS_HAVE - name the capabilities of this operating system.  We can't
++# reuse posix values here because we don't have bstring.
++HAVE=$HAVE:BIND:BSD_NETWORKING:COMSAT:FGETPWENT:FSYNC:FTRUNCATE:GETHOSTNAME
++HAVE=$HAVE:HASH_BANG:HDB_UUCP:LIMIT_H:NDBM:RLIMIT:SETGROUPS:STRERROR
++HAVE=$HAVE:SYS_INTERPRETER:SYSEXITS:ULIMIT:VFORK:MEMMOVE:EHLO
++
++# NO_HAVE - what features are not available on this operating system
++#[[ this is because of the db(3) emulation of ndbm ]]
++NO_HAVE=$NO_HAVE:DBM_PAGFNO
++
++# NOTE:  GNU/Linux systems seem to have a <regexp.h> that's compatible
++# with the old SysV stuff, so the user might want to add USE_REGEXP_H
++# to the MISC_DEFINES in their EDITME.  Some GNU/Linux systems also
++# seem to have a P1003.2 <regex.h> too, and this should be used if it
++# works, and will be tried since none of the UNIX_SYS5* are on (nor
++# should be on) by default.
++
++MISC_DEFINES=INET_NTOA_USE_STRUCT:USE_TM_ZONE
++
++: MISC_C_DEFINES='
++#define DATA_RLIMIT	(8192 * 1024)	/* limit to 8Mb of data space */
++#define STACK_RLIMIT	(1024 * 1024)	/* limit to 1Mb of stack space */
++'
++
++: SOCKET_INCLUDES='
++#include <sys/socket.h>
++#include <netinet/in.h>
++#include <arpa/inet.h>
++#include <netdb.h>
++#include <errno.h>      /* Guarantee that NOERROR is not defined later again.  */
++#ifdef HAVE_BIND
++# undef NOERROR		/* remove conflict in SVR4 header files */
++# include <arpa/nameser.h>
++# include <resolv.h>
++#endif
++'
++
++SMAIL_NOBODY=nobody		# BSD and SunOS-like systems
++SECURE_PATH=/bin:/usr/bin:/sbin:/usr/sbin
++
++COMPRESS=gzip
++COMP_FLAG=-9f
++DOT_Z=.gz
++UNCOMPRESS=gunzip
++ZCAT=zcat
+--- smail-3.2.0.101/conf/EDITME.mintcnf	Sun Aug  1 13:31:51 1999
++++ smail-3.2.0.101/conf/EDITME	Sun Aug  1 20:03:33 1999
+@@ -0,0 +1,1560 @@
++#ident	"@(#)smail/conf:RELEASE-3_2_0_92:EDITME-dist,v 1.75 1997/02/09 22:10:33 woods Exp"
++#
++# EDITME-dist - distribution standard EDITME
++#
++# Copy me to a new file named EDITME and edit the new file to perform
++# high level configuration of Smail.
++#
++# The EDITME file is used by makefiles to build individual defs.h,
++# defs.sh and defs.sed files, which in turn control the build/install
++# process of smail.
++#
++# The EDITME-dist file serves as a reference copy only.  Patches to
++# Smail will refer to EDITME-dist rather than EDITME.  Only the EDITME
++# file is used in the build/install process.  Any editing should be
++# done to the file EDITME, which should be located in the same
++# directory as EDITME-dist.
++#
++# The EDITME is a /bin/sh shell script.  That is, comments begin with
++# the first non-quoted/non-escaped '#' character.  Values are set
++# using NAME=VALUE or NAME=, with no spaces around the equal sign.
++# Values that have spaces or special shell characters should be qouted
++# and/or escaped.  Consult the sh(1) man page for further details.
++#
++# Values that are indicated as optional may, in some cases, not be set.
++# All other values MUST be set to some value.  The NAME= form is
++# equivalent to not setting the value, with the exception of TEST_BASE.
++#
++# An alternate path to the EDITME file can be specified through setting
++# the environment variable SMAIL_EDITME.  This can either be a full
++# pathname or a relateive pathname, which will be referenced relative
++# to the smail conf directory.	Care must be taken with dependencies in
++# makefiles when the path to the EDITME file has changed.  If this is
++# a permanent change, then type "make depend" at the top of the smail
++# source tree.	Otherwise the conf/lib/mkdefs.sh shell script can be
++# run in affected directories to create new defs files.
++
++
++# OS_TYPE - define the operating system type for your machine
++#
++# required
++#
++# Consult the conf/os directory for a complete list of recognized
++# operating system types.  The names given below may not represent
++# all of the operating systems for which an OS description file
++# is available.
++
++#OS_TYPE=posix				# default for blind config...
++#
++#OS_TYPE=386ix				# Interactive 386/IX with networking
++#OS_TYPE=3b2-s5.3+win			# 3b2 with SVR3.2 and WIN TCP/IP
++#OS_TYPE=aix-ps2			# IBM AIX For PS/2
++#OS_TYPE=aix3.1				# IBM AIX 3.1
++#OS_TYPE=aix3.2				# IBM AIX 3.2
++#OS_TYPE=aux2.0				# Apple A/UX v2.0/v2.0.1
++#OS_TYPE=aux3.0				# Apple A/UX v3.x.x
++#OS_TYPE=bsd4.2				# 4.2 BSD systems
++#OS_TYPE=bsd4.3				# 4.3 BSD systems
++#OS_TYPE=bsd4.4				# 4.4 BSD systems
++#OS_TYPE=bsd4.4-lite			# 4.4-lite BSD systems (aka Net/3)
++#OS_TYPE=bsdi				# BSDI-1.x systems
++#OS_TYPE=bsdi2				# BSDI-2.x systems
++#OS_TYPE=cpc3.0				# Counterpoint C-XIX Release 3.0
++#OS_TYPE=delta				# Motorola delta
++#OS_TYPE=forpro				# fortune FOR:Pro 2.1 to 3.1
++#OS_TYPE=hp-ux7.0			# Hewlet Packard's HP-UX version 7.0
++#OS_TYPE=hp-ux8.0			# Hewlet Packard's HP-UX version 8.0
++#OS_TYPE=hp-ux9.0			# Hewlet Packard's HP-UX version 9.0
++#OS_TYPE=irix3.2			# SGI IRIX version 3.2
++#OS_TYPE=irix3.3			# SGI IRIX version 3.3
++#OS_TYPE=irix4.0			# SGI IRIX version 4.0
++#OS_TYPE=irix5				# SGI IRIX version 5 (5.2)
++#OS_TYPE=isc2.2.1			# Interactive release 2.2.1
++#OS_TYPE=linux				# Linux-based GNU systems
++#OS_TYPE=mips-bsd4.3			# MIPS Risc/OS in bsd universe
++OS_TYPE=mint				# MiNT is Not TOS
++#OS_TYPE=next2.0			# NeXT NeXTstep 2.x (and 3.x)
++#OS_TYPE=posix				# Any P1003.1/X3J11-conformant system
++#OS_TYPE=sco3.2				# SCO UNIX 3.2
++#OS_TYPE=sco3.2+tcp			# SCO UNIX 3.2 with SCO TCP/IP
++#OS_TYPE=scs4.2				# Symmetrix/4.2BSD
++#OS_TYPE=sun_os3			# Sun/OS version 3.x
++#OS_TYPE=sun_os4			# Sun/OS version 4.0.x
++#OS_TYPE=sun_os4.1			# Sun/OS version 4.1.x
++#OS_TYPE=solaris2			# Sun Solaris 2.x (i.e. SunOS-5.x)
++#OS_TYPE=sys5.2				# System V release 2
++#OS_TYPE=sys5.3				# System V release 3
++#OS_TYPE=sys5.3+cmc			# CMC TCP/IP on top of System V.3
++#OS_TYPE=sys5.4				# System V release 4
++#OS_TYPE=ultrix1.2			# DEC Ultrix release 1.2
++#OS_TYPE=unixpc				# AT&T Unix PC (3b1) release 3.x
++#OS_TYPE=uts1.2				# UTS/580 release 1.2
++#OS_TYPE=uts2.0				# UTS/580 release 2.0
++#OS_TYPE=xenix5				# SCO Xenix System V
++#OS_TYPE=xenix5+tcp			# SCO Xenix System V with TCP/IP
++
++
++# CPPFLAGS - interesting flags for the cpp, and cc commands
++#
++# required
++#
++# Include things like "-I" other cpp/cc options here....
++
++#CPPFLAGS="-I. -I.. -I../src"				# required minumum
++#CPPFLAGS="-I. -I.. -I../src -I/local/include"		# common
++CPPFLAGS="-D_GNU_SOURCE"
++
++# CFLAGS - the base set of flags for the cc command
++#
++# optional
++#
++# When debugging smail, it is useful to set this to "-g".  Otherwise
++# "-O" is normally used to optimize the code produced.
++#
++# NOTE:	 I get core dumps on SCO MPX 2.0 when using the bind router (I
++#   haven't tried other SCO releases).	Whatever the problem is, it
++#   goes away when I compile without -O.  If anybody finds the cause,
++#   please let me know.	 For now, if you get core dumps when using the
++#   bind router on SCO, try compiling without -O.
++
++CFLAGS="-O2 -fomit-frame-pointer -mbaserel"
++#CFLAGS=				# don't use optimizer
++#CFLAGS=-O				# common
++#CFLAGS="-O2 -g"			# GNU Compiler V2
++#CFLAGS=-g				# use when debugging
++#CFLAGS="-O -C"				# UTS/580
++#CFLAGS="-g -C"				# UTS/580 for debugging
++#CFLAGS="-O -g"				# GNU Compiler V1
++
++
++# CC - the C compiler to use for compiling smail
++#
++# optional (defaults to cc)
++# 
++# CAUTION: gcc does not work with Smail on all architecures.  In
++# particular, problems have been reported on the SunOS platform.  The
++# typical problem is that gcc uses different structure-passing
++# conventions for function calls.  This is a problem for a few
++# networking calls which pass around in_addr structures.  Note also
++# that earlier version of GCC don't generate quite as tight code as
++# the SunOS-4.1 compilers (m68k and sparc).  Also note that as recent
++# as GCC-2.7.2 there have been code generator and/or optimiser
++# problems reported for sparc targets which may or may not affect
++# Smail-3.  I.e. you're on your own if you use GCC, particularly on
++# SunOS-4.x.
++# 
++# Some conf/os files set an alternate default value for CC.  For
++# example SunOS-4.1 sets CC to /usr/5bin/cc and in effect requires it
++# due to the conf/os/sun_os4.1 file also setting UNIX_SYS5.  For
++# SunOS-4.0, CC might be to /usr/bin/cc, to ensure that /usr/5bin/cc
++# is not used if you don't want to use it but you do have /usr/5bin
++# earlier than /usr/bin in your path.
++# 
++# Note that /usr/5bin/cc does work fine for Smail, at least on
++# SunOS-4.1 and newer provided that you don't specify the 'nobody' id
++# with uid=65534 as owing any database files (on at least SunOS-4.1.1,
++# the setuid(3V) library call returns EINVAL if the uid is greater
++# than 65533 despite what the manual page claims [see MAXUID in
++# <sys/param.h>]).
++# 
++# The /usr/5lib routines are generally thought to be more reliable and
++# bug free.  You may need to ensure that the /usr/5lib libraries are
++# always available for the Smail binary, and that you have installed
++# the most current BIND (4.9.4-P1 or newer) resolver routines in the
++# /usr/5lib/libc.so library (or you can link statically, and don't
++# forget to specify BIND's libresolv.a).
++
++CC=gcc					# use the GNU C Compiler
++#CC=acc					# use sun's ansi compiler (untested)
++
++
++# LDFLAGS - flags to pass to the loader
++#
++# optional
++#
++# These flags are passed to the cc command before any object
++# modules or libraries.
++#
++# NOTE: If you are on a system that by default uses NIS/yp, it is
++# likely that the conf/os file for that system will use BIND for
++# hostname lookups, and in the case that your host doesn't have the
++# BIND resolver libraries in the default shared library, you might
++# need to link smail statically in order to assure the BIND resolver
++# routines are indeed called.
++
++#LDFLAGS="-g -Bstatic"			# link for symbolic debugging and no shared libs
++#LDFLAGS="-L/usr/ucblib"		# use an alternate directory for libs
++#LDFLAGS="-L/usr/ucblib -Bstatic"	# and don't use shared libraries
++#LDFLAGS="-g -L/usr/local/lib"		# common convention with symbolic debug
++#LDFLAGS="-L/usr/local/lib"		# common convention
++#LDFLAGS="-g -L/local/lib"		# common local convention with symbolic debug
++#LDFLAGS="-L/local/lib"			# common local convention
++LDFLAGS=-mbaserel			# MiNT shared-text executables.
++
++# LIBS - libraries to include in binaries
++#
++# optional
++#
++# These libraries are passed to the cc command before any libraries
++# mentioned in the conf/os file.  It can be used to link in additional
++# libraries before the system libraries.
++#
++# If you wish to use the GNU dbm library, then add -lgdbm to LIBS
++# (perhaps with a -L to indicate the directory containing gdbm),
++# and then add NDBM to the HAVE variable.
++
++#LIBS="-lident"				# use the libident library - for RFC1413 ident
++#LIBS="-lgdbm"				# use the GNU dbm library
++#LIBS="-lgdbm"				# if gdbm is in /usr/local/lib
++#LIBS="-lgdbm -lalloca"			# load alloca function from somewhere
++#LIBS="-lndbm" # (Red Hat 4.1 gdbm doesn't have dbm_error() ??)
++LIBS="-lbport -lbdb -lbsocket"
++
++# OSLIBS - ending libraries to include in binaries
++#
++# optional
++#
++# These libraries are passed to the cc command after all other
++# libraries from any other source.  For example, this can be used
++# to force the use of an alternate C library, or a shared version
++# of the C library.
++#
++# Some conf/os files already specify use of the shared C library, and
++# some necessary system libraries.
++
++#OSLIBS=-lc_s				# SVR3 shared C library
++#OSLIBS="-lc_s -lcposix"		# POSIX and shared C libs
++
++# STRIP - define this if you wish to strip binaries when installing
++#
++# optional
++#
++# The smail binaries will only be striped on installation if STRIP=yes.
++# This may save some disk space at the expence of the ability to do
++# symbolic debugging and core dump analysis.
++
++STRIP=yes
++
++
++# USE_SYMLINKS - define this if you wish to use symlinks when installing
++#
++# optional
++#
++# The smail binaries are normally installed using hardlinks between
++# the various copies of the smail binary.  Where hardlinks cannot be
++# made, real copies are made.  To use symbolic links instead of
++# hard links and copies, set USE_SYMLINKS=yes.	This will cause only
++# one copy of the smail binary to be installed.	 Do not define this
++# if your system does not have symbolic links.
++
++USE_SYMLINKS=yes
++
++
++# DRIVER_CONFIGURATION - configuration file describing smail drivers
++#
++# optional
++#
++# By default, the os configuration file (conf/os/OS_TYPE) refers to
++# the file that describes the available director, router and transport
++# drivers.
++#
++# For example on BSD-based OS_TYPEs, the os configuration file refers to
++# a driver configuration that uses BSD networking.  A BSD based system
++# could not set DRIVER_CONFIGURATION and get the BSD netwokring based
++# drivers; or a system could set DRIVER_CONFIGURATION=unix-generic and
++# disable BSD networking drivers.
++#
++# Currently few conf/os files specify the arpa-network driver
++# configuration (which includes support for the BIND server).
++# If you want to use this, you must usually set DRIVER_CONFIGURATION
++# explicitly.  You may also have to add BIND to the HAVE list (later
++# in this file) to use the arpa-network driver configuration.
++#
++#
++# IMPORTANT NOTE FOR INTERNET HOSTS:
++#
++######################################################################
++#								     #
++# If you are on the internet - or want to be! - you MUST include a   #
++# use a configuration that supports the bind router.  This means     #
++# that you should choose the arpa-network configuration below and    #
++# you should also include "BIND" in the HAVE definition below.       #
++#								     #
++######################################################################
++#DRIVER_CONFIGURATION=unix-generic		# no BSD networking
++#DRIVER_CONFIGURATION=$ROOT/mydriver.cf		# customized configuration
++#DRIVER_CONFIGURATION=arpa-network		# include bind router
++
++
++# LMAIL - where the real /bin/mail resides
++#
++# optional
++#
++# On many System V machines, and on SunOS-4.x, the /bin/mail program
++# will deliver what it thinks is local mail directly into user
++# mailboxes, and may also call uucp, or some other remote delivery
++# mechanism.  The /bin/mail program will therefore can bypass smail.
++#
++# A solution to this program is to move the /bin/mail supplied with
++# your system to another name, LMAIL, and to then install the binmail
++# program, in pd/binmail as /bin/mail.	If binmail is invoked to read
++# mail, the LMAIL (old /bin/mail) is called, otherwise SMAIL is called
++# to deliver mail.
++#
++# If LMAIL is defined below and the specified file does not exist,
++# then the binmail makefile install rule will attempt to move
++# /bin/mail to /bin/mail.SAV, link it to LMAIL and then copy the new
++# binmail binary into /bin/mail.  If LMAIL is defined and the file
++# LMAIL does exist, then the binmail makefile will only install
++# binmail if /bin/mail and /bin/mail.SAV also exist.
++#
++# If LMAIL is not defined then /bin/mail is not touched.
++#
++
++#LMAIL=/bin/lmail				# standard System V, SunOS, etc.
++
++
++# MISC_DEFINES - miscellaneous definitions
++#
++# optional
++#
++# A colon-separated list that names miscellaneous macros to define
++# for C programs and shell scripts.  Each entry in the list can be
++# a simple name, or the name can be followed by an equal sign to
++# provide a value.  For example:
++#
++#	MISC_DEFINES="void=int:DECLARE_UTIMBUF:NO_FORWARDTO_FILE"
++#
++# Defines void to be int for compilers that do not correctly support
++# the void type, and declares the macro DECLARE_UTIMBUF, so that smail
++# will not try to get the utimbuf structure from a header file.
++#
++# REGULAR EXPRESSIONS FOR LSEARCH LOOKUPS
++#
++# It is now possible to use regular expressions for lsearch lookups in
++# databases such as the aliases file.  This feature is made use of by
++# enclosing the key expression in double quotes (").
++#
++# To enable this feature add the define USE_LSEARCH_REGEXCMP to
++# MISC_DEFINES.  If your system has a SysVr2 or SysVr3 (or SunOS4)
++# compatible <regexp.h> (but *NOT* the V8/old-Spencer one!), but is
++# not defined as a SysV system, you may have to add USE_REGEXP_H too.
++#
++# FILENAME EXPANSION BY DOMAIN NAME
++#
++# It is now possble to use the (un-documented) varialbe $target_domain
++# in any(?) file attribute, such as for the aliasfile driver.  To do
++# this you might add a second "aliases" director with the private
++# attirbute set as follows:
++#
++#	file = /etc/smail/aliases/${lc:target_domain},
++#
++# To enable this feature add the define USE_TARGET_DOMAIN to
++# MISC_DEFINES.
++#
++# IMPORTANT FOR INTERACTIVE UNIX USERS:
++#
++# Some versions of Interactive UNIX have a <sys/socket.h> header
++# file that directly includes the <time.h> header file, which is
++# not protected against multiple inclusion.  If your system has
++# this problem, you will encounter a multiple declaration problem
++# when compiling src/modes.o.  To repair the situation, use:
++#
++#	MISC_DEFINES=ISC_SOCKET_TIME_BUG
++#
++# Interactive UNIX 2.2 has a bug in accept().  If accept() is
++# interrupted by an alarm signal, accept() does not return from
++# waiting for a connection with errno set to EINTR.  Unfortunately
++# this is necessary for smail to process its mail queues at regular
++# intervals, as specified with the -q option.  Choosing OS_TYPE=isc2.2.1
++# enables this define as well, but it may be necessary for other
++# releases of ISC 386/ix too.
++#
++#       MISC_DEFINES="ISC_SOCKET_TIME_BUG:ISC_ACCEPT_BUG"
++#
++# IMPORTANT FOR BSD AND SUNOS USERS:
++#
++# Some mail readers compare access and modify times to determine
++# whether mail has been delivered which has not been read.  The local
++# mail transport (using the appendfile driver) preserves access time
++# for files so that this will work.  However, if Smail is configured
++# to use the System V convention of reading forwarding information
++# from user mailbox files, then this will be defeated (the forwardto
++# director does not preserve access times).
++#
++# Since BSD systems (and System V systems running Smail) have little
++# reason to use the System V forwarding convention, it is sufficient
++# to disable it.  To disable the System V forwarding convention, add
++# NO_FORWARDTO_FILE to MISC_DEFINES.
++#
++#
++# IMPORTANT FOR USERS OF OLD BIND RELEASES
++#
++# DON'T USE THE OLD BIND!  Please install BIND-4.9.3-REL-P1 A.S.A.P.
++#
++# The bind resolver can make use of features in newer releases of
++# BIND (named).	 In particular, it will use the res_search function,
++# rather than older res_mkquery function.  If you do not have the
++# new BIND release (e.g., res_search is listed as an undefined
++# variable when you link smail), then add OBSOLETE_RESOLVER to
++# MISC_DEFINES.	 Also, the res_search function does not appear to
++# interract correctly with the 'defnames' attribute to the bind
++# driver, on some versions of the resolv library, so beware.  If bind
++# doesn't work for you, try defining OBSOLETE_RESOLVER.
++#
++#
++# IMPORTANT FOR USERS OF SOME SEQUENT OS RELEASES
++#
++# Some releases of the Sequent C compiler recognize private as a keyword.
++# However, smail uses this as a variable or structure name in several
++# places.  To get around this problem use:
++#
++#	MISC_DEFINES=private=smail_private_tag
++#
++#
++# IMPORTANT FOR NON-POSIX OPERATING SYSTEMS
++#
++# Smail uses the utime() system call to set file times in a few places.
++# All U*IX releases appear to support this call, although not all
++# systems define the structure (utimbuf) used as an argument to the
++# call.	 In particular, true 4.2 and 4.3BSD do not declare this
++# structure (at least not the original, non-POSIX, 4.3BSD release).
++#
++# The bsd4.2 and bsd4.3 conf/os files define DECLARE_UTIMBUF to cause
++# smail itself to define this structure.  However, this may fail if
++# your system is extended to define the utimbuf structure in an
++# incompatible fashion.	 This can be disabled by defining
++# NO_DECLARE_UTIMBUF in MISC_DEFINES.
++#
++# For other operating systems, you may need to add DECLARE_UTIMBUF
++# in MISC_DEFINES.  Some releases of Interactive U*IX require this.
++# Other releases don't (I don't have a list).
++#
++#
++# IMPORTANT FOR USERS OF GCC ON NON-ANSI C SYSTEMS
++#
++# If you are using a C compiler that defines __STDC__ (such as gcc) but
++# you are running into problems due to non-ANSI #include files or missing
++# ANSI definitions, then you can define NO_ANSI_C.
++
++#MISC_DEFINES=ISC_SOCKET_TIME_BUG
++#MISC_DEFINES=NO_FORWARDTO_FILE		# recommended for BSD systems
++#MISC_DEFINES=ISC_SOCKET_TIME_BUG:NO_FORWARDTO_FILE
++#MISC_DEFINES=OBSOLETE_RESOLVER
++#MISC_DEFINES=DECLARE_UTIMBUF		# if smail must define utimbuf struct
++#MISC_DEFINES=NO_DECLARE_UTIMBUF	# if smail must _not_ define utimbuf
++#MISC_DEFINES=private=smail_private_tag # for sequent
++#MISC_DEFINES=NO_ANSI_C			# don't believe __STDC__
++#MISC_DEFINES=SMAIL_LOG_STYLE=1		# Use 3.1.28 logfile format (default for 3.1.29 if omitted)
++#MISC_DEFINES=SMAIL_LOG_STYLE=2		# Use 3.1.29 logfile format
++#MISC_DEFINES=USE_LSEARCH_REGEXCMP	# allow regexp's in lsearch db lookups
++MISC_DEFINES=NO_FORWARDTO_FILE:SMAIL_LOG_STYLE=2:USE_LSEARCH_REGEXCMP
++
++
++# HAVE - miscellaneous supported features
++#
++# optional
++#
++# A colon-separated list of features that the local system supports
++# in addition to those defined in the OS configuration file.  Some
++# interesting features you might want to list are:
++#
++#	NDBM	      - this system supports the new DBM library
++#			functions introduced in 4.3BSD or the ndbm.h
++#			emulation povided by the 4.4BSD db(3) library.
++#			Note that if you're using db(3), then you must
++#			set "NO_HAVE=DBM_PAGFNO" too.
++#	DBM	      - this system supports the old DBM library
++#			distributed with older BSD systems and
++#			many System V systems.	This *requires* the
++#			dbmclose() function, which does not exist
++#			in most historic dbm implementations.
++#	HDB_UUCP      - this system uses HoneyDanBer UUCP, rather
++#			than a traditional version of UUCP.
++#			(use this for Taylor UUCP too)
++#	NIALIAS	      - aliases with NeXT NetInfo databases.
++#	NISPLUS	      - lookups using SUN NIS+ routines
++#	YP	      - lookups using SUN NIS/YP routines
++#	BIND	      - the system supports the bind resolver library
++#	RFC1413	      - there is support for the RFC1413 ident protocol
++#			allowing a username to be associated with a
++#			message coming in over smtp/tcp.  You also
++#			need to add the ident library to the LIBS.
++#	EHLO	      - have ESMTP sending support
++#
++# Many of these features are already enabled in the appropriate
++# OS configuration files, and do not need to be selected here...
++#
++# Defining NDBM or DBM may require the specification of additional
++# libraries, in LIBS or in OSLIBS.  See conf/os/template for a more
++# complete list of recognized features, and for more detailed
++# descriptions.  If neither NDBM or DBM is specified, Ozan Yigit's
++# sdbm (an ndbm workalike) will be used.
++#
++# Defining RFC1413 may require the specification of an additional
++# library, in LIBS or in OSLIBS, such as "-lident".  This library
++# will most likely be locally installed libraries, and thus LDFLAGS
++# will also require the appropriate options such as "-L/usr/local/lib"
++# to find this library.
++#
++# CAUTION: The HoneyDanBer UUCP in System V Release 4.0 uses multi-
++#	letter message grade values, rather than the traditional
++#	single-letter message grades in earlier versions.  Smail
++#	presumes that message grades are single letters, so Smail and
++#	the default grades for SVR4.0 are incompatible.
++#
++#	As a result of this incompatiblity, either HDB_UUCP must not
++#	be defined with SVR4.0, or the message grades that smail
++#	uses will have to be added to the file /etc/uucp/Grades.
++#	The list of grades that smail will use is specified in the
++#	grades variable (whose default value can be specified by
++#	setting GRADES in this file).  Grades are specified by
++#	providing a longer string in the Precedence: field.  The
++#	grade letters for the default value of GRADES are:
++#
++#		9	- special-delivery
++#		A	- air-mail
++#		C	- first-class	(also the default message grade)
++#		a	- bulk
++#		n	- junk
++#
++#	To add the default letters, you might add the following lines
++#	to /etc/uucp/Grades:
++#
++#		9	9	Any	User	Any
++#		A	A	Any	User	Any
++#		C	C	Any	User	Any
++#		a	a	Any	User	Any
++#		n	n	Any	User	Any
++
++#HAVE=BIND				# have BIND resolver functions
++#HAVE=HDB_UUCP				# have HoneyDanBer UUCP
++#HAVE=NDBM				# have the new DBM functions
++#HAVE=DBM				# have the old DBM functions
++#HAVE=RFC1413				# have the rfc1413 libraries
++#HAVE=EHLO				# have ESMTP sending support
++#HAVE=HDB_UUCP:NDBM			# new DBM and HoneyDanBer UUCP
++#HAVE=BIND:HDB_UUCP:NDBM		# Bind, new DBM, and HoneyDanBer UUCP
++HAVE=EHLO:NDBM
++
++# NO_HAVE - disable features
++#
++# You can use NO_HAVE to disable features set in the conf/os you
++# selected with OS_TYPE or to define other features *not* supported in
++# your configuration.
++
++#NO_HAVE=DBM_PAGFNO			# needed with 4.4BSD db(3) ndbm.h
++NO_HAVE=DBM_PAGFNO
++
++# SMAIL_NOBODY - a user with few access capabilities
++#
++# optional
++#
++# The user named here will be used by smail whenever a user ID is
++# desired that cannot do any more damange than any unpriveledged user
++# on the system.  Under 4.3BSD and SunOS, this would be the user named
++# "nobody".  Under other operating systems, it may be reasonable to
++# create a "nobody" entry in the passwd file.  Some systems have a
++# user such as "unknown" which will suffice.
++#
++# If this is not defined, then a default will be chosen.  This default
++# is os-type dependent, and is commonly nobody for BSD- and sun-derived
++# systems.
++
++SMAIL_NOBODY=nobody
++#SMAIL_NOBODY=unknown		# some sites have this in their passwd file
++
++
++# TEST_BASE - directory where smail test files are kept
++#
++# optional  (special when defined to an empty string)
++#
++# When testing smail, it is convenient to put binaries and configuration
++# files in an area separated from the actual installation areas.  The
++# TEST_BASE directory defines this alternate area.  Smail will assume
++# assume a fixed hierarchy below this directory, with a "bin" subdirectory
++# containing the smail binary and utilities, a "lib" directory containing
++# smail configuration files, and a "spool" directory containing smail
++# spool files.
++#
++# If no TEST_BASE is defined, then this facility is turned off.	 If a
++# TEST_BASE is defined to be an empty string, then all programs will be
++# used in the area where they are compiled, LIB_DIR will be set to the
++# "lib" directory under the root of the smail source tree, and SPOOL_DIRS
++# will be set to the "spool" directory under the root of the smail source
++# tree.	 In this case, a "make install" is not required.
++#
++# If a TEST_BASE is defined as a relative path (e.g. "."), then it is
++# defined relative to the root of the smail source directory.
++
++#TEST_BASE=/usr/project/smail
++#TEST_BASE=test
++#TEST_BASE=					# use progs in source area
++
++
++# SMAIL_BIN_DIR - directory where copies of the smail binary are kept
++#
++# optional
++#
++# The Smail program comes in user callable names: smail, uupath,
++# pathto, optto, and so on.  A copy of smail will be linked to files
++# under SMAIL_BIN_DIR.	The SMAIL_BIN_DIR should be a directory
++# that is commonly in users search path (i.e., $PATH).
++
++#SMAIL_BIN_DIR=/usr/local			# BSD local convention
++#SMAIL_BIN_DIR=/local/bin			# common local convention
++#SMAIL_BIN_DIR=/usr/amdahl/bin			# convention for UTS/580
++#SMAIL_BIN_DIR=/usr/local/bin			# yet another convention
++#SMAIL_BIN_DIR=/usr/smail/bin			# and more....
++SMAIL_BIN_DIR=/usr/sbin			# Linux FSSTND-compliant
++#SMAIL_BIN_DIR=/usr/bin				# 4.4BSD native
++
++
++# SMAIL_NAME - file where the primary working copy of smail is located
++#
++# optional
++#
++# Any program that needs to call smail, including smail itself will
++# attempt to execute the program named by SMAIL_NAME.
++#
++# Often the primary working copy of smail is /usr/lib/sendmail.	 This
++# should be used for systems that used to run sendmail.	 Programs such
++# as Berkeley Mail, System V mailx or /bin/mail can be made to, or do
++# call /usr/lib/sendmail for mailer activity.  It is common for public
++# domain programs to expect a mailer to exist under this name, also.
++#
++# If SMAIL_NAME is not defined here, or is set to a null string, then
++# $SMAIL_BIN_DIR/smail is used instead.	 If this is the name that you
++# want to use as the primary binary pathname, then do set SMAIL_NAME
++# to the null string.  This will prevent the smail src/Makefile from
++# installing it as $SMAIL_BIN_DIR/smail twice.
++
++#SMAIL_NAME=/usr/lib/sendmail			# common convention
++#SMAIL_NAME=/usr/sbin/sendmail			# 4.4BSD derrived, native
++SMAIL_NAME=					# use smail in bin directory
++
++
++# OTHER_SMAIL_NAMES - other names under which to install smail
++#
++# optional
++#
++# Many systems will wish to install smail as /bin/rmail to catch mail
++# coming in over UUCP directly with smail.  To install under this
++# name set OTHER_SMAIL_NAMES to /bin/rmail.  As implied by the name,
++# other pathnames can be specified as well, if a system has other
++# potential rendezvous points for mail.	 This should be a colon or
++# white-space separated list of full pathnames.
++#
++# NOTE:  Rmail is sendmail friendly on 4.4BSD derrived systems.
++#
++# Users of XENIX may wish to use smail as their execmail interface.
++# To do this, add /usr/lib/mail/execmail to this list.
++#
++# This is assumed to be empty when TEST_DIR is defined.
++#
++# NOTE:  A pathname CANNOT be in both SMAIL_NAME and OTHER_SMAIL_NAMES.
++
++#OTHER_SMAIL_NAMES=/bin/rmail			# common
++#OTHER_SMAIL_NAMES=/usr/bin/mailq		# 4.4BSD derrived
++#OTHER_SMAIL_NAMES=/usr/bin/rmail:/usr/lib/mail/execmail # for XENIX
++OTHER_SMAIL_NAMES=/usr/lib/sendmail:/bin/rmail:/usr/sbin/rmail:/usr/sbin/rsmtp:/usr/sbin/sendmail:/usr/bin/mailq
++						# (ugliness above) for Linux and MiNT
++
++
++# LIB_DIR - directory where various smail files are found
++#
++# required
++#
++# WARNING:  Many OS files specify the correct file for this, though some don't.
++#
++# The LIB_DIR is where various static smail files reside, by default.
++# Files which may reside under this directory are: the primary config
++# file, the directors, routers and transports files, an aliases file,
++# pathalias database, uuwho database, and the COPYING file.
++#
++# The common subdirectories under LIB_DIR are: "methods", where method
++# files are by default found; "maps", where local pathalias files,
++# mkmap configuration files and the getmap batch file are located;
++# and "lists" where mailing lists are commonly located.
++#
++# It should be noted that none of these files, except for COPYING,
++# is required by the smail binary as it is released.  See smail(5)
++# and smail(8) for more details on this and related topics.
++
++#LIB_DIR=/usr/lib/smail				# common convention
++#LIB_DIR=/etc/smail				# Linux, 4.4BSD native
++#LIB_DIR=/local/lib/smail			# common local convention
++#LIB_DIR=/local/etc/smail			# another common convention
++#LIB_DIR=/usr/local/lib/smail			# BSD local convention
++LIB_DIR=/usr/lib/smail				# Don't pollute /etc for MiNT
++
++# UTIL_BIN_DIR - directory where smail utilities are located
++#
++# required
++#
++# WARNING:  Many OS files specify the correct file for this, though some don't.
++#
++# The smail system has a number of programs such as pathalias, mkline,
++# mksort, mkdbm that users normally need not execute directly.	Such
++# utilities will be placed under the UTIL_BIN_DIR directory.
++#
++# UTIL_BIN_DIR is often the same as LIB_DIR.
++
++#UTIL_BIN_DIR=$LIB_DIR				# common, same as LIB_DIR
++#UTIL_BIN_DIR=/usr/lib/smail			# Linux
++#UTIL_BIN_DIR=/usr/libexec/smail		# 4.4BSD native
++#UTIL_BIN_DIR=/usr/local/share/smail		# GNU-like
++UTIL_BIN_DIR=/usr/sbin
++
++
++# NEWALIASES - alternate pathname for mkaliases program
++#
++# optional
++#
++# For compatibility with sendmail, mkaliases can be installed under
++# a name such as /usr/ucb/newaliases, or /usr/lib/newaliases.  To setup
++# smail to perform this installation, set NEWALIASES to the desired full
++# pathname.  When testing, this is set to the empty string, signifying
++# that mkaliases will be installed only under the name mkaliases.
++
++#NEWALIASES=$UTIL_BIN_DIR/newaliases		# default if unassigned
++#NEWALIASES=/usr/local/bin/newaliases		# common
++#NEWALIASES=/local/sbin/newaliases		# common local convention
++#NEWALIASES=/usr/ucb/newaliases			# BSD location, SunOS-4, etc.
++#NEWALIASES=/usr/lib/newaliases			# UTS/580 location
++#NEWALIASES=/usr/bin/newaliases			# 4.4BSD derrived
++NEWALIASES=/usr/sbin/newaliases
++
++
++# UUCP_SYSTEM_FILE - path to UUCP file containing remote systems
++#
++# optional
++#
++# The normal smail configuration defines a router that scans the
++# output of the /usr/bin/uuname command for neighboring UUCP sites.
++# When smail is running as a daemon, it can cache the output of uuname
++# so that the uuname command need not be executed for each mail
++# message.  In order to be able to detect when the output of uuname
++# will change, smail daemons will stat the UUCP configuration file
++# which contains the names of neighboring hosts.  This EDITME variable
++# defines the full pathname to this file.  If this variable is not
++# defined, then the output of the uuname will not be cached.
++#
++# NOTE: Many OS files specify the correct file for this, though some
++#	don't.	Also, if you add HoneyDanBer UUCP to a system that
++#	does not normally have it, then you will need to set this.
++#
++# NOTE: For systems with HoneyDanBer UUCP the file /usr/lib/uucp/Sysfiles
++#	or /etc/uucp/Sysfiles specifies the actual list of files
++#	containing remote system configurations.  On these systems it's
++#	best not to define UUCP_SYSTEM_FILE and cache uuname output,
++#	since smail will not be able to determine precisely if the uucp
++#	configuration has changed or not.
++
++#UUCP_SYSTEM_FILE=				# default to non-caching
++#UUCP_SYSTEM_FILE=/usr/lib/uucp/L.sys		# use this for normal UUCP
++#UUCP_SYSTEM_FILE=/usr/lib/uucp/Systems		# use this for simple HoneyDanBer UUCP
++#UUCP_SYSTEM_FILE=/etc/uucp/Systems		# for simple System V Release 4, SunOS, etc.
++
++
++# SPOOL_DIRS - smail spooling directories
++#
++# required
++#
++# WARNING:  Many OS files specify the correct file for this, though some don't.
++#
++# Smail can use one or more spooling directories, where spool directories
++# other than the first are used if earlier spool directories were
++# inaccessible or were on file systems which filled up.	 The list of spool
++# directories should be colon-separated and may contain only one spool
++# directory if desired.
++
++#SPOOL_DIRS=/usr/spool/smail			# common
++SPOOL_DIRS=/var/spool/smail			# for System V Release 4, SunOS, etc.
++#SPOOL_DIRS=/local/var/spool/smail		# common local convention
++#SPOOL_DIRS=/usr/spool/smail:/usr2/spool/smail	# use of alternate filesystem
++#SPOOL_DIRS=/usr/smail/spool			# alternative
++#SPOOL_DIRS=/var/smail/spool			# Another alternative
++
++
++# LOG_DIR - smail logging directory
++#
++# optional (defaults to (more or less) $SPOOL_DIRS/log)
++#
++# Smail creates two log files in this directory: logfile and paniclog.
++# The first is a file that logs all incoming messages and deliveries,
++# plus many errors.  The second file (paniclog) logs important system
++# errors that smail can manage to write into the log file.
++
++#LOG_DIR=/var/log/smail				# 4.4BSD derrived and SunOS, etc.
++#LOG_DIR=/usr/spool/smail/log			# common
++#LOG_DIR=/local/var/log/smail			# common local convention
++#LOG_DIR=/var/spool/smail/log			# for System V Release 4
++#LOG_DIR=/usr/smail/log				# alternative
++#LOG_DIR=/var/smail/log				# Another alternative
++
++
++# UNSHAR_MAP_DIR - where unshared USENET map files are to be placed
++#
++# optional
++#
++# The getmap utility will read a list of files on the file
++# LIB_DIR/map/batch, and using unsharmap unshar these maps into the
++# UNSHAR_MAP_DIR directory.
++#
++# A common way that maps are distributed is through the USENET news group
++# "comp.mail.maps".  A sys file line of:
++#
++#	usenet-maps:comp.mail.maps,world:F:<UNSHAR_MAP_DIR>/work/batch
++#
++# will add names into the UNSHAR_MAP_DIR/work/batch file for getmap to
++# process.
++#
++# If UNSHAR_MAP_DIR is not defined, then the getmap and uuwho utilities
++# will not function.
++
++#UNSHAR_MAP_DIR=/usr/spool/uumaps		# common
++#UNSHAR_MAP_DIR=/var/spool/uumaps		# for System V Release 4
++#UNSHAR_MAP_DIR=/local/var/spool/uumaps		# common local convention
++#UNSHAR_MAP_DIR=/var/spool/uumaps		# for System V Release 4, SunOS, etc.
++
++
++# NEWS_SPOOL_DIR - where news articles are stored
++#
++# optional (defaults to /usr/spool/news)
++#
++# C News stores pathnames in the batch file that are relative to
++# the top-level of the news article directory hierarchy.  Smail needs
++# to know the name of this directory in order to be able to extract
++# the news articles from comp.mail.maps.
++
++#NEWS_SPOOL_DIR=/usr/spool/news
++NEWS_SPOOL_DIR=/var/spool/news
++#NEWS_SPOOL_DIR=/local/var/spool/news
++
++
++# UUWHO_FILE - file used to store the uuwho file
++#
++# optional (defaults to $LIB_DIR/uuwho)
++#
++# This specified the file used to store the host database generated by
++# and used by the uuwho command.  If the uuwho database is stored in a
++# DBM file, then UUWHO_FILE is the file prefix before adding the .pag
++# and .dir suffixes to form the actual files.
++#
++# If UUWHO_FILE does not begin with /, then the name is relative to
++# the $LIB_DIR directory.
++
++#UUWHO_FILE=$UNSHAR_MAP_DIR/uuwho	# to store database with the map files
++#UUWHO_FILE=/local/var/spool/smail/uuwho # common local convention
++
++
++# UUWHO_USE_DBM - configure the uuwho command to use the DBM library
++#
++# optional
++#
++# If you would like the uuwho utility to use the DBM library, set
++# UUWHO_USE_DBM to true.  If this is not set, then the uuwho utility
++# will use a sorted database.  Earlier versions of the uuwho utility
++# worked only with the DBM library.
++#
++# Note that using DBM does not result in any real measurable speed-up,
++# since binary searches of even large databases happen fast enough to
++# prevent users from noticing.	Note that generation of the DBM uuwho
++# database can take a significant amount of time.  The uuwho utility
++# creates sorted databases by calling the sort utility, which is usually
++# quite fast.
++
++#UUWHO_USE_DBM=true				# use DBM
++#UUWHO_USE_DBM=					# default, don't use DBM
++
++
++# TMP_DIR - secure temp directory used by smail utilities
++#
++# optional (defaults to $SPOOL_DIRS/tmp)
++#
++# Some smail utilities use TMP_DIR to define a directory in which
++# their temporary files can be created.	 Utilities that use this
++# directory are those that wish to use a secure temporary area.
++#
++# The only smail utilities that need to use TMP_DIR are utilities that
++# should be run as root, or as some other user with appropriate
++# privledges.  It is therefore recommended that TMP_DIR not be
++# globally writable, and perhaps not even globally accessable.
++#
++# NOTE:  This is not the same as the TMPDIR environment variable used
++# by most implementations of the sandard tmpnam(3) function.
++#
++# WARNING:  If you use /tmp or /usr/tmp the install procedure will
++# clear the write bits on the directory specified.
++
++#TMP_DIR=$SPOOL_DIRS/tmp			# if SPOOL_DIRS is one dir
++#TMP_DIR=$LIB_DIR/tmp				# common
++#TMP_DIR=$UNSHAR_MAP_DIR/tmp			# common
++#TMP_DIR=/local/var/spool/smail/tmp		# common local convention
++
++
++# SECURE_PATH - path for smail utilities
++#
++# optional (defaults to system-specific path or /bin:/usr/bin)
++#
++# The smail utilities often set their PATH to begin with the SECURE_PATH.
++# The SECURE_PATH should be a path of directories where standard commands
++# are located.	These directories and commands should not be writeable by
++# normal users.	 A common directory for smail utilities to append to
++# SECURE_PATH is UTIL_BIN_DIR.
++
++#SECURE_PATH=/bin:/usr/bin:/usr/ucb		# common for 4.2BSD systems
++#SECURE_PATH=/sbin:/bin:/usr/sbin:/usr/bin	# common for 4.4BSD systems
++#SECURE_PATH=/usr/bin:/usr/ucb			# common for SunOS-4.x systems
++#SECURE_PATH=/bin:/usr/bin:/usr/amdahl/bin	# common for UTS/580 systems
++#SECURE_PATH=/bin:/usr/bin			# common for System V system
++
++
++# MAN1 - where smail user command man pages are to be installed
++# MAN5 - where smail file format man pages are to be installed
++# MAN8 - where smail administrator man pages should be installed
++# MAN1_EXT - file extension for user command man pages
++# MAN5_EXT - file extension for file format man pages
++# MAN8_EXT - file extension for adminstrator man pages
++#
++# optional
++#
++# The man page for "foo.an" in the smail man/man5 source directory
++# will be installed in MAN5/foo.MAN5_EXT, if MAN5 is defined.
++#
++# NOTE:  Manual pages are only installed with 'make installman'.
++#
++# The conf/os/* files define these to default to the standard OS locations
++# but they can be over-ridden from here....
++#
++# Because of manual chapter numbering differences, BSD and System V differ
++# on where file format and administration command man pages are kept,
++# hence the unusual values of MAN5 and MAN8 for System V.
++
++MAN1=/usr/man/man1				# common for BSD systems
++#MAN1=/usr/share/man/man1			# 4.4BSD derrived & SunOS, etc.
++#MAN1=/usr/man/u_man/man1			# common for System V systems
++#MAN1=/local/share/man/man1			# common for local man pages
++#MAN1=/usr/local/man/man1			# common for local man pages
++MAN1_EXT=1					# common
++
++MAN5=/usr/man/man5				# common for BSD systems
++#MAN5=/usr/share/man/man5			# 4.4BSD derrived & SunOS, etc.
++#MAN5=/local/share/man/man5			# common for local man pages
++#MAN5=/usr/local/man/man5			# common for local man pages
++MAN5_EXT=5					# common for BSD systems
++#MAN5=/usr/man/a_man/man4			# common for System V systems
++#MAN5=/usr/local/man/man4			# for local man pages on System V
++#MAN5_EXT=4					# common for System V systems
++
++MAN8=/usr/man/man8				# common for BSD systems
++#MAN8=/usr/share/man/man8			# 4.4BSD derrived & SunOS, etc.
++#MAN8=/local/share/man/man8			# common for local man pages
++#MAN8=/usr/local/man/man8			# common for local man pages
++MAN8_EXT=8					# common
++#MAN8=/usr/man/a_man/man1			# common for System V systems
++#MAN8=/usr/local/man/man1			# for Sys V local man pages
++#MAN8_EXT=1m					# system V suffi
++
++
++# COMPRESS - file compression
++#
++# optional (default is system dependent or uses cat)
++#
++# The savelog utility can save space by compressing old log files.
++# Normally when a file is compressed, the suffix is added to the
++# filename.
++#
++# The COMPRESS symbol is the name of a program such that:
++#
++#		$COMPRESS $COMP_FLAG filename ...
++#
++# the file: filename is replaced by: filename$DOT_Z
++# regardless of the size of filename.  The command:
++#
++#		$UNCOMPRESS filename$DOT_Z
++#
++# will replace filename$DOT_Z with the original filename.
++# The command:
++#		$ZCAT filename$DOT_Z
++#
++# will read the compressed file: filename$DOT_Z and write the
++# plain text to standard output while leaving the file compressed.
++
++#COMPRESS=compress				# common
++#COMP_FLAG="-f"
++#UNCOMPRESS=uncompress
++#ZCAT=zcat
++#DOT_Z=".Z"
++
++#COMPRESS=gzip					# for sites using gzip
++#COMP_FLAG="-9f"
++#UNCOMPRESS=gunzip
++#ZCAT="gunzip -c"
++#DOT_Z=".gz"
++
++#COMPRESS=pack					# System V standard
++#COMP_FLAG="-f"
++#UNCOMPRESS=unpack
++#ZCAT=pcat
++#DOT_Z=".z"
++
++#COMPRESS=:					# if no compress is used
++#COMP_FLAG=""
++#UNCOMPRESS=true
++#ZCAT=cat
++#DOT_Z=""
++
++
++# MISC_C_DEFINES - miscellaneous #defines for C programs
++#
++# optional
++#
++# The value of MISC_C_DEFINES is included directly into the file defs.h
++# in each source directory.  It is useful as a central place for
++# miscellaneous #defines not otherwise setable above.  In particular,
++# it is useful for overriding other more values given in the file
++# src/config.h.	 It was felt that it was appropriate to keep the
++# EDITME file fairly small, with only a reasonable subset of the
++# configurable aspects of smail being explicitly described.  As a
++# result, there may be some other things in config.h that you may
++# wish to change.  Use #define's here to accomplish this.
++#
++# A suitable collection of #undef's and #define's here can also
++# change the behavior defined in the file under conf/os or conf/arch
++# for your operating system and architecture.  However, use of
++# MISC_C_DEFINES for such subversion is strongly discouraged.
++#
++# This example is suitable for systems neither defining or using the
++# YP or NISPLUS options, and thus it is not commented out by default!
++#  
++# Since I don't know the interaction between ALIASES_TRYAGAIN and the
++# struct aliasfile_private:retries attribute, this may not work right
++# if HAVE_RENAME is defined, since that sets retries to 0.  This
++# condition is probably only important if the access method is lsearch.
++#
++# NOTE:  You can't have both *_TRYAGAIN's, *and* the _OPTIONAL's at the
++# same time....  It just doesn't make sense!  ;-)
++#
++# I'm not sure routers/pathalias.c currently implements TRYAGAIN
++# properly in the first place, so you probably don't want to use these:
++#
++#     #define NO_PATHS_OPTIONAL
++#     #define PATHS_TRYAGAIN
++#     #define NO_FORCE_PATHS_OPTIONAL
++#     #define FORCE_PATHS_TRYAGAIN
++#     #define NO_FORCE_SMTP_OPTIONAL
++#     #define FORCE_SMTP_TRYAGAIN
++
++MISC_C_DEFINES='
++#define NO_ALIASES_OPTIONAL		/* aliases file is not optional */
++#define ALIASES_TRYAGAIN		/* defer message if no aliases file */
++'
++
++
++# MISC_SH_DEFINES - miscellaneous script to include in defs.sh
++#
++# optional
++#
++# The value of MISC_SH_DEFINES is included directly into the file
++# defs.sh, in each source directory.  It is a useful place to store
++# script lines to override values set by the mkdefs.sh shell script
++# or in a conf/os or conf/arch file.
++#
++# As with /bin/sh scripts, a logical line beginning with a : causes
++# that line to be parsed but ignored.  If it were simply commented out
++# then the second line would be processed.
++
++: MISC_SH_DEFINES='			# example only
++LIST_FILENAME="~operator/mail/lists/${lc:user}" # somewhat silly example
++'
++
++
++# MISC_SED_DEFINES - miscellaneous lines to include in defs.sed
++#
++# optional
++#
++# The value of MISC_SED_DEFINES is included directly into the file
++# defs.sed, in each source directory.  It is a useful place to store
++# sed lines to override lines set by the mkdefs.sh shell script from
++# information in a conf/os or conf/arch file.
++#
++# As with /bin/sh scripts, a logical line beginning with a : causes
++# that line to be parsed but ignored.  If it were simply commented out
++# then the second line would be processed.
++
++# We can't readily think of good examples for this one.
++: MISC_SED_DEFINES=''
++
++
++# PATHS_FILE, PATHS_TYPE - location and type of the pathalias router database
++#
++# optional
++#
++# If PATH_FILE begins with a '/', then it is the name of the optional
++# pathalias database, otherwise it is assumed that PATH_FILE refers to
++# a file under the LIB_DIR directory.
++#
++# For use with YP, it may be more convenient to use the "yp" type,
++# rather than "aliasyp", because this way a paths file can be maintained
++# in a format compatible with other YP maps.
++#
++# If PATHS_FILE is left undefined, no paths file is defined in the
++# preloaded smail configuration.
++
++PATHS_FILE=paths				# for file under LIB_DIR
++#PATHS_FILE=/var/lib/smail/paths		# Linux
++#PATHS_FILE=/local/var/spool/smail/paths	# common local convention
++#PATHS_FILE=mail.paths				# YP (NIS)
++
++#PATHS_TYPE=dbm					# indexed
++#PATHS_TYPE=bsearch				# sorted
++PATHS_TYPE=lsearch				# linear search
++#PATHS_TYPE=yp					# YP (NIS)
++
++
++# FORCE_PATHS_FILE, FORCE_PATHS_TYPE - location and type of the force_paths router database
++#
++# optional
++#
++# If FORCE_PATHS_FILE begins with a '/', then it is the name of the optional
++# pathalias database, otherwise it is assumed that FORCE_PATHS_FILE refers to
++# a file under the LIB_DIR directory.
++#
++# For use with YP, it may be more convenient to use the "yp" type,
++# rather than "aliasyp", because this way a paths file can be maintained
++# in a format compatible with other YP maps.
++#
++# If FORCE_PATHS_FILE is left undefined, no force_paths router is defined in the
++# preloaded smail configuration.
++
++FORCE_PATHS_FILE=forcepaths			# for file under LIB_DIR
++#FORCE_PATHS_FILE=mail.forcepaths		# YP (NIS)
++
++#FORCE_PATHS_TYPE=dbm				# indexed
++#FORCE_PATHS_TYPE=bsearch			# sorted
++FORCE_PATHS_TYPE=lsearch			# linear search
++#FORCE_PATHS_TYPE=yp				# YP (NIS)
++
++
++# FORCE_SMTP_FILE, FORCE_SMTP_TYPE - location and type of the force_smtp router database
++#
++# optional
++#
++# If FORCE_SMTP_FILE begins with a '/', then it is the name of the optional
++# pathalias database, otherwise it is assumed that FORCE_SMTP_FILE refers to
++# a file under the LIB_DIR directory.
++#
++# For use with YP, it may be more convenient to use the "yp" type,
++# rather than "aliasyp", because this way a paths file can be maintained
++# in a format compatible with other YP maps.
++#
++# If FORCE_SMTP_FILE is left undefined, no force_smtp router is defined in the
++# preloaded smail configuration.
++
++FORCE_SMTP_FILE=forcesmtp			# for file under LIB_DIR
++#FORCE_SMTP_FILE=mail.forcesmtp			# YP (NIS)
++
++#FORCE_SMTP_TYPE=dbm				# indexed
++#FORCE_SMTP_TYPE=bsearch			# sorted
++FORCE_SMTP_TYPE=lsearch			# linear search
++#FORCE_SMTP_TYPE=yp				# YP (NIS)
++
++
++# ALIASES_FILE, ALIASES_TYPE - location and type of the aliases database
++#
++# optional, but highly recommended....
++#
++# WARNING:  Many OS files specify the correct file for this, though some don't.
++#
++# If ALIASES_FILE begins with a '/', then it is the full pathname of the
++# optional aliases database, otherwise it is assumed that ALIASES_FILE
++# refers to a file under the LIB_DIR directory.
++#
++# For use with YP, it may be more convenient to use the "yp" type,
++# rather than "aliasyp", because this way an alias file can be maintained
++# in a format compatible with other YP maps.
++#
++# NOTE:	 If ALIASES_TYPE is specified as bsearch, then the suffix .sort
++#	 will be appended to the filename given in ALIASES_FILE.  The
++#	 mkaliases command will then treat a file without that suffix
++#	 as the unsorted source file for the database.
++#
++# If ALIASES_FILE is left undefined, no aliases file is defined in the
++# preloaded smail configuration.
++#
++# NOTE FOR AIX SYSTEMS:
++#	I have received reports that AIX3.1 requires use of "yp",
++#	rather than "aliasyp".	If this is true, I don't quite see
++#	how Suns and RS/6000s running sendmail can share the same
++#	YP maps.  In any case, use whatever works in your
++#	environment.
++#
++# NOTE:  See MISC_C_DEFINES above regarding some alias file options....
++
++#ALIASES_FILE=/usr/lib/aliases			# compatible with sendmail
++ALIASES_FILE=/etc/aliases			# Linux, SunOS, 4.4BSD derrived, etc.
++#ALIASES_FILE=/local/etc/aliases		# common local convention
++#ALIASES_FILE=aliases				# for file under LIB_DIR
++#ALIASES_FILE=mail.aliases			# YP (NIS)
++#ALIASES_FILE=NetInfo				# for NeXT NetInfo aliases
++
++ALIASES_TYPE=lsearch				# for sites without dbm(3x)
++#ALIASES_TYPE=dbm				# compatible with sendmail
++#ALIASES_TYPE=bsearch				# for sorted files, faster
++#ALIASES_TYPE=aliasyp				# YP (NIS)
++#ALIASES_TYPE=nialias				# for NeXT NetInfo aliases
++
++
++# =====================================================================
++#
++# WARNING
++# =======
++#
++# Everything after here merely defaults some settings within smail.
++# These items really *should* be set within your config files - and
++# many things that you will want to set up cannot be set here.
++# I *very* strongly suggest that you do not alter anything after here.
++#
++# =====================================================================
++#
++# UUCP_ZONE - this host is within the UUCP zone
++#
++# optional (defaults to undefined)
++#
++# Smail supports both strictly compliant SMTP transfers, and a
++# modification the the SMTP protocol for use within the UUCP zone.
++# The modified protocol transmits sender and recipient addresses in
++# accordance with the RFC976 specification, and provides behavior that
++# is more likely to work with other mailers in the UUCP zone.
++# Transferring mail using SMTP over private IP networks can work well
++# within the UUCP zone, except for the fact that the SMTP
++# specification doesn't work as well in the presence of generated
++# UUCP-zone routes form path files.
++#
++# The built-in smail transport definitions include transport
++# definitions that provide either behavior: inet_zone_smtp and
++# uucp_zone_smtp.  The first provides conformant behavior and should
++# be used when transferring mail to sites on the Internet.  The
++# second, uucp_zone_smtp, provides the modified protocol.
++#
++# An additional builtin transport protocol, smtp, is defined as having
++# the same behavior as inet_zone_smtp or uucp_zone_smtp, depending
++# upon whether UUCP_ZONE is set.  To make the the basic smtp transport
++# use the modified behavior for the UUCP zone, set UUCP_ZONE to true.
++#
++# In the presence of generated routes from paths files, the
++# Internet-zone version of the SMTP transport will generate route-addr
++# addresses.  The introduction of RFC1123 removes the requirement that
++# route-addrs work as routes, preferring instead the use of the %
++# operator for routing.	 Intermixed % and ! operators, particularly in
++# the presence of an @ operator (e.g., veritas!mitsu%tron@apple.com),
++# are sufficiently ambiguous that it is undesirable to use with ! or %
++# operators for routing when strict SMTP compliance is needed.	This
++# is one of the motivations for introducing the modified UUCP-zone
++# protocol.  However, generating route-addr addresses works well for
++# transferring mail between nodes running Smail 3.1.
++#
++# NOTE: the UUCP_ZONE flag does not affect the batched SMTP transports
++# that operate through UUCP.  The uusmtp and demand_uusmtp transports
++# always operate with the modified UUCP-zone protocol.	Two additional
++# transports, inet_uusmtp and inet_demand_uusmtp use compliant
++# protocols.
++#
++# WARNING: you should not define this if you use arpa-network and/or
++# exchange e-mail via SMTP with Internet hosts (i.e. you're on the
++# Internet), even if you are also UUCP connected.
++
++#UUCP_ZONE=true					# this site is in the UUCP zone
++#UUCP_ZONE=					# this site is on the Internet
++
++
++# HOSTNAMES - names for the local host
++#
++# optional
++#
++# The HOSTNAMES value is a colon-separated list of names your system.
++# This does not need to include the name given by UUCP_NAME.  If
++# HOSTNAMES is set, then the first name in the list will be used as the
++# canonical name of your system.  That is, the name by which your
++# machine can be uniquely named across all networks.
++#
++# Normally HOSTNAMES is not set.  In this case the HOSTNAMES value will
++# be computed at run-time from the DOMAINS value and the system-dependently
++# computed name of your system.
++#
++# If you are registered in a domain, you might consider seting HOSTNAMES
++# to a list such as:   sitename.subdom.dom:sitename.dom:sitename.uucp
++#
++# NOTE: It is preferable, in most circumstances, to set the hostnames
++# variable in /usr/lib/smail/config, rather than setting HOSTNAMES
++# in this file.	 The value of the "hostnames" variable in the config
++# file can be changed without recompiling smail.
++
++#HOSTNAMES=kgbvax.ussr.comm:kgbvax.uucp		# example only
++
++
++# DOMAINS - domains under which the local host resides
++#
++# optional   (except when HOSTNAMES is not set)
++#
++# If HOSTNAMES is not defined, then HOSTNAMES is computed by concatenating
++# local host's actual name with each name in this colon-separated list of
++# domain names.	 This computation is done at run-time.
++#
++# Example: if DOMAINS="uts.amdahl.com:uucp", then the HOSTNAMES value
++# for the site "amdahl" would become "amdahl.uts.amdahl.com:amdahl.uucp".
++#
++# NOTE: The uucp domain is not meaningful in any standard way, though
++#	many sites treat this as implying any site that is registered
++#	in the UUCP zone through the USENET maps.  Sites that really
++#	wish to be able to receive mail from anywhere in the world
++#	should get a registered domain.
++#
++# NOTE: It is preferable, in most circumstances, to set the domains
++# variable in /usr/lib/smail/config, rather than setting DOMAINS
++# in this file.	 The value of the "domains" variable in the config
++# file can be changed without recompiling smail.
++
++#DOMAINS=uucp					# common on UUCP
++#DOMAINS=ussr.comm:uucp				# example only
++
++
++# UUCP_NAME - name for the local host on the UUCP network
++#
++# optional
++#
++# This should be set to the name of the local host as known by the
++# UUCP software.
++#
++# Normally, no value is given for this variable, in which case the
++# value will be computed by smail at run-time from the actual name for
++# local host, as computed in a system-dependent fashion.
++#
++# NOTE: It is preferable, in most circumstances, to set the uucp_name
++# variable in /usr/lib/smail/config, rather than setting UUCP_NAME
++# in this file.	 The value of the "uucp_name" variable in the config
++# file can be changed without recompiling smail.
++
++#UUCP_NAME=kgbvax				# example only
++
++
++# VISIBLE_NAME - local host name used in outgoing addresses
++#
++# optional
++#
++# Some installations may wish to hide a group of machines under a common
++# name.	 For example, at Amdahl, we may wish to hide the machines on our
++# ethernet under the domain "uts.amdahl.com".  If we set the value
++# VISIBLE_NAME="uts.amdahl.com" on the machine "futatsu", then mail
++# from "futatsu" sent as if it came from "user@uts.amdahl.com" rather than
++# "user@futatsu.uts.amdahl.com".  Of course, the "uts.amdahl.com" gateways
++# will need to forward mail to "user", however the fact that a user
++# does not have check for mail on all machines on the network is useful.
++#
++# The VISIBLE_NAME value will not be recognized as a name for the local
++# host unless it is also included in one of the other lists of names for
++# the local host.
++#
++# NOTE: It is preferable, in most circumstances, to set the visible_name
++# variable in /usr/lib/smail/config, rather than setting VISIBLE_NAME
++# in this file.	 The value of the "visible_name" variable in the config
++# file can be changed without recompiling smail.
++
++#VISIBLE_NAME=kgbvax.uucp			# example only
++
++
++# GATEWAY_NAMES - more names for the local host
++#
++# optional
++#
++# It is often important that hosts which are domain gateways recognize
++# the domain names as alternate names for the local host.  These names
++# should be defined in addition to those computed automatically from
++# the actual name for the local host by putting them in GATEWAY_NAMES.
++#
++# This variable is a colon-separated list of names for the local host
++# which is not computed from the actual name for the local host.
++#
++# NOTE: It is preferable, in most circumstances, to set the gateway_names
++# variable in /usr/lib/smail/config, rather than setting GATEWAY_NAMES
++# in this file.	 The value of the "gateway_names" variable in the config
++# file can be changed without recompiling smail.
++
++#GATEWAY_NAMES=moscow.ussr.comm:ussr.comm:comm	# example only
++
++
++# AUTH_DOMAINS - domains for which this host is authoritative
++#
++# optional (defaults to none)
++#
++# If this host contains all routing information needed for a particular
++# set of domains, then smail should generate an error if it is given a
++# hostname that is not resolved, but is within one of those domains.
++# Normally, this isn't a problem because mail that is not matched by
++# any routers generates a "host not found" error. However, the
++# smarthost router can upset this by matching any hostname.  Without
++# something to generate an error, a mail loop can occur where mail
++# is sent to a host that controls a domain, and that host sends mail
++# to another host listed as the "smarthost", which sends it back.
++#
++# A host which contains all routing information for a domain is called
++# "authoritative" for that domain.  A host can be authoritative for
++# any number of domains.  To declare this host to be authoritative
++# for this domain, set AUTH_DOMAINS here (or auth_domains in the
++# /usr/lib/smail/config file) to a colon-separated list of domains.
++# This will prevent the smarthost router from matching any hosts within
++# the indicated domains.
++#
++# NOTE: It is preferable, in most circumstances, to set the auth_domains
++# variable in /usr/lib/smail/config, rather than setting AUTH_DOMAINS
++# in this file.	 The value of the "auth_domains" variable in the config
++# file can be changed without recompiling smail.
++
++#AUTH_DOMAINS=ussr.com
++#AUTH_DOMAINS=veritas.com:tolerant.com
++
++
++# POSTMASTER - the default address for the mail administrator
++#
++# optional	(defaults to root)
++#
++# This address is used by smail as a last resort in trying to deliver
++# to the address "postmaster".	Normally, "postmaster" is aliased to a
++# responsible person, or persons through the alias file.  In the event
++# that no alias file exists, or that "postmaster" was not found in
++# that file or by any other directors, the default address will be
++# used.
++
++#POSTMASTER=root
++
++
++# SECOND_CONFIG_FILE - pathname of an alternate config file
++#
++# optional
++#
++# Smail allows one to have a second set of configuration files that can
++# override both the compiled in and the optional primary config file.
++# Normally, the path to this secondary configuration file is defined
++# in the primary smail configuration file.  However the value
++# SECOND_CONFIG_FILE can be the filename of the secondary (alternate)
++# config file.	In the case where both this value, and where the
++# LIB_DIR/config file specifies a "second_config_file" value, the
++# LIB_DIR/config file takes presidence.
++#
++# A secondary configuration file is useful in an environment with
++# distributed filesystems.  In such an environment, the regular config
++# directory can be maintained centrally on a remotely mounted
++# filesystem.  Individual machines, can then setup a secondary
++# configuration file which overrides these centrally maintained files
++# for specific purposes.
++#
++# For example, in a network with one gateway to the outside world,
++# all could share the same smail binaries and standard configuration.
++# However the the gateway machine could have a secondary configuration
++# file which so that the gateway's the smail setup has greater intelligence
++# and thus act as a smart_user and smart_path host.
++
++#SECOND_CONFIG_FILE=				# default for non-NFS systems
++#SECOND_CONFIG_FILE=/private/usr/lib/smail	# convention for NFS systems
++
++
++# ALIASES_REMOVE_SENDER - remove the sender (by default) from alias expansions
++# LISTS_REMOVE_SENDER - remove the sender (by default) from list expansions
++#
++# optional
++#
++# For compatibility with sendmail, smail can be configured to remove the
++# sender of a message (if the sender is a local user) from alias
++# expansions.  Users can disable this feature by invoking smail with
++# the -m flag, typically by setting "metoo" in their .mailrc file.
++#
++# However, many people find this behavior confusing and some administrators
++# would prefer to disable this "sender removal" feature altogether.
++# Also, it has recently been noticed that smail's sender removal
++# behavior is not quite sendmail-compatible with regards to nested
++# aliases and have been surprised by the results of aliasing.
++#
++# Smail supports two forms of aliasing to which sender removal can be
++# applied: the regular aliases file (defined by ALIASES_FILE above), and
++# a directory of mailing lists (typically /usr/lib/smail/lists) where
++# all files in that directory define a list.  A site that has converted
++# entirely over to smail3 can use alias files strictly for username
++# aliasing, while using the lists directory for real mailing lists.  With
++# such a usage model, sender removal should be disabled for the alias
++# file, but can be enabled (depending upon preference) for the lists
++# directory.
++#
++# To enable sender removal, set ALIASES_REMOVE_SENDER or LISTS_REMOVE_SENDER
++# (depending upon preference) to "yes".	 If these values are empty, or are
++# note defined, then sender removal is disabled.
++#
++# This behavior can be configured using the run-time directors configuration
++# file by setting the "sender_okay" flag, to indicate that sender removal
++# should NOT be done.
++
++#ALIASES_REMOVE_SENDER=yes
++#LISTS_REMOVE_SENDER=yes
++
++
++# RETRY_INTERVAL - minimum per-host retry interval for TCP/IP delivery
++# RETRY_DURATION - maximum time to keep messages in the input queue
++#
++# optional (RETRY_INTERVAL defaults to 10 minutes, RETRY_DURATION to 5 days)
++#
++# Messages to hosts on TCP/IP networks may block for quite some time, if
++# the recipient host is down, or some intervening network is inoperative.
++# Connections to such unreachable or downed hosts can block for quite
++# some time until a timeout indicates indicates that the condition
++# exists.
++#
++# To prevent the mail queue from blocking repeatedly on the same set of
++# unreachable hosts, smail keeps a directory of files that store the
++# last connection failure encountered for each host.  Message deliveries
++# to a host that has failed recently will be deferred until a certain
++# period of time (the retry interval) has elapsed, preventing queue runs
++# from hanging again immediately.
++#
++# If a host is down for an extended period of time (such as forever),
++# then sending a message to the message sender is preferable to keeping
++# the message in our mail queue.  If message deliveries to a particular
++# host have not succeeded within a particular length of time (the retry
++# duration), smail considers delivery to have failed, and sends a bounce
++# notification to the sender or address owner.
++#
++# Retry durations and intervals for specific hosts or domains can be
++# defined by creating a retry file in $LIB_DIR and adding lines of
++# the form:
++#
++#	hostname	interval/duration
++#	*.domain	interval/duration
++#
++# A default can be added at the end of this file with:
++#
++#	*		interval/duration
++#
++# Alternately, a default can be specified by setting RETRY_INTERVAL
++# and RETRY_DURATION in this file.  Both values are in seconds.	 To
++# help in calculating, 1 day is 86400 seconds.	You can actually
++# use C constant expressions here, if you want to use addition or
++# multiplication.
++#
++# These values can also be set using the retry_interval and
++# retry_duration variables in $LIB_DIR/config.	In the config file
++# and in the retry file, times can be specified with suffixes, such
++# as 'm', 'h', or 'd' to indicate minutes, hours, or days.  For
++# example:
++#
++#	*.uu.net	10m/3d
++
++#RETRY_INTERVAL=600		# 10 minutes
++#RETRY_INTERVAL='20*60'		# 20 minutes
++
++#RETRY_DURATION='86400*5'	# 5 days
++#RETRY_DURATION='86400'		# 1 day
++#RETRY_DURATION='86400*14'	# 2 weeks
++
++#
++# =====================================================================
++#

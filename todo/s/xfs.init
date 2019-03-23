@@ -1,0 +1,111 @@
+#!/bin/sh
+#
+# xfs:       Starts the X Font Server
+#
+# Version:      @(#) /etc/init.d/xfs 2.0
+#
+# chkconfig: 2345 90 10
+# description: Starts and stops the X Font Server at boot time and shutdown. \
+#              It also takes care of (re-)generating font lists.
+#
+# processname: xfs
+# config: /etc/X11/fs/config
+# hide: true
+
+# Source function library.
+. /etc/init.d/functions
+
+
+buildfontlist() {
+	for d in `/usr/sbin/chkfontpath --list | cut -f 2 -d ':'`; do
+		if [ -d "$d" ]; then
+			cd $d
+			# Check if we need to rerun mkfontdir
+			NEEDED=no
+			if ! [ -e fonts.dir ]; then
+				NEEDED=yes
+			elif [ "x`find . -type f -newer fonts.dir 2>/dev/null`" != "x" ]; then
+				NEEDED=yes
+			fi
+			if [ "$NEEDED" = "yes" ]; then
+				rm -f fonts.dir &>/dev/null
+				if ls | grep \.ttf$ &>/dev/null; then
+                                        # TrueType fonts found...
+                                        ttmkfdir . >fonts.scale
+                                        mkfontdir -e /usr/X11R6/lib/X11/fonts/encodings \
+                                                  -e /usr/X11R6/lib/X11/fonts/encodings/large . &>/dev/null
+                                        chmod +r fonts.scale
+                                        chmod +r fonts.dir
+                                fi
+				if [ "x`ls |egrep --ignore-case -v '\.ttf$|^fonts\.|^encodings\.'`" != "x" ]; then
+                                        # This directory contains fonts that are not TrueType...
+
+                                        mkfontdir -e /usr/X11R6/lib/X11/fonts/encodings \
+                                                  -e /usr/X11R6/lib/X11/fonts/encodings/large . &>/dev/null
+                                        chmod +r fonts.dir
+                                fi
+		        fi
+
+		fi
+	done
+}
+
+start() {
+	echo -n "Starting X Font Server: "
+	buildfontlist
+	rm -fr /tmp/.font-unix
+	daemon xfs -droppriv -daemon
+	ret=$?
+	[ $ret -eq 0 ] && touch /var/lock/subsys/xfs
+	echo
+	return $ret
+}	
+stop() {
+	echo -n "Shutting down X Font Server: "
+	killproc xfs
+	ret=$?
+	[ $ret -eq 0 ] && rm -f /var/lock/subsys/xfs
+	echo
+	return $ret
+}	
+
+rhstatus() {
+	status xfs
+}	
+
+restart() {
+	if [ -f /var/lock/subsys/xfs ]; then
+	    echo -n "Restarting X Font Server: "
+	    buildfontlist
+	    killproc xfs -USR1
+	    ret=$?
+	    echo
+	    return $ret
+	else
+	    stop
+	    start
+	fi
+}
+
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  restart|reload)
+  	restart
+	;;
+  condrestart)
+  	[ -f /var/lock/subsys/xfs ] && restart || :
+	;;
+  status)
+  	rhstatus
+	;;
+  *)
+	echo "*** Usage: xfs {start|stop|status|restart|reload|condrestart}"
+	exit 1
+esac
+
+exit $?

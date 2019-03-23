@@ -1,0 +1,11 @@
+--- gdb-5.0/readline/terminal.c~	Wed Mar 15 13:05:58 2000
++++ gdb-5.0/readline/terminal.c	Thu Nov 23 15:40:42 2000
+@@ -515,7 +515,7 @@
+ int
+ crlf ()
+ {
+-#if defined (NEW_TTY_DRIVER)
++#if defined (NEW_TTY_DRIVER) || defined (__MINT__)
+   if (term_cr)
+     tputs (term_cr, 1, _rl_output_character_function);
+ #endif /* NEW_TTY_DRIVER */

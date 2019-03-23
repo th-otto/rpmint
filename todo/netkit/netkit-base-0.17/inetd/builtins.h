@@ -1,0 +1,10 @@
+void echo_stream(int, struct servtab *);
+void discard_stream(int, struct servtab *);
+void machtime_stream(int, struct servtab *);
+void daytime_stream(int, struct servtab *);
+void chargen_stream(int, struct servtab *);
+void echo_dg(int, struct servtab *);
+void discard_dg(int, struct servtab *);
+void machtime_dg(int, struct servtab *);
+void daytime_dg(int, struct servtab *);
+void chargen_dg(int, struct servtab *);

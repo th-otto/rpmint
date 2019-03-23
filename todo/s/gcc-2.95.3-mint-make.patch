@@ -1,0 +1,297 @@
+diff -urN gcc-2.95.2/gcc/Makefile.in gcc-2.95.2-mint/gcc/Makefile.in
+--- gcc-2.95.2/gcc/Makefile.in	Fri Aug 13 09:46:54 1999
++++ gcc-2.95.2-mint/gcc/Makefile.in	Tue Feb 15 03:11:48 2000
+@@ -887,6 +887,7 @@
+    version.o $(LIBDEPS) $(EXTRA_GCC_OBJS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gcc.o gccspec.o intl.o \
+ 	  prefix.o version.o $(EXTRA_GCC_OBJS) $(LIBS)
++	stack --fix=128k $@
+ 
+ # We call this executable `xcpp' rather than `cpp'
+ # since the real preprocessor is named `cpp'.  It too is renamed
+@@ -897,6 +898,7 @@
+    version.o $(LIBDEPS) $(EXTRA_GCC_OBJS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gcc.o cppspec.o intl.o \
+ 	  prefix.o version.o $(EXTRA_GCC_OBJS) $(LIBS)
++	stack --fix=128k $@
+ 
+ # Dump a specs file to make -B./ read these specs over installed ones.
+ specs: xgcc$(exeext)
+@@ -911,6 +913,7 @@
+ 
+ cc1$(exeext): $(P) $(OBJS) $(C_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(C_OBJS) $(LIBS)
++	stack --fix=960k $@
+ 
+ # Build the version of limits.h that we will install.
+ xlimits.h: glimits.h limitx.h limity.h
+@@ -1363,6 +1366,7 @@
+ # Don't try modifying collect2 (aka ld) in place--it might be linking this.
+ 	-rm -f collect2$(exeext)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(COLLECT2_OBJS) $(LIBS)
++	stack --fix=128k $@
+ 
+ collect2.o : collect2.c $(CONFIG_H) system.h gstab.h intl.h \
+ 	$(srcdir)/../include/obstack.h $(DEMANGLE_H) collect2.h
+@@ -1430,6 +1434,7 @@
+ gencheck : gencheck.o $(lang_tree_files) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 gencheck.o $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ gencheck.o : gencheck.c tree.def $(CONFIG_H) hconfig.h system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) \
+@@ -1777,6 +1782,7 @@
+ genconfig : genconfig.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	  genconfig.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ genconfig.o : genconfig.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genconfig.c
+@@ -1784,6 +1790,7 @@
+ genflags : genflags.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genflags.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ genflags.o : genflags.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genflags.c
+@@ -1791,6 +1798,7 @@
+ gencodes : gencodes.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 gencodes.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ gencodes.o : gencodes.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/gencodes.c
+@@ -1798,6 +1806,7 @@
+ genemit : genemit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genemit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ genemit.o : genemit.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genemit.c
+@@ -1805,6 +1814,7 @@
+ genopinit : genopinit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genopinit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ genopinit.o : genopinit.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genopinit.c
+@@ -1812,6 +1822,7 @@
+ genrecog : genrecog.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genrecog.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ genrecog.o : genrecog.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genrecog.c
+@@ -1819,6 +1830,7 @@
+ genextract : genextract.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genextract.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ genextract.o : genextract.c $(RTL_H) $(build_xm_file) system.h insn-config.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genextract.c
+@@ -1826,6 +1838,7 @@
+ genpeep : genpeep.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genpeep.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ genpeep.o : genpeep.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genpeep.c
+@@ -1833,6 +1846,7 @@
+ genattr : genattr.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genattr.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ genattr.o : genattr.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genattr.c
+@@ -1840,6 +1854,7 @@
+ genattrtab : genattrtab.o $(HOST_RTL) $(HOST_PRINT) $(HOST_RTLANAL) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genattrtab.o $(HOST_RTL) $(HOST_PRINT) $(HOST_RTLANAL) $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ genattrtab.o : genattrtab.c $(RTL_H)  $(build_xm_file) system.h insn-config.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genattrtab.c
+@@ -1847,6 +1862,7 @@
+ genoutput : genoutput.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genoutput.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ genoutput.o : genoutput.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genoutput.c
+@@ -1854,6 +1870,7 @@
+ gengenrtl : gengenrtl.o $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 gengenrtl.o $(HOST_LIBS)
++	stack --fix=128k $@
+ 
+ gengenrtl.o : gengenrtl.c $(RTL_BASE_H) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/gengenrtl.c
+@@ -1977,6 +1977,7 @@
+ CCCP_OBJS = cccp.o cexp.o intl.o prefix.o version.o @extra_cpp_objs@ mbchar.o 
+ cccp$(exeext): $(CCCP_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(CCCP_OBJS) $(LIBS)
++	stack --fix=128k $@
+ cexp.o: $(srcdir)/cexp.c $(CONFIG_H) system.h
+ 	$(CC) $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) -c $(srcdir)/cexp.c
+ $(srcdir)/cexp.c: $(srcdir)/cexp.y
+@@ -1989,6 +2009,7 @@
+ cppmain$(exeext): cppmain.o intl.o libcpp.a $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o cppmain$(exeext) cppmain.o \
+ 	intl.o libcpp.a $(LIBS)
++	stack --fix=128k $@
+ 
+ cppmain.o: cppmain.c $(CONFIG_H) cpplib.h intl.h system.h
+ 
+@@ -2019,9 +2040,11 @@
+ 
+ protoize$(exeext): protoize.o $(PROTO_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ protoize.o $(PROTO_OBJS) $(LIBS)
++	stack --fix=128k $@
+ 
+ unprotoize$(exeext): unprotoize.o $(PROTO_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ unprotoize.o $(PROTO_OBJS) $(LIBS)
++	stack --fix=128k $@
+ 
+ protoize.o: protoize.c $(srcdir)/../include/getopt.h $(CONFIG_H) system.h \
+    Makefile
+@@ -2087,6 +2110,7 @@
+ GCOV_OBJS = gcov.o intl.o
+ gcov$(exeext): $(GCOV_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) $(GCOV_OBJS) $(LIBS) -o $@
++	stack --fix=128k $@
+ #
+ # Build the include directory.  The stamp files are stmp-* rather than
+ # s-* so that mostlyclean does not force the include directory to
+diff -urN gcc-2.95.2/gcc/ch/Makefile.in gcc-2.95.2-mint/gcc/ch/Makefile.in
+--- gcc-2.95.2/gcc/ch/Makefile.in	Wed Mar 31 09:47:58 1999
++++ gcc-2.95.2-mint/gcc/ch/Makefile.in	Sat Jan  8 20:16:40 2000
+@@ -206,6 +206,7 @@
+ ../cc1chill$(exeext): $(P) $(CHILL_OBJS) $(OBJDEPS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(CHILL_OBJS) \
+ 	      $(OBJS) $(C_OBJS) $(LIBS)
++	stack --fix=960k $@
+ 
+ # This executable is used in the CHILL regression 
+ # test script
+diff -urN gcc-2.95.2/gcc/cp/Make-lang.in gcc-2.95.2-mint/gcc/cp/Make-lang.in
+--- gcc-2.95.2/gcc/cp/Make-lang.in	Tue Apr 27 01:50:36 1999
++++ gcc-2.95.2-mint/gcc/cp/Make-lang.in	Sat Jan  8 20:17:18 2000
+@@ -91,6 +91,7 @@
+ g++$(exeext): $(GXX_OBJS) $(EXTRA_GCC_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ \
+ 	  $(GXX_OBJS) $(EXTRA_GCC_OBJS) $(LIBS)
++	stack --fix=128k $@
+ 
+ # Create a version of the g++ driver which calls the cross-compiler.
+ g++-cross$(exeext): g++$(exeext)
+diff -urN gcc-2.95.2/gcc/cp/Makefile.in gcc-2.95.2-mint/gcc/cp/Makefile.in
+--- gcc-2.95.2/gcc/cp/Makefile.in	Sun Jul 25 23:27:38 1999
++++ gcc-2.95.2-mint/gcc/cp/Makefile.in	Sat Jan  8 20:17:32 2000
+@@ -197,6 +197,7 @@
+ compiler: ../cc1plus$(exeext)
+ ../cc1plus$(exeext): $(P) $(OBJDEPS) $(CXX_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(CXX_OBJS) $(LIBS)
++	stack --fix=960k $@
+ 
+ Makefile: $(srcdir)/Makefile.in $(srcdir)/../configure
+ 	cd ..; $(SHELL) config.status
+diff -urN gcc-2.95.2/gcc/f/Make-lang.in gcc-2.95.2-mint/gcc/f/Make-lang.in
+--- gcc-2.95.2/gcc/f/Make-lang.in	Mon Jun  7 08:44:56 1999
++++ gcc-2.95.2-mint/gcc/f/Make-lang.in	Sat Jan  8 20:18:10 2000
+@@ -84,6 +84,7 @@
+ 	if [ -f lang-f77 ]; then \
+ 	  $(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gcc.o g77spec.o g77version.o \
+ 	   version.o prefix.o intl.o $(EXTRA_GCC_OBJS) $(LIBS); \
++	  stack --fix=128k $@; \
+ 	else true; fi
+ 
+ # Create a version of the g77 driver which calls the cross-compiler.
+diff -urN gcc-2.95.2/gcc/f/Makefile.in gcc-2.95.2-mint/gcc/f/Makefile.in
+--- gcc-2.95.2/gcc/f/Makefile.in	Wed Dec 16 22:16:32 1998
++++ gcc-2.95.2-mint/gcc/f/Makefile.in	Sat Jan  8 20:18:28 2000
+@@ -213,6 +213,7 @@
+ ../f771$(exeext): $(P) $(F77_OBJS) $(OBJDEPS) $(LIBDEPS)
+ 	rm -f f771$(exeext)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(F77_OBJS) $(OBJS) $(LIBS)
++	stack --fix=960k $@
+ 
+ Makefile: $(srcdir)/Makefile.in $(srcdir)/../configure
+ 	cd ..; $(SHELL) config.status
+diff -urN gcc-2.95.2/gcc/fixinc/Makefile.in gcc-2.95.2-mint/gcc/fixinc/Makefile.in
+--- gcc-2.95.2/gcc/fixinc/Makefile.in	Mon Jun 21 07:20:58 1999
++++ gcc-2.95.2-mint/gcc/fixinc/Makefile.in	Sat Jan  8 20:22:16 2000
+@@ -76,7 +76,7 @@
+ 
+ fixincl: $(OBJ)
+ 	@echo $(CC) -o $@ $(OBJ) $(LIBERTY) $(LIB) ; \
+-	if $(CC) -o $@ $(OBJ) $(LIBERTY) $(LIB) ; then : ; else \
++	if $(CC) -o $@ $(OBJ) $(LIBERTY) $(LIB) ; stack --fix=128k $@ ; then : ; else \
+ 	rm -f $@ ; (echo "#! /bin/sh" ; echo exit 1 ) > $@ ; \
+ 	chmod 777 $@ ; fi
+ 
+diff -urN gcc-2.95.2/gcc/java/Make-lang.in gcc-2.95.2-mint/gcc/java/Make-lang.in
+--- gcc-2.95.2/gcc/java/Make-lang.in	Fri Jun 25 10:26:22 1999
++++ gcc-2.95.2-mint/gcc/java/Make-lang.in	Sat Jan  8 20:19:16 2000
+@@ -89,6 +89,7 @@
+ 	   prefix.o intl.o $(LIBDEPS) $(EXTRA_GCC_OBJS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gcc.o jvspec.o prefix.o intl.o \
+ 	  version.o $(EXTRA_GCC_OBJS) $(LIBS)
++	stack --fix=128k $@
+ 
+ # Create a version of the $(GCJ) driver which calls the cross-compiler.
+ $(GCJ)-cross$(exeext): $(GCJ)$(exeext)
+diff -urN gcc-2.95.2/gcc/java/Makefile.in gcc-2.95.2-mint/gcc/java/Makefile.in
+--- gcc-2.95.2/gcc/java/Makefile.in	Fri Apr 30 19:55:54 1999
++++ gcc-2.95.2-mint/gcc/java/Makefile.in	Sat Jan  8 20:20:02 2000
+@@ -191,24 +191,29 @@
+ 	rm -f ../jc1$(exeext)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ \
+ 	      $(JAVA_OBJS) $(OBJS) $(SUBDIR_OBSTACK) $(LIBS)
++	stack --fix=960k $@
+ ../jv-scan$(exeext): $(P) $(JAVA_OBJS_LITE) $(OBJDEPS) $(LIBDEPS)
+ 	rm -f ../jv-scan$(exeext)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ \
+ 	      $(JAVA_OBJS_LITE) $(SUBDIR_OBSTACK) $(LIBS)
++	stack --fix=128k $@
+ 
+ ../jcf-dump$(exeext): jcf-dump.o jcf-io.o jcf-depend.o jcf-path.o \
+ 		zextract.o
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ jcf-dump.o jcf-io.o \
+ 	  jcf-depend.o jcf-path.o zextract.o $(LIBS)
++	stack --fix=128k $@
+ 
+ # Dependencies here must be kept in sync with dependencies in Make-lang.in.
+ ../jvgenmain$(exeext):  jvgenmain.o mangle.o $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ jvgenmain.o mangle.o ../obstack.o $(LIBS)
++	stack --fix=128k $@
+ 
+ ../gcjh$(exeext): gjavah.o jcf-io.o jcf-depend.o jcf-path.o \
+ 		zextract.o $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gjavah.o jcf-io.o \
+ 	  jcf-depend.o jcf-path.o zextract.o $(LIBS)
++	stack --fix=128k $@
+ 
+ Makefile: $(srcdir)/Makefile.in $(srcdir)/../configure
+ 	cd ..; $(SHELL) config.status
+diff -urN gcc-2.95.2/gcc/objc/Make-lang.in gcc-2.95.2-mint/gcc/objc/Make-lang.in
+--- gcc-2.95.2/gcc/objc/Make-lang.in	Wed Apr 21 00:47:48 1999
++++ gcc-2.95.2-mint/gcc/objc/Make-lang.in	Sat Jan  8 20:20:50 2000
+@@ -61,6 +61,7 @@
+ 
+ cc1obj$(exeext): $(P) $(OBJS) $(OBJC_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(OBJC_OBJS) $(LIBS)
++	stack --fix=960k $@
+ 
+ # Objective C language specific files.
+ 

@@ -1,0 +1,1910 @@
+--- dosfstools-2.10/dosfsck/Makefile.mint	Tue Jul  6 16:23:10 1999
++++ dosfstools-2.10/dosfsck/Makefile	Tue Sep 30 00:03:44 2003
+@@ -1,5 +1,6 @@
+ 
+-OBJECTS = boot.o check.o common.o dosfsck.o fat.o file.o io.o lfn.o
++OBJECTS = boot.o check.o common.o dosfsck.o fat.o file.o io.o lfn.o \
++		mint_io.o
+ 
+ all: dosfsck
+ 
+@@ -7,7 +8,7 @@
+ 	$(CC) -o $@ $(LDFLAGS) $^
+ 
+ .c.o:
+-	$(CC) -c $(CFLAGS) $*.c
++	$(CC) -c -Wall $(CFLAGS) $*.c
+ 
+ install: dosfsck
+ 	mkdir -p $(SBINDIR) $(MANDIR)
+--- dosfstools-2.10/dosfsck/boot.c.mint	Sat Jun 14 22:03:20 2003
++++ dosfstools-2.10/dosfsck/boot.c	Tue Sep 30 00:04:44 2003
+@@ -158,7 +158,7 @@
+ 	for( p = (__u8 *)b, q = (__u8 *)&b2, i = 0; i < sizeof(b2);
+ 	     ++p, ++q, ++i ) {
+ 	    if (*p != *q) {
+-		sprintf( buf, "%s%d:%02x/%02x", first ? "" : ", ",
++		sprintf( buf, "%s%ld:%02x/%02x", first ? "" : ", ",
+ 			 p-(__u8 *)b, *p, *q );
+ 		if (pos + strlen(buf) > 78) printf( "\n  " ), pos = 2;
+ 		printf( "%s", buf );
+--- dosfstools-2.10/dosfsck/check.c.mint	Tue Jan 21 22:33:40 2003
++++ dosfstools-2.10/dosfsck/check.c	Tue Sep 30 00:03:44 2003
+@@ -228,7 +228,11 @@
+     
+     for (i = 0; i < 8; i++) {
+ 	if (name[i] < ' ' || name[i] == 0x7f) return 1;
+-	if (name[i] > 0x7f) ++suspicious;
++	if (name[i] > 0x7f) {
++		/* german Ä,Ö,Ü are fully legally under MS-DOS/GEMDOS */
++		if (name[i] != 142 && name[i] != 153 && name[i] != 154)
++			++suspicious;
++	}
+ 	if (strchr(bad_chars,name[i])) return 1;
+     }
+ 
+@@ -756,7 +760,7 @@
+ 	file_modify(cp,de.name);
+ 	fs_write(offset,1,&de);
+     }
+-    if (IS_FREE(de.name)) return;
++    if (offset && IS_FREE(de.name)) return;
+     if (de.attr == VFAT_LN_ATTR) {
+ 	lfn_add_slot(&de,offset);
+ 	return;
+--- dosfstools-2.10/dosfsck/common.c.mint	Thu May 15 20:39:16 2003
++++ dosfstools-2.10/dosfsck/common.c	Tue Sep 30 00:03:44 2003
+@@ -49,7 +49,9 @@
+ {
+     void *this;
+ 
+-    if ((this = malloc(size))) return this;
++    if ((this = malloc(size)))
++	return this;
++
+     pdie("malloc");
+     return NULL; /* for GCC */
+ }
+--- dosfstools-2.10/dosfsck/dosfsck.c.mint	Sat Jun 14 22:03:20 2003
++++ dosfstools-2.10/dosfsck/dosfsck.c	Tue Sep 30 00:03:44 2003
+@@ -23,7 +23,7 @@
+ #include "check.h"
+ 
+ 
+-int interactive = 0,list = 0,test = 0,verbose = 0,write_immed = 0;
++int preen = 0,interactive = 0,list = 0,test = 0,verbose = 0,write_immed = 0;
+ int atari_format = 0;
+ unsigned n_files = 0;
+ void *mem_queue = NULL;
+@@ -34,10 +34,16 @@
+     fprintf(stderr,"usage: %s [-aAflrtvVwy] [-d path -d ...] "
+       "[-u path -u ...]\n%15sdevice\n",name,"");
+     fprintf(stderr,"  -a       automatically repair the file system\n");
++#ifdef __MINT__
++    fprintf(stderr,"  -A       force DOS file system format\n");
++    fprintf(stderr,"  -AA      force Atari file system format\n");
++#else
+     fprintf(stderr,"  -A       toggle Atari file system format\n");
++#endif
+     fprintf(stderr,"  -d path  drop that file\n");
+     fprintf(stderr,"  -f       salvage unused chains to files\n");
+     fprintf(stderr,"  -l       list path names\n");
++    fprintf(stderr,"  -p       like -a -V, but do not check when filesystem is clean\n");
+     fprintf(stderr,"  -r       interactively repair the file system\n");
+     fprintf(stderr,"  -t       test for bad clusters\n");
+     fprintf(stderr,"  -u path  try to undelete that (non-directory) file\n");
+@@ -55,6 +61,9 @@
+  */
+ static void check_atari( void )
+ {
++#ifdef __MINT__
++    atari_format = -1;
++#else
+ #ifdef __mc68000__
+     FILE *f;
+     char line[128], *p;
+@@ -75,6 +84,7 @@
+     }
+     fclose( f );
+ #endif
++#endif
+ }
+ 
+ 
+@@ -88,11 +98,17 @@
+     interactive = 1;
+     check_atari();
+ 
+-    while ((c = getopt(argc,argv,"Aad:flrtu:vVwy")) != EOF)
++    while ((c = getopt(argc,argv,"Aad:flprtu:vVwy")) != EOF)
+ 	switch (c) {
+-	    case 'A': /* toggle Atari format */
++	    case 'A': /* toogle Atari/DOS format */
++		if (atari_format == -1)
++		    atari_format = 0;
+ 	  	atari_format = !atari_format;
+ 		break;
++	    case 'p':
++		verify = 1;
++		preen = 1;
++		/* Fall thru */
+ 	    case 'a':
+ 	    case 'y':
+ 		rw = 1;
+@@ -139,35 +155,50 @@
+ 
+     printf( "dosfsck " VERSION ", " VERSION_DATE ", FAT32, LFN\n" );
+     fs_open(argv[optind],rw);
++    if (atari_format == -1)
++	atari_format = fs_type();
++#ifdef __MINT__
++    if (atari_format == -1)
++	die("Couldn't autodetect format. Please specify with -A or -AA");
++#endif
+     read_boot(&fs);
+-    if (verify) printf("Starting check/repair pass.\n");
+-    while (read_fat(&fs), scan_root(&fs)) qfree(&mem_queue);
+-    if (test) fix_bad(&fs);
+-    if (salvage_files) reclaim_file(&fs);
+-    else reclaim_free(&fs);
+-    free_clusters = update_free(&fs);
+-    file_unused();
+-    qfree(&mem_queue);
+-    if (verify) {
+-	printf("Starting verification pass.\n");
+-	read_fat(&fs);
+-	scan_root(&fs);
+-	reclaim_free(&fs);
++    if (verify)
++	printf("Starting check/repair pass.\n");
++    fflush(stdout);
++    while (read_fat(&fs), !preen && scan_root(&fs)) qfree(&mem_queue);
++    if (!preen) {
++	if (test) fix_bad(&fs);
++	if (salvage_files) reclaim_file(&fs);
++	else reclaim_free(&fs);
++	free_clusters = update_free(&fs);
++	file_unused();
+ 	qfree(&mem_queue);
+-    }
++	if (verify) {
++	    printf("Starting verification pass.\n");
++	    fflush(stdout);
++	    read_fat(&fs);
++	    scan_root(&fs);
++	    reclaim_free(&fs);
++	    qfree(&mem_queue);
++	}
+ 
+-    if (fs_changed()) {
+-	if (rw) {
+-	    if (interactive)
+-		rw = get_key("yn","Perform changes ? (y/n)") == 'y';
+-	    else printf("Performing changes.\n");
++	if (fs_changed()) {
++	    if (rw) {
++		if (interactive)
++		    rw = get_key("yn","Perform changes ? (y/n)") == 'y';
++		else printf("Performing changes.\n");
++	    }
++	    else
++		printf("Leaving file system unchanged.\n");
+ 	}
+-	else
+-	    printf("Leaving file system unchanged.\n");
+-    }
+ 
+-    printf( "%s: %u files, %lu/%lu clusters\n", argv[optind],
+-	    n_files, fs.clusters - free_clusters, fs.clusters );
++	printf( "%s: %u files, %lu/%lu clusters\n", argv[optind],
++		n_files, fs.clusters - free_clusters, fs.clusters );
++    }
++    else {
++	printf("Filesystem is clean.\n");
++    }
++    fflush(stdout);
+ 
+     return fs_close(rw) ? 1 : 0;
+ }
+--- dosfstools-2.10/dosfsck/dosfsck.h.mint	Sat Jun 14 22:03:20 2003
++++ dosfstools-2.10/dosfsck/dosfsck.h	Tue Sep 30 00:03:44 2003
+@@ -10,6 +10,9 @@
+ #define _DOSFSCK_H
+ 
+ #include <sys/types.h>
++
++#ifndef __MINT__
++
+ #define _LINUX_STAT_H		/* hack to avoid inclusion of <linux/stat.h> */
+ #define _LINUX_STRING_H_	/* hack to avoid inclusion of <linux/string.h>*/
+ #define _LINUX_FS_H             /* hack to avoid inclusion of <linux/fs.h> */
+@@ -24,6 +27,20 @@
+ #define cpu_to_le32	__cpu_to_le32
+ #endif
+ 
++#else /* __MINT__ */
++
++typedef signed char	__s8;
++typedef signed short	__s16;
++typedef signed long	__s32;
++typedef unsigned char	__u8;
++typedef unsigned short	__u16;
++typedef unsigned long	__u32;
++
++#include "msdos_fs.h"
++
++#endif
++
++
+ #define VFAT_LN_ATTR (ATTR_RO | ATTR_HIDDEN | ATTR_SYS | ATTR_VOLUME)
+ 
+ /* ++roman: Use own definition of boot sector structure -- the kernel headers'
+@@ -94,9 +111,8 @@
+ 
+ typedef struct {
+     unsigned long value;
+-    unsigned long reserved;
+     DOS_FILE *owner;
+-    int prev; /* number of previous clusters */
++    unsigned short reserved;
+ } FAT_ENTRY;
+ 
+ typedef struct {
+@@ -121,7 +137,7 @@
+ #define offsetof(t,e)	((int)&(((t *)0)->e))
+ #endif
+ 
+-extern int interactive,list,verbose,test,write_immed;
++extern int preen,interactive,list,verbose,test,write_immed;
+ extern int atari_format;
+ extern unsigned n_files;
+ extern void *mem_queue;
+--- dosfstools-2.10/dosfsck/fat.c.mint	Sat Jun 14 22:03:20 2003
++++ dosfstools-2.10/dosfsck/fat.c	Tue Sep 30 00:03:44 2003
+@@ -6,6 +6,7 @@
+  * by Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de> */
+ 
+ 
++#include <assert.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -97,18 +98,50 @@
+ 	    exit(1);
+ 	}
+     }
++
++    assert(use);
++
++    if (use != first) {
++	/* first not used, free it */
++	free(first);
++	/* use must be second */
++	assert(use == second);
++    }
++    else if (second) {
++	/* use == first, second not needed */
++	free(second);
++    }
++
++    first = NULL;
++    second = NULL;
++
+     fs->fat = qalloc(&mem_queue,sizeof(FAT_ENTRY)*(fs->clusters+2));
+-    for (i = 2; i < fs->clusters+2; i++) get_fat(&fs->fat[i],use,i,fs);
+-    for (i = 2; i < fs->clusters+2; i++)
+-	if (fs->fat[i].value >= fs->clusters+2 &&
+-	    (fs->fat[i].value < FAT_MIN_BAD(fs))) {
+-	    printf("Cluster %ld out of range (%ld > %ld). Setting to EOF.\n",
+-		   i-2,fs->fat[i].value,fs->clusters+2-1);
+-	    set_fat(fs,i,-1);
++    if (preen) {
++	get_fat(&fs->fat[1], use, 1, fs);
++	switch (fs->fat_bits) {
++	    case 12: /* Shouldn't happen */
++		preen = 0;
++		break;
++	    case 16:
++		preen = !!(fs->fat[1].value & 0x8000L);
++		break;
++	    case 32:
++		preen = !!(fs->fat[1].value & 0x08000000L);
++		break;
+ 	}
+-    free(first);
+-    if (second)
+-	free(second);
++    }
++    if (!preen) {
++	for (i = 2; i < fs->clusters+2; i++) get_fat(&fs->fat[i],use,i,fs);
++	for (i = 2; i < fs->clusters+2; i++)
++	    if (fs->fat[i].value >= fs->clusters+2 &&
++		(fs->fat[i].value < FAT_MIN_BAD(fs))) {
++		printf("Cluster %ld out of range (%ld > %ld). Setting to EOF.\n",
++		       i-2,fs->fat[i].value,fs->clusters+2-1);
++		set_fat(fs,i,-1);
++	    }
++    }
++
++    free(use);
+ }
+ 
+ 
+@@ -145,8 +178,8 @@
+ 	offs = fs->fat_start+cluster*4;
+ 	/* According to M$, the high 4 bits of a FAT32 entry are reserved and
+ 	 * are not part of the cluster number. So we never touch them. */
+-	*(unsigned long *) data = CT_LE_L( (new & 0xfffffff) |
+-					   (fs->fat[cluster].reserved << 28) );
++	*(unsigned long *) data = CT_LE_L((new & 0xfffffff) |
++					  ((unsigned long)fs->fat[cluster].reserved << 28));
+ 	size = 4;
+ 	break;
+       default:
+@@ -230,7 +263,7 @@
+ }
+ 
+ 
+-static void tag_free(DOS_FS *fs,DOS_FILE *ptr)
++static void tag_free(DOS_FS *fs,unsigned char *fatprev,DOS_FILE *ptr)
+ {
+     DOS_FILE *owner;
+     int prev;
+@@ -238,7 +271,7 @@
+ 
+     for (i = 2; i < fs->clusters+2; i++)
+ 	if (fs->fat[i].value && !FAT_IS_BAD(fs,fs->fat[i].value) &&
+-	    !get_owner(fs,i) && !fs->fat[i].prev) {
++	    !get_owner(fs,i) && !fatprev[i]) {
+ 	    prev = 0;
+ 	    for (walk = i; walk > 0 && walk != -1;
+ 		 walk = next_cluster(fs,walk)) {
+@@ -260,25 +293,32 @@
+     DOS_FILE dummy;
+     int reclaimed,files,changed;
+     unsigned long i,next,walk;
++    unsigned char *prev;
+ 
+     if (verbose)
+ 	printf("Reclaiming unconnected clusters.\n");
+-    for (i = 2; i < fs->clusters+2; i++) fs->fat[i].prev = 0;
++    prev = alloc(sizeof(*prev)*fs->clusters+2);
++    for (i = 2; i < fs->clusters+2; i++) prev[i] = 0;
+     for (i = 2; i < fs->clusters+2; i++) {
+ 	next = fs->fat[i].value;
+ 	if (!get_owner(fs,i) && next && next < fs->clusters+2) {
+ 	    if (get_owner(fs,next) || !fs->fat[next].value ||
+ 		FAT_IS_BAD(fs,fs->fat[next].value)) set_fat(fs,i,-1);
+-	    else fs->fat[next].prev++;
++	    else {
++		if (prev[next] == 0xff)
++		    die("Internal error: prev going to big");
++		prev[next]++;
++	    }
+ 	}
+     }
+     do {
+-	tag_free(fs,&dummy);
++	tag_free(fs,prev,&dummy);
+ 	changed = 0;
+ 	for (i = 2; i < fs->clusters+2; i++)
+ 	    if (fs->fat[i].value && !FAT_IS_BAD(fs,fs->fat[i].value) &&
+ 		!get_owner(fs, i)) {
+-		if (!fs->fat[fs->fat[i].value].prev--)
++		assert(fs->fat[i].value < fs->clusters+2);
++		if (!prev[fs->fat[i].value]--)
+ 		    die("Internal error: prev going below zero");
+ 		set_fat(fs,i,-1);
+ 		changed = 1;
+@@ -289,12 +329,12 @@
+     while (changed);
+     files = reclaimed = 0;
+     for (i = 2; i < fs->clusters+2; i++)
+-	if (get_owner(fs,i) == &dummy && !fs->fat[i].prev) {
++	if (get_owner(fs,i) == &dummy && !prev[i]) {
+ 	    DIR_ENT de;
+ 	    loff_t offset;
+ 	    files++;
+ 	    offset = alloc_rootdir_entry(fs,&de,"FSCK%04dREC");
+-	    de.start = CT_LE_W(i&0xffff);
++	    de.start = CT_LE_W(i & 0xffff);
+ 	    if (fs->fat_bits == 32)
+ 		de.starthi = CT_LE_W(i>>16);
+ 	    for (walk = i; walk > 0 && walk != -1;
+@@ -304,10 +344,15 @@
+ 	    }
+ 	    fs_write(offset,sizeof(DIR_ENT),&de);
+ 	}
+-    if (reclaimed)
++    if (reclaimed) {
+ 	printf("Reclaimed %d unused cluster%s (%d bytes) in %d chain%s.\n",
+-	  reclaimed,reclaimed == 1 ? "" : "s",reclaimed*fs->cluster_size,files,
++	  reclaimed,reclaimed == 1 ? "" : "s",
++	  reclaimed * fs->cluster_size,
++	  files,
+ 	  files == 1 ? "" : "s");
++    }
++
++    free(prev);
+ }
+ 
+ 
+@@ -348,9 +393,9 @@
+ 
+     if (do_set) {
+ 	fs->free_clusters = free;
+-	free = CT_LE_L(free);
++	i = CT_LE_L(free);
+ 	fs_write(fs->fsinfo_start+offsetof(struct info_sector,free_clusters),
+-		 sizeof(free),&free);
++		 sizeof(i),&i);
+     }
+ 
+     return free;
+--- dosfstools-2.10/dosfsck/file.c.mint	Sat Jun 14 22:03:20 2003
++++ dosfstools-2.10/dosfsck/file.c	Tue Sep 30 00:03:44 2003
+@@ -12,10 +12,14 @@
+ #include <ctype.h>
+ #include <unistd.h>
+ 
++#ifdef __MINT__
++#include "dosfsck.h"
++#else
+ #define _LINUX_STAT_H		/* hack to avoid inclusion of <linux/stat.h> */
+ #define _LINUX_STRING_H_	/* hack to avoid inclusion of <linux/string.h>*/
+ #define _LINUX_FS_H             /* hack to avoid inclusion of <linux/fs.h> */
+ #include <linux/msdos_fs.h>
++#endif
+ 
+ #include "common.h"
+ #include "file.h"
+--- dosfstools-2.10/dosfsck/io.c.mint	Sat Jun 14 22:03:20 2003
++++ dosfstools-2.10/dosfsck/io.c	Tue Sep 30 00:03:44 2003
+@@ -19,7 +19,9 @@
+ #include <sys/ioctl.h>
+ #include <errno.h>
+ #include <fcntl.h>
++#ifndef __MINT__
+ #include <linux/fd.h>
++#endif
+ 
+ #include "dosfsck.h"
+ #include "common.h"
+@@ -39,6 +41,10 @@
+ 
+ unsigned device_no;
+ 
++#ifdef __MINT__
++extern loff_t llseek (int fd, loff_t offset, int whence);
++extern int gettype (int fd);
++#else
+ /* Use the _llseek system call directly, because there (once?) was a bug in
+  * the glibc implementation of it. */
+ #include <linux/unistd.h>
+@@ -64,6 +70,7 @@
+     return actual;
+ }
+ #endif
++#endif
+ 
+ 
+ void fs_open(char *path,int rw)
+@@ -180,6 +187,15 @@
+ int fs_changed(void)
+ {
+     return !!changes || did_change;
++}
++
++int fs_type(void)
++{
++#ifdef __MINT__
++    return gettype(fd);
++#else
++    return -1;
++#endif
+ }
+ 
+ /* Local Variables: */
+--- dosfstools-2.10/dosfsck/io.h.mint	Mon May 18 15:20:48 1998
++++ dosfstools-2.10/dosfsck/io.h	Tue Sep 30 00:03:44 2003
+@@ -42,6 +42,10 @@
+ 
+ /* Determines whether the file system has changed. See fs_close. */
+ 
++int fs_type(void);
++
++/* Determines fat type (-1: unknown, 0: DOS/Windows, 1: Atari) */
++
+ extern unsigned device_no;
+ 
+ /* Major number of device (0 if file) and size (in 512 byte sectors) */
+--- dosfstools-2.10/dosfsck/mint_io.c.mint	Tue Sep 30 00:03:46 2003
++++ dosfstools-2.10/dosfsck/mint_io.c	Tue Sep 30 00:03:46 2003
+@@ -0,0 +1,1025 @@
++/*
++ * mint_io.c
++ *
++ * Copyright (C) 2000 Frank Naumann <fnaumann@freemint.de>.
++ *
++ * %Begin-Header%
++ * This file may be redistributed under the terms of the GNU Public
++ * License.
++ * %End-Header%
++ */
++
++# ifdef __MINT__
++
++# include <assert.h>
++# include <ctype.h>
++# include <errno.h>
++# include <fcntl.h>
++# include <limits.h>
++# include <stdarg.h>
++# include <stdlib.h>
++# include <stdio.h>
++# include <string.h>
++# include <time.h>
++# include <unistd.h>
++
++# include <sys/stat.h>
++
++# include <mintbind.h>
++# include "mint_io.h"
++
++
++# if 0
++# define DEBUG(x)	printf x
++# else
++# define DEBUG(x)
++# endif
++
++
++int __open_v(const char *_filename, int iomode, va_list argp);
++int __close(int fd);
++int __read(int fd, void *buf, size_t size);
++int __write(int fd, const void *buf, size_t size);
++int __ioctl(int fd, int cmd, void *arg);
++int __fstat(int, struct stat *);
++int __fsync(int fd);
++off_t __lseek(int fd, off_t offset, int whence);
++
++
++/* XHDI prototypes */
++
++typedef struct __bpb __BPB;
++
++static long	init_XHDI	(void);
++
++static long	XHGetVersion	(void);
++static long	XHInqTarget	(ushort major, ushort minor, ulong *block_size, ulong *device_flags, char *product_name);
++static long	XHReadWrite	(ushort major, ushort minor, ushort rwflag, ulong recno, ushort count, void *buf);
++static long	XHInqDev2	(ushort bios, ushort *major, ushort *minor, ulong *start, __BPB *bpb, ulong *blocks, char *partid);
++
++
++struct device
++{
++	int used;
++	
++	int drv;
++	int open_flags;
++	
++	ushort xhdi_maj;
++	ushort xhdi_min;
++	ulong xhdi_start;
++	ulong xhdi_blocks;
++	ulong xhdi_blocksize;
++	char xhdi_id[4];
++	
++	loff_t pos;
++};
++
++# define DEVS 16
++static struct device devs[DEVS];
++
++static void
++init_device(struct device *dev)
++{
++	dev->used = 0;
++	
++	dev->drv = -1;
++	dev->open_flags = 0;
++	dev->xhdi_maj = 0;
++	dev->xhdi_min = 0;
++	dev->xhdi_start = 0;
++	dev->xhdi_blocks = 0;
++	dev->xhdi_blocksize = 0;
++	
++	dev->pos = 0;
++}
++
++static inline void
++init(void)
++{
++	static int done = 0;
++	int i;
++	
++	if (done)
++		return;
++	
++	for (i = 0; i < DEVS; i++)
++		init_device(&devs[i]);
++	
++	init_XHDI();
++	
++	/* we are now initialized */
++	done = 1;
++}
++
++static struct device *
++get_device(int fd)
++{
++	struct device *dev;
++	
++	if ((fd < 1024) || (fd >= (1024 + DEVS)))
++		return NULL;
++	
++	fd -= 1024;
++	dev = &devs[fd];
++	
++	assert(dev->used);
++	
++	return dev;
++}
++
++static int
++alloc_device(void)
++{
++	int i;
++	
++	for (i = 0; i < DEVS; i++)
++	{
++		struct device *dev = &devs[i];
++		
++		if (!dev->used)
++		{
++			dev->used = 1;
++			return (i + 1024);
++		}
++	}
++	
++	__set_errno(ENOMEM);
++	return -1;
++}
++
++static void
++free_device(struct device *dev)
++{
++	assert(dev->used);
++	
++	init_device(dev);
++}
++
++int
++open(const char *filename, int iomode, ...)
++{
++	const char *f = filename;
++	struct device *mydev = NULL;
++	int dev = -1;
++	long ret;
++	
++	init();
++	
++	if (!filename)
++	{
++		__set_errno(EINVAL);
++		return -1;
++	}
++	
++	if ((f[1] == ':') && (f[2] == '\0'))
++	{
++		int c = tolower(f[0]);
++		
++		if (c >= 'a' && c <= 'z')
++			c = c - 'a';
++		else if (c >= '1' && c <= '6')
++			c = 26 + (c - '1');
++		
++		if ((c >= 0) && (c < 32))
++		{
++			dev = alloc_device();
++			if (dev != -1)
++			{
++				mydev = get_device(dev);
++				assert(mydev);
++				
++				mydev->drv = c;
++				mydev->open_flags = iomode;
++			}
++		}
++	}
++	
++	if (dev == -1)
++	{
++		/* fall through */
++		
++		va_list args;
++		int retval;
++		
++		va_start(args, iomode);
++		retval = __open_v(filename, iomode, args);
++		va_end(args);
++		
++		return retval;
++	}
++	
++	if (mydev->open_flags == O_RDONLY)
++	{
++		DEBUG(("readonly mode!\n"));
++		sync();
++	}
++	else if (Dlock(1, mydev->drv))
++	{
++		printf("Can't lock partition %c:!\n", mydev->drv+'A');
++		
++		if (mydev)
++			free_device(mydev);
++		
++		__set_errno(EACCES);
++		return -1;
++	}
++	
++	__set_errno(EERROR);
++	
++	ret = XHGetVersion();
++	DEBUG(("XHDI version: %lx\n", ret));
++	
++	ret = XHInqDev2(mydev->drv, &mydev->xhdi_maj, &mydev->xhdi_min, &mydev->xhdi_start, NULL, &mydev->xhdi_blocks, mydev->xhdi_id);
++	if (ret)
++	{
++		printf("XHInqDev2 [%c] fail (ret = %li, errno = %i)\n", mydev->drv+'A', ret, errno);
++		ret = -1;
++	}
++	else
++	{
++		ret = XHInqTarget(mydev->xhdi_maj, mydev->xhdi_min, &mydev->xhdi_blocksize, NULL, NULL);
++		if (ret)
++		{
++			printf("XHInqTarget [%i:%i] fail (ret = %li, errno = %i)\n", mydev->xhdi_maj, mydev->xhdi_min, ret, errno);
++			ret = -1;
++		}
++		else
++		{
++			char *xhdi_id = mydev->xhdi_id;
++			
++			if (       ((xhdi_id[0] == 'G') && (xhdi_id[1] == 'E') && (xhdi_id[2] == 'M')) /* GEM */
++				|| ((xhdi_id[0] == 'B') && (xhdi_id[1] == 'G') && (xhdi_id[2] == 'M')) /* BGM */
++				|| ((xhdi_id[0] == 'F') && (xhdi_id[1] == '3') && (xhdi_id[2] == '2')) /* F32 */
++				|| ((xhdi_id[0] == 'R') && (xhdi_id[1] == 'A') && (xhdi_id[2] == 'W')) /* RAW */
++				|| ((xhdi_id[0] == 'L') && (xhdi_id[1] == 'N') && (xhdi_id[2] == 'X')) /* LNX */
++				|| ((xhdi_id[0] == 'M') && (xhdi_id[1] == 'I') && (xhdi_id[2] == 'X')) /* MIX */
++				|| ((xhdi_id[0] == '\0') && (xhdi_id[1] == 'D')))                  /* any DOS */
++			{
++				DEBUG(("Partition ok and accepted!\n"));
++				DEBUG(("start = %lu, blocks = %lu, blocksize = %lu\n", mydev->xhdi_start, mydev->xhdi_blocks, mydev->xhdi_blocksize));
++			}
++			else
++			{
++				xhdi_id[3] = '\0';
++				printf("Wrong partition ID [%s]!\n", xhdi_id);
++				printf("Only 'RAW', 'LNX' and DOS partitions are supported.\n");
++				
++				__set_errno(EPERM);
++				ret = -1;
++			}
++		}
++	}
++	
++	if (ret)
++	{
++		if (mydev)
++			free_device(mydev);
++		
++		dev = -1;
++	}
++	
++	return dev;
++}
++
++int
++close(int fd)
++{
++	struct device *mydev = get_device(fd);
++	int ret = 0;
++	
++	if (!mydev)
++		/* fall through */
++		return __close(fd);
++	
++	if (mydev->open_flags == O_RDONLY)
++	{
++		;
++	}
++	else if (Dlock(0, mydev->drv))
++	{
++		printf("Can't unlock partition %c:!\n", 'A'+mydev->drv);
++		
++		__set_errno(EACCES);
++		ret = -1;
++	}
++	
++	free_device(mydev);
++	return ret;
++}
++
++static long
++rwabs_xhdi(struct device *mydev, ushort rw, void *buf, ulong size, ulong recno)
++{
++	/* simple buffer */
++	static char buffer[1024L * 128];
++	static ulong buf_recno = 0;
++	static long buf_n = 0;
++	
++	ulong n = size / mydev->xhdi_blocksize;
++	long r;
++	
++	assert((size % mydev->xhdi_blocksize) == 0);
++	
++	if (!n || (recno + n) > mydev->xhdi_blocks)
++	{
++		printf("rwabs_xhdi: access outside partition (drv = %c:)\n", 'A'+mydev->drv);
++		exit(2);
++	}
++	
++	if (n > 65535UL)
++	{
++		printf("rwabs_xhdi: n to large (drv = %c)\n", 'A'+mydev->drv);
++		exit(2);
++	}
++	
++	if (!rw && (buf_recno == recno) && (buf_n == n))
++	{
++		bcopy(buffer, buf, buf_n * mydev->xhdi_blocksize);
++		return 0;
++	}
++	
++	r = XHReadWrite(mydev->xhdi_maj, mydev->xhdi_min, rw, mydev->xhdi_start + recno, n, buf);
++	
++	if (!r && (n * mydev->xhdi_blocksize) <= sizeof(buffer))
++	{
++		bcopy(buf, buffer, n * mydev->xhdi_blocksize);
++		
++		buf_recno = recno;
++		buf_n = n;
++	}
++	else
++		buf_n = 0;
++	
++	return r;
++}
++
++# define max(a,b)	(a > b ? a : b)
++# define min(a,b)	(a > b ? b : a)
++
++int
++read(int fd, void *buf, size_t size)
++{
++	struct device *mydev = get_device(fd);
++	
++	if (!mydev)
++		/* fall through */
++		return __read(fd, buf, size);
++		
++{
++	long todo;		/* characters remaining */
++	long done;		/* characters processed */
++	
++	todo = size;
++	done = 0;
++	
++	if (todo == 0)
++		return 0;
++	
++	/* partial block copy
++	 */
++	if (mydev->pos % mydev->xhdi_blocksize)
++	{
++		char tmp[mydev->xhdi_blocksize];
++		
++		ulong recno = mydev->pos / mydev->xhdi_blocksize;
++		ulong offset = mydev->pos % mydev->xhdi_blocksize;
++		ulong data;
++		long ret;
++		
++		ret = rwabs_xhdi(mydev, 0, tmp, mydev->xhdi_blocksize, recno);
++		if (ret)
++		{
++			DEBUG(("read: partial part: read failure (r = %li, errno = %i)\n", ret, errno));
++			goto out;
++		}
++		
++		data = mydev->xhdi_blocksize - offset;
++		data = min(todo, data);
++		
++		memcpy(buf, tmp + offset, data);
++		
++		buf += data;
++		todo -= data;
++		done += data;
++		mydev->pos += data;
++	}
++	
++	if (todo)
++	{
++		assert((todo > 0));
++		assert((mydev->pos % mydev->xhdi_blocksize) == 0);
++	}
++	
++	
++	/* full blocks
++	 */
++	if (todo / mydev->xhdi_blocksize)
++	{
++		ulong recno = mydev->pos / mydev->xhdi_blocksize;
++		ulong data = (todo / mydev->xhdi_blocksize) * mydev->xhdi_blocksize;
++		long ret;
++		
++		ret = rwabs_xhdi(mydev, 0, buf, data, recno);
++		if (ret)
++		{
++			DEBUG(("read: full blocks: read failure (r = %li, errno = %i)\n", ret, errno));
++			goto out;
++		}
++		
++		buf += data;
++		todo -= data;
++		done += data;
++		mydev->pos += data;
++	}
++	
++	if (todo)
++	{
++		assert((todo > 0) && (todo < mydev->xhdi_blocksize));
++		assert((mydev->pos % mydev->xhdi_blocksize) == 0);
++	}
++	
++	/* anything left?
++	 */
++	if (todo)
++	{
++		char tmp[mydev->xhdi_blocksize];
++		
++		ulong recno = mydev->pos / mydev->xhdi_blocksize;
++		long ret;
++		
++		ret = rwabs_xhdi(mydev, 0, tmp, mydev->xhdi_blocksize, recno);
++		if (ret)
++		{
++			DEBUG(("read: left part: read failure (r = %li, errno = %i)]\n", ret, errno));
++			goto out;
++		}
++		
++		memcpy(buf, tmp, todo);
++		
++		done += todo;
++		mydev->pos += todo;
++	}
++	
++	assert(done == size);
++	
++out:
++	return done;
++}
++}
++
++int
++write(int fd, const void *buf, size_t size)
++{
++	struct device *mydev = get_device(fd);
++	
++	if (!mydev)
++		/* fall through */
++		return __write(fd, buf, size);
++	
++	if (mydev->open_flags == O_RDONLY)
++	{
++		__set_errno(EPERM);
++		return -1;
++	}
++{
++	long todo;		/* characters remaining */
++	long done;		/* characters processed */
++	
++	todo = size;
++	done = 0;
++	
++	if (todo == 0)
++		return 0;
++	
++	/* partial block copy
++	 */
++	if (mydev->pos % mydev->xhdi_blocksize)
++	{
++		char tmp[mydev->xhdi_blocksize];
++		
++		ulong recno = mydev->pos / mydev->xhdi_blocksize;
++		ulong offset = mydev->pos % mydev->xhdi_blocksize;
++		ulong data;
++		long ret;
++		
++		ret = rwabs_xhdi(mydev, 0, tmp, mydev->xhdi_blocksize, recno);
++		if (ret)
++		{
++			DEBUG(("write: partial part: read failure (r = %li, errno = %i)\n", ret, errno));
++			goto out;
++		}
++		
++		data = mydev->xhdi_blocksize - offset;
++		data = min(todo, data);
++		
++		memcpy(tmp + offset, buf, data);
++		
++		ret = rwabs_xhdi(mydev, 1, tmp, mydev->xhdi_blocksize, recno);
++		if (ret)
++		{
++			DEBUG(("write: partial part: write failure (r = %li, errno = %i)\n", ret, errno));
++			goto out;
++		}
++		
++		buf += data;
++		todo -= data;
++		done += data;
++		mydev->pos += data;
++	}
++	
++	if (todo)
++	{
++		assert((todo > 0));
++		assert((mydev->pos % mydev->xhdi_blocksize) == 0);
++	}
++	
++	/* full blocks
++	 */
++	if (todo / mydev->xhdi_blocksize)
++	{
++		ulong recno = mydev->pos / mydev->xhdi_blocksize;
++		ulong data = (todo / mydev->xhdi_blocksize) * mydev->xhdi_blocksize;
++		long ret;
++		
++		ret = rwabs_xhdi(mydev, 1, buf, data, recno);
++		if (ret)
++		{
++			DEBUG(("write: full blocks: write failure (r = %li, errno = %i)\n", ret, errno));
++			goto out;
++		}
++		
++		buf += data;
++		todo -= data;
++		done += data;
++		mydev->pos += data;
++	}
++	
++	if (todo)
++	{
++		assert((todo > 0) && (todo < mydev->xhdi_blocksize));
++		assert((mydev->pos % mydev->xhdi_blocksize) == 0);
++	}
++	
++	/* anything left?
++	 */
++	if (todo)
++	{
++		char tmp[mydev->xhdi_blocksize];
++		
++		ulong recno = mydev->pos / mydev->xhdi_blocksize;
++		long ret;
++		
++		ret = rwabs_xhdi(mydev, 0, tmp, mydev->xhdi_blocksize, recno);
++		if (ret)
++		{
++			DEBUG(("write: left part: read failure (r = %li, errno = %i)]\n", ret, errno));
++			goto out;
++		}
++		
++		memcpy(tmp, buf, todo);
++		
++		ret = rwabs_xhdi(mydev, 1, tmp, mydev->xhdi_blocksize, recno);
++		if (ret)
++		{
++			DEBUG(("write: partial part: write failure (r = %li, errno = %i)\n", ret, errno));
++			goto out;
++		}
++		
++		done += todo;
++		mydev->pos += todo;
++	}
++	
++	assert(done == size);
++	
++out:
++	return done;
++}
++}
++
++int
++ioctl(int fd, int cmd, void *arg)
++{
++	struct device *mydev = get_device(fd);
++	
++	if (!mydev)
++		/* fall through */
++		return __ioctl(fd, cmd, arg);
++	
++	DEBUG(("ioctl: cmd = %i\n", cmd));
++	
++	switch (cmd)
++	{
++		case BLKGETSIZE:
++		{
++			ulong *size = arg;
++			*size = mydev->xhdi_blocks * (mydev->xhdi_blocksize / 512);
++			break;
++		}
++		case BLOCKSIZE:
++		{
++			ulong *block_size = arg;
++			*block_size = mydev->xhdi_blocksize;
++			break;
++		}
++		default:
++			__set_errno(EINVAL);
++			return -1;
++	}
++	
++	return 0;
++}
++
++int
++fstat(int fd, struct stat *st)
++{
++	struct device *mydev = get_device(fd);
++	
++	if (!mydev)
++		/* fall through */
++		return __fstat(fd, st);
++	
++	bzero(st, sizeof(*st));
++	
++	st->st_dev	= mydev->xhdi_maj;
++	st->st_ino	= mydev->drv;
++	st->st_mode	= S_IFBLK | S_IRUSR | S_IWUSR;
++	st->st_nlink	= 1;
++	st->st_uid	= 0;
++	st->st_gid	= 0;
++	st->st_rdev	= mydev->xhdi_min;
++	st->st_atime	= time(NULL);
++	st->st_mtime	= time(NULL);
++	st->st_ctime	= time(NULL);
++	st->st_size	= (int64_t) mydev->xhdi_blocks * mydev->xhdi_blocksize;
++	st->st_blocks	= (int64_t) mydev->xhdi_blocks * mydev->xhdi_blocksize / 512;
++	st->st_blksize	= mydev->xhdi_blocksize;
++	st->st_flags	= 0;
++	st->st_gen	= 0;
++	
++	return 0;
++}
++
++int
++fsync(int fd)
++{
++	struct device *mydev = get_device(fd);
++	
++	if (!mydev)
++		/* fall through */
++		return __fsync(fd);
++	
++	/* nothing todo */
++	return 0;
++}
++
++loff_t
++llseek(int fd, loff_t offset, int origin)
++{
++	struct device *mydev = get_device(fd);
++	
++	if (!mydev)
++		/* fall through */
++		return __lseek(fd, (off_t) offset, origin);
++	
++	
++	switch (origin)
++	{
++		case SEEK_SET:
++			break;
++		case SEEK_CUR:
++			offset += mydev->pos;
++			break;
++		case SEEK_END:
++			offset += (int64_t) mydev->xhdi_blocks * mydev->xhdi_blocksize;
++			break;
++		default:
++			return -1;
++	}
++	
++	if (offset > (loff_t) mydev->xhdi_blocks * mydev->xhdi_blocksize)
++	{
++		__set_errno(EINVAL);
++		return -1;
++	}
++	
++	mydev->pos = offset;
++	return mydev->pos;
++}
++
++off_t
++lseek(int fd, off_t offset, int mode)
++{
++	struct device *mydev = get_device(fd);
++	
++	if (!mydev)
++		/* fall through */
++		return __lseek(fd, offset, mode);
++	
++{
++	loff_t _offset = offset;
++	
++	switch (mode)
++	{
++		case SEEK_SET:
++			break;
++		case SEEK_CUR:
++			_offset += mydev->pos;
++			break;
++		case SEEK_END:
++			_offset += (loff_t) mydev->xhdi_blocks * mydev->xhdi_blocksize;
++			break;
++		default:
++			return -1;
++	}
++	
++	if (_offset > LONG_MAX)
++	{
++		__set_errno(EINVAL);
++		return -1;
++	}
++	
++	if (_offset > (loff_t) mydev->xhdi_blocks * mydev->xhdi_blocksize)
++	{
++		__set_errno(EINVAL);
++		return -1;
++	}
++	
++	mydev->pos = _offset;
++	return (off_t) mydev->pos;
++}
++}
++
++int
++gettype(int fd)
++{
++	struct device *mydev = get_device(fd);
++	char *xhdi_id;
++	
++	if (!mydev)
++		return -1;
++
++	/* Get filesystem type by XHDI ID */
++	xhdi_id = mydev->xhdi_id;
++	if ((xhdi_id[0] == '\0') && (xhdi_id[1] == 'D'))
++		return 0;   /* DOS (\0D*) */
++	else
++		return 1;   /* Atari (GEM/GBM) */
++}
++
++
++/* XHDI bindings */
++
++
++# include <stdio.h>
++# include <stdlib.h>
++# include <errno.h>
++# include <mintbind.h>
++# include <mint/cookie.h>
++
++
++/*
++ * internal usage
++ */
++
++/* dummy routine */
++static long
++XHDIfail(void)
++{
++	return -ENOSYS;
++}
++
++/* XHDI handler function */
++static long (*XHDI)() = XHDIfail;
++
++static ushort XHDI_installed = 0;
++
++
++# define C_XHDI		0x58484449L
++# define XHDIMAGIC	0x27011992L
++
++/* initalize flag */
++static ushort XHDI_init = 1;
++
++static long
++init_XHDI(void)
++{
++	long *val;
++	long r;
++	
++	XHDI_init = 0;
++	
++	r = Getcookie(C_XHDI, (long *) &val);
++	if (r == C_FOUND)
++	{
++		long *magic_test = val;
++		
++		/* check magic */
++		if (magic_test)
++		{
++			magic_test--;
++			if (*magic_test == XHDIMAGIC)
++			{
++				(long *) XHDI = val;
++			}
++		}
++	}
++	
++	r = XHGetVersion();
++	if (r < 0)
++	{
++		perror("XHGetVersion");
++		
++		XHDI = XHDIfail;
++		return r;
++	}
++	
++	/* we need at least XHDI 1.10 */
++	if (r >= 0x110)
++	{
++		XHDI_installed = r;
++		return 0;
++	}
++	
++	XHDI = XHDIfail;
++	return -1;
++}
++
++
++/*
++ * 32bit clean XHDI wrapper routines
++ */
++
++# define CALL \
++	long oldstack = 0;		\
++	long r;				\
++					\
++	if (XHDI_init) init_XHDI();	\
++					\
++	if (!Super(1L))			\
++		oldstack = Super(0L);	\
++					\
++	r = XHDI(args);			\
++	if (r < 0)			\
++	{				\
++		__set_errno(-r);	\
++		r = -1;			\
++	}				\
++					\
++	if (oldstack)			\
++		Super(oldstack);	\
++					\
++	return r
++
++static long
++XHGetVersion(void)
++{
++	struct args_XHGetVersion
++	{
++		ushort	opcode;
++	}
++	args = 
++	{
++		0
++	};
++	
++	CALL;
++}
++
++static long
++XHInqTarget(ushort major, ushort minor, ulong *block_size, ulong *device_flags, char *product_name)
++{
++	struct args_XHInqTarget
++	{
++		ushort	opcode;
++		ushort	major;
++		ushort	minor;
++		ulong	*block_size;
++		ulong	*device_flags;
++		char	*product_name;
++	}
++	args =
++	{
++		1,
++		major,
++		minor,
++		block_size,
++		device_flags,
++		product_name
++	};
++	
++	CALL;
++}
++
++long
++XHInqDriver(ushort bios, char *name, char *version, char *company, ushort *ahdi_version, ushort *maxIPL)
++{
++	struct args_XHInqDriver
++	{
++		ushort	opcode;
++		ushort	bios;
++		char	*name;
++		char	*version;
++		char	*company;
++		ushort	*ahdi_version;
++		ushort	*maxIPL;
++	}
++	args =
++	{
++		8,
++		bios,
++		name,
++		version,
++		company,
++		ahdi_version,
++		maxIPL
++	};
++	
++	CALL;
++}
++
++static long
++XHReadWrite(ushort major, ushort minor, ushort rwflag, ulong recno, ushort count, void *buf)
++{
++	struct args_XHReadWrite
++	{
++		ushort	opcode;
++		ushort	major;
++		ushort	minor;
++		ushort	rwflag;
++		ulong	recno;
++		ushort	count;
++		void	*buf;
++	}
++	args =
++	{
++		10,
++		major,
++		minor,
++		rwflag,
++		recno,
++		count,
++		buf
++	};
++	
++	CALL;
++}
++
++long
++XHInqTarget2(ushort major, ushort minor, ulong *block_size, ulong *device_flags, char *product_name, ushort stringlen)
++{
++	struct args_XHInqTarget2
++	{
++		ushort	opcode;
++		ushort	major;
++		ushort	minor;
++		ulong	*block_size;
++		ulong	*device_flags;
++		char	*product_name;
++		ushort	stringlen;
++	}
++	args =
++	{
++		11,
++		major,
++		minor,
++		block_size,
++		device_flags,
++		product_name,
++		stringlen
++	};
++	
++	CALL;
++}
++
++static long
++XHInqDev2(ushort bios, ushort *major, ushort *minor, ulong *start, __BPB *bpb, ulong *blocks, char *partid)
++{
++	struct args_XHInqDev2
++	{
++		ushort	opcode;
++		ushort	bios;
++		ushort	*major;
++		ushort	*minor;
++		ulong	*start;
++		__BPB	*bpb;
++		ulong	*blocks;
++		char	*partid;
++	}
++	args =
++	{
++		12,
++		bios,
++		major,
++		minor,
++		start,
++		bpb,
++		blocks,
++		partid
++	};
++	
++	CALL;
++}
++
++
++# endif /* __MINT__ */
+--- dosfstools-2.10/dosfsck/mint_io.h.mint	Tue Sep 30 00:03:46 2003
++++ dosfstools-2.10/dosfsck/mint_io.h	Tue Sep 30 00:03:46 2003
+@@ -0,0 +1,22 @@
++/*
++ * mint_io.h
++ *
++ * Copyright (C) 2000 Frank Naumann <fnaumann@freemint.de>.
++ *
++ * %Begin-Header%
++ * This file may be redistributed under the terms of the GNU Public
++ * License.
++ * %End-Header%
++ */
++
++# ifdef __MINT__
++
++# ifndef _mint_io_h
++# define _mint_io_h
++
++# define BLKGETSIZE		(('b'<< 8) | 1)
++# define BLOCKSIZE		(('b'<< 8) | 2)
++
++# endif /* _mint_io_h */
++
++# endif /* __MINT__ */
+--- dosfstools-2.10/dosfsck/msdos_fs.h.mint	Tue Sep 30 00:03:46 2003
++++ dosfstools-2.10/dosfsck/msdos_fs.h	Tue Sep 30 00:03:46 2003
+@@ -0,0 +1,334 @@
++#ifndef _LINUX_MSDOS_FS_H
++#define _LINUX_MSDOS_FS_H
++
++/*
++ * The MS-DOS filesystem constants/structures
++ */
++
++
++#define MSDOS_ROOT_INO  1 /* == MINIX_ROOT_INO */
++#define SECTOR_SIZE     512 /* sector size (bytes) */
++#define SECTOR_BITS	9 /* log2(SECTOR_SIZE) */
++#define MSDOS_DPB	(MSDOS_DPS) /* dir entries per block */
++#define MSDOS_DPB_BITS	4 /* log2(MSDOS_DPB) */
++#define MSDOS_DPS	(SECTOR_SIZE/sizeof(struct msdos_dir_entry))
++#define MSDOS_DPS_BITS	4 /* log2(MSDOS_DPS) */
++#define MSDOS_DIR_BITS	5 /* log2(sizeof(struct msdos_dir_entry)) */
++
++#define MSDOS_SUPER_MAGIC 0x4d44 /* MD */
++
++#define FAT_CACHE    8 /* FAT cache size */
++
++#define MSDOS_MAX_EXTRA	3 /* tolerate up to that number of clusters which are
++			     inaccessible because the FAT is too short */
++
++#define ATTR_RO      1  /* read-only */
++#define ATTR_HIDDEN  2  /* hidden */
++#define ATTR_SYS     4  /* system */
++#define ATTR_VOLUME  8  /* volume label */
++#define ATTR_DIR     16 /* directory */
++#define ATTR_ARCH    32 /* archived */
++
++#define ATTR_NONE    0 /* no attribute bits */
++#define ATTR_UNUSED  (ATTR_VOLUME | ATTR_ARCH | ATTR_SYS | ATTR_HIDDEN)
++	/* attribute bits that are copied "as is" */
++#define ATTR_EXT     (ATTR_RO | ATTR_HIDDEN | ATTR_SYS | ATTR_VOLUME)
++	/* bits that are used by the Windows 95/Windows NT extended FAT */
++
++#define ATTR_DIR_READ_BOTH 512 /* read both short and long names from the
++				* vfat filesystem.  This is used by Samba
++				* to export the vfat filesystem with correct
++				* shortnames. */
++#define ATTR_DIR_READ_SHORT 1024
++
++#define CASE_LOWER_BASE 8	/* base is lower case */
++#define CASE_LOWER_EXT  16	/* extension is lower case */
++
++#define SCAN_ANY     0  /* either hidden or not */
++#define SCAN_HID     1  /* only hidden */
++#define SCAN_NOTHID  2  /* only not hidden */
++#define SCAN_NOTANY  3  /* test name, then use SCAN_HID or SCAN_NOTHID */
++
++#define DELETED_FLAG 0xe5 /* marks file as deleted when in name[0] */
++#define FD_FILL_BYTE ' '
++#define IS_FREE(n) (!*(n) || *(const unsigned char *) (n) == DELETED_FLAG || \
++  *(const unsigned char *) (n) == FD_FILL_BYTE)
++
++#define MSDOS_VALID_MODE (S_IFREG | S_IFDIR | S_IRWXU | S_IRWXG | S_IRWXO)
++	/* valid file mode bits */
++
++#define MSDOS_SB(s) (&((s)->u.msdos_sb))
++#define MSDOS_I(i) (&((i)->u.msdos_i))
++
++#define MSDOS_NAME 11 /* maximum name length */
++#define MSDOS_LONGNAME 256 /* maximum name length */
++#define MSDOS_SLOTS 21  /* max # of slots needed for short and long names */
++#define MSDOS_DOT    ".          " /* ".", padded to MSDOS_NAME chars */
++#define MSDOS_DOTDOT "..         " /* "..", padded to MSDOS_NAME chars */
++
++#define MSDOS_FAT12 4078 /* maximum number of clusters in a 12 bit FAT */
++
++#define EOF_FAT12 0xFF8		/* standard EOF */
++#define EOF_FAT16 0xFFF8
++#define EOF_FAT32 0xFFFFFF8
++#define EOF_FAT(s) (MSDOS_SB(s)->fat_bits == 32 ? EOF_FAT32 : \
++	MSDOS_SB(s)->fat_bits == 16 ? EOF_FAT16 : EOF_FAT12)
++
++/*
++ * Inode flags
++ */
++#define FAT_BINARY_FL		0x00000001 /* File contains binary data */
++
++/*
++ * ioctl commands
++ */
++#define	VFAT_IOCTL_READDIR_BOTH		_IOR('r', 1, struct dirent [2])
++#define	VFAT_IOCTL_READDIR_SHORT	_IOR('r', 2, struct dirent [2])
++
++/*
++ * Conversion from and to little-endian byte order. (no-op on i386/i486)
++ *
++ * Naming: Ca_b_c, where a: F = from, T = to, b: LE = little-endian,
++ * BE = big-endian, c: W = word (16 bits), L = longword (32 bits)
++ */
++
++#define CF_LE_W(v) ((((v) & 0xff) << 8) | (((v) >> 8) & 0xff))
++#define CF_LE_L(v) (((unsigned)(v)>>24) | (((unsigned)(v)>>8)&0xff00) | \
++               (((unsigned)(v)<<8)&0xff0000) | ((unsigned)(v)<<24))
++#define CT_LE_W(v) CF_LE_W(v)
++#define CT_LE_L(v) CF_LE_L(v)
++
++struct fat_boot_sector {
++	__s8	ignored[3];	/* Boot strap short or near jump */
++	__s8	system_id[8];	/* Name - can be used to special case
++				   partition manager volumes */
++	__u8	sector_size[2];	/* bytes per logical sector */
++	__u8	cluster_size;	/* sectors/cluster */
++	__u16	reserved;	/* reserved sectors */
++	__u8	fats;		/* number of FATs */
++	__u8	dir_entries[2];	/* root directory entries */
++	__u8	sectors[2];	/* number of sectors */
++	__u8	media;		/* media code (unused) */
++	__u16	fat_length;	/* sectors/FAT */
++	__u16	secs_track;	/* sectors per track */
++	__u16	heads;		/* number of heads */
++	__u32	hidden;		/* hidden sectors (unused) */
++	__u32	total_sect;	/* number of sectors (if sectors == 0) */
++
++	/* The following fields are only used by FAT32 */
++	__u32	fat32_length;	/* sectors/FAT */
++	__u16	flags;		/* bit 8: fat mirroring, low 4: active fat */
++	__u8	version[2];	/* major, minor filesystem version */
++	__u32	root_cluster;	/* first cluster in root directory */
++	__u16	info_sector;	/* filesystem info sector */
++	__u16	backup_boot;	/* backup boot sector */
++	__u16	reserved2[6];	/* Unused */
++};
++
++struct fat_boot_fsinfo {
++	__u32   reserved1;	/* Nothing as far as I can tell */
++	__u32   signature;	/* 0x61417272L */
++	__u32   free_clusters;	/* Free cluster count.  -1 if unknown */
++	__u32   next_cluster;	/* Most recently allocated cluster.
++				 * Unused under Linux. */
++	__u32   reserved2[4];
++};
++
++struct msdos_dir_entry {
++	__s8	name[8],ext[3];	/* name and extension */
++	__u8	attr;		/* attribute bits */
++	__u8    lcase;		/* Case for base and extension */
++	__u8	ctime_ms;	/* Creation time, milliseconds */
++	__u16	ctime;		/* Creation time */
++	__u16	cdate;		/* Creation date */
++	__u16	adate;		/* Last access date */
++	__u16   starthi;	/* High 16 bits of cluster in FAT32 */
++	__u16	time,date,start;/* time, date and first cluster */
++	__u32	size;		/* file size (in bytes) */
++};
++
++/* Up to 13 characters of the name */
++struct msdos_dir_slot {
++	__u8    id;		/* sequence number for slot */
++	__u8    name0_4[10];	/* first 5 characters in name */
++	__u8    attr;		/* attribute byte */
++	__u8    reserved;	/* always 0 */
++	__u8    alias_checksum;	/* checksum for 8.3 alias */
++	__u8    name5_10[12];	/* 6 more characters in name */
++	__u16   start;		/* starting cluster number, 0 in long slots */
++	__u8    name11_12[4];	/* last 2 characters in name */
++};
++
++struct vfat_slot_info {
++	int is_long;		       /* was the found entry long */
++	int long_slots;		       /* number of long slots in filename */
++	int total_slots;	       /* total slots (long and short) */
++	loff_t longname_offset;	       /* dir offset for longname start */
++	loff_t shortname_offset;       /* dir offset for shortname start */
++	int ino;		       /* ino for the file */
++};
++
++/* Determine whether this FS has kB-aligned data. */
++#define MSDOS_CAN_BMAP(mib) (!(((mib)->cluster_size & 1) || \
++    ((mib)->data_start & 1)))
++
++/* Convert attribute bits and a mask to the UNIX mode. */
++#define MSDOS_MKMODE(a,m) (m & (a & ATTR_RO ? S_IRUGO|S_IXUGO : S_IRWXUGO))
++
++/* Convert the UNIX mode to MS-DOS attribute bits. */
++#define MSDOS_MKATTR(m) ((m & S_IWUGO) ? ATTR_NONE : ATTR_RO)
++
++
++#ifdef __KERNEL__
++
++struct fat_cache {
++	kdev_t device; /* device number. 0 means unused. */
++	int start_cluster; /* first cluster of the chain. */
++	int file_cluster; /* cluster number in the file. */
++	int disk_cluster; /* cluster number on disk. */
++	struct fat_cache *next; /* next cache entry */
++};
++
++/* misc.c */
++extern int fat_is_binary(char conversion,char *extension);
++extern void lock_fat(struct super_block *sb);
++extern void unlock_fat(struct super_block *sb);
++extern int fat_add_cluster(struct inode *inode);
++extern struct buffer_head *fat_add_cluster1(struct inode *inode);
++extern int date_dos2unix(__u16 time, __u16 date);
++extern void fat_fs_panic(struct super_block *s,const char *msg);
++extern void fat_lock_creation(void);
++extern void fat_unlock_creation(void);
++extern void fat_date_unix2dos(int unix_date,__u16 *time, __u16 *date);
++extern int fat__get_entry(struct inode *dir,loff_t *pos,struct buffer_head **bh,
++			 struct msdos_dir_entry **de,int *ino);
++static __inline__ int fat_get_entry(struct inode *dir,loff_t *pos,
++		struct buffer_head **bh,struct msdos_dir_entry **de,int *ino)
++{
++	/* Fast stuff first */
++	if (*bh && *de &&
++	    	(*de - (struct msdos_dir_entry *)(*bh)->b_data) < MSDOS_DPB-1) {
++		*pos += sizeof(struct msdos_dir_entry);
++		(*de)++;
++		(*ino)++;
++		return 0;
++	}
++	return fat__get_entry(dir,pos,bh,de,ino);
++}
++extern int fat_scan(struct inode *dir,const char *name,struct buffer_head **res_bh,
++		    struct msdos_dir_entry **res_de,int *ino);
++extern int fat_parent_ino(struct inode *dir,int locked);
++extern int fat_subdirs(struct inode *dir);
++void fat_clusters_flush(struct super_block *sb);
++
++/* fat.c */
++extern int fat_access(struct super_block *sb,int nr,int new_value);
++extern int fat_smap(struct inode *inode,int sector);
++extern int fat_free(struct inode *inode,int skip);
++void fat_cache_inval_inode(struct inode *inode);
++void fat_cache_inval_dev(kdev_t device);
++extern void fat_cache_init(void);
++void fat_cache_lookup(struct inode *inode,int cluster,int *f_clu,int *d_clu);
++void fat_cache_add(struct inode *inode,int f_clu,int d_clu);
++int fat_get_cluster(struct inode *inode,int cluster);
++
++/* inode.c */
++extern void fat_hash_init(void);
++extern int fat_bmap(struct inode *inode,int block);
++extern int fat_notify_change(struct dentry *, struct iattr *);
++extern void fat_clear_inode(struct inode *inode);
++extern void fat_delete_inode(struct inode *inode);
++extern void fat_put_super(struct super_block *sb);
++extern void fat_attach(struct inode *inode, int ino);
++extern void fat_detach(struct inode *inode);
++extern struct inode *fat_iget(struct super_block*,int);
++extern struct inode *fat_build_inode(struct super_block*,struct msdos_dir_entry*,int,int*);
++extern struct super_block *fat_read_super(struct super_block *s, void *data, int silent, struct inode_operations *dir_ops);
++extern void msdos_put_super(struct super_block *sb);
++extern int fat_statfs(struct super_block *sb,struct statfs *buf, int);
++extern void fat_write_inode(struct inode *inode);
++
++/* dir.c */
++extern struct file_operations fat_dir_operations;
++extern int fat_search_long(struct inode *dir, const char *name, int len,
++			   int anycase, loff_t *spos, loff_t *lpos);
++extern int fat_readdir(struct file *filp,
++		       void *dirent, filldir_t);
++extern int fat_dir_ioctl(struct inode * inode, struct file * filp,
++			 unsigned int cmd, unsigned long arg);
++int fat_add_entries(struct inode *dir,int slots, struct buffer_head **bh,
++		  struct msdos_dir_entry **de, int *ino);
++int fat_dir_empty(struct inode *dir);
++
++/* file.c */
++extern struct inode_operations fat_file_inode_operations;
++extern struct inode_operations fat_file_inode_operations_1024;
++extern struct inode_operations fat_file_inode_operations_readpage;
++extern ssize_t fat_file_read(struct file *, char *, size_t, loff_t *);
++extern ssize_t fat_file_write(struct file *, const char *, size_t, loff_t *);
++extern void fat_truncate(struct inode *inode);
++
++/* mmap.c */
++extern int fat_mmap(struct file *, struct vm_area_struct *);
++extern int fat_readpage(struct file *, struct page *);
++
++
++/* vfat.c */
++extern int init_vfat_fs(void);
++
++
++/* msdosfs_syms.c */
++extern int init_msdos_fs(void);
++extern struct file_system_type msdos_fs_type;
++
++/* msdos.c */
++extern struct super_block *msdos_read_super(struct super_block *sb,void *data, int silent);
++
++/* msdos.c - these are for Umsdos */
++extern void msdos_read_inode(struct inode *inode);
++extern struct dentry *msdos_lookup(struct inode *dir,struct dentry *);
++extern int msdos_create(struct inode *dir,struct dentry *dentry,int mode);
++extern int msdos_rmdir(struct inode *dir,struct dentry *dentry);
++extern int msdos_mkdir(struct inode *dir,struct dentry *dentry,int mode);
++extern int msdos_unlink(struct inode *dir,struct dentry *dentry);
++extern int msdos_rename(struct inode *old_dir,struct dentry *old_dentry,
++			struct inode *new_dir,struct dentry *new_dentry);
++
++/* nls.c */
++extern int init_fat_nls(void);
++extern struct fat_nls_table *fat_load_nls(int codepage);
++
++/* tables.c */
++extern unsigned char fat_uni2esc[];
++extern unsigned char fat_esc2uni[];
++
++/* fatfs_syms.c */
++extern int init_fat_fs(void);
++extern void cleanup_fat_fs(void);
++
++/* nls.c */
++extern int fat_register_nls(struct fat_nls_table * fmt);
++extern int fat_unregister_nls(struct fat_nls_table * fmt);
++extern struct fat_nls_table *fat_find_nls(int codepage);
++extern struct fat_nls_table *fat_load_nls(int codepage);
++extern void fat_unload_nls(int codepage);
++extern int init_fat_nls(void);
++
++/* vfat/namei.c - these are for dmsdos */
++extern int vfat_create(struct inode *dir,struct dentry *dentry,int mode);
++extern int vfat_unlink(struct inode *dir,struct dentry *dentry);
++extern int vfat_mkdir(struct inode *dir,struct dentry *dentry,int mode);
++extern int vfat_rmdir(struct inode *dir,struct dentry *dentry);
++extern int vfat_rename(struct inode *old_dir,struct dentry *old_dentry,
++		       struct inode *new_dir,struct dentry *new_dentry);
++extern struct super_block *vfat_read_super(struct super_block *sb,void *data,
++					   int silent);
++extern void vfat_read_inode(struct inode *inode);
++extern struct dentry *vfat_lookup(struct inode *dir,struct dentry *);
++
++/* vfat/vfatfs_syms.c */
++extern struct file_system_type vfat_fs_type;
++
++#endif /* __KERNEL__ */
++
++#endif

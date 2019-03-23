@@ -1,0 +1,142 @@
+diff -rup apache_1.3.28-orig/conf/httpd.conf-dist apache_1.3.28/conf/httpd.conf-dist
+--- apache_1.3.28-orig/conf/httpd.conf-dist	Wed Jul 16 15:36:40 2003
++++ apache_1.3.28/conf/httpd.conf-dist	Mon Oct 13 23:04:56 2003
+@@ -132,14 +132,14 @@ KeepAliveTimeout 15
+ # a new spare.  If there are more than MaxSpareServers, some of the
+ # spares die off.  The default values are probably OK for most sites.
+ #
+-MinSpareServers 5
+-MaxSpareServers 10
++MinSpareServers 1
++MaxSpareServers 1
+ 
+ #
+ # Number of servers to start initially --- should be a reasonable ballpark
+ # figure.
+ #
+-StartServers 5
++StartServers 1
+ 
+ #
+ # Limit on total number of servers running, i.e., limit on the number
+diff -rup apache_1.3.28-orig/config.layout apache_1.3.28/config.layout
+--- apache_1.3.28-orig/config.layout	Thu May 16 12:32:30 2002
++++ apache_1.3.28/config.layout	Mon Oct 13 23:05:14 2003
+@@ -122,7 +122,7 @@
+     bindir:        $prefix/bin
+     sbindir:       $prefix/sbin
+     libexecdir:    $prefix/lib/apache
+-    mandir:        $prefix/man
++    mandir:        $prefix/share/man
+     sysconfdir:    /etc/httpd/conf
+     datadir:       /var/www
+     iconsdir:      $datadir/icons
+diff -rup apache_1.3.28-orig/src/Configure apache_1.3.28/src/Configure
+--- apache_1.3.28-orig/src/Configure	Wed Feb 19 15:39:58 2003
++++ apache_1.3.28/src/Configure	Mon Oct 13 23:03:26 2003
+@@ -283,6 +283,12 @@ case "$PLAT" in
+ 	LIBS="$LIBS -lportlib -lsocket"
+ 	DEF_WANTHSREGEX=yes
+ 	;;
++    *FreeMiNT*)
++	OS="FreeMiNT"
++	CFLAGS="-DMINT"
++	LIBS="$LIBS -lgdbm -lsocket"
++	DEF_WANTHSREGEX=yes
++	;;
+     *MPE/iX*)
+ 	export OS='MPE/iX'
+ 	OSDIR='os/mpeix'
+diff -rup apache_1.3.28-orig/src/include/ap_config.h apache_1.3.28/src/include/ap_config.h
+--- apache_1.3.28-orig/src/include/ap_config.h	Mon May  5 07:45:48 2003
++++ apache_1.3.28/src/include/ap_config.h	Mon Oct 13 23:07:16 2003
+@@ -115,16 +115,8 @@ stat() properly */
+ 
+ /* Define one of these according to your system. */
+ #if defined(MINT)
+-typedef int rlim_t;
+-#define JMP_BUF sigjmp_buf
+-#define NO_LONG_DOUBLE
+-#define HAVE_FLOCK_SERIALIZED_ACCEPT
+-#define _BSD_SOURCE
+-#define EAGAIN EWOULDBLOCK
+-int initgroups (char *, int);     
+-char *crypt (const char *pw, const char *salt);
+-int gethostname (char *name, int namelen);
+-
++typedef __rlim_t rlim_t;
++#define USE_FCNTL_SERIALIZED_ACCEPT
+ #elif defined(MPE)
+ #include <sys/times.h>
+ #define NO_SETSID
+diff -rup apache_1.3.28-orig/src/main/http_main.c apache_1.3.28/src/main/http_main.c
+--- apache_1.3.28-orig/src/main/http_main.c	Fri May 23 11:25:24 2003
++++ apache_1.3.28/src/main/http_main.c	Mon Oct 13 23:05:26 2003
+@@ -188,7 +188,7 @@ API_EXPORT(void) ap_force_library_loadin
+ 
+ 
+ #ifdef MINT
+-long _stksize = 32768;
++long _stksize = 256L * 1024L;
+ #endif
+ 
+ #ifdef USE_OS2_SCOREBOARD
+@@ -3315,7 +3315,7 @@ static void set_signals(void)
+ #endif
+ 	if (sigaction(SIGSEGV, &sa, NULL) < 0)
+ 	    ap_log_error(APLOG_MARK, APLOG_WARNING, server_conf, "sigaction(SIGSEGV)");
+-#ifdef SIGBUS
++#ifdef _SIGBUS
+ 	if (sigaction(SIGBUS, &sa, NULL) < 0)
+ 	    ap_log_error(APLOG_MARK, APLOG_WARNING, server_conf, "sigaction(SIGBUS)");
+ #endif
+diff -rup apache_1.3.28-orig/src/main/util_script.c apache_1.3.28/src/main/util_script.c
+--- apache_1.3.28-orig/src/main/util_script.c	Mon Feb  3 12:13:22 2003
++++ apache_1.3.28/src/main/util_script.c	Mon Oct 13 23:04:36 2003
+@@ -196,7 +196,7 @@ API_EXPORT(void) ap_add_common_vars(requ
+     conn_rec *c = r->connection;
+     const char *rem_logname;
+     char *env_path;
+-#if defined(WIN32) || defined(OS2)
++#if defined(WIN32) || defined(OS2) || defined(MINT)
+     char *env_temp;
+ #endif
+     const char *host;
+@@ -274,6 +274,18 @@ API_EXPORT(void) ap_add_common_vars(requ
+     }
+     if ((env_temp = getenv("PERLLIB_PREFIX")) != NULL) {
+         ap_table_addn(e, "PERLLIB_PREFIX", env_temp);            
++    }
++#endif
++
++#ifdef MINT
++    if ((env_temp = getenv("UNIXMODE")) != NULL) {
++        ap_table_addn(e, "UNIXMODE", env_temp);            
++    }
++    else {
++	ap_table_addn(e, "UNIXMODE", "rUs");
++    }
++    if ((env_temp = getenv("PCONVERT")) != NULL) {
++        ap_table_addn(e, "PCONVERT", env_temp);            
+     }
+ #endif
+ 
+diff -rup apache_1.3.28-orig/src/support/ab.c apache_1.3.28/src/support/ab.c
+--- apache_1.3.28-orig/src/support/ab.c	Sun Jul  6 13:52:26 2003
++++ apache_1.3.28/src/support/ab.c	Mon Oct 13 23:03:40 2003
+@@ -452,8 +452,14 @@ static void nonblock(int fd)
+     int i = 1;
+ #ifdef BEOS
+     setsockopt(fd, SOL_SOCKET, SO_NONBLOCK, &i, sizeof(i));
+-#else
++#elif defined(FIONBIO)
+     ioctl(fd, FIONBIO, &i);
++#else
++    if ((i = fcntl(fd, F_GETFL, 0)) != -1)
++    {
++	    i |= O_NONBLOCK;
++	    fcntl(fd, F_SETFL, i);
++    }
+ #endif
+ }
+ 

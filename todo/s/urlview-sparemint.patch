@@ -1,0 +1,110 @@
+--- urlview-0.7/urlview.c.sparemint	Sat Jan 31 03:28:25 1998
++++ urlview-0.7/urlview.c	Fri Jul 30 17:23:11 1999
+@@ -47,7 +47,7 @@
+ #endif
+ 
+ #define DEFAULT_REGEXP "((((ht|f)tp)|mailto):(//)?[^ >\"\t]*|www\\.[-a-z0-9.]+)[^ .,;\t>\">]"
+-#define DEFAULT_COMMAND "netscape -remote 'openURL(%s)'"
++#define DEFAULT_COMMAND "url_handler.sh '%s'"
+ 
+ #define OFFSET 2
+ #define PAGELEN (LINES - 1 - OFFSET)
+--- urlview-0.7/sample.urlview.sparemint	Fri Jul 30 17:31:15 1999
++++ urlview-0.7/sample.urlview	Fri Jul 30 17:31:55 1999
+@@ -6,5 +6,5 @@
+ REGEXP ((((ht|f)tp)|mailto):(//)?[^ >"\t]*|www\.[-a-z0-9.]+)[^ .,;\t>">]
+ 
+ # command to invoke for selected URL
+-COMMAND netscape -remote 'openURL(%s)'
+-
++#COMMAND netscape -remote 'openURL(%s)'
++COMMAND lynx %s
+--- urlview-0.7/url_handler.sh.sparemint	Thu Dec 18 23:10:01 1997
++++ urlview-0.7/url_handler.sh	Fri Jul 30 18:15:53 1999
+@@ -8,42 +8,70 @@
+ # Last Edited: May 26, 1997
+ #
+ 
++# Modified for Sparemint by Guido Flohr <gufl0000@stud.uni-sb.de>,
++# July, 1999.
++
+ url=$1
+ method=`echo $1 | sed 's;\(^[^:]*\):.*;\1;'`
+ 
++BROWSER=${BROWSER:=lynx}
++
++# Attention this is a space followed by a tab!
++save_IFS=${IFS=" 	"}
++IFS=":"
++# Look for a mail client program.
++clients="mutt:pine:elm:mail:"
++for mail_client in $clients; do
++  for dir in $PATH; do
++    if test -x $dir/$mail_client; then
++      break;
++    fi
++  done
++  if test "x$mail_client" != x; then
++    break;
++  fi
++done
++
++# Now look for a suitable ftp client.
++clients="ncftp:ftp:"
++for ftp_client in $clients; do
++  for dir in $PATH; do
++    if test -x $dir/$ftp_client; then
++      break;
++    fi
++  done
++  if test "x$ftp_client" != x; then
++    break;
++  fi
++done
++
++IFS="$save_IFS"
++
++test "x$mail_client" = "x" && mail_client="No suitable mail client found."
++test "x$ftp_client" = "x" && mail_client="No suitable ftp client found."
++
+ case $method in
+     ftp)
+-	target=`echo $url | sed 's;^.*://\([^/]*\)/*\(.*\);\1:/\2;'`
+-	ncftp $target
++	$ftp_client `echo $url | sed 's;^.*://\([^/]*\)/*\(.*\);\1:/\2;'`
+ 	;;
+ 
+     http)   
+-	if test x$DISPLAY = x; then
+-	    lynx $url
+-	else
+-	    netscape -remote "openURL($url)" || netscape $url
+-	fi
++        $BROWSER $url
+ 	;;
+ 
+     mailto)
+-	mutt `echo $url | sed 's;^[^:]*:\(.*\);\1;'`
++        $mail_client `echo $url | sed 's;^[^:]*:\(.*\);\1;'`
+ 	;;
+ 
+     *)
+ 	method=`echo $url | sed 's;\(^...\).*;\1;'`
+ 	case $method in
+ 	    ftp)
+-		target=`echo $url | sed 's;^\([^/]*\)/*\(.*\);\1:/\2;'`
+-		ncftp $target
++		$ftp_client `echo $url | sed 's;^\([^/]*\)/*\(.*\);\1:/\2;'`
+ 		;;
+ 
+ 	    www)
+-		target="http://"$url
+-		if test x$DISPLAY = x; then
+-		    lynx $target
+-		else
+-		    netscape -remote "openURL($target)" || netscape $target
+-		fi
++		$BROWSER "http://"$url
+ 		;;
+ 
+ 	    *)

@@ -1,0 +1,13 @@
+--- a/src/openssl.c.orig
++++ b/src/openssl.c
+@@ -373,7 +373,9 @@
+   /* The OpenSSL library can handle renegotiations automatically, so
+      tell it to do so.  */
+   SSL_CTX_set_mode (ssl_ctx, SSL_MODE_AUTO_RETRY);
+-
++#ifdef SSL_OP_NO_COMPRESSION
++  SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_COMPRESSION);
++#endif
+   return true;
+ 
+  error:

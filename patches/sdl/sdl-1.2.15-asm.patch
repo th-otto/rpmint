@@ -1,6 +1,5 @@
-diff -rupN SDL-1.2.15-hg.orig/include/symbols.h SDL-1.2.15-hg/include/symbols.h
---- SDL-1.2.15-hg.orig/include/symbols.h	1970-01-01 01:00:00.000000000 +0100
-+++ SDL-1.2.15-hg/include/symbols.h	2017-10-12 06:04:41.402901922 +0200
+--- a/include/symbols.h	1970-01-01 01:00:00.000000000 +0100
++++ b/include/symbols.h	2017-10-12 06:04:41.402901922 +0200
 @@ -0,0 +1,54 @@
 +#ifndef __USER_LABEL_PREFIX__
 +#define __USER_LABEL_PREFIX__ _
@@ -56,9 +55,8 @@ diff -rupN SDL-1.2.15-hg.orig/include/symbols.h SDL-1.2.15-hg/include/symbols.h
 +#define pc REG(pc)
 +
 +#define sr REG(sr)
-diff -rupN SDL-1.2.15-hg.orig/src/audio/mint/SDL_mintaudio_it.S SDL-1.2.15-hg/src/audio/mint/SDL_mintaudio_it.S
---- SDL-1.2.15-hg.orig/src/audio/mint/SDL_mintaudio_it.S	2017-08-31 14:52:18.000000000 +0200
-+++ SDL-1.2.15-hg/src/audio/mint/SDL_mintaudio_it.S	2017-10-12 06:14:28.554889145 +0200
+--- a/src/audio/mint/SDL_mintaudio_it.S	2017-08-31 14:52:18.000000000 +0200
++++ b/src/audio/mint/SDL_mintaudio_it.S	2017-10-12 06:14:28.554889145 +0200
 @@ -20,6 +20,8 @@
      slouken@libsdl.org
  */
@@ -111,20 +109,24 @@ diff -rupN SDL-1.2.15-hg.orig/src/audio/mint/SDL_mintaudio_it.S SDL-1.2.15-hg/sr
 -_SDL_MintAudio_Dma8Interrupt:
 +SYM(SDL_MintAudio_XbiosInterrupt):
 +SYM(SDL_MintAudio_Dma8Interrupt):
- 
- 	/* Clear service bit, so other MFP interrupts can work */
  #if defined(__mcoldfire__)
-@@ -84,13 +86,13 @@ _SDL_MintAudio_Dma8Interrupt:
+ 	lea	sp@(-12),sp
+ 	moveml	d0-d1/a0,sp@
+@@ -86,10 +88,10 @@ _SDL_MintAudio_Dma8Interrupt:
  	bclr	#5,0xfffffa0f:w
  #endif
  
 -_SDL_MintAudio_StfaInterrupt:
--	addql	#1,_SDL_MintAudio_num_its
+-	move.l	_SDL_MintAudio_num_its,d0
 +SYM(SDL_MintAudio_StfaInterrupt):
-+	addql	#1,SYM(SDL_MintAudio_num_its)
- 
- 	rte
- 
++	move.l	SYM(SDL_MintAudio_num_its),d0
+ 	addql	#1,d0
+-	move.l	d0,_SDL_MintAudio_num_its
++	move.l	d0,SYM(SDL_MintAudio_num_its)
+  
+ 	cmp.l	#5,d0
+ 	bmi.s	_SDL_MintAudio_nosilence
+@@ -117,8 +119,8 @@ _SDL_MintAudio_nosilence:
  	.bss
  
  	.even
@@ -132,9 +134,11 @@ diff -rupN SDL-1.2.15-hg.orig/src/audio/mint/SDL_mintaudio_it.S SDL-1.2.15-hg/sr
 -	.comm	_SDL_MintAudio_num_its,4
 +	.comm	SYM(SDL_MintAudio_clocktics),4
 +	.comm	SYM(SDL_MintAudio_num_its),4
-diff -rupN SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_ataric2p.S SDL-1.2.15-hg/src/video/ataricommon/SDL_ataric2p.S
---- SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_ataric2p.S	2017-08-31 14:52:18.000000000 +0200
-+++ SDL-1.2.15-hg/src/video/ataricommon/SDL_ataric2p.S	2017-10-12 06:12:36.746891578 +0200
+ 
+ 	.comm	_SDL_MintAudio_itbuffer,4	/* Audio DMA buffer */
+ 	.comm	_SDL_MintAudio_itbuflen,4	/* Length in longword */
+--- a/src/video/ataricommon/SDL_ataric2p.S	2017-08-31 14:52:18.000000000 +0200
++++ b/video/ataricommon/SDL_ataric2p.S	2017-10-12 06:12:36.746891578 +0200
 @@ -20,6 +20,8 @@
      slouken@libsdl.org
  */
@@ -211,9 +215,8 @@ diff -rupN SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_ataric2p.S SDL-1.2.15-hg
  
  	.comm	c2p_source,4	/* Source framebuffer */
  	.comm	c2p_dest,4		/* Destination framebuffer */
-diff -rupN SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_atarieddi.S SDL-1.2.15-hg/src/video/ataricommon/SDL_atarieddi.S
---- SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_atarieddi.S	2017-08-31 14:52:18.000000000 +0200
-+++ SDL-1.2.15-hg/src/video/ataricommon/SDL_atarieddi.S	2017-10-12 06:04:41.402901922 +0200
+--- a/src/video/ataricommon/SDL_atarieddi.S	2017-08-31 14:52:18.000000000 +0200
++++ b/src/video/ataricommon/SDL_atarieddi.S	2017-10-12 06:04:41.402901922 +0200
 @@ -20,6 +20,8 @@
      slouken@libsdl.org
  */
@@ -237,9 +240,8 @@ diff -rupN SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_atarieddi.S SDL-1.2.15-h
  	movel	sp@(4),a0	/* Value of EdDI cookie */
  
  	/* Call EdDI function #0 */
-diff -rupN SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_ikbdinterrupt.S SDL-1.2.15-hg/src/video/ataricommon/SDL_ikbdinterrupt.S
---- SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_ikbdinterrupt.S	2017-08-31 14:52:18.000000000 +0200
-+++ SDL-1.2.15-hg/src/video/ataricommon/SDL_ikbdinterrupt.S	2017-10-12 06:12:57.494891126 +0200
+--- a/src/video/ataricommon/SDL_ikbdinterrupt.S	2017-08-31 14:52:18.000000000 +0200
++++ b/src/video/ataricommon/SDL_ikbdinterrupt.S	2017-10-12 06:12:57.494891126 +0200
 @@ -20,6 +20,8 @@
      slouken@libsdl.org
  */
@@ -395,9 +397,8 @@ diff -rupN SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_ikbdinterrupt.S SDL-1.2.
 +	.comm	SYM(SDL_AtariIkbd_mousey),2
 +	.comm	SYM(SDL_AtariIkbd_mouseb),2
 +	.comm	SYM(SDL_AtariIkbd_joystick),2
-diff -rupN SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_xbiosinterrupt.S SDL-1.2.15-hg/src/video/ataricommon/SDL_xbiosinterrupt.S
---- SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_xbiosinterrupt.S	2017-08-31 14:52:18.000000000 +0200
-+++ SDL-1.2.15-hg/src/video/ataricommon/SDL_xbiosinterrupt.S	2017-10-12 06:16:44.250886192 +0200
+--- a/src/video/ataricommon/SDL_xbiosinterrupt.S	2017-08-31 14:52:18.000000000 +0200
++++ b/src/video/ataricommon/SDL_xbiosinterrupt.S	2017-10-12 06:16:44.250886192 +0200
 @@ -20,6 +20,8 @@
      slouken@libsdl.org
  */
@@ -537,3 +538,58 @@ diff -rupN SDL-1.2.15-hg.orig/src/video/ataricommon/SDL_xbiosinterrupt.S SDL-1.2
  	.even
 -	.comm	_SDL_AtariXbios_joystick,2*1
 +	.comm	SYM(SDL_AtariXbios_joystick),2*1
+--- a/src/video/xbios/SDL_xbios.h	2019-03-22 12:20:46.759338227 +0100
++++ b/src/video/xbios/SDL_xbios.h	2019-03-22 12:21:27.827337333 +0100
+@@ -152,4 +152,7 @@
+ /* SDL_xbios_ctpci.c */
+ void SDL_XBIOS_VideoInit_Ctpci(_THIS);
+ 
++/* SDL_xbios_nova.c */
++void SDL_XBIOS_VideoInit_Nova(_THIS, void *cookie_nova);
++
+ #endif /* _SDL_xbios_h */
+--- a/src/video/xbios/SDL_xbios_nova.c	2019-03-22 12:16:57.975343205 +0100
++++ b/src/video/xbios/SDL_xbios_nova.c	2019-03-22 12:18:26.311341283 +0100
+@@ -266,10 +266,10 @@
+ 	oldstack = (void *)Super(NULL);
+ 
+ 	__asm__ __volatile__ (
+-			"moveql	#0,d0\n\t"
+-			"movel	%0,a0\n\t"
+-			"movel	%1,a1\n\t"
+-			"jsr	a1@"
++			"moveql	#0,%%d0\n\t"
++			"movel	%0,%%a0\n\t"
++			"movel	%1,%%a1\n\t"
++			"jsr	%%a1@"
+ 		: /* no return value */
+ 		: /* input */
+ 			"g"(&NOVA_modes[num_mode]), "g"(NOVA_xcb->p_chres)
+@@ -287,9 +287,9 @@
+ 	oldstack = (void *)Super(NULL);
+ 
+ 	__asm__ __volatile__ (
+-			"movel	%0,a0\n\t"
+-			"movel	%1,a1\n\t"
+-			"jsr	a1@"
++			"movel	%0,%%a0\n\t"
++			"movel	%1,%%a1\n\t"
++			"jsr	%%a1@"
+ 		: /* no return value */
+ 		: /* input */
+ 			"g"(screen), "g"(NOVA_xcb->p_setscr)
+@@ -312,10 +312,10 @@
+ 	oldstack = (void *)Super(NULL);
+ 
+ 	__asm__ __volatile__ (
+-			"movel	%0,d0\n\t"
+-			"movel	%1,a0\n\t"
+-			"movel	%2,a1\n\t"
+-			"jsr	a1@"
++			"movel	%0,%%d0\n\t"
++			"movel	%1,%%a0\n\t"
++			"movel	%2,%%a1\n\t"
++			"jsr	%%a1@"
+ 		: /* no return value */
+ 		: /* input */
+ 			"g"(index), "g"(color), "g"(NOVA_xcb->p_setcol)

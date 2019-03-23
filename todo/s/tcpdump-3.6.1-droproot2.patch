@@ -1,0 +1,135 @@
+--- tcpdump-3.6.2/tcpdump.1	Thu Jan 18 06:38:31 2001
++++ tcpdump-3.6.2/tcpdump.1	Sun Jun 10 16:26:10 2001
+@@ -60,6 +60,10 @@
+ .I type
+ ]
+ [
++.B \-U
++.I user
++]
++[
+ .B \-w
+ .I file
+ ]
+@@ -247,6 +251,12 @@
+ .TP
+ .B \-tt
+ Print an unformatted timestamp on each dump line.
++.TP
++.B \-U
++Drops root privileges and changes user ID to
++.I user
++and group ID to the primary group of
++.IR user .
+ .TP
+ .B \-v
+ (Slightly more) verbose output.  For example, the time to live,
+--- tcpdump-3.6.2/tcpdump.c	Thu Dec 21 12:43:24 2000
++++ tcpdump-3.6.2/tcpdump.c	Sun Jun 10 16:27:27 2001
+@@ -51,7 +51,7 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <ctype.h>
+-
++#include <pwd.h>
+ 
+ #include "interface.h"
+ #include "addrtoname.h"
+@@ -152,6 +152,25 @@
+ extern int opterr;
+ extern char *optarg;
+ 
++/* Drop root privileges */
++void droproot(const char *username)
++{
++	struct passwd *pw = NULL;
++	pw = getpwnam( username );
++	if ( pw ) {
++		if ( initgroups(pw->pw_name, NULL) != 0 || setgid(pw->pw_gid) != 0 ||
++				 setuid(pw->pw_uid) != 0 ) {
++			fprintf(stderr, "Couldn't change to '%.32s' uid=%d gid=%d\n", username, 
++							pw->pw_uid, pw->pw_gid);
++			exit(1);
++		}
++	}
++	else {
++		fprintf(stderr, "Couldn't find user '%.32s'\n", username);
++		exit(1);
++	}
++}
++
+ int
+ main(int argc, char **argv)
+ {
+@@ -163,6 +182,7 @@
+ 	RETSIGTYPE (*oldhandler)(int);
+ 	u_char *pcap_userdata;
+ 	char ebuf[PCAP_ERRBUF_SIZE];
++	char *username = NULL;
+ 
+ 	cnt = -1;
+ 	device = NULL;
+@@ -183,7 +203,7 @@
+ 	
+ 	opterr = 0;
+ 	while (
+-	    (op = getopt(argc, argv, "ac:deE:fF:i:lm:nNOpqr:Rs:StT:uvw:xXY")) != -1)
++	    (op = getopt(argc, argv, "ac:deE:fF:i:lm:nNOpqr:Rs:StT:uvw:xXYU:")) != -1)
+ 		switch (op) {
+ 
+ 		case 'a':
+@@ -340,6 +360,16 @@
+ 			}
+ 			break;
+ #endif
++		case 'U':
++			if ( optarg ) {
++				username = strdup(optarg);
++			}
++			else {
++				usage();
++				/* NOTREACHED */
++			}
++			break;
++
+ 		default:
+ 			usage();
+ 			/* NOTREACHED */
+@@ -357,7 +387,13 @@
+ 		 * Also, this prevents the user from reading anyone's
+ 		 * trace file.
+ 		 */
+-		setuid(getuid());
++		if ( username ) {
++			droproot( username );
++		}
++		else {
++			if ( setgid(getgid()) != 0 || setuid(getuid()) != 0 )
++				fprintf(stderr, "Warning: setgid/setuid failed !\n");
++		}
+ 
+ 		pd = pcap_open_offline(RFileName, ebuf);
+ 		if (pd == NULL)
+@@ -388,7 +424,13 @@
+ 		/*
+ 		 * Let user own process after socket has been opened.
+ 		 */
+-		setuid(getuid());
++		if ( username ) {
++			droproot( username );
++		}
++		else {
++			if ( setgid(getgid()) != 0 || setuid(getuid()) != 0 )
++				fprintf(stderr, "Warning: setgid/setuid failed !\n");
++		}
+ 	}
+ 	if (infile)
+ 		cmdbuf = read_infile(infile);
+@@ -506,6 +548,6 @@
+ 	(void)fprintf(stderr,
+ "\t\t[ -i interface ] [ -r file ] [ -s snaplen ]\n");
+ 	(void)fprintf(stderr,
+-"\t\t[ -T type ] [ -w file ] [ expression ]\n");
++"\t\t[ -T type ] [ -U user ] [ -w file ] [ expression ]\n");
+ 	exit(-1);
+ }

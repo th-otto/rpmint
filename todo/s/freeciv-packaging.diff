@@ -1,0 +1,38 @@
+diff -U 3 -r ../freeciv-1.11.0/intl/Makefile.in ./intl/Makefile.in
+--- ../freeciv-1.11.0/intl/Makefile.in	Sat Jul 17 07:46:51 1999
++++ ./intl/Makefile.in	Tue Jul  4 14:24:16 2000
+@@ -28,12 +28,12 @@
+ prefix = @prefix@
+ exec_prefix = @exec_prefix@
+ transform = @program_transform_name@
+-libdir = $(exec_prefix)/lib
+-includedir = $(prefix)/include
+-datadir = $(prefix)/@DATADIRNAME@
++libdir = $(DESTDIR)$(exec_prefix)/lib
++includedir = $(DESTDIR)$(prefix)/include
++datadir = $(DESTDIR)$(prefix)/@DATADIRNAME@
+ localedir = $(datadir)/locale
+-gnulocaledir = $(prefix)/share/locale
+-gettextsrcdir = @datadir@/gettext/intl
++gnulocaledir = $(DESTDIR)$(prefix)/share/locale
++gettextsrcdir = $(DESTDIR)@datadir@/gettext/intl
+ aliaspath = $(localedir):.
+ subdir = intl
+ 
+diff -U 3 -r ../freeciv-1.11.0/po/Makefile.in.in ./po/Makefile.in.in
+--- ../freeciv-1.11.0/po/Makefile.in.in	Sat Jul 17 07:46:56 1999
++++ ./po/Makefile.in.in	Tue Jul  4 14:22:28 2000
+@@ -18,10 +18,10 @@
+ 
+ prefix = @prefix@
+ exec_prefix = @exec_prefix@
+-datadir = $(prefix)/@DATADIRNAME@
++datadir = $(DESTDIR)$(prefix)/@DATADIRNAME@
+ localedir = $(datadir)/locale
+-gnulocaledir = $(prefix)/share/locale
+-gettextsrcdir = $(prefix)/share/gettext/po
++gnulocaledir = $(DESTDIR)$(prefix)/share/locale
++gettextsrcdir = $(DESTDIR)$(prefix)/share/gettext/po
+ subdir = po
+ 
+ INSTALL = @INSTALL@

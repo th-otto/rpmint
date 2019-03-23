@@ -1,0 +1,10 @@
+--- netkit-rsh-0.10/rexecd/rexecd.c.sectty	Fri Mar 26 18:46:40 1999
++++ netkit-rsh-0.10/rexecd/rexecd.c	Fri Mar 26 18:43:48 1999
+@@ -254,6 +254,7 @@
+        PAM_password = pass;
+        pam_error = pam_start("rexec", PAM_username, &PAM_conversation,&pamh);
+        PAM_BAIL;
++       (void) pam_set_item (pamh, PAM_TTY, "tty");
+        pam_error = pam_authenticate(pamh, 0);
+        PAM_BAIL;
+        pam_error = pam_acct_mgmt(pamh, 0);

@@ -1,0 +1,41 @@
+--- mingetty-0.9.4/mingetty.c.wtmplock	Thu Apr 30 21:41:12 1998
++++ mingetty-0.9.4/mingetty.c	Thu Apr 30 21:44:07 1998
+@@ -135,6 +135,7 @@
+ 	struct utmp ut;
+ 	int ut_fd;
+ 	struct utmp *utp;
++	void locktimeout();
+ 
+ 	utmpname (_PATH_UTMP);
+ 	setutent ();
+@@ -162,7 +163,10 @@
+ 	endutent ();
+ 
+ 	if ((ut_fd = open (_PATH_WTMP, O_APPEND | O_WRONLY)) >= 0) {
++	        (void)signal(SIGALRM, locktimeout);
++		(void)alarm(3);
+ 		flock (ut_fd, LOCK_EX);
++		(void)alarm(0);
+ 		write (ut_fd, &ut, sizeof (ut));
+ 		flock (ut_fd, LOCK_UN);
+ 		close (ut_fd);
+@@ -441,3 +445,19 @@
+ 	exit (0);
+ }
+ 
++ 
++void locktimeout()
++{
++#ifdef USE_SYSLOG
++    openlog (progname, LOG_PID, LOG_AUTH);
++    syslog(LOG_ALERT, "Lock failed on wtmp");
++    closelog ();
++#else
++    int fd;
++    char buf[]="Lock failed on wtmp\n";
++    if ((fd = open ("/dev/console", 1)) >= 0) {
++	write (fd, buf, strlen (buf));
++	close (fd);
++    }
++#endif
++}

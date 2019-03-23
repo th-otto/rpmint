@@ -1,0 +1,64 @@
+--- cproto-4.6/Makefile.in.4_6	Sat Jan 24 02:42:00 1998
++++ cproto-4.6/Makefile.in	Sat Oct 23 21:53:06 1999
+@@ -4,7 +4,7 @@
+ # UNIX template-makefile for C prototype generator
+ 
+ THIS = cproto
+-RELEASE = 4_6
++RELEASE = 4_6_1
+ 
+ #### Start of system configuration section. ####
+ 
+@@ -21,7 +21,7 @@
+ INSTALL_PROGRAM	= @INSTALL_PROGRAM@
+ INSTALL_DATA	= @INSTALL_DATA@
+ 
+-DEFINES		=
++DEFINES		= -DMAX_INC_DIR=64 -DMAX_INC_DEPTH=64
+ CPPFLAGS	= -I$(srcdir) $(DEFINES) -DHAVE_CONFIG_H @CPPFLAGS@
+ CFLAGS		= @CFLAGS@ $(CPPFLAGS)
+ LIBS		= @LIBS@ @LEXLIB@
+--- cproto-4.6/cproto.c.4_6	Sat Jan 24 02:42:06 1998
++++ cproto-4.6/cproto.c	Sat Oct 23 21:53:34 1999
+@@ -2,7 +2,7 @@
+  *
+  * C function prototype generator and function definition converter
+  */
+-#define VERSION "4.6"
++#define VERSION "4.6.1"
+ 
+ #include <stdio.h>
+ #include <ctype.h>
+--- cproto-4.6/yyerror.c.4_6	Sat Apr 13 06:29:18 1996
++++ cproto-4.6/yyerror.c	Sat Oct 23 21:57:36 1999
+@@ -126,22 +126,16 @@
+     if (count < 0) {
+ 	if (last++ >= 0) {
+ 	    qsort((char *)vec, (size_t)last, sizeof(vec[0]), compar);
+-	    /* limit length of error message */
+-	    k = 80 - (strlen(vec[last-1]) + 2);
++
+ 	    for (j = 0; j < last; j++) {
+ 		tag = j ? " " : "Expected: ";
+-		s = vec[j];
+-		if (j != (last - 1)) {
+-		    x = strlen(s) + strlen(tag);
+-		    if (k <= 0)
+-			continue;
+-		    else if ((k - x) <= 0)
+-			s = "...";
+-		    k -= x;
+-		}
+-		fprintf(stderr, "%s%s", tag, s);
+-	    }
+-	    fprintf(stderr, "\n");
++
++		if (vec[j])
++		    fprintf(stderr, "%s%s", tag, vec[j]);
++ 	    }
++	    
++ 	    fprintf(stderr, "\n");
++
+ 	    while (--last >= 0)
+ 	    	free(vec[last]);
+ 	}

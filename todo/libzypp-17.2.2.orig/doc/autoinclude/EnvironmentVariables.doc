@@ -1,0 +1,57 @@
+/**
+
+\page zypp-envars Environment Variables
+
+\author Michael Andres <ma@suse.de>
+
+\section zypp-envars-intro Environment Variables
+
+<b>Note</b> that for Boolean variables we usually test whether the variable exists and not for the assigned value.
+
+\subsection zypp-envars-config zypp config options
+
+\li \c ZYPP_CONF=<PATH> Location of the zypp.conf file.
+\li \c ZYPP_LOCK_TIMEOUT=<sec> If zypp is locked by another process wait this number of seconds for the lock becoming available.
+
+\subsection zypp-envars-repos Variables related to repositories
+
+\li \c ZYPP_REPO_RELEASEVER=<ver> Overwrite the \c $releasever variable in repository URLs and names (\see zypp::repo::RepoVariablesStringReplacer).
+
+\subsection zypp-envars-commit Variables related to commit
+
+\li \c ZYPP_IS_RUNNING=1 Set during commit so packages pre/post/trigger scripts can detect whether rpm was called from within libzypp.
+
+\subsection zypp-envars-logging Variables related to logging
+
+\li \c ZYPP_LOGFILE=<PATH> Location of the logfile to write or \c - for stderr.
+\li \c ZYPP_FULLLOG=1 Even more verbose logging (usually not needed).
+\li \c ZYPP_LIBSOLV_FULLLOG=1 Verbose logging when resolving dependencies.
+\li (\c ZYPP_LIBSAT_FULLLOG=1) deprecated since \c libzypp-10.x, prefer \c ZYPP_LIBSOLV_FULLLOG
+\li \c LIBSOLV_DEBUGMASK=<INT> Pass value to libsolv::pool_setdebugmask
+
+\li \c ZYPP_MEDIA_CURL_DEBUG=<1|2> Log http headers, if \c 2 also log server responses.
+\li \c ZYPP_MEDIA_CURL_IPRESOLVE=<4|6> Tell curl to resolve names to IPv4/IPv6 addresses only.
+
+\subsection zypp-envars-mediabackend Selecting the mediabackend to use.
+
+\li \c ZYPP_MULTICURL=0 Turn off multicurl (metalink and zsync) and fall back to plain libcurl.
+
+\subsection zypp-envars-plugin Variables related to plugins
+
+\li \c ZYPP_PLUGIN_DEBUG=1 Verbose logging from plugin framework.
+\li \c ZYPP_PLUGIN_TIMEOUT=<sec> Send/receive timeout for plugin communication.
+\li \c ZYPP_PLUGIN_SEND_TIMEOUT=<sec> Send timeout for plugin communication.
+\li \c ZYPP_PLUGIN_RECEIVE_TIMEOUT=<sec> Receive timeout for plugin communication.
+
+\li \c ZYPP_PLUGIN_APPDATA_FORCE_COLLECT=1 Make RepoManager trigger the appdata collector plugin unconditionally. Can be used with \c 'zypper \c lr' (as root) to trigger an initial collect rather than calling \c 'zypper \c ref \c -f' or waiting for some repo to be refreshed.
+
+\subsection zypp-envars-misc Variables not for common use (test and debug)
+
+\li \c ZYPP_MODALIAS_SYSFS=<PATH> Use this instead of \c /sys to evaluate modaliases.
+\li \c ZYPP_COMMIT_NO_PACKAGE_CACHE=1
+\li \c ZYPP_TESTSUITE_FAKE_ARCH Never use this!
+\li \c ZYPPTMPDIR=<PATH>
+\li \c ZYPP_LOCKFILE_ROOT=<PATH> Hack to circumvent the currently poor --root support.
+\li \c ZYPP_PROFILING=1
+
+*/

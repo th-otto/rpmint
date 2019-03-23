@@ -1,0 +1,16 @@
+--- xpuzzles-5.4.1/xpuzzles.Makefile.orig	Mon Mar  3 22:50:27 1997
++++ xpuzzles-5.4.1/xpuzzles.Makefile	Fri Oct 24 15:13:41 1997
+@@ -258,10 +258,12 @@
+ 	${UMOUNT}
+ 
+ read :
++install:
+ 	for i in ${PROGRAMS}; do\
+ 		if [ -d ${PRE}$${i} ]; then\
+ 			cd ${PRE}$${i};\
+-			more README;\
++			install -m755 ${PRE}$${i} /usr/X11R6/bin;\
++			install -m644 -o root -g man ${PRE}$${i}.man /usr/X11R6/man/man1/${PRE}$${i}.1;\
+ 			cd ..;\
+ 		fi;\
+ 	done

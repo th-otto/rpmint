@@ -1,0 +1,69 @@
+#! /bin/sh
+#
+# chkconfig: - 60 20
+# description: The rstat protocol allows users on a network to retrieve \
+#              performance metrics for any machine on that network.
+# processname: rpc.rstatd
+
+# Source function library.
+. /etc/init.d/functions
+
+# Get config.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+if [ ${NETWORKING} = "no" ]
+then
+	exit 0
+fi
+
+start() {
+	echo -n "Starting rstat services: "
+	daemon rpc.rstatd
+	RETVAL=$?
+
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/rstatd
+	return $RETVAL
+}	
+
+stop() {
+	echo -n "Stopping rstat services: "
+	killproc rpc.rstatd
+	RETVAL=$?
+
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/rstatd
+	return $RETVAL
+}
+
+restart() {
+	stop
+	start
+}	
+
+# See how we were called.
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  status)
+	status rpc.rstatd
+	;;
+  restart|reload)
+  	restart
+	;;
+  condrestart)
+  	[ -f /var/lock/subsys/rstatd ] && restart || :
+	;;
+  *)
+	echo "Usage: rstatd {start|stop|status|restart}"
+	exit 1
+	;;
+esac
+
+exit $?
+

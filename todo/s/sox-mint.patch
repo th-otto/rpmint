@@ -1,0 +1,15 @@
+--- sox-12.17.3/play.in.mint	Tue Sep  4 03:58:12 2001
++++ sox-12.17.3/play.in	Sat Feb  9 15:04:26 2002
+@@ -186,6 +186,12 @@
+         device="/dev/audio"
+     fi
+     ;;
++  FreeMiNT)
++    arch_defines="-t au"
++    if [ -z "$device" ]; then
++        device="/dev/audio"
++    fi
++    ;;
+ esac
+ 
+ # If name is "rec" then record else assume user is wanting to play

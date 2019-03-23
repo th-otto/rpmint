@@ -1,0 +1,33 @@
+--- cvsweb.conf.orig	Tue Mar  9 21:09:25 1999
++++ cvsweb.conf	Thu May  6 14:12:39 1999
+@@ -79,8 +79,8 @@
+ # The title of the Page on startup
+ $defaulttitle = "CVS Repository";
+ 
+-# The address is shown on the footer
+-$address = "zeller\@think.de";
++# This message is shown on the footer
++$footer = "<small>Report CVSWEB problems to: <address>zeller\@think.de</address></small>";
+ 
+ # Default page background color for the diffs
+ # and annotations
+--- cvsweb.cgi.orig	Tue Mar  9 21:09:27 1999
++++ cvsweb.cgi	Thu May  6 14:11:23 1999
+@@ -57,7 +57,7 @@
+ # These are defined to allow checking with perl -cw
+ %CVSROOT = %MIRRORS = %DEFAULTVALUE = %ICONS = %MTYPES =
+ @tabcolors = ();
+-$cvstreedefault = $body_tag = $logo = $defaulttitle = $address =
++$cvstreedefault = $body_tag = $logo = $defaulttitle = $footer =
+ $backcolor = $long_intro = $short_instruction = $shortLogLen =
+ $show_author = $dirtable = $tablepadding = $columnHeaderColorDefault =
+ $columnHeaderColorSorted = $hr_breakable = $hr_funout = $hr_ignwhite =
+@@ -2355,7 +2355,7 @@
+ }
+ 
+ sub html_footer {
+-    return "<hr noshade><address>$address</address>\n";
++    return "<hr noshade>$footer\n";
+ }
+ 
+ sub link_tags

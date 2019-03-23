@@ -1,0 +1,117 @@
+--- minicom-1.83.1/src/install.sh.make	Wed Mar 15 11:25:21 2000
++++ minicom-1.83.1/src/install.sh	Sat Jun 10 14:32:48 2000
+@@ -1,13 +1,6 @@
+ #
+ # Install shell script for minicom and friends.
+ #
+-NAME=`id |sed 's/uid=[0-9]*(\(.*\))  *gid=.*$/\1/'`
+-
+-if test "$NAME" != root
+-then
+-	echo "You must be root to install minicom."
+-	exit 1
+-fi
+ 
+ if test $# != 4
+ then
+@@ -20,34 +13,21 @@
+ 	mkdir -p $i
+ done
+ 
+-if test ! -d $1
+-then
+-	mkdir -p $1
+-	if [ $? != 0 ]
+-	then
+-		echo "$1: No such directory"
+-		exit 1
+-	fi
+-fi
+ 
+-if test ! -d $2
+-then
+-	echo "$2: No such directory"
+-	exit 1
+-fi
+-
+-if test ! -d $3
+-then
+-	echo "$3: No such directory"
+-	exit 1
+-fi
++for dir in $1 $2 $3 $4 ; do
++	if [ ! -d $dir ]; then
++		mkdir -p $dir
++		if [ $? != 0 ]; then
++			echo "$dir: No such directory"
++			exit 1
++		fi
++        fi
++done
+ 
+ if test -f minicom
+ then
+ 	echo "Installing minicom in $2"
+ 	cp minicom $2/minicom
+-	chown root $2/minicom
+-	chgrp uucp $2/minicom
+ 	chmod 755 $2/minicom
+ fi
+ 
+@@ -58,8 +38,6 @@
+ 	echo "Installing $i in $2"
+ 	cp $i $2/$i
+ 	chmod 755 $2/$i
+-	chown root $2/$i
+-	chgrp root $2/$i
+   fi
+ done
+ 
+@@ -68,8 +46,6 @@
+ 	echo "Installing keyserv in $1"
+ 	cp keyserv $1/keyserv
+ 	chmod 755 $1/keyserv
+-	chown root $1/keyserv
+-	chgrp root $1/keyserv
+ fi
+ 
+ echo "Installing manpages in $3"
+@@ -77,31 +53,24 @@
+ do
+ 	cp ../man/$i $3
+ 	chmod 644 $3/$i
+-	chown root $3/$i
+-	chgrp root $3/$i
+ done
+ 
+ if [ ! -f $1/minicom.users ]
+ then
+ 	echo "Installing sample config file minicom.users in $1"
+ 	cp minicom.users $1
+-	chown root $1/minicom.users
+-	chgrp root $1/minicom.users
+ 	chmod 644 $1/minicom.users
+ fi
+ 
+ mkdir -p $4 2>/dev/null
+ 
+-if test -d $4
+-then
+-		echo "Installing script demos, docs, & character tables in $4"
+-		cp ../doc/* $4
+-		cp -r ../demos $4
+-		cp -r ../tables $4
+-		chmod -f 644 $4/* $4/demos/* $4/tables/*
+-		chmod -f a+x $4/demos $4/tables
+-		chown -f root $4/* $4/demos/* $4/tables/*
+-		chgrp -f root $4/* $4/demos/* $4/tables/*
++if test -d $4 ; then
++	echo "Installing script demos, docs, & character tables in $4"
++	cp ../doc/* $4
++	cp -r ../demos $4
++	cp -r ../tables $4
++	chmod -f 644 $4/* $4/demos/* $4/tables/*
++	chmod -f a+x $4/demos $4/tables
+ else
+ 	echo "You don't have a $4 directory - script examples not installed."
+ fi

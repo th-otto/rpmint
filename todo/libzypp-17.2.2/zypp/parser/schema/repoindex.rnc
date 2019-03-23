@@ -1,0 +1,40 @@
+# repoindex.xml RNC schema
+
+start = repoindex-element
+
+repoindex-element =
+  element repoindex {
+    element repo {
+      # Internal repo identifier
+      attribute alias { xsd:string },
+
+      # Human-readable name of the repository
+      attribute name { xsd:string }?,
+
+      # More detailed description of what's inside
+      attribute description { xsd:string }?,
+      (
+        # Path relative to the base url of the service
+        # WARNING 'repo/' is always prepended to this path
+        #         (this is inherited from NU services)
+        attribute path { xsd:string }
+        |
+        # Full URI of the repository (can also be outside of the service base)
+        attribute url { xsd:anyURI }
+      ),
+      # unique identifier of the target distribution (distroname-version-arch)
+      # if not specified, all the repositories will be added by the client
+      attribute distro_target { xsd:string }?,
+
+      # An optional repository type. Will be determined automatically if not
+      # specified.
+      attribute type { xsd:string }?,
+
+      # Repository priority. Starts from 1 (the highest); the higher number,
+      # the lowe priority. 
+      attribute priority { xsd:integer }?,
+
+      # legacy attribute, currently not used
+      attribute pub { xsd:boolean }? 
+    }
+  }

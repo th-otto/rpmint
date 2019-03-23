@@ -1,0 +1,80 @@
+--- mailx-8.1.1/def.h.mint	Wed Sep  8 20:49:57 1999
++++ mailx-8.1.1/def.h	Wed Sep  8 21:03:59 1999
+@@ -277,3 +277,12 @@
+ 	(void)fflush(stream); 						\
+ 	(void)ftruncate(fileno(stream), (off_t)ftell(stream));		\
+ }
++
++#ifdef __MINT__
++# define sig_t __Sigfunc
++
++/* Sigh, there's still no EISIR.  We unconditionally define that
++   to ENOENT (like the kernel does) so that this will produce an
++   error as soon as there is EISDIR.  */
++#define EISDIR ENOENT
++#endif
+--- mailx-8.1.1/fio.c.mint	Wed Sep  8 20:55:11 1999
++++ mailx-8.1.1/fio.c	Wed Sep  8 21:02:43 1999
+@@ -47,10 +47,29 @@
+ #include <sys/wait.h>
+ 
+ #include <unistd.h>
++#ifdef __MINT__
++# ifdef _PATH_MAILDIR
++#  undef _PATH_MAILDIR
++# endif
++# ifdef _PATH_SENDMAIL
++#  undef _PATH_SENDMAIL
++# endif
++#endif
+ #include <paths.h>
+ #include <errno.h>
+ #include "extern.h"
+ 
++#ifdef __MINT__
++# ifdef _PATH_MAILDIR
++#  undef _PATH_MAILDIR
++# endif
++# ifdef _PATH_SENDMAIL
++#  undef _PATH_SENDMAIL
++# endif
++# define _PATH_MAILDIR "/var/mail"
++# define _PATH_SENDMAIL "/usr/sbin/sendmail"
++#endif
++
+ /*
+  * Mail -- a mail program
+  *
+@@ -294,6 +313,7 @@
+ 
+ 	if (stat(name, &sb) < 0)
+ 		return(-1);
++
+ 	if (!S_ISREG(sb.st_mode)) {
+ 		errno = EISDIR;
+ 		return(-1);
+--- mailx-8.1.1/quit.c.mint	Wed Sep  8 21:10:09 1999
++++ mailx-8.1.1/quit.c	Wed Sep  8 22:03:35 1999
+@@ -46,6 +46,10 @@
+ #include <fcntl.h>
+ #include "extern.h"
+ 
++#ifdef __MINT__
++# include <sys/file.h>  /* For LOCK_EX.  */
++#endif
++
+ /*
+  * Rcv -- receive mail rationally.
+  *
+@@ -109,7 +113,11 @@
+ 	 * a message.
+ 	 */
+ 
++#ifdef __MINT__
++	fbuf = Fopen(mailname, "a+");
++#else
+ 	fbuf = Fopen(mailname, "r");
++#endif
+ 	if (fbuf == NULL)
+ 		goto newmail;
+ 	if (flock(fileno(fbuf), LOCK_EX) == -1) {

@@ -1,0 +1,23 @@
+--- polipo.h.orig	Sun Aug  8 19:38:56 2010
++++ polipo.h	Sun Aug  8 19:43:18 2010
+@@ -44,7 +44,9 @@
+ #include <sys/stat.h>
+ #include <dirent.h>
+ #ifndef MINGW
++#ifndef __MINT__
+ #include <sys/mman.h>
++#endif
+ #include <sys/socket.h>
+ #include <netinet/in.h>
+ #include <netinet/tcp.h>
+@@ -112,6 +114,10 @@
+ #ifdef __CYGWIN__
+ #define HAVE_SETENV
+ #define HAVE_ASPRINTF
++#endif
++
++#ifdef __MINT__
++#define HAVE_TM_GMTOFF
+ #endif
+ 
+ #ifndef O_BINARY

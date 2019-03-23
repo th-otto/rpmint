@@ -1,0 +1,347 @@
+diff -urN gcc-2.95.2-orig/libio/config/mint.mt gcc-2.95.2/libio/config/mint.mt
+--- gcc-2.95.2-orig/libio/config/mint.mt	Thu Jan  1 01:00:00 1970
++++ gcc-2.95.2/libio/config/mint.mt	Wed Apr  5 01:29:30 2000
+@@ -0,0 +1,10 @@
++
++G_CONFIG_ARGS = HAVE_PRINTF_FP=0 HAVE_LONG_DOUBLE_IO=0
++
++# STDIO_OBJECTS=
++
++# We have the rest in /usr/include.
++#USER_INCLUDES=PlotFile.h SFile.h builtinbuf.h editbuf.h fstream.h \
++#	indstream.h iomanip.h iostream.h istream.h ostream.h \
++#	parsestream.h pfstream.h procbuf.h stdiostream.h stream.h \
++#	streambuf.h strfile.h strstream.h
+diff -urN gcc-2.95.2-orig/libio/configure.in gcc-2.95.2/libio/configure.in
+--- gcc-2.95.2-orig/libio/configure.in	Tue Jun 29 04:31:46 1999
++++ gcc-2.95.2/libio/configure.in	Mon Apr  3 03:47:34 2000
+@@ -50,6 +50,7 @@
+ 
+ case "${target}" in
+   *-hpux*)       frags=hpux.mt ;;
++  *-mint*)       frags=mint.mt ;;
+   alpha*-*-linux-gnulibc1)
+ 		 frags="linux.mt linuxaxp1.mt mtsafe.mt" ;;
+   powerpc*-*-linux-gnulibc1)
+diff -urN gcc-2.95.2-orig/libio/gen-params gcc-2.95.2/libio/gen-params
+--- gcc-2.95.2-orig/libio/gen-params	Wed Mar 24 00:58:20 1999
++++ gcc-2.95.2/libio/gen-params	Mon Apr  3 03:47:34 2000
+@@ -712,7 +712,7 @@
+ cat >dummy.c <<EOF
+ int main()
+ {
+-    return __printf_fp ();
++    return __p_xx_rintf_fp ();
+ }
+ EOF
+ 
+diff -urN gcc-2.95.2-orig/libio/genops.c gcc-2.95.2/libio/genops.c
+--- gcc-2.95.2-orig/libio/genops.c	Fri Mar  5 01:19:08 1999
++++ gcc-2.95.2/libio/genops.c	Wed Apr  5 01:05:30 2000
+@@ -935,12 +935,6 @@
+ 
+ #endif /* TODO */
+ 
+-#ifdef weak_alias
+-weak_alias (_IO_cleanup, _cleanup)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-void _cleanup () __attribute__ ((weak, alias ("_IO_cleanup")));
+-#endif
+-
+ #ifdef text_set_element
+ text_set_element(__libc_atexit, _cleanup);
+ #endif
+diff -urN gcc-2.95.2-orig/libio/iofclose.c gcc-2.95.2/libio/iofclose.c
+--- gcc-2.95.2-orig/libio/iofclose.c	Fri Mar  5 01:19:08 1999
++++ gcc-2.95.2/libio/iofclose.c	Wed Apr  5 01:05:02 2000
+@@ -52,9 +52,3 @@
+ 
+   return status;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fclose, fclose)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int fclose (_IO_FILE *) __attribute__ ((weak, alias("_IO_fclose")));
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iofdopen.c gcc-2.95.2/libio/iofdopen.c
+--- gcc-2.95.2-orig/libio/iofdopen.c	Sat Sep  6 09:42:54 1997
++++ gcc-2.95.2/libio/iofdopen.c	Wed Apr  5 01:04:56 2000
+@@ -128,7 +128,3 @@
+ 
+   return (_IO_FILE *) &new_f->fp;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fdopen, fdopen)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iofeof.c gcc-2.95.2/libio/iofeof.c
+--- gcc-2.95.2-orig/libio/iofeof.c	Fri Mar  5 01:19:10 1999
++++ gcc-2.95.2/libio/iofeof.c	Wed Apr  5 01:04:40 2000
+@@ -37,9 +37,3 @@
+   _IO_funlockfile (fp);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_feof, feof)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int feof (_IO_FILE *) __attribute__ ((weak, alias("_IO_feof")));
+-#endif
+diff -urN gcc-2.95.2-orig/libio/ioferror.c gcc-2.95.2/libio/ioferror.c
+--- gcc-2.95.2-orig/libio/ioferror.c	Fri Mar  5 01:19:10 1999
++++ gcc-2.95.2/libio/ioferror.c	Wed Apr  5 01:04:24 2000
+@@ -37,9 +37,3 @@
+   _IO_funlockfile (fp);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_ferror, ferror)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int ferror (_IO_FILE *) __attribute__ ((weak, alias("_IO_ferror")));
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iofflush.c gcc-2.95.2/libio/iofflush.c
+--- gcc-2.95.2-orig/libio/iofflush.c	Sat Sep  6 09:42:58 1997
++++ gcc-2.95.2/libio/iofflush.c	Wed Apr  5 01:04:14 2000
+@@ -43,7 +43,3 @@
+       return result;
+     }
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fflush, fflush)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iofgetpos.c gcc-2.95.2/libio/iofgetpos.c
+--- gcc-2.95.2-orig/libio/iofgetpos.c	Sat Sep  6 09:43:00 1997
++++ gcc-2.95.2/libio/iofgetpos.c	Wed Apr  5 01:04:02 2000
+@@ -49,7 +49,3 @@
+   *posp = pos;
+   return 0;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fgetpos, fgetpos)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iofgets.c gcc-2.95.2/libio/iofgets.c
+--- gcc-2.95.2-orig/libio/iofgets.c	Sat Sep  6 09:43:00 1997
++++ gcc-2.95.2/libio/iofgets.c	Wed Apr  5 01:02:02 2000
+@@ -50,7 +50,3 @@
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fgets, fgets)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iofopen.c gcc-2.95.2/libio/iofopen.c
+--- gcc-2.95.2-orig/libio/iofopen.c	Sat Sep  6 09:43:02 1997
++++ gcc-2.95.2/libio/iofopen.c	Wed Apr  5 01:02:54 2000
+@@ -58,7 +58,3 @@
+   free (new_f);
+   return NULL;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fopen, fopen)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iofputs.c gcc-2.95.2/libio/iofputs.c
+--- gcc-2.95.2-orig/libio/iofputs.c	Sat Sep  6 09:43:06 1997
++++ gcc-2.95.2/libio/iofputs.c	Wed Apr  5 01:03:50 2000
+@@ -43,7 +43,3 @@
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fputs, fputs)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iofread.c gcc-2.95.2/libio/iofread.c
+--- gcc-2.95.2-orig/libio/iofread.c	Sat Sep  6 09:43:08 1997
++++ gcc-2.95.2/libio/iofread.c	Wed Apr  5 01:02:44 2000
+@@ -43,7 +43,3 @@
+   _IO_cleanup_region_end (1);
+   return bytes_requested == bytes_read ? count : bytes_read / size;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fread, fread)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iofsetpos.c gcc-2.95.2/libio/iofsetpos.c
+--- gcc-2.95.2-orig/libio/iofsetpos.c	Sat Sep  6 09:43:10 1997
++++ gcc-2.95.2/libio/iofsetpos.c	Wed Apr  5 01:03:40 2000
+@@ -50,7 +50,3 @@
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fsetpos, fsetpos)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/ioftell.c gcc-2.95.2/libio/ioftell.c
+--- gcc-2.95.2-orig/libio/ioftell.c	Sat Sep  6 09:43:12 1997
++++ gcc-2.95.2/libio/ioftell.c	Wed Apr  5 00:58:26 2000
+@@ -47,7 +47,3 @@
+     }
+   return _IO_pos_as_off (pos);
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_ftell, ftell)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iofwrite.c gcc-2.95.2/libio/iofwrite.c
+--- gcc-2.95.2-orig/libio/iofwrite.c	Sat Sep  6 09:43:12 1997
++++ gcc-2.95.2/libio/iofwrite.c	Wed Apr  5 01:02:34 2000
+@@ -48,7 +48,3 @@
+   else
+     return written / size;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fwrite, fwrite)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iogetc.c gcc-2.95.2/libio/iogetc.c
+--- gcc-2.95.2-orig/libio/iogetc.c	Fri Mar  5 01:19:12 1999
++++ gcc-2.95.2/libio/iogetc.c	Wed Apr  5 00:59:04 2000
+@@ -40,11 +40,3 @@
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#undef getc
+-
+-#ifdef weak_alias
+-weak_alias (_IO_getc, getc)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int getc (_IO_FILE *) __attribute__ ((weak, alias("_IO_getc")));
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iogetdelim.c gcc-2.95.2/libio/iogetdelim.c
+--- gcc-2.95.2-orig/libio/iogetdelim.c	Sat Sep  6 09:43:16 1997
++++ gcc-2.95.2/libio/iogetdelim.c	Wed Apr  5 01:02:22 2000
+@@ -118,8 +118,3 @@
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_getdelim, __getdelim)
+-weak_alias (_IO_getdelim, getdelim)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iogets.c gcc-2.95.2/libio/iogets.c
+--- gcc-2.95.2-orig/libio/iogets.c	Sat Sep  6 09:43:20 1997
++++ gcc-2.95.2/libio/iogets.c	Wed Apr  5 01:03:28 2000
+@@ -62,10 +62,6 @@
+   return retval;
+ }
+ 
+-#ifdef weak_alias
+-weak_alias (_IO_gets, gets)
+-#endif
+-
+ #ifdef _LIBC
+ link_warning (gets, "the `gets' function is dangerous and should not be used.")
+ #endif
+diff -urN gcc-2.95.2-orig/libio/iopopen.c gcc-2.95.2/libio/iopopen.c
+--- gcc-2.95.2-orig/libio/iopopen.c	Mon Apr 12 20:27:50 1999
++++ gcc-2.95.2/libio/iopopen.c	Wed Apr  5 01:00:18 2000
+@@ -181,10 +181,6 @@
+   return NULL;
+ }
+ 
+-#ifdef strong_alias
+-strong_alias (_IO_popen, popen);
+-#endif
+-
+ int
+ _IO_proc_close (fp)
+      _IO_FILE *fp;
+diff -urN gcc-2.95.2-orig/libio/ioputc.c gcc-2.95.2/libio/ioputc.c
+--- gcc-2.95.2-orig/libio/ioputc.c	Fri Mar  5 01:19:12 1999
++++ gcc-2.95.2/libio/ioputc.c	Wed Apr  5 01:00:30 2000
+@@ -34,11 +34,3 @@
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#undef putc
+-
+-#ifdef weak_alias
+-weak_alias (_IO_putc, putc)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int putc (int, _IO_FILE *) __attribute__ ((weak, alias("_IO_putc")));
+-#endif
+diff -urN gcc-2.95.2-orig/libio/ioputs.c gcc-2.95.2/libio/ioputs.c
+--- gcc-2.95.2-orig/libio/ioputs.c	Sat Sep  6 09:43:26 1997
++++ gcc-2.95.2/libio/ioputs.c	Wed Apr  5 01:01:42 2000
+@@ -43,7 +43,3 @@
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_puts, puts)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iosetbuffer.c gcc-2.95.2/libio/iosetbuffer.c
+--- gcc-2.95.2-orig/libio/iosetbuffer.c	Sat Sep  6 09:43:30 1997
++++ gcc-2.95.2/libio/iosetbuffer.c	Wed Apr  5 01:01:12 2000
+@@ -40,7 +40,3 @@
+   (void) _IO_SETBUF (fp, buf, size);
+   _IO_cleanup_region_end (1);
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_setbuffer, setbuffer)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iosetvbuf.c gcc-2.95.2/libio/iosetvbuf.c
+--- gcc-2.95.2-orig/libio/iosetvbuf.c	Sat Sep  6 09:43:32 1997
++++ gcc-2.95.2/libio/iosetvbuf.c	Wed Apr  5 01:00:54 2000
+@@ -94,7 +94,3 @@
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_setvbuf, setvbuf)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/ioungetc.c gcc-2.95.2/libio/ioungetc.c
+--- gcc-2.95.2-orig/libio/ioungetc.c	Sat Sep  6 09:43:36 1997
++++ gcc-2.95.2/libio/ioungetc.c	Wed Apr  5 00:59:26 2000
+@@ -40,7 +40,3 @@
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_ungetc, ungetc)
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iovsprintf.c gcc-2.95.2/libio/iovsprintf.c
+--- gcc-2.95.2-orig/libio/iovsprintf.c	Fri Mar  5 01:19:14 1999
++++ gcc-2.95.2/libio/iovsprintf.c	Wed Apr  5 00:58:04 2000
+@@ -51,10 +51,3 @@
+   _IO_cleanup_region_end (1);
+   return ret;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_vsprintf, vsprintf)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int vsprintf (char *, const char *, _IO_va_list)
+-	      __attribute__ ((weak, alias("_IO_vsprintf")));
+-#endif
+diff -urN gcc-2.95.2-orig/libio/iovsscanf.c gcc-2.95.2/libio/iovsscanf.c
+--- gcc-2.95.2-orig/libio/iovsscanf.c	Fri Mar  5 01:19:14 1999
++++ gcc-2.95.2/libio/iovsscanf.c	Wed Apr  5 00:57:40 2000
+@@ -47,13 +47,3 @@
+   _IO_cleanup_region_end (1);
+   return ret;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_vsscanf, __vsscanf)
+-weak_alias (_IO_vsscanf, vsscanf)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int __vsscanf (const char *, const char *, _IO_va_list)
+-	    __attribute__ ((weak, alias("_IO_vsscanf")));
+-int vsscanf (const char *, const char *, _IO_va_list)
+-	    __attribute__ ((weak, alias("_IO_vsscanf")));
+-#endif

@@ -1,0 +1,58 @@
+--- Makefile.orig	Fri Jun 18 00:27:18 2010
++++ Makefile	Fri Jun 18 00:26:54 2010
+@@ -1,6 +1,6 @@
+-PREFIX = /usr/local
++PREFIX = /usr
+ BINDIR = $(PREFIX)/bin
+-MANDIR = $(PREFIX)/man
++MANDIR = $(PREFIX)/share/man
+ INFODIR = $(PREFIX)/info
+ LOCAL_ROOT = /usr/share/polipo/www
+ DISK_CACHE_ROOT = /var/cache/polipo
+@@ -13,7 +13,7 @@
+ 
+ # CC = gcc
+ # CDEBUGFLAGS = -Os -g -Wall -std=gnu99
+-CDEBUGFLAGS = -Os -g -Wall
++# CDEBUGFLAGS = -Os -g -Wall
+ # CDEBUGFLAGS = -Os -Wall
+ # CDEBUGFLAGS = -g -Wall
+ 
+@@ -61,9 +61,9 @@
+ #  -DNO_REDIRECTOR to compile out the Squid-style redirector code
+ #  -DNO_SYSLOG to compile out logging to syslog
+ 
+-DEFINES = $(FILE_DEFINES) $(PLATFORM_DEFINES)
++DEFINES = $(FILE_DEFINES) $(PLATFORM_DEFINES) -DNO_IPv6
+ 
+-CFLAGS = $(MD5INCLUDES) $(CDEBUGFLAGS) $(DEFINES) $(EXTRA_DEFINES)
++CFLAGS += $(MD5INCLUDES) $(CDEBUGFLAGS) $(DEFINES) $(EXTRA_DEFINES)
+ 
+ SRCS = util.c event.c io.c chunk.c atom.c object.c log.c diskcache.c main.c \
+        config.c local.c http.c client.c server.c auth.c tunnel.c \
+@@ -84,7 +84,7 @@
+ 
+ .PHONY: all install install.binary install.man
+ 
+-all: polipo$(EXE) polipo.info html/index.html localindex.html
++all: polipo$(EXE) localindex.html
+ 
+ install: install.binary install.man
+ 
+@@ -94,16 +94,12 @@
+ 	mkdir -p $(TARGET)$(LOCAL_ROOT)/doc
+ 	rm -f $(TARGET)$(BINDIR)/polipo
+ 	cp -f polipo $(TARGET)$(BINDIR)/
+-	cp -f html/* $(TARGET)$(LOCAL_ROOT)/doc
+ 	cp -f localindex.html $(TARGET)$(LOCAL_ROOT)/index.html
+ 
+ install.man: all
+ 	mkdir -p $(TARGET)$(MANDIR)/man1
+ 	mkdir -p $(TARGET)$(INFODIR)
+ 	cp -f polipo.man $(TARGET)$(MANDIR)/man1/polipo.1
+-	cp polipo.info $(TARGET)$(INFODIR)/
+-	install-info --info-dir=$(TARGET)$(INFODIR) polipo.info
+-
+ 
+ polipo.info: polipo.texi
+ 	makeinfo polipo.texi

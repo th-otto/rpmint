@@ -1,0 +1,36 @@
+--- xchat-1.4.2/src/common/plugin.c.orig	Mon Dec 27 15:34:42 1999
++++ xchat-1.4.2/src/common/plugin.c	Sat Dec 23 22:01:02 2000
+@@ -23,7 +23,6 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <dlfcn.h>
+ #include "xchat.h"
+ #include "util.h"
+ #include "plugin.h"
+@@ -31,6 +30,7 @@
+ #include "fe.h"
+ 
+ #ifdef USE_PLUGIN
++#include <dlfcn.h>
+ 
+ extern void notj_msg (struct session *sess);
+ extern void notc_msg (struct session *sess);
+--- xchat-1.4.2/src/fe-gtk/plugingui.c.orig	Thu Mar 23 07:27:00 2000
++++ xchat-1.4.2/src/fe-gtk/plugingui.c	Sat Dec 23 22:14:16 2000
+@@ -21,7 +21,6 @@
+ #define	PLUGIN_C
+ 
+ #include <stdio.h>
+-#include <dlfcn.h>
+ #include "../common/xchat.h"
+ #include "../common/plugin.h"
+ #include "fe-gtk.h"
+@@ -29,6 +28,7 @@
+ #include "../common/util.h"
+ 
+ #ifdef USE_PLUGIN
++#include <dlfcn.h>
+ 
+ void unhook_all_by_mod (struct module *mod);
+ int module_load (char *name, struct session *sess);

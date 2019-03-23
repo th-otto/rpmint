@@ -1,0 +1,101 @@
+The following patch should allow you to compile XV 3.10a against the latest
+version of Sam Leffler's TIFF Library (libtiff 3.4).  
+
+You do *not* need to apply this patch to compile XV 3.10a against the
+older version of the TIFF library (3.3) that is included in the XV
+3.10a distribution.  This is only necessary if you wish to upgrade to 
+the newer version of the TIFF library.
+
+You can get the latest version of the TIFF library via anonymous ftp on
+ftp.sgi.com, in 'graphics/tiff'.
+
+Thanks to Dan McCoy (mccoy@pixar.com) for supplying this patch!
+
+John Bradley
+-----------------------------------------------------------------------
+
+
+*** xvtiff.c.orig	Fri Jan 13 14:53:34 1995
+--- xvtiff.c	Thu Sep  5 16:55:46 1996
+***************
+*** 301,306 ****
+--- 301,310 ----
+  static	byte **BWmap;
+  static	byte **PALmap;
+  
++ /* XXXX Work around some collisions with the new library. */
++ #define tileContigRoutine _tileContigRoutine
++ #define tileSeparateRoutine _tileSeparateRoutine
++ 
+  typedef void (*tileContigRoutine)   PARM((byte*, u_char*, RGBvalue*, 
+  					  uint32, uint32, int, int));
+  
+***************
+*** 340,346 ****
+  					     uint32, uint32, int, int));
+  static void   put4bitbwtile            PARM((byte *, u_char *, RGBvalue *,
+  					     uint32, uint32, int, int));
+! static void   put16bitbwtile           PARM((byte *, u_char *, RGBvalue *,
+  					     uint32, uint32, int, int));
+  
+  static void   putRGBcontig8bittile     PARM((byte *, u_char *, RGBvalue *,
+--- 344,350 ----
+  					     uint32, uint32, int, int));
+  static void   put4bitbwtile            PARM((byte *, u_char *, RGBvalue *,
+  					     uint32, uint32, int, int));
+! static void   put16bitbwtile           PARM((byte *, u_short *, RGBvalue *,
+  					     uint32, uint32, int, int));
+  
+  static void   putRGBcontig8bittile     PARM((byte *, u_char *, RGBvalue *,
+***************
+*** 1218,1224 ****
+   */
+  static void put16bitbwtile(cp, pp, Map, w, h, fromskew, toskew)
+       byte  *cp;
+!      u_char *pp;
+       RGBvalue *Map;
+       uint32 w, h;
+       int fromskew, toskew;
+--- 1222,1228 ----
+   */
+  static void put16bitbwtile(cp, pp, Map, w, h, fromskew, toskew)
+       byte  *cp;
+!      u_short *pp;
+       RGBvalue *Map;
+       uint32 w, h;
+       int fromskew, toskew;
+***************
+*** 1227,1234 ****
+    
+    while (h-- > 0) {
+      for (x=w; x>0; x--) {
+!       *cp++ = Map[(pp[0] << 8) + pp[1]];
+!       pp += 2;
+      }
+      cp += toskew;
+      pp += fromskew;
+--- 1231,1237 ----
+    
+    while (h-- > 0) {
+      for (x=w; x>0; x--) {
+!       *cp++ = Map[*pp++];
+      }
+      cp += toskew;
+      pp += fromskew;
+***************
+*** 1514,1520 ****
+    case PHOTOMETRIC_MINISWHITE:
+    case PHOTOMETRIC_MINISBLACK:
+      switch (bitspersample) {
+!     case 16: put = put16bitbwtile; break;
+      case 8:  put = putgreytile;    break;
+      case 4:  put = put4bitbwtile;  break;
+      case 2:  put = put2bitbwtile;  break;
+--- 1517,1523 ----
+    case PHOTOMETRIC_MINISWHITE:
+    case PHOTOMETRIC_MINISBLACK:
+      switch (bitspersample) {
+!     case 16: put = (tileContigRoutine) put16bitbwtile; break;
+      case 8:  put = putgreytile;    break;
+      case 4:  put = put4bitbwtile;  break;
+      case 2:  put = put2bitbwtile;  break;

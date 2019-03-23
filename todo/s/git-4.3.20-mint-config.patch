@@ -1,0 +1,89 @@
+--- git-4.3.20/config.guess	Sat Jan 16 17:37:14 1999
++++ git-4.3.20/config.guess.mint	Fri Feb  6 20:25:46 2004
+@@ -189,6 +189,32 @@ EOF
+     aushp:SunOS:*:*)
+ 	echo sparc-auspex-sunos${UNAME_RELEASE}
+ 	exit 0 ;;
++    # The situation for MiNT is a little confusing.  The machine name
++    # can be virtually everything (everything which is not
++    # "atarist" or "atariste" at least should have a processor
++    # > m68000).  The system name ranges from "MiNT" over "FreeMiNT"
++    # to the lowercase version "mint" (or "freemint").  Finally
++    # the system name "TOS" denotes a system which is actually not
++    # MiNT.  But MiNT is downward compatible to TOS, so this should
++    # be no problem.
++    atarist[e]:*MiNT:*:* | atarist[e]:*mint:*:* | atarist[e]:*TOS:*:*)
++        echo m68k-atari-mint${UNAME_RELEASE}
++        exit 0 ;;
++    atari*:*MiNT:*:* | atari*:*mint:*:* | atarist[e]:*TOS:*:*)
++        echo m68k-atari-mint${UNAME_RELEASE}
++        exit 0 ;;
++    *falcon*:*MiNT:*:* | *falcon*:*mint:*:* | *falcon*:*TOS:*:*)
++        echo m68k-atari-mint${UNAME_RELEASE}
++        exit 0 ;;
++    milan*:*MiNT:*:* | milan*:*mint:*:* | *milan*:*TOS:*:*)
++        echo m68k-milan-mint${UNAME_RELEASE}
++        exit 0 ;;
++    hades*:*MiNT:*:* | hades*:*mint:*:* | *hades*:*TOS:*:*)
++        echo m68k-hades-mint${UNAME_RELEASE}
++        exit 0 ;;
++    *:*MiNT:*:* | *:*mint:*:* | *:*TOS:*:*)
++        echo m68k-unknown-mint${UNAME_RELEASE}
++        exit 0 ;;
+     atari*:NetBSD:*:*)
+ 	echo m68k-atari-netbsd${UNAME_RELEASE}
+ 	exit 0 ;;
+--- git-4.3.20/config.sub	Fri Feb  6 20:24:00 2004
++++ git-4.3.20/config.sub.mint	Fri Feb  6 20:29:16 2004
+@@ -143,6 +143,10 @@ case $os in
+ 	-psos*)
+ 		os=-psos
+ 		;;
++        -mint | -mint[0-9]*)
++                basic_machine=m68k-atari
++                os=-mint
++                ;;
+ esac
+ 
+ # Decode aliases for certain CPU-COMPANY combinations.
+@@ -386,6 +390,10 @@ case $basic_machine in
+ 	miniframe)
+ 		basic_machine=m68000-convergent
+ 		;;
++        *mint | -mint[0-9]* | *MiNT | *MiNT[0-9]*)
++                basic_machine=m68k-atari
++                os=-mint
++                ;;
+ 	mips3*-*)
+ 		basic_machine=`echo $basic_machine | sed -e 's/mips3/mips64/'`
+ 		;;
+@@ -744,6 +752,9 @@ case $os in
+ 	-xenix)
+ 		os=-xenix
+ 		;;
++        -*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
++                os=-mint
++                ;;
+ 	-none)
+ 		;;
+ 	*)
+@@ -859,6 +870,9 @@ case $basic_machine in
+ 	*-masscomp)
+ 		os=-rtu
+ 		;;
++        *-atari*)
++                os=-mint
++                ;;
+ 	*)
+ 		os=-none
+ 		;;
+@@ -913,6 +927,9 @@ case $basic_machine in
+ 			-aux*)
+ 				vendor=apple
+ 				;;
++                        -*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
++                                vendor=atari
++                                ;;
+ 		esac
+ 		basic_machine=`echo $basic_machine | sed "s/unknown/$vendor/"`
+ 		;;

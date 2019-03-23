@@ -1,0 +1,95 @@
+--- swatch-2.2/install.pl.redhat	Thu Dec 14 17:17:23 1995
++++ swatch-2.2/install.pl	Tue Mar 16 16:17:01 1999
+@@ -12,32 +12,35 @@
+ 
+ # usage: install.pl [full_path_to_perl]
+ #
+-$ENV{'PATH'} = '/usr/ucb:/usr/bin:/bin:/usr/local/bin' ;
++$ENV{'PATH'} = '/usr/bin:/bin:/usr/local/bin' ;
+ $ENV{'IFS'} = '' if $ENV{'IFS'} ne '' ;
+ 
+ 
++$RPM_BUILD_ROOT = $ENV{'RPM_BUILD_ROOT'} ;
++
+ ##
+ ## Default values
+ ##
+-       $PERL_LIB_DIR = "/usr/local/lib/perl" ;
+-       $PERL_BIN_DIR = "/usr/local/bin" ;
+-     $SWATCH_BIN_DIR = "/usr/local/etc" ;
+-     $SWATCH_MAN_DIR = "/usr/local/man" ;
++       $PERL_LIB_DIR = "/usr/lib/perl5" ;
++       $PERL_BIN_DIR = "/usr/bin" ;
++     $SWATCH_BIN_DIR = "/usr/bin" ;
++     $SWATCH_LIB_DIR = "/usr/lib" ;
++     $SWATCH_MAN_DIR = "/usr/man" ;
+ $SWATCH_PROG_MAN_EXT = "8" ;
+ $SWATCH_CONF_MAN_EXT = "5" ;
+    $SWATCH_DATA_MODE = 444 ;
+  $SWATCH_SCRIPT_MODE = 755 ;
+               $OWNER = "root" ;
+-              $GROUP = "wheel" ;
++              $GROUP = "root" ;
+    $SWATCH_PROG_NAME = "swatch" ;
+     $SWATCH_PROG_MAN = "swatch.prog.man" ;
+     $SWATCH_CONF_MAN = "swatch.conf.man" ;
+   $SWATCH_ACTION_LIB = "sw_actions.pl" ;
+     $SWATCH_HIST_LIB = "sw_history.pl" ;
+ 
+-                $SED = "/usr/bin/sed" ; 
+-               $COPY = "/usr/bin/cp" ;
+-	      $CHMOD = "/usr/bin/chmod" ;
++                $SED = "/bin/sed" ; 
++               $COPY = "/bin/cp" ;
++	      $CHMOD = "/bin/chmod" ;
+ 
+ if ( ! -f $SED ) {
+     $SED = `which sed` ;
+@@ -58,8 +61,12 @@
+ } else {
+     $PERL_BIN_DIR = $ARGV[0] ;
+ }
++$PERL_BIN_DIR = "/usr/bin/perl";
+ $PERL_BIN_DIR = substr($PERL_BIN_DIR, 0, rindex($PERL_BIN_DIR, '/')) ;
+ 
++&do_the_install();
++exit 0;
++
+ $ready = 0 ;
+ while (!$ready) {
+     &get_some_answers() ;
+@@ -147,9 +154,9 @@
+     local($uid, $gid, $mode, $src_file, $dest_file) = @_ ;
+ 
+     print "Installing $src_file..." ;
+-    system("$COPY $src_file $dest_file") ;
+-    chown($uid, $gid, $dest_file) ;
+-    system("$CHMOD $mode $dest_file") ;
++    system("$COPY -v $src_file $RPM_BUILD_ROOT$dest_file") ;
++    chown($uid, $gid, "$RPM_BUILD_ROOT$dest_file") ;
++    system("$CHMOD -v $mode $RPM_BUILD_ROOT$dest_file") ;
+     print "done.\n" ;
+ }
+ 
+--- swatch-2.2/swatch.pl.redhat	Thu Dec 14 15:01:08 1995
++++ swatch-2.2/swatch.pl	Tue Mar 16 16:17:29 1999
+@@ -8,7 +8,7 @@
+ #   [ -P pattern_separator ] [ -A action_separator ]
+ #   [ -I input_record_separator ]
+ #
+-# default: swatch -c ~/.swatchrc -t /var/log/syslog
++# default: swatch -c ~/.swatchrc -t /var/log/messages
+ #
+ # Created on Thu Mar 19 10:10:19 PST 1992 by Todd.Atkins@CAST.Stanford.EDU
+ #
+@@ -44,8 +44,8 @@
+ 
+ # Some defaults
+ $PERL                   = 'PERL_BIN_DIR/perl';
+-$TAIL			= '/usr/ucb/tail -f';
+-$DEF_INPUT		= "$TAIL /var/log/syslog";
++$TAIL			= '/usr/bin/tail -f';
++$DEF_INPUT		= "$TAIL /var/log/messages";
+ $Pipe			= 1;
+ $ConfigFile		= "$ENV{'HOME'}/.swatchrc";
+ $PatternSeparator	= ',';

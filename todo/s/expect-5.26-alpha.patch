@@ -1,0 +1,55 @@
+--- tcltk-8.0.3/expect-5.26/exp_command.c.alpha	Mon Dec  8 21:24:38 1997
++++ tcltk-8.0.3/expect-5.26/exp_command.c	Tue Feb 16 13:08:44 1999
+@@ -890,9 +890,11 @@
+ 			tclReadFile = Tcl_GetChannelFile(chan, TCL_READABLE);
+ 			rfd = (int)Tcl_GetFileInfo(tclReadFile, (int *)0);
+ #else
+-			if (TCL_ERROR == Tcl_GetChannelHandle(chan, TCL_READABLE, (ClientData) &rfd)) {
++			ClientData rfd_data;
++			if (TCL_ERROR == Tcl_GetChannelHandle(chan, TCL_READABLE, &rfd_data)) {
+ 				return TCL_ERROR;
+ 			}
++			rfd = (int)rfd_data;
+ #endif
+ 		}
+ 		if (mode & TCL_WRITABLE) {
+@@ -900,9 +902,11 @@
+ 			tclWriteFile = Tcl_GetChannelFile(chan, TCL_WRITABLE);
+ 			wfd = (int)Tcl_GetFileInfo(tclWriteFile, (int *)0);
+ #else
+-			if (TCL_ERROR == Tcl_GetChannelHandle(chan, TCL_WRITABLE, (ClientData) &wfd)) {
++			ClientData wfd_data;
++			if (TCL_ERROR == Tcl_GetChannelHandle(chan, TCL_WRITABLE, &wfd_data)) {
+ 				return TCL_ERROR;
+ 			}
++			wfd = (int)wfd_data;
+ #endif
+ 		}
+ 
+@@ -2322,6 +2326,8 @@
+ 		int mode;
+ #if TCL_MAJOR_VERSION < 8
+ 		Tcl_File tclWriteFile;
++#else
++		ClientData fd_data;
+ #endif /* TCL_MAJOR_VERSION < 8 */
+ 
+ 		Tcl_DStringTrunc(&dstring,0);
+@@ -2343,13 +2349,14 @@
+ 		}
+ #if TCL_MAJOR_VERSION < 8
+ 		tclWriteFile = Tcl_GetChannelFile(chan, TCL_WRITABLE);
+-		fd = dup((int)Tcl_GetFileInfo(tclWriteFile, (int *)0));
++		fd = (int)Tcl_GetFileInfo(tclWriteFile, (int *)0);
+ #else
+-		if (TCL_ERROR == Tcl_GetChannelHandle(chan, TCL_WRITABLE, (ClientData) &fd)) {
++		if (TCL_ERROR == Tcl_GetChannelHandle(chan, TCL_WRITABLE, &fd_data)) {
+ 			goto error;
+ 		}
+-		fd = dup(fd);
++		fd = (int) fd_data;
+ #endif
++		fd = dup(fd);
+ 	
+ 		if (!(logfile = fdopen(fd,type))) {
+ 			exp_error(interp,"fdopen: %s",Tcl_PosixError(interp));

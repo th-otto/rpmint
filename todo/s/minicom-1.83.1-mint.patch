@@ -1,0 +1,561 @@
+diff -cr minicom-1.83.1.original/src/Makefile minicom-1.83.1.work/src/Makefile
+*** minicom-1.83.1.original/src/Makefile	Tue Apr 25 16:42:32 2000
+--- minicom-1.83.1.work/src/Makefile	Sat Mar  2 17:28:08 2002
+***************
+*** 59,70 ****
+  # DOCDIR	= /usr/local/lib
+  # MANDIR	= /usr/local/man/man1
+  
+! # Take these compilation flags for Linux with libncurses.
+! FLAGS	= -Wall -D_POSIX -D_SYSV -D_SELECT -pipe # -I/usr/include/ncurses
+  PROGS	= minicom runscript ascii-xfr
+  LFLAGS	= -s
+! LIBS	= -lncurses #-lintl
+! CC	= cc
+  
+  # Take these compilation flags for FreeBSD.
+  #FLAGS	= -Wall -D_POSIX -D_BSD43 -D_SELECT -D_DCDFLOW
+--- 59,77 ----
+  # DOCDIR	= /usr/local/lib
+  # MANDIR	= /usr/local/man/man1
+  
+! # Take these compilation flags for MiNT
+! FLAGS	= -O2 -D_POSIX -D_SYSV -D_SELECT -D_MINT
+  PROGS	= minicom runscript ascii-xfr
+  LFLAGS	= -s
+! LIBS	= -lintl -lncurses #-ltermcap 
+! CC = cc
+! 
+! # Take these compilation flags for Linux with libncurses.
+! #FLAGS	= -Wall -D_POSIX -D_SYSV -D_SELECT -pipe # -I/usr/include/ncurses
+! #PROGS	= minicom runscript ascii-xfr
+! #LFLAGS	= -s
+! #LIBS	= -lncurses #-lintl
+! #CC	= cc
+  
+  # Take these compilation flags for FreeBSD.
+  #FLAGS	= -Wall -D_POSIX -D_BSD43 -D_SELECT -D_DCDFLOW
+***************
+*** 145,151 ****
+  #FLAGS	= -D_SYSV		 			   # Generic Sysv
+  #FLAGS	= -D_SYSV -D_POSIX				   # Posix SysV
+  #FLAGS	= -D_HPUX_SOURCE -D_POSIX -D_SYSV -D_SELECT	   # HPUX
+! #FLAGS	= -D_SYSV -D_SVR2 -D_POSIX -D_NO_TERMIOS	   # Sysv R2, eg UnixPC
+  #FLAGS	= -Wall -D_SYSV -DISC -D_SYSV3 -D_POSIX -D_SELECT  # ISC unix
+  #### Only include the "keyserv" program if you don't have select()
+  #PROGS	= minicom runscript ascii-xfr #keyserv
+--- 152,158 ----
+  #FLAGS	= -D_SYSV		 			   # Generic Sysv
+  #FLAGS	= -D_SYSV -D_POSIX				   # Posix SysV
+  #FLAGS	= -D_HPUX_SOURCE -D_POSIX -D_SYSV -D_SELECT	   # HPUX
+! #FLAGS	= -D_SYSV -D_SVR2 -D_POSIX -D_NO_TERMIOS	   # Sysv R2, eg UnixPC 
+  #FLAGS	= -Wall -D_SYSV -DISC -D_SYSV3 -D_POSIX -D_SELECT  # ISC unix
+  #### Only include the "keyserv" program if you don't have select()
+  #PROGS	= minicom runscript ascii-xfr #keyserv
+diff -cr minicom-1.83.1.original/src/config.h minicom-1.83.1.work/src/config.h
+*** minicom-1.83.1.original/src/config.h	Wed Mar 15 17:25:20 2000
+--- minicom-1.83.1.work/src/config.h	Sat Mar  2 12:59:48 2002
+***************
+*** 39,44 ****
+--- 39,51 ----
+  #  define KERMIT "/usr/bin/kermit -l %l -b %b"
+  #endif
+  
++ #if defined (__MINT__)
++ #  define  DFL_PORT "/dev/ttyS1"
++ #  define  DEF_BAUD "57600"
++ #  define  CALLOUT  ""
++ #  define  CALLIN   ""
++ #endif
++ 
+  #if defined (_COHERENT)
+  #  define DFL_PORT "/dev/modem"
+  #  define DEF_BAUD "9600"
+diff -cr minicom-1.83.1.original/src/getsdir.c minicom-1.83.1.work/src/getsdir.c
+*** minicom-1.83.1.original/src/getsdir.c	Fri Feb 18 18:40:00 2000
+--- minicom-1.83.1.work/src/getsdir.c	Fri Mar  1 04:43:42 2002
+***************
+*** 203,209 ****
+  		    /* copy the filename */
+  		    strncpy(datb_cur->data[datb_cur->cnt].fname,
+  			    dp->d_name,
+! 			    MAXNAMLEN);
+  
+  	            /* get information about the directory entry */
+  	            snprintf(fpath, sizeof(fpath), "%s/%s", dirpath, dp->d_name);
+--- 203,209 ----
+  		    /* copy the filename */
+  		    strncpy(datb_cur->data[datb_cur->cnt].fname,
+  			    dp->d_name,
+! 			    NAME_MAX);
+  
+  	            /* get information about the directory entry */
+  	            snprintf(fpath, sizeof(fpath), "%s/%s", dirpath, dp->d_name);
+diff -cr minicom-1.83.1.original/src/getsdir.h minicom-1.83.1.work/src/getsdir.h
+*** minicom-1.83.1.original/src/getsdir.h	Mon Apr  6 16:53:02 1998
+--- minicom-1.83.1.work/src/getsdir.h	Fri Mar  1 04:26:28 2002
+***************
+*** 19,25 ****
+  #include <dirent.h>
+  
+  typedef struct dirEntry {		/* structure of data item */
+!    char fname[MAXNAMLEN + 1];		/* filename + terminating null */
+     time_t time;				/* last modification date */
+     mode_t mode;				/* file mode (dir? etc.) */
+     ushort cflags;			/* caller field for convenience */
+--- 19,25 ----
+  #include <dirent.h>
+  
+  typedef struct dirEntry {		/* structure of data item */
+!    char fname[NAME_MAX + 1];	/* filename + terminating null */
+     time_t time;				/* last modification date */
+     mode_t mode;				/* file mode (dir? etc.) */
+     ushort cflags;			/* caller field for convenience */
+diff -cr minicom-1.83.1.original/src/minicom.c minicom-1.83.1.work/src/minicom.c
+*** minicom-1.83.1.original/src/minicom.c	Sun Apr 16 16:53:44 2000
+--- minicom-1.83.1.work/src/minicom.c	Sat Mar  2 13:38:20 2002
+***************
+*** 1080,1085 ****
+--- 1080,1087 ----
+  			use_status = 1;
+  			break;
+  		case 'C': /* Capturing */
++ 			setegid(real_gid);
++ 			seteuid(real_uid);
+  			capfp = sfopen(optarg, "a");
+  			if (capfp == NULL) {
+  				werror(_("Cannot open capture file"));
+***************
+*** 1087,1092 ****
+--- 1089,1096 ----
+  			}
+  			docap = 1;
+  			vt_set(addlf, -1, capfp, docap, -1, -1, -1, -1);
++ 			setegid(eff_uid);
++ 			setegid(eff_gid);
+  			break;
+  		case 'S': /* start Script */
+  			strncpy(scr_name, optarg, 33);
+diff -cr minicom-1.83.1.original/src/sysdep1.c minicom-1.83.1.work/src/sysdep1.c
+*** minicom-1.83.1.original/src/sysdep1.c	Wed Mar 15 17:45:02 2000
+--- minicom-1.83.1.work/src/sysdep1.c	Fri Mar  1 04:18:24 2002
+***************
+*** 66,72 ****
+  void m_setrts(fd)
+  int fd;
+  {
+! #if defined(TIOCM_RTS) && defined(TIOCMODG)
+    int mcs=0;
+  
+    ioctl(fd, TIOCMODG, &mcs);
+--- 66,72 ----
+  void m_setrts(fd)
+  int fd;
+  {
+! #if defined(TIOCM_RTS) && defined(TIOCMODG) && defined(TIOCMODS)
+    int mcs=0;
+  
+    ioctl(fd, TIOCMODG, &mcs);
+diff -cr minicom-1.83.1.original/src/window.c minicom-1.83.1.work/src/window.c
+*** minicom-1.83.1.original/src/window.c	Thu Mar 16 10:44:24 2000
+--- minicom-1.83.1.work/src/window.c	Fri Mar  1 04:04:34 2002
+***************
+*** 331,337 ****
+   *                 0: only write to memory, not to screen
+   *                 1: write to both screen and memory
+   */
+! static void _write(c, doit, x, y,attr, color)
+  int c, doit;
+  int x, y;
+  char attr, color;
+--- 331,337 ----
+   *                 0: only write to memory, not to screen
+   *                 1: write to both screen and memory
+   */
+! static void _stdwrite(c, doit, x, y,attr, color)
+  int c, doit;
+  int x, y;
+  char attr, color;
+***************
+*** 550,576 ****
+  
+    /* And draw the window */
+    if (border) {
+! 	_write(border == BSINGLE ? S_UL : D_UL, w->direct, x1, y1,
+  					xattr, color);
+  	for(x = x1 + 1; x < x2; x++)
+! 		_write(border == BSINGLE ? S_HOR : D_HOR, w->direct, x, y1,
+  					xattr, color);
+! 	_write(border == BSINGLE ? S_UR : D_UR, w->direct, x2, y1,
+  					xattr, color);
+  	for(y = y1 + 1; y < y2; y++) {
+! 		_write(border == BSINGLE ? S_VER : D_VER, w->direct, x1, y,
+  					xattr, color);
+  		for(x = x1 + 1; x < x2; x++)
+! 			_write(' ', w->direct, x, y, attr, color);
+! 		_write(border == BSINGLE ? S_VER : D_VER, w->direct, x2, y,
+  					xattr, color);
+  	}
+! 	_write(border == BSINGLE ? S_LL : D_LL, w->direct, x1, y2,
+  					xattr, color);
+  	for(x = x1 + 1; x < x2; x++)
+! 		_write(border == BSINGLE ? S_HOR : D_HOR, w->direct,
+  					x, y2, xattr, color);
+! 	_write(border == BSINGLE ? S_LR : D_LR, w->direct, x2, y2,
+  					xattr, color);
+  	if (w->direct) _gotoxy(x1 + 1, y1 + 1);
+    } else
+--- 550,576 ----
+  
+    /* And draw the window */
+    if (border) {
+! 	_stdwrite(border == BSINGLE ? S_UL : D_UL, w->direct, x1, y1,
+  					xattr, color);
+  	for(x = x1 + 1; x < x2; x++)
+! 		_stdwrite(border == BSINGLE ? S_HOR : D_HOR, w->direct, x, y1,
+  					xattr, color);
+! 	_stdwrite(border == BSINGLE ? S_UR : D_UR, w->direct, x2, y1,
+  					xattr, color);
+  	for(y = y1 + 1; y < y2; y++) {
+! 		_stdwrite(border == BSINGLE ? S_VER : D_VER, w->direct, x1, y,
+  					xattr, color);
+  		for(x = x1 + 1; x < x2; x++)
+! 			_stdwrite(' ', w->direct, x, y, attr, color);
+! 		_stdwrite(border == BSINGLE ? S_VER : D_VER, w->direct, x2, y,
+  					xattr, color);
+  	}
+! 	_stdwrite(border == BSINGLE ? S_LL : D_LL, w->direct, x1, y2,
+  					xattr, color);
+  	for(x = x1 + 1; x < x2; x++)
+! 		_stdwrite(border == BSINGLE ? S_HOR : D_HOR, w->direct,
+  					x, y2, xattr, color);
+! 	_stdwrite(border == BSINGLE ? S_LR : D_LR, w->direct, x2, y2,
+  					xattr, color);
+  	if (w->direct) _gotoxy(x1 + 1, y1 + 1);
+    } else
+***************
+*** 615,626 ****
+  		ELM *g;
+  		g = gmap + (y * stdwin->xs);
+  		for(x = 0 ; x < win->x1; x++) {
+! 			_write(g->value, 1, x, y, g->attr, g->color);
+  			g++;
+  		}
+  		/* to here */
+    		for(x = win->x1; x <= win->x2; x++) {
+!   			_write(e->value, 1, x, y, e->attr, e->color);
+    			e++;
+    		}
+   	}
+--- 615,626 ----
+  		ELM *g;
+  		g = gmap + (y * stdwin->xs);
+  		for(x = 0 ; x < win->x1; x++) {
+! 			_stdwrite(g->value, 1, x, y, g->attr, g->color);
+  			g++;
+  		}
+  		/* to here */
+    		for(x = win->x1; x <= win->x2; x++) {
+!   			_stdwrite(e->value, 1, x, y, e->attr, e->color);
+    			e++;
+    		}
+   	}
+***************
+*** 687,693 ****
+    e = gmap;
+    for(y = 0; y <LINES; y++) {
+    	for(x = 0; x < COLS; x++) {
+!   		_write(e->value, -1, x, y, e->attr, e->color);
+    		e++;
+    	}
+    }
+--- 687,693 ----
+    e = gmap;
+    for(y = 0; y <LINES; y++) {
+    	for(x = 0; x < COLS; x++) {
+!   		_stdwrite(e->value, -1, x, y, e->attr, e->color);
+    		e++;
+    	}
+    }
+***************
+*** 727,733 ****
+  
+    for(y = miny; y <= maxy; y++) {
+    	for(x = minx; x <= maxx; x++) {
+!   		_write(e->value, -1, x, y, e->attr, e->color);
+    		e++;
+    	}
+    	e += addcnt;
+--- 727,733 ----
+  
+    for(y = miny; y <= maxy; y++) {
+    	for(x = minx; x <= maxx; x++) {
+!   		_stdwrite(e->value, -1, x, y, e->attr, e->color);
+    		e++;
+    	}
+    	e += addcnt;
+***************
+*** 760,766 ****
+    	doit = 0;
+    }
+    for(x = w->curx + w->x1; x <= w->x2; x++) {
+!   	_write(' ', (w->direct && doit) ? 1 : 0, x, y, w->attr, w->color);
+    }
+    return(doit);	
+  }
+--- 760,766 ----
+    	doit = 0;
+    }
+    for(x = w->curx + w->x1; x <= w->x2; x++) {
+!   	_stdwrite(' ', (w->direct && doit) ? 1 : 0, x, y, w->attr, w->color);
+    }
+    return(doit);	
+  }
+***************
+*** 853,859 ****
+     */
+    if (sflag && win->sy2 == (LINES - 1) && win->sy1 != win->sy2) {
+    	if (dir == S_UP) {
+!   		_write(oldc.value, 1, COLS - 1, LINES - 2,
+    			oldc.attr, oldc.color);
+    	}
+    	sflag = 0;
+--- 853,859 ----
+     */
+    if (sflag && win->sy2 == (LINES - 1) && win->sy1 != win->sy2) {
+    	if (dir == S_UP) {
+!   		_stdwrite(oldc.value, 1, COLS - 1, LINES - 2,
+    			oldc.attr, oldc.color);
+    	}
+    	sflag = 0;
+***************
+*** 914,920 ****
+    		for(y = win->sy1 + 1; y <= win->sy2; y++) {
+    			e = gmap + y * COLS + win->x1;
+    			for(x = win->x1; x <= win->x2; x++) {
+!   			   _write(e->value, win->direct && doit,
+    			   		x, y - 1, e->attr, e->color);
+    			   e++;
+   	 		}
+--- 914,920 ----
+    		for(y = win->sy1 + 1; y <= win->sy2; y++) {
+    			e = gmap + y * COLS + win->x1;
+    			for(x = win->x1; x <= win->x2; x++) {
+!   			   _stdwrite(e->value, win->direct && doit,
+    			   		x, y - 1, e->attr, e->color);
+    			   e++;
+   	 		}
+***************
+*** 926,932 ****
+    		for(y = win->sy2 - 1; y >= win->sy1; y--) {
+    			e = gmap + y * COLS + win->x1;
+    			for(x = win->x1; x <= win->x2; x++) {
+!   			   _write(e->value, win->direct && doit,
+    			   		x, y + 1, e->attr, e->color);
+    			   e++;
+    			}
+--- 926,932 ----
+    		for(y = win->sy2 - 1; y >= win->sy1; y--) {
+    			e = gmap + y * COLS + win->x1;
+    			for(x = win->x1; x <= win->x2; x++) {
+!   			   _stdwrite(e->value, win->direct && doit,
+    			   		x, y + 1, e->attr, e->color);
+    			   e++;
+    			}
+***************
+*** 940,946 ****
+    win->curx = ocurx;
+  
+    if (!doit) for(x = win->x1; x <= win->x2; x++)
+! 		_write(' ', 0, x, win->y1 + win->cury, win->attr, win->color);
+    if (!_intern && win->direct)
+    	_gotoxy(win->x1 + win->curx, win->y1 + win->cury);
+    if (dirflush && !_intern && win->direct) wflush();
+--- 940,946 ----
+    win->curx = ocurx;
+  
+    if (!doit) for(x = win->x1; x <= win->x2; x++)
+! 		_stdwrite(' ', 0, x, win->y1 + win->cury, win->attr, win->color);
+    if (!_intern && win->direct)
+    	_gotoxy(win->x1 + win->curx, win->y1 + win->cury);
+    if (dirflush && !_intern && win->direct) wflush();
+***************
+*** 1015,1021 ****
+  		}
+  		/* Now write the character. */
+  		if (c != '\n') {
+! 			_write(c, win->direct, win->curx + win->x1,
+  				win->cury + win->y1, win->attr, win->color);
+    			if (++win->curx >= win->xs && !win->wrap) {
+  				win->curx--;	
+--- 1015,1021 ----
+  		}
+  		/* Now write the character. */
+  		if (c != '\n') {
+! 			_stdwrite(c, win->direct, win->curx + win->x1,
+  				win->cury + win->y1, win->attr, win->color);
+    			if (++win->curx >= win->xs && !win->wrap) {
+  				win->curx--;	
+***************
+*** 1042,1048 ****
+    /* MARK updated 02/17/94 - Fixes bug, to do all 80 cols, not 79 cols */
+    for(x = w->x1; x <= w->x2; x++)
+    {
+! 	_write(e->value, w->direct, x, y + w->y1, e->attr, e->color);
+  		/*y + w->y1, XA_NORMAL, e->color);*/
+  	e++;
+    }
+--- 1042,1048 ----
+    /* MARK updated 02/17/94 - Fixes bug, to do all 80 cols, not 79 cols */
+    for(x = w->x1; x <= w->x2; x++)
+    {
+! 	_stdwrite(e->value, w->direct, x, y + w->y1, e->attr, e->color);
+  		/*y + w->y1, XA_NORMAL, e->color);*/
+  	e++;
+    }
+***************
+*** 1087,1106 ****
+    /* filipg 8/19/97: this will BOLD-up the line */
+    /* first position */
+    x = w->x1;
+!   _write(e->value, w->direct, x, y + w->y1, XA_NORMAL, e->color);
+  
+    e++;
+  
+    /* everything in the middle will be BLINK */
+    for(x = (w->x1+1); x <= (w->x2-1); x++)
+    {
+! 	_write(e->value, w->direct, x, y + w->y1, XA_BOLD, WHITE);
+  	e++;
+    }
+  
+    /* last position */
+    x = w->x2;
+!   _write(e->value, w->direct, x, y + w->y1, XA_NORMAL, e->color);
+  }
+  
+  /*
+--- 1087,1106 ----
+    /* filipg 8/19/97: this will BOLD-up the line */
+    /* first position */
+    x = w->x1;
+!   _stdwrite(e->value, w->direct, x, y + w->y1, XA_NORMAL, e->color);
+  
+    e++;
+  
+    /* everything in the middle will be BLINK */
+    for(x = (w->x1+1); x <= (w->x2-1); x++)
+    {
+! 	_stdwrite(e->value, w->direct, x, y + w->y1, XA_BOLD, WHITE);
+  	e++;
+    }
+  
+    /* last position */
+    x = w->x2;
+!   _stdwrite(e->value, w->direct, x, y + w->y1, XA_NORMAL, e->color);
+  }
+  
+  /*
+***************
+*** 1186,1195 ****
+    if (pos == TMID) x = w->x1 + (w->xs - strlen(s)) / 2 - 1;
+    if (x < w->x1) x = w->x1;
+  
+!   if (x < w->x2) _write('[', w->direct, x++, w->y1 - 1, w->attr, w->color);
+!   while(*s && x <= w->x2) _write(*s++, w->direct, x++, w->y1 - 1,
+    		w->attr, w->color);
+!   if (x <= w->x2) _write(']', w->direct, x++, w->y1 - 1, w->attr, w->color);
+  
+    if (w->direct) {
+    	_gotoxy(w->x1 + w->curx, w->y1 + w->cury);
+--- 1186,1195 ----
+    if (pos == TMID) x = w->x1 + (w->xs - strlen(s)) / 2 - 1;
+    if (x < w->x1) x = w->x1;
+  
+!   if (x < w->x2) _stdwrite('[', w->direct, x++, w->y1 - 1, w->attr, w->color);
+!   while(*s && x <= w->x2) _stdwrite(*s++, w->direct, x++, w->y1 - 1,
+    		w->attr, w->color);
+!   if (x <= w->x2) _stdwrite(']', w->direct, x++, w->y1 - 1, w->attr, w->color);
+  
+    if (w->direct) {
+    	_gotoxy(w->x1 + w->curx, w->y1 + w->cury);
+***************
+*** 1227,1236 ****
+    		x = '>';
+    	else
+    		x = ' ';
+!   	_write(x, w->direct, w->x1, y, attr, e->color);
+    } else {
+  	for(x = w->x1; x <= w->x2; x++) {
+!   		_write(e->value, w->direct, x, y, attr, e->color);
+    		e++;
+  	}
+    }
+--- 1227,1236 ----
+    		x = '>';
+    	else
+    		x = ' ';
+!   	_stdwrite(x, w->direct, w->x1, y, attr, e->color);
+    } else {
+  	for(x = w->x1; x <= w->x2; x++) {
+!   		_stdwrite(e->value, w->direct, x, y, attr, e->color);
+    		e++;
+  	}
+    }
+***************
+*** 1370,1376 ****
+    
+    n = w->x1 + w->curx;
+    if( n > w->x2) n = w->x2;
+!   for(x = w->x1; x <= n; x++) _write(' ', w->direct, x, y,
+    		w->attr, w->color);
+    if (w->direct) {
+    	_gotoxy(n, y);
+--- 1370,1376 ----
+    
+    n = w->x1 + w->curx;
+    if( n > w->x2) n = w->x2;
+!   for(x = w->x1; x <= n; x++) _stdwrite(' ', w->direct, x, y,
+    		w->attr, w->color);
+    if (w->direct) {
+    	_gotoxy(n, y);
+***************
+*** 1585,1591 ****
+    /* Write buffer to screen */
+    e = buf;
+    for(++x; x <= w->x2; x++) {
+!   	_write(e->value, doit && w->direct, x, y, e->attr, e->color);
+    	e++;
+    }
+    w->direct = odir;
+--- 1585,1591 ----
+    /* Write buffer to screen */
+    e = buf;
+    for(++x; x <= w->x2; x++) {
+!   	_stdwrite(e->value, doit && w->direct, x, y, e->attr, e->color);
+    	e++;
+    }
+    w->direct = odir;
+***************
+*** 1625,1634 ****
+    e = gmap + y * COLS + x + 1;
+    
+    for(; x < w->x2; x++) {
+!   	_write(e->value, doit && w->direct, x, y, e->attr, e->color);
+    	e++;
+    }
+!   _write(' ', doit && w->direct, x, y, w->attr, w->color);
+    wlocate(w, w->curx, w->cury);
+  }
+  
+--- 1625,1634 ----
+    e = gmap + y * COLS + x + 1;
+    
+    for(; x < w->x2; x++) {
+!   	_stdwrite(e->value, doit && w->direct, x, y, e->attr, e->color);
+    	e++;
+    }
+!   _stdwrite(' ', doit && w->direct, x, y, w->attr, w->color);
+    wlocate(w, w->curx, w->cury);
+  }
+  

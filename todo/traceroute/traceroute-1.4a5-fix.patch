@@ -1,0 +1,80 @@
+--- traceroute-1.4a5/configure.in.fix	Fri Jun 13 05:31:44 1997
++++ traceroute-1.4a5/configure.in	Fri Jan 22 10:07:04 1999
+@@ -40,7 +40,7 @@
+ 	;;
+ 
+ linux*)
+-	V_INCLS="$V_INCLS -Ilinux-include"
++	V_INCLS="$V_INCLS -Ilinux-include -DHAVE_IFF_LOOPBACK"
+ 	;;
+ 
+ osf3*)
+--- traceroute-1.4a5/configure.fix	Fri Jun 13 05:31:47 1997
++++ traceroute-1.4a5/configure	Fri Jan 22 10:21:00 1999
+@@ -752,7 +752,7 @@
+   # We found a bogon in the path, so make sure we never use it.
+   set dummy $ac_cv_prog_CC
+   shift
+-  if test $# -gt 0; then
++  if test $# -gt 0 ; then
+     # We chose a different compiler from the bogus one.
+     # However, it has the same basename, so the bogon will be chosen
+     # first if we set CC to just the basename; use the full file name.
+@@ -879,6 +879,9 @@
+ 			    sed -n -e '$s/.* //' -e '$s/\..*//p'`
+ fi
+ 
++		# XXX hack for Red Hat linux
++		    ac_cv_lbl_gcc_vers=2
++
+ 		    echo "$ac_t""$ac_cv_lbl_gcc_vers" 1>&6
+ 		    if test $ac_cv_lbl_gcc_vers -gt 1 ; then
+ 			    V_CCOPT="-O2"
+@@ -1671,7 +1674,7 @@
+ 	;;
+ 
+ linux*)
+-	V_INCLS="$V_INCLS -Ilinux-include"
++	V_INCLS="$V_INCLS -Ilinux-include -DHAVE_IFF_LOOPBACK"
+ 	;;
+ 
+ osf3*)
+@@ -2094,7 +2097,7 @@
+ ac_more_lines=:
+ ac_sed_cmds=""
+ while $ac_more_lines; do
+-  if test $ac_beg -gt 1; then
++  if test $ac_beg -gt 1 ; then
+     sed "1,${ac_beg}d; ${ac_end}q" conftest.subs > conftest.s$ac_file
+   else
+     sed "${ac_end}q" conftest.subs > conftest.s$ac_file
+--- traceroute-1.4a5/ifaddrlist.c.fix	Tue Apr 22 16:31:14 1997
++++ traceroute-1.4a5/ifaddrlist.c	Fri Jan 22 10:07:05 1999
+@@ -71,10 +71,10 @@
+ 
+ 
+ /* Not all systems have IFF_LOOPBACK */
+-#ifdef IFF_LOOPBACK
++#ifdef HAVE_IFF_LOOPBACK
+ #define ISLOOPBACK(p) ((p)->ifr_flags & IFF_LOOPBACK)
+ #else
+-#define ISLOOPBACK(p) (strcmp((p)->ifr_name, "lo0") == 0)
++#define ISLOOPBACK(p) ((strcmp((p)->ifr_name, "lo0") == 0) || (strcmp((p)->ifr_name, "lo") == 0)) 
+ #endif
+ 
+ #define MAX_IPADDR 32
+--- traceroute-1.4a5/Makefile.in.bad	Fri Jan 14 12:33:35 2000
++++ traceroute-1.4a5/Makefile.in	Fri Jan 14 12:34:12 2000
+@@ -90,10 +90,10 @@
+ 	sed -e 's/.*/char version[] = "&";/' $(srcdir)/VERSION > $@
+ 
+ install: force
+-	$(INSTALL) -m 4555 -o root -g bin traceroute $(DESTDIR)$(BINDEST)
++	$(INSTALL) -m 4755 traceroute $(DESTDIR)$(BINDEST)
+ 
+ install-man: force
+-	$(INSTALL) -m 444 -o bin -g bin traceroute.8 $(DESTDIR)$(MANDEST)/man8
++	$(INSTALL) traceroute.8 $(DESTDIR)$(MANDEST)/man8
+ 
+ lint: $(GENSRC) force
+ 	lint -hbxn $(SRC) | \

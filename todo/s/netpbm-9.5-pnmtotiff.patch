@@ -1,0 +1,103 @@
+--- netpbm-9.5/pnm/pnmtotiff.1.pnmtotiff	Sun Apr  2 17:58:56 2000
++++ netpbm-9.5/pnm/pnmtotiff.1	Mon Jul 17 16:38:29 2000
+@@ -13,6 +13,12 @@
+ .RB [ -msb2lsb | -lsb2msb ]
+ .RB [ -rowsperstrip
+ .IR n ]
++.RB [ -X
++.IR res |
++.B -Y
++.IR res |
++.B -R
++.IR res ]
+ .RI [ pnmfile ]
+ .SH DESCRIPTION
+ Reads a portable anymap as input.
+@@ -81,6 +87,14 @@
+ strip of data in the output file.  By default, the output file has
+ the number of rows per strip set to a value that will ensure each
+ strip is no more than 8 kilobytes long.
++.P
++The
++.BR -X ,
++.BR -Y ,
++and
++.BR -R
++options can be used to specify the X, Y, or both resolutions of the
++input anymap, in pixels per inch.
+ 
+ .SH NOTES
+ There are myriad variations of the TIFF format, and this program generates
+--- netpbm-9.5/pnm/pnmtotiff.c.pnmtotiff	Fri Jun 30 14:23:00 2000
++++ netpbm-9.5/pnm/pnmtotiff.c	Mon Jul 17 16:43:11 2000
+@@ -62,13 +62,14 @@
+     int bytesperrow;
+     unsigned char* buf;
+     unsigned char* tP;
+-    char* usage = "[-none|-packbits|-lzw|-g3|-g4] [-msb2lsb|-lsb2msb] [-2d] [-fill] [-predictor n] [-rowsperstrip n] [pnmfile]";
++    float x_resolution = -1, y_resolution = -1;
++    char* usage = "[-none|-packbits|-lzw|-g3|-g4] [-msb2lsb|-lsb2msb] [-2d] [-fill] [-predictor n] [-rowsperstrip n] [-X res|-Y res|-R res] [pnmfile]";
+ 
+ 
+     pnm_init( &argc, argv );
+ 
+     argn = 1;
+-    compression = COMPRESSION_NONE;
++    compression = COMPRESSION_PACKBITS;
+     g3options = 0;
+     fillorder = FILLORDER_MSB2LSB;
+     predictor = 0;
+@@ -102,7 +103,7 @@
+ 	    if ( predictor != 1 && predictor != 2 )
+ 		pm_usage( usage );
+ 	    }
+-	else if ( pm_keymatch( argv[argn], "-rowsperstrip", 2 ) )
++       else if ( pm_keymatch( argv[argn], "-rowsperstrip", 3 ) )
+ 	    {
+ 	    ++argn;
+ 	    if ( argn == argc ||
+@@ -111,6 +112,31 @@
+ 	    if ( rowsperstrip < 1 )
+ 		pm_usage( usage );
+ 	    }
++       else if ( pm_keymatch( argv[argn], "-X", 2 ) )
++           {
++           ++argn;
++           if ( argn == argc || sscanf( argv[argn], "%f", &x_resolution) != 1 )
++               pm_usage( usage );
++           if ( x_resolution < 1 )
++               pm_usage( usage );
++           }
++       else if ( pm_keymatch( argv[argn], "-Y", 2 ) )
++           {
++           ++argn;
++           if ( argn == argc || sscanf( argv[argn], "%f", &y_resolution) != 1 )
++               pm_usage( usage );
++           if ( y_resolution < 1 )
++               pm_usage( usage );
++           }
++       else if ( pm_keymatch( argv[argn], "-R", 2 ) )
++           {
++           ++argn;
++           if ( argn == argc || sscanf( argv[argn], "%f", &x_resolution) != 1 )
++               pm_usage( usage );
++           if ( x_resolution < 1 )
++               pm_usage( usage );
++           y_resolution = x_resolution;
++           }
+ 	else
+ 	    pm_usage( usage );
+ 	++argn;
+@@ -252,6 +278,12 @@
+     TIFFSetField( tif, TIFFTAG_ROWSPERSTRIP, rowsperstrip );
+     /* TIFFSetField( tif, TIFFTAG_STRIPBYTECOUNTS, rows / rowsperstrip ); */
+     TIFFSetField( tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG );
++    if ( x_resolution > 0 )
++       TIFFSetField( tif, TIFFTAG_XRESOLUTION, x_resolution );
++    if ( y_resolution > 0 )
++       TIFFSetField( tif, TIFFTAG_YRESOLUTION, y_resolution );
++    if ( x_resolution > 0 || y_resolution > 0 )
++       TIFFSetField( tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH );
+ 
+     if ( chv == (colorhist_vector) 0 )
+ 	cht = (colorhash_table) 0;

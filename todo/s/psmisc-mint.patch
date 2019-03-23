@@ -1,0 +1,142 @@
+--- psmisc/killall.c.mint	Wed May  6 15:56:48 1998
++++ psmisc/killall.c	Thu Nov 15 14:19:22 2001
+@@ -16,8 +16,13 @@
+ #include "comm.h"
+ #include "signals.h"
+ 
+-
+-#define PROC_BASE "/proc"
++#ifdef __MINT__
++#define PROC_BASE  "/kern"
++int __bsd_getpgrp (int pid);
++pid_t getpgid (pid_t pid) { return __bsd_getpgrp (pid); }
++#else
++#define PROC_BASE  "/proc"
++#endif
+ #define MAX_NAMES (sizeof(unsigned long)*8)
+ 
+ 
+@@ -112,10 +117,17 @@
+ 	}
+     }
+     for (i = 0; i < pids; i++) {
++#ifdef __MINT__
++	sprintf(path,PROC_BASE "/%d/status",pid_table[i]);
++	if (!(file = fopen(path,"r"))) continue;
++	empty = 0;
++	okay = fscanf(file,"Name: %s",comm) == 1;
++#else
+ 	sprintf(path,PROC_BASE "/%d/stat",pid_table[i]);
+ 	if (!(file = fopen(path,"r"))) continue;
+ 	empty = 0;
+ 	okay = fscanf(file,"%*d (%[^)]",comm) == 1;
++#endif
+ 	(void) fclose(file);
+ 	if (!okay) continue;
+ 	got_long = 0;
+--- psmisc/pstree.c.mint	Sat May  1 21:40:56 1999
++++ psmisc/pstree.c	Thu Nov 15 14:48:30 2001
+@@ -24,7 +24,11 @@
+ #ifndef MAX_DEPTH
+ #define MAX_DEPTH    100
+ #endif
+-#define PROC_BASE    "/proc"
++#ifdef __MINT__
++#define PROC_BASE  "/kern"
++#else
++#define PROC_BASE  "/proc"
++#endif
+ 
+ /* UTF-8 defines by Johan Myreen */
+ #define UTF_V	"\342\224\202\277"		/* Vertical line drawing char */
+@@ -402,8 +406,70 @@
+     empty = 1;
+     while (de = readdir(dir))
+ 	if (pid = atoi(de->d_name)) {
++#ifdef __MINT__
++	    sprintf(path,"%s/%d/status",PROC_BASE,pid);
++	    file = fopen(path,"r");
++	    if (file) {
++	    	int got_name = 0, got_ppid = 0;
++		empty = 0;
++		if (fstat(fileno(file),&st) < 0) {
++		    perror(path);
++		    exit(1);
++		}
++		{
++			char *line = NULL;
++			ssize_t len;
++			size_t len1;
++			
++			len = getline(&line, &len1, file);
++			while (len > 0)
++			{
++				char buf[128]; int v;
++				int check;
++				
++				check = sscanf(line, "Name: %s", buf);
++				if (check) {
++					strcpy(comm, buf);
++					got_name = 1;
++				}
++				
++				check = sscanf(line, "PPid: %i", &v);
++				if (check) {
++					ppid = v;
++					got_ppid = 1;
++				}
++				
++				if (got_name && got_ppid)
++					break;
++				
++				len = getline(&line, &len1, file);
++			}
++		}
++		
++		if (got_name && got_ppid) {
++		    if (!print_args) add_proc(comm,pid,ppid,st.st_uid,NULL,0);
++		    else {
++			sprintf(path,"%s/%d/cmdline",PROC_BASE,pid);
++			if ((fd = open(path,O_RDONLY)) < 0) {
++			    perror(path);
++			    exit(1);
++			}
++			if ((size = read(fd,buffer,(size_t) output_width)) < 0)
++			  {
++			    perror(path);
++			    exit(1);
++			}
++			(void) close(fd);
++			if (size) buffer[size++] = 0;
++			add_proc(comm,pid,ppid,st.st_uid,buffer,size);
++		    }
++		}
++		(void) fclose(file);
++	    }
++#else
+ 	    sprintf(path,"%s/%d/stat",PROC_BASE,pid);
+-	    if (file = fopen(path,"r")) {
++	    file = fopen(path,"r");
++	    if (file) {
+ 		empty = 0;
+ 		if (fstat(fileno(file),&st) < 0) {
+ 		    perror(path);
+@@ -430,6 +496,7 @@
+ 		}
+ 		(void) fclose(file);
+ 	    }
++#endif
+ 	}
+     (void) closedir(dir);
+     if (print_args) free(buffer);
+--- psmisc/Makefile.mint	Mon Oct 25 20:01:32 1999
++++ psmisc/Makefile	Thu Nov 15 13:33:12 2001
+@@ -5,7 +5,7 @@
+   # -Wcast-align -Wconversion -g
+ LDFLAGS=#-s -N #-Xlinker -qmagic
+ REAL_CPP=cc -E
+-PROGS=killall pstree fuser
++PROGS=killall pstree
+ EBINDIR=/bin		# essential binaries
+ BINDIR=/usr/bin		# not so essential ones
+ MANDIR=/usr/man/man1	# all man pages

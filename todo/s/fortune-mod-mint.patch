@@ -1,0 +1,235 @@
+diff -ur fortune-mod-9708-orig/fortune/fortune.c fortune-mod-9708/fortune/fortune.c
+--- fortune-mod-9708-orig/fortune/fortune.c	Thu Aug 28 19:43:31 1997
++++ fortune-mod-9708/fortune/fortune.c	Fri Jun 25 01:34:33 1999
+@@ -69,6 +69,21 @@
+  *  + The -s and -l options can now be combined wit the -m option
+  */
+ 
++/* Changes Copyleft (C) 1999 Guido Flohr.
++ *
++ *    The changes in this file may be freely redistributed, modified or
++ *    included in other software, as long as both the above copyright
++ *    notice and these conditions appear intact.
++ */
++
++/* Modified June 1999 Guido Flohr <gufl0000@stud.uni-sb.de>. 
++ *
++ * o Adaptions for MiNT: open may fail for directories.
++ * o Don't waste file handles. If you keep all files in the fortunes
++ *   directory open you may easily run out of handles (if your OS has
++ *   this restriction).
++ */
++ 
+ #if 0				/* comment out the stuff here, and get rid of silly warnings */
+ #ifndef lint
+ static char copyright[] =
+@@ -272,6 +287,7 @@
+     {
+ 	fprintf(stderr, "%*s", lev * 4, "");
+ 	if (list->percent == NO_PROB)
++	{
+ 	    if (!Equal_probs)
+ /* This, with some changes elsewhere, gives proper percentages for every case
+  * fprintf(stderr, "___%%"); */
+@@ -281,6 +297,7 @@
+ 		fprintf(stderr, "%5.2f%%", 100.0 / Num_files);
+ 	    else
+ 		fprintf(stderr, "%5.2f%%", 100.0 / Num_kids);
++	}
+ 	else
+ 	    fprintf(stderr, "%5.2f%%", 1.0 * list->percent);
+ 	fprintf(stderr, " %s", STR(list->name));
+@@ -487,7 +504,11 @@
+ 	     FILEDESC ** head, FILEDESC ** tail, FILEDESC * parent)
+ {
+     register FILEDESC *fp;
++#ifdef __MINT__
++    register int fd = -1;
++#else
+     register int fd;
++#endif
+     register char *path;
+     register bool was_malloc;
+     register bool isdir;
+@@ -513,10 +534,16 @@
+     }
+ 
+     DPRINTF(1, (stderr, "trying to add file \"%s\"\n", path));
++#ifdef __MINT__
++	/* On MiNT the open call will fail for directories.  */
++    if (!isdir && (fd = open(path, 0)) < 0)
++#else
+     if ((fd = open(path, 0)) < 0)
++#endif
+     {
+ 	found = FALSE;
+ 	if (dir == NULL && (strchr(file,'/') == NULL))
++	{
+ 	    if ( ((sp = strrchr(file,'-')) != NULL) && (strcmp(sp,"-o") == 0) )
+ 	    {
+ 		/* BSD-style '-o' offensive file suffix */
+@@ -532,6 +559,7 @@
+ 		found = add_file(percent, file, OFFDIR, head, tail, parent);
+ 	    else
+ 		found = add_file(percent, file, FORTDIR, head, tail, parent);
++	}
+ 	if (!found && parent == NULL && dir == NULL)
+ 	    perror(path);
+ 	if (was_malloc)
+@@ -579,6 +607,16 @@
+ 	*head = fp;
+     }
+ 
++#ifdef __MINT__
++    if (fp->inf != NULL)
++    {
++        fclose (fp->inf);
++        fp->inf = NULL;
++    }
++    close (fp->fd);
++    fp->fd = -1;
++#endif
++
+     return TRUE;
+ }
+ 
+@@ -593,7 +631,12 @@
+     auto FILEDESC *tailp;
+     auto char *name;
+ 
++#ifdef __MINT__
++    if (fp->fd > 0)
++        (void) close (fp->fd);
++#else
+     close(fp->fd);
++#endif
+     fp->fd = -1;
+     if ((dir = opendir(fp->path)) == NULL)
+     {
+@@ -632,6 +675,7 @@
+     register char *sp;
+ 
+     if (file_cnt == 0)
++    {
+ 	if (All_forts)
+ 	    return (add_file(NO_PROB, FORTDIR, NULL, &File_list,
+ 			     &File_tail, NULL)
+@@ -643,6 +687,7 @@
+ 	else
+ 	    return add_file(NO_PROB, FORTDIR, NULL, &File_list,
+ 			    &File_tail, NULL);
++    }
+     for (i = 0; i < file_cnt; i++)
+     {
+ 	percent = NO_PROB;
+@@ -846,6 +891,7 @@
+     Spec_prob = percent;	/* this is for -f when % is specified on cmd line */
+     percent = 100 - percent;
+     if (Equal_probs)
++    {
+ 	if (num_noprob != 0)
+ 	{
+ 	    if (num_noprob > 1)
+@@ -868,6 +914,7 @@
+ 			", %d%% distributed over remaining fortunes\n",
+ 			percent));
+ 	}
++    }
+     DPRINTF(1, (stderr, "\n"));
+ 
+ #ifdef DEBUG
+@@ -1100,6 +1147,10 @@
+     read(fp->datfd, Seekpts, sizeof Seekpts);
+     Seekpts[0] = ntohl(Seekpts[0]);
+     Seekpts[1] = ntohl(Seekpts[1]);
++#ifdef __MINT__
++    close (fp->datfd);
++    fp->datfd = -1;
++#endif
+ }
+ 
+ /*
+@@ -1108,6 +1159,15 @@
+  */
+ void open_fp(FILEDESC * fp)
+ {
++#ifdef __MINT__
++    if (fp->inf != NULL)
++      return;
++    if (fp->fd < 0 && (fp->fd = open (fp->path, O_RDONLY)) < 0)
++    {
++        perror(fp->path);
++        exit(1);
++    }
++#endif
+     if (fp->inf == NULL && (fp->inf = fdopen(fp->fd, "r")) == NULL)
+     {
+ 	perror(fp->path);
+@@ -1165,6 +1225,7 @@
+ 	sp = Fortbuf;
+ 	in_file = FALSE;
+ 	while (fgets(sp, Fort_len, fp->inf) != NULL)
++	{
+ 	    if (!STR_ENDSTRING(sp, fp->tbl))
+ 		sp += strlen(sp);
+ 	    else
+@@ -1187,6 +1248,13 @@
+ 		}
+ 		sp = Fortbuf;
+ 	    }
++	}
++#ifdef __MINT__
++      (void) fclose (fp->inf);
++      fp->inf = NULL;
++      (void) close (fp->fd);
++      fp->fd = -1;
++#endif
+     }
+ }
+ 
+@@ -1220,13 +1288,21 @@
+     {
+ 	if (fp->tbl.str_flags & STR_ROTATED)
+ 	    for (p = line; (ch = *p); ++p)
++	    {
+ 		if (isupper(ch))
+ 		    *p = 'A' + (ch - 'A' + 13) % 26;
+ 		else if (islower(ch))
+ 		    *p = 'a' + (ch - 'a' + 13) % 26;
++	    }
+ 	fputs(line, stdout);
+     }
+     fflush(stdout);
++#ifdef __MINT__
++    fclose (fp->inf);
++    fp->inf = NULL;
++    close (fp->fd);
++    fp->fd = -1;
++#endif
+ }
+ 
+ /*
+@@ -1248,6 +1324,12 @@
+ 	while (fgets(line, sizeof line, Fortfile->inf) != NULL &&
+ 	       !STR_ENDSTRING(line, Fortfile->tbl))
+ 	    nchar += strlen(line);
++#ifdef __MINT__
++    fclose (Fortfile->inf);
++    Fortfile->inf = NULL;
++    close (Fortfile->fd);
++    Fortfile->fd = -1;
++#endif
+     }
+     Fort_len = nchar;
+     return nchar;
+diff -ur fortune-mod-9708-orig/util/strfile.c fortune-mod-9708/util/strfile.c
+--- fortune-mod-9708-orig/util/strfile.c	Thu May  1 04:23:40 1997
++++ fortune-mod-9708/util/strfile.c	Thu Jun 24 16:39:43 1999
+@@ -79,6 +79,7 @@
+ #include	<stdio.h>
+ #include	<ctype.h>
+ #include	<string.h>
++#include	<sys/types.h>
+ #include	"strfile.h"
+ 
+ #ifndef MAXPATHLEN

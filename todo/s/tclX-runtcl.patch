@@ -1,0 +1,23 @@
+--- tcltk-8.0.5/expect-5.28/Makefile.in.runtcl	Thu Feb  3 19:26:14 2000
++++ tcltk-8.0.5/expect-5.28/Makefile.in	Thu Feb  3 19:30:40 2000
+@@ -188,7 +188,7 @@
+ AR = ar
+ ARFLAGS = cr
+ 
+-LOCAL_EXPECT=LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH ./expect
++LOCAL_EXPECT=LD_LIBRARY_PATH=.:$(TCL_LIBRARY)/../unix:$$LD_LIBRARY_PATH ./expect
+ 
+ # These definitions are used by the "subdirs_do" target to pass
+ # the compile flags down recursively.
+--- tcltk-8.0.5/tclX8.0.4/unix/runtcl.in.runtcl	Sun Dec  6 22:47:31 1998
++++ tcltk-8.0.5/tclX8.0.4/unix/runtcl.in	Thu Feb  3 19:25:52 2000
+@@ -5,7 +5,7 @@
+ TCLX_LIBRARY=@bldbasedir@/tcl/unix
+ TCL=@bldbasedir@/tcl/unix/tcl
+ export TCL_LIBRARY TCLX_LIBRARY
+-LD_LIBRARY_PATH=@bldbasedir@/tcl/unix:@TCL_BUILD@:${LD_LIBRARY_PATH}
+-SHLIB_PATH=@bldbasedir@/tcl/unix:@TCL_BUILD@:${SHLIB_PATH}
++LD_LIBRARY_PATH=@bldbasedir@/tcl/unix:@TCL_BUILD@/unix:${LD_LIBRARY_PATH}
++SHLIB_PATH=@bldbasedir@/tcl/unix:@TCL_BUILD@/unix:${SHLIB_PATH}
+ export LD_LIBRARY_PATH SHLIB_PATH
+ exec $TCL ${1+"$@"}

@@ -1,0 +1,18 @@
+--- lynx-2.8.3.rel1/WWW/Library/Implementation/HTTP.c.orig	Tue Jun 19 12:51:30 2001
++++ lynx-2.8.3.rel1/WWW/Library/Implementation/HTTP.c	Tue Jun 19 14:06:46 2001
+@@ -1383,6 +1383,7 @@
+ 		    url = connect_url;
+ 		    FREE(line_buffer);
+ 		    FREE(line_kept_clean);
++#ifndef DISABLE_NEWS
+ 		    if (!strncmp(connect_url, "snews", 5)) {
+ 			CTRACE((tfp,
+ 			"      Will attempt handshake and snews connection.\n"));
+@@ -1390,6 +1391,7 @@
+ 						    format_out, sink);
+ 			goto done;
+ 		    }
++#endif
+ 		    did_connect = TRUE;
+ 		    already_retrying = TRUE;
+ 		    eol = 0;

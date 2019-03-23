@@ -1,0 +1,23 @@
+--- tcp_wrappers_7.6/Makefile.mint	Fri Jan 28 18:34:56 2000
++++ tcp_wrappers_7.6/Makefile	Mon Jan 31 19:46:38 2000
+@@ -18,7 +18,7 @@
+ 	@echo
+ 	@echo "	generic (most bsd-ish systems with sys5 compatibility)"
+ 	@echo "	386bsd aix alpha apollo bsdos convex-ultranet dell-gcc dgux dgux543"
+-	@echo "	dynix epix esix freebsd hpux irix4 irix5 irix6 isc iunix"
++	@echo "	dynix epix esix freebsd freemint hpux irix4 irix5 irix6 isc iunix"
+ 	@echo "	linux machten mips(untested) ncrsvr4 netbsd next osf power_unix_211"
+ 	@echo "	ptx-2.x ptx-generic pyramid sco sco-nis sco-od2 sco-os5 sinix sunos4"
+ 	@echo "	sunos40 sunos5 sysv4 tandem ultrix unicos7 unicos8 unixware1 unixware2"
+@@ -144,6 +144,11 @@
+ linux:
+ 	@make REAL_DAEMON_DIR=$(REAL_DAEMON_DIR) STYLE=$(STYLE) \
+ 	LIBS= RANLIB=ranlib ARFLAGS=rv AUX_OBJ= \
++	NETGROUP= TLI= EXTRA_CFLAGS="$(RPM_OPT_FLAGS) -DSYS_ERRLIST_DEFINED -DBROKEN_SO_LINGER" all
++
++freemint:
++	@make REAL_DAEMON_DIR=$(REAL_DAEMON_DIR) STYLE=$(STYLE) \
++	LIBS="-lsocket" RANLIB=ranlib ARFLAGS=rv AUX_OBJ= \
+	NETGROUP= TLI= EXTRA_CFLAGS="$(RPM_OPT_FLAGS) -DSYS_ERRLIST_DEFINED -DBROKEN_SO_LINGER" all
+
+ # This is good for many SYSV+BSD hybrids with NIS, probably also for HP-UX 7.x.

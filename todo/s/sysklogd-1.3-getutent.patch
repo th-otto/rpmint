@@ -1,0 +1,45 @@
+--- sysklogd-1.3/syslogd.c~	Tue Dec 17 14:46:20 1996
++++ sysklogd-1.3/syslogd.c	Tue Dec 17 14:58:40 1996
+@@ -1579,20 +1579,17 @@
+ 	char p[6 + UNAMESZ];
+ 	register int i;
+ 	int ttyf, len;
+-	FILE *uf;
+ 	static int reenter = 0;
+ 	struct utmp ut;
++	struct utmp *uptr;
+ 	char greetings[200];
+ 
+ 	if (reenter++)
+ 		return;
+ 
+ 	/* open the user login file */
+-	if ((uf = fopen(UTMP_FILE, "r")) == NULL) {
+-		logerror(UTMP_FILE);
+-		reenter = 0;
+-		return;
+-	}
++	utmpname(_PATH_UTMP);
++	setutent();
+ 
+ 	/*
+ 	 * Might as well fork instead of using nonblocking I/O
+@@ -1612,7 +1609,8 @@
+ 		len = strlen(greetings);
+ 
+ 		/* scan the user login file */
+-		while (fread((char *) &ut, sizeof(ut), 1, uf) == 1) {
++		while ((uptr = getutent())) {
++			memcpy(&ut, uptr, sizeof(ut));
+ 			/* is this slot used? */
+ 			if (ut.ut_name[0] == '\0')
+ 				continue;
+@@ -1664,7 +1662,7 @@
+ 		exit(0);
+ 	}
+ 	/* close the user login file */
+-	(void) fclose(uf);
++	endutent();
+ 	reenter = 0;
+ }
+ 

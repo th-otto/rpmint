@@ -1,0 +1,10 @@
+--- bsd-games-2.1/cribbage/instr.c.old	Tue Dec 16 17:27:58 1997
++++ bsd-games-2.1/cribbage/instr.c	Wed Jun 17 18:55:19 1998
+@@ -76,6 +76,7 @@
+ 	case -1:
+ 		err(1, "vfork");
+ 	case 0:
++		setegid(getgid());	/* AC */
+ 		if (!(path = getenv("PAGER")))
+ 			path = _PATH_MORE;
+ 		if ((pager = strrchr(path, '/')) != NULL)

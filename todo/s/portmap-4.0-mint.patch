@@ -1,0 +1,10 @@
+--- portmap_4/from_local.c.mint	Wed Sep 26 19:11:20 2001
++++ portmap_4/from_local.c	Wed Sep 26 20:04:38 2001
+@@ -134,6 +134,7 @@
+ 	    if (ioctl(sock, SIOCGIFFLAGS, (char *) &ifreq) < 0) {
+ 		perror("SIOCGIFFLAGS");
+ 	    } else if (ifreq.ifr_flags & IFF_UP) {	/* active interface */
++	        ifreq.ifr_dstaddr.sa_family = AF_INET;
+ 		if (ioctl(sock, SIOCGIFADDR, (char *) &ifreq) < 0) {
+ 		    perror("SIOCGIFADDR");
+ 		} else {

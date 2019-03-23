@@ -1,0 +1,17 @@
+--- vixie-cron-3.0.1/do_command.c.sigchld2	Wed Jun 10 14:46:11 1998
++++ vixie-cron-3.0.1/do_command.c	Wed Jun 10 15:02:02 1998
+@@ -227,6 +227,14 @@
+ 				_exit(OK_EXIT);
+ 			}
+ # endif /*DEBUGGING*/
++#ifdef USE_SIGCHLD
++			/* Our grandparent is watching for our parent's death by
++			 * catching SIGCHLD. Meanwhile, our parent will use wait
++			 * explicitly and so has disabled SIGCHLD. So now it's
++			 * time to reset SIGCHLD handling.
++			 */
++			(void) signal(SIGCHLD, SIG_DFL);
++#endif
+ 			execle(shell, shell, "-c", e->cmd, (char *)0, e->envp);
+ 			fprintf(stderr, "execl: couldn't exec `%s'\n", shell);
+ 			perror("execl");

@@ -1,0 +1,34 @@
+--- netkit-rwall-0.17/configure.orig	Sun Jul 23 07:42:24 2000
++++ netkit-rwall-0.17/configure	Fri Apr  6 16:37:06 2001
+@@ -146,9 +146,6 @@
+ 
+ fi
+ 
+-LDFLAGS=
+-LIBS=
+-
+ rm -f __conftest*
+ 
+ ##################################################
+@@ -207,18 +204,18 @@
+ 
+ EOF
+ if (
+-      $CC $CFLAGS  __conftest.c  -o __conftest || exit 1
++      $CC $CFLAGS  __conftest.c  -o __conftest $LIBS || exit 1
+    ) >/dev/null 2>&1; then
+     echo 'yes'
+ else
+     if (
+-          $CC $CFLAGS -Dsocklen_t=int __conftest.c  -o __conftest || exit 1
++          $CC $CFLAGS -Dsocklen_t=int __conftest.c  -o __conftest $LIBS || exit 1
+        ) >/dev/null 2>&1; then
+         echo 'int'
+         CFLAGS="$CFLAGS -Dsocklen_t=int"
+     else
+         if (
+-              $CC $CFLAGS -Dsocklen_t=size_t __conftest.c  -o __conftest || exit 1
++              $CC $CFLAGS -Dsocklen_t=size_t __conftest.c  -o __conftest $LIBS || exit 1
+            ) >/dev/null 2>&1; then
+             echo 'size_t'
+             CFLAGS="$CFLAGS -Dsocklen_t=size_t"

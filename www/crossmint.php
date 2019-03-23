@@ -1345,6 +1345,8 @@ This notably applies to Perl and Python.
 
 <li>2019/03/21 Package SDL_net added</li>
 
+<li>2019/03/22 Update SDL from upstream</li>
+
 </ul>
 
 <p></p>

@@ -1,0 +1,14 @@
+--- lynx2-8-2/WWW/Library/Implementation/HTTelnet.c.telnet	Tue Mar 30 12:10:37 1999
++++ lynx2-8-2/WWW/Library/Implementation/HTTelnet.c	Wed Aug 25 15:02:39 1999
+@@ -64,6 +64,11 @@
+ 	 *  *cp=0;  / * terminate at any ;,<,>,`,|,",' or space or return
+ 	 *  or tab to prevent security whole
+ 	 */
++	/* don't accept command line args to telnet */
++	/* notting@redhat.com, 8-25-99 */
++	for (; *host && *host =='-' ; host ++) {
++		*host = '\0';
++	}
+ 	for(cp = (strchr(host, '@') ? strchr(host, '@') : host); *cp != '\0';
+ 		cp++)	{
+ 	    if(!isalnum(*cp) && *cp != '_' && *cp != '-' &&

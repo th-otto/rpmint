@@ -1,0 +1,19 @@
+--- tcltk-8.0.5/expect-5.28/example/autopasswd.sopwith	Thu Feb  3 15:30:10 2000
++++ tcltk-8.0.5/expect-5.28/example/autopasswd	Thu Feb  3 15:30:36 2000
+@@ -2,10 +2,16 @@
+ # wrapper to make passwd(1) be non-interactive
+ # username is passed as 1st arg, passwd as 2nd
+ 
++set force_conservative 1
+ set password [lindex $argv 1]
+ spawn passwd [lindex $argv 0]
++sleep .1
+ expect "password:"
++sleep .1
+ send "$password\r"
++sleep .1
+ expect "password:"
++sleep .1
+ send "$password\r"
++sleep .1
+ expect eof

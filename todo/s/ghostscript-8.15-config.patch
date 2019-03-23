@@ -1,0 +1,54 @@
+--- ghostscript-8.15/Makefile.backup
++++ ghostscript-8.15/Makefile
+@@ -56,12 +56,12 @@
+ INSTALL_PROGRAM = $(INSTALL) -m 755
+ INSTALL_DATA = $(INSTALL) -m 644
+ 
+-prefix = /usr/local
++prefix = /usr
+ exec_prefix = $(prefix)
+ bindir = $(exec_prefix)/bin
+ scriptdir = $(bindir)
+ libdir = $(exec_prefix)/lib
+-mandir = $(prefix)/man
++mandir = $(prefix)/share/man
+ man1ext = 1
+ datadir = $(prefix)/share
+ gsdir = $(datadir)/ghostscript
+@@ -65,14 +65,14 @@
+ gsdir = $(datadir)/ghostscript
+ gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
+
+-docdir=$(gsdatadir)/doc
++docdir=$(prefix)/doc/ghostscript-$(GS_DOT_VERSION)
+ exdir=$(gsdatadir)/examples
+ GS_DOCDIR=$(docdir)
+
+ # Define the default directory/ies for the runtime
+ # initialization, resource and font files.  Separate multiple directories with a :.
+
+-GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource:$(gsdir)/fonts
++GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource:$(gsdir)/fonts:/usr/share/fonts/default/Type1
+
+ # Define whether or not searching for initialization files should always
+ # look in the current directory first.  This leads to well-known security
+@@ -251,7 +251,7 @@
+ # Solaris may need -lnsl -lsocket -lposix4.
+ # (Libraries required by individual drivers are handled automatically.)
+ 
+-EXTRALIBS=
++EXTRALIBS=-lsocket
+ 
+ # Define the standard libraries to search at the end of linking.
+ # Most platforms require -lpthread for the POSIX threads library;
+@@ -295,9 +295,9 @@
+ #XLIBS=Xt SM ICE Xext X11
+
+ #XLIBDIRS=-L/usr/local/X/lib
+ XLIBDIRS=-L/usr/X11R6/lib
+ XLIBDIR=
+-XLIBS=Xt Xext X11
++XLIBS=Xt SM ICE Xext X11
+
+ # Define whether this platform has floating point hardware:
+ #	FPU_TYPE=2 means floating point is faster than fixed point.

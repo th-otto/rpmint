@@ -1,0 +1,34 @@
+--- bsd-finger-0.17/configure	Sat Jul 29 20:00:26 2000
++++ bsd-finger-0.17-/configure	Wed Apr  4 14:35:12 2001
+@@ -146,9 +146,6 @@
+ 
+ fi
+ 
+-LDFLAGS=
+-LIBS=
+-
+ rm -f __conftest*
+ 
+ ##################################################
+@@ -167,18 +164,18 @@
+ 
+ EOF
+ if (
+-      $CC $CFLAGS  __conftest.c  -o __conftest || exit 1
++      $CC $CFLAGS  __conftest.c  -o __conftest $LIBS || exit 1
+    ) >/dev/null 2>&1; then
+     echo 'yes'
+ else
+     if (
+-          $CC $CFLAGS -Dsocklen_t=int __conftest.c  -o __conftest || exit 1
++          $CC $CFLAGS -Dsocklen_t=int __conftest.c  -o __conftest $LIBS || exit 1
+        ) >/dev/null 2>&1; then
+         echo 'int'
+         CFLAGS="$CFLAGS -Dsocklen_t=int"
+     else
+         if (
+-              $CC $CFLAGS -Dsocklen_t=size_t __conftest.c  -o __conftest || exit 1
++              $CC $CFLAGS -Dsocklen_t=size_t __conftest.c  -o __conftest $LIBS || exit 1
+            ) >/dev/null 2>&1; then
+             echo 'size_t'
+             CFLAGS="$CFLAGS -Dsocklen_t=size_t"

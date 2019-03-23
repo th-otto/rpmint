@@ -1,0 +1,214 @@
+diff -u -r ping-20010219-orig/ping.8 ping-20010219/ping.8
+--- ping-20010219-orig/ping.8	Tue Sep 25 02:33:30 2001
++++ ping-20010219/ping.8	Tue Sep 25 02:48:28 2001
+@@ -44,7 +44,7 @@
+ .Sh SYNOPSIS
+ .Nm ""
+ .Bk -words
+-.Op Fl adfnoqrvDPQRL
++.Op Fl adfnoqrvDPQR
+ .Ek
+ .Bk -words
+ .Op Fl c Ar count
+@@ -59,9 +59,6 @@
+ .Op Fl i Ar interval
+ .Ek
+ .Bk -words
+-.Op Fl I Ar ifaddr
+-.Ek
+-.Bk -words
+ .Op Fl l Ar preload
+ .Ek
+ .Bk -words
+@@ -155,9 +152,6 @@
+ .Em between sending each packet .
+ The default is to wait for one second between each packet,
+ except when the -f option is used the wait interval is 0.01 seconds.
+-.It Fl I Ar ifaddr
+-Send multicast datagrams on the network interface specified by the
+-interface's hostname or IP address.
+ .It Fl h Ar host
+ is an alternate way of specifying the target host instead of as the
+ last argument.
+@@ -169,9 +163,6 @@
+ sends that many packets as fast as possible before falling into its normal
+ mode of behavior.
+ Only the super-user may use this option.
+-.It Fl L
+-Disable loopback when sending to multicast destinations,
+-so the transmitting host doesn't see the ICMP requests.
+ .It Fl n
+ Numeric output only.
+ No attempt will be made to look up symbolic names for host addresses.
+diff -u -r ping-20010219-orig/ping.c ping-20010219/ping.c
+--- ping-20010219-orig/ping.c	Tue Sep 25 02:33:50 2001
++++ ping-20010219/ping.c	Tue Sep 25 03:03:34 2001
+@@ -60,10 +60,9 @@
+  *	This program has to run SUID to ROOT to access the ICMP socket.
+  */
+ 
++char Version[] = "$NetBSD: ping.c,v 1.59 2001/02/19 22:56:21 cgd Exp $";
++
+ #include <sys/cdefs.h>
+-#ifndef lint
+-__RCSID("$NetBSD: ping.c,v 1.59 2001/02/19 22:56:21 cgd Exp $");
+-#endif
+ 
+ #include <stdio.h>
+ #include <errno.h>
+@@ -121,10 +120,7 @@
+ #define	F_NUMERIC	0x0100		/* do not do gethostbyaddr() calls */
+ #define F_TIMING	0x0200		/* room for a timestamp */
+ #define F_DF		0x0400		/* set IP DF bit */
+-#define F_SOURCE_ADDR	0x0800		/* set source IP address/interface */
+ #define F_ONCE		0x1000		/* exit(0) after receiving 1 reply */
+-#define F_MCAST		0x2000		/* multicast target */
+-#define F_MCAST_NOLOOP	0x4000		/* no multicast loopback */
+ #define F_AUDIBLE	0x8000		/* audible output */
+ #ifdef IPSEC
+ #ifdef IPSEC_POLICY_IPSEC
+@@ -272,7 +268,7 @@
+ #endif /*IPSEC_POLICY_IPSEC*/
+ #endif
+ 	while ((c = getopt(argc, argv,
+-			   "ac:dDfg:h:i:I:l:Lnop:PqQrRs:t:T:vw:" IPSECOPT)) != -1) {
++			   "ac:dDfg:h:i:l:nop:PqQrRs:t:T:vw:" IPSECOPT)) != -1) {
+ #undef IPSECOPT
+ 		switch (c) {
+ 		case 'a':
+@@ -345,9 +341,6 @@
+ 		case 'R':
+ 			pingflags |= F_RECORD_ROUTE;
+ 			break;
+-		case 'L':
+-			pingflags |= F_MCAST_NOLOOP;
+-			break;
+ 		case 't':
+ 			tos = strtoul(optarg, &p, 0);
+ 			if (*p != '\0' ||  tos > 0xFF)
+@@ -359,10 +352,6 @@
+ 				errx(1, "ttl out of range");
+ 			ttl = (u_char)l;    /* cannot check >255 otherwise */
+ 			break;
+-		case 'I':
+-			pingflags |= F_SOURCE_ADDR;
+-			gethost("-I", optarg, &src_addr, 0, 0);
+-			break;
+ 		case 'g':
+ 			pingflags |= F_SOURCE_ROUTE;
+ 			gethost("-g", optarg, &send_addr, 0, 0);
+@@ -429,8 +418,6 @@
+ 		usage();
+ 
+ 	gethost("", argv[hostind], &whereto, hostname, sizeof(hostname));
+-	if (IN_MULTICAST(ntohl(whereto.sin_addr.s_addr)))
+-		pingflags |= F_MCAST;
+ 	if (!(pingflags & F_SOURCE_ROUTE))
+ 		(void) memcpy(&send_addr, &whereto, sizeof(send_addr));
+ 
+@@ -512,31 +499,6 @@
+ 	opack_ip->ip_src = src_addr.sin_addr;
+ 	opack_ip->ip_dst = send_addr.sin_addr;
+ 
+-	if (pingflags & F_MCAST) {
+-		if (pingflags & F_MCAST_NOLOOP) {
+-			u_char loop = 0;
+-			if (setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP,
+-			    (char *) &loop, 1) < 0)
+-				err(1, "Can't disable multicast loopback");
+-		}
+-
+-		if (ttl != 0
+-		    && setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL,
+-		    (char *) &ttl, 1) < 0)
+-			err(1, "Can't set multicast time-to-live");
+-
+-		if ((pingflags & F_SOURCE_ADDR)
+-		    && setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF,
+-				  (char *) &src_addr.sin_addr,
+-				  sizeof(src_addr.sin_addr)) < 0)
+-			err(1, "Can't set multicast source interface");
+-
+-	} else if (pingflags & F_SOURCE_ADDR) {
+-		if (setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF,
+-			       (char *) &src_addr.sin_addr,
+-			       sizeof(src_addr.sin_addr)) < 0)
+-			err(1, "Can't set source interface/address");
+-	}
+ #ifdef IPSEC
+ #ifdef IPSEC_POLICY_IPSEC
+     {
+@@ -1411,42 +1373,11 @@
+ 			(void)printf("Destination Port Unreachable");
+ 			break;
+ 		case ICMP_UNREACH_NEEDFRAG:
+-			(void)printf("frag needed and DF set.  Next MTU=%d",
+-			       ntohs(icp->icmp_nextmtu));
++			(void)printf("frag needed and DF set.");
+ 			break;
+ 		case ICMP_UNREACH_SRCFAIL:
+ 			(void)printf("Source Route Failed");
+ 			break;
+-		case ICMP_UNREACH_NET_UNKNOWN:
+-			(void)printf("Unreachable unknown net");
+-			break;
+-		case ICMP_UNREACH_HOST_UNKNOWN:
+-			(void)printf("Unreachable unknown host");
+-			break;
+-		case ICMP_UNREACH_ISOLATED:
+-			(void)printf("Unreachable host isolated");
+-			break;
+-		case ICMP_UNREACH_NET_PROHIB:
+-			(void)printf("Net prohibited access");
+-			break;
+-		case ICMP_UNREACH_HOST_PROHIB:
+-			(void)printf("Host prohibited access");
+-			break;
+-		case ICMP_UNREACH_TOSNET:
+-			(void)printf("Bad TOS for net");
+-			break;
+-		case ICMP_UNREACH_TOSHOST:
+-			(void)printf("Bad TOS for host");
+-			break;
+-		case 13:
+-			(void)printf("Communication prohibited");
+-			break;
+-		case 14:
+-			(void)printf("Host precedence violation");
+-			break;
+-		case 15:
+-			(void)printf("Precedence cutoff");
+-			break;
+ 		default:
+ 			(void)printf("Bad Destination Unreachable Code: %d",
+ 				     icp->icmp_code);
+@@ -1507,18 +1438,6 @@
+ 		return 0;
+ #endif
+ 
+-	case ICMP_ROUTERADVERT:
+-		if (!ck_pr_icmph(icp, from, cc, 0))
+-			return 0;
+-		(void)printf("Router Discovery Advert");
+-		break;
+-
+-	case ICMP_ROUTERSOLICIT:
+-		if (!ck_pr_icmph(icp, from, cc, 0))
+-			return 0;
+-		(void)printf("Router Discovery Solicit");
+-		break;
+-
+ 	case ICMP_TIMXCEED:
+ 		if (!ck_pr_icmph(icp, from, cc, 1))
+ 			return 0;
+@@ -1821,8 +1740,8 @@
+ #endif /*IPSEC*/
+ 
+ 	(void)fprintf(stderr, "Usage: \n"
+-	    "%s [-dDfLnoPqQrRv] [-c count] [-g gateway] [-h host]"
+-	    " [-i interval] [-I addr]\n"
++	    "%s [-dDfnoPqQrRv] [-c count] [-g gateway] [-h host]"
++	    " [-i interval]\n"
+ 	    "     [-l preload] [-p pattern] [-s size] [-t tos] [-T ttl]"
+ 	    " [-w maxwait] " IPSECOPT "host\n",
+ 	    getprogname());

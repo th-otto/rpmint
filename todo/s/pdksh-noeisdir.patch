@@ -1,0 +1,15 @@
+--- pdksh-5.2.13/exec.c.noeisdir	Mon Oct 27 15:51:27 1997
++++ pdksh-5.2.13/exec.c	Wed Aug 25 20:02:35 1999
+@@ -1101,6 +1101,12 @@
+ 		     && !(statb.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH))))
+ 	{
+ 		ret = -1;
++#ifdef __MINT__
++# ifndef EISDIR
++/* Sigh, without EISDIR we return the wrong ENOENT that users are used to.  */
++#  define EISDIR ENOENT
++# endif
++#endif
+ 		err = S_ISDIR(statb.st_mode) ? EISDIR : EACCES;
+ 	}
+ 	if (err && errnop && !*errnop)

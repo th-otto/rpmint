@@ -1,0 +1,369 @@
+*** photopc-3.05dev4/photoshell	Thu Jan  1 00:00:00 1970
+--- photopc-3.05dev4.patch/photoshell	Fri Dec  1 13:49:24 2000
+***************
+*** 0 ****
+--- 1,363 ----
++ #!/bin/sh
++ #
++ # Little shellscript for the program photopc 3.05
++ # (c) 2000 M.A. Kehr
++ 
++ 
++ #set -x 
++ DEVICE=ttyd 		# serial device where is camera connected to
++ SPEED=115200		# serial communication speed
++ STD_DIR=/tmp		# Standard dir wher downloads are going to
++ OUTPUT=/dev/console	# Where program outputs go
++ 
++ function sp_dev()
++ {
++ 	if [ -z $DEVICE ] || [ -z $SPEED ]
++ 	then
++ 		printf "No speed or device set\n"
++ 	else
++ 		photo_cmd $1 $2 $3 
++ 	fi	
++ }
++ 
++ function photo_cmd()
++ {
++ 	photopc $VERBOSE -s $SPEED -l $DEVICE $1 $2 $3 > $OUTPUT 
++ }
++ 
++ function frames()
++ {
++ 	printf "framenumber(s) (comma-separated|all): "
++ 	read FRAMES
++ 	#printf $FRAMES
++ }
++ 
++ function setmenu()
++ {
++ 
++ echo "*****************************************"
++ echo "*           Shell settings              *"
++ echo "*****************************************"
++ echo ""
++ echo "[0] - set standard download path"
++ echo "[1] - set output device"
++ echo "[2] - set verbose mode"
++ echo "[b] - back"
++ echo ""
++ 
++ printf "Choose: "
++ read SETMENU
++ case $SETMENU in
++ 	0)
++ 	printf "enter standard download path (e.g. /tmp): "
++ 	read STD_DIR
++ 	;;
++ 	1)
++ 	printf "enter output device (e.g. /dev/console): "
++ 	read OUTPUT
++ 	;;
++ 	2)
++ 	printf "Verbose Mode (0|1|2): "
++ 	read VERBOSE
++ 	case $VERBOSE in
++ 	 0) VERBOSE="";;
++ 	 1) VERBOSE="-v";;
++ 	 2) VERBOSE="-vv";;
++ 	esac
++ 	;;
++ 	b)
++ 	break
++ 	;;
++ esac
++ }
++ 
++ function submenu()
++ {
++ 
++ echo "******************************************"
++ echo "*            Camera settings             *"
++ echo "******************************************"
++ echo ""
++ echo "[0] - show camera settings"
++ echo "[1] - set resolution"
++ echo "[2] - set internal camera clock from host"
++ echo "[3] - set shutter speed"
++ echo "[4] - set flash mode"
++ echo "[5] - set camera id string (not on all cameras)"
++ echo "[6] - set autoshut host"
++ echo "[7] - set autoshut field"
++ echo "[8] - set autoshut lcd"
++ echo "[9] - set lcd brightness"
++ echo "[a] - set macro"
++ echo "[b] - set color/BW"
++ echo "[q] - Quit"
++ 
++ 
++ 
++ 
++ printf "Choose: ";
++ read UMENU
++ 
++ case $UMENU in
++ 
++ # Show settings
++ 	0)
++ 	sp_dev query
++ 	;;
++ 
++ # Resolution
++ 	1)
++ 	printf "Resolution (<L>o|<H>i|<E>xt): "
++ 	
++ 	read RES
++ 	case "$RES" in
++ 	 l) RESOL="Lo" ;;
++ 	 h) RESOL="Hi" ;;
++ 	 e) RESOL="Ext";;
++         # [0-9]) RESOL="$RES" ;;
++ 	esac
++ 
++ 	
++ 	
++ 	sp_dev resolution $RESOL
++ 	;;
++ 	
++ # Clock
++ 	2)
++ 	sp_dev clock
++ 	;;
++ 
++ # Shutter speed
++ 	3)
++ 	printf "Shutter speed (microseconds or classic e.g. 1/250): "
++ 	read SSPEED
++ 	sp_dev shutter $SSPEED
++ 	;;
++ 
++ # flash mode
++ 	4)
++ 	printf "Flash mode (<A>uto|<F>orce|<O>ff|Anti<R>edeye|<S>lowsync): "
++ 	read FLASH
++ 	case "$FLASH" in
++          a) FLASH="Auto" ;;
++          f) FLASH="Force" ;;
++          o) FLASH="Off";;
++          r) FLASH="AntiRedeye" ;;
++ 	 s) FLASH="Slowsync" ;;
++         esac
++ 	sp_dev flash $FLASH
++ 	;;
++ 
++ # id
++ 	5)
++ 	printf "Enter ID string: "
++ 	read ID
++ 	
++ 	printf $ID
++ 	sp_dev id $ID
++ 	;;
++ 
++ # autoshut host
++ 	6)
++ 	printf "Enter seconds: "
++ 	read HSEC
++ 	sp_dev autoshut-host $HSEC
++ 	;;
++ 
++ # autoshut field
++ 	7)
++ 	printf "Enter seconds: "
++ 	read FSEC
++ 	sp_dev autoshut-field $FSEC
++ 	;;
++ 
++ # autoshut lcd
++ 	8)
++ 	printf "Enter seconds: "
++ 	read LSEC
++ 	sp_dev lcd-autoshut $LSEC
++ 	;;
++ 
++ # lcd brightness
++ 	9)
++ 	printf "Enter brightness (1-7): "
++ 	read BRIGHT
++ 	sp_dev lcd-brightness $BRIGHT
++ 	;;
++ 
++ # macro
++ 	a)
++ 	printf "Macro (<N>ormal|<M>acro|<I>nfinity): "
++ 	read MACRO
++ 	case "$MACRO" in
++          n) MACRO="Normal" ;;
++          m) MACRO="Macro" ;;
++          i) MACRO="Infinity";;
++         esac
++ 	sp_dev focus $MACRO
++ 	;;
++ # color/BW
++ 	b)
++ 	printf "Color (<O>n|O<f>f): "
++ 	read COLOR
++ 	case "$COLOR" in
++          o) COLOR="On" ;;
++          f) COLOR="Off" ;;
++         esac	
++ 	sp_dev color $COLOR
++ 	;;
++ 
++ # quit
++ 	q)
++ 	#exit 2 
++ 	break
++ #	;;
++ 
++ esac
++ 
++ 
++ 
++ }
++ 
++ function mainmenu()
++ {
++ echo "************************************************************"
++ echo "*         Welcome to photopc Shell 0.1                     *"
++ echo "*           by M.A. Kehr (c) 2000                          *"
++ echo "************************************************************"
++ echo ""
++ echo "              Please, choose an option"
++ echo ""
++ echo "[1] - Communication Speed"
++ echo "[2] - Serial device"
++ echo "[3] - Count frames"
++ echo "[4] - Create short frame list"
++ echo "[5] - Create long frame list"
++ echo "[6] - Protect frame(s)"
++ echo "[7] - Download thumbnails"
++ echo "[8] - Download image(s)"
++ echo "[9] - Erase image(s)"
++ echo "[a] - Erase all images" 
++ echo "[b] - Take picture" 
++ echo "[p] - Take preview"
++ echo "[c] - Camera settings"
++ echo "[s] - Shell settings"
++ echo "[q] - Quit"
++ echo ""
++ 
++ 
++ 
++ 
++ printf "Choose: ";
++ read MENUNUM
++ 
++ 
++ case $MENUNUM in
++ 
++ # Set device
++     1)
++ 	 printf "Speed (e.g 38400): "
++ 	 read SPEED
++ 	;;
++ 
++ # Set Device
++     2)
++ 	 printf "Device (e.g. ttya): "
++ 	 read DEVICE
++     ;;
++ 
++ # Count frames	
++ 	3)
++ 	sp_dev count;
++ 	;;
++ 
++ # Short frame-list
++ 	4)
++ 	sp_dev list;
++ 	;;
++ 
++ # Long frame-list
++ 	5)
++ 	sp_dev llist;
++ 	;;
++ 
++ # protect frame(s)
++ 	6)
++ 	frames
++ 	printf "Protection [<O>n|O<f>f]"
++ 	read PROTECT
++ 	case "$PROTECT" in
++          o) PROTECT="On" ;;
++          f) PROTECT="Off" ;;
++         esac
++ 	sp_dev protect $FRAMES $PROTECT
++ 	;;
++ 
++ # thumbnails
++ 	7)
++ 	frames
++ 	sp_dev thumbnail $FRAMES $STD_DIR
++ 
++ 	;;
++ 
++ # download images
++ 	8)
++ 	frames
++ 	sp_dev image $FRAMES $STD_DIR		
++ 	;;
++ # erase image(s)
++ 	9)
++ 	frames
++ 	sp_dev erase $FRAMES
++ 	;;
++ 
++ # erase all images
++ 	a)
++ 	sp_dev eraseall
++ 	;;
++ 
++ # Snapshot
++ 	b)
++ 	sp_dev snapshot
++ 	;;
++ # Preview
++ 	p)
++ 	sp_dev preview $STD_DIR/preview.jpg
++ 	;;
++ # Camera settings
++ 	c)
++ 	while [ $SMENU!=q ]
++ 	do
++ 		submenu
++ 	done
++ 	;;
++ 
++ # Shell settings
++ 	s)
++ 	while [ $SETMENU!=b ]
++ 	do
++ 		setmenu
++ 	done
++ 	
++ 	;;
++ #Quit
++ 	q)
++ 
++ 
++ 	exit 0
++ 	;;
++ 
++ esac
++ 
++ }
++ 
++ while [ $MENUNUM!=q ]
++ 
++ do
++ 
++ 	mainmenu
++ 	
++ done
++ 
++ exit 0
++ 
+

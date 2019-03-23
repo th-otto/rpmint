@@ -1,0 +1,24 @@
+If you have one of the newer versions of GhostScript which can read PDF 
+files, then there's no reason you can't read PDF files in XV, either.  
+
+All you need is this simple patch to detect PDF files as being
+'PostScript-y'.
+
+--jhb, 4/1/98
+
+
+*** xv.c.orig	Wed Apr  1 01:30:58 1998
+--- xv.c	Wed Apr  1 01:31:52 1998
+***************
+*** 2625,2630 ****
+--- 2625,2634 ----
+  	   strncmp((char *) magicno, "\004%!", (size_t) 3)==0)   rv = RFT_PS;
+  #endif
+  
++ #ifdef GS_PATH
++   else if (strncmp((char *) magicno, "%PDF",   (size_t) 4)==0)   rv = RFT_PS;
++ #endif
++ 
+    return rv;
+  }
+  

@@ -1,0 +1,48 @@
+--- xv-3.10a/tiff/Makefile.ewt	Thu Aug 29 16:42:28 1996
++++ xv-3.10a/tiff/Makefile	Thu Aug 29 16:42:33 1996
+@@ -36,7 +36,7 @@
+ IPATH= -I.
+ 
+ COPTS=	-O
+-CFLAGS=	${COPTS} ${IPATH}
++CFLAGS=	${COPTS} ${IPATH} -D_BSD_SOURCE
+ 
+ INCS=	tiff.h tiffio.h
+ 
+--- xv-3.10a/xv.h.ewt	Thu Aug 29 16:44:24 1996
++++ xv-3.10a/xv.h	Thu Aug 29 16:44:46 1996
+@@ -114,8 +114,8 @@
+ 
+ #ifndef VMS
+ #  include <errno.h>
+-   extern int   errno;             /* SHOULD be in errno.h, but often isn't */
+-#  ifndef __NetBSD__
++#  if !defined(__NetBSD__) && !defined(__GNU_LIBRARY__)
++     extern int   errno;             /* SHOULD be in errno.h, but often isn't */
+      extern char *sys_errlist[];     /* this too... */
+ #  endif
+ #endif
+--- xv-3.10a/Makefile.djb	Thu Oct 16 18:05:17 1997
++++ xv-3.10a/Makefile	Thu Oct 16 18:06:51 1997
+@@ -14,7 +14,7 @@
+ #       -Wuninitialized -Wparentheses
+ 
+ 
+-CCOPTS = -O -L/usr/X11R6/lib
++CCOPTS = -O -L/usr/X11R6/lib -D_BSD_SOURCE
+ 
+ 
+ ### NOTE: Sun running OpenWindows:
+--- xv-3.10a/Makefile.djb	Thu Oct 16 18:33:53 1997
++++ xv-3.10a/Makefile	Thu Oct 16 18:34:07 1997
+@@ -67,9 +67,7 @@
+ ### if, for whatever reason, you're unable to get the PNG library to compile
+ ### on your machine, *COMMENT OUT* the following lines
+ ###
+-ZLIBDIR = /usr/local/src/zlib
+-ZLIBINC = -I$(ZLIBDIR)
+-ZLIBLIB = -L$(ZLIBDIR) -lz
++ZLIBLIB = -lz
+ 
+ 
+ ###

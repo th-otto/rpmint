@@ -1,0 +1,14 @@
+diff -Nrup lzip-1.5/main.cc lzip-1.5-mint/main.cc
+--- lzip-1.5/main.cc	2009-04-12 16:59:52.000000000 -0400
++++ lzip-1.5-mint/main.cc	2009-05-14 18:14:38.000000000 -0400
+@@ -53,7 +53,9 @@
+ #ifndef ULLONG_MAX
+ #define ULLONG_MAX 0xFFFFFFFFFFFFFFFFULL
+ #endif
+-
++#ifdef __MINT__
++#define llabs(n) labs(n)
++#endif
+ 
+ namespace {
+ 

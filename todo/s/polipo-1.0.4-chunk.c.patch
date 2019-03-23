@@ -1,0 +1,43 @@
+--- polipo-1.0.4/chunk.c	2010-06-02 17:20:18.000000000 +0200
++++ polipo-1.0.4-1/chunk.c	2010-06-02 17:21:23.000000000 +0200
+@@ -184,6 +184,24 @@
+ }
+ #else
+ 
++#ifdef __MINT__
++#ifndef MAP_FAILED
++#define MAP_FAILED NULL
++#endif
++#define getpagesize() (64 * 1024)
++static void *
++alloc_arena(size_t size)
++{
++    return malloc(size);
++}
++static int
++free_arena(void *addr, size_t size)
++{
++    free(addr);
++    return 0;
++}
++#endif
++
+ #ifdef MINGW
+ #define MAP_FAILED NULL
+ #define getpagesize() (64 * 1024)
+@@ -202,6 +220,7 @@
+     return rc;
+ }
+ #else
++#ifndef __MINT__
+ #ifndef MAP_FAILED
+ #define MAP_FAILED ((void*)((long int)-1))
+ #endif
+@@ -217,6 +236,7 @@
+     return munmap(addr, size);
+ }
+ #endif
++#endif
+ 
+ /* Memory is organised into a number of chunks of ARENA_CHUNKS chunks
+    each.  Every arena is pointed at by a struct _ChunkArena. */

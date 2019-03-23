@@ -1,0 +1,54 @@
+--- imlib-1.9.8.1/gdk_imlib/colors.c.sopwith	Tue Aug  1 14:34:20 2000
++++ imlib-1.9.8.1/gdk_imlib/colors.c	Tue Aug  1 14:36:41 2000
+@@ -192,6 +192,12 @@
+ 
+   f = fopen(file, "r");
+   if (!f)
++    {
++      char *ctmp = basename (file);
++      if (ctmp) { sprintf (s, "%s/%s", SYSCONFDIR, ctmp);
++      f = open (s, "r"); }
++    }
++  if (!f)
+       return 0;
+ 
+   i = 0;
+--- imlib-1.9.7/gdk_imlib/Makefile.am.sopwith	Thu Feb 24 14:26:59 2000
++++ imlib-1.9.7/gdk_imlib/Makefile.am	Thu Feb 24 14:27:49 2000
+@@ -91,8 +91,8 @@
+ 
+ DEFS = -DDJPEG_PROG=\"@DJPEG_PROG@\"  -DCJPEG_PROG=\"@CJPEG_PROG@\" \
+ 	-DCONVERT_PATH=\"@CONVERT_PATH@\" \
+-	-DNETPBM_PATH=\"@NETPBM_PATH@\" -DSYSTEM_IMRC=\"@sysconfdir@/imrc\" \
+-	-DIMLIB_LIB=\""$(libdir)"\"
++	-DNETPBM_PATH=\"@NETPBM_PATH@\" -DSYSTEM_IMRC=\"$(sysconfdir)/imrc\" \
++	-DIMLIB_LIB=\""$(libdir)"\" -DSYSCONFDIR=\"$(sysconfdir)\"
+ 
+ INCLUDES = -I. -I$(srcdir) -I.. -I$(srcdir)/.. \
+ 	$(GTK_CFLAGS) $(X_CFLAGS) $(GMODULE_FLAGS) 
+--- imlib-1.9.7/Imlib/Makefile.am.sopwith	Thu Feb 24 14:28:05 2000
++++ imlib-1.9.7/Imlib/Makefile.am	Thu Feb 24 14:28:20 2000
+@@ -36,6 +36,7 @@
+ 
+ DEFS = -DDJPEG_PROG=\"@DJPEG_PROG@\"  -DCJPEG_PROG=\"@CJPEG_PROG@\" \
+ 	-DCONVERT_PATH=\"@CONVERT_PATH@\" \
+-	-DNETPBM_PATH=\"@NETPBM_PATH@\" -DSYSTEM_IMRC=\"@sysconfdir@/imrc\"
++	-DNETPBM_PATH=\"@NETPBM_PATH@\" -DSYSTEM_IMRC=\"$(sysconfdir)/imrc\" \
++	-DSYSCONFDIR=\"$(sysconfdir)\"
+ 
+ INCLUDES = -I. -I$(srcdir) -I.. -I$(srcdir)/.. $(X_CFLAGS)
+--- imlib-1.9.7/Imlib/colors.c.sopwith	Thu Feb 24 14:28:50 2000
++++ imlib-1.9.7/Imlib/colors.c	Thu Feb 24 14:33:13 2000
+@@ -164,6 +164,12 @@
+   f = fopen(file, "r");
+   if (!f)
+     {
++      char *ctmp = basename(file);
++      if(ctmp) { sprintf(s, "%s/%s", SYSCONFDIR, ctmp);
++      f = fopen(s, "r"); }
++    }
++  if (!f)
++    {
+       fprintf(stderr, "ImLib ERROR: Cannot find palette file %s\n", file);
+       return 0;
+     }

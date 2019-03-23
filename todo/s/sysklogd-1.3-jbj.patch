@@ -1,0 +1,23 @@
+--- sysklogd-1.3/klogd.c.jbj	Thu Nov 12 16:40:16 1998
++++ sysklogd-1.3/klogd.c	Thu Nov 12 16:44:46 1998
+@@ -180,7 +180,7 @@
+ #endif
+ 
+ #define LOG_BUFFER_SIZE 4096
+-#define LOG_LINE_LENGTH 1024
++#define LOG_LINE_LENGTH 4096
+ 
+ #if defined(FSSTND)
+ static char	*PidFile = _PATH_VARRUN "klogd.pid";
+@@ -543,6 +543,11 @@
+ 	if ( index == 0 )
+ 		memset(line, '\0', sizeof(line));
+ 	
++	if (len >= sizeof(line)) {
++		len = sizeof (line) - 1;
++		*(ptr + len) = '\0';
++	}
++
+ 	while (len) {
+ 		nl = strpbrk(ptr, "\r\n"); /* Find first line terminator */
+ 		if (nl) {

@@ -1,0 +1,20 @@
+--- ImageMagick-5.3.0/coders/wmf.c.orig	Fri Mar 16 02:50:25 2001
++++ ImageMagick-5.3.0/coders/wmf.c	Thu Mar 29 15:45:23 2001
+@@ -1715,7 +1715,7 @@
+           /* Destroy cstruct */
+           LiberateMemory((void**)&MVG_PTR);
+           LiberateMemory((void**)&(cstruct->userdata));
+-          LiberateMemory((void**)&(cstruct->dc));
++          /* LiberateMemory((void**)&(cstruct->dc));  libwmf seems to do it */
+           LiberateMemory((void**)&(cstruct));
+ 
+           /* Destroy other allocations */
+@@ -1750,7 +1750,7 @@
+   /* Destroy cstruct handle */
+   LiberateMemory((void**)&MVG_PTR);
+   LiberateMemory((void**)&(cstruct->userdata));
+-  LiberateMemory((void**)&(cstruct->dc));
++  /* LiberateMemory((void**)&(cstruct->dc)); libwmf seems to do it */
+   LiberateMemory((void**)&(cstruct));
+ 
+   return image;

@@ -1,0 +1,47 @@
+--- xpdf-0.91/Makefile.in.buildroot	Tue Aug 15 07:01:31 2000
++++ xpdf-0.91/Makefile.in	Thu Aug 17 11:20:32 2000
+@@ -9,8 +9,8 @@
+ SHELL = /bin/sh
+ 
+ prefix = @prefix@
+-exec_prefix = @exec_prefix@
+ srcdir = @srcdir@
++mandir = @mandir@
+ 
+ INSTALL = @INSTALL@
+ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -51,20 +51,20 @@
+ dummy:
+ 
+ install: dummy
+-	-mkdir -p @bindir@
+-@X@	$(INSTALL_PROGRAM) xpdf/xpdf$(EXE) @bindir@/xpdf$(EXE)
+-	$(INSTALL_PROGRAM) xpdf/pdftops$(EXE) @bindir@/pdftops$(EXE)
+-	$(INSTALL_PROGRAM) xpdf/pdftotext$(EXE) @bindir@/pdftotext$(EXE)
+-	$(INSTALL_PROGRAM) xpdf/pdfinfo$(EXE) @bindir@/pdfinfo$(EXE)
+-@X@	$(INSTALL_PROGRAM) xpdf/pdftopbm$(EXE) @bindir@/pdftopbm$(EXE)
+-	$(INSTALL_PROGRAM) xpdf/pdfimages$(EXE) @bindir@/pdfimages$(EXE)
+-	-mkdir -p @mandir@/man1
+-@X@	$(INSTALL_DATA) $(srcdir)/doc/xpdf.1 @mandir@/man1/xpdf.1
+-	$(INSTALL_DATA) $(srcdir)/doc/pdftops.1 @mandir@/man1/pdftops.1
+-	$(INSTALL_DATA) $(srcdir)/doc/pdftotext.1 @mandir@/man1/pdftotext.1
+-	$(INSTALL_DATA) $(srcdir)/doc/pdfinfo.1 @mandir@/man1/pdfinfo.1
+-@X@	$(INSTALL_DATA) $(srcdir)/doc/pdftopbm.1 @mandir@/man1/pdftopbm.1
+-	$(INSTALL_DATA) $(srcdir)/doc/pdfimages.1 @mandir@/man1/pdfimages.1
++	-mkdir -p $(bindir)
++@X@	$(INSTALL_PROGRAM) xpdf/xpdf$(EXE) $(bindir)/xpdf$(EXE)
++	$(INSTALL_PROGRAM) xpdf/pdftops$(EXE) $(bindir)/pdftops$(EXE)
++	$(INSTALL_PROGRAM) xpdf/pdftotext$(EXE) $(bindir)/pdftotext$(EXE)
++	$(INSTALL_PROGRAM) xpdf/pdfinfo$(EXE) $(bindir)/pdfinfo$(EXE)
++@X@	$(INSTALL_PROGRAM) xpdf/pdftopbm$(EXE) $(bindir)/pdftopbm$(EXE)
++	$(INSTALL_PROGRAM) xpdf/pdfimages$(EXE) $(bindir)/pdfimages$(EXE)
++	-mkdir -p $(mandir)/man1
++@X@	$(INSTALL_DATA) $(srcdir)/doc/xpdf.1 $(mandir)/man1/xpdf.1
++	$(INSTALL_DATA) $(srcdir)/doc/pdftops.1 $(mandir)/man1/pdftops.1
++	$(INSTALL_DATA) $(srcdir)/doc/pdftotext.1 $(mandir)/man1/pdftotext.1
++	$(INSTALL_DATA) $(srcdir)/doc/pdfinfo.1 $(mandir)/man1/pdfinfo.1
++@X@	$(INSTALL_DATA) $(srcdir)/doc/pdftopbm.1 $(mandir)/man1/pdftopbm.1
++	$(INSTALL_DATA) $(srcdir)/doc/pdfimages.1 $(mandir)/man1/pdfimages.1
+ 
+ clean:
+ 	-cd goo; $(MAKE) clean

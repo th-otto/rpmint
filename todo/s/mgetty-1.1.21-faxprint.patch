@@ -1,0 +1,16 @@
+--- mgetty-1.1.21/frontends/X11/viewfax-2.4/viewfax.c.faxprint	Tue Sep  7 15:24:22 1999
++++ mgetty-1.1.21/frontends/X11/viewfax-2.4/viewfax.c	Tue Sep  7 15:26:28 1999
+@@ -758,6 +758,13 @@
+ 			      0, 0, PaneWidth, PaneHeight);
+ 		    XDefineCursor(Disp, Win, ReadyCursor);
+ 		    break;
++		case XK_Print:
++		   {char cmd[256]; struct pagenode *p = firstpage;
++		    sprintf(cmd, "tiffsplit %s /tmp/viewfax$$; "
++			"tiff2ps /tmp/viewfax$$* | lpr; "
++			"rm -f /tmp/viewfax$$*", thispage->pathname);
++		    system(cmd);}
++		    break;
+ 		case XK_z:
+ 		    if (Event.xkey.state & ShiftMask)
+ 			goto Zoomout;

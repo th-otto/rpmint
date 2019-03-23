@@ -1,0 +1,28 @@
+*** sysklogd-1.3/syslogd.bak	Mon Feb 19 10:24:33 1996
+--- sysklogd-1.3/syslogd.c	Thu Oct 31 23:51:01 1996
+***************
+*** 574,579 ****
+--- 574,584 ----
+  static void allocate_log(void);
+  void sighup_handler();
+  
++ void silent(sig)
++ 	int sig;
++ {
++ 	// Do nothing
++ }
+  
+  int main(argc, argv)
+  	int argc;
+***************
+*** 659,664 ****
+--- 664,672 ----
+  			if (fork())
+  			{
+  				/* We try to wait the end of initialization */
++ 				/* We still trap the signal to avoid exiting */
++ 				/* With a killed signal */
++ 				(void) signal(SIGINT, silent);
+  				sleep(10);
+  				exit(0);
+  			}

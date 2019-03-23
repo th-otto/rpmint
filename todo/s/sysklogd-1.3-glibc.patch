@@ -1,0 +1,775 @@
+--- sysklogd-1.3/klogd.c.noglibc	Tue Jun 17 14:27:49 1997
++++ sysklogd-1.3/klogd.c	Tue Jun 17 14:28:11 1997
+@@ -162,18 +162,21 @@
+ #include <errno.h>
+ #include <sys/fcntl.h>
+ #include <sys/stat.h>
+-#include <linux/time.h>
+ #include <stdarg.h>
+ #include <paths.h>
+ #include "klogd.h"
+ #include "pidfile.h"
+ #include "version.h"
+ 
+-#define __LIBRARY__
+-#include <linux/unistd.h>
+-#ifndef __alpha__
+-# define __NR_ksyslog __NR_syslog
+-_syscall3(int,ksyslog,int, type, char *, buf, int, len);
++#if __GNU_LIBRARY__ - 0 < 6
++# define __LIBRARY__
++# include <linux/unistd.h>
++# define __NR_sys_syslog __NR_klogctl
++  _syscall3(int,klogctl,int, type, char *, buf, int, len);
++#endif /* __GNU_LIBRARY__ < 6 */
++
++#ifndef _PATH_KLOG
++#define _PATH_KLOG    "/proc/kmsg"
+ #endif
+ 
+ #define LOG_BUFFER_SIZE 4096
+@@ -207,7 +210,7 @@
+ 
+ 
+ /* Function prototypes. */
+-extern int ksyslog(int type, char *buf, int len);
++extern int klogctl(int type, char *buf, int len);
+ static void CloseLogSrc(void);
+ extern void restart(int sig);
+ extern void stop_logging(int sig);
+@@ -228,14 +231,14 @@
+ 
+ {
+ 	/* Turn on logging of messages to console. */
+-  	ksyslog(7, NULL, 0);
++  	klogctl(7, NULL, 0);
+   
+         /* Shutdown the log sources. */
+ 	switch ( logsrc )
+ 	{
+ 	    case kernel:
+-		ksyslog(0, 0, 0);
+-		Syslog(LOG_INFO, "Kernel logging (ksyslog) stopped.");
++		klogctl(0, 0, 0);
++		Syslog(LOG_INFO, "Kernel logging (klogctl) stopped.");
+ 		break;
+             case proc:
+ 		close(kmsg);
+@@ -399,7 +402,7 @@
+ 
+ 
+ 	/* Set level of kernel console messaging.. */
+-	if ( (ksyslog(8, NULL, console_log_level) < 0) && \
++	if ( (klogctl(8, NULL, console_log_level) < 0) && \
+ 	     (errno == EINVAL) )
+ 	{
+ 		/*
+@@ -410,7 +413,7 @@
+ 		 */
+ 		Syslog(LOG_WARNING, "Cannot set console log level - disabling "
+ 			      "console output.");
+-		ksyslog(6, NULL, 0);
++		klogctl(6, NULL, 0);
+ 	}
+ 	
+ 
+@@ -422,8 +425,8 @@
+ 	    ((stat(_PATH_KLOG, &sb) < 0) && (errno == ENOENT)) )
+ 	{
+ 	  	/* Initialize kernel logging. */
+-	  	ksyslog(1, NULL, 0);
+-		Syslog(LOG_INFO, "klogd %s-%s, log source = ksyslog "
++	  	klogctl(1, NULL, 0);
++		Syslog(LOG_INFO, "klogd %s-%s, log source = klogctl "
+ 		       "started.", VERSION, PATCHLEVEL);
+ 		return(kernel);
+ 	}
+@@ -432,7 +435,7 @@
+ 	{
+ 		fprintf(stderr, "klogd: Cannot open proc file system, " \
+ 			"%d - %s.\n", errno, strerror(errno));
+-		ksyslog(7, NULL, 0);
++		klogctl(7, NULL, 0);
+ 		exit(1);
+ 	}
+ 
+@@ -591,7 +594,7 @@
+ 	 * messages into this fresh buffer.
+ 	 */
+ 	memset(log_buffer, '\0', sizeof(log_buffer));
+-	if ( (rdcnt = ksyslog(2, log_buffer, sizeof(log_buffer))) < 0 )
++	if ( (rdcnt = klogctl(2, log_buffer, sizeof(log_buffer))) < 0 )
+ 	{
+ 		if ( errno == EINTR )
+ 			return;
+--- sysklogd-1.3/syslogd.c.noglibc	Tue Jun 17 14:27:49 1997
++++ sysklogd-1.3/syslogd.c	Tue Jun 17 14:27:49 1997
+@@ -297,6 +297,7 @@
+ #include <string.h>
+ #include <setjmp.h>
+ #include <stdarg.h>
++#include <time.h>
+ 
+ #include <sys/syslog.h>
+ #include <sys/param.h>
+@@ -458,8 +459,9 @@
+  * in seconds after previous message is logged.  After each flush,
+  * we move to the next interval until we reach the largest.
+  */
+-int	repeatinterval[] = { 30, 60 };	/* # of secs before flush */
+-#define	MAXREPEAT ((sizeof(repeatinterval) / sizeof(repeatinterval[0])) - 1)
++time_t	repeatinterval[] = { 30, 60 };	/* # of secs before flush */
++#define	MAXREPEAT \
++  ((int) ((sizeof(repeatinterval) / sizeof(repeatinterval[0])) - 1))
+ #define	REPEATTIME(f)	((f)->f_time + repeatinterval[(f)->f_repeatcount])
+ #define	BACKOFF(f)	{ if (++(f)->f_repeatcount > MAXREPEAT) \
+ 				 (f)->f_repeatcount = MAXREPEAT; \
+@@ -554,15 +556,17 @@
+ 				   intermediate host. */
+ 
+ extern	int errno, sys_nerr;
++#if __GNU_LIBRARY__ - 0 < 6
+ extern	char *sys_errlist[];
+-extern	char *ctime(), *index();
++extern	char *index();
++#endif
+ 
+ /* Function prototypes. */
+ int main(int argc, char **argv);
+ char **crunch_list(char *list);
+ int usage(void);
+ void untty(void);
+-void printchopped(const char *hname, char *msg, int len, int fd);
++void printchopped(const char *hname, char *msg, size_t len, int fd);
+ void printline(const char *hname, char *msg);
+ void printsys(char *msg);
+ void logmsg(int pri, char *msg, const char *from, int flags);
+@@ -578,7 +582,7 @@
+ void init();
+ void cfline(char *line, register struct filed *f);
+ int decode(char *name, struct code *codetab);
+-static void dprintf(char *, ...);
++static void Dprintf(char *, ...);
+ static void allocate_log(void);
+ void sighup_handler();
+ 
+@@ -589,7 +593,8 @@
+ {
+ 	register int i;
+ 	register char *p;
+-	int len, num_fds;
++	size_t len;
++        int num_fds;
+ 	fd_set unixm, readfds;
+ 
+ 	int	fd;
+@@ -660,7 +665,7 @@
+ 
+ 	if ( !(Debug || NoFork) )
+ 	{
+-		dprintf("Checking pidfile.\n");
++		Dprintf("Checking pidfile.\n");
+ 		if (!check_pid(PidFile))
+ 		{
+ 			quitpid = getpid();
+@@ -691,18 +696,18 @@
+ 	/* tuck my process id away */
+ 	if ( !Debug )
+ 	{
+-		dprintf("Writing pidfile.\n");
++		Dprintf("Writing pidfile.\n");
+ 		if (!check_pid(PidFile))
+ 		{
+ 			if (!write_pid(PidFile))
+ 			{
+-				dprintf("Can't write pid.\n");
++				Dprintf("Can't write pid.\n");
+ 				exit(1);
+ 			}
+ 		}
+ 		else
+ 		{
+-			dprintf("Pidfile (and pid) already exist.\n");
++			Dprintf("Pidfile (and pid) already exist.\n");
+ 			exit(1);
+ 		}
+ 	} /* if ( !Debug ) */
+@@ -764,7 +769,7 @@
+ 	    chmod(LogName, 0666) < 0 || listen(funix, 5) < 0) {
+ 		(void) sprintf(line, "cannot create %s", LogName);
+ 		logerror(line);
+-		dprintf("cannot create %s (%d).\n", LogName, errno);
++		Dprintf("cannot create %s (%d).\n", LogName, errno);
+ #ifndef SYSV
+ 		die(0);
+ #endif
+@@ -798,7 +803,7 @@
+ 				} else {
+ 					inetm = finet;
+ 					InetInuse = 1;
+-					dprintf("listening on syslog UDP port.\n");
++					Dprintf("listening on syslog UDP port.\n");
+ 				}
+ 			}
+ 		}
+@@ -810,7 +815,7 @@
+ 
+ 	/* Create a partial message table for all file descriptors. */
+ 	num_fds = getdtablesize();
+-	dprintf("Allocated parts table for %d file descriptors.\n", num_fds);
++	Dprintf("Allocated parts table for %d file descriptors.\n", num_fds);
+ 	if ( (parts = (char **) malloc(num_fds * sizeof(char *))) == \
+ 	    (char **) 0 )
+ 	{
+@@ -820,11 +825,11 @@
+ 	for(i= 0; i < num_fds; ++i)
+ 	    parts[i] = (char *) 0;
+ 
+-	dprintf("Starting.\n");
++	Dprintf("Starting.\n");
+ 	init();
+ 	if ( Debug )
+ 	{
+-		dprintf("Debugging disabled, SIGUSR1 to turn on debugging.\n");
++		Dprintf("Debugging disabled, SIGUSR1 to turn on debugging.\n");
+ 		debugging_on = 0;
+ 	}
+ 
+@@ -859,54 +864,54 @@
+ 
+ 		if ( debugging_on )
+ 		{
+-			dprintf("Calling select, active file descriptors: ");
++			Dprintf("Calling select, active file descriptors: ");
+ 			for (nfds= 0; nfds < FD_SETSIZE; ++nfds)
+ 				if ( FD_ISSET(nfds, &readfds) )
+-					dprintf("%d ", nfds);
+-			dprintf("\n");
++					Dprintf("%d ", nfds);
++			Dprintf("\n");
+ 		}
+ 		nfds = select(FD_SETSIZE, (fd_set *) &readfds, (fd_set *) NULL,
+ 				  (fd_set *) NULL, (struct timeval *) NULL);
+ 		if ( restart )
+ 		{
+-			dprintf("\nReceived SIGHUP, reloading syslogd.\n");
++			Dprintf("\nReceived SIGHUP, reloading syslogd.\n");
+ 			init();
+ 			restart = 0;
+ 			continue;
+ 		}
+ 		if (nfds == 0) {
+-			dprintf("No select activity.\n");
++			Dprintf("No select activity.\n");
+ 			continue;
+ 		}
+ 		if (nfds < 0) {
+ 			if (errno != EINTR)
+ 				logerror("select");
+-			dprintf("Select interrupted.\n");
++			Dprintf("Select interrupted.\n");
+ 			continue;
+ 		}
+ 
+ 		if ( debugging_on )
+ 		{
+-			dprintf("\nSuccessful select, descriptor count = %d, " \
++			Dprintf("\nSuccessful select, descriptor count = %d, " \
+ 				"Activity on: ", nfds);
+ 			for (nfds= 0; nfds < FD_SETSIZE; ++nfds)
+ 				if ( FD_ISSET(nfds, &readfds) )
+-					dprintf("%d ", nfds);
+-			dprintf(("\n"));
++					Dprintf("%d ", nfds);
++			Dprintf(("\n"));
+ 		}
+ 
+ #ifdef SYSLOG_UNIXAF
+ 		if ( debugging_on )
+ 		{
+-			dprintf("Checking UNIX connections, active: ");
++			Dprintf("Checking UNIX connections, active: ");
+ 			for (nfds= 0; nfds < FD_SETSIZE; ++nfds)
+ 				if ( FD_ISSET(nfds, &unixm) )
+-					dprintf("%d ", nfds);
+-			dprintf("\n");
++					Dprintf("%d ", nfds);
++			Dprintf("\n");
+ 		}
+ 		for (fd= 0; fd < FD_SETSIZE; ++fd)
+ 		  if ( FD_ISSET(fd, &readfds) && FD_ISSET(fd, &unixm) ) {
+-			dprintf("Message from UNIX socket #%d.\n", fd);
++			Dprintf("Message from UNIX socket #%d.\n", fd);
+ 			memset(line, '\0', sizeof(line));
+ 			i = read(fd, line, MAXLINE);
+ 			if (i > 0) {
+@@ -916,7 +921,7 @@
+ 		      			logerror("recvfrom unix");
+ 				}
+ 		        } else {
+-		    		dprintf("Unix socket (%d) closed.\n", fd);
++		    		Dprintf("Unix socket (%d) closed.\n", fd);
+ 				if ( parts[fd] != (char *) 0 )
+ 				{
+ 					logerror("Printing partial message");
+@@ -936,12 +941,12 @@
+ 			if ((fd = accept(funix, (struct sockaddr *) &fromunix,\
+ 					 &len)) >= 0) {
+ 			  	FD_SET(fd, &unixm);
+-				dprintf("New UNIX connect assigned to fd: " \
++				Dprintf("New UNIX connect assigned to fd: " \
+ 					"%d.\n", fd);
+ 				FD_SET(fd, &readfds);
+ 			}
+ 			else {
+-				dprintf("Error accepting UNIX connection: " \
++				Dprintf("Error accepting UNIX connection: " \
+ 					"%d = %s.\n", errno, strerror(errno));
+ 			}
+ 		}
+@@ -954,7 +959,7 @@
+ 			memset(line, '\0', sizeof(line));
+ 			i = recvfrom(finet, line, MAXLINE - 2, 0, \
+ 				     (struct sockaddr *) &frominet, &len);
+-			dprintf("Message from inetd socket: #%d, host: %s\n",
++			Dprintf("Message from inetd socket: #%d, host: %s\n",
+ 				inetm, inet_ntoa(frominet.sin_addr));
+ 			if (i > 0) {
+ 				line[i] = line[i+1] = '\0';
+@@ -971,7 +976,7 @@
+ 				printchopped(from, line, \
+  					     i + 2,  finet);
+ 			} else if (i < 0 && errno != EINTR) {
+-				dprintf("INET socket error: %d = %s.\n", \
++				Dprintf("INET socket error: %d = %s.\n", \
+ 					errno, strerror(errno));
+ 				logerror("recvfrom inet");
+ 				sleep(10);
+@@ -1047,7 +1052,7 @@
+ #if 0
+ 	count=0;
+ 	while (result[count])
+-		dprintf ("#%d: %s\n", count, StripDomains[count++]);
++		Dprintf ("#%d: %s\n", count, StripDomains[count++]);
+ #endif
+ 	return result;
+ }
+@@ -1085,7 +1090,7 @@
+ void printchopped(hname, msg, len, fd)
+ 	const char *hname;
+ 	char *msg;
+-	int len;
++	size_t len;
+ 	int fd;
+ {
+ 	auto int ptlngth;
+@@ -1095,11 +1100,11 @@
+ 	          *end,
+ 		  tmpline[MAXLINE + 1];
+ 
+-	dprintf("Message length: %d, File descriptor: %d.\n", len, fd);
++	Dprintf("Message length: %d, File descriptor: %d.\n", len, fd);
+ 	tmpline[0] = '\0';
+ 	if ( parts[fd] != (char *) 0 )
+ 	{
+-		dprintf("Including part from messages.\n");
++		Dprintf("Including part from messages.\n");
+ 		strcpy(tmpline, parts[fd]);
+ 		free(parts[fd]);
+ 		parts[fd] = (char *) 0;
+@@ -1111,8 +1116,8 @@
+ 		}
+ 		else
+ 		{
+-			dprintf("Previous: %s\n", tmpline);
+-			dprintf("Next: %s\n", msg);
++			Dprintf("Previous: %s\n", tmpline);
++			Dprintf("Next: %s\n", msg);
+ 			strcat(tmpline, msg);
+ 			printline(hname, tmpline);
+ 			if ( (strlen(msg) + 1) == len )
+@@ -1133,7 +1138,7 @@
+ 		else
+ 		{
+ 			strcpy(parts[fd], p);
+-			dprintf("Saving partial msg: %s\n", parts[fd]);
++			Dprintf("Saving partial msg: %s\n", parts[fd]);
+ 			memset(p, '\0', ptlngth);
+ 		}
+ 	}
+@@ -1254,7 +1259,7 @@
+ 	int msglen;
+ 	char *timestamp;
+ 
+-	dprintf("logmsg: pri %o, flags %x, from %s, msg %s\n", pri, flags, from, msg);
++	Dprintf("logmsg: pri %o, flags %x, from %s, msg %s\n", pri, flags, from, msg);
+ 
+ #ifndef SYSV
+ 	omask = sigblock(sigmask(SIGHUP)|sigmask(SIGALRM));
+@@ -1326,7 +1331,7 @@
+ 		    !strcmp(from, f->f_prevhost)) {
+ 			(void) strncpy(f->f_lasttime, timestamp, 15);
+ 			f->f_prevcount++;
+-			dprintf("msg repeated %d times, %ld sec of %d.\n",
++			Dprintf("msg repeated %d times, %ld sec of %d.\n",
+ 			    f->f_prevcount, now - f->f_time,
+ 			    repeatinterval[f->f_repeatcount]);
+ 			/*
+@@ -1378,7 +1383,7 @@
+ 	time_t fwd_suspend;
+ 	struct hostent *hp;
+ 
+-	dprintf("Called fprintlog, ");
++	Dprintf("Called fprintlog, ");
+ 
+ 	v->iov_base = f->f_lasttime;
+ 	v->iov_len = 15;
+@@ -1406,25 +1411,25 @@
+ 	}
+ 	v++;
+ 
+-	dprintf("logging to %s", TypeNames[f->f_type]);
++	Dprintf("logging to %s", TypeNames[f->f_type]);
+ 
+ 	switch (f->f_type) {
+ 	case F_UNUSED:
+ 		f->f_time = now;
+-		dprintf("\n");
++		Dprintf("\n");
+ 		break;
+ 
+ 	case F_FORW_SUSP:
+ 		fwd_suspend = time((time_t *) 0) - f->f_time;
+ 		if ( fwd_suspend >= INET_SUSPEND_TIME ) {
+-			dprintf("\nForwarding suspension over, " \
++			Dprintf("\nForwarding suspension over, " \
+ 				"retrying FORW ");
+ 			f->f_type = F_FORW;
+ 			goto f_forw;
+ 		}
+ 		else {
+-			dprintf(" %s\n", f->f_un.f_forw.f_hname);
+-			dprintf("Forwarding suspension not over, time " \
++			Dprintf(" %s\n", f->f_un.f_forw.f_hname);
++			Dprintf("Forwarding suspension not over, time " \
+ 				"left: %d.\n", INET_SUSPEND_TIME - \
+ 				fwd_suspend);
+ 		}
+@@ -1439,29 +1444,29 @@
+ 	 * is started after syslogd. 
+ 	 */
+ 	case F_FORW_UNKN:
+-		dprintf(" %s\n", f->f_un.f_forw.f_hname);
++		Dprintf(" %s\n", f->f_un.f_forw.f_hname);
+ 		fwd_suspend = time((time_t *) 0) - f->f_time;
+ 		if ( fwd_suspend >= INET_SUSPEND_TIME ) {
+-			dprintf("Forwarding suspension to unknown over, retrying\n");
++			Dprintf("Forwarding suspension to unknown over, retrying\n");
+ 			if ( (hp = gethostbyname(f->f_un.f_forw.f_hname)) == NULL ) {
+-				dprintf("Failure: %s\n", sys_h_errlist[h_errno]);
+-				dprintf("Retries: %d\n", f->f_prevcount);
++				Dprintf("Failure: %s\n", sys_h_errlist[h_errno]);
++				Dprintf("Retries: %d\n", f->f_prevcount);
+ 				if ( --f->f_prevcount < 0 ) {
+-					dprintf("Giving up.\n");
++					Dprintf("Giving up.\n");
+ 					f->f_type = F_UNUSED;
+ 				}
+ 				else
+-					dprintf("Left retries: %d\n", f->f_prevcount);
++					Dprintf("Left retries: %d\n", f->f_prevcount);
+ 			}
+ 			else {
+-			        dprintf("%s found, resuming.\n", f->f_un.f_forw.f_hname);
++			        Dprintf("%s found, resuming.\n", f->f_un.f_forw.f_hname);
+ 				bcopy(hp->h_addr, (char *) &f->f_un.f_forw.f_addr.sin_addr, hp->h_length);
+ 				f->f_type = F_FORW;
+ 				goto f_forw;
+ 			}
+ 		}
+ 		else
+-			dprintf("Forwarding suspension not over, time " \
++			Dprintf("Forwarding suspension not over, time " \
+ 				"left: %d\n", INET_SUSPEND_TIME - fwd_suspend);
+ 		break;
+ 
+@@ -1472,9 +1477,9 @@
+ 		 * sent the message, we don't send it anyway)  -Joey
+ 		 */
+ 	f_forw:
+-		dprintf(" %s\n", f->f_un.f_forw.f_hname);
++		Dprintf(" %s\n", f->f_un.f_forw.f_hname);
+ 		if ( strcmp(from, LocalHostName) && NoHops )
+-			dprintf("Not sending message to remote.\n");
++			Dprintf("Not sending message to remote.\n");
+ 		else {
+ 			f->f_time = now;
+ 			(void) sprintf(line, "<%d>%s", f->f_prevpri, \
+@@ -1487,7 +1492,7 @@
+ 				   (struct sockaddr *) &f->f_un.f_forw.f_addr,
+ 				   sizeof(f->f_un.f_forw.f_addr)) != l) {
+ 				int e = errno;
+-				dprintf("INET sendto error: %d = %s.\n", 
++				Dprintf("INET sendto error: %d = %s.\n", 
+ 					e, strerror(e));
+ 				f->f_type = F_FORW_SUSP;
+ 				errno = e;
+@@ -1503,7 +1508,7 @@
+ #else
+ 		if (flags & IGN_CONS) {	
+ #endif
+-			dprintf(" (ignored).\n");
++			Dprintf(" (ignored).\n");
+ 			break;
+ 		}
+ 		/* FALLTHROUGH */
+@@ -1511,7 +1516,7 @@
+ 	case F_TTY:
+ 	case F_FILE:
+ 		f->f_time = now;
+-		dprintf(" %s\n", f->f_un.f_fname);
++		Dprintf(" %s\n", f->f_un.f_fname);
+ 		if (f->f_type != F_FILE) {
+ 			v->iov_base = "\r\n";
+ 			v->iov_len = 2;
+@@ -1547,7 +1552,7 @@
+ 	case F_USERS:
+ 	case F_WALL:
+ 		f->f_time = now;
+-		dprintf("\n");
++		Dprintf("\n");
+ 		v->iov_base = "\r\n";
+ 		v->iov_len = 2;
+ 		wallmsg(f, iov);
+@@ -1693,13 +1698,13 @@
+ 	int count;
+ 
+ 	if (f->sin_family != AF_INET) {
+-		dprintf("Malformed from address.\n");
++		Dprintf("Malformed from address.\n");
+ 		return ("???");
+ 	}
+ 	hp = gethostbyaddr((char *) &f->sin_addr, sizeof(struct in_addr), \
+ 			   f->sin_family);
+ 	if (hp == 0) {
+-		dprintf("Host name for your address (%s) unknown.\n",
++		Dprintf("Host name for your address (%s) unknown.\n",
+ 			inet_ntoa(f->sin_addr));
+ 		return (inet_ntoa(f->sin_addr));
+ 	}
+@@ -1766,7 +1771,7 @@
+ 	for (f = Files; f; f = f->f_next) {
+ #endif
+ 		if (f->f_prevcount && now >= REPEATTIME(f)) {
+-			dprintf("flush %s: repeated %d times, %d sec.\n",
++			Dprintf("flush %s: repeated %d times, %d sec.\n",
+ 			    TypeNames[f->f_type], f->f_prevcount,
+ 			    repeatinterval[f->f_repeatcount]);
+ 			fprintlog(f, LocalHostName, 0, (char *)NULL);
+@@ -1780,7 +1785,7 @@
+ void debug_switch()
+ 
+ {
+-	dprintf("Switching debugging_on to %s\n", (debugging_on == 0) ? "true" : "false");
++	Dprintf("Switching debugging_on to %s\n", (debugging_on == 0) ? "true" : "false");
+ 	debugging_on = (debugging_on == 0) ? 1 : 0;
+ 	signal(SIGUSR1, debug_switch);
+ }
+@@ -1794,7 +1799,7 @@
+ {
+ 	char buf[100];
+ 
+-	dprintf("Called loggerr, msg: %s\n", type);
++	Dprintf("Called loggerr, msg: %s\n", type);
+ 
+ 	if (errno == 0)
+ 		(void) sprintf(buf, "syslogd: %s", type);
+@@ -1824,7 +1829,7 @@
+ 	}
+ 
+ 	if (sig) {
+-		dprintf("syslogd: exiting on signal %d\n", sig);
++		Dprintf("syslogd: exiting on signal %d\n", sig);
+ 		(void) sprintf(buf, "exiting on signal %d", sig);
+ 		errno = 0;
+ 		logerror(buf);
+@@ -1856,11 +1861,11 @@
+ 	/*
+ 	 *  Close all open log files and free log descriptor array.
+ 	 */
+-	dprintf("Called init.\n");
++	Dprintf("Called init.\n");
+ 	Initialized = 0;
+ 	if ( nlogs > -1 )
+ 	{
+-		dprintf("Initializing log structures.\n");
++		Dprintf("Initializing log structures.\n");
+ 
+ 		for (lognum = 0; lognum <= nlogs; lognum++ ) {
+ 			f = &Files[lognum];
+@@ -1886,7 +1891,7 @@
+ 
+ 	/* open the configuration file */
+ 	if ((cf = fopen(ConfFile, "r")) == NULL) {
+-		dprintf("cannot open %s.\n", ConfFile);
++		Dprintf("cannot open %s.\n", ConfFile);
+ #ifdef SYSV
+ 		cfline("*.ERR\t" _PATH_CONSOLE, *nextp);
+ #else
+@@ -1979,7 +1984,7 @@
+ 		logmsg(LOG_SYSLOG|LOG_INFO, "syslogd " VERSION "-" PATCHLEVEL \
+ 		       ": restart." , LocalHostName, ADDDATE);
+ 	(void) signal(SIGHUP, sighup_handler);
+-	dprintf("syslogd: restarted.\n");
++	Dprintf("syslogd: restarted.\n");
+ }
+ 
+ /*
+@@ -2001,7 +2006,7 @@
+ 	struct hostent *hp;
+ 	char buf[MAXLINE];
+ 
+-	dprintf("cfline(%s)\n", line);
++	Dprintf("cfline(%s)\n", line);
+ 
+ 	errno = 0;	/* keep sys_errlist stuff out of logerror messages */
+ 
+@@ -2147,7 +2152,7 @@
+ 	} else
+ 		syncfile = 1;
+ 
+-	dprintf("leading char in action: %c\n", *p);
++	Dprintf("leading char in action: %c\n", *p);
+ 	switch (*p)
+ 	{
+ 	case '@':
+@@ -2155,7 +2160,7 @@
+ 		if (!InetInuse)
+ 			break;
+ 		(void) strcpy(f->f_un.f_forw.f_hname, ++p);
+-		dprintf("forwarding host: %s\n", p);	/*ASP*/
++		Dprintf("forwarding host: %s\n", p);	/*ASP*/
+ 		if ( (hp = gethostbyname(p)) == NULL ) {
+ 			f->f_type = F_FORW_UNKN;
+ 			f->f_prevcount = INET_RETRY_MAX;
+@@ -2180,7 +2185,7 @@
+         case '|':
+ 	case '/':
+ 		(void) strcpy(f->f_un.f_fname, p);
+-		dprintf ("filename: %s\n", p);	/*ASP*/
++		Dprintf ("filename: %s\n", p);	/*ASP*/
+ 		if (syncfile)
+ 			f->f_flags |= SYNC_FILE;
+ 		if ( *p == '|' )
+@@ -2191,7 +2196,7 @@
+ 		        
+ 	  	if ( f->f_file < 0 ){
+ 			f->f_file = F_UNUSED;
+-			dprintf("Error opening log file: %s\n", p);
++			Dprintf("Error opening log file: %s\n", p);
+ 			logerror(p);
+ 			break;
+ 		}
+@@ -2206,12 +2211,12 @@
+ 		break;
+ 
+ 	case '*':
+-		dprintf ("write-all\n");
++		Dprintf ("write-all\n");
+ 		f->f_type = F_WALL;
+ 		break;
+ 
+ 	default:
+-		dprintf ("users: %s\n", p);	/* ASP */
++		Dprintf ("users: %s\n", p);	/* ASP */
+ 		for (i = 0; i < MAXUNAMES && *p; i++) {
+ 			for (q = p; *q && *q != ','; )
+ 				q++;
+@@ -2243,10 +2248,10 @@
+ 	register char *p;
+ 	char buf[40];
+ 
+-	dprintf ("symbolic name: %s", name);
++	Dprintf ("symbolic name: %s", name);
+ 	if (isdigit(*name))
+ 	{
+-		dprintf ("\n");
++		Dprintf ("\n");
+ 		return (atoi(name));
+ 	}
+ 	(void) strcpy(buf, name);
+@@ -2256,13 +2261,13 @@
+ 	for (c = codetab; c->c_name; c++)
+ 		if (!strcmp(buf, c->c_name))
+ 		{
+-			dprintf (" ==> %d\n", c->c_val);
++			Dprintf (" ==> %d\n", c->c_val);
+ 			return (c->c_val);
+ 		}
+ 	return (-1);
+ }
+ 
+-static void dprintf(char *fmt, ...)
++static void Dprintf(char *fmt, ...)
+ 
+ {
+ 	va_list ap;
+@@ -2286,7 +2291,7 @@
+ static void allocate_log()
+ 
+ {
+-	dprintf("Called allocate_log, nlogs = %d.\n", nlogs);
++	Dprintf("Called allocate_log, nlogs = %d.\n", nlogs);
+ 	
+ 	/*
+ 	 * Decide whether the array needs to be initialized or needs to
+@@ -2297,7 +2302,7 @@
+ 		Files = (struct filed *) malloc(sizeof(struct filed));
+ 		if ( Files == (void *) 0 )
+ 		{
+-			dprintf("Cannot initialize log structure.");
++			Dprintf("Cannot initialize log structure.");
+ 			logerror("Cannot initialize log structure.");
+ 			return;
+ 		}
+@@ -2309,7 +2314,7 @@
+ 						  sizeof(struct filed));
+ 		if ( Files == (struct filed *) 0 )
+ 		{
+-			dprintf("Cannot grow log structure.");
++			Dprintf("Cannot grow log structure.");
+ 			logerror("Cannot grow log structure.");
+ 			return;
+ 		}
+--- sysklogd-1.3/ksym_mod.c.noglibc	Tue Jun 17 14:27:49 1997
++++ sysklogd-1.3/ksym_mod.c	Tue Jun 17 14:28:25 1997
+@@ -57,7 +57,6 @@
+ #include <errno.h>
+ #include <sys/fcntl.h>
+ #include <sys/stat.h>
+-#include <linux/time.h>
+ #include <linux/module.h>
+ #include <stdarg.h>
+ #include <paths.h>
+@@ -72,11 +71,21 @@
+  * actually a system call in disguise.  The purpose of the getsyms
+  * call is to return a current copy of the in-kernel symbol table.
+  */
++#ifndef __alpha__
+ #define __LIBRARY__
+ #include <linux/unistd.h>
+ #define __NR_getsyms __NR_get_kernel_syms
+ _syscall1(int, getsyms, struct kernel_sym *, syms);
+ #undef __LIBRARY__
++#else
++#include <linux/unistd.h>
++int getsyms(struct kernel_sym * syms)
++{
++   extern long syscall (long int, ...);
++   return syscall(__NR_get_kernel_syms, syms);
++}
++#endif /* __alpha__ */
++
+ extern int getsyms(struct kernel_sym *);
+ 
+ 

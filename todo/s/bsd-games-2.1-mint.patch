@@ -1,0 +1,580 @@
+diff -ur --new-file bsd-games-2.1-orig/Makeconfig bsd-games-2.1/Makeconfig
+--- bsd-games-2.1-orig/Makeconfig	Fri Jun 25 20:11:19 1999
++++ bsd-games-2.1/Makeconfig	Fri Jun 25 22:37:01 1999
+@@ -6,7 +6,10 @@
+ # Source directory
+ SRCDIR = $(RPM_BUILD_DIR)/bsd-games-2.1
+ # Build directories
+-BUILDDIRS = adventure arithmetic atc backgammon battlestar bcd caesar canfield countmail cribbage dm factor fish gomoku hangman hunt mille monop morse number phantasia pig pom ppt primes quiz rain random robots sail snake tetris trek wargames worm worms wump
++BUILDDIRS = adventure arithmetic atc backgammon banner battlestar bcd caesar \
++canfield countmail cribbage dm factor fish gomoku hangman hunt mille monop \
++morse number phantasia pig pom ppt primes quiz rain random robots sail \
++snake tetris trek wargames worm worms wump
+ # Installation prefix
+ INSTALL_PREFIX = $(RPM_BUILD_ROOT)
+ # Games directory
+@@ -36,7 +36,7 @@
+ INSTALL_BINARY = install -c -m 0755 -o root -g games
+ INSTALL_SCRIPT = install -c -m 0755 -o root -g games
+ INSTALL_SCORE_GAME = install -c -m 02755 -o root -g games
+-INSTALL_DAEMON = install -c -m 0755 -o root -g root
++INSTALL_DAEMON = install -c -m 0755 -o root -g wheel
+ INSTALL_MANUAL = $(RPM_BUILD_DIR)/bsd-games-2.1/install-man
+-INSTALL_DATA = install -c -m 0644 -o root -g root
++INSTALL_DATA = install -c -m 0644 -o root -g wheel
+ INSTALL_VARDATA = install -c -m 0644 -o root -g games
+ INSTALL_DM = install -c -m 2755 -o root -g games
+ # Is INSTALL_VARDATA actually needed (for games that start with non-empty
+diff -ur --new-file bsd-games-2.1-orig/README.MiNT bsd-games-2.1/README.MiNT
+--- bsd-games-2.1-orig/README.MiNT	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/README.MiNT	Sat Jun 26 02:21:11 1999
+@@ -0,0 +1,10 @@
++The BSD games for MiNT are based on the port of the BSD games for Redhat
++Linux plus the program `banner' which is not in the Linux distribution.
++
++Most of these games are really old but some of them are evergreens
++(like the famous `wargames').  The BSD versions are a little buggy,
++as far as I can see it the Linux versions have introduced even more
++bugs and the MiNT version is almost completely untested.  Have fun
++finding more bugs.
++
++Guido Flohr <gufl0000@stud.uni-sb.de>
+diff -ur --new-file bsd-games-2.1-orig/arithmetic/arithmetic.c bsd-games-2.1/arithmetic/arithmetic.c
+--- bsd-games-2.1-orig/arithmetic/arithmetic.c	Fri Mar 27 11:04:51 1998
++++ bsd-games-2.1/arithmetic/arithmetic.c	Fri Jun 25 22:03:29 1999
+@@ -385,9 +385,9 @@
+ void
+ usage()
+ {
+-	extern char *__progname;	/* from crt0.o */
++	extern char *program_invocation_name;	/* from crt0.o */
+ 
+ 	(void)fprintf(stderr, "usage: %s [-o +-x/] [-r range]\n",
+-		__progname);
++		program_invocation_name);
+ 	exit(1);
+ }
+diff -ur --new-file bsd-games-2.1-orig/backgammon/backgammon/main.c bsd-games-2.1/backgammon/backgammon/main.c
+--- bsd-games-2.1-orig/backgammon/backgammon/main.c	Thu Mar 26 16:53:05 1998
++++ bsd-games-2.1/backgammon/backgammon/main.c	Fri Jun 25 22:23:17 1999
+@@ -57,7 +57,7 @@
+ 
+ extern char   *instr[];		/* text of instructions */
+ extern char   *message[];	/* update message */
+-#ifndef __linux__ /* Linux has ospeed declared, but ncurses makes it a short */
++#if !defined (__linux__) && !defined(__MINT__) /* Linux has ospeed declared, but ncurses makes it a short */
+ speed_t ospeed;			/* tty output speed */
+ #endif
+ 
+@@ -151,8 +151,10 @@
+ 		getarg(&argv);
+ 	args[acnt] = '\0';
+ 	if (tflag) {		/* clear screen */
++#ifndef __MINT__
+ 		noech.c_oflag &= ~(ONLCR | OXTABS);
+ 		bg_raw.c_oflag &= ~(ONLCR | OXTABS);
++#endif
+ 		clear();
+ 	}
+ 	fixtty(&bg_raw);	/* go into raw mode */
+diff -ur --new-file bsd-games-2.1-orig/backgammon/teachgammon/teach.c bsd-games-2.1/backgammon/teachgammon/teach.c
+--- bsd-games-2.1-orig/backgammon/teachgammon/teach.c	Thu Mar 26 16:50:31 1998
++++ bsd-games-2.1/backgammon/teachgammon/teach.c	Fri Jun 25 22:27:13 1999
+@@ -50,7 +50,7 @@
+ #include "back.h"
+ #include "tutor.h"
+ 
+-#ifndef __linux__
++#if !defined (__linux__) && !defined (__MINT__)
+ extern speed_t ospeed;		/* tty output speed for termlib */
+ #endif
+ 
+@@ -90,8 +90,10 @@
+ #endif
+ 		getarg(&argv);
+ 	if (tflag) {
++#ifndef __MINT__
+ 		noech.c_oflag &= ~(ONLCR | OXTABS);
+ 		bg_raw.c_oflag &= ~(ONLCR | OXTABS);
++#endif
+ 		clear();
+ 	}
+ 	text(hello);
+diff -ur --new-file bsd-games-2.1-orig/banner/banner.c bsd-games-2.1/banner/banner.c
+--- bsd-games-2.1-orig/banner/banner.c	Fri Oct 10 11:22:23 1997
++++ bsd-games-2.1/banner/banner.c	Fri Jun 25 22:51:33 1999
+@@ -34,6 +34,12 @@
+  */
+ 
+ #include <sys/cdefs.h>
++
++#ifdef __MINT__
++# define _BSD_SOURCE 1
++# include <sys/types.h>
++#endif
++
+ #ifndef lint
+ __COPYRIGHT("@(#) Copyright (c) 1980, 1993, 1994\n\
+ 	The Regents of the University of California.  All rights reserved.\n");
+diff -ur --new-file bsd-games-2.1-orig/dm/Makefile bsd-games-2.1/dm/Makefile
+--- bsd-games-2.1-orig/dm/Makefile	Fri Mar 27 21:58:25 1998
++++ bsd-games-2.1/dm/Makefile	Fri Jun 25 23:17:47 1999
+@@ -3,7 +3,9 @@
+ include ../Makeconfig
+ 
+ PROG = dm
+-OBJS = dm.o getloadavg.o
++# OBJS = dm.o getloadavg.o
++# For MiNT we have getloadavg in the libc.
++OBJS = dm.o
+ 
+ # Add -DLOG if you want logging
+ 
+diff -ur --new-file bsd-games-2.1-orig/dm/dm.c bsd-games-2.1/dm/dm.c
+--- bsd-games-2.1-orig/dm/dm.c	Fri Jun 25 20:11:37 1999
++++ bsd-games-2.1/dm/dm.c	Fri Jun 25 23:15:41 1999
+@@ -65,6 +65,13 @@
+ 
+ #include "pathnames.h"
+ 
++#ifdef __MINT__
++# ifndef _PATH_UTMP
++   /* Sigh, this is no good.  But this very program is also no good. ;-)  */
++#  define _PATH_UTMP "/etc/utmp"
++# endif
++#endif
++
+ static time_t	now;			/* current time value */
+ static int	priority = 0;		/* priority game runs at */
+ static char	*game,			/* requested game */
+diff -ur --new-file bsd-games-2.1-orig/gomoku/pickmove.c bsd-games-2.1/gomoku/pickmove.c
+--- bsd-games-2.1-orig/gomoku/pickmove.c	Wed Dec 17 20:36:07 1997
++++ bsd-games-2.1/gomoku/pickmove.c	Fri Jun 25 23:24:27 1999
+@@ -48,7 +48,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <curses.h>
+-#ifndef __linux__
++#if !defined (__linux__) && !defined(__MINT__)
+ #include <machine/limits.h>
+ #else
+ #include <limits.h>
+diff -ur --new-file bsd-games-2.1-orig/hunt/hunt/Makefile bsd-games-2.1/hunt/hunt/Makefile
+--- bsd-games-2.1-orig/hunt/hunt/Makefile	Fri Dec 19 22:04:55 1997
++++ bsd-games-2.1/hunt/hunt/Makefile	Fri Jun 25 23:36:25 1999
+@@ -3,12 +3,12 @@
+ include ../../Makeconfig
+ include ../Makeconfig
+ 
+-OBJS = hunt.o connect.o playit.o otto.o pathname.o select.o
++OBJS = hunt.o connect.o playit.o otto.o pathname.o
+ 
+ all:	hunt
+ 
+ hunt:	$(OBJS)
+-	$(CC) $(LDFLAGS) -o hunt $(OBJS) $(NCURSES_LIB)
++	$(CC) $(LDFLAGS) -o hunt $(OBJS) $(NCURSES_LIB) -lsocket
+ 
+ install:	hunt
+ 	$(INSTALL_BINARY) hunt $(INSTALL_PREFIX)$(GAMESDIR)
+diff -ur --new-file bsd-games-2.1-orig/hunt/huntd/Makefile bsd-games-2.1/hunt/huntd/Makefile
+--- bsd-games-2.1-orig/hunt/huntd/Makefile	Fri Dec 19 22:27:09 1997
++++ bsd-games-2.1/hunt/huntd/Makefile	Sat Jun 26 00:03:11 1999
+@@ -5,12 +5,12 @@
+ 
+ OBJS = answer.o ctl.o ctl_transact.o draw.o driver.o execute.o expl.o \
+ 	extern.o faketalk.o get_names.o makemaze.o pathname.o shots.o \
+-	terminal.o select.o
++	terminal.o
+ 
+ all:	huntd
+ 
+ huntd:	$(OBJS)
+-	$(CC) $(LDFLAGS) -o huntd $(OBJS)
++	$(CC) $(LDFLAGS) -o huntd $(OBJS) -lport -lsocket
+ 
+ .c.o:
+ 	$(CC) $(CFLAGS) $(DEFS) $(INCS) -c $< -o $@
+diff -ur --new-file bsd-games-2.1-orig/hunt/huntd/driver.c bsd-games-2.1/hunt/huntd/driver.c
+--- bsd-games-2.1-orig/hunt/huntd/driver.c	Fri Dec 19 22:14:01 1997
++++ bsd-games-2.1/hunt/huntd/driver.c	Fri Jun 25 23:56:41 1999
+@@ -5,7 +5,11 @@
+  *  San Francisco, California
+  */
+ 
++#define _BSD_SOURCE 1
++#define FAVOR_BSD
++
+ #include <sys/cdefs.h>
++
+ #ifndef lint
+ __RCSID("$NetBSD: driver.c,v 1.5 1997/10/20 00:37:16 lukem Exp $");
+ #endif /* not lint */
+@@ -17,6 +21,7 @@
+ # include	<errno.h>
+ # include	<signal.h>
+ # include	<stdlib.h>
++
+ # include	<unistd.h>
+ # include	"hunt.h"
+ 
+diff -ur --new-file bsd-games-2.1-orig/include/protocols/talkd.h bsd-games-2.1/include/protocols/talkd.h
+--- bsd-games-2.1-orig/include/protocols/talkd.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/include/protocols/talkd.h	Fri Jun 25 23:46:29 1999
+@@ -0,0 +1,123 @@
++/*
++ * Copyright (c) 1983, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)talkd.h	8.1 (Berkeley) 6/2/93
++ */
++
++#ifndef _TALKD_H_
++#define	_TALKD_H_
++
++/*
++ * This describes the protocol used by the talk server and clients.
++ *
++ * The talk server acts a repository of invitations, responding to
++ * requests by clients wishing to rendezvous for the purpose of
++ * holding a conversation.  In normal operation, a client, the caller,
++ * initiates a rendezvous by sending a CTL_MSG to the server of
++ * type LOOK_UP.  This causes the server to search its invitation
++ * tables to check if an invitation currently exists for the caller
++ * (to speak to the callee specified in the message).  If the lookup
++ * fails, the caller then sends an ANNOUNCE message causing the server
++ * to broadcast an announcement on the callee's login ports requesting
++ * contact.  When the callee responds, the local server uses the
++ * recorded invitation to respond with the appropriate rendezvous
++ * address and the caller and callee client programs establish a
++ * stream connection through which the conversation takes place.
++ */
++
++#include <sys/types.h>
++
++#ifdef __MINT__
++struct osockaddr {
++  unsigned short int sa_family;
++  unsigned char sa_data[14];
++};
++#endif
++
++/*
++ * Client->server request message format.
++ */
++typedef struct {
++	u_char	vers;		/* protocol version */
++	u_char	type;		/* request type, see below */
++	u_char	answer;		/* not used */
++	u_char	pad;
++	u_int32_t id_num;	/* message id */
++	struct	osockaddr addr;		/* old (4.3) style */
++	struct	osockaddr ctl_addr;	/* old (4.3) style */
++	int32_t	pid;		/* caller's process id */
++#define	NAME_SIZE	12
++	char	l_name[NAME_SIZE];/* caller's name */
++	char	r_name[NAME_SIZE];/* callee's name */
++#define	TTY_SIZE	16
++	char	r_tty[TTY_SIZE];/* callee's tty name */
++} CTL_MSG;
++
++/*
++ * Server->client response message format.
++ */
++typedef struct {
++	u_char	vers;		/* protocol version */
++	u_char	type;		/* type of request message, see below */
++	u_char	answer;		/* response to request message, see below */
++	u_char	pad;
++	u_int32_t id_num;	/* message id */
++	struct	osockaddr addr;	/* address for establishing conversation */
++} CTL_RESPONSE;
++
++#define	TALK_VERSION	1		/* protocol version */
++
++/* message type values */
++#define LEAVE_INVITE	0	/* leave invitation with server */
++#define LOOK_UP		1	/* check for invitation by callee */
++#define DELETE		2	/* delete invitation by caller */
++#define ANNOUNCE	3	/* announce invitation by caller */
++
++/* answer values */
++#define SUCCESS		0	/* operation completed properly */
++#define NOT_HERE	1	/* callee not logged in */
++#define FAILED		2	/* operation failed for unexplained reason */
++#define MACHINE_UNKNOWN	3	/* caller's machine name unknown */
++#define PERMISSION_DENIED 4	/* callee's tty doesn't permit announce */
++#define UNKNOWN_REQUEST	5	/* request has invalid type value */
++#define	BADVERSION	6	/* request has invalid protocol version */
++#define	BADADDR		7	/* request has invalid addr value */
++#define	BADCTLADDR	8	/* request has invalid ctl_addr value */
++
++/*
++ * Operational parameters.
++ */
++#define MAX_LIFE	60	/* max time daemon saves invitations */
++/* RING_WAIT should be 10's of seconds less than MAX_LIFE */
++#define RING_WAIT	30	/* time to wait before resending invitation */
++
++#endif /* !_TALKD_H_ */
+diff -ur --new-file bsd-games-2.1-orig/include/signal.h bsd-games-2.1/include/signal.h
+--- bsd-games-2.1-orig/include/signal.h	Sat Mar 28 10:47:07 1998
++++ bsd-games-2.1/include/signal.h	Fri Jun 25 22:58:21 1999
+@@ -11,9 +11,15 @@
+ 
+ #include_next <signal.h>
+ 
++#ifdef __MINT__
++typedef __Sigfunc sig_t;
++#else
++
+ #ifndef __GLIBC__ /* glibc 2 has this; with libc5 we want to avoid
+ 		   * <bsd/signal.h>.  */
+ typedef __sighandler_t sig_t;
++#endif
++
+ #endif
+ 
+ #endif /* !defined(LINUX_BSD_GAMES_SIGNAL_H) */
+diff -ur --new-file bsd-games-2.1-orig/include/sys/ttydefaults.h bsd-games-2.1/include/sys/ttydefaults.h
+--- bsd-games-2.1-orig/include/sys/ttydefaults.h	Fri Dec 19 14:46:01 1997
++++ bsd-games-2.1/include/sys/ttydefaults.h	Fri Jun 25 21:26:33 1999
+@@ -3,10 +3,14 @@
+ #ifndef LINUX_BSD_GAMES_SYS_TTYDEFAULTS_H
+ #define LINUX_BSD_GAMES_SYS_TTYDEFAULTS_H	1
+ 
++#ifndef __MINT__
++
+ #include <features.h>
+ 
+ #ifdef __GLIBC__
+ #include_next <sys/ttydefaults.h>
++#endif
++
+ #endif
+ 
+ #ifndef CTRL
+diff -ur --new-file bsd-games-2.1-orig/mille/Makefile bsd-games-2.1/mille/Makefile
+--- bsd-games-2.1-orig/mille/Makefile	Thu Dec 18 15:51:17 1997
++++ bsd-games-2.1/mille/Makefile	Sat Jun 26 03:06:35 1999
+@@ -7,7 +7,7 @@
+ OBJS=	mille.o comp.o end.o extern.o init.o misc.o move.o print.o \
+ 	roll.o save.o types.o varpush.o
+ 
+-LIBS = $(NCURSES_LIB)
++LIBS = $(NCURSES_LIB) -lport -lsocket
+ INCS = -I../include $(NCURSES_INCS)
+ DEFS = 
+ 
+diff -ur --new-file bsd-games-2.1-orig/monop/execute.c bsd-games-2.1/monop/execute.c
+--- bsd-games-2.1-orig/monop/execute.c	Thu Mar 26 16:25:43 1998
++++ bsd-games-2.1/monop/execute.c	Sat Jun 26 03:28:21 1999
+@@ -61,6 +61,10 @@
+ 
+ static void show_move __P((void));
+ 
++#ifdef __MINT__
++# include <basepage.h>
++#endif
++
+ /*
+  *	This routine executes the given command by index number
+  */
+@@ -209,8 +213,16 @@
+ 	for (sp = buf; *sp != '\n'; sp++)
+ 		continue;
+ 	*sp = '\0';
++#ifndef __MINT__
+ 	start = 0;
+ 	end = sbrk(0);
++#else
++	{
++	  /* Cross your fingers that this works.  */
++	  start = _base->p_dbase;
++	  end = start + _base->p_dlen;
++	}
++#endif
+ 	while (start < end) {		/* write out entire data space */
+ 		num = start + 16 * 1024 > end ? end - start : 16 * 1024;
+ 		write(outf, start, num);
+@@ -258,8 +270,16 @@
+ 		perror(file);
+ 		exit(1);
+ 	}
++#ifndef __MINT__
+ 	start = 0;
+ 	brk(end = start + sbuf.st_size);
++#else
++	{
++	  /* Cross your fingers that this works.  */
++	  start = _base->p_dbase;
++	  end = start + _base->p_dlen;
++	}
++#endif
+ 	while (start < end) {		/* write out entire data space */
+ 		num = start + 16 * 1024 > end ? end - start : 16 * 1024;
+ 		read(inf, start, num);
+diff -ur --new-file bsd-games-2.1-orig/phantasia/Makefile bsd-games-2.1/phantasia/Makefile
+--- bsd-games-2.1-orig/phantasia/Makefile	Sat Mar 28 10:53:29 1998
++++ bsd-games-2.1/phantasia/Makefile	Sat Jun 26 04:15:51 1999
+@@ -18,7 +18,7 @@
+ 	$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROG)
+ 
+ setup:	phantglobs.o setup.o
+-	$(CC) $(LDFLAGS) phantglobs.o setup.o -lm -o setup
++	$(CC) $(LDFLAGS) phantglobs.o setup.o -lm -lport -o setup
+ 
+ .c.o:	
+ 	$(CC) $(CFLAGS) $(DEFS) $(INCS) -c $< -o $@
+diff -ur --new-file bsd-games-2.1-orig/pom/pom.c bsd-games-2.1/pom/pom.c
+--- bsd-games-2.1-orig/pom/pom.c	Thu Dec 18 21:55:17 1997
++++ bsd-games-2.1/pom/pom.c	Sat Jun 26 04:19:49 1999
+@@ -59,6 +59,9 @@
+  *
+  */
+ 
++#ifdef __MINT__
++# include <time.h>
++#endif
+ #include <sys/time.h>
+ #include <err.h>
+ #include <errno.h>
+diff -ur --new-file bsd-games-2.1-orig/quiz/Makefile bsd-games-2.1/quiz/Makefile
+--- bsd-games-2.1-orig/quiz/Makefile	Sat Mar 28 10:34:47 1998
++++ bsd-games-2.1/quiz/Makefile	Sat Jun 26 04:25:55 1999
+@@ -17,7 +17,7 @@
+ all:	$(PROG)
+ 
+ $(PROG):	$(OBJS)
+-	$(CC) $(LDFLAGS) $(OBJS) -o $(PROG)
++	$(CC) $(LDFLAGS) $(OBJS) -o $(PROG) -lport
+ 
+ .c.o:	
+ 	$(CC) $(CFLAGS) $(DEFS) $(INCS) -c $< -o $@
+diff -ur --new-file bsd-games-2.1-orig/rain/rain.c bsd-games-2.1/rain/rain.c
+--- bsd-games-2.1-orig/rain/rain.c	Fri Dec 19 16:53:45 1997
++++ bsd-games-2.1/rain/rain.c	Sat Jun 26 04:28:23 1999
+@@ -137,7 +137,9 @@
+ 	tcgetattr(1, &sg);
+ 	old_tty = sg;
+ 	sg.c_iflag &= ~ICRNL;
++#ifndef __MINT__
+ 	sg.c_oflag &= ~ONLCR;
++#endif
+ 	sg.c_lflag &= ~ECHO;
+ 	tcsetattr(1, TCSADRAIN, &sg);
+ 	if (TI)
+diff -ur --new-file bsd-games-2.1-orig/sail/Makefile bsd-games-2.1/sail/Makefile
+--- bsd-games-2.1-orig/sail/Makefile	Sat Mar 28 10:54:15 1998
++++ bsd-games-2.1/sail/Makefile	Sat Jun 26 04:49:13 1999
+@@ -11,7 +11,7 @@
+ 	dr_main.o dr_1.o dr_2.o dr_3.o dr_4.o dr_5.o lo_main.o \
+ 	assorted.o game.o globals.o misc.o parties.o sync.o version.o
+ 
+-LIBS    = $(NCURSES_LIB)
++LIBS    = $(NCURSES_LIB) -lport
+ INCS    = -I../include $(NCURSES_INCS)
+ DEFS    = 
+ 
+diff -ur --new-file bsd-games-2.1-orig/snake/snake/move.c bsd-games-2.1/snake/snake/move.c
+--- bsd-games-2.1-orig/snake/snake/move.c	Sat Dec 20 18:47:57 1997
++++ bsd-games-2.1/snake/snake/move.c	Sat Jun 26 05:04:23 1999
+@@ -115,7 +115,7 @@
+ int     NDlength;
+ int     BSlength;
+ int     delaystr[10];
+-#ifndef __linux__
++#if !defined (__linux__) && !defined(__MINT__)
+ speed_t ospeed;
+ #endif
+ 
+@@ -590,7 +590,11 @@
+ 	tcsetattr(0, TCSADRAIN, &orig);
+ }
+ 
++#ifdef __MINT__
++static void
++#else
+ void
++#endif
+ raw()
+ {
+ 	tcsetattr(0, TCSADRAIN, &new);
+@@ -706,7 +710,11 @@
+ 	tcgetattr(0, &orig);
+ 	new = orig;
+ 	new.c_lflag &= ~(ECHO | ICANON);
++#ifndef __MINT__
+ 	new.c_oflag &= ~(ONLCR | OXTABS);
++#else
++	new.c_oflag &= ~OXTABS;
++#endif
+ 	signal(SIGINT, stop);
+ 	ospeed = cfgetospeed(&orig);
+ 	new.c_cc[VSUSP] = _POSIX_VDISABLE;
+diff -ur --new-file bsd-games-2.1-orig/snake/snake/snake.h bsd-games-2.1/snake/snake/snake.h
+--- bsd-games-2.1-orig/snake/snake/snake.h	Sat Dec 20 18:48:11 1997
++++ bsd-games-2.1/snake/snake/snake.h	Sat Jun 26 04:52:27 1999
+@@ -65,7 +65,7 @@
+ char	tbuf[1024], tcapbuf[128];
+ int	Klength;	/* length of KX strings */
+ int	chunk;		/* amount of money given at a time */
+-#ifndef __linux__
++#if !defined (__linux__) && !defined(__MINT__)
+ speed_t	ospeed;
+ #endif
+ #ifdef	debug
+diff -ur --new-file bsd-games-2.1-orig/tetris/scores.h bsd-games-2.1/tetris/scores.h
+--- bsd-games-2.1-orig/tetris/scores.h	Sat Oct 14 00:03:17 1995
++++ bsd-games-2.1/tetris/scores.h	Sat Jun 26 05:12:59 1999
+@@ -38,6 +38,10 @@
+  *	@(#)scores.h	8.1 (Berkeley) 5/31/93
+  */
+ 
++#ifdef __MINT__
++# include <time.h>
++#endif
++
+ /*
+  * Tetris scores.
+  */
+diff -ur --new-file bsd-games-2.1-orig/tetris/screen.c bsd-games-2.1/tetris/screen.c
+--- bsd-games-2.1-orig/tetris/screen.c	Sat Dec 20 20:30:11 1997
++++ bsd-games-2.1/tetris/screen.c	Sat Jun 26 05:09:19 1999
+@@ -78,7 +78,7 @@
+  * Capabilities from TERMCAP.
+  */
+ char	PC, *BC, *UP;		/* tgoto requires globals: ugh! */
+-#ifndef __linux__
++#if !defined (__linux__) && !defined(__MINT__)
+ speed_t	ospeed;
+ #endif
+ 

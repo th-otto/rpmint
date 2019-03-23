@@ -1,0 +1,244 @@
+--- mgetty-1.1.22/voice/include/hardware.h.elsa	Thu Aug 10 16:37:22 2000
++++ mgetty-1.1.22/voice/include/hardware.h	Sat Aug 26 17:16:17 2000
+@@ -94,6 +94,7 @@
+ extern voice_modem_struct Digi_RAS;
+ extern voice_modem_struct Dr_Neuhaus;
+ extern voice_modem_struct Elsa;
++extern voice_modem_struct V250modem;
+ extern voice_modem_struct V253modem;
+ extern voice_modem_struct IS_101;
+ extern voice_modem_struct ISDN4Linux;
+--- mgetty-1.1.22/voice/libvoice/Makefile.elsa	Thu Aug 10 16:33:45 2000
++++ mgetty-1.1.22/voice/libvoice/Makefile	Sat Aug 26 17:16:42 2000
+@@ -9,7 +9,7 @@
+ VOICEOBJS=analyze.o close.o command.o detect.o event.o flush.o \
+ 	init.o mode.o open.o play.o read.o record.o shell.o signal.o write.o \
+ 	voice_fax.o \
+-	Cirrus_Logic.o Digi_RAS.o Dolphin.o Dr_Neuhaus.o Elsa.o V253modem.o IS_101.o \
++	Cirrus_Logic.o Digi_RAS.o Dolphin.o Dr_Neuhaus.o Elsa.o V250modem.o V253modem.o IS_101.o \
+ 	ISDN4Linux.o Multitech_2834.o Rockwell.o Sierra.o Supra.o UMC.o \
+ 	US_Robotics.o ZyXEL_1496.o ZyXEL_2864.o ZyXEL_Omni56K.o \
+ 	Multitech_5634.o Multitech_5600ZDXv.o
+--- mgetty-1.1.22/voice/libvoice/detect.c.elsa	Tue Aug 15 04:51:59 2000
++++ mgetty-1.1.22/voice/libvoice/detect.c	Sat Aug 26 17:21:41 2000
+@@ -51,7 +51,7 @@
+ const char ati4[] = "ATI4";
+ const char ati9[] = "ATI9";
+ const char ati0[] = "ATI0";
+-
++const char atq3[] = "AT\\Q3";
+ 
+ static const struct modem_type_struct modem_database[] =
+      {
+@@ -67,7 +67,7 @@
+      {ati, "247",                  NULL,   &Multitech_2834ZDXv},
+      {ati, "248",                  NULL,   &Sierra},
+      {ati, "249",                  NULL,   &Rockwell},
+-     {ati, "282",                  NULL,   &Elsa},
++     {atq3,"OK",     	           NULL,   &Elsa},     /* ELSA TQV-Modem */
+      {ati, "288",                  NULL,   &ZyXEL_2864},
+      {ati, "2864",                 NULL,   &ZyXEL_2864},
+      {ati, "28641",                NULL,   &ZyXEL_2864},
+@@ -271,6 +271,9 @@
+                s = buffer;
+ 	       while( isspace(*s) ) s++;
+ 
++	       if (voice_command("AT+IFC=?", "ERROR") != OK) voice_modem=&V250modem;
++               /* if the modem not answers with error then it supports V250 commands */
++			 
+                for (i = 0; ((modem_database[i].at_cmnd != NULL) &&
+                 (voice_modem == &no_modem)); i++)
+                     {
+--- mgetty-1.1.21/voice/libvoice/V250modem.c.orig	Tue Jul  4 08:22:10 2000
++++ mgetty-1.1.21/voice/libvoice/V250modem.c	Thu Jul 13 11:33:47 2000
+@@ -0,0 +1,190 @@
++/*
++ * V250modem.c
++ *
++ * This file contains the commands for V250 complaient modems
++ *
++ */
++
++#include "../include/voice.h"
++
++static int V250modem_set_device (int device);
++
++static int V250modem_init (void)
++     {
++     char buffer[VOICE_BUF_LEN];
++
++     reset_watchdog();
++     voice_modem_state = INITIALIZING;
++     lprintf(L_MESG, "initializing V250 voice modem");
++
++     sprintf(buffer, "AT+FCLASS=8");
++     if (voice_command(buffer, "OK") != VMA_USER_1)
++          lprintf(L_WARN, "FCLASS=8");
++
++
++
++     sprintf(buffer, "AT+VSD=%d,%d", cvd.rec_silence_threshold.d.i * 141 / 100, cvd.rec_silence_len.d.i);
++
++     if (voice_command(buffer, "OK") != VMA_USER_1)
++          lprintf(L_WARN, "can't set silence threshold VSD");
++
++     sprintf(buffer, "ATS30=60");       /* fuer 38400 */
++
++     if (voice_command(buffer, "OK") != VMA_USER_1)
++          lprintf(L_WARN, "can't set S30");
++
++     if (cvd.transmit_gain.d.i == -1)
++          cvd.transmit_gain.d.i = 50;
++
++     sprintf(buffer, "AT+VGT=%d", cvd.transmit_gain.d.i * 127 / 100 +
++      128);
++
++     if (voice_command(buffer, "OK") != VMA_USER_1)
++          lprintf(L_WARN, "can't set speaker volume");
++
++     if (cvd.receive_gain.d.i == -1)
++          cvd.receive_gain.d.i = 50;
++
++     sprintf(buffer, "AT+VGR=%d", cvd.receive_gain.d.i * 127 / 100 +
++      128);
++
++     if (voice_command(buffer, "OK") != VMA_USER_1)
++          lprintf(L_WARN, "can't set record volume");
++
++     voice_modem->set_device(DIALUP_LINE);
++
++     if ((cvd.do_hard_flow.d.i) && (voice_command("AT+IFC=2,2", "OK") ==
++      VMA_USER_1) )
++          {
++          TIO tio;
++          tio_get(voice_fd, &tio);
++          tio_set_flow_control(voice_fd, &tio, FLOW_HARD);
++          tio_set(voice_fd, &tio);
++          }
++     else
++          lprintf(L_WARN, "can't turn on hardware flow control");
++
++     voice_modem_state = IDLE;
++     return(OK);
++     }
++
++static int V250modem_set_compression (int *compression, int *speed, int *bits)
++     {
++     char buffer[VOICE_BUF_LEN];
++     reset_watchdog();
++
++     if (*compression == 0)
++          *compression = 8;
++
++     if (*speed == 0)
++          *speed = 8000;
++
++     sprintf(buffer, "AT+VSM=1,%d,8", *speed);
++     voice_command(buffer, "OK");   /* only no compression is common! */
++     *bits=8;
++     return(OK) ;
++
++
++     }
++
++static int V250modem_set_device (int device)
++     {
++     reset_watchdog();
++
++     switch (device)
++          {
++          case NO_DEVICE:
++               lprintf(L_JUNK, "%s: _NO_DEV: (%d)", voice_modem_name, device);
++               voice_command("AT+VLS=0", "OK|VCON");
++               return(OK);
++          case DIALUP_LINE:
++               lprintf(L_JUNK, "%s: _DIALUP: (%d)", voice_modem_name, device);
++               voice_command("AT+VLS=2", "OK");
++               return(OK);
++          case EXTERNAL_MICROPHONE:
++               voice_command("AT+VLS=11", "OK");
++          case INTERNAL_MICROPHONE:
++               lprintf(L_JUNK, "%s: _INT_MIC: (%d)", voice_modem_name, device);
++               voice_command("AT+VLS=6", "OK|VCON");
++               return(OK);
++          case INTERNAL_SPEAKER:
++               lprintf(L_JUNK, "%s: _INT_SEAK: (%d)", voice_modem_name, device);
++               voice_command("AT+VLS=4", "OK|VCON");
++               return(OK);
++          }
++
++     lprintf(L_WARN, "%s: Unknown device (%d)", voice_modem_name, device);
++     return(FAIL);
++     }
++
++static char V250modem_pick_phone_cmnd[] = "AT+FCLASS=8; AT+VLS=2";
++static char V250modem_pick_phone_answr[] = "VCON|OK";
++
++
++static char V250modem_hardflow_cmnd[] = "AT+IFC=2,2";
++static char V250modem_softflow_cmnd[] = "AT+IFC=1,1";
++
++/*static char V250modem_intr_play_answr[] = "OK|VCON";
++static char V250modem_stop_play_answr[] = "OK|VCON";
++
++static char V250modem_stop_rec_cmnd[] = "!";
++static char V250modem_stop_rec_answr[] = "OK|VCON"; */
++
++
++voice_modem_struct V250modem =
++    {
++    "V250 modem",
++    "V250modem",
++     (char *) V250modem_pick_phone_cmnd,
++     (char *) V250modem_pick_phone_answr,
++     (char *) IS_101_beep_cmnd,
++     (char *) IS_101_beep_answr,
++              IS_101_beep_timeunit,
++     (char *) V250modem_hardflow_cmnd,
++     (char *) IS_101_hardflow_answr,
++     (char *) V250modem_softflow_cmnd,
++     (char *) IS_101_softflow_answr,
++     (char *) IS_101_start_play_cmnd,
++     (char *) IS_101_start_play_answer,
++     (char *) IS_101_reset_play_cmnd,
++     (char *) IS_101_intr_play_cmnd,
++     (char *) IS_101_intr_play_answr,
++     (char *) IS_101_stop_play_cmnd,
++     (char *) IS_101_stop_play_answr,
++     (char *) IS_101_start_rec_cmnd,
++     (char *) IS_101_start_rec_answr,
++     (char *) IS_101_stop_rec_cmnd,
++     (char *) IS_101_stop_rec_answr,
++     (char *) IS_101_switch_mode_cmnd,
++     (char *) IS_101_switch_mode_answr,
++     (char *) IS_101_ask_mode_cmnd,
++     (char *) IS_101_ask_mode_answr,
++     (char *) IS_101_voice_mode_id,
++     (char *) IS_101_play_dtmf_cmd,
++     (char *) IS_101_play_dtmf_extra,
++     (char *) IS_101_play_dtmf_answr,
++    &IS_101_answer_phone,
++    &IS_101_beep,
++    &IS_101_dial,
++    &IS_101_handle_dle,
++    &V250modem_init,
++    &IS_101_message_light_off,
++    &IS_101_message_light_on,
++    &IS_101_start_play_file,
++    NULL,
++    &IS_101_stop_play_file,
++    &IS_101_play_file,
++    &IS_101_record_file,
++    &V250modem_set_compression,
++    &V250modem_set_device,
++    &IS_101_stop_dialing,
++    &IS_101_stop_playing,
++    &IS_101_stop_recording,
++    &IS_101_stop_waiting,
++    &IS_101_switch_to_data_fax,
++    &IS_101_voice_mode_off,
++    &IS_101_voice_mode_on,
++    &IS_101_wait,
++    &IS_101_play_dtmf,
++    0
++    };

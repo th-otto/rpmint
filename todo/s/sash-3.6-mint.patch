@@ -1,0 +1,35 @@
+--- sash-3.6-orig/Makefile	Sun Jul 21 19:24:46 2002
++++ sash-3.6/Makefile	Tue Jan  6 20:31:14 2004
+@@ -8,10 +8,10 @@
+ # The MOUNT_TYPE definition sets the default file system type for -mount.
+ #
+ HAVE_GZIP		= 1
+-HAVE_LINUX_ATTR		= 1
+-HAVE_LINUX_MOUNT	= 1
++HAVE_LINUX_ATTR		= 0
++HAVE_LINUX_MOUNT	= 0
+ HAVE_BSD_MOUNT		= 0
+-MOUNT_TYPE		= '"ext3"'
++MOUNT_TYPE		= '"ext2"'
+ 
+ 
+ CFLAGS = -O3 -Wall -Wmissing-prototypes \
+@@ -25,7 +25,7 @@
+ LIBS = -lz
+ 
+ 
+-BINDIR = /bin
++BINDIR = /usr/bin
+ MANDIR = /usr/man/man1
+ 
+ 
+@@ -40,7 +40,7 @@
+ 	rm -f $(OBJS) sash
+ 
+ install: sash
+-	cp sash $(BINDIR)/sash
+-	cp sash.1 $(MANDIR)/sash.1
++	cp sash $(DESTDIR)$(BINDIR)/sash
++	cp sash.1 $(DESTDIR)$(MANDIR)/sash.1
+ 
+ $(OBJS):	sash.h

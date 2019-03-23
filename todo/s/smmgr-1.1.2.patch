@@ -1,0 +1,32 @@
+--- smmgr-1.1.2/Makefile.make	Sun Dec 26 11:20:16 1999
++++ smmgr-1.1.2/Makefile	Wed Feb 21 13:18:46 2001
+@@ -69,11 +69,11 @@
+ 	gcc $(LDFLAGS) -o smmgr $(OBJS) $(GSMLIB) -lreadline -lhistory -ltermcap
+ 
+ install: smmgr smmgr.conf lsmmgr
+-	install -s -o root -g dialout -m 755 smmgr $(PREFIX)/bin/smmgr
+-	install -o root -g dialout -m 755 lsmmgr $(PREFIX)/bin/lsmmgr
+-	if [ ! -e "$(CONFIGFILE)" ]; then install -o root -g dialout -m 644 smmgr.conf $CONFIGFILE ; fi
+-	install -d -o root -g dialout -m 775 $(LIBDIR)
+-	install -d -o root -g dialout -m 775 $(SPOOLDIR)
++	install -s -o root -g 0 -m 755 smmgr $(PREFIX)/bin/smmgr
++	install -o root -g 0 -m 755 lsmmgr $(PREFIX)/bin/lsmmgr
++	if [ ! -e "$(CONFIGFILE)" ]; then install -o root -g 0 -m 644 smmgr.conf $(CONFIGFILE) ; fi
++	install -d -o root -g 0 -m 775 $(LIBDIR)
++	install -d -o root -g 0 -m 775 $(SPOOLDIR)
+ 
+ package: clean
+ 	(pwd=`pwd`; name=`basename $$pwd`; cd ..; tar -czf $${name}.tar.gz $$name)
+diff -u smmgr-1.1.2/main.c smmgr-1.1.2.patch/main.c
+--- smmgr-1.1.2/main.c	Sun Jan 23 22:22:56 2000
++++ smmgr-1.1.2.patch/main.c	Sun Dec 24 16:40:40 2000
+@@ -352,7 +352,8 @@
+ 	snprintf(tmpdir,256,"/tmp/smmgr-%d",getpid());
+ 	snprintf(rmcommand,300,"rm -rf %s",tmpdir);
+ 	
+-	on_exit(exitfunc,(void*)NULL);
++
++	atexit(exitfunc);
+ 	if (signal (SIGINT, termination_handler) == SIG_IGN) signal (SIGINT, SIG_IGN);
+ 	if (signal (SIGHUP, termination_handler) == SIG_IGN) signal (SIGHUP, SIG_IGN);
+ 	if (signal (SIGTERM, termination_handler) == SIG_IGN) signal (SIGTERM, SIG_IGN);

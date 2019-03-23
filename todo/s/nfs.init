@@ -1,0 +1,94 @@
+#!/bin/sh
+#
+# nfs           This shell script takes care of starting and stopping
+#               the NFS services. Later we might add NIS too.
+#
+# chkconfig: 345 60 20
+# description: NFS is a popular protocol for file sharing across TCP/IP \
+#              networks. This service provides NFS server functionality, \
+#              which is configured via the /etc/exports file.
+# probe: true
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+if [ ! -f /etc/sysconfig/network ]; then
+    exit 0
+fi
+
+. /etc/sysconfig/network
+
+# Check that networking is up.
+if [ "$NETWORKING" = "no" ]
+then
+        echo $"Networking is down\n"
+        exit 0
+fi
+
+
+[ -f /usr/sbin/rpc.nfsd ] || exit 0
+[ -f /usr/sbin/rpc.mountd ] || exit 0
+[ -f /etc/exports ] || exit 0
+
+# See how we were called.
+case "$1" in
+  start)
+	# Start daemons.
+	echo "Starting NFS services: "
+	echo -n $"Starting NFS mountd: "	
+	daemon rpc.mountd
+	echo
+        echo -n $"Starting NFS daemon: "
+	daemon rpc.nfsd
+	echo
+	touch /var/lock/subsys/nfs
+	;;
+  stop)
+	# Stop daemons.
+	echo "Shutting down NFS services: "
+	echo -n $"Stopping NFS mountd: "	
+	killproc rpc.mountd
+	echo	
+	echo -n $"Stopping NFS daemon: "
+	killproc rpc.nfsd
+	echo
+	rm -f /var/lock/subsys/nfs
+	;;
+  status)
+	status rpc.mountd
+	status rpc.nfsd
+	;;
+  restart)
+	echo -n "Restarting NFS services: "
+	echo -n "rpc.nfsd "
+	killall -HUP rpc.nfsd
+	echo -n "rpc.mountd "
+	killall -HUP rpc.mountd
+	touch /var/lock/subsys/nfs
+	echo "done."
+	;;
+  reload)
+	/usr/sbin/exportfs
+	touch /var/lock/subsys/nfs
+	;;
+  probe)
+	if [ ! -f /var/lock/subsys/nfs ] ; then
+	  echo start; exit 0
+	fi
+	/sbin/pidof rpc.mountd > /dev/null 2>&1; MOUNTD="$?"
+	/sbin/pidof rpc.nfsd > /dev/null 2>&1; NFSD="$?"
+	if [ $MOUNTD = 1 -o $NFSD = 1 ] ; then
+	  echo restart; exit 0
+	fi
+	if [ /etc/exports -nt /var/lock/subsys/nfs ] ; then
+	  echo reload; exit 0
+	fi
+	;;
+  *)
+	echo "Usage: nfs {start|stop|status|restart|reload}"
+	exit 1
+esac
+
+exit 0
+

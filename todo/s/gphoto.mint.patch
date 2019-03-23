@@ -1,0 +1,543 @@
+diff -cr gphoto-0.4.3/canon/serial.c gphoto-0.4.3.my/canon/serial.c
+*** gphoto-0.4.3/canon/serial.c	Mon Mar  6 21:23:04 2000
+--- gphoto-0.4.3.my/canon/serial.c	Sun Mar 25 02:15:12 2001
+***************
+*** 143,149 ****
+      newtio.c_cflag = (newtio.c_cflag & ~CSIZE) | CS8;
+  
+      /* Set into raw, no echo mode */
+!     #if defined(__FreeBSD__) || defined(__NetBSD__)
+      newtio.c_iflag &= ~(IGNBRK | IGNCR | INLCR | ICRNL | 
+  			IXANY | IXON | IXOFF | INPCK | ISTRIP);
+      #else
+--- 143,149 ----
+      newtio.c_cflag = (newtio.c_cflag & ~CSIZE) | CS8;
+  
+      /* Set into raw, no echo mode */
+!     #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__MINT__)
+      newtio.c_iflag &= ~(IGNBRK | IGNCR | INLCR | ICRNL | 
+  			IXANY | IXON | IXOFF | INPCK | ISTRIP);
+      #else
+diff -cr gphoto-0.4.3/casio/sdComm.c gphoto-0.4.3.my/casio/sdComm.c
+*** gphoto-0.4.3/casio/sdComm.c	Sun Dec  5 21:25:06 1999
+--- gphoto-0.4.3.my/casio/sdComm.c	Sun Mar 25 02:15:16 2001
+***************
+*** 395,400 ****
+--- 395,425 ----
+  static sdcStatus
+  setBaudRateFinish(sdcInfo info) {
+  #if HAVE_RTS_IOCTL
++ #ifdef __MINT__
++ 
++ # define TIOCMH_DTR 0x0002 /* data terminal ready, output */
++ # define TIOCMH_RTS 0x0004 /* ready to send */
++ 
++         long arg[2];
++ 
++         arg[0] = TIOCMH_RTS;    /* line */
++         arg[1] = 0;             /* clear */
++         if (ioctl(info->fd, TIOCCTLSET, arg) < 0) { /* RTS OFF */
++            print_error(CANT_SET_RTS, "OFF");
++            sdcClose(info);
++            return(SDC_FAIL);
++         }
++ 
++         arg[0] = TIOCMH_DTR;
++         arg[1] = TIOCMH_DTR;
++         if (ioctl(info->fd, TIOCCTLSET, arg) < 0) { /* DTR ON */
++            print_error(CANT_SET_DTR, "ON");
++            sdcClose(info);
++            return(SDC_FAIL);
++         }
++ 
++         /* CTS can't be set, it's a input line, ignoring */
++ #else
+      int mode;
+      mode = TIOCM_RTS;
+      if(ioctl(info->fd, TIOCMBIC, &mode) < 0){ /* RTS OFF */
+***************
+*** 408,413 ****
+--- 433,439 ----
+  	sdcClose(info);
+  	return(SDC_FAIL);  
+      }
++ #endif
+  #endif
+  
+      sdcFlush(info);
+diff -cr gphoto-0.4.3/config.sub gphoto-0.4.3.my/config.sub
+*** gphoto-0.4.3/config.sub	Mon Mar  6 22:05:42 2000
+--- gphoto-0.4.3.my/config.sub	Sun Mar 25 02:15:08 2001
+***************
+*** 156,161 ****
+--- 156,165 ----
+  	-psos*)
+  		os=-psos
+  		;;
++ 	-mint | -mint[0-9]*)
++ 		basic_machine=m68k-atari
++ 		os=-mint
++ 		;;
+  esac
+  
+  # Decode aliases for certain CPU-COMPANY combinations.
+***************
+*** 172,178 ****
+  		| mips64orion | mips64orionel | mipstx39 | mipstx39el \
+  		| mips64vr4300 | mips64vr4300el | mips64vr4100 | mips64vr4100el \
+  		| mips64vr5000 | miprs64vr5000el \
+! 		| armv[34][lb] | sparc | sparclet | sparclite | sparc64 | sparcv9 | v850 | c4x \
+  		| thumb | d10v)
+  		basic_machine=$basic_machine-unknown
+  		;;
+--- 176,182 ----
+  		| mips64orion | mips64orionel | mipstx39 | mipstx39el \
+  		| mips64vr4300 | mips64vr4300el | mips64vr4100 | mips64vr4100el \
+  		| mips64vr5000 | miprs64vr5000el \
+! 		| sparc | sparclet | sparclite | sparc64 | sparcv9 | v850 | c4x \
+  		| thumb | d10v)
+  		basic_machine=$basic_machine-unknown
+  		;;
+***************
+*** 205,211 ****
+  	      | mips64el-* | mips64orion-* | mips64orionel-* \
+  	      | mips64vr4100-* | mips64vr4100el-* | mips64vr4300-* | mips64vr4300el-* \
+  	      | mipstx39-* | mipstx39el-* \
+- 	      | armv[34][lb]-* \
+  	      | f301-* | armv*-* | t3e-* \
+  	      | m88110-* | m680[01234]0-* | m683?2-* | m68360-* | z8k-* | d10v-* \
+  	      | thumb-* | v850-* | d30v-* | tic30-* | c30-* )
+--- 209,214 ----
+***************
+*** 489,495 ****
+  	miniframe)
+  		basic_machine=m68000-convergent
+  		;;
+! 	*mint | *MiNT)
+  		basic_machine=m68k-atari
+  		os=-mint
+  		;;
+--- 492,498 ----
+  	miniframe)
+  		basic_machine=m68000-convergent
+  		;;
+! 	*mint | -mint[0-9]* | *MiNT | *MiNT[0-9]*)
+  		basic_machine=m68k-atari
+  		os=-mint
+  		;;
+diff -cr gphoto-0.4.3/kodak/dc21x/lowlevel.c gphoto-0.4.3.my/kodak/dc21x/lowlevel.c
+*** gphoto-0.4.3/kodak/dc21x/lowlevel.c	Thu Jan 20 21:42:18 2000
+--- gphoto-0.4.3.my/kodak/dc21x/lowlevel.c	Sun Mar 25 02:15:30 2001
+***************
+*** 7,12 ****
+--- 7,27 ----
+  #include <time.h>
+  #include "dc21x.h"
+  
++ /* Set *T to indicate raw mode */
++ void
++ cfmakeraw (struct termios *t)
++ {
++ 	t->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
++ 	t->c_oflag &= ~OPOST;
++ 	t->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
++ 	t->c_cflag &= ~(CSIZE|PARENB);
++ 	t->c_cflag |= CS8;
++ 	t->c_cc[VMIN] = 1;  /* read returns when one char is available */
++ 	t->c_cc[VTIME] = 0;
++ }
++ 
++ 
++ 
+  /* Open serial port attached to the camera */
+  int open_camera (const char *devname)
+  {
+diff -cr gphoto-0.4.3/konica/lowlevel.c gphoto-0.4.3.my/konica/lowlevel.c
+*** gphoto-0.4.3/konica/lowlevel.c	Tue Aug 17 11:03:08 1999
+--- gphoto-0.4.3.my/konica/lowlevel.c	Sun Mar 25 02:15:46 2001
+***************
+*** 100,110 ****
+   *---------------------------------------------------------------------*/
+  void qm100_resetUart(int serialdev)
+  {
+     int out;
+     
+     sleep(1);
+!    out = TIOCM_DTR | TIOCM_RTS;
+     ioctl(serialdev, TIOCMBIC, &out);
+     sleep(3);
+     ioctl(serialdev, TIOCMBIS, &out);
+  }
+--- 100,133 ----
+   *---------------------------------------------------------------------*/
+  void qm100_resetUart(int serialdev)
+  {
++ 
++ #ifdef __MINT__
++ 
++ # define TIOCMH_DTR 0x0002 /* data terminal ready, output */
++ # define TIOCMH_RTS 0x0004 /* ready to send */ 
++ 
++ 	long arg[2];;
++ 
++ 	sleep(1);
++ 
++ 	arg[0] = TIOCMH_DTR | TIOCMH_RTS;
++ 	arg[1] = 0; /* clear */
++ 	ioctl(serialdev, TIOCCTLSET, arg);
++ 
++ 	sleep(3);
++ 
++ 	arg[0] = TIOCMH_DTR | TIOCMH_RTS;
++ 	arg[1] = TIOCMH_DTR | TIOCMH_RTS;
++ 	ioctl(serialdev, TIOCCTLSET, arg);
++ #else
++ 
+     int out;
+     
+     sleep(1);
+! 
+     ioctl(serialdev, TIOCMBIC, &out);
+     sleep(3);
+     ioctl(serialdev, TIOCMBIS, &out);
++ 
++ #endif
+  }
+diff -cr gphoto-0.4.3/konica/open.c gphoto-0.4.3.my/konica/open.c
+*** gphoto-0.4.3/konica/open.c	Tue Sep 28 00:10:56 1999
+--- gphoto-0.4.3.my/konica/open.c	Sun Mar 25 02:15:46 2001
+***************
+*** 116,122 ****
+    memcpy((char *)&newt,(char *)&oldt, sizeof(struct termios));
+    newt.c_cflag |= CS8 | HUPCL;
+    newt.c_iflag &= ~(IGNBRK|BRKINT|IGNPAR|PARMRK|INPCK|ISTRIP|INLCR);
+!   newt.c_iflag &= ~(IGNCR|ICRNL|IXON|IXOFF|IXANY|IMAXBEL);
+    
+    newt.c_oflag &= ~(OPOST);
+    newt.c_lflag &= ~(ISIG|ICANON);
+--- 116,126 ----
+    memcpy((char *)&newt,(char *)&oldt, sizeof(struct termios));
+    newt.c_cflag |= CS8 | HUPCL;
+    newt.c_iflag &= ~(IGNBRK|BRKINT|IGNPAR|PARMRK|INPCK|ISTRIP|INLCR);
+!   #if defined(__MINT__)
+!   newt.c_iflag &= ~(IGNCR|ICRNL|IXON|IXOFF|IXANY         );
+!   #else
+!   newt.c_iflag &= ~(IGNCR|ICRNL|IXON|IXOFF|IXANY)|IMAXBEL);
+!   #endif
+    
+    newt.c_oflag &= ~(OPOST);
+    newt.c_lflag &= ~(ISIG|ICANON);
+diff -cr gphoto-0.4.3/konica/setSpeed.c gphoto-0.4.3.my/konica/setSpeed.c
+*** gphoto-0.4.3/konica/setSpeed.c	Mon Dec 27 12:59:20 1999
+--- gphoto-0.4.3.my/konica/setSpeed.c	Sun Mar 25 02:15:46 2001
+***************
+*** 18,30 ****
+    newt.c_cflag |= CS8;
+    newt.c_iflag &= ~(IGNBRK|BRKINT|IGNPAR|PARMRK|INPCK|ISTRIP|INLCR);
+    #if defined(__FreeBSD__) || defined(__NetBSD__) /* by fujisawa@konica.co.jp */
+!   newt.c_iflag &= ~(IGNCR|ICRNL|IXON|IXOFF|      IXANY|IMAXBEL);
+    #else
+    newt.c_iflag &= ~(IGNCR|ICRNL|IXON|IXOFF|IUCLC|IXANY|IMAXBEL);
+    #endif
+    newt.c_oflag &= ~(OPOST);
+    newt.c_lflag &= ~(ISIG|ICANON);
+!   #if defined(__FreeBSD__) || defined(__NetBSD__)
+    /**/
+    #else
+    newt.c_cflag &= ~(XCASE);
+--- 18,32 ----
+    newt.c_cflag |= CS8;
+    newt.c_iflag &= ~(IGNBRK|BRKINT|IGNPAR|PARMRK|INPCK|ISTRIP|INLCR);
+    #if defined(__FreeBSD__) || defined(__NetBSD__) /* by fujisawa@konica.co.jp */
+!   newt.c_iflag &= ~(IGNCR|ICRNL|IXON|IXOFF|      IXANY)|IMAXBEL);
+!   #elif defined(__MINT__)
+!   newt.c_iflag &= ~(IGNCR|ICRNL|IXON|IXOFF|      IXANY         ); 
+    #else
+    newt.c_iflag &= ~(IGNCR|ICRNL|IXON|IXOFF|IUCLC|IXANY|IMAXBEL);
+    #endif
+    newt.c_oflag &= ~(OPOST);
+    newt.c_lflag &= ~(ISIG|ICANON);
+!   #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__MINT__)
+    /**/
+    #else
+    newt.c_cflag &= ~(XCASE);
+diff -cr gphoto-0.4.3/mustek/device.c gphoto-0.4.3.my/mustek/device.c
+*** gphoto-0.4.3/mustek/device.c	Sun Dec  5 18:48:54 1999
+--- gphoto-0.4.3.my/mustek/device.c	Sun Mar 25 02:16:30 2001
+***************
+*** 59,65 ****
+  	newtio.c_cflag = (newtio.c_cflag & ~CSIZE) | CS8;
+  
+  	//  Set into raw, no echo mode 
+! 	#if defined(__NetBSD__)
+  	newtio.c_iflag &= ~(IGNBRK | IGNCR | INLCR | ICRNL |
+  		IXANY | IXON | IXOFF | INPCK | ISTRIP);
+  	#else
+--- 59,65 ----
+  	newtio.c_cflag = (newtio.c_cflag & ~CSIZE) | CS8;
+  
+  	//  Set into raw, no echo mode 
+! 	#if defined(__NetBSD__) || defined(__MINT__)
+  	newtio.c_iflag &= ~(IGNBRK | IGNCR | INLCR | ICRNL |
+  		IXANY | IXON | IXOFF | INPCK | ISTRIP);
+  	#else
+diff -cr gphoto-0.4.3/philips/philips_io.c gphoto-0.4.3.my/philips/philips_io.c
+*** gphoto-0.4.3/philips/philips_io.c	Sat Nov 20 16:28:40 1999
+--- gphoto-0.4.3.my/philips/philips_io.c	Sun Mar 25 02:16:44 2001
+***************
+*** 97,103 ****
+--- 97,107 ----
+  	static struct sigaction close_philips = {
+  		(void (*)())philips_close_handler,
+  		0, 
++ #ifdef __MINT__
++ 		0
++ #else
+  		SA_RESTART
++ #endif
+  		};
+  	struct timeval zero_time = {0, 0};
+  	struct itimerval it_zero = {zero_time, zero_time};
+diff -cr gphoto-0.4.3/photopc/eph_io.c gphoto-0.4.3.my/photopc/eph_io.c
+*** gphoto-0.4.3/photopc/eph_io.c	Sun Dec  5 21:25:08 1999
+--- gphoto-0.4.3.my/photopc/eph_io.c	Sun Mar 25 02:16:48 2001
+***************
+*** 98,104 ****
+  #define ERRNO errno
+  #endif
+  
+! #ifdef BSD /* by fujisawa */
+  #undef HAVE_NANOSLEEP
+  #endif
+  
+--- 98,105 ----
+  #define ERRNO errno
+  #endif
+  
+! #ifdef BSD || defined(__MINT__) /* by fujisawa */
+! /* config.h buggy */
+  #undef HAVE_NANOSLEEP
+  #endif
+  
+***************
+*** 108,114 ****
+  	struct timespec ts={tv_sec: (long int)(useconds/1000000),
+  			tv_nsec: (long int)(useconds%1000000)*1000ul};
+  
+! 	nanosleep(&ts,NULL);
+  }
+  
+  #else /* HAVE_NANOSLEEP */
+--- 109,115 ----
+  	struct timespec ts={tv_sec: (long int)(useconds/1000000),
+  			tv_nsec: (long int)(useconds%1000000)*1000ul};
+  
+! /*	nanosleep(&ts,NULL); */
+  }
+  
+  #else /* HAVE_NANOSLEEP */
+diff -cr gphoto-0.4.3/photopc/eph_open.c gphoto-0.4.3.my/photopc/eph_open.c
+*** gphoto-0.4.3/photopc/eph_open.c	Thu May 27 18:32:06 1999
+--- gphoto-0.4.3.my/photopc/eph_open.c	Sun Mar 25 02:16:48 2001
+***************
+*** 116,122 ****
+--- 116,126 ----
+  
+  #elif defined(UNIX)
+  
++ #ifdef B19200
++ #define DEFSPEED B19200
++ #else
+  #define DEFSPEED EXTA
++ #endif
+  #define CLOSE close
+  
+  #elif defined(DOS)
+***************
+*** 167,178 ****
+  		ephspeed=1;	break;
+  	case 19200:
+  #ifdef UNIX
+  		tspeed=EXTA;
+  #endif
+  		ephspeed=2;	break;
+  	case 38400:
+  #ifdef UNIX
+! 		tspeed=EXTB;
+  #endif
+  		ephspeed=3;	break;
+  	case 57600:
+--- 171,190 ----
+  		ephspeed=1;	break;
+  	case 19200:
+  #ifdef UNIX
++ 	#ifdef B19200
++ 		tspeed=B19200;
++ 	#else
+  		tspeed=EXTA;
++ 	#endif
+  #endif
+  		ephspeed=2;	break;
+  	case 38400:
+  #ifdef UNIX
+! 	#ifdef B38400
+! 		tspeed=B38400;
+! 	#else
+! 		tspeed=EXTB; 
+! 	#endif
+  #endif
+  		ephspeed=3;	break;
+  	case 57600:
+diff -cr gphoto-0.4.3/ricoh/ricoh_300_io.c gphoto-0.4.3.my/ricoh/ricoh_300_io.c
+*** gphoto-0.4.3/ricoh/ricoh_300_io.c	Fri Jun 18 12:25:18 1999
+--- gphoto-0.4.3.my/ricoh/ricoh_300_io.c	Sun Mar 25 02:16:54 2001
+***************
+*** 91,97 ****
+  int *camera_model;
+  {
+  	static struct sigaction close_ricoh = {
+! 	  (void (*)())close_handler, 0, SA_RESTART};
+  	struct timeval zero_time = {0, 0};
+  	struct itimerval it_zero = {zero_time, zero_time};
+  
+--- 91,102 ----
+  int *camera_model;
+  {
+  	static struct sigaction close_ricoh = {
+! 	/*  (void (*)())close_handler, 0, 0}, SA_RESTART}; */
+!  #ifdef __MINT__
+!  	(void (*)())close_handler, 0, 0};
+!  #else
+!  	(void (*)())close_handler, 0, 0}, SA_RESTART};
+!  #endif	
+  	struct timeval zero_time = {0, 0};
+  	struct itimerval it_zero = {zero_time, zero_time};
+  
+diff -cr gphoto-0.4.3/sony/chotplay.c gphoto-0.4.3.my/sony/chotplay.c
+*** gphoto-0.4.3/sony/chotplay.c	Sun Dec  5 21:25:08 1999
+--- gphoto-0.4.3.my/sony/chotplay.c	Sun Mar 25 02:17:00 2001
+***************
+*** 128,134 ****
+    exit(code);
+  } 
+  
+! int
+  write_file(buf, len, outfp)
+       u_char     *buf;
+       int        len;
+--- 128,135 ----
+    exit(code);
+  } 
+  
+! /* int */
+! static int
+  write_file(buf, len, outfp)
+       u_char     *buf;
+       int        len;
+***************
+*** 752,757 ****
+--- 753,760 ----
+  }
+  #endif
+  
++ #ifndef __MINT__
++ /* that's that ??? */
+  int
+  main(argc, argv)
+       int	argc;
+***************
+*** 949,951 ****
+--- 952,955 ----
+    Exit (errflg ? 1 : 0);
+    return(255);
+  }
++ #endif
+diff -cr gphoto-0.4.3/sony/dscf55/serio.c gphoto-0.4.3.my/sony/dscf55/serio.c
+*** gphoto-0.4.3/sony/dscf55/serio.c	Tue Jan 25 21:36:20 2000
+--- gphoto-0.4.3.my/sony/dscf55/serio.c	Sun Mar 25 02:17:04 2001
+***************
+*** 35,41 ****
+  
+  
+  #ifndef __linux__
+! #ifdef __sun__
+  int cfmakeraw(struct termios *termios_p)
+  {
+  
+--- 35,42 ----
+  
+  
+  #ifndef __linux__
+! /* #ifdef __sun__  */
+! #if defined(__sun__) || defined(__MINT__)
+  int cfmakeraw(struct termios *termios_p)
+  {
+  
+***************
+*** 50,55 ****
+--- 51,57 ----
+  }
+  #endif
+  #endif
++ 
+  
+  /***************************************************************
+  *
+diff -cr gphoto-0.4.3/src/callbacks.c gphoto-0.4.3.my/src/callbacks.c
+*** gphoto-0.4.3/src/callbacks.c	Mon Mar  6 21:23:06 2000
+--- gphoto-0.4.3.my/src/callbacks.c	Sat Apr 14 22:53:50 2001
+***************
+*** 527,533 ****
+  	int i=0;
+  	int sd = -1;
+  
+! #ifdef linux
+          sprintf(serial_port_prefix, "/dev/ttyS");
+  #elif defined(BSD)
+          sprintf(serial_port_prefix, "/dev/tty0");
+--- 527,533 ----
+  	int i=0;
+  	int sd = -1;
+  
+! #if defined(linux) || defined(__MINT__)
+          sprintf(serial_port_prefix, "/dev/ttyS");
+  #elif defined(BSD)
+          sprintf(serial_port_prefix, "/dev/tty0");
+diff -cr gphoto-0.4.3/src/main.c gphoto-0.4.3.my/src/main.c
+*** gphoto-0.4.3/src/main.c	Mon Mar  6 21:23:06 2000
+--- gphoto-0.4.3.my/src/main.c	Sun Mar 25 02:17:10 2001
+***************
+*** 65,70 ****
+--- 65,74 ----
+      abort();
+  }
+  
++ char *__progname = "none";
++ /* for stupid kodak that reference strict system specific things and
++    absolut non-portable variables */
++ 
+  int main (int argc, char *argv[]) {
+  
+  	int has_rc=0;
+***************
+*** 85,92 ****
+  	char title[256];
+  	char *envhome;
+  
+  	signal(SIGSEGV, crash);
+! 	
+  	Thumbnails.next = NULL;
+  	Images.next=NULL;
+  
+--- 89,99 ----
+  	char title[256];
+  	char *envhome;
+  
++ 	if (argc > 0)
++ 		__progname = strdup (argv[0]);
++ 		
+  	signal(SIGSEGV, crash);
+! 
+  	Thumbnails.next = NULL;
+  	Images.next=NULL;
+  

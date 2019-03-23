@@ -1,0 +1,42 @@
+--- gsm-1.0.10/Makefile	Tue Jul  2 14:36:06 1996
++++ gsm-1.0.10.patch/Makefile	Sun Feb 18 20:17:54 2001
+@@ -22,8 +22,8 @@
+ ######### both integer and floating point multiplications.
+ ######### This flag is still in the experimental stage.
+ 
+-#WAV49	= -DWAV49
+-WAV49	=
++WAV49	= -DWAV49
++#WAV49	=
+ ######### Define to enable the GSM library's option to pack GSM frames 
+ ######### in the style used by the WAV #49 format.  If you want to write
+ ######### a tool that produces .WAV files which contain GSM-encoded data,
+@@ -43,8 +43,8 @@
+ # CC		= /usr/lang/acc
+ # CCFLAGS 	= -c -O
+ 
+-CC		= gcc -ansi -pedantic
+-CCFLAGS 	= -c -O2 -DNeedFunctionPrototypes=1
++CC		= gcc 
++CCFLAGS 	= -c -O2 
+ 
+ LD 		= $(CC)
+ 
+@@ -71,7 +71,7 @@
+ # Leave INSTALL_ROOT empty (or just don't execute "make install") to
+ # not install gsm and toast outside of this directory.
+ 
+-INSTALL_ROOT	=
++INSTALL_ROOT	= 
+ 
+ # Where do you want to install the gsm library, header file, and manpages?
+ #
+@@ -80,7 +80,7 @@
+ 
+ GSM_INSTALL_ROOT = $(INSTALL_ROOT)
+ GSM_INSTALL_LIB = $(GSM_INSTALL_ROOT)/lib
+-GSM_INSTALL_INC = $(GSM_INSTALL_ROOT)/inc
++GSM_INSTALL_INC = $(GSM_INSTALL_ROOT)/include
+ GSM_INSTALL_MAN = $(GSM_INSTALL_ROOT)/man/man3
+ 
+ 

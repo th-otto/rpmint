@@ -1,0 +1,54 @@
+--- config.sample.orig	Sun Aug  8 01:31:40 2010
++++ config.sample	Sun Aug  8 01:24:32 2010
+@@ -30,7 +30,7 @@
+ 
+ # Uncomment this if there's only one user using this instance of Polipo:
+ 
+-# cacheIsShared = false
++cacheIsShared = false
+ 
+ # Uncomment this if you want to use a parent proxy:
+ 
+@@ -48,8 +48,8 @@
+ # Uncomment this if you want Polipo to use a ridiculously small amount
+ # of memory (a hundred C-64 worth or so):
+ 
+-# chunkHighMark = 819200
+-# objectHighMark = 128
++chunkHighMark = 819200
++objectHighMark = 128
+ 
+ # Uncomment this if you've got plenty of memory:
+ 
+@@ -62,7 +62,9 @@
+ 
+ # Uncomment this if you want to disable the on-disk cache:
+ 
+-# diskCacheRoot = ""
++# It seems to run more stable on FreeMiNT with disk caching disabled,
++# Disable the next line if you need disk caching. 
++diskCacheRoot = ""
+ 
+ # Uncomment this if you want to put the on-disk cache in a
+ # non-standard location:
+@@ -97,8 +99,8 @@
+ # Uncomment this to disable Polipo's DNS resolver and use the system's
+ # default resolver instead.  If you do that, Polipo will freeze during
+ # every DNS query:
+-
+-# dnsUseGethostbyname = yes
++# Uncommented, seems to be more stable
++dnsUseGethostbyname = yes
+ 
+ 
+ ### HTTP
+@@ -150,3 +152,9 @@
+ # Vary header (this is not a good idea):
+ 
+ # mindlesslyCacheVary = true
++
++# Other FreeMiNT specific settings follow:
++dnsMaxTimeout = 15
++serverTimeout = 30
++maxConnectionAge = 5m
++maxDiskEntries = 8

@@ -1,0 +1,10 @@
+diff -ur unzip-5.31-orig/Makefile unzip-5.31/Makefile
+--- unzip-5.31-orig/Makefile	Tue May 27 04:30:28 1997
++++ unzip-5.31/Makefile	Fri Jun 25 20:40:06 1999
+@@ -871,3 +871,6 @@
+ 	@echo
+ 	@echo  '	Ha ha!  Just kidding.'
+ 	@echo
++
++m68k-atari-mint:	unix_make
++	$(MAKE) unzips CC=gcc LD=gcc CF="-O2 -fomit-frame-pointer -Wall -I. $(LOC) -D_GNU_SOURCE -DUNIX -DSYSV"

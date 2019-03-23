@@ -1,0 +1,91 @@
+diff -rup mpeg_lib-1.3.1-orig/config.guess mpeg_lib-1.3.1/config.guess
+--- mpeg_lib-1.3.1-orig/config.guess	Tue Oct 10 12:38:00 1995
++++ mpeg_lib-1.3.1/config.guess	Thu Dec 11 19:14:26 2003
+@@ -96,6 +96,32 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:$
+ 	# Japanese Language versions have a version number like `4.1.3-JL'.
+ 	echo sparc-sun-sunos`echo ${UNAME_RELEASE}|sed -e 's/-/_/'`
+ 	exit 0 ;;
++    # The situation for MiNT is a little confusing.  The machine name
++    # can be virtually everything (everything which is not
++    # "atarist" or "atariste" at least should have a processor
++    # > m68000).  The system name ranges from "MiNT" over "FreeMiNT"
++    # to the lowercase version "mint" (or "freemint").  Finally
++    # the system name "TOS" denotes a system which is actually not
++    # MiNT.  But MiNT is downward compatible to TOS, so this should
++    # be no problem.
++    atarist[e]:*MiNT:*:* | atarist[e]:*mint:*:* | atarist[e]:*TOS:*:*)
++        echo m68k-atari-mint${UNAME_RELEASE}
++        exit 0 ;;
++    atari*:*MiNT:*:* | atari*:*mint:*:* | atarist[e]:*TOS:*:*)
++        echo m68k-atari-mint${UNAME_RELEASE}
++        exit 0 ;;
++    *falcon*:*MiNT:*:* | *falcon*:*mint:*:* | *falcon*:*TOS:*:*)
++        echo m68k-atari-mint${UNAME_RELEASE}
++        exit 0 ;;
++    milan*:*MiNT:*:* | milan*:*mint:*:* | *milan*:*TOS:*:*)
++        echo m68k-milan-mint${UNAME_RELEASE}
++        exit 0 ;;
++    hades*:*MiNT:*:* | hades*:*mint:*:* | *hades*:*TOS:*:*)
++        echo m68k-hades-mint${UNAME_RELEASE}
++        exit 0 ;;
++    *:*MiNT:*:* | *:*mint:*:* | *:*TOS:*:*)
++        echo m68k-unknown-mint${UNAME_RELEASE}
++        exit 0 ;;
+     sun3*:SunOS:*:*)
+ 	echo m68k-sun-sunos${UNAME_RELEASE}
+ 	exit 0 ;;
+diff -rup mpeg_lib-1.3.1-orig/config.sub mpeg_lib-1.3.1/config.sub
+--- mpeg_lib-1.3.1-orig/config.sub	Tue Oct 10 12:38:00 1995
++++ mpeg_lib-1.3.1/config.sub	Thu Dec 11 19:22:34 2003
+@@ -122,6 +122,10 @@ case $os in
+ 	-windowsnt*)
+ 		os=`echo $os | sed -e 's/windowsnt/winnt/'`
+ 		;;
++        -mint | -mint[0-9]*)
++                basic_machine=m68k-atari
++                os=-mint
++                ;;
+ esac
+ 
+ # Decode aliases for certain CPU-COMPANY combinations.
+@@ -351,6 +355,10 @@ case $basic_machine in
+ 	miniframe)
+ 		basic_machine=m68000-convergent
+ 		;;
++        *mint | -mint[0-9]* | *MiNT | *MiNT[0-9]*)
++                basic_machine=m68k-atari
++                os=-mint
++                ;;
+ 	mips3*-*)
+ 		basic_machine=`echo $basic_machine | sed -e 's/mips3/mips64/'`
+ 		;;
+@@ -695,6 +703,9 @@ case $os in
+ 	-xenix)
+ 		os=-xenix
+ 		;;
++        -*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
++                os=-mint
++                ;;
+ 	-none)
+ 		;;
+ 	*)
+@@ -807,6 +818,9 @@ case $basic_machine in
+ 	*-masscomp)
+ 		os=-rtu
+ 		;;
++        *-atari*)
++                os=-mint
++                ;;
+ 	*)
+ 		os=-none
+ 		;;
+@@ -858,6 +872,9 @@ case $basic_machine in
+ 			-vxworks*)
+ 				vendor=wrs
+ 				;;
++                        -*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
++                                vendor=atari
++                                ;;
+ 		esac
+ 		basic_machine=`echo $basic_machine | sed "s/unknown/$vendor/"`
+ 		;;

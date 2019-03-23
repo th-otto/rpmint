@@ -1,0 +1,25 @@
+diff --unified --recursive --new-file gnubg-0.02.orig/lib/event.c gnubg-0.02/lib/event.c
+--- gnubg-0.02.orig/lib/event.c	Tue Nov 23 02:30:40 1999
++++ gnubg-0.02/lib/event.c	Sat Apr  8 16:51:58 2000
+@@ -12,7 +12,9 @@
+ #include <limits.h>
+ #include <list.h>
+ #include <stdlib.h>
++#ifdef HAVE_SYSLOG_H
+ #include <syslog.h>
++#endif
+ #include <sys/types.h>
+ #include <unistd.h>
+ 
+@@ -302,7 +304,11 @@
+ 	    if( errno == EINTR )
+ 		continue;
+ 
++#ifdef HAVE_SYSLOG_H
+ 	    syslog( LOG_ERR, "select: %m" );
++#else
++	    perror("select");
++#endif
+ 
+ 	    return -1;
+ 	}

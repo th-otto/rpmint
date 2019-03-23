@@ -1,0 +1,12 @@
+diff -ur man-1.5g-orig/src/man.c man-1.5g/src/man.c
+--- man-1.5g-orig/src/man.c	Wed Apr  7 12:15:21 1999
++++ man-1.5g/src/man.c	Mon Jun 28 22:41:57 1999
+@@ -1094,7 +1094,7 @@
+      extern int optind;
+ #endif
+ 
+-#ifndef __FreeBSD__ 
++#if !defined(__FreeBSD__) && !defined(atarist)
+      /* Slaven Rezif: FreeBSD-2.2-SNAP does not recognize LC_MESSAGES. */
+      setlocale(LC_MESSAGES, "");
+ #endif

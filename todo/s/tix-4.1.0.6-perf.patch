@@ -1,0 +1,64 @@
+--- tcltk-8.0.5/Tix4.1.0/library/Balloon.tcl.perf	Sat May  1 14:48:36 1999
++++ tcltk-8.0.5/Tix4.1.0/library/Balloon.tcl	Sat May  1 14:59:44 1999
+@@ -116,21 +116,23 @@
+ # "RAW" event bindings:
+ #----------------------------------------------------------------------
+ 
+-bind all <B1-Motion> 	    "+tixBalloon_XXMotion %X %Y 1"
+-bind all <B2-Motion> 	    "+tixBalloon_XXMotion %X %Y 2"
+-bind all <B3-Motion> 	    "+tixBalloon_XXMotion %X %Y 3"
+-bind all <B4-Motion> 	    "+tixBalloon_XXMotion %X %Y 4"
+-bind all <B5-Motion> 	    "+tixBalloon_XXMotion %X %Y 5"
+-bind all <Any-Motion> 	    "+tixBalloon_XXMotion %X %Y 0"
+-bind all <Leave>      	    "+tixBalloon_XXMotion %X %Y %b"
+-bind all <Button>      	    "+tixBalloon_XXButton   %X %Y %b"
+-bind all <ButtonRelease>    "+tixBalloon_XXButtonUp %X %Y %b"
++#bind all <B1-Motion> 	    "+tixBalloon_XXMotion %X %Y 1"
++#bind all <B2-Motion> 	    "+tixBalloon_XXMotion %X %Y 2"
++#bind all <B3-Motion> 	    "+tixBalloon_XXMotion %X %Y 3"
++#bind all <B4-Motion> 	    "+tixBalloon_XXMotion %X %Y 4"
++#bind all <B5-Motion> 	    "+tixBalloon_XXMotion %X %Y 5"
++#bind all <Any-Motion> 	    "+tixBalloon_XXMotion %X %Y 0"
++bind all <Enter>	"+tixBalloon_XXMotion %W %X %Y 0"
++bind all <Leave>	"+tixBalloon_XXMotion %W %X %Y %b"
++#bind all <Button>      	    "+tixBalloon_XXButton   %X %Y %b"
++#bind all <ButtonRelease>    "+tixBalloon_XXButtonUp %X %Y %b"
+ 
+-proc tixBalloon_XXMotion {rootX rootY b} {
++proc tixBalloon_XXMotion {cw rootX rootY b} {
+     global tixBalloon
+ 
++#   set cw [winfo containing $rootX $rootY]
+     foreach w $tixBalloon(bals) {
+-	tixBalloon:XXMotion $w $rootX $rootY $b
++	tixBalloon:XXMotion $w $cw $rootX $rootY $b
+     }
+ }
+ 
+@@ -182,7 +184,7 @@
+     return 1
+ }
+ 
+-proc tixBalloon:XXMotion {w rootX rootY b} {
++proc tixBalloon:XXMotion {w cw rootX rootY b} {
+     upvar #0 $w data
+ 
+     if {$data(-state) == "none"} {
+@@ -204,7 +206,7 @@
+ 	return
+     }
+ 
+-    set cw [winfo containing $rootX $rootY]
++#    set cw [winfo containing $rootX $rootY]
+     if [tixBalloon:GrabBad $w $cw] {
+ 	return
+     }
+@@ -345,7 +347,7 @@
+ 
+     set data(isActive) 1
+ 
+-    after 200 tixBalloon:Verify $w
++#    after 200 tixBalloon:Verify $w
+ }
+ 
+ 

@@ -1,0 +1,55 @@
+--- joe/tty.c	Mon Jan 23 05:17:20 1995
++++ /tmp/tty.c	Mon Aug 31 14:44:31 1998
+@@ -308,16 +308,17 @@
+ static void dotick() { ticked=1; dostaupd=1; }
+ void tickoff() { alarm(0); }
+ 
++struct sigaction vnew;
++
++void tickon()
++ {
++ vnew.sa_handler = dotick;
+ #ifdef SA_INTERRUPT
+-struct sigaction vnew={dotick,0,SA_INTERRUPT};
++ vnew.sa_flags = SA_INTERRUPT;
+ #else
+-#ifdef SV_INTERRUPT
+-struct sigvec vnew={dotick,0,SV_INTERRUPT};
+-#endif
++ vnew.sa_flags = SV_INTERRUPT;
+ #endif
+ 
+-void tickon()
+- {
+  ticked=0;
+ #ifdef SA_INTERRUPT
+  sigaction(SIGALRM,&vnew,(struct sigaction *)0);
+@@ -861,13 +862,7 @@
+ #define SIGCHLD SIGCLD
+ #endif
+ 
+-#ifdef SA_INTERRUPT
+-struct sigaction inew={death,0,SA_INTERRUPT};
+-#else
+-#ifdef SV_INTERRUPT
+-struct sigvec inew={death,0,SV_INTERRUPT};
+-#endif
+-#endif
++struct sigaction inew;
+ 
+ /* Build a new environment */
+ 
+@@ -927,10 +922,13 @@
+   close(fds[1]);
+   close(comm[0]);
+   dead=0;
++  inew.sa_handler=death;
+ #ifdef SA_INTERRUPT
++  inew.sa_flags=SA_INTERRUPT;
+   sigaction(SIGCHLD,&inew,(struct sigaction *)0);
+ #else
+ #ifdef SV_INTERRUPT
++  inew.sa_flags=SV_INTERRUPT;
+   sigvec(SIGCHLD,&inew,(struct sigvec *)0);
+ #else
+   signal(SIGCHLD,death);

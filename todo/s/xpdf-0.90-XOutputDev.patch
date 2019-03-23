@@ -1,0 +1,26 @@
+--- xpdf-0.90/xpdf/XOutputDev.cc.orig	Tue Jun  6 12:36:07 2000
++++ xpdf-0.90/xpdf/XOutputDev.cc	Tue Jun  6 12:39:23 2000
+@@ -2121,7 +2121,10 @@
+   color = findColor(state->getFillColor());
+ 
+   // check for tiny (zero width or height) images
+-  if (w0 == 0 || h0 == 0) {
++  // and off-page images
++  if (w0 == 0 || h0 == 0 ||
++      x0 >= pixmapW || x0 + w0 <= 0 ||
++      y0 >= pixmapH || y0 + h0 <= 0) {
+     j = height * ((width + 7) / 8);
+     str->reset();
+     for (i = 0; i < j; ++i)
+@@ -2354,7 +2357,10 @@
+   dither = nComps > 1 || nBits > 1;
+ 
+   // check for tiny (zero width or height) images
+-  if (w0 == 0 || h0 == 0) {
++  // and off-page images
++  if (w0 == 0 || h0 == 0 ||
++      x0 >= pixmapW || x0 + w0 <= 0 ||
++      y0 >= pixmapH || y0 + h0 <= 0) {
+     j = height * ((nVals * nBits + 7) / 8);
+     str->reset();
+     for (i = 0; i < j; ++i)

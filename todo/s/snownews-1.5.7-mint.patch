@@ -1,0 +1,69 @@
+diff -p1 snownews-1.5.7/conversions.c snownews-1.5.7-aaa/conversions.c
+*** snownews-1.5.7/conversions.c	Sun Jun  5 11:50:22 2005
+--- snownews-1.5.7-aaa/conversions.c	Mon Aug  8 00:27:20 2005
+***************
+*** 25,27 ****
+   */
+!  
+  #include <string.h>
+--- 25,27 ----
+   */
+! 
+  #include <string.h>
+***************
+*** 34,36 ****
+  #include <libxml/HTMLparser.h>
+! #include <langinfo.h>
+  
+--- 34,36 ----
+  #include <libxml/HTMLparser.h>
+! /* #include <langinfo.h> */
+  
+***************
+*** 54,56 ****
+  
+! extern struct entity *first_entity;
+  
+--- 54,56 ----
+  
+! extern struct entity *first_entity; 
+  
+*************** int ISODateToUnix (char const * const IS
+*** 613,625 ****
+  	if (strptime(ISODate, "%Y-%m-%dT%T", t)) {
+! #ifdef __CYGWIN__
+  		time_unix = mktime(t);
+! #else
+! 		time_unix = timegm(t);
+! #endif
+  	} else if (strptime(ISODate, "%Y-%m-%d", t)) {
+! #ifdef __CYGWIN__
+  		time_unix = mktime(t);
+! #else
+! 		time_unix = timegm(t);
+! #endif
+  	}
+--- 613,621 ----
+  	if (strptime(ISODate, "%Y-%m-%dT%T", t)) {
+! 
+  		time_unix = mktime(t);
+! 
+  	} else if (strptime(ISODate, "%Y-%m-%d", t)) {
+! 
+  		time_unix = mktime(t);
+! 
+  	}
+*************** int pubDateToUnix (char const * const pu
+*** 666,672 ****
+  	if (strptime(start_here, "%d %b %Y %T", t)) {
+! #ifdef __CYGWIN__
+  		time_unix = mktime(t);
+- #else
+- 		time_unix = timegm(t);
+- #endif
+  	}
+--- 662,665 ----
+  	if (strptime(start_here, "%d %b %Y %T", t)) {
+! 
+  		time_unix = mktime(t);
+  	}

@@ -1,0 +1,125 @@
+diff -ur mgetty-1.1.22-orig/Makefile mgetty-1.1.22/Makefile
+--- mgetty-1.1.22-orig/Makefile	Tue Jan  9 13:13:28 2001
++++ mgetty-1.1.22/Makefile	Tue Jan  9 13:40:28 2001
+@@ -149,9 +149,9 @@
+ # For Linux, add "-lutil" if the linker complains about "updwtmp".
+ #
+ LDFLAGS=
+-LIBS=
++#LIBS=
+ #LIBS=-lprot -lsocket				# SCO Unix
+-#LIBS=-lsocket
++LIBS=-lsocket
+ #LIBS=-lbsd					# OSF/1
+ #LIBS=-lutil					# FreeBSD or Linux/GNU libc2
+ #LDFLAGS=-posix					# NeXT with POSIX
+diff -ur mgetty-1.1.22-orig/callback/callback.c mgetty-1.1.22/callback/callback.c
+--- mgetty-1.1.22-orig/callback/callback.c	Mon Aug 14 21:34:56 2000
++++ mgetty-1.1.22/callback/callback.c	Tue Jan  9 13:40:28 2001
+@@ -69,7 +69,7 @@
+ /* prototypes for system functions (that are missing in some 
+  * system header files)
+  */
+-#ifndef __NetBSD__
++#if !defined(__NetBSD__) && !defined(__MINT__)
+ time_t		time _PROTO(( long * tloc ));
+ #endif
+ 
+diff -ur mgetty-1.1.22-orig/faxrec.c mgetty-1.1.22/faxrec.c
+--- mgetty-1.1.22-orig/faxrec.c	Mon May 24 15:39:04 1999
++++ mgetty-1.1.22/faxrec.c	Tue Jan  9 13:40:28 2001
+@@ -35,7 +35,7 @@
+ extern time_t call_start;		/* in faxrecp.c, set in mgetty.c */
+ static time_t call_done;
+ 
+-#ifndef __NetBSD__
++#if !defined(__NetBSD__) && !defined(__MINT__)
+ time_t	time _PROTO(( long * tloc ));
+ #endif
+ 
+diff -ur mgetty-1.1.22-orig/logfile.c mgetty-1.1.22/logfile.c
+--- mgetty-1.1.22-orig/logfile.c	Tue Jan  9 13:13:30 2001
++++ mgetty-1.1.22/logfile.c	Tue Jan  9 13:40:28 2001
+@@ -19,7 +19,8 @@
+ #include <syslog.h>
+ 
+ #if !defined(linux) && !defined(BSD) && !defined(_SCO_DS) && \
+-    !defined(SVR42) && !defined(solaris2) && !defined(_AIX)
++    !defined(SVR42) && !defined(solaris2) && !defined(_AIX) && \
++    !defined(__MINT__)
+ int openlog _PROTO(( char *, int, int ));
+ int syslog _PROTO(( int, char *, ... ));
+ #endif
+@@ -53,7 +54,7 @@
+    of those systems that _do_ declare them, it won't hurt */
+ 
+ extern int sys_nerr;
+-#if !defined(__NetBSD__) && !defined( __FreeBSD__ ) && !defined(__GLIBC__)
++#if !defined(__NetBSD__) && !defined(__MINT__) && !defined( __FreeBSD__ ) && !defined(__GLIBC__)
+ extern char *sys_errlist[];
+ #endif
+ 
+diff -ur mgetty-1.1.22-orig/mgetty.c mgetty-1.1.22/mgetty.c
+--- mgetty-1.1.22-orig/mgetty.c	Tue Jan  9 13:13:30 2001
++++ mgetty-1.1.22/mgetty.c	Tue Jan  9 13:40:28 2001
+@@ -66,7 +66,7 @@
+ /* prototypes for system functions (that are missing in some 
+  * system header files)
+  */
+-#ifndef __NetBSD__
++#if !defined(__NetBSD__) && !defined(__MINT__)
+ time_t		time _PROTO(( long * tloc ));
+ #endif
+ 
+diff -ur mgetty-1.1.22-orig/mgetty.h mgetty-1.1.22/mgetty.h
+--- mgetty-1.1.22-orig/mgetty.h	Tue Jan  9 13:13:26 2001
++++ mgetty-1.1.22/mgetty.h	Tue Jan  9 13:40:28 2001
+@@ -296,7 +296,7 @@
+ extern char * mktemp _PROTO(( char * template ));
+ 
+ #if  !defined(linux) && !defined(SVR4) && !defined(__hpux) && \
+-     !defined(BSD) && !defined(M_UNIX) && !defined(_AIX)
++     !defined(BSD) && !defined(M_UNIX) && !defined(_AIX) && !defined(__MINT__)
+ extern int	getopt _PROTO(( int, char **, char * ));
+ #endif
+ extern int	optind;
+diff -ur mgetty-1.1.22-orig/tio.c mgetty-1.1.22/tio.c
+--- mgetty-1.1.22-orig/tio.c	Sat Oct 23 23:56:56 1999
++++ mgetty-1.1.22/tio.c	Tue Jan  9 13:46:38 2001
+@@ -45,6 +45,24 @@
+ 
+ /* some systems do not define all flags needed later, e.g. NetBSD */
+ 
++#ifdef __MINT__
++# ifndef IUCLC
++#  define IUCLC 0
++# endif
++# ifndef OXTABS
++#  define OXTABS 0
++# endif
++# ifndef IXANY
++#  define IXANY 0
++# endif
++# ifndef ONLCR
++#  define ONLCR 0
++# endif
++# ifndef TAB3
++#  define TAB3 OXTABS
++# endif
++#endif
++
+ #ifdef BSD
+ # ifndef IUCLC
+ # define IUCLC 0
+diff -ur mgetty-1.1.22-orig/tio.h mgetty-1.1.22/tio.h
+--- mgetty-1.1.22-orig/tio.h	Sat Oct 23 23:56:58 1999
++++ mgetty-1.1.22/tio.h	Tue Jan  9 13:40:28 2001
+@@ -18,7 +18,7 @@
+ #if !defined( POSIX_TERMIOS ) && !defined( BSD_SGTTY ) && !defined( SYSV_TERMIO)
+ # if defined(linux) || defined(sunos4) || defined(_AIX) || defined(BSD) || \
+      defined(SVR4) || defined(solaris2) || defined(m88k) || defined(M_UNIX) ||\
+-     defined(__sgi)
++     defined(__sgi) || defined(__MINT__)
+ #  define POSIX_TERMIOS
+ # else
+ #  define SYSV_TERMIO

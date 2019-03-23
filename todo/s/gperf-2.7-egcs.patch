@@ -1,0 +1,120 @@
+--- gperf-2.7/src/key-list.cc.egcs	Wed Apr 15 18:02:51 1998
++++ gperf-2.7/src/key-list.cc	Wed Mar 24 22:19:20 1999
+@@ -1069,7 +1069,7 @@
+             printf (", ");
+         }
+       if (option[TYPE])
+-        printf ("{\"\"}");
++        printf ("{\"\"%s}", option.get_fill_default());
+       else
+         printf ("\"\"");
+       column++;
+--- gperf-2.7/src/options.cc.egcs	Sat May  2 06:35:16 1998
++++ gperf-2.7/src/options.cc	Wed Mar 24 22:19:20 1999
+@@ -40,6 +40,9 @@
+ /* Default name for generated lookup function. */
+ static const char *const DEFAULT_NAME = "in_word_set";
+ 
++/* Default filler for keyword table. */
++static const char *const DEFAULT_FILL = "";
++
+ /* Default name for the key component. */
+ static const char *const DEFAULT_KEY = "name";
+ 
+@@ -66,6 +69,7 @@
+ int Options::iterations;
+ char **Options::argument_vector;
+ const char *Options::function_name;
++const char *Options::fill_default;
+ const char *Options::key_name;
+ const char *Options::class_name;
+ const char *Options::hash_name;
+@@ -265,6 +269,7 @@
+   jump                = DEFAULT_JUMP_VALUE;
+   option_word         = DEFAULTCHARS | C;
+   function_name       = DEFAULT_NAME;
++  fill_default        = DEFAULT_FILL;
+   key_name            = DEFAULT_KEY;
+   hash_name           = DEFAULT_HASH_NAME;
+   wordlist_name       = DEFAULT_WORDLIST_NAME;
+@@ -306,6 +311,7 @@
+                "\nSEVENBIT is....: %s"
+                "\niterations = %d"
+                "\nlookup function name = %s"
++               "\nfill default = %s"
+                "\nhash function name = %s"
+                "\nword list name = %s"
+                "\nkey name = %s"
+@@ -336,7 +342,7 @@
+                option_word & INCLUDE ? "enabled" : "disabled",
+                option_word & SEVENBIT ? "enabled" : "disabled",
+                iterations,
+-               function_name, hash_name, wordlist_name, key_name,
++               function_name, fill_default, hash_name, wordlist_name, key_name,
+                jump, size - 1, initial_asso_value, delimiters, total_switches);
+       if (option_word & ALLCHARS)
+         fprintf (stderr, "all characters are used in the hash function\n");
+@@ -379,6 +385,7 @@
+   { "compare-strlen", no_argument, 0, 'l' },
+   { "duplicates", no_argument, 0, 'D' },
+   { "fast", required_argument, 0, 'f' },
++  { "fill-default", required_argument, 0, 'F' },
+   { "initial-asso", required_argument, 0, 'i' },
+   { "jump", required_argument, 0, 'j' },
+   { "no-strlen", no_argument, 0, 'n' },
+@@ -403,7 +410,7 @@
+ 
+   while ((option_char =
+             getopt_long (argument_count, argument_vector,
+-                         "adcCDe:Ef:gGhH:i:Ij:k:K:lL:nN:oprs:S:tTvW:Z:7",
++                         "adcCDe:Ef:F:gGhH:i:Ij:k:K:lL:nN:oprs:S:tTvW:Z:7",
+                          long_options, (int *)0))
+          != -1)
+     {
+@@ -575,6 +582,11 @@
+         case 'N':               /* Make generated lookup function name be optarg */
+           {
+             function_name = /*getopt*/optarg;
++            break;
++          }
++        case 'F':               /* Make fill_default be optarg */
++          {
++            fill_default = /*getopt*/optarg;
+             break;
+           }
+         case 'o':               /* Order input by frequency of key set occurrence. */
+--- gperf-2.7/src/options.h.egcs	Tue Apr 14 06:55:28 1998
++++ gperf-2.7/src/options.h	Wed Mar 24 22:19:20 1999
+@@ -97,6 +97,7 @@
+   static int          initial_value (void);
+   static int          get_total_switches (void);
+   static const char  *get_function_name (void);
++  static const char  *get_fill_default (void);
+   static const char  *get_key_name (void);
+   static const char  *get_class_name (void);
+   static const char  *get_hash_name (void);
+@@ -115,6 +116,7 @@
+   static int          iterations;                         /* Amount to iterate when a collision occurs. */
+   static char       **argument_vector;                    /* Stores a pointer to command-line vector. */
+   static const char  *function_name;                      /* Names used for generated lookup function. */
++  static const char  *fill_default;                       /* Expression used to assign default values in keyword table. */
+   static const char  *key_name;                           /* Name used for keyword key. */
+   static const char  *class_name;                         /* Name used for generated C++ class. */
+   static const char  *hash_name;                          /* Name used for generated hash function. */
+--- gperf-2.7/src/options.icc.egcs	Sat Mar 21 07:51:17 1998
++++ gperf-2.7/src/options.icc	Wed Mar 24 22:19:20 1999
+@@ -110,6 +110,14 @@
+   return function_name;
+ }
+ 
++/* Returns the fill default. */
++INLINE const char *
++Options::get_fill_default (void)
++{
++  T (Trace t ("Options::get_fill_default");)
++  return fill_default;
++}
++
+ /* Returns the keyword key name. */
+ INLINE const char *
+ Options::get_key_name (void)

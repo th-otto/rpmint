@@ -1,0 +1,469 @@
+diff -ur gnupg-1.0.4-orig/acconfig.h gnupg-1.0.4/acconfig.h
+--- gnupg-1.0.4-orig/acconfig.h	Fri Aug 25 13:17:14 2000
++++ gnupg-1.0.4/acconfig.h	Sat Jan  6 14:59:48 2001
+@@ -69,7 +69,7 @@
+ /* and the real names of the random devices */
+ #undef NAME_OF_DEV_RANDOM
+ #undef NAME_OF_DEV_URANDOM
+-/* Linux has an ioctl */
++/* Linux and MiNT have an ioctl */
+ #undef HAVE_DEV_RANDOM_IOCTL
+ 
+ /* see cipher/rndegd.c */
+--- gnupg-1.0.4/acinclude.m4.mint	Mon Oct  9 13:41:12 2000
++++ gnupg-1.0.4/acinclude.m4	Sat Jan  6 17:25:12 2001
+@@ -463,7 +463,7 @@
+ AC_SUBST(NM)
+ ])
+ 
+-# GNUPG_SYS_NM_PARSE - Check for command ro grab the raw symbol name followed
++# GNUPG_SYS_NM_PARSE - Check for command to grab the raw symbol name followed
+ # by C symbol name from nm.
+ AC_DEFUN(GNUPG_SYS_NM_PARSE,
+ [AC_REQUIRE([AC_CANONICAL_HOST])dnl
+@@ -516,12 +516,18 @@
+ esac
+ changequote([,])dnl
+ 
+-# Write the raw and C identifiers.
+-ac_cv_sys_global_symbol_pipe="sed -n -e 's/^.* $ac_symcode $ac_sympat$/$ac_symxfrm/p'"
++# Try with and without leading underscore.
++for ac_symprfx in "" "_"; do
+ 
+-# Check to see that the pipe works correctly.
+-ac_pipe_works=no
+-cat > conftest.$ac_ext <<EOF
++  ac_sympat=$ac_symprfx$ac_sympat
++  ac_symxrm=$ac_symprfx$ac_
++
++  # Write the raw and C identifiers.
++  ac_cv_sys_global_symbol_pipe="sed -n -e 's/^.* $ac_symcode $ac_sympat$/$ac_symxfrm/p'"
++
++  # Check to see that the pipe works correctly.
++  ac_pipe_works=no
++  cat > conftest.$ac_ext <<EOF
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -532,37 +538,37 @@
+ #endif
+ int main(){nm_test_var='a';nm_test_func;return 0;}
+ EOF
+-if AC_TRY_EVAL(ac_compile); then
+-  # Now try to grab the symbols.
+-  ac_nlist=conftest.nm
+-  if AC_TRY_EVAL(NM conftest.$ac_objext \| $ac_cv_sys_global_symbol_pipe \> $ac_nlist) && test -s "$ac_nlist"; then
+-
+-    # Try sorting and uniquifying the output.
+-    if sort "$ac_nlist" | uniq > "$ac_nlist"T; then
+-      mv -f "$ac_nlist"T "$ac_nlist"
+-      ac_wcout=`wc "$ac_nlist" 2>/dev/null`
++  if AC_TRY_EVAL(ac_compile); then
++    # Now try to grab the symbols.
++    ac_nlist=conftest.nm
++    if AC_TRY_EVAL(NM conftest.$ac_objext \| $ac_cv_sys_global_symbol_pipe \> $ac_nlist) && test -s "$ac_nlist"; then
++
++      # Try sorting and uniquifying the output.
++      if sort "$ac_nlist" | uniq > "$ac_nlist"T; then
++        mv -f "$ac_nlist"T "$ac_nlist"
++        ac_wcout=`wc "$ac_nlist" 2>/dev/null`
+ changequote(,)dnl
+-      ac_count=`echo "X$ac_wcout" | sed -e 's,^X,,' -e 's/^[    ]*\([0-9][0-9]*\).*$/\1/'`
++        ac_count=`echo "X$ac_wcout" | sed -e 's,^X,,' -e 's/^[    ]*\([0-9][0-9]*\).*$/\1/'`
+ changequote([,])dnl
+-      (test "$ac_count" -ge 0) 2>/dev/null || ac_count=-1
+-    else
+-      rm -f "$ac_nlist"T
+-      ac_count=-1
+-    fi
++        (test "$ac_count" -ge 0) 2>/dev/null || ac_count=-1
++      else
++        rm -f "$ac_nlist"T
++        ac_count=-1
++      fi
+ 
+-    # Make sure that we snagged all the symbols we need.
+-    if egrep ' nm_test_var$' "$ac_nlist" >/dev/null; then
+-      if egrep ' nm_test_func$' "$ac_nlist" >/dev/null; then
+-        cat <<EOF > conftest.c
++      # Make sure that we snagged all the symbols we need.
++      if egrep ' nm_test_var$' "$ac_nlist" >/dev/null; then
++        if egrep ' nm_test_func$' "$ac_nlist" >/dev/null; then
++          cat <<EOF > conftest.c
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+ 
+ EOF
+-        # Now generate the symbol file.
+-        sed 's/^.* \(.*\)$/extern char \1;/' < "$ac_nlist" >> conftest.c
++          # Now generate the symbol file.
++          sed 's/^.* \(.*\)$/extern char \1;/' < "$ac_nlist" >> conftest.c
+ 
+-        cat <<EOF >> conftest.c
++          cat <<EOF >> conftest.c
+ #if defined (__STDC__) && __STDC__
+ # define __ptr_t void *
+ #else
+@@ -591,37 +597,38 @@
+ }
+ #endif
+ EOF
+-        # Now try linking the two files.
+-        mv conftest.$ac_objext conftestm.$ac_objext
+-        ac_save_LIBS="$LIBS"
+-        ac_save_CFLAGS="$CFLAGS"
+-        LIBS="conftestm.$ac_objext"
+-        CFLAGS="$CFLAGS$no_builtin_flag"
+-        if AC_TRY_EVAL(ac_link) && test -s conftest; then
+-          ac_pipe_works=yes
++          # Now try linking the two files.
++          mv conftest.$ac_objext conftestm.$ac_objext
++          ac_save_LIBS="$LIBS"
++          ac_save_CFLAGS="$CFLAGS"
++          LIBS="conftestm.$ac_objext"
++          CFLAGS="$CFLAGS$no_builtin_flag"
++          if AC_TRY_EVAL(ac_link) && test -s conftest; then
++            ac_pipe_works=yes
++          else
++            echo "configure: failed program was:" >&AC_FD_CC
++            cat conftest.c >&AC_FD_CC
++          fi
++          LIBS="$ac_save_LIBS"
++          CFLAGS="$ac_save_CFLAGS"
+         else
+-          echo "configure: failed program was:" >&AC_FD_CC
+-          cat conftest.c >&AC_FD_CC
++          echo "cannot find nm_test_func in $ac_nlist" >&AC_FD_CC
+         fi
+-        LIBS="$ac_save_LIBS"
+-        CFLAGS="$ac_save_CFLAGS"
+       else
+-        echo "cannot find nm_test_func in $ac_nlist" >&AC_FD_CC
++        echo "cannot find nm_test_var in $ac_nlist" >&AC_FD_CC
+       fi
+     else
+-      echo "cannot find nm_test_var in $ac_nlist" >&AC_FD_CC
++      echo "cannot run $ac_cv_sys_global_symbol_pipe" >&AC_FD_CC
+     fi
+   else
+-    echo "cannot run $ac_cv_sys_global_symbol_pipe" >&AC_FD_CC
++    echo "$progname: failed program was:" >&AC_FD_CC
++    cat conftest.c >&AC_FD_CC
+   fi
+-else
+-  echo "$progname: failed program was:" >&AC_FD_CC
+-  cat conftest.c >&AC_FD_CC
+-fi
+-rm -rf conftest*
++  rm -rf conftest*
++done
+ 
+-# Do not use the global_symbol_pipe unless it works.
+-test "$ac_pipe_works" = yes || ac_cv_sys_global_symbol_pipe=
++  # Do not use the global_symbol_pipe unless it works.
++  test "$ac_pipe_works" = yes || ac_cv_sys_global_symbol_pipe=
+ ])
+ 
+ ac_result=yes
+@@ -659,33 +666,9 @@
+ AC_REQUIRE([GNUPG_SYS_NM_PARSE])dnl
+ AC_MSG_CHECKING([for _ prefix in compiled symbols])
+ AC_CACHE_VAL(ac_cv_sys_symbol_underscore,
+-[ac_cv_sys_symbol_underscore=no
+-cat > conftest.$ac_ext <<EOF
+-void nm_test_func(){}
+-int main(){nm_test_func;return 0;}
+-EOF
+-if AC_TRY_EVAL(ac_compile); then
+-  # Now try to grab the symbols.
+-  ac_nlist=conftest.nm
+-  if AC_TRY_EVAL(NM conftest.$ac_objext \| $ac_cv_sys_global_symbol_pipe \> $ac_nlist) && test -s "$ac_nlist"; then
+-    # See whether the symbols have a leading underscore.
+-    if egrep '^_nm_test_func' "$ac_nlist" >/dev/null; then
+-      ac_cv_sys_symbol_underscore=yes
+-    else
+-      if egrep '^nm_test_func ' "$ac_nlist" >/dev/null; then
+-        :
+-      else
+-        echo "configure: cannot find nm_test_func in $ac_nlist" >&AC_FD_CC
+-      fi
+-    fi
+-  else
+-    echo "configure: cannot run $ac_cv_sys_global_symbol_pipe" >&AC_FD_CC
+-  fi
+-else
+-  echo "configure: failed program was:" >&AC_FD_CC
+-  cat conftest.c >&AC_FD_CC
+-fi
+-rm -rf conftest*
++[test $ac_pipe_works
++ac_cv_sys_symbol_underscore=no
++test "$ac_pipe_works$ac_symprfx" = "yes_" && ac_cv_sys_symbol_underscore=yes
+ ])
+ else
+ AC_MSG_CHECKING([for _ prefix in compiled symbols])
+--- gnupg-1.0.4/aclocal.m4.mint	Tue Oct 17 15:39:38 2000
++++ gnupg-1.0.4/aclocal.m4	Sat Jan  6 17:27:50 2001
+@@ -466,7 +466,7 @@
+ AC_SUBST(NM)
+ ])
+ 
+-# GNUPG_SYS_NM_PARSE - Check for command ro grab the raw symbol name followed
++# GNUPG_SYS_NM_PARSE - Check for command to grab the raw symbol name followed
+ # by C symbol name from nm.
+ AC_DEFUN(GNUPG_SYS_NM_PARSE,
+ [AC_REQUIRE([AC_CANONICAL_HOST])dnl
+@@ -519,12 +519,18 @@
+ esac
+ changequote([,])dnl
+ 
+-# Write the raw and C identifiers.
+-ac_cv_sys_global_symbol_pipe="sed -n -e 's/^.* $ac_symcode $ac_sympat$/$ac_symxfrm/p'"
++# Try with and without leading underscore.
++for ac_symprfx in "" "_"; do
+ 
+-# Check to see that the pipe works correctly.
+-ac_pipe_works=no
+-cat > conftest.$ac_ext <<EOF
++  ac_sympat=$ac_symprfx$ac_sympat
++  ac_symxrm=$ac_symprfx$ac_
++
++  # Write the raw and C identifiers.
++  ac_cv_sys_global_symbol_pipe="sed -n -e 's/^.* $ac_symcode $ac_sympat$/$ac_symxfrm/p'"
++
++  # Check to see that the pipe works correctly.
++  ac_pipe_works=no
++  cat > conftest.$ac_ext <<EOF
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -535,37 +541,37 @@
+ #endif
+ int main(){nm_test_var='a';nm_test_func;return 0;}
+ EOF
+-if AC_TRY_EVAL(ac_compile); then
+-  # Now try to grab the symbols.
+-  ac_nlist=conftest.nm
+-  if AC_TRY_EVAL(NM conftest.$ac_objext \| $ac_cv_sys_global_symbol_pipe \> $ac_nlist) && test -s "$ac_nlist"; then
+-
+-    # Try sorting and uniquifying the output.
+-    if sort "$ac_nlist" | uniq > "$ac_nlist"T; then
+-      mv -f "$ac_nlist"T "$ac_nlist"
+-      ac_wcout=`wc "$ac_nlist" 2>/dev/null`
++  if AC_TRY_EVAL(ac_compile); then
++    # Now try to grab the symbols.
++    ac_nlist=conftest.nm
++    if AC_TRY_EVAL(NM conftest.$ac_objext \| $ac_cv_sys_global_symbol_pipe \> $ac_nlist) && test -s "$ac_nlist"; then
++
++      # Try sorting and uniquifying the output.
++      if sort "$ac_nlist" | uniq > "$ac_nlist"T; then
++        mv -f "$ac_nlist"T "$ac_nlist"
++        ac_wcout=`wc "$ac_nlist" 2>/dev/null`
+ changequote(,)dnl
+-      ac_count=`echo "X$ac_wcout" | sed -e 's,^X,,' -e 's/^[    ]*\([0-9][0-9]*\).*$/\1/'`
++        ac_count=`echo "X$ac_wcout" | sed -e 's,^X,,' -e 's/^[    ]*\([0-9][0-9]*\).*$/\1/'`
+ changequote([,])dnl
+-      (test "$ac_count" -ge 0) 2>/dev/null || ac_count=-1
+-    else
+-      rm -f "$ac_nlist"T
+-      ac_count=-1
+-    fi
++        (test "$ac_count" -ge 0) 2>/dev/null || ac_count=-1
++      else
++        rm -f "$ac_nlist"T
++        ac_count=-1
++      fi
+ 
+-    # Make sure that we snagged all the symbols we need.
+-    if egrep ' nm_test_var$' "$ac_nlist" >/dev/null; then
+-      if egrep ' nm_test_func$' "$ac_nlist" >/dev/null; then
+-        cat <<EOF > conftest.c
++      # Make sure that we snagged all the symbols we need.
++      if egrep ' nm_test_var$' "$ac_nlist" >/dev/null; then
++        if egrep ' nm_test_func$' "$ac_nlist" >/dev/null; then
++          cat <<EOF > conftest.c
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+ 
+ EOF
+-        # Now generate the symbol file.
+-        sed 's/^.* \(.*\)$/extern char \1;/' < "$ac_nlist" >> conftest.c
++          # Now generate the symbol file.
++          sed 's/^.* \(.*\)$/extern char \1;/' < "$ac_nlist" >> conftest.c
+ 
+-        cat <<EOF >> conftest.c
++          cat <<EOF >> conftest.c
+ #if defined (__STDC__) && __STDC__
+ # define __ptr_t void *
+ #else
+@@ -594,37 +600,38 @@
+ }
+ #endif
+ EOF
+-        # Now try linking the two files.
+-        mv conftest.$ac_objext conftestm.$ac_objext
+-        ac_save_LIBS="$LIBS"
+-        ac_save_CFLAGS="$CFLAGS"
+-        LIBS="conftestm.$ac_objext"
+-        CFLAGS="$CFLAGS$no_builtin_flag"
+-        if AC_TRY_EVAL(ac_link) && test -s conftest; then
+-          ac_pipe_works=yes
++          # Now try linking the two files.
++          mv conftest.$ac_objext conftestm.$ac_objext
++          ac_save_LIBS="$LIBS"
++          ac_save_CFLAGS="$CFLAGS"
++          LIBS="conftestm.$ac_objext"
++          CFLAGS="$CFLAGS$no_builtin_flag"
++          if AC_TRY_EVAL(ac_link) && test -s conftest; then
++            ac_pipe_works=yes
++          else
++            echo "configure: failed program was:" >&AC_FD_CC
++            cat conftest.c >&AC_FD_CC
++          fi
++          LIBS="$ac_save_LIBS"
++          CFLAGS="$ac_save_CFLAGS"
+         else
+-          echo "configure: failed program was:" >&AC_FD_CC
+-          cat conftest.c >&AC_FD_CC
++          echo "cannot find nm_test_func in $ac_nlist" >&AC_FD_CC
+         fi
+-        LIBS="$ac_save_LIBS"
+-        CFLAGS="$ac_save_CFLAGS"
+       else
+-        echo "cannot find nm_test_func in $ac_nlist" >&AC_FD_CC
++        echo "cannot find nm_test_var in $ac_nlist" >&AC_FD_CC
+       fi
+     else
+-      echo "cannot find nm_test_var in $ac_nlist" >&AC_FD_CC
++      echo "cannot run $ac_cv_sys_global_symbol_pipe" >&AC_FD_CC
+     fi
+   else
+-    echo "cannot run $ac_cv_sys_global_symbol_pipe" >&AC_FD_CC
++    echo "$progname: failed program was:" >&AC_FD_CC
++    cat conftest.c >&AC_FD_CC
+   fi
+-else
+-  echo "$progname: failed program was:" >&AC_FD_CC
+-  cat conftest.c >&AC_FD_CC
+-fi
+-rm -rf conftest*
++  rm -rf conftest*
++done
+ 
+-# Do not use the global_symbol_pipe unless it works.
+-test "$ac_pipe_works" = yes || ac_cv_sys_global_symbol_pipe=
++  # Do not use the global_symbol_pipe unless it works.
++  test "$ac_pipe_works" = yes || ac_cv_sys_global_symbol_pipe=
+ ])
+ 
+ ac_result=yes
+@@ -662,33 +669,9 @@
+ AC_REQUIRE([GNUPG_SYS_NM_PARSE])dnl
+ AC_MSG_CHECKING([for _ prefix in compiled symbols])
+ AC_CACHE_VAL(ac_cv_sys_symbol_underscore,
+-[ac_cv_sys_symbol_underscore=no
+-cat > conftest.$ac_ext <<EOF
+-void nm_test_func(){}
+-int main(){nm_test_func;return 0;}
+-EOF
+-if AC_TRY_EVAL(ac_compile); then
+-  # Now try to grab the symbols.
+-  ac_nlist=conftest.nm
+-  if AC_TRY_EVAL(NM conftest.$ac_objext \| $ac_cv_sys_global_symbol_pipe \> $ac_nlist) && test -s "$ac_nlist"; then
+-    # See whether the symbols have a leading underscore.
+-    if egrep '^_nm_test_func' "$ac_nlist" >/dev/null; then
+-      ac_cv_sys_symbol_underscore=yes
+-    else
+-      if egrep '^nm_test_func ' "$ac_nlist" >/dev/null; then
+-        :
+-      else
+-        echo "configure: cannot find nm_test_func in $ac_nlist" >&AC_FD_CC
+-      fi
+-    fi
+-  else
+-    echo "configure: cannot run $ac_cv_sys_global_symbol_pipe" >&AC_FD_CC
+-  fi
+-else
+-  echo "configure: failed program was:" >&AC_FD_CC
+-  cat conftest.c >&AC_FD_CC
+-fi
+-rm -rf conftest*
++[test $ac_pipe_works
++ac_cv_sys_symbol_underscore=no
++test "$ac_pipe_works$ac_symprfx" = "yes_" && ac_cv_sys_symbol_underscore=yes
+ ])
+ else
+ AC_MSG_CHECKING([for _ prefix in compiled symbols])
+diff -ur gnupg-1.0.4-orig/cipher/rndlinux.c gnupg-1.0.4/cipher/rndlinux.c
+--- gnupg-1.0.4-orig/cipher/rndlinux.c	Fri Aug 25 16:00:14 2000
++++ gnupg-1.0.4/cipher/rndlinux.c	Sat Jan  6 14:59:48 2001
+@@ -34,10 +34,16 @@
+ #include <unistd.h>
+ #include <fcntl.h>
+ #if 0
+-  #ifdef HAVE_LINUX_RANDOM_H
+-    #include <sys/ioctl.h>
+-    #include <asm/types.h>
+-    #include <linux/random.h>
++  #ifdef __MINT__
++   #ifdef HAVE_MINT_RANDOM_H
++    #include <mint/random.h>
++   #endif
++  #else
++   #ifdef HAVE_LINUX_RANDOM_H
++     #include <sys/ioctl.h>
++     #include <asm/types.h>
++     #include <linux/random.h>
++   #endif
+   #endif
+ #endif
+ #include "types.h"
+diff -ur gnupg-1.0.4-orig/config.h.in gnupg-1.0.4/config.h.in
+--- gnupg-1.0.4-orig/config.h.in	Wed Sep  6 17:23:46 2000
++++ gnupg-1.0.4/config.h.in	Sat Jan  6 14:59:48 2001
+@@ -119,7 +119,7 @@
+ /* and the real names of the random devices */
+ #undef NAME_OF_DEV_RANDOM
+ #undef NAME_OF_DEV_URANDOM
+-/* Linux has an ioctl */
++/* Linux and MiNT have an ioctl */
+ #undef HAVE_DEV_RANDOM_IOCTL
+ 
+ /* see cipher/rndegd.c */
+@@ -310,6 +310,9 @@
+ 
+ /* Define if you have the <malloc.h> header file.  */
+ #undef HAVE_MALLOC_H
++
++/* Define if you have the <mint/random.h> header file.  */
++#undef HAVE_MINT_RANDOM_H
+ 
+ /* Define if you have the <nl_types.h> header file.  */
+ #undef HAVE_NL_TYPES_H
+--- gnupg-1.0.4-orig/configure.in	Tue Oct 17 15:29:30 2000
++++ gnupg-1.0.4/configure.in	Sat Jan  6 14:59:48 2001
+@@ -489,8 +489,11 @@
+ dnl
+ if test "$ac_cv_have_dev_random" = yes ; then
+     AC_CHECK_HEADERS(linux/random.h)
++    AC_CHECK_HEADERS(mint/random.h)
+     AC_CACHE_CHECK(for random device ioctl, ac_cv_have_dev_random_ioctl,
+       [ if test "$ac_cv_header_linux_random_h" = yes ; then
++          ac_cv_have_dev_random_ioctl=yes;
++        elif test "$ac_cv_header_mint_random_h" = yes ; then
+           ac_cv_have_dev_random_ioctl=yes;
+         else
+           ac_cv_have_dev_random_ioctl=no;
+--- gnupg-1.0.4/util/secmem.c.orig	Mon Oct 16 17:43:40 2000
++++ gnupg-1.0.4/util/secmem.c	Sat Jan  6 19:56:36 2001
+@@ -153,7 +153,7 @@
+ 	show_warning = 1;
+     }
+ 
+-  #elif defined ( __QNX__ )
++  #elif defined ( __QNX__ ) || defined ( __MINT__ )
+     /* QNX does not page at all, so the whole secure memory stuff does
+      * not make much sense.  However it is still of use because it
+      * wipes out the memory on a free().

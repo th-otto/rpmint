@@ -1,0 +1,55 @@
+--- tcltk-8.0.5/tk8.0.5/unix/Makefile.in.~	Tue Mar  9 07:53:50 1999
++++ tcltk-8.0.5/tk8.0.5/unix/Makefile.in	Sun Jul  9 14:18:12 2000
+@@ -112,7 +112,7 @@
+ 
+ # Libraries to use when linking.  This definition is determined by the
+ # configure script.
+-LIBS = @TCL_BUILD_LIB_SPEC@ @LIBS@ $(X11_LIB_SWITCHES) @DL_LIBS@ @MATH_LIBS@ -lc
++LIBS = @TCL_BUILD_LIB_SPEC@ $(X11_LIB_SWITCHES) @LIBS@ @DL_LIBS@ @MATH_LIBS@ -lc
+ 
+ # To turn off the security checks that disallow incoming sends when
+ # the X server appears to be insecure, reverse the comments on the
+--- tcltk-8.0.5/tclX8.0.4/unix/configure.in.bak	Sun Jul  9 13:48:54 2000
++++ tcltk-8.0.5/tclX8.0.4/unix/configure.in	Sun Jul  9 16:02:14 2000
+@@ -652,7 +652,7 @@
+ # Check for missing typedefs.
+ #------------------------------------------------------------------------------
+ 
+-AC_CHECK_TYPE(clock_t, long)
++#AC_CHECK_TYPE(clock_t, long)
+ AC_CHECK_TYPE(time_t, long)
+ AC_CHECK_TYPE(off_t, long)
+ 
+--- tcltk-8.0.5/tk8.0.5/unix/tkUnixPort.h.~	Wed Sep 30 21:01:22 1998
++++ tcltk-8.0.5/tk8.0.5/unix/tkUnixPort.h	Thu Nov 16 11:17:26 2000
+@@ -18,7 +18,9 @@
+ #ifndef _UNIXPORT
+ #define _UNIXPORT
+ 
++#ifndef __UNIX__
+ #define __UNIX__ 1
++#endif
+ 
+ /*
+  * Macro to use instead of "void" for arguments that must have
+--- tcltk-8.0.5/tclX8.0.4/tcl/generic/tclXsignal.c.bak	Mon Dec  7 03:47:10 1998
++++ tcltk-8.0.5/tclX8.0.4/tcl/generic/tclXsignal.c	Tue Jul 11 12:25:42 2000
+@@ -373,6 +373,7 @@
+     if (sigaction (signalNum, NULL, &currentState) < 0)
+         return TCL_ERROR;
+     *sigProcPtr = currentState.sa_handler;
++#define SA_RESTART 0x4000
+     *restart = ((currentState.sa_flags & SA_RESTART) != 0);
+     return TCL_OK;
+ #else
+--- tcltk-8.0.5/tclX8.0.4/unix/Makefile.in.bak	Mon Dec  7 03:47:30 1998
++++ tcltk-8.0.5/tclX8.0.4/unix/Makefile.in	Thu Nov 16 12:19:16 2000
+@@ -130,7 +130,7 @@
+ TKX_INSTALL_EXEC_NO:
+ 
+ TCLX_INSTALL_MAN:
+-	${CPMANPAGES} -rmcat @${MAN_DIR_SEPARATOR}@ \
++	${CPMANPAGES} @${MAN_DIR_SEPARATOR}@ \
+ 	    ${TCLX_MAN_CMD_SECTION} ${TCLX_MAN_FUNC_SECTION} @@ \
+ 	    ${srcbasedir}/doc ${INSTALL_ROOT}${TCLX_INST_MAN}
+ 

@@ -1,0 +1,20 @@
+--- traceroute-1.4a5/traceroute.c.orig	Thu May 27 11:15:02 1999
++++ traceroute-1.4a5/traceroute.c	Thu May 27 11:22:15 1999
+@@ -258,7 +258,7 @@ struct hostinfo {
+ struct outdata {
+ 	u_char seq;		/* sequence number of this packet */
+ 	u_char ttl;		/* ttl packet left with */
+-	struct timeval tv;	/* time packet left */
++	struct timeval tv __attribute__((packed)); /* time packet left */
+ };
+ 
+ u_char	packet[512];		/* last inbound (icmp) packet */
+@@ -917,7 +917,7 @@ send_probe(register int seq, int ttl, re
+ 	/* Payload */
+ 	outdata->seq = seq;
+ 	outdata->ttl = ttl;
+-	outdata->tv = *tp;
++	memcpy(&outdata->tv, tp, sizeof(outdata->tv));
+ 
+ 	if (useicmp)
+ 		outicmp->icmp_seq = htons(seq);

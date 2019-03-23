@@ -1,0 +1,17 @@
+--- sharutils-4.2/src/uudecode.c.uudecode	Tue Sep  7 10:17:14 1999
++++ sharutils-4.2/src/uudecode.c	Tue Sep  7 10:21:12 1999
+@@ -292,12 +292,12 @@
+ 
+       if (strncmp (buf, "begin", 5) == 0)
+ 	{
+-	  if (sscanf (buf, "begin-base64 %o %s", &mode, buf) == 2)
++	  if (sscanf (buf, "begin-base64 %o %[^\n]", &mode, buf) == 2)
+ 	    {
+ 	      do_base64 = 1;
+ 	      break;
+ 	    }
+-	  else if (sscanf (buf, "begin %o %s", &mode, buf) == 2)
++	  else if (sscanf (buf, "begin %o %[^\n]", &mode, buf) == 2)
+ 	    break;
+ 	}
+     }

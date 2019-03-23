@@ -1,0 +1,99 @@
+--- lynx2-8-1/userdefs.h.redhat	Sat Oct 24 12:49:07 1998
++++ lynx2-8-1/userdefs.h	Mon Mar 29 16:06:25 1999
+@@ -88,7 +88,7 @@
+  * mailcap files (see the examples in the samples directory).
+  */
+ #ifndef LYNX_CFG_FILE
+-#define LYNX_CFG_FILE "Lynx_Dir:lynx.cfg"
++#define LYNX_CFG_FILE "/etc/lynx.cfg"
+ #endif /* LYNX_CFG_FILE */
+ 
+ /**************************
+@@ -97,8 +97,8 @@
+  * These global and personal files override anything in
+  * lynx.cfg or src/HTInit.c
+  */
+-#define GLOBAL_EXTENSION_MAP "Lynx_Dir:mime.types"
+-#define PERSONAL_EXTENSION_MAP "mime.types"
++#define GLOBAL_EXTENSION_MAP "/etc/mime.types"
++#define PERSONAL_EXTENSION_MAP ".mime.types"
+ 
+ /**************************
+  * The MAILCAP file allows you to map file MIME types to
+@@ -106,7 +106,7 @@
+  * These global and personal files override anything in
+  * lynx.cfg or src/HTInit.c
+  */
+-#define GLOBAL_MAILCAP "Lynx_Dir:mailcap"
++#define GLOBAL_MAILCAP "/etc/mailcap"
+ #define PERSONAL_MAILCAP ".mailcap"
+ 
+ /**************************
+@@ -269,7 +269,7 @@
+ #ifdef DOSPATH
+ #define LYNX_CFG_FILE "./lynx.cfg"
+ #else
+-#define LYNX_CFG_FILE "/usr/local/lib/lynx.cfg"
++#define LYNX_CFG_FILE "/etc/lynx.cfg"
+ #endif /* DOSPATH */
+ #endif /* LYNX_CFG_FILE */
+ #endif /* HAVE_CONFIG_H */
+@@ -280,7 +280,7 @@
+  * These global and personal files override anything in
+  * lynx.cfg or src/HTInit.c
+  */
+-#define GLOBAL_EXTENSION_MAP "/usr/local/lib/mosaic/mime.types"
++#define GLOBAL_EXTENSION_MAP "/etc/mime.types"
+ #define PERSONAL_EXTENSION_MAP ".mime.types"
+ 
+ /**************************
+@@ -289,7 +289,7 @@
+  * These global and personal files override anything in
+  * lynx.cfg or src/HTInit.c
+  */
+-#define GLOBAL_MAILCAP "/usr/local/lib/mosaic/mailcap"
++#define GLOBAL_MAILCAP "/etc/mailcap"
+ #define PERSONAL_MAILCAP ".mailcap"
+ 
+ /**************************
+@@ -341,7 +341,7 @@
+  * The definition here can be overridden at run time by setting a
+  * "LYNX_TEMP_SPACE" environment symbol.
+  */
+-#define TEMP_SPACE "/tmp/"
++#define TEMP_SPACE "~"
+ 
+ /********************************
+  * Comment this line out to let the user enter his/her email address
+@@ -1010,7 +1010,7 @@
+  * lynxcgi:advice  as a G)oto URL for more information and links to the
+  * OSU server distribution.
+  */
+-/* #define LYNXCGI_LINKS */
++#define LYNXCGI_LINKS
+ 
+ #if defined(EXEC_LINKS) || defined(EXEC_SCRIPTS)
+ 
+--- lynx2-8-1/lynx.cfg.redhat	Sat Oct 24 12:49:07 1998
++++ lynx2-8-1/lynx.cfg	Mon Mar 29 16:05:15 1999
+@@ -41,7 +41,8 @@
+ #  replace PATH_TO with the complete path to FILENAME
+ #  use Unix SHELL syntax and include the device on VMS systems)
+ #
+-STARTFILE:http://lynx.browser.org/
++#STARTFILE:http://lynx.browser.org/
++STARTFILE:file:/usr/doc/HTML/index.html
+ 
+ # HELPFILE must be defined as a URL and must have a
+ # complete path if local:
+@@ -53,8 +54,8 @@
+ # http://www.crl.com/~subir/lynx/lynx_help/lynx_help_main.html
+ #   This should be changed to the local path.
+ #
+-HELPFILE:http://www.crl.com/~subir/lynx/lynx_help/lynx_help_main.html
+-#HELPFILE:file://localhost/PATH_TO/lynx_help/lynx_help_main.html
++#HELPFILE:http://www.crl.com/~subir/lynx/lynx_help/lynx_help_main.html
++HELPFILE:file://localhost/usr/doc/lynx-2.8.1/lynx_help/lynx_help_main.html
+ 
+ # DEFAULT_INDEX_FILE is the default file retrieved when the
+ # user presses the 'I' key when viewing any document.

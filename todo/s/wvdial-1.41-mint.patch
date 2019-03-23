@@ -1,0 +1,63 @@
+--- wvdial-1.41-orig/rules.mk	Fri Jan  5 16:29:28 2001
++++ wvdial-1.41/rules.mk	Fri Jan  5 02:09:08 2001
+@@ -12,7 +12,7 @@
+ # It will only work with GNU make.
+ #
+ 
+-STRIP=strip --remove-section=.note --remove-section=.comment
++STRIP=strip
+ #STRIP=echo
+ 
+ #
+diff -ur wvdial-1.41-orig/streams/wvmodem.cc wvdial-1.41/streams/wvmodem.cc
+--- wvdial-1.41-orig/streams/wvmodem.cc	Mon Aug  2 20:01:48 1999
++++ wvdial-1.41/streams/wvmodem.cc	Wed Jun  7 23:35:24 2000
+@@ -157,6 +157,18 @@
+     close();
+ }
+ 
++/* Set *T to indicate raw mode.  */
++static void
++cfmakeraw (struct termios *t)
++{
++  t->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
++  t->c_oflag &= ~OPOST;
++  t->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
++  t->c_cflag &= ~(CSIZE|PARENB);
++  t->c_cflag |= CS8;
++  t->c_cc[VMIN] = 1;		/* read returns when one char is available.  */
++  t->c_cc[VTIME] = 0;
++}
+ 
+ void WvModem::setup_modem()
+ {
+@@ -173,12 +185,14 @@
+     
+     // set up the terminal characteristics.
+     // see "man tcsetattr" for more information about these options.
+-    t.c_iflag &= ~(BRKINT | ISTRIP | IUCLC | IXON | IXANY | IXOFF | IMAXBEL);
++//    t.c_iflag &= ~(BRKINT | ISTRIP | IUCLC | IXON | IXANY | IXOFF | IMAXBEL);
++    t.c_iflag &= ~(BRKINT | ISTRIP | IXON | IXANY | IXOFF);
+     t.c_iflag |= (IGNBRK | IGNPAR);
+-    t.c_oflag &= ~(OLCUC);
++//    t.c_oflag &= ~(OLCUC);
+     t.c_cflag &= ~(CSIZE | CSTOPB | PARENB | PARODD);
+     t.c_cflag |= (CS8 | CREAD | HUPCL | CRTSCTS | CLOCAL);
+-    t.c_lflag &= ~(ISIG | XCASE | ECHO);
++//    t.c_lflag &= ~(ISIG | XCASE | ECHO);
++    t.c_lflag &= ~(ISIG | ECHO);
+     tcsetattr( fd, TCSANOW, &t );
+     
+     // make sure we leave the modem in CLOCAL when we exit, so normal user
+diff -ur wvdial-1.41-orig/streams/wvpipe.cc wvdial-1.41/streams/wvpipe.cc
+--- wvdial-1.41-orig/streams/wvpipe.cc	Wed Oct 20 22:20:12 1999
++++ wvdial-1.41/streams/wvpipe.cc	Fri Jan  5 02:23:34 2001
+@@ -124,7 +124,7 @@
+ 	if (!readable && stdout_fd != 1)
+ 	{
+ 	    setsid();
+-	    ioctl(1, TIOCSCTTY, 1);
++	    ioctl(1, TIOCSCTTY, (void *) 1);
+ 	}
+ 	
+ 	// now run the program.  If it fails, use _exit() so no destructors

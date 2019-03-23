@@ -1,0 +1,27 @@
+#!/bin/bash
+
+umask=022
+
+die ()
+{
+  echo "$*" 1>&2
+  exit 1
+}
+
+cd /
+
+TMPFILE=`/bin/mktemp /tmp/locatedb.XXXXXX` || {
+  echo "could not create tempfile" >&2 ; exit 1
+}
+chown nobody.nobody $TMPFILE
+su nobody -c "/usr/bin/updatedb --output=$TMPFILE --localpaths='/' --prunepaths='/tmp /var/tmp /usr/tmp /afs /net' --netpaths='' 2>/dev/null"
+
+SFILE=$TMPFILE
+
+mv $SFILE /var/lib/locatedb || \
+  die "$0: could not create /var/lib/locatedb"
+chown root.root /var/lib/locatedb || \
+  die "$0: could not change ownership of /var/lib/locatedb"
+rm -rf $TMPFILE
+
+exit 0

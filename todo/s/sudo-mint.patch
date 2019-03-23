@@ -1,0 +1,14 @@
+--- sudo.v1.5.9p1/tgetpass.c.mint	Mon Mar 29 06:04:51 1999
++++ sudo.v1.5.9p1/tgetpass.c	Wed Sep 15 18:36:57 1999
+@@ -185,7 +185,11 @@
+      */
+     if (timeout > 0) {
+ 	/* setup for select(2) */
++#ifndef __MINT__
+ 	n = howmany(fileno(input) + 1, NFDBITS) * sizeof(fd_mask);
++#else
++	n = sizeof (*readfds);
++#endif
+ 	if ((readfds = (fd_set *) malloc(n)) == NULL) {
+ 	    (void) fprintf(stderr, "Cannot allocate memory: ");
+ 	    perror("");

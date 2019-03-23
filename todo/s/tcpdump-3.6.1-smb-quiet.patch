@@ -1,0 +1,75 @@
+--- tcpdump-3.6.1/print-smb.c	Sat Jan 13 18:57:59 2001
++++ tcpdump-3.6.1.smb/print-smb.c	Sat Jan 13 19:31:59 2001
+@@ -624,7 +624,9 @@
+ 
+   fn = smbfind(command,smb_fns);
+ 
+-  printf("\nSMB PACKET: %s (%s)\n",fn->name,request?"REQUEST":"REPLY");
++  if (vflag > 0 ) printf("\n");
++
++  printf("SMB PACKET: %s (%s)\n",fn->name,request?"REQUEST":"REPLY");
+ 
+   if (vflag == 0) return;
+ 
+@@ -712,8 +714,14 @@
+   startbuf = data;
+   if (maxbuf <= data) return;
+ 
+-  printf("\n>>> NBT Packet\n");
++  if (vflag > 0) printf ("\n>>> ");
++
++  printf("NBT Packet");
++
++  if (vflag == 0) return;
+ 
++  printf("\n");
++  
+   switch (flags) {
+   case 1:    
+     printf("flags=0x%x\n", flags);
+@@ -798,7 +806,9 @@
+ 
+   if (maxbuf <= data) return;
+ 
+-  printf("\n>>> NBT UDP PACKET(137): ");
++  if (vflag > 0 ) printf("\n>>> ");
++
++  printf("NBT UDP PACKET(137): ");
+ 
+   switch (opcode) {
+   case 0: opcodestr = "QUERY"; break;
+@@ -921,6 +931,11 @@
+   startbuf = data;
+   if (maxbuf <= data) return;
+ 
++  if (vflag == 0 ) {
++    printf("NBT UDP PACKET(138)");
++    return;
++  }
++
+   data = fdata(data,"\n>>> NBT UDP PACKET(138) Res=[rw] ID=[rw] IP=[b.b.b.b] Port=[rd] Length=[rd] Res2=[rw]\nSourceName=[n1]\nDestName=[n1]\n#",maxbuf);
+ 
+   if (data != NULL)
+@@ -948,6 +963,11 @@
+   }
+ 
+   startbuf = data;
++
++  if (vflag == 0) {
++    printf("NetBeui Packet");
++    return;
++  }
+ 
+   printf("\n>>> NetBeui Packet\nType=0x%X ", control);
+   data = fdata(data,"Length=[d] Signature=[w] Command=[B]\n#",maxbuf);
+--- tcpdump-3.6.1/tcpdump.1	Sat Jan 13 18:57:59 2001
++++ tcpdump-3.6.1.smb/tcpdump.1	Sat Jan 13 19:31:59 2001
+@@ -259,7 +263,7 @@
+ (Slightly more) verbose output.  For example, the time to live,
+ identification, total length and options in an IP packet are printed.
+ Also enables additional packet integrity checks such as verifying the
+-IP and ICMP header checksum.
++IP and ICMP header checksum.  SMB packets are also printed in full.
+ .TP
+ .B \-vv
+ Even more verbose output.  For example, additional fields are

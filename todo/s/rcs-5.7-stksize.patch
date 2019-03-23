@@ -1,0 +1,13 @@
+--- rcs-5.7/src/rcslex.c~       Fri Jun 16 06:19:05 1995
++++ rcs-5.7/src/rcslex.c        Thu May 13 15:43:39 1999
+@@ -171,6 +171,10 @@
+
+ libId(lexId, "$Id: rcslex.c,v 5.19 1995/06/16 06:19:24 eggert Exp $")
+
++#ifdef __MINT__
++long _stksize = 64 * 1024L;
++#endif
++
+ static char *checkidentifier P((char*,int,int));
+ static void errsay P((char const*));
+ static void fatsay P((char const*));

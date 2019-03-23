@@ -1,0 +1,109 @@
+diff -ur abctab2ps-1.8.8.orig/doc/examples/Makefile abctab2ps-1.8.8/doc/examples/Makefile
+--- abctab2ps-1.8.8.orig/doc/examples/Makefile	Sun Sep 6 13:52:30 2009
++++ abctab2ps-1.8.8/doc/examples/Makefile	Sun Sep 6 16:28:40 2009
+@@ -3,8 +3,8 @@
+ #
+ 
+ # set paths
+-ABCTAB2PS   = ../../src/abctab2ps
+-#ABCTAB2PS   = abctab2ps
++#ABCTAB2PS   = ../../src/abctab2ps
++ABCTAB2PS   = /usr/bin/abctab2ps
+ 
+ 
+ # from here on, no alterations
+diff -ur abctab2ps-1.8.8.orig/src/Makefile abctab2ps-1.8.8/src/Makefile
+--- abctab2ps-1.8.8.orig/src/Makefile	Sun Sep 6 13:52:30 2009
++++ abctab2ps-1.8.8/src/Makefile	Sun Sep 6 16:27:50 2009
+@@ -14,10 +14,10 @@
+ #ARCH = -arch i386 -arch ppc
+ 
+ # settings for GNU C compiler
+-CC = g++
+-CFLAGS = -Wimplicit -Wformat -g -fpermissive $(ARCH)
++#CC = g++
++#CFLAGS = -Wimplicit -Wformat -g -fpermissive $(ARCH)
+ #CFLAGS = -Wimplicit -Wformat -Os -fpermissive 
+-LDFLAGS = -lstdc++ -lm $(ARCH)
++#LDFLAGS = -lstdc++ -lm $(ARCH)
+ LDSTATIC = --static
+ 
+ 
+@@ -28,9 +28,10 @@
+ #CC = cc
+ 
+ # uncomment the following lines on MINT
+-#OSVARIANT = MINT
+-#CFLAGS = -Wimplicit -Wformat -g -m68020-60
+-#LDFLAGS = -m68020-60 -lstdc++
++OSVARIANT = MINT
++CFLAGS = -Wimplicit -Wformat -g -m68020-60
++LDFLAGS = -m68020-60 -lstdc++
++CC = g++ =m68020-60
+ 
+ # uncomment the following lines on SGI IRIX
+ #CC = cc
+@@ -44,7 +45,7 @@
+ #-----------------------------------------
+ 
+ # install root
+-PREFIX = /usr/local
++PREFIX = /usr
+ # directory for the binary
+ BINDIR = $(PREFIX)/bin
+ # directory for the man page
+@@ -99,20 +100,23 @@
+ 	ABCTABFONTS=./fonts ./$(PROGRAM) sample.abc
+ 
+ install:
+-	@# plausi check on old font installation
+-	@test \( ! -z "$$ABCTABFONTS" \) -a \( "$$ABCTABFONTS" != "$(FONTDIR)" \) && \
+-		echo "There seems to be an old installation of $(PROGRAM)" &&\
+-		echo "Its font directory ABCTABFONTS is set to $$ABCTABFONTS" &&\
+-		echo "Please uninstall the old version first and unset ABCTABFONTS" &&\
+-		echo "Remark:" &&\
+-		echo "The environment variable ABCTABFONTS is no longer necessary" &&\
+-		echo "unless you install the fonts in an odd location" &&\
+-		exit 1 || :
++#	@# plausi check on old font installation
++#	@test \( ! -z "$$ABCTABFONTS" \) -a \( "$$ABCTABFONTS" != "$(FONTDIR)" \) && \
++#		echo "There seems to be an old installation of $(PROGRAM)" &&\
++#		echo "Its font directory ABCTABFONTS is set to $$ABCTABFONTS" &&\
++#		echo "Please uninstall the old version first and unset ABCTABFONTS" &&\
++#		echo "Remark:" &&\
++#		echo "The environment variable ABCTABFONTS is no longer necessary" &&\
++#		echo "unless you install the fonts in an odd location" &&\
++#		exit 1 || :
+ 
+ 	@# actual installation
+-	install -m 755 -s $(PROGRAM) $(BINDIR)/$(PROGRAM)
++	install -d $(BINDIR)
++	install -m 755 $(PROGRAM) $(BINDIR)/$(PROGRAM)
++	strip $(BINDIR)/$(PROGRAM)
+ 	install -d $(MANDIR)
+ 	install -m 644 ../doc/manpages/$(PROGRAM).1 $(MANDIR)/$(PROGRAM).1
++	gzip $(MANDIR)/$(PROGRAM).1
+ 	install -d $(FONTDIR)
+ 	install -m 644 $(FONTS) $(FONTDIR)
+ 	install -d $(DOCDIR)
+@@ -125,13 +129,13 @@
+ 	install -d $(DOCDIR)/examples
+ 	install -m 644 ../doc/examples/Readme ../doc/examples/*.abc $(DOCDIR)/examples
+ 
+-	@# inform user about post install tasks
+-	@test $(FONTDIR) = /usr/share/abctab2ps -o $(FONTDIR) = /usr/local/share/abctab2ps || {\
+-		echo "+++++++++++++++++++++++++++++++++++++++++++++++";\
+-		echo "Please add the environment variable ABCTABFONTS";\
+-		echo "to your shell's profile and set it to:";\
+-		echo "    $(FONTDIR)";\
+-		echo "+++++++++++++++++++++++++++++++++++++++++++++++"; }
++#	@# inform user about post install tasks
++#	@test $(FONTDIR) = /usr/share/abctab2ps -o $(FONTDIR) = /usr/local/share/abctab2ps || {\
++#		echo "+++++++++++++++++++++++++++++++++++++++++++++++";\
++#		echo "Please add the environment variable ABCTABFONTS";\
++#		echo "to your shell's profile and set it to:";\
++#		echo "    $(FONTDIR)";\
++#		echo "+++++++++++++++++++++++++++++++++++++++++++++++"; }
+ 
+ uninstall:
+ 	@# uninstall abctab2ps

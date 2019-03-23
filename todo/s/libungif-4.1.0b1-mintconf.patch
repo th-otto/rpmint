@@ -1,0 +1,40 @@
+diff -ur libungif-4.1.0b1-orig/config.sub libungif-4.1.0b1/config.sub
+--- libungif-4.1.0b1-orig/config.sub	Thu Jul 15 21:31:34 1999
++++ libungif-4.1.0b1/config.sub	Fri Aug 27 05:14:48 1999
+@@ -156,6 +156,10 @@
+ 	-psos*)
+ 		os=-psos
+ 		;;
++	-mint | -mint[0-9]*)
++		basic_machine=m68k-atari
++		os=-mint
++		;;
+ esac
+ 
+ # Decode aliases for certain CPU-COMPANY combinations.
+@@ -172,7 +176,7 @@
+ 		| mips64orion | mips64orionel | mipstx39 | mipstx39el \
+ 		| mips64vr4300 | mips64vr4300el | mips64vr4100 | mips64vr4100el \
+ 		| mips64vr5000 | miprs64vr5000el \
+-		| armv[34][lb] | sparc | sparclet | sparclite | sparc64 | sparcv9 | v850 | c4x \
++		| sparc | sparclet | sparclite | sparc64 | sparcv9 | v850 | c4x \
+ 		| thumb | d10v)
+ 		basic_machine=$basic_machine-unknown
+ 		;;
+@@ -205,7 +209,6 @@
+ 	      | mips64el-* | mips64orion-* | mips64orionel-* \
+ 	      | mips64vr4100-* | mips64vr4100el-* | mips64vr4300-* | mips64vr4300el-* \
+ 	      | mipstx39-* | mipstx39el-* \
+-	      | armv[34][lb]-* \
+ 	      | f301-* | armv*-* | t3e-* \
+ 	      | m88110-* | m680[01234]0-* | m683?2-* | m68360-* | z8k-* | d10v-* \
+ 	      | thumb-* | v850-* | d30v-* | tic30-* | c30-* )
+@@ -489,7 +492,7 @@
+ 	miniframe)
+ 		basic_machine=m68000-convergent
+ 		;;
+-	*mint | *MiNT)
++	*mint | -mint[0-9]* | *MiNT | *MiNT[0-9]*)
+ 		basic_machine=m68k-atari
+ 		os=-mint
+ 		;;

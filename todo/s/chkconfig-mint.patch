@@ -1,0 +1,23 @@
+--- chkconfig-1.0.7/Makefile.mint	Sun Sep 27 19:53:00 1998
++++ chkconfig-1.0.7/Makefile	Mon Dec 20 03:04:00 1999
+@@ -9,6 +9,7 @@
+ USRSBINDIR = /usr/sbin
+ MANDIR = /usr/man
+ SUBDIRS = po
++LIBS =
+ 
+ OBJS=chkconfig.o leveldb.o
+ NTOBJS=ntsysv.o leveldb.o
+@@ -22,10 +23,10 @@
+ 	done && test -z "$$fail"
+ 
+ chkconfig: $(OBJS)
+-	$(CC) $(LDFLAGS) -o chkconfig $(OBJS) -lpopt
++	$(CC) $(LDFLAGS) -o chkconfig $(OBJS) -lpopt $(LIBS)
+ 
+ ntsysv: $(NTOBJS)
+-	$(CC) $(LDFLAGS) -o ntsysv $(NTOBJS) -lnewt -lpopt $(LIBMHACK)
++	$(CC) $(LDFLAGS) -o ntsysv $(NTOBJS) -lnewt -lslang -lpopt $(LIBS) $(LIBMHACK)
+ 
+ chkconfig.o: chkconfig.c leveldb.h
+ 	$(CC) $(CFLAGS) -DVERSION=\"$(VERSION)\" -c chkconfig.c

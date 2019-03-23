@@ -1,0 +1,11 @@
+--- libpcap-0.4/inet.c.orig	Sat Jan 31 02:29:40 1998
++++ libpcap-0.4/inet.c	Fri Sep 28 03:04:54 2001
+@@ -180,7 +180,7 @@
+ 		return (-1);
+ 	}
+ 	memset(&ifr, 0, sizeof(ifr));
+-#ifdef linux
++#if defined(linux) || defined(__MINT__)
+ 	/* XXX Work around Linux kernel bug */
+ 	ifr.ifr_addr.sa_family = AF_INET;
+ #endif

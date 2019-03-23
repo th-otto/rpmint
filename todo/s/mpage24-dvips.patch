@@ -1,0 +1,27 @@
+--- mpage-2.4/post.c.msf	Wed Oct 15 12:18:37 1997
++++ mpage-2.4/post.c	Wed Oct 15 12:20:07 1997
+@@ -361,6 +361,16 @@
+             fprintf(outfd, "%% %s", currline);
+             return;
+         }
++/*
++ * This causes a failure on dvips-generated PostScript (I have tetex-0.4pl8-5
++ * under RedHat 4.2 Linux. I do not grok the following code, but it seems
++ * that there is no such code in mpage-2.3 which works for me.
++ * I have #ifdef'd it out. If you find any PostScript file, which
++ * is not mpage'd correctly with this ifdef, but is mpage'd correctly
++ * with vanilla mpage 2.4, please contact me (Jan "Yenya" Kasprzak,
++ * <kas@fi.muni.cz>).
++ */
++#if 0
+         if (ps_posttype == PS_TEX &&
+             strncmp(currline, "TeXDict", 7) == 0) {
+             /*
+@@ -382,6 +392,7 @@
+             strcpy(tex2, currline);
+             fgets(currline, LINESIZE-1, fd);
+         }
++#endif
+         fprintf(outfd, "%s", currline);
+     }
+     Debug(DB_PSDOC, "%%ps_copyprolog: eof before %%%%EndProlog\n", 0);

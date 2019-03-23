@@ -1,0 +1,397 @@
+diff -Nrup gcc/Makefile gcc56k/Makefile
+--- gcc/Makefile	Mon Jun  8 08:43:46 1992
++++ gcc56k/Makefile	Thu Nov 11 13:18:22 2010
+@@ -24,8 +24,9 @@
+ # See below for how to change them for certain systems.
+ 
+ #CFLAGS = -g $(XCFLAGS)
+-CFLAGS = $(XCFLAGS) -O
+-CC = cc
++CFLAGS = $(XCFLAGS) -O2 -fomit-frame-pointer
++CC = gcc
++INSTALLDIR=/usr/local/bin
+ #CC = /usr/local/gnu/bin/gcc
+ BISON = bison
+ BISONFLAGS = -v
+diff -Nrup gcc/cccp.c gcc56k/cccp.c
+--- gcc/cccp.c	Mon Jun  8 08:43:52 1992
++++ gcc56k/cccp.c	Thu Nov 11 15:28:08 2010
+@@ -23,6 +23,9 @@ Foundation, 675 Mass Ave, Cambridge, MA 
+  You are forbidden to forbid anyone else to use, share and improve
+  what you give them.   Help stamp out software-hoarding!  */
+ 
++#include <time.h>
++#include <errno.h>
++#include <string.h>
+ #if defined( _MSDOS )
+ /* -D option doesn't work right. */
+ #include "cccp.h"
+@@ -51,9 +54,9 @@ typedef unsigned char U_CHAR;
+ #endif /* not EMACS */
+ 
+ /* In case config.h defines these.  */
+-#undef bcopy
+-#undef bzero
+-#undef bcmp
++//#undef bcopy
++//#undef bzero
++//#undef bcmp
+ 
+ #include <sys/types.h>
+ #include <sys/stat.h>
+@@ -114,11 +117,11 @@ void fatal ( char *str, ... );
+ #endif
+ /* External declarations.  */
+ 
+-#if ! defined( NeXT )
++//#if ! defined( NeXT )
+ /* NeXT string.h file defines the following */
+-void bcopy (), bzero ();
+-int bcmp ();
+-#endif
++//void bcopy (), bzero ();
++//int bcmp ();
++//#endif
+ extern char *getenv ();
+ extern char *version_string;
+ 
+@@ -2532,7 +2535,7 @@ special_symbol (hp, op)
+   int true_indepth;
+   FILE_BUF *ip = NULL;
+   static struct tm *timebuf = NULL;
+-  struct tm *localtime ();
++//  struct tm *localtime ();
+ 
+   int paren = 0;		/* For special `defined' keyword */
+ 
+@@ -5083,13 +5086,13 @@ error_from_errno (name)
+ {
+   int i;
+   FILE_BUF *ip = NULL;
+-#if ! defined( _INTELC32_ ) && ! defined( __WATCOMC__ )
+-  extern int errno;
+-#endif
+-#if ! defined( __WATCOMC__ )
+-  extern int sys_nerr;
+-#endif
+-  extern char *sys_errlist[];
++//#if ! defined( _INTELC32_ ) && ! defined( __WATCOMC__ )
++//  extern int errno;
++//#endif
++//#if ! defined( __WATCOMC__ )
++//  extern int sys_nerr;
++//#endif
++//  extern char *sys_errlist[];
+ 
+   for (i = indepth; i >= 0; i--)
+     if (instack[i].fname != NULL) {
+@@ -5702,68 +5705,68 @@ deps_output (string, size)
+ #ifndef BSD
+ #ifndef BSTRING
+ 
+-void
+-bzero (b, length)
+-     register char *b;
+-     register int length;
+-{
+-#ifdef VMS
+-  short zero = 0;
+-  long max_str = 65535;
+-
+-  while (length > max_str) {
+-    (void) LIB$MOVC5 (&zero, &zero, &zero, &max_str, b);
+-    length -= max_str;
+-    b += max_str;
+-  }
+-  (void) LIB$MOVC5 (&zero, &zero, &zero, &length, b);
+-#else
+-  while (length-- > 0)
+-    *b++ = 0;
+-#endif /* not VMS */
+-}
+-
+-void
+-bcopy (b1, b2, length)
+-     register char *b1;
+-     register char *b2;
+-     register int length;
+-{
+-#ifdef VMS
+-  long max_str = 65535;
+-
+-  while (length > max_str) {
+-    (void) LIB$MOVC3 (&max_str, b1, b2);
+-    length -= max_str;
+-    b1 += max_str;
+-    b2 += max_str;
+-  }
+-  (void) LIB$MOVC3 (&length, b1, b2);
+-#else
+-  while (length-- > 0)
+-    *b2++ = *b1++;
+-#endif /* not VMS */
+-}
+-
+-int
+-bcmp (b1, b2, length)	/* This could be a macro! */
+-     register char *b1;
+-     register char *b2;
+-      register int length;
+-{
+-#ifdef VMS
+-   struct dsc$descriptor_s src1 = {length, DSC$K_DTYPE_T, DSC$K_CLASS_S, b1};
+-   struct dsc$descriptor_s src2 = {length, DSC$K_DTYPE_T, DSC$K_CLASS_S, b2};
+-
+-   return STR$COMPARE (&src1, &src2);
+-#else
+-   while (length-- > 0)
+-     if (*b1++ != *b2++)
+-       return 1;
+-
+-   return 0;
+-#endif /* not VMS */
+-}
++//void
++//bzero (b, length)
++//     register char *b;
++//     register int length;
++//{
++//#ifdef VMS
++//  short zero = 0;
++//  long max_str = 65535;
++
++//  while (length > max_str) {
++//    (void) LIB$MOVC5 (&zero, &zero, &zero, &max_str, b);
++//    length -= max_str;
++//    b += max_str;
++//  }
++//  (void) LIB$MOVC5 (&zero, &zero, &zero, &length, b);
++//#else
++//  while (length-- > 0)
++//    *b++ = 0;
++//#endif /* not VMS */
++//}
++
++//void
++//bcopy (b1, b2, length)
++//     register char *b1;
++//     register char *b2;
++//     register int length;
++//{
++//#ifdef VMS
++//  long max_str = 65535;
++//
++//  while (length > max_str) {
++//    (void) LIB$MOVC3 (&max_str, b1, b2);
++//    length -= max_str;
++//    b1 += max_str;
++//    b2 += max_str;
++//  }
++//  (void) LIB$MOVC3 (&length, b1, b2);
++//#else
++//  while (length-- > 0)
++//    *b2++ = *b1++;
++//#endif /* not VMS */
++//}
++
++//int
++//bcmp (b1, b2, length)	/* This could be a macro! */
++//     register char *b1;
++//     register char *b2;
++//      register int length;
++//{
++//#ifdef VMS
++//   struct dsc$descriptor_s src1 = {length, DSC$K_DTYPE_T, DSC$K_CLASS_S, b1};
++//   struct dsc$descriptor_s src2 = {length, DSC$K_DTYPE_T, DSC$K_CLASS_S, b2};
++//
++//   return STR$COMPARE (&src1, &src2);
++//#else
++//   while (length-- > 0)
++//     if (*b1++ != *b2++)
++//       return 1;
++//
++//   return 0;
++//#endif /* not VMS */
++//}
+ #endif /* not BSTRING */
+ #endif /* not BSD */
+ #endif /* not GNUDOS */
+@@ -5809,13 +5812,13 @@ void
+ perror_with_name (name)
+      char *name;
+ {
+-#if ! defined( _INTELC32_ ) && ! defined( __WATCOMC__ )
+-  extern int errno;
+-#endif
+-#if ! defined( __WATCOMC__ )
+-  extern int sys_nerr;
+-#endif
+-  extern char *sys_errlist[];
++//#if ! defined( _INTELC32_ ) && ! defined( __WATCOMC__ )
++//  extern int errno;
++//#endif
++//#if ! defined( __WATCOMC__ )
++//  extern int sys_nerr;
++//#endif
++//  extern char *sys_errlist[];
+ 
+   fprintf (stderr, "%s: ", progname);
+   if (errno < sys_nerr)
+diff -Nrup gcc/config.gcc gcc56k/config.gcc
+--- gcc/config.gcc	Mon Jun  8 08:43:54 1992
++++ gcc56k/config.gcc	Thu Nov 11 13:03:44 2010
+@@ -149,6 +149,11 @@ then
+ 		configuration_file=xm-m68k.h
+ 		target_machine=tm-dsp56k.h
+ 		;;
++	dsp56k-atari )
++		cpu_type=dsp56k
++		configuration_file=xm-m68k.h
++		target_machine=tm-dsp56k.h
++		;;
+ 	dsp56k-pc386 )
+ 		cpu_type=dsp56k
+ 		configuration_file=xm-i386.h
+diff -Nrup gcc/config.status gcc56k/config.status
+--- gcc/config.status	Mon Jun  8 08:43:56 1992
++++ gcc56k/config.status	Thu Nov 11 13:04:04 2010
+@@ -1 +1 @@
+-Links are now set up for use with a sun4-os4.
++Links are now set up for use with a dsp56k-atari.
+diff -Nrup gcc/emit-rtl.c gcc56k/emit-rtl.c
+--- gcc/emit-rtl.c	Mon Jun  8 08:43:58 1992
++++ gcc56k/emit-rtl.c	Thu Nov 11 15:01:04 2010
+@@ -35,9 +35,14 @@ the Free Software Foundation, 675 Mass A
+    the individual rtx's of the pattern; what is machine dependent
+    is the kind of rtx's they make and what arguments they use.  */
+ 
++#if defined (__MINT__)
++#define STDARGS_ARE_COOL 1
++#endif
++
+ #include "config.h"
+ #include <stdio.h>
+-#include "gvarargs.h"
++//#include "gvarargs.h"
++#include <stdarg.h>
+ #include "rtl.h"
+ #include "regs.h"
+ #if ! defined( _INTELC32_ )
+diff -Nrup gcc/expr.c gcc56k/expr.c
+--- gcc/expr.c	Mon Jun  8 08:44:00 1992
++++ gcc56k/expr.c	Thu Nov 11 14:54:42 2010
+@@ -38,7 +38,8 @@ the Free Software Foundation, 675 Mass A
+ #include "iconfig.h"
+ #endif
+ #include "recog.h"
+-#include "gvarargs.h"
++//#include "gvarargs.h"
++#include <stdarg.h>
+ #if ! defined( _INTELC32_ )
+ #include "typeclass.h"
+ #else
+@@ -1723,7 +1724,7 @@ emit_library_call (va_alist)
+      va_dcl
+ #endif
+ {
+-  register va_list p;
++  /* register */ va_list p;
+   register int args_size = 0;
+   register int argnum;
+   enum machine_mode outmode;
+diff -Nrup gcc/gcc.c gcc56k/gcc.c
+--- gcc/gcc.c	Mon Jun  8 08:44:04 1992
++++ gcc56k/gcc.c	Thu Nov 11 13:18:08 2010
+@@ -127,6 +127,7 @@ position among the other output files.
+ 
+ */
+ 
++#include <errno.h>
+ #include <stdio.h>
+ #include <sys/types.h>
+ #include <signal.h>
+@@ -509,7 +510,7 @@ char *machine_suffix = 0;
+ #if defined( _MSDOS )
+ #define STANDARD_EXEC_PREFIX "c:\\dsp\\bin\\g56-"
+ #else
+-#define STANDARD_EXEC_PREFIX "/usr/local/dsp/bin/gcc56-"
++#define STANDARD_EXEC_PREFIX "/usr/local/bin/gcc56-"
+ #endif /* _MSDOS */
+ #endif /* DSP56000 */
+ 
+@@ -2465,8 +2466,8 @@ void
+ pfatal_with_name (name)
+      char *name;
+ {
+-  extern int errno, sys_nerr;
+-  extern char *sys_errlist[];
++//  extern int errno, sys_nerr;
++//  extern char *sys_errlist[];
+   char *s;
+ 
+   if (errno < sys_nerr)
+@@ -2480,8 +2481,8 @@ void
+ perror_with_name (name)
+      char *name;
+ {
+-  extern int errno, sys_nerr;
+-  extern char *sys_errlist[];
++//  extern int errno, sys_nerr;
++//  extern char *sys_errlist[];
+   char *s;
+ 
+   if (errno < sys_nerr)
+@@ -2495,8 +2496,8 @@ void
+ perror_exec (name)
+      char *name;
+ {
+-  extern int errno, sys_nerr;
+-  extern char *sys_errlist[];
++//  extern int errno, sys_nerr;
++//  extern char *sys_errlist[];
+   char *s;
+ 
+   if (errno < sys_nerr)
+Binary files gcc/gnulib and gcc56k/gnulib differ
+diff -Nrup gcc/tree.c gcc56k/tree.c
+--- gcc/tree.c	Mon Jun  8 08:44:38 1992
++++ gcc56k/tree.c	Thu Nov 11 14:47:40 2010
+@@ -38,9 +38,14 @@ the Free Software Foundation, 675 Mass A
+ #include <stdio.h>
+ #include "tree.h"
+ #include "obstack.h"
+-#include "gvarargs.h"
++#include <stdarg.h>
++//#include "gvarargs.h"
+ #include "flags.h"
+ 
++#if defined (__MINT__)
++#define STDARGS_ARE_COOL 1
++#endif
++
+ #define obstack_chunk_alloc xmalloc
+ #define obstack_chunk_free free
+ 
+@@ -1255,7 +1260,7 @@ build_nt (va_alist)
+      va_dcl
+ #endif
+ {
+-  register va_list p;
++  /* register */ va_list p;
+ #if ! defined( STDARGS_ARE_COOL )
+   register enum tree_code code;
+ #endif
+diff -Nrup gcc/tree.h gcc56k/tree.h
+--- gcc/tree.h	Mon Jun  8 08:44:38 1992
++++ gcc56k/tree.h	Thu Nov 11 14:32:14 2010
+@@ -33,6 +33,10 @@ enum tree_code {
+ 
+ #undef DEFTREECODE
+ 
++#if defined (__MINT__)
++#define STDARGS_ARE_COOL 1
++#endif
++
+ /* Number of tree codes.  */
+ #define NUM_TREE_CODES ((int)LAST_AND_UNUSED_TREE_CODE)
+ 

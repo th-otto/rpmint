@@ -1,0 +1,42 @@
+diff -rC 2 rdate-1.0/rdate.c rdate-1.0.new/rdate.c
+*** rdate-1.0/rdate.c	Fri Feb  4 14:07:08 2000
+--- rdate-1.0.new/rdate.c	Mon Jul 31 14:14:54 2000
+***************
+*** 119,123 ****
+    int nhosts = 0;
+    int retval = 0;
+! 
+    for(i = 1; i < argc; i++)
+      {
+--- 119,124 ----
+    int nhosts = 0;
+    int retval = 0;
+!   int success = 0;
+!   
+    for(i = 1; i < argc; i++)
+      {
+***************
+*** 157,160 ****
+--- 158,164 ----
+        if(!rdate(hosts[i], &timeval))
+  	{
++ 	  /* keep track of the succesful request */
++ 	  success = 1;
++ 	  
+  	  if(print_mode)
+  	    printf("[%s]\t%s", hosts[i], ctime(&timeval) /* ctime includes a trailing \n */);
+***************
+*** 173,177 ****
+    if(!nhosts)
+      usage(1);
+!   
+    return retval;
+  }
+--- 177,183 ----
+    if(!nhosts)
+      usage(1);
+! 
+!   if (!retval && !success) retval = 1;
+    return retval;
+  }
++ 

@@ -1,0 +1,39 @@
+--- mingetty-0.9.4/mingetty.c.glibc	Thu Jun  6 10:29:30 1996
++++ mingetty-0.9.4/mingetty.c	Mon Jun  2 21:00:30 1997
+@@ -37,13 +37,17 @@
+ #include <errno.h>
+ #include <sys/stat.h>
+ #include <sys/file.h>
+-#include <sys/signal.h>
++#include <signal.h>
+ #include <fcntl.h>
+ #include <stdarg.h>
+ #include <ctype.h>
+ #include <utmp.h>
+ #include <getopt.h>
+ 
++#ifndef _PATH_LOGIN
++#define _PATH_LOGIN "/bin/login"
++#endif
++
+ #ifdef linux
+ #include <sys/param.h>
+ #define USE_SYSLOG
+@@ -51,7 +55,7 @@
+ 
+  /* If USE_SYSLOG is undefined all diagnostics go directly to /dev/console. */
+ #ifdef	USE_SYSLOG
+-#include <syslog.h>
++#include <sys/syslog.h>
+ #endif
+ 
+ #define	ISSUE "/etc/issue"	/* displayed before the login prompt */
+--- mingetty-0.9.4/Makefile.glibc	Mon Jun  2 21:01:03 1997
++++ mingetty-0.9.4/Makefile	Mon Jun  2 21:01:10 1997
+@@ -1,5 +1,5 @@
+ CC=gcc
+-CFLAGS=$(RPM_OPTS) -Wall -fomit-frame-pointer -pipe
++CFLAGS=$(RPM_OPTS) -Wall -fomit-frame-pointer -pipe -D_GNU_SOURCE
+ # my compiler doesn't need -fno-strength-reduce
+ LDFLAGS=-Wl,-warn-common -s
+ 

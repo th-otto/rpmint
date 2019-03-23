@@ -1,0 +1,95 @@
+--- ijb20/Makefile.mint	Fri Oct 30 22:58:48 1998
++++ ijb20/Makefile	Thu Sep 21 02:14:54 2000
+@@ -10,6 +10,9 @@
+ RM     = rm -f
+ MORE_CFLAGS = -g
+ 
++# use this for FreeMiNT
++LDFLAGS = -lsocket
++
+ # use this for Solaris 2.x
+ #LDFLAGS = -lnsl -lsocket 
+ 
+--- ijb20/junkbstr.ini.mint	Fri Oct 30 22:58:48 1998
++++ ijb20/junkbstr.ini	Thu Sep 21 02:14:56 2000
+@@ -16,31 +16,31 @@
+ # Many example lines are provided here commented out
+ 
+ # the blockfile contains patterns to be blocked by the proxy
+-blockfile		sblock.ini	# comments are OK here, too
++#blockfile		sblock.ini	# comments are OK here, too
+ #
+ # or can use full paths for files, like so
+ #
+-#blockfile		/usr/local/lib/junkbusters/blockfile
++blockfile		/usr/share/junkbuster/blockfile
+ 
+ # the cookiefile contains patterns to specify the cookie management policy
+ #
+-cookiefile		scookie.ini
++cookiefile		/usr/share/junkbuster/cookiefile
+ 
+ # the logfile is where all logging and error messages are written
+ #
+-#logfile		logfile
++logfile		/var/log/junkbuster/logfile
+ 
+ # the jarfile is where cookies can be stored
+ #
+-#jarfile		jarfile	
++#jarfile		/var/log/junkbuster/jarfile	
+ 
+ # the forwardfile defines domain-specific routing
+ #
+-#forwardfile		sforward.ini
++forwardfile		/usr/share/junkbuster/forward
+ 
+ # file which lists and into which trusted domains are written
+ #
+-#trustfile		strust.ini
++#trustfile		/usr/share/junkbuster/trust
+ # files specify locations of "for information about trusted referers, see.."
+ # multiple trust_info_url lines are OK
+ #
+@@ -51,7 +51,7 @@
+ # The access control list file can be used to restrict IP addresses
+ # that are permitted to use the proxy (see warnings in the FAQ).
+ #
+-#aclfile	saclfile.ini
++# aclfile	aclfile
+ 
+ # add an "X-Forwarded-For:" specification to each request header
+ #
+--- ijb20/README.MiNT.mint	Thu Sep 21 02:14:56 2000
++++ ijb20/README.MiNT	Thu Sep 21 08:24:56 2000
+@@ -0,0 +1,30 @@
++Hi,
++
++This RPM package keeps its configuration files in /etc/junkbuster.
++I changed their filenames to more descriptive ones, and edited the main config 
++file /usr/share/junkbuster/config to point at them. Be aware that if you
++change a filename or its location here, you'll run into problems when 
++updating or uninstalling.
++
++To have the daemon starting up automatically at each bootup, you should add 
++something like the following to a suitable location in one of your startup
++scripts, most probably in /etc/rc.net or /etc/rc.local.
++
++# -------- cut here --------
++if [ -f /usr/sbin/junkbuster ] ; then
++	echo "junkbuster"
++	/usr/sbin/junkbuster /etc/junkbuster/config &
++fi
++# -------- cut here --------
++
++Remember to set up your browser's proxy settings; read the HTML docs in
++this directory on which values to use.
++
++Thanks go to Patrice Mandin who first had the idea of porting The Internet
++Junkbuster to MiNT; I offered him help to create a rpm, and now find myself 
++maintaining it... ;-)
++
++Happy ad-free browsing, 
++
++	Edgar Aichinger <eaiching@t0.or.at>
++

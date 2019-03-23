@@ -1,0 +1,254 @@
+--- netkit-rsh-0.17/rcp/rcp.c.orig	Sun Jul 23 06:16:22 2000
++++ netkit-rsh-0.17/rcp/rcp.c	Wed Apr  4 20:54:50 2001
+@@ -102,14 +102,15 @@
+ int
+ main(int argc, char *argv[])
+ {
++	extern char **environ;
+ 	struct servent *sp;
+ 	int ch, fflag, tflag;
+ 	char *targ;
+ 	const char *shell;
+ 	char *null = NULL;
+ 
+-	saved_environ = __environ;
+-	__environ = &null;
++	saved_environ = environ;
++	environ = &null;
+ 
+ 	fflag = tflag = 0;
+ 	while ((ch = getopt(argc, argv, OPTIONS)) != EOF)
+--- netkit-rsh-0.17/rsh/rsh.c.orig	Sun Jul 23 06:16:24 2000
++++ netkit-rsh-0.17/rsh/rsh.c	Wed Apr  4 22:27:56 2001
+@@ -71,6 +71,7 @@
+ int
+ main(int argc, char *argv[])
+ {
++	extern char **environ;
+ 	struct passwd *pw;
+ 	struct servent *sp;
+ 	long omask;
+@@ -80,8 +81,8 @@
+ 	char *null = NULL;
+ 	char **saved_environ;
+ 
+-	saved_environ = __environ;
+-	__environ = &null;
++	saved_environ = environ;
++	environ = &null;
+ 
+ 	argoff = asrsh = dflag = nflag = 0;
+ 	one = 1;
+@@ -207,8 +208,34 @@
+ 	}
+ 
+ 	{
++#ifdef __MINT__
++		long arg;
++		
++		arg = fcntl(rfd2, F_GETFL, NULL);
++		if (arg >= 0)
++		{
++			if (one)
++				arg |= O_NDELAY;
++			else
++				arg &= ~O_NDELAY;
++			
++			fcntl(rfd2, F_SETFL, arg);
++		}
++		
++		arg = fcntl(rem, F_GETFL, NULL);
++		if (arg >= 0)
++		{
++			if (one)
++				arg |= O_NDELAY;
++			else
++				arg &= ~O_NDELAY;
++			
++			fcntl(rem, F_SETFL, arg);
++		}
++#else
+ 		ioctl(rfd2, FIONBIO, &one);
+ 		ioctl(rem, FIONBIO, &one);
++#endif
+ 	}
+ 
+ 	talk(nflag, omask, pid, rem);
+--- netkit-rsh-0.17/rshd/rshd.c.orig	Sun Jul 23 06:16:24 2000
++++ netkit-rsh-0.17/rshd/rshd.c	Wed Apr  4 22:33:56 2001
+@@ -64,6 +64,7 @@
+ #include <sys/socket.h>
+ #include <netinet/in.h>
+ #include <arpa/inet.h>
++#include <arpa/nameser.h>
+ #include <netdb.h>
+ 
+ #include <pwd.h>
+@@ -79,6 +80,7 @@
+ #include <stdarg.h>
+ #include <ctype.h>
+ #include <assert.h>
++#include <limits.h>
+ 
+ #if defined(__GLIBC__) && (__GLIBC__ >= 2)
+ #define _check_rhosts_file  __check_rhosts_file
+@@ -172,9 +174,20 @@
+     char buf[BUFSIZ], sig;
+     int one = 1;
+     int nfd, cc, guys=2;
++
++#ifdef __MINT__
++    long arg;
+     
++    arg = fcntl(pype, F_GETFL, NULL);
++    if (arg >= 0)
++    {
++        arg |= O_NDELAY;
++        fcntl(pype, F_SETFL, arg);
++    }
++#else
+     ioctl(pype, FIONBIO, (char *)&one);
+     /* should set s nbio! */
++#endif
+     
+     FD_ZERO(&readfrom);
+     FD_SET(sock, &readfrom);
+--- netkit-rsh-0.17/configure.orig	Sat Jul 29 20:00:28 2000
++++ netkit-rsh-0.17/configure	Wed Apr  4 14:49:42 2001
+@@ -153,9 +153,6 @@
+ 
+ fi
+ 
+-LDFLAGS=
+-LIBS=
+-
+ rm -f __conftest*
+ 
+ ##################################################
+@@ -453,18 +450,18 @@
+ 
+ EOF
+ if (
+-      $CC $CFLAGS  __conftest.c  -o __conftest || exit 1
++      $CC $CFLAGS  __conftest.c  -o __conftest $LIBS || exit 1
+    ) >/dev/null 2>&1; then
+     echo 'yes'
+ else
+     if (
+-          $CC $CFLAGS -Dsocklen_t=int __conftest.c  -o __conftest || exit 1
++          $CC $CFLAGS -Dsocklen_t=int __conftest.c  -o __conftest $LIBS || exit 1
+        ) >/dev/null 2>&1; then
+         echo 'int'
+         CFLAGS="$CFLAGS -Dsocklen_t=int"
+     else
+         if (
+-              $CC $CFLAGS -Dsocklen_t=size_t __conftest.c  -o __conftest || exit 1
++              $CC $CFLAGS -Dsocklen_t=size_t __conftest.c  -o __conftest $LIBS || exit 1
+            ) >/dev/null 2>&1; then
+             echo 'size_t'
+             CFLAGS="$CFLAGS -Dsocklen_t=size_t"
+--- netkit-rsh-0.17/Makefile.orig	Sun Dec 12 14:19:00 1999
++++ netkit-rsh-0.17/Makefile	Wed Sep 26 02:34:24 2001
+@@ -1,7 +1,7 @@
+ # You can do "make SUB=blah" to make only a few, or edit here, or both
+ # You can also run make directly in the subdirs you want.
+ 
+-SUB =   rcp rexec rexecd rlogin rlogind rsh rshd
++SUB =   rcp rexecd rlogin rsh rshd
+ 
+ %.build:
+ 	(cd $(patsubst %.build, %, $@) && $(MAKE))
+--- netkit-rsh-0.17/rlogin/rlogin.c.mint	Wed Sep 26 02:35:18 2001
++++ netkit-rsh-0.17-/rlogin/rlogin.c	Wed Apr  4 22:11:10 2001
+@@ -166,7 +166,9 @@
+ 	  case B57600: return "57600";
+ 	  case B115200: return "115200";
+ 	  case B230400: return "230400";
++#ifdef B460800
+ 	  case B460800: return "460800";
++#endif
+ 	}
+ 	return "9600";
+ }
+@@ -194,7 +196,6 @@
+ 		p = argv[0];
+ 
+ 	if (strcmp(p, "rlogin"))
+-	if (strcmp(p, "rsh"))
+ 		host = p;
+ 
+ 	/* handle "rlogin host flags" */
+@@ -265,7 +266,7 @@
+   	}
+ 	else snprintf(term, sizeof(term), "%.256s", t);
+ 
+-	__environ = &null;
++//	__environ = &null;
+ 
+ 	get_window_size(0, &winsize);
+ 
+@@ -329,7 +330,7 @@
+ 	defdsusp = (char)0xFF; /* cast 0xFF for 32/64 bit platforms */
+ #endif
+ 	defreprint = tios.c_cc[VREPRINT];       /* rprint line */
+-	defdiscard = tios.c_cc[VDISCARD];        /* flush output */
++//	defdiscard = tios.c_cc[VDISCARD];        /* flush output */
+ 	defwerase = tios.c_cc[VWERASE];         /* word erase */
+ 	deflnext = tios.c_cc[VLNEXT];         /* literal next char */
+ 
+@@ -761,7 +762,8 @@
+ 		break;
+ 	  case 1:
+                 /* turn off output mappings */
+-                tios.c_oflag &= ~(ONLCR|OCRNL);
++                //tios.c_oflag &= ~(ONLCR|OCRNL);
++                tios.c_oflag &= ~(ONLCR);
+                 /*
+                  * turn off canonical processing and character echo;
+                  * also turn off signal checking -- ICANON might be
+@@ -773,8 +775,8 @@
+                 tios.c_cc[VMIN] = 1;
+                 if (eight) tios.c_iflag &= ~(ISTRIP);
+                 /* preserve tab delays, but turn off tab-to-space expansion */
+-                if ((tios.c_oflag & TABDLY) == TAB3)
+-                        tios.c_oflag &= ~TAB3;
++                //if ((tios.c_oflag & TABDLY) == TAB3)
++                //        tios.c_oflag &= ~TAB3;
+                 /*
+                  *  restore current flow control state
+                  */
+@@ -787,10 +789,10 @@
+ 		tios.c_cc[VSUSP] = 255;
+ 		tios.c_cc[VEOL] = 255;
+ 		tios.c_cc[VREPRINT] = 255;
+-		tios.c_cc[VDISCARD] = 255;
++		// tios.c_cc[VDISCARD] = 255;
+ 		tios.c_cc[VWERASE] = 255;
+ 		tios.c_cc[VLNEXT] = 255;
+-		tios.c_cc[VEOL2] = 255;
++		// tios.c_cc[VEOL2] = 255;
+ 		break;
+ 	  default:
+ 		return;
+--- netkit-rsh-0.17/rexecd/Makefile.orig	Sun Dec 12 19:05:00 1999
++++ netkit-rsh-0.17/rexecd/Makefile	Wed Sep 26 02:52:36 2001
+@@ -27,7 +27,7 @@
+ 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+ 
+ install: rexecd
+-	install -s -m$(DAEMONMODE) rexecd $(INSTALLROOT)$(SBINDIR)/in.rexecd
++	install -m$(DAEMONMODE) rexecd $(INSTALLROOT)$(SBINDIR)/in.rexecd
+ 	install -m$(MANMODE) rexecd.8 $(INSTALLROOT)$(MANDIR)/man8/in.rexecd.8
+ 	ln -sf in.rexecd.8 $(INSTALLROOT)$(MANDIR)/man8/rexecd.8
+ ifeq ($(USE_PAM),1)
+--- netkit-rsh-0.17/rshd/Makefile.orig	Wed Sep 26 02:42:52 2001
++++ netkit-rsh-0.17/rshd/Makefile	Wed Sep 26 02:54:04 2001
+@@ -14,7 +14,7 @@
+ 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+ 
+ install: rshd
+-	install -s -m$(DAEMONMODE) rshd $(INSTALLROOT)$(SBINDIR)/in.rshd
++	install -m$(DAEMONMODE) rshd $(INSTALLROOT)$(SBINDIR)/in.rshd
+ 	install -m$(MANMODE) rshd.8 $(INSTALLROOT)$(MANDIR)/man8/in.rshd.8
+ 	ln -sf in.rshd.8 $(INSTALLROOT)$(MANDIR)/man8/rshd.8
+ 

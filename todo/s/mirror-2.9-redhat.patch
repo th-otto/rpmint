@@ -1,0 +1,148 @@
+--- mirror-2.9/support/lstest.pl.redhat	Fri May 23 13:57:13 1997
++++ mirror-2.9/support/lstest.pl	Tue Oct 27 18:31:10 1998
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/perl -s
++#!/usr/bin/perl -s
+ 
+ unshift( @INC, '.' );
+ unshift( @INC, '..' );
+--- mirror-2.9/makefile.redhat	Mon Jun  1 14:28:47 1998
++++ mirror-2.9/makefile	Tue Oct 27 18:31:10 1998
+@@ -61,32 +61,33 @@
+ 
+ #  install, clean ...
+ # mode to install .pl files
+-PLMODE = 644
++PLMODE = 755 
+ # mode to install executables
+ EXMODE = 755
+ # group to own all the files
+-GRP = gnu
++GRP = root
+ # directory to install .pl (perl library) files
+-PLDIR = /usr/local/perl5/lib/perl5
++PLDIR = /usr/lib/mirror
+ # directory to install public executables
+-BINDIR = /usr/local/sbin
++BINDIR = /usr/bin
+ # directory to install man pages
+-MANDIR = /usr/local/man/man1
++MANDIR = /usr/man/man1
+ 
+ install:
++	mkdir -p $(PLDIR)
+ 	install -m $(PLMODE) -g $(GRP) lchat.pl $(PLDIR)
+ 	install -m $(PLMODE) -g $(GRP) dateconv.pl $(PLDIR)
+ 	install -m $(PLMODE) -g $(GRP) ftp.pl $(PLDIR)
+ 	install -m $(PLMODE) -g $(GRP) lsparse.pl $(PLDIR)
+-	install -m $(EXMODE) -g $(GRP) mirror.pl $(BINDIR)/mirror
+-	install -m $(EXMODE) -g $(GRP) do_unlinks.pl $(BINDIR)/do_unlinks
+-	install -m $(EXMODE) -g $(GRP) pkgs_to_mmin.pl $(BINDIR)/pkgs_to_mmin
+-	install -m $(EXMODE) -g $(GRP) mm.pl $(BINDIR)/mirror-master
++	install -m $(EXMODE) -g $(GRP) mirror.pl $(BINDIR)
++	install -m $(EXMODE) -g $(GRP) do_unlinks.pl $(BINDIR)
++	install -m $(EXMODE) -g $(GRP) pkgs_to_mmin.pl $(BINDIR)
++	install -m $(EXMODE) -g $(GRP) mm.pl $(BINDIR)
+ 	install -m $(PLMODE) -g $(GRP) mirror.man $(MANDIR)/mirror.1
+-	install -m $(PLMODE) -g $(GRP) mm.man $(MANDIR)/mirror-master.1
++	install -m $(PLMODE) -g $(GRP) mm.man $(MANDIR)/mm.1
+ 
+ # directory to install .pl (perl library) files for rperl
+-RPLDIR = /usr/local/rperl5/lib/perl5
++RPLDIR = /usr/rperl5/lib/perl5
+ 
+ rinstall:
+ 	sed 's/^\#!\/bin\/perl5/\#!\/bin\/rperl5/g' < mirror.pl > rmirror.pl
+--- mirror-2.9/install.pl.redhat	Fri May 29 15:52:00 1998
++++ mirror-2.9/install.pl	Tue Oct 27 18:31:10 1998
+@@ -70,7 +70,7 @@
+ # Try to find the default location of various programs via
+ # the users PATH then using $extra_path
+ if( ! $on_win ){
+-	$extra_path = '/usr/local/bin:/usr/new/bin:/usr/public/bin:/usr/ucb:/usr/bin:/bin:/etc:/usr/etc:/usr/local/etc';
++	$extra_path = '/bin:/usr/bin:/usr/local/bin';
+ 	if( $extra_path ne '' ){
+ 		$ENV{ 'PATH' } .= $path_sep . $extra_path;
+ 	}
+@@ -90,7 +90,7 @@
+ 		$commands_home = "c:\\mirror";
+ 	}
+ 	else {
+-		$commands_home = '/usr/local/bin';
++		$commands_home = '/usr/bin';
+ 	}
+ }
+ 
+--- mirror-2.9/do_unlinks.pl.redhat	Tue Feb  3 18:01:13 1998
++++ mirror-2.9/do_unlinks.pl	Tue Oct 27 18:31:10 1998
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/perl -s
++#!/usr/bin/perl -s
+ #
+ #
+ #
+--- mirror-2.9/mirror.pl.redhat	Mon Jun  8 06:55:27 1998
++++ mirror-2.9/mirror.pl	Tue Oct 27 18:32:14 1998
+@@ -104,7 +104,7 @@
+ # Try to find the default location of various programs via
+ # the users PATH then using $extra_path
+ if( ! $on_win ){
+-	$extra_path = '/usr/local/bin:/usr/new/bin:/usr/public/bin:/usr/ucb:/usr/bin:/bin:/etc:/usr/etc:/usr/local/etc';
++	$extra_path = '/bin:/usr/bin:/usr/local/bin';
+ }
+ if( $extra_path ne '' ){
+ 	$ENV{ 'PATH' } .= $path_sep . $extra_path;
+@@ -170,6 +170,9 @@
+ # system to keep the connection alive
+ $prod_interval = 60;
+ 
++# First look in the /etc dir
++unshift(@INC, '/etc');
++
+ # Put the directory that mirror is actually in at the start of PERLLIB.
+ $dir = &real_dir_from_path( $0 );
+ unshift( @INC, $dir );
+@@ -183,9 +186,9 @@
+ 	
+ # Make sure that your PERLLIB environment variable can get you
+ # all these or that they are installed.
+-require 'ftp.pl';
+-require 'lsparse.pl';
+-require 'dateconv.pl';
++require '/usr/lib/mirror/ftp.pl';
++require '/usr/lib/mirror/lsparse.pl';
++require '/usr/lib/mirror/dateconv.pl';
+ 
+ # Find some local details
+ # The current directory
+--- mirror-2.9/ftp.pl.redhat	Fri Jun  5 05:10:27 1998
++++ mirror-2.9/ftp.pl	Tue Oct 27 18:31:10 1998
+@@ -73,7 +73,7 @@
+ 
+ # lchat.pl is a special subset of chat2.pl that avoids some memory leaks.
+ # This will drag in the correct socket library
+-require 'lchat.pl';
++require '/usr/lib/mirror/lchat.pl';
+ 
+ 
+ package ftp;
+@@ -150,7 +150,7 @@
+ # (Normally set elsewhere - this is just a sensible default.)
+ # Is expected to take count and code as arguments and prompt
+ # for the secret key  with 'password:' on stdout and then print the password.
+-$ftp'keygen_prog = '/usr/local/bin/key';
++$ftp'keygen_prog = '/usr/bin/key';
+ 
+ # Uncomment to turn on lots of debugging.
+ # &debug( 10 );
+--- mirror-2.9/lsparse.pl.redhat	Fri May 29 15:04:23 1998
++++ mirror-2.9/lsparse.pl	Tue Oct 27 18:31:10 1998
+@@ -51,7 +51,7 @@
+ #
+ 
+ # This has better be available via your PERLLIB environment variable
+-require 'dateconv.pl';
++require '/usr/lib/mirror/dateconv.pl';
+ 
+ package lsparse;
+ 

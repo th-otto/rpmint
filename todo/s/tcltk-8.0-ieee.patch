@@ -1,0 +1,31 @@
+--- tcltk-8.0/tcl8.0.3/unix/configure.in.ieee	Wed Oct 22 13:39:11 1997
++++ tcltk-8.0/tcl8.0.3/unix/configure.in	Wed Oct 22 13:43:47 1997
+@@ -50,12 +50,9 @@
+ #--------------------------------------------------------------------
+ #	On a few very rare systems, all of the libm.a stuff is
+ #	already in libc.a.  Set compiler flags accordingly.
+-#	Also, Linux requires the "ieee" library for math to work
+-#	right (and it must appear before "-lm").
+ #--------------------------------------------------------------------
+ 
+ AC_CHECK_FUNC(sin, MATH_LIBS="", MATH_LIBS="-lm")
+-AC_CHECK_LIB(ieee, main, [MATH_LIBS="-lieee $MATH_LIBS"])
+ 
+ #--------------------------------------------------------------------
+ #       On AIX systems, libbsd.a has to be linked in to support
+--- tcltk-8.0/tk8.0.3/unix/configure.in.ieee	Wed Oct 22 13:44:22 1997
++++ tcltk-8.0/tk8.0.3/unix/configure.in	Wed Oct 22 13:44:29 1997
+@@ -285,13 +285,10 @@
+ #--------------------------------------------------------------------
+ #	On a few very rare systems, all of the libm.a stuff is
+ #	already in libc.a.  Set compiler flags accordingly.
+-#	Also, Linux requires the "ieee" library for math to
+-#	work right (and it must appear before "-lm").
+ #--------------------------------------------------------------------
+ 
+ MATH_LIBS=""
+ AC_CHECK_FUNC(sin, , MATH_LIBS="-lm")
+-AC_CHECK_LIB(ieee, main, [MATH_LIBS="-lieee $MATH_LIBS"])
+ 
+ #--------------------------------------------------------------------
+ #	If this system doesn't have a memmove procedure, use memcpy

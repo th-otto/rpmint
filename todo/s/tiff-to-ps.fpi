@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# takes tiff from stdin, writes postscript to stdout
+#
+
+TMPFILE=`mktemp /tmp/printtmp.XXXXXX` || exit 1
+cat > $TMPFILE
+tiff2ps -a $TMPFILE
+rm -f $TMPFILE
+
+exit 0

@@ -1,0 +1,10 @@
+--- lynx2-8-1/src/LYCookie.c.cookiefoo	Mon Mar 29 16:29:20 1999
++++ lynx2-8-1/src/LYCookie.c	Mon Mar 29 17:58:15 1999
+@@ -2024,6 +2024,7 @@
+     }
+ 
+     cookie_handle = LYNewTxtFile (cookie_file);
++    if (cookie_handle == NULL) return;
+     for (dl = domain_list; dl != NULL; dl = dl->next) {
+ 	de = dl->object;
+ 	if (de == NULL)

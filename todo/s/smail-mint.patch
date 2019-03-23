@@ -1,0 +1,111 @@
+--- smail-3.2.0.101/compat/Makefile.mint	Tue Nov 12 18:23:06 1996
++++ smail-3.2.0.101/compat/Makefile	Tue Aug  3 19:11:43 1999
+@@ -24,8 +24,8 @@
+ 
+ ROOT=..
+ MISCSRC=Makefile
+-DUMMY_OBJ=dummy.o
+-DUMMY_CSRC=dummy.c
++DUMMY_OBJ=dummy.o hstrerror.o
++DUMMY_CSRC=dummy.c hstrerror.c
+ SRC=${MISCSRC} ${DUMMY_CSRC}
+ SYS5_STRLIB=_str2set.o strpbrk.o strspn.o strcspn.o
+ STRLIB_DIR=${ROOT}/pd/strlib
+--- smail-3.2.0.101/compat/hstrerror.c.mint	Tue Aug  3 19:11:43 1999
++++ smail-3.2.0.101/compat/hstrerror.c	Tue Aug  3 19:11:43 1999
+@@ -0,0 +1,10 @@
++/* hstrerror for MiNTNet, (w) 1999, Guido Flohr.  */
++
++extern char** h_errlist;
++extern int h_nerr;
++
++char* hstrerror (e)
++     int e;
++{
++  return e < h_nerr ? h_errlist[e] : "Unknown error";
++}
+--- smail-3.2.0.101/contrib/smaillog/Makefile.mint	Tue Nov 12 18:24:12 1996
++++ smail-3.2.0.101/contrib/smaillog/Makefile	Tue Aug  3 19:11:43 1999
+@@ -20,10 +20,12 @@
+ MAN           = /usr/local/man
+ EXT           = 8
+ 
+-EXTHDRS	      = /usr/include/ctype.h \
+-		/usr/include/stdio.h \
+-		/usr/include/string.h \
+-		/usr/include/strings.h
++# This loses if system headers are not in /usr/include.  Leave
++# the dependencies ...
++#EXTHDRS	      = /usr/include/ctype.h \
++#		/usr/include/stdio.h \
++#		/usr/include/string.h \
++#		/usr/include/strings.h
+ 
+ HDRS	      =
+ 
+@@ -80,8 +82,10 @@
+ 		@-ar xo $(DEST)/$(LIBRARY)
+ 		@make -f $(MAKEFILE) DEST=$(DEST) install clean
+ ###
+-smaillog.o: /usr/include/stdio.h /usr/include/ctype.h \
+-	/usr/include/string.h
++# This loses if system headers are not in /usr/include.  Leave
++# the dependencies ...
++#smaillog.o: /usr/include/stdio.h /usr/include/ctype.h \
++#	/usr/include/string.h
+ 
+ names:
+ 	@for i in ${SRC}; do echo ${SRC_PREFIX}$$i; done
+--- smail-3.2.0.101/contrib/smaillog/smaillog.c.mint	Sun Sep 20 12:54:17 1992
++++ smail-3.2.0.101/contrib/smaillog/smaillog.c	Tue Aug  3 19:11:45 1999
+@@ -25,7 +25,7 @@
+ 
+ #include <stdio.h>
+ #include <ctype.h>
+-#if defined(SYSV) || defined(POSIX)
++#if defined(SYSV) || defined(POSIX) || defined(__MINT__)
+ #include <string.h>
+ #define index strchr
+ #define rindex strrchr
+--- smail-3.2.0.101/src/routers/gethost.c.mint	Tue Aug  3 21:27:01 1999
++++ smail-3.2.0.101/src/routers/gethost.c	Tue Aug  3 21:28:11 1999
+@@ -103,6 +103,10 @@
+ # define INADDR_LOOPBACK	((unsigned long) 0x7F000001)
+ #endif
+ 
++#ifdef __MINT__
++ extern int h_errno;
++#endif
++
+ /* functions local to this file */
+ static int gethostbyname_lookup();
+ static int gethostbyaddr_lookup();
+--- smail-3.2.0.101/util/mkdbm.c.mint	Wed Dec 17 19:33:23 1997
++++ smail-3.2.0.101/util/mkdbm.c	Tue Aug  3 19:11:45 1999
+@@ -81,7 +81,7 @@
+ static void create_database();
+ static void add_to_database();
+ static void add_ending_record();
+-static char *getline();
++static char *get_line();
+ static void rename_database();
+ static void add_yp_stamps();
+ 
+@@ -401,7 +401,7 @@
+ {
+     register char *s;
+ 
+-    while ((s = getline(f))) {
++    while ((s = get_line(f))) {
+ 	register char *data;
+ 	datum key, content;
+ 
+@@ -461,7 +461,7 @@
+  * return NULL on end of input.
+  */
+ static char *
+-getline(f)
++get_line(f)
+     register FILE *f;
+ {
+     static struct str str;

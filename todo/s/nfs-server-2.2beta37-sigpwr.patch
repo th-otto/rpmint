@@ -1,0 +1,12 @@
+--- nfs-server-2.2beta37/failsafe.c.sigpwr	Wed Sep 30 20:05:27 1998
++++ nfs-server-2.2beta37/failsafe.c	Wed Sep 30 20:06:16 1998
+@@ -193,7 +193,9 @@
+ 	case SIGPROF:	return "SIGPROF";
+ 	case SIGWINCH:	return "SIGWINCH";
+ 	case SIGIO:	return "SIGIO";
++#ifdef SIGPWR
+ 	case SIGPWR:	return "SIGPWR";
++#endif
+ 	}
+ 
+ 	sprintf(namebuf, "signal #%d", signo);

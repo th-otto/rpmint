@@ -1,0 +1,121 @@
+--- dialog-0.6/src/checklist.c.orig	Thu May  7 15:15:48 1998
++++ dialog-0.6/src/checklist.c	Thu May  7 15:16:36 1998
+@@ -124,7 +124,7 @@
+   wrefresh(dialog);
+ 
+   while (key != ESC) {
+-    key = wgetch(dialog);
++    key = mywgetch(dialog);
+     /* Check if key pressed matches first character of any item tag in list */
+     for (i = 0; i < max_choice; i++)
+       if (toupper(key) == toupper(items[(scroll+i)*3][0]))
+--- dialog-0.6/src/dialog.c.orig	Thu May  7 15:17:41 1998
++++ dialog-0.6/src/dialog.c	Thu May  7 15:20:01 1998
+@@ -100,6 +100,9 @@
+   int offset = 0, clear_screen = 0, end_common_opts = 0, retval;
+   char *title = NULL;
+   
++   if (!isatty(0)) {
++     exit(255);
++     }
+ #if defined(LOCALE)
+   (void) setlocale(LC_ALL, "");
+ #endif
+@@ -608,3 +611,14 @@
+ }
+ /* End of draw_shadow() */
+ #endif
++
++ 
++ /*  gets character, if not connected to a terminal returns ESC  */
++ 
++ int mywgetch(WINDOW *win)
++ {
++ if (!isatty(0))
++       return('\033');
++ return(wgetch(win));
++ }
++
+--- dialog-0.6/src/dialog.h.orig	Thu May  7 15:20:18 1998
++++ dialog-0.6/src/dialog.h	Thu May  7 15:21:32 1998
+@@ -243,3 +243,5 @@
+ int dialog_radiolist(char *title, char *prompt, int height, int width, int list_height, int item_no, char **items);
+ int dialog_inputbox(char *title, char *prompt, int height, int width, char *init);
+ int dialog_gauge(char *title, char *prompt, int height, int width, int percent);
++extern int mywgetch(WINDOW *);
++
+--- dialog-0.6/src/inputbox.c.orig	Thu May  7 15:21:45 1998
++++ dialog-0.6/src/inputbox.c	Thu May  7 15:27:08 1998
+@@ -100,7 +100,7 @@
+   
+   wrefresh(dialog);
+   while (key != ESC) {
+-    key = wgetch(dialog);
++    key = mywgetch(dialog);
+ 
+     if (button == -1) {    /* Input box selected */
+       switch (key) {
+--- dialog-0.6/src/menubox.c.orig	Thu May  7 15:27:21 1998
++++ dialog-0.6/src/menubox.c	Thu May  7 15:27:46 1998
+@@ -114,7 +114,7 @@
+   wrefresh(dialog);
+ 
+   while (key != ESC) {
+-    key = wgetch(dialog);
++    key = mywgetch(dialog);
+     /* Check if key pressed matches first character of any item tag in menu */
+     for (i = 0; i < max_choice; i++)
+       if (toupper(key) == toupper(items[(scroll+i)*2][0]))
+--- dialog-0.6/src/msgbox.c.orig	Thu May  7 15:28:02 1998
++++ dialog-0.6/src/msgbox.c	Thu May  7 15:28:35 1998
+@@ -68,7 +68,7 @@
+     print_button(dialog, "  OK  ", height-2, width/2-4, TRUE);
+     wrefresh(dialog);
+     while (key != ESC && key != '\n' && key != ' ')
+-      key = wgetch(dialog);
++      key = mywgetch(dialog);
+   }
+   else {
+     key = '\n';
+--- dialog-0.6/src/radiolist.c.orig	Thu May  7 15:28:54 1998
++++ dialog-0.6/src/radiolist.c	Thu May  7 15:29:11 1998
+@@ -125,7 +125,7 @@
+   wrefresh(dialog);
+ 
+   while (key != ESC) {
+-    key = wgetch(dialog);
++    key = mywgetch(dialog);
+     /* Check if key pressed matches first character of any item tag in list */
+     for (i = 0; i < max_choice; i++)
+       if (toupper(key) == toupper(items[(scroll+i)*3][0]))
+--- dialog-0.6/src/textbox.c.orig	Thu May  7 15:30:15 1998
++++ dialog-0.6/src/textbox.c	Thu May  7 15:30:57 1998
+@@ -130,7 +130,7 @@
+   wrefresh(dialog);
+ 
+   while ((key != ESC) && (key != '\n')) {
+-    key = wgetch(dialog);
++    key = mywgetch(dialog);
+     switch (key) {
+       case 'E':    /* Exit */
+       case 'e':
+@@ -637,7 +637,7 @@
+   search_term[0] = '\0';
+   wattrset(win, searchbox_attr);
+   while (key != ESC) {
+-    key = wgetch(win);
++    key = mywgetch(win);
+     switch (key) {
+       case '\n':
+         if (search_term[0] != '\0')
+--- dialog-0.6/src/yesno.c.orig	Thu May  7 15:31:10 1998
++++ dialog-0.6/src/yesno.c	Thu May  7 15:31:39 1998
+@@ -70,7 +70,7 @@
+   wrefresh(dialog);
+ 
+   while (key != ESC) {
+-    key = wgetch(dialog);
++    key = mywgetch(dialog);
+     switch (key) {
+       case 'Y':
+       case 'y':

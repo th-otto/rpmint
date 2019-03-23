@@ -1,0 +1,22 @@
+--- tcltk-8.0.4/expect-5.28/example/kibitz.jbj	Thu Apr  8 16:25:11 1999
++++ tcltk-8.0.4/expect-5.28/example/kibitz	Thu Apr  8 16:25:32 1999
+@@ -354,7 +354,7 @@
+     # can't use exec since write insists on being run from a tty!
+     set rc [catch {
+ 		   system echo "Can we talk?  Run: \"kibitz -$pid\"" | \
+-			/bin/write $user $tty
++			/usr/bin/write $user $tty
+ 		}
+ 	]
+     if $rc {rmfifos;abort}
+--- tcltk-8.0.4/expect-5.28/example/weather.jbj	Thu Apr  8 16:30:11 1999
++++ tcltk-8.0.4/expect-5.28/example/weather	Thu Apr  8 16:31:12 1999
+@@ -28,7 +28,7 @@
+ 
+ set env(TERM) vt100	;# actual value doesn't matter, just has to be set
+ 
+-spawn telnet downwind.sprl.umich.edu 3000
++spawn telnet cirrus.sprl.umich.edu 3000
+ match_max 100000
+ for {} 1 {} {
+ 	expect timeout {

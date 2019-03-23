@@ -1,0 +1,507 @@
+# ------------------------------------------------------------------------------
+#  CHANGES                               |   35 ++++++++++++++++++++++++++++
+#  WWW/Library/Implementation/HTChunk.h  |    2 -
+#  WWW/Library/Implementation/HTFile.h   |    2 -
+#  WWW/Library/Implementation/HTRules.h  |    2 -
+#  WWW/Library/Implementation/HTString.c |    4 +--
+#  WWW/Library/Implementation/HTString.h |    2 -
+#  WWW/Library/Implementation/HTTCP.c    |   12 ++++++---
+#  makefile.in                           |    4 +--
+#  src/DefaultStyle.c                    |    3 --
+#  src/HTML.c                            |   40 +++++++++++++++++++++-----------
+#  src/LYBookmark.c                      |    3 ++
+#  src/LYCookie.c                        |    2 -
+#  src/LYDownload.c                      |    1 
+#  src/LYShowInfo.c                      |    5 +++-
+#  src/LYStrings.c                       |    7 ++++-
+#  src/LYStrings.h                       |    2 -
+#  src/LYUtils.c                         |   38 ++++++++++++++++++++++++------
+#  17 files changed, 125 insertions, 39 deletions
+# ------------------------------------------------------------------------------
+Index: CHANGES
+--- lynx2.8.1rel.2-981118+/CHANGES	Fri Dec  4 05:27:45 1998
++++ lynx2.8.1rel.2-981204/CHANGES	Fri Dec  4 06:10:03 1998
+@@ -1,6 +1,41 @@
+ Bugfixes since Lynx 2.8.1 release
+ ================================================================================
+ 
++1998-12-05
++* check that stdin is really a tty before trying to select from it in the
++  NSL-FORK logic in HTParseInet(), file HTTCP.c (reported by Kim DeVaughn, for
++  someone who was unable to run lynx -dump in a cron job, applies to
++  2.8.1rel.2) - TD, BL
++* correct logic in OpenHiddenFile, which did not check if a failure to open a
++  file for append was due to the file's not existing and hence causing
++  IsOurFile to return failure.  This caused the -traversal option to fail
++  (reported by Francis Irving <francis@ncgraphics.co.uk>, applies to
++  2.8.1rel.2) - TD
++* change fopen for write in LYCookie.c to LYNewTxtFile so that the resulting
++  file will be readable by only the owner (Bill Nottingham <wen2@po.cwru.edu>
++  suggested using umask, but that may not be portable enough) - TD
++* fixes for SunOS K&R compiler with/without unproto wrapper, i.e., definition
++  of 'const' - TD
++* modify PutDefs macro in LYShowInfo.c to check for nonnull table[N].value,
++  which may be null due to limitations of cfg_defs.sh script on some
++  platforms where an empty string was intended (reported by LV, PG, applies
++  to 2.8.1rel.2) - TD
++* correct typo in 'make distclean' rule; an extra '-' prevented removal of
++  .orig and .rej files (patch by LV).
++* modify HTCheckForInterrupt() to check for interrupt no more than one per
++  second, since this check is comparatively slow - TD
++* convert KEY_ENTER to newline in LYgetch() to make Lynx work with IRIX's
++  iris-ansi terminfo description, which equates the kent capability with
++  carriage return.  Doing this will allow lynx to use the keypad "enter" key as
++  an alias for carriage return on most terminals - KW
++* fixed various memory leaks (LYDownload.c, LYBookmark.c, HTML.c,
++  DefaultStyle.c) - KW
++* modify MakeNewTitle() to check for null pointer, fixing core dump with
++  verbose images when value[src_type] is null (reported by John Bley
++  <jbb6@acpub.duke.edu> for 2.8.1rel.2) - TD
++* modify HTParseInet() so that it works if stdin has been redirected to
++  /dev/null, e.g., when running a cron job (reported by John H.  DuBois III
++  <spcecdt@armory.com>) - BL
+ 1998-11-18
+ * suppress cookie-storing if the value is null - BJP
+ * modify cookie parsing to ignore comment lines beginning with a '#' (reported
+Index: WWW/Library/Implementation/HTChunk.h
+--- lynx2.8.1rel.2-981118+/WWW/Library/Implementation/HTChunk.h	Thu Aug  6 09:04:14 1998
++++ lynx2.8.1rel.2-981204/WWW/Library/Implementation/HTChunk.h	Fri Dec  4 05:45:50 1998
+@@ -146,7 +146,7 @@
+  */
+ 
+ 
+-extern void HTChunkPuts PARAMS((HTChunk * ch, const char *str));
++extern void HTChunkPuts PARAMS((HTChunk * ch, CONST char *str));
+ 
+ 
+ /*
+Index: WWW/Library/Implementation/HTFile.h
+--- lynx2.8.1rel.2-981118+/WWW/Library/Implementation/HTFile.h	Thu Sep 17 08:13:52 1998
++++ lynx2.8.1rel.2-981204/WWW/Library/Implementation/HTFile.h	Fri Dec  4 05:45:58 1998
+@@ -50,7 +50,7 @@
+ /*
+ **  Make a WWW name from a full local path name
+ */
+-extern char * WWW_nameOfFile PARAMS((const char * name));
++extern char * WWW_nameOfFile PARAMS((CONST char * name));
+ 
+ /*
+ **  Generate the name of a cache file
+Index: WWW/Library/Implementation/HTRules.h
+--- lynx2.8.1rel.2-981118+/WWW/Library/Implementation/HTRules.h	Thu Aug  6 09:04:14 1998
++++ lynx2.8.1rel.2-981204/WWW/Library/Implementation/HTRules.h	Fri Dec  4 05:46:10 1998
+@@ -66,7 +66,7 @@
+    large.
+    
+  */
+-extern int HTAddRule PARAMS((HTRuleOp op, const char * pattern, const char * equiv));
++extern int HTAddRule PARAMS((HTRuleOp op, CONST char * pattern, CONST char * equiv));
+ 
+ 
+ /*
+Index: WWW/Library/Implementation/HTString.c
+--- lynx2.8.1rel.2-981118+/WWW/Library/Implementation/HTString.c	Thu Aug  6 09:04:14 1998
++++ lynx2.8.1rel.2-981204/WWW/Library/Implementation/HTString.c	Fri Dec  4 05:46:20 1998
+@@ -232,8 +232,8 @@
+ */
+ PUBLIC char * HTNextTok ARGS4(
+ 	char **,	pstr,
+-	const char *,	delims,
+-	const char *,	bracks,
++	CONST char *,	delims,
++	CONST char *,	bracks,
+ 	char *, 	found)
+ {
+     char * p = *pstr;
+Index: WWW/Library/Implementation/HTString.h
+--- lynx2.8.1rel.2-981118+/WWW/Library/Implementation/HTString.h	Thu Aug  6 09:04:14 1998
++++ lynx2.8.1rel.2-981204/WWW/Library/Implementation/HTString.h	Fri Dec  4 05:46:29 1998
+@@ -51,7 +51,7 @@
+ 
+ /* A more general parser - kw */
+ extern char * HTNextTok PARAMS((char ** pstr,
+-		      const char * delims, const char * bracks, char * found));
++		      CONST char * delims, CONST char * bracks, char * found));
+ 
+ #endif
+ /*
+Index: WWW/Library/Implementation/HTTCP.c
+--- lynx2.8.1rel.2-981118+/WWW/Library/Implementation/HTTCP.c	Sat Oct 24 13:18:27 1998
++++ lynx2.8.1rel.2-981204/WWW/Library/Implementation/HTTCP.c	Fri Dec  4 05:37:36 1998
+@@ -526,19 +526,23 @@
+ 		*/
+ 		cycle++;
+ 
+-		timeout.tv_sec = 1;
+-		timeout.tv_usec = 0;
+ 		FD_ZERO(&readfds);
+-		FD_SET(pfd[0], &readfds);
+ #ifndef USE_SLANG
+ 		/*
+ 		**  This allows us to abort immediately, not after 1-second
+ 		**  timeout, when user hits abort key.  Can't do this when
+ 		**  using SLANG (or at least I don't know how), so SLANG
+ 		**  users must live with up-to-1s timeout.  -BL
++		**
++		**  Whoops -- we need to make sure stdin is actually
++		**  selectable!  /dev/null isn't, on some systems, which
++		**  makes some useful Lynx invocations fail.  -BL
+ 		*/
+-		FD_SET(0, &readfds);    /* stdin -BL */
++		if (isatty(fileno(stdin))) FD_SET(fileno(stdin), &readfds); 
+ #endif /* USE_SLANG */
++		timeout.tv_sec = 1;
++		timeout.tv_usec = 0;
++		FD_SET(pfd[0], &readfds);
+ 
+ 		/*
+ 		**  Return when data received, interrupted, or failed.
+Index: makefile.in
+--- lynx2.8.1rel.2-981118+/makefile.in	Fri Dec  4 05:27:43 1998
++++ lynx2.8.1rel.2-981204/makefile.in	Fri Dec  4 06:03:57 1998
+@@ -210,8 +210,8 @@
+ 	-cd src/chrtrans && $(MAKE) $@
+ 	-rm -f *~ *.bak *.sav
+ 	-rm -f WWW/Library/unix/makefile src/makefile src/chrtrans/makefile
+-	@SRCDIR_CLEAN@-find . -type f -name '*.rej' -exec -rm -f {} \;
+-	@SRCDIR_CLEAN@-find . -type f -name '*.orig' -exec -rm -f {} \;
++	@SRCDIR_CLEAN@-find . -type f -name '*.rej' -exec rm -f {} \;
++	@SRCDIR_CLEAN@-find . -type f -name '*.orig' -exec rm -f {} \;
+ 	@SRCDIR_CLEAN@-rmdir WWW/Library/unix && rmdir WWW/Library && rmdir WWW
+ 	@SRCDIR_CLEAN@-rmdir src/chrtrans && rmdir src
+ 	-rm -f makefile lynx_cfg.h config.status config.log config.cache
+Index: src/DefaultStyle.c
+--- lynx2.8.1rel.2-981118+/src/DefaultStyle.c	Thu Aug  6 09:04:14 1998
++++ lynx2.8.1rel.2-981204/src/DefaultStyle.c	Fri Dec  4 05:57:22 1998
+@@ -389,9 +389,6 @@
+ 		p != 0 && q != 0;
+ 		p = p->next, q = q->next) {
+     	    HTStyle *r = p->next;
+-	    HTStyle temp;
+-	    temp = *p;
+-	    temp.next = q->next;
+ 	    *p = *q;
+ 	    p->next = r;
+ 	}
+Index: src/HTML.c
+--- lynx2.8.1rel.2-981118+/src/HTML.c	Sat Oct 17 17:26:25 1998
++++ lynx2.8.1rel.2-981204/src/HTML.c	Fri Dec  4 05:49:09 1998
+@@ -78,14 +78,14 @@
+     /* .... */
+ };
+ 
+-PRIVATE HTStyleSheet * styleSheet;	/* Application-wide */
++PRIVATE HTStyleSheet * styleSheet = NULL;	/* Application-wide */
+ 
+ /*	Module-wide style cache
+ */
+ PRIVATE HTStyle *styles[HTML_ELEMENTS+31]; /* adding 24 nested list styles  */
+ 					   /* and 3 header alignment styles */
+ 					   /* and 3 div alignment styles    */
+-PRIVATE HTStyle *default_style;
++PRIVATE HTStyle *default_style = NULL;
+ 
+ PUBLIC char *LYToolbarName = "LynxPseudoToolbar";
+ 
+@@ -108,7 +108,7 @@
+ 
+ PRIVATE char* MakeNewTitle PARAMS((CONST char ** value, int src_type));
+ PRIVATE char* MakeNewImageValue PARAMS((CONST char ** value));
+-PRIVATE char* MakeNewMapValue PARAMS((const char ** value, const char* mapstr));
++PRIVATE char* MakeNewMapValue PARAMS((CONST char ** value, CONST char* mapstr));
+ 
+ /*	Set an internal flag that the next call to a stack-affecting method
+ **	is only internal and the stack manipulation should be skipped. - kw
+@@ -2735,10 +2735,12 @@
+ 		if (*alt_string == '\0') {
+ 		    if (map_href) {
+ 			StrAllocCopy(alt_string, (title ? title :
+-				     MakeNewMapValue(value,"USEMAP")));
++				     (temp = MakeNewMapValue(value,"USEMAP"))));
++			FREE(temp);
+ 		    } else if (dest_ismap) {
+ 			StrAllocCopy(alt_string, (title ? title :
+-				     MakeNewMapValue(value,"ISMAP")));
++				     (temp = MakeNewMapValue(value,"ISMAP"))));
++			FREE(temp);
+ 
+ 		    } else if (me->inA == TRUE && dest) {
+ 			StrAllocCopy(alt_string, (title ?
+@@ -2758,12 +2760,14 @@
+ 
+ 	} else if (map_href) {
+ 	    StrAllocCopy(alt_string, (title ? title :
+-				      MakeNewMapValue(value,"USEMAP")));
++				      (temp = MakeNewMapValue(value,"USEMAP"))));
++	    FREE(temp);
+ 
+ 	} else if ((dest_ismap == TRUE) ||
+ 		   (me->inA && present && present[HTML_IMG_ISMAP])) {
+ 	    StrAllocCopy(alt_string, (title ? title :
+-				      MakeNewMapValue(value,"ISMAP")));
++				      (temp = MakeNewMapValue(value,"ISMAP"))));
++	    FREE(temp);
+ 
+ 	} else if (me->inA == TRUE && dest) {
+ 	    StrAllocCopy(alt_string, (title ?
+@@ -2782,7 +2786,8 @@
+ 					  title : ""));
+ 	}
+ 	if (*alt_string == '\0' && map_href) {
+-	    StrAllocCopy(alt_string, MakeNewMapValue(value,"USEMAP"));
++	    StrAllocCopy(alt_string, (temp = MakeNewMapValue(value,"USEMAP")));
++	    FREE(temp);
+ 	}
+ 
+ 	CTRACE(tfp, "HTML IMG: USEMAP=%d ISMAP=%d ANCHOR=%d PARA=%d\n",
+@@ -2844,7 +2849,8 @@
+ 		    if (dest_ismap) {
+ 			HTML_put_character(me, ' ');
+ 			me->in_word = NO;
+-			HTML_put_string(me, MakeNewMapValue(value,"ISMAP"));
++			HTML_put_string(me, (temp = MakeNewMapValue(value,"ISMAP")));
++			FREE(temp);
+ 		    } else if (dest) {
+ 			HTML_put_character(me, ' ');
+ 			me->in_word = NO;
+@@ -2900,6 +2906,7 @@
+ 		HText_endAnchor(me->text, me->CurrentANum);
+ 		me->CurrentANum = 0;
+ 		HTML_put_character(me, '-');
++		FREE(newtitle);
+ 		StrAllocCopy(alt_string,
+ 			     ((present &&
+ 			       present[HTML_IMG_ISOBJECT]) ?
+@@ -2956,6 +2963,7 @@
+ 		HText_endAnchor(me->text, me->CurrentANum);
+ 		me->CurrentANum = 0;
+ 		HTML_put_character(me, '-');
++		FREE(newtitle);
+ 		StrAllocCopy(alt_string,
+ 			     ((present &&
+ 			       present[HTML_IMG_ISOBJECT]) ?
+@@ -3012,7 +3020,8 @@
+ 		if (dest_ismap) {
+ 		    HTML_put_character(me, ' ');/* space char may be ignored */
+ 		    me->in_word = NO;
+-		    HTML_put_string(me, MakeNewMapValue(value,"ISMAP"));
++		    HTML_put_string(me, (temp = MakeNewMapValue(value,"ISMAP")));
++		    FREE(temp);
+ 		} else if (dest) {
+ 		    HTML_put_character(me, ' ');/* space char may be ignored */
+ 		    me->in_word = NO;
+@@ -4398,7 +4407,7 @@
+ 		 *  We have a TYPE="image" with a non-zero-length SRC
+ 		 *  attribute and want clickable images.  Make the
+ 		 *  SRC's value a link if it's still not zero-length
+-		 *  legitiimizing it. - FM
++		 *  legitimizing it. - FM
+ 		 */
+ 		url_type = LYLegitimizeHREF(me, &href, TRUE, TRUE);
+ 		if (*href) {
+@@ -4436,6 +4445,7 @@
+ 		    if (me->inBoldH == FALSE)
+ 			HText_appendCharacter(me->text, LY_BOLD_START_CHAR);
+ 		    HTML_put_string(me, VERBOSE_IMG(value,HTML_INPUT_SRC,"[IMAGE]"));
++		    FREE(newtitle);
+ 		    if (me->inBoldH == FALSE)
+ 			HText_appendCharacter(me->text, LY_BOLD_END_CHAR);
+ 		    HText_endAnchor(me->text, 0);
+@@ -4687,6 +4697,7 @@
+ 		}
+ 	    }
+ 	    HText_setIgnoreExcess(me->text, FALSE);
++	    FREE(ImageSrc);
+ 	    FREE(I_value);
+ 	    FREE(I_name);
+ 	}
+@@ -7466,7 +7477,10 @@
+     char *newtitle = NULL;
+ 
+     StrAllocCopy(newtitle, "[");
+-    ptr = strrchr(value[src_type], '/');
++    if (value != 0 && value[src_type] != 0)
++	ptr = strrchr(value[src_type], '/');
++    else
++	ptr = 0;
+     if (!ptr) {
+ 	StrAllocCat(newtitle, value[src_type]);
+     } else {
+@@ -7492,7 +7506,7 @@
+     return newtitle;
+ }
+ 
+-PRIVATE char * MakeNewMapValue ARGS2(const char **, value, const char*, mapstr)
++PRIVATE char * MakeNewMapValue ARGS2(CONST char **, value, CONST char*, mapstr)
+ {
+     char *ptr;
+     char *newtitle = NULL;
+Index: src/LYBookmark.c
+--- lynx2.8.1rel.2-981118+/src/LYBookmark.c	Wed Oct 14 08:32:07 1998
++++ lynx2.8.1rel.2-981204/src/LYBookmark.c	Fri Dec  4 05:56:24 1998
+@@ -953,5 +953,8 @@
+     StrAllocCat(buf, " -->");
+     StrAllocCat(buf, ncr);
+ 
++    FREE(comment);
++    FREE(ncr);
++
+     return(buf);
+ }
+Index: src/LYCookie.c
+--- lynx2.8.1rel.2-981118+/src/LYCookie.c	Fri Dec  4 05:27:45 1998
++++ lynx2.8.1rel.2-981204/src/LYCookie.c	Fri Dec  4 06:10:31 1998
+@@ -2023,7 +2023,7 @@
+ 	return;
+     }
+ 
+-    cookie_handle = fopen(cookie_file, "w+");
++    cookie_handle = LYNewTxtFile (cookie_file);
+     for (dl = domain_list; dl != NULL; dl = dl->next) {
+ 	de = dl->object;
+ 	if (de == NULL)
+Index: src/LYDownload.c
+--- lynx2.8.1rel.2-981118+/src/LYDownload.c	Wed Oct 14 08:32:07 1998
++++ lynx2.8.1rel.2-981204/src/LYDownload.c	Fri Dec  4 05:55:02 1998
+@@ -655,6 +655,7 @@
+      *	Free off temp copy.
+      */
+     FREE(sug_filename);
++    FREE(downloaded_url);
+ 
+     return(0);
+ }
+Index: src/LYShowInfo.c
+--- lynx2.8.1rel.2-981118+/src/LYShowInfo.c	Sat Oct 17 17:26:25 1998
++++ lynx2.8.1rel.2-981204/src/LYShowInfo.c	Fri Dec  4 06:03:32 1998
+@@ -26,7 +26,10 @@
+ #if defined(HAVE_CONFIG_H) && !defined(NO_CONFIG_INFO)
+ #define HAVE_CFG_DEFS_H
+ 
+-#define PutDefs(table, N) fprintf(fp0, "%-35s %s\n", table[N].name, table[N].value)
++#define PutDefs(table, N) \
++	fprintf(fp0, "%-35s %s\n", \
++		     table[N].name, \
++		     (table[N].value != 0) ? table[N].value : "")
+ 
+ /*
+  *  Compile-time definitions info, returns local url
+Index: src/LYStrings.c
+--- lynx2.8.1rel.2-981118+/src/LYStrings.c	Tue Sep 22 07:57:43 1998
++++ lynx2.8.1rel.2-981204/src/LYStrings.c	Fri Dec  4 06:00:05 1998
+@@ -406,7 +406,7 @@
+  * Ncurses stores the termcap/terminfo names in arrays sorted to match the
+  * array of strings in the TERMTYPE struct.
+  */
+-PRIVATE int lookup_tiname (char *name, NCURSES_CONST char *const *names)
++PRIVATE int lookup_tiname (char *name, NCURSES_CONST char *CONST *names)
+ {
+     int code;
+ 
+@@ -1060,6 +1060,11 @@
+ 	case KEY_C3:		   /* lower right of keypad */
+ 	   c = PGDOWN;
+ 	   break;
++#ifdef KEY_ENTER
++	case KEY_ENTER:		   /* enter/return	*/
++	   c = '\n';
++	   break;
++#endif /* KEY_END */
+ #ifdef KEY_END
+ 	case KEY_END:		   /* end key		001 */
+ 	   c = END_KEY;
+Index: src/LYStrings.h
+--- lynx2.8.1rel.2-981118+/src/LYStrings.h	Sun Sep 13 10:41:19 1998
++++ lynx2.8.1rel.2-981204/src/LYStrings.h	Fri Dec  4 05:47:09 1998
+@@ -22,7 +22,7 @@
+ 	int		recall));
+ extern char *LYstrsep PARAMS((
+ 	char **		stringp,
+-	const char *	delim));
++	CONST char *	delim));
+ extern char * LYstrstr PARAMS((
+ 	char *		chptr,
+ 	CONST char *	tarptr));
+Index: src/LYUtils.c
+--- lynx2.8.1rel.2-981118+/src/LYUtils.c	Sat Oct 24 13:18:27 1998
++++ lynx2.8.1rel.2-981204/src/LYUtils.c	Fri Dec  4 06:05:40 1998
+@@ -2027,6 +2027,27 @@
+ 
+ }
+ 
++PRIVATE int DontCheck NOARGS
++{
++    static time_t last;
++    time_t next;
++
++    /** Curses or slang setup was not invoked **/
++    if (dump_output_immediately)
++	return(TRUE);
++
++    /*
++     * Avoid checking interrupts more than one per second, since it is a slow
++     * and expensive operation - TD
++     */
++    next = time((time_t*)0);
++    if (next == last)
++	return (TRUE);
++
++    last = next;
++    return FALSE;
++}
++
+ PUBLIC int HTCheckForInterrupt NOARGS
+ {
+     int c;
+@@ -2046,7 +2067,7 @@
+     }
+ 
+     /** Curses or slang setup was not invoked **/
+-    if (dump_output_immediately)
++    if (DontCheck())
+ 	return((int)FALSE);
+ 
+ #ifdef USE_SLANG
+@@ -2107,7 +2128,7 @@
+     }
+ 
+     /** Curses or slang setup was not invoked **/
+-    if (dump_output_immediately)
++    if (DontCheck())
+ 	  return((int)FALSE);
+ 
+     /** Control-C or Control-Y and a 'N'o reply to exit query **/
+@@ -5483,6 +5504,7 @@
+ PRIVATE FILE *OpenHiddenFile ARGS2(char *, name, char *, mode)
+ {
+     FILE *fp = 0;
++    struct stat data;
+ 
+ #if defined(O_CREAT) && defined(O_EXCL) /* we have fcntl.h or kindred? */
+     /*
+@@ -5504,10 +5526,12 @@
+     }
+     else
+ #endif
+-    if (*mode == 'a'
+-     && IsOurFile(name)
+-     && chmod(name, HIDE_CHMOD) == 0)
+-	fp = fopen(name, mode);
++    if (*mode == 'a') {
++	if (IsOurFile(name)
++	 && chmod(name, HIDE_CHMOD) == 0)
++	    fp = fopen(name, mode);
++	else if (lstat(name, &data) != 0)
++	    fp = OpenHiddenFile(name, "w");
+     /*
+      * This is less stringent, but reasonably portable.  For new files, the
+      * umask will suffice; however if the file already exists we'll change
+@@ -5517,7 +5541,7 @@
+      *
+      * This won't work properly if the user is root, since the chmod succeeds.
+      */
+-    else if (*mode != 'a') {
++    } else if (*mode != 'a') {
+ 	int save = umask(HIDE_UMASK);
+ 	if (chmod(name, HIDE_CHMOD) == 0 || errno == ENOENT)
+ 	    fp = fopen(name, mode);

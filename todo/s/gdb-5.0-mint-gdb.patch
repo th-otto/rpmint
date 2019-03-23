@@ -1,0 +1,337 @@
+diff -urN gdb-5.0-orig/gdb/config/m68k/mint.mh gdb-5.0/gdb/config/m68k/mint.mh
+--- gdb-5.0-orig/gdb/config/m68k/mint.mh	Thu Jan  1 01:00:00 1970
++++ gdb-5.0/gdb/config/m68k/mint.mh	Fri Nov 24 13:38:42 2000
+@@ -0,0 +1,9 @@
++# Host: m68k-atari running FreeMiNT
++
++XM_FILE= xm-mint.h
++XDEPFILES= ser-tcp.o
++
++NAT_FILE= nm-mint.h
++NATDEPFILES= infptrace.o inftarg.o fork-child.o m68kmint-nat.o
++
++GDBSERVER_DEPFILES= low-mint.o
+diff -urN gdb-5.0-orig/gdb/config/m68k/mint.mt gdb-5.0/gdb/config/m68k/mint.mt
+--- gdb-5.0-orig/gdb/config/m68k/mint.mt	Thu Jan  1 01:00:00 1970
++++ gdb-5.0/gdb/config/m68k/mint.mt	Fri Nov 24 13:38:44 2000
+@@ -0,0 +1,3 @@
++# Target: m68k-atari running FreeMiNT
++TDEPFILES= m68k-tdep.o
++TM_FILE= tm-mint.h
+diff -urN gdb-5.0-orig/gdb/config/m68k/nm-mint.h gdb-5.0/gdb/config/m68k/nm-mint.h
+--- gdb-5.0-orig/gdb/config/m68k/nm-mint.h	Thu Jan  1 01:00:00 1970
++++ gdb-5.0/gdb/config/m68k/nm-mint.h	Mon Nov 27 18:47:32 2000
+@@ -0,0 +1,31 @@
++/* Native-dependent definitions for m68k-atari running FreeMiNT, for GDB.
++   Copyright 2000 Free Software Foundation, Inc.
++
++   This file is part of GDB.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place - Suite 330,
++   Boston, MA 02111-1307, USA.  */
++
++#define PTRACE_ARG3_TYPE void*
++
++#define FETCH_INFERIOR_REGISTERS
++#define ATTACH_DETACH
++
++#define CHILD_POST_STARTUP_INFERIOR
++#define CHILD_POST_ATTACH
++
++struct target_ops;
++extern void mint_post_unpush_target (struct target_ops *t);
++#define TARGET_POST_UNPUSH_TARGET_HOOK(t) mint_post_unpush_target (t)
+diff -urN gdb-5.0-orig/gdb/config/m68k/tm-mint.h gdb-5.0/gdb/config/m68k/tm-mint.h
+--- gdb-5.0-orig/gdb/config/m68k/tm-mint.h	Thu Jan  1 01:00:00 1970
++++ gdb-5.0/gdb/config/m68k/tm-mint.h	Fri Nov 24 13:38:44 2000
+@@ -0,0 +1,31 @@
++/* Macro definitions for m68k-atari running under FreeMiNT.
++   Copyright 2000 Free Software Foundation, Inc.
++
++   This file is part of GDB.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place - Suite 330,
++   Boston, MA 02111-1307, USA.  */
++
++#ifndef TM_MINT_H
++#define TM_MINT_H
++
++
++#define BREAKPOINT {0x4a, 0xfc}
++#define DECR_PC_AFTER_BREAK 0
++
++#include "m68k/tm-m68k.h"
++
++
++#endif /* TM_MINT_H */
+diff -urN gdb-5.0-orig/gdb/config/m68k/xm-mint.h gdb-5.0/gdb/config/m68k/xm-mint.h
+--- gdb-5.0-orig/gdb/config/m68k/xm-mint.h	Thu Jan  1 01:00:00 1970
++++ gdb-5.0/gdb/config/m68k/xm-mint.h	Fri Nov 24 13:38:44 2000
+@@ -0,0 +1,36 @@
++/* Parameters for execution on a m68k-atari running FreeMiNT, for GDB.
++   Copyright 2000 Free Software Foundation, Inc.
++
++   This file is part of GDB.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place - Suite 330,
++   Boston, MA 02111-1307, USA.  */
++
++#ifndef XM_MINT_H
++#define XM_MINT_H
++
++/* Include this to get things like NGROUPS which <limits.h> doesn't
++   define on some systems. */
++#include <sys/param.h>
++
++/* We have to include these files now, so that GDB will not make
++   competing definitions in defs.h.  */
++#include <limits.h>
++
++
++#include "m68k/xm-m68k.h"
++
++
++#endif /* XM_MINT_H */
+diff -urN gdb-5.0-orig/gdb/configure.host gdb-5.0/gdb/configure.host
+--- gdb-5.0-orig/gdb/configure.host	Mon May  1 17:30:54 2000
++++ gdb-5.0/gdb/configure.host	Fri Nov 24 13:38:44 2000
+@@ -97,6 +97,7 @@
+ m68*-isi-*)		gdb_host=isi ;;
+ m68*-*-linux*)		gdb_host=linux ;;
+ m68*-*-lynxos*)		gdb_host=m68klynx ;;
++m68*-*-mint*)		gdb_host=mint ;;
+ m68*-*-netbsd*)		gdb_host=nbsd ;;
+ m68*-*-sysv4*)		gdb_host=m68kv4 ;;
+ m68*-motorola-*)	gdb_host=delta68 ;;
+diff -urN gdb-5.0-orig/gdb/configure.tgt gdb-5.0/gdb/configure.tgt
+--- gdb-5.0-orig/gdb/configure.tgt	Mon May  1 17:30:54 2000
++++ gdb-5.0/gdb/configure.tgt	Fri Nov 24 13:38:44 2000
+@@ -157,6 +157,8 @@
+ 		configdirs="${configdirs} gdbserver" ;;
+ m68*-*-lynxos*)		gdb_target=m68klynx
+ 		configdirs="${configdirs} gdbserver" ;;
++m68*-*-mint*)		gdb_target=mint
++		configdirs="${configdirs} gdbserver" ;;
+ m68*-*-netbsd*)		gdb_target=nbsd ;;
+ m68*-*-os68k*)		gdb_target=os68k ;;
+ m68*-*-sunos3*)		gdb_target=sun3os3 ;;
+diff -urN gdb-5.0-orig/gdb/m68kmint-nat.c gdb-5.0/gdb/m68kmint-nat.c
+--- gdb-5.0-orig/gdb/m68kmint-nat.c	Thu Jan  1 01:00:00 1970
++++ gdb-5.0/gdb/m68kmint-nat.c	Mon Nov 27 18:45:08 2000
+@@ -0,0 +1,151 @@
++/* Native-dependent code for Motorola m68k's running FreeMiNT, for GDB.
++   Copyright 2000 Free Software Foundation, Inc.
++
++   This file is part of GDB.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place - Suite 330,
++   Boston, MA 02111-1307, USA.  */
++
++#include <sys/types.h>
++#include <sys/ptrace.h>
++#include <sys/wait.h>
++
++struct reg
++{
++	long	regs[16];	/* D0-D7/A0-A7 */
++	long	sr;
++	long	pc;
++};
++
++struct fpreg
++{
++	long	regs[3*8];	/* FP0-FP7 */
++	long	fpcr;
++	long	fpsr;
++	long	fpiar;
++};
++
++#include "defs.h"
++#include "inferior.h"
++#include "gdbcore.h"
++
++void
++fetch_inferior_registers (regno)
++     int regno;
++{
++	struct reg inferior_registers;
++	struct fpreg inferior_fp_registers;
++	
++	ptrace (PT_GETREGS, inferior_pid,
++		(PTRACE_ARG3_TYPE) & inferior_registers, 0);
++	memcpy (&registers[REGISTER_BYTE (0)], &inferior_registers,
++		sizeof (inferior_registers));
++	
++	ptrace (PT_GETFPREGS, inferior_pid,
++		(PTRACE_ARG3_TYPE) & inferior_fp_registers, 0);
++	memcpy (&registers[REGISTER_BYTE (FP0_REGNUM)], &inferior_fp_registers,
++		sizeof (inferior_fp_registers));
++	
++	registers_fetched ();
++}
++
++void
++store_inferior_registers (regno)
++     int regno;
++{
++	struct reg inferior_registers;
++	struct fpreg inferior_fp_registers;
++	
++	memcpy (&inferior_registers, &registers[REGISTER_BYTE (0)],
++		sizeof (inferior_registers));
++	ptrace (PT_SETREGS, inferior_pid,
++		(PTRACE_ARG3_TYPE) & inferior_registers, 0);
++	
++	memcpy (&inferior_fp_registers, &registers[REGISTER_BYTE (FP0_REGNUM)],
++		sizeof (inferior_fp_registers));
++	ptrace (PT_SETFPREGS, inferior_pid,
++		(PTRACE_ARG3_TYPE) & inferior_fp_registers, 0);
++}
++
++# include "gdb-stabs.h"
++# include "symfile.h"
++# include "objfiles.h"
++
++void
++child_post_startup_inferior (pid)
++     int pid;
++{
++	CORE_ADDR basepage;
++	struct objfile *objfile;
++	
++	if (ptrace (999, pid, 0, (long) &basepage))
++		error ("cannot get basepage address for pid %d", pid);
++	
++	basepage += 0x100;
++	
++	ALL_OBJFILES(objfile)
++	{
++		struct section_offsets *new_offsets;
++		int i;
++		
++		new_offsets = (struct section_offsets *) alloca (SIZEOF_SECTION_OFFSETS);
++		
++		for (i = 0; i < objfile->num_sections; ++i)
++			ANOFFSET (new_offsets, i) = ANOFFSET (objfile->section_offsets, i);
++		
++		ANOFFSET (new_offsets, SECT_OFF_TEXT) = basepage;
++		ANOFFSET (new_offsets, SECT_OFF_DATA) = basepage;
++		ANOFFSET (new_offsets, SECT_OFF_BSS) = basepage;
++		/* ANOFFSET (new_offsets, SECT_OFF_RODATA) = basepage; */
++		
++		objfile_relocate (objfile, new_offsets);
++	}
++}
++
++void
++child_post_attach (pid)
++     int pid;
++{
++	child_post_startup_inferior (pid);
++}
++
++void
++mint_post_unpush_target (t)
++	struct target_ops *t;
++{
++	extern struct target_ops child_ops; /* inftarg.c */
++	struct objfile *objfile;
++	
++	if (t != &child_ops)
++		return;
++	
++	ALL_OBJFILES(objfile)
++	{
++		struct section_offsets *new_offsets;
++		int i;
++		
++		new_offsets = (struct section_offsets *) alloca (SIZEOF_SECTION_OFFSETS);
++		
++		for (i = 0; i < objfile->num_sections; ++i)
++			ANOFFSET (new_offsets, i) = ANOFFSET (objfile->section_offsets, i);
++		
++		ANOFFSET (new_offsets, SECT_OFF_TEXT) = 0;
++		ANOFFSET (new_offsets, SECT_OFF_DATA) = 0;
++		ANOFFSET (new_offsets, SECT_OFF_BSS) = 0;
++		/* ANOFFSET (new_offsets, SECT_OFF_RODATA) = 0; */
++		
++		objfile_relocate (objfile, new_offsets);
++	}
++}
+diff -urN gdb-5.0-orig/gdb/target.c gdb-5.0/gdb/target.c
+--- gdb-5.0-orig/gdb/target.c	Fri Apr 28 04:10:12 2000
++++ gdb-5.0/gdb/target.c	Mon Nov 27 18:40:14 2000
+@@ -784,6 +784,8 @@
+   update_current_target ();
+   cleanup_target (&current_target);
+ 
++  TARGET_POST_UNPUSH_TARGET_HOOK(t);
++
+   return 1;
+ }
+ 
+iff -urN gdb-5.0-orig/gdb/target.h gdb-5.0/gdb/target.h
+--- gdb-5.0-orig/gdb/target.h	Wed Mar 15 16:55:06 2000
++++ gdb-5.0/gdb/target.h	Mon Nov 27 18:36:30 2000
+@@ -1170,6 +1170,13 @@
+ #define TARGET_CREATE_INFERIOR_HOOK(PID)
+ #endif
+ 
++/* Hook to call target dependant code just after a target ops vector is
++   pushed from stack.  */
++
++#ifndef TARGET_POST_UNPUSH_TARGET_HOOK
++#define TARGET_POST_UNPUSH_TARGET_HOOK(t)
++#endif
++
+ /* Hardware watchpoint interfaces.  */
+ 
+ /* Returns non-zero if we were stopped by a hardware watchpoint (memory read or

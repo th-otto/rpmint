@@ -1,0 +1,30 @@
+#!/bin/sh
+
+usage () {
+    echo "usage: exportfs [-a]"
+    exit 1
+}
+
+help() {
+    echo "exportfs: tells NFS server to reread configuration files. -a is supported"
+    echo "for backward compatibility"
+    exit 1
+}
+
+while [ $# -gt 0 ]; do
+    case $1 in
+	-a)
+	    ;;
+	--help)
+	    help
+	    ;;
+	*)
+	    usage
+	    ;;
+    esac
+
+    shift
+done
+
+killall -HUP rpc.nfsd
+killall -HUP rpc.mountd

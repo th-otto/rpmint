@@ -1,0 +1,59 @@
+diff -uNr shadow-20000902.gwm/lib/getdef.c shadow-20000902/lib/getdef.c
+--- shadow-20000902.gwm/lib/getdef.c	Sat Aug 26 15:27:17 2000
++++ shadow-20000902/lib/getdef.c	Fri May 18 13:57:32 2001
+@@ -118,6 +118,7 @@
+ 	{ "TTYTYPE_FILE",		NULL },
+ 	{ "UID_MAX",			NULL },
+ 	{ "UID_MIN",			NULL },
++	{ "UID_SYSTEM_MIN",		NULL },
+ 	{ "ULIMIT",			NULL },
+ 	{ "UMASK",			NULL },
+ 	{ "USERDEL_CMD",		NULL },
+diff -uNr shadow-20000902.gwm/man/login.defs.5 shadow-20000902/man/login.defs.5
+--- shadow-20000902.gwm/man/login.defs.5	Sat Aug 26 15:27:17 2000
++++ shadow-20000902/man/login.defs.5	Fri May 18 13:56:13 2001
+@@ -519,9 +519,18 @@
+ be set.
+ .\"
+ .IP "UID_MAX (number)"
+-XXX needs to be documented.
+ .IP "UID_MIN (number)"
+-XXX needs to be documented.
++Range of UIDs to choose from for the
++.B useradd
++program.
++.\"
++.IP "UID_SYSTEM_MIN (number)"
++Lowest possible UID to choose from for the
++.B useradd
++program for
++.I system
++users. This is to avoid creating users below a certain
++UID for systems which have a range of statically assigned UIDs.
+ .\"
+ .IP "ULIMIT (long number)"
+ The file size limit is initialized to this value.  This is supported
+diff -uNr shadow-20000902.gwm/man/useradd.8 shadow-20000902/man/useradd.8
+--- shadow-20000902.gwm/man/useradd.8	Fri May 18 09:53:56 2001
++++ shadow-20000902/man/useradd.8	Fri May 18 14:03:06 2001
+@@ -141,7 +141,7 @@
+ Linux specific behavior. 
+ .IP \fB-r\fR 
+ This flag is used to create a system account. That is, an user with an 
+-UID lower than value of UID_MIN defined in \fI/etc/login.defs\fR. Note 
++UID lower than 500 and higher than UID_SYSTEM_MIN, as defined in \fI/etc/login.defs\fR. Note 
+ that \fBuseradd\fR will not create a home directory for such an user, 
+ regardless of the default setting in \fI/etc/login.defs\fR. 
+ You have to specify \fB-m\fR option if you want a home directory  
+diff -uNr shadow-20000902.gwm/src/useradd.c shadow-20000902/src/useradd.c
+--- shadow-20000902.gwm/src/useradd.c	Fri May 18 09:53:57 2001
++++ shadow-20000902/src/useradd.c	Fri May 18 13:56:13 2001
+@@ -951,7 +951,7 @@
+ 	    uid_min = getdef_num("UID_MIN", 500);
+ 	    uid_max = getdef_num("UID_MAX", 60000);
+ 	} else {
+-	    uid_min = 1;
++	    uid_min = getdef_num("UID_SYSTEM_MIN", 100);
+ 	    uid_max = 499;
+ 	}
+ 

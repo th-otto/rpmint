@@ -1,0 +1,52 @@
+--- info2html.orig	Fri Apr  7 09:07:18 1995
++++ info2html	Thu Jul 23 20:51:49 1998
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/perl
++#!/usr/bin/perl
+ #---------------------------------------------------------
+ #                      info2html
+ #---------------------------------------------------------
+@@ -27,7 +27,7 @@
+ 
+ # set here the full path of the info2html.conf
+ $0 =~ m!(.*/)[^/]+$!;
+-$INFO2HTMLCONF = "$1info2html.conf";
++$INFO2HTMLCONF = "/usr/local/etc/info2html.conf";
+ require($INFO2HTMLCONF);  #-- configuration settings
+ 
+ #-- patterns
+@@ -562,14 +562,27 @@
+     if ($File =~ /^(.+)\.info$/) {
+ 	$Alt = $1;
+     } else {
+-	$Alt = $File . '.info';
+-    }
++         $Alt = $File . '.info';
++      }
++      for $Name ($File, $Alt) {
++       for (@INFODIR, "/tmp") {
++             return "$_/$Name" if (-e "$_/$Name");
++       }
++    }
++    # Now we try for compressed versions
++    $File = $File . '.gz';
++    $Alt = $Alt . '.gz';
+     for $Name ($File, $Alt) {
+-	for (@INFODIR) {
+-	    return "$_/$Name" if (-e "$_/$Name");
+-	}
+-    }
+-    return "";
++       for (@INFODIR) {
++           if (-e "$_/$Name") {
++               system ("cp", "$_/$Name", "/tmp/$Name");
++               system ("gunzip", "/tmp/$Name");
++               chop ($Name); chop ($Name); chop ($Name);
++               return "/tmp/$Name";
++           }
++         }
++      }
++      return "";
+ }
+ 
+ #-------------------------------------------------------

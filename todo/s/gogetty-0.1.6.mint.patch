@@ -1,0 +1,15 @@
+diff -c gogetty-0.1.6/login-agent.c gogetty-0.1.6.patch/login-agent.c
+*** gogetty-0.1.6/login-agent.c	Thu Jan 10 02:05:50 2002
+--- gogetty-0.1.6.patch/login-agent.c	Mon Mar 10 09:17:16 2003
+***************
+*** 189,195 ****
+--- 189,197 ----
+  	show_uts('v',version);
+  	show_uts('m',machine);
+  	show_uts('n',nodename);
++ #ifndef __MINT__
+  	show_uts('o',domainname);
++ #endif
+  
+  #undef show_uts
+        case EOF:

@@ -1,0 +1,115 @@
+--- netkit-rwho-0.17/configure.orig	Sat Jul 29 20:00:28 2000
++++ netkit-rwho-0.17/configure	Fri Apr  6 16:53:06 2001
+@@ -146,9 +146,6 @@
+ 
+ fi
+ 
+-LDFLAGS=
+-LIBS=
+-
+ rm -f __conftest*
+ 
+ ##################################################
+--- netkit-rwho-0.17/rwhod/rwhod.c.mint	Wed Sep 26 22:11:26 2001
++++ netkit-rwho-0.17/rwhod/rwhod.c	Wed Sep 26 22:40:18 2001
+@@ -52,7 +52,7 @@
+ #include <netinet/in.h>
+ #include <netinet/ip.h>
+ 
+-#ifndef __linux__
++#if !defined(__linux__) && !defined(__MINT__)
+ #include <nlist.h>
+ #endif
+ #include <errno.h>
+@@ -74,7 +74,7 @@
+ 
+ #include "../version.h"
+ 
+-#define ENDIAN	LITTLE_ENDIAN
++#define ENDIAN	BIG_ENDIAN
+ 
+ /*
+  * Alarm interval. Don't forget to change the down time check in ruptime
+@@ -84,7 +84,7 @@
+ 
+ static struct sockaddr_in sine;
+ 
+-#ifndef __linux__
++#if !defined(__linux__) && !defined(__MINT__)
+ struct	nlist nl[] = {
+ #define	NL_BOOTTIME	0
+ 	{ "_boottime" },
+@@ -95,7 +95,9 @@
+ static void	broadcaster(void);
+ static int	configure(int s);
+ static int	verify(const char *name);
++#ifdef __linux__
+ static int	getloadavg(double ptr[3], int n);
++#endif
+ 
+ /*
+  * We communicate with each neighbor in
+@@ -472,6 +474,7 @@
+ 	}
+ }
+ 
++#ifdef __linux__
+ /*
+  * Taken from:
+  *
+@@ -501,7 +504,7 @@
+  *
+  * Send comments/bug reports/fixes to: pen@signum.se or pen@lysator.liu.se
+  */
+-int getloadavg(double ptr[3], int n)
++static int getloadavg(double ptr[3], int n)
+ {
+ 	FILE *fp;
+ 
+@@ -518,15 +521,19 @@
+ 	fclose(fp);
+ 	return 0;
+ }
+-
++#endif
+ 
+ void
+ getboottime(struct whod *wd)
+ {
+-#ifdef __linux__
++#if defined(__linux__) || defined(__MINT__)
+ 	long uptime;
+ 	time_t curtime;
++#ifdef __MINT__
++	FILE *fp = fopen("/kern/uptime", "r");
++#else
+ 	FILE *fp = fopen("/proc/uptime", "r");
++#endif
+ 	if (!fp) return /* -1 */;
+ 
+ 	fscanf(fp, "%ld", &uptime);
+@@ -637,6 +644,7 @@
+ 		}
+ 		np->n_flags = ifreq.ifr_flags;
+ 		if (np->n_flags & IFF_POINTOPOINT) {
++			ifreq.ifr_dstaddr.sa_family = AF_INET;
+ 			if (ioctl(s, SIOCGIFDSTADDR, &ifreq) < 0) {
+ 				syslog(LOG_ERR, "ioctl (get dstaddr)");
+ 				free(np);
+@@ -651,6 +659,7 @@
+ 			  np->n_addr, np->n_addrlen);
+ 		}
+ 		if (np->n_flags & IFF_BROADCAST) {
++			ifreq.ifr_dstaddr.sa_family = AF_INET;
+ 			if (ioctl(s, SIOCGIFBRDADDR, &ifreq) < 0) {
+ 				syslog(LOG_ERR, "ioctl (get broadaddr)");
+ 				free(np);
+@@ -676,7 +685,7 @@
+ #ifdef DEBUG
+ sendto(s, buf, cc, flags, to, tolen)
+ 	int s;
+-#ifdef	__linux__
++#if defined(__linux__) || defined(__MINT__)
+ 	__const void *buf;
+ 	int cc;
+ 	unsigned int flags;

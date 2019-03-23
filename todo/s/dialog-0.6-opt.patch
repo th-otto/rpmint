@@ -1,0 +1,22 @@
+--- dialog-0.6/src/Makefile.orig	Wed Nov  1 09:52:16 1995
++++ dialog-0.6/src/Makefile	Wed Nov  1 09:52:27 1995
+@@ -10,7 +10,7 @@
+ DEFS = -DHAVE_NCURSES -DLOCALE 
+ LIBS = -lncurses
+ 
+-CFLAGS = -O2 -m486 -Wall -Wstrict-prototypes -fomit-frame-pointer -I/usr/include/ncurses
++CFLAGS = $(RPM_OPT_FLAGS) -Wall -Wstrict-prototypes -fomit-frame-pointer -I/usr/include/ncurses
+ LDFLAGS = -s
+ 
+ HDRS = dialog.h colors.h rc.h
+--- dialog-0.6/Makefile.orig	Wed Nov  1 09:52:35 1995
++++ dialog-0.6/Makefile	Wed Nov  1 09:52:47 1995
+@@ -4,7 +4,7 @@
+ 	(cd src; $(MAKE) all)
+ 
+ dialog:
+-	(cd src; $(MAKE) dialog)
++	(cd src; $(MAKE) "RPM_OPT_FLAGS=$(RPM_OPT_FLAGS)" dialog)
+ 
+ install:
+ 	(cd src; $(MAKE) install)

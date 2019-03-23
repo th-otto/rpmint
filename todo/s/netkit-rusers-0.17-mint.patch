@@ -1,0 +1,57 @@
+--- netkit-rusers-0.17/rup/rup.c.orig	Sat Jul 22 21:51:40 2000
++++ netkit-rusers-0.17/rup/rup.c	Fri Apr  6 15:18:14 2001
+@@ -48,7 +48,11 @@
+ 
+ #undef FSHIFT			/* Use protocol's shift and scale values */
+ #undef FSCALE
+-#include <rpcsvc/rstat.h>
++#ifdef __GLIBC__
++	#include <rpcsvc/rstat.h>
++#else
++	#include "rstat.h"
++#endif
+ 
+ #include "../version.h"
+ 
+--- netkit-rusers-0.17/rup/Makefile.orig	Sun Dec 12 19:05:04 1999
++++ netkit-rusers-0.17/rup/Makefile	Fri Apr  6 15:25:04 2001
+@@ -28,6 +28,7 @@
+ clean:
+ 	rm -f *.o rup rstat.h rstat_xdr.c rstat.x
+ 
++rup.c: rstat.h
+ rstat_xdr.o: rstat_xdr.c rstat.h
+ 
+ # rpcgen includes the pathname you specify for the .x file as the
+--- netkit-rusers-0.17/rpc.rusersd/rusers_proc.c.orig	Sun Jul 23 05:11:56 2000
++++ netkit-rusers-0.17/rpc.rusersd/rusers_proc.c	Fri Apr  6 14:52:32 2001
+@@ -49,12 +49,17 @@
+ /*
+  * Sigh.
+  */
++#ifdef __MINTLIB__
++	#define UT_TIME ut_xtime
++	#define RUT_TIME rut_tv
++#else
+ #ifdef __GLIBC__
+ 	#define UT_TIME ut_xtime
+ 	#define RUT_TIME rut_time
+ #else
+ 	#define UT_TIME ut_time
+ 	#define RUT_TIME ut_time
++#endif
+ #endif
+ 
+ /* Glibc strikes again */
+--- netkit-rusers-0.17/configure.orig	Sat Jul 29 20:00:28 2000
++++ netkit-rusers-0.17/configure	Fri Apr  6 15:27:32 2001
+@@ -146,9 +146,6 @@
+ 
+ fi
+ 
+-LDFLAGS=
+-LIBS=
+-
+ rm -f __conftest*
+ 
+ ##################################################

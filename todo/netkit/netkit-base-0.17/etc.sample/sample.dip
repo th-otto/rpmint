@@ -1,0 +1,92 @@
+# This is a sample file for the program 'dip'.
+# 'dip' can be used to dial to a Internet provider and establish a SLIP
+# or CSLIP connection.
+#
+# sample.dip	Dialup IP connection support program.
+#		This file (should show) shows how to use the DIP
+#		scripting commands to establish a link to a host.
+#		This host runs the 386bsd operating system, and
+#		thus can only be used for the "static" addresses.
+#
+# NOTE:		We also need an examnple of a script used to connect
+#		to a "dynamic" SLIP server, like an Annex terminal
+#		server...
+#
+# Version:	@(#)sample.dip	1.40	07/20/93
+#
+# Author:	Fred N. van Kempen, <waltje@uWalt.NL.Mugnet.ORG>
+#
+
+main:
+  # First of all, set up our name for this connection.
+  # I am called "uwalt.hacktic.nl"  (== 193.78.33.238)
+  get $local uwalt.hacktic.nl
+
+  # Next, set up the other side's name and address.
+  # My dialin machine is called 'xs4all.hacktic.nl' (== 193.78.33.42)
+  get $remote xs4all.hacktic.nl
+  # Set netmask on sl0 to 255.255.255.0
+  netmask 255.255.255.0
+  # Set the desired serial port and speed.
+  port cua02
+  speed 38400
+
+  # Reset the modem and terminal line.
+  # This seems to cause trouble for some people!
+  reset
+
+  # Prepare for dialing.
+  send ATQ0V1E1X4\r
+  wait OK 2
+  if $errlvl != 0 goto modem_trouble
+  dial 555-1234567
+  if $errlvl != 0 goto modem_trouble
+  wait CONNECT 60
+  if $errlvl != 0 goto modem_trouble
+
+  # We are connected.  Login to the system.
+login:
+  sleep 2
+  wait ogin: 20
+  if $errlvl != 0 goto login_error
+  send MYLOGIN\n
+  wait ord: 20
+  if $errlvl != 0 goto password_error
+  send MYPASSWD\n
+loggedin:
+
+  # We are now logged in.
+  wait SOMETEXT 15
+  if $errlvl != 0 goto prompt_error
+
+  # Set up the SLIP operating parameters.
+  get $mtu 296
+  # Ensure "route add -net default xs4all.hacktic.nl" will be done
+  default
+
+  # Say hello and fire up!
+done:
+  print CONNECTED $locip ---> $rmtip
+  mode CSLIP
+  goto exit
+
+prompt_error:
+  print TIME-OUT waiting for SLIPlogin to fire up...
+  goto error
+
+login_trouble:
+  print Trouble waiting for the Login: prompt...
+  goto error
+
+password:error:
+  print Trouble waiting for the Password: prompt...
+  goto error
+
+modem_trouble:
+  print Trouble ocurred with the modem...
+error:
+  print CONNECT FAILED to $remote
+  quit
+
+exit:
+  exit

@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# dhclient        Starts dhcp client
+#
+#
+#
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+[ -f /sbin/dhclient ] || exit 0
+
+# See how we were called.
+case "$1" in
+  start)
+	echo -n "Starting dhcp client: "
+	daemon dhclient
+	echo
+	touch /var/lock/subsys/dhclient
+	;;
+  stop)
+	echo -n "Shutting down dhclient daemon: "
+	killproc dhclient
+	echo
+	rm -f /var/lock/subsys/dhclient
+	;;
+  status)
+	status dhclient
+	;;
+  restart)
+	$0 stop
+	$0 start
+	;;
+  *)
+	echo "Usage: dhclient {start|stop|status|restart}"
+	exit 1
+esac
+
+exit 0
+

@@ -1,0 +1,407 @@
+diff -uNr wvdial-1.41/CHANGES wvdial-libs/CHANGES
+--- wvdial-1.41/CHANGES	Thu Jan  6 21:57:05 2000
++++ wvdial-libs/CHANGES	Thu Jan 27 18:01:23 2000
+@@ -2,7 +2,7 @@
+ Changes to WvDial since the initial release:
+ 
+ 
+-1.41 (1999 01 06)
++1.41 (2000 01 06)
+ ----
+  - Some internal changes to wvstreams for compatibility with non-gcc
+ 	compilers.  Nothing much that will interest most people, but anyone
+diff -uNr wvdial-1.41/Makefile wvdial-libs/Makefile
+--- wvdial-1.41/Makefile	Fri Oct  2 23:40:30 1998
++++ wvdial-libs/Makefile	Thu Aug  3 11:33:37 2000
+@@ -1,10 +1,13 @@
++# Generated automatically from Makefile.in by configure.
+ TOPDIR=$(shell if [ "$$PWD" != "" ]; then echo $$PWD; else pwd; fi)
+ 
+ DEBUG=0
+-PREFIX=/usr/local
++prefix=/usr/local
++PREFIX=${prefix}
+ BINDIR=${PREFIX}/bin
+ MANDIR=${PREFIX}/man
+-PPPDIR=/etc/ppp/peers
++sysconfdir=${prefix}/etc
++PPPDIR=$(sysconfdir)/ppp/peers
+ 
+ export TOPDIR DEBUG CC CXX
+ include rules.mk
+@@ -22,6 +25,30 @@
+ 	install -m 0755 --strip wvdial/wvdial wvdial/wvdialconf ${BINDIR}
+ 	install -m 0644 wvdial.1 wvdialconf.1 ${MANDIR}/man1
+ 	cp ppp.provider ${PPPDIR}/wvdial
++
++top_builddir = ..
++subdir = wvdial-libs
++srcdir = .
++top_srcdir = ..
++distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
++
++DISTFILES = $(shell find * \! -name ".*.d" -a \! -name "*.o" -a \! -name "*.a" -a \! -name ".cvsignore" | grep -v CVS)
++
++distdir: clean
++	here=`cd $(top_builddir) && pwd`; \
++	top_distdir=`cd $(top_distdir) && pwd`; \
++	distdir=`cd $(distdir) && pwd`; \
++	cd $(top_srcdir)/$(subdir); \
++	for file in $(DISTFILES) ; do \
++	  d=$(top_srcdir)/$(subdir); \
++	  if test -d $$d/$$file; then \
++	    cp -pr $$d/$$file $(distdir)/$$file; \
++	  else \
++	    test -f $(distdir)/$$file \
++	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
++	    || cp -p $$d/$$file $(distdir)/$$file || :; \
++	  fi; \
++	done
+ 
+ uninstall:
+ 	rm -f ${BINDIR}/wvdial ${BINDIR}/wvdialconf
+diff -uNr wvdial-1.41/Makefile.in wvdial-libs/Makefile.in
+--- wvdial-1.41/Makefile.in	Wed Dec 31 19:00:00 1969
++++ wvdial-libs/Makefile.in	Thu Jan 27 18:01:23 2000
+@@ -0,0 +1,58 @@
++TOPDIR=$(shell if [ "$$PWD" != "" ]; then echo $$PWD; else pwd; fi)
++
++DEBUG=0
++prefix=@prefix@
++PREFIX=${prefix}
++BINDIR=${PREFIX}/bin
++MANDIR=${PREFIX}/man
++sysconfdir=@sysconfdir@
++PPPDIR=$(sysconfdir)/ppp/peers
++
++export TOPDIR DEBUG CC CXX
++include rules.mk
++
++CC=${CXX}
++
++SUBDIRS=utils configfile streams wvdial
++
++all: subdirs wvdial/wvdial
++
++install: all
++	[ -d ${BINDIR}      ] || install -d ${BINDIR}
++	[ -d ${MANDIR}/man1 ] || install -d ${MANDIR}/man1
++	[ -d ${PPPDIR}      ] || install -d ${PPPDIR}
++	install -m 0755 --strip wvdial/wvdial wvdial/wvdialconf ${BINDIR}
++	install -m 0644 wvdial.1 wvdialconf.1 ${MANDIR}/man1
++	cp ppp.provider ${PPPDIR}/wvdial
++
++top_builddir = ..
++subdir = wvdial-libs
++srcdir = @srcdir@
++top_srcdir = @top_srcdir@
++distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
++
++DISTFILES = $(shell find * \! -name ".*.d" -a \! -name "*.o" -a \! -name "*.a" -a \! -name ".cvsignore" | grep -v CVS)
++
++distdir: clean
++	here=`cd $(top_builddir) && pwd`; \
++	top_distdir=`cd $(top_distdir) && pwd`; \
++	distdir=`cd $(distdir) && pwd`; \
++	cd $(top_srcdir)/$(subdir); \
++	for file in $(DISTFILES) ; do \
++	  d=$(top_srcdir)/$(subdir); \
++	  if test -d $$d/$$file; then \
++	    cp -pr $$d/$$file $(distdir)/$$file; \
++	  else \
++	    test -f $(distdir)/$$file \
++	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
++	    || cp -p $$d/$$file $(distdir)/$$file || :; \
++	  fi; \
++	done
++
++uninstall:
++	rm -f ${BINDIR}/wvdial ${BINDIR}/wvdialconf
++	rm -f ${MANDIR}/man1/wvdial.1 ${MANDIR}/man1/wvdialconf.1
++	rm -f ${PPPDIR}/wvdial
++
++clean:
++	$(subdirs)
+diff -uNr wvdial-1.41/configfile/wvconf.h wvdial-libs/configfile/wvconf.h
+--- wvdial-1.41/configfile/wvconf.h	Sun Nov 28 14:39:33 1999
++++ wvdial-libs/configfile/wvconf.h	Thu Jan 27 18:01:23 2000
+@@ -85,7 +85,7 @@
+ class WvConf : public WvConfigSectionList
+ {
+ public:
+-    WvConf(const WvString &_filename, int _create_mode = 0666);
++    WvConf(const WvString &_filename, int _create_mode = 0600);
+     ~WvConf();
+     
+     bool isok() const
+diff -uNr wvdial-1.41/rules.mk wvdial-libs/rules.mk
+--- wvdial-1.41/rules.mk	Wed Oct 20 18:37:00 1999
++++ wvdial-libs/rules.mk	Fri Aug  4 15:34:19 2000
+@@ -44,14 +44,13 @@
+ CXXFLAGS +=
+ LDFLAGS += -g
+ else
+-CFLAGS += -g -O6 -DDEBUG=0 -DNDEBUG
++CFLAGS += -g $(RPM_OPT_FLAGS) -DDEBUG=0 -DNDEBUG
+ #CFLAGS += -fomit-frame-pointer  # really evil
+ #CXXFLAGS += -fno-implement-inlines  # causes trouble with egcs 1.0
+-CXXFLAGS += -fno-rtti -fno-exceptions
+-LDFLAGS += -g
++#CXXFLAGS += -fno-rtti -fno-exceptions # Breaks apps that don't use these flags
++#LDFLAGS += -g
+ endif
+ 
+-
+ # we need a default rule, since the 'include' below causes trouble
+ default: all
+ 
+@@ -71,21 +70,21 @@
+ #
+ # Typical compilation rules.
+ #
+-override _R_CFLAGS=$(CPPFLAGS) $(CFLAGS) $(INCFLAGS) -MD
+-override _R_CXXFLAGS=$(CPPFLAGS) $(CFLAGS) $(CXXFLAGS) $(INCFLAGS) -MD
++override _R_CFLAGS=$(CPPFLAGS) $(CFLAGS) $(INCFLAGS) -MMD
++override _R_CXXFLAGS=$(CPPFLAGS) $(CFLAGS) $(CXXFLAGS) $(INCFLAGS) -MMD
+ export _R_CFLAGS
+ export _R_CXXFLAGS
+ 
+ %.o: %.c
+ 	@rm -f .$*.d $@
+-	$(CC) $$_R_CFLAGS -c $<
++	$(CC) $(_R_CFLAGS) -c $<
+ 	@mv $*.d .$*.d
+ 
+ %.o: %.cc
+ 	@rm -f .$*.d $@
+-	$(CXX) $$_R_CXXFLAGS -c $<
++	$(CXX) $(_R_CXXFLAGS) -c $<
+ 	@mv $*.d .$*.d
+-	
++
+ ../%.a:
+ 	@echo "Library $@ does not exist!"; exit 1
+ 
+diff -uNr wvdial-1.41/streams/pipetest.cc wvdial-libs/streams/pipetest.cc
+--- wvdial-1.41/streams/pipetest.cc	Wed Oct 20 16:20:13 1999
++++ wvdial-libs/streams/pipetest.cc	Fri Jun 16 01:25:59 2000
+@@ -12,7 +12,7 @@
+ int main(int argc, char **argv)
+ {
+     const char *_av[] = {
+-	"/bin/bash",
++       (argc == 2) ? argv[1] : "/bin/bash",
+ 	NULL
+     };
+     const char **av = (argc < 2) ? _av : (const char **)(argv + 1);
+diff -uNr wvdial-1.41/streams/wvlockfile.cc wvdial-libs/streams/wvlockfile.cc
+--- wvdial-1.41/streams/wvlockfile.cc	Mon Aug  2 14:01:49 1999
++++ wvdial-libs/streams/wvlockfile.cc	Thu May 18 11:54:16 2000
+@@ -51,7 +51,7 @@
+ 	return true;
+     }
+     
+-    if (lock_dev(devicename))
++    if (dev_lock(devicename))
+ 	return false;
+ 
+     lock_count++;
+@@ -64,7 +64,7 @@
+     if (!lock_count) return;
+ 
+     if (!--lock_count)
+-	unlock_dev(devicename, getpid());
++	dev_unlock(devicename, getpid());
+ }
+ 
+ 
+diff -uNr wvdial-1.41/streams/wvstream.cc wvdial-libs/streams/wvstream.cc
+--- wvdial-1.41/streams/wvstream.cc	Wed Oct 20 18:37:04 1999
++++ wvdial-libs/streams/wvstream.cc	Thu Jan 27 18:01:26 2000
+@@ -59,7 +59,7 @@
+     char buf[1024];
+     size_t len;
+     
+-    while (s.isok() && s.select(0))
++    while (s.isok() && s2.isok() && s.select(0))
+     {
+ 	len = s.read(buf, sizeof(buf));
+ 	s2.write(buf, len);
+diff -uNr wvdial-1.41/utils/wvlinklist.h wvdial-libs/utils/wvlinklist.h
+--- wvdial-1.41/utils/wvlinklist.h	Thu Oct 14 17:33:38 1999
++++ wvdial-libs/utils/wvlinklist.h	Fri Jun 16 01:26:00 2000
+@@ -50,6 +50,7 @@
+ #define __WVLINKLIST_H
+ 
+ #include <stdlib.h>  // for 'NULL'
++#include <string.h>  // for 'memcpy'
+ 
+ // note: auto_free behaviour is a little bit weird; since WvLink does not
+ // know what data type it has received, there is no way it can call the
+diff -uNr wvdial-1.41/wvdial/wvdial.cc wvdial-libs/wvdial/wvdial.cc
+--- wvdial-1.41/wvdial/wvdial.cc	Sun Nov 28 14:39:36 1999
++++ wvdial-libs/wvdial/wvdial.cc	Thu Jan 27 18:01:27 2000
+@@ -90,6 +90,7 @@
+     char *		homedir = getenv("HOME");
+ 
+     bool chat_mode = false;
++    char *remote_name = NULL;
+     
+     signal( SIGTERM, signalhandler );
+     signal( SIGINT, signalhandler );
+@@ -109,6 +110,11 @@
+ 
+     if( argc > 1 ) {
+     	for( int i=1; i < argc; i++ ) {
++            if( !strcmp( argv[i], "--remotename" ) ) {
++                i++;
++                remote_name = argv[i];
++                continue;
++            }
+ 	    if( !strcmp( argv[i], "--chat" ) ) {
+ 		syslog = new WvSyslog( "WvDial", false, WvLog::Debug2, 
+ 				       WvLog::Debug2 );
+@@ -133,7 +139,7 @@
+ 	sections->append( new WvString( "Dialer Defaults" ), true);
+     }
+     
+-    WvDialer dialer( cfg, sections, chat_mode );
++    WvDialer dialer( cfg, sections, chat_mode, remote_name );
+ 	
+     if( dialer.dial() == false )
+ 	return  1;
+diff -uNr wvdial-1.41/wvdial/wvdialer.cc wvdial-libs/wvdial/wvdialer.cc
+--- wvdial-1.41/wvdial/wvdialer.cc	Fri Nov 19 00:14:46 1999
++++ wvdial-libs/wvdial/wvdialer.cc	Mon Aug 21 11:13:49 2000
+@@ -51,7 +51,7 @@
+ //       WvDialer Public Functions
+ //**************************************************
+ 
+-WvDialer::WvDialer( WvConf &_cfg, WvStringList *_sect_list, bool _chat_mode = false )
++WvDialer::WvDialer( WvConf &_cfg, WvStringList *_sect_list, bool _chat_mode = false, char *_remote_name = NULL )
+ /********************************************************/
+ : WvStreamClone( (WvStream **)&modem ),
+     cfg(_cfg), log( "WvDial", WvLog::Debug ),
+@@ -73,6 +73,7 @@
+     
+     sect_list = _sect_list;
+     chat_mode = _chat_mode;
++    remote_name = _remote_name;
+     
+     log( "WvDial: Internet dialer version " WVDIAL_VER_STRING "\n" );
+ 
+@@ -408,6 +409,11 @@
+     	    		    cfg.get( d, opts[i].name, opts[i].str_default ) );
+     	}
+     }
++
++    if( remote_name ) {
++	// command line overrides configuration file
++	options.remote = remote_name;
++    }
+ }
+ 
+ bool WvDialer::init_modem()
+@@ -588,6 +594,19 @@
+ void WvDialer::start_ppp()
+ /************************/
+ {
++    WvPapChap	papchap;
++    papchap.put_secret( options.login, options.password, options.remote );
++    if( papchap.isok_pap() == false ) {
++    	err( "Warning: Could not modify %s: %s\n"
++    	     "--> PAP (Password Authentication Protocol) may be flaky.\n",
++    	     PAP_SECRETS, strerror( errno ) );
++    }
++    if( papchap.isok_chap() == false ) {
++    	err( "Warning: Could not modify %s: %s\n"
++    	     "--> CHAP (Challenge Handshake) may be flaky.\n",
++	     CHAP_SECRETS, strerror( errno ) );
++    }
++
+     if( chat_mode ) exit(0); // pppd is already started...
+ 
+     WvString	addr_colon( "%s:", options.force_addr );
+@@ -601,8 +620,10 @@
+ 	"-detach",
+ 	"user", options.login,
+ 	options.force_addr[0] ? (const char *)addr_colon : "noipdefault",
+-	options.new_pppd ? "call" : NULL, 
+-	options.new_pppd ? "wvdial" : NULL,
++	options.remote ? "remotename" : (options.new_pppd ? "call" : NULL), 
++	options.remote ? (const char*)options.remote : (options.new_pppd ? "wvdial" : NULL),
++	(options.new_pppd && options.remote) ? "call" : NULL,
++	(options.new_pppd && options.remote) ? "wvdial" : NULL,
+ 	NULL
+     };
+ 
+@@ -611,19 +632,6 @@
+         err( "Check permissions, or specify a \"PPPD Path\" option "
+              "in wvdial.conf.\n" );
+     	return;
+-    }
+-
+-    WvPapChap	papchap;
+-    papchap.put_secret( options.login, options.password, options.remote );
+-    if( papchap.isok_pap() == false ) {
+-    	err( "Warning: Could not modify %s: %s\n"
+-    	     "--> PAP (Password Authentication Protocol) may be flaky.\n",
+-    	     PAP_SECRETS, strerror( errno ) );
+-    }
+-    if( papchap.isok_chap() == false ) {
+-    	err( "Warning: Could not modify %s: %s\n"
+-    	     "--> CHAP (Challenge Handshake) may be flaky.\n",
+-	     CHAP_SECRETS, strerror( errno ) );
+     }
+ 
+     time_t	now;
+diff -uNr wvdial-1.41/wvdial/wvdialer.h wvdial-libs/wvdial/wvdialer.h
+--- wvdial-1.41/wvdial/wvdialer.h	Sat Aug  7 13:06:16 1999
++++ wvdial-libs/wvdial/wvdialer.h	Mon Sep 13 18:08:13 1999
+@@ -42,7 +42,7 @@
+ /***********************************/
+ {
+ public:
+-    WvDialer( WvConf &_cfg, WvStringList *_sect_list, bool _chat_mode = false );
++    WvDialer( WvConf &_cfg, WvStringList *_sect_list, bool _chat_mode = false, char *_remote_name = NULL );
+     virtual ~WvDialer();
+ 
+     WvModemBase *modem;
+@@ -115,6 +115,7 @@
+     WvStringList *	sect_list;
+ 
+     bool		chat_mode;
++    char *		remote_name;
+     
+     bool		been_online;
+     time_t		connected_at;
+diff -uNr wvdial-1.41/wvdial/wvdialtext.cc wvdial-libs/wvdial/wvdialtext.cc
+--- wvdial-1.41/wvdial/wvdialtext.cc	Sun Aug  1 12:00:38 1999
++++ wvdial-libs/wvdial/wvdialtext.cc	Fri Jun 16 01:26:01 2000
+@@ -11,12 +11,13 @@
+ 
+ const char wvdial_version_text[] = 
+ "WvDial " WVDIAL_VER_STRING
+-": Copyright (c) 1998, 1999 Worldvisions Computer Technology, Inc.\n";
++": Copyright (c) 1998-2000 Worldvisions Computer Technology, Inc.\n";
+ 
+ const char wvdial_help_text[] = 
+ "Usage: wvdial { option || sect1 sect2 sect3 ... } \n"
+ "\n"
+ "  options:	--chat		used when running wvdial from pppd\n"
++"  		--remotename	remotename to pass to pppd\n"
+ "  		--help		display this help and exit\n"
+ " 		--version	output version information and exit\n"
+ "\n"
+diff -uNr wvdial-1.41/wvdial/wvmodemscan.h wvdial-libs/wvdial/wvmodemscan.h
+--- wvdial-1.41/wvdial/wvmodemscan.h	Tue Mar 23 22:41:42 1999
++++ wvdial-libs/wvdial/wvmodemscan.h	Thu Jan 27 18:01:27 2000
+@@ -45,6 +45,8 @@
+     bool isdone() const
+ 	{ return stage == Done; }
+     bool isok() const;
++    enum Stage get_stage() const
++        { return (enum Stage) stage; }
+ 
+     // is this an isdn modem?  Returns modem identifier if so.
+     const char *is_isdn() const;

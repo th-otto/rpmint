@@ -1,0 +1,51 @@
+diff -ru nfs-server-2.2beta47-orig/extensions.h nfs-server-2.2beta47/extensions.h
+--- nfs-server-2.2beta47-orig/extensions.h	Mon Nov 23 12:15:14 1998
++++ nfs-server-2.2beta47/extensions.h	Mon Oct 30 00:58:06 2000
+@@ -15,8 +15,8 @@
+ #define efs_timeout_handler()	efs_noop
+ 
+ /* Propagate changes of uid/gid */
+-#define efs_setfsuid(u)		setfsuid(u)
+-#define efs_setfsgid(g)		setfsgid(g)
++#define efs_setfsuid(u)		/* setfsuid(u) */
++#define efs_setfsgid(g)		/* setfsgid(g) */
+ 
+ /* VFS operations */
+ #define efs_mkdir	mkdir
+diff -ru nfs-server-2.2beta47-orig/mountd.c nfs-server-2.2beta47/mountd.c
+--- nfs-server-2.2beta47-orig/mountd.c	Wed Jun  2 14:10:32 1999
++++ nfs-server-2.2beta47/mountd.c	Mon Oct 30 00:41:56 2000
+@@ -275,7 +275,7 @@
+ 		Dprintf (D_CALL, "\tpathconf failure 3\n");
+ 	} else {
+ 		/* You get what you ask for */
+-#if 1
++#if 0
+ 		res->pc_link_max  = pathconf(dir, _PC_LINK_MAX);
+ 		res->pc_max_canon = pathconf(dir, _PC_MAX_CANON);
+ 		res->pc_max_input = pathconf(dir, _PC_MAX_INPUT);
+diff -ru nfs-server-2.2beta47-orig/system.h nfs-server-2.2beta47/system.h
+--- nfs-server-2.2beta47-orig/system.h	Wed May 26 10:06:18 1999
++++ nfs-server-2.2beta47/system.h	Mon Oct 30 00:24:30 2000
+@@ -250,21 +250,8 @@
+ # endif
+ #endif
+ 
+-#ifdef linux
+-# ifdef __GLIBC__
+    typedef u_int32_t		__u32;
+    typedef u_int8_t		__u8;
+-# endif
+-#else
+-# if SIZEOF_UNSIGNED_LONG == 4
+-   typedef unsigned long	__u32;
+-# elsif SIZEOF_UNSIGNED_INT == 4
+-   typedef unsigned int		__u32;
+-# else
+-#  error "Don't know how to define unsigned 32bit quantity!"
+-# endif
+-   typedef unsigned char	__u8;
+-#endif
+ 
+ #ifndef MIN
+ # define MIN(a, b)		(((a) < (b))? (a) : (b))

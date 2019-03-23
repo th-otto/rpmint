@@ -1,0 +1,548 @@
+diff -urN nap-1.4.4-orig/alias.c nap-1.4.4/alias.c
+--- nap-1.4.4-orig/alias.c	Wed Sep  6 16:48:42 2000
++++ nap-1.4.4/alias.c	Tue Jan  9 17:39:12 2001
+@@ -10,7 +10,7 @@
+ #include <ncurses.h>
+ #include <sys/time.h>
+ 
+-
++#include "globals.h"
+ #include "defines.h"
+ #include "cmds.h"
+ #include "vfuncs.h"
+diff -urN nap-1.4.4-orig/bswap.h nap-1.4.4/bswap.h
+--- nap-1.4.4-orig/bswap.h	Thu Jan  1 01:00:00 1970
++++ nap-1.4.4/bswap.h	Tue Jan  9 15:54:44 2001
+@@ -0,0 +1,57 @@
++#ifndef _NAP_BSWAP_H
++#define _NAP_BSWAP_H
++
++/* Copyright (c) 2000  Kevin Sullivan <nite@gis.net>
++ *
++ * Please refer to the COPYRIGHT file for more information.
++ */
++
++#include <endian.h>
++
++#if BYTE_ORDER == LITTLE_ENDIAN
++
++#define le2cpu16(x)	(x)
++#define le2cpu32(x)	(x)
++
++#define cpu2le16(x)	(x)
++#define cpu2le32(x)	(x)
++
++#define 
++
++#elif BYTE_ORDER == BIG_ENDIAN
++
++static inline unsigned short
++le2cpu16 (register unsigned short x)
++{
++	register unsigned short r;
++	
++	r  = (x << 8) & 0xff00;
++	r |= (x >> 8) & 0x00ff;
++	
++	return r;
++}
++
++static inline unsigned long
++le2cpu32 (register unsigned long x)
++{
++	register unsigned long r;
++	
++	r  = (x << 24) & 0xff000000;
++	r |= (x <<  8) & 0x00ff0000;
++	r |= (x >>  8) & 0x0000ff00;
++	r |= (x >> 24) & 0x000000ff;
++	
++	return r;
++}
++
++#define cpu2le16(x)	le2cpu16(x)
++#define cpu2le32(x)	le2cpu32(x)
++
++#elif
++
++#error Unknown byte order
++
++#endif
++
++
++#endif
+diff -urN nap-1.4.4-orig/cmds.c nap-1.4.4/cmds.c
+--- nap-1.4.4-orig/cmds.c	Sun Sep 10 15:18:02 2000
++++ nap-1.4.4/cmds.c	Tue Jan  9 17:39:24 2001
+@@ -6,7 +6,9 @@
+ #ifndef MCURSES
+ #include <ncurses.h>
+ #endif
++#ifdef HAVE_LIBDL
+ #include <dlfcn.h>
++#endif
+ #include <pwd.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+@@ -24,6 +26,7 @@
+ #include <ctype.h>
+ #include <getopt.h>
+ 
++#include "globals.h"
+ #include "defines.h"
+ #include "colors.h"
+ #include "codes.h"
+@@ -3275,7 +3278,11 @@
+   libunload(&hnd);
+   if (libload(USERLIB) == -1)
+   {
++#ifdef HAVE_LIBDL
+     wp(win, "%s* Error loading %s%s\n", RED, dlerror(), WHITE);
++#else
++    wp(win, "%s* Error loading %s\n", RED, WHITE);
++#endif
+     drw(win);
+   }
+   
+diff -urN nap-1.4.4-orig/exp.c nap-1.4.4/exp.c
+--- nap-1.4.4-orig/exp.c	Sun Sep  3 23:21:22 2000
++++ nap-1.4.4/exp.c	Tue Jan  9 17:39:42 2001
+@@ -10,6 +10,7 @@
+ #include <arpa/inet.h>
+ #include <ncurses.h>
+ 
++#include "globals.h"
+ #include "defines.h"
+ #include "nap.h"
+ #include "exp.h"
+diff -urN nap-1.4.4-orig/getopt.c nap-1.4.4/getopt.c
+--- nap-1.4.4-orig/getopt.c	Tue Aug  8 02:13:22 2000
++++ nap-1.4.4/getopt.c	Tue Jan  9 17:41:34 2001
+@@ -57,6 +57,10 @@
+ # endif
+ #endif
+ 
++#if defined(__MINT__)
++#define ELIDE_CODE
++#endif
++
+ #ifndef ELIDE_CODE
+ 
+ 
+diff -urN nap-1.4.4-orig/globals.h nap-1.4.4/globals.h
+--- nap-1.4.4-orig/globals.h	Thu Jan  1 01:00:00 1970
++++ nap-1.4.4/globals.h	Tue Jan  9 17:42:30 2001
+@@ -0,0 +1,22 @@
++#ifndef _NAP_GLOBALS_H
++#define _NAP_GLOBALS_H
++
++/* Copyright (c) 2000  Kevin Sullivan <nite@gis.net>
++ *
++ * Please refer to the COPYRIGHT file for more information.
++ */
++
++
++/* catch globally out of memory */
++
++void * my_malloc(size_t __n);
++void * my_realloc(void* __r, size_t __n);
++
++void * libc_malloc(size_t __n);
++void * libc_realloc(void *__r, size_t __n);
++
++#define malloc my_malloc
++#define realloc my_realloc
++
++
++#endif
+diff -urN nap-1.4.4-orig/handlers.c nap-1.4.4/handlers.c
+--- nap-1.4.4-orig/handlers.c	Tue Sep  5 06:12:14 2000
++++ nap-1.4.4/handlers.c	Tue Jan  9 17:39:48 2001
+@@ -9,6 +9,7 @@
+ #include <stdlib.h>
+ #include <ncurses.h>
+ 
++#include "globals.h"
+ #include "defines.h"
+ #include "cmds.h"
+ #include "handlers.h"
+diff -urN nap-1.4.4-orig/irc.c nap-1.4.4/irc.c
+--- nap-1.4.4-orig/irc.c	Fri Sep  8 17:12:08 2000
++++ nap-1.4.4/irc.c	Tue Jan  9 17:39:56 2001
+@@ -13,6 +13,7 @@
+ #include <ncurses.h>
+ #endif
+ 
++#include "globals.h"
+ #include "defines.h"
+ #include "colors.h"
+ #include "codes.h"
+Binary files nap-1.4.4-orig/irc.o and nap-1.4.4/irc.o differ
+diff -urN nap-1.4.4-orig/lists.c nap-1.4.4/lists.c
+--- nap-1.4.4-orig/lists.c	Sun Sep  3 23:21:22 2000
++++ nap-1.4.4/lists.c	Tue Jan  9 17:40:02 2001
+@@ -8,6 +8,7 @@
+ #include <string.h>
+ #include <math.h>
+ 
++#include "globals.h"
+ #include "defines.h"
+ #include "lists.h"
+ 
+diff -urN nap-1.4.4-orig/md5.c nap-1.4.4/md5.c
+--- nap-1.4.4-orig/md5.c	Tue Aug  8 02:13:10 2000
++++ nap-1.4.4/md5.c	Tue Jan  9 16:32:26 2001
+@@ -35,7 +35,13 @@
+ # endif
+ #endif
+ 
+-#include "md5.h"
++#include <md5.h>
++
++#if defined(__MINT__)
++#define ELIDE_CODE
++#endif
++
++#ifndef ELIDE_CODE
+ 
+ #ifdef _LIBC
+ # include <endian.h>
+@@ -445,3 +451,5 @@
+ # undef md5_buffer
+ weak_alias (__md5_buffer, md5_buffer)
+ #endif
++
++#endif /* ELIDE_CODE */
+diff -urN nap-1.4.4-orig/mp3s.c nap-1.4.4/mp3s.c
+--- nap-1.4.4-orig/mp3s.c	Sun Sep  3 23:21:22 2000
++++ nap-1.4.4/mp3s.c	Tue Jan  9 17:39:32 2001
+@@ -10,7 +10,8 @@
+ #include <fcntl.h>
+ #include <stdlib.h>
+ 
+-#include "md5.h"
++#include <md5.h>
++#include "globals.h"
+ #include "mp3s.h"
+ 
+ 
+@@ -124,7 +125,7 @@
+   close(f);
+   
+   memset(ret, 0, sizeof(ret));
+-  md5_buffer(buf, 300000, &ret);
++  __md5_buffer(buf, 300000, &ret);
+   free(buf);
+   
+   memset(r->check, 0, sizeof(r->check));
+diff -urN nap-1.4.4-orig/nap.c nap-1.4.4/nap.c
+--- nap-1.4.4-orig/nap.c	Fri Sep  8 17:16:12 2000
++++ nap-1.4.4/nap.c	Tue Jan  9 17:59:38 2001
+@@ -27,6 +27,8 @@
+ #include <netdb.h>
+ #include <getopt.h>
+ 
++#include "globals.h"
++#include "bswap.h"
+ #include "defines.h"
+ #include "codes.h"
+ #include "colors.h"
+@@ -346,10 +348,37 @@
+   FILE *f;
+   char *t;
+   
+-  f = fopen(fn, "r");
++  if (fn != NULL)
++    f = fopen(fn, "r");
++  else
++  {
++    f = fopen(CONF, "r");
++    if (f == NULL)
++    {
++      t = getenv("HOME");
++      if (t)
++      {
++        char *tmppath;
++        
++        tmppath = libc_malloc(strlen(t) + strlen(CONF) + 2);
++        if (tmppath)
++        {
++          strcpy(tmppath, t);
++          strcpy(tmppath+strlen(t), "/");
++          strcpy(tmppath+strlen(t)+1, CONF);
++          
++          f = fopen(tmppath, "r");
++          free(tmppath);
++        }
++      }
++    }
++  }
+   if (f == NULL)
+   {
+-    wp(NULL, "Error opening file\n");
++    if (fn)
++      wp(NULL, "Error: can't open config file \"%s\"!\n", fn);
++    else
++      wp(NULL, "Error: can't open config file \"./%s\" and \"$HOME/%s\"!\n", CONF, CONF);
+     return(-1);
+   }
+   
+@@ -1048,8 +1077,6 @@
+     }
+   }
+ 
+-  if (!(*cfg))
+-    *cfg = CONF;
+   if (!(*srv))
+     *srv = NULL;
+   
+@@ -2388,10 +2415,10 @@
+   
+   if (!fmt)
+   {
+-    hdr = (phead_t *)malloc(sizeof(phead_t));
++    hdr = malloc(sizeof(phead_t));
+     
+-    hdr->len = 0;
+-    hdr->op = op;
++    hdr->len = cpu2le16(0);
++    hdr->op = cpu2le16(op);
+ 
+     if (info.d == 2)
+     {
+@@ -2404,36 +2431,38 @@
+     
+     r = send(s, (char *)hdr, 4, 0);
+     
++    free(hdr);
+     return(r);
+   }
+   
+-  data = (char *)malloc(4096);
++  data = malloc(4096);
+   memset(data, 0, 4096);
+   
+   va_start(args, fmt);
+   vsprintf(data, fmt, args);
+   va_end(args);
+   
+-  data = (char *)realloc(data, strlen(data)+1);
++  // freed some instr later, just overkill
++  //data = (char *)realloc(data, strlen(data)+1);
+   
+-  pack = (char *)malloc(strlen(data)+5);
++  pack = malloc(strlen(data)+5);
+   memset(pack, 0, sizeof(pack));
+   hdr = (phead_t *)pack;
+   
+-  hdr->len = strlen(data);
+-  hdr->op = op;
++  hdr->len = cpu2le16(strlen(data));
++  hdr->op = cpu2le16(op);
+   strcpy(pack+4, data);
+ 
+   if (info.d == 2)
+   {
+     if (wchan)
+     {
+-      wp(wchan, "--> (%x) |%s|\n", hdr->op, data);
++      wp(wchan, "--> (%x) |%s|\n", le2cpu16(hdr->op), data);
+       drw(wchan);
+     }
+   }
+   
+-  r = send(s, pack, hdr->len+4, 0);
++  r = send(s, pack, le2cpu16(hdr->len)+4, 0);
+   free(pack);
+   free(data);
+   
+@@ -2494,9 +2523,11 @@
+       }
+       i += r;
+     }
++    thdr->len = le2cpu16(thdr->len);
++    thdr->op = le2cpu16(thdr->op);
+   }
+   
+-  if (!thdr->len)
++  if (!(thdr->len))
+   {
+     *hdr = thdr;
+     *buf = strdup("");
+@@ -3274,4 +3305,55 @@
+   cur->csz += n;
+   
+   return(1);
++}
++
++
++/* avoid race if doquit() call my_malloc/my_realloc and fail too
++ */
++static void safe_quit(void)
++{
++  static int flag = 1;
++  
++  if (flag)
++  {
++    flag = 0;
++    wp(NULL, "FATAL: Out of memory!\n");
++    doquit();
++  }
++  
++  exit(1);
++}
++
++void * my_malloc(size_t n)
++{
++  void *ret = libc_malloc(n);
++  
++  if (ret == NULL)
++    safe_quit();
++  
++  return ret;
++}
++
++void * my_realloc(void *r, size_t n)
++{
++  void *ret = libc_realloc(r, n);
++  
++  if (ret == NULL)
++    safe_quit();
++  
++  return ret;
++}
++
++
++# undef malloc
++# undef realloc
++
++void * libc_malloc(size_t n)
++{
++  return malloc(n);
++}
++
++void * libc_realloc(void *r, size_t n)
++{
++  return realloc(r, n);
+ }
+diff -urN nap-1.4.4-orig/scheck.c nap-1.4.4/scheck.c
+--- nap-1.4.4-orig/scheck.c	Tue Sep  5 17:22:46 2000
++++ nap-1.4.4/scheck.c	Tue Jan  9 17:40:22 2001
+@@ -15,6 +15,7 @@
+ #include <sys/socket.h>
+ #include <errno.h>
+ 
++#include "globals.h"
+ #include "defines.h"
+ #include "codes.h"
+ #include "colors.h"
+diff -urN nap-1.4.4-orig/sscr.c nap-1.4.4/sscr.c
+--- nap-1.4.4-orig/sscr.c	Tue Sep  5 06:08:24 2000
++++ nap-1.4.4/sscr.c	Tue Jan  9 17:40:36 2001
+@@ -10,6 +10,7 @@
+ #include <ctype.h>
+ #include <sys/time.h>
+ 
++#include "globals.h"
+ #include "defines.h"
+ #include "colors.h"
+ #include "codes.h"
+diff -urN nap-1.4.4-orig/timer.c nap-1.4.4/timer.c
+--- nap-1.4.4-orig/timer.c	Sun Sep 10 15:25:00 2000
++++ nap-1.4.4/timer.c	Tue Jan  9 17:40:42 2001
+@@ -10,7 +10,7 @@
+ #include <time.h>
+ #include <ncurses.h>
+ 
+-
++#include "globals.h"
+ #include "defines.h"
+ #include "colors.h"
+ #include "timer.h"
+diff -urN nap-1.4.4-orig/usercmds.c nap-1.4.4/usercmds.c
+--- nap-1.4.4-orig/usercmds.c	Sun Sep  3 23:21:22 2000
++++ nap-1.4.4/usercmds.c	Tue Jan  9 17:40:50 2001
+@@ -10,8 +10,11 @@
+ #include <ncurses.h>
+ #endif
+ #include <stdarg.h>
++#ifdef HAVE_LIBDL
+ #include <dlfcn.h>
++#endif
+ 
++#include "globals.h"
+ #include "defines.h"
+ #include "codes.h"
+ #include "cmds.h"
+@@ -47,6 +50,7 @@
+ 
+ int libload(char *nm)
+ {
++#ifdef HAVE_LIBDL
+   void (*setfunc)(ucmd_func_t *);
+ 
+   hnd = dlopen(nm, RTLD_LAZY);
+@@ -69,13 +73,18 @@
+   setfunc(ucmds);
+   
+   return(1);
++#else
++  return -1;
++#endif
+ }
+ 
+ int libunload(void **hnd)
+ {
+   if (!(*hnd))
+     return(1);
++#ifdef HAVE_LIBDL
+   dlclose(*hnd);
++#endif
+   *hnd = NULL;
+   return(1);
+ }
+@@ -91,7 +100,11 @@
+   sock = s;
+   w = win;
+   
++#ifdef HAVE_LIBDL
+   cmds = (cmd_t *)dlsym(hnd, "cmds");
++#else
++  cmds = NULL;
++#endif
+   if (!cmds)
+     return(0);
+   
+@@ -124,7 +137,11 @@
+   sock = s;
+   w = win;
+   
++#ifdef HAVE_LIBDL
+   handlers = (cmd_t *)dlsym(hnd, "handlers");
++#else
++  handlers = NULL;
++#endif
+   if (!handlers)
+     return(0);
+   
+diff -urN nap-1.4.4-orig/vfuncs.c nap-1.4.4/vfuncs.c
+--- nap-1.4.4-orig/vfuncs.c	Tue Sep  5 06:20:56 2000
++++ nap-1.4.4/vfuncs.c	Tue Jan  9 17:40:54 2001
+@@ -9,6 +9,7 @@
+ #include <sys/time.h>
+ #include <ncurses.h>
+ 
++#include "globals.h"
+ #include "defines.h"
+ #include "colors.h"
+ #include "cmds.h"
+--- nap-1.4.4/cmds.h.~	Sun Sep  3 23:21:22 2000
++++ nap-1.4.4/cmds.h	Tue Jan  9 18:37:14 2001
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <sys/time.h>
++#include <sys/types.h>
+ 
+ #include "scheck.h"
+ 

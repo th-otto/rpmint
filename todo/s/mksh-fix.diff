@@ -1,0 +1,13 @@
+--- mksh~/main.c	2012-03-24 22:12:07.000000000 +0000
++++ mksh/main.c	2012-03-25 19:50:39.000000000 +0000
+@@ -251,8 +251,9 @@ main(int argc, const char *argv[])
+ 
+ #ifdef TIOCGWINSZ
+ 	/* try to initialise tty size before importing environment */
+-	tty_init(true, false);
++	tty_init(false, false);
+ 	change_winsz();
++	tty_close();
+ #endif
+ 
+ #ifdef _PATH_DEFPATH

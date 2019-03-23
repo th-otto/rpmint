@@ -1,0 +1,42 @@
+--- freeciv/client/gui-gtk/Makefile.am.gcc296	Tue May 30 12:44:23 2000
++++ freeciv/client/gui-gtk/Makefile.am	Fri Jun  9 00:20:40 2000
+@@ -1,7 +1,7 @@
+ ## Process this file with automake to produce Makefile.in
+ 
+ noinst_LIBRARIES = libguiclient.a
+-INCLUDES = -I. -I$(srcdir)/.. -I$(srcdir)/../include -I$(top_srcdir)/common -I../../intl @CLIENT_CFLAGS@
++INCLUDES = -I. -I$(srcdir)/.. -I$(srcdir)/../include -I$(top_srcdir)/common -I../../intl @CLIENT_CFLAGS@ `glib-config --cflags`
+ 
+ ## Above, note -I../../intl instead of -I$(top_srdir/intl) is deliberate.
+ # The INCLUDES "-I." is so resources.c includes the locally generated 
+--- freeciv/client/gui-gtk/resources.c.gcc296	Fri Jun  9 00:25:26 2000
++++ freeciv/client/gui-gtk/resources.c	Fri Jun  9 00:25:44 2000
+@@ -20,6 +20,4 @@
+ Fallback resources
+ **************************************************************************/
+ 
+-const gchar *fallback_resources =
+-#include <Freeciv.h>
+-;
++const gchar *fallback_resources = { };
+--- freeciv/client/gui-xaw/dialogs.c.gcc296	Tue May 30 12:45:50 2000
++++ freeciv/client/gui-xaw/dialogs.c	Fri Jun  9 00:20:40 2000
+@@ -1482,7 +1482,7 @@
+     I_L(XtVaCreateManagedWidget("closebutton", commandWidgetClass, form,
+ 				XtNfromVert, prev,
+ 				NULL));
+-  XtAddCallback (button, XtNcallback, unit_connect_callback, ACTIVITY_IDLE);
++  XtAddCallback (button, XtNcallback, unit_connect_callback, (XtPointer)ACTIVITY_IDLE);
+ 
+   xaw_set_relative_position (toplevel, shell, 10, 0);
+   XtPopup (shell, XtGrabNone);
+--- freeciv/client/gui-xaw/resources.c.gcc296	Tue May 30 12:45:56 2000
++++ freeciv/client/gui-xaw/resources.c	Fri Jun  9 00:20:40 2000
+@@ -23,7 +23,6 @@
+ Fallback resources
+ **************************************************************************/
+ String fallback_resources[] = {
+-#include <Freeciv.h>
+   /* Deliberate use of angle-brackets instead of double quotes, to
+      support compilation from another dir.  Then we "-I." (see Makefile.am)
+      to include the locally generated Freeciv.h in the compilation dir,

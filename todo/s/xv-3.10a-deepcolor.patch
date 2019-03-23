@@ -1,0 +1,54 @@
+This fixes a byte-ordering problem when displaying 8-bit colormapped images
+on certain 12, 15, or 16-bit displays.
+
+Thanks to Mr. Ryo Shimizu for coming up with the patch, and to Yuuki Harano
+for sending it to me.
+
+--jhb
+
+*** xvimage.c.old	Fri Jan 13 19:11:36 1995
+--- xvimage.c	Fri Oct 16 12:34:11 1998
+***************
+*** 1736,1745 ****
+      if (xim->byte_order == MSBFirst) {
+        for (i=wide*high, ip=imagedata; i>0; i--,pp++) {
+  	if (((i+1)&0x1ffff) == 0) WaitCursor();
+! 	if (dithpic) {
+! 	  *ip++ = ((*pp) ? white : black) & 0xffff;
+! 	}
+! 	else *ip++ = xcolors[*pp] & 0xffff;
+        }
+      }
+      else {   /* LSBFirst */
+--- 1736,1747 ----
+      if (xim->byte_order == MSBFirst) {
+        for (i=wide*high, ip=imagedata; i>0; i--,pp++) {
+  	if (((i+1)&0x1ffff) == 0) WaitCursor();
+! 
+! 	if (dithpic) xcol = ((*pp) ? white : black) & 0xffff;
+! 		else xcol = xcolors[*pp] & 0xffff;
+! 
+! 	*((unsigned char *)ip)++ = (xcol>>8) & 0xff;
+! 	*((unsigned char *)ip)++ = (xcol) & 0xff;
+        }
+      }
+      else {   /* LSBFirst */
+***************
+*** 1749,1756 ****
+  	if (dithpic) xcol = ((*pp) ? white : black) & 0xffff;
+  	        else xcol = xcolors[*pp];
+  
+! 	/*  WAS *ip++ = ((xcol>>8) & 0xff) | ((xcol&0xff) << 8);  */
+! 	*ip++ = (unsigned short) (xcol);
+        }
+      }
+    }
+--- 1751,1758 ----
+  	if (dithpic) xcol = ((*pp) ? white : black) & 0xffff;
+  	        else xcol = xcolors[*pp];
+  
+! 	*((unsigned char *)ip)++ = (xcol) & 0xff;
+! 	*((unsigned char *)ip)++ = (xcol>>8) & 0xff;
+        }
+      }
+    }

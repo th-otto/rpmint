@@ -1,0 +1,20 @@
+--- gc/Makefile.orig	Thu Jun 21 13:09:16 2001
++++ gc/Makefile	Thu Jun 21 13:30:56 2001
+@@ -17,7 +17,7 @@
+ #  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
+ #  if you use something other than the default ABI on your machine.
+ 
+-CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT
++CFLAGS= -O2 -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT
+ 
+ # For dynamic library builds, it may be necessary to add flags to generate
+ # PIC code, e.g. -fPIC on Linux.
+@@ -150,7 +150,7 @@
+ #
+ 
+ 
+-LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
++LIBGC_CFLAGS= -O2 -DNO_SIGNALS -DSILENT \
+     -DREDIRECT_MALLOC=GC_malloc_uncollectable \
+     -DDONT_ADD_BYTE_AT_END -DALL_INTERIOR_POINTERS
+ #   Flags for building libgc.a -- the last two are required.

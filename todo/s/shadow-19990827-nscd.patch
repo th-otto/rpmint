@@ -1,0 +1,133 @@
+--- shadow-19990827/libmisc/nscd.c.nscd	Tue Sep 21 21:45:07 1999
++++ shadow-19990827/libmisc/nscd.c	Tue Sep 21 21:45:07 1999
+@@ -0,0 +1,27 @@
++/* club nscd so it invalidates its cache */
++/* notting@redhat.com 19990408           */
++
++#include <signal.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <sys/types.h>
++
++
++int hup_nscd() {
++    FILE *pidfile;
++    char *pidbuf=calloc(256,sizeof(char));
++    int pid;
++    
++    if ((pidfile=fopen("/var/run/nscd.pid","r"))!=NULL) {
++	pidbuf=fgets(pidbuf,256,pidfile);
++	fclose(pidfile);
++	if (pidbuf!=NULL) {
++	    pid=atoi(pidbuf);
++	    free(pidbuf);
++	    if (pid>0) {
++		return kill(pid,SIGHUP);
++	    }
++	}
++    }
++    return -1;
++}
+--- shadow-19990827/libmisc/Makefile.am.nscd	Fri Jul  9 12:05:01 1999
++++ shadow-19990827/libmisc/Makefile.am	Tue Sep 21 21:45:58 1999
+@@ -14,7 +14,7 @@
+  chowndir.c chowntty.c console.c copydir.c entry.c env.c failure.c \
+  fields.c getdate.y hushed.c isexpired.c limits.c list.c log.c \
+  login_access.c login_desrpc.c login_krb.c loginprompt.c mail.c motd.c \
+- myname.c obscure.c pam_pass.c pwd2spwd.c pwdcheck.c pwd_init.c rlogin.c \
++ myname.c nscd.c obscure.c pam_pass.c pwd2spwd.c pwdcheck.c pwd_init.c rlogin.c \
+  salt.c setugid.c setup.c setupenv.c shell.c strtoday.c suauth.c sub.c \
+  sulog.c ttytype.c tz.c ulimit.c utmp.c valid.c xmalloc.c
+ 
+--- shadow-19990827/libmisc/Makefile.in.nscd	Fri Aug 27 15:12:39 1999
++++ shadow-19990827/libmisc/Makefile.in	Tue Sep 21 21:46:40 1999
+@@ -111,7 +111,7 @@
+ INCLUDES = -I$(top_srcdir)/libmisc -I$(top_srcdir)/lib
+ DEFS = -DLOCALEDIR=\"$(localedir)\" -I. -I$(srcdir) -I.. @DEFS@
+ 
+-libmisc_a_SOURCES = addgrps.c age.c basename.c chkname.c chkshell.c  chowndir.c chowntty.c console.c copydir.c entry.c env.c failure.c  fields.c getdate.y hushed.c isexpired.c limits.c list.c log.c  login_access.c login_desrpc.c login_krb.c loginprompt.c mail.c motd.c  myname.c obscure.c pam_pass.c pwd2spwd.c pwdcheck.c pwd_init.c rlogin.c  salt.c setugid.c setup.c setupenv.c shell.c strtoday.c suauth.c sub.c  sulog.c ttytype.c tz.c ulimit.c utmp.c valid.c xmalloc.c
++libmisc_a_SOURCES = addgrps.c age.c basename.c chkname.c chkshell.c  chowndir.c chowntty.c console.c copydir.c entry.c env.c failure.c  fields.c getdate.y hushed.c isexpired.c limits.c list.c log.c  login_access.c login_desrpc.c login_krb.c loginprompt.c mail.c motd.c  myname.c nscd.c obscure.c pam_pass.c pwd2spwd.c pwdcheck.c pwd_init.c rlogin.c  salt.c setugid.c setup.c setupenv.c shell.c strtoday.c suauth.c sub.c  sulog.c ttytype.c tz.c ulimit.c utmp.c valid.c xmalloc.c
+ 
+ mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+ CONFIG_HEADER = ../config.h
+--- shadow-19990827/src/userdel.c.nscd	Tue Sep 21 21:45:07 1999
++++ shadow-19990827/src/userdel.c	Tue Sep 21 21:45:07 1999
+@@ -912,6 +912,7 @@
+ 	user_cancel(user_name);
+ 
+ 	close_files ();
++        hup_nscd ();
+ 
+ 	exit(errors ? E_HOMEDIR : E_SUCCESS);
+ 	/*NOTREACHED*/
+--- shadow-19990827/src/useradd.c.nscd	Tue Sep 21 21:45:07 1999
++++ shadow-19990827/src/useradd.c	Tue Sep 21 21:47:37 1999
+@@ -1964,6 +1964,8 @@
+ 
+ 	close_files ();
+ 
++	hup_nscd ();
++
+ 	exit(E_SUCCESS);
+ 	/*NOTREACHED*/
+ }
+--- shadow-19990827/src/newusers.c.nscd	Mon Jun  7 12:40:45 1999
++++ shadow-19990827/src/newusers.c	Tue Sep 21 21:45:07 1999
+@@ -565,6 +565,7 @@
+ 		spw_unlock();
+ #endif
+ 	(void) pw_unlock ();
++        hup_nscd ();
+ 
+ 	exit (0);
+ 	/*NOTREACHED*/
+--- shadow-19990827/src/groupmod.c.nscd	Fri Jul  9 14:02:43 1999
++++ shadow-19990827/src/groupmod.c	Tue Sep 21 21:45:07 1999
+@@ -544,6 +544,7 @@
+ 	grp_update ();
+ 
+ 	close_files ();
++        hup_nscd ();
+ 	exit(E_SUCCESS);
+ 	/*NOTREACHED*/
+ }
+--- shadow-19990827/src/groupdel.c.nscd	Mon Jun  7 12:40:45 1999
++++ shadow-19990827/src/groupdel.c	Tue Sep 21 21:45:07 1999
+@@ -347,6 +347,7 @@
+ 	grp_update ();
+ 
+ 	close_files ();
++        hup_nscd ();
+ 	exit(errors == 0 ? E_SUCCESS : E_GRP_UPDATE);
+ 	/*NOTREACHED*/
+ }
+--- shadow-19990827/src/groupadd.c.nscd	Tue Sep 21 21:45:07 1999
++++ shadow-19990827/src/groupadd.c	Tue Sep 21 21:45:07 1999
+@@ -548,6 +548,7 @@
+ 	grp_update();
+ 
+ 	close_files();
++        hup_nscd();
+ 	exit(E_SUCCESS);
+ 	/*NOTREACHED*/
+ }
+--- shadow-19990827/src/gpasswd.c.nscd	Fri Aug 27 15:02:51 1999
++++ shadow-19990827/src/gpasswd.c	Tue Sep 21 21:45:07 1999
+@@ -657,6 +657,7 @@
+ 	endsgent ();
+ #endif
+ #endif
++        hup_nscd ();
+ 	exit (0);
+ 	/*NOTREACHED*/
+ }
+--- shadow-19990827/src/usermod.c.nscd	Fri Jul  9 12:27:38 1999
++++ shadow-19990827/src/usermod.c	Tue Sep 21 21:45:07 1999
+@@ -1655,6 +1655,7 @@
+ 			user_id, user_newid,
+ 			user_gid, gflg ? user_newgid:user_gid);
+ 	}
++        hup_nscd();
+ 
+ 	if (grp_err)
+ 		exit(E_GRP_UPDATE);

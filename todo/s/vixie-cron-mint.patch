@@ -1,0 +1,79 @@
+--- vixie-cron-3.0.1/entry.c.mint	Mon Aug 23 01:56:11 1999
++++ vixie-cron-3.0.1/entry.c	Mon Aug 23 01:56:17 1999
+@@ -266,6 +266,12 @@
+ 	snprintf(envstr, MAX_ENVSTR, "%s=%s", "USER", pw->pw_name);
+ 	e->envp = env_set(e->envp, envstr);
+ #endif
++#if defined(__MINT__)
++	if (!env_get("UNIXMODE", e->envp)) {
++		snprintf(envstr, MAX_ENVSTR, "UNIXMODE=%s", "/brUs");
++		e->envp = env_set(e->envp, envstr);
++	}
++#endif
+ 
+ 	Debug(DPARS, ("load_entry()...about to parse command\n"))
+ 
+--- vixie-cron-3.0.1/compat.h.mint	Mon Aug 23 01:56:07 1999
++++ vixie-cron-3.0.1/compat.h	Mon Aug 23 01:58:55 1999
+@@ -63,7 +63,7 @@
+ 
+ #ifndef POSIX
+ # if (BSD >= 199103) || defined(__linux) || defined(ultrix) || defined(AIX) ||\
+-	defined(HPUX) || defined(CONVEX) || defined(IRIX)
++	defined(HPUX) || defined(CONVEX) || defined(IRIX) || defined(__MINT__)
+ #  define POSIX
+ # endif
+ #endif
+@@ -76,17 +76,18 @@
+ 
+ /*****************************************************************/
+ 
+-#if !defined(BSD) && !defined(HPUX) && !defined(CONVEX) && !defined(__linux)
++#if !defined(BSD) && !defined(HPUX) && !defined(CONVEX) && \
++	!defined(__linux) && !defined(__MINT__)
+ # define NEED_VFORK
+ #endif
+ 
+ #if (!defined(BSD) || (BSD < 198902)) && !defined(__linux) && \
+-	!defined(IRIX) && !defined(NeXT) && !defined(HPUX)
++	!defined(IRIX) && !defined(NeXT) && !defined(HPUX) && !defined(__MINT__)
+ # define NEED_STRCASECMP
+ #endif
+ 
+ #if (!defined(BSD) || (BSD < 198911)) && !defined(__linux) &&\
+-	!defined(IRIX) && !defined(UNICOS) && !defined(HPUX)
++	!defined(IRIX) && !defined(UNICOS) && !defined(HPUX) && !defined(__MINT__)
+ # define NEED_STRDUP
+ #endif
+ 
+@@ -102,7 +103,7 @@
+ # define NEED_SETSID
+ #endif
+ 
+-#if (defined(POSIX) && !defined(BSD)) && !defined(__linux)
++#if (defined(POSIX) && !defined(BSD)) && !defined(__linux) && !defined(__MINT__)
+ # define NEED_GETDTABLESIZE
+ #endif
+ 
+@@ -112,7 +113,7 @@
+ 
+ # define USE_SIGCHLD
+ 
+-#if !defined(AIX) && !defined(UNICOS)
++#if !defined(AIX) && !defined(UNICOS) && !defined(__MINT__)
+ # define SYS_TIME_H 1
+ #else
+ # define SYS_TIME_H 0
+@@ -126,10 +127,10 @@
+ # define NEED_SETENV
+ #endif
+ 
+-#if !defined(UNICOS) && !defined(UNIXPC)
++#if !defined(UNICOS) && !defined(UNIXPC) && !defined(__MINT__)
+ # define HAS_FCHOWN
+ #endif
+ 
+-#if !defined(UNICOS) && !defined(UNIXPC)
++#if !defined(UNICOS) && !defined(UNIXPC) && !defined(_MINT__)
+ # define HAS_FCHMOD
+ #endif

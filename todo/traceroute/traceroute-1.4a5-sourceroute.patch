@@ -1,0 +1,15 @@
+--- traceroute-1.4a5/savestr.c.orig	Sat May 10 00:52:34 1997
++++ traceroute-1.4a5/savestr.c	Sat Jul  8 00:29:51 2000
+@@ -45,8 +45,10 @@
+ {
+ 	register u_int size;
+ 	register char *p;
+-	static char *strptr = NULL;
+-	static u_int strsize = 0;
++	/* [20000708] strptr and strsize were static, but that caused problems with
++	   two consecutive savestr calls, leading to a segfault */
++	char *strptr = NULL;
++	u_int strsize = 0;
+ 
+ 	size = strlen(str) + 1;
+ 	if (size > strsize) {

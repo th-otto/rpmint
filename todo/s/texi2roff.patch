@@ -1,0 +1,1050 @@
+Date: Tue, 19 Nov 96 16:01:27 EST
+From: William Bader <william@nscs.fast.net>
+To: kb@cs.umb.edu
+Cc: a144@lehigh.edu, william@nscs.fast.net
+Subject: Re: texi2roff update
+
+Here are changes I made to texi2roff 2.0 from cs.toronto.edu.
+I added most of the changes to -me only.  Do not use the -mm or -ms options.
+
+1) Support for variables with @set, @clear, @ifset, @ifclear, and @value.
+   Some manuals use variables for holding the program name or for conditionals
+   to print different versions.
+
+2) Ignores the first line of input if it starts "\input texinfo".
+
+3) Ignores the text after comments.
+   Some manuals had commented commands that texi2roff was trying to parse.
+
+4) No longer crashes on @include commands on ignored lines.
+
+5) Support for most texinfo commands including texinfo version 3.9.
+   @multitable/@tab does not make clean tables.
+   Some of the character codes, like @O{} for a slashed O, are recognized
+   but print an ascii representation.
+
+6) Does not support @macro.  If a texinfo file has macros, use "makeinfo -E"
+   to expand them before running texi2roff.
+
+7) Improved error checking.  texi2roff now prints warnings for mismatched
+   @ends, even on inactive lines, and for invalid entries in its internal
+   tables.
+
+I have my patches below.  If you have problems, I can send you the base
+source version that I made them from.
+
+William
+
+----------------------------------------------------------------------
+
+*** ./items.c-	Thu Aug 12 19:05:51 1993
+--- ./items.c	Fri Nov 15 21:59:32 1996
+***************
+*** 14,19 ****
+--- 14,20 ----
+  #define ENUMERATE   1
+  #define TABLE	    2
+  #define APPLY	    3
++ #define MULTITABLE  4
+  
+  #define MAXILEVEL	10
+  int  icount[MAXILEVEL];
+***************
+*** 27,34 ****
+  extern struct tablerecd * lookup();
+  
+  /*
+!  * itemize - handle the itemizing start commands @enumerate, @itemize
+!  *	and @table
+   */
+  
+  char * itemize(s, token)
+--- 28,35 ----
+  extern struct tablerecd * lookup();
+  
+  /*
+!  * itemize - handle the itemizing start commands @enumerate, @itemize,
+!  *	@table, and @multitable
+   */
+  
+  char * itemize(s, token)
+***************
+*** 58,64 ****
+      } else if (STREQ(token,"@enumerate")) {
+  	what[ilevel] = ENUMERATE;
+  	icount[ilevel] = 1;
+!     } else if (STREQ(token,"@table")) {
+  	what[ilevel] = TABLE;
+  	s = gettoken(eatwhitespace(s),tag);
+  	if (*tag == '\n') {
+--- 59,67 ----
+      } else if (STREQ(token,"@enumerate")) {
+  	what[ilevel] = ENUMERATE;
+  	icount[ilevel] = 1;
+!     } else if (STREQ(token,"@table") ||
+! 		STREQ(token,"@ftable") ||
+! 		STREQ(token,"@vtable")) {
+  	what[ilevel] = TABLE;
+  	s = gettoken(eatwhitespace(s),tag);
+  	if (*tag == '\n') {
+***************
+*** 75,80 ****
+--- 78,88 ----
+  		}
+  	    }
+  	}
++     } else if (STREQ(token,"@multitable")) {
++ 	what[ilevel] = MULTITABLE;
++ 	icount[ilevel] = 1;
++     } else {
++ 	errormsg("unrecognized itemizing command ",token);
+      }
+      while (*s != '\n' && *s != '\0') 
+  	++s;  /* flush rest of line */
+***************
+*** 98,103 ****
+--- 106,112 ----
+  	(void) sprintf(tag, "%d.", icount[ilevel]++);
+  	break;
+      case TABLE:
++     case MULTITABLE:
+  	s = eatwhitespace(s);
+  	if (*s == '\n') {
+  	    *tag++ = '-';
+*** ./tableme.h-	Thu Aug 12 19:05:50 1993
+--- ./tableme.h	Mon Nov 18 20:20:39 1996
+***************
+*** 14,25 ****
+--- 14,42 ----
+  struct misccmds mecmds = { ".nr _- 0", "\n.pp\n", "\n.ip\n", "", ""};
+  
+  struct tablerecd metable[] = {
++     "@!",		"",	"",		"",	"",	ESCAPED,
++     "@'",		"",	"'",		"",	"",	ESCAPED,
+      "@*",		"",	"\n.br\n",	"",	"",	ESCAPED,
+      "@.",		"",	"\\&.",		"",	"",	ESCAPED,
+      "@:",		"",	"",		"",	"",	ESCAPED,
++     "@?",		"",	"",		"",	"",	ESCAPED,
++     "@|",		"",	"",		"",	"",	ESCAPED,
+      "@@",		"",	"@",		"",	"",	ESCAPED,
++     "@ ",		"",	" ",		"",	"",	ESCAPED,
++     "@\n",		"",	"\n",		"",	"",	ESCAPED,
++     "@AA{",		"}",	"AA",		"",	"",	CHAR,
++     "@AE{",		"}",	"\\(AE",	"",	"",	CHAR,
+      "@Arrow",		"\n",	"\\(rh",	"\n",	"",	CHAR,
++     "@H{",		"}",	"",		"",	"\\*:",	INPARA,
++     "@HEADINGSon",	"\n",	"",		"",	"",	DISCARD,
++     "@L{",		"}",	"L",		"",	"",	CHAR,
++     "@O{",		"}",	"O/",		"",	"",	CHAR,
++     "@OE{",		"}",	"\\(OE",	"",	"",	CHAR,
++     "@SS{",		"}",	"SS",		"",	"",	CHAR,
+      "@TeX{",		"}",	"TeX",		"",	"",	INPARA,
++     "@`",		"",	"`",		"",	"",	ESCAPED,
++     "@aa{",		"}",	"aa",		"",	"",	CHAR,
++     "@ae{",		"}",	"\\(ae",	"",	"",	CHAR,
+      "@appendix",	"\n",	
+       "\n.if !\\n(_- \\{\\\n.nr _- 1\n.nr $1 0 1\n.af $1 A\\}\n.bp\n.ds __ ",
+       "\n.sh 1 \\*(__ \n.(x \n\\n($1	\\*(__ \n.)x\n","\\fB",	HEADING,
+***************
+*** 39,60 ****
+--- 56,85 ----
+      "@asis",		"\n",	"",		"\n",	"",	PARAGRAPH,
+      "@asis{",		"}",	"",		"",	"",	INPARA,
+      "@author",		"\n",	"\n.ce\n",	"\n",	"",	HEADING,
++     "@author{",		"}",	"\n.ce\n",	"\n",	"",	HEADING,
++     "@begingroup",	"\n",	"\n.(b\n",	"\n",	"",	PARAGRAPH,
+      "@br",		"\n",	"\n.br\n.sp\n", "",	"",	PARAGRAPH,
+      "@bullet{",		"}",	"\\(bu",	"",	"",	CHAR,
+      "@bye",		"\n",	"",		"\n",	"",	DISCARD,
+      "@b{",		"}",	"\\fB",		"",	"\\fB",	INPARA,
+      "@c",		"\n",	"",		"\n",	"",	DISCARD,
++     "@cartouche",	"@end",	"",		"",	"",	PARAGRAPH,
+      "@center",		"\n",	"\n.ce\n",	"\n",	"",	HEADING,
+      "@center{",		"}",	"\n.ce\n",	"",	"",	HEADING,
+      "@chapter",		"\n",	"\n.bp\n.ds __ ",
+  	"\n.sh 1 \\*(__ \n.(x \n\\n($1	\\*(__ \n.)x\n","\\fB",	HEADING,
++     "@chapheading",	"\n",	"\n.sp 6\n.ds __ ",
++ 		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@cindex",		"\n",	"\n.iX \"c ",	"\"\n",	"",	INDEX,
+      "@cite{",		"}",	"\\fI",		"",	"\\fI",	INPARA,
++     "@clear",		"\n",	"",		"",	"",	CLEAR,
++     "@cmindex",		"\n",	"\n.iX \"c ",	"\"\n",	"",	INDEX,
+      "@code{",		"}",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
+      "@comment",		"\n",	"",		"\n",	"",	DISCARD,
+      "@contents",	"\n",	"\n.nr % 0 1\n.af % i\n.bp \\n%+1\n",
+  	".ce\n\\fBTable of Contents\\fR\n.sp 2\n.xp \n","",INPARA,
+      "@copyright{",	"}",	"\\(co",	"",	"",	CHAR,
++     "@cropmarks",	"\n",	"",		"",	"",	DISCARD,
+      "@ctrl{",		"}",	"\\fR\\&\\f(CW^","","\\fR\\&\\f(CW",INPARA,
+      "@dag",		"}{",	"\\(dg",	"",	"",	CHAR,
+      "@dag{",		"}",	"\\(dg",	"",	"",	CHAR,
+***************
+*** 62,92 ****
+--- 87,156 ----
+      "@ddag{",		"}",	"\\(dd",	"",	"",	CHAR,
+      "@defcmd",		"@end", "\n.lp\n*\\ Command: ","","",	HEADING,
+      "@defcmdx",		"\n", 	"\n.lp\n*\\ Command: ","\n.br\n","",HEADING,
++     "@defcodeindex",	"\n",	"",		"",	"",	DISCARDLINE,
++     /*	  @defcodeindex au */
++     /*	  creates an '@auindex' command that indexes the line in code font */
+      "@defconst",	"@end", "\n.lp\n*\\ Constant: ","","",	HEADING,
+      "@defconstx",	"\n", 	"\n.lp\n*\\ Constant: ","\n.br\n","",HEADING,
++     "@defcv",		"@end", "\n.lp\n*\\ Class Variable: ","","",	HEADING,
++     "@defcvx",		"\n", 	"\n.lp\n*\\ Class Varaible: ","\n.br\n","",HEADING,
+      "@deffn",		"@end", "\n.lp\n*\\ ",	"",	"",	HEADING,
+      "@deffnx",		"\n", 	"\n.lp\n*\\ ",	"\n.br\n","",	HEADING,
++     "@defindex",	"\n",	"",		"",	"",	DISCARDLINE,
++     /*	  @defindex au */
++     /*	  creates an '@auindex' command that indexes the line in roman font */
++     "@defivar",		"@end", "\n.lp\n*\\ Instance Variable: ","","",	HEADING,
++     "@defivarx",	"\n", 	"\n.lp\n*\\ Instance Variable: ","\n.br\n","",HEADING,
+      "@defmac",		"@end", "\n.lp\n*\\ Macro: ","","",	HEADING,
+      "@defmacx",		"\n", 	"\n.lp\n*\\ Macro: ","\n.br\n","",HEADING,
+      "@defmethod",	"@end", "\n.lp\n*\\ Operation on ","","",HEADING,
+      "@defmethodx",	"\n", 	"\n.lp\n*\\ Operation on ","\n.br\n",
+  							"",	HEADING,
++     "@defop",		"@end", "\n.lp\n*\\ Class Operation on ","","",HEADING,
++     "@defopx",		"\n", 	"\n.lp\n*\\ Class Operation on ","\n.br\n",
++ 							"",	HEADING,
+      "@defopt",		"@end", "\n.lp\n*\\ User Option: ","","",HEADING,
+      "@defoptx",		"\n", 	"\n.lp\n*\\ User Option: ","\n.br\n",
+  							"",	HEADING,
+      "@defspec",		"@end", "\n.lp\n*\\ Special Form: ","","",HEADING,
+      "@defspecx",	"\n", 	"\n.lp\n*\\ Special Form: ","\n.br\n",
+  							"",	HEADING,
++     "@deftp",		"@end", "\n.lp\n*\\ Type: ","","",	HEADING,
++     "@deftpx",		"\n", 	"\n.lp\n*\\ Type: ","\n.br\n","",HEADING,
++     "@deftypefn",	"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
++     "@deftypefnx",	"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
++     "@deftypefun",	"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
++     "@deftypefunx",	"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
++     "@deftypemethod",	"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
++     "@deftypemethodx",	"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
++     "@deftypevar",	"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
++     "@deftypevarx",	"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
++     "@deftypevr",	"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
++     "@deftypevrx",	"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
+      "@defun",		"@end", "\n.lp\n*\\ Function: ","","",	HEADING,
+      "@defunx",		"\n", 	"\n.lp\n*\\ Function: ","\n.br\n","",HEADING,
+      "@defvar",		"@end", "\n.lp\n*\\ Variable: ","","",	HEADING,
+      "@defvarx",		"\n", 	"\n.lp\n*\\ Variable: ","\n.br\n","",HEADING,
++     "@defvar{",		"}",	"\n.lp\n*\\ Variable: ","","",	HEADING,
++     "@defvr",		"@end", "\n.lp\n*\\ Variable: ","","",	HEADING,
++     "@defvrx",		"\n", 	"\n.lp\n*\\ Variable: ","\n.br\n","",HEADING,
++     "@detailmenu",	"@end", "\n.(l I\n\\s8Detail Menu: \n",
++ 					"\\s0\n.)l\n","",	DISPLAY,
+      "@dfn{",		"}",	"\\fI",		"",	"\\fI",	INPARA,
++     "@dircategory",	"\n",	"",		"",	"",	DISCARDLINE,
++     "@direntry",	"@end",	"",		"",	"",	DISCARD,
+      "@display",		"@end", "\n.(l I\n",	"\n.)l\n","",	DISPLAY,
++     "@dotaccent{",	"}",	"",		"",	"\\*o",	INPARA,
++     "@dotless{",	"}",	"",		"",	"",	INPARA,
+      "@dots{",		"}",	"\\&...",	"",	"",	INPARA,
++     "@down",		"\n",	"",		"\n",	"",	DISCARD,
++     "@dmn{",		"}",	"",		"",	"",	INPARA,
+      "@eject",		"\n",	"\n.bp\n",	"",	"",	PARAGRAPH,
++     "@email{",		"}",	"\\fB",		"",	"\\fB",	INPARA,
+      "@emph{",		"}",	"\\fI",		"",	"\\fI",	INPARA,
+      "@end",		"\n",	"",	"\n.sp\n.in\n", "",	END,
++     "@enddots{",	"}",	"....",		"",	"",	CHAR,
++     "@endgroup",	"\n",	"",	"\n.)b\n",	"",	PARAGRAPH,
+      "@enumerate",	"@end", "\n.(l L F\n.ba +5\n",
+  					"\n.ba -5\n.)l\n","",	ITEMIZING,
+      "@equiv{",		"}",	"\\(==",	"",	"",	CHAR,
+***************
+*** 94,123 ****
+      "@example",		"@end", "\n.(l I\n\\fR\\&\\f(CW\n",
+  				"\n.)l\n","\\fR\\&\\f(CW",	DISPLAY,
+      "@example{",	"}",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
+      "@exdent",		"\n",	"\n.lp\n",	"\n",	"",	PARAGRAPH,
+      "@expansion{",	"}",	"\\(->",	"",	"",	CHAR,
+      "@file{",		"}",	"\\fR\\&\\f(CW\\(if",
+  				"\\(is","\\fR\\&\\f(CW",	INPARA,
+!     "@finalout",	"\n",	"",		"\n",	"",	DISCARD,
+      "@findex",		"\n",	"\n.iX \"f ",	"\"\n",	"",	INDEX,
+      "@footnote{",	"}",	"\n.(f \n",	"\n.)f\n","",	FOOTNOTE,
+      "@group",		"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
+      "@heading",		"\n",	"\n.bp\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@headings",	"\n",	"",		"",	"",	DISCARD,
+      "@iappendix",	"\n",	"\n.bp\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@iappendixsec",	"\n",	"\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@iappendixsubsec",	"\n",	"\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@ichapter",	"\n",	"\n.bp\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@ifinfo",		"@end", "\n",		"\n",	"",	PARAGRAPH, 
+      "@iftex",		"@end", "",		"",	"",	PARAGRAPH,
+      "@ignore",		"@end", "",		"",	"",	DISCARD,
+      "@include",		"\n",	"",		"",	"",	INCLUDE,
+      "@inforef{",	"}",	"See Info file ","",	"",	PARAGRAPH,
+      "@isection",	"\n", 	"\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@isubsection",	"\n", 	"\n.ds __ ",
+--- 158,205 ----
+      "@example",		"@end", "\n.(l I\n\\fR\\&\\f(CW\n",
+  				"\n.)l\n","\\fR\\&\\f(CW",	DISPLAY,
+      "@example{",	"}",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
++     "@exclamdown{",	"}",	"!",		"",	"",	CHAR,
+      "@exdent",		"\n",	"\n.lp\n",	"\n",	"",	PARAGRAPH,
+      "@expansion{",	"}",	"\\(->",	"",	"",	CHAR,
+      "@file{",		"}",	"\\fR\\&\\f(CW\\(if",
+  				"\\(is","\\fR\\&\\f(CW",	INPARA,
+!     "@finalout",	"\n",	"",		"",	"",	DISCARD,
+      "@findex",		"\n",	"\n.iX \"f ",	"\"\n",	"",	INDEX,
++     "@flindex",		"\n",	"\n.iX \"c ",	"\"\n",	"",	INDEX,
++     "@flushleft",	"@end",	"\n.br\n.ad l",	"\n.br\n.ad b\n","", HEADING,
++     "@flushright",	"@end",	"\n.br\n.ad r",	"\n.br\n.ad b\n","", HEADING,
++     "@footnotestyle",	"\n",	"",		"",	"",	DISCARD,
+      "@footnote{",	"}",	"\n.(f \n",	"\n.)f\n","",	FOOTNOTE,
++     "@format",		"@end", "\n.(l I\n",	"\n.)l\n","",	DISPLAY,
++     "@ftable",		"@end", "\n.(l L F\n.ba +5\n",
++ 					"\n.ba -5\n.)l\n","",	ITEMIZING,
+      "@group",		"@end", "\n.(b\n",	"\n.)b\n","",	PARAGRAPH,
+      "@heading",		"\n",	"\n.bp\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@headings",	"\n",	"",		"",	"",	DISCARD,
++     "@hrule",		"\n",	"",		"\n",	"",	DISCARD,
+      "@iappendix",	"\n",	"\n.bp\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@iappendixsec",	"\n",	"\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
++     "@iappendixsection", "\n",	"\n.ds __ ",
++ 		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@iappendixsubsec",	"\n",	"\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
++     "@iappendixsubsection", "\n",	"\n.ds __ ",
++ 		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
++     "@iappendixsubsubsec", "\n",	"\n.ds __ ",
++ 		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@ichapter",	"\n",	"\n.bp\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
++     "@ifclear",		"@end", "",		"",	"",	IFCLEAR,
+      "@ifinfo",		"@end", "\n",		"\n",	"",	PARAGRAPH, 
++     "@ifset",		"@end", "",		"",	"",	IFSET,
+      "@iftex",		"@end", "",		"",	"",	PARAGRAPH,
+      "@ignore",		"@end", "",		"",	"",	DISCARD,
+      "@include",		"\n",	"",		"",	"",	INCLUDE,
+      "@inforef{",	"}",	"See Info file ","",	"",	PARAGRAPH,
++     "@input",		"\n",	"",		"",	"",	INCLUDE,
+      "@isection",	"\n", 	"\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@isubsection",	"\n", 	"\n.ds __ ",
+***************
+*** 134,164 ****
+--- 216,268 ----
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@iunnumberedsubsec","\n", 	"\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
++     "@iunnumberedsubsubsec","\n", 	"\n.ds __ ",
++ 		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@i{",		"}",	"\\fI",		"",	"\\fI",	INPARA,
+      "@kbd{",		"}",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
+      "@key{",		"}",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
+      "@kindex",		"\n",	"\n.iX \"k ",	"\"\n",	"",	INDEX,
++     "@l{",		"}",	"l",		"",	"",	CHAR,
++     "@lisp",		"@end",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
++     "@lowersections",	"\n",	"",		"\n",	"",	DISCARD,
+      "@majorheading",	"\n",	"\n.sp 4\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
++     "@math{",		"}",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
+      "@menu",		"@end", "\n.(l I\n\\s8Menu: \n",
+  					"\\s0\n.)l\n","",	DISPLAY,
+      "@minus{",		"}",	"\\-",		"",	"",	CHAR,
++     "@multitable",	"@end", "\n.(l L F\n.ba +5\n",
++ 					"\n.ba -5\n.)l\n","",	ITEMIZING,
+      "@need",		"\n",	"",		"\n",	"",	DISCARD,
+      "@node",		"\n", 	"\n.lp\n\\s8Node:",
+  					"\\s0\n.br\n","",	PARAGRAPH,
+      "@noindent",	"\n",	"\n.lp\n",	"",	"",	PARAGRAPH,
++     "@nwnode",		"\n", 	"\n.lp\n\\s8Node:",
++ 					"\\s0\n.br\n","",	PARAGRAPH,
++     "@o{",		"}",	"o/",		"",	"",	CHAR,
++     "@obeylines",	"\n",	"",		"\n",	"",	DISCARD,
++     "@oe{",		"}",	"\\(oe",	"",	"",	CHAR,
++     "@opindex",		"\n",	"\n.iX \"c ",	"\"\n",	"",	INDEX,
++     "@overfullrule",	"\n",	"",		"\n",	"",	DISCARD,
+      "@page",		"\n",	"\n.bp\n",	"",	"",	PARAGRAPH,
++     "@paragraphindent",	"\n",	"",		"",	"",	DISCARD,
+      "@pindex",		"\n",	"\n.iX \"p ",	"\"\n",	"",	INDEX,
+      "@point{",		"}",	"*",		"",	"",	CHAR,
++     "@pounds{",		"}",	"#",		"",	"",	CHAR,
+      "@printindex",	"\n",	"",		"\n",	"",	DISCARD,
+      "@prints{",		"}",	"-|",		"",	"",	CHAR,
+      "@print{",		"}",	"-|",		"",	"",	CHAR,
+      "@pxref{",		"}",	"see section  ","",	"",	PARAGRAPH,
++     "@quad",		"\n",	"",		"\n",	"",	DISCARD,
++     "@questiondown{",	"}",	"?",		"",	"",	CHAR,
+      "@quotation",	"@end", "\n.(q\n.nh\n", "\n.)q\n","",	DISPLAY,
++     "@quote{",		"}",	"\"",		"\"",	"",	INPARA,
++     "@raisesections",	"\n",	"",		"\n",	"",	DISCARD,
+      "@refill",		"\n",	"",		"\n",	"",	DISCARD,
+      "@ref{",		"}",	"\\(if",	"\\(is","",	INPARA,
+      "@result",		"\n",	"\\(rh",	"\n",	"",	CHAR,
+      "@result{",		"}",	"\\(rh",	"",	"",	CHAR,
++     "@ringaccent{",	"}",	"",		"",	"\\*o",	INPARA,
+      "@r{",		"}",	"\\fR",		"",	"\\fR",	INPARA,
+      "@samp{",		"}",	"\\fR\\&\\f(CW\\(if", "\\(is",
+  						"\\fR\\&\\f(CW",INPARA,
+***************
+*** 166,180 ****
+--- 270,292 ----
+      "@section",		"\n",	"\n.ds __ ",
+       "\n.sh 2 \\*(__ \n.(x \n\\n($1.\\n($2      \\*(__ \n.)x\n",
+  							"\\fB",	HEADING,
++     "@set",		"\n",	"",		"",	"",	SET,
+      "@setchapternewpage","\n",	"",		"\n",	"",	DISCARD,
++     "@setchapternewstyle","\n",	"",		"\n",	"",	DISCARD,
++     "@setchapterstyle",	"\n",	"",		"\n",	"",	DISCARD,
+      "@setfilename",	"\n",	"",		"\n",	"",	DISCARD,
+      "@settitle",	"\n",	"\n.ds St ",
+  		"\n.oh '\\\\*(St''%'\n.eh '%''\\\\*(St'\n","",	HEADING,
++     "@shortcontents",	"\n",	"\n.nr % 0 1\n.af % i\n.bp \\n%+1\n",
++ 	".ce\n\\fBTable of Contents\\fR\n.sp 2\n.xp \n","",	INPARA,
++     "@shorttitlepage",	"\n",	"",		"",	"",	DISCARD,
+      "@smallbook",	"\n",	"",		"",	"",	DISCARD,
+      "@smallexample",	"@end", "\n.(l I\n\\fR\\&\\f(CW\n",
+  				"\n.)l\n",	"\\fR\\&\\f(CW",DISPLAY,
++     "@smalllisp",	"@end",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
+      "@sp",		"\n",	"\n.sp",	"\n",	"",	PARAGRAPH,
+      "@sp2",		"\n",	"\n.sp 2",	"\n",	"",	PARAGRAPH,
++     "@ss{",		"}",	"ss",		"",	"",	CHAR,
+      "@strong{",		"}",	"\\fB",		"",	"\\fB",	INPARA,
+      "@subheading",	"\n",	"\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+***************
+*** 188,201 ****
+  							"\\fB",	HEADING,
+      "@subtext",		"\n",	"\n.ce\n",	"\n",	"",	HEADING,
+      "@subtitle",	"\n",	"\n.ce\n",	"\n",	"",	HEADING,
+      "@summarycontents",	"\n",	"\n.nr % 0 1\n.af % i\n.bp \\n%+1\n",
+  	".ce\n\\fBTable of Contents\\fR\n.sp 2\n.xp \n","",	INPARA,
+      "@syncodeindex",	"\n",	"",		"\n",	"",	DISCARD,
+      "@synindex",	"\n",	"",		"\n",	"",	DISCARD,
+      "@t",		"\n",	"\t",		"\n",	"",	CHAR,
+      "@table",		"@end", "\n.(l L F\n.ba +5\n",
+  					"\n.ba -5\n.)l\n","",	ITEMIZING,
+!     "@tex",		"@end", "",		"",	"",	DISCARD, 
+      "@tindex",		"\n",	"\n.iX \"t ",	"\"\n",	"",	INDEX,
+      "@title",		"\n",	"\n.ce\n",	"\n",	"",	HEADING,
+      "@titlefont{",	"}",	"\n.sz +10\n.ce\n",
+--- 300,320 ----
+  							"\\fB",	HEADING,
+      "@subtext",		"\n",	"\n.ce\n",	"\n",	"",	HEADING,
+      "@subtitle",	"\n",	"\n.ce\n",	"\n",	"",	HEADING,
++     "@subtitle{",	"}",	"\n.ce\n",	"\n",	"",	HEADING,
+      "@summarycontents",	"\n",	"\n.nr % 0 1\n.af % i\n.bp \\n%+1\n",
+  	".ce\n\\fBTable of Contents\\fR\n.sp 2\n.xp \n","",	INPARA,
+      "@syncodeindex",	"\n",	"",		"\n",	"",	DISCARD,
+      "@synindex",	"\n",	"",		"\n",	"",	DISCARD,
+      "@t",		"\n",	"\t",		"\n",	"",	CHAR,
++     "@tab",		"",	"\t",		"",	"",	ESCAPED,
+      "@table",		"@end", "\n.(l L F\n.ba +5\n",
+  					"\n.ba -5\n.)l\n","",	ITEMIZING,
+!     "@tex",		"@end", "",		"",	"",	DISCARD,
+!     "@tex{",		"}", 	"",		"",	"",	DISCARD,
+!     "@tieaccent{",	"}",	"",		"-",	"",	INPARA,
+!     "@today{",		"}",	"-DATE-",	"",	"",	PARAGRAPH,
+!     "@top",		"\n", 	"\n.lp\n\\s8Top:",
+! 					"\\s0\n.br\n","",	PARAGRAPH,
+      "@tindex",		"\n",	"\n.iX \"t ",	"\"\n",	"",	INDEX,
+      "@title",		"\n",	"\n.ce\n",	"\n",	"",	HEADING,
+      "@titlefont{",	"}",	"\n.sz +10\n.ce\n",
+***************
+*** 203,209 ****
+--- 322,332 ----
+      "@titlepage",	"@end", "\n.tp\n",	"\n.bp\n","",	PARAGRAPH,
+      "@titlespec",	"@end", "\n.tp\n.ce \n\\&\\*(St \n",
+  						"\n",	"",	PARAGRAPH,
++     "@title{",		"}",	"\n.ce\n",	"\n",	"",	HEADING,
++     "@tt{",		"}",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
+      "@t{",		"}",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
++     "@ubaraccent{",	"}",	"",		"-",	"",	INPARA,
++     "@udotaccent{",	"}",	"",		".",	"",	INPARA,
+      "@unnumbered",	"\n",	"\n.bp\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@unnumberedsec",	"\n",	"\n.ds __ ",
+***************
+*** 212,224 ****
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@unnumberedsubsubsec","\n","\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@var{",		"}",	"\\fI",		"",	"\\fI",	INPARA,
+      "@vfil", 		"\n",	"",		"\n",	"",	DISCARD,
+      "@vindex",		"\n",	"\n.iX \"v ",	"\"\n",	"",	INDEX,
+      "@vskip",		"\n",	"",		"\n",	"",	DISCARD,
+      "@w{",		"}",	"\n\\! ",	"\n",	"",	INPARA,
+      "@xref{",		"}",	"See section ",	"",	"",	PARAGRAPH,
+      "@{",		"",	"{",		"",	"",	ESCAPED,
+!     "@}",		"",	"}",		"",	"",	ESCAPED
+! };
+  
+--- 335,426 ----
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
+      "@unnumberedsubsubsec","\n","\n.ds __ ",
+  		"\n.(x \n\\*(__ \n.)x\n.uh  \\*(__ \n","\\fB",	HEADING,
++     "@up",		"\n",	"",		"\n",	"",	DISCARD,
++     "@url{",		"}",	"\\fB",		"",	"\\fB",	INPARA,
++     "@u{",		"}",	"",		"-",	"",	INPARA,
++     "@value{",		"}",	"",		"",	"",	VALUE,
+      "@var{",		"}",	"\\fI",		"",	"\\fI",	INPARA,
+      "@vfil", 		"\n",	"",		"\n",	"",	DISCARD,
+      "@vindex",		"\n",	"\n.iX \"v ",	"\"\n",	"",	INDEX,
+      "@vskip",		"\n",	"",		"\n",	"",	DISCARD,
++     "@vtable",		"@end", "\n.(l L F\n.ba +5\n",
++ 					"\n.ba -5\n.)l\n","",	ITEMIZING,
++     "@v{",		"}",	"",		"\\*v",	"",	INPARA,
+      "@w{",		"}",	"\n\\! ",	"\n",	"",	INPARA,
++     "@widen{",		"}",	"",		"\n",	"",	DISCARD,
+      "@xref{",		"}",	"See section ",	"",	"",	PARAGRAPH,
+      "@{",		"",	"{",		"",	"",	ESCAPED,
+!     "@}",		"",	"}",		"",	"",	ESCAPED,
+! 
+!     "@\"a",		"",	"",		"a\\*:","",	ESCAPED,
+!     "@\"e",		"",	"",		"e\\*:","",	ESCAPED,
+!     "@\"i",		"",	"",		"i\\*:","",	ESCAPED,
+!     "@\"o",		"",	"",		"o\\*:","",	ESCAPED,
+!     "@\"u",		"",	"",		"u\\*:","",	ESCAPED,
+!     "@\"y",		"",	"",		"y\\*:","",	ESCAPED,
+!     "@\"A",		"",	"",		"A\\*:","",	ESCAPED,
+!     "@\"E",		"",	"",		"E\\*:","",	ESCAPED,
+!     "@\"I",		"",	"",		"I\\*:","",	ESCAPED,
+!     "@\"O",		"",	"",		"O\\*:","",	ESCAPED,
+!     "@\"U",		"",	"",		"U\\*:","",	ESCAPED,
+!     "@\"Y",		"",	"",		"Y\\*:","",	ESCAPED,
+! 
+!     "@'a",		"",	"",		"a\\*'","",	ESCAPED,
+!     "@'e",		"",	"",		"e\\*'","",	ESCAPED,
+!     "@'i",		"",	"",		"i\\*'","",	ESCAPED,
+!     "@'o",		"",	"",		"o\\*'","",	ESCAPED,
+!     "@'u",		"",	"",		"u\\*'","",	ESCAPED,
+!     "@'y",		"",	"",		"y\\*'","",	ESCAPED,
+!     "@'A",		"",	"",		"A\\*'","",	ESCAPED,
+!     "@'E",		"",	"",		"E\\*'","",	ESCAPED,
+!     "@'I",		"",	"",		"I\\*'","",	ESCAPED,
+!     "@'O",		"",	"",		"O\\*'","",	ESCAPED,
+!     "@'U",		"",	"",		"U\\*'","",	ESCAPED,
+!     "@'Y",		"",	"",		"Y\\*'","",	ESCAPED,
+! 
+!     "@`a",		"",	"",		"a\\*`","",	ESCAPED,
+!     "@`e",		"",	"",		"e\\*`","",	ESCAPED,
+!     "@`i",		"",	"",		"i\\*`","",	ESCAPED,
+!     "@`o",		"",	"",		"o\\*`","",	ESCAPED,
+!     "@`u",		"",	"",		"u\\*`","",	ESCAPED,
+!     "@`y",		"",	"",		"y\\*`","",	ESCAPED,
+!     "@`A",		"",	"",		"A\\*`","",	ESCAPED,
+!     "@`E",		"",	"",		"E\\*`","",	ESCAPED,
+!     "@`I",		"",	"",		"I\\*`","",	ESCAPED,
+!     "@`O",		"",	"",		"O\\*`","",	ESCAPED,
+!     "@`U",		"",	"",		"U\\*`","",	ESCAPED,
+!     "@`Y",		"",	"",		"Y\\*`","",	ESCAPED,
+  
++     "@=o",		"",	"=o",		"",	"",	ESCAPED,
++ 
++     "@^a",		"",	"",		"a\\*^","",	ESCAPED,
++     "@^e",		"",	"",		"e\\*^","",	ESCAPED,
++     "@^i",		"",	"",		"i\\*^","",	ESCAPED,
++     "@^o",		"",	"",		"o\\*^","",	ESCAPED,
++     "@^u",		"",	"",		"u\\*^","",	ESCAPED,
++     "@^y",		"",	"",		"y\\*^","",	ESCAPED,
++     "@^A",		"",	"",		"A\\*^","",	ESCAPED,
++     "@^E",		"",	"",		"E\\*^","",	ESCAPED,
++     "@^I",		"",	"",		"I\\*^","",	ESCAPED,
++     "@^O",		"",	"",		"O\\*^","",	ESCAPED,
++     "@^U",		"",	"",		"U\\*^","",	ESCAPED,
++     "@^Y",		"",	"",		"Y\\*^","",	ESCAPED,
++ 
++     "@~N",		"",	"",		"N\\*~","",	ESCAPED,
++     "@~n",		"",	"",		"n\\*~","",	ESCAPED,
++ 
++     "@~a",		"",	"",		"a\\*~","",	ESCAPED,
++     "@~e",		"",	"",		"e\\*~","",	ESCAPED,
++     "@~i",		"",	"",		"i\\*~","",	ESCAPED,
++     "@~o",		"",	"",		"o\\*~","",	ESCAPED,
++     "@~u",		"",	"",		"u\\*~","",	ESCAPED,
++     "@~y",		"",	"",		"y\\*~","",	ESCAPED,
++     "@~A",		"",	"",		"A\\*~","",	ESCAPED,
++     "@~E",		"",	"",		"E\\*~","",	ESCAPED,
++     "@~I",		"",	"",		"I\\*~","",	ESCAPED,
++     "@~O",		"",	"",		"O\\*~","",	ESCAPED,
++     "@~U",		"",	"",		"U\\*~","",	ESCAPED,
++     "@~Y",		"",	"",		"Y\\*~","",	ESCAPED,
++ 
++     "@,{",		"}",	"",		"\\*,",	"",	INPARA
++ };
+*** ./tablemm.h-	Thu Aug 12 19:05:50 1993
+--- ./tablemm.h	Thu Aug 12 21:58:14 1993
+***************
+*** 49,54 ****
+--- 49,55 ----
+  					"\n.sp .5\n",	"\\fB",	HEADING,
+      "@cindex",		"\n",	"\n.iX \"c ",	"\"\n",	"",	INDEX,
+      "@cite{",		"}",	"\\fI",		"",	"\\fI",	INPARA,
++     "@clear",		"\n",	"",		"",	"",	CLEAR,
+      "@code{",		"}",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
+      "@comment",		"\n",	"",		"\n",	"",	DISCARD,
+      "@contents",	"\n",	"\n.TC 1 1 5 0\n", "",	"",	INPARA,
+***************
+*** 126,132 ****
+--- 127,135 ----
+  					"\n.sp .5\n",	"\\fB",	HEADING,
+      "@ichapter",	"\n",	"\n.bp\n.sp .5\n.HU ",
+  					"\n.sp .5\n",	"\\fB",	HEADING,
++     "@ifclear",		"@end", "",		"",	"",	IFCLEAR,
+      "@ifinfo",		"@end", "\n", 		"\n",	"",	PARAGRAPH,
++     "@ifset",		"@end", "",		"",	"",	IFSET,
+      "@iftex",		"@end", "",		"",	"",	PARAGRAPH,
+      "@ignore",		"@end", "",		"",	"",	DISCARD,
+      "@include",		"\n",	"",		"\n",	"",	INCLUDE,
+***************
+*** 177,182 ****
+--- 180,186 ----
+      "@sc{",		"}",	"\\fB",		"",	"\\fB",	INPARA,
+      "@section",		"\n",	"\n.sp .5\n.H 2 ",
+  					"\n.sp .5\n",	"\\fB",	HEADING,
++     "@set",		"\n",	"",		"",	"",	SET,
+      "@setchapternewpage","\n",	"",		"\n",	"",	DISCARD,
+      "@setfilename",	"\n",	"",		"\n",	"",	DISCARD,
+      "@settitle",	"\n",	"\n.ds St ",
+***************
+*** 218,223 ****
+--- 222,228 ----
+  					"\n.sp .5\n",	"\\fB",	HEADING,
+      "@unnumberedsubsubsec","\n","\n.sp .5\n.HU ",
+  					"\n.sp .5\n",	"\\fB",	HEADING,
++     "@value{",		"}",	"",		"",	"",	VALUE,
+      "@var{",		"}",	"\\fI",		"",	"\\fI",	INPARA,
+      "@vfil",		"\n",	"",		"\n",	"",	DISCARD,
+      "@vindex",		"\n",	"\n.iX \"v ",	"\"\n",	"",	INDEX,
+*** ./tablems.h-	Thu Aug 12 19:05:51 1993
+--- ./tablems.h	Thu Aug 12 21:58:15 1993
+***************
+*** 51,56 ****
+--- 51,57 ----
+  	"\n.NH 1\n\\*(__ \n.XS \n\\n(H1	\\*(__ \n.XE\n","\\fB",	HEADING,
+      "@cindex",		"\n",	"\n.iX \"c ",	"\"\n",	"",	INDEX,
+      "@cite{",		"}",	"\\fI",		"",	"\\fI",	INPARA,
++     "@clear",		"\n",	"",		"",	"",	CLEAR,
+      "@code{",		"}",	"\\fR\\&\\f(CW","","\\fR\\&\\f(CW",INPARA,
+      "@comment",		"\n",	"",		"\n",	"",	DISCARD,
+      "@contents",	"\n",	"\n.nr % 0\n.af % i\n.bp\n.PX\n",
+***************
+*** 113,119 ****
+--- 114,122 ----
+  	"\n.XS \n\\*(__ \n.XE\n.SH \n\\*(__ \n", 	"\\fB",	HEADING,
+      "@ichapter",	"\n",   "\n.bp\n.ds __ ",
+  	"\n.XS \n\\*(__ \n.XE\n.SH \n\\*(__ \n", 	"\\fB",	HEADING,
++     "@ifclear",		"@end", "",		"",	"",	IFCLEAR,
+      "@ifinfo",		"@end", "\n",		"\n",	"",	PARAGRAPH,
++     "@ifset",		"@end", "",		"",	"",	IFSET,
+      "@iftex",		"@end", "",		"",	"",	PARAGRAPH,
+      "@ignore",		"@end", "",		"",	"",	DISCARD,
+      "@include",		"\n",	"",		"\n",	"",	INCLUDE,
+***************
+*** 165,170 ****
+--- 168,174 ----
+      "@section",	 "\n",   "\n.ds __ ",
+        "\n.NH 2\n\\*(__ \n.XS \n\\n(H1.\\n(H2      \\*(__ \n.XE\n",
+  							"\\fB",	HEADING,
++     "@set",		"\n",	"",		"",	"",	SET,
+      "@setchapternewpage","\n",	"",		"\n",	"",	DISCARD,
+      "@setfilename",	"\n",	"",		"\n",	"",	DISCARD,
+      "@settitle",	"\n",	"\n.ds St ",
+***************
+*** 209,214 ****
+--- 213,219 ----
+  	"\n.XS \n\\*(__ \n.XE\n.SH \n\\*(__ \n",	"\\fB",	HEADING,
+      "@unnumberedsubsubsec","\n","\n.ds __ ",
+   	"\n.XS \n\\*(__ \n.XE\n.SH \n\\*(__ \n",	"\\fB",	HEADING,
++     "@value{",		"}",	"",		"",	"",	VALUE,
+      "@var{",		"}",	"\\fI",		"",	"\\fI",INPARA,
+      "@vfil",		"\n",	"",		"\n",	"",	DISCARD,
+      "@vindex",		"\n",	"\n.iX \"v ",	"\"\n",	"",	INDEX,
+*** ./texi2roff.h-	Thu Aug 12 19:05:51 1993
+--- ./texi2roff.h	Mon Dec  6 19:15:28 1993
+***************
+*** 62,68 ****
+  #define DISPLAY    10	/* text block of the kind called a 'display' */
+  #define INDEX	   11	/* index entry */
+  #define INCLUDE	   12	/* include file command */
+!  
+  /* portability */
+  #ifdef BSD
+  #include <strings.h>
+--- 62,74 ----
+  #define DISPLAY    10	/* text block of the kind called a 'display' */
+  #define INDEX	   11	/* index entry */
+  #define INCLUDE	   12	/* include file command */
+! #define	IFSET	   13	/* test if a variable is set */
+! #define	IFCLEAR	   14	/* test if a variable is not set */
+! #define	SET	   15	/* set a variable */
+! #define	CLEAR	   16	/* clear a variable */
+! #define	VALUE	   17	/* lookup the value of a variable */
+! #define DISCARDLINE 18	/* not supported -- discard to end of line */
+! 
+  /* portability */
+  #ifdef BSD
+  #include <strings.h>
+*** ./translate.c-	Thu Aug 12 19:05:52 1993
+--- ./translate.c	Mon Nov 18 20:46:40 1996
+***************
+*** 11,16 ****
+--- 11,20 ----
+  #include <stdio.h>
+  #include "texi2roff.h"
+  
++ #ifndef TDEBUG
++ #define	TDEBUG 0
++ #endif
++ 
+  extern int transparent;		/* -t flag: dont discard things	   */
+  int	displaylevel = 0;	/* nesting level of 'display' text */
+  int	inmacroarg = NO;	/* protect roff macro args flag */
+***************
+*** 78,83 ****
+--- 82,90 ----
+  
+      while (fgets(input, MAXLINELEN, in) != NULL) {
+  	++linecount;
++ 	if (linecount == 1 && strncmp(input, "\\input texinfo", 14) == 0) {
++ 	    continue;
++ 	}
+  	inp = input;
+  	*output = 0;
+  	if (*inp == '.')		/* protect leading '.' in input */
+***************
+*** 118,130 ****
+  }
+  
+  /*
+   * PUSH - macro to push pointer to table entry onto command stack
+   *	  and current font onto font stack
+   */
+  
+! #define MAXDEPTH    20
+  
+  #define PUSH(tptr)							\
+      if (++stackptr == MAXDEPTH) {					\
+  	errormsg("stack overflow - commands nested too deeply", "");	\
+  	return NULL;							\
+--- 125,223 ----
+  }
+  
+  /*
++  * handle variables
++  */
++ 
++ static struct vartag {
++ 	char var_name[MAXLINELEN];
++ 	char var_value[MAXLINELEN + 20];	/* room for no value for ... */
++ 	int var_is_set;
++ 	struct vartag *var_next;
++ } *first_var = NULL;
++ 
++ /*
++  * lookup a variable and return a pointer to it.
++  *   creates the variable if needed.
++  */
++ 
++ static struct vartag *
++ lookup_var(name)
++ char	*name;
++ {
++     struct vartag *v;
++ 
++     for (v = first_var; v; v = v->var_next) {
++ 	if (strcmp(v->var_name, name) == 0) {
++ 	    return(v);
++ 	}
++     }
++ 
++     v = (struct vartag *) malloc(sizeof(struct vartag));
++     if (!v) {
++ 	errormsg("unable to save variable: ", name);
++     } else {
++ 	strncpy(v->var_name, name, MAXLINELEN);
++ 	v->var_name[MAXLINELEN-1] = '\0';
++ 	v->var_value[0] = '\0';
++ 	v->var_is_set = NO;
++ 	v->var_next = first_var;
++ 	first_var = v;
++     }
++     return(v);
++ }
++ 
++ static void
++ set_var(name, is_set, value)
++ char	*name, *value;
++ int	is_set;
++ {
++     struct vartag *v;
++ 
++     v = lookup_var(name);
++     if (v) {
++ 	v->var_is_set = is_set;
++ 	if (is_set) {
++ 	    strncpy(v->var_value, value, MAXLINELEN-1);
++ 	    v->var_value[MAXLINELEN-1] = '\0';
++ 	} else {
++ 	    v->var_value[0] = '\0';
++ 	}
++     }
++ }
++ 
++ static int
++ var_is_set(name)
++ char	*name;
++ {
++     struct vartag *v;
++     v = lookup_var(name);
++     return(v != (struct vartag *)NULL && v->var_is_set);
++ }
++ 
++ static char *
++ get_var(name)
++ char	*name;
++ {
++     struct vartag *v;
++     v = lookup_var(name);
++     if (!v)
++ 	return("");
++     if (!v->var_is_set)
++ 	sprintf(v->var_value, "{No value for \"%s\"}", v->var_name);
++     return(v->var_value);
++ }
++ 
++ /*
+   * PUSH - macro to push pointer to table entry onto command stack
+   *	  and current font onto font stack
+   */
+  
+! #define MAXDEPTH    100
+  
+  #define PUSH(tptr)							\
++     if (tptr->texend[0] == '\0') {					\
++         errormsg("error - table has empty end for cmd ", tptr->texstart);\
++     }									\
+      if (++stackptr == MAXDEPTH) {					\
+  	errormsg("stack overflow - commands nested too deeply", "");	\
+  	return NULL;							\
+***************
+*** 160,165 ****
+--- 253,265 ----
+      FILE	    *fp;	/* for @include files */
+      extern int	    process();	/* for @include files */
+  
++ #if TDEBUG
++     fprintf(stderr,
++ 	"interp, ln %d token '%s', stackptr %d fontptr %d discard %d level %d inmacarg %d\n",
++ 	linecount, token, stackptr, fontptr,
++ 	discarding, discardlevel, inmacroarg);
++ #endif
++ 
+      if (init == NO) {
+  	(void) strcpy(fontstack[0], defaultfont);
+  	(void) strcpy(curfont, defaultfont);
+***************
+*** 169,180 ****
+      s = inp;
+      if (stackptr > 0 && STREQ(token, stack[stackptr]->texend)) {
+      /* have fetched closing token of current Texinfo command */
+  	if (STREQ(token, "@end")) {/* WARNING! only works from translate() */
+  	    s = gettoken(eatwhitespace(s),tempstr);
+! 	    if	(! STREQ(&(stack[stackptr]->texstart[1]), tempstr) 
+! 				&& !discarding) {
+  		errormsg("unexpected @end found for Texinfo cmd @", tempstr);
+! 		return s;
+  	    }
+  	}
+  	if (!discarding)
+--- 269,285 ----
+      s = inp;
+      if (stackptr > 0 && STREQ(token, stack[stackptr]->texend)) {
+      /* have fetched closing token of current Texinfo command */
++ #if TDEBUG
++ 	fprintf(stderr, "interp, found end, stackptr %d\n", stackptr);
++ #endif
+  	if (STREQ(token, "@end")) {/* WARNING! only works from translate() */
+  	    s = gettoken(eatwhitespace(s),tempstr);
+! 	    if	(! STREQ(&(stack[stackptr]->texstart[1]), tempstr) ) {
+  		errormsg("unexpected @end found for Texinfo cmd @", tempstr);
+! 		errormsg("expected @end for Texinfo cmd ", stack[stackptr]->texstart);
+! 		if (!discarding) {
+! 		    return s;
+! 		}
+  	    }
+  	}
+  	if (!discarding)
+***************
+*** 209,214 ****
+--- 314,322 ----
+  	    return "";  		/* flush rest of line if any */
+  	}
+      } else if (*token != '@') { 	/* ordinary piece of text */
++ #if TDEBUG
++ 	fprintf(stderr, "interp, normal text\n");
++ #endif
+  	if (!discarding)
+  	    (void) strcat(outstring, token);
+  	if (*token == '\n') {
+***************
+*** 220,229 ****
+  	    if (!discarding)
+  		errormsg("unrecognized Texinfo command ", token);
+  	} else {
+  	    switch (tptr->type) {
+  	    case ESCAPED:
+! 		if (!discarding)
+! 		    (void) strcat(outstring, tptr->trfstart);
+  		break;
+  	    case DISPLAY:
+  		++displaylevel;
+--- 328,350 ----
+  	    if (!discarding)
+  		errormsg("unrecognized Texinfo command ", token);
+  	} else {
++ #if TDEBUG
++ 	    fprintf(stderr, "interp, command, type %d\n", tptr->type);
++ #endif
+  	    switch (tptr->type) {
+  	    case ESCAPED:
+! 		if (tptr->texend[0] != '\0') {
+! 		    errormsg("error - table has non-empty end for cmd ",
+! 			tptr->texstart);
+! 		}
+! 		if (!discarding) {
+! 		    if (tptr->trfstart[0] != '\0') {
+! 			(void) strcat(outstring, tptr->trfstart);
+! 		    }
+! 		    if (tptr->trfend[0] != '\0') {
+! 			(void) strcat(outstring, tptr->trfend);
+! 		    }
+! 		}
+  		break;
+  	    case DISPLAY:
+  		++displaylevel;
+***************
+*** 249,254 ****
+--- 370,385 ----
+  		if (!discarding && !transparent) {
+  		    discarding = YES;
+  		    discardlevel = stackptr;
++ 		    if (tptr->texend[0] == '\n') {
++ 			while (*s != '\0' && *s != '\n')
++ 			    s++;
++ 		    }
++ 		}
++ 		break;
++ 	    case DISCARDLINE:
++ 		if (!transparent) {
++ 		    while (*s != '\0' && *s != '\n')
++ 			s++;
+  		}
+  		break;
+  	    case ITEMIZING:
+***************
+*** 277,284 ****
+  		break;
+  	    case END:
+  		s = gettoken(eatwhitespace(s),tempstr);
+! 		if (!discarding) 
+! 		 errormsg("unexpected @end found for Texinfo cmd @", tempstr);
+  		break;
+  	    case FOOTNOTE:
+  		PUSH(tptr);
+--- 408,414 ----
+  		break;
+  	    case END:
+  		s = gettoken(eatwhitespace(s),tempstr);
+! 		errormsg("unexpected @end found for Texinfo cmd @", tempstr);
+  		break;
+  	    case FOOTNOTE:
+  		PUSH(tptr);
+***************
+*** 297,307 ****
+  		for (cp = tempstr; strchr(" \t\n",*s) == NULL; *cp++ = *s++)
+  			;
+  		*cp = '\0';
+! 		if (!discarding && ( fp = fopen(tempstr, "r")) == NULL)
+! 		    errormsg("can't open included file ", tempstr);
+! 		else {
+! 		    (void) process(fp, tempstr);
+! 		    (void) fclose(fp);
+  		}
+  		break;
+  	    default:
+--- 427,482 ----
+  		for (cp = tempstr; strchr(" \t\n",*s) == NULL; *cp++ = *s++)
+  			;
+  		*cp = '\0';
+! 		if (!discarding) {
+! 		    if ( (fp = fopen(tempstr, "r")) == NULL)
+! 			errormsg("can't open included file ", tempstr);
+! 		    else {
+! 			(void) process(fp, tempstr);
+! 			(void) fclose(fp);
+! 		    }
+! 		}
+! 		break;
+! 	    case IFSET:
+! 	    case IFCLEAR:
+! 		PUSH(tptr);
+! 		s = eatwhitespace(s);
+! 		for (cp = tempstr; strchr(" \t\n",*s) == NULL; *cp++ = *s++)
+! 		    ;
+! 		*cp = '\0';
+! 		if (!discarding) {
+! 		    discarding = var_is_set(tempstr);
+! 		    if (tptr->type == IFSET) discarding = !discarding;
+! 		    if (discarding) discardlevel = stackptr;
+! 		}
+! 		break;
+! 	    case SET:
+! 	    case CLEAR:
+! 		s = eatwhitespace(s);
+! 		for (cp = itemtag; strchr(" \t\n",*s) == NULL; *cp++ = *s++)
+! 		    ;
+! 		*cp = '\0';
+! 		if (tptr->type == CLEAR) {
+! 		    if (!discarding) {
+! 			set_var(itemtag, NO, "");
+! 		    }
+! 		} else {
+! 		    s = eatwhitespace(s);
+! 		    for (cp = s; *s != '\0' && *s != '\n'; s++)
+! 			;
+! 		    *s = '\0';
+! 		    if (!discarding) {
+! 			set_var(itemtag, YES, cp);
+! 		    }
+! 		}
+! 		break;
+! 	    case VALUE:
+! 		cp = tempstr;
+! 		while (*s != '}' && *s != '\n' && *s != '\0')
+! 		    *cp++ = *s++;
+! 		*cp = 0;
+! 		if (*s == '}') s++;
+! 		if (!discarding) {
+! 		    (void) strcat(outstring, get_var(tempstr));
+  		}
+  		break;
+  	    default:
+***************
+*** 406,411 ****
+--- 581,593 ----
+  		++s;
+  	    break;
+  	case '@':
++ 	    /* handle 3 char @ tokens @ + "'`=^~ + letter */
++ 	    if (s[1] != '\0' &&
++ 		((s[2] >= 'a' && s[2] <= 'z') || (s[2] >= 'A' && s[2] <= 'Z')) &&
++ 		strchr("\"'`=^~", s[1]) != NULL) {
++ 		s += 2;
++ 		break;
++ 	    }
+  	    s = strpbrk_like(q + 1, endchars );
+  	    /* handles 2 char @ tokens: @{ @} @@ @: @. @* */
+  	    if ( strchr("{}@:.*", *s) == NULL

@@ -1,0 +1,68 @@
+#! /bin/sh
+#
+# chkconfig: - 60 20
+# description: The rwho protocol lets remote users get a list of all of \
+#              the users logged into a machine running the rwho daemon \
+#              (similiar to finger).
+# processname: rwhod
+
+# Get config.
+. /etc/sysconfig/network
+
+# Get functions
+. /etc/init.d/functions
+
+# Check that networking is up.
+if [ ${NETWORKING} = "no" ] ; then
+	exit 0
+fi
+
+RETVAL=0
+
+start() {
+ 	echo -n "Starting rwho services: "
+	daemon rwhod
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/rwhod
+	return $RETVAL
+}	
+
+stop() {
+	echo -n "Stopping rwho services: "
+	killproc rwhod
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/rwhod
+	return $RETVAL
+}	
+
+restart() {
+	stop
+	start
+}	
+
+# See how we were called.
+case "$1" in
+ start)
+ 	start
+	;;
+ stop)
+ 	stop
+	;;
+ status)
+ 	status rwhod
+	;;
+ restart)
+ 	restart
+	;;
+ condrestart)
+ 	[ -f /var/lock/subsys/rwhod ] && restart || :
+	;;
+ *)
+	echo "Usage: $0 {start|stop|status|restart}"
+	exit 1
+	;;
+esac
+
+exit $?

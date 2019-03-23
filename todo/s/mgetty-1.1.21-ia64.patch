@@ -1,0 +1,299 @@
+diff -uNr mgetty-1.1.21/callback/conf_cb.c mgetty-1.1.21-ia64/callback/conf_cb.c
+--- mgetty-1.1.21/callback/conf_cb.c	Mon Jun  1 08:07:37 1998
++++ mgetty-1.1.21-ia64/callback/conf_cb.c	Sun Jun  4 13:35:10 2000
+@@ -30,21 +30,21 @@
+  */
+ 
+ struct conf_data_mgetty c = {
+-	{ "dialout-devices", {(p_int)FAX_MODEM_TTYS}, CT_STRING, C_PRESET },
++	{ "dialout-devices", {FAX_MODEM_TTYS}, CT_STRING, C_PRESET },
+ 	{ "dialout-devices", {0}, CT_STRING, C_IGNORE },
+-	{ "delay", {20}, CT_INT, C_PRESET },
+-	{ "delay-randomize", {10}, CT_INT, C_PRESET },
+-	{ "retry-time", {30}, CT_INT, C_PRESET },
+-	{ "max-time", {600}, CT_INT, C_PRESET },
++	{ "delay", {(void*)20}, CT_INT, C_PRESET },
++	{ "delay-randomize", {(void*)10}, CT_INT, C_PRESET },
++	{ "retry-time", {(void*)30}, CT_INT, C_PRESET },
++	{ "max-time", {(void*)600}, CT_INT, C_PRESET },
+ 
+ 	{ "modem-init", {0}, CT_CHAT, C_PRESET },
+-	{ "speed", {DEFAULT_PORTSPEED}, CT_INT, C_PRESET },
+-	{ "dial-prefix", {(p_int) FAX_DIAL_PREFIX}, CT_STRING, C_PRESET },
+-	{ "autobauding", {FALSE}, CT_BOOL, C_PRESET },
+-	{ "prompt-waittime", {300}, CT_INT, C_PRESET },
++	{ "speed", {(void*)DEFAULT_PORTSPEED}, CT_INT, C_PRESET },
++	{ "dial-prefix", {FAX_DIAL_PREFIX}, CT_STRING, C_PRESET },
++	{ "autobauding", {(void*)FALSE}, CT_BOOL, C_PRESET },
++	{ "prompt-waittime", {(void*)300}, CT_INT, C_PRESET },
+ 
+-	{ "", {FALSE}, CT_BOOL, C_PRESET },		/* nodetach */
+-	{ "debug", {LOG_LEVEL}, CT_INT, C_PRESET },
++	{ "", {(void*)FALSE}, CT_BOOL, C_PRESET },		/* nodetach */
++	{ "debug", {(void*)LOG_LEVEL}, CT_INT, C_PRESET },
+ 	{ NULL, {0}, CT_STRING, C_EMPTY }};
+ 
+ /*
+diff -uNr mgetty-1.1.21/conf_mg.c mgetty-1.1.21-ia64/conf_mg.c
+--- mgetty-1.1.21/conf_mg.c	Sun Feb 28 14:17:55 1999
++++ mgetty-1.1.21-ia64/conf_mg.c	Sun Jun  4 12:59:52 2000
+@@ -57,85 +57,85 @@
+  */
+ 
+ struct conf_data_mgetty c = {
+-	{ "speed", {DEFAULT_PORTSPEED}, CT_INT, C_PRESET },
++	{ "speed", {(void*) DEFAULT_PORTSPEED}, CT_INT, C_PRESET },
+ 	{ "switchbd", {FAX_RECV_SWITCHBD}, CT_INT, C_PRESET },
+ 	{ "direct", {FALSE}, CT_BOOL, C_PRESET },
+ 	{ "blocking", {FALSE}, CT_BOOL, C_PRESET },
+ 
+-	{ "port-owner", {(p_int) DEVICE_OWNER}, CT_STRING, C_PRESET },
++	{ "port-owner", {DEVICE_OWNER}, CT_STRING, C_PRESET },
+ #ifdef DEVICE_GROUP
+-	{ "port-group", {(p_int) DEVICE_GROUP}, CT_STRING, C_PRESET },
++	{ "port-group", {DEVICE_GROUP}, CT_STRING, C_PRESET },
+ #else
+ 	{ "port-group", {0}, CT_STRING, C_EMPTY },
+ #endif
+-	{ "port-mode", {FILE_MODE}, CT_INT, C_PRESET },
++	{ "port-mode", {(void*) FILE_MODE}, CT_INT, C_PRESET },
+ 
+-	{ "toggle-dtr", {TRUE}, CT_BOOL, C_PRESET },
+-	{ "toggle-dtr-waittime", {500}, CT_INT, C_PRESET },
+-	{ "need-dsr", {FALSE}, CT_BOOL, C_PRESET },
+-	{ "data-only", {FALSE}, CT_BOOL, C_PRESET },
+-	{ "fax-only", {FALSE}, CT_BOOL, C_PRESET },
+-	{ "modem-type", {(p_int) DEFAULT_MODEMTYPE}, CT_STRING, C_PRESET },
+-	{ "modem-quirks", {0}, CT_INT, C_EMPTY },
+-	{ "init-chat", {0}, CT_CHAT, C_EMPTY },
+-	{ "force-init-chat", {0}, CT_CHAT, C_EMPTY },
+-	{ "post-init-chat", {0}, CT_CHAT, C_EMPTY },
+-	{ "data-flow", {DATA_FLOW}, CT_FLOWL, C_PRESET },
+-	{ "fax-send-flow", {FAXSEND_FLOW}, CT_FLOWL, C_PRESET },
+-	{ "fax-rec-flow", {FAXREC_FLOW}, CT_FLOWL, C_PRESET },
+-
+-	{ "modem-check-time", {MODEM_CHECK_TIME}, CT_INT, C_PRESET },
+-	{ "rings", {1}, CT_INT, C_PRESET },
+-	{ "msn-list", {(p_int) NULL}, CT_CHAT, C_EMPTY },
+-	{ "get-cnd-chat", {0}, CT_CHAT, C_EMPTY },
+-	{ "cnd-program", {(p_int) NULL}, CT_STRING, C_EMPTY },
+-	{ "answer-chat", {0}, CT_CHAT, C_EMPTY },
+-	{ "answer-chat-timeout", {80}, CT_INT, C_PRESET },
+-	{ "autobauding", {FALSE}, CT_BOOL, C_PRESET },
+-
+-	{ "ringback", {FALSE}, CT_BOOL, C_PRESET },
+-	{ "ringback-time", {30}, CT_INT, C_PRESET },
+-
+-	{ "ignore-carrier", {FALSE}, CT_BOOL, C_PRESET },
+-	{ "issue-file", {(p_int)"/etc/issue"}, CT_STRING, C_PRESET },
+-	{ "prompt-waittime", {500}, CT_INT, C_PRESET },
+-	{ "login-prompt", {(p_int) LOGIN_PROMPT}, CT_STRING, C_PRESET },
++	{ "toggle-dtr", {(void*)TRUE}, CT_BOOL, C_PRESET },
++	{ "toggle-dtr-waittime", {(void*)500}, CT_INT, C_PRESET },
++	{ "need-dsr", {(void*)FALSE}, CT_BOOL, C_PRESET },
++	{ "data-only", {(void*)FALSE}, CT_BOOL, C_PRESET },
++	{ "fax-only", {(void*)FALSE}, CT_BOOL, C_PRESET },
++	{ "modem-type", {DEFAULT_MODEMTYPE}, CT_STRING, C_PRESET },
++	{ "modem-quirks", {(void*)0}, CT_INT, C_EMPTY },
++	{ "init-chat", {(void*)0}, CT_CHAT, C_EMPTY },
++	{ "force-init-chat", {(void*)0}, CT_CHAT, C_EMPTY },
++	{ "post-init-chat", {(void*)0}, CT_CHAT, C_EMPTY },
++	{ "data-flow", {(void*)DATA_FLOW}, CT_FLOWL, C_PRESET },
++	{ "fax-send-flow", {(void*)(FAXSEND_FLOW)}, CT_FLOWL, C_PRESET },
++	{ "fax-rec-flow", {(void*)(FAXREC_FLOW)}, CT_FLOWL, C_PRESET },
++
++	{ "modem-check-time", {(void*)MODEM_CHECK_TIME}, CT_INT, C_PRESET },
++	{ "rings", {(void*)1}, CT_INT, C_PRESET },
++	{ "msn-list", {NULL}, CT_CHAT, C_EMPTY },
++	{ "get-cnd-chat", {(void*)0}, CT_CHAT, C_EMPTY },
++	{ "cnd-program", {NULL}, CT_STRING, C_EMPTY },
++	{ "answer-chat", {(void*)0}, CT_CHAT, C_EMPTY },
++	{ "answer-chat-timeout", {(void*)80}, CT_INT, C_PRESET },
++	{ "autobauding", {(void*)FALSE}, CT_BOOL, C_PRESET },
++
++	{ "ringback", {(void*)FALSE}, CT_BOOL, C_PRESET },
++	{ "ringback-time", {(void*)30}, CT_INT, C_PRESET },
++
++	{ "ignore-carrier", {(void*)FALSE}, CT_BOOL, C_PRESET },
++	{ "issue-file", {"/etc/issue"}, CT_STRING, C_PRESET },
++	{ "prompt-waittime", {(void*)500}, CT_INT, C_PRESET },
++	{ "login-prompt", {LOGIN_PROMPT}, CT_STRING, C_PRESET },
+ #ifdef MAX_LOGIN_TIME
+-	{ "login-time", {MAX_LOGIN_TIME}, CT_INT, C_PRESET },
++	{ "login-time", {(void*)MAX_LOGIN_TIME}, CT_INT, C_PRESET },
+ #else
+-	{ "login-time", {0}, CT_INT, C_EMPTY },
++	{ "login-time", {(void*)0}, CT_INT, C_EMPTY },
+ #endif
+-	{ "fido-send-emsi", {TRUE}, CT_BOOL, C_PRESET },
++	{ "fido-send-emsi", {(void*)TRUE}, CT_BOOL, C_PRESET },
+ 
+ #ifdef LOGIN_CFG_FILE
+-	{ "login-conf-file", {(p_int) LOGIN_CFG_FILE}, CT_STRING, C_PRESET },
++	{ "login-conf-file", {LOGIN_CFG_FILE}, CT_STRING, C_PRESET },
+ #else
+-	{ "login-conf-file", {0}, CT_STRING, C_EMPTY },
++	{ "login-conf-file", {(void*)0}, CT_STRING, C_EMPTY },
+ #endif
+ 
+-	{ "fax-id", {(p_int)FAX_STATION_ID}, CT_STRING, C_PRESET },
+-	{ "fax-min-speed", {0}, CT_INT, C_PRESET },
+-	{ "fax-max-speed", {14400}, CT_INT, C_PRESET },
+-	{ "fax-server-file", {0}, CT_STRING, C_EMPTY },
+-	{ "diskspace", {MINFREESPACE}, CT_INT, C_PRESET },
++	{ "fax-id", {FAX_STATION_ID}, CT_STRING, C_PRESET },
++	{ "fax-min-speed", {(void*)0}, CT_INT, C_PRESET },
++	{ "fax-max-speed", {(void*)14400}, CT_INT, C_PRESET },
++	{ "fax-server-file", {(void*)0}, CT_STRING, C_EMPTY },
++	{ "diskspace", {(void*)MINFREESPACE}, CT_INT, C_PRESET },
+ #ifdef MAIL_TO
+-	{ "notify", {(p_int)MAIL_TO}, CT_STRING, C_PRESET },
++	{ "notify", {MAIL_TO}, CT_STRING, C_PRESET },
+ #else
+-	{ "notify", {0, CT_STRING}, C_EMPTY },
++	{ "notify", {(void*)0}, CT_STRING, C_EMPTY },
+ #endif
+-	{ "fax-owner", {(p_int)FAX_IN_OWNER}, CT_STRING, C_PRESET },
++	{ "fax-owner", {FAX_IN_OWNER}, CT_STRING, C_PRESET },
+ #ifdef FAX_IN_GROUP
+-	{ "fax-group", {(p_int)FAX_IN_GROUP}, CT_STRING, C_PRESET },
++	{ "fax-group", {FAX_IN_GROUP}, CT_STRING, C_PRESET },
+ #else
+-	{ "fax-group", {0}, CT_STRING, C_EMPTY },
++	{ "fax-group", {(void*)0}, CT_STRING, C_EMPTY },
+ #endif
+-	{ "fax-mode", {FAX_FILE_MODE}, CT_INT, C_PRESET },
++	{ "fax-mode", {(void*)FAX_FILE_MODE}, CT_INT, C_PRESET },
+ 
+-	{ "debug", {LOG_LEVEL}, CT_INT, C_PRESET },
++	{ "debug", {(void*)LOG_LEVEL}, CT_INT, C_PRESET },
+ 	
+ 	{ "statistics-chat", {0}, CT_CHAT, C_EMPTY },
+ 	{ "statistics-file", {0}, CT_STRING, C_EMPTY },
+-	{ "gettydefs", {(p_int)GETTYDEFS_DEFAULT_TAG}, CT_STRING, C_PRESET },
++	{ "gettydefs", {GETTYDEFS_DEFAULT_TAG}, CT_STRING, C_PRESET },
+ 	{ "term", {0}, CT_STRING, C_EMPTY },
+ 
+ 	{ NULL, {0}, CT_STRING, C_EMPTY }};
+diff -uNr mgetty-1.1.21/conf_sf.c mgetty-1.1.21-ia64/conf_sf.c
+--- mgetty-1.1.21/conf_sf.c	Sun Feb 28 14:17:55 1999
++++ mgetty-1.1.21-ia64/conf_sf.c	Sun Jun  4 13:34:12 2000
+@@ -35,29 +35,29 @@
+ #else
+ 	{ "modem-handshake", {0}, CT_STRING, C_EMPTY },
+ #endif
+-	{ "modem-type", {(p_int) DEFAULT_MODEMTYPE}, CT_STRING, C_PRESET },
++	{ "modem-type", {DEFAULT_MODEMTYPE}, CT_STRING, C_PRESET },
+ 	{ "modem-quirks", {0}, CT_INT, C_EMPTY },
+-	{ "fax-send-flow", {FAXSEND_FLOW}, CT_FLOWL, C_PRESET },
+-	{ "fax-rec-flow", {FAXREC_FLOW}, CT_FLOWL, C_PRESET },
+-	{ "max-tries", {FAX_SEND_MAX_TRIES}, CT_INT, C_PRESET },
+-	{ "max-tries-continue", {TRUE}, CT_BOOL, C_PRESET },
+-	{ "speed", {FAX_SEND_BAUD}, CT_INT, C_PRESET },
+-	{ "switchbd", {FAX_SEND_SWITCHBD}, CT_INT, C_PRESET },
+-	{ "open-delay",	{0}, CT_INT, C_EMPTY },
+-	{ "ignore-carrier", {TRUE }, CT_BOOL, C_PRESET },
+-	{ "dial-prefix", {(p_int) FAX_DIAL_PREFIX}, CT_STRING, C_PRESET },
+-	{ "fax-id", {(p_int)FAX_STATION_ID}, CT_STRING, C_PRESET },
+-	{ "poll-dir", {(p_int)"."}, CT_STRING, C_PRESET },
+-	{ "normal-res", {0}, CT_BOOL, C_PRESET },
+-	{ "fax-min-speed", {0}, CT_INT, C_PRESET },
+-	{ "fax-max-speed", {14400}, CT_INT, C_PRESET },
+-	{ "debug", {LOG_LEVEL}, CT_INT, C_PRESET },
+-	{ "verbose", {FALSE}, CT_BOOL, C_PRESET },
+-	{ "" /* polling */, {FALSE}, CT_BOOL, C_PRESET },
++	{ "fax-send-flow", {(void*)(FAXSEND_FLOW)}, CT_FLOWL, C_PRESET },
++	{ "fax-rec-flow", {(void*)(FAXREC_FLOW)}, CT_FLOWL, C_PRESET },
++	{ "max-tries", {(void*)FAX_SEND_MAX_TRIES}, CT_INT, C_PRESET },
++	{ "max-tries-continue", {(void*)TRUE}, CT_BOOL, C_PRESET },
++	{ "speed", {(void*)FAX_SEND_BAUD}, CT_INT, C_PRESET },
++	{ "switchbd", {(void*)FAX_SEND_SWITCHBD}, CT_INT, C_PRESET },
++	{ "open-delay",	{(void*)0}, CT_INT, C_EMPTY },
++	{ "ignore-carrier", {(void*)TRUE}, CT_BOOL, C_PRESET },
++	{ "dial-prefix", {FAX_DIAL_PREFIX}, CT_STRING, C_PRESET },
++	{ "fax-id", {FAX_STATION_ID}, CT_STRING, C_PRESET },
++	{ "poll-dir", {"."}, CT_STRING, C_PRESET },
++	{ "normal-res", {(void*)0}, CT_BOOL, C_PRESET },
++	{ "fax-min-speed", {(void*)0}, CT_INT, C_PRESET },
++	{ "fax-max-speed", {(void*)14400}, CT_INT, C_PRESET },
++	{ "debug", {(void*)LOG_LEVEL}, CT_INT, C_PRESET },
++	{ "verbose", {(void*)FALSE}, CT_BOOL, C_PRESET },
++	{ "" /* polling */, {(void*)FALSE}, CT_BOOL, C_PRESET },
+ 	{ "page-header", {0}, CT_STRING, C_EMPTY },
+ 	{ "" /* stdin */, {FALSE}, CT_BOOL, C_PRESET },
+ 	{ "" /* rename */, {FALSE}, CT_BOOL, C_PRESET },
+-	{ "" /* acct_handle */, {(p_int)""}, CT_STRING, C_PRESET },
++	{ "" /* acct_handle */, {""}, CT_STRING, C_PRESET },
+ 	{ NULL, {0}, CT_STRING, C_EMPTY }};
+ 
+ int sendfax_parse_args _P2( (argc,argv), int argc, char ** argv )
+diff -uNr mgetty-1.1.21/config.h mgetty-1.1.21-ia64/config.h
+--- mgetty-1.1.21/config.h	Wed Feb 24 08:06:23 1999
++++ mgetty-1.1.21-ia64/config.h	Sun Jun  4 12:56:02 2000
+@@ -14,7 +14,7 @@
+ 
+ typedef struct conf_data {
+ 		   char * key;
+-		   union { p_int i; void * p; } d;
++		   union { void * p; p_int i; } d;
+ 		   enum { CT_INT, CT_STRING, CT_CHAT, CT_BOOL,
+ 			  CT_FLOWL, CT_ACTION, CT_KEYWORD } type;
+ 		   enum { C_EMPTY, C_PRESET, C_OVERRIDE, C_CONF,
+diff -uNr mgetty-1.1.21/voice/include/config.h mgetty-1.1.21-ia64/voice/include/config.h
+--- mgetty-1.1.21/voice/include/config.h	Wed Sep  9 17:06:32 1998
++++ mgetty-1.1.21-ia64/voice/include/config.h	Sun Jun  4 14:04:21 2000
+@@ -23,14 +23,14 @@
+ #define KEYWORD(name) \
+  {# name, {0}, CT_KEYWORD, C_IGNORE},
+ #define CONF(field_name, default_value, value_type) \
+- {# field_name, {default_value}, value_type, C_PRESET},
++ {# field_name, {(void*)default_value}, value_type, C_PRESET},
+  
+ struct conf_voice_data cvd =
+      {
+            
+ #else
+ 
+-#define STRING (p_int)
++#define STRING
+ #define KEYWORD(name) \
+  struct conf_data name;
+ #define CONF(field_name, default_value, value_type) \
+@@ -55,7 +55,7 @@
+ 
+ #ifdef CONFIG_C
+ 
+-     {NULL, {(p_int) ""}, CT_STRING, C_EMPTY}
++     {NULL, {""}, CT_STRING, C_EMPTY}
+      };
+ 
+ #else
+diff -uNr mgetty-1.1.21/voice/libutil/test_wildmat.c mgetty-1.1.21-ia64/voice/libutil/test_wildmat.c
+--- mgetty-1.1.21/voice/libutil/test_wildmat.c	Wed Sep  9 14:50:57 1998
++++ mgetty-1.1.21-ia64/voice/libutil/test_wildmat.c	Sun Jun  4 13:58:22 2000
+@@ -3,9 +3,8 @@
+  */
+ 
+ #include <stdio.h>
++#include <string.h>
+ 
+-/* Yes, we use gets not fgets.  Sue me. */
+-extern char     *gets();
+ extern int wildmat(char *text, char *p, int length);
+ 
+ int
+@@ -21,12 +20,12 @@
+     for ( ; ; ) {
+         printf("\nEnter pattern:  ");
+         (void)fflush(stdout);
+-        if (gets(p) == NULL || p[0] == '\0')
++        if (fgets(p,sizeof(p)-1,stdin) == NULL || p[0] == '\0')
+             break;
+         for ( ; ; ) {
+             printf("Enter text:  ");
+             (void)fflush(stdout);
+-            if (gets(text) == NULL)
++            if (fgets(text,sizeof(text)-1,stdin) == NULL)
+                 exit(0);
+             if (text[0] == '\0')
+                 /* Blank line; go back and get a new pattern. */

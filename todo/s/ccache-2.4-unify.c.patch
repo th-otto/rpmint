@@ -1,0 +1,40 @@
+--- ccache-2.4/unify.c	2004-09-13 12:38:30.000000000 +0200
++++ ccache-2.4-mint/unify.c	2010-06-09 12:11:56.336437500 +0200
+@@ -249,20 +249,36 @@
+ 		return -1;
+ 	}
+ 
++#ifdef HAVE_MMAP
+ 	/* we use mmap() to make it easy to handle arbitrarily long
+            lines in preprocessor output. I have seen lines of over
+            100k in length, so this is well worth it */
+ 	map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+ 	if (map == (char *)-1) {
+ 		cc_log("Failed to mmap %s\n", fname);
++		close(fd);
+ 		return -1;
+ 	}
+-	close(fd);
++#else
++	/* malloc fallback */
++	map = malloc( st.st_size );
++	if (map == NULL ) {
++		cc_log("Failed to malloc %d bytes for %s\n", st.st_size, fname);
++		close(fd);
++		return -1;
++	}
++	read(fd, map, st.st_size );
++#endif
+ 
++	close(fd);
+ 	/* pass it through the unifier */
+ 	unify((unsigned char *)map, st.st_size);
+ 
++#ifdef HAVE_MMAP
+ 	munmap(map, st.st_size);
++#else
++	free( map );
++#endif
+ 
+ 	return 0;
+ }

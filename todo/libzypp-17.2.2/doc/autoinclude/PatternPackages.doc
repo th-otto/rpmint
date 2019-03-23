@@ -1,0 +1,95 @@
+/**
+
+\page zypp-pattern-packages Code 12 Pattern Packages
+
+\author Michael Andres <ma@suse.de>
+
+<HR><!-- ====================================================================== -->
+
+\section zypp-pattern-packages_intro Intro
+
+Since Code12 (SLES-12) we utilize a new method of defining patterns, as opposed to the older XML-based patterns files. A pattern and it's dependencies are now represented by a rpm package and the few pattern specific properties are provided by the package. No extra XML-file is needed.
+
+By convention a patterns-package for a <tt>pattern:FOO</tt> is named <tt>patterns-[*-]FOO</tt> and is must provide <tt>pattern() = FOO</tt>. Usually the patterns-package name has a distribution or product identifier embedded, like in <tt>patterns-sles-Minimal</tt> or <tt>patterns-openSUSE-xfce</tt>.
+
+The pattens content is expressed by the patterns-packages dependencies to other packages and patterns-packages.
+
+The list of patterns-package provides used for the new pattern autogeneration:
+
+<table width="100%" border="1">
+  <tr>
+    <td colspan="2"><b>Basic provides relevant for package management (libzypp/zypper):</b></td>
+  </tr>
+  <tr>
+    <td width="30%"><tt>Provides:  pattern() = FOO</tt></td>
+    <td>The patterns name: <tt>FOO</tt>. Additional attributes like version, release, architecture, summary and description are taken from the pattenrs-package.</td>
+  </tr>
+  <tr>
+    <td><tt>Provides:  pattern-visible()</tt></td>
+    <td>A UI hint telling whether the pattern should be shown to the user. If the provides is missing, the UI will usually hide the pattern in lists and output. This is mainly used for helper patterns defining a basic content which is then required/recommended by different (visible) patterns.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><b>Additional pattern properties not used by libzypp, but provided by the API mainly for the YAST UI:</b></td>
+  </tr>
+  <tr>
+    <td><tt>Provides:  pattern-icon() = STRING</tt></td>
+    <td>Name of an icon the UI should use for this pattern.</td>
+  </tr>
+  <tr>
+    <td><tt>Provides:  pattern-order() = STRING</tt></td>
+    <td>A string used by the UI for sorting patterns rather than 'by name'. Usually some 4-digit string like "1750"</td>
+  </tr>
+  <tr>
+    <td><tt>Provides:  pattern-category() = STRING</tt></td>
+    <td>The category name used in the UI in English (en).</td>
+  </tr>
+  <tr>
+    <td><tt>Provides:  pattern-category(de) = STRING</tt></td>
+    <td>The category name translated. E.g. into German (de).</td>
+  </tr>
+  <tr>
+    <td><tt>Provides:  pattern-includes() = STRING</tt></td>
+    <td>Hint for the UI to include an other patterns content (i.e. its required and recommended packages) in this patterns content list. Usually used to embed the content of an invisible pattern in a visible one.</td>
+  </tr>
+  <tr>
+    <td><tt>Provides:  pattern-extends() = STRING</tt></td>
+    <td>Reverse-includes. Hint for the UI to include this patterns content (i.e. its required and recommended packages) in an other patterns content list. Usually used to embed the content of an invisible pattern in a visible one.</td>
+  </tr>
+  <tr>
+    <td colspan="2">STRING must be url-hexencoded so that it does not contain any characters that rpm-provides can't have.</br>
+    E.g.: ' ' => %20 / ',' => %2C / '-' => %2D</td>
+  </tr>
+</table>
+
+\code
+patterns-sles-Minimal-12-37.1.x86_64.rpm
+ PROVIDES {
+  pattern() == Minimal
+  pattern-icon() == pattern-basis
+  pattern-order() == 1099
+  pattern-visible()
+  pattern-category() == Base%20Technologies
+  pattern-category(ar) == %D8%A7%D9%84%D8%AA%D9%83%D9%86%D9%88%D9%84%D9%88%D8%AC%D9%8A%D8%A7%D8%AA%20%D8%A7%D9%84%D8%A3%D8%B3%D8%A7%D8%B3%D9%8A%D8%A9
+  pattern-category(ca) == Tecnologies%20de%20base
+  pattern-category(cs) == Z%C3%A1kladn%C3%AD%20technologie
+  pattern-category(da) == Basisteknologier
+  pattern-category(de) == Basistechnologien
+  ...
+}
+ REQUIRES {
+  systemd
+  coreutils
+  insserv
+  aaa_base
+  ...
+}
+ RECOMMENDS (22){
+  grub2
+  rpcbind
+  nfs-client
+  rsyslog
+  ...
+}
+\endcode
+
+*/

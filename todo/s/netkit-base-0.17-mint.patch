@@ -1,0 +1,130 @@
+--- netkit-base-0.17/configure.orig	Sat Jul 29 20:00:28 2000
++++ netkit-base-0.17/configure	Wed Apr  4 14:38:10 2001
+@@ -161,9 +161,6 @@
+ 
+ fi
+ 
+-LDFLAGS=
+-LIBS=
+-
+ rm -f __conftest*
+ 
+ ##################################################
+@@ -222,18 +219,18 @@
+ 
+ EOF
+ if (
+-      $CC $CFLAGS  __conftest.c  -o __conftest || exit 1
++      $CC $CFLAGS  __conftest.c  -o __conftest $LIBS || exit 1
+    ) >/dev/null 2>&1; then
+     echo 'yes'
+ else
+     if (
+-          $CC $CFLAGS -Dsocklen_t=int __conftest.c  -o __conftest || exit 1
++          $CC $CFLAGS -Dsocklen_t=int __conftest.c  -o __conftest $LIBS || exit 1
+        ) >/dev/null 2>&1; then
+         echo 'int'
+         CFLAGS="$CFLAGS -Dsocklen_t=int"
+     else
+         if (
+-              $CC $CFLAGS -Dsocklen_t=size_t __conftest.c  -o __conftest || exit 1
++              $CC $CFLAGS -Dsocklen_t=size_t __conftest.c  -o __conftest $LIBS || exit 1
+            ) >/dev/null 2>&1; then
+             echo 'size_t'
+             CFLAGS="$CFLAGS -Dsocklen_t=size_t"
+--- netkit-base-0.17/inetd/inetd.c.orig	Tue Jul 25 01:48:34 2000
++++ netkit-base-0.17/inetd/inetd.c	Wed Sep 26 03:31:18 2001
+@@ -137,8 +137,9 @@
+ #include <getopt.h>
+ #include <stdlib.h>
+ #include <unistd.h>
++#include <limits.h>
+ 
+-#ifndef __linux__
++#if !defined(__linux__) && !defined(__MINT__)
+ #ifndef RLIMIT_NOFILE
+ #define RLIMIT_NOFILE	RLIMIT_OFILE
+ #endif
+@@ -165,7 +166,11 @@
+ #define MIN(a, b)	((a) < (b) ? (a) : (b))
+ #endif
+ 
++#ifdef __MINT__
++#define DEFAULT_FILE_LIMIT	32
++#else
+ #define DEFAULT_FILE_LIMIT	1024
++#endif
+ 
+ /* Reserve some descriptors, 3 stdio + at least: 1 log, 1 conf. file */
+ #define FD_MARGIN	(8)
+@@ -250,18 +256,18 @@
+ 	};
+ 
+ 	int i,k=0;
+-	for (i=0; __environ[i]; i++) {
++	for (i=0; environ[i]; i++) {
+ 		int found=0, j;
+ 		for (j=0; junk[j]; j++) {
+-			if (!strncmp(__environ[i], junk[j], strlen(junk[j]))) {
++			if (!strncmp(environ[i], junk[j], strlen(junk[j]))) {
+ 				found=1;
+ 			}
+ 		}
+ 		if (!found) {
+-			__environ[k++] = __environ[i];
++			environ[k++] = environ[i];
+ 		}
+ 	}
+-	__environ[k] = NULL;
++	environ[k] = NULL;
+ }
+ 
+ 
+--- netkit-base-0.17/inetd/servtab.c.orig	Sat Jul 22 22:20:50 2000
++++ netkit-base-0.17/inetd/servtab.c	Wed Sep 26 03:53:02 2001
+@@ -35,6 +35,7 @@
+ #include <sys/time.h>
+ #include <sys/socket.h>
+ #include <netinet/in.h>
++#include <rpc/netdb.h>
+ #include <sys/un.h>
+ #include <netdb.h>
+ #include <syslog.h>
+--- netkit-base-0.17/inetd/setproctitle.c.orig	Tue Sep 28 22:46:48 1999
++++ netkit-base-0.17/inetd/setproctitle.c	Wed Sep 26 03:54:42 2001
+@@ -88,10 +88,10 @@
+ 
+ 	for (i = 0; envp[i] != NULL; i++)
+ 		continue;
+-	__environ = (char **) domalloc(sizeof (char *) * (i + 1));
++	environ = (char **) domalloc(sizeof (char *) * (i + 1));
+ 	for (i = 0; envp[i] != NULL; i++)
+-		__environ[i] = dostrdup(envp[i]);
+-	__environ[i] = NULL;
++		environ[i] = dostrdup(envp[i]);
++	environ[i] = NULL;
+ 
+ 	/*
+ 	**  Save start and extent of argv for setproctitle.
+--- netkit-base-0.17/Makefile.orig	Sun Dec 12 14:19:00 1999
++++ netkit-base-0.17/Makefile	Wed Sep 26 03:55:44 2001
+@@ -3,7 +3,7 @@
+ 
+ include MCONFIG
+ 
+-SUB = inetd ping
++SUB = inetd
+ 
+ %.build:
+ 	(cd $(patsubst %.build, %, $@) && $(MAKE))
+--- netkit-base-0.17/inetd/Makefile.orig	Sat Jul 22 22:14:20 2000
++++ netkit-base-0.17/inetd/Makefile	Wed Sep 26 03:58:10 2001
+@@ -16,7 +16,7 @@
+ 	$(CC) $(CFLAGS) -MM *.c > depend.mk
+ 
+ install: inetd
+-	install -s -m$(DAEMONMODE) inetd $(INSTALLROOT)$(SBINDIR)
++	install -m$(DAEMONMODE) inetd $(INSTALLROOT)$(SBINDIR)
+ 	install -m$(MANMODE) inetd.8 $(INSTALLROOT)$(MANDIR)/man8
+ 
+ clean:

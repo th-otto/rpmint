@@ -1,0 +1,44 @@
+--- shadow-19990827/libmisc/rlogin.c.mint	Fri Aug 27 19:02:50 1999
++++ shadow-19990827/libmisc/rlogin.c	Sat Sep 25 01:47:06 1999
+@@ -142,6 +142,9 @@
+ 
+ 	GTTY(0, &termio);
+ 	termio.c_iflag |= ICRNL|IXON;
++#ifndef ONLCR
++# define ONLCR 0
++#endif
+ 	termio.c_oflag |= OPOST|ONLCR;
+ 	termio.c_lflag |= ICANON|ECHO|ECHOE;
+ #ifdef CBAUD
+--- shadow-19990827/libmisc/login_access.c.mint	Mon Sep 27 21:43:28 1999
++++ shadow-19990827/libmisc/login_access.c	Mon Sep 27 22:38:14 1999
+@@ -214,7 +214,12 @@
+ 		mydomain = domain;
+ 	}
+ 
++# ifdef HAVE_INNETGR
+ 	return innetgr(group, machine, user, mydomain);
++# else
++	syslog (LOG_ERR, "NIS netgroup support not configured");
++	return (NO);
++# endif
+ #endif
+ }
+ 
+--- shadow-20000902-orig/libmisc/utmp.c	Mon Jun  7 18:40:44 1999
++++ shadow-20000902/libmisc/utmp.c	Fri Sep  7 00:36:26 2001
+@@ -48,14 +48,6 @@
+ #endif
+ extern	struct	utmp	utent;
+ 
+-extern	struct	utmp	*getutent();
+-extern	struct	utmp	*getutline();
+-extern	void	setutent();
+-extern	void	endutent();
+-extern	time_t	time();
+-extern	char	*ttyname();
+-extern	long	lseek();
+-
+ #define	NO_UTENT \
+ 	"No utmp entry.  You must exec \"login\" from the lowest level \"sh\""
+ #define	NO_TTY \

@@ -1,0 +1,76 @@
+--- gs6.50/Makefile.backup	Sun Dec 31 22:55:20 2000
++++ gs6.50/Makefile	Mon Jan  1 01:22:36 2001
+@@ -56,7 +56,7 @@
+ INSTALL_PROGRAM = $(INSTALL) -m 755
+ INSTALL_DATA = $(INSTALL) -m 644
+ 
+-prefix = /usr/local
++prefix = /usr
+ exec_prefix = $(prefix)
+ bindir = $(exec_prefix)/bin
+ scriptdir = $(bindir)
+@@ -67,14 +67,14 @@
+ gsdir = $(datadir)/ghostscript
+ gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
+ 
+-docdir=$(gsdatadir)/doc
++docdir=$(prefix)/doc/ghostscript-$(GS_DOT_VERSION)
+ exdir=$(gsdatadir)/examples
+ GS_DOCDIR=$(docdir)
+ 
+ # Define the default directory/ies for the runtime
+ # initialization and font files.  Separate multiple directories with a :.
+ 
+-GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdir)/fonts
++GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdir)/fonts:/usr/share/fonts/default/Type1
+ 
+ # Define whether or not searching for initialization files should always
+ # look in the current directory first.  This leads to well-known security
+@@ -235,7 +235,7 @@
+ # Solaris may need -lnsl -lsocket -lposix4.
+ # (Libraries required by individual drivers are handled automatically.)
+ 
+-EXTRALIBS=
++EXTRALIBS=-lsocket
+ 
+ # Define the standard libraries to search at the end of linking.
+ # Most platforms require -lpthread for the POSIX threads library;
+@@ -244,7 +244,7 @@
+ # All reasonable platforms require -lm, but Rhapsody and perhaps one or
+ # two others fold libm into libc and don't require any additional library.
+ 
+-STDLIBS=-lpthread -lm
++STDLIBS=-lm
+ 
+ # Define the include switch(es) for the X11 header files.
+ # This can be null if handled in some other way (e.g., the files are
+@@ -254,7 +254,7 @@
+ # Note that x_.h expects to find the header files in $(XINCLUDE)/X11,
+ # not in $(XINCLUDE).
+ 
+-XINCLUDE=-I/usr/local/X/include
++XINCLUDE=-I/usr/X11R6/include
+ 
+ # Define the directory/ies and library names for the X11 library files.
+ # XLIBDIRS is for ld and should include -L; XLIBDIR is for LD_RUN_PATH
+@@ -269,9 +269,9 @@
+ #XLIBS=Xt SM ICE Xext X11
+ 
+ #XLIBDIRS=-L/usr/local/X/lib
+-XLIBDIRS=-L/usr/X11/lib
++XLIBDIRS=-L/usr/X11R6/lib
+ XLIBDIR=
+-XLIBS=Xt Xext X11
++XLIBS=Xt SM ICE Xext X11
+ 
+ # Define whether this platform has floating point hardware:
+ #	FPU_TYPE=2 means floating point is faster than fixed point.
+@@ -287,7 +287,7 @@
+ # Define the .dev module that implements thread and synchronization
+ # primitives for this platform.
+ 
+-SYNC=posync
++SYNC=nosync
+ 
+ # ------ Devices and features ------ #
+ 

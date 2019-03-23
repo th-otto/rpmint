@@ -1,0 +1,42 @@
+--- teTeX-1.0/texk/kpathsea/texmf.in.texmfcnf	Sun Jun  6 09:40:29 1999
++++ teTeX-1.0/texk/kpathsea/texmf.in	Sat Jun 26 17:23:56 1999
+@@ -295,7 +295,7 @@
+ %
+ % For security reasons, it is better not to have . part of the path.
+ % 
+-TEXMFCNF = {$SELFAUTOLOC,$SELFAUTODIR,$SELFAUTOPARENT}{,{/share,}/texmf{.local,}/web2c};$TETEXDIR;$TEXMF/web2c;@web2c@
++TEXMFCNF = $SELFAUTODIR/share/texmf/web2c;{$SELFAUTOLOC,$SELFAUTODIR,$SELFAUTOPARENT}{,{/share,}/texmf{.local,}/web2c};$TETEXDIR;@web2c@
+ 
+ 
+ 
+@@ -387,18 +387,21 @@
+ % Extra space for the hash table of control sequences (which allows 10K
+ % names as distributed).
+ hash_extra.context = 25000
++hash_extra.jadetex = 25000
+ hash_extra = 0
+ 
+ % Max number of characters in all strings, including all error messages,
+ % help texts, font names, control sequences.  These values apply to TeX and MP.
+ pool_size.context = 750000
+-pool_size = 125000		
++pool_size.jadetex = 750000
++pool_size = 150000		
+ % Minimum pool space after TeX/MP's own strings; must be at least
+ % 25000 less than pool_size, but doesn't need to be nearly that large.
+ string_vacancies.context = 45000
+ string_vacancies = 25000
+ % Maximum number of strings.
+ max_strings.context = 55000
++max_strings.jadetex = 55000
+ max_strings = 15000
+ % min pool space left after loading .fmt
+ pool_free.context = 47500
+@@ -431,6 +434,7 @@
+ param_size.context = 1500
+ param_size = 500	% simultaneous macro parameters
+ save_size.context = 5000
++save_size.jadetex = 15000
+ save_size = 4000	% for saving values outside current group
+ stack_size.context = 1500
+ stack_size = 300	% simultaneous input sources

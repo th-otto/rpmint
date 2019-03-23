@@ -1,0 +1,3417 @@
+diff -ruN bsd-games-2.1.foo/Makeconfig bsd-games-2.1/Makeconfig
+--- bsd-games-2.1.foo/Makeconfig	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/Makeconfig	Tue Apr  7 21:56:38 1998
+@@ -0,0 +1,91 @@
++# Makeconfig.in - configuration included in Makefiles after substitution
++# If some variables are unexpanded in Makeconfig, this shouldn't be a
++# problem, it will be because they weren't configured since the relevant
++# games weren't being built.
++
++# Source directory
++SRCDIR = $(RPM_BUILD_DIR)/bsd-games-2.1
++# Build directories
++BUILDDIRS = adventure arithmetic atc backgammon battlestar bcd caesar canfield countmail cribbage dm factor fish gomoku hangman hunt mille monop morse number phantasia pig pom ppt primes quiz rain random robots sail snake tetris trek wargames worm worms wump
++# Installation prefix
++INSTALL_PREFIX = $(RPM_BUILD_ROOT)
++# Games directory
++GAMESDIR = /usr/games
++# Daemon directory
++SBINDIR = /usr/sbin
++# Other binaries directory
++USRBINDIR = /usr/bin
++# Manual pages, section 6
++MAN6DIR = /usr/man/man6
++# Manual pages, section 8
++MAN8DIR = /usr/man/man8
++# Manual pages, section 5
++MAN5DIR = /usr/man/man5
++# Constant data (arch-dependent)
++LIBDIR = /usr/lib/games
++# Constant data (arch-independent)
++SHAREDIR = /usr/share/games
++# Variable data
++VARLIBDIR = /var/lib/games
++# Directory for hidden games (dm)
++LIBEXECDIR = /usr/libexec/dm
++# Installation commands, with install -c -o whatever -s etc.
++INSTALL_BINARY = install -c -m 0755 -o root -g games
++INSTALL_SCRIPT = install -c -m 0755 -o root -g games
++INSTALL_SCORE_GAME = install -c -m 02755 -o root -g games
++INSTALL_DAEMON = install -c -m 0755 -o root -g root
++INSTALL_MANUAL = $(RPM_BUILD_DIR)/bsd-games-2.1/install-man
++INSTALL_DATA = install -c -m 0644 -o root -g root
++INSTALL_VARDATA = install -c -m 0644 -o root -g games
++INSTALL_DM = install -c -m 2755 -o root -g games
++# Is INSTALL_VARDATA actually needed (for games that start with non-empty
++# scorefile?)
++# For games which can start with empty scorefile we do:
++INSTALL_SCORE_FILE = $(RPM_BUILD_DIR)/bsd-games-2.1/install-score
++# Definitions of INSTALL_* that may have -s added
++DEFS_TO_PASS = INSTALL_BINARY="$(INSTALL_BINARY)" \
++	INSTALL_SCORE_GAME="$(INSTALL_SCORE_GAME)" \
++	INSTALL_DAEMON="$(INSTALL_DAEMON)" INSTALL_DM="$(INSTALL_DM)"
++# For the top level install-strip target
++DEFS_TO_PASS_STRIP = INSTALL_BINARY="$(INSTALL_BINARY) -s" \
++	INSTALL_SCORE_GAME="$(INSTALL_SCORE_GAME) -s" \
++	INSTALL_DAEMON="$(INSTALL_DAEMON) -s" INSTALL_DM="$(INSTALL_DM) -s"
++# srcdir/hide-game or :
++HIDE_GAME = :
++
++# Compilation details
++CC = gcc
++OPTIMIZE = $(RPM_OPT_FLAGS)
++WARNING = -Wall -W -Wstrict-prototypes -Wmissing-prototypes
++CFLAGS = $(OPTIMIZE) $(WARNING) 
++LDFLAGS = 
++NCURSES_LIB = -lncurses
++NCURSES_INCS = 
++YACC = bison -y
++LEX = flex
++LEX_LIB = -lfl
++
++# More paths
++PAGER = /usr/bin/less
++
++# Individual games
++ATC_DIR = /usr/share/games/atc
++ATC_SCOREFILE = /var/lib/games/atc_score
++BATTLESTAR_SCOREFILE = /var/lib/games/battlestar.log
++BOGGLE_DIR = @boggle_dir@
++CANFIELD_SCOREFILE = /var/lib/games/cfscores
++CRIBBAGE_INSTRFILE = /usr/share/games/cribbage.instr
++CRIBBAGE_SCOREFILE = /var/lib/games/criblog
++FISH_INSTRFILE = /usr/share/games/fish.instr
++FORTUNE_TYPE = fake
++HANGMAN_WORDSFILE = /usr/share/games/hangman-words
++MONOP_CARDSFILE = /usr/lib/games/monop-cards.pck
++PHANTASIA_DIR = /var/lib/games/phantasia
++QUIZ_DIR = /usr/share/games/quiz
++ROBOTS_SCOREFILE = /var/lib/games/robots_roll
++ROGUE_SCOREFILE = @rogue_scorefile@
++SAIL_SCOREFILE = /var/lib/games/saillog
++SNAKE_SCOREFILE = /var/lib/games/snake.log
++SNAKE_RAWSCOREFILE = /var/lib/games/snakerawscores
++TETRIS_SCOREFILE = /var/lib/games/tetris-bsd.scores
++WUMP_INFOFILE = /usr/share/games/wump.info
+diff -ruN bsd-games-2.1.foo/atc/pathnames.h bsd-games-2.1/atc/pathnames.h
+--- bsd-games-2.1.foo/atc/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/atc/pathnames.h	Tue Apr  7 21:55:01 1998
+@@ -0,0 +1,41 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/03/21 15:04:28 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#include <paths.h>
++
++#define	_PATH_GAMES	"/usr/share/games/atc/"
++#define	_PATH_SCORE	"/var/lib/games/atc_score"
+diff -ruN bsd-games-2.1.foo/backgammon/backgammon/backgammon.6 bsd-games-2.1/backgammon/backgammon/backgammon.6
+--- bsd-games-2.1.foo/backgammon/backgammon/backgammon.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/backgammon/backgammon/backgammon.6	Tue Apr  7 21:55:01 1998
+@@ -0,0 +1,189 @@
++.\"	$NetBSD: backgammon.6,v 1.6 1997/10/10 08:59:35 lukem Exp $
++.\"
++.\" Copyright (c) 1980, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"	@(#)backgammon.6	8.1 (Berkeley) 5/31/93
++.\"
++.Dd May 31, 1993
++.Dt BACKGAMMON 6
++.Os
++.Sh NAME
++.Nm backgammon
++.Nd the game of backgammon
++.br
++.Nm teachgammon
++.Nd learn to play backgammon
++.Sh SYNOPSIS
++.Nm backgammon
++.Op Fl
++.Op Fl nrwb 
++.Op Fl pr
++.Op Fl pw
++.Op Fl pb
++.Op Fl t Ar term
++.Op Fl s Ar file
++.br
++.Nm teachgammon
++.Sh DESCRIPTION
++This program lets you play backgammon against the computer
++or against a "friend".
++All commands only are one letter,
++so you don't need to type a carriage return,
++except at the end of a move.
++The program is mostly self documenting,
++so that a question mark (?) will usually get some help.
++If you answer `y' when the program asks if you want the rules,
++you will get text explaining the rules of the game,
++some hints on strategy,
++instruction on how to use the program,
++and a tutorial consisting of a practice game against the computer.
++A description of how to use the program can be
++obtained by answering `y' when it asks if you want instructions.
++.Pp
++The possible arguments for backgammon
++(most are unnecessary but some are very convenient)
++consist of:
++.Bl -tag -width indent
++.It Fl n
++don't ask for rules or instructions
++.It Fl r
++player is red (implies n)
++.It Fl w
++player is white (implies n)
++.It Fl b
++two players, red and white (implies n)
++.It Fl pr
++print the board before red's turn
++.It Fl pw
++print the board before white's turn
++.It Fl pb
++print the board before both player's turn
++.It Fl t Ar term
++terminal is type
++.Ar term ,
++uses
++.Pa /usr/share/misc/termcap
++.It Fl s Ar file
++recover previously saved game from
++.Ar file .
++(This can also be done by executing the saved file,
++i.e., typing its name in as a command)
++.El
++.Pp
++.\" 
++.\" Arguments may be optionally preceded by a `-'.
++.\" Several arguments may be concatenated together,
++.\" but not after `s' or `t' arguments,
++.\" since they can be followed by an arbitrary string.
++Any unrecognized arguments are ignored.
++An argument of a lone `-' gets a description of possible arguments.
++.Pp
++If
++.Ar term
++has capabilities for direct cursor movement (see
++.Xr termcap 5 )
++.Nm backgammon
++``fixes'' the board after each move,
++so the board does not need to be reprinted,
++unless the screen suffers some horrendous malady.
++Also, any `p' option will be ignored.
++(The `t' option is not necessary unless the terminal type does not match
++the entry in the 
++.Pa /usr/share/misc/termcap 
++data base.)
++.Sh QUICK REFERENCE
++When the program prompts by typing only your color,
++type a space or carriage return to roll, or
++.Bl -tag -width indent
++.It Ic d
++to double
++.It Ic p
++to print the board
++.It Ic q
++to quit
++.It Ic s
++to save the game for later
++.El
++.Pp
++When the program prompts with 'Move:', type
++.Bl -tag -width indent
++.It Ic p
++to print the board
++.It Ic q
++to quit
++.It Ic s
++to save the game
++.El
++.Pp
++or a
++.Em move ,
++which is a sequence of
++.Bl -tag -width indent
++.It Ic s-f
++move from
++.Ic s
++to
++.Ic f
++.It Ic s/r
++move one man on
++.Ic s
++the roll
++.Ic r
++separated by commas or spaces and ending with a newline.
++Available abbreviations are
++.Bl -tag -width indent
++.It Ic s-f1-f2
++means
++.Ic s-f1,f1-f2
++.It Ic s/r1r2
++means
++.Ic s/r1,s/r2
++.El
++.El
++.Pp
++Use 
++.Ic b
++for bar and
++.Ic h
++for home,
++or 0 or 25 as appropriate.
++.Sh AUTHOR
++Alan Char
++.Sh FILES
++.Bl -tag -width /usr/share/misc/termcap -compact
++.It Pa /usr/games/teachgammon
++rules and tutorial
++.It Pa /usr/share/misc/termcap
++terminal capabilities
++.El
++.Sh BUGS
++The program's strategy needs much work.
+diff -ruN bsd-games-2.1.foo/battlestar/pathnames.h bsd-games-2.1/battlestar/pathnames.h
+--- bsd-games-2.1.foo/battlestar/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/battlestar/pathnames.h	Tue Apr  7 21:55:01 1998
+@@ -0,0 +1,38 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/03/21 15:07:51 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_SCORE	"/var/lib/games/battlestar.log"
+diff -ruN bsd-games-2.1.foo/caesar/rot13 bsd-games-2.1/caesar/rot13
+--- bsd-games-2.1.foo/caesar/rot13	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/caesar/rot13	Tue Apr  7 21:55:01 1998
+@@ -0,0 +1,38 @@
++#!/bin/sh -
++#	$NetBSD: rot13.sh,v 1.2 1995/03/21 15:08:23 cgd Exp $
++#
++# Copyright (c) 1992, 1993
++#	The Regents of the University of California.  All rights reserved.
++#
++# Redistribution and use in source and binary forms, with or without
++# modification, are permitted provided that the following conditions
++# are met:
++# 1. Redistributions of source code must retain the above copyright
++#    notice, this list of conditions and the following disclaimer.
++# 2. Redistributions in binary form must reproduce the above copyright
++#    notice, this list of conditions and the following disclaimer in the
++#    documentation and/or other materials provided with the distribution.
++# 3. All advertising materials mentioning features or use of this software
++#    must display the following acknowledgement:
++#	This product includes software developed by the University of
++#	California, Berkeley and its contributors.
++# 4. Neither the name of the University nor the names of its contributors
++#    may be used to endorse or promote products derived from this software
++#    without specific prior written permission.
++#
++# THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++# ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++# SUCH DAMAGE.
++#
++#	@(#)rot13.sh	8.1 (Berkeley) 5/31/93
++#
++
++exec /usr/games/caesar 13 "$@"
+diff -ruN bsd-games-2.1.foo/canfield/canfield/canfield.6 bsd-games-2.1/canfield/canfield/canfield.6
+--- bsd-games-2.1.foo/canfield/canfield/canfield.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/canfield/canfield/canfield.6	Tue Apr  7 21:55:02 1998
+@@ -0,0 +1,131 @@
++.\"	$NetBSD: canfield.6,v 1.5 1997/10/10 12:26:34 lukem Exp $
++.\"
++.\" Copyright (c) 1983, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"	@(#)canfield.6	8.1 (Berkeley) 5/31/93
++.\"
++.Dd May 31, 1993
++.Dt CANFIELD 6
++.Os
++.Sh NAME
++.Nm canfield , 
++.Nm cfscores
++.Nd the solitaire card game canfield
++.Sh SYNOPSIS
++.Nm
++.Nm cfscores 
++.Op Fl a
++.Op Ar user
++.Sh DESCRIPTION
++If you have never played solitaire before, it is recommended
++that you consult a solitaire instruction book. In
++Canfield, tableau cards may be built on each other downward
++in alternate colors. An entire pile must be moved as a unit
++in building. Top cards of the piles are available 
++to be played on foundations, but never into empty spaces.
++.Pp
++Spaces must be filled from the stock. The top card of
++the stock also is available to be played on foundations or
++built on tableau piles. After the stock is exhausted,
++tableau spaces may be filled from the talon and the player may
++keep them open until he wishes to use them.
++.Pp
++Cards are dealt from the hand to the talon by threes
++and this repeats until there are no more cards in the hand
++or the player quits. To have cards dealt onto the talon the
++player types 
++.Sq Ic ht 
++for his move. Foundation base cards are
++also automatically moved to the foundation when they become
++available.
++.Pp
++The command 
++.Sq Ic c
++causes
++.Nm
++to maintain card counting statistics
++on the bottom of the screen. 
++When properly used this can greatly increase one's chances of 
++winning.
++.Pp
++The rules for betting are somewhat less strict than
++those used in the official version of the game.
++The initial deal costs $13.
++You may quit at this point or inspect the game.
++Inspection costs $13 and allows you to make as many
++moves as possible without moving any cards from your hand
++to the talon.
++(The initial deal places three cards on the talon;
++if all these cards are used,
++three more are made available.)
++Finally, if the game seems interesting,
++you must pay the final installment of $26.
++At this point you are
++credited at the rate of $5 for each card on the foundation;
++as the game progresses you are credited with $5 for each
++card that is moved to the foundation.
++Each run through the hand after the first costs $5.
++The card counting feature
++costs $1 for each unknown card that is identified.
++If the information is toggled on,
++you are only charged for cards
++that became visible since it was last turned on.
++Thus the maximum cost of information is $34.
++Playing time is charged at a rate of $1 per minute.
++.Pp
++With no arguments, the program
++.Nm cfscores
++prints out the current status of your canfield account.
++If a 
++.Ar user
++name is specified,
++it prints out the status of their canfield account.
++If the
++.Fl a
++flag is specified,
++it prints out the canfield accounts for all users that have
++played the game since the database was set up.
++.Sh FILES
++.Bl -tag -width /usr/games/canfield -compact
++.It Pa /usr/games/canfield
++the game itself
++.It Pa /usr/games/cfscores
++the database printer
++.It Pa /var/lib/games/cfscores
++the database of scores
++.Sh BUGS
++It is impossible to cheat.
++.Sh AUTHORS
++Originally written: Steve Levine.
++.Pp
++Further random hacking by: Steve Feldman, Kirk McKusick, 
++Mikey Olson, and Eric Allman.
+diff -ruN bsd-games-2.1.foo/canfield/canfield/pathnames.h bsd-games-2.1/canfield/canfield/pathnames.h
+--- bsd-games-2.1.foo/canfield/canfield/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/canfield/canfield/pathnames.h	Tue Apr  7 21:55:02 1998
+@@ -0,0 +1,39 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/03/21 15:08:34 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_SCORE	"/var/lib/games/cfscores"
++
+diff -ruN bsd-games-2.1.foo/cribbage/cribbage.6 bsd-games-2.1/cribbage/cribbage.6
+--- bsd-games-2.1.foo/cribbage/cribbage.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/cribbage/cribbage.6	Tue Apr  7 21:55:02 1998
+@@ -0,0 +1,187 @@
++.\"	$NetBSD: cribbage.6,v 1.5 1997/10/10 12:32:26 lukem Exp $
++.\"
++.\" Copyright (c) 1980, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"	@(#)cribbage.6	8.1 (Berkeley) 5/31/93
++.\"
++.Dd May 31, 1993
++.Dt CRIBBAGE 6
++.Os
++.Sh NAME
++.Nm cribbage
++.Nd the card game cribbage
++.Sh SYNOPSIS
++.Nm
++.Op Fl eqr
++.Sh DESCRIPTION
++.Nm
++plays the card game cribbage, with the program playing one hand
++and the user the other.  The program will initially ask the user if
++the rules of the game are needed \- if so, it will print out
++the appropriate section from
++.Em According to Hoyle
++with
++.Xr more 1 .
++.Pp
++.Nm
++options include:
++.Bl -tag -width indent
++.It Fl e
++When the player makes a mistake scoring his hand or crib, provide an
++explanation of the correct score.  (This is especially useful for
++beginning players.)
++.It Fl q
++Print a shorter form of all messages \- this is only recommended for
++users who have played the game without specifying this option.
++.It Fl r
++Instead of asking the player to cut the deck, the program will randomly
++cut the deck.
++.El
++.Pp
++.Nm
++first asks the player whether he wishes to play a short game (
++.Dq once around ,
++to 61) or a long game (
++.Dq twice around ,
++to 121).  A
++response of 
++.Sq Ic s
++will result in a short game, any other response will
++play a long game.
++.Pp
++At the start of the first game, the program
++asks the player to cut the deck to determine who gets the
++first crib.  The user should respond with a number between 0 and
++51, indicating how many cards down the deck is to be cut.  The player
++who cuts the lower ranked card gets the first crib.
++If more than one game is played, the
++loser of the previous game gets the first crib in the current game.
++.Pp
++For each hand, the program first prints the player's hand,
++whose crib it is, and then asks the player
++to discard two cards into the crib.  The cards are prompted for
++one per line, and are typed as explained below.
++.Pp
++After discarding, the program cuts the deck (if it is the player's
++crib) or asks the player to cut the deck (if it's its crib); in the latter
++case, the appropriate response is a number from 0 to 39 indicating
++how far down the remaining 40 cards are to be cut.
++.Pp
++After cutting the deck, play starts with the non-dealer (the person
++who doesn't have the crib) leading the first card.
++Play continues, as per cribbage, until all cards are exhausted.  The
++program keeps track of the scoring of all points and the total of
++the cards on the table.
++.Pp
++After play, the hands are scored.  The program requests the player to
++score his hand (and the crib, if it is his) by printing out the
++appropriate cards (and the cut card enclosed in brackets).
++Play continues until one player reaches the game limit (61 or 121).
++.Pp
++A carriage return when a numeric input is expected is equivalent
++to typing the lowest legal value; when cutting the deck this
++is equivalent to choosing the top card.
++.Pp
++Cards are specified as rank followed by suit.  The ranks may be specified
++as one of:
++.Sq a ,
++.Sq 2 ,
++.Sq 3 ,
++.Sq 4 ,
++.Sq 5 ,
++.Sq 6 ,
++.Sq 7 ,
++.Sq 8 ,
++.Sq 9 ,
++.Sq t ,
++.Sq j ,
++.Sq q ,
++and
++.Sq k ,
++or alternatively, one of:
++.Sq ace ,
++.Sq two ,
++.Sq three ,
++.Sq four ,
++.Sq five ,
++.Sq six ,
++.Sq seven ,
++.Sq eight ,
++.Sq nine ,
++.Sq ten ,
++.Sq jack ,
++.Sq queen ,
++and 
++.Sq king .
++Suits may be specified as: 
++.Sq s ,
++.Sq h ,
++.Sq d ,
++and
++.Sq c ,
++or alternatively as:
++.Sq spades ,
++.Sq hearts ,
++.Sq diamonds ,
++and
++.Sq clubs .
++A card may be specified as: 
++.Dq Ao rank Ac \  Aq suit ,
++or: 
++.Dq Ao rank Ac of Aq suit .
++If the single letter rank and suit designations are used, the space
++separating the suit and rank may be left out.  Also, if only one card
++of the desired rank is playable, typing the rank is sufficient.
++For example, if your hand was 
++.Dq 2H, 4D, 5C, 6H, JC, and KD
++and it was desired to discard the king of diamonds, any of 
++the following could be typed:
++.Sq k ,
++.Sq king ,
++.Sq kd ,
++.Sq k d ,
++.Sq k of d ,
++.Sq king d ,
++.Sq king of d ,
++.Sq k diamonds ,
++.Sq k of diamonds ,
++.Sq king diamonds ,
++.Sq king of diamonds .
++.Sh FILES
++.Bl -tag -width /usr/games/cribbage -compact
++.It Pa /usr/games/cribbage
++.It Pa /var/lib/games/criblog
++.It Pa /usr/share/games/cribbage.instr
++.El
++.Sh AUTHORS
++Earl T. Cohen wrote the logic.
++Ken Arnold added the screen oriented interface.
+diff -ruN bsd-games-2.1.foo/cribbage/pathnames.h bsd-games-2.1/cribbage/pathnames.h
+--- bsd-games-2.1.foo/cribbage/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/cribbage/pathnames.h	Tue Apr  7 21:55:02 1998
+@@ -0,0 +1,40 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/03/21 15:08:56 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_INSTR	"/usr/share/games/cribbage.instr"
++#define	_PATH_LOG	"/var/lib/games/criblog"
++#define	_PATH_MORE	"/usr/bin/less"
+diff -ruN bsd-games-2.1.foo/dm/dm.8 bsd-games-2.1/dm/dm.8
+--- bsd-games-2.1.foo/dm/dm.8	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/dm/dm.8	Tue Apr  7 21:55:03 1998
+@@ -0,0 +1,111 @@
++.\"	$NetBSD: dm.8,v 1.4 1997/10/10 12:49:45 lukem Exp $
++.\"
++.\" Copyright (c) 1987, 1991, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"     @(#)dm.8	8.1 (Berkeley) 5/31/93
++.\"
++.Dd May 31, 1993
++.Dt DM 8
++.Os
++.Sh NAME
++.Nm dm
++.Nd dungeon master
++.Sh SYNOPSIS
++.Nm ln
++.Fl s Cm dm Ar game
++.Sh DESCRIPTION
++.Nm
++is a program used to regulate game playing.
++.Nm
++expects to be invoked with the name of a game that a user wishes to play.
++This is done by creating symbolic links to
++.Nm dm ,
++in the directory
++.Pa /usr/games
++for all of the regulated games.
++The actual binaries for these games should be placed in a
++.Dq hidden
++directory,
++.Pa /usr/libexec/dm ,
++that may only be accessed by the
++.Nm
++program.
++.Nm
++determines if the requested game is available and, if so, runs it.
++The file
++.Pa /etc/dm.conf
++controls the conditions under which games may
++be run.
++.Pp
++The file
++.Pa /etc/nogames
++may be used to
++.Dq turn off
++game playing.
++If the file exists, no game playing is allowed; the contents of the file
++will be displayed to any user requesting a game.
++.Sh FILES
++.Bl -tag -width /var/lib/games/games.log -compact
++.It Pa /etc/dm.conf
++configuration file
++.It Pa /etc/nogames
++turns off game playing
++.It Pa /usr/libexec/dm
++directory of ``real'' binaries
++.It Pa /var/lib/games/games.log
++game logging file
++.El
++.Sh SEE ALSO
++.Xr dm.conf 5
++.Sh BUGS
++Two problems result from
++.Nm
++running the games setuid
++.Dq games .
++First, all games that allow users to run
++.Tn UNIX
++commands should carefully
++set both the real and effective user id's immediately before executing
++those commands.  Probably more important is that
++.Nm
++never be setuid
++anything but
++.Dq games
++so that compromising a game will result only in
++the user's ability to play games at will.  Secondly, games which previously
++had no reason to run setuid and which accessed user files may have to
++be modified.
++.Sh HISTORY
++The
++.Nm
++command appeared in
++.Bx 4.3 tahoe .
+diff -ruN bsd-games-2.1.foo/dm/dm.conf.5 bsd-games-2.1/dm/dm.conf.5
+--- bsd-games-2.1.foo/dm/dm.conf.5	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/dm/dm.conf.5	Tue Apr  7 21:55:03 1998
+@@ -0,0 +1,101 @@
++.\"	$NetBSD: dm.conf.5,v 1.3 1995/03/21 15:09:07 cgd Exp $
++.\"
++.\" Copyright (c) 1988, 1991, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"     @(#)dm.conf.5	8.1 (Berkeley) 5/31/93
++.\"
++.Dd May 31, 1993
++.Dt DM.CONF 5
++.Os BSD 4.2
++.Sh NAME
++.Nm dm.conf
++.Nd \&dm configuration file
++.Sh DESCRIPTION
++The
++.Xr dm.conf
++file
++is the configuration file for the
++.Xr \&dm 8
++program.
++It consists of lines beginning with one of three keywords, ``badtty'',
++``game'', and ``time''.  All other lines are ignored.
++.Pp
++Any tty listed after the keyword ``badtty'' may not have games played on
++it.
++Entries consist of two white-space separated fields: the string
++``badtty'' and the ttyname as returned by
++.Xr ttyname 3 .
++For example,
++to keep the uucp dialout, ``tty19'', from being used for games, the
++entry would be:
++.Bd -literal -offset indent
++badtty	/dev/tty19
++.Ed
++.Pp
++Any day/hour combination listed after the keyword ``time'' will disallow
++games during those hours.  Entries consist of four white-space separated
++fields: the string ``time'', the unabbreviated day of the week and the
++beginning and ending time of a period of the day when games may not be
++played.  The time fields are in a 0 based, 24-hour clock.  For example,
++the following entry allows games playing before 8AM and after 5PM on
++Mondays.
++.Bd -literal -offset indent
++time		Monday	8	17
++.Ed
++.Pp
++Any game listed after the keyword ``game'' will set parameters for a specific
++game.  Entries consist of five white-space separated fields: the keyword
++``game'', the name of a game, the highest system load average at which the
++game may be played, the maximum users allowed if the game is to be played,
++and the priority at which the game is to be run.  Any of these fields may
++start with a non-numeric character, resulting in no game limitation or
++priority based on that field.  The game "default" controls the settings for
++any game not otherwise listed, and must be the last ``game'' entry in the
++file.  Priorities may not be negative.  For example, the following entries
++limits the game ``hack'' to running only when the system has 10 or less
++users and a load average of 5 or less; all other games may be run any time
++the system has 15 or less users.
++.Bd -literal -offset indent
++game		hack		5	10	*
++game		default	*	15	*
++.Ed
++.Sh FILES
++.Bl -tag -width /etc/dm.conf -compact
++.It Pa /etc/dm.conf
++The
++.Xr \&dm 8
++configuration file.
++.El
++.Sh SEE ALSO
++.Xr setpriority 2 ,
++.Xr ttyname 3 ,
++.Xr dm 8
+diff -ruN bsd-games-2.1.foo/dm/pathnames.h bsd-games-2.1/dm/pathnames.h
+--- bsd-games-2.1.foo/dm/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/dm/pathnames.h	Tue Apr  7 21:55:03 1998
+@@ -0,0 +1,42 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/03/21 15:09:08 cgd Exp $	*/
++
++/*
++ * Copyright (c) 1989, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_CONFIG	"/etc/dm.conf"
++#define	_PATH_HIDE	"/usr/libexec/dm/"
++#undef _PATH_LOG
++#define	_PATH_LOG	"/var/lib/games/games.log"
++#define	_PATH_NOGAMES	"/etc/nogames"
+diff -ruN bsd-games-2.1.foo/fish/pathnames.h bsd-games-2.1/fish/pathnames.h
+--- bsd-games-2.1.foo/fish/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/fish/pathnames.h	Tue Apr  7 21:55:03 1998
+@@ -0,0 +1,39 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/03/23 08:28:21 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_INSTR	"/usr/share/games/fish.instr"
++#define	_PATH_MORE	"/usr/bin/less"
+diff -ruN bsd-games-2.1.foo/fortune/fortune/fortune.6 bsd-games-2.1/fortune/fortune/fortune.6
+--- bsd-games-2.1.foo/fortune/fortune/fortune.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/fortune/fortune/fortune.6	Tue Apr  7 21:55:04 1998
+@@ -0,0 +1,173 @@
++.\"	$NetBSD: fortune.6,v 1.7 1997/10/10 13:04:37 lukem Exp $
++.\"
++.\" Copyright (c) 1985, 1991, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" This code is derived from software contributed to Berkeley by
++.\" Ken Arnold.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"	@(#)fortune.6	8.3 (Berkeley) 4/19/94
++.\"
++.Dd April 19, 1994
++.Dt FORTUNE 6
++.Os
++.Sh NAME
++.Nm fortune 
++.Nd print a random, hopefully interesting, adage
++.Sh SYNOPSIS
++.Nm
++.Op Fl aefilosw
++.Op Fl m Ar pattern 
++.Oo 
++.Op Ar N% 
++.Ar file/dir/all
++.Oc
++.Sh DESCRIPTION
++When
++.Nm
++is run with no arguments it prints out a random epigram.
++Epigrams are divided into several categories, where each category
++is subdivided into those which are potentially offensive and those
++which are not.
++The options are as follows:
++.Bl -tag -width flag
++.It Fl a
++Choose from all lists of maxims, both offensive and not.
++(See the
++.Fl o
++option for more information on offensive fortunes.)
++.It Fl e
++Consider all fortune files to be of equal size (see discussion below
++on multiple files).
++.It Fl f
++Print out the list of files which would be searched, but don't
++print a fortune.
++.It Fl l
++Long dictums only.
++.It Fl m
++Print out all fortunes which match the regular expression
++.Ar pattern .
++See
++.Xr regex 3
++for a description of patterns.
++.It Fl o
++Choose only from potentially offensive aphorisms.
++.Bf -symbolic
++Please, please, please request a potentially offensive fortune if and
++only if you believe, deep down in your heart, that you are willing
++to be offended.
++(And that if you are, you'll just quit using
++.Fl o
++rather than give us
++grief about it, okay?)
++.Ef
++.Bd -filled -offset indent
++\&... let us keep in mind the basic governing philosophy
++of The Brotherhood, as handsomely summarized in these words:
++we believe in healthy, hearty laughter -- at the expense of
++the whole human race, if needs be.
++Needs be.
++.Bd -filled -offset indent-two -compact
++--H. Allen Smith, "Rude Jokes"
++.Ed
++.Ed
++.It Fl s
++Short apothegms only.
++.It Fl i
++Ignore case for
++.Fl m
++patterns.
++.It Fl w
++Wait before termination for an amount of time calculated from the
++number of characters in the message.
++This is useful if it is executed as part of the logout procedure
++to guarantee that the message can be read before the screen is cleared.
++.El
++.Pp
++The user may specify alternative sayings.
++You can specify a specific file, a directory which contains one or
++more files, or the special word
++.Em all
++which says to use all the standard databases.
++Any of these may be preceded by a percentage, which is a number
++.Ar N
++between 0 and 100 inclusive, followed by a
++.Ar % .
++If it is, there will be a
++.Ar N
++percent probability that an adage will be picked from that file
++or directory.
++If the percentages do not sum to 100, and there are specifications
++without percentages, the remaining percent will apply to those files
++and/or directories, in which case the probability of selecting from
++one of them will be based on their relative sizes.
++.Pp
++As an example, given two databases
++.Em funny
++and
++.Em not-funny ,
++with
++.Em funny
++twice as big, saying
++.Bd -literal -offset indent
++fortune funny not-funny
++.Ed
++.Pp
++will get you fortunes out of
++.Em funny
++two-thirds of the time.
++The command
++.Bd -literal -offset indent
++fortune 90% funny 10% not-funny
++.Ed
++.Pp
++will pick out 90% of its fortunes from
++.Em funny
++(the ``10% not-funny'' is unnecessary, since 10% is all that's left).
++The
++.Fl e
++option says to consider all files equal;
++thus
++.Bd -literal -offset indent
++fortune -e
++.Ed
++.Pp
++is equivalent to
++.Bd -literal -offset indent
++fortune 50% funny 50% not
++.Em -funny
++.Ed
++.Sh FILES
++.Bl -tag -width Pa -compact
++.It Pa /usr/lib/games/fortunes
++.El
++.Sh SEE ALSO
++.Xr regex 3
+diff -ruN bsd-games-2.1.foo/fortune/fortune/pathnames.h bsd-games-2.1/fortune/fortune/pathnames.h
+--- bsd-games-2.1.foo/fortune/fortune/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/fortune/fortune/pathnames.h	Tue Apr  7 21:55:04 1998
+@@ -0,0 +1,40 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/03/23 08:28:42 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1991, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#ifndef TEST
++#define	FORTDIR		"/usr/lib/games"
++#endif
+diff -ruN bsd-games-2.1.foo/hangman/hangman.6 bsd-games-2.1/hangman/hangman.6
+--- bsd-games-2.1.foo/hangman/hangman.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/hangman/hangman.6	Tue Apr  7 21:55:04 1998
+@@ -0,0 +1,57 @@
++.\"	$NetBSD: hangman.6,v 1.6 1997/10/11 01:16:32 lukem Exp $
++.\"
++.\" Copyright (c) 1983, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"	@(#)hangman.6	8.1 (Berkeley) 5/31/93
++.\"
++.Dd May 31, 1993
++.Dt HANGMAN 6
++.Os
++.Sh NAME
++.Nm hangman
++.Nd Computer version of the game hangman
++.Sh SYNOPSIS
++.Nm
++.Sh DESCRIPTION
++In
++.Nm hangman ,
++the computer picks a word from the on-line word list
++and you must try to guess it.
++The computer keeps track of which letters have been guessed
++and how many wrong guesses you have made on the screen in a graphic fashion.
++.Sh FILES
++.Bl -tag -width /usr/share/games/hangman-words -compact
++.It Pa /usr/share/games/hangman-words
++On-line word list
++.El
++.Sh AUTHOR
++Ken Arnold
+diff -ruN bsd-games-2.1.foo/hangman/pathnames.h bsd-games-2.1/hangman/pathnames.h
+--- bsd-games-2.1.foo/hangman/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/hangman/pathnames.h	Tue Apr  7 21:55:04 1998
+@@ -0,0 +1,38 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/03/23 08:32:51 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_DICT	"/usr/share/games/hangman-words"
+diff -ruN bsd-games-2.1.foo/hunt/hunt/hunt.6 bsd-games-2.1/hunt/hunt/hunt.6
+--- bsd-games-2.1.foo/hunt/hunt/hunt.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/hunt/hunt/hunt.6	Tue Apr  7 21:55:05 1998
+@@ -0,0 +1,380 @@
++.\"	$NetBSD: hunt.6,v 1.3 1997/10/10 16:32:30 lukem Exp $
++.\"
++.\"  hunt
++.\"  Copyright (c) 1985 Conrad C. Huang, Gregory S. Couch, Kenneth C.R.C. Arnold
++.\"  San Francisco, California
++.\"
++.\"  Copyright (c) 1985 Regents of the University of California.
++.\"  All rights reserved.  The Berkeley software License Agreement
++.\"  specifies the terms and conditions for redistribution.
++.\"
++.TH HUNT 6 "21 August 1986"
++.UC 4
++.SH NAME
++hunt \- a multi-player multi-terminal game
++.SH SYNOPSIS
++\fB/usr/games/hunt\fP [ \fB\-qmcsfbS\fP ] [ \fB\-n\fP name ] [ \fB\-t\fP team ] [ \fB\-p\fP port ] [ \fB\-w\fP message ] [ host ]
++.SH DESCRIPTION
++The object of the game
++.I hunt
++is to kill off the other players.
++There are no rooms, no treasures, and no monsters.
++Instead, you wander around a maze, find grenades, trip mines, and shoot down
++walls and players.
++The more players you kill before you die, the better your score is.
++If the
++.B \-m
++flag is given,
++you enter the game as a monitor
++(you can see the action but you cannot play).
++.PP
++.I Hunt
++normally looks for an active game on the local network;
++if none is found, it starts one up on the local host.
++The location of the game may be specified by giving the
++.I host
++argument.
++This presupposes that a hunt game is already running on that host, see
++.IR huntd (6)
++for details on how to setup a game on a specific host.
++If more than one game if found,
++you may pick which game to play in.
++.PP
++If the
++.B \-q
++flag is given,
++.I hunt
++queries the local network (or specific host)
++and reports on all active games found.
++This is useful for shell startup scripts, \fIe.g.\fP csh's .login.
++.PP
++The player name may be specified on the command line by using the
++.B \-n
++option.
++.PP
++The
++.BR \-c ,
++.BR \-s ,
++and
++.B \-f
++options are for entering the game cloaked, scanning, or flying respectively.
++.PP
++The
++.B \-b
++option turns off beeping when you reach the typeahead limit.
++.PP
++The
++.B \-t
++option aids team playing by making everyone else on one's team
++appear as the team name.
++A team name is a single digit to avoid conflicting with other characters
++used in the game.
++.PP
++The
++.B \-p
++.I port
++option allows the rendezvous port number to be set.
++This is a useful way for people playing on dialup lines to avoid playing
++with people on 9600 baud terminals.
++.PP
++The
++.B \-w
++.I message
++option is the only way to send a message to everyone else's screen when
++you start up.
++It is most often used to say ``eat slime death - NickD's coming in''.
++.PP
++When you die and are asked if you wish to re-enter the game,
++there are other answers than just yes or no.
++You can also reply with a
++.B w
++for write a message before continuing or
++.B o
++to change how you enter the game (cloaked, scanning, or flying).
++.PP
++To be notified automatically when a
++.I hunt
++starts up, add your login to the
++.I hunt-players
++mailing list (see
++.IR huntd (6)).
++.SH "PLAYING HINTS"
++.I Hunt
++only works on crt (vdt) terminals with at least 24 lines, 80 columns, and
++cursor addressing.
++The screen is divided in to 3 areas.
++On the right hand side is the status area.
++It shows damage sustained,
++charges remaining,
++who's in the game,
++who's scanning (the
++.B ``*''
++in front of the name),
++who's cloaked (the
++.B ``+''
++in front of the name),
++and other players' scores.
++The rest of the screen is taken up by your map of the maze.
++The 24th line
++is used for longer messages that don't fit in the status area.
++.PP
++.I Hunt
++uses the same keys to move as
++.IR vi (1)
++does,
++.IR i.e. ,
++.BR h ,
++.BR j ,
++.BR k ,
++and
++.B l
++for left, down, up, right respectively.
++To change which direction you're facing in the maze,
++use the upper case version of the movement key (\c
++.IR i.e. ,
++.BR HJKL ).
++You can only fire or throw things in the direction you're facing.
++.TP
++Other commands are:
++.sp
++.nf
++.ta
++.ta \w'>\|<\|^\|v\ \ 'u
++f or 1	\- Fire a bullet (Takes 1 charge)
++g or 2	\- Throw grenade (Takes 9 charges)
++F or 3	\- Throw satchel charge (Takes 25 charges)
++G or 4	\- Throw bomb (Takes 49 charges)
++5	\- Throw big bomb (Takes 81 charges)
++6	\- Throw even bigger bomb (Takes 121 charges)
++7	\- Throw even more big bomb (Takes 169 charges)
++8	\- Throw even more bigger bomb (Takes 225 charges)
++9	\- Throw very big bomb (Takes 289 charges)
++0	\- Throw very, very big bomb (Takes 361 charges)
++@	\- Throw biggest bomb (Takes 441 charges)
++o	\- Throw small slime (Takes 15 charges)
++O	\- Throw big slime (Takes 30 charges)
++p	\- Throw bigger slime (Takes 45 charges)
++P	\- Throw biggest slime (Takes 60 charges)
++s	\- Scan (show where other players are) (Takes 1 charge)
++c	\- Cloak (hide from scanners) (Takes 1 charge)
++
++^L	\- Redraw screen
++q	\- Quit
++.fi
++.TP
++The symbols on the screen are:
++.sp
++.nf
++.ta
++.ta \w'>\|<\|^\|v\ \ 'u
++\-\||\|+	\- walls
++/\|\\	\- diagonal (deflecting) walls
++#	\- doors (dispersion walls)
++;	\- small mine
++g	\- large mine
++:	\- bullet
++o	\- grenade
++O	\- satchel charge
++@	\- bomb
++s	\- small slime
++$	\- big slime
++>\|<\|^\|v	\- you facing right, left, up, or down
++}\|{\|i\|!	\- other players facing right, left, up, or down
++\(**	\- explosion
++.ne 3
++.cs R 24
++.cs I 24
++\fR\\|/\fP
++.cs R
++\fI\-\(**\-\fP	\- grenade and large mine explosion
++.fl
++.cs R 24
++\fR/|\\\fP
++.cs R
++.cs I
++.fi
++.LP
++Other helpful hints:
++.sp
++.ie n .ds b []
++.el .ds b \(bu
++.ta
++.ta \w'\*b\ \|'u
++.nr In \n(.i
++.de MP
++.br
++.in \n(Inu+\w'\*b\ \|'u
++.ti \n(Inu
++\*b	\c
++..
++.MP
++You can only fire in the direction you are facing.
++.MP
++You can only fire three shots in a row, then the gun must cool off.
++.MP
++Shots move 5 times faster than you do.
++.MP
++To stab someone,
++you face that player and move at them.
++.MP
++Stabbing does 2 points worth of damage and shooting does 5 points.
++.MP
++Slime does 5 points of damage each time it hits.
++.MP
++You start with 15 charges and get 5 more every time a player enters
++or re-enters.
++.MP
++Grenade explosions cover a 3 by 3 area, each larger bomb cover a
++correspondingly larger area (ranging from 5 by 5 to 21 by 21).
++All explosions are centered around the square the shot hits and
++do the most damage in the center.
++.MP
++Slime affects all squares it oozes over.
++The number of squares is equal to the number of charges used.
++.MP
++One small mine and one large mine is placed in the maze for every new player.
++A mine has a 2% probability of tripping when you walk forward on to it;
++50% when going sideways;
++95% when backing up.
++Tripping a mine costs you 5 points or 10 points respectively.
++Defusing a mine is worth 1 charge or 9 charges respectively.
++.MP
++You cannot see behind you.
++.MP
++Cloaking consumes 1 ammo charge per 20 of your moves.
++.MP
++Scanning consumes 1 ammo charge per (20 \(mu the number of players)
++of other player moves.
++.MP
++Turning on cloaking turns off scanning \(em turning on scanning turns off
++cloaking.
++.MP
++When you kill someone,
++you get 2 more damage capacity points and 2 damage points get taken away.
++.MP
++Maximum typeahead is 5 characters.
++.MP
++A shot destroys normal (\c
++.IR i.e., 
++non-diagonal, non-door) walls.
++.MP
++Diagonal walls deflect shots and change orientation.
++.MP
++Doors disperse shots in random directions (up, down, left, right).
++.MP
++Diagonal walls and doors cannot be destroyed by direct shots but may
++be destroyed by an adjacent grenade explosion.
++.MP
++Slime goes around walls, not through them.
++.MP
++Walls regenerate, reappearing in the order they were destroyed.
++One percent of the regenerated walls will be diagonal walls or doors.
++When a wall is generated directly beneath a player, he is thrown in
++a random direction for a random period of time.  When he lands, he
++sustains damage (up to 20 percent of the amount of damage already
++sustained);
++.IR i.e. ,
++the less damage he had, the more nimble he is and
++therefore less likely to hurt himself on landing.
++.\"MP
++.\"There is a volcano close to the center of the maze which goes off
++.\"close to every 30 deaths.
++.MP
++Every 30 deaths or so, a
++.B ``?''
++will appear.
++It is a wandering bomb which will explode when it hits someone, or
++when it is slimed.
++.MP
++If no one moves, everything stands still.
++.MP
++The environment variable
++.B HUNT
++is checked to get the player name.
++If you don't have this variable set,
++.I hunt
++will ask you what name you want to play under.
++If you wish to set other options than just your name,
++you can enumerate the options as follows:
++.br
++.ti +1i
++setenv HUNT "name=Sneaky,team=1,cloak,mapkey=zoFfGg1f2g3F4G"
++.br
++sets the player name to Sneaky,
++sets the team to one,
++sets the enter game attribute to cloaked,
++and the maps \fBz\fP to \fBo\fP, \fBF\fP to \fBf\fP, \fBG\fP to \fBg\fP,
++\fB1\fP to \fBf\fP,
++\fB2\fP to \fBg\fP, \fB3\fP to \fBF\fP, and \fB4\fP to \fBG\fP.
++The \fImapkey\fP option must be last.
++Other options are: scan, fly, nobeep, port=string, host=string,
++and message=string \(em which correspond to the command line options.
++String options cannot contain commas since commas
++are used to separate options.
++.MP
++It's a boring game if you're the only one playing.
++.PP
++Your score is the decayed average of the ratio of number of kills to number
++of times you entered the game and is only kept for the duration
++of a single session of \fIhunt\fP.
++.PP
++.I Hunt
++normally drives up the load average to be approximately
++(number_of_players + 0.5) greater than it would be without a
++.I hunt 
++game executing.
++.SH STATISTICS
++The
++.B \-S
++option fetches the current game statistics.
++The meaning of the column headings are as follows:
++.I score
++\(em the player's last score;
++.I ducked
++\(em
++how many shots a player ducked;
++.I absorb
++\(em how many shots a player absorbed;
++.I faced
++\(em how many shots were fired at player's face;
++.I shot
++\(em how many shots were fired at player;
++.I robbed
++\(em how many of player's shots were absorbed;
++.I missed
++\(em how many of player's shots were ducked;
++.I slimeK
++\(em how many slime kills player had;
++.I enemy
++\(em how many enemies were killed;
++.I friend
++\(em how many friends were killed (self and same team);
++.I deaths
++\(em how many times player died;
++.I still
++\(em how many times player died without typing in any commands;
++.I saved
++\(em how many times a shot/bomb would have killed player if he hadn't
++ducked or absorbed it.
++.SH FILES
++.nf
++.ta
++.ta \w'/usr/sbin/huntd\ \ \ 'u
++/usr/sbin/huntd	game coordinator
++.DT
++.fi
++.SH "SEE ALSO"
++huntd(6)
++.SH AUTHORS
++Conrad Huang, Ken Arnold, and Greg Couch;
++.br
++University of California, San Francisco, Computer Graphics Lab
++.SH ACKNOWLEDGEMENTS
++We thank Don Kneller,
++John Thomason, Eric Pettersen, Mark Day,
++and Scott Weiner for providing
++endless hours of play-testing to improve the character of the game.
++We hope their significant others will forgive them;
++we certainly don't.
++.SH BUGS
++To keep up the pace, not everything is as realistic as possible.
+diff -ruN bsd-games-2.1.foo/hunt/huntd/huntd.6 bsd-games-2.1/hunt/huntd/huntd.6
+--- bsd-games-2.1.foo/hunt/huntd/huntd.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/hunt/huntd/huntd.6	Tue Apr  7 21:55:05 1998
+@@ -0,0 +1,100 @@
++.\"	$NetBSD: huntd.6,v 1.3 1998/01/09 08:03:42 perry Exp $
++.\"
++.\"  Hunt
++.\"  Copyright (c) 1985 Conrad C. Huang, Gregory S. Couch, Kenneth C.R.C. Arnold
++.\"  San Francisco, California
++.\"
++.\"  Copyright (c) 1985 Regents of the University of California.
++.\"  All rights reserved.  The Berkeley software License Agreement
++.\"  specifies the terms and conditions for redistribution.
++.\"
++.TH HUNTD 6 "21 August 1986"
++.UC 4
++.SH NAME
++huntd \- hunt daemon, back-end for hunt game
++.SH SYNOPSIS
++\fB/usr/sbin/huntd\fP [ \fB\-s\fP ] [ \fB\-p\fP port ]
++.SH DESCRIPTION
++.PP
++.I huntd
++controls the multi-player
++.IR hunt (6)
++game.
++When it starts up, it tries to notify all members of the
++.I hunt-players
++mailing list (see
++.IR sendmail (8))
++by faking a
++.IR talk (1)
++request from user ``Hunt Game''.
++.PP
++The
++.B \-s
++option is for running
++.I huntd
++forever (server mode).
++This is similar to running it under the control of
++.I inetd
++(see below),
++but it consumes a process table entry when no one is playing.
++.PP
++The
++.B \-p
++option changes the udp port number used to rendezvous with the player
++process and thus allows for private games of hunt.
++This option turns off the notification of players on the
++.I hunt-players
++mailing list.
++.SH INETD
++.PP
++To run
++.I huntd
++from
++.IR inetd ,
++you'll need to put the
++.I hunt
++service in
++.BR /etc/services :
++.IP
++hunt 26740/udp		# multi-player/multi-host mazewars
++.LP
++and add a line in
++.BR /etc/inetd.conf :
++.IP
++hunt dgram udp wait nobody /usr/sbin/huntd HUNT
++.LP
++except for Suns which use
++.BR /etc/servers :
++.IP
++hunt udp /usr/sbin/huntd
++.LP
++Do not use any of the command line options \(em if you want
++.I inetd
++to start up
++.I huntd
++on a private port, change the port listed in
++.BR /etc/services .
++.SH "NETWORK RENDEZVOUS"
++When
++.IR hunt (6)
++starts up, it broadcasts on the local area net
++(using the broadcast address for each interface) to find a
++.I hunt
++game in progress.
++If a
++.I huntd
++hears the request, it sends back the port number for the
++.I hunt
++process to connect to.
++Otherwise, the
++.I hunt
++process starts up a
++.I huntd
++on the local machine and trys to rendezvous with it.
++.SH "SEE ALSO"
++hunt(6), talk(1), sendmail(8)
++.SH AUTHORS
++Conrad Huang, Ken Arnold, and Greg Couch;
++.br
++University of California, San Francisco, Computer Graphics Lab
++.\"SH BUGS
+diff -ruN bsd-games-2.1.foo/install-man bsd-games-2.1/install-man
+--- bsd-games-2.1.foo/install-man	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/install-man	Tue Apr  7 21:55:01 1998
+@@ -0,0 +1,65 @@
++#!/bin/bash
++# install-man.in - install a manpage
++
++set -e
++
++if [ $# = 1 ]; then
++    page=$1
++    section=${page##*.}
++    if [ "$section" = 6 ]; then
++	mandir=$RPM_BUILD_ROOT/usr/man/man6
++    elif [ "$section" = 8 ]; then
++	mandir=$RPM_BUILD_ROOT/usr/man/man8
++    elif [ "$section" = 5 ]; then
++	mandir=$RPM_BUILD_ROOT/usr/man/man5
++    else
++	echo "Unknown manpage section $section" >&2
++	exit 1
++    fi
++    install -c -m 0644 -o root -g games "$page" "$mandir"
++    if [ n = y ]; then
++	rm -f "$mandir/$page.gz"
++	gzip -9 "$mandir/$page"
++    fi
++elif [ $# = 2 ]; then
++    # Manpage 2 should link to manpage 1
++    page1=$1
++    section1=${page1##*.}
++    page2=$2
++    section2=${page2##*.}
++    if [ "$section2" = 6 ]; then
++	mandir=$RPM_BUILD_ROOT/usr/man/man6
++    elif [ "$section2" = 8 ]; then
++	mandir=$RPM_BUILD_ROOT/usr/man/man8
++    elif [ "$section2" = 5 ]; then
++	mandir=$RPM_BUILD_ROOT/usr/man/man5
++    else
++	echo "Unknown manpage section $section2" >&2
++	exit 1
++    fi
++    if [ .so = .so ]; then
++	echo ".so man$section1/$page1" >"$mandir/$page2"
++	chmod 0644 "$mandir/$page2"
++	if [ y = y ]; then
++	    chown root.games "$mandir/$page2"
++	fi
++	if [ n = y ]; then
++	    rm -f "$mandir/$page2.gz"
++	    gzip -9 "$mandir/$page2"
++	fi
++    else
++	if [ "$section1" = "$section2" ]; then
++	    linkto="$page1"
++	else
++	    linkto="../man$section1/$page1"
++	fi
++	if [ n = y ]; then
++	    ln -s "$linkto.gz" "$mandir/$page2.gz"
++	else
++	    ln -s "$linkto" "$mandir/$page2"
++	fi
++    fi
++else
++    echo "usage: $0 manpage [ manpage ]" >&2
++    exit 1
++fi
+diff -ruN bsd-games-2.1.foo/install-score bsd-games-2.1/install-score
+--- bsd-games-2.1.foo/install-score	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/install-score	Tue Apr  7 21:55:01 1998
+@@ -0,0 +1,12 @@
++#!/bin/sh
++# install-score.in - install a score file
++
++set -e
++
++scorefile="$RPM_BUILD_ROOT/$1"
++
++test -e "$scorefile" || touch "$scorefile"
++if [ y = y ]; then
++    chown root.games "$scorefile"
++fi
++chmod 0644 "$scorefile"
+diff -ruN bsd-games-2.1.foo/monop/monop.6 bsd-games-2.1/monop/monop.6
+--- bsd-games-2.1.foo/monop/monop.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/monop/monop.6	Tue Apr  7 21:55:05 1998
+@@ -0,0 +1,185 @@
++.\"	$NetBSD: monop.6,v 1.8 1995/03/23 08:34:50 cgd Exp $
++.\"
++.\" Copyright (c) 1980 The Regents of the University of California.
++.\" All rights reserved.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"	@(#)monop.6	6.5 (Berkeley) 3/25/93
++.\"
++.Dd March 25, 1993
++.Dt MONOP 6
++.Os
++.Sh NAME
++.Nm monop
++.Nd Monopoly game
++.Sh SYNOPSIS
++.Nm /usr/games/monop
++.Op Ar file
++.Sh DESCRIPTION
++.Nm Monop
++is reminiscent of the Parker Brother's game Monopoly, and
++monitors a game between 1 to 9 users.
++It is assumed that the rules of Monopoly are known.
++The game follows the standard rules, with the exception that,
++if a property goes up for auction and there are only two solvent players,
++no auction is held and the property remains unowned.
++.Nm
++The game, in effect, lends the player money,
++so it is possible to buy something which you cannot afford.
++However, as soon as a person goes into debt,
++he must 
++.Dq fix the problem ,
++.Em i.e. ,
++make himself solvent, before play can continue.
++If this is not possible, the player's property reverts to his debtee,
++either a player or the bank.
++A player can resign at any time to any person or the bank,
++which puts the property back on the board, unowned.
++.Pp
++Any time that the response to a question is a
++.Em string ,
++e.g., a name, place or person, you can type 
++.Sq Ic ?
++to get a list of valid answers.
++It is not possible to input a negative number, nor is it ever necessary.
++.Pp
++.Em A Summary of Commands :
++.Bl -tag -width item
++.It Ic quit
++quit game: This allows you to quit the game.  It asks you if you're sure.
++.It Ic print
++print board: This prints out the current board.
++The columns have the following meanings (column headings are the same for the
++.Ic where ,
++.Ic own holdings  ,
++and
++.Ic holdings
++commands):
++.Pp
++.Bl -tag -width indent -compact
++.It Name
++The first ten characters of the name of the square
++.It Own
++The 
++.Em number
++of the owner of the property.
++.It Price
++The cost of the property (if any)
++.It Mg
++This field has a 
++.Sq *
++in it if the property is mortgaged
++.It \&#
++If the property is a Utility or Railroad, this is the number
++of such owned by the owner.
++If the property is land, this is the number of houses on it.
++.It Rent
++Current rent on the property.  If it is not owned, there is no rent.
++.El
++.It Ic where
++where players are: Tells you where all the players are.
++A `*' indicates the current player.
++.It Ic own holdings
++List your own holdings,
++.Em i.e. ,
++money, get-out-of-jail-free cards, and property.
++.It Ic holdings
++holdings list: Look at anyone's holdings.
++It will ask you whose holdings you wish to look at.
++When you are finished, type 
++.Sq Ic done .
++.It Ic mortgage
++mortgage property:
++Sets up a list of mortgageable property, and asks which you wish to mortgage.
++.It Ic unmortgage
++unmortgage property:
++Unmortgage mortgaged property.
++.It Ic buy
++buy houses:
++Sets up a list of monopolies on which you can buy houses.
++If there is more than one, it asks you which you want to buy for.
++It then asks you how many for each piece of property,
++giving the current amount in parentheses after the property name.
++If you build in an unbalanced manner
++(a disparity of more than one house within the same monopoly),
++it asks you to re-input things.
++.It Ic sell
++sell houses:
++Sets up a list of monopolies from which you can sell houses.
++It operates in an analogous manner to
++.Ic buy.
++.It Ic card
++card for jail:
++Use a get-out-of-jail-free card to get out of jail.
++If you're not in jail, or you don't have one, it tells you so.
++.It Ic pay
++pay for jail:
++Pay $50 to get out of jail, from whence you are put on Just Visiting.
++Difficult to do if you're not there.
++.It Ic trade
++This allows you to trade with another player.
++It asks you whom you wish to trade with,
++and then asks you what each wishes to give up.
++You can get a summary at the end, and, in all cases,
++it asks for confirmation of the trade before doing it.
++.It Ic resign
++Resign to another player or the bank.
++If you resign to the bank, all property reverts to its virgin state,
++and get-out-of-jail free cards revert to the deck.
++.It Ic save
++save game:
++Save the current game in a file for later play.
++You can continue play after saving,
++either by adding the file in which you saved the game after the
++.Nm monop
++command, or by using the
++.Ic restore
++command (see below).
++It will ask you which file you wish to save it in,
++and, if the file exists, confirm that you wish to overwrite it.
++.It Ic restore
++restore game:
++Read in a previously saved game from a file.
++It leaves the file intact.
++.It Ic roll
++Roll the dice and move forward to your new location.  
++If you simply hit the <RETURN> key instead of a command,
++it is the same as typing
++.Ic roll .
++.El
++.Sh AUTHOR
++Ken Arnold
++.Sh FILES
++.Bl -tag -width /usr/lib/games/monop-cards.pck -compact
++.It Pa /usr/lib/games/monop-cards.pck
++Chance and Community Chest cards
++.El
++.Sh BUGS
++No command can be given an argument instead of a response to a query.
+diff -ruN bsd-games-2.1.foo/monop/pathnames.h bsd-games-2.1/monop/pathnames.h
+--- bsd-games-2.1.foo/monop/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/monop/pathnames.h	Tue Apr  7 21:55:06 1998
+@@ -0,0 +1,38 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/03/23 08:35:03 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_CARDS	"/usr/lib/games/monop-cards.pck"
+diff -ruN bsd-games-2.1.foo/phantasia/pathnames.h bsd-games-2.1/phantasia/pathnames.h
+--- bsd-games-2.1.foo/phantasia/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/phantasia/pathnames.h	Tue Apr  7 21:55:06 1998
+@@ -0,0 +1,46 @@
++/*	$NetBSD: pathnames.h,v 1.2 1995/03/24 03:59:17 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1989, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.2 (Berkeley) 4/2/94
++ */
++
++#define	_PATH_GAMEPROG	"/usr/games/phantasia"
++#define	_PATH_GOLD	"/var/lib/games/phantasia/gold"
++#define	_PATH_LASTDEAD	"/var/lib/games/phantasia/lastdead"
++#define	_PATH_MESS	"/var/lib/games/phantasia/mess"
++#define	_PATH_MONST	"/var/lib/games/phantasia/monsters"
++#define	_PATH_MOTD	"/var/lib/games/phantasia/motd"
++#define	_PATH_PEOPLE	"/var/lib/games/phantasia/characs"
++#define	_PATH_SCORE	"/var/lib/games/phantasia/scoreboard"
++#define	_PATH_VOID	"/var/lib/games/phantasia/void"
+diff -ruN bsd-games-2.1.foo/quiz/datfiles/index bsd-games-2.1/quiz/datfiles/index
+--- bsd-games-2.1.foo/quiz/datfiles/index	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/quiz/datfiles/index	Tue Apr  7 21:55:06 1998
+@@ -0,0 +1,32 @@
++/usr/share/games/quiz/africa:Africa{n}:cap{ital}
++/usr/share/games/quiz/america:America{n}:cap{ital}
++/usr/share/games/quiz/areas:area{-code}:state{-region}:city
++/usr/share/games/quiz/arith:arith{metic}:ans{wer}
++/usr/share/games/quiz/asia:Asia{n}:cap{ital}
++/usr/share/games/quiz/babies:baby:adult
++/usr/share/games/quiz/bard:Shakespeare{{-}line{s}}|line{s}:next:work:char{acter}
++/usr/share/games/quiz/chinese:{Chinese{-}}year:next
++/usr/share/games/quiz/collectives:ind{ividuals}:coll{ective}
++/usr/share/games/quiz/ed:function:ed-command
++/usr/share/games/quiz/elements:symbol:number:weight:element
++/usr/share/games/quiz/europe:Europe{an}:cap{ital}
++/usr/share/games/quiz/flowers:flower{s}:meaning
++/usr/share/games/quiz/greek:greek:english
++/usr/share/games/quiz/inca:inca:succ{essor}
++/usr/share/games/quiz/latin:latin:english
++/usr/share/games/quiz/locomotive:locomotive:name
++/usr/share/games/quiz/midearth:M[iddle{-}Earth|E]:cap{ital}
++/usr/share/games/quiz/morse:clear|alpha{bet{ic}}:morse
++/usr/share/games/quiz/mult:mult{iplication}:ans{wer}
++/usr/share/games/quiz/murders:victim:killer
++/usr/share/games/quiz/poetry:poem{-}line:next:poem:author
++/usr/share/games/quiz/posneg:pos{itive}:neg{ative}
++/usr/share/games/quiz/pres:pres{ident}:term:succ{essor}
++/usr/share/games/quiz/province:province:cap{ital}
++/usr/share/games/quiz/seq-easy:easy{-}{seq{uence}}:next:name
++/usr/share/games/quiz/seq-hard:hard{-}{seq{uence}}:next:name
++/usr/share/games/quiz/sexes:male:female
++/usr/share/games/quiz/sov:sov{ereign}:cen{t{ury}}:succ{essor}
++/usr/share/games/quiz/state:state:cap{ital}:abbr{ev{iation}}:flower
++/usr/share/games/quiz/trek:star:trek
++/usr/share/games/quiz/ucc:section:U{niform{-}}C{riminal{-}}C{ode}
+diff -ruN bsd-games-2.1.foo/quiz/pathnames.h bsd-games-2.1/quiz/pathnames.h
+--- bsd-games-2.1.foo/quiz/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/quiz/pathnames.h	Tue Apr  7 21:55:06 1998
+@@ -0,0 +1,39 @@
++/*	$NetBSD: pathnames.h,v 1.4 1995/04/22 10:16:55 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_PAGER	"/usr/bin/less"
++#define	_PATH_QUIZIDX	"/usr/share/games/quiz/index"
+diff -ruN bsd-games-2.1.foo/quiz/quiz.6 bsd-games-2.1/quiz/quiz.6
+--- bsd-games-2.1.foo/quiz/quiz.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/quiz/quiz.6	Tue Apr  7 21:55:06 1998
+@@ -0,0 +1,121 @@
++.\"	$NetBSD: quiz.6,v 1.6 1997/09/20 14:28:16 lukem Exp $
++.\"
++.\" Copyright (c) 1991, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" This code is derived from software contributed to Berkeley by
++.\" Jim R. Oldroyd at The Instruction Set.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"	@(#)quiz.6	8.1 (Berkeley) 5/31/93
++.\"
++.Dd May 31, 1993
++.Dt QUIZ 6
++.Os
++.Sh NAME
++.Nm quiz
++.Nd random knowledge tests
++.Sh SYNOPSIS
++.Nm
++.Op Fl t
++.Op Fl i Ar file
++.Op Ar question answer
++.Sh DESCRIPTION
++The
++.Nm
++utility tests your knowledge of random facts.
++It has a database of subjects from which you can choose.
++With no arguments,
++.Nm
++displays the list of available subjects.
++.Pp
++The options are as follows:
++.Bl -tag -width indent
++.It Fl t
++Use tutorial mode, in which questions are repeated later if you didn't get
++them right the first time, and new questions are presented less frequently
++to help you learn the older ones.
++.It Fl i
++Specify an alternative index file.
++.El
++.Pp
++Subjects are divided into categories.
++You can pick any two categories from the same subject.
++.Nm
++will ask questions from the first category and it expects answers from
++the second category.
++For example, the command ``quiz victim killer'' asks questions which are
++the names of victims, and expects you to answer with the cause of their
++untimely demise, whereas the command ``quiz killer victim'' works the
++other way around.
++.Pp
++If you get the answer wrong,
++.Nm
++lets you try again.
++To see the right answer, enter a blank line.
++.Sh "Index and Data File Syntax"
++The index and data files have a similar syntax.
++Lines in them consist of several categories separated by colons.
++The categories are regular expressions formed using the following
++meta-characters:
++.sp
++.Bl -tag -width "pat|pat" -compact -offset indent
++.It pat|pat
++alternative patterns
++.It {pat}
++optional pattern
++.It [pat]
++delimiters, as in pat[pat|pat]pat
++.El
++.Pp
++In an index file, each line represents a subject.
++The first category in each subject is the pathname of the data file for
++the subject.
++The remaining categories are regular expressions for the titles of each
++category in the subject.
++.Pp
++In data files, each line represents a question/answer set.
++Each category is the information for the question/answer for that category.
++.Pp
++The backslash character (``\e'') is used to quote syntactically significant
++characters, or at the end of a line to signify that a continuation line
++follows.
++.Pp
++If either a question or its answer is empty,
++.Nm
++will refrain from asking it.
++.Sh FILES
++.Bl -tag -width /usr/share/games/quiz -compact
++.It Pa /usr/share/games/quiz
++The default index and data files.
++.El
++.Sh BUGS
++.Nm
++is pretty cynical about certain subjects.
+diff -ruN bsd-games-2.1.foo/robots/pathnames.h bsd-games-2.1/robots/pathnames.h
+--- bsd-games-2.1.foo/robots/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/robots/pathnames.h	Tue Apr  7 21:55:06 1998
+@@ -0,0 +1,38 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/04/22 10:09:01 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_SCORE	"/var/lib/games/robots_roll"
+diff -ruN bsd-games-2.1.foo/robots/robots.6 bsd-games-2.1/robots/robots.6
+--- bsd-games-2.1.foo/robots/robots.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/robots/robots.6	Tue Apr  7 21:55:07 1998
+@@ -0,0 +1,153 @@
++.\"	$NetBSD: robots.6,v 1.6 1997/10/12 14:10:03 lukem Exp $
++.\"
++.\" Copyright (c) 1991, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"	@(#)robots.6	8.1 (Berkeley) 5/31/93
++.\"
++.Dd May 31, 1993
++.Dt ROBOTS 6
++.Os
++.Sh NAME
++.Nm robots 
++.Nd fight off villainous robots
++.Sh SYNOPSIS
++.Nm
++.Op Fl sjta
++.Op Ar scorefile
++.Sh DESCRIPTION
++.Nm
++pits you against evil robots, who are trying to kill you (which is why
++they are evil).
++Fortunately for you, even though they are evil, they are not very bright
++and have a habit of bumping into each other, thus destroying themselves.
++In order to survive, you must get them to kill each other off, since you
++have no offensive weaponry.
++.Pp
++Since you are stuck without offensive weaponry, you are endowed with one
++piece of defensive weaponry: a teleportation device.
++When two robots run into each other or a junk pile, they die.
++If a robot runs into you, you die.
++When a robot dies, you get 10 points, and when all the robots die,
++you start on the next field.
++This keeps up until they finally get you.
++.Pp
++Robots are represented on the screen by a
++.Sq \+ ,
++the junk heaps from their collisions by a
++.Sq \(** ,
++and you
++(the good guy)
++by a
++.Sq \@ .
++.Pp
++The commands are:
++.Bl -tag -width indent -compact
++.It Ic h
++move one square left
++.It Ic l
++move one square right
++.It Ic k
++move one square up
++.It Ic j
++move one square down
++.It Ic y
++move one square up and left
++.It Ic u
++move one square up and right
++.It Ic b
++move one square down and left
++.It Ic n
++move one square down and right
++.It Ic \&.
++(also space) do nothing for one turn
++.It Ic HJKLBNYU
++run as far as possible in the given direction
++.It Ic \>
++do nothing for as long as possible
++.It Ic t
++teleport to a random location
++.It Ic w
++wait until you die or they all do
++.It Ic q
++quit
++.It Ic ^L
++redraw the screen
++.El
++.Pp
++All commands can be preceded by a count.
++.Pp
++If you use the
++.Sq Ic w 
++command and survive to the next level, you will get a bonus of 10%
++for each robot which died after you decided to wait.
++If you die, however, you get nothing.
++For all other commands, the program will save you from typos
++by stopping short of being eaten.
++However, with
++.Sq Ic w
++you take the risk of dying by miscalculation.
++.Pp
++Only five scores are allowed per user on the score file.
++If you make it into the score file, you will be shown the list at the end
++of the game.
++If an alternative score file is specified, that will be used instead of the
++standard file for scores.
++.Pp
++The options are
++.Bl -tag -width indent
++.It Fl s
++Don't play, just show the score file.
++.It Fl j
++Jump,
++.Em i.e. ,
++when you run, don't show any intermediate positions; only show things at
++the end.
++This is useful on slow terminals.
++.It Fl t
++Teleport automatically when you have no other option.
++This is a little disconcerting until you get used to it, and then it is
++very nice.
++.It Fl a
++Advance into the higher levels directly, skipping the lower, easier levels.
++.El
++.Sh AUTHOR
++Ken Arnold
++.Sh FILES
++.Bl -tag -width /var/lib/games/robots_roll -compact
++.It Pa /var/lib/games/robots_roll
++the score file
++.El
++.Sh BUGS
++Bugs?
++You
++.Em crazy ,
++man?!?
+diff -ruN bsd-games-2.1.foo/sail/pathnames.h bsd-games-2.1/sail/pathnames.h
+--- bsd-games-2.1.foo/sail/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/sail/pathnames.h	Tue Apr  7 21:55:07 1998
+@@ -0,0 +1,38 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/04/22 10:37:06 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_LOGFILE	"/var/lib/games/saillog"
+diff -ruN bsd-games-2.1.foo/snake/snake/pathnames.h bsd-games-2.1/snake/snake/pathnames.h
+--- bsd-games-2.1.foo/snake/snake/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/snake/snake/pathnames.h	Tue Apr  7 21:55:07 1998
+@@ -0,0 +1,39 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/04/22 08:34:33 cgd Exp $	*/
++
++/*
++ * Copyright (c) 1989, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_RAWSCORES	"/var/lib/games/snakerawscores"
++#define	_PATH_LOGFILE	"/var/lib/games/snake.log"
+diff -ruN bsd-games-2.1.foo/snake/snake/snake.6 bsd-games-2.1/snake/snake/snake.6
+--- bsd-games-2.1.foo/snake/snake/snake.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/snake/snake/snake.6	Tue Apr  7 21:55:07 1998
+@@ -0,0 +1,124 @@
++.\"	$NetBSD: snake.6,v 1.6 1997/10/12 01:49:26 lukem Exp $
++.\"
++.\" Copyright (c) 1980, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"	@(#)snake.6	8.1 (Berkeley) 5/31/93
++.\"
++.Dd May 31, 1993
++.Dt SNAKE 6
++.Os
++.Sh NAME
++.Nm snake , 
++.Nm snscore
++.Nd display chase game
++.Sh SYNOPSIS
++.Nm
++.Op Fl w Ar width
++.Op Fl l Ar length
++.br
++.Nm snscore
++.Sh DESCRIPTION
++.Nm
++is a display-based game which must be played on a CRT terminal.
++The object of the game is to make as much money as possible without
++getting eaten by the snake.  The
++.Fl l
++and
++.Fl w
++options allow you to specify the length and width of the field.
++By default the entire screen (except for the last column) is used.
++.Pp
++You are represented on the screen by an I.
++The snake is 6 squares long and is represented by S's.
++The money is $, and an exit is #.
++Your score is posted in the upper left hand corner.
++.Pp
++You can move around using the same conventions as 
++.Xr vi 1 ,
++the
++.Ic h ,
++.Ic j ,
++.Ic k ,
++and
++.Ic l
++keys work, as do the arrow keys.
++Other possibilities include:
++.Bl -tag -width indent
++.It Ic sefc
++These keys are like hjkl but form a directed pad around the d key.
++.It Ic HJKL
++These keys move you all the way in the indicated direction to the
++same row or column as the money.  This does 
++.Em not
++let you jump away from the snake, but rather saves you from having
++to type a key repeatedly.  The snake still gets all his turns.
++.It Ic SEFC
++Likewise for the upper case versions on the left.
++.It Ic ATPB
++These keys move you to the four edges of the screen.
++Their position on the keyboard is the mnemonic, e.g.
++P is at the far right of the keyboard.
++.It Ic x
++This lets you quit the game at any time.
++.It Ic p
++Points in a direction you might want to go.
++.It Ic w
++Space warp to get out of tight squeezes, at a price.
++.El
++.Pp
++To earn money, move to the same square the money is on.
++A new $ will appear when you earn the current one.
++As you get richer, the snake gets hungrier.
++To leave the game, move to the exit (#).
++.Pp
++A record is kept of the personal best score of each player.
++Scores are only counted if you leave at the exit,
++getting eaten by the snake is worth nothing.
++.Pp
++As in pinball, matching the last digit of your score to the number
++which appears after the game is worth a bonus.
++.Pp
++To see who wastes time playing snake, run
++.Nm snscore .
++.Sh FILES
++.Bl -tag -width /var/games/snakerawscores -compact
++.It Pa /var/games/snakerawscores
++database of personal bests
++.It Pa /var/games/snake.log
++log of games played
++.El
++.Sh BUGS
++When playing on a small screen,
++it's hard to tell when you hit the edge of the screen.
++.Pp
++The scoring function takes into account the size of the screen.
++A perfect function to do this equitably has not been devised.
+diff -ruN bsd-games-2.1.foo/subst.sed bsd-games-2.1/subst.sed
+--- bsd-games-2.1.foo/subst.sed	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/subst.sed	Tue Apr  7 21:55:00 1998
+@@ -0,0 +1,85 @@
++s%@srcdir@%$RPM_BUILD_DIR/bsd-games-2.1%g
++s%@install_prefix@%$RPM_BUILD_ROOT/%g
++s%@build_dirs@%adventure arithmetic atc backgammon battlestar bcd caesar canfield countmail cribbage dm factor fish gomoku hangman hunt mille monop morse number phantasia pig pom ppt primes quiz rain random robots sail snake tetris trek wargames worm worms wump%g
++s%@gamesdir@%/usr/games%g
++s%@sbindir@%/usr/sbin%g
++s%@usrbindir@%/usr/bin%g
++s%@hidegame@%:%g
++s%@use_dm@%n%g
++s%@libexecdir@%/usr/libexec/dm%g
++s%@man6dir@%/usr/man/man6%g
++s%@man8dir@%/usr/man/man8%g
++s%@man5dir@%/usr/man/man5%g
++s%@usrlibdir@%/usr/lib/games%g
++s%@sharedir@%/usr/share/games%g
++s%@varlibdir@%/var/lib/games%g
++s%@do_chown@%y%g
++s%@binary_owner@%root%g
++s%@binary_group@%games%g
++s%@binary_perms@%0755%g
++s%@install_binary@%install -c -m 0755 -o root -g games%g
++s%@score_game_owner@%root%g
++s%@score_game_group@%games%g
++s%@score_game_perms@%02755%g
++s%@install_score_game@%install -c -m 02755 -o root -g games%g
++s%@daemon_owner@%root%g
++s%@daemon_group@%root%g
++s%@daemon_perms@%0755%g
++s%@install_daemon@%install -c -m 0755 -o root -g root%g
++s%@dmdir_owner@%root%g
++s%@dmdir_group@%games%g
++s%@dmdir_perms@%0750%g
++s%@install_dmdir@%install -d -m 0750 -o root -g games%g
++s%@dm_owner@%root%g
++s%@dm_group@%games%g
++s%@dm_perms@%2755%g
++s%@install_dm@%install -c -m 2755 -o root -g games%g
++s%@manpage_owner@%root%g
++s%@manpage_group@%games%g
++s%@manpage_perms@%0644%g
++s%@install_manpage@%install -c -m 0644 -o root -g games%g
++s%@constdata_owner@%root%g
++s%@constdata_group@%root%g
++s%@constdata_perms@%0644%g
++s%@install_constdata@%install -c -m 0644 -o root -g root%g
++s%@vardata_owner@%root%g
++s%@vardata_group@%games%g
++s%@vardata_perms@%0644%g
++s%@install_vardata@%install -c -m 0644 -o root -g games%g
++s%@use_dot_so@%.so%g
++s%@use_dot_so@%.so%g
++s%@gzip_manpages@%n%g
++s%@install_script@%install -c -m 0755 -o root -g games%g
++s%@cc@%gcc%g
++s%@optimize_flags@%-g -O2%g
++s%@warning_flags@%-Wall -W -Wstrict-prototypes -Wmissing-prototypes%g
++s%@ncurses_lib@%-lncurses%g
++s%@ncurses_includes@%%g
++s%@other_cflags@%%g
++s%@other_ldflags@%%g
++s%@yacc@%bison -y%g
++s%@lex@%flex%g
++s%@lex_lib@%-lfl%g
++s%@pager@%/usr/bin/less%g
++s%@offensive_fortunes@%n%g
++s%@fortune_type@%fake%g
++s%@atc_dir@%/usr/share/games/atc%g
++s%@atc_scorefile@%/var/lib/games/atc_score%g
++s%@battlestar_scorefile@%/var/lib/games/battlestar.log%g
++s%@canfield_scorefile@%/var/lib/games/cfscores%g
++s%@cribbage_instrfile@%/usr/share/games/cribbage.instr%g
++s%@cribbage_scorefile@%/var/lib/games/criblog%g
++s%@dm_configfile@%/etc/dm.conf%g
++s%@dm_nogamesfile@%/etc/nogames%g
++s%@dm_logfile@%/var/lib/games/games.log%g
++s%@fish_instrfile@%/usr/share/games/fish.instr%g
++s%@hangman_wordsfile@%/usr/share/games/hangman-words%g
++s%@monop_cardsfile@%/usr/lib/games/monop-cards.pck%g
++s%@phantasia_dir@%/var/lib/games/phantasia%g
++s%@quiz_dir@%/usr/share/games/quiz%g
++s%@robots_scorefile@%/var/lib/games/robots_roll%g
++s%@sail_scorefile@%/var/lib/games/saillog%g
++s%@snake_scorefile@%/var/lib/games/snake.log%g
++s%@snake_rawscorefile@%/var/lib/games/snakerawscores%g
++s%@tetris_scorefile@%/var/lib/games/tetris-bsd.scores%g
++s%@wump_infofile@%/usr/share/games/wump.info%g
+diff -ruN bsd-games-2.1.foo/tetris/pathnames.h bsd-games-2.1/tetris/pathnames.h
+--- bsd-games-2.1.foo/tetris/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/tetris/pathnames.h	Tue Apr  7 21:55:08 1998
+@@ -0,0 +1,41 @@
++/*	$NetBSD: pathnames.h,v 1.2 1995/04/22 07:42:37 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1992, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * This code is derived from software contributed to Berkeley by
++ * Chris Torek and Darren F. Provine.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define _PATH_SCOREFILE	"/var/lib/games/tetris-bsd.scores"
+diff -ruN bsd-games-2.1.foo/tetris/tetris.6 bsd-games-2.1/tetris/tetris.6
+--- bsd-games-2.1.foo/tetris/tetris.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/tetris/tetris.6	Tue Apr  7 21:55:08 1998
+@@ -0,0 +1,157 @@
++.\"	$NetBSD: tetris.6,v 1.4 1997/09/01 23:26:11 mikel Exp $
++.\"
++.\" Copyright (c) 1992, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" This code is derived from software contributed to Berkeley by
++.\" Nancy L. Tinkham and Darren F. Provine.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"	@(#)tetris.6	8.1 (Berkeley) 5/31/93
++.\"
++.Dd May 31, 1993
++.Dt TETRIS 6
++.Os
++.Sh NAME
++.Nm tetris
++.Nd the game of tetris
++.Sh SYNOPSIS
++.Nm
++.Op Fl s
++.Op Fl k Ar keys
++.Op Fl l Ar level
++.Sh DESCRIPTION
++The
++.Nm
++command runs display-based game which must be played on a CRT terminal.
++The object is to fit the shapes together forming complete rows,
++which then vanish.
++When the shapes fill up to the top, the game ends.
++You can optionally select a level of play, or custom-select control keys.
++.Pp
++The default level of play is 2.
++.Pp
++The default control keys are as follows:
++.Pp
++.Bl -tag -width "<space>" -compact -offset indent
++.It j
++move left
++.It k
++rotate 1/4 turn counterclockwise
++.It l
++move right
++.It <space>
++drop
++.It p
++pause
++.It q
++quit
++.El
++.Pp
++The options are as follows:
++.Bl -tag -width indent
++.It Fl k
++The default control keys can be changed using the
++.Fl k
++option.
++The
++.Ar keys
++argument must have the six keys in order, and, remember to quote any
++space or tab characters from the shell.
++For example:
++.sp
++.Dl "tetris -l 2 -k 'jkl pq'"
++.sp
++will play the default games, i.e. level 2 and with the default
++control keys.
++The current key settings are displayed at the bottom of the screen
++during play.
++.It Fl l
++Select a level of play.
++.It Fl s
++Display the top scores.
++.El
++.Pp
++.Sh PLAY
++At the start of the game, a shape will appear at the top of the screen,
++falling one square at a time.
++The speed at which it falls is determined directly by the level:
++if you select level 2, the blocks will fall twice per second;
++at level 9, they fall 9 times per second.
++(As the game goes on, things speed up,
++no matter what your initial selection.)
++When this shape
++.Dq "touches down"
++on the bottom of the field, another will appear at the top.
++.Pp
++You can move shapes to the left or right, rotate them counterclockwise,
++or drop them to the bottom by pressing the appropriate keys.
++As you fit them together, completed horizontal rows vanish,
++and any blocks above fall down to fill in.
++When the blocks stack up to the top of the screen, the game is over.
++.Sh SCORING
++You get one point for every block you fit into the stack,
++and one point for every space a block falls when you hit the drop key.
++(Dropping the blocks is therefore a good way to increase your score.)
++Your total score is the product of the level of play
++and your accumulated
++.ie t points\(em200
++.el points -- 200
++points on level 3 gives you a score of 600.
++Each player gets at most one entry on any level,
++for a total of nine scores in the high scores file.
++Players who no longer have accounts are limited to one score.
++Also, scores over 5 years old are expired.
++The exception to these conditions is that the highest score on a given
++level is
++.Em always
++kept,
++so that following generations can pay homage to those who have
++wasted serious amounts of time.
++.Pp
++The score list is produced at the end of the game.
++The printout includes each player's overall ranking,
++name, score, and how many points were scored on what level.
++Scores which are the highest on a given level
++are marked with asterisks
++.Dq * .
++.Sh FILES
++.Bl -tag -width /var/lib/games/tetris-bsd.scoresxx
++.It /var/lib/games/tetris-bsd.scores
++high score file
++.El
++.Sh BUGS
++The higher levels are unplayable without a fast terminal connection.
++.Sh AUTHORS
++Adapted from a 1989 International Obfuscated C Code Contest winner by
++Chris Torek and Darren F. Provine.
++.Pp
++Manual adapted from the original entry written by Nancy L. Tinkham and
++Darren F. Provine.
+diff -ruN bsd-games-2.1.foo/trek/trek.6 bsd-games-2.1/trek/trek.6
+--- bsd-games-2.1.foo/trek/trek.6	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/trek/trek.6	Tue Apr  7 21:55:08 1998
+@@ -0,0 +1,142 @@
++.\"	$NetBSD: trek.6,v 1.4 1995/04/22 10:59:35 cgd Exp $
++.\"
++.\" Copyright (c) 1980, 1993
++.\"	The Regents of the University of California.  All rights reserved.
++.\"
++.\" Redistribution and use in source and binary forms, with or without
++.\" modification, are permitted provided that the following conditions
++.\" are met:
++.\" 1. Redistributions of source code must retain the above copyright
++.\"    notice, this list of conditions and the following disclaimer.
++.\" 2. Redistributions in binary form must reproduce the above copyright
++.\"    notice, this list of conditions and the following disclaimer in the
++.\"    documentation and/or other materials provided with the distribution.
++.\" 3. All advertising materials mentioning features or use of this software
++.\"    must display the following acknowledgement:
++.\"	This product includes software developed by the University of
++.\"	California, Berkeley and its contributors.
++.\" 4. Neither the name of the University nor the names of its contributors
++.\"    may be used to endorse or promote products derived from this software
++.\"    without specific prior written permission.
++.\"
++.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++.\" SUCH DAMAGE.
++.\"
++.\"	@(#)trek.6	8.2 (Berkeley) 12/30/93
++.\"
++.Dd December 30, 1993
++.Dt TREK 6
++.Os
++.Sh NAME
++.Nm trek 
++.Nd trekkie game
++.Sh SYNOPSIS
++.Nm /usr/games/trek
++.Oo
++.Op Fl a
++.Ar file
++.Oc
++.Sh DESCRIPTION
++.Nm Trek
++is a game of space glory and war.  Below is a summary of commands.
++For complete documentation, see
++.Em Trek
++by Eric Allman.
++.Pp
++If a filename is given, a log of the game is written onto that file.
++If the
++.Fl a
++flag is given before the filename, that file is appended to, not truncated.
++.Pp
++The game will ask you what length game you would like.
++Valid responses are 
++.Dq short ,
++.Dq medium ,
++and 
++.Dq long .
++You may also type 
++.Dq restart ,
++which restarts a previously saved game.
++You will then be prompted for the skill, to which you must respond
++.Dq novice ,
++.Dq fair ,
++.Dq good ,
++.Dq expert ,
++.Dq commodore ,
++or
++.Dq impossible .
++You should normally start out with a novice and work up.
++.Pp
++In general, throughout the game, if you forget what is appropriate
++the game will tell you what it expects if you just type in a question mark.
++.Sh AUTHOR
++Eric Allman
++.Sh "SEE ALSO"
++.Pa /usr/doc/trek
++.Sh COMMAND SUMMARY
++.Bl -item -compact
++.It
++.Ic abandon
++.It
++.Ic ca Ns pture
++.It
++.Ic cl Ns oak 
++.Ic u Ns p/ Ns Ic d Ns own
++.It
++.Ic c Ns omputer request; ...
++.It
++.Ic da Ns mages
++.It
++.Ic destruct
++.It
++.Ic do Ns ck
++.It
++.Ic help
++.It
++.Ic i Ns mpulse course distance
++.It
++.Ic l Ns rscan
++.It
++.Ic m Ns ove course distance
++.It
++.Ic p Ns hasers Ic a Ns utomatic
++amount
++.It
++.Ic p Ns hasers Ic m Ns anual
++amt1 course1 spread1 ...
++.It
++.Ic t Ns orpedo course
++.Op Ic y Ns es
++.No angle/ Ns Ic n Ns o
++.It
++.Ic ram No course distance
++.It
++.Ic r Ns est time
++.It
++.Ic shell
++.It
++.Ic sh Ns ields 
++.Ic u Ns p/ Ns Ic d Ns own
++.It
++.Ic s Ns rscan
++.Op Ic y Ns es/ Ic n Ns o
++.It
++.Ic st Ns atus
++.It
++.Ic terminate y Ns es/ Ns Ic n Ns o
++.It
++.Ic u Ns ndock
++.It
++.Ic v Ns isual course
++.It
++.Ic w Ns arp warp_factor
++.El
+diff -ruN bsd-games-2.1.foo/wump/pathnames.h bsd-games-2.1/wump/pathnames.h
+--- bsd-games-2.1.foo/wump/pathnames.h	Thu Jan  1 00:00:00 1970
++++ bsd-games-2.1/wump/pathnames.h	Tue Apr  7 21:55:08 1998
+@@ -0,0 +1,39 @@
++/*	$NetBSD: pathnames.h,v 1.3 1995/04/22 08:19:48 cgd Exp $	*/
++
++/*-
++ * Copyright (c) 1989, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)pathnames.h	8.1 (Berkeley) 5/31/93
++ */
++
++#define	_PATH_PAGER	"/usr/bin/less"
++#define	_PATH_WUMPINFO	"/usr/share/games/wump.info"

@@ -1,0 +1,218 @@
+--- mgetty-1.1.22/do_stat.c.excl	Mon Dec  8 02:47:01 1997
++++ mgetty-1.1.22/do_stat.c	Sat Aug 26 17:22:49 2000
+@@ -14,6 +14,8 @@
+ #include <string.h>
+ #include <time.h>
+ #include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
+ #ifndef sunos4
+ #include <sys/ioctl.h>
+ #endif
+@@ -39,6 +41,7 @@
+ char line[MAXLINE];
+ int  r;
+ FILE * fp = NULL;			/* target file */
++struct stat st;				/* target file info */
+ 
+     if ( tgt_file != NULL )		/* to file, not to lprintf() */
+     {
+@@ -47,10 +50,20 @@
+ 	    lprintf( L_ERROR, "do_stat: can't open %s", tgt_file );
+ 	else				/* open ok, log time */
+ 	{
+-	    time_t now = time(NULL);
+-	    char *snow = ctime( &now );
+-	    if ( snow )
+-	        fprintf( fp, "--- %.*s ---\n", (int) strlen(snow)-1, snow);
++	    if ( fstat ( fileno ( fp ), &st ) == -1 )
++	    {
++	        lprintf( L_ERROR, "do_stat: can't open %s", tgt_file );
++		fclose ( fp );
++	    }
++	    else
++	    {
++	        time_t now = time(NULL);
++	        char *snow = ctime( &now );
++	        if ( snow )
++	            if ( ! S_ISLNK (st.st_mode) )
++	                if ( st.st_nlink == 1 )
++	                    fprintf( fp, "--- %.*s ---\n", (int) strlen(snow)-1, snow);
++	    }
+ 	}
+     }
+ 
+--- mgetty-1.1.22/faxrecp.c.excl	Fri Oct 16 15:50:04 1998
++++ mgetty-1.1.22/faxrecp.c	Sat Aug 26 17:22:49 2000
+@@ -121,7 +121,10 @@
+ #endif
+ 
+     if ( checkspace(directory) )
+-	fax_fp = fopen( temp, "w" );
++    {
++        int fax_fd = open ( temp, O_WRONLY | O_CREAT | O_EXCL );
++	fax_fp = ( fax_fd != -1 ) ? fdopen( fax_fd, "w" ) : NULL;
++    }
+     else
+     {
+ 	lprintf( L_ERROR, "Not enough space on %s for fax reception", directory);
+@@ -136,7 +139,10 @@
+ 		       (int) call_start & 0xffff, pagenum );
+ 
+ 	if ( checkspace("/tmp") )
+-	    fax_fp = fopen( temp, "w" );
++	{
++            int fax_fd = open ( temp, O_WRONLY | O_CREAT | O_EXCL );
++	    fax_fp = ( fax_fd != -1 ) ? fdopen( fax_fd, "w" ) : NULL;
++	}
+ 	else
+ 	{
+ 	    lprintf( L_ERROR, "Not enough space on /tmp for fax reception - dropping line");
+--- mgetty-1.1.22/logfile.c.excl	Tue Sep  1 07:22:57 1998
++++ mgetty-1.1.22/logfile.c	Sat Aug 26 17:22:49 2000
+@@ -212,62 +212,13 @@
+ 
+     errnr = errno;
+ 
+-    if ( log_fp == NULL )		/* open log file, if necessary */
++    /* the first time we open the logfile, write a separator line
++     * and initialize syslog logging (if desired)
++     */
++    if ( first_open )
+     {
+-        if ( log_path[0] == 0 )
+-	    sprintf( log_path, LOG_PATH, "unknown" );
+-	log_fp = fopen( log_path, "a" );
+-
+-	if ( log_fp == NULL )		/* opening log file failed */
+-	{
+-
+-	    sprintf(ws, "cannot open logfile %s", log_path);
+-	    perror(ws);
+-	    
+-	    /* use /dev/console for logging, if possible */
+-	    if ( ( log_fp = fopen( CONSOLE, "w" ) ) != NULL )
+-	    {
+-		fprintf( log_fp, "\n%s: resorting to logging to %s\n",
+-			log_program, CONSOLE );
+-	    }
+-	    else	/* give up, disable logging */
+-	    {
+-		sprintf( ws, "cannot log to %s, disable logging", CONSOLE );
+-		perror( ws );
+-		log_level = -1;
+-		return 0;
+-	    }
+-	}
+-	
+-	/* make sure that the logfile is not accidently stdin, -out or -err
+-	 */
+-	if ( fileno( log_fp ) < 3 )
+-	{
+-	int fd;
+-	    if ( ( fd = fcntl( fileno( log_fp ), F_DUPFD, 3 ) ) > 2 )
+-	    {
+-		fclose( log_fp );
+-		log_fp = fdopen( fd, "a" );
+-	    }
+-	}
+-
+-	/* the first time we open the logfile, write a separator line
+-	 * and initialize syslog logging (if desired)
+-	 */
+-	if ( first_open )
+-	{
+-	    first_open = FALSE;
+-	    fprintf( log_fp, "\n--" );
+-#ifdef SYSLOG
+-	    openlog( log_program, LOG_PID, SYSLOG_FC );
+-#endif
+-	}
+-
+-	/* set close-on-exec bit (prevent user programs writing to logfile */
+-	if ( fcntl( fileno( log_fp ), F_SETFD, 1 ) < 0 )
+-	{
+-	    lprintf( L_ERROR, "open_log: can't set close-on-exec bit" );
+-	}
++        first_open = FALSE;
++        openlog( log_program, LOG_PID, SYSLOG_FC );
+     }
+ 
+     /* Marc's hack to get different verbosity levels on different
+@@ -297,52 +248,12 @@
+ 
+     if ( level == L_AUDIT )		/* some little auditing */
+     {
+-	fprintf(log_fp, "\n%02d/%02d %02d:%02d:%02d ##### %s\n",
+-		             tm->tm_mon+1,  tm->tm_mday,
+-			     tm->tm_hour, tm->tm_min, tm->tm_sec, ws );
+-#ifdef SYSLOG
+ 	syslog( LOG_NOTICE, "%s", ws );
+-#endif
+-    }
+-    else if ( level != L_ERROR && level != L_FATAL )
+-    {
+-	fprintf(log_fp, "\n%02d/%02d %02d:%02d:%02d %s %s",
+-		             tm->tm_mon+1,  tm->tm_mday,
+-			     tm->tm_hour, tm->tm_min, tm->tm_sec,
+-		             log_infix, ws );
+     }
+     else		/* ERROR or FATAL */
+     {
+-	fprintf(log_fp, "\n%02d/%02d %02d:%02d:%02d %s %s: %s",
+-		             tm->tm_mon+1,  tm->tm_mday,
+-			     tm->tm_hour, tm->tm_min, tm->tm_sec,
+-		             log_infix, ws,
+-			     ( errnr <= sys_nerr ) ? sys_errlist[errnr]:
+-			     "<error not in list>" );
+-#ifdef SYSLOG
+ 	syslog( level == L_FATAL? LOG_ALERT: LOG_ERR, "%s: %m", ws );
+-#endif
+-
+-#ifndef SYSLOG
+-	if ( level == L_FATAL )		/* write to console */
+-	{
+-	    FILE * cons_fp;
+-	    if ( ( cons_fp = fopen( CONSOLE, "w" ) ) != NULL )
+-	    {
+-		fprintf( cons_fp, "\n%s FATAL: %s %s\n",
+-			          log_program, log_infix, ws );
+-		fclose( cons_fp );
+-	    }
+-	    else	/* last resort */
+-		if ( !mail_logfile )
+-	    {
+-		atexit( logmail );
+-		mail_logfile = TRUE;
+-	    }
+-	}
+-#endif
+     }	/* end if ( L_ERROR or L_FATAL ) */
+-    fflush(log_fp);
+ 
+     return 0;
+ }
+--- mgetty-1.1.22/mgetty.c.excl	Sat Aug 26 17:22:49 2000
++++ mgetty-1.1.22/mgetty.c	Sat Aug 26 17:24:14 2000
+@@ -12,6 +12,7 @@
+ #include <stdio.h>
+ #include "syslibs.h"
+ #include <string.h>
++#include <fcntl.h>
+ #include <unistd.h>
+ #include <sys/types.h>
+ #include <sys/times.h>
+@@ -108,10 +109,12 @@
+ static void make_pid_file _P0( void )
+ {
+     FILE * fp;
++    int fd;
+ 
+     sprintf( pid_file_name, "%s/mgetty.pid.%s", VARRUNDIR, DevID );
+ 
+-    fp = fopen( pid_file_name, "w" );
++    fd = open( pid_file_name, O_WRONLY | O_CREAT | O_EXCL );
++    fp = ( fd != -1 ) ? fdopen(fd, "w") : NULL;
+     if ( fp == NULL )
+ 	lprintf( L_ERROR, "can't create pid file %s", pid_file_name );
+     else

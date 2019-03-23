@@ -1,0 +1,77 @@
+#! /bin/sh
+#
+# inet          Start TCP/IP networking services. This script
+#               starts the Internet Network Daemon.
+#
+# chkconfig: 345 50 50
+# description: The internet superserver daemon (commonly called inetd) \
+#              starts a variety of other internet services as needed. It \
+#              is responsible for starting many services, including telnet, \
+#              ftp, rsh, and rlogin. Disabling inetd disables all of the \
+#              services it is responsible for.
+# processname: inetd
+# pidfile: /var/run/inetd.pid
+# config: /etc/sysconfig/network
+# config: /etc/inetd.conf
+
+# Source function library.
+. /etc/init.d/functions
+
+# Get config.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+if [ "$NETWORKING" = "no" ]
+then
+	exit 0
+fi
+
+[ -f /usr/sbin/inetd ] || exit 0
+
+RETVAL=0
+prog="INET services"
+
+start() {
+        echo -n $"Starting $prog: "
+        daemon inetd
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/inetd
+	return $RETVAL
+}
+stop() {
+        echo -n $"Stopping $prog: "
+        killproc inetd
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/inetd
+	return $RETVAL
+}
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+	status inetd
+	;;
+  restart)
+	stop
+	start
+	;;
+  reload)
+	killall -HUP inetd
+	RETVAL=$?
+	;;
+  condrestart)
+	[ -f /var/lock/subsys/inetd ] && restart
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart|reload|condrestart}"
+	exit 1
+esac
+
+exit $?

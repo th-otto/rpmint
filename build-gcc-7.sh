@@ -48,7 +48,7 @@ case $host in
 	mingw* | msys*) here=`pwd` ;;
 	*) here=`pwd` ;;
 esac
-ARCHIVES_DIR="$here"
+ARCHIVES_DIR="$HOME/packages"
 
 #
 # where to look for mpfr/gmp/mpc/isl etc.
@@ -69,7 +69,7 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
+MINT_BUILD_DIR="$BUILD_DIR/gcc-build7"
 
 #
 # Where to put the executables for later use.
@@ -87,11 +87,7 @@ DIST_DIR="$here/pkgs"
 # Where to look up the source tree.
 #
 srcdir="$HOME/m68k-atari-mint-gcc"
-if test -d "$srcdir"; then
-	touch ".patched-${PACKAGENAME}${VERSION}"
-else
-	srcdir="$here/${PACKAGENAME}${VERSION}"
-fi
+srcdir="$here/${PACKAGENAME}${VERSION}"
 
 #
 # this patch can be recreated by

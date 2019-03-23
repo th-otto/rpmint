@@ -1,0 +1,38 @@
+--- wv-0.7.0/configure.in.config	Mon Oct 29 17:43:06 2001
++++ wv-0.7.0/configure.in	Tue Nov  6 13:49:24 2001
+@@ -143,7 +143,7 @@
+ AC_CHECK_HEADER(png.h,[
+ 	AC_CHECK_HEADER(pngconf.h,[
+ 		AC_CHECK_LIB(png, png_free,[
+-			AC_DEFINE(HasPNG)
++			AC_DEFINE(HasPNG,,Define if you have PNG library)
+ 			HAVE_PNG=1
+ 			if test "x$PNG_DIR" != "x"; then
+ 				PNG_CFLAGS="-I$PNG_DIR/include"
+@@ -349,7 +349,7 @@
+ 	AC_CHECK_HEADER(libwmf/api.h,[
+ 		AC_CHECK_LIB(wmf,wmf_stream_create,have_libwmf=yes,[
+ 			AC_MSG_ERROR(* * * libwmf >= 0.2.1 required * * *)
+-		])
++		],$libwmf_libs)
+ 		AC_CHECK_HEADER(libwmf/foreign.h,[
+ 			AC_DEFINE(HAVE_LIBWMF_FOREIGN_H)
+ 		],[	AC_MSG_WARN(* * * libwmf >= 0.2.2 recommended * * *)
+@@ -523,6 +523,8 @@
+ if test -n "$MAGICK_CONFIG"; then
+     m_cppflags=`$MAGICK_CONFIG --cppflags`
+     m_ldflags=`$MAGICK_CONFIG --ldflags`
++    m_libs=`$MAGICK_CONFIG --libs`
++    xml2_libs=`xml2-config --libs`
+ 
+     CPPFLAGS="$CPPFLAGS $m_cppflags"
+     LDFLAGS="$LDFLAGS $m_ldflags"
+@@ -532,7 +534,7 @@
+             MAGICK_CFLAGS=$m_cppflags
+             MAGICK_LIBS=$m_ldflags
+             MAGICK="BMAGICK"
+-            MAGICKOBJS="\$(RMAGICKOBJS)"]))
++            MAGICKOBJS="\$(RMAGICKOBJS)"],,$m_libs $xml2_libs))
+ fi
+ 
+ if test -z "$MAGICK"; then

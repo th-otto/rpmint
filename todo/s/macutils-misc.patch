@@ -1,0 +1,30 @@
+--- macutils/makefile.nonfsstnd	Sat Oct  2 16:16:00 1993
++++ macutils/makefile	Thu Mar  7 00:16:32 1996
+@@ -1,5 +1,5 @@
+ SHELL =	/bin/sh
+-BINDIR =	/ufs/dik/tmpbin
++BINDIR =	/usr/bin
+ # Use the following flags on the CF macro definition as needed.
+ #
+ # -DBSD if you are on a BSD system
+@@ -64,13 +64,13 @@
+ 	(cd comm; make CF='$(CF)' lint)
+ 
+ install:
+-	cp macunpack/macunpack $(BINDIR)/.
+-	cp hexbin/hexbin $(BINDIR)/.
+-	cp mixed/macsave $(BINDIR)/.
+-	cp mixed/macstream $(BINDIR)/.
+-	cp binhex/binhex $(BINDIR)/.
+-	cp comm/tomac $(BINDIR)/.
+-	cp comm/frommac $(BINDIR)/.
++	install -m 755 -o 0 -g 0 -s macunpack/macunpack $(BINDIR)/.
++	install -m 755 -o 0 -g 0 -s hexbin/hexbin $(BINDIR)/.
++	install -m 755 -o 0 -g 0 -s mixed/macsave $(BINDIR)/.
++	install -m 755 -o 0 -g 0 -s mixed/macstream $(BINDIR)/.
++	install -m 755 -o 0 -g 0 -s binhex/binhex $(BINDIR)/.
++	install -m 755 -o 0 -g 0 -s comm/tomac $(BINDIR)/.
++	install -m 755 -o 0 -g 0 -s comm/frommac $(BINDIR)/.
+ 
+ distr:
+ 	shar -a README makefile crc util fileio macunpack hexbin mixed binhex  \

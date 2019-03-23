@@ -1,0 +1,74 @@
+--- tcpdump-3.6.2/tcpdump.1	Wed Jan  3 19:35:34 2001
++++ tcpdump-3.6.2.usageman/tcpdump.1	Sat Jan 13 22:20:11 2001
+@@ -27,7 +27,7 @@
+ .na
+ .B tcpdump
+ [
+-.B \-adeflnNOpqRStvxX
++.B \-adeflnNOpqRStuvxX
+ ] [
+ .B \-c
+ .I count
+@@ -200,6 +201,12 @@
+ Read packets from \fIfile\fR (which was created with the -w option).
+ Standard input is used if \fIfile\fR is ``-''.
+ .TP
++.B \-R
++Assume ESP/AH packets to be based on old specification (RFC1825 to RFC1829).
++If specified, \fItcpdump\fP will not print replay prevention field.
++Since there is no protocol version field in ESP/AH specification,
++\fItcpdump\fP cannot deduce the version of ESP/AH protocol.
++.TP
+ .B \-s
+ Snarf \fIsnaplen\fP bytes of data from each packet rather than the
+ default of 68 (with SunOS's NIT, the minimum is actually 96).
+@@ -215,6 +222,15 @@
+ capture the protocol information you're interested in.  Setting
+ \fIsnaplen\fP to 0 means use the required length to catch whole packets.
+ .TP
++.B \-S
++Print absolute, rather than relative, TCP sequence numbers.
++.TP
++.B \-t
++\fIDon't\fP print a timestamp on each dump line.
++.TP
++.B \-tt
++Print an unformatted timestamp on each dump line.
++.TP
+ .B \-T
+ Force packets selected by "\fIexpression\fP" to be interpreted the
+ specified \fItype\fR. Currently known types are
+@@ -227,20 +243,8 @@
+ and
+ \fBwb\fR (distributed White Board).
+ .TP
+-.B \-R
+-Assume ESP/AH packets to be based on old specification (RFC1825 to RFC1829).
+-If specified, \fItcpdump\fP will not print replay prevention field.
+-Since there is no protocol version field in ESP/AH specification,
+-\fItcpdump\fP cannot deduce the version of ESP/AH protocol.
+-.TP
+-.B \-S
+-Print absolute, rather than relative, TCP sequence numbers.
+-.TP
+-.B \-t
+-\fIDon't\fP print a timestamp on each dump line.
+-.TP
+-.B \-tt
+-Print an unformatted timestamp on each dump line.
++.B \-u
++Print undecoded NFS handles.
+ .TP
+ .B \-v
+ (Slightly more) verbose output.  For example, the time to live,
+--- tcpdump-3.6.2/tcpdump.c	Wed Jan  3 19:35:34 2001
++++ tcpdump-3.6.2.usageman/tcpdump.c	Sat Jan 13 22:20:11 2001
+@@ -502,7 +502,7 @@
+ 	(void)fprintf(stderr, "%s version %s\n", program_name, version);
+ 	(void)fprintf(stderr, "libpcap version %s\n", pcap_version);
+ 	(void)fprintf(stderr,
+-"Usage: %s [-adeflnNOpqStuvxX] [-c count] [ -F file ]\n", program_name);
++"Usage: %s [-adeflnNOpqRStuvxX] [-c count] [ -F file ]\n", program_name);
+ 	(void)fprintf(stderr,
+ "\t\t[ -i interface ] [ -r file ] [ -s snaplen ]\n");
+ 	(void)fprintf(stderr,

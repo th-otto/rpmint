@@ -1,0 +1,28 @@
+inetd:
+	- If you switch a service to vhosting, you have to kill -1 twice.
+	  This is because it adds the new services in (and thus tries to
+	  bind the sockets) before it flushes the old ones, so the binds
+	  fail the first time.
+
+	- Someone with detailed knowledge of the behavior of file 
+	  descriptor limits in the kernel (particularly over changing
+	  kernel versions) should look at the rlimit code and see if it
+	  makes sense and if it interacts with the restart-on-EMFILE 
+	  code correctly. It gives an air of being wrong.
+
+	- setproctitle() may produce a "might be used uninitialized"
+	  warning.
+
+	- If you encounter problems with inetd disabling services and
+	  then never restarting them, or (rarely) hanging completely
+	  in sigpause or sigsuspend, the most likely problem is that
+	  your libc is doing sleep() by calling alarm() followed by
+	  sigsuspend(). This conflicts with inetd's use of alarm() and
+	  causes all kinds of problems. To solve this problem, put
+	  -DUSE_MYSLEEP in CFLAGS. (This is already the default for
+	  libc5.) If someone can think of a clever way to test for
+	  this condition in configure without making configure take a
+	  long time to run, please let me know.
+
+ping:
+	- lets any user view arbitrary incoming icmp traffic. 

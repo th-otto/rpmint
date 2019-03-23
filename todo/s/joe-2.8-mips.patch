@@ -1,0 +1,48 @@
+diff -urN joe.orig/macro.c joe/macro.c
+--- joe.orig/macro.c	Thu Dec 22 17:27:27 1994
++++ joe/macro.c	Sun Jun 21 16:12:48 1998
+@@ -464,7 +464,7 @@
+   else return -1;
+  }
+ 
+-extern int dostaupd;
++extern volatile int dostaupd;
+ 
+ int ustop()
+  {
+diff -urN joe.orig/pw.c joe/pw.c
+--- joe.orig/pw.c	Thu Oct  6 07:20:35 1994
++++ joe/pw.c	Sun Jun 21 16:13:13 1998
+@@ -75,7 +75,7 @@
+ 
+ /* When user hits return in a prompt window */
+ 
+-extern int dostaupd;
++extern volatile int dostaupd;
+ 
+ int rtnpw(bw)
+ BW *bw;
+diff -urN joe.orig/scrn.c joe/scrn.c
+--- joe.orig/scrn.c	Thu Oct  6 08:10:07 1994
++++ joe/scrn.c	Sun Jun 21 16:13:30 1998
+@@ -1155,7 +1155,7 @@
+ if(amnt==bot-top) msetI(t->updtab+bot-amnt,1,amnt);
+ }
+ 
+-extern int dostaupd;
++extern volatile int dostaupd;
+ 
+ void nredraw(t)
+ SCRN *t;
+diff -urN joe.orig/w.c joe/w.c
+--- joe.orig/w.c	Thu Oct  6 07:20:35 1994
++++ joe/w.c	Sun Jun 21 16:14:22 1998
+@@ -240,7 +240,7 @@
+  */
+ 
+ static int doabort();
+-extern int dostaupd;
++extern volatile int dostaupd;
+ 
+ void wfit(t)
+ SCREEN *t;

@@ -1,0 +1,59 @@
+--- sysklogd-1.3/Makefile.mint	Sat Sep 29 00:06:40 2001
++++ sysklogd-1.3/Makefile	Sat Sep 29 00:09:46 2001
+@@ -23,6 +23,9 @@
+ # uncommenting the following define.
+ # LIBS = ${LIBS} -linux
+ 
++# Networking stuff is in -lsocket for MiNT.
++LIBS = -lsocket
++
+ # Define the following to impart start-up delay in klogd.  This is
+ # useful if klogd is started simultaneously or in close-proximity to syslogd.
+ # KLOGD_START_DELAY = -DKLOGD_DELAY=5
+@@ -37,6 +40,8 @@
+ MAN_OWNER = root
+ # MAN_OWNER = man
+ 
++MAN_GROUP = root
++
+ # The following define establishes the name of the pid file for the
+ # syslogd daemon.  The library include file (paths.h) defines the
+ # name for the syslogd pid to be syslog.pid.  A number of people have
+@@ -44,7 +49,7 @@
+ # ballot below.
+ # SYSLOGD_PIDNAME = -DSYSLOGD_PIDNAME=\"syslogd.pid\"
+ 
+-SYSLOGD_FLAGS= -DSYSLOG_INET -DSYSLOG_UNIXAF -DNO_SCCS ${FSSTND} \
++SYSLOGD_FLAGS= -DSYSLOG_INET -DNO_SCCS ${FSSTND} \
+ 	${SYSLOGD_PIDNAME}
+ SYSLOG_FLAGS= -DALLOW_KERNEL_LOGGING
+ KLOGD_FLAGS = ${FSSTND} ${KLOGD_START_DELAY}
+@@ -52,7 +57,7 @@
+ .c.o:
+ 	${CC} ${CFLAGS} -c $*.c
+ 
+-all: syslogd klogd
++all: syslogd # klogd
+ 
+ test: syslog_tst ksym oops_test
+ 
+@@ -104,12 +109,12 @@
+ clobber: clean
+ 	rm -f syslogd klogd ksym syslog_tst oops_test TAGS
+ 
+-install_exec: syslogd klogd
+-	${INSTALL} -m 500 -s syslogd ${BINDIR}/syslogd
+-	${INSTALL} -m 500 -s klogd ${BINDIR}/klogd
++install_exec: syslogd # klogd
++	${INSTALL} -m 500 syslogd ${BINDIR}/syslogd
++	# ${INSTALL} -m 500 -s klogd ${BINDIR}/klogd
+ 
+ install_man:
+-	${INSTALL} -o ${MAN_OWNER} -g ${MAN_OWNER} -m 644 sysklogd.8 ${MANDIR}/man8/sysklogd.8
+-	${INSTALL} -o ${MAN_OWNER} -g ${MAN_OWNER} -m 644 syslogd.8 ${MANDIR}/man8/syslogd.8
+-	${INSTALL} -o ${MAN_OWNER} -g ${MAN_OWNER} -m 644 syslog.conf.5 ${MANDIR}/man5/syslog.conf.5
+-	${INSTALL} -o ${MAN_OWNER} -g ${MAN_OWNER} -m 644 klogd.8 ${MANDIR}/man8/klogd.8
++	${INSTALL} -o ${MAN_OWNER} -g ${MAN_GROUP} -m 644 sysklogd.8 ${MANDIR}/man8/sysklogd.8
++	${INSTALL} -o ${MAN_OWNER} -g ${MAN_GROUP} -m 644 syslogd.8 ${MANDIR}/man8/syslogd.8
++	${INSTALL} -o ${MAN_OWNER} -g ${MAN_GROUP} -m 644 syslog.conf.5 ${MANDIR}/man5/syslog.conf.5
++	${INSTALL} -o ${MAN_OWNER} -g ${MAN_GROUP} -m 644 klogd.8 ${MANDIR}/man8/klogd.8

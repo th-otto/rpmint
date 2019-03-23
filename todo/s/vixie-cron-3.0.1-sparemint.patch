@@ -1,0 +1,153 @@
+--- vixie-cron-3.0.1/Makefile.norh	Wed May 31 17:37:20 1995
++++ vixie-cron-3.0.1/Makefile	Wed Feb 12 19:26:35 1997
+@@ -50,35 +50,35 @@
+ DESTROOT	=	$(DESTDIR)/usr
+ DESTSBIN	=	$(DESTROOT)/sbin
+ DESTBIN		=	$(DESTROOT)/bin
+-DESTMAN		=	$(DESTROOT)/share/man
++DESTMAN		=	$(DESTROOT)/man
+ #<<need bitstring.h>>
+ INCLUDE		=	-I.
+ #INCLUDE	=
+ #<<need getopt()>>
+ LIBS		=
+ #<<optimize or debug?>>
+-#OPTIM		=	-O
+-OPTIM		=	-g
++OPTIM		=	$(RPM_OPT_FLAGS)
++#OPTIM		=	-g
+ #<<ATT or BSD or POSIX?>>
+ # (ATT untested)
+ #COMPAT		=	-DATT
+ #(BSD is only needed if <sys/params.h> does not define it, as on ULTRIX)
+ #COMPAT		=	-DBSD
+ # (POSIX)
+-#COMPAT		=	-DPOSIX
++COMPAT		=	-DPOSIX
+ #<<lint flags of choice?>>
+ LINTFLAGS	=	-hbxa $(INCLUDE) $(COMPAT) $(DEBUGGING)
+ #<<want to use a nonstandard CC?>>
+ #CC		=	vcc
+ #<<manifest defines>>
+-DEFS		=
++DEFS		= -s -DMAXNAMLEN=_LIB_NAME_MAX -D_PATH_VI=\"/usr/bin/vi\"
+ #(SGI IRIX systems need this)
+ #DEFS		=	-D_BSD_SIGNALS -Dconst=
+ #<<the name of the BSD-like install program>>
+ #INSTALL = installbsd
+ INSTALL = install
+ #<<any special load flags>>
+-LDFLAGS		=
++LDFLAGS		= -s
+ #################################### end configurable stuff
+ 
+ SHELL		=	/bin/sh
+@@ -113,13 +113,22 @@
+ 			$(CC) $(LDFLAGS) -o crontab $(CRONTAB_OBJ) $(LIBS)
+ 
+ install		:	all
+-			$(INSTALL) -c -m  111 -o root -s cron    $(DESTSBIN)/
+-			$(INSTALL) -c -m 4111 -o root -s crontab $(DESTBIN)/
++			$(INSTALL) -c -m 755 -o root -s cron    $(DESTSBIN)/crond
++			$(INSTALL) -c -m 4755 -o root -s crontab $(DESTBIN)/
+ 			sh putman.sh crontab.1 $(DESTMAN)
++			chmod 644 $(DESTMAN)/man1/crontab.1
++			#chown root.root $(DESTMAN)/man1/crontab.1
+ 			sh putman.sh cron.8    $(DESTMAN)
++			chmod 644 $(DESTMAN)/man8/cron.8
++			#chown root.root $(DESTMAN)/man8/cron.8
++			rm -f $(DESTMAN)/man8/crond.8
++			ln -sf cron.8.gz $(DESTMAN)/man8/crond.8
+ 			sh putman.sh crontab.5 $(DESTMAN)
++			chmod 644 $(DESTMAN)/man5/crontab.5
++			#chown root.root $(DESTMAN)/man5/crontab.5
+ 
+-clean		:;	rm -f *.o cron crontab a.out core tags *~ #*
++clean		:
++			rm -f *.o cron crontab a.out core tags *~ #*
+ 
+ kit		:	$(SHAR_SOURCE)
+ 			makekit -m -s99k $(SHAR_SOURCE)
+--- vixie-cron-3.0.1/config.h.norh	Wed May 31 17:37:20 1995
++++ vixie-cron-3.0.1/config.h	Wed Feb 12 19:26:35 1997
+@@ -29,7 +29,7 @@
+  */
+ 
+ #ifndef DEBUGGING
+-#define DEBUGGING 1	/* 1 or 0 -- do you want debugging code built in? */
++#define DEBUGGING 0	/* 1 or 0 -- do you want debugging code built in? */
+ #endif
+ 
+ 			/*
+@@ -83,4 +83,4 @@
+ 			 * are both defined, then logging will go to both
+ 			 * places.
+ 			 */
+-#define SYSLOG	 			/*-*/
++/*#define SYSLOG	 			/*-*/
+--- vixie-cron-3.0.1/cron.8.norh	Wed May 31 17:37:20 1995
++++ vixie-cron-3.0.1/cron.8	Wed Feb 12 19:27:03 1997
+@@ -29,7 +29,7 @@
+ so you don't need to start it with '&'.
+ .PP
+ .I Cron
+-searches /var/cron/tabs for crontab files which are named after accounts in
++searches /var/spool/cron for crontab files which are named after accounts in
+ /etc/passwd; crontabs found are loaded into memory.
+ .I Cron
+ also searches for /etc/crontab which is in a different format (see
+--- vixie-cron-3.0.1/crontab.1.norh	Wed May 31 17:37:21 1995
++++ vixie-cron-3.0.1/crontab.1	Wed Feb 12 19:26:35 1997
+@@ -83,8 +83,8 @@
+ crontab(5), cron(8)
+ .SH FILES
+ .nf
+-/var/cron/allow
+-/var/cron/deny
++/etc/cron.allow
++/etc/cron.deny
+ .fi
+ .SH STANDARDS
+ The
+--- vixie-cron-3.0.1/pathnames.h.norh	Wed May 31 17:37:21 1995
++++ vixie-cron-3.0.1/pathnames.h	Wed Feb 12 19:26:35 1997
+@@ -28,7 +28,7 @@
+ 			 * to; SPOOL_DIR, ALLOW_FILE, DENY_FILE, and LOG_FILE
+ 			 * are all relative to this directory.
+ 			 */
+-#define CRONDIR		"/var/cron"
++#define CRONDIR		"/var/spool"
+ #endif
+ 
+ 			/* SPOOLDIR is where the crontabs live.
+@@ -39,7 +39,7 @@
+ 			 * newer than they were last time around (or which
+ 			 * didn't exist last time around...)
+ 			 */
+-#define SPOOL_DIR	"tabs"
++#define SPOOL_DIR	"cron"
+ 
+ 			/* undefining these turns off their features.  note
+ 			 * that ALLOW_FILE and DENY_FILE must both be defined
+@@ -47,9 +47,9 @@
+ 			 * LOG_FILE or SYSLOG is defined, we don't log.  If
+ 			 * both are defined, we log both ways.
+ 			 */
+-#define	ALLOW_FILE	"allow"		/*-*/
+-#define DENY_FILE	"deny"		/*-*/
+-#define LOG_FILE	"log"		/*-*/
++#define	ALLOW_FILE	"/etc/cron.allow"		/*-*/
++#define DENY_FILE	"/etc/cron.deny"		/*-*/
++#define LOG_FILE	"/var/log/cron"		/*-*/
+ 
+ 			/* where should the daemon stick its PID?
+ 			 */
+@@ -58,7 +58,7 @@
+ #else
+ # define PIDDIR "/etc/"
+ #endif
+-#define PIDFILE		"%scron.pid"
++#define PIDFILE		"%scrond.pid"
+ 
+ 			/* 4.3BSD-style crontab */
+ #define SYSCRONTAB	"/etc/crontab"

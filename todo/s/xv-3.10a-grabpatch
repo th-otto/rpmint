@@ -1,0 +1,40 @@
+This patch fixes problems with the Grab function going out to lunch and/or 
+getting all weird-ass on some X servers.
+
+*** xv-3.10a/xvgrab.c	Thu Dec 22 17:34:47 1994
+--- xv-3.10a/xvgrab.c	Fri Apr 28 02:09:22 1995
+***************
+*** 341,356 ****
+  	 ConfigureNotify on mainW */
+  
+        state = 0;
+!       while (1) {
+  	XEvent event;
+  	XNextEvent(theDisp, &event);
+  	HandleEvent(&event, &i);
+  
+! 	if (state==0 && event.type == MapNotify &&
+! 	    event.xmap.window == mainW) state = 1;
+  
+! 	if (state==1 && event.type == ConfigureNotify && 
+! 	    event.xconfigure.window == mainW) break;
+        }
+  
+        if (DEBUG) fprintf(stderr,"==after remapping mainW, GOT Config.\n");
+--- 317,332 ----
+  	 ConfigureNotify on mainW */
+  
+        state = 0;
+!       while (state != 3) {
+  	XEvent event;
+  	XNextEvent(theDisp, &event);
+  	HandleEvent(&event, &i);
+  
+! 	if (!(state&1) && event.type == MapNotify &&
+! 	    event.xmap.window == mainW) state |= 1;
+  
+! 	if (!(state&2) && event.type == ConfigureNotify && 
+! 	    event.xconfigure.window == mainW) state |= 2;
+        }
+  
+        if (DEBUG) fprintf(stderr,"==after remapping mainW, GOT Config.\n");

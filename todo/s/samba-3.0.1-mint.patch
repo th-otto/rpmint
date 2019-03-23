@@ -1,0 +1,84 @@
+diff -urN samba-3.0.1.orig/source/configure samba-3.0.1/source/configure
+--- samba-3.0.1.orig/source/configure	Sun Feb 15 00:09:44 2004
++++ samba-3.0.1/source/configure	Sun Feb 15 01:26:00 2004
+@@ -13,6 +13,8 @@
+   as_expr=false
+ fi
+ 
++# MGD 2004.02.15 - Disable getrlimit due to its incomplete implementation
++ac_cv_func_getrlimit=no
+ 
+ ## --------------------- ##
+ ## M4sh Initialization.  ##
+diff -urN samba-3.0.1.orig/source/tdb/tdb.c samba-3.0.1/source/tdb/tdb.c
+--- samba-3.0.1.orig/source/tdb/tdb.c	Sun Feb 15 00:09:36 2004
++++ samba-3.0.1/source/tdb/tdb.c	Sun Feb 15 01:26:10 2004
+@@ -53,7 +53,7 @@
+ #include <string.h>
+ #include <fcntl.h>
+ #include <errno.h>
+-#include <sys/mman.h>
++//#include <sys/mman.h>
+ #include <sys/stat.h>
+ #include <signal.h>
+ #include "tdb.h"
+diff -urN samba-3.0.1.orig/source/tdb/tdbbackup.c samba-3.0.1/source/tdb/tdbbackup.c
+--- samba-3.0.1.orig/source/tdb/tdbbackup.c	Sun Feb 15 00:09:36 2004
++++ samba-3.0.1/source/tdb/tdbbackup.c	Sun Feb 15 17:39:34 2004
+@@ -54,7 +54,7 @@
+ #include <string.h>
+ #include <fcntl.h>
+ #include <time.h>
+-#include <sys/mman.h>
++//#include <sys/mman.h>
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ #include <ctype.h>
+diff -urN samba-3.0.1.orig/source/tdb/tdbdump.c samba-3.0.1/source/tdb/tdbdump.c
+--- samba-3.0.1.orig/source/tdb/tdbdump.c	Sun Feb 15 00:09:36 2004
++++ samba-3.0.1/source/tdb/tdbdump.c	Sun Feb 15 17:38:48 2004
+@@ -26,7 +26,7 @@
+ #include <string.h>
+ #include <fcntl.h>
+ #include <time.h>
+-#include <sys/mman.h>
++//#include <sys/mman.h>
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ #include <ctype.h>
+diff -urN samba-3.0.1.orig/source/tdb/tdbtest.c samba-3.0.1/source/tdb/tdbtest.c
+--- samba-3.0.1.orig/source/tdb/tdbtest.c	Sun Feb 15 00:09:36 2004
++++ samba-3.0.1/source/tdb/tdbtest.c	Sun Feb 15 17:39:04 2004
+@@ -5,7 +5,7 @@
+ #include <string.h>
+ #include <fcntl.h>
+ #include <stdarg.h>
+-#include <sys/mman.h>
++//#include <sys/mman.h>
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ #include <signal.h>
+diff -urN samba-3.0.1.orig/source/tdb/tdbtool.c samba-3.0.1/source/tdb/tdbtool.c
+--- samba-3.0.1.orig/source/tdb/tdbtool.c	Sun Feb 15 00:09:36 2004
++++ samba-3.0.1/source/tdb/tdbtool.c	Sun Feb 15 17:39:14 2004
+@@ -29,7 +29,7 @@
+ #include <string.h>
+ #include <fcntl.h>
+ #include <time.h>
+-#include <sys/mman.h>
++//#include <sys/mman.h>
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ #include <ctype.h>
+diff -urN samba-3.0.1.orig/source/tdb/tdbtorture.c samba-3.0.1/source/tdb/tdbtorture.c
+--- samba-3.0.1.orig/source/tdb/tdbtorture.c	Sun Feb 15 00:09:36 2004
++++ samba-3.0.1/source/tdb/tdbtorture.c	Sun Feb 15 17:39:46 2004
+@@ -7,7 +7,7 @@
+ #include <fcntl.h>
+ #include <signal.h>
+ #include <stdarg.h>
+-#include <sys/mman.h>
++//#include <sys/mman.h>
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ #include <sys/wait.h>

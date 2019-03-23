@@ -1,0 +1,81 @@
+From: Michael Rausch <M.Rausch@Ernie.MI.Uni-Koeln.DE>
+Subject: bug in xv visual schnauzer
+
+while using xv's visual schnauzer, I ran across some problems with rather
+long file names. Namely these were (spurious) segmentation faults when
+generation icons or selecting icons with the rubber-band.
+The problem turned out to be a strncpy() without appending a terminating
+null byte in case the limiting length was reached. Appended to this mail
+you'll find a set of context diffs where this specific and other possible
+occurances of the same bug are fixed.
+I think it will be not too hard to integrate the patches into your actual
+working version if patch should fail on them. Speaking of which, when do
+you think we can expect a new (bigger, better, etc.) version of xv?
+
+Ciao
+	Michael
+
+---*snip*---*snip*---*snip*--
+
+diff -ru /tmp/xv-3.10a.orig/xvbrowse.c xv-3.10a/xvbrowse.c
+--- xv-3.10a.orig/xvbrowse.c	Thu Jan 19 18:49:17 1995
++++ xv-3.10a/xvbrowse.c	Mon Feb  5 23:46:28 1996
+@@ -956,6 +956,7 @@
+      char *str;
+ {
+   strncpy(br->dispstr, str, (size_t) 256);
++  br->dispstr[255] = '\0';
+   drawBrowStr(br);
+   XFlush(theDisp);
+ }
+@@ -1490,6 +1491,7 @@
+   if (StringWidth(str) > ISPACE_WIDE-6) {
+     int dotpos; 
+     strncpy(tmpstr, str, (size_t) 56);
++    tmpstr[56] = '\0'; /* MR: otherwise it dies on long file names */
+     dotpos = strlen(tmpstr);
+     strcat(tmpstr,"...");
+ 
+@@ -1505,7 +1507,7 @@
+     nstr = tmpstr;
+   }
+   else nstr = str;
+-  
++ 
+ 
+   /* draw the title */
+   sw = StringWidth(nstr);
+diff -ru xv-3.10a.orig/xvdir.c xv-3.10a/xvdir.c
+--- xv-3.10a.orig/xvdir.c	Tue Jan  3 22:21:39 1995
++++ xv-3.10a/xvdir.c	Mon Feb  5 21:49:21 1996
+@@ -1200,6 +1200,7 @@
+      char *st;
+ {
+   strncpy(deffname, st, (size_t) MAXFNLEN-1);
++  deffname[MAXFNLEN-1] = '\0';
+   setFName(st);
+ }
+ 
+diff -ru xv-3.10a.orig/xvpopup.c xv-3.10a/xvpopup.c
+--- xv-3.10a.orig/xvpopup.c	Thu Jan 19 19:09:31 1995
++++ xv-3.10a/xvpopup.c	Mon Feb  5 21:50:13 1996
+@@ -560,6 +560,7 @@
+ 	nams[*lenp] = (char *) malloc((size_t) 32);
+ 	if (!nams[*lenp]) { free(vals[*lenp]); continue; }
+ 	strncpy(nams[*lenp], vals[*lenp], (size_t) 31);
++	nams[*lenp][31] = '\0';
+       }
+       
+       if (strlen(nams[*lenp]) > (size_t) 20) {   /* fix long names */
+diff -ru xv-3.10a.orig/xvtext.c xv-3.10a/xvtext.c
+--- xv-3.10a.orig/xvtext.c	Sat Jan 14 00:46:28 1995
++++ xv-3.10a/xvtext.c	Mon Feb  5 21:50:54 1996
+@@ -293,6 +293,7 @@
+   tv->textlen     = len;
+   tv->freeonclose = freeonclose;
+   strncpy(tv->title, title, (size_t) TITLELEN-1);
++  tv->title[TITLELEN-1] = '\0';
+ 
+   computeText(tv);      /* compute # lines and linestarts array */
+
+---*snap*---*snap*---*snap*--

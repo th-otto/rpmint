@@ -1,0 +1,49 @@
+This patch fixes a bug in XVs gif-reading code.  The bug could conceivably
+hit when viewing a number of interlaced GIFs.  Thanks to Mark Hanson 
+<mbh@netcom.com> for spotting this one.  
+
+--jhb, 10/29/98
+
+
+*** xvgif.c.old	Tue Jan 10 14:54:41 1995
+--- xvgif.c	Thu Oct 29 17:43:30 1998
+***************
+*** 113,119 ****
+    int            aspect, gotimage;
+  
+    /* initialize variables */
+!   BitOffset = XC = YC = Pass = OutCount = gotimage = 0;
+    RawGIF = Raster = pic8 = NULL;
+    gif89 = 0;
+  
+--- 113,120 ----
+    int            aspect, gotimage;
+  
+    /* initialize variables */
+!   BitOffset = XC = YC = OutCount = gotimage = 0;
+!   Pass = -1;
+    RawGIF = Raster = pic8 = NULL;
+    gif89 = 0;
+  
+***************
+*** 692,698 ****
+  {
+    static byte *ptr = NULL;
+    static int   oldYC = -1;
+!   
+    if (oldYC != YC) {  ptr = pic8 + YC * Width;  oldYC = YC; }
+    
+    if (YC<Height)
+--- 693,704 ----
+  {
+    static byte *ptr = NULL;
+    static int   oldYC = -1;
+! 
+!   if (Pass == -1) {  /* first time through - init stuff */
+!     oldYC = -1;
+!     Pass = 0;
+!   }
+! 
+    if (oldYC != YC) {  ptr = pic8 + YC * Width;  oldYC = YC; }
+    
+    if (YC<Height)

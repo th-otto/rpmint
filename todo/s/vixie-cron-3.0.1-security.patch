@@ -1,0 +1,11 @@
+--- vixie-cron-3.0.1/do_command.c.marc	Wed May 31 17:37:28 1995
++++ vixie-cron-3.0.1/do_command.c	Mon Sep 25 17:45:40 1995
+@@ -207,7 +207,7 @@
+ 		 * we set uid, we've lost root privledges.
+ 		 */
+ 		setgid(e->gid);
+-# if defined(BSD)
++# if defined(BSD) || defined(linux) || defined(__MINT__)
+ 		initgroups(env_get("LOGNAME", e->envp), e->gid);
+ # endif
+ 		setuid(e->uid);		/* we aren't root after this... */

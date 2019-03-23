@@ -1,0 +1,474 @@
+--- Makefile
++++ Makefile	1997/02/06 20:51:42
+@@ -318,7 +318,7 @@
+ 	  cd $$LIBDIR; \
+ 	  if [ $$MASTERHASH != $DEFHASH ]; then \
+ 	    rm -f $$DEFHASH; \
+-	    ln $$MASTERHASH $$DEFHASH; \
++	    ln -s $$MASTERHASH $$DEFHASH; \
+ 	  fi
+ 
+ ispell.info:	config.sh ispell.texinfo
+@@ -524,7 +524,7 @@
+ 	    :; \
+ 	  else \
+ 	    set -x; \
+-	    rm -f msgs.h; ln $$msgs msgs.h  ||  cp $$msgs msgs.h; \
++	    rm -f msgs.h; ln -s $$msgs msgs.h  ||  cp $$msgs msgs.h; \
+ 	  fi
+ 
+ FRC:
+--- ispell.1X
++++ ispell.1X	1997/02/06 20:51:42
+@@ -1310,6 +1310,17 @@
+ Default dictionary to use, if no
+ .B \-d
+ flag is given.
++.IP CHARSET
++Only read if
++.B DICTIONARY
++is set. Default formatter type or character encoding to use, if no
++.B \-T
++or
++.B \-t
++or
++.B \-n
++flag is given.
++Usefull if formatter type is recognized in affix-file.
+ .IP WORDLIST
+ Personal dictionary file name
+ .IP INCLUDE_STRING
+--- ispell.c
++++ ispell.c	1997/02/06 20:51:42
+@@ -137,6 +137,7 @@
+ #include "version.h"
+ #include <ctype.h>
+ #include <sys/stat.h>
++#include <unistd.h>
+ 
+ static void	usage P ((void));
+ static void	initckch P ((char * wchars));
+@@ -258,6 +259,7 @@
+     static char	outbuf[BUFSIZ];
+     int		argno;
+     int		arglen;
++    int		dictdeft = 0;
+ 
+     Cmd = *argv;
+ 
+@@ -266,6 +268,7 @@
+     p = getenv ("DICTIONARY");
+     if (p != NULL)
+ 	{
++	dictdeft++;
+ 	if (index (p, '/') != NULL)
+ 	    (void) strcpy (hashname, p);
+ 	else
+@@ -282,6 +285,7 @@
+ 	p = rindex (libdictname, '.');
+ 	if (p != NULL)
+ 	    *p = '\0';
++	preftype = getenv ("CHARSET");
+ 	}
+     else
+ 	(void) sprintf (hashname, "%s/%s", LIBDIR, DEFHASH);
+@@ -492,7 +496,7 @@
+ 		    usage ();
+ 		tflag = 0;		/* nroff/troff mode */
+ 		deftflag = 0;
+-		if (preftype == NULL)
++		if (preftype == NULL || dictdeft)
+ 		    preftype = "nroff";
+ 		break;
+ 	    case 't':			/* TeX mode */
+@@ -500,7 +504,7 @@
+ 		    usage ();
+ 		tflag = 1;
+ 		deftflag = 1;
+-		if (preftype == NULL)
++		if (preftype == NULL || dictdeft)
+ 		    preftype = "tex";
+ 		break;
+ 	    case 'T':			/* Set preferred file type */
+--- languages/american/Makefile
++++ languages/american/Makefile	1997/02/06 20:51:42
+@@ -149,7 +149,7 @@
+ 	  cd $$LIBDIR; \
+ 	  chmod 644 english.aff $(HASHFILES); \
+ 	  for i in $(HASHFILES); do \
+-	    ln $$i $(LANGUAGE).hash; \
++	    ln -s $$i $(LANGUAGE).hash; \
+ 	    break; \
+ 	  done
+ 	@. $(CONFIG); \
+@@ -237,7 +237,7 @@
+ 
+ $(DBUILD)american.sml:	$(DBUILD)english.sml
+ 	rm -f american.sml
+-	ln english.sml american.sml
++	ln -s english.sml american.sml
+ 
+ $(DBUILD)english.sml:	$(CONFIG)
+ $(DBUILD)english.sml:	english.0
+@@ -249,7 +249,7 @@
+ 
+ $(DBUILD)american.sml+:	$(DBUILD)english.sml+
+ 	rm -f american.sml+
+-	ln english.sml+ american.sml+
++	ln -s english.sml+ american.sml+
+ 
+ $(DBUILD)english.sml+:	$(CONFIG)
+ $(DBUILD)english.sml+:	english.0
+@@ -261,7 +261,7 @@
+ 
+ $(DBUILD)american.med:	$(DBUILD)english.med
+ 	rm -f american.med
+-	ln english.med american.med
++	ln -s english.med american.med
+ 
+ $(DBUILD)english.med:	$(CONFIG)
+ $(DBUILD)english.med:	english.0
+@@ -273,7 +273,7 @@
+ 
+ $(DBUILD)american.med+:	$(DBUILD)english.med+
+ 	rm -f american.med+
+-	ln english.med+ american.med+
++	ln -s english.med+ american.med+
+ 
+ $(DBUILD)english.med+:	$(CONFIG)
+ $(DBUILD)english.med+:	english.0
+@@ -285,7 +285,7 @@
+ 
+ $(DBUILD)american.lrg:	$(DBUILD)english.lrg
+ 	rm -f american.lrg
+-	ln english.lrg american.lrg
++	ln -s english.lrg american.lrg
+ 
+ $(DBUILD)english.lrg:	$(CONFIG)
+ $(DBUILD)english.lrg:	english.0
+@@ -297,7 +297,7 @@
+ 
+ $(DBUILD)american.lrg+:	$(DBUILD)english.lrg+
+ 	rm -f american.lrg+
+-	ln english.lrg+ american.lrg+
++	ln -s english.lrg+ american.lrg+
+ 
+ $(DBUILD)english.lrg+:	$(CONFIG)
+ $(DBUILD)english.lrg+:	english.0
+@@ -309,7 +309,7 @@
+ 
+ $(DBUILD)american.xlg:	$(DBUILD)english.xlg
+ 	rm -f american.xlg
+-	ln english.xlg american.xlg
++	ln -s english.xlg american.xlg
+ 
+ $(DBUILD)english.xlg:	$(CONFIG)
+ $(DBUILD)english.xlg:	english.0
+@@ -321,7 +321,7 @@
+ 
+ $(DBUILD)american.xlg+:	$(DBUILD)english.xlg+
+ 	rm -f american.xlg+
+-	ln english.xlg+ american.xlg+
++	ln -s english.xlg+ american.xlg+
+ 
+ $(DBUILD)english.xlg+:	$(CONFIG)
+ $(DBUILD)english.xlg+:	english.0
+@@ -363,7 +363,7 @@
+ 	for i in english.0 english.1 english.2 english.3 \
+ 	  american.0 american.1 american.2 altamer.0 altamer.1 altamer.2 \
+ 	  british.0 british.1 british.2; do \
+-	    ln -s $(DICTSRC)/$$i .  ||  ln $(DICTSRC)/$$i . \
++	    ln -s $(DICTSRC)/$$i .  ||  ln -s $(DICTSRC)/$$i . \
+ 	      ||  cp $(DICTSRC)/$$i .; \
+ 	done
+ 
+--- languages/british/Makefile
++++ languages/british/Makefile	1997/02/06 20:51:42
+@@ -149,7 +149,7 @@
+ 	  cd $$LIBDIR; \
+ 	  chmod 644 english.aff $(HASHFILES); \
+ 	  for i in $(HASHFILES); do \
+-	    ln $$i $(LANGUAGE).hash; \
++	    ln -s $$i $(LANGUAGE).hash; \
+ 	    break; \
+ 	  done
+ 	@. $(CONFIG); \
+@@ -237,7 +237,7 @@
+ 
+ $(DBUILD)british.sml:	$(DBUILD)english.sml
+ 	rm -f british.sml
+-	ln english.sml british.sml
++	ln -s english.sml british.sml
+ 
+ $(DBUILD)english.sml:	$(CONFIG)
+ $(DBUILD)english.sml:	english.0
+@@ -249,7 +249,7 @@
+ 
+ $(DBUILD)british.sml+:	$(DBUILD)english.sml+
+ 	rm -f british.sml+
+-	ln english.sml+ british.sml+
++	ln -s english.sml+ british.sml+
+ 
+ $(DBUILD)english.sml+:	$(CONFIG)
+ $(DBUILD)english.sml+:	english.0
+@@ -261,7 +261,7 @@
+ 
+ $(DBUILD)british.med:	$(DBUILD)english.med
+ 	rm -f british.med
+-	ln english.med british.med
++	ln -s english.med british.med
+ 
+ $(DBUILD)english.med:	$(CONFIG)
+ $(DBUILD)english.med:	english.0
+@@ -273,7 +273,7 @@
+ 
+ $(DBUILD)british.med+:	$(DBUILD)english.med+
+ 	rm -f british.med+
+-	ln english.med+ british.med+
++	ln -s english.med+ british.med+
+ 
+ $(DBUILD)english.med+:	$(CONFIG)
+ $(DBUILD)english.med+:	english.0
+@@ -285,7 +285,7 @@
+ 
+ $(DBUILD)british.lrg:	$(DBUILD)english.lrg
+ 	rm -f british.lrg
+-	ln english.lrg british.lrg
++	ln -s english.lrg british.lrg
+ 
+ $(DBUILD)english.lrg:	$(CONFIG)
+ $(DBUILD)english.lrg:	english.0
+@@ -297,7 +297,7 @@
+ 
+ $(DBUILD)british.lrg+:	$(DBUILD)english.lrg+
+ 	rm -f british.lrg+
+-	ln english.lrg+ british.lrg+
++	ln -s english.lrg+ british.lrg+
+ 
+ $(DBUILD)english.lrg+:	$(CONFIG)
+ $(DBUILD)english.lrg+:	english.0
+@@ -309,7 +309,7 @@
+ 
+ $(DBUILD)british.xlg:	$(DBUILD)english.xlg
+ 	rm -f british.xlg
+-	ln english.xlg british.xlg
++	ln -s english.xlg british.xlg
+ 
+ $(DBUILD)english.xlg:	$(CONFIG)
+ $(DBUILD)english.xlg:	english.0
+@@ -321,7 +321,7 @@
+ 
+ $(DBUILD)british.xlg+:	$(DBUILD)english.xlg+
+ 	rm -f british.xlg+
+-	ln english.xlg+ british.xlg+
++	ln -s english.xlg+ british.xlg+
+ 
+ $(DBUILD)english.xlg+:	$(CONFIG)
+ $(DBUILD)english.xlg+:	english.0
+--- languages/deutsch/deutsch.aff
++++ languages/deutsch/deutsch.aff	1997/02/06 21:20:39
+@@ -277,7 +277,7 @@
+ #
+ # Alternate forms for ISO latin1 charset
+ #
+-altstringtype "latin1" "nroff" ".latin1" ".txt"
++altstringtype "latin1" "TeX" ".latin1" ".txt" ".tex" ".bib"
+ 
+ altstringchar	\344	a\"
+ altstringchar	\304	A\"
+--- languages/english/english.4l
++++ languages/english/english.4l	1997/02/06 21:05:10
+@@ -47,15 +47,15 @@
+ .\"
+ .TH ENGLISH 4
+ .SH NAME
+-english \- flag format for English \fIokspell\fP dictionaries
++english \- flag format for English \fIispell\fP dictionaries
+ .SH DESCRIPTION
+ English dictionaries for
+-.IR okspell (1)
++.IR ispell (1)
+ supports 3 prefix and 14 suffix flags.
+ For a detailed description of how
+-.I okspell
++.I ispell
+ handles flags and capitalization, see
+-.IR okspell (4).
++.IR ispell (4).
+ This manual page only describes flags usable in dictionaries built
+ using the
+ .I english.aff
+@@ -74,7 +74,7 @@
+ .PP
+ In the following list, an asterisk indicates that a flag participates in
+ cross-product formation (see
+-.IR okspell (4)).
++.IR ispell (4)).
+ .PP
+ The meaning of the prefix flags is as follows:
+ .IP "*A"
+@@ -274,4 +274,4 @@
+ .fi
+ .RE
+ .SH "SEE ALSO"
+-okspell(1), okspell(4)
++ispell(1), ispell(4)
+--- languages/english/english.aff
++++ languages/english/english.aff	1997/02/06 20:51:42
+@@ -71,6 +71,7 @@
+ wordchars [a-z] [A-Z]
+ 
+ altstringtype "tex" "tex" ".tex" ".bib"
++altstringtype "latin1" "nroff" ".txt" ".tex"
+ 
+ # Here's a record of flags used, in case you want to add new ones.
+ # Right now, we fit within the minimal MASKBITS definition.
+--- lookup.c
++++ lookup.c	1997/02/06 20:51:42
+@@ -62,6 +62,7 @@
+ #include "ispell.h"
+ #include "proto.h"
+ #include "msgs.h"
++#include <unistd.h>
+ 
+ int		linit P ((void));
+ #ifdef INDEXDUMP
+--- term.c
++++ term.c	1997/02/06 20:51:42
+@@ -73,6 +73,7 @@
+ #include <sgtty.h>
+ #endif
+ #include <signal.h>
++#include <unistd.h>
+ 
+ void		erase P ((void));
+ void		move P ((int row, int col));
+--- tree.c
++++ tree.c	1997/02/06 20:51:42
+@@ -64,6 +64,7 @@
+ 
+ #include <ctype.h>
+ #include <errno.h>
++#include <unistd.h>
+ #include "config.h"
+ #include "ispell.h"
+ #include "proto.h"
+--- languages/deutsch/Makefile.orig	Wed Nov  2 18:44:32 1994
++++ languages/deutsch/Makefile	Sat Nov 22 13:43:09 1997
+@@ -95,8 +95,31 @@
+ # If you change DICTOPTIONS in your local.h file, you will have to do
+ # "make dictclean" to clear out the old dictionary before you re-make.
+ #
+-DICTALWAYS	=	adjektive.txt worte.txt verben.txt
+-DICTOPTIONS	=	Use_LANGUAGES_from_config.X
++DICTALWAYS	= worte.txt \
++		  verben.txt \
++		  adjektive.txt \
++		  klein.txt \
++		  imperat.txt \
++		  abkuerz.txt \
++		  vornamen.txt \
++		  geographie.txt \
++		  latein.txt \
++		  oesterreich.txt \
++		  informatik.txt \
++		  infoabk.txt \
++		  elektronik.txt \
++		  alphabeta.txt \
++		  roemisch.txt \
++		  orgabk.txt \
++		  marken.txt
++
++DICTXLARGE	= worte2.txt \
++		  zusammen.txt \
++		  technik.txt \
++		  compeng.txt \
++		  geogra2.txt \
++		  vornam2.txt \
++		  namen.txt
+ 
+ #
+ # The following variables may be overridden by the superior Makefile,
+@@ -104,7 +127,7 @@
+ # the affix file is closely related to the dictionary chosen; don't
+ # change the affix file unless you know what you are doing!
+ #
+-AFFIXES	=	deutsch.aff
++AFFIXES	=	deutsch.aff-hk
+ 
+ #
+ #	Set this to "-vx" in the make command line if you need to
+@@ -112,26 +135,34 @@
+ #
+ SHELLDEBUG = +vx
+ 
+-all:	deutsch.hash
++all:	deutschmed.hash deutschlxg.hash
+ 
+ install: all $(CONFIG)
+ 	@. $(CONFIG); \
+ 	  set -x; \
+ 	  [ -d $$LIBDIR ]  ||  (mkdir $$LIBDIR; chmod 755 $$LIBDIR); \
+-	  cd $$LIBDIR; rm -f deutsch.aff deutsch.hash
++	  cd $$LIBDIR; rm -f deutsch.aff deutschmed.hash deutschlxg.hash
+ 	@. $(CONFIG); \
+ 	  set -x; \
+-	  cp deutsch.aff deutsch.hash $$LIBDIR
++	  cp deutsch.aff deutschmed.hash deutschlxg.hash $$LIBDIR
+ 	@. $(CONFIG); \
+ 	  set -x; \
+ 	  cd $$LIBDIR; \
+-	  chmod 644 deutsch.aff deutsch.hash
++	  chmod 644 deutsch.aff deutschmed.hash deutschlxg.hash; \
++	  ln -sf deutschlxg.hash deutsch.hash; ln -sf deutschlxg.hash german.hash
+ 
+-deutsch.hash:	$(BUILDHASH) $(AFFIXES) deutsch.dict
+-	rm -f deutsch.hash
+-	$(BUILDHASH) deutsch.dict $(AFFIXES) deutsch.hash
++deutschmed.hash:	$(BUILDHASH) $(AFFIXES) deutsch.med
++	rm -f deutschmed.hash
++	$(BUILDHASH) deutsch.med $(AFFIXES) deutschmed.hash
+ 
+-$(AFFIXES):	deutsch.7bit $(FIX8BIT)
++deutschlxg.hash:	$(BUILDHASH) $(AFFIXES) deutsch.lxg
++	rm -f deutschlxg.hash
++	$(BUILDHASH) deutsch.lxg $(AFFIXES) deutschlxg.hash
++
++$(AFFIXES):	deutsch.aff $(FIX8BIT)
++	$(FIX8BIT) -8 < deutsch.aff > $(AFFIXES)
++
++deutsch-isp.aff:	deutsch.7bit $(FIX8BIT)
+ 	$(FIX8BIT) -8 < deutsch.7bit > $(AFFIXES)
+ 
+ deutsch-alt.aff:	deutsch-alt.7bit $(FIX8BIT)
+@@ -140,10 +171,17 @@
+ $(FIX8BIT):	../fix8bit.c
+ 	cd ..; $(MAKE) fix8bit
+ 
+-deutsch.dict:	$(DICTALWAYS) $(DICTOPTIONS)
+-	. $(CONFIG); \
+-	  eval sort -f -o deutsch.dict $$MAKE_SORTTMP \
+-	    $(DICTALWAYS) $(DICTOPTIONS)
++deutsch.med:	$(DICTALWAYS) README $(AFFIXES)
++	@. $(CONFIG); \
++	  set -x; \
++	  eval sort -u -t/ +0f -1 +0 $$MAKE_SORTTMP -o deutsch.med \
++	    $(DICTALWAYS)
++
++deutsch.lxg:	$(DICTALWAYS) $(DICTXLARGE) README $(AFFIXES)
++	@. $(CONFIG); \
++	  set -x; \
++	  eval sort -u -t/ +0f -1 +0 $$MAKE_SORTTMP -o deutsch.lxg \
++	    $(DICTALWAYS) $(DICTXLARGE)
+ 
+ #
+ #	The following dependency can be executed when ispell is unpacked,
+@@ -179,7 +217,7 @@
+ #	dictionary file.
+ #
+ dictclean:
+-	rm -f deutsch.dict
++	rm -f deutsch.med deutsch.lxg
+ 
+ #	required to be present in all other language Makefiles as
+ #	well, even though it doesn't have to do anything in those

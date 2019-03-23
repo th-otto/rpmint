@@ -1,0 +1,147 @@
+diff -ur xv-3.10a.orig/Makefile xv-3.10a/Makefile
+--- xv-3.10a.orig/Makefile	Mon Jan 23 15:20:54 1995
++++ xv-3.10a/Makefile	Thu Aug 17 13:03:25 1995
+@@ -1,8 +1,8 @@
+ # Makefile for xv
+ 
+ # your C compiler (and options) of choice
+-CC = cc
+-# CC = gcc -ansi
++#CC = cc
++CC = gcc -ansi
+ 
+ # use this if you're using 'cc' on a DEC Alpha (OSF/1) or MIPS (Ultrix) system:
+ # CC = cc -std1 -Olimit 750
+@@ -14,7 +14,7 @@
+ #       -Wuninitialized -Wparentheses
+ 
+ 
+-CCOPTS = -O 
++CCOPTS = -O -L/usr/X11R6/lib
+ 
+ 
+ ### NOTE: Sun running OpenWindows:
+@@ -28,10 +28,10 @@
+ 
+ 
+ ### Installation locations
+-BINDIR = /usr/local/bin
+-MANDIR = /usr/local/man/man1
++BINDIR = /usr/X11R6/bin
++MANDIR = /usr/man/man1
+ MANSUF = 1
+-LIBDIR = /usr/local/lib
++LIBDIR = /usr/lib
+ 
+ 
+ buildit: all
+@@ -46,13 +46,13 @@
+ ### on your machine, *COMMENT OUT* the following lines
+ ###
+ JPEG    = -DDOJPEG
+-JPEGDIR = jpeg
+-JPEGINC = -I$(JPEGDIR)
+-JPEGLIB = $(JPEGDIR)/libjpeg.a
+-$(JPEGDIR)/jconfig.h:
+-	cd $(JPEGDIR) ; ./configure CC='$(CC)'
+-$(JPEGLIB):  $(JPEGDIR)/jconfig.h
+-	cd $(JPEGDIR) ; make
++#JPEGDIR = jpeg
++#JPEGINC = -I$(JPEGDIR)
++JPEGLIB = -ljpeg
++#$(JPEGDIR)/jconfig.h:
++	#cd $(JPEGDIR) ; ./configure CC='$(CC)'
++#$(JPEGLIB):  $(JPEGDIR)/jconfig.h
++	#cd $(JPEGDIR) ; make
+ 
+ 
+ ###
+@@ -102,7 +102,7 @@
+ 
+ 
+ ### for LINUX, uncomment the following line
+-#MCHN = -DLINUX
++MCHN = -DLINUX
+ 
+ 
+ # For SCO 1.1 (UNIX 3.2v2) machines, uncomment the following:
+@@ -144,7 +144,7 @@
+ 
+ # if your machine has the usleep() function, uncomment the following line:
+ # if it doesn't, or you're not sure, leave this line alone.
+-#TIMERS = -DUSLEEP
++TIMERS = -DUSLEEP
+ 
+ 
+ # if XV locks up whenever you click on *any* of the buttons, the Timer() 
+diff -ur xv-3.10a.orig/config.h xv-3.10a/config.h
+--- xv-3.10a.orig/config.h	Thu Jan  5 13:49:21 1995
++++ xv-3.10a/config.h	Thu Aug 17 13:01:41 1995
+@@ -13,14 +13,14 @@
+  * definition appropriately. (use 'which gunzip' to find if you have gunzip, 
+  * and where it lives)
+  */
+-#undef USE_GUNZIP
++#define USE_GUNZIP
+ 
+ #ifdef USE_GUNZIP
+-#  ifdef VMS
+-#    define GUNZIP "UNCOMPRESS"
+-#  else
+-#    define GUNZIP "/usr/local/bin/gunzip -q"
+-#  endif
++#ifdef VMS
++#define GUNZIP "UNCOMPRESS"
++#else
++#define GUNZIP "/bin/gunzip -q"
++#endif
+ #endif
+ 
+ 
+@@ -88,9 +88,9 @@
+  * should not need to be changed
+  */
+ 
+-/* #define GS_PATH "/usr/local/bin/gs" */
+-/* #define GS_LIB  "."                 */
+-/* #define GS_DEV  "ppmraw"            */
++#define GS_PATH "/usr/bin/gs"
++#define GS_LIB  "." 
++#define GS_DEV  "ppmraw"
+ 
+ 
+ /***************************************************************************
+@@ -103,7 +103,7 @@
+  * change 'undef' to 'define' in the following line
+  */
+ 
+-#undef USEOLDPIC
++#define USEOLDPIC
+ 
+ 
+ /***************************************************************************
+diff -ur xv-3.10a.orig/xvps.c xv-3.10a/xvps.c
+--- xv-3.10a.orig/xvps.c	Thu Dec 22 17:34:42 1994
++++ xv-3.10a/xvps.c	Thu Aug 17 13:01:41 1995
+@@ -1564,7 +1564,7 @@
+   /* build command string */
+ 
+ #ifndef VMS  /* VMS needs quotes around mixed case command lines */
+-  sprintf(tmp, "%s -sDEVICE=%s -r%d -q -dNOPAUSE -sOutputFile=%s%%d ",
++  sprintf(tmp, "%s -sDEVICE=%s -r%d -q -dSAFER -dNOPAUSE -sOutputFile=%s%%d ",
+ 	  GS_PATH, gsDev, gsRes, tmpname);
+ #else
+   sprintf(tmp, 
+--- xv-3.10a/Makefile.djb	Thu Oct 16 18:23:06 1997
++++ xv-3.10a/Makefile	Thu Oct 16 18:23:53 1997
+@@ -60,9 +60,7 @@
+ ### on your machine, *COMMENT OUT* the following lines
+ ###
+ PNG    = -DDOPNG
+-PNGDIR = /usr/local/src/libpng
+-PNGINC = -I$(PNGDIR)
+-PNGLIB = -L$(PNGDIR) -lpng
++PNGLIB = -lpng
+ 
+ 
+ ###

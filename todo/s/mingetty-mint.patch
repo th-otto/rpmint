@@ -1,0 +1,149 @@
+--- mingetty-0.9.4/mingetty.c.mint	Sat Oct  9 16:34:44 1999
++++ mingetty-0.9.4/mingetty.c	Tue Oct 12 19:36:54 1999
+@@ -27,6 +27,9 @@
+  *
+  */
+ 
++/* Modified for MiNT by Guido Flohr <gufl0000@stud.uni-sb.de>,
++   8 Oct 1999.  */
++ 
+ #define DEBUG_THIS 0
+ 
+ #include <stdio.h>
+@@ -44,6 +47,10 @@
+ #include <utmp.h>
+ #include <getopt.h>
+ 
++#ifdef __MINT__
++# include <termios.h>
++#endif
++
+ #ifndef _PATH_LOGIN
+ #define _PATH_LOGIN "/bin/login"
+ #endif
+@@ -198,12 +205,53 @@
+ 	   We also get a SIGHUP/SIGCONT.
+ 	 */
+ 	if ((fd = open (buf, O_RDWR, 0)) < 0
++#ifndef __MINT__
+ 		|| ioctl (fd, TIOCSCTTY, (void *)1) == -1)
++#else
++		|| dup2 (fd, -1) != -1)  /* Just set controlling tty, 
++					    actually ignore errors.  */
++#endif
+ 		error ("%s: cannot open tty: %s", buf, sys_errlist[errno]);
+ 	if (!isatty (fd))
+ 		error ("%s: not a tty", buf);
+ 
++#ifndef __MINT__
+ 	vhangup ();
++#else
++	{
++		struct termios tty;
++		
++		tcgetattr (fd, &tty);
++		
++		tty.c_iflag = BRKINT | IGNPAR | ICRNL | IXON;
++		
++		tty.c_oflag = OPOST;
++		
++		tty.c_cflag = CS8 | CREAD | PARENB;
++		
++		tty.c_lflag = ECHOE | ECHONL | ECHO | ICANON | ISIG | IEXTEN;
++		
++		tty.c_cc[VEOF] = 4;
++		tty.c_cc[VEOL] = 13;
++		tty.c_cc[VERASE] = 8;
++		tty.c_cc[VINTR] = 3;
++		tty.c_cc[VKILL] = 21;
++		tty.c_cc[VQUIT] = 28;
++		tty.c_cc[VSUSP] = 26;
++		tty.c_cc[VSTART] = 17;
++		tty.c_cc[VSTOP] = 19;
++		tty.c_cc[VLNEXT] = 22;
++		tty.c_cc[VWERASE] = 23;
++		tty.c_cc[VDSUSP] = 25;
++		tty.c_cc[VREPRINT] = 18;
++		tty.c_cc[VFLUSHO] = 15;
++		
++		cfsetispeed (&tty, B9600);
++		cfsetospeed (&tty, B9600);
++		tcsetattr (fd, TCSANOW, &tty);
++	}
++#endif
++
+ 	/* Get rid of the present stdout/stderr. */
+ 	close (2);
+ 	close (1);
+@@ -221,8 +269,13 @@
+ 
+ 	/* Write a reset string to the terminal. This is very linux-specific
+ 	   and should be checked for other systems. */
++#ifndef __MINT__
+ 	if (! noclear)
+ 		write (0, "\033c", 2);
++#else
++	if (! noclear)
++		write (0, "\033E", 2);
++#endif
+ 
+ 	sa.sa_handler = SIG_DFL;
+ 	sa.sa_flags = 0;
+@@ -254,7 +307,15 @@
+ 		printf ("%s", uts.machine);
+ 		break;
+ 	case 'o':
++#ifndef __MINT__
+ 		printf ("%s", uts.domainname);
++#else
++		{
++			char domainname[256];
++			if (getdomainname (domainname, sizeof domainname) == 0)
++				printf ("%s", domainname);
++		}
++#endif
+ 		break;
+ #if 0
+ 	case 'd':
+@@ -359,7 +420,12 @@
+ 	char *bp;
+ 	unsigned char c;
+ 
++#ifndef __MINT__
+ 	ioctl (0, TCFLSH, 0);	/* flush pending input */
++#else
++	tcflush (0, TCIOFLUSH);
++#endif
++
+ 
+ 	for (*logname = 0; *logname == 0;) {
+ 		do_prompt ();
+@@ -409,8 +475,15 @@
+ 	gethostname (hn, MAXHOSTNAMELEN);
+ 	pid = getpid ();
+ 	time (&cur_time);
+-#if 1
++#ifndef __MINT__
+ 	putenv ("TERM=linux");
++#else
++	/* FIXME: We basically have tt52, tt52-color, st52, st52-color
++	   pluse virtual consoles.  */
++	putenv ("TERM=st52");
++	
++	/* Make the cursor visible and enable auto-wrap.  */
++	printf ("\033e\033v");
+ #endif
+ 
+ 	while ((c = getopt_long (argc, argv, "", long_options, (int *) 0))
+@@ -436,7 +509,11 @@
+ #endif
+ #endif
+ 	/* flush input and output queues, important for modems */
++#ifndef __MINT__
+ 	ioctl (0, TCFLSH, 2);
++#else
++	tcflush (0, TCIOFLUSH);
++#endif
+ 
+ 	while ((logname = get_logname ()) == 0);
+ 

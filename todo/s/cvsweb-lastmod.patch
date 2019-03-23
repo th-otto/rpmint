@@ -1,0 +1,33 @@
+--- cvsweb.cgi.orig	Tue Mar  9 20:05:48 1999
++++ cvsweb.cgi	Tue Mar  9 20:28:59 1999
+@@ -985,6 +985,7 @@
+ sub doCheckout {
+     my ($fullname, $rev) = @_;
+     my ($mimetype,$revopt);
++    my $moddate;
+ 
+     # make sure the revisions a wellformed, for security
+     # reasons ..
+@@ -1002,8 +1003,12 @@
+ 
+     if (defined $rev) {
+ 	$revopt = "-r'$rev'";
++	readLog($fullname,$rev);
++	$moddate=$date{$rev};
+     } else {
+ 	$revopt = "";
++	readLog($fullname);
++	$moddate=$date{$symrev{HEAD}};
+     }
+     
+     # this may not be quoted with single quotes
+@@ -1039,6 +1044,9 @@
+     if ($mimetype eq "text/x-cvsweb-markup") {
+ 	&cvswebMarkup(CO,$fullname,$revision);
+     } else {
++	if ($moddate > 0) {
++	   print "Last-Modified: " . scalar gmtime($moddate) . " GMT\n";
++        }
+ 	print "Content-type: $mimetype\n\n";
+ 	print <CO>;
+     }

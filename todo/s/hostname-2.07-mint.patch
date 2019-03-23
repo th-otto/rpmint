@@ -1,0 +1,11 @@
+--- hostname-2.07/Makefile.orig	Mon Nov  8 18:31:02 1999
++++ hostname-2.07/Makefile	Fri Sep  7 13:14:12 2001
+@@ -16,7 +16,7 @@
+ OBJS=hostname.o localdomain.o localhost.o
+ 
+ hostname: nlscat $(OBJS)
+-	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJS)
++	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJS) -lsocket
+ 	strip hostname
+ 	ln -f hostname dnsdomainname
+ 

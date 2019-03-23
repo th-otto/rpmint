@@ -1,0 +1,89 @@
+--- termcap-2.0.8/Makefile.mint	Fri Jul 16 20:35:57 1999
++++ termcap-2.0.8/Makefile	Fri Jul 16 20:35:59 1999
+@@ -1,5 +1,6 @@
+ #
+ # Makefile for libtermcap. It is intended for Linux/ELF only.
++# Modified by Guido Flohr to work with MiNT.
+ #
+ 
+ LIBNAME=termcap
+@@ -22,14 +23,15 @@
+ SHARED_LIB=lib$(LIBNAME).so.$(VERSION)
+ SONAME_SHARED_LIB=lib$(LIBNAME).so.$(SONAME_VERSION)
+ 
+-TARGETS=$(STATIC_LIB) $(SHARED_LIB)
++#TARGETS=$(STATIC_LIB) $(SHARED_LIB)
++TARGETS=$(STATIC_LIB)
+ 
+ # Where is include and dir located?
+ prefix=/
+ 
+ .c.o:
+ 	$(CC) $(CFLAGS) -c $<
+-	$(CC) $(CFLAGS) -fPIC -c $< -o pic/$@
++	@#$(CC) $(CFLAGS) -fPIC -c $< -o pic/$@
+ 
+ SRCS = termcap.c tparam.c version.c
+ OBJS= $(SRCS:.c=.o)
+@@ -46,7 +48,11 @@
+ pic:
+ 	-if [ ! -d pic ]; then mkdir pic; fi
+ 
+-install: lib install-dirs install-data
++install: lib
++	install -m 644 -o bin -g bin $(STATIC_LIB) $(prefix)/lib
++	install -m 644 -o bin -g bin termcap.h $(prefix)/include
++	
++install-but-not-for-mint: lib install-dirs install-data
+ 	-if [ -f $(prefix)/lib/$(SHARED_LIB) ]; then \
+ 	   mkdir -p $(prefix)/lib/backup; \
+ 	   mv $(prefix)/lib/$(SHARED_LIB) \
+--- termcap-2.0.8/termcap.h.mint	Sat Apr  6 05:49:26 1996
++++ termcap-2.0.8/termcap.h	Fri Jul 16 20:35:59 1999
+@@ -15,6 +15,9 @@
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
+ 
++/* Slightly modified (speed_t <-> short ospeed) for MiNT by
++   Guido Flohr <gufl0000@stud.uni-sb.de>.  */
++   
+ #ifndef _TERMCAP_H
+ #define _TERMCAP_H 1
+ 
+@@ -26,7 +29,7 @@
+ extern char *UP;
+ extern char *BC;
+ 
+-#ifdef __linux__
++#if defined (__linux__) || defined (__MINT__)
+ extern speed_t ospeed;
+ #else
+ extern short ospeed;
+--- termcap-2.0.8/termcap.c.mint	Fri Jul 16 20:35:55 1999
++++ termcap-2.0.8/termcap.c	Fri Jul 16 20:44:53 1999
+@@ -370,19 +370,24 @@
+   printf("Using file %s\n", tc_file);
+ #endif
+ 
++#ifndef __MINT__
+   if(tc_set)
+   {
+   	setfsuid(getuid());
+   	setfsgid(getgid());
+   }
++#endif
+   /* Now read the termcap file. */
+   fp = fopen(tc_file, "r");
+-  
++
++#ifndef __MINT__
+   if(tc_set)
+   {
+   	setfsuid(geteuid());
+   	setfsgid(getegid());
+   }
++#endif
++
+   if (fp == NULL)
+   	return(NULL);
+ 

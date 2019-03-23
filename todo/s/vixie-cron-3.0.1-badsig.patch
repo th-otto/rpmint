@@ -1,0 +1,13 @@
+--- vixie-cron-3.0.1/cron.c.ewt	Wed Nov 20 16:46:33 1996
++++ vixie-cron-3.0.1/cron.c	Wed Nov 20 16:48:09 1996
+@@ -278,6 +278,10 @@
+ static void
+ sighup_handler(x) {
+ 	log_close();
++
++	/* we should use sigaction for proper signal blocking as this 
++	   has a race, but... */
++	signal(SIGHUP, sighup_handler);
+ }
+ 
+ 

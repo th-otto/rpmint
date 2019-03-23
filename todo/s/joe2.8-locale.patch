@@ -1,0 +1,313 @@
+*** b.c.locale	Fri Jan 20 09:38:25 1995
+--- b.c	Mon Oct  5 03:45:46 1998
+***************
+*** 416,422 ****
+   int c=brc(p);
+   int d=prgetc(q);
+   prm(q);
+!  if(crest(c) && !crest(d)) return 1;
+   else return 0;
+   }
+  
+--- 416,422 ----
+   int c=brc(p);
+   int d=prgetc(q);
+   prm(q);
+!  if(isalnum(c) && !isalnum(d)) return 1;
+   else return 0;
+   }
+  
+***************
+*** 427,433 ****
+   int d=brc(q);
+   int c=prgetc(q);
+   prm(q);
+!  if(crest(c) && !crest(d)) return 1;
+   else return 0;
+   }
+  
+--- 427,433 ----
+   int d=brc(q);
+   int c=prgetc(q);
+   prm(q);
+!  if(isalnum(c) && !isalnum(d)) return 1;
+   else return 0;
+   }
+  
+*** main.c.locale	Sun Jan 22 01:21:08 1995
+--- main.c	Mon Oct  5 03:45:47 1998
+***************
+*** 18,23 ****
+--- 18,26 ----
+  
+  #include <stdio.h>
+  #include <fcntl.h>
++ #ifdef USE_LOCALE
++ #include <locale.h>
++ #endif
+  #include "config.h"
+  #include "w.h"
+  #include "tty.h"
+***************
+*** 193,198 ****
+--- 196,205 ----
+   if(getenv("DOPADDING")) dopadding=1;
+   if(getenv("NOXON")) noxon=1;
+   if(s=getenv("JOETERM")) joeterm=s;
++ 
++ #ifdef USE_LOCALE
++  setlocale(LC_CTYPE, "");
++ #endif
+  
+  #ifndef __MSDOS__
+   if(!(cap=getcap(NULL,9600,NULL,NULL)))
+*** scrn.h.locale	Thu Oct  6 08:09:04 1994
+--- scrn.h	Mon Oct  5 03:48:51 1998
+***************
+*** 19,24 ****
+--- 19,27 ----
+  #ifndef _Iscrn
+  #define _Iscrn 1
+  
++ #ifdef USE_LOCALE
++ #include <ctype.h>
++ #endif
+  #include "config.h"
+  #include "termcap.h"
+  #include "tty.h"
+***************
+*** 252,257 ****
+--- 255,269 ----
+  extern unsigned char xlatc[256];
+  extern int dspasis;
+  
++ #ifdef USE_LOCALE
++ #define xlat(a,c) \
++   ( \
++   (isprint(c) || dspasis && ((unsigned)(c)>=128)) ? \
++       ((a)=0) \
++     : \
++       (((a)=xlata[(unsigned)(c)]), ((c)=xlatc[(unsigned)(c)])) \
++   )
++ #else
+  #define xlat(a,c) \
+    ( \
+    (dspasis && ((unsigned)(c)>=128)) ? \
+***************
+*** 259,264 ****
+--- 271,277 ----
+      : \
+        (((a)=xlata[(unsigned)(c)]), ((c)=xlatc[(unsigned)(c)])) \
+    )
++ #endif
+  
+  /* int eraeol(SCRN *t,int x,int y);
+   *
+*** uedit.c.locale	Sun Jan  8 16:47:01 1995
+--- uedit.c	Mon Oct  5 03:45:47 1998
+***************
+*** 103,109 ****
+   lp:
+   d=' ';
+   while(c=prgetc(bw->cursor),
+!        c!= MAXINT && !crest(c) && (!cwhitel(c) || cwhitel(d)))
+    d=c; 
+   if(c==' ')
+    {
+--- 103,109 ----
+   lp:
+   d=' ';
+   while(c=prgetc(bw->cursor),
+!        c!= MAXINT && !isalnum(c) && (!cwhitel(c) || cwhitel(d)))
+    d=c; 
+   if(c==' ')
+    {
+***************
+*** 112,118 ****
+    }
+   if(c!= MAXINT) pgetc(bw->cursor);
+   /* Move to beginning of current word */
+!  while(crest(c=prgetc(bw->cursor)));
+   if(c!= MAXINT) pgetc(bw->cursor);
+   return 0;
+   }
+--- 112,118 ----
+    }
+   if(c!= MAXINT) pgetc(bw->cursor);
+   /* Move to beginning of current word */
+!  while(isalnum(c=prgetc(bw->cursor)));
+   if(c!= MAXINT) pgetc(bw->cursor);
+   return 0;
+   }
+***************
+*** 128,134 ****
+   lp:
+   d=' ';
+   while(c=brc(bw->cursor),
+!        c!= MAXINT && !crest(c) && (!cwhitel(c) || cwhitel(d)))
+    d=pgetc(bw->cursor);
+   if(c==' ')
+    {
+--- 128,134 ----
+   lp:
+   d=' ';
+   while(c=brc(bw->cursor),
+!        c!= MAXINT && !isalnum(c) && (!cwhitel(c) || cwhitel(d)))
+    d=pgetc(bw->cursor);
+   if(c==' ')
+    {
+***************
+*** 136,142 ****
+    if(!cwhitel(d)) goto lp;
+    }
+   /* Move to end of current word */
+!  while(c=brc(bw->cursor), crest(c)) pgetc(bw->cursor);
+   return 0;
+   }
+  
+--- 136,142 ----
+    if(!cwhitel(d)) goto lp;
+    }
+   /* Move to end of current word */
+!  while(c=brc(bw->cursor), isalnum(c)) pgetc(bw->cursor);
+   return 0;
+   }
+  
+***************
+*** 588,595 ****
+   {
+   P *p=pdup(bw->cursor);
+   int c=brc(p);
+!  if(crest(c))
+!   while(c=brc(p), crest(c)) pgetc(p);
+   else if(cwhitel(c) || c=='\r')
+    while(c=brc(p), (cwhitel(c) || c=='\r')) pgetc(p);
+   else pgetc(p);
+--- 588,595 ----
+   {
+   P *p=pdup(bw->cursor);
+   int c=brc(p);
+!  if(isalnum(c))
+!   while(c=brc(p), isalnum(c)) pgetc(p);
+   else if(cwhitel(c) || c=='\r')
+    while(c=brc(p), (cwhitel(c) || c=='\r')) pgetc(p);
+   else pgetc(p);
+***************
+*** 608,616 ****
+   {
+   P *p=pdup(bw->cursor);
+   int c=prgetc(bw->cursor);
+!  if(crest(c))
+    {
+!   while(c=prgetc(bw->cursor), crest(c));
+    if(c!= MAXINT) pgetc(bw->cursor);
+    }
+   else if(cwhitel(c))
+--- 608,616 ----
+   {
+   P *p=pdup(bw->cursor);
+   int c=prgetc(bw->cursor);
+!  if(isalnum(c))
+    {
+!   while(c=prgetc(bw->cursor), isalnum(c));
+    if(c!= MAXINT) pgetc(bw->cursor);
+    }
+   else if(cwhitel(c))
+*** usearch.c.locale	Wed Dec 21 17:32:48 1994
+--- usearch.c	Mon Oct  5 03:45:47 1998
+***************
+*** 9,14 ****
+--- 9,15 ----
+  #include "main.h"
+  #include "undo.h"
+  #include "usearch.h"
++ #include "zstr.h"
+  
+  int smode=0;		/* Decremented to zero by execmd */
+  int csmode=0;		/* Set for continued search mode */
+*** zstr.c.locale	Mon Jan 16 19:02:47 1995
+--- zstr.c	Mon Oct  5 03:45:47 1998
+***************
+*** 42,49 ****
+--- 42,51 ----
+   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+   };
+  
++ #ifndef USE_LOCALE
+  int toup(a) { return clower(a) ? a+'A'-'a' : a; }
+  int todn(a) { return cupper(a) ? a+'a'-'A' : a; }
++ #endif
+  unsigned Umin(a,b) unsigned a,b; { return a<b?a:b; }
+  unsigned Umax(a,b) unsigned a,b; { return a>b?a:b; }
+  int Imin(a,b) { return a<b?a:b; }
+*** zstr.h.locale	Thu Oct  6 07:20:35 1994
+--- zstr.h	Mon Oct  5 03:45:47 1998
+***************
+*** 20,25 ****
+--- 20,28 ----
+  #define _Izstr 1
+  
+  #include "config.h"
++ #ifdef USE_LOCALE
++ #include <ctype.h>
++ #endif
+  
+  #define _upp 1
+  #define _low 2
+***************
+*** 38,43 ****
+--- 41,52 ----
+  
+  /* Character type test macros */
+  
++ #ifdef USE_LOCALE
++ #define cupper isupper
++ #define clower islower
++ #define calpha isalpha
++ #else
++ 
+  /* Upper case */
+  #define cupper(c) (_ctaB[(unsigned char)(c)]&_upp)
+  
+***************
+*** 46,51 ****
+--- 55,61 ----
+  
+  /* Letter */
+  #define calpha(c) (_ctaB[(unsigned char)(c)]&(_low|_upp))
++ #endif
+  
+  /* First legal character of a C identifier */
+  #define cfirst(c) (_ctaB[(unsigned char)(c)]&(_low|_upp|_und))
+***************
+*** 53,58 ****
+--- 63,72 ----
+  /* Remaining legal characters of a C identifier */
+  #define crest(c)  (_ctaB[(unsigned char)(c)]&(_low|_upp|_und|_bin|_oct|_dec))
+  
++ #ifndef USE_LOCALE
++ #define isalnum crest
++ #endif
++ 
+  /* Binary digit */
+  #define cbin(c)   (_ctaB[(unsigned char)(c)]&(_bin))
+  
+***************
+*** 83,93 ****
+--- 97,112 ----
+  /* long Labs(long n); Return absolute value of given long */
+  long Labs();
+  
++ #ifdef USE_LOCALE
++ #define toup toupper
++ #define todn tolower
++ #else
+  /* int toup(int c); Convert character to uppercase if it was lowercase */
+  int toup();
+  
+  /* int todn(int c); Convert character to lowercase if it was uppercase */
+  int todn();
++ #endif
+  
+  /* unsigned Umin(unsigned a,unsigned b); Return the smaller unsigned integer */
+  unsigned Umin();

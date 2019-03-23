@@ -1,0 +1,25 @@
+--- bs-2.6/Makefile.orig	Tue Jan 13 16:06:12 2004
++++ bs-2.6/Makefile	Tue Jan 13 16:15:18 2004
+@@ -1,6 +1,9 @@
+ #	Makefile for bs, the Battleships game
+ 
+ VERSION=2.6
++DESTDIR=
++bindir=usr/bin
++mandir=usr/share/man
+ 
+ # Flags for use with the Linux ncurses package (recommended)
+ TERMLIB = -lncurses
+@@ -16,8 +19,10 @@
+ 	rm -f bs bs.6 bs*.tar.gz bs*.rpm *~
+ 
+ install: bs.6 uninstall
+-	cp bs /usr/bin
+-	cp bs.6 /usr/share/man/man6/bs.6
++	mkdir -p -m 755 ${DESTDIR}/${bindir}
++	mkdir -p -m 755 ${DESTDIR}/${mandir}/man6
++	install -m 755 bs ${DESTDIR}/${bindir}/
++	install -m 644 bs.6 ${DESTDIR}/${mandir}/man6/
+ 
+ uninstall:
+ 	rm -f /usr/bin/bs /usr/share/man/man6/bs.6

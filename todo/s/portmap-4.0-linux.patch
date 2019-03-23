@@ -1,0 +1,23 @@
+--- portmap_4/Makefile.orig	Fri May 31 09:50:40 1996
++++ portmap_4/Makefile	Fri Aug  9 17:40:43 1996
+@@ -46,7 +46,7 @@
+ # libwrap.a object library. WRAP_DIR should specify the directory with
+ # that library.
+ 
+-WRAP_DIR= ../tcp_wrappers
++WRAP_DIR= /usr/lib
+ 
+ # Auxiliary object files that may be missing from your C library.
+ #
+@@ -67,9 +67,9 @@
+ 
+ SHELL	= /bin/sh
+ 
+-COPT	= -Dconst= -Dperror=xperror $(HOSTS_ACCESS) $(CHECK_PORT) \
++COPT	= $(HOSTS_ACCESS) $(CHECK_PORT) \
+ 	$(SYS) -DFACILITY=$(FACILITY) $(ULONG) $(ZOMBIES) $(SA_LEN)
+-CFLAGS	= $(COPT) -O $(NSARCHS) $(SETPGRP)
++CFLAGS	= $(COPT) $(RPM_OPT_FLAGS) $(NSARCHS) $(SETPGRP)
+ OBJECTS	= portmap.o pmap_check.o from_local.o $(AUX)
+ 
+ all:	portmap pmap_dump pmap_set

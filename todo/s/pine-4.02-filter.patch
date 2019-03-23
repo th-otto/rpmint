@@ -1,0 +1,10 @@
+--- pine3.96/pine/filter.c.orig	Wed Jan 14 20:40:38 1998
++++ pine3.96/pine/filter.c	Wed Jan 14 20:33:26 1998
+@@ -1079,6 +1079,7 @@
+ 	     *	     because *some* stdio implementations consider
+ 	     *	     EAGAIN and EWOULDBLOCK equivalent to EOF...
+ 	     */
++	    clearerr(fpipe->in.f);
+ 	    errno = 0;
+ 
+ 	    while(!errstr && fgets(buf, MAILTMPLEN, fpipe->in.f))

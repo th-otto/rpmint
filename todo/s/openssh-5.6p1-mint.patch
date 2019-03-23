@@ -1,0 +1,29 @@
+--- openssh-5.6p1/ssh-keygen.c	Wed Aug  4 22:05:32 2010
++++ openssh-5.6p1-mint/ssh-keygen.c	Tue Dec  7 14:35:26 2010
+@@ -1378,6 +1378,7 @@ do_ca_sign(struct passwd *pw, int argc, 
+ 		}
+ 	}
+ 
++#ifdef ENABLE_PKCS11
+ 	pkcs11_init(1);
+ 	tmp = tilde_expand_filename(ca_key_path, pw->pw_uid);
+ 	if (pkcs11provider != NULL) {
+@@ -1386,7 +1387,7 @@ do_ca_sign(struct passwd *pw, int argc, 
+ 	} else if ((ca = load_identity(tmp)) == NULL)
+ 		fatal("Couldn't load CA key \"%s\"", tmp);
+ 	xfree(tmp);
+-
++#endif
+ 	for (i = 0; i < argc; i++) {
+ 		/* Split list of principals */
+ 		n = 0;
+@@ -1459,7 +1460,9 @@ do_ca_sign(struct passwd *pw, int argc, 
+ 		key_free(public);
+ 		xfree(out);
+ 	}
++#ifdef ENABLE_PKCS11
+ 	pkcs11_terminate();
++#endif
+ 	exit(0);
+ }
+ 

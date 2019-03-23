@@ -1,0 +1,899 @@
+diff -u -r Sharity-Light-1.2-orig/fo_nfs.c Sharity-Light-1.2/fo_nfs.c
+--- Sharity-Light-1.2-orig/fo_nfs.c	Mon Nov 16 18:03:44 1998
++++ Sharity-Light-1.2/fo_nfs.c	Wed Feb 27 09:09:24 2002
+@@ -58,7 +58,7 @@
+ static void	file_close(file_info_t *finfo)
+ {
+ 	if(finfo->file != NULL){
+-		DFPRINTF(("closing inode %d\n", (int)finfo->ino));
++		DFPRINTF(("closing inode %d", (int)finfo->ino));
+ 		smba_close(finfo->file);
+ 		finfo->file = NULL;
+ 	}
+@@ -111,13 +111,13 @@
+ 		p = &file_buffer[free_i];
+ 	}
+ 	if((i = psi_index(ino)) < 0){
+-		eprintf("file_get_open: requested inode not found\n");
++		eprintf("file_get_open: requested inode not found");
+ 		*errnum = -MY_NFSERR_STALE;
+ 		return NULL;
+ 	}
+ 	path = psi_to_path(i, DOS_PATHSEP, NULL);
+ 	if((*errnum = smba_open(the_server, path, &p->file)) == 0){
+-		DFPRINTF(("opening inode %d\n", (int)ino));
++		DFPRINTF(("opening inode %d", (int)ino));
+ 		p->ino = ino;
+ 		p->index = i;
+ 		file_touch(p);
+@@ -222,7 +222,7 @@
+ 
+ int	fo_create(fh_t *fh, my_attr_t *fa, fh_t dir, char *name, my_attr_t *sa)
+ {
+-	DPRINTF(("fo_create(ino=%d, name=%s)\n", (int)dir, name));
++	DPRINTF(("fo_create(ino=%d, name=%s)", (int)dir, name));
+ 	return fo_new(0, fh, fa, dir, name, sa);
+ }
+ 
+@@ -230,7 +230,7 @@
+ 
+ int	fo_mkdir(fh_t *fh, my_attr_t *fa, fh_t dir, char *name, my_attr_t *sa)
+ {
+-	DPRINTF(("fo_mkdir(ino=%d, name=%s)\n", (int)dir, name));
++	DPRINTF(("fo_mkdir(ino=%d, name=%s)", (int)dir, name));
+ 	return fo_new(1, fh, fa, dir, name, sa);
+ }
+ 
+@@ -242,7 +242,7 @@
+ file_info_t	*file;
+ smba_stat_t	smbattr;
+ 
+-	DPRINTF(("fo_getattr(ino=%d)\n", (int)fh));
++	DPRINTF(("fo_getattr(ino=%d)", (int)fh));
+ 	if((file = file_get_open(fh, MODE_NONE, &errnum)) == NULL)
+ 		return errnum;
+ 	if((errnum = smba_getattr(file->file, &smbattr)) != 0)
+@@ -259,7 +259,7 @@
+ file_info_t	*file;
+ smba_stat_t	smbattr;
+ 
+-	DPRINTF(("fo_setattr(ino=%d)\n", (int)fh));
++	DPRINTF(("fo_setattr(ino=%d)", (int)fh));
+ 	if((file = file_get_open(fh, MODE_NONE, &errnum)) == NULL)
+ 		return errnum;
+ 	if((errnum = smba_getattr(file->file, &smbattr)) != 0)
+@@ -276,7 +276,7 @@
+ {
+ int			dir_i;
+ 
+-	DPRINTF(("fo_lookup(ino=%d, name=%s)\n", (int)dir, name));
++	DPRINTF(("fo_lookup(ino=%d, name=%s)", (int)dir, name));
+ 	if((dir_i = psi_index(dir)) < 0)
+ 		return MY_NFSERR_STALE;
+ 	psi_lookup(dir_i, name, fh);
+@@ -316,10 +316,10 @@
+ 	memcpy(dirent->name, n, namelen);
+ 	dirent->cookie = nextpos;
+ 	dirent->next = NULL;
+-	DPRINTF(("fo_readdir(): appended entry:\n"));
+-	DPRINTF(("\tfh=%d\n", dirent->fh));
+-	DPRINTF(("\tname=%s\n", dirent->name));
+-	DPRINTF(("\tcookie=%d\n", dirent->cookie));
++	DPRINTF(("fo_readdir(): appended entry:"));
++	DPRINTF(("\tfh=%d", dirent->fh));
++	DPRINTF(("\tname=%s", dirent->name));
++	DPRINTF(("\tcookie=%d", dirent->cookie));
+ 	*rstat->tail = dirent;
+ 	rstat->tail = &dirent->next;
+ 	rstat->maxlen -= len;
+@@ -366,7 +366,7 @@
+ int		dir_i, errnum = 0;
+ char	*path;
+ 
+-	DPRINTF(("fo_rm(ino=%d, name=%s)\n", (int)dir, name));
++	DPRINTF(("fo_rm(ino=%d, name=%s)", (int)dir, name));
+ 	if((dir_i = psi_index(dir)) < 0)
+ 		return MY_NFSERR_STALE;
+ 	path = psi_to_path(dir_i, DOS_PATHSEP, name);
+@@ -398,7 +398,7 @@
+ int		i, lold, errnum = 0;
+ char	*p, *old, *new;
+ 
+-	DPRINTF(("fo_rename(ino=%d, name=%s, ino=%d, name=%s)\n", (int)fromdir,
++	DPRINTF(("fo_rename(ino=%d, name=%s, ino=%d, name=%s)", (int)fromdir,
+ 												fromname, (int)todir, toname));
+ 	if((i = psi_index(fromdir)) < 0)
+ 		return MY_NFSERR_STALE;
+@@ -420,7 +420,7 @@
+ {
+ int		errnum = 0;
+ 
+-	DPRINTF(("fo_statfs()\n"));
++	DPRINTF(("fo_statfs()"));
+ 	errnum = smba_statfs(the_server, &fsstat->bsize, &fsstat->blocks,
+ 															&fsstat->bfree);
+ 	if(errnum)
+@@ -442,7 +442,7 @@
+ smba_stat_t	smbattr;
+ int			errnum = 0;
+ 
+-	DPRINTF(("fo_read(ino=%d, offs=%d, len=%d)\n", (int)fh, offs, totalcount));
++	DPRINTF(("fo_read(ino=%d, offs=%d, len=%d)", (int)fh, offs, totalcount));
+ 	if(totalcount > TRANSFER_BUFFER_SIZE)
+ 		totalcount = TRANSFER_BUFFER_SIZE;
+ 	*data = transfer_buf;
+@@ -453,7 +453,7 @@
+ 	get_attr(&smbattr, fa, (int)p->ino);
+ 	errnum = smba_read(p->file, transfer_buf, totalcount, offs);
+ 	*len = errnum;	/* normally returns bytes read */
+-	DPRINTF(("fo_read() returns %d\n", errnum));
++	DPRINTF(("fo_read() returns %d", errnum));
+ 	if(errnum < 0)
+ 		return errnum;
+ 	return 0;
+@@ -467,7 +467,7 @@
+ smba_stat_t	smbattr;
+ int			errnum = 0;
+ 
+-	DPRINTF(("fo_write(ino=%d, offs=%d, len=%d)\n",(int)fh,offset,totalcount));
++	DPRINTF(("fo_write(ino=%d, offs=%d, len=%d)",(int)fh,offset,totalcount));
+ 	if((p = file_get_open(fh, MODE_WRITE, &errnum)) == NULL)
+ 		return errnum;
+ 	if((errnum = smba_write(p->file, data, totalcount, offset)) < 0)
+@@ -476,7 +476,7 @@
+ 	if((errnum = smba_getattr(p->file, &smbattr)) < 0)
+ 		return errnum;
+ 	get_attr(&smbattr, fa, (int)p->ino);
+-	DPRINTF(("fo_write() returns %d\n", errnum));
++	DPRINTF(("fo_write() returns %d", errnum));
+ 	return errnum;
+ }
+ 
+diff -u -r Sharity-Light-1.2-orig/nfs/mount.c Sharity-Light-1.2/nfs/mount.c
+--- Sharity-Light-1.2-orig/nfs/mount.c	Mon Nov 16 18:04:06 1998
++++ Sharity-Light-1.2/nfs/mount.c	Wed Feb 27 09:04:22 2002
+@@ -29,14 +29,14 @@
+ 
+ static void	my_perror(char *s)
+ {
+-	eprintf("%s: [%d] %s\n", s, errno, strerror(errno));
++	eprintf("%s: [%d] %s", s, errno, strerror(errno));
+ }
+ 
+ /* ------------------------------------------------------------------------- */
+ 
+ static void	nfs_unmount(void)
+ {
+-	debprintf("Going to unmount NFS...\n");
++	debprintf("Going to unmount NFS...");
+ 	while(syscall_unmount(mntdir)){
+ 		if(errno != ENOENT)
+ 			my_perror(mntdir);
+@@ -49,7 +49,7 @@
+ 	if(syscall_delete_mtab(mntdir) != 0){
+ 		my_perror("deleting from mtab");
+ 	}
+-	debprintf("NFS unmounted.\n");
++	debprintf("NFS unmounted.");
+ }
+ 
+ /* ------------------------------------------------------------------------- */
+@@ -70,10 +70,10 @@
+ 	switch(signr){
+ 	case SIGHUP:	case SIGINT:	case SIGQUIT:
+ 	case SIGUSR1:	case SIGUSR2:
+-		debprintf("** caught signal %d, preparing for unmount\n", signr);
++		debprintf("** caught signal %d, preparing for unmount", signr);
+ 		break;	/* if the signal was user-induced: unmount nfs from mainloop */
+ 	default:
+-		debprintf("** caught signal %d, unmounting\n", signr);
++		debprintf("** caught signal %d, unmounting", signr);
+ 		terminate(1);
+ 	}
+ }
+@@ -89,20 +89,20 @@
+ 		readfd = svc_fdset;
+ 		tv.tv_sec = 2; tv.tv_usec = 0;
+ 	
+-		DDPRINTF(("- going into select\n"));
++		DDPRINTF(("- going into select"));
+ 		if(select(FD_SETSIZE, &readfd, NULL, NULL, &tv) > 0){
+-			DDPRINTF(("- executing request\n"));
++			DDPRINTF(("- executing request"));
+ 			svc_getreqset(&readfd);
+ 		}
+ 		if(do_exit){
+-			DDPRINTF(("- doing exit\n"));
++			DDPRINTF(("- doing exit"));
+ 			if(do_nfsumount)
+ 				nfs_unmount();
+ 			fo_unmount();
+-			debprintf("Exiting.\n");
++			debprintf("Exiting.");
+ 			exit(0);
+ 		}
+-		DDPRINTF(("- checking for regular jobs()\n"));
++		DDPRINTF(("- checking for regular jobs()"));
+ 		fo_regular();
+ 	}
+ }
+@@ -178,11 +178,11 @@
+ 		dispatch_loop();
+ 	}else{
+ 		char			fsname[256];
+-		DPRINTF(("Going to mount...\n"));
++		DPRINTF(("Going to mount..."));
+ 		other_pid = child_pid == 0 ? parent_pid : child_pid;
+ 		sprintf(fsname, "shlight-%d", other_pid);
+ 		if(syscall_mount(dir, root_fh, sock, &sain, fsname) < 0){
+-			eprintf("nfs mount %s: [%d] %s\n", dir, errno, strerror(errno));
++			eprintf("nfs mount %s: [%d] %s", dir, errno, strerror(errno));
+ 			kill(other_pid, SIGKILL);
+ 		}else{
+ 			if(syscall_insert_mtab(mntdir, fsname) != 0){
+diff -u -r Sharity-Light-1.2-orig/proc.c Sharity-Light-1.2/proc.c
+--- Sharity-Light-1.2-orig/proc.c	Mon Nov 16 18:12:26 1998
++++ Sharity-Light-1.2/proc.c	Wed Feb 27 09:12:16 2002
+@@ -241,7 +241,7 @@
+ static int
+ smb_valid_packet(byte *packet)
+ {
+-        DDPRINTK("len: %ld, wct: %d, bcc: %d\n",
++        DDPRINTK("len: %ld, wct: %d, bcc: %d",
+                  smb_len(packet), SMB_WCT(packet), SMB_BCC(packet));
+         return (   packet[4] == 0xff
+                 && packet[5] == 'S'
+@@ -401,18 +401,18 @@
+         s->err  = 0;
+ 
+         if (smb_request(s) < 0) {
+-                DPRINTK("smb_request failed\n");
++                DPRINTK("smb_request failed");
+                 result = -EIO;
+         }
+         else if (smb_valid_packet(s->packet) != 0) {
+-                DPRINTK("not a valid packet!\n");
++                DPRINTK("not a valid packet!");
+                 result = -EIO;
+         }
+         else if (s->rcls != 0) {
+                 result =  -smb_errno(s->rcls, s->err);
+         }
+         else if (smb_verify(s->packet, command, wct, bcc) != 0) {
+-                DPRINTK("smb_verify failed\n");
++                DPRINTK("smb_verify failed");
+                 result = -EIO;
+         }
+ 
+@@ -433,12 +433,12 @@
+         }
+         
+         if (smb_release(server) < 0) {
+-                DPRINTK("smb_retry: smb_release failed\n");
++                DPRINTK("smb_retry: smb_release failed");
+                 server->state = CONN_RETRIED;
+                 return 0;
+         }
+         if(smb_proc_reconnect(server) < 0) {
+-                DPRINTK("smb_proc_reconnect failed\n");
++                DPRINTK("smb_proc_reconnect failed");
+                 server->state = CONN_RETRIED;
+                 return 0;
+         }
+@@ -524,7 +524,7 @@
+         char* buf = server->packet;
+         const word o_attr = aSYSTEM | aHIDDEN | aDIR;
+ 
+-        DPRINTK("smb_proc_open: path=%s\n", pathname);
++        DPRINTK("smb_proc_open: path=%s", pathname);
+ 
+         smb_lock_server(server);
+ 
+@@ -573,7 +573,7 @@
+ 
+         smb_unlock_server(server);
+ 
+-        DPRINTK("smb_proc_open: entry->access = %d\n", entry->access);
++        DPRINTK("smb_proc_open: entry->access = %d", entry->access);
+         return 0;
+ }
+ 
+@@ -629,7 +629,7 @@
+                 printk("smb_proc_read: ret_c=%d, data_len=%d\n",
+                        returned_count, data_len);
+         }else{
+-			DPRINTK("smb_proc_read: ret_c=%d, data_len=%d\n",
++			DPRINTK("smb_proc_read: ret_c=%d, data_len=%d",
+ 						returned_count, data_len);
+ 		}
+ 
+@@ -716,7 +716,7 @@
+ 
+         result = smb_request_ok(server, SMBwritebraw, 1, 0);
+ 
+-        DPRINTK("smb_proc_write_raw: first request returned %d\n", result);
++        DPRINTK("smb_proc_write_raw: first request returned %d", result);
+         
+         if (result < 0) {
+                 smb_unlock_server(server);
+@@ -725,17 +725,17 @@
+         
+         result = smb_request_write_raw(server, data, count);
+ 
+-        DPRINTK("smb_proc_write_raw: raw request returned %d\n", result);
++        DPRINTK("smb_proc_write_raw: raw request returned %d", result);
+         
+         if (result > 0) {
+                 /* We have to do the checks of smb_request_ok here as well */
+                 if (smb_valid_packet(server->packet) != 0) {
+-                        DPRINTK("not a valid packet!\n");
++                        DPRINTK("not a valid packet!");
+                         result = -EIO;
+                 } else if (server->rcls != 0) {
+                         result = -smb_errno(server->rcls, server->err);
+                 } else if (smb_verify(server->packet, SMBwritec,1,0) != 0) {
+-                        DPRINTK("smb_verify failed\n");
++                        DPRINTK("smb_verify failed");
+                         result = -EIO;
+                 }
+         }
+@@ -915,7 +915,7 @@
+                 date_dos2unix(WVAL(p, 1), WVAL(p, 3));
+         entry->size = DVAL(p, 5);
+         memcpy(entry->path, p+9, 13);
+-        DDPRINTK("smb_decode_dirent: path = %s\n", entry->path);
++        DDPRINTK("smb_decode_dirent: path = %s", entry->path);
+         return p + 22;
+ }
+ 
+@@ -952,8 +952,8 @@
+         strcpy(mask, SMB_FINFO(dir)->path);
+         strcat(mask, "\\*.*");
+ 
+-        DPRINTK("SMB call  readdir %d @ %d\n", cache_size, fpos);        
+-        DPRINTK("          mask = %s\n", mask);
++        DPRINTK("SMB call  readdir %d @ %d", cache_size, fpos);        
++        DPRINTK("          mask = %s", mask);
+ 
+         buf = server->packet;
+ 
+@@ -1026,9 +1026,9 @@
+                 for (i = 0; i < count; i ++) {
+                         if (total_count < fpos) {
+                                 p += SMB_DIRINFO_SIZE;
+-                                DDPRINTK("smb_proc_readdir: skipped entry.\n");
++                                DDPRINTK("smb_proc_readdir: skipped entry.");
+                                 DDPRINTK("                  total_count = %d\n"
+-                                         "                i = %d, fpos = %d\n",
++                                         "                i = %d, fpos = %d",
+                                          total_count, i, fpos);
+                         }
+                         else if (total_count >= fpos + cache_size) {
+@@ -1039,7 +1039,7 @@
+                                 p = smb_decode_dirent(p, current_entry);
+                                 current_entry->f_pos = total_count;
+                                 DDPRINTK("smb_proc_readdir: entry->f_pos = "
+-                                         "%d\n", current_entry->f_pos);        
++                                         "%d", current_entry->f_pos);        
+                                 current_entry += 1;
+                         }
+                         total_count += 1;
+@@ -1071,8 +1071,8 @@
+         case 1:                 /* OS/2 understands this */
+                 if (finfo)
+                 {
+-                        DPRINTK("received entry\n");
+-						DPRINTK("resume key = %d\n", DVAL(p,0));
++                        DPRINTK("received entry");
++						DPRINTK("resume key = %d", DVAL(p,0));
+                         strcpy(finfo->path,p+27);
+                         finfo->len  = strlen(finfo->path);
+                         finfo->size = DVAL(p,16);
+@@ -1130,7 +1130,7 @@
+                 break;
+ 
+         default:
+-                DPRINTK("Unknown long filename format %d\n",level);
++                DPRINTK("Unknown long filename format %d",level);
+                 result = p + WVAL(p,0);
+         }
+         return result;
+@@ -1179,8 +1179,8 @@
+ 		strcpy(mask, SMB_FINFO(dir)->path);
+ 		strcat(mask, "\\*");
+ 
+-		DPRINTK("SMB call lreaddir %d @ %d\n", cache_size, fpos);		 
+-		DPRINTK("		   mask = %s\n", mask);
++		DPRINTK("SMB call lreaddir %d @ %d", cache_size, fpos);		 
++		DPRINTK("		   mask = %s", mask);
+ 
+ 		resp_param = NULL;
+ 		resp_data  = NULL;
+@@ -1250,7 +1250,7 @@
+ 
+ 					    usleep(200 * 1000);
+ #endif
+-						DPRINTK("hand=0x%X resume=%d ff_lastname=%d mask=%s\n",
++						DPRINTK("hand=0x%X resume=%d ff_lastname=%d mask=%s",
+ 								ff_dir_handle,ff_resume_key,ff_lastname,mask);
+ 						WSET(p,0,ff_dir_handle);
+ 						WSET(p,2,max_matches); /* max count */
+@@ -1267,20 +1267,20 @@
+ 											&resp_data_len,&resp_param_len,
+ 											&resp_data,&resp_param);
+ 				DPRINTK("smb_proc_readdir_long: "
+-								"smb_trans2_request returns %d\n", result);
++								"smb_trans2_request returns %d", result);
+ 
+ 				if (result < 0) {
+ 						if (smb_retry(server)) {
+ 								goto retry;
+ 						}
+ 						DPRINTK("smb_proc_readdir_long: "
+-								"got error from trans2_request\n");
++								"got error from trans2_request");
+ 						break;
+ 				}
+ 
+ 				if (server->rcls != 0)
+ 				{
+-						DPRINTK("server->rcls = %d err = %d\n",
++						DPRINTK("server->rcls = %d err = %d",
+ 										server->rcls,server->err);
+ 						result = -EIO;
+ 						break;
+@@ -1302,7 +1302,7 @@
+ 						ff_lastname = WVAL(p,6);
+ 				}
+ 
+-				DPRINTK("received %d entries (eos=%d resume=%d)\n",
++				DPRINTK("received %d entries (eos=%d resume=%d)",
+ 						ff_searchcount, ff_eos, ff_resume_key);
+ 				if (ff_searchcount == 0) 
+ 						break;
+@@ -1349,14 +1349,14 @@
+ 						if (total_count < fpos) {
+ 								p = smb_decode_long_dirent(p, NULL,
+ 														   info_level);
+-								DPRINTK("smb_proc_readdir: skipped entry.\n");
++								DPRINTK("smb_proc_readdir: skipped entry.");
+ 								DDPRINTK("					total_count = %d\n"
+-										 "				  i = %d, fpos = %d\n",
++										 "				  i = %d, fpos = %d",
+ 										 total_count, i, fpos);
+ 						}
+ 						else if (total_count >= fpos + cache_size) {
+ 							p = smb_decode_long_dirent(p, NULL, info_level);
+-							DPRINTK("smb_proc_readdir: skipped entry.\n");
++							DPRINTK("smb_proc_readdir: skipped entry.");
+ 							continue;
+ 						}
+ 						else {
+@@ -1364,7 +1364,7 @@
+ 														   info_level);
+ 								current_entry->f_pos = total_count;
+ 								DDPRINTK("smb_proc_readdir: entry->f_pos = "
+-										 "%lu\n", current_entry->f_pos);		
++										 "%lu", current_entry->f_pos);		
+ 								current_entry += 1;
+ 						}
+ 						total_count += 1;
+@@ -1422,7 +1422,7 @@
+ 
+         smb_lock_server(server);
+ 
+-        DDPRINTK("smb_proc_getattr: %s\n", path);
++        DDPRINTK("smb_proc_getattr: %s", path);
+ 
+  retry:
+         p = smb_setup_header(server, SMBgetatr, 0, 2 + len);
+@@ -1520,7 +1520,7 @@
+         smb_lock_server(server);
+ 
+  retry:
+-		DPRINTK("smb_proc_setattr_core\n");
++		DPRINTK("smb_proc_setattr_core");
+         p = smb_setup_header(server, SMBsetatr, 8, 4 + len);
+         WSET(buf, smb_vwv0, new_finfo->attr);
+         DSET(buf, smb_vwv1, utc2local(new_finfo->mtime));
+@@ -1545,7 +1545,7 @@
+         char *buf = server->packet;
+         word date, time;
+ 
+-		DPRINTK("smb_proc_setattrE\n");
++		DPRINTK("smb_proc_setattrE");
+         smb_setup_header_exclusive(server, SMBsetattrE, 7, 0);
+ 
+         WSET(buf, smb_vwv0, fid);
+@@ -1661,7 +1661,7 @@
+ 			server->max_recv = given_max_xmit > 8000 ? given_max_xmit : 8000;
+ 		}
+         if ((result = smb_connect(server)) < 0) {
+-                DPRINTK("smb_proc_reconnect: could not smb_connect\n");
++                DPRINTK("smb_proc_reconnect: could not smb_connect");
+                 goto fail;
+         }
+ 
+@@ -1715,7 +1715,7 @@
+                 goto fail;
+         }
+ 
+-        DPRINTK("smb_proc_connect: Passed SESSION REQUEST.\n");
++        DPRINTK("smb_proc_connect: Passed SESSION REQUEST.");
+         
+         /* Now we are ready to send a SMB Negotiate Protocol packet. */
+         memset(server->packet, 0, SMB_HEADER_LEN);
+@@ -1741,14 +1741,14 @@
+                 DDPRINTK("smb_proc_connect: Request SMBnegprot..");
+         }
+ 
+-        DDPRINTK("Verified!\n");
++        DDPRINTK("Verified!");
+ 
+         p = SMB_VWV(server->packet);
+         p = smb_decode_word(p, &any_word);
+ 		i = any_word;
+         server->protocol = prots[i].prot;
+ 
+-        DPRINTK("smb_proc_connect: Server wants %s protocol.\n",
++        DPRINTK("smb_proc_connect: Server wants %s protocol.",
+                 prots[i].name);
+ 
+         if (server->protocol > PROTOCOL_LANMAN1) {
+@@ -1756,11 +1756,11 @@
+                 word passlen = strlen(server->m.password);
+                 word userlen = strlen(server->m.username);
+                 
+-                DPRINTK("smb_proc_connect: password = %s\n",
++                DPRINTK("smb_proc_connect: password = %s",
+                         server->m.password);
+-                DPRINTK("smb_proc_connect: usernam = %s\n",
++                DPRINTK("smb_proc_connect: usernam = %s",
+                         server->m.username);
+-                DPRINTK("smb_proc_connect: blkmode = %d\n",
++                DPRINTK("smb_proc_connect: blkmode = %d",
+                         WVAL(server->packet, smb_vwv5));
+ 
+                 if (server->protocol >= PROTOCOL_NT1) {
+@@ -1777,7 +1777,7 @@
+                         server->sesskey= DVAL(server->packet, smb_vwv6);
+                 }
+ 
+-				DPRINTK("smb_proc_connect: workgroup = %s\n", cfg_workgroup);
++				DPRINTK("smb_proc_connect: workgroup = %s", cfg_workgroup);
+                 if (server->protocol >= PROTOCOL_NT1) {
+                         char *OS_id = "Unix";
+                         char *client_id = "ksmbfs";
+@@ -1828,7 +1828,7 @@
+                 }
+ 
+                 if ((result = smb_request_ok(server,SMBsesssetupX,3,0)) < 0) {
+-                        DPRINTK("smb_proc_connect: SMBsessetupX failed\n");
++                        DPRINTK("smb_proc_connect: SMBsessetupX failed");
+                         smb_dont_catch_keepalive(server);
+                         goto fail;
+                 }
+@@ -1855,12 +1855,12 @@
+         p = smb_encode_ascii(p, dev, strlen(dev));
+ 
+         if ((result = smb_request_ok(server, SMBtcon, 2, 0)) < 0) {
+-                DPRINTK("smb_proc_connect: SMBtcon not verified.\n");
++                DPRINTK("smb_proc_connect: SMBtcon not verified.");
+                 smb_dont_catch_keepalive(server);
+                 goto fail;
+         }
+ 
+-        DDPRINTK("OK! Managed to set up SMBtcon!\n");
++        DDPRINTK("OK! Managed to set up SMBtcon!");
+    
+         p = SMB_VWV(server->packet);
+         p = smb_decode_word(p, &server->max_xmit);
+@@ -1879,7 +1879,7 @@
+         /* the TCP-SMB header of 4 bytes. */
+         server->max_xmit += 4;
+ 
+-        DPRINTK("max_xmit = %d, tid = %d\n", server->max_xmit, server->tid);
++        DPRINTK("max_xmit = %d, tid = %d", server->max_xmit, server->tid);
+ 
+ # if 0	/* CS: don't resize buffer to max_xmit, leave it at max_recv */
+         /* Now make a new packet with the correct size. */
+@@ -1893,7 +1893,7 @@
+         }
+ #endif
+ 
+-        DPRINTK("smb_proc_connect: Normal exit\n");
++        DPRINTK("smb_proc_connect: Normal exit");
+         return 0;
+ 
+  fail:
+diff -u -r Sharity-Light-1.2-orig/psinode.c Sharity-Light-1.2/psinode.c
+--- Sharity-Light-1.2-orig/psinode.c	Mon Nov 16 18:03:46 1998
++++ Sharity-Light-1.2/psinode.c	Wed Feb 27 09:13:36 2002
+@@ -179,7 +179,7 @@
+ {
+ 	if(*refcount != REFCOUNT_MAX){
+ 		if(*refcount == 0){
+-			eprintf("refcount_dec: releasing free node\n");
++			eprintf("refcount_dec: releasing free node");
+ 		}else
+ 			(*refcount)--;
+ 	}
+@@ -190,7 +190,7 @@
+ 	if(*refcount != REFCOUNT_MAX){
+ 		(*refcount)++;
+ 		if(*refcount == REFCOUNT_MAX){
+-			DPRINTF(("reference count has reached maximum\n"));
++			DPRINTF(("reference count has reached maximum"));
+ 		}
+ 	}
+ }
+@@ -204,13 +204,13 @@
+ 
+ 	while(l-- > 0){
+ 		if(table->table[i]!=NULL && table->table[i]->ino == ino){
+-			DPRINTF(("psitable_find(): inode %d found\n", (int)ino));
++			DPRINTF(("psitable_find(): inode %d found", (int)ino));
+ 			list_move_to_end(&table->lru, table->table[i]);
+ 			return i;
+ 		}
+ 		i = (i + 1) & (table->table_size - 1);
+ 	}
+-	DPRINTF(("psitable_find(): inode %d not found\n", (int)ino));
++	DPRINTF(("psitable_find(): inode %d not found", (int)ino));
+ 	return -1;
+ }
+ 
+@@ -221,9 +221,9 @@
+ int		i = psitable_find(table, ino);
+ 
+ 	if(i >= 0){
+-		DPRINTF(("psitable_delete(): deleting inode %d\n", (int)ino));
++		DPRINTF(("psitable_delete(): deleting inode %d", (int)ino));
+ 		if(table->table[i]->refcount != 0){
+-			eprintf("psitable_delete: deleting entry with refcount %d\n",
++			eprintf("psitable_delete: deleting entry with refcount %d",
+ 											(int)table->table[i]->refcount);
+ 		}
+ 		if(table->table[i]->parent != NULL)
+@@ -242,7 +242,7 @@
+ psinode_t	*p, *next;
+ int			to_delete = table->delete_on_gc;
+ 
+-	DPRINTF(("running garbage collection in psitable\n"));
++	DPRINTF(("running garbage collection in psitable"));
+ 	for(p=table->lru.head;to_delete>0 && p!=NULL;p=next){
+ 		next = p->next;
+ 		if(p->refcount == 0){	/* remove only unreferenced nodes */
+@@ -259,7 +259,7 @@
+ int		i = entry->ino & (table->table_size - 1);
+ int		l = table->max_search;
+ 
+-	DPRINTF(("psitable_insert(): inserting inode %d: ->%s<-\n",
++	DPRINTF(("psitable_insert(): inserting inode %d: ->%s<-",
+ 											(int)entry->ino, entry->name));
+ 	while(l-- > 0){
+ 		if(table->table[i]== NULL)
+@@ -267,7 +267,7 @@
+ 		i = (i + 1) & (table->table_size - 1);
+ 	}
+ 	if(table->table[i] != NULL){
+-		fatal("hashtable full!\n");
++		fatal("hashtable full!");
+ 	}
+ 	table->table[i] = entry;
+ 	if(entry->parent != NULL)
+@@ -323,7 +323,7 @@
+ 		}else{
+ 			i = psitable_find(&psitable,psitable.table[parent_i]->parent->ino);
+ 			if(i < 0){
+-				fatal("could not find parent of inode %d\n", (int)ino);
++				fatal("could not find parent of inode %d", (int)ino);
+ 			}
+ 			*ino = psitable.table[i]->ino;
+ 			return i;
+@@ -354,7 +354,7 @@
+ 		return parent_ino;
+ 	}else if(strcmp(name, "..") == 0){
+ 		if((parent_i = psi_index(parent_ino)) < 0)
+-			fatal("parent inode not found in psi_inum()\n");
++			fatal("parent inode not found in psi_inum()");
+ 		psi_lookup(parent_i, name, &hash);
+ 	}else
+ 		hash_add_string(&hash, name);
+@@ -406,7 +406,7 @@
+ 		l = strlen(ending);
+ 		name_i -= l;
+ 		if(name_i <= 0){
+-			fatal("name buffer overflow from ending for inode %ud\n",
++			fatal("name buffer overflow from ending for inode %ud",
+ 										(unsigned)psitable.table[index]->ino);
+ 		}
+ 		memcpy(&name[name_i], ending, l);
+@@ -417,7 +417,7 @@
+ 		l = strlen(p->name);
+ 		name_i -= l;
+ 		if(name_i <= 0){
+-			fatal("name buffer overflow for inode %ud\n",
++			fatal("name buffer overflow for inode %ud",
+ 										(unsigned)psitable.table[index]->ino);
+ 		}
+ 		memcpy(&name[name_i], p->name, l);
+@@ -432,7 +432,7 @@
+ void	psi_init(int table_size, int low_mark, int high_mark)
+ {
+ 	if((table_size & (table_size - 1)) != 0){
+-		fatal("psi_init(): table_size != power of 2\n");
++		fatal("psi_init(): table_size != power of 2");
+ 	}
+ 	list_init(&psitable.lru);
+ 	psitable.table_size = table_size;
+diff -u -r Sharity-Light-1.2-orig/rumba.c Sharity-Light-1.2/rumba.c
+--- Sharity-Light-1.2-orig/rumba.c	Tue Nov 24 14:51:30 1998
++++ Sharity-Light-1.2/rumba.c	Wed Feb 27 09:07:22 2002
+@@ -181,13 +181,13 @@
+ 		*root_start++ = '\0';
+ 	}
+ 	if ((strlen(complete_service) > 63) || (strlen(share_start) > 63)) {
+-		eprintf("server or share too long: %s\n", service);
++		eprintf("server or share too long: %s", service);
+ 		return -1;
+ 	}
+ 	if (root_start != NULL) {
+ 		int i;
+ 		if (strlen(root_start) > 62) {
+-			eprintf("root too long: %s\n", root_start);
++			eprintf("root too long: %s", root_start);
+ 			return -1;
+ 		}
+ 		s_root[0] = '/';
+@@ -280,7 +280,7 @@
+ 	}
+ #ifndef BSD4_4_LITE2
+ 	if (geteuid() != 0) {
+-		eprintf("%s must be installed suid root\n", progname);
++		eprintf("%s must be installed suid root", progname);
+ 	}
+ #endif
+ 	mount_point = argv[2];
+@@ -294,13 +294,13 @@
+ 	ipAddr = inet_addr(server);
+ 	if(ipAddr == INADDR_NONE){	/* name was given, not numeric */
+ 		if ((h = gethostbyname(server)) == NULL) {
+-			eprintf("%s: unknown host\n", server);
++			eprintf("%s: unknown host", server);
+ 			return 1;
+ 		}
+ 	}else{
+ 		char hostName[256];
+ 		if((h = gethostbyaddr((char*)&ipAddr, sizeof(ipAddr), AF_INET)) == NULL){
+-			eprintf("%s: unknown host\n", server);
++			eprintf("%s: unknown host", server);
+ 			return 1;
+ 		}
+ 		/* Brian Willette: Now we will set the server name to the dns
+@@ -346,28 +346,28 @@
+ 			break;
+ 		case 's':
+ 			if(strlen(optarg) > 16){
+-				eprintf("Server name too long: %s\n", optarg);
++				eprintf("Server name too long: %s", optarg);
+ 				return 1;
+ 			}
+ 			strcpy(server_name, optarg);
+ 			break;
+ 		case 'c':
+ 			if(strlen(optarg) > 16){
+-				eprintf("Client name too long: %s\n", optarg);
++				eprintf("Client name too long: %s", optarg);
+ 				return 1;
+ 			}
+ 			strcpy(client_name, optarg);
+ 			break;
+ 		case 'U':
+ 			if(strlen(optarg) > 63){
+-				eprintf("Username too long: %s\n", optarg);
++				eprintf("Username too long: %s", optarg);
+ 				return 1;
+ 			}
+ 			strcpy(username, optarg);
+ 			break;
+ 		case 'W':
+ 			if(strlen(optarg) >= sizeof(cfg_workgroup)){
+-				eprintf("Workgroup/Domain too long (max %d): %s\n", sizeof(cfg_workgroup) - 1, optarg);
++				eprintf("Workgroup/Domain too long (max %d): %s", sizeof(cfg_workgroup) - 1, optarg);
+ 				return 1;
+ 			}
+ 			strcpy(cfg_workgroup, optarg);
+@@ -379,7 +379,7 @@
+ 			}else{
+ 				pwd = getpwnam(optarg);
+ 				if(pwd == NULL){
+-					eprintf("Unknown user: %s\n", optarg);
++					eprintf("Unknown user: %s", optarg);
+ 					return 1;
+ 				}
+ 				conf_uid = pwd->pw_uid;
+@@ -391,7 +391,7 @@
+ 			}else{
+ 				grp = getgrnam(optarg);
+ 				if(grp == NULL){
+-					eprintf("Unknown group: %s\n", optarg);
++					eprintf("Unknown group: %s", optarg);
+ 					return 1;
+ 				}
+ 				conf_gid = grp->gr_gid;
+@@ -442,7 +442,7 @@
+ 			else if(strcmp(optarg, "..") == 0)
+ 				fake_dotdot_in_root = 0;
+ 			else
+-				eprintf("Parameter of -F must be \".\" or \"..\"\n");
++				eprintf("Parameter of -F must be \".\" or \"..\"");
+ 			break;
+ 		case 'S':
+ 			rw_is_safe = 1;
+diff -u -r Sharity-Light-1.2-orig/smb_abstraction.c Sharity-Light-1.2/smb_abstraction.c
+--- Sharity-Light-1.2-orig/smb_abstraction.c	Mon Nov 16 18:03:48 1998
++++ Sharity-Light-1.2/smb_abstraction.c	Wed Feb 27 09:14:12 2002
+@@ -127,7 +127,7 @@
+ 		*s = 0;
+ 	}
+ 	if((h = gethostbyname(p->server_ipname)) == NULL){
+-		eprintf("%s: unknown host\n", p->server_ipname);
++		eprintf("%s: unknown host", p->server_ipname);
+ 		goto error_occured;
+ 	}
+ 	data.addr.sin_family = AF_INET;
+@@ -135,7 +135,7 @@
+ 	data.addr.sin_port = htons(p->port > 0 ? p->port : SMB_PORT);
+ 	data.fd = socket(AF_INET, SOCK_STREAM, 0);
+ 	if (data.fd == -1) {
+-		eprintf("smba_connect: socket: [%d] %s\n", errno, strerror(errno));
++		eprintf("smba_connect: socket: [%d] %s", errno, strerror(errno));
+ 		goto error_occured;
+ 	}
+ 	data.version = SMB_MOUNT_VERSION;
+@@ -153,7 +153,7 @@
+ 
+ 	if(data.server_name[0] == 0){
+ 		if(strlen(p->server_ipname) > 16){
+-			eprintf("server name too long as a netbios name: %s\n",
++			eprintf("server name too long as a netbios name: %s",
+ 															p->server_ipname);
+ 			goto error_occured;
+ 		}
+@@ -162,7 +162,7 @@
+ 	str_upper(data.server_name);
+ 	if(data.client_name[0] == 0) {
+ 		if(strlen(hostname) > 16) {
+-			eprintf("my hostname name too long for netbios: %s\n", hostname);
++			eprintf("my hostname name too long for netbios: %s", hostname);
+ 			goto error_occured;
+ 		}
+ 		strcpy(data.client_name, hostname);
+@@ -172,7 +172,7 @@
+ 	list_init(&res->open_files);
+ 
+ 	if((errnum = smb_proc_connect(&res->server)) < 0){
+-		eprintf("error connecting to server: [%d] %s\n",
++		eprintf("error connecting to server: [%d] %s",
+ 												-errnum, strerror(-errnum));
+ 		goto error_occured;
+ 	}
+@@ -193,7 +193,7 @@
+ int	smba_disconnect(smba_server_t *server)
+ {
+ 	if(server->open_files.head != NULL){
+-		eprintf("smba_disconnect: still files open\n");
++		eprintf("smba_disconnect: still files open");
+ 		return -1;
+ 	}
+ 	list_remove_element(&servers, server);
+@@ -454,7 +454,7 @@
+ 
+ int smb_make_open(struct inode *i, int right)
+ {
+-	eprintf("dummy function smb_make_open() called\n");
++	eprintf("dummy function smb_make_open() called");
+ 	return -1;
+ }
+ 

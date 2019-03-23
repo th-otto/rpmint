@@ -1,0 +1,68 @@
+#! /bin/sh
+#
+# chkconfig: - 60 20
+# description: The rwall protocol allows remote users to display messages \
+#              on all of the active terminals on a system (like local \
+#  	       users can do with the wall command). 
+# processname: rpc.rwalld
+
+# Source function library.
+. /etc/init.d/functions
+
+# Get config.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+if [ ${NETWORKING} = "no" ] ; then
+	exit 0
+fi
+
+RETVAL=0
+
+start() {
+	echo -n "Starting rwall services: "
+	daemon rpc.rwalld
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/rwalld
+	return $RETVAL
+}	
+
+stop() {
+	echo -n "Stopping rwall services: "
+	killproc rpc.rwalld
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/rwalld
+	return $RETVAL
+}
+
+restart() {
+	stop
+	start
+}	
+
+# See how we were called.
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  status)
+	status rpc.rwalld
+	;;
+  condrestart)
+  	[ -f /var/lock/subsys/rwalld ] && restart || :
+	;;
+  restart|reload)
+  	restart
+	;;
+  *)
+	echo "Usage: rwalld {start|stop|status|restart}"
+	exit 1
+	;;
+esac
+
+exit $?

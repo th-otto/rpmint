@@ -1,0 +1,64 @@
+#! /bin/sh
+#
+# chkconfig: - 55 45
+# description:	The arpwatch daemon attempts to keep track of ethernet/ip \
+#		address pairings.
+# processname: arpwatch
+
+# Source function library.
+. /etc/init.d/functions
+
+# Get config.
+. /etc/sysconfig/network
+
+if [ -f /etc/sysconfig/arpwatch ];then 
+	. /etc/sysconfig/arpwatch
+fi
+
+# Check that networking is up.
+if [ "$NETWORKING" = "no" ]
+then
+	exit 0
+fi
+
+RETVAL=0
+prog="arpwatch"
+
+start () {
+	echo -n $"Starting $prog: "
+	daemon arpwatch $OPTIONS
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/arpwatch
+}
+stop () {
+	echo -n $"Stopping $prog: "
+	killproc arpwatch
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/arpwatch
+}
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+	status arpwatch
+	;;
+  restart|reload)
+	stop
+	start
+	;;
+  condrestart)
+	[ -f /var/lock/subsys/arpwatch ] && restart || :
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart|reload|condrestart}"
+	exit 1
+esac
+
+exit $?

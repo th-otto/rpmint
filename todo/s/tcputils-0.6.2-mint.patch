@@ -1,0 +1,44 @@
+--- tcputils-0.6.2.orig/Makefile
++++ tcputils-0.6.2/Makefile
+@@ -10,12 +10,12 @@
+ MKDIR_P = mkdir -p
+ # Solaris 2 needs to link with "-lsocket -lnsl".  For other unices you might
+ # need to comment out those libraries.
+-NETLIBS = -lsocket -lnsl
++NETLIBS = -lsocket
+ 
+ # Where to install things.
+-prefix = /usr/local
++prefix = $(DESTDIR)/usr
+ bindir = ${prefix}/bin
+-mandir = ${prefix}/man
++mandir = ${prefix}/share/man
+ man1dir = ${mandir}/man1
+ 
+ 
+--- tcputils-0.6.2/fionread.c.orig	Wed Oct  2 11:19:42 1996
++++ tcputils-0.6.2/fionread.c	Fri Sep 28 00:32:12 2001
+@@ -1,5 +1,5 @@
+ #include <stdio.h>
+-#include <sys/filio.h>
++#include <sys/ioctl.h>
+ 
+ int
+ main(int argc,
+--- tcputils-0.6.2.orig/relay.c
++++ tcputils-0.6.2/relay.c
+@@ -4,10 +4,10 @@
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ #include <sys/types.h>
+-#if defined(__hpux__) || defined(__linux__)
+-#  include <sys/ioctl.h>
+-#else
+-#  include <sys/filio.h>
++#include <sys/ioctl.h>
++#if defined(__sun__)
++#  include <sys/filio.h>    /* The official way to get FIONREAD in SunOS;
++			       others seem to get it from <sys/ioctl.h> */
+ #endif
+ #include <sys/socket.h>
+ 

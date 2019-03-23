@@ -1,0 +1,208 @@
+24-Jul-2000:
+	Don't use OPEN_MAX. (Olaf Kirch)
+
+23-Jul-2000:
+	General audit for setuid/setgid/initgroups/etc. calls that didn't
+	  check for error.
+
+22-Jul-2000:
+	Documented the virtual hosting stuff in inetd(8).
+	  (Michael Tokarev, mjt@tls.msk.ru)
+	
+	On systems where sleep() is implemented in terms of alarm(),
+	  inetd breaks because it tries to sleep while alarms are in
+	  progress, blocks SIGALRM, and other fun stuff. So, on libc5,
+	  reimplement sleep in terms of select to circumvent this.
+
+	Fixed another file descriptor leak. (Pekka Savola, 
+	  Pekka.Savola@netcore.fi)
+
+	Added code that will hopefully restart inetd if it runs out of
+	  fds. It doesn't work terribly well yet, unfortunately.
+
+3-Jun-2000:
+	Some minor fixes to ping.
+
+4-Feb-2000:
+	Massive cleanup of ping. 
+	Also, added -w option (overall timeout).
+
+3-Feb-2000:
+	Merge some ping fixes from Red Hat.
+
+20-Jan-2000:
+	AF_UNIX sockets should be chmod 666'd after being bound.
+	  (Olaf Kirch, okir@caldera.de)
+
+14-Dec-1999:
+	netkit-base-0.16 is released.
+
+12-Dec-1999:
+	Split off rpcgen and rpcinfo into netkit-rpc.
+
+23-Nov-1999:
+	Log the pid along with the service name when it fails (exits
+	  nonzero or with a signal.)
+	  (Catalin Mitrofan, catam@infoiasi.ro)
+
+	
+14-Sep-1999:
+	Have inetd discard a bunch of well-known environment variables
+	  at startup, in case someone starts it from a shell and doesn't
+	  use "env -".
+	Fix ping to behave itself when flooding localhost.
+	Deny ping -s (give packet size) to non-root users, as it has
+	  little purpose beyond DoS.
+
+23-Aug-1999:
+	Merged the virtual hosting stuff. The syntax in inetd.conf
+	  is "service@host" as the first field, instead of just "service".
+	  You can use hostnames, not just IP addresses. Note however 
+	  that you can't mix "service" with "service@host" for the same
+	  service - it won't be able to bind both sockets.
+	  (Martin Lucina, mato@Pod-Palmou.drp.fmph.uniba.sk; Philip 
+	  Copeland, root@ftp.uk.linux.org; David A. Holland, 
+	  dholland@hcs.harvard.edu, et al.)
+
+22-Aug-1999:
+	Major cleanup of inetd. Minor DoS fixed. New option -i for running
+	  from init. Won't exec programs with argc==0. Completely new
+	  config parser, too, but it's still fairly gross - is there any
+	  reason not to use lex? (dholland@hcs.harvard.edu)
+
+1-Aug-1999:
+	Complete y2k and y2038 audit.
+	  (dholland@hcs.harvard.edu)
+
+31-Jul-1999:
+	Redo makefiles/config stuff for new confgen version.
+	Don't build rpcinfo with glibc; glibc also includes rpcinfo.
+	  (dholland@hcs.harvard.edu)
+
+31-Jul-1999:
+	Fix 64-bit issues in ping.
+	  (Alex Rhomberg, rhomberg@ife.ee.ethz.ch)
+
+15-Jul-1999:
+	Merge the old sample-etc-files package into netkit-base, where it
+	  more or less belongs. (dholland@hcs.harvard.edu)
+	
+9-Jul-1999:
+	Make sure ping's raw socket doesn't end up as stdout/stderr.
+	  (I thought this had been merged ages ago...)
+	  (dholland@hcs.harvard.edu)
+
+7-Apr-1999: 
+	Merged fd leak patch into CVS tree; fixed a related bug with
+	  "tcp wait" services (which, fortunately, nobody uses) and an
+	  fd leak in the #if'd-out identd query code.
+	  (dholland@hcs.harvard.edu)
+
+29-Jul-1998:
+	File descriptor leak patched in. Patch by Astor-> Chris
+	  (Chris Evans chris@ferret.lmh.ox.ac.uk)
+
+23-Sep-1997:
+	Fix missing {} in inetd that led to excess calls of sleep().
+	  (D. Richard Hipp, drh@acm.org)
+
+22-Sep-1997:
+	Fix a strncpy() misuse bug in ping, and others in inetd.
+	Reject udp source ports lower than 128 in inetd services to
+	  prevent a single spoofed packet from triggering a local udp
+	  storm. (Willy TARREAU, tarreau@aemiaif.ibp.fr)
+
+20-Aug-1997:
+	Fixed minor doc bug in inetd.8.
+
+14-Jul-1997:
+	Fixed bug in inetd where two entries in /etc/inetd.conf for the
+	  same service would confuse it.
+
+12-Jun-1997:
+	netkit-base-0.10 released.
+
+19-May-1997:
+	glibc fixes from Red Hat.
+
+13-May-1997:
+	Fixes for record-route in ping. (Dave Smart, 
+	  dsmart@nastg.gsfc.nasa.gov)
+
+12-May-1997:
+	Merged inetd, ping, and rpc packages together to form "base".
+
+05-Apr-1997:
+	Added configure script to generate MCONFIG.
+	Don't build rpcgen if glibc is in use, since glibc has its own.
+
+08-Mar-1997: 
+	Split from full NetKit package. 
+	Generated this change log from NetKit's.
+
+07-Mar-1997:
+	Fix rpcgen bug and redo suppression of unused variable warnings.
+	  (Frank Heldt, heldt.mahr@t-online.de)
+	Fixed group handling in inetd in case it's run manually.
+	Ignore SIGPIPE in inetd to prevent denial of service.
+	Posixized signal handling in inetd. (Gerald Britton, 
+	  gbritton@whitman.gmu.edu)
+
+29-Dec-1996
+	NetKit-0.09 released.
+	Ping exits with code 1 if it gets no response. (Donnie Barnes,
+	  djb@redhat.com)
+	Assorted alpha/glibc patches. (Erik Troan, ewt@redhat.com)
+	Assorted bug fixes from Debian. (Peter Tobias, 
+	  tobias@et-inf.fho-emden.de)
+	Hardened programs against DNS h_length spoofing attacks.
+	Use inet_aton() everywhere instead of inet_addr().
+	inetd now supports a -q option to set the socket listen queue length.
+	Minor hacks to rpcgen to cause it to generate code that 
+	  compiles more cleanly.
+	Fix bug in -N rpcgen output. (Frank Heldt, heldt.mahr@t-online.de)
+	Fix to ping to avoid an endless sleep problem on links that can
+	  corrupt packets. (Yury Shevchuk, sizif@botik.ru)
+	ping understands new RFC1812 ICMP dest unreachable codes. (Alan Cox)
+	ping drops root after startup, but (theoretically) only when 
+	  it's known to be safe to do so. (Alan Cox)
+
+22-Aug-1996
+	NetKit-B-0.08 released.
+	rpcgen now puts some standard includes in its generated c.
+	(almost) everything now compiles with lots of warnings turned on.
+	ping -l (preload flood) requires uid 0.
+	ping sets SO_BROADCAST so pinging the broadcast address works.
+	Clear environment in setuid programs to protect against library
+	bugs.
+
+25-Jul-1996
+	NetKit-B-0.07A released.
+
+23-Jul-1996
+	NetKit-B-0.07 released.
+	Integrated a collection of patches that had been lurking on the net,
+	  including the 256-ptys support for telnetd and passive mode ftp.
+	Major security fixes, including to fingerd, lpr, rlogin, rsh, talkd, 
+	  and telnetd. Do *not* use the sliplogin from earlier versions of this
+	  package, either.
+	Much of the code builds without libbsd.a or bsd includes.
+	Massive code cleanup. Almost everything compiles clean with gcc
+	  -Wall now. rusers and rusersd do not; patches to rpcgen to fix
+	  this would be appreciated if anyone feels like it.
+	New maintainer:  David A. Holland, dholland@hcs.harvard.edu
+
+date not known
+	NetKit-B-0.06 released.
+	ping uses no a correct minimum packet size (John Richardson)
+
+date not known
+	NetKit-B-0.05 released.
+
+date not known
+	NetKit-B-0.04 released.
+	Changed inetd to store pid-file in /var/run.
+
+date not known
+	NetKit-B-0.03 released.
+

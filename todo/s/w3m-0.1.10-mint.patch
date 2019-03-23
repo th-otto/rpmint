@@ -1,0 +1,51 @@
+--- w3m-0.1.10/display.c.orig	Tue Jun  6 07:39:12 2000
++++ w3m-0.1.10/display.c	Mon Dec 18 18:26:14 2000
+@@ -717,8 +717,10 @@
+     }
+     else {
+         buf->pos = l->len -1;
++#ifdef JP_CHARSET
+         if (CharType(p[buf->pos]) == PC_KANJI2)
+             buf->pos--;
++#endif				/* JP_CHARSET */
+     }
+     cpos = COLPOS(l, buf->pos);
+     buf->visualpos = cpos - buf->currentColumn;
+--- w3m-0.1.10/gc/gcconfig.h.orig	Wed Sep 15 06:56:30 1999
++++ w3m-0.1.10/gc/gcconfig.h	Mon Dec 18 18:21:10 2000
+@@ -38,6 +38,11 @@
+ #    define HP
+ #    define mach_type_known
+ # endif
++# if defined(__MINT__)
++#    define M68K
++#    define MINT
++#    define mach_type_known
++# endif
+ # if defined(__OpenBSD__) && defined(m68k)
+ #    define M68K
+ #    define OPENBSD
+@@ -401,6 +406,12 @@
+ #   define ALIGNMENT 2
+ #   ifdef OPENBSD
+ #	define OS_TYPE "OPENBSD"
++#	define HEURISTIC2
++	extern char etext;
++#	define DATASTART ((ptr_t)(&etext))
++#   endif
++#   ifdef MINT
++#	define OS_TYPE "MINT"
+ #	define HEURISTIC2
+ 	extern char etext;
+ #	define DATASTART ((ptr_t)(&etext))
+--- w3m-0.1.10/gc/mark.c.orig	Thu Jul 22 06:37:42 1999
++++ w3m-0.1.10/gc/mark.c	Mon Dec 18 19:53:36 2000
+@@ -498,7 +498,7 @@
+     /* The simple case in which we're scanning a range.	*/
+     credit -= (ptr_t)limit - (ptr_t)current_p;
+     limit -= 1;
+-    while (current_p <= limit) {
++    while (current_p < limit) {
+       current = *current_p;
+       if ((ptr_t)current >= least_ha && (ptr_t)current <  greatest_ha) {
+         PUSH_CONTENTS(current, GC_mark_stack_top_reg,

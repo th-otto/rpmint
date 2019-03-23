@@ -1,0 +1,574 @@
+# ------------------------------------------------------------------------------
+#  CHANGES                            |   59 ++++++++----
+#  README                             |   10 +-
+#  WWW/Library/Implementation/HTDOS.c |    4 
+#  WWW/Library/Implementation/HTFTP.c |    6 -
+#  lynx.cfg                           |    2 
+#  lynx.hlp                           |    4 
+#  makefile.in                        |    2 
+#  src/LYCharSets.c                   |    2 
+#  src/LYCookie.c                     |  166 +++++++++++++++++------------------
+#  src/LYMain.c                       |   10 +-
+#  src/LYMap.c                        |   19 +++-
+#  src/LYPrint.c                      |    2 
+#  src/chrtrans/makefile.in           |    5 -
+#  userdefs.h                         |    4 
+#  14 files changed, 171 insertions, 124 deletions
+# ------------------------------------------------------------------------------
+Index: CHANGES
+--- lynx2.8.1rel.2+/CHANGES	Tue Oct 27 21:27:28 1998
++++ lynx2.8.1rel.2-981106/CHANGES	Thu Nov  5 21:41:21 1998
+@@ -1,3 +1,28 @@
++Bugfixes since Lynx 2.8.1 release
++================================================================================
++
++1998-11-05
++* relax the cookie sanity checking for version 0 (old) cookies _only when_ the
++  user has accept_all_cookies set (patch by Risto Widenius
++  <widenius@ling.helsinki.fi>)
++* modify get_listen_socket() to check if master_socket is set before attempting
++  to use it in FD_CLR (patch by Karl-Andre Skevik <karls@kosmo.inet.no>)
++* minor documentation fixes - DK
++* use $(LIBS) symbol in src/chrtrans/makefile.in (reported by Alois Maier
++  <m9235159@grz08u.unileoben.ac.at>)
++* Fix core dump which may happen after printing-to-email. - LP
++* Move read_rc() before parsing any command-line arguments (except -help)
++  so the latter will override any .lynxrc settings. In particular, the problem
++  was detected with -cookie_file= which was ignored after saving values
++  from Options menu. - LP
++* Chartrans bug: LYNXIMGMAP now shows the text in right charset.
++  (The page was converted twice, fixed by adding META charset to this internal
++  page. The bug was in all versions of Lynx starting from 2.7.1ac) - LP
++* Oops, my typo from pre3 back to 27-09-98: windows-1252 appears twice
++  in the list of character sets in options menu, was also typo in docs. - LP
++* modify HTDOS.c to permit compile with K&R compiler - TD
++
++
+ Changes since Lynx 2.8 release
+ ================================================================================
+ 
+@@ -20,14 +45,14 @@
+   NO_CONFIG_INFO is defined (reported by LP) - TD
+ * minor/cosmetic fixes for comments and documentation - LP
+ * revised patch for nsl-fork, which does not rely on WNOWAIT definition - BL
+-* include termio.h in LYCurses.c only #ifdef TERMIO_AND_CURSES (Philippe 
+-  De Muyter <phdm@macqel.be>) 
++* include termio.h in LYCurses.c only #ifdef TERMIO_AND_CURSES (Philippe
++  De Muyter <phdm@macqel.be>)
+ * modify cfg_defs.sh to work when the 'set' command emits double-quotes
+   (pg@sweng.stortek.com)
+ * update obsolete copy of HTFWriter.c to add content-encoding for HTFileSuffix
+   (reported by David Helder <dhelder@umich.edu) - TD
+ 1998-10-17 (2.8.1pre.11)
+-* add dependency on cfg_defs.h to src/makefile.in for LYShowInfo.o 
++* add dependency on cfg_defs.h to src/makefile.in for LYShowInfo.o
+   (pg@sweng.stortek.com)
+ * modify add_item_to_list() so that if the restriction flag is omitted from
+   a download/upload/extern line in lynx.cfg, it is assumed true.  Also check
+@@ -36,8 +61,8 @@
+   correctly for any LYRawMode value by synchronizing gen_options() and
+   postoptions() via rawmode memory - LP
+ * correct ifdef'ing in LYShowInfo.c for non-Unix platforms - LP
+-* modify nsl_fork logic to handle a case where child exits successfully 
+-  right after parent's select timed out (reported by Serge Munhoven) - BL 
++* modify nsl_fork logic to handle a case where child exits successfully
++  right after parent's select timed out (reported by Serge Munhoven) - BL
+ * small updates to lynx_help files and other documentation (BJP, PW, LV).
+ * add #define's for later work to simplify configuring the maximum number
+   of cookies (suggested by BJP) - TD
+@@ -60,7 +85,7 @@
+ * use HTDOS_name() to force DOS temporary-directory into consistent form - DK
+ * include HTVMSUtils.h and HTDOS.h from LYUtils.h, consolidate some ifdef's
+   using macro HTSYS_name - TD
+-* another fix for HTTCP.c, for lookups with Lynx/32 - WB 
++* another fix for HTTCP.c, for lookups with Lynx/32 - WB
+ * add fallback to $TMPDIR for Lynx temporary directory on Unix - TD
+ * remove verbose_links variable due to popular demand - TD
+ 1998-10-10 (2.8.1pre.9)
+@@ -69,15 +94,15 @@
+   <moshez@math.huji.ac.il>) - TD
+ * change defaults in lynx.cfg and userdefs.h, add comments - PW
+   (a) defaults are stated for `verbose' & `KB';
+-  (b) GOTOBUFFER & JUMPBUFFER defaults to TRUE; 
+-  (c) QUIT_DEFAULT_YES defaults to FALSE 
++  (b) GOTOBUFFER & JUMPBUFFER defaults to TRUE;
++  (c) QUIT_DEFAULT_YES defaults to FALSE
+ * restore suggested file name in download menu:  it is really useful for other
+   download methods which should be available in menu when `save to disk' is
+   disabled.  Remove local_path/ prefix (LYNX_SAVE_SPACE if any) from visible
+   suggested file name string near the top instead - LP
+ * restore newline position when toggling comments parsing (at least we could
+   return to previous screen to try comments toggling twice) - LP
+-* add a link from keystrokes help for edit_help.html (input line keys) - LP 
++* add a link from keystrokes help for edit_help.html (input line keys) - LP
+ * corrected to make -nostatus command-line option override HTReadProgress - TD
+ * updates to lynx-dev.html (Al Gilman).
+ * modify NSL-fork support in HTTCP.c to use waitpid call to reap child processes
+@@ -105,15 +130,15 @@
+ * update/reorganize option_help.html - PW
+ * restore newline position when return from the Print menu or follow a link
+   from History page (was broken for partial display mode only):  LYPop() and
+-  LYPop_num now reinitialize Newline_partial if it happens on getfile stage. 
++  LYPop_num now reinitialize Newline_partial if it happens on getfile stage.
+   Also remove changes from 1998-06-11 (case LYK_DOWNLOAD) since this is now
+   protected by HText_new() which never starts.  - LP
+-* tweak suggested filename for download menu: now it we have URL 
+-  terminated with "/" (e.g. a directory or possibly root) do one more try - 
++* tweak suggested filename for download menu: now it we have URL
++  terminated with "/" (e.g. a directory or possibly root) do one more try -
+   remove terminating "/" - LP
+-* download menu: do not show "Suggested file name" when "save to disk disabled" 
+-  (requested by HN) - LP 
+-* more tweaks on LYshow_kb_rate - LP 
++* download menu: do not show "Suggested file name" when "save to disk disabled"
++  (requested by HN) - LP
++* more tweaks on LYshow_kb_rate - LP
+ * move fallback definitions for POSIX S_ISLNK, etc., to allow build with
+   VAX C (reported by Tony Bolton) - TD
+ * add parentheses to eval-expression in CF_MAKE_INCLUDE configure test to
+@@ -124,7 +149,7 @@
+   Zakharevich <ilya@math.ohio-state.edu>) - TD
+ * correct missing "\n\" in change to LYrcFile.c for pre.4 (reported by David
+   Eaton) - TD
+-* reorder HTCheckForInterrupt() so that partial displace mode will work for
++* reorder HTCheckForInterrupt() so that partial display mode will work for
+   VMS (reported by LP) - TD
+ * fix LYK_DOWNLOAD to restrict downloading remote links for local_host_only,
+   like it was done for mailto: links recently, see comments where in. - LP
+@@ -829,7 +854,7 @@
+   -telnet.  I believe there is no issue, because if the user can control the
+   command line to Lynx, he could have run `lynx -cfg my_cfg_file` and
+   circumvented those settings anyway.  - BL
+-* fix for buffer-overrun in LYMail.c when processing a mailto:very-log-address
++* fix for buffer-overrun in LYMail.c when processing a mailto:very-long-address
+   URL - BL
+ * correct, for OS/2 EMX, a place in LYConvertToURL() which must not use
+   HTDOS_wwwName() (patch by Jason F. McBrayer <jmcbray@mailhost.tcs.tulane.edu>)
+Index: README
+--- lynx2.8.1rel.2+/README	Tue Oct 27 21:27:28 1998
++++ lynx2.8.1rel.2-981106/README	Thu Nov  5 21:25:51 1998
+@@ -1,11 +1,11 @@
+ 
+                              Lynx README file
+ 
+-Lynx Version 2.8.1 is the latest "official" release.  This release is based on
+-the lynx2.8pre.11 development code set, and includes bug fixes through October
+-24, 1998.  See the CHANGES file for a complete record of all changes and
+-bug fixes in this release.  New releases are announced on the lynx-dev mailing
+-list (see below). 
++Lynx Version 2.8.1 is the latest release.  This release is based on the
++lynx2.8pre.11 development code set, and includes bug fixes through October 24,
++1998.  See the CHANGES file for a complete record of all changes and bug fixes
++in this release.  New releases are announced on the lynx-dev mailing list (see
++below). 
+ 
+ 
+ WHAT IS LYNX?
+Index: WWW/Library/Implementation/HTDOS.c
+--- lynx2.8.1rel.2+/WWW/Library/Implementation/HTDOS.c	Wed Sep 30 17:18:18 1998
++++ lynx2.8.1rel.2-981106/WWW/Library/Implementation/HTDOS.c	Thu Nov  5 20:45:55 1998
+@@ -14,7 +14,7 @@
+ **	returns 	WWW file specification
+ **
+ */
+-char * HTDOS_wwwName (char *dosname)
++char * HTDOS_wwwName ARGS1(char *, dosname)
+ {
+ 	static char wwwname[1024];
+ 	char *cp_url = wwwname;
+@@ -52,7 +52,7 @@
+ **
+ ** Bug(?):	Returns pointer to input string, which is modified
+ */
+-char * HTDOS_name(char *wwwname)
++char * HTDOS_name ARGS1(char *, wwwname)
+ {
+ 	static char cp_url[1024];
+ 	int joe;
+Index: WWW/Library/Implementation/HTFTP.c
+--- lynx2.8.1rel.2+/WWW/Library/Implementation/HTFTP.c	Thu Aug  6 09:04:14 1998
++++ lynx2.8.1rel.2-981106/WWW/Library/Implementation/HTFTP.c	Thu Nov  5 21:36:34 1998
+@@ -698,7 +698,7 @@
+ 	    CTRACE (tfp, "HTFTP: Interrupted on connect\n");
+ 	} else {
+ 	    CTRACE(tfp, "HTFTP: Unable to connect to remote host for `%s'.\n",
+-		        arg);
++			arg);
+ 	}
+ 	if (status == HT_INTERRUPTED) {
+ 	    _HTProgress ("Connection interrupted.");
+@@ -972,7 +972,9 @@
+ PRIVATE int close_master_socket NOARGS
+ {
+     int status;
+-    FD_CLR(master_socket, &open_sockets);
++
++    if (master_socket != -1)
++	FD_CLR(master_socket, &open_sockets);
+     status = NETCLOSE(master_socket);
+     CTRACE(tfp, "HTFTP: Closed master socket %d\n", master_socket);
+     master_socket = -1;
+Index: lynx.cfg
+--- lynx2.8.1rel.2+/lynx.cfg	Sat Oct 24 13:18:27 1998
++++ lynx2.8.1rel.2-981106/lynx.cfg	Thu Nov  5 21:10:34 1998
+@@ -218,7 +218,7 @@
+ #    7 bit approximations (US-ASCII)    us-ascii
+ #    Western (ISO-8859-1)               iso-8859-1
+ #    Western (cp850)                    cp850
+-#    Western (windows-1252)             windows-1251
++#    Western (windows-1252)             windows-1252
+ #    IBM PC US codepage (cp437)         cp437
+ #    DEC Multinational                  dec-mcs
+ #    Macintosh (8 bit)                  macintosh
+Index: lynx.hlp
+--- lynx2.8.1rel.2+/lynx.hlp	Tue Oct 27 21:27:28 1998
++++ lynx2.8.1rel.2-981106/lynx.hlp	Thu Nov  5 21:27:44 1998
+@@ -472,8 +472,8 @@
+  o Use Up arrow and Down arrow to scroll through hypertext links.
+  o Right arrow or Return will follow a highlighted hypertext link.
+  o Left Arrow will retreat from a link.
+- o Type "h" or "?" for online help and descriptions of key-stroke commands.
+- o Type "k" for a complete list of the current key-stroke command mappings.
++ o Type "H" or "?" for online help and descriptions of key-stroke commands. 
++ o Type "K" for a complete list of the current key-stroke command mappings. 
+ 
+ 2 NOTES
+  This is the Lynx v2.8.1 Release
+Index: makefile.in
+--- lynx2.8.1rel.2+/makefile.in	Wed Oct 14 08:32:07 1998
++++ lynx2.8.1rel.2-981106/makefile.in	Thu Nov  5 21:25:53 1998
+@@ -27,7 +27,7 @@
+ VERSION		= 2-8-1
+ 
+ ##this is the name of the directory the lynx source code is in.
+-##(e.g. lynx2-8, not the full path)
++##(e.g. lynx2-8-1, not the full path) 
+ lynxdir= lynx$(VERSION)
+ lynxname= lynx$(VERSION)
+ 
+Index: src/LYCharSets.c
+--- lynx2.8.1rel.2+/src/LYCharSets.c	Sat Sep 26 23:36:56 1998
++++ lynx2.8.1rel.2-981106/src/LYCharSets.c	Thu Nov  5 21:10:34 1998
+@@ -394,7 +394,7 @@
+   {-1,"cp850",		UCT_ENC_8BIT,
+ 			UCT_REP_SUPERSETOF_LAT1,
+ 			0,			UCT_R_8BIT,UCT_R_ASCII},
+-  {-1,"cp1252", 	UCT_ENC_8BIT,
++  {-1,"windows-1251", 	UCT_ENC_8BIT,
+ 			UCT_REP_SUPERSETOF_LAT1,
+ 			0,			UCT_R_8BIT,UCT_R_ASCII},
+   {-1,"cp437",		UCT_ENC_8BIT,0,0,	UCT_R_8BIT,UCT_R_ASCII},
+Index: src/LYCookie.c
+--- lynx2.8.1rel.2+/src/LYCookie.c	Sat Oct 24 13:18:27 1998
++++ lynx2.8.1rel.2-981106/src/LYCookie.c	Thu Nov  5 21:42:31 1998
+@@ -278,101 +278,103 @@
+     if (co == NULL)
+ 	return;
+ 
+-    /*
+-     *	Apply sanity checks.
+-     *
+-     *	Section 4.3.2, condition 1: The value for the Path attribute is
+-     *	not a prefix of the request-URI.
+-     */
+-    if (strncmp(co->path, path, co->pathlen) != 0) {
+-	CTRACE(tfp, "store_cookie: Rejecting because '%s' is not a prefix of '%s'.\n",
+-		    co->path, path);
+-	freeCookie(co);
+-	co = NULL;
+-	return;
+-    }
+-    /*
+-     *	The next 4 conditions do NOT apply if the domain is still
+-     *	the default of request-host.
+-     */
+-    if (strcmp(co->domain, hostname) != 0) {
++    if (co->version != 0 || !LYAcceptAllCookies) {
+ 	/*
+-	 *  The hostname does not contain a dot.
++	 * Apply sanity checks.
++	 *
++	 * Section 4.3.2, condition 1:  The value for the Path attribute is
++	 * not a prefix of the request-URI.
+ 	 */
+-	if (strchr(hostname, '.') == NULL) {
+-	    CTRACE(tfp, "store_cookie: Rejecting because '%s' has no dot.\n",
+-			hostname);
++	if (strncmp(co->path, path, co->pathlen) != 0) {
++	    CTRACE(tfp, "store_cookie: Rejecting because '%s' is not a prefix of '%s'.\n",
++			co->path, path);
+ 	    freeCookie(co);
+ 	    co = NULL;
+ 	    return;
+ 	}
+-
+ 	/*
+-	 *  Section 4.3.2, condition 2: The value for the Domain attribute
+-	 *  contains no embedded dots or does not start with a dot.
+-	 *  (A dot is embedded if it's neither the first nor last character.)
+-	 *  Note that we added a lead dot ourselves if a domain attribute
+-	 *  value otherwise qualified. - FM
++	 * The next 4 conditions do NOT apply if the domain is still
++	 * the default of request-host.
+ 	 */
+-	if (co->domain[0] != '.' || co->domain[1] == '\0') {
+-	    CTRACE(tfp, "store_cookie: Rejecting domain '%s'.\n",
+-			co->domain);
+-	    freeCookie(co);
+-	    co = NULL;
+-	    return;
+-	}
+-	ptr = strchr((co->domain + 1), '.');
+-	if (ptr == NULL || ptr[1] == '\0') {
+-	    CTRACE(tfp, "store_cookie: Rejecting domain '%s'.\n",
+-			co->domain);
+-	    freeCookie(co);
+-	    co = NULL;
+-	    return;
+-	}
++	if (strcmp(co->domain, hostname) != 0) {
++	    /*
++	     *  The hostname does not contain a dot.
++	     */
++	    if (strchr(hostname, '.') == NULL) {
++		CTRACE(tfp, "store_cookie: Rejecting because '%s' has no dot.\n",
++			    hostname);
++		freeCookie(co);
++		co = NULL;
++		return;
++	    }
+ 
+-	/*
+-	 *  Section 4.3.2, condition 3: The value for the request-host does
+-	 *  not domain-match the Domain attribute.
+-	 */
+-	if (!host_matches(hostname, co->domain)) {
+-	    CTRACE(tfp, "store_cookie: Rejecting domain '%s' for host '%s'.\n",
+-			co->domain, hostname);
+-	    freeCookie(co);
+-	    co = NULL;
+-	    return;
+-	}
++	    /*
++	     *  Section 4.3.2, condition 2: The value for the Domain attribute
++	     *  contains no embedded dots or does not start with a dot.
++	     *  (A dot is embedded if it's neither the first nor last character.)
++	     *  Note that we added a lead dot ourselves if a domain attribute
++	     *  value otherwise qualified. - FM
++	     */
++	    if (co->domain[0] != '.' || co->domain[1] == '\0') {
++		CTRACE(tfp, "store_cookie: Rejecting domain '%s'.\n",
++			    co->domain);
++		freeCookie(co);
++		co = NULL;
++		return;
++	    }
++	    ptr = strchr((co->domain + 1), '.');
++	    if (ptr == NULL || ptr[1] == '\0') {
++		CTRACE(tfp, "store_cookie: Rejecting domain '%s'.\n",
++			    co->domain);
++		freeCookie(co);
++		co = NULL;
++		return;
++	    }
+ 
+-	/*
+-	 *  Section 4.3.2, condition 4: The request-host is an HDN (not IP
+-	 *  address) and has the form HD, where D is the value of the Domain
+-	 *  attribute, and H is a string that contains one or more dots.
+-	 */
+-	ptr = ((hostname + strlen(hostname)) - strlen(co->domain));
+-	if (strchr(hostname, '.') < ptr) {
+-	    char *msg = calloc(1,
+-			       (strlen(co->domain) +
+-				strlen(hostname) +
+-				strlen(INVALID_COOKIE_DOMAIN_CONFIRMATION) +
+-				1));
++	    /*
++	     *  Section 4.3.2, condition 3: The value for the request-host does
++	     *  not domain-match the Domain attribute.
++	     */
++	    if (!host_matches(hostname, co->domain)) {
++		CTRACE(tfp, "store_cookie: Rejecting domain '%s' for host '%s'.\n",
++			    co->domain, hostname);
++		freeCookie(co);
++		co = NULL;
++		return;
++	    }
++
++	    /*
++	     *  Section 4.3.2, condition 4: The request-host is an HDN (not IP
++	     *  address) and has the form HD, where D is the value of the Domain
++	     *  attribute, and H is a string that contains one or more dots.
++	     */
++	    ptr = ((hostname + strlen(hostname)) - strlen(co->domain));
++	    if (strchr(hostname, '.') < ptr) {
++		char *msg = calloc(1,
++				   (strlen(co->domain) +
++				    strlen(hostname) +
++				    strlen(INVALID_COOKIE_DOMAIN_CONFIRMATION) +
++				    1));
+ 
+-	    if (msg == 0)
+-		outofmem(__FILE__, "store_cookie");
+-	    if (!LYAcceptAllCookies) {
+-		sprintf(msg,
+-			INVALID_COOKIE_DOMAIN_CONFIRMATION,
+-			co->domain,
+-			hostname);
+-		if (!HTConfirm(msg)) {
+-		    CTRACE(tfp, "store_cookie: Rejecting domain '%s' for host '%s'.\n",
+-				co->domain,
+-				hostname);
+-		    freeCookie(co);
+-		    co = NULL;
+-		    FREE(msg);
+-		    return;
++		if (msg == 0)
++		    outofmem(__FILE__, "store_cookie");
++		if (!LYAcceptAllCookies) {
++		    sprintf(msg,
++			    INVALID_COOKIE_DOMAIN_CONFIRMATION,
++			    co->domain,
++			    hostname);
++		    if (!HTConfirm(msg)) {
++			CTRACE(tfp, "store_cookie: Rejecting domain '%s' for host '%s'.\n",
++				    co->domain,
++				    hostname);
++			freeCookie(co);
++			co = NULL;
++			FREE(msg);
++			return;
++		    }
+ 		}
++		FREE(msg);
+ 	    }
+-	    FREE(msg);
+ 	}
+     }
+ 
+Index: src/LYMain.c
+--- lynx2.8.1rel.2+/src/LYMain.c	Sat Oct 24 13:18:27 1998
++++ lynx2.8.1rel.2-981106/src/LYMain.c	Thu Nov  5 21:10:34 1998
+@@ -1256,6 +1256,11 @@
+      */
+     read_cfg(lynx_cfg_file, "main program", 1, (FILE *)0);
+ 
++    /*
++     *	Process the RC file.
++     */
++    read_rc();
++
+     HTSwitchDTD(New_DTD);
+ 
+     /*
+@@ -1373,11 +1378,6 @@
+     }
+ #endif /* SYSLOG_REQUESTED_URLS */
+ #endif /* !VMS */
+-
+-    /*
+-     *	Process the RC file.
+-     */
+-    read_rc();
+ 
+ #ifdef USE_SLANG
+     if (LYShowColor >= SHOW_COLOR_ON &&
+Index: src/LYMap.c
+--- lynx2.8.1rel.2+/src/LYMap.c	Sat Oct 17 17:26:25 1998
++++ lynx2.8.1rel.2-981106/src/LYMap.c	Thu Nov  5 21:10:34 1998
+@@ -19,6 +19,7 @@
+ #include <LYGlobalDefs.h>
+ #include <LYKeymap.h>
+ #include <LYCharUtils.h>
++#include <LYCharSets.h>
+ 
+ #ifdef DIRED_SUPPORT
+ #include <LYUpload.h>
+@@ -540,7 +541,21 @@
+ 	LYEntify(&MapTitle, TRUE);
+     }
+ 
+-    sprintf(buf,"<head>\n<title>%s</title>\n</head>\n<body>\n", MapTitle);
++    sprintf(buf, "<html>\n<head>\n");
++    (*target->isa->put_block)(target, buf, strlen(buf));
++    sprintf(buf, "<META %s content=\"text/html;charset=%s\">\n",
++		"http-equiv=\"content-type\"",
++		LYCharSet_UC[current_char_set].MIMEname);
++    (*target->isa->put_block)(target, buf, strlen(buf));
++	/*
++	 *  This page is a list of titles and anchors for them.
++	 *  Since titles already passed SGML/HTML stage
++	 *  they converted to current_char_set.
++	 *  That is why we insist on META charset for this page.
++	 */
++    sprintf(buf, "<title>%s</title>\n", MapTitle);
++    (*target->isa->put_block)(target, buf, strlen(buf));
++    sprintf(buf, "</head>\n<body>\n");
+     (*target->isa->put_block)(target, buf, strlen(buf));
+ 
+     sprintf(buf,"<h1><em>%s</em></h1>\n", MapTitle);
+@@ -571,7 +586,7 @@
+ 	(*target->isa->put_block)(target, MapTitle, strlen(MapTitle));
+ 	(*target->isa->put_block)(target, "</a>\n", 5);
+     }
+-    sprintf(buf,"</%s>\n</body>\n", ((keypad_mode == NUMBERS_AS_ARROWS) ?
++    sprintf(buf,"</%s>\n</body>\n</html>\n", ((keypad_mode == NUMBERS_AS_ARROWS) ?
+ 				     "ol" : "ul"));
+     (*target->isa->put_block)(target, buf, strlen(buf));
+ 
+Index: src/LYPrint.c
+--- lynx2.8.1rel.2+/src/LYPrint.c	Wed Oct 14 08:32:07 1998
++++ lynx2.8.1rel.2-981106/src/LYPrint.c	Thu Nov  5 21:10:34 1998
+@@ -580,7 +580,7 @@
+ 		 *  MORE readable and 8-bit letters shouldn't be a problem - LP
+ 		 */
+ 		/* change_sug_filename(sug_filename); */
+-		subject = subject_translate8bit(newdoc->title);
++		StrAllocCopy(subject, subject_translate8bit(newdoc->title));
+ 
+ #ifdef VMS
+ 		if (strchr(user_response,'@') && !strchr(user_response,':') &&
+Index: src/chrtrans/makefile.in
+--- lynx2.8.1rel.2+/src/chrtrans/makefile.in	Sat Sep 26 23:36:56 1998
++++ lynx2.8.1rel.2-981106/src/chrtrans/makefile.in	Thu Nov  5 21:17:05 1998
+@@ -14,6 +14,9 @@
+ srcdir		= @srcdir@
+ VPATH		= $(srcdir)
+ 
++LIBS		= @LIBS@ $(SITE_LIBS)
++LDFLAGS		= @LDFLAGS@
++
+ WWWINC		= WWW/Library/Implementation
+ SITE_DEFS	= # FIXME: set in parent makefile
+ 
+@@ -79,7 +82,7 @@
+ tables: $(TABLES)
+ 
+ makeuctb$x: makeuctb.o
+-	$(CC) $(CC_OPTS) -o $@ makeuctb.o
++	$(CC) $(CC_OPTS) -o $@ makeuctb.o $(LIBS)
+ 
+ makeuctb.o: $(srcdir)/UCkd.h $(srcdir)/makeuctb.c
+ 
+Index: userdefs.h
+--- lynx2.8.1rel.2+/userdefs.h	Tue Oct 27 21:27:28 1998
++++ lynx2.8.1rel.2-981106/userdefs.h	Thu Nov  5 21:10:34 1998
+@@ -619,7 +619,7 @@
+  *     7 bit approximations (US-ASCII)    us-ascii
+  *     Western (ISO-8859-1)               iso-8859-1
+  *     Western (cp850)                    cp850
+- *     Western (windows-1252)             windows-1251
++ *     Western (windows-1252)             windows-1252
+  *     IBM PC US codepage (cp437)         cp437
+  *     DEC Multinational                  dec-mcs
+  *     Macintosh (8 bit)                  macintosh
+@@ -637,7 +637,7 @@
+  *     Latin 4 (ISO-8859-4)               iso-8859-4
+  *     Baltic Rim (cp775)                 cp775
+  *     Baltic Rim (windows-1257)          windows-1257
+- *     Cyrillic (ISO-8859-5)              is-8859-5
++ *     Cyrillic (ISO-8859-5)              iso-8859-5
+  *     Cyrillic (cp866)                   cp866
+  *     Cyrillic (windows-1251)            windows-1251
+  *     Cyrillic (KOI8-R)                  koi8-r

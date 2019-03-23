@@ -1,0 +1,104 @@
+--- xv-3.10a/Imakefile.syslibs	Fri Jan 13 21:24:00 1995
++++ xv-3.10a/Imakefile	Sun Jul  9 11:46:22 2000
+@@ -116,10 +116,15 @@
+ 
+ 
+ #ifdef HaveJpeg
++#if 0
+ JPEG = -DDOJPEG
+ JPEGDIR = jpeg
+ LIBJPEG = $(JPEGDIR)/libjpeg.a
+ JPEGINCLUDE = -I$(JPEGDIR)
++#else
++JPEG = -DDOJPEG
++LIBJPEG = -ljpeg
++#endif
+ #endif
+ 
+ #ifdef HaveTiff
+@@ -133,6 +138,10 @@
+ PDS = -DDOPDS
+ #endif
+ 
++PNG    = -DDOPNG
++PNGLIB = -lpng
++ZLIBLIB = -lz
++
+ 
+ #if defined(SCOArchitecture)
+ SCO= -Dsco -DPOSIX -DNO_RANDOM 
+@@ -142,12 +151,12 @@
+ #endif
+ 
+ 
+-DEPLIBS = $(LIBJPEG) $(LIBTIFF)
+-LOCAL_LIBRARIES = $(XLIB) $(DEPLIBS)
++DEPLIBS = $(LIBTIFF)
++LOCAL_LIBRARIES = $(XLIB) $(LIBJPEG) $(DEPLIBS) $(PNGLIB) $(ZLIBLIB)
+ 
+-DEFINES= $(SCO) $(UNIX) $(NODIRENT) $(VPRINTF) $(TIMERS) \
+-	$(HPUX7) $(JPEG) $(TIFF) $(PDS) $(DXWM) $(RAND) \
+-	$(BACKING_STORE) $(BSDTYPES) $(SGI)
++DEFINES= $(UNIX) $(NODIRENT) $(VPRINTF) $(TIMERS) \
++	$(HPUX7) $(DXWM) $(RAND) $(BACKING_STORE) $(BSDTYPES) $(SGI) \
++	$(JPEG) $(TIFF) $(PDS) $(PNG) $(SCO)
+ 
+ INCLUDES = $(JPEGINCLUDE) $(TIFFINCLUDE)
+ 
+@@ -157,7 +166,7 @@
+ 	xvdial.c xvgraf.c xvsunras.c xvjpeg.c xvps.c xvpopup.c xvdflt.c \
+ 	xvtiff.c xvtiffwr.c xvpds.c xvrle.c xviris.c xvgrab.c vprintf.c \
+ 	xvbrowse.c xvtext.c xvpcx.c xviff.c xvtarga.c xvxpm.c xvcut.c \
+-	xvxwd.c xvfits.c
++	xvxwd.c xvfits.c xvpng.c
+ 
+ OBJS1 =	xv.o xvevent.o xvroot.o xvmisc.o xvimage.o xvcolor.o xvsmooth.o \
+ 	xv24to8.o xvgif.o xvpm.o xvinfo.o xvctrl.o xvscrl.o xvalg.o \
+@@ -165,7 +174,7 @@
+ 	xvdial.o xvgraf.o xvsunras.o xvjpeg.o xvps.o xvpopup.o xvdflt.o \
+ 	xvtiff.o xvtiffwr.o xvpds.o xvrle.o xviris.o xvgrab.o vprintf.o \
+ 	xvbrowse.o xvtext.o xvpcx.o xviff.o xvtarga.o xvxpm.o xvcut.o \
+-	xvxwd.o xvfits.o
++	xvxwd.o xvfits.o xvpng.o
+ 
+ SRCS2=	bggen.c
+ OBJS2=	bggen.o
+@@ -210,6 +219,7 @@
+ 
+ 
+ #ifdef HaveJpeg
++#if 0
+ $(LIBJPEG):
+ 	cd $(JPEGDIR); $(MAKE) libjpeg.a
+ 
+@@ -219,6 +229,7 @@
+ 	@echo ""
+ 	( cd $(JPEGDIR) ; $(MAKE) clean )
+ 	@echo ""
++#endif
+ #endif
+ 
+ #ifdef HaveTiff
+--- xv-3.10a/tiff/Imakefile.bak	Thu Dec 22 23:35:16 1994
++++ xv-3.10a/tiff/Imakefile	Sun Jul  9 12:15:18 2000
+@@ -17,19 +17,12 @@
+ NormalLibraryTarget(tiff,$(OBJS))
+ 
+ tif_compress.o: Imakefile
++tif_fax3.o: 	tif_fax3.c g3states.h t4.h tif_fax3.h
+ 
+-
+-#if HasGcc
+-g3states.h: mkg3states.c t4.h
+-	-${RM} g3states.h
+-	${CC} -traditional -o mkg3states ${CFLAGS} mkg3states.c
+-	./mkg3states > g3states.h || rm g3states.h
+-#else
+ g3states.h: mkg3states.c t4.h
+ 	-${RM} g3states.h
+ 	${CC} -o mkg3states ${CFLAGS} mkg3states.c
+ 	./mkg3states > g3states.h || rm g3states.h
+-#endif
+ 
+ depend:: g3states.h
+ 

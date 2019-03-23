@@ -1,0 +1,11 @@
+--- texinfo-4.0/makeinfo/multi.c.orig	Tue Aug 17 23:06:56 1999
++++ texinfo-4.0/makeinfo/multi.c	Mon Sep 17 10:26:24 2001
+@@ -199,7 +199,7 @@
+ 
+   do
+     {
+-      if (**params == '{' && (*params)[-1] != '@')
++      if (**params == '{' && ((*params == start) || ((*params)[-1] != '@')))
+         brace_level++;
+       else if (**params == '}' && (*params)[-1] != '@')
+         brace_level--;

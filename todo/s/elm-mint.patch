@@ -1,0 +1,48 @@
+--- elm2.5.0pre8/hdrs/nl_types.h.mint	Sat Sep 11 23:14:13 1999
++++ elm2.5.0pre8/hdrs/nl_types.h	Sat Sep 11 23:14:51 1999
+@@ -39,8 +39,10 @@
+ typedef	long	nl_catd;
+ typedef long	nl_item;
+ 
++#ifndef __MINT__
+     extern nl_catd 	catopen();
+     extern char		*catgets();
+     extern void		catclose();
++#endif
+ 
+ #endif
+--- elm2.5.0pre8/lib/can_access.c.mint	Mon Feb  1 14:40:33 1999
++++ elm2.5.0pre8/lib/can_access.c	Sat Sep 11 21:03:27 1999
+@@ -56,7 +56,11 @@
+ 	rc = painful_access_check(fname, mode);
+ 
+     if (rc == 0 && stat(fname, &stat_buf) == 0 && !S_ISREG(stat_buf.st_mode)) {
++#ifdef EISDIR    
+ 	errno = EISDIR; /* well...at least it is not a file */
++#else
++	errno = ENOENT;
++#endif
+ 	rc = -1;
+     }
+ 
+--- elm2.5.0pre8/sysdefs.h.mint	Sat Sep 11 21:03:25 1999
++++ elm2.5.0pre8/sysdefs.h	Sat Sep 11 23:16:57 1999
+@@ -135,12 +135,17 @@
+ 
+ /* other system definitions */
+ 
+-#define mailhome	"/var/spool/mail/"
++#define mailhome	"/var/mail/"
+ 
+ #define default_charset		"iso-8859-1"
+ #define default_display_charset	"iso-8859-1"
+ 
+ #define MSG_SEPARATOR	"\001\001\001\001\n"	/* mmdf message seperator */
+ 
++#ifdef __MINT__
++# define catgets(a, b, c, msg) msg
++# define catopen(a, b) NULL
++# define catclose(a)
++#endif
+ 		
+ 

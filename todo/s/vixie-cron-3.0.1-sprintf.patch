@@ -1,0 +1,259 @@
+--- vixie-cron-3.0.1/env.c~	Thu Dec 11 14:07:40 1997
++++ vixie-cron-3.0.1/env.c	Thu Dec 11 14:20:13 1997
+@@ -155,7 +155,7 @@
+ 		}
+ 	}
+ 
+-	(void) sprintf(envstr, "%s=%s", name, val);
++	(void) snprintf(envstr, MAX_ENVSTR, "%s=%s", name, val);
+ 	Debug(DPARS, ("load_env, <%s> <%s> -> <%s>\n", name, val, envstr))
+ 	return (TRUE);
+ }
+--- vixie-cron-3.0.1/misc.c~	Wed May 31 17:37:28 1995
++++ vixie-cron-3.0.1/misc.c	Thu Dec 11 14:30:10 1997
+@@ -263,11 +263,11 @@
+ 		char	buf[MAX_TEMPSTR];
+ 		int	fd, otherpid;
+ 
+-		(void) sprintf(pidfile, PIDFILE, PIDDIR);
++		(void) snprintf(pidfile, MAX_FNAME, PIDFILE, PIDDIR);
+ 		if ((-1 == (fd = open(pidfile, O_RDWR|O_CREAT, 0644)))
+ 		    || (NULL == (fp = fdopen(fd, "r+")))
+ 		    ) {
+-			sprintf(buf, "can't open or create %s: %s",
++			snprintf(buf, MAX_TEMPSTR, "can't open or create %s: %s",
+ 				pidfile, strerror(errno));
+ 			fprintf(stderr, "%s: %s\n", ProgramName, buf);
+ 			log_it("CRON", getpid(), "DEATH", buf);
+@@ -278,7 +278,7 @@
+ 			int save_errno = errno;
+ 
+ 			fscanf(fp, "%d", &otherpid);
+-			sprintf(buf, "can't lock %s, otherpid may be %d: %s",
++			snprintf(buf, MAX_TEMPSTR, "can't lock %s, otherpid may be %d: %s",
+ 				pidfile, otherpid, strerror(save_errno));
+ 			fprintf(stderr, "%s: %s\n", ProgramName, buf);
+ 			log_it("CRON", getpid(), "DEATH", buf);
+@@ -467,7 +467,7 @@
+ 	TIME_T			now = time((TIME_T) 0);
+ 	register struct tm	*t = localtime(&now);
+ #endif /*LOG_FILE*/
+-
++	int 			msg_size;
+ #if defined(SYSLOG)
+ 	static int		syslog_open = 0;
+ #endif
+@@ -475,11 +475,14 @@
+ #if defined(LOG_FILE)
+ 	/* we assume that MAX_TEMPSTR will hold the date, time, &punctuation.
+ 	 */
+-	msg = malloc(strlen(username)
+-		     + strlen(event)
+-		     + strlen(detail)
+-		     + MAX_TEMPSTR);
+-
++	msg_size = strlen(username) + strlen(event) + strlen(detail) + MAX_TEMPSTR;
++	msg = malloc(msg_size);
++	if (msg == NULL) {
++	    /* damn, out of mem and we did not test that before... */
++	    fprintf(stderr, "%s: Run OUT OF MEMORY while %s\n",
++		    ProgramName, __FUNCTION__);
++	    return;
++	}
+ 	if (LogFD < OK) {
+ 		LogFD = open(LOG_FILE, O_WRONLY|O_APPEND|O_CREAT, 0600);
+ 		if (LogFD < OK) {
+@@ -491,16 +494,16 @@
+ 		}
+ 	}
+ 
+-	/* we have to sprintf() it because fprintf() doesn't always write
++	/* we have to snprintf() it because fprintf() doesn't always write
+ 	 * everything out in one chunk and this has to be atomically appended
+ 	 * to the log file.
+ 	 */
+-	sprintf(msg, "%s (%02d/%02d-%02d:%02d:%02d-%d) %s (%s)\n",
++	snprintf(msg, msg_size, "%s (%02d/%02d-%02d:%02d:%02d-%d) %s (%s)\n",
+ 		username,
+ 		t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, pid,
+ 		event, detail);
+ 
+-	/* we have to run strlen() because sprintf() returns (char*) on old BSD
++	/* we have to run strlen() because snprintf() returns (char*) on old BSD
+ 	 */
+ 	if (LogFD < OK || write(LogFD, msg, strlen(msg)) < OK) {
+ 		if (LogFD >= OK)
+@@ -604,8 +607,10 @@
+ 			*dst++ = '^';
+ 			*dst++ = '?';
+ 		} else {			/* parity character */
+-			sprintf(dst, "\\%03o", ch);
+-			dst += 4;
++		    /* well, the following snprintf is paranoid, but that will
++		     * keep grep happy */
++		    snprintf(dst, 5, "\\%03o", ch);
++		    dst += 4;
+ 		}
+ 	}
+ 	*dst = '\0';
+@@ -640,7 +645,7 @@
+ 	struct tm *tm = localtime(&t);
+ 	static char ret[30];	/* zone name might be >3 chars */
+ 	
+-	(void) sprintf(ret, "%s, %2d %s %2d %02d:%02d:%02d %s",
++	(void) snprintf(ret, 30, "%s, %2d %s %2d %02d:%02d:%02d %s",
+ 		       DowNames[tm->tm_wday],
+ 		       tm->tm_mday,
+ 		       MonthNames[tm->tm_mon],
+--- vixie-cron-3.0.1/entry.c~	Wed May 31 17:37:28 1995
++++ vixie-cron-3.0.1/entry.c	Thu Dec 11 14:31:30 1997
+@@ -249,21 +249,21 @@
+ 	 */
+ 	e->envp = env_copy(envp);
+ 	if (!env_get("SHELL", e->envp)) {
+-		sprintf(envstr, "SHELL=%s", _PATH_BSHELL);
++		snprintf(envstr, MAX_ENVSTR, "SHELL=%s", _PATH_BSHELL);
+ 		e->envp = env_set(e->envp, envstr);
+ 	}
+ 	if (!env_get("HOME", e->envp)) {
+-		sprintf(envstr, "HOME=%s", pw->pw_dir);
++		snprintf(envstr, MAX_ENVSTR, "HOME=%s", pw->pw_dir);
+ 		e->envp = env_set(e->envp, envstr);
+ 	}
+ 	if (!env_get("PATH", e->envp)) {
+-		sprintf(envstr, "PATH=%s", _PATH_DEFPATH);
++		snprintf(envstr, MAX_ENVSTR, "PATH=%s", _PATH_DEFPATH);
+ 		e->envp = env_set(e->envp, envstr);
+ 	}
+-	sprintf(envstr, "%s=%s", "LOGNAME", pw->pw_name);
++	snprintf(envstr, MAX_ENVSTR, "%s=%s", "LOGNAME", pw->pw_name);
+ 	e->envp = env_set(e->envp, envstr);
+ #if defined(BSD)
+-	sprintf(envstr, "%s=%s", "USER", pw->pw_name);
++	snprintf(envstr, MAX_ENVSTR, "%s=%s", "USER", pw->pw_name);
+ 	e->envp = env_set(e->envp, envstr);
+ #endif
+ 
+--- vixie-cron-3.0.1/do_command.c~	Thu Dec 11 14:07:40 1997
++++ vixie-cron-3.0.1/do_command.c	Thu Dec 11 14:32:05 1997
+@@ -366,7 +366,7 @@
+ 				auto char	hostname[MAXHOSTNAMELEN];
+ 
+ 				(void) gethostname(hostname, MAXHOSTNAMELEN);
+-				(void) sprintf(mailcmd, MAILARGS,
++				(void) snprintf(mailcmd, MAX_COMMAND, MAILARGS,
+ 					       MAILCMD, mailto);
+ 				if (!(mail = cron_popen(mailcmd, "w"))) {
+ 					perror(MAILCMD);
+@@ -425,7 +425,7 @@
+ 			if (mailto && status) {
+ 				char buf[MAX_TEMPSTR];
+ 
+-				sprintf(buf,
++				snprintf(buf, MAX_TEMPSTR,
+ 			"mailed %d byte%s of output but got status 0x%04x\n",
+ 					bytes, (bytes==1)?"":"s",
+ 					status);
+--- vixie-cron-3.0.1/database.c~	Wed May 31 17:37:21 1995
++++ vixie-cron-3.0.1/database.c	Thu Dec 11 14:32:29 1997
+@@ -113,7 +113,7 @@
+ 			continue;
+ 
+ 		(void) strcpy(fname, dp->d_name);
+-		sprintf(tabname, CRON_TAB(fname));
++		snprintf(tabname, MAXNAMLEN+1, CRON_TAB(fname));
+ 
+ 		process_crontab(fname, fname, tabname,
+ 				&statbuf, &new_db, old_db);
+--- vixie-cron-3.0.1/crontab.c~	Thu Dec 11 14:07:40 1997
++++ vixie-cron-3.0.1/crontab.c	Thu Dec 11 14:36:03 1997
+@@ -248,7 +248,7 @@
+ 	int	ch;
+ 
+ 	log_it(RealUser, Pid, "LIST", User);
+-	(void) snprintf(n, sizeof(n), CRON_TAB(User));
++	(void) snprintf(n, MAX_FNAME, CRON_TAB(User));
+ 	if (!(f = fopen(n, "r"))) {
+ 		if (errno == ENOENT)
+ 			fprintf(stderr, "no crontab for %s\n", User);
+@@ -271,7 +271,7 @@
+ 	char	n[MAX_FNAME];
+ 
+ 	log_it(RealUser, Pid, "DELETE", User);
+-	(void) snprintf(n, sizeof(n), CRON_TAB(User));
++	(void) snprintf(n, MAX_FNAME, CRON_TAB(User));
+ 	if (unlink(n)) {
+ 		if (errno == ENOENT)
+ 			fprintf(stderr, "no crontab for %s\n", User);
+@@ -303,7 +303,7 @@
+ 	PID_T		pid, xpid;
+ 
+ 	log_it(RealUser, Pid, "BEGIN EDIT", User);
+-	(void) snprintf(n, sizeof(n), CRON_TAB(User));
++	(void) snprintf(n, MAX_FNAME, CRON_TAB(User));
+ 	if (!(f = fopen(n, "r"))) {
+ 		if (errno != ENOENT) {
+ 			perror(n);
+@@ -317,7 +317,7 @@
+ 		}
+ 	}
+ 
+-	(void) sprintf(Filename, "/tmp/crontab.%d", Pid);
++	(void) snprintf(Filename, MAX_FNAME, "/tmp/crontab.%d", Pid);
+ 	if (-1 == (t = open(Filename, O_CREAT|O_EXCL|O_RDWR, 0600))) {
+ 		perror(Filename);
+ 		goto fatal;
+@@ -411,7 +411,7 @@
+ 				ProgramName);
+ 			exit(ERROR_EXIT);
+ 		}
+-		sprintf(q, "%s %s", editor, Filename);
++		snprintf(q, MAX_TEMPSTR, "%s %s", editor, Filename);
+ 		execlp(_PATH_BSHELL, _PATH_BSHELL, "-c", q, NULL);
+ 		perror(editor);
+ 		exit(ERROR_EXIT);
+@@ -498,8 +498,8 @@
+ 	time_t	now = time(NULL);
+ 	char	**envp = env_init();
+ 
+-	(void) sprintf(n, "tmp.%d", Pid);
+-	(void) snprintf(tn, sizeof(tn), CRON_TAB(n));
++	(void) snprintf(n, MAX_FNAME, "tmp.%d", Pid);
++	(void) snprintf(tn, MAX_FNAME, CRON_TAB(n));
+ 	if (!(tmp = fopen(tn, "w+"))) {
+ 		perror(tn);
+ 		return (-2);
+--- vixie-cron-3.0.1/compat.c~	Wed May 31 17:37:20 1995
++++ vixie-cron-3.0.1/compat.c	Thu Dec 11 14:42:43 1997
+@@ -73,7 +73,7 @@
+ 		return sys_errlist[error];
+ 	}
+ 
+-	sprintf(buf, "Unknown error: %d", error);
++	snprintf(buf, 32, "Unknown error: %d", error);
+ 	return buf;
+ }
+ #endif
+@@ -218,16 +218,19 @@
+ 	int overwrite;
+ {
+ 	char *tmp;
+-
++	int tmp_size;
++	
+ 	if (overwrite && getenv(name))
+ 		return -1;
+ 
+-	if (!(tmp = malloc(strlen(name) + strlen(value) + 2))) {
++	tmp_size = strlen(name) + strlen(value) + 2;
++	if (!(tmp = malloc(tmp_size))) {
+ 		errno = ENOMEM;
+ 		return -1;
+ 	}
+ 
+-	sprintf("%s=%s", name, value);
++	/* boy, that was really broken... */
++	snprintf(tmp, tmp_size, "%s=%s", name, value);
+ 	return putenv(tmp);	/* intentionally orphan 'tmp' storage */
+ }
+ #endif

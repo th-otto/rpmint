@@ -1,0 +1,49 @@
+--- procmail-3.12/Makefile.patch0	Wed Nov  4 11:24:22 1998
++++ procmail-3.12/Makefile	Tue Mar 30 12:18:32 1999
+@@ -55,7 +55,7 @@
+ 
+ LOCKINGTEST=__defaults__
+ 
+-#LOCKINGTEST=/tmp .	# Uncomment and add any directories you see fit.
++LOCKINGTEST=/tmp . /usr/rhs  # Uncomment and add any directories you see fit.
+ #			If LOCKINGTEST is defined, autoconf will NOT
+ #			prompt you to enter additional directories.
+ #			See INSTALL for more information about the
+@@ -86,7 +86,7 @@
+  #-Wimplicit -Wshadow -Wid-clash-6 #-Wuninitialized
+ 
+ # The place to put your favourite extra cc flag
+-CFLAGS0 = -O #$(GCC_WARNINGS)
++CFLAGS0 = $(RPM_OPT_FLAGS) #$(GCC_WARNINGS)
+ LDFLAGS0= -s
+ # Read my libs :-)
+ LIBS=
+--- procmail-3.12/config.h.patch0	Fri Feb 26 16:11:54 1999
++++ procmail-3.12/config.h	Tue Mar 30 12:18:32 1999
+@@ -18,7 +18,7 @@
+  */
+ #define KEEPENV		{"TZ",0}
+ 
+-/*#define DEFPATH	"PATH=$HOME/bin:/bin:/usr/bin"	/* uncomment and/or
++#define DEFPATH	"PATH=$HOME/bin:/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/usr/bin/X11"	/* uncomment and/or
+ 							   change if you
+ 	do not want the autoconf generated defPATH setting to be used in
+ 	PRESTENV below. */
+@@ -61,7 +61,7 @@
+ 	restriction does not apply to /etc/procmailrc and /etc/procmailrcs
+ 	files) */
+ 
+-/*#define NO_NFS_ATIME_HACK	/* uncomment if you're definitely not using
++#define NO_NFS_ATIME_HACK	/* uncomment if you're definitely not using
+ 				   NFS mounted filesystems and can't afford
+ 	procmail to sleep for 1 sec. before writing a regular mailbox
+ 	(under heavy load procmail automatically suppresses this) */
+@@ -72,7 +72,7 @@
+    (either directly, or through changing the definitions in the same file
+    of MAILSPOOLDIR, MAILSPOOLHASH or MAILSPOOLHOME) */
+ 
+-/*#define DEFsendmail	"/bin/mail"	/* uncomment and/or change if the
++#define DEFsendmail	"/usr/sbin/sendmail"	/* uncomment and/or change if the
+ 					   autoconfigured default SENDMAIL is
+ 	not suitable */
+ 

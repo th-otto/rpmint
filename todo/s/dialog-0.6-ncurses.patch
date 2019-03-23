@@ -1,0 +1,21 @@
+--- dialog-0.6/src/dialog.h.orig	Sun Jan 15 18:48:07 1995
++++ dialog-0.6/src/dialog.h	Mon Aug 28 15:39:50 1995
+@@ -27,7 +27,7 @@
+ #include <string.h>
+ 
+ #ifdef HAVE_NCURSES
+-#include <ncurses.h>
++#include <curses.h>
+ 
+ #else
+ 
+--- dialog-0.6/src/inputbox.c.orig	Mon Aug 28 15:40:26 1995
++++ dialog-0.6/src/inputbox.c	Mon Aug 28 15:40:38 1995
+@@ -113,6 +113,7 @@
+         case KEY_RIGHT:
+           continue;
+         case KEY_BACKSPACE:
++        case 0177:
+           if (input_x || scroll) {
+             wattrset(dialog, inputbox_attr);
+             if (!input_x) {

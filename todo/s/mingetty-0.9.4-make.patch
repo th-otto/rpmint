@@ -1,0 +1,20 @@
+--- Makefile.orig	Tue Apr  9 15:11:26 1996
++++ Makefile	Sun Aug 25 22:42:21 1996
+@@ -1,4 +1,5 @@
+-CFLAGS=-Wall -O6 -fomit-frame-pointer -pipe
++CC=gcc
++CFLAGS=$(RPM_OPTS) -Wall -fomit-frame-pointer -pipe
+ # my compiler doesn't need -fno-strength-reduce
+ LDFLAGS=-Wl,-warn-common -s
+ 
+@@ -6,8 +7,8 @@
+ 		size mingetty
+ 
+ install:	all
+-		install -s mingetty /sbin/
+-		install -m 644 mingetty.8 /usr/man/man8/
++		install -s -m 0755 -o root -g root mingetty /sbin/
++		install    -m 0644 -o root -g root mingetty.8 /usr/man/man8/
+ 
+ mingetty:	mingetty.o
+ 

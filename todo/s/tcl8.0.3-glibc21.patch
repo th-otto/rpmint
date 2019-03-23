@@ -1,0 +1,20 @@
+--- tcltk-8.0.3/tcl8.0.3/generic/tclPosixStr.c.glibc21	Fri Dec 18 17:30:53 1998
++++ tcltk-8.0.3/tcl8.0.3/generic/tclPosixStr.c	Fri Dec 18 17:34:05 1998
+@@ -324,7 +324,7 @@
+ #ifdef ENOTSOCK
+ 	case ENOTSOCK: return "ENOTSOCK";
+ #endif
+-#ifdef ENOTSUP
++#if defined(ENOTSUP) && (ENOTSUP != EOPNOTSUPP)
+ 	case ENOTSUP: return "ENOTSUP";
+ #endif
+ #ifdef ENOTTY
+@@ -771,7 +771,7 @@
+ #ifdef ENOTSOCK
+ 	case ENOTSOCK: return "socket operation on non-socket";
+ #endif
+-#ifdef ENOTSUP
++#if defined(ENOTSUP) && (ENOTSUP != EOPNOTSUPP)
+ 	case ENOTSUP: return "operation not supported";
+ #endif
+ #ifdef ENOTTY

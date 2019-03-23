@@ -1,0 +1,134 @@
+--- XFree86-4.0/xc/programs/lbxproxy/Imakefile.orig	Wed Feb  9 19:02:16 2000
++++ XFree86-4.0/xc/programs/lbxproxy/Imakefile	Wed Dec 20 01:26:10 2000
+@@ -21,7 +21,7 @@
+ #ifdef LynxOSArchitecture
+ OTHERLIBS = $(ICELIB) $(XLIB) -lbsd $(ZLIB)
+ #else
+-OTHERLIBS = $(ICELIB) $(XLIB) $(ZLIB)
++OTHERLIBS = $(ICELIB) $(XLIB) $(ZLIB) -lsocket
+ #endif
+ #endif
+ 
+@@ -29,7 +29,7 @@
+ 
+ di/LibraryTargetName(dilbx):	di
+ 
+-#if !defined(LynxOSArchitecture) && !defined(QNX4Architecture)
++#if !defined(LynxOSArchitecture) && !defined(QNX4Architecture) && !defined(MintArchitecture)
+ ServerTarget(lbxproxy,$(SUBDIRS),NullParameter,$(LBXLIBS),$(OTHERLIBS))
+ #else
+ ServerTarget(lbxproxy,$(SUBDIRS),di/main.o,$(LBXLIBS),$(OTHERLIBS))
+--- XFree86-4.0/xc/programs/xdm/daemon.c.bak	Wed Dec 29 02:01:06 1999
++++ XFree86-4.0/xc/programs/xdm/daemon.c	Wed Jul 12 10:43:28 2000
+@@ -98,7 +98,7 @@
+ 	stat = setpgid(child_id, child_id);
+ 	/* This gets error EPERM.  Why? */
+ #else
+-#if defined(SYSV)||defined(__GNU__)
++#if defined(SYSV)||defined(__GNU__)||defined(__MINT__)
+ 	stat = 0;	/* don't know how to set child's process group */
+ #else
+ 	stat = setpgrp(child_id, child_id);
+@@ -124,7 +124,7 @@
+      * Close standard file descriptors and get rid of controlling tty
+      */
+ 
+-#if defined(SYSV) || defined(SVR4) || defined(__GNU__) || defined(__QNXNTO__)
++#if defined(SYSV) || defined(SVR4) || defined(__GNU__) || defined(__QNXNTO__) || defined(__MINT__)
+     setpgrp ();
+ #else
+     setpgrp (0, getpid());
+--- XFree86-4.0/xc/programs/xdm/util.c.bak	Wed Dec 29 02:01:08 1999
++++ XFree86-4.0/xc/programs/xdm/util.c	Wed Jul 12 10:44:46 2000
+@@ -214,8 +214,8 @@
+ #ifdef CSRG_BASED
+ 	setsid();
+ #else
+-#if defined(SYSV) || defined(SVR4) || defined(__GNU__)
+-#if !(defined(SVR4) && defined(i386)) || defined(SCO325) || defined(__GNU__)
++#if defined(SYSV) || defined(SVR4) || defined(__GNU__) || defined(__MINT__)
++#if !(defined(SVR4) && defined(i386)) || defined(SCO325) || defined(__GNU__) || defined(__MINT__)
+ 	setpgrp ();
+ #endif
+ #else
+--- XFree86-4.0/xc/programs/xfs/Imakefile.orig	Sun Feb 13 08:54:40 2000
++++ XFree86-4.0/xc/programs/xfs/Imakefile	Wed Dec 20 00:35:48 2000
+@@ -45,7 +45,7 @@
+ 
+ all:: config
+ 
+-#if !defined(LynxOSArchitecture) && !defined(QNX4Architecture)
++#if !defined(LynxOSArchitecture) && !defined(QNX4Architecture) && !defined(MintArchitecture)
+ ServerTarget(xfs,$(FSDIRS),NullParameter,$(FSLIBS),$(FSSYSLIBS) $(EXTRA_LIBRARIES))
+ #else
+ ServerTarget(xfs,$(FSDIRS),difs/main.o,$(FSLIBS),$(FSSYSLIBS) $(EXTRA_LIBRARIES))
+--- XFree86-4.0/xc/programs/xterm/main.c.mint	Sat Mar  4 05:42:26 2000
++++ XFree86-4.0/xc/programs/xterm/main.c	Wed Dec 20 00:58:06 2000
+@@ -179,6 +179,14 @@
+ #endif
+ #endif
+ 
++#ifdef __MINT__
++#define USE_SYSV_PGRP
++#define LCTLECH 0
++#include <sys/ioctl.h>
++#include <pty.h>
++#define ttyslot() 1
++#endif
++
+ #ifdef __MVS__
+ #define SVR4
+ #define USE_POSIX_TERMIOS
+@@ -1887,7 +1895,7 @@
+ 	if (fcntl(screen->respond, F_SETFD, mode) == -1)
+ 		Error(1);
+ 	nbio_register(screen->respond);
+-#elif defined(USE_SYSV_TERMIO) || defined(__MVS__)
++#elif defined(USE_SYSV_TERMIO) || defined(__MVS__) || defined(__MINT__)
+ 	if (0 > (mode = fcntl(screen->respond, F_GETFL, 0)))
+ 		Error(1);
+ #ifdef O_NDELAY
+@@ -1956,7 +1964,7 @@
+ static int
+ get_pty (int *pty)
+ {
+-#if defined(__osf__) || (defined(__GLIBC__) && !defined(USE_USG_PTYS))
++#if defined(__MINT__) || defined(__osf__) || (defined(__GLIBC__) && !defined(USE_USG_PTYS))
+ 	int tty;
+ 	return (openpty(pty, &tty, ttydev, NULL, NULL));
+ #elif (defined(SYSV) && defined(i386) && !defined(SVR4)) || defined(__QNXNTO__)
+--- XFree86-4.0/xc/programs/xload/get_load.c.orig	Tue Feb 22 00:16:34 2000
++++ XFree86-4.0/xc/programs/xload/get_load.c	Wed Dec 20 16:53:18 2000
+@@ -51,7 +51,7 @@
+ #ifndef macII
+ #ifndef apollo
+ #ifndef LOADSTUB
+-#if !defined(linux) && !defined(AMOEBA)
++#if !defined(linux) && !defined (__MINT__) && !defined(AMOEBA)
+ #include <nlist.h>
+ #endif /* linux || AMOEBA */
+ #endif /* LOADSTUB */
+@@ -403,7 +403,13 @@
+ }
+ #else /* AMOEBA */
+ 
+-#ifdef linux
++#if defined(linux) || defined(__MINT__)
++
++#if defined(__MINT__)
++#define LOADAVG_PATH "/kern/loadavg"
++#else
++#define LOADAVG_PATH "/proc/loadavg"
++#endif
+ 
+ void InitLoadPoint()
+ {
+@@ -422,7 +428,7 @@
+       if (fd < 0)
+       {
+               if (fd == -2 ||
+-                  (fd = open("/proc/loadavg", O_RDONLY)) < 0)
++                  (fd = open(LOADAVG_PATH, O_RDONLY)) < 0)
+               {
+                       fd = -2;
+                       *(double *)call_data = 0.0;

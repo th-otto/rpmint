@@ -1,0 +1,85 @@
+To apply this patch, cd netkit-combo-0.16 and do patch -p1 < thisfile.
+
+This patch can also be used on any of the 0.17-pre snapshots dated prior
+to July 2000.
+
+#diff -ru netkit-combo-0.16/linux-ftpd/ftpd/ftpd.c netkit-combo-0.16-fixed/linux-ftpd/ftpd/ftpd.c
+#--- netkit-combo-0.16/linux-ftpd/ftpd/ftpd.c	Sun Dec 12 13:04:58 1999
+#+++ netkit-combo-0.16-fixed/linux-ftpd/ftpd/ftpd.c	Sat Jul  8 00:33:00 2000
+#@@ -988,7 +988,7 @@
+# 		    "%s: anonymous/%.*s", remotehost,
+# 		    (int)(sizeof(proctitle) - sizeof(remotehost) -
+# 		    sizeof(": anonymous/")), passwd);
+#-		setproctitle(proctitle);
+#+		setproctitle("%s", proctitle);
+# #endif /* HASSETPROCTITLE */
+# 		if (logging)
+# 			syslog(LOG_INFO, "ANONYMOUS FTP LOGIN FROM %s, %s",
+#@@ -998,7 +998,7 @@
+# #ifdef HASSETPROCTITLE
+# 		snprintf(proctitle, sizeof(proctitle),
+# 		    "%s: %s", remotehost, pw->pw_name);
+#-		setproctitle(proctitle);
+#+		setproctitle("%s", proctitle);
+# #endif /* HASSETPROCTITLE */
+# 		if (logging)
+# 			syslog(LOG_INFO, "FTP LOGIN FROM %s as %s",
+#@@ -1834,7 +1834,7 @@
+# 	remotehost[sizeof(remotehost)-1] = '\0';
+# #ifdef HASSETPROCTITLE
+# 	snprintf(proctitle, sizeof(proctitle), "%s: connected", remotehost);
+#-	setproctitle(proctitle);
+#+	setproctitle("%s", proctitle);
+# #endif /* HASSETPROCTITLE */
+# 
+# 	if (logging)
+diff -ru netkit-combo-0.16/netkit-ftp/ftp/cmds.c netkit-combo-0.16-fixed/netkit-ftp/ftp/cmds.c
+--- netkit-combo-0.16/netkit-ftp/ftp/cmds.c	Sun Dec 12 15:19:34 1999
++++ netkit-combo-0.16-fixed/netkit-ftp/ftp/cmds.c	Sat Jul  8 00:55:23 2000
+@@ -1663,7 +1663,7 @@
+ 			len += strlen(strcpy(&buf[len], argv[i]));
+ 		}
+ 	}
+-	if (command(buf) == PRELIM) {
++	if (command("%s", buf) == PRELIM) {
+ 		while (getreply(0) == PRELIM);
+ 	}
+ }
+#diff -ru netkit-combo-0.16/netkit-rpc/rpcgen/rpc_main.c netkit-combo-0.16-fixed/netkit-rpc/rpcgen/rpc_main.c
+#--- netkit-combo-0.16/netkit-rpc/rpcgen/rpc_main.c	Wed Apr 12 17:48:09 2000
+#+++ netkit-combo-0.16-fixed/netkit-rpc/rpcgen/rpc_main.c	Sat Jul  8 01:59:41 2000
+#@@ -528,7 +528,7 @@
+# 	if (extend && tell == ftell(fout)) {
+# 		(void) unlink(outfilename);
+# 	} else if (tblflag) {
+#-		f_print(fout, rpcgen_table_dcl);
+#+		f_print(fout, "%s", rpcgen_table_dcl);
+# 	}
+# 	f_print(fout, "\n#endif /* !_%s */\n", guard);
+# }
+#diff -ru netkit-combo-0.16/netkit-rpc/rpcgen/rpc_svcout.c netkit-combo-0.16-fixed/netkit-rpc/rpcgen/rpc_svcout.c
+#--- netkit-combo-0.16/netkit-rpc/rpcgen/rpc_svcout.c	Sun Dec 12 07:17:51 1999
+#+++ netkit-combo-0.16-fixed/netkit-rpc/rpcgen/rpc_svcout.c	Sat Jul  8 02:07:16 2000
+#@@ -316,7 +316,7 @@
+# 			  f_print(fout, "(" );
+# 			  /* arg name */
+# 			  if (proc->arg_num > 1)
+#-			    f_print(fout, proc->args.argname);
+#+			    f_print(fout, "%s", proc->args.argname);
+# 			  else
+# 			    ptype(proc->args.decls->decl.prefix, 
+# 				  proc->args.decls->decl.type, 0);
+#@@ -626,11 +626,11 @@
+# 	f_print(fout, "#ifdef RPC_SVC_FG\n");
+# 	if (inetdflag || pmflag)
+# 		f_print(fout, "\tif (_rpcpmstart)\n");
+#-	f_print(fout, "\t\tsyslog(LOG_ERR, msg);\n");
+#+	f_print(fout, "\t\tsyslog(LOG_ERR, \"%%s\", msg);\n");
+# 	f_print(fout, "\telse\n");
+# 	f_print(fout, "\t\t(void) fprintf(stderr, \"%%s\\n\", msg);\n");
+# 	f_print(fout, "#else\n");
+#-	f_print(fout, "\tsyslog(LOG_ERR, msg);\n");
+#+	f_print(fout, "\tsyslog(LOG_ERR, \"%%s\", msg);\n");
+# 	f_print(fout, "#endif\n");
+# 	f_print(fout, "}\n");
+# }

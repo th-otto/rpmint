@@ -1,0 +1,100 @@
+# ------------------------------------------------------------------------------
+#  CHANGES        |    5 +++++
+#  src/LYCookie.c |   34 +++++++++++++++++++++++++++++-----
+#  2 files changed, 34 insertions, 5 deletions
+# ------------------------------------------------------------------------------
+Index: CHANGES
+--- 2.8.1rel.2-981106/CHANGES	Wed Nov 18 10:08:10 1998
++++ 2.8.1rel.2-981118/CHANGES	Wed Nov 18 10:10:54 1998
+@@ -1,6 +1,11 @@
+ Bugfixes since Lynx 2.8.1 release
+ ================================================================================
+ 
++1998-11-18
++* suppress cookie-storing if the value is null - BJP
++* modify cookie parsing to ignore comment lines beginning with a '#' (reported
++  by Jonathan Bobin indicates that Netscape adds comments back, confusing Lynx)
++  - BJP
+ 1998-11-05
+ * relax the cookie sanity checking for version 0 (old) cookies _only when_ the
+   user has accept_all_cookies set (patch by Risto Widenius
+Index: src/LYCookie.c
+--- 2.8.1rel.2-981106/src/LYCookie.c	Wed Nov 18 10:08:11 1998
++++ 2.8.1rel.2-981118/src/LYCookie.c	Thu Nov 19 03:22:17 1998
+@@ -495,6 +495,14 @@
+ 	co = NULL;
+ 
+     /*
++     * Don't add the cookie if the value is NULL. - BJP
++     */
++    } else if (co->value[0] == '\0') {
++	CTRACE(tfp, "store_cookie: Value is NULL! Not storing cookie.\n");
++	freeCookie(co);
++	co = NULL;
++
++    /*
+      *	If it's a replacement for a cookie that had not expired,
+      *	and never allow has not been set, add it again without
+      *	confirmation. - FM
+@@ -1156,7 +1164,14 @@
+ 	     *	new, unknown attribute which doesn't take a value, and
+ 	     *	ignore it. - FM
+ 	     */
+-	    if (!known_attr && value_end > value_start) {
++	    /* if (!known_attr && value_end > value_start) */
++
++	    /* Is there any reason we don't want to accept cookies with
++	     * no value? This seems to be needed for sites that reset a
++	     * cookie by nulling out the value. If this causes problems,
++	     * we can go back to the original behavior above.  - BJP
++	     */
++	    if (!known_attr) {
+ 		/*
+ 		 *  If we've started a cookie, and it's not too big,
+ 		 *  save it in the CombinedCookies list. - FM
+@@ -1622,7 +1637,14 @@
+ 	     *	new, unknown attribute which doesn't take a value, and
+ 	     *	ignore it. - FM
+ 	     */
+-	    if (!known_attr && value_end > value_start) {
++	    /* if (!known_attr && value_end > value_start) */
++
++	    /* Is there any reason we don't want to accept cookies with
++	     * no value? This seems to be needed for sites that reset a
++	     * cookie by nulling out the value. If this causes problems,
++	     * we can go back to the original behavior above.  - BJP
++	     */
++	    if (!known_attr) {
+ 		/*
+ 		 *  If we've started a cookie, and it's not too big,
+ 		 *  save it in the CombinedCookies list. - FM
+@@ -1909,7 +1931,7 @@
+ 
+ 	j = fgets(buf, sizeof(buf)-1, cookie_handle);
+ 
+-	if((j == NULL) || (buf[0] == '\0' || buf[0] == '\n')) {
++	if((j == NULL) || (buf[0] == '\0' || buf[0] == '\n' || buf[0] == '#')) {
+ 	    continue;
+ 	}
+ 
+@@ -2343,8 +2365,9 @@
+     sprintf(buf, "<HEAD>\n<TITLE>%s</title>\n</HEAD>\n<BODY>\n",
+ 		 COOKIE_JAR_TITLE);
+     (*target->isa->put_block)(target, buf, strlen(buf));
+-    sprintf(buf, "<h1>%s (%s), help on <a href=\"%s%s\">%s</a></h1>\n",
++    sprintf(buf, "<h1>%s (%s)%s<a href=\"%s%s\">%s</a></h1>\n",
+ 	LYNX_NAME, LYNX_VERSION,
++        ", help on ",
+ 	helpfilepath, COOKIE_JAR_HELP, COOKIE_JAR_TITLE);
+     (*target->isa->put_block)(target, buf, strlen(buf));
+ 
+@@ -2473,7 +2496,8 @@
+ 	    /*
+ 	     *	Show the Maximum Gobble Date. - FM
+ 	     */
+-	    sprintf(buf, "<DD><EM>Maximum Gobble Date:</EM> %s%s",
++	    sprintf(buf, "<DD><EM>%s</EM> %s%s",
++	    		 "Maximum Gobble Date:",
+ 			 ((co->expires > 0 &&
+ 			   !(co->flags & COOKIE_FLAG_DISCARD))
+ 					    ?

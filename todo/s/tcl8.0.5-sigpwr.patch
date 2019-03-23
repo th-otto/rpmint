@@ -1,0 +1,20 @@
+--- tcltk-8.0.5/tcl8.0.5/generic/tclPosixStr.c.jj	Wed May 19 01:10:04 1999
++++ tcltk-8.0.5/tcl8.0.5/generic/tclPosixStr.c	Tue Nov 30 15:08:24 1999
+@@ -986,7 +986,7 @@ Tcl_SignalId(sig)
+ #ifdef SIGPROF
+ 	case SIGPROF: return "SIGPROF";
+ #endif
+-#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ))
++#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ)) && (!defined(SIGLOST) || (SIGPWR != SIGLOST))
+ 	case SIGPWR: return "SIGPWR";
+ #endif
+ #ifdef SIGQUIT
+@@ -1118,7 +1118,7 @@ Tcl_SignalMsg(sig)
+ #ifdef SIGPROF
+ 	case SIGPROF: return "profiling alarm";
+ #endif
+-#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ))
++#if defined(SIGPWR) && (!defined(SIGXFSZ) || (SIGPWR != SIGXFSZ)) && (!defined(SIGLOST) || (SIGPWR != SIGLOST))
+ 	case SIGPWR: return "power-fail restart";
+ #endif
+ #ifdef SIGQUIT

@@ -1,0 +1,324 @@
+--- mpage-2.5.1/Makefile.jp	Fri Aug 11 20:04:49 2000
++++ mpage-2.5.1/Makefile	Fri Aug 11 20:08:42 2000
+@@ -74,7 +74,7 @@
+ SHEETMARGIN=18
+ 
+ 
+-DEFS = -DPAGE_DEF=\"${PAGESIZE}\" -DLIBDIR=\"${LIBDIR}/mpage\" -DDEFAULT_ENCODING=${ENCODING} -DDEFAULTSMARGIN=${SHEETMARGIN} -DSPOOLER=${SPOOL_TYPE}
++DEFS = -DPAGE_DEF=\"${PAGESIZE}\" -DLIBDIR=\"${LIBDIR}/mpage\" -DDEFAULT_ENCODING=${ENCODING} -DDEFAULTSMARGIN=${SHEETMARGIN} -DSPOOLER=${SPOOL_TYPE} -DKANJI
+ 
+ 
+ ############################################################################
+--- mpage-2.5.1/mpage.c.jp	Mon Jan 12 07:29:17 1998
++++ mpage-2.5.1/mpage.c	Fri Aug 11 20:04:49 2000
+@@ -314,6 +314,15 @@
+                    HSIZE - 2);
+     fprintf(outfd, "textfont setfont\n");
+     fprintf(outfd, "(a) stringwidth pop /mp_a_x exch def\n");
++#ifdef KANJI
++#ifdef GOTHIC
++    fprintf(outfd, "/kanj /GothicBBB-Medium-H findfont %d scalefont def\n", fsize - 1);
++    fprintf(outfd, "/han /GothicBBB-Medium.Hankaku findfont %d scalefont def\n", fsize - 1);
++#else
++    fprintf(outfd, "/kanj /Ryumin-Light-H findfont %d scalefont def\n", fsize - 1);
++    fprintf(outfd, "/han /Ryumin-Light.Hankaku findfont %d scalefont def\n", fsize - 1);
++#endif
++#endif
+ # ifdef DEBUG
+     if (Debug_flag & DB_PSMPAGE)
+         fprintf(outfd, "(\\t'a' length ) print mp_a_x ==\nflush\n");
+--- mpage-2.5.1/text.c.jp	Fri Mar 13 07:48:58 1998
++++ mpage-2.5.1/text.c	Fri Aug 11 21:47:33 2000
+@@ -56,7 +56,9 @@
+ static int text_onepage();
+ static char *mp_get_text();
+ 
+-
++#ifdef KANJI
++int get_wc( FILE * );
++#endif
+ /*
+  * do_text_doc processes an input stream fd, reducing output to fit on
+  * a printed page as decribed by asheet, and prints this on outfd.
+@@ -264,6 +266,11 @@
+  FILE *outfd;
+ {
+     char *text;
++#ifdef KANJI
++    int kcode;
++    int loadfont = 0;
++    int i;
++#endif
+ 
+     /*
+      * Start off with printing any wanted annotation
+@@ -287,7 +294,52 @@
+      * keep getting lines of input, until we have filled a page
+      */
+     while (loc.pl_line <= asheet->sh_plength) {
++#ifndef KANJI
+         text = mp_get_text(file, &loc, asheet);
++#else
++        text = mp_get_text(file, &loc, asheet, &kcode );
++        if( kcode )
++        {
++            if( kcode < 0x0100 )  /* hankaku */
++            {
++                if( loadfont != 2 )
++                {
++                    fprintf(outfd, "han setfont\n");
++                    loadfont = 2;
++                }
++            }
++            else                  /* zenkaku */
++            {
++                if( loadfont != 1 )
++                {
++                     fprintf(outfd, "kanj setfont\n");
++                     loadfont = 1;
++                }
++            }
++            i = loc.pl_col;
++            if( kcode >= 0x80 && kcode < 0x100 )
++		i--;
++            switch (i) {
++            /* fprintf(outfd, "(%s\\n) print flush\n", text); */
++                case 0: putc('0', outfd);
++                        break;
++                case 1: fprintf(outfd, "mp_a_x");
++                        break;
++                default:
++                         fprintf(outfd, "%d mp_a_x mul", i);
++                         break;
++            }
++            fprintf(outfd, " %d moveto <%04x> show\n",
++                (asheet->sh_plength - loc.pl_line) * fsize, kcode);
++            text[0] = 0;
++
++        }
++        else if( loadfont )
++        {
++               fprintf(outfd, "textfont setfont\n");
++               loadfont = 0;
++        }
++#endif
+         Debug(DB_ONEPAGE, "%% text = %d\n", text);
+         if (text == 0) {
+             return FILE_EOF;
+@@ -326,7 +378,12 @@
+ 
+ 
+ static char *
++#ifndef KANJI
+ mp_get_text(infile, locp, asheet)
++#else
++mp_get_text(infile, locp, asheet, kp)
++ int *kp;
++#endif
+  FILE *infile;
+  struct pageloc *locp;
+  struct sheet *asheet;
+@@ -337,22 +394,72 @@
+     static int prevchar = 0;
+     char *textp;
+ 
++#ifdef KANJI
++    static int prevkanj=0;
++#endif
++
+     textp = text;
+     locp->pl_new_line = locp->pl_line;
+     locp->pl_new_col = locp->pl_col;
+-
++ #ifdef KANJI
++    *kp = -1;
++#endif
+     gathering = 1;
+     /*
+      * Make sure there is still enough space in text array (we
+      * may need to put 5 characters plus NULL in it.
+      */
+     while (gathering && textp - text < LINESIZE - 5) {
++#ifdef KANJI
++        if( prevkanj )
++        {
++            *kp = prevkanj;
++            if( prevkanj >= 0x0100 )
++                  locp->pl_new_col++;
++            locp->pl_new_col++;
++            prevkanj = 0;
++            gathering = 0;
++            return textp;
++        }
++      if (prevchar) {
++          ichr = prevchar;
++            prevchar = 0;
++      }
++      else
++            ichr = get_wc( infile );
++        if( ichr >= 0x0080 )
++        {
++            if( *kp < 0 )
++            {
++               *kp = ichr;
++               gathering = 0;
++               if( ichr >= 0x0100 )
++                   locp->pl_new_col++;
++               locp->pl_new_col++;
++             if (opt_fold &&
++                 (locp->pl_new_col >= asheet->sh_cwidth)) {
++                 gathering = 1;
++               locp->pl_new_line += 1;
++               locp->pl_new_col = opt_indent;
++             }
++               return textp;
++            }
++            else
++            {
++               prevkanj = ichr;
++               gathering = 0;
++               goto  loopend;
++            }
++        }
++        else *kp = 0;
++#else
+         if (prevchar) {
+             ichr = prevchar;
+             prevchar = 0;
+         }
+         else
+             ichr = fgetc(infile);
++#endif
+         Debug(DB_GETLINE, "%%called fgetc ichr = %d", ichr);
+         /*
+          * this prevents nulls in the input from confusing the
+@@ -426,6 +533,10 @@
+         }
+     }
+     
++#ifdef KANJI
++loopend:
++    *kp = 0;
++#endif
+     *textp = 0;
+     /*
+      * remove any spaces at the front of the text string by
+@@ -445,3 +556,118 @@
+ 
+ } /* mp_get_text */
+ 
++
++
++
++
++#ifdef KANJI
++
++#define	ESC	0x1b
++
++unsigned short sjtojis(unsigned short, unsigned short);
++int issjkanji(int );
++
++#define UNKOWN  0
++#define SJIS    1
++#define EUC     2
++
++int get_wc( FILE *infile )
++{
++ static int     ext[3];
++ static unsigned int  rem = 0;
++ static int in_kanji = 0;
++ static int coding = UNKOWN;
++  int c;
++  if( !rem )
++  {
++     while(1)
++     {
++         c = fgetc( infile );
++         ext[rem] = c;
++         rem++;
++         if( c == EOF )
++             break;
++         if( ext[0] == ESC )
++         {
++            if( rem >= 3 )
++            {
++                if( ext[1] == '$' /*&& ext[2] == 'B'*/ )
++                     in_kanji = 1;
++                else if( ext[1] == '(' /*&& ext[2] == 'B' */)
++                     in_kanji = 0;
++                else  goto  loopout;
++                rem = 0;
++                continue;
++            }
++         }
++         else
++         {
++            if( in_kanji )
++            {
++                if( rem >= 2 )
++                {
++                    rem = 0;
++                    return (ext[0]<<8) + ext[1];
++                }
++            }
++            else if( coding != SJIS && c >= 0xa1 && c <= 0xf4 )
++            {   /* EUC */
++                rem = 0;
++                coding = EUC;
++                return (( c & 0x7f )<<8 )+(fgetc( infile ) & 0x7f);
++            }
++            else if( issjkanji( c ))
++            {
++                rem = 0;
++                if( coding != EUC )
++                     coding = SJIS;
++                return sjtojis(c,fgetc( infile ));
++            }
++            else goto loopout;
++         }
++     }
++  }
++  loopout:
++  if( rem )
++  {
++     c = ext[0];
++     ext[0] = ext[1];
++     ext[1] = ext[2];
++     rem--;
++  }
++  return c;
++}
++
++
++int issjkanji(int c)
++{
++	c &= 0377;
++	return ((c > 0x80 && c < 0xa0)||(c > 0xdf && c < 0xfd));
++}
++
++#ifdef JIS7
++iskana(c)
++ int c;
++{
++	c &= 0xff;
++	return(( c >= 0xa0 ) && ( c <= df ));
++}
++#endif
++
++unsigned short sjtojis(unsigned short byte1, unsigned short byte2)
++{
++unsigned short	c;
++
++	byte1 -= ( byte1>=0xa0 ) ? 0xc1 : 0x81;
++	c = ((byte1 << 1) + 0x21) << 8;
++	if( byte2 >= 0x9f ) {
++		c += 0x0100;
++		c |= (byte2 - 0x7e) & 0xff;
++	} else {
++		c |= (byte2 - ( (byte2<=0x7e) ? 0x1f : 0x20 )) & 0xff;
++	}
++	return ( c );
++}
++
++
++#endif

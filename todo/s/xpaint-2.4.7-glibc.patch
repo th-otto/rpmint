@@ -1,0 +1,38 @@
+--- xpaint/misc.h.ewt	Mon Aug 19 14:52:43 1996
++++ xpaint/misc.h	Mon Aug 19 14:52:51 1996
+@@ -14,11 +14,13 @@
+  */
+ #define USE_DRAND
+ 
++#if 0
+ #if defined(SVR4) || defined(__osf__)
+ #define SHORT_RANGE
+ #else
+ #ifndef random
+ long random(void);
++#endif
+ #endif
+ 
+ #ifndef linux
+--- xpaint/rw/rwTable.c.ewt	Mon Aug 19 15:02:58 1996
++++ xpaint/rw/rwTable.c	Mon Aug 19 15:03:13 1996
+@@ -233,7 +233,7 @@
+ {
+ #if defined(BSD4_4)
+     __const extern char *__const sys_errlist[];
+-#else
++#elif !defined(__linux__) && !defined(__MINT__)
+     extern char *sys_errlist[];
+ #endif
+     extern int errno;
+--- xpaint/rw/libpnmrw.c.ewt	Mon Aug 19 15:43:26 1996
++++ xpaint/rw/libpnmrw.c	Mon Aug 19 15:43:40 1996
+@@ -130,7 +130,7 @@
+ {
+ #if defined(BSD4_4)
+     __const extern char *__const sys_errlist[];
+-#else
++#elif !defined(__linux__) && !defined(__MINT__)
+     extern char *sys_errlist[];
+ #endif
+     extern int errno;

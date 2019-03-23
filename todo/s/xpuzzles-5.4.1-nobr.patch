@@ -1,0 +1,13 @@
+--- xpuzzles-5.4.1/xpuzzles.Makefile.nobr	Wed Aug 12 19:08:06 1998
++++ xpuzzles-5.4.1/xpuzzles.Makefile	Wed Aug 12 19:10:36 1998
+@@ -262,8 +262,8 @@
+ 	for i in ${PROGRAMS}; do\
+ 		if [ -d ${PRE}$${i} ]; then\
+ 			cd ${PRE}$${i};\
+-			install -m755 ${PRE}$${i} /usr/X11R6/bin;\
+-			install -m644 -o root -g man ${PRE}$${i}.man /usr/X11R6/man/man1/${PRE}$${i}.1;\
++			install -m755 ${PRE}$${i} $(DESTDIR)/usr/X11R6/bin;\
++			install -m644 ${PRE}$${i}.man $(DESTDIR)/usr/X11R6/man/man1/${PRE}$${i}.1;\
+ 			cd ..;\
+ 		fi;\
+ 	done

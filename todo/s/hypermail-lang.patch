@@ -1,0 +1,180 @@
+--- hypermail-2b29/src/lang.c.de	Sun Oct 10 07:22:22 1999
++++ hypermail-2b29/src/lang.c	Wed Feb  9 12:42:58 2000
+@@ -51,6 +51,10 @@
+ 		fprintf(stderr,
+ 			"usage: %s [-tv] [-L lang] [msg-num [..]]\n",
+ 			progname);
++		fprintf(stderr, "   -L lang   set language lang\n");
++		fprintf(stderr, "   -v        verbose\n");
++		fprintf(stderr, "   -t        print table\n");
++		fprintf(stderr, "For msg-num look in lang.h\n");
+ 		return (1);
+ 	    }
+ 	}
+--- hypermail-2b29/src/lang.h.de	Fri Dec 24 12:56:46 1999
++++ hypermail-2b29/src/lang.h	Wed Feb  9 14:29:54 2000
+@@ -151,49 +151,51 @@
+ /*
+ ** German version of the language table
+ ** Translation by Martin Schulze <joey@kuolema.Infodrom.North.DE> 
++**
++** modified/completed 02/2000 by Edgar Aichinger <eaiching@t0.or.at>
+ */
+ 
+ char *de[] = {       /* German */
+   "Neue Nachricht",                       /* New Message        -HTML*/
+   "Antwort",                              /* Reply              -HTML*/
+-  "Über diese Liste",                  /* About this list    -HTML*/
++  "Über diese Liste",                     /* About this list    -HTML*/
+   "Ende der Nachricht",                   /* End of Messages    -HTML*/
+   "Anfang der Nachricht",                 /* Start of Messages  -HTML*/
+-  "Datums-Sicht",                         /* Date view          -HTML*/
+-  "Thread-Sicht",                         /* Thread view        -HTML*/
+-  "Subject-Sicht",                        /* Subject view       -HTML*/
+-  "Autor-Sicht",                          /* Author view        -HTML*/
++  "Datums-Übersicht",                     /* Date view          -HTML*/
++  "Thread-Übersicht",                     /* Thread view        -HTML*/
++  "Betreff-Übersicht",                    /* Subject view       -HTML*/
++  "Autor-Übersicht",                      /* Author view        -HTML*/
+   "Weitere Gruppen",                      /* Other groups       -HTML*/
+   "Nachrichten",                          /* Messages           -HTML*/
+   "Anfang",                               /* Starting           -HTML*/
+   "Ende",                                 /* Ending             -HTML*/
+-  "Über dieses Archiv",                /* About this archive -HTML*/
+-  "sortiert nach",            /* sorted by -HTML*/
++  "Über dieses Archiv",                   /* About this archive -HTML*/
++  "sortiert nach",                        /* sorted by -HTML*/
+   "Weitere Mail-Archive",                 /* Other mail archives -HTML*/
+   "Datum",                                /* By Date             -HTML*/
+   "Neueste Nachrichten",                  /* Most recent messages-HTML*/
+   "Autor",                                /* author              -HTML*/
+   "Datum",                                /* date                -HTML*/
+   "Thread",                               /* thread              -HTML*/
+-  "Subject",                              /* subject             -HTML*/
+-  "für Optionen",                      /* for options       -STDOUT*/
+-  "Schreibe Nachrichten in",              /* Writing messages to-STDOUT*/
+-  "Schreibe Datums-Index in",             /* Writing date index to-STDOUT*/
+-  "Schreibe Thread-Index in",             /* Writing thread index to -STDOUT*/
+-  "Schreibe Subject-Index in",            /* Writing subject index to-STDOUT*/
+-  "Schreibe Autoren-Index in",            /* Writing author index to-STDOUT*/
++  "Betreff",                              /* subject             -HTML*/
++  "für Optionen",                         /* for options       -STDOUT*/
++  "Schreibe Nachrichten nach",            /* Writing messages to-STDOUT*/
++  "Schreibe Datums-Index nach",           /* Writing date index to-STDOUT*/
++  "Schreibe Thread-Index nach",           /* Writing thread index to -STDOUT*/
++  "Schreibe Betreff-Index nach",          /* Writing subject index to-STDOUT*/
++  "Schreibe Autoren-Index nach",          /* Writing author index to-STDOUT*/
+   "Letztes Datum",                        /* Last message date   -HTML*/
+   "Archiviert auf",                       /* Archived on         -HTML*/
+-  "Kann Dateimodus nicht ändern",      /* Can not chmod     -STDERR*/
+-  "Kann nicht schreiben",                 /* Could not write   -STDERR*/
+-  "Nächste Nachricht",                 /* Next message        -HTML*/
++  "Kann Dateimodus nicht ändern",         /* Can not chmod     -STDERR*/
++  "Konnte nicht schreiben",               /* Could not write   -STDERR*/
++  "Nächste Nachricht",                    /* Next message        -HTML*/
+   "Vorherige Nachricht",                  /* Previous message    -HTML*/
+   "Vielleicht als Antwort auf",           /* Maybe in reply to   -HTML*/
+   "Als Antwort auf",                      /* In reply to         -HTML*/
+-  "Nächste im Thread",                 /* Next in thread      -HTML*/
++  "Nächste im Thread",                    /* Next in thread      -HTML*/
+   "Eventuelle Antwort",                   /* Maybe reply         -HTML*/
+   "Nach Thread",                          /* By Thread           -HTML*/
+-  "Nach Subject",                         /* By Subject          -HTML*/
++  "Nach Betreff",                         /* By Subject          -HTML*/
+   "Nach Autor",                           /* By Author           -HTML*/
+   "Kann das Verzeichnis nicht erstellen", /* Can not create directory -STDERR*/
+   "Erstelle Verzeichnis",                 /* Creating directory -STDOUT*/
+@@ -203,7 +205,7 @@
+   "Dieses Archiv wurde generiert von",    /* This archive was generated by-HTML*/
+   "Elemente",                             /* Elements          -STDOUT*/
+   "Keine Elemente",                       /* No Elements       -STDOUT*/
+-  "Kann Mail-Archiv nicht öffnen",     /* Cannot open mail archive */
++  "Kann Mail-Archiv nicht öffnen",        /* Cannot open mail archive */
+   "Lese neue Header...",                  /* Reading new header...-STDOUT*/
+   "Lade Mailbox",                         /* Loading mailbox      -STDOUT*/
+   "Kodierung wird nicht unterstützt, speichere so", 
+@@ -211,53 +213,52 @@
+   "Nachrichten",                          /* messages             -HTML*/
+   "Version",                              /* Version            -STDOUT*/
+   "Patchlevel",                           /* Patchlevel         -STDOUT*/
+-  "Dokus",                                /* Docs               -STDOUT*/
++  "Dokumentation",                        /* Docs               -STDOUT*/
+   "Befehls- und Kontrollvariablen",       /* Command and Control Variables-STDOUT*/
+   "Ja",                                   /* Yes                -STDOUT*/
+   "Nein",                                 /* No                 -STDOUT*/
+-  "Über das Archiv: nicht benutzt",    /* About the archive: not used-STDOUT */
++  "Über das Archiv: nicht benutzt",       /* About the archive: not used-STDOUT */
+   "Andere Archive: nicht benutzt",        /* Other archives: not used-STDOUT*/
+   "Adresse nicht benutzt",                /* address not used        -STDOUT*/
+   "Eingebautes <BODY> benutzt",           /* Builtin <BODY> statement used-STDOUT*/
+-  "Kann nicht von Datei und stdin lesen.", /* Cannot read from both file and stdin. -STDERR*/
++  "Kann nicht zugleich von Datei und stdin lesen.",
++                                /* Cannot read from both file and stdin. -STDERR*/
+   "Optionen",                             /* Options                -STDOUT*/
+-  "URL für weitere Archive",           /* URL to other archives  -STDOUT*/
+-  "URL für Informationen über Archiv",  
+-                                      /* URL to archive information -STDOUT*/
+-  "Konfigurationsdatei zum Einlesen", 
+-                                    /* Configuration file to read in -STDOUT*/
++  "URL für weitere Archive",              /* URL to other archives  -STDOUT*/
++  "URL für Informationen über Archiv",    /* URL to archive information -STDOUT*/
++  "einzulesende Konfigurationsdatei",     /* Configuration file to read in -STDOUT*/
+   "Das Verzeichnis, um die HTML-Dateien zu speichern", 
+-                              /* The directory to save HTML files in -STDOUT*/
+-  "Lese Nachrichten von der Standard Eingabe",
++                                /* The directory to save HTML files in -STDOUT*/
++  "Lese Nachrichten von der Standardeingabe",
+                                 /* Read messages from standard input -STDOUT*/
+   "Wie soll das Archiv genannt werden",   
+-                                  /* What to name the output archive -STDOUT*/
+-  "Mail-Archive zum Einlesen",            /* Mail archive to read in -STDOUT*/
+-  "Zeige Zwischenbericht",                /* Show progress           -STDOUT*/
+-  "Zeigt nur die Konfigurationsvariablen", /* Show configuration variables only -STDOUT*/
+-  "Zeigt Version und beende",             /* Show version information and exit -STDOUT*/
+-  "Jeweils einen Artikel hinzufügen",  /* Update archive by one article -STDOUT*/
+-  "Vorherige Nachrichten überschreiben", /* Overwrite previous messages -STDOUT*/
++                                /* What to name the output archive -STDOUT*/
++  "einzulesende Mail-Archive",            /* Mail archive to read in -STDOUT*/
++  "Zeige Fortschritt",                    /* Show progress           -STDOUT*/
++  "Zeige nur die Konfigurationsvariablen",/* Show configuration variables only -STDOUT*/
++  "Zeige Versionsinfo und beende",        /* Show version information and exit -STDOUT*/
++  "Jeweils einen Artikel hinzufügen",     /* Update archive by one article -STDOUT*/
++  "Vorherige Nachrichten überschreiben",  /* Overwrite previous messages -STDOUT*/
+   "Sprache angeben",                      /* Specify language to use -STDOUT*/
+-  "Usage",                                /* Usage -STDOUT*/
+-  "Die Sprache wird nicht unterstützt",/* Language not supported  -STDERR*/
++  "Benutzung",                            /* Usage -STDOUT*/
++  "Die Sprache wird nicht unterstützt",   /* Language not supported  -STDERR*/
+   "Nicht gesetzt",                        /* Not set               -STDOUT*/
+   "Nicht benutzt",                        /* Not used              -STDOUT*/
+-  "Attachement-Datei angelegt",           /* Created attachment file -STDOUT*/
+-  "Attachement",                          /* attachment           -HTML*/
+-  "Mode",                                 /* mode                 -STDOUT*/
+-  "Lese alte Header",                     /* Reading old headers  -STDOUT*/
+-  "",       /* for alignment only -STDOUT*/
+-  "ERROR",                       /* ERROR                       -STDERR*/
+-  "The submission address of the list", 
+-                           /* The submission address of the list-STDERR*/
+-  "Read only one mail from input",
++  "Anhang-Datei angelegt",                /* Created attachment file -STDOUT*/
++  "Anhang",                               /* attachment           -HTML*/
++  "Modus",                                /* mode                 -STDOUT*/
++  "Lese vorhandene Header",               /* Reading old headers  -STDOUT*/
++  "Nur zur Ausrichtung",                  /* for alignment only -STDOUT*/
++  "FEHLER",                               /* ERROR                       -STDERR*/
++  "Die Zustelladresse dieser Liste",      /* The submission address of the list-STDERR*/
++  "Nur eine Nachricht von der Eingabe lesen",
++                                 /* Read only one mail from input */
+   "Autor",                                /* author              -HTML*/
+   "Datum",                                /* date                -HTML*/
+-  "Subject",                              /* subject             -HTML*/
+-  "Mail actions",                         /* Mail actions (MA) header -HTML*/
+-  "mail a new topic",                     /* MA New Message      -HTML*/
+-  "respond to this message",              /* MA Reply            -HTML*/
++  "Betreff",                              /* subject             -HTML*/
++  "Mail-Aktionen",                        /* Mail actions (MA) header -HTML*/
++  "Neue Nachricht senden",                /* MA New Message      -HTML*/
++  "Antworten",                            /* MA Reply            -HTML*/
+   NULL,                                   /* End Of Message Table - NOWHERE*/
+ };
+ 

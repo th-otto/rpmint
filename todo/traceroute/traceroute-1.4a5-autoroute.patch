@@ -1,0 +1,153 @@
+diff -ur traceroute-1.4a5/configure traceroute-1.4a5-fix/configure
+--- traceroute-1.4a5/configure	Sun Feb  7 15:56:50 1999
++++ traceroute-1.4a5-fix/configure	Sun Feb  7 15:52:14 1999
+@@ -1674,7 +1671,7 @@
+ 	;;
+ 
+ linux*)
+-	V_INCLS="$V_INCLS -Ilinux-include -DHAVE_IFF_LOOPBACK"
++	V_INCLS="$V_INCLS -Ilinux-include -DHAVE_IFF_LOOPBACK -DUSE_KERNEL_ROUTING_TABLE"
+ 	;;
+ 
+ osf3*)
+diff -ur traceroute-1.4a5/configure.in traceroute-1.4a5-fix/configure.in
+--- traceroute-1.4a5/configure.in	Sun Feb  7 15:56:50 1999
++++ traceroute-1.4a5-fix/configure.in	Sun Feb  7 15:52:08 1999
+@@ -40,7 +40,7 @@
+ 	;;
+ 
+ linux*)
+-	V_INCLS="$V_INCLS -Ilinux-include -DHAVE_IFF_LOOPBACK"
++	V_INCLS="$V_INCLS -Ilinux-include -DHAVE_IFF_LOOPBACK -DUSE_KERNEL_ROUTING_TABLE"
+ 	;;
+ 
+ osf3*)
+diff -ur traceroute-1.4a5/traceroute.c traceroute-1.4a5-fix/traceroute.c
+--- traceroute-1.4a5/traceroute.c	Sun Feb  7 15:56:50 1999
++++ traceroute-1.4a5-fix/traceroute.c	Sun Feb  7 15:58:07 1999
+@@ -326,6 +326,11 @@
+ __dead	void usage(void);
+ int	wait_for_reply(int, struct sockaddr_in *, struct timeval *);
+ 
++#ifdef USE_KERNEL_ROUTING_TABLE
++struct ifaddrlist *search_routing_table(struct sockaddr_in *to, struct ifaddrlist *al, int n);
++#endif
++
++
+ int
+ main(int argc, char **argv)
+ {
+@@ -689,6 +694,15 @@
+ 
+ 	/* Determine our source address */
+ 	if (source == NULL) {
++#ifdef USE_KERNEL_ROUTING_TABLE
++		/* Search the kernel routing table for a match with the
++		 * destination address.  Then use that interface.  If
++		 * there is no match, default to using the first 
++		 * interface found.
++		 */
++		al = search_routing_table(to, al, n);
++		setsin(from, al->addr);
++#else
+ 		/*
+ 		 * If a device was specified, use the interface address.
+ 		 * Otherwise, use the first interface found.
+@@ -700,6 +714,7 @@
+ 		    "%s: Warning: Multiple interfaces found; using %s @ %s\n",
+ 			    prog, inet_ntoa(from->sin_addr), al->device);
+ 		}
++#endif
+ 	} else {
+ 		hi = gethostinfo(source);
+ 		source = hi->name;
+@@ -1323,3 +1338,89 @@
+ 	    prog);
+ 	exit(1);
+ }
++
++
++#ifdef USE_KERNEL_ROUTING_TABLE
++
++/* This function currently only supports IPv4.  Someone who knows
++ * more about multi-protocol socket stuff should take a look at this.
++ * 
++ * (But does it make any sense for traceroute to support other 
++ * protocols?  Maybe IPv6...
++ */
++
++struct ifaddrlist *search_routing_table(struct sockaddr_in *to, struct ifaddrlist *al, int n)
++{
++	struct ifaddrlist *first_if;
++	FILE *fp;
++	char buf[1024];
++	char ifname[128];
++        unsigned int route_dest;
++	unsigned int mask;
++	char best_name[128];
++	unsigned int best_mask;
++	unsigned int dest_addr;
++	unsigned int convs;
++
++	/* How come using ntohl(to->sin_addr.s_addr) doesn't work here? */
++	dest_addr = to->sin_addr.s_addr;
++
++	fp = fopen("/proc/net/route", "r");
++	if (fp == NULL) {
++		return al;
++	}
++
++	/* Skip the first line (the column headings) */
++	if (fgets(buf, sizeof(buf), fp) == NULL) {
++		fclose(fp);
++		return al;
++	}
++
++	best_name[0] = '\0';
++	best_mask = 0;
++
++	while (fgets(buf, sizeof(buf), fp) != NULL) {
++		/* Field 1: interface name
++		 * Field 2: dest addr
++		 * Field 8: genmask 
++		 */
++		convs = sscanf(buf, "%s %x %*s %*s %*s %*s %*s %x", 
++				ifname, &route_dest, &mask);
++		if (convs != 3) {
++			/* format error .... */
++			fclose(fp);
++			return al;
++		}
++
++		if ((dest_addr & mask) == route_dest) {
++			/* This routing entry applies to
++			 * our destination addr
++			 */
++			if ((mask > best_mask) || (best_mask == 0)) {
++				/* And it is more specific than any
++				 * previous match (or is the first match)
++				 */
++				best_mask = mask;
++				strncpy(best_name, ifname, sizeof(best_name));
++			}
++		}
++	}
++
++	fclose(fp);
++
++	/* If we don't find a match, we'll return the first entry */
++	first_if = al;
++
++	while (al < first_if + n) {
++		if (strcmp(best_name, al->device) == 0) {
++			/* Got a match */
++			return al;
++		}
++		al++;
++	}
++
++	return first_if;
++}
++			
++#endif
++

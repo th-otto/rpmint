@@ -1,0 +1,15 @@
+--- mingetty-0.9.4/mingetty.c.isprint	Mon Oct 28 15:52:08 1996
++++ mingetty-0.9.4/mingetty.c	Mon Oct 28 15:54:47 1996
+@@ -369,9 +369,9 @@
+ 			if (c == '\n' || c == '\r') {
+ 				*bp = 0;
+ 				break;
+-			} else if (!isalnum (c) && c != '_')
+-				error ("%s: invalid character for login name",
+-								tty);
++			} else if (!isprint (c))
++				error ("%s: invalid character %c in login name",
++								tty, c);
+ 			else if (bp - logname >= sizeof (logname) - 1)
+ 				error ("%s: too long login name", tty);
+ 			else

@@ -45,7 +45,7 @@ for CPU in ${ALL_CPUS}; do
 	LIBS="-lm" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
-	${MAKE} || exit 1
+	${MAKE} $JOBS || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
 	

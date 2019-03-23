@@ -1,0 +1,38 @@
+--- mgetty-1.1.5/Makefile.orig	Sun Apr 13 16:20:42 1997
++++ mgetty-1.1.5/Makefile	Mon May  5 11:09:34 1997
+@@ -107,7 +107,7 @@
+ # prompt first. Don't forget to activate the /AutoPPP/ line in login.config!
+ #
+ #CFLAGS=-Wall -O2 -pipe -DSECUREWARE -DUSE_POLL
+-CFLAGS=-O2 -Wall -pipe
++CFLAGS=$(RPM_OPT_FLAGS) -Wall -pipe -DAUTO_PPP
+ #CFLAGS=-O -DSVR4
+ #CFLAGS=-O -DSVR4 -DSVR42
+ #CFLAGS=-O -DUSE_POLL
+@@ -168,7 +168,7 @@
+ #
+ # if your systems doesn't have one, use the shell script that I provide
+ # in "inst.sh" (taken from X11R5). Needed on IRIX5.2
+-INSTALL=install -c -o bin -g bin
++INSTALL=install -c -o root -g root
+ #INSTALL=install -c -o root -g wheel		# NeXT/BSD
+ #INSTALL=/usr/ucb/install -c -o bin -g bin	# AIX, Solaris 2.x
+ #INSTALL=installbsd -c -o bin -g bin		# OSF/1, AIX 4.1, 4.2
+@@ -176,7 +176,7 @@
+ #
+ # prefix, where most (all?) of the stuff lives, usually /usr/local or /usr
+ #
+-prefix=/usr/local
++prefix=/usr
+ #
+ # prefix for all the spool directories (usually /usr/spool or /var/spool)
+ #
+@@ -196,7 +196,7 @@
+ #
+ # where the configuration files (*.config, aliases, fax.allow/deny) go to
+ #
+-CONFDIR=$(prefix)/etc/mgetty+sendfax
++CONFDIR=/etc/mgetty+sendfax
+ #CONFDIR=/etc/default/
+ #
+ #

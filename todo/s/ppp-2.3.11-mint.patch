@@ -1,0 +1,2146 @@
+--- ppp-2.3.11/README.mint.~	Tue May 30 09:35:02 2000
++++ ppp-2.3.11/README.mint	Tue May 30 09:34:48 2000
+@@ -0,0 +1,18 @@
++
++Here is my port of ppp-2.3.10 for FreeMiNT/MiNTNet. It base mainly at the
++old ppp 2.2.0f port from Kay Roemer.
++
++some notes:
++- pppstats has not been ported.
++- it work best with the new serial drivers from me
++- new features like demand calling is not yet supported yet under MiNT
++  would be nice if someone with enough time can work on that
++
++
++Many thanks to Ralph Lowinski for intensiv testing and lot of help.
++
++
++Frank Naumann
++<fnaumann@freemint.de>
++
++Magdeburg, 19.05.2000
+diff -urN ppp-2.3.11-orig/chat/Makefile.mint ppp-2.3.11/chat/Makefile.mint
+--- ppp-2.3.11-orig/chat/Makefile.mint	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/chat/Makefile.mint	Fri May 19 15:11:22 2000
+@@ -0,0 +1,31 @@
++#	$Id: Makefile.mint,v 1.1 1993/08/14 06:30:44 deraadt Exp $
++
++CDEF1=	-DTERMIOS			# Use the termios structure
++CDEF2=	-DSIGTYPE=void			# Standard definition
++CDEF3=	-UNO_USLEEP			# Use the usleep function
++CDEF4=	-DPIDSTRING			# I like ascii pid values
++CDEF5=	-DLOCK_DIR=\"/var/spool/locks\"	# Directory for lock file
++CDEF6=	-DFNDELAY=O_NDELAY		# Old name value
++CDEFS=	$(CDEF1) $(CDEF2) $(CDEF3) $(CDEF4) $(CDEF5) $(CDEF6)
++
++CC= gcc
++RPM_OPT_FLAGS= -O2 -fomit-frame-pointer
++CFLAGS=	-Wall $(RPM_OPT_FLAGS) $(CDEFS)
++
++INSTALL= install
++
++all:	chat
++
++chat:	chat.o
++	$(CC) -o chat chat.o
++
++chat.o:	chat.c
++	$(CC) -c $(CFLAGS) -o chat.o chat.c
++
++install: chat
++	mkdir -p $(BINDIR)
++	$(INSTALL) -s -c chat $(BINDIR)
++	$(INSTALL) -c -m 644 chat.8 $(MANDIR)/man8
++
++clean:
++	rm -f chat.o chat *~
+diff -urN ppp-2.3.11-orig/configure ppp-2.3.11/configure
+--- ppp-2.3.11-orig/configure	Mon Nov 15 02:56:26 1999
++++ ppp-2.3.11/configure	Fri May 19 15:11:22 2000
+@@ -61,6 +61,10 @@
+       2.2.8*)   state="known"; ksrc="freebsd-2.2.8";;
+       3.[0-1]*)	state="known"; ksrc="freebsd-3.0";;
+     esac;;
++  FreeMiNT)
++    makext="mint";
++    ksrc="mint";
++    state="known";;
+   NeXTStep)
+     makext="NeXT";
+     ksrc="NeXT";
+diff -urN ppp-2.3.11-orig/include/net/if_ppp.h ppp-2.3.11/include/net/if_ppp.h
+--- ppp-2.3.11-orig/include/net/if_ppp.h	Thu May 13 02:31:52 1999
++++ ppp-2.3.11/include/net/if_ppp.h	Fri May 19 15:11:22 2000
+@@ -1,4 +1,4 @@
+-/*	$Id: if_ppp.h,v 1.18 1999/05/13 00:31:49 paulus Exp $	*/
++/*	$Id: if_ppp.h,v 1.12 1995/04/24 02:40:23 paulus Exp $	*/
+ 
+ /*
+  * if_ppp.h - Point-to-Point Protocol definitions.
+@@ -22,6 +22,55 @@
+ #ifndef _IF_PPP_H_
+ #define _IF_PPP_H_
+ 
++#include "ppp_defs.h"
++
++
++#define _IOC_NRBITS	8
++#define _IOC_TYPEBITS	8
++#define _IOC_SIZEBITS	14
++#define _IOC_DIRBITS	2
++
++#define _IOC_NRMASK	((1 << _IOC_NRBITS)-1)
++#define _IOC_TYPEMASK	((1 << _IOC_TYPEBITS)-1)
++#define _IOC_SIZEMASK	((1 << _IOC_SIZEBITS)-1)
++#define _IOC_DIRMASK	((1 << _IOC_DIRBITS)-1)
++
++#define _IOC_NRSHIFT	0
++#define _IOC_TYPESHIFT	(_IOC_NRSHIFT+_IOC_NRBITS)
++#define _IOC_SIZESHIFT	(_IOC_TYPESHIFT+_IOC_TYPEBITS)
++#define _IOC_DIRSHIFT	(_IOC_SIZESHIFT+_IOC_SIZEBITS)
++
++/*
++ * Direction bits.
++ */
++#define _IOC_NONE	0U
++#define _IOC_WRITE	1U
++#define _IOC_READ	2U
++
++#define _IOC(dir,type,nr,size) \
++	(((dir)  << _IOC_DIRSHIFT) | \
++	 ((type) << _IOC_TYPESHIFT) | \
++	 ((nr)   << _IOC_NRSHIFT) | \
++	 ((size) << _IOC_SIZESHIFT))
++
++/* used to create numbers */
++#define _IO(type,nr)		_IOC(_IOC_NONE,(type),(nr),0)
++#define _IOR(type,nr,size)	_IOC(_IOC_READ,(type),(nr),sizeof(size))
++#define _IOW(type,nr,size)	_IOC(_IOC_WRITE,(type),(nr),sizeof(size))
++#define _IOWR(type,nr,size)	_IOC(_IOC_READ|_IOC_WRITE,(type),(nr),sizeof(size))
++
++/* used to decode ioctl numbers.. */
++#define _IOC_DIR(nr)		(((nr) >> _IOC_DIRSHIFT) & _IOC_DIRMASK)
++#define _IOC_TYPE(nr)		(((nr) >> _IOC_TYPESHIFT) & _IOC_TYPEMASK)
++#define _IOC_NR(nr)		(((nr) >> _IOC_NRSHIFT) & _IOC_NRMASK)
++#define _IOC_SIZE(nr)		(((nr) >> _IOC_SIZESHIFT) & _IOC_SIZEMASK)
++
++/*
++ * Packet sizes
++ */
++#define	PPP_MTU		1500	/* Default MTU (size of Info field) */
++#define PPP_MAXMRU	65000	/* Largest MRU we allow */
++
+ /*
+  * Bit definitions for flags.
+  */
+@@ -42,7 +91,6 @@
+ #define SC_RCV_B7_1	0x02000000	/* have rcvd char with bit 7 = 1 */
+ #define SC_RCV_EVNP	0x04000000	/* have rcvd char with even parity */
+ #define SC_RCV_ODDP	0x08000000	/* have rcvd char with odd parity */
+-#define SC_SYNC		0x00200000	/* use synchronous HDLC framing */
+ #define	SC_MASK		0x0fff00ff	/* bits that user can change */
+ 
+ /*
+@@ -89,45 +137,88 @@
+  * Ioctl definitions.
+  */
+ 
+-#define	PPPIOCGFLAGS	_IOR('t', 90, int)	/* get configuration flags */
+-#define	PPPIOCSFLAGS	_IOW('t', 89, int)	/* set configuration flags */
+-#define	PPPIOCGASYNCMAP	_IOR('t', 88, int)	/* get async map */
+-#define	PPPIOCSASYNCMAP	_IOW('t', 87, int)	/* set async map */
+-#define	PPPIOCGUNIT	_IOR('t', 86, int)	/* get ppp unit number */
+-#define	PPPIOCGRASYNCMAP _IOR('t', 85, int)	/* get receive async map */
+-#define	PPPIOCSRASYNCMAP _IOW('t', 84, int)	/* set receive async map */
+-#define	PPPIOCGMRU	_IOR('t', 83, int)	/* get max receive unit */
+-#define	PPPIOCSMRU	_IOW('t', 82, int)	/* set max receive unit */
+-#define	PPPIOCSMAXCID	_IOW('t', 81, int)	/* set VJ max slot ID */
+-#define PPPIOCGXASYNCMAP _IOR('t', 80, ext_accm) /* get extended ACCM */
+-#define PPPIOCSXASYNCMAP _IOW('t', 79, ext_accm) /* set extended ACCM */
+-#define PPPIOCXFERUNIT	_IO('t', 78)		/* transfer PPP unit */
+-#define PPPIOCSCOMPRESS	_IOW('t', 77, struct ppp_option_data)
+-#define PPPIOCGNPMODE	_IOWR('t', 76, struct npioctl) /* get NP mode */
+-#define PPPIOCSNPMODE	_IOW('t', 75, struct npioctl)  /* set NP mode */
+-#define PPPIOCGIDLE	_IOR('t', 74, struct ppp_idle) /* get idle time */
+-#ifdef PPP_FILTER
+-#define PPPIOCSPASS	_IOW('t', 71, struct bpf_program) /* set pass filter */
+-#define PPPIOCSACTIVE	_IOW('t', 70, struct bpf_program) /* set active filt */
+-#endif /* PPP_FILTER */
++/* ACHTUNG: In ppp.h stehen ueberlappende defines! */
++/* ich nehme jene! Die _IOx-Definitionen stehen unter
++* /usr/src/linux/include/asm_m68k/ioctl.h
++* oder so aenhlich.
++*/
++
++/* #define PPPIOCGFLAGS	_IOR('t', 90, int) */	/* get configuration flags */
++#define	PPPIOCGFLAGS	(('p' << 8) | 100)	/* set config flags */
++
++/* #define PPPIOCSFLAGS	_IOW('t', 89, int) */	/* set configuration flags */
++#define PPPIOCSFLAGS	(('p' << 8) | 101)	/* get config flags */
++
++#define PPPIOCSRMAP	(('p' << 8) | 102)	/* set rcv asynch. char map */
++#define PPPIOCGRMAP	(('p' << 8) | 103)	/* get rcv asynch. char map */
++
++#define PPPIOCSXMAP	(('p' << 8) | 104)	/* set snd asynch. char map */
++#define PPPIOCGXMAP	(('p' << 8) | 105)	/* get snd asynch. char map */
++
++#define PPPIOCGPGRP	(('p' << 8) | 110)	/* get pid to send SIGIO to */
++#define PPPIOCSPGRP	(('p' << 8) | 111)	/* set pid to send SIGIO to */
++
++#define PPPIOCSSLOTS	(('p' << 8) | 112)	/* set # of VJ comp. slots */
++
++/* #define PPPIOCGASYNCMAP	_IOR('t', 88, int) */	/* get async map */
++/* #define PPPIOCSASYNCMAP	_IOW('t', 87, int) */	/* set async map */
++/* #define PPPIOCGUNIT	_IOR('t', 86, int) */	/* get ppp unit number */
++/* #define PPPIOCGRASYNCMAP	_IOR('t', 85, int) */	/* get receive async map */
++/* #define PPPIOCSRASYNCMAP	_IOW('t', 84, int) */	/* set receive async map */
++
++
++/* #define PPPIOCGMRU	_IOR('t', 83, int) */	/* get max receive unit */
++#define PPPIOCGMRU	(('p' << 8) | 108)	/* get max. recv unit */
++
++/* #define PPPIOCSMRU	_IOW('t', 82, int) */	/* set max receive unit */
++#define PPPIOCSMRU	(('p' << 8) | 109)	/* set max. recv unit */
++
++
++/* #define PPPIOCSMAXCID	_IOW('t', 81, int) */	/* set VJ max slot ID */
++/* #define PPPIOCGXASYNCMAP	_IOR('t', 80, ext_accm) */ /* get extended ACCM */
++/* #define PPPIOCSXASYNCMAP	_IOW('t', 79, ext_accm) */ /* set extended ACCM */
++/* #define PPPIOCXFERUNIT	_IO('t', 78) */		/* transfer PPP unit */
++/* #define PPPIOCSCOMPRESS	_IOW('t', 77, struct ppp_option_data) */
++/* #define PPPIOCGNPMODE	_IOWR('t', 76, struct npioctl) */ /* get NP mode */
++/* #define PPPIOCSNPMODE	_IOW('t', 75, struct npioctl) */  /* set NP mode */
++/* #define PPPIOCGIDLE		_IOR('t', 74, struct ppp_idle) */ /* get idle time */
+ 
+ /* PPPIOC[GS]MTU are alternatives to SIOC[GS]IFMTU, used under Ultrix */
+-#define PPPIOCGMTU	_IOR('t', 73, int)	/* get interface MTU */
+-#define PPPIOCSMTU	_IOW('t', 72, int)	/* set interface MTU */
++/* #define PPPIOCGMTU	_IOR('t', 73, int) */	/* get interface MTU */
++#define PPPIOCGMTU	(('p' << 8) | 106)	/* get max. send unit */
++/* #define PPPIOCSMTU	_IOW('t', 72, int) */	/* set interface MTU */
++#define PPPIOCSMTU	(('p' << 8) | 107)	/* set max. send unit */
+ 
+ /*
+  * These two are interface ioctls so that pppstats can do them on
+  * a socket without having to open the serial device.
+  */
+-#define SIOCGPPPSTATS	_IOWR('i', 123, struct ifpppstatsreq)
+-#define SIOCGPPPCSTATS	_IOWR('i', 122, struct ifpppcstatsreq)
++/* #define SIOCGPPPSTATS	_IOWR('i', 123, struct ifpppstatsreq) */
++/* #define SIOCGPPPCSTATS	_IOWR('i', 122, struct ifpppcstatsreq) */
+ 
+ #if !defined(ifr_mtu)
+ #define ifr_mtu	ifr_ifru.ifru_metric
+ #endif
+ 
+-#if (defined(_KERNEL) || defined(KERNEL)) && !defined(NeXT)
+-void pppattach __P((void));
+-void pppintr __P((void));
+-#endif
++/* und dies ist aus ppp.h rueberkopiert: */
++
++/*
++ * Option codes for PPPIOC[SG]FLAGS.
++ */
++#define PPPO_PROT_COMP	0x00000001	/* enable protocol compression */
++#define PPPO_ADDR_COMP	0x00000002	/* enable addr/control compression */
++#define PPPO_IP_DOWN	0x00000004	/* send IP pack. to /dev/ppp? */
++#define PPPO_COMPRESS	0x00000008	/* enable VJ compression */
++#define PPPO_AUTOCOMP	0x00000010	/* enable comp. on TCP_UNCOMP. frame */
++#define PPPO_COMPCID	0x00000020	/* turn on conn. ID compression */
++
++/*
++ * Some notable PPP protocols.
++ */
++#define PPPPROTO_IP		0x0021	/* IP */
++#define PPPPROTO_LCP		0xc021	/* Link Control Protocol */
++#define PPPPROTO_IPCP		0x8021	/* IP Control Protocol */
++#define PPPPROTO_COMP_TCP 	0x002d	/* VJ compressed TCP */
++#define PPPPROTO_UNCOMP_TCP	0x002f	/* VJ uncompressed TCP */
++
+ #endif /* _IF_PPP_H_ */
+diff -urN ppp-2.3.11-orig/mint/Makefile.top ppp-2.3.11/mint/Makefile.top
+--- ppp-2.3.11-orig/mint/Makefile.top	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/mint/Makefile.top	Fri May 19 15:11:22 2000
+@@ -0,0 +1,55 @@
++# PPP top-level Makefile for MiNT
++
++
++BINDIR = $(TOPDIR)/usr/sbin
++MANDIR = $(TOPDIR)/usr/man
++ETCDIR = $(TOPDIR)/etc/ppp
++
++# uid 0 = root
++INSTALL= install # -o 0 -g daemon
++
++all:
++	cd chat; $(MAKE) $(MFLAGS) all
++	cd pppd; $(MAKE) $(MFLAGS) all
++	cd pppdump; $(MAKE) $(MFLAGS) all
++
++install: dirs install-progs install-etcppp
++
++dirs:
++	mkdir -p $(BINDIR) $(MANDIR)/man8 $(ETCDIR)
++
++install-progs:
++	cd chat; $(MAKE) BINDIR=$(BINDIR) MANDIR=$(MANDIR) $(MFLAGS) install
++	cd pppd; $(MAKE) BINDIR=$(BINDIR) MANDIR=$(MANDIR) $(MFLAGS) install
++	cd pppdump; $(MAKE) BINDIR=$(BINDIR) MANDIR=$(MANDIR) $(MFLAGS) install
++
++install-etcppp: $(ETCDIR) $(ETCDIR)/options $(ETCDIR)/pap-secrets \
++	$(ETCDIR)/chap-secrets
++
++$(ETCDIR)/options:
++	$(INSTALL) -c -m 644 etc.ppp/options $@
++$(ETCDIR)/pap-secrets:
++	$(INSTALL) -c -m 600 etc.ppp/pap-secrets $@
++$(ETCDIR)/chap-secrets:
++	$(INSTALL) -c -m 600 etc.ppp/chap-secrets $@
++
++$(BINDIR):
++	$(INSTALL) -d -m 755 $@
++$(MANDIR)/man8:
++	$(INSTALL) -d -m 755 $@
++$(ETCDIR):
++	$(INSTALL) -d -m 755 $@
++
++clean:
++	rm -f `find . -name '*.[oas]' -print`
++	rm -f `find . -name 'core' -print`
++	rm -f `find . -name '*~' -print`
++	cd chat; $(MAKE) clean
++	cd pppd; $(MAKE) clean
++	cd pppdump; $(MAKE) clean
++
++dist-clean:	clean
++	rm -f Makefile `find . -name Makefile -print`
++
++kernel:
++	cd linux; ./kinstall.sh
+diff -urN ppp-2.3.11-orig/pppd/Makefile.mint ppp-2.3.11/pppd/Makefile.mint
+--- ppp-2.3.11-orig/pppd/Makefile.mint	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/pppd/Makefile.mint	Fri May 19 15:11:22 2000
+@@ -0,0 +1,57 @@
++#
++# pppd makefile for FreeMiNT
++# $Id: Makefile.mint,v 1.8 1995/06/30 01:47:13 paulus Exp $
++#
++
++# Default installation locations
++BINDIR = $(TOPDIR)/usr/sbin
++MANDIR = $(TOPDIR)/usr/man
++
++PPPDSRCS = main.c magic.c fsm.c lcp.c ipcp.c upap.c chap.c md5.c ccp.c \
++	   auth.c options.c sys-mint.c md4.c chap_ms.c cbcp.c \
++	   demand.c utils.c
++HEADERS =  callout.h pathnames.h patchlevel.h chap.h md5.h chap_ms.h md4.h \
++	   ipxcp.h cbcp.h
++MANPAGES = pppd.8
++PPPDOBJS = main.o magic.o fsm.o lcp.o ipcp.o upap.o chap.o md5.o ccp.o \
++	   auth.o options.o sys-mint.o md4.o chap_ms.o \
++	   demand.o utils.o
++
++all: pppd
++
++#
++# include dependancies if present and backup if as a header file
++ifeq (.depend,$(wildcard .depend))
++include .depend
++HEADERS := $(HEADERS) .depend
++endif
++
++CC = gcc
++# DEBUG_FLAGS = -DDEBUGALL
++COPTS = -O2 -fomit-frame-pointer -pipe -Wall
++LIBS = -lsocket
++INCLUDE_DIRS= -I../include
++COMPILE_FLAGS = -DHAVE_PATHS_H -DSVR4 \
++	-DCHAPMS=1 \
++	-DMSLANMAN=1 \
++	-DUSE_CRYPT=1 \
++	-DHAVE_CRYPT_H=1
++
++CFLAGS= $(DEBUG_FLAGS) $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS)
++
++
++INSTALL= install -o root
++
++install: pppd
++	mkdir -p $(BINDIR) $(MANDIR)
++	install pppd $(BINDIR)/pppd
++	install pppd.8 $(MANDIR)/man8
++
++pppd: $(PPPDOBJS)
++	$(CC) $(CFLAGS) $(LDFLAGS) -o pppd $(PPPDOBJS) $(LIBS)
++
++clean:
++	rm -f $(PPPDOBJS) pppd *~ #* core
++
++depend:
++	$(CPP) -M $(CFLAGS) $(PPPDSRCS) >.depend
+diff -urN ppp-2.3.11-orig/pppd/sys-mint.c ppp-2.3.11/pppd/sys-mint.c
+--- ppp-2.3.11-orig/pppd/sys-mint.c	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/pppd/sys-mint.c	Fri May 19 15:11:24 2000
+@@ -0,0 +1,1425 @@
++/*
++ * sys-mint.c - System-dependent procedures for setting up
++ * PPP interfaces on MiNT systems
++ *
++ * MintNet specific routines (w) 1996 Kay Roemer.
++ *
++ * Copyright (c) 1989 Carnegie Mellon University.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms are permitted
++ * provided that the above copyright notice and this paragraph are
++ * duplicated in all such forms and that any documentation,
++ * advertising materials, and other materials related to such
++ * distribution and use acknowledge that the software was developed
++ * by Carnegie Mellon University.  The name of the
++ * University may not be used to endorse or promote products derived
++ * from this software without specific prior written permission.
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
++ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
++ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
++ */
++
++#include <errno.h>
++#include <fcntl.h>
++#include <memory.h>
++#include <signal.h>
++#include <sockios.h>
++#include <stdio.h>
++#include <string.h>
++#include <syslog.h>
++#include <termios.h>
++#include <unistd.h>
++
++#include <sys/ioctl.h>
++#include <sys/socket.h>
++#include <sys/stat.h>
++#include <sys/time.h>
++#include <sys/types.h>
++
++#include <pty.h>
++
++#include <net/if.h>
++#include <net/if_arp.h>
++#include <net/if_ppp.h>
++#include <net/ppp_defs.h>
++#include <net/route.h>
++#include <netinet/in.h>
++
++#include "pppd.h"
++#include "fsm.h"
++#include "ipcp.h"
++
++long _stksize = 64 * 1024;
++
++static int pppfd = -10;
++static int sockfd = -10;
++
++static fd_set in_fds;		/* set of fds that wait_input waits for */
++static int max_in_fd;		/* highest fd set in in_fds */
++
++static int if_is_up;		/* the interface is currently up */
++static u_int32_t ifaddrs[2];	/* local and remote addresses we set */
++static u_int32_t default_route_gateway;	/* gateway addr for default route */
++static u_int32_t proxy_arp_addr;	/* remote addr for proxy arp */
++
++static char pppdev[MAXNAMELEN];
++static struct termios inittermios;
++static int restore_term = 0;
++
++#define MAX_IFS		32
++#ifndef PPP_MTU
++#define PPP_MTU		1500
++#endif
++
++/* Prototypes for procedures local to this file. */
++static int get_ether_addr (u_int32_t, struct sockaddr *);
++
++
++/* prototypes */
++void die         (int);
++
++extern int	if_link		(char *, char *);
++extern int	if_getlnkflags	(char *, short *);
++extern int	if_setlnkflags	(char *, short);
++extern int	if_getifflags	(char *, short *);
++extern int	if_setifflags	(char *, short);
++
++extern void		setrtent (void);
++extern void		endrtent (void);
++extern struct rtentry *	getrtent (void);
++
++
++
++/*
++ * sys_init - System-dependent initialization.
++ */
++void
++sys_init(void)
++{
++    openlog("pppd", LOG_PID | LOG_NDELAY, LOG_PPP);
++    setlogmask(LOG_UPTO(LOG_INFO));
++    if (debug) {
++	setlogmask(LOG_UPTO(LOG_DEBUG));
++    }
++
++    /* Get an internet socket for doing socket ioctls. */
++    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
++    if (sockfd < 0) {
++	syslog(LOG_ERR, "Couldn't create IP socket: %m");
++	die(1);
++    }
++
++    FD_ZERO(&in_fds);
++    max_in_fd = 0;
++}
++
++
++/*
++ * sys_cleanup - restore any system state we modified before exiting:
++ * mark the interface down, delete default route and/or proxy arp entry.
++ * This should call die() because it's called from die().
++ */
++void
++sys_cleanup(void)
++{
++    struct ifreq ifr;
++
++    if (if_is_up) {
++	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
++	if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) >= 0
++	    && ((ifr.ifr_flags & IFF_UP) != 0)) {
++	    ifr.ifr_flags &= ~IFF_UP;
++	    ioctl(sockfd, SIOCSIFFLAGS, &ifr);
++	}
++    }
++
++    if (ifaddrs[0] != 0)
++	cifaddr(0, ifaddrs[0], ifaddrs[1]);
++
++    if (default_route_gateway)
++	cifdefaultroute(0, 0, default_route_gateway);
++
++    if (proxy_arp_addr)
++	cifproxyarp(0, proxy_arp_addr);
++}
++
++
++/*
++ * sys_close - Clean up in a child process before execing.
++ */
++void
++sys_close(void)
++{
++    close(sockfd);
++#if 0
++    if (loop_slave >= 0) {
++	close(loop_slave);
++	close(loop_master);
++    }
++#endif
++}
++
++
++/*
++ * sys_check_options - check the options that the user specified
++ */
++int
++sys_check_options(void)
++{
++    if (demand) {
++	option_error("demand dialling is not supported by kernel driver");
++	return 0;
++    }
++    return 1;
++}
++
++
++/*
++ * ppp_available - check whether the system has any ppp interfaces
++ * (in fact we check whether we can do an ioctl on ppp0).
++ */
++int
++ppp_available(void)
++{
++    int s, ok;
++    struct ifreq ifr;
++
++    s = socket(AF_INET, SOCK_DGRAM, 0);
++    if (s < 0)
++	return 1;		/* can't tell - maybe we're not root */
++
++    strncpy(ifr.ifr_name, "ppp0", sizeof (ifr.ifr_name));
++    ok = ioctl(s, SIOCGIFFLAGS, (caddr_t) &ifr) >= 0;
++    close(s);
++
++    return ok;
++}
++
++
++/*
++ * establish_ppp - Turn the serial port into a ppp interface.
++ */
++int
++establish_ppp(int tty_fd)
++{
++    /* int pid = getpid (); */
++    char *ttydev = ttyname (tty_fd);
++    char iname[IFNAMSIZ];
++    long flags;
++    short sflags;
++
++    if (!ttydev) {
++	syslog (LOG_ERR, "not a tty");
++	die (1);
++    }
++    strcpy (iname, "ppp");
++    if (if_link (ttydev, iname)) {
++	syslog (LOG_ERR, "cannot link %s to PPP interface: %m", ttydev);
++	die (1);
++    }
++    if (sscanf (iname, "ppp%d", &ifunit) != 1) {
++	syslog (LOG_ERR, "invalid interface name: %s", iname);
++	die (1);
++    }
++    sprintf (pppdev, "/dev/%s", iname);
++    pppfd = open (pppdev, O_RDWR|O_NDELAY);
++    if (pppfd < 0) {
++	syslog (LOG_ERR, "cannot open PPP device %s: %m", pppdev);
++	die (1);
++    }
++#if 0
++    if (ioctl (pppfd, PPPIOCSPGRP, &pid) < 0) {
++	syslog (LOG_ERR, "cannot set pgrp for interface %s: %m", iname);
++	die (1);
++    }
++#endif
++    flags = PPPO_IP_DOWN;
++    if (ioctl (pppfd, PPPIOCSFLAGS, &flags) < 0) {
++	syslog (LOG_ERR, "cannot set flags on interface %s: %m", iname);
++	die (1);
++    }
++    if (if_getifflags (iname, &sflags) ||
++        if_setifflags (iname, sflags | IFF_UP)) {
++	syslog (LOG_ERR, "cannot UP interface %s: %m", iname);
++	die (1);
++    }
++    return pppfd;
++}
++
++
++/*
++ * restore_loop - reattach the ppp unit to the loopback.
++ */
++void
++restore_loop(void)
++{
++#if 0
++    int x;
++
++    /*
++     * Transfer the ppp interface back to the loopback.
++     */
++    if (ioctl(ppp_fd, PPPIOCXFERUNIT, 0) < 0)
++	fatal("ioctl(transfer ppp unit): %m");
++    x = PPPDISC;
++    if (ioctl(loop_slave, TIOCSETD, &x) < 0)
++	fatal("ioctl(TIOCSETD): %m");
++
++    /*
++     * Check that we got the same unit again.
++     */
++    if (ioctl(loop_slave, PPPIOCGUNIT, &x) < 0)
++	fatal("ioctl(PPPIOCGUNIT): %m");
++    if (x != ifunit)
++	fatal("transfer_ppp failed: wanted unit %d, got %d", ifunit, x);
++    ppp_fd = loop_slave;
++#endif
++}
++
++
++/*
++ * disestablish_ppp - Restore the serial port to normal operation.
++ * This shouldn't call die() because it's called from die().
++ */
++void
++disestablish_ppp(int tty_fd)
++{
++    short flags;
++
++    if (pppfd >= 0) {
++    	close (pppfd);
++    	pppfd = -10;
++	if (if_getifflags (ifname, &flags) ||
++	    if_setifflags (ifname, flags | IFF_UP) ||
++	    if_setifflags (ifname, flags & ~IFF_UP)) {
++		syslog (LOG_WARNING, "cannot shut down interface %s", ifname);
++		return;
++	}
++    }
++}
++
++
++/*
++ * Check whether the link seems not to be 8-bit clean.
++ */
++void
++clean_check(void)
++{
++    int x;
++    char *s;
++
++    if (ioctl(pppfd, PPPIOCGFLAGS, (caddr_t) &x) == 0) {
++	s = NULL;
++	switch (~x & (SC_RCV_B7_0|SC_RCV_B7_1|SC_RCV_EVNP|SC_RCV_ODDP)) {
++	case SC_RCV_B7_0:
++	    s = "bit 7 set to 1";
++	    break;
++	case SC_RCV_B7_1:
++	    s = "bit 7 set to 0";
++	    break;
++	case SC_RCV_EVNP:
++	    s = "odd parity";
++	    break;
++	case SC_RCV_ODDP:
++	    s = "even parity";
++	    break;
++	}
++	if (s != NULL) {
++	    warn("Serial link is not 8-bit clean:");
++	    warn("All received characters had %s", s);
++	}
++    }
++}
++
++
++/*
++ * List of valid speeds.
++ */
++struct speed {
++    int speed_int, speed_val;
++} speeds[] = {
++    { 50, B50 },
++    { 75, B75 },
++    { 110, B110 },
++    { 134, B134 },
++    { 150, B150 },
++    { 200, B200 },
++    { 300, B300 },
++    { 600, B600 },
++    { 1200, B1200 },
++    { 1800, B1800 },
++    { 2400, B2400 },
++    { 4800, B4800 },
++    { 9600, B9600 },
++    { 19200, B19200 },
++    { 38400, B38400 },
++    { 57600, B57600 },
++    { 115200, B115200 },
++    { 230400, B230400 },
++    { 0, 0 }
++};
++
++
++/*
++ * Translate from bits/second to a speed_t.
++ */
++static int
++translate_speed(int bps)
++{
++    struct speed *speedp;
++
++    if (bps != 0) {
++	for (speedp = speeds; speedp->speed_int; speedp++)
++	    if (bps == speedp->speed_int)
++		return speedp->speed_val;
++
++	syslog(LOG_WARNING, "speed %d not supported", bps);
++    }
++
++    return 0;
++}
++
++
++/*
++ * Translate from a speed_t to bits/second.
++ */
++static int
++baud_rate_of(int speed)
++{
++    struct speed *speedp;
++
++    if (speed != 0)
++	for (speedp = speeds; speedp->speed_int; speedp++)
++	    if (speed == speedp->speed_val)
++		return speedp->speed_int;
++
++    return 0;
++}
++
++
++/*
++ * set_up_tty: Set up the serial port on `fd' for 8 bits, no parity,
++ * at the requested speed, etc.  If `local' is true, set CLOCAL
++ * regardless of whether the modem option was specified.
++ */
++void
++set_up_tty(int fd, int local)
++{
++    int speed;
++    struct termios tios;
++
++    if (tcgetattr(fd, &tios) < 0) {
++	syslog(LOG_ERR, "tcgetattr: %m");
++	die(1);
++    }
++
++    if (!restore_term)
++	inittermios = tios;
++
++    tios.c_cflag     &= ~(CSIZE | CSTOPB | PARENB | CLOCAL);
++    tios.c_cflag     |= CS8 | CREAD | HUPCL;
++
++    tios.c_iflag      = IGNBRK | IGNPAR;
++    tios.c_oflag      = 0;
++    tios.c_lflag      = 0;
++    tios.c_cc[VMIN]   = 1;
++    tios.c_cc[VTIME]  = 0;
++
++    if (local || !modem) {
++	tios.c_cflag ^= (CLOCAL | HUPCL);
++    }
++
++    switch (crtscts) {
++	case 1:
++	    tios.c_cflag |= CRTSCTS;
++	    break;
++
++	case 2:
++	    tios.c_iflag     |= IXOFF;
++	    tios.c_cc[VSTOP]  = 0x13;	/* DC3 = XOFF = ^S */
++	    tios.c_cc[VSTART] = 0x11;	/* DC1 = XON  = ^Q */
++	    break;
++
++	case -1:
++	    tios.c_cflag &= ~CRTSCTS;
++	    break;
++
++	default:
++	    break;
++    }
++
++    speed = translate_speed(inspeed);
++    if (speed) {
++	cfsetospeed (&tios, speed);
++	cfsetispeed (&tios, speed);
++    } else {
++	speed = cfgetospeed(&tios);
++
++	/* We can't proceed if the serial port speed is B0,
++	 * since that implies that the serial port is disabled.
++	 */
++	if (speed == B0) {
++	    syslog(LOG_ERR, "Baud rate for %s is 0; need explicit baud rate", devnam);
++	    die (1);
++	}
++    }
++
++    if (tcsetattr(fd, TCSANOW, &tios) < 0) {
++	syslog(LOG_ERR, "tcsetattr: %m");
++	die(1);
++    }
++
++    baud_rate    = baud_rate_of(speed);
++    restore_term = 1;
++}
++
++
++/*
++ * restore_tty - restore the terminal to the saved settings.
++ */
++void
++restore_tty (int tty_fd)
++{
++    if (restore_term) {
++	restore_term = 0;
++
++	/* Turn off echoing, because otherwise we can get into
++	 * a loop with the tty and the modem echoing to each other.
++	 * We presume we are the sole user of this tty device, so
++	 * when we close it, it will revert to its defaults anyway.
++	 */
++	if (!default_device) {
++	    inittermios.c_lflag &= ~(ECHO | ECHONL);
++	}
++
++	if (tcsetattr(tty_fd, TCSANOW, &inittermios) < 0) {
++	    if (errno != EIO) {
++		syslog(LOG_WARNING, "tcsetattr: %m");
++	    }
++	}
++    }
++}
++
++
++/*
++ * setdtr - control the DTR line on the serial port.
++ * This is called from die(), so it shouldn't call die().
++ */
++void
++setdtr(int fd, int on)
++{
++#if 0
++    int modembits = TIOCM_DTR;
++
++    ioctl(fd, (on? TIOCMBIS: TIOCMBIC), &modembits);
++#else
++    speed_t ospeed;
++    struct termios t;
++
++    if (tcgetattr (fd, &t) < 0)
++	return;
++
++    ospeed = cfgetispeed (&t);
++    if (on && ospeed == B0) {
++	cfsetispeed (&t, B9600);
++	cfsetospeed (&t, B9600);
++	tcsetattr (fd, TCSANOW, &t);
++	tcflush (fd, TCIFLUSH);
++    } else if (!on && ospeed != B0) {
++	cfsetispeed (&t, B0);
++	cfsetospeed (&t, B0);
++	tcsetattr (fd, TCSANOW, &t);
++	usleep (500000L);
++	cfsetispeed (&t, ospeed);
++	cfsetospeed (&t, ospeed);
++	tcsetattr (fd, TCSANOW, &t);
++    }
++#endif
++}
++
++
++/*
++ * get_pty - get a pty master/slave pair and chown the slave side
++ * to the uid given.  Assumes slave_name points to >= 12 bytes of space.
++ */
++int
++get_pty(int *master_fdp, int *slave_fdp, char *slave_name, int uid)
++{
++    struct termios tios;
++
++    if (openpty(master_fdp, slave_fdp, slave_name, NULL, NULL) < 0)
++	return 0;
++
++    fchown(*slave_fdp, uid, -1);
++    fchmod(*slave_fdp, S_IRUSR | S_IWUSR);
++    if (tcgetattr(*slave_fdp, &tios) == 0) {
++	tios.c_cflag &= ~(CSIZE | CSTOPB | PARENB);
++	tios.c_cflag |= CS8 | CREAD;
++	tios.c_iflag  = IGNPAR | CLOCAL;
++	tios.c_oflag  = 0;
++	tios.c_lflag  = 0;
++	if (tcsetattr(*slave_fdp, TCSAFLUSH, &tios) < 0)
++	    warn("couldn't set attributes on pty: %m");
++    } else
++	warn("couldn't get attributes on pty: %m");
++
++    return 1;
++}
++
++
++/*
++ * open_ppp_loopback - open the device we use for getting
++ * packets in demand mode, and connect it to a ppp interface.
++ * Here we use a pty.
++ */
++int
++open_ppp_loopback(void)
++{
++#if 1
++    fatal("open_ppp_loopback called!");
++    return -1;
++#else
++    int flags;
++    struct termios tios;
++    int pppdisc = PPPDISC;
++
++    if (openpty(&loop_master, &loop_slave, loop_name, NULL, NULL) < 0)
++	fatal("No free pty for loopback");
++    SYSDEBUG(("using %s for loopback", loop_name));
++
++    if (tcgetattr(loop_slave, &tios) == 0) {
++	tios.c_cflag &= ~(CSIZE | CSTOPB | PARENB);
++	tios.c_cflag |= CS8 | CREAD;
++	tios.c_iflag = IGNPAR;
++	tios.c_oflag = 0;
++	tios.c_lflag = 0;
++	if (tcsetattr(loop_slave, TCSAFLUSH, &tios) < 0)
++	    warn("couldn't set attributes on loopback: %m");
++    }
++
++    if ((flags = fcntl(loop_master, F_GETFL)) != -1) 
++	if (fcntl(loop_master, F_SETFL, flags | O_NONBLOCK) == -1)
++	    warn("couldn't set loopback to nonblock: %m");
++
++    ppp_fd = loop_slave;
++    if (ioctl(ppp_fd, TIOCSETD, &pppdisc) < 0)
++	fatal("ioctl(TIOCSETD): %m");
++
++    /*
++     * Find out which interface we were given.
++     */
++    if (ioctl(ppp_fd, PPPIOCGUNIT, &ifunit) < 0)
++	fatal("ioctl(PPPIOCGUNIT): %m");
++
++    /*
++     * Enable debug in the driver if requested.
++     */
++    if (kdebugflag) {
++	if (ioctl(ppp_fd, PPPIOCGFLAGS, (caddr_t) &flags) < 0) {
++	    warn("ioctl (PPPIOCGFLAGS): %m");
++	} else {
++	    flags |= (kdebugflag & 0xFF) * SC_DEBUG;
++	    if (ioctl(ppp_fd, PPPIOCSFLAGS, (caddr_t) &flags) < 0)
++		warn("ioctl(PPPIOCSFLAGS): %m");
++	}
++    }
++
++    return loop_master;
++#endif
++}
++
++
++/*
++ * output - Output PPP packet.
++ */
++void
++output(int unit, u_char *p, int len)
++{
++    if (debug)
++	dbglog("sent %P", p, len);
++
++    if (len < PPP_HDRLEN)
++	return;
++
++#if 0
++    if (write (pppfd, p, len) < 0) {
++	syslog (LOG_ERR, "write: %m", errno);
++	die (1);
++    }
++#else
++    if (write(pppfd, p, len) < 0) {
++	if (errno == EWOULDBLOCK || errno == ENOBUFS
++	    || errno == ENXIO || errno == EIO || errno == EINTR)
++	    warn("write: warning: %m (%d)", errno);
++	else
++	    error("write: %m (%d)", errno);
++    }
++#endif
++}
++
++
++/*
++ * wait_input - wait until there is data available on fd,
++ * for the length of time specified by *timo (indefinite
++ * if timo is NULL).
++ */
++
++void
++wait_input (struct timeval *timo)
++{
++#if 1
++    fd_set ready;
++    int n;
++
++    ready = in_fds;
++    n = select(max_in_fd + 1, &ready, NULL, &ready, timo);
++    if (n < 0 && errno != EINTR)
++	fatal("select: %m");
++#else
++    fd_set ready;
++    int n;
++
++    FD_ZERO(&ready);
++    FD_SET(pppfd, &ready);
++
++    n = select(pppfd+1, &ready, NULL, &ready, timo);
++    if (n < 0 && errno != EINTR)
++    {
++	syslog(LOG_ERR, "select: %m");
++	die(1);
++    }
++#endif
++}
++
++
++/*
++ * add_fd - add an fd to the set that wait_input waits for.
++ */
++void
++add_fd(int fd)
++{
++    FD_SET(fd, &in_fds);
++    if (fd > max_in_fd)
++	max_in_fd = fd;
++}
++
++
++/*
++ * remove_fd - remove an fd from the set that wait_input waits for.
++ */
++void
++remove_fd(int fd)
++{
++    FD_CLR(fd, &in_fds);
++}
++
++
++/*
++ * read_packet - get a PPP packet from the serial device.
++ */
++int
++read_packet (u_char *buf)
++{
++    int len;
++
++    len = read (pppfd, buf, PPP_MTU + PPP_HDRLEN);
++
++    /* special case for MiNT */
++    if (len == 0)
++	return -1;
++
++    if (len < 0) {
++	if (errno == EWOULDBLOCK || errno == EINTR)
++	    return -1;
++	
++	syslog (LOG_ERR, "read: %m");
++	die (1);
++    }
++
++    return len;
++}
++
++
++/*
++ * get_loop_output - read characters from the loopback, form them
++ * into frames, and detect when we want to bring the real link up.
++ * Return value is 1 if we need to bring up the link, 0 otherwise.
++ */
++int
++get_loop_output(void)
++{
++#if 1
++    return 0;
++#else
++    int rv = 0;
++    int n;
++
++    while ((n = read(loop_master, inbuf, sizeof(inbuf))) >= 0) {
++	if (loop_chars(inbuf, n))
++	    rv = 1;
++    }
++
++    if (n == 0)
++	fatal("eof on loopback");
++    if (errno != EWOULDBLOCK)
++	fatal("read from loopback: %m");
++
++    return rv;
++#endif
++}
++
++
++/*
++ * ppp_send_config - configure the transmit characteristics of
++ * the ppp interface.
++ */
++void
++ppp_send_config (int unit,int mtu,u_int32_t asyncmap,int pcomp,int accomp)
++{
++    u_long flags, xmap[8];
++
++    if (ioctl (pppfd, PPPIOCGFLAGS, &flags) < 0) {
++	syslog (LOG_ERR, "cannot get flags on interface %s: %m", ifname);
++	die (1);
++    }
++    flags = pcomp  ? (flags | PPPO_PROT_COMP) : (flags & ~PPPO_PROT_COMP);
++    flags = accomp ? (flags | PPPO_ADDR_COMP) : (flags & ~PPPO_ADDR_COMP);
++    if (ioctl (pppfd, PPPIOCSFLAGS, &flags) < 0) {
++	syslog (LOG_ERR, "cannot set flags on interface %s: %m", ifname);
++	die (1);
++    }
++    if (ioctl (pppfd, PPPIOCSMTU, &mtu) < 0) {
++	syslog (LOG_ERR, "cannot set mtu on interface %s: %m", ifname);
++	die (1);
++    }
++    if (ioctl (pppfd, PPPIOCGXMAP, xmap) < 0) {
++	syslog (LOG_ERR, "cannot get xmap on interface %s: %m", ifname);
++	die (1);
++    }
++    xmap[0] = asyncmap;
++    if (ioctl (pppfd, PPPIOCSXMAP, xmap) < 0) {
++	syslog (LOG_ERR, "cannot set xmap on interface %s: %m", ifname);
++	die (1);
++    }
++}
++
++
++/*
++ * ppp_set_xaccm - set the extended transmit ACCM for the interface.
++ */
++void
++ppp_set_xaccm(int unit, ext_accm accm)
++{
++    MAINDEBUG ((LOG_DEBUG, "set_xaccm: %08lx %08lx %08lx %08lx\n",
++		accm[0], accm[1], accm[2], accm[3]));
++    if (ioctl (pppfd, PPPIOCSXMAP, accm) < 0)
++	syslog (LOG_WARNING, "cannot set extended ACCM on if %s: %m", ifname);
++}
++
++
++/*
++ * ppp_recv_config - configure the receive-side characteristics of
++ * the ppp interface.
++ *
++ * BUG: cannot tell PPP to reject frames with proto/address compression
++ * turned on.
++ */
++void
++ppp_recv_config(int unit,int mru,u_int32_t asyncmap,int pcomp,int accomp)
++{
++    if (ioctl (pppfd, PPPIOCSMRU, &mru) < 0) {
++	syslog (LOG_ERR, "cannot set mru on interface %s: %m", ifname);
++	die (1);
++    }
++    if (ioctl (pppfd, PPPIOCSRMAP, &asyncmap) < 0) {
++	syslog (LOG_ERR, "cannot set rmap on interface %s: %m", ifname);
++	die (1);
++    }
++}
++
++
++/*
++ * ccp_test - ask kernel whether a given compression method
++ * is acceptable for use.  Returns 1 if the method and parameters
++ * are OK, 0 if the method is known but the parameters are not OK
++ * (e.g. code size should be reduced), or -1 if the method is unknown.
++ */
++int
++ccp_test(int unit, u_char *opt_ptr, int opt_len, int for_transmit)
++{
++    return -1;
++}
++
++
++/*
++ * ccp_flags_set - inform kernel about the current state of CCP.
++ */
++void
++ccp_flags_set(int unit, int isopen, int isup)
++{
++}
++
++
++/*
++ * ccp_fatal_error - returns 1 if decompression was disabled as a
++ * result of an error detected after decompression of a packet,
++ * 0 otherwise.  This is necessary because of patent nonsense.
++ */
++int
++ccp_fatal_error(int unit)
++{
++    return 0;
++}
++
++
++/*
++ * get_idle_time - return how long the link has been idle.
++ */
++int
++get_idle_time(int u, struct ppp_idle *ip)
++{
++#if 1
++    return 0;
++#else
++    return ioctl(pppfd, PPPIOCGIDLE, ip) >= 0;
++#endif
++}
++
++
++/*
++ * get_ppp_stats - return statistics for the link.
++ */
++int
++get_ppp_stats(int u, struct pppd_stats *stats)
++{
++#if 1
++    return 0;
++#else
++    struct ifpppstatsreq req;
++
++    memset (&req, 0, sizeof (req));
++    strlcpy(req.ifr_name, ifname, sizeof(req.ifr_name));
++    if (ioctl(sockfd, SIOCGPPPSTATS, &req) < 0) {
++	error("Couldn't get PPP statistics: %m");
++	return 0;
++    }
++    stats->bytes_in = req.stats.p.ppp_ibytes;
++    stats->bytes_out = req.stats.p.ppp_obytes;
++    return 1;
++#endif
++}
++
++
++/*
++ * sifvjcomp - config tcp header compression
++ */
++int
++sifvjcomp(int u, int vjcomp, int cidcomp, int maxcid)
++{
++    long flags;
++
++    if (ioctl (pppfd, PPPIOCGFLAGS, &flags) < 0) {
++	syslog (LOG_ERR, "cannot get flags on interface %s: %m", ifname);
++	return 0;
++    }
++    flags |= PPPO_AUTOCOMP;
++    flags = vjcomp  ? (flags | PPPO_COMPRESS) : (flags & ~PPPO_COMPRESS);
++    flags = cidcomp ? (flags | PPPO_COMPCID)  : (flags & ~PPPO_COMPCID);
++    if (ioctl (pppfd, PPPIOCSFLAGS, &flags) < 0) {
++	syslog (LOG_ERR, "cannot set flags on interface %s: %m", ifname);
++	return 0;
++    }
++    /*
++     * The maxcid is currently hardcoded to 16 (MintNet 0.60)
++     */
++    flags = (long)maxcid;
++    if (ioctl (pppfd, PPPIOCSSLOTS, &flags) < 0) {
++	syslog (LOG_ERR, "cannot set max VJ comp slot ID: %m");
++	return 0;
++    }
++    return 1;
++}
++
++
++/*
++ * sifup - Config the interface up and enable IP packets to pass.
++ */
++int
++sifup(int u)
++{
++    long lflags;
++
++    if (ioctl (pppfd, PPPIOCGFLAGS, &lflags) < 0) {
++	syslog (LOG_ERR, "cannot get flags on interface %s: %m", ifname);
++	return 0;
++    }
++
++    lflags &= ~PPPO_IP_DOWN;
++    if (ioctl (pppfd, PPPIOCSFLAGS, &lflags) < 0) {
++	syslog (LOG_ERR, "cannot set flags on interface %s: %m", ifname);
++	return 0;
++    }
++
++    if_is_up = 1;
++    return 1;
++}
++
++
++/*
++ * sifnpmode - Set the mode for handling packets for a given NP.
++ */
++int
++sifnpmode(int u, int proto, enum NPmode mode)
++{
++#if 0
++    /* not supported by MiNT ??? */
++    struct npioctl npi;
++
++    npi.protocol = proto;
++    npi.mode = mode;
++    if (ioctl(pppfd, PPPIOCSNPMODE, &npi) < 0) {
++	error("ioctl(set NP %d mode to %d): %m", proto, mode);
++	return 0;
++    }
++#endif
++    return 1;
++}
++
++
++/*
++ * sifdown - Config the interface down and disable IP.
++ */
++int
++sifdown(int u)
++{
++    long lflags;
++
++    if (ioctl (pppfd, PPPIOCGFLAGS, &lflags) < 0) {
++	syslog (LOG_ERR, "cannot get flags on interface %s: %m", ifname);
++	return 0;
++    }
++
++    lflags |= PPPO_IP_DOWN;
++    if (ioctl (pppfd, PPPIOCSFLAGS, &lflags) < 0) {
++	syslog (LOG_ERR, "cannot set flags on interface %s: %m", ifname);
++	return 0;
++    }
++
++    if_is_up = 0;
++    return 1;
++}
++
++
++/*
++ * SET_SA_FAMILY - set the sa_family field of a struct sockaddr,
++ * if it exists.
++ */
++
++#define SET_SA_FAMILY(addr, family)			\
++    memset ((char *) &(addr), '\0', sizeof(addr));	\
++    addr.sa_family = (family);
++
++/*
++ * sifaddr - Config the interface IP addresses and netmask.
++ */
++int
++sifaddr(int unit, u_int32_t our_adr, u_int32_t his_adr, u_int32_t net_mask)
++{
++    struct ifreq   ifr; 
++    struct rtentry rt;
++    
++    SET_SA_FAMILY (ifr.ifr_addr,    AF_INET); 
++    SET_SA_FAMILY (ifr.ifr_dstaddr, AF_INET); 
++
++    strncpy (ifr.ifr_name, ifname, sizeof (ifr.ifr_name));
++/*
++ *  Set our IP address
++ */
++    ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr.s_addr = our_adr;
++    if (ioctl(sockfd, SIOCSIFADDR, (caddr_t) &ifr) < 0) {
++	syslog (LOG_ERR, "cannot set address on interface %s: %m", ifname);
++	return 0;
++    } 
++/*
++ *  Set the gateway address
++ */
++    ((struct sockaddr_in *) &ifr.ifr_dstaddr)->sin_addr.s_addr = his_adr;
++    if (ioctl(sockfd, SIOCSIFDSTADDR, (caddr_t) &ifr) < 0) {
++	syslog (LOG_ERR, "cannot set dst address on interface %s: %m", ifname);
++	return 0;
++    }
++/*
++ *  Set the netmask
++ */
++    if (net_mask != 0) {
++	((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr.s_addr = net_mask;
++	if (ioctl(sockfd, SIOCSIFNETMASK, (caddr_t) &ifr) < 0) {
++	    syslog (LOG_ERR, "cannot set netmask on interface %s: %m", ifname);
++	    return 0;
++        }
++    }
++/*
++ *  Add the device route
++ */
++    memset (&rt, '\0', sizeof (rt));
++
++    SET_SA_FAMILY (rt.rt_dst,     AF_INET);
++    SET_SA_FAMILY (rt.rt_gateway, AF_INET);
++
++    ((struct sockaddr_in *) &rt.rt_gateway)->sin_addr.s_addr = 0;
++    ((struct sockaddr_in *) &rt.rt_dst)->sin_addr.s_addr     = his_adr;
++    rt.rt_flags = RTF_UP | RTF_HOST;
++
++    if (ioctl(sockfd, SIOCADDRT, &rt) < 0) {
++	syslog (LOG_ERR, "cannot add device route: %m");
++	return 0;
++    }
++    ifaddrs[0] = our_adr;
++    ifaddrs[1] = his_adr;
++    return 1;
++}
++
++
++/*
++ * cifaddr - Clear the interface IP addresses, and delete routes
++ * through the interface if possible.
++ */
++int
++cifaddr(int unit, u_int32_t our_adr, u_int32_t his_adr)
++{
++    struct rtentry rt;
++/*
++ *  Delete the route through the device
++ */
++    ifaddrs[0] = 0;
++    memset (&rt, '\0', sizeof (rt));
++
++    SET_SA_FAMILY (rt.rt_dst,     AF_INET);
++    SET_SA_FAMILY (rt.rt_gateway, AF_INET);
++
++    ((struct sockaddr_in *) &rt.rt_gateway)->sin_addr.s_addr = 0;
++    ((struct sockaddr_in *) &rt.rt_dst)->sin_addr.s_addr     = his_adr;
++    rt.rt_flags = RTF_UP | RTF_HOST;
++
++    if (ioctl(sockfd, SIOCDELRT, &rt) < 0) {
++	syslog (LOG_ERR, "cannot delete device route: %m");
++	return 0;
++    }
++
++    return 1;
++}
++
++
++/*
++ * sifdefaultroute - assign a default route through the address given.
++ */
++int
++sifdefaultroute(int unit, u_int32_t ouraddr, u_int32_t gateway)
++{
++    struct rtentry rt, *rtp;
++
++    setrtent ();
++    while ((rtp = getrtent ())) {
++	if (rtp->rt_flags & RTF_GATEWAY &&
++	    !((struct sockaddr_in *)&rtp->rt_dst)->sin_addr.s_addr) {
++		syslog (LOG_WARNING, "default route already exits");
++		endrtent ();
++		return 0;
++	}
++    }
++    endrtent ();
++
++    memset (&rt, '\0', sizeof (rt));
++    SET_SA_FAMILY (rt.rt_dst,     AF_INET);
++    SET_SA_FAMILY (rt.rt_gateway, AF_INET);
++    ((struct sockaddr_in *) &rt.rt_gateway)->sin_addr.s_addr = gateway;
++    
++    rt.rt_flags = RTF_UP | RTF_GATEWAY;
++    if (ioctl(sockfd, SIOCADDRT, &rt) < 0) {
++	syslog (LOG_ERR, "cannot add default route: %m");
++	return 0;
++    }
++
++    return 1;
++}
++
++
++/*
++ * cifdefaultroute - delete a default route through the address given.
++ */
++int
++cifdefaultroute(int unit, u_int32_t ouraddr, u_int32_t gateway)
++{
++    struct rtentry rt;
++  
++    SET_SA_FAMILY (rt.rt_dst,     AF_INET);
++    SET_SA_FAMILY (rt.rt_gateway, AF_INET);
++    ((struct sockaddr_in *) &rt.rt_gateway)->sin_addr.s_addr = gateway;
++    
++    rt.rt_flags = RTF_UP | RTF_GATEWAY;
++    if (ioctl(sockfd, SIOCDELRT, &rt) < 0) {
++	syslog (LOG_ERR, "default route ioctl(SIOCDELRT): %m");
++	return 0;
++    }
++
++    return 1;
++}
++
++
++/*
++ * sifproxyarp - Make a proxy ARP entry for the peer.
++ */
++int
++sifproxyarp(int unit, u_int32_t his_adr)
++{
++    struct arpreq arpreq;
++
++    memset (&arpreq, '\0', sizeof(arpreq));
++/*
++ * Get the hardware address of an interface on the same subnet
++ * as our local address.
++ */
++    if (!get_ether_addr(his_adr, &arpreq.arp_ha)) {
++	syslog(LOG_ERR, "Cannot determine ethernet address for proxy ARP");
++	return 0;
++    }
++    
++    SET_SA_FAMILY(arpreq.arp_pa, AF_INET);
++    ((struct sockaddr_in *) &arpreq.arp_pa)->sin_addr.s_addr = his_adr;
++    arpreq.arp_flags = ATF_PERM | ATF_PUBL;
++    
++    if (ioctl(sockfd, SIOCSARP, &arpreq) < 0) {
++	syslog(LOG_ERR, "ioctl(SIOCSARP): %m");
++	return 0;
++    }
++
++    proxy_arp_addr = his_adr;
++    return 1;
++}
++
++
++/*
++ * cifproxyarp - Delete the proxy ARP entry for the peer.
++ */
++int
++cifproxyarp(int unit, u_int32_t his_adr)
++{
++    struct arpreq arpreq;
++  
++    memset (&arpreq, '\0', sizeof(arpreq));
++    SET_SA_FAMILY(arpreq.arp_pa, AF_INET);
++    
++    ((struct sockaddr_in *) &arpreq.arp_pa)->sin_addr.s_addr = his_adr;
++    if (ioctl(sockfd, SIOCDARP, &arpreq) < 0) {
++	syslog(LOG_WARNING, "ioctl(SIOCDARP): %m");
++	return 0;
++    }
++    
++    proxy_arp_addr = 0;
++    return 1;
++}
++
++     
++/*
++ * get_ether_addr - get the hardware address of an interface on the
++ * the same subnet as ipaddr.
++ */
++static int
++get_ether_addr(u_int32_t ipaddr, struct sockaddr *hwaddr)
++{
++    struct ifreq *ifr, *ifend;
++    u_long ina, mask;
++    struct ifreq ifreq;
++    struct ifconf ifc;
++    struct ifreq ifs[MAX_IFS];
++    
++    ifc.ifc_len = sizeof(ifs);
++    ifc.ifc_req = ifs;
++    if (ioctl(sockfd, SIOCGIFCONF, &ifc) < 0) {
++	syslog(LOG_ERR, "cannot get interface list: %m");
++	return 0;
++    }
++    MAINDEBUG ((LOG_DEBUG, "proxy arp: scanning %d interfaces for IP %s",
++		ifc.ifc_len / sizeof(struct ifreq), ip_ntoa(ipaddr)));
++/*
++ * Scan through looking for an interface with an Internet
++ * address on the same subnet as `ipaddr'.
++ */
++    ifend = ifs + (ifc.ifc_len / sizeof(struct ifreq));
++    for (ifr = ifc.ifc_req; ifr < ifend; ifr++) {
++	if (ifr->ifr_addr.sa_family == AF_INET) {
++	    ina = ((struct sockaddr_in *) &ifr->ifr_addr)->sin_addr.s_addr;
++	    strncpy(ifreq.ifr_name, ifr->ifr_name, sizeof(ifreq.ifr_name));
++            MAINDEBUG ((LOG_DEBUG, "proxy arp: examining interface %s",
++			ifreq.ifr_name));
++/*
++ * Check that the interface is up, and not point-to-point
++ * or loopback.
++ */
++	    if (ioctl(sockfd, SIOCGIFFLAGS, &ifreq) < 0)
++		continue;
++	    if ((ifreq.ifr_flags &
++		 (IFF_UP|IFF_BROADCAST|IFF_POINTOPOINT|IFF_LOOPBACK|IFF_NOARP))
++		!= (IFF_UP|IFF_BROADCAST))
++		continue;
++/*
++ * Get its netmask and check that it's on the right subnet.
++ */
++	    ifreq.ifr_addr.sa_family = AF_INET;
++	    if (ioctl(sockfd, SIOCGIFNETMASK, &ifreq) < 0)
++	        continue;
++	    mask = ((struct sockaddr_in *) &ifreq.ifr_addr)->sin_addr.s_addr;
++	    MAINDEBUG ((LOG_DEBUG, "proxy arp: interface addr %s mask %lx",
++			ip_ntoa(ina), ntohl(mask)));
++	    if (((ipaddr ^ ina) & mask) != 0)
++	        continue;
++	    break;
++	}
++    }
++    
++    if (ifr >= ifend)
++        return 0;
++
++    syslog(LOG_INFO, "found interface %s for proxy arp", ifreq.ifr_name);
++
++/*
++ * Now get the hardware address.
++ */
++    if (ioctl (sockfd, SIOCGIFHWADDR, &ifreq) < 0) {
++        syslog(LOG_ERR, "SIOCGIFHWADDR(%s): %m", ifreq.ifr_name);
++        return 0;
++    }
++    *hwaddr = ifreq.ifr_addr;
++
++#define SHW(x)	((struct sockaddr_hw *)x)
++
++    MAINDEBUG ((LOG_DEBUG,
++		"proxy arp: found hwaddr %02x:%02x:%02x:%02x:%02x:%02x",
++		(int) SHW(hwaddr)->shw_addr[0],
++		(int) SHW(hwaddr)->shw_addr[1],
++		(int) SHW(hwaddr)->shw_addr[2],
++		(int) SHW(hwaddr)->shw_addr[3],
++		(int) SHW(hwaddr)->shw_addr[4],
++		(int) SHW(hwaddr)->shw_addr[5]));
++    return 1;
++}
++
++
++/*
++ * Return user specified netmask, modified by any mask we might determine
++ * for address `addr' (in network byte order).
++ * Here we scan through the system's list of interfaces, looking for
++ * any non-point-to-point interfaces which might appear to be on the same
++ * network as `addr'.  If we find any, we OR in their netmask to the
++ * user-specified netmask.
++ */
++u_int32_t
++GetMask(u_int32_t addr)
++{
++    u_int32_t mask, nmask, ina;
++    struct ifreq *ifr, *ifend, ifreq;
++    struct ifconf ifc;
++    struct ifreq ifs[MAX_IFS];
++
++    addr = ntohl(addr);
++
++    if (IN_CLASSA(addr)) {	/* determine network mask for address class */
++	nmask = IN_CLASSA_NET;
++    } else {
++	if (IN_CLASSB(addr)) {
++	    nmask = IN_CLASSB_NET;
++	} else {
++	    nmask = IN_CLASSC_NET;
++	}
++    }
++  
++    /* class D nets are disallowed by bad_ip_adrs */
++    mask = netmask | htonl(nmask);
++
++    /*
++     * Scan through the system's network interfaces.
++     */
++    ifc.ifc_len = sizeof(ifs);
++    ifc.ifc_req = ifs;
++    if (ioctl(sockfd, SIOCGIFCONF, &ifc) < 0) {
++	syslog(LOG_WARNING, "ioctl(SIOCGIFCONF): %m");
++	return mask;
++    }
++
++    ifend = ifs + (ifc.ifc_len / sizeof (struct ifreq));
++    for (ifr = ifc.ifc_req; ifr < ifend; ifr++) {
++	/*
++	 * Check the interface's internet address.
++	 */
++	if (ifr->ifr_addr.sa_family != AF_INET) {
++	    continue;
++	}
++
++	ina = ((struct sockaddr_in *) &ifr->ifr_addr)->sin_addr.s_addr;
++	if (((ntohl(ina) ^ addr) & nmask) != 0) {
++	    continue;
++	}
++
++	/*
++	 * Check that the interface is up, and not point-to-point nor loopback.
++	 */
++	strncpy(ifreq.ifr_name, ifr->ifr_name, sizeof(ifreq.ifr_name));
++	if (ioctl(sockfd, SIOCGIFFLAGS, &ifreq) < 0) {
++	    continue;
++	}
++
++	if ((ifreq.ifr_flags & (IFF_UP|IFF_BROADCAST|IFF_POINTOPOINT|IFF_LOOPBACK|IFF_NOARP))
++	     != (IFF_UP|IFF_BROADCAST))
++	{
++	    continue;
++	}
++
++	/*
++	 * Get its netmask and OR it into our mask.
++	 */
++	ifreq.ifr_addr.sa_family = AF_INET;
++	if (ioctl(sockfd, SIOCGIFNETMASK, &ifreq) < 0) {
++	    continue;
++	}
++
++	mask |= ((struct sockaddr_in *)&ifreq.ifr_addr)->sin_addr.s_addr;
++	break;
++    }
++
++    return mask;
++}
++
++
++/*
++ * have_route_to - determine if the system has any route to
++ * a given IP address.
++ * For demand mode to work properly, we have to ignore routes
++ * through our own interface.
++ */
++int
++have_route_to(u_int32_t addr)
++{
++    return -1;
++}
++
++
++/*
++ * Use the hostid as part of the random number seed.
++ */
++int
++get_host_seed(void)
++{
++#if 1
++    int h;
++    char *p = hostname;
++
++    h = 407;
++    for (p = hostname; *p != 0; ++p)
++	h = h * 37 + *p;
++    
++    return h;
++#else
++    return gethostid();
++#endif
++}
+diff -urN ppp-2.3.11-orig/pppd/utils.c ppp-2.3.11/pppd/utils.c
+--- ppp-2.3.11-orig/pppd/utils.c	Sat Sep 11 13:35:46 1999
++++ ppp-2.3.11/pppd/utils.c	Fri May 19 15:11:24 2000
+@@ -39,9 +39,6 @@
+ #include <sys/stat.h>
+ #include <sys/socket.h>
+ #include <netinet/in.h>
+-#ifdef SVR4
+-#include <sys/mkdev.h>
+-#endif
+ 
+ #include "pppd.h"
+ 
+diff -urN ppp-2.3.11-orig/pppdump/Makefile.mint ppp-2.3.11/pppdump/Makefile.mint
+--- ppp-2.3.11-orig/pppdump/Makefile.mint	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/pppdump/Makefile.mint	Fri May 19 15:11:26 2000
+@@ -0,0 +1,17 @@
++CFLAGS= -O -I../include/net
++OBJS = pppdump.o bsd-comp.o deflate.o zlib.o
++
++INSTALL= install
++
++all:	pppdump
++
++pppdump: $(OBJS)
++	$(CC) -o pppdump $(OBJS)
++
++clean:
++	rm -f pppdump $(OBJS) *~
++
++install:
++	mkdir -p $(BINDIR) $(MANDIR)/man8
++	$(INSTALL) -s -c pppdump $(BINDIR)
++	$(INSTALL) -c -m 444 pppdump.8 $(MANDIR)/man8
+diff -urN ppp-2.3.11-orig/sample/auth-down ppp-2.3.11/sample/auth-down
+--- ppp-2.3.11-orig/sample/auth-down	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/sample/auth-down	Mon May  8 19:20:42 2000
+@@ -0,0 +1,17 @@
++#!/bin/sh
++#
++# A program or script which is executed after the remote system
++# successfully authenticates itself. It is executed with the parameters
++# <interface-name> <peer-name> <user-name> <tty-device> <speed>
++#
++
++#
++# The environment is cleared before executing this script
++# so the path must be reset
++#
++PATH=/usr/sbin:/sbin:/usr/bin:/bin
++export PATH
++
++echo auth-down `date +'%y/%m/%d %T'` $* >> /var/log/pppstats
++
++# last line
+diff -urN ppp-2.3.11-orig/sample/auth-up ppp-2.3.11/sample/auth-up
+--- ppp-2.3.11-orig/sample/auth-up	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/sample/auth-up	Mon May  8 19:20:42 2000
+@@ -0,0 +1,17 @@
++#!/bin/sh
++#
++# A program or script which is executed after the remote system
++# successfully authenticates itself. It is executed with the parameters
++# <interface-name> <peer-name> <user-name> <tty-device> <speed>
++#
++
++#
++# The environment is cleared before executing this script
++# so the path must be reset
++#
++PATH=/usr/sbin:/sbin:/usr/bin:/bin
++export PATH
++
++echo auth-up `date +'%y/%m/%d %T'` $* >> /var/log/pppstats
++
++# last line
+diff -urN ppp-2.3.11-orig/sample/ip-down ppp-2.3.11/sample/ip-down
+--- ppp-2.3.11-orig/sample/ip-down	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/sample/ip-down	Mon May  8 19:20:42 2000
+@@ -0,0 +1,22 @@
++#!/bin/sh
++#
++# This script is run by the pppd _after_ the link is brought down.
++# It should be used to delete routes, unset IP addresses etc.
++#
++# This script is called with the following arguments:
++#    Arg  Name               Example
++#    $1   Interface name     ppp0
++#    $2   The tty            ttyS1
++#    $3   The link speed     38400
++#    $4   Local IP number    12.34.56.78
++#    $5   Peer  IP number    12.34.56.99
++#
++
++#
++# The  environment is cleared before executing this script
++# so the path must be reset
++#
++PATH=/usr/sbin:/sbin:/usr/bin:/bin
++export PATH
++
++# last line
+diff -urN ppp-2.3.11-orig/sample/ip-up ppp-2.3.11/sample/ip-up
+--- ppp-2.3.11-orig/sample/ip-up	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/sample/ip-up	Mon May  8 19:20:42 2000
+@@ -0,0 +1,23 @@
++#!/bin/sh
++#
++# This script is run by the pppd after the link is established.
++# It should be used to add routes, set IP address, run the mailq 
++# etc.
++#
++# This script is called with the following arguments:
++#    Arg  Name               Example
++#    $1   Interface name     ppp0
++#    $2   The tty            ttyS1
++#    $3   The link speed     38400
++#    $4   Local IP number    12.34.56.78
++#    $5   Peer  IP number    12.34.56.99
++#
++
++#
++# The  environment is cleared before executing this script
++# so the path must be reset
++#
++PATH=/usr/sbin:/sbin:/usr/bin:/bin
++export PATH
++
++# last line
+diff -urN ppp-2.3.11-orig/sample/options ppp-2.3.11/sample/options
+--- ppp-2.3.11-orig/sample/options	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/sample/options	Mon May  8 19:20:42 2000
+@@ -0,0 +1,153 @@
++# /etc/ppp/options
++
++# The name of this server. Often, the FQDN is used here.
++#name <host>
++
++# Enforce the use of the hostname as the name of the local system for
++# authentication purposes (overrides the name option).
++usehostname
++
++# If no local IP address is given, pppd will use the first IP address
++# that belongs to the local hostname. If "noipdefault" is given, this
++# is disabled and the peer will have to supply an IP address.
++noipdefault
++
++# With this option, pppd will accept the peer's idea of our local IP
++# address, even if the local IP address was specified in an option.
++#ipcp-accept-local
++
++# With this option, pppd will accept the peer's idea of its (remote) IP
++# address, even if the remote IP address was specified in an option.
++#ipcp-accept-remote
++
++# Specify which DNS Servers the incoming Win95 or WinNT Connection should use
++# Two Servers can be remotely configured
++#ms-dns 192.168.1.1
++#ms-dns 192.168.1.2
++
++# Specify which WINS Servers the incoming connection Win95 or WinNT should use
++#wins-addr 192.168.1.50
++#wins-addr 192.168.1.51
++
++# enable this on a server that already has a permanent default route
++#nodefaultroute
++
++# Run the executable or shell command specified after pppd has terminated
++# the link.  This script could, for example, issue commands to the modem
++# to cause it to hang up if hardware modem control signals were not
++# available.
++# If mgetty is running, it will reset the modem anyway. So there is no need
++# to do it here.
++#disconnect "chat -- \d+++\d\c OK ath0 OK"
++
++# Increase debugging level (same as -d). The debug output is written
++# to syslog LOG_LOCAL2.
++debug
++
++# Enable debugging code in the kernel-level PPP driver.  The argument n
++# is a number which is the sum of the following values: 1 to enable
++# general debug messages, 2 to request that the contents of received
++# packets be printed, and 4 to request that the contents of transmitted
++# packets be printed.
++#kdebug n
++
++# Require the peer to authenticate itself before allowing network
++# packets to be sent or received.
++# Please do not disable this setting. It is expected to be standard in
++# future releases of pppd. Use the call option (see manpage) to disable
++# authentication for specific peers.
++#auth
++
++# authentication can either be pap or chap. As most people only want to
++# use pap, you can also disable chap:
++#require-pap
++#refuse-chap
++
++# Use hardware flow control (i.e. RTS/CTS) to control the flow of data
++# on the serial port.
++crtscts
++
++# Specifies that pppd should use a UUCP-style lock on the serial device
++# to ensure exclusive access to the device.
++lock
++
++# Use the modem control lines.
++modem
++
++# async character map -- 32-bit hex; each bit is a character
++# that needs to be escaped for pppd to receive it.  0x00000001
++# represents '\x01', and 0x80000000 represents '\x1f'.
++# To allow pppd to work over a rlogin/telnet connection, ou should escape
++# XON (^Q), XOFF  (^S) and ^]: (The peer should use "escape ff".)
++#asyncmap  200a0000
++asyncmap 0
++
++# Specifies that certain characters should be escaped on transmission
++# (regardless of whether the peer requests them to be escaped with its
++# async control character map).  The characters to be escaped are
++# specified as a list of hex numbers separated by commas.  Note that
++# almost any character can be specified for the escape option, unlike
++# the asyncmap option which only allows control characters to be
++# specified.  The characters which may not be escaped are those with hex
++# values 0x20 - 0x3f or 0x5e.
++#escape 11,13,ff
++
++# Set the MRU [Maximum Receive Unit] value to <n> for negotiation.  pppd
++# will ask the peer to send packets of no more than <n> bytes. The
++# minimum MRU value is 128.  The default MRU value is 1500.  A value of
++# 296 is recommended for slow links (40 bytes for TCP/IP header + 256
++# bytes of data).
++#mru 542
++
++# Set the MTU [Maximum Transmit Unit] value to <n>. Unless the peer
++# requests a smaller value via MRU negotiation, pppd will request that
++# the kernel networking code send data packets of no more than n bytes
++# through the PPP network interface.
++#mtu <n>
++
++# Set the interface netmask to <n>, a 32 bit netmask in "decimal dot"
++# notation (e.g. 255.255.255.0).
++#netmask 255.255.255.0
++
++# Don't fork to become a background process (otherwise pppd will do so
++# if a serial device is specified).
++nodetach
++
++# Set the assumed name of the remote system for authentication purposes
++# to <n>.
++#remotename <n>
++
++# Add an entry to this system's ARP [Address Resolution Protocol]
++# table with the IP address of the peer and the Ethernet address of this
++# system. {proxyarp,noproxyarp}
++proxyarp
++
++# Use the system password database for authenticating the peer using
++# PAP. Note: mgetty already provides this option. If this is specified
++# then dialin from users using a script under Linux to fire up ppp wont work.
++#login
++
++# If this option is given, pppd will send an LCP echo-request frame to
++# the peer every n seconds. Under Linux, the echo-request is sent when
++# no packets have been received from the peer for n seconds. Normally
++# the peer should respond to the echo-request by sending an echo-reply.
++# This option can be used with the lcp-echo-failure option to detect
++# that the peer is no longer connected.
++lcp-echo-interval 30
++
++# If this option is given, pppd will presume the peer to be dead if n
++# LCP echo-requests are sent without receiving a valid LCP echo-reply.
++# If this happens, pppd will terminate the connection.  Use of this
++# option requires a non-zero value for the lcp-echo-interval parameter.
++# This option can be used to enable pppd to terminate after the physical
++# connection has been broken (e.g., the modem has hung up) in
++# situations where no hardware modem control lines are available.
++lcp-echo-failure 4
++
++# Specifies that pppd should disconnect if the link is idle for n seconds.
++idle 600
++
++# Disable the IPXCP and IPX protocols.
++noipx
++
++# ---<End of File>---
+diff -urN ppp-2.3.11-orig/sample/options.ttyXX ppp-2.3.11/sample/options.ttyXX
+--- ppp-2.3.11-orig/sample/options.ttyXX	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/sample/options.ttyXX	Mon May  8 19:20:42 2000
+@@ -0,0 +1,14 @@
++# If you need to set up multiple serial lines then copy this file to
++# options.<ttyname> for each tty with a modem on it.
++#
++# The options.tty file will assign an IP address to each PPP connection
++# as it comes up. They must all be distinct!
++#
++# Example:
++# options.ttyS1		for com2 under DOS.
++#
++# Edit the following line so that the first IP address
++# mentioned is the ip address of the serial port while the second
++# is the IP address of your host
++#
++hostname-s1:hostname
+diff -urN ppp-2.3.11-orig/sample/pap-secrets ppp-2.3.11/sample/pap-secrets
+--- ppp-2.3.11-orig/sample/pap-secrets	Thu Jan  1 01:00:00 1970
++++ ppp-2.3.11/sample/pap-secrets	Mon May  8 19:20:42 2000
+@@ -0,0 +1,28 @@
++# Secrets for authentication using PAP
++# client	server	secret			IP addresses
++
++# OUTBOUND CONNECTIONS
++# Here you should add your userid password to connect to your providers via
++# pap. The * means that the password is to be used for ANY host you connect
++# to. Thus you do not have to worry about the foreign machine name. Just
++# replace password with your password.
++# If you have different providers with different passwords then you better
++# remove the following line.
++#hostname	*	password
++
++# INBOUND CONNECTIONS
++#client		hostname	<password>	192.168.1.1
++
++# If you add "auth login -chap +pap" to /etc/mgetty+sendfax/login.config,
++# all users in /etc/passwd can use their password for pap-authentication.
++#
++# Every regular user can use PPP and has to use passwords from /etc/passwd
++#*	hostname	""
++# UserIDs that cannot use PPP at all. Check your /etc/passwd and add any
++# other accounts that should not be able to use pppd! Replace hostname
++# with your local hostname.
++#guest		hostname	"*"	-
++#master		hostname	"*"	-
++#root		hostname	"*"	-
++#support	hostname	"*"	-
++#stats		hostname	"*"	-

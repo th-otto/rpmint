@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# convert TeX dvi to Postscript
+#
+# tricky because  dvips doesn't act as filter
+#
+#
+# will want to source print options for dvips
+#
+TMP_FILE=`mktemp /tmp/rhsprintfilter.XXXXXX` || exit 1
+cat > $TMP_FILE
+dvips -f $DVIPS_OPTIONS < $TMP_FILE
+
+if [ -f "$TMP_FILE" ]; then
+      rm -f $TMP_FILE
+fi
+
+exit 0

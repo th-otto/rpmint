@@ -1,0 +1,12 @@
+--- joe/tty.c.mint	Sat Sep 11 12:55:46 1999
++++ joe/tty.c	Sat Sep 11 13:20:54 1999
+@@ -316,7 +316,9 @@
+ #ifdef SA_INTERRUPT
+  vnew.sa_flags = SA_INTERRUPT;
+ #else
++#ifdef SV_INTERRUPT
+  vnew.sa_flags = SV_INTERRUPT;
++#endif
+ #endif
+ 
+  ticked=0;

@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# takes tiff from stdin, writes pnm to stdout
+#
+TMPFILE=`mktemp /tmp/printtmp.XXXXXX` || exit 1
+cat > $TMPFILE
+tifftopnm $TMPFILE
+rm -f $TMPFILE 
+
+exit 0

@@ -1,0 +1,17 @@
+--- teTeX-1.0-orig/selfautofix	Wed Mar 24 00:33:34 1999
++++ teTeX-1.0/selfautofix	Thu Feb  3 19:01:10 2000
+@@ -21,10 +21,10 @@
+ test -n "$bindirpp" \
+   && echo "/^[ 	]*TEXMFCNF[ =]/!s%$bindirpp/%\$SELFAUTOPARENT/%g" >> $sedfile
+ 
+-cat >>$sedfile <<eof
+-/^%/!s%:%;%g
+-/^[ 	]*TEXMFCNF[ =]/s%;%:%g
+-eof
++#cat >>$sedfile <<eof
++#/^%/!s%:%;%g
++#/^[ 	]*TEXMFCNF[ =]/s%;%:%g
++#eof
+ 
+ sed  -f $sedfile texmf.cnf >texmf.cnf.$$
+ test -s texmf.cnf.$$  && cat texmf.cnf.$$ > texmf.cnf

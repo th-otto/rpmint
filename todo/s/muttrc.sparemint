@@ -1,0 +1,72 @@
+# Sample configuration file for Mutt.  This file is part of the 
+# Sparemint configuration for Mutt.  You should copy this file
+# into your home directory under the name `.muttrc'.  Read the
+# comments carefully and change everything to your needs.
+#
+# If you want to make the contents of this file available system-wide
+# you should put the following line in the system configuration file
+# /etc/Muttrc:
+#
+# source /wherever/you/put/it/muttrc.sparemint
+#
+
+# Aliases should go into `.mutt_aliases' in home directory.  Create
+# the file and then uncomment the next two lines.
+#source ~/.mutt_aliases
+#set alias_file=~/.mutt_aliases
+
+# Custom header lines.  Note that Mutt allows you to override all
+# header lines.  For example you could do:
+#
+#  my_hdr From: Free MiNT <freemint@my.isp.com>
+#
+# This is useful if you are only temporarily connected to the internet
+# and you have to change your local mail address to your official
+# one..
+my_hdr X-Operating-System: `uname -a`
+my_hdr X-Distribution: Sparemint
+
+# This is useful for mailing lists.
+set sort=threads
+
+# Mailing lists that I am subscribed to.  Note that you only have to
+# specify the name of the list.  Omit everything after the at-sign,
+# i. e. "lists mint" and not "lists mint@fishpool.com".
+lists mint
+
+# Default.  Note that you may also specify a program here, like this:
+#  set signature="~/bin/print_signature |"
+# The program's stdout will then be read instead.
+set signature=~/.signature
+
+# Pop3 configuration is read from `.mutt_pop' in home directory.  Create
+# the file and uncomment the next line.
+#source ~/.mutt_pop
+
+# Borrow the editor from the other mailer, what was its name?  If you 
+# want to use a GEM editor such as QED you should put a little wrapper
+# script around it.  If you need help for that then send a mail to
+# Guido Flohr <guido@freemint.de>.
+# set editor=pico
+
+#
+# Fancy color definitions for Sparemint.
+#
+color attachment brightblack yellow
+color error brightred color12
+color header brightblack red (^From:|^Date:|^Subject:|^To:)
+color hdrdefault color9 black
+color indicator brightcolor9 color12
+color markers black color11
+color message color15 color12
+color normal color11 black
+color quoted color14 black
+color search brightred black
+color signature brightcolor9 black
+color tree brightcolor9 black
+
+# Sample alias.  Note that you should actually put all aliases into
+# `.mutt_aliases' in your home directory.
+alias frank fnaumann@freemint.de (Frank Naumann)
+alias guido guido@freemint.de (Guido Flohr)
+alias mint mint@fishpool.com (MiNT Mailing List)

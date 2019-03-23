@@ -1,0 +1,358 @@
+diff -u --new-file --recursive v1.3/sysklogd-1.3/Makefile sysklogd-1.3/Makefile
+--- v1.3/sysklogd-1.3/Makefile	Mon Feb 19 15:18:23 1996
++++ sysklogd-1.3/Makefile	Sun Mar 31 06:11:04 1996
+@@ -3,11 +3,10 @@
+ CC= gcc
+ #CFLAGS= -g -DSYSV -Wall
+ #LDFLAGS= -g
+-CFLAGS= -O6 -DSYSV -fomit-frame-pointer -Wall
+-LDFLAGS= -s -N
++CFLAGS= -O2 -DSYSV -fomit-frame-pointer -Wall -fno-strength-reduce
++LDFLAGS= -s
+ 
+-# Look where your install program is
+-#
++# Look where your install program is.
+ INSTALL = /usr/bin/install
+ BINDIR = /usr/sbin
+ MANDIR = /usr/man
+@@ -17,6 +16,13 @@
+ # to try uncommenting the following define.
+ # LIBS = /usr/lib/libresolv.a
+ 
++# A patch was forwarded which provided support for sysklogd under
++# the ALPHA.  This patch included a reference to a library which may be
++# specific to the ALPHA.  If you are attempting to build this package under
++# an ALPHA and linking fails with unresolved references please try
++# uncommenting the following define.
++# LIBS = ${LIBS} -linux
++
+ # Define the following to impart start-up delay in klogd.  This is
+ # useful if klogd is started simultaneously or in close-proximity to syslogd.
+ # KLOGD_START_DELAY = -DKLOGD_DELAY=5
+@@ -54,7 +60,7 @@
+ 	${CC} ${LDFLAGS} -o syslogd syslogd.o pidfile.o ${LIBS}
+ 
+ klogd:	klogd.o syslog.o pidfile.o ksym.o
+-	${CC} ${LDFLAGS} -o klogd klogd.o syslog.o pidfile.o ksym.o
++	${CC} ${LDFLAGS} -o klogd klogd.o syslog.o pidfile.o ksym.o ${LIBS}
+ 
+ syslog_tst: syslog_tst.o
+ 	${CC} ${LDFLAGS} -o syslog_tst syslog_tst.o
+@@ -75,17 +81,17 @@
+ 	${CC} ${CFLAGS} -c syslog_tst.c
+ 
+ clean:
+-	rm -f *.o *.log *~ *.orig;
++	rm -f *.o *.log *~ *.orig
+ 
+ clobber: clean
+-	rm -f syslogd klogd syslog_tst TAGS;
++	rm -f syslogd klogd syslog_tst TAGS
+ 
+ install_exec: syslogd klogd
+-	${INSTALL} -m 500 -s syslogd ${BINDIR}/syslogd;
+-	${INSTALL} -m 500 -s klogd ${BINDIR}/klogd;
++	${INSTALL} -m 500 -s syslogd ${BINDIR}/syslogd
++	${INSTALL} -m 500 -s klogd ${BINDIR}/klogd
+ 
+ install_man:
+ 	${INSTALL} -o ${MAN_OWNER} -g ${MAN_OWNER} -m 644 sysklogd.8 ${MANDIR}/man8/sysklogd.8
+ 	${INSTALL} -o ${MAN_OWNER} -g ${MAN_OWNER} -m 644 syslogd.8 ${MANDIR}/man8/syslogd.8
+ 	${INSTALL} -o ${MAN_OWNER} -g ${MAN_OWNER} -m 644 syslog.conf.5 ${MANDIR}/man5/syslog.conf.5
+-	${INSTALL} -o ${MAN_OWNER} -g ${MAN_OWNER} -m 644 klogd.8 ${MANDIR}/MAN8/klogd.8
++	${INSTALL} -o ${MAN_OWNER} -g ${MAN_OWNER} -m 644 klogd.8 ${MANDIR}/man8/klogd.8
+diff -u --new-file --recursive v1.3/sysklogd-1.3/NEWS sysklogd-1.3/NEWS
+--- v1.3/sysklogd-1.3/NEWS	Fri Dec 15 15:06:25 1995
++++ sysklogd-1.3/NEWS	Sun Mar 31 06:21:14 1996
+@@ -1,3 +1,35 @@
++Version 1.3 Patch Level 1
++
++General. ------------------------------------------------------------------
++Cleanups in the Makefile.
++
++Patches to support compilation in the ALPHA environment.  I have not
++been able to test these personally so if anyone has any feedback I
++would be interested in hearing from the Linux ALPHA community.
++
++Spelling and grammar corrections in the man pages.
++
++
++syslogd ------------------------------------------------------------------
++Patch to fix parsing of hostnames in syslogd.c.
++
++The return value of gethostbyname is now properly checked.  This should
++fix the problems with core dumps when name resolution failed.
++
++Bounds error fixed when setting the file descriptors for UNIX domain
++sockets.
++
++
++klogd ---------------------------------------------------------------------
++Error checking and reporting enhanced.  I have a couple of reports
++that klogd is experiencing errors when reading the /proc filesystem.
++Any additional information would be appreciated.
++
++The sys_syslog function has been renamed to ksyslog.  This was in a
++set patches for ALPHA support so I am assuming that this is necessary
++for that environment
++
++
+ Version 1.3 
+ 
+ Numerous changes, performance enhancements, code cleanups and bug fixes.
+diff -u --new-file --recursive v1.3/sysklogd-1.3/klogd.c sysklogd-1.3/klogd.c
+--- v1.3/sysklogd-1.3/klogd.c	Sat Feb 17 14:02:54 1996
++++ sysklogd-1.3/klogd.c	Tue Mar 19 11:50:43 1996
+@@ -159,8 +159,10 @@
+ 
+ #define __LIBRARY__
+ #include <linux/unistd.h>
+-#define __NR_sys_syslog __NR_syslog
+-_syscall3(int,sys_syslog,int, type, char *, buf, int, len);
++#ifndef __alpha__
++# define __NR_ksyslog __NR_syslog
++_syscall3(int,ksyslog,int, type, char *, buf, int, len);
++#endif
+ 
+ #define LOG_BUFFER_SIZE 4096
+ #define LOG_LINE_LENGTH 1024
+@@ -191,7 +193,7 @@
+ 
+ 
+ /* Function prototypes. */
+-extern int sys_syslog(int type, char *buf, int len);
++extern int ksyslog(int type, char *buf, int len);
+ static void CloseLogSrc(void);
+ extern void restart(int sig);
+ extern void stop_logging(int sig);
+@@ -209,14 +211,14 @@
+ 
+ {
+ 	/* Turn on logging of messages to console. */
+-  	sys_syslog(7, NULL, 0);
++  	ksyslog(7, NULL, 0);
+   
+         /* Shutdown the log sources. */
+ 	switch ( logsrc )
+ 	{
+ 	    case kernel:
+-		sys_syslog(0, 0, 0);
+-		Syslog(LOG_INFO, "Kernel logging (sys_syslog) stopped.");
++		ksyslog(0, 0, 0);
++		Syslog(LOG_INFO, "Kernel logging (ksyslog) stopped.");
+ 		break;
+             case proc:
+ 		close(kmsg);
+@@ -326,7 +328,7 @@
+ 
+ 
+ 	/* Set level of kernel console messaging.. */
+-	if ( (sys_syslog(8, NULL, console_log_level) < 0) && \
++	if ( (ksyslog(8, NULL, console_log_level) < 0) && \
+ 	     (errno == EINVAL) )
+ 	{
+ 		/*
+@@ -337,7 +339,7 @@
+ 		 */
+ 		Syslog(LOG_WARNING, "Cannot set console log level - disabling "
+ 			      "console output.");
+-		sys_syslog(6, NULL, 0);
++		ksyslog(6, NULL, 0);
+ 	}
+ 	
+ 
+@@ -349,16 +351,17 @@
+ 	    ((stat(_PATH_KLOG, &sb) < 0) && (errno == ENOENT)) )
+ 	{
+ 	  	/* Initialize kernel logging. */
+-	  	sys_syslog(1, NULL, 0);
+-		Syslog(LOG_INFO, "klogd %s-%s, log source = sys_syslog "
++	  	ksyslog(1, NULL, 0);
++		Syslog(LOG_INFO, "klogd %s-%s, log source = ksyslog "
+ 		       "started.", VERSION, PATCHLEVEL);
+ 		return(kernel);
+ 	}
+ 	
+ 	if ( (kmsg = open(_PATH_KLOG, O_RDONLY)) < 0 )
+ 	{
+-		fputs("klogd: Cannot open proc file system.", stderr);
+-		sys_syslog(7, NULL, 0);
++		fprintf(stderr, "klogd: Cannot open proc file system, " \
++			"%d - %s.\n", errno, strerror(errno));
++		ksyslog(7, NULL, 0);
+ 		exit(1);
+ 	}
+ 
+@@ -517,12 +520,12 @@
+ 	 * messages into this fresh buffer.
+ 	 */
+ 	memset(log_buffer, '\0', sizeof(log_buffer));
+-	if ( (rdcnt = sys_syslog(2, log_buffer, sizeof(log_buffer))) < 0 )
++	if ( (rdcnt = ksyslog(2, log_buffer, sizeof(log_buffer))) < 0 )
+ 	{
+ 		if ( errno == EINTR )
+ 			return;
+-		fprintf(stderr, "Error return from sys_sycall: %d - %s\n", \
+-			errno, strerror(errno));
++		fprintf(stderr, "klogd: Error return from sys_sycall: " \
++			"%d - %s\n", errno, strerror(errno));
+ 	}
+ 	
+ 	LogLine(log_buffer, rdcnt);
+@@ -546,7 +549,8 @@
+ 	{
+ 		if ( errno == EINTR )
+ 			return;
+-		Syslog(LOG_ERR, "Cannot read proc file system.");
++		Syslog(LOG_ERR, "Cannot read proc file system: %d - %s.", \
++		       errno, strerror(errno));
+ 	}
+ 	
+ 	LogLine(log_buffer, rdcnt);
+@@ -687,8 +691,8 @@
+ 			output_file = stdout;
+ 		else if ( (output_file = fopen(output, "w")) == (FILE *) 0 )
+ 		{
+-			fprintf(stderr, "klogd: Cannot open output file %s - "\
+-				"%s\n", output, strerror(errno));
++			fprintf(stderr, "klogd: Cannot open output file " \
++				"%s - %s\n", output, strerror(errno));
+ 			return(1);
+ 		}
+ 	}
+diff -u --new-file --recursive v1.3/sysklogd-1.3/sysklogd.8 sysklogd-1.3/sysklogd.8
+--- v1.3/sysklogd-1.3/sysklogd.8	Sat Feb 17 14:02:54 1996
++++ sysklogd-1.3/sysklogd.8	Tue Mar  5 12:52:59 1996
+@@ -39,7 +39,7 @@
+ .BR syslogd (8)
+ derived from the
+ stock BSD sources.  Support for kernel logging is provided by the
+-.BR syslogd (8)
++.BR klogd (8)
+ utility which allows kernel logging to be conducted in either a
+ standalone fashion or as a client of syslogd.
+ 
+@@ -91,7 +91,7 @@
+ .TP
+ .BI "\-l " "hostlist"
+ Specify a hostname that should be logged only with its simple hostname
+-and not the the fqdn. Multiple hosts may be specified using the colon
++and not the fqdn. Multiple hosts may be specified using the colon
+ (``:'') separator.
+ .TP
+ .BI "\-m " "interval"
+@@ -195,8 +195,8 @@
+ .PP
+ Under the new scheme this behavior remains the same.  The difference
+ is the addition of four new specifiers, the asterisk (\fB*\fR)
+-wildcard the equation sign (\fB=\fR), the exclamation mark
+-(\fB!\fR) and the minus sign (\fB-\fR).
++wildcard, the equation sign (\fB=\fR), the exclamation mark
++(\fB!\fR), and the minus sign (\fB-\fR).
+ 
+ The \fB*\fR specifies that all messages for the
+ specified facility are to be directed to the destination.  Note that
+@@ -215,7 +215,7 @@
+ .IP
+ .nf
+ 	# Sample syslog.conf
+-	daemon.=debug			/usr/adm/debug
++	*.=debug			/usr/adm/debug
+ .fi
+ .PP
+ .\" The \fB!\fR as the first character of a priority inverts the above
+@@ -456,11 +456,11 @@
+ .SH DEBUGGING
+ When debugging is turned on using
+ .B "\-d"
+-option the
++option then
+ .B syslogd
+-will very verbose by writing much of what it does on stdout. Whenever
++will be very verbose by writing much of what it does on stdout. Whenever
+ the configuration file is reread and re-parsed you'll see a tabular,
+-corresponding on the internal data structure. This tabular consists of
++corresponding to the internal data structure. This tabular consists of
+ four fields:
+ .TP
+ .I number
+@@ -489,7 +489,7 @@
+ This field shows additional arguments to the actions in the last
+ field. For file-logging this is the filename for the logfile; for
+ user-logging this is a list of users; for remote logging this is the
+-the hostname of the machine to log to; for console-logging this is the
++hostname of the machine to log to; for console-logging this is the
+ used console; for tty-logging this is the specified tty; wall has no
+ additional arguments.
+ .SH FILES
+diff -u --new-file --recursive v1.3/sysklogd-1.3/syslogd.c sysklogd-1.3/syslogd.c
+--- v1.3/sysklogd-1.3/syslogd.c	Mon Feb 19 09:24:33 1996
++++ sysklogd-1.3/syslogd.c	Fri Mar  8 11:19:25 1996
+@@ -715,9 +715,15 @@
+ 		 * should return the simple hostname or the fqdn. A
+ 		 * good piece of software should be aware of both and
+ 		 * we want to distribute good software.  Joey
++		 *
++		 * Good software also always checks its return values...
++		 * If syslogd starts up before DNS is up & /etc/hosts
++		 * doesn't have LocalHostName listed, gethostbyname will
++		 * return NULL. 
+ 		 */
+ 		hent = gethostbyname(LocalHostName);
+-		sprintf(LocalHostName, "%s", hent->h_name);
++		if ( hent )
++			sprintf(LocalHostName, "%s", hent->h_name);
+ 		if ( (p = index(LocalHostName, '.')) )
+ 		{
+ 			*p++ = '\0';
+@@ -890,7 +896,7 @@
+ 					dprintf("%d ", nfds);
+ 			dprintf("\n");
+ 		}
+-		for (fd= 0; fd <= FD_SETSIZE; ++fd)
++		for (fd= 0; fd < FD_SETSIZE; ++fd)
+ 		  if ( FD_ISSET(fd, &readfds) && FD_ISSET(fd, &unixm) ) {
+ 			dprintf("Message from UNIX socket #%d.\n", fd);
+ 			memset(line, '\0', sizeof(line));
+@@ -979,9 +985,8 @@
+ crunch_list(list)
+ 	char *list;
+ {
+-	int count;
+-	int i;
+-	char *p;
++	int count, i;
++	char *p, *q;
+ 	char **result = NULL;
+ 
+ 	p = list;
+@@ -1012,15 +1017,15 @@
+ 	 * so we don't have to care about this.
+ 	 */
+ 	count = 0;
+-	while ((i=(int)index(p, LIST_DELIMITER))) {
+-		if ((result[count] = \
+-		     (char *)malloc(sizeof(char) * i - (int)p +1)) == NULL) {
++	while ((q=index(p, LIST_DELIMITER))) {
++		result[count] = (char *) malloc((q - p + 1) * sizeof(char));
++		if (result[count] == NULL) {
+ 			printf ("Sorry, can't get enough memory, exiting.\n");
+ 			exit(0);
+ 		}
+-		strncpy(result[count],p, i - (int)p);
+-		result[count][i - (int)p] = '\0';
+-		p = (char *)i;p++;
++		strncpy(result[count], p, q - p);
++		result[count][q - p] = '\0';
++		p = q; p++;
+ 		count++;
+ 	}
+ 	if ((result[count] = \
+diff -u --new-file --recursive v1.3/sysklogd-1.3/version.h sysklogd-1.3/version.h
+--- v1.3/sysklogd-1.3/version.h	Tue Feb 27 15:48:42 1996
++++ sysklogd-1.3/version.h	Sun Mar 31 05:58:48 1996
+@@ -1,2 +1,2 @@
+ #define VERSION "1.3"
+-#define PATCHLEVEL "0"
++#define PATCHLEVEL "1"

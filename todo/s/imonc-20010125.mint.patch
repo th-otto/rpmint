@@ -1,0 +1,23 @@
+diff -u imonc-20010125/Makefile imonc.patch/Makefile
+--- imonc-20010125/Makefile	Thu Sep 20 16:00:26 2001
++++ imonc.patch/Makefile	Thu Sep 20 14:20:24 2001
+@@ -1,4 +1,4 @@
+-LIB=-lncurses 		# Linux
++LIB=-lncurses -lsocket		# Linux
+ #LIB=-lcurses		# Unix
+ 
+ all: mkfli4l imonc
+Only in imonc.patch/: imonc
+diff -u imonc-20010125/imonc.c imonc.patch/imonc.c
+--- imonc-20010125/imonc.c	Thu Sep 20 16:00:50 2001
++++ imonc.patch/imonc.c	Thu Sep 20 14:16:50 2001
+@@ -46,7 +46,7 @@
+ #include <arpa/inet.h>				/* decl of inet_addr()	    */
+ #include <sys/socket.h>
+ 
+-#include <linux/isdn.h>
++/* #include <linux/isdn.h> */
+ 
+ /*----------------------------------------------------------------------------
+  * some mini curses functions for fli4l router without curses library
+Only in imonc.patch/: mkfli4l

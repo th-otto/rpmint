@@ -1,0 +1,25 @@
+--- mpage-2.5.1/file.c.foo	Mon Jan  8 10:42:55 2001
++++ mpage-2.5.1/file.c	Mon Jan  8 11:14:18 2001
+@@ -145,6 +145,7 @@
+     char tmpfile[LINESIZE];
+     char buffer[LINESIZE];
+     int incnt, outcnt;
++    int tmpfd;
+ 
+     if (opt_pr) {
+         Debug(DB_STDIN, "%%do_stdin: pr option selects text\n", 0);
+@@ -155,7 +156,13 @@
+          * be used as input to the do_doc routine
+          */
+         (void)strcpy(tmpfile, "/usr/tmp/mpageXXXXXX");
+-        (void)mktemp(tmpfile);
++        if ( (tmpfd = mkstemp(tmpfile)) == -1) {
++		fprintf(stderr, "%s: cannot create temporary file",
++			MPAGE);
++		perror(MPAGE);
++		return;
++	}
++	close(tmpfd);
+         if (opt_header != NULL)
+             (void)sprintf(command, "pr -l%d -w%d -h \"%s\"> %s",
+                       asheet->sh_plength, asheet->sh_cwidth,

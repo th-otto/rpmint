@@ -1,0 +1,191 @@
+Index: buildrules
+===================================================================
+--- buildrules	(Revision 7)
++++ buildrules	(Arbeitskopie)
+@@ -186,7 +186,7 @@
+ $(top_srcdir)/includepath: $(top_srcdir)/configvars
+ 	@echo "Generating $@"; \
+ 	local= ; \
+-	installdir=`$(CC) --print-search-dirs | awk '{ print $$2; exit; }'`; \
++	installdir=`$(CC) --print-search-dirs | awk '{ print $$2; exit; }' | awk '{gsub(/\\\\/,"/")}1'`; \
+ 	case $$installdir in /usr/local*) local=/local;; esac; \
+ 	echo "$${installdir}include -I$${installdir}include-fixed -I/usr$$local/m68k-atari-mint/include" >$@
+ 	@if [ -z "$$(<$@)" ]; then \
+Index: configvars
+===================================================================
+--- configvars	(Revision 7)
++++ configvars	(Arbeitskopie)
+@@ -47,7 +47,10 @@
+ # need be.  When cross-compiling you will usually want to set this
+ # to "/usr/m68k-atari-mint".
+ ifeq ($(CROSS),yes)
+- prefix=/usr/m68k-atari-mint
++ ifeq ($(strip $(MINTLIB_INSTALLDIR)),)
++  $(error "Please set MINTLIB_INSTALLDIR")
++ endif
++ prefix=$(MINTLIB_INSTALLDIR)
+ else
+  prefix=/usr
+ endif
+@@ -121,7 +124,7 @@
+ # ATTENTION: You have to optimize at least with -O, otherwise some
+ # extern inlines will not work and will cause unresolved references
+ # in certain modules.
+-CFLAGS=-O2 -fomit-frame-pointer
++CFLAGS=-O2 -fomit-frame-pointer -Wa,--register-prefix-optional
+ 
+ # Additional defines.
+ DEFS=
+Index: include/stdlib.h
+===================================================================
+--- include/stdlib.h	(Revision 7)
++++ include/stdlib.h	(Arbeitskopie)
+@@ -81,14 +81,14 @@
+ extern double strtod (__const char *__restrict __nptr,
+ 		      char **__restrict __endptr) __THROW;
+ 
+-#ifdef	__USE_ISOC99
++/* #ifdef	__USE_ISOC99 */
+ /* Likewise for `float' and `long double' sizes of floating-point numbers.  */
+ extern float strtof (__const char *__restrict __nptr,
+ 		     char **__restrict __endptr) __THROW;
+ 
+ extern long double strtold (__const char *__restrict __nptr,
+ 			    char **__restrict __endptr) __THROW;
+-#endif
++/* #endif */
+ 
+ /* Convert a string to a long integer.  */
+ extern long int strtol (__const char *__restrict __nptr,
+Index: mintlib/gensys
+===================================================================
+--- mintlib/gensys	(Revision 7)
++++ mintlib/gensys	(Arbeitskopie)
+@@ -34,7 +34,7 @@
+   warn_generated
+   
+   # Extract the definitions from SYSCALLS.
+-  awk ' BEGIN { count = 0; errors = 0; lineno = 0; }
++  cat $srcfile | awk ' BEGIN { count = 0; errors = 0; lineno = 0; }
+     {
+       lineno++
+       sub ("#.*", "")
+@@ -58,7 +58,7 @@
+         count++
+     }
+     END { if (errors != 0) exit 1; }
+-  ' $srcfile || exit 1  
++  ' || exit 1
+ }
+ 
+ make_array ()
+@@ -66,7 +66,7 @@
+   warn_generated
+   
+   # Extract the definitions from SYSCALLS.
+-  awk ' BEGIN { errors = 0; lineno = 0; array = ""; count = -1 }
++  cat $srcfile | awk ' BEGIN { errors = 0; lineno = 0; array = ""; count = -1 }
+     {
+       lineno++
+       sub ("#.*", "")
+@@ -210,13 +210,13 @@
+         }  
+       
+     }
+-  ' $srcfile || exit 1  
++  ' || exit 1
+ }
+ 
+ make_syscalls ()
+ {
+   # Extract the definitions from SYSCALLS.
+-  awk ' BEGIN { errors = 0; lineno = 0; }
++  cat $srcfile | awk ' BEGIN { errors = 0; lineno = 0; }
+     {
+       lineno++
+       sub ("#.*", "")
+@@ -239,7 +239,7 @@
+         count++
+     }
+     END { if (errors != 0) exit 1; print "\n" }
+-  ' $srcfile || exit 1
++  ' || exit 1
+ }
+ 
+ make_sysdefs ()
+@@ -253,7 +253,7 @@
+ EOF
+ 
+   # Extract the definitions from SYSCALLS.
+-  awk ' BEGIN { call = "'$1'"; errors = 0; lineno = 0 }
++  cat $srcfile | awk ' BEGIN { call = "'$1'"; errors = 0; lineno = 0 }
+     {
+       lineno++
+       sub ("#.*", "")
+@@ -411,7 +411,7 @@
+             }
+           if (errors != 0) exit 1
+         }
+-  ' $srcfile || exit 1
++  ' || exit 1
+ }
+ 
+ myname=$0
+Index: sunrpc/Makefile
+===================================================================
+--- sunrpc/Makefile	(Revision 7)
++++ sunrpc/Makefile	(Arbeitskopie)
+@@ -30,7 +30,8 @@
+ ifndef CROSS
+ all-here: rpcgen rpcinfo $(rpcsvc_hdrs:.h=.stmp) $(rpcsvc_funcs:.c=.stmp)
+ else
+-all-here: rpcgen rpcinfo
++all-here:
++# rpcgen rpcinfo
+ endif
+ 
+ dont_install_libs = yes
+Index: tz/Makefile
+===================================================================
+--- tz/Makefile	(Revision 7)
++++ tz/Makefile	(Arbeitskopie)
+@@ -79,7 +79,7 @@
+ CFLAGS-zdump.c = -I$(top_srcdir)/time
+ CFLAGS-tzinit.c = -I$(top_srcdir)/time
+ 
+-all-here: zic zdump tzselect yearistype tzinit zonelist
++all-here: #zic zdump tzselect yearistype tzinit zonelist
+ 
+ ifdef CROSS
+ NOTZ=yes
+Index: include/mint/cookie.h
+===================================================================
+--- include/mint/cookie.h	(Revision 7)
++++ include/mint/cookie.h	(Arbeitskopie)
+@@ -564,6 +564,14 @@
+ #define C_FOUND		0
+ #define C_NOTFOUND	-1	/* EERROR */
+
++#ifndef _FEATURES_H
++# include <features.h>
++#endif
++
++__BEGIN_DECLS
++
+ extern int 	Getcookie(long cookie, long *val);
+
++__END_DECLS
++
+ #endif
+Index: startup/crt0.S
+===================================================================
+--- startup/crt0.S	(Revision 7)
++++ startup/crt0.S	(Arbeitskopie)
+@@ -47,6 +47,7 @@
+
+ 	.text
+ 	.even
++	.section	.text.entry.mint,"ax",@progbits
+ 	.globl	__start
+ __start:
+ 	subl	a6, a6		| clear a6 for debuggers

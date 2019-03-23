@@ -1,0 +1,16 @@
+Index: wget-1.19.5/src/host.c
+===================================================================
+--- wget-1.19.5.orig/src/host.c
++++ wget-1.19.5/src/host.c
+@@ -732,7 +732,10 @@ wait_ares (ares_channel channel)
+         ares_process (channel, &read_fds, &write_fds);
+     }
+   if (timer)
+-    timer = ptimer_destroy (timer);
++  {
++    ptimer_destroy (timer);
++    timer = NULL;
++  }
+ }
+ 
+ static void

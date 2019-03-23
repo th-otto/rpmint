@@ -1,0 +1,108 @@
+diff -r -u microemacs-5.03-orig/Makefile microemacs-5.03/Makefile
+--- microemacs-5.03-orig/Makefile	Sun Dec  5 21:46:30 1999
++++ microemacs-5.03/Makefile	Thu Jan  3 18:28:24 2002
+@@ -16,14 +16,14 @@
+ BDIR = .
+ LDIR = lib
+ 
+-INSD = /usr/lib/microemacs
++INSD = /usr/local/lib/microemacs
+ BIND = /usr/local/bin
+ MV   = /bin/mv
+ 
+ # options and arguments to the C compiler
+ CC = gcc
+ 
+-CFLAGS =	-I$(SDIR) -I$(HDIR) 
++CFLAGS = -I$(SDIR) -I$(HDIR) -O2 -fomit-frame-pointer
+ 
+ # list of header files
+ 
+diff -r -u microemacs-5.03-orig/epath.h microemacs-5.03/epath.h
+--- microemacs-5.03-orig/epath.h	Mon Jan 27 23:03:36 1997
++++ microemacs-5.03/epath.h	Thu Feb 14 15:01:10 2002
+@@ -69,7 +69,7 @@
+ 	".emacsrc",
+ 	"emacs.hlp",
+ 	"/usr/local/",
+-	"/usr/lib/microemacs/",
++	"/usr/local/lib/microemacs/",
+ 	""
+ };
+ #endif
+diff -r -u microemacs-5.03-orig/estruct.h microemacs-5.03/estruct.h
+--- microemacs-5.03-orig/estruct.h	Fri Jan  7 10:59:02 2000
++++ microemacs-5.03/estruct.h	Thu Jan  3 19:11:34 2002
+@@ -44,7 +44,7 @@
+ #define AOSVS	0			/* Data General AOS/VS		*/
+ #define AUX     0                       /* Apple UNIX for Macintosh     */
+ #define AVIION	0			/* Data General AViiON		*/
+-#define BSD	0			/* UNIX BSD 4.2 and ULTRIX	*/
++#define BSD	1			/* UNIX BSD 4.2 and ULTRIX	*/
+ #define FINDER	0			/* Macintosh OS 		*/
+ #define HPUX8	0			/* HPUX HP 9000 ver 8 or less	*/
+ #define HPUX9	0			/* HPUX HP 9000 ver 9           */
+@@ -55,8 +55,8 @@
+ #define SMOS	0			/* Supermax UNIX System V	*/
+ #define SUN	0			/* SUN v4.0			*/
+ #define TOS	0			/* ST520, TOS			*/
+-#define USG	1			/* UNIX system V		*/
+-#define LINUX	1			/* Linux			*/
++#define USG	0			/* UNIX system V		*/
++#define LINUX	0			/* Linux			*/
+ #define V7	0			/* V7 UNIX or Coherent or BSD4.2*/ 
+ #define VMS	0			/* VAX/VMS			*/
+ #define WMCS	0			/* Wicat's MCS			*/
+@@ -141,9 +141,9 @@
+ /*	Language text options	(pick one)				*/
+ 
+ #define ENGLISH 0		/* [default] */
+-#define FRENCH	1
++#define FRENCH	0
+ #define SPANISH 0
+-#define GERMAN	0
++#define GERMAN	1
+ #define DUTCH	0
+ #define PLATIN	0		/* Pig Latin */
+ #define JAPAN	0
+diff -r -u microemacs-5.03-orig/unix.c microemacs-5.03/unix.c
+--- microemacs-5.03-orig/unix.c	Wed Mar 29 17:19:46 2000
++++ microemacs-5.03/unix.c	Thu Jan  3 19:17:02 2002
+@@ -672,10 +672,12 @@
+ {
+ #if BSD
+ 	static struct timeval timout = { 0, 500000L };
+-	int count, r;
++	int count;
++	fd_set r;
+ 
+ 	/* Select input */
+-	r = 1;
++	FD_ZERO(&r);
++	FD_SET(1, &r);
+ 	count = select(1, &r, NULL, NULL, &timout);
+ 	if (count == 0)
+ 		return(TIMEOUT);
+@@ -1312,7 +1314,7 @@
+ /** Get time of day **/
+ char * timeset()
+ {
+-	long int buf; /* Should be time_t */
++	time_t buf;
+ 	char * sp, * cp;
+ 
+ 	char * ctime();
+diff -r -u microemacs-5.03-orig/window.c microemacs-5.03/window.c
+--- microemacs-5.03-orig/window.c	Wed Jan  5 23:12:18 2000
++++ microemacs-5.03/window.c	Thu Jan  3 19:08:02 2002
+@@ -4,8 +4,8 @@
+  */
+ 
+ #include	<stdio.h>
+-#include	<asm/termios.h>
+-#include	<asm/ioctls.h>
++#include	<sys/termios.h>
++#include	<sys/ioctl.h>
+ #include	"estruct.h"
+ #include	"eproto.h"
+ #include	"edef.h"

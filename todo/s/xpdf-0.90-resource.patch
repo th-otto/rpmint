@@ -1,0 +1,62 @@
+--- xpdf-0.90/ltk/LTKResources.cc.orig	Tue May 23 15:30:38 2000
++++ xpdf-0.90/ltk/LTKResources.cc	Tue May 23 15:24:29 2000
+@@ -36,34 +36,40 @@
+   GString *s;
+   FILE *f;
+ 
+-  if (XResourceManagerString(display)) {
+-    db1 = XrmGetStringDatabase(XResourceManagerString(display));
++  if (!access("/usr/X11R6/lib/X11/app-defaults/Xpdf",0)) {
++    db1 = XrmGetFileDatabase("/usr/X11R6/lib/X11/app-defaults/Xpdf");
+     XrmMergeDatabases(db1, db);
+-  } else {
++  }
++  else {
++    if (XResourceManagerString(display)) {
++      db1 = XrmGetStringDatabase(XResourceManagerString(display));
++      XrmMergeDatabases(db1, db);
++    } else {
+ #ifdef VMS
+-    s = new GString("DECW$USER_DEFAULTS:XPDF.DAT");
++      s = new GString("DECW$USER_DEFAULTS:XPDF.DAT");
+ #else
+-    s = appendToPath(getHomeDir(), ".Xresources");
++      s = appendToPath(getHomeDir(), ".Xresources");
+ #endif
+-    if ((f = fopen(s->getCString(), "r"))) {
+-      fclose(f);
+-      db1 = XrmGetFileDatabase(s->getCString());
+-      XrmMergeDatabases(db1, db);
+-    }
+-    delete s;
++      if ((f = fopen(s->getCString(), "r"))) {
++        fclose(f);
++        db1 = XrmGetFileDatabase(s->getCString());
++        XrmMergeDatabases(db1, db);
++      }
++      delete s;
+ #ifdef VMS
+-    s = new GString("DECW$USER_DEFAULTS:DECW$XDEFAULTS.DAT");
++      s = new GString("DECW$USER_DEFAULTS:DECW$XDEFAULTS.DAT");
+ #else
+-    s = appendToPath(getHomeDir(), ".Xdefaults");
++      s = appendToPath(getHomeDir(), ".Xdefaults");
+ #endif
+-    if ((f = fopen(s->getCString(), "r"))) {
+-      fclose(f);
+-      db1 = XrmGetFileDatabase(s->getCString());
+-      XrmMergeDatabases(db1, db);
++      if ((f = fopen(s->getCString(), "r"))) {
++        fclose(f);
++        db1 = XrmGetFileDatabase(s->getCString());
++        XrmMergeDatabases(db1, db);
++      }
++      delete s;
+     }
+-    delete s;
++    XrmMergeDatabases(cmdLineDB, db);
+   }
+-  XrmMergeDatabases(cmdLineDB, db);
+ }
+ 
+ GString *ltkGetStringResource(XrmDatabase db, GString *appName,
