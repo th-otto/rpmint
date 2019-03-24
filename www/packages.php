@@ -1977,6 +1977,22 @@ realistic reflections, shading, perspective, and other effects.
 version was compiled with the fdlibm math library.
 '
 	),
+	'smpeg' => array(
+		'name' => 'smpeg',
+		'upstream' => 'http://www.lokigames.com/development/smpeg.php3',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '0.4.5',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+SMPEG is based on UC Berkeley's mpeg_play software MPEG decoder
+and SPLAY, an mpeg audio decoder created by Woo-jae Jung. We have
+completed the initial work to wed these two projects in order to 
+create a general purpose MPEG video/audio player.
+'
+	),
 );
 
 ?>
