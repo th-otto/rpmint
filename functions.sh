@@ -520,7 +520,7 @@ make_archives()
 		rm -rf "${srcdir}"
 	fi
 
-	test -z "${PATCHES}" || ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES} ${DISABLED_PATCHES} ${POST_INSTALL_SCRIPTS} ${PATCHARCHIVE}
+	test -z "${PATCHES} ${DISABLED_PATCHES}" || ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES} ${DISABLED_PATCHES} ${POST_INSTALL_SCRIPTS} ${PATCHARCHIVE}
 	cp -p "$me" ${DIST_DIR}/build-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh
 	cp -p "${scriptdir}/functions.sh" "${DIST_DIR}"
 }

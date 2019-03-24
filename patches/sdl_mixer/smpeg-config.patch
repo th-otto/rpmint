@@ -1,0 +1,198 @@
+--- SDL_mixer-1.2.12/acinclude/smpeg.m4.orig	2019-03-24 11:16:39.288299483 +0100
++++ SDL_mixer-1.2.12/acinclude/smpeg.m4	2019-03-24 11:21:36.504293015 +0100
+@@ -1,4 +1,3 @@
+-##############################################################################
+ # Configure paths for SMPEG
+ # Nicolas Vignal 11/19/2000
+ # stolen from Sam Lantinga
+@@ -7,49 +6,41 @@
+ # stolen from Manish Singh
+ # Shamelessly stolen from Owen Taylor
+ 
+-dnl AM_PATH_SMPEG([MINIMUM-VERSION, [ACTION-IF-FOUND [, 
+-ACTION-IF-NOT-FOUND]]])
++dnl AM_PATH_SMPEG([MINIMUM-VERSION, [ACTION-IF-FOUND [,ACTION-IF-NOT-FOUND]]])
+ dnl Test for SMPEG, and define SMPEG_CFLAGS and SMPEG_LIBS
+ dnl
+ AC_DEFUN([AM_PATH_SMPEG],
+ [dnl
+ dnl Get the cflags and libraries from the smpeg-config script
+ dnl
+-AC_ARG_WITH(smpeg-prefix,[  --with-smpeg-prefix=PFX   Prefix where SMPEG is installed (optional)],
+-            smpeg_prefix="$withval", smpeg_prefix="")
+-AC_ARG_WITH(smpeg-exec-prefix,[  --with-smpeg-exec-prefix=PFX Exec prefix where SMPEG is installed (optional)],
+-            smpeg_exec_prefix="$withval", smpeg_exec_prefix="")
+-AC_ARG_ENABLE(smpegtest, [  --disable-smpegtest       Do not try to compile and run a test SMPEG program],
+-                    , enable_smpegtest=yes)
+-
+-  if test x$smpeg_exec_prefix != x ; then
+-     smpeg_args="$smpeg_args --exec-prefix=$smpeg_exec_prefix"
+-     if test x${SMPEG_CONFIG+set} != xset ; then
+-        SMPEG_CONFIG=$smpeg_exec_prefix/bin/smpeg-config
+-     fi
+-  fi
+-  if test x$smpeg_prefix != x ; then
+-     smpeg_args="$smpeg_args --prefix=$smpeg_prefix"
+-     if test x${SMPEG_CONFIG+set} != xset ; then
+-        SMPEG_CONFIG=$smpeg_prefix/bin/smpeg-config
+-     fi
+-  fi
++AC_ARG_WITH([smpeg-prefix],
++            AS_HELP_STRING([--with-smpeg-prefix=PFX],
++                           [Prefix where SMPEG is installed (optional)]),
++            [smpeg_prefix="$withval"], [smpeg_prefix=""])
++AC_ARG_WITH([smpeg-exec-prefix],
++            AS_HELP_STRING([--with-smpeg-exec-prefix=PFX],
++                           [Exec prefix where SMPEG is installed (optional)]),
++            [smpeg_exec_prefix="$withval"], [smpeg_exec_prefix=""])
++AC_ARG_ENABLE([smpegtest],
++              AS_HELP_STRING([--disable-smpegtest],
++                             [Do not try to compile and run a test SMPEG program]),
++              [], [enable_smpegtest=yes])
+ 
+-  AC_PATH_PROG(SMPEG_CONFIG, smpeg-config, no)
+-  min_smpeg_version=ifelse([$1], ,0.2.7,$1)
+-  AC_MSG_CHECKING(for SMPEG - version >= $min_smpeg_version)
++  min_smpeg_version=ifelse([$1], [], [0.4.5], [$1])
+   no_smpeg=""
+-  if test "$SMPEG_CONFIG" = "no" ; then
+-    no_smpeg=yes
+-  else
+-    SMPEG_CFLAGS=`$SMPEG_CONFIG $smpegconf_args --cflags`
+-    SMPEG_LIBS=`$SMPEG_CONFIG $smpegconf_args --libs`
+-
+-    smpeg_major_version=`$SMPEG_CONFIG $smpeg_args --version | \
++  PKG_CHECK_MODULES(SMPEG, [smpeg >= $min_smpeg_version],
++           [],
++           [dnl
++             AC_MSG_RESULT(no)
++             no_smpeg=yes
++           ])
++  AC_MSG_CHECKING([for SMPEG - version >= $min_smpeg_version])
++  if test "$no_smpeg" != "ye" ; then
++    smpeg_major_version=`pkg-config smpeg $smpeg_args --version | \
+            sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\1/'`
+-    smpeg_minor_version=`$SMPEG_CONFIG $smpeg_args --version | \
++    smpeg_minor_version=`pkg-config smpeg $smpeg_args --version | \
+            sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\2/'`
+-    smpeg_micro_version=`$SMPEG_CONFIG $smpeg_config_args --version | \
++    smpeg_micro_version=`pkg-config smpeg $smpeg_args --version | \
+            sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`
+     if test "x$enable_smpegtest" = "xyes" ; then
+       ac_save_CFLAGS="$CFLAGS"
+@@ -61,7 +52,7 @@
+ dnl checks the results of smpeg-config to some extent
+ dnl
+       rm -f conf.smpegtest
+-      AC_TRY_RUN([
++      AC_RUN_IFELSE([AC_LANG_SOURCE([[
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -118,16 +109,16 @@
+     }
+ }
+ 
+-],, no_smpeg=yes,[echo $ac_n "cross compiling; assumed OK... $ac_c"])
++]])],[],[no_smpeg=yes], [echo $ac_n "cross compiling; assumed OK... $ac_c"])
+        CFLAGS="$ac_save_CFLAGS"
+        LIBS="$ac_save_LIBS"
+      fi
+   fi
+   if test "x$no_smpeg" = x ; then
+-     AC_MSG_RESULT(yes)
+-     ifelse([$2], , :, [$2])
++     AC_MSG_RESULT([yes])
++     ifelse([$2], [], [:], [$2])
+   else
+-     AC_MSG_RESULT(no)
++     AC_MSG_RESULT([no])
+      if test "$SMPEG_CONFIG" = "no" ; then
+        echo "*** The smpeg-config script installed by SMPEG could not be found"
+        echo "*** If SMPEG was installed in PREFIX, make sure PREFIX/bin is in"
+@@ -140,10 +131,11 @@
+           echo "*** Could not run SMPEG test program, checking why..."
+           CFLAGS="$CFLAGS $SMPEG_CFLAGS $SDL_CFLAGS"
+           LIBS="$LIBS $SMPEG_LIBS $SDL_LIBS"
+-          AC_TRY_LINK([
++          AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+ #include <stdio.h>
+ #include "smpeg.h"
+-],      [ return 0; ],
++]],
++        [[ return 0; ]])],
+         [ echo "*** The test program compiled, but did not run. This usually means"
+           echo "*** that the run-time linker is not finding SMPEG or finding the wrong"
+           echo "*** version of SMPEG. If it is not finding SMPEG, you'll need to set your"
+@@ -163,9 +155,9 @@
+      fi
+      SMPEG_CFLAGS=""
+      SMPEG_LIBS=""
+-     ifelse([$3], , :, [$3])
++     ifelse([$3], [], [:], [$3])
+   fi
+-  AC_SUBST(SMPEG_CFLAGS)
+-  AC_SUBST(SMPEG_LIBS)
++  AC_SUBST([SMPEG_CFLAGS])
++  AC_SUBST([SMPEG_LIBS])
+   rm -f conf.smpegtest
+ ])
+--- SDL_mixer-1.2.12/Makefile.in	2019-03-24 11:30:24.984281515 +0100
++++ SDL_mixer-1.2.12/Makefile.in	2019-03-24 11:31:18.784280344 +0100
+@@ -66,10 +66,10 @@
+ 	$(LIBTOOL) --mode=link $(CC) -o $@ $(OBJECTS) $(VERSION_OBJECTS) $(LDFLAGS) $(EXTRA_LDFLAGS) $(LT_LDFLAGS)
+ 
+ $(objects)/playwave$(EXE): $(objects)/playwave.lo $(objects)/$(TARGET)
+-	$(LIBTOOL) --mode=link $(CC) -o $@ $(objects)/playwave.lo $(LDFLAGS) $(SDL_CFLAGS) $(SDL_LIBS) $(objects)/$(TARGET)
++	$(LIBTOOL) --mode=link $(CC) -o $@ $(objects)/playwave.lo $(LDFLAGS) $(SDL_CFLAGS) $(SDL_LIBS) $(objects)/$(TARGET) -lstdc++ -lm
+ 
+ $(objects)/playmus$(EXE): $(objects)/playmus.lo $(objects)/$(TARGET)
+-	$(LIBTOOL) --mode=link $(CC) -o $@ $(objects)/playmus.lo $(LDFLAGS) $(SDL_CFLAGS) $(SDL_LIBS) $(objects)/$(TARGET)
++	$(LIBTOOL) --mode=link $(CC) -o $@ $(objects)/playmus.lo $(LDFLAGS) $(SDL_CFLAGS) $(SDL_LIBS) $(objects)/$(TARGET) -lstdc++ -lm
+ 
+ install: all install-hdrs install-lib #install-bin
+ install-hdrs:
+--- SDL_mixer-1.2.12/music.c.orig	2019-03-24 11:45:54.568261287 +0100
++++ SDL_mixer-1.2.12/music.c	2019-03-24 11:47:57.720258607 +0100
+@@ -657,7 +657,7 @@
+ 		if ( Mix_Init(MIX_INIT_MP3) ) {
+ 			SMPEG_Info info;
+ 			music->type = MUS_MP3;
+-			music->data.mp3 = smpeg.SMPEG_new_rwops(rw, &info, 0);
++			music->data.mp3 = smpeg.SMPEG_new_rwops(rw, &info, freesrc, 0);
+ 			if ( !info.has_audio ) {
+ 				Mix_SetError("MPEG file does not have any audio stream.");
+ 				music->error = 1;
+--- SDL_mixer-1.2.12/dynamic_mp3.c.orig	2019-03-24 11:44:06.960263628 +0100
++++ SDL_mixer-1.2.12/dynamic_mp3.c	2019-03-24 11:48:49.136257488 +0100
+@@ -66,7 +66,7 @@
+ 			return -1;
+ 		}
+ 		smpeg.SMPEG_new_rwops =
+-			(SMPEG* (*)(SDL_RWops *, SMPEG_Info*, int))
++			(SMPEG* (*)(SDL_RWops *, SMPEG_Info*, int, int))
+ 			SDL_LoadFunction(smpeg.handle, "SMPEG_new_rwops");
+ 		if ( smpeg.SMPEG_new_rwops == NULL ) {
+ 			SDL_UnloadObject(smpeg.handle);
+--- SDL_mixer-1.2.12/dynamic_mp3.h.orig	2019-03-24 11:51:52.028253508 +0100
++++ SDL_mixer-1.2.12/dynamic_mp3.h	2019-03-24 11:52:11.816253078 +0100
+@@ -29,7 +29,7 @@
+ 	void (*SMPEG_delete)( SMPEG* mpeg );
+ 	void (*SMPEG_enableaudio)( SMPEG* mpeg, int enable );
+ 	void (*SMPEG_enablevideo)( SMPEG* mpeg, int enable );
+-	SMPEG* (*SMPEG_new_rwops)(SDL_RWops *src, SMPEG_Info* info, int sdl_audio);
++	SMPEG* (*SMPEG_new_rwops)(SDL_RWops *src, SMPEG_Info* info, int freesrc, int sdl_audio);
+ 	void (*SMPEG_play)( SMPEG* mpeg );
+ 	int (*SMPEG_playAudio)( SMPEG *mpeg, Uint8 *stream, int len );
+ 	void (*SMPEG_rewind)( SMPEG* mpeg );
+--- SDL_mixer-1.2.12/dynamic_ogg.h.orig	2019-03-24 11:54:46.456249713 +0100
++++ SDL_mixer-1.2.12/dynamic_ogg.h	2019-03-24 11:55:06.280249281 +0100
+@@ -31,7 +31,7 @@
+ 	void *handle;
+ 	int (*ov_clear)(OggVorbis_File *vf);
+ 	vorbis_info *(*ov_info)(OggVorbis_File *vf,int link);
+-	int (*ov_open_callbacks)(void *datasource, OggVorbis_File *vf, char *initial, long ibytes, ov_callbacks callbacks);
++	int (*ov_open_callbacks)(void *datasource, OggVorbis_File *vf, const char *initial, long ibytes, ov_callbacks callbacks);
+ 	ogg_int64_t (*ov_pcm_total)(OggVorbis_File *vf,int i);
+ #ifdef OGG_USE_TREMOR
+ 	long (*ov_read)(OggVorbis_File *vf,char *buffer,int length, int *bitstream);

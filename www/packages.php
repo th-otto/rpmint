@@ -1876,11 +1876,11 @@ vcut (which allows you to cut up Vorbis files).
 		'name' => 'SDL_mixer',
 		'upstream' => 'http://libsdl.org/projects/SDL_mixer/release-1.2.html',
 		'source' => 'http://libsdl.org/projects/SDL_mixer/release/%{name}-%{version}.tar.gz',
-		'version' => '1.2.12',
+		'version' => '1.2.13',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
-		'bin' => 0,
+		'bin' => 1,
 		'comment' => '
 A multichannel audio mixer. It supports four channels of 16-bit stereo
 audio, plus a single channel of music, mixed by the popular MikMod MOD,
@@ -1987,10 +1987,25 @@ version was compiled with the fdlibm math library.
 		'dev' => 1,
 		'bin' => 1,
 		'comment' => '
-SMPEG is based on UC Berkeley's mpeg_play software MPEG decoder
+SMPEG is based on UC Berkeley&apos;s mpeg_play software MPEG decoder
 and SPLAY, an mpeg audio decoder created by Woo-jae Jung. We have
 completed the initial work to wed these two projects in order to 
 create a general purpose MPEG video/audio player.
+'
+	),
+	'mpg123' => array(
+		'name' => 'mpg123',
+		'upstream' => 'http://www.mpg123.de/',
+		'source' => 'https://sourceforge.net/projects/%{name}/files/%{name}/%{version}/%{name}-%{version}.tar.bz2',
+		'version' => '1.25.10',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'comment' => '
+The mpg123 distribution contains an MPEG 1.0/2.0/2.5 audio player/decoder for
+layers 1, 2 and 3 (most commonly MPEG 1.0 Layer 3 aka MP3), as well as re-usable decoding
+and output libraries.
 '
 	),
 );

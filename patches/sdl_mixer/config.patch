@@ -1,15 +1,12 @@
---- SDL_mixer-1.2.12/configure.in.orig	2019-03-19 18:10:39.659158397 +0100
-+++ SDL_mixer-1.2.12/configure.in	2019-03-19 18:11:27.255157361 +0100
-@@ -251,32 +251,12 @@
-     libmikmod_min=1
-     libmikmod_rev=10
+--- a/configure.in	2019-03-19 18:10:39.659158397 +0100
++++ b/configure.in	2019-03-19 18:11:27.255157361 +0100
+@@ -252,28 +252,12 @@
      libmikmod_ver="$libmikmod_maj.$libmikmod_min.$libmikmod_rev"
+     CFLAGS_SAVED="$CFLAGS"
+     LIBS_SAVED="$LIBS"
 -    AC_PATH_PROG(LIBMIKMOD_CONFIG, libmikmod-config, no, [$PATH])
 -    if test "$LIBMIKMOD_CONFIG" != "no" ; then
--        
--        CFLAGS_SAVED="$CFLAGS"
--        LIBS_SAVED="$LIBS"
--        CFLAGS="$CFLAGS -DLIBMIKMOD_MUSIC `$LIBMIKMOD_CONFIG --cflags`"
+-        CFLAGS="$CFLAGS `$LIBMIKMOD_CONFIG --cflags`"
 -        LIBS="$LIBS `$LIBMIKMOD_CONFIG --libs`"
 +    AC_MSG_CHECKING([for libmikmod - version >= $libmikmod_ver])
 +    PKG_CHECK_MODULES(LIBMIKMOD, [libmikmod >= 3.1.10], have_libmikmod=yes)
@@ -33,12 +30,11 @@
 -printf("no\n*** libmikmod is older than %d.%d.%d, not using.\n",maj,min,rev);
 -return 1;
 -}
--], [], have_libmikmod=no; CFLAGS="$CFLAGS_SAVED"; LIBS="$LIBS_SAVED",
--        [echo $ac_n "cross compiling; assumed OK... $ac_c"])
+-], [], [have_libmikmod=no], [echo $ac_n "cross compiling; assumed OK... $ac_c"])
      fi
  
      if test x$have_libmikmod = xyes; then
-@@ -295,12 +275,12 @@
+@@ -292,12 +276,12 @@
                  ;;
          esac
          SOURCES="$SOURCES $srcdir/*_mod.c"
@@ -53,16 +49,16 @@
          fi
      else
          AC_MSG_WARN([*** Unable to find MikMod library (http://mikmod.raphnet.net/)])
-@@ -465,7 +465,7 @@
-         fi
-     else
-         AC_CHECK_HEADER([vorbis/vorbisfile.h], [have_ogg_hdr=yes])
--        AC_CHECK_LIB([vorbisfile], [ov_open_callbacks], [have_ogg_lib=yes])
-+        AC_CHECK_LIB([vorbisfile], [ov_open_callbacks], [have_ogg_lib=yes],, [-lvorbis -logg -lm])
-         if test x$have_ogg_hdr = xyes -a x$have_ogg_lib = xyes; then
+@@ -427,7 +411,7 @@
+     LIBS_SAVED="$LIBS"
+     if test x$enable_music_ogg_tremor = xyes; then
+         AC_CHECK_HEADER([tremor/ivorbisfile.h], [have_tremor_hdr=yes])
+-        AC_CHECK_LIB([vorbisidec], [ov_open_callbacks], [have_tremor_lib=yes], [], [-logg])
++        AC_CHECK_LIB([vorbisidec], [ov_open_callbacks], [have_tremor_lib=yes], [], [-lvorbis -logg -lm])
+         if test x$have_tremor_hdr = xyes -a x$have_tremor_lib = xyes; then
              case "$host" in
                  *-*-darwin*)
-@@ -525,7 +525,7 @@
+@@ -518,7 +502,7 @@
  
      if test x$have_flac_ver = xyes; then
          AC_CHECK_HEADER([FLAC/stream_decoder.h], [have_flac_hdr=yes])
@@ -71,7 +67,7 @@
          if test x$have_flac_hdr = xyes -a x$have_flac_lib = xyes; then    
              case "$host" in
                  *-*-darwin*)
-@@ -547,7 +547,7 @@
+@@ -540,7 +524,7 @@
                  echo "-- dynamic libFLAC -> $flac_lib"
                  EXTRA_CFLAGS="$EXTRA_CFLAGS -DFLAC_DYNAMIC=\\\"$flac_lib\\\""
              else
@@ -80,18 +76,30 @@
              fi
          fi
      else
---- SDL_mixer-1.2.12/Makefile.in.orig	2019-03-20 11:20:30.039016501 +0100
-+++ SDL_mixer-1.2.12/Makefile.in	2019-03-20 11:20:59.631015857 +0100
+--- a/Makefile.in	2019-03-20 11:20:30.039016501 +0100
++++ n/Makefile.in	2019-03-20 11:20:59.631015857 +0100
 @@ -66,10 +66,10 @@
  	$(LIBTOOL) --mode=link $(CC) -o $@ $(OBJECTS) $(VERSION_OBJECTS) $(LDFLAGS) $(EXTRA_LDFLAGS) $(LT_LDFLAGS)
  
  $(objects)/playwave$(EXE): $(objects)/playwave.lo $(objects)/$(TARGET)
--	$(LIBTOOL) --mode=link $(CC) -o $@ $(objects)/playwave.lo $(SDL_CFLAGS) $(SDL_LIBS) $(objects)/$(TARGET)
+-	$(LIBTOOL) --mode=link $(CC) -o $@ $(objects)/playwave.lo $(SDL_CFLAGS) $(SDL_LIBS) $(LDFLAGS) $(objects)/$(TARGET)
 +	$(LIBTOOL) --mode=link $(CC) -o $@ $(objects)/playwave.lo $(LDFLAGS) $(SDL_CFLAGS) $(SDL_LIBS) $(objects)/$(TARGET)
  
  $(objects)/playmus$(EXE): $(objects)/playmus.lo $(objects)/$(TARGET)
--	$(LIBTOOL) --mode=link $(CC) -o $@ $(objects)/playmus.lo $(SDL_CFLAGS) $(SDL_LIBS) $(objects)/$(TARGET)
+-	$(LIBTOOL) --mode=link $(CC) -o $@ $(objects)/playmus.lo $(SDL_CFLAGS) $(SDL_LIBS) $(LDFLAGS) $(objects)/$(TARGET)
 +	$(LIBTOOL) --mode=link $(CC) -o $@ $(objects)/playmus.lo $(LDFLAGS) $(SDL_CFLAGS) $(SDL_LIBS) $(objects)/$(TARGET)
  
  install: all install-hdrs install-lib #install-bin
  install-hdrs:
+
+--- SDL_mixer-1.2.13/configure.in.orig	2019-03-24 14:04:39.846358120 +0100
++++ SDL_mixer-1.2.13/configure.in	2019-03-24 14:05:18.850357271 +0100
+@@ -544,7 +544,7 @@
+               [], [enable_music_mp3_shared=yes])
+ if test x$enable_music_mp3 = xyes; then
+     AC_CHECK_HEADER([mpg123.h], [have_mpg123_hdr=yes])
+-    AC_CHECK_LIB([mpg123], [mpg123_replace_reader_handle], [have_mpg123_lib=yes])
++    AC_CHECK_LIB([mpg123], [mpg123_replace_reader_handle], [have_mpg123_lib=yes],, [-lm])
+     if test x$have_mpg123_hdr = xyes -a x$have_mpg123_lib = xyes; then
+         have_mpg123=yes
+         case "$host" in
