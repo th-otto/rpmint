@@ -349,7 +349,10 @@ instead of the latest official release.
 		'dev' => 1,
 		'comment' => '
 PML stands for Portable Math Library.<br />
-It works, but of course it is really slow on a 68000 without FPU.'
+It works, but of course it is really slow on a 68000 without FPU.
+<br />
+For a comparison to fdlibm, see <a href="math.php">Math libraries for Atari</a>
+'
 	),
 	'fdlibm' => array(
 		'name' => 'fdlibm',
@@ -365,6 +368,8 @@ fdlibm is a portable math library that was originally <br />
 developed by Sun Microsystem. <br />
 You should be able to use it at a replacement for PML,
 but note that all packages provided here were compiled using PML.
+<br />
+For a comparison to PML, see <a href="math.php">Math libraries for Atari</a>
 '
 	),
 	'gemlib' => array(
