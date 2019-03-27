@@ -1,0 +1,44 @@
+--- a/config.sub.orig	2009-02-24 04:50:50.000000000 +0100
++++ b/config.sub	2019-03-27 19:27:11.053540567 +0100
+@@ -214,6 +214,10 @@
+ 	-psos*)
+ 		os=-psos
+ 		;;
++	-mintelf | -mintelf[0-9]*)
++		basic_machine=m68k-atari
++		os=-mintelf
++		;;
+ 	-mint | -mint[0-9]*)
+ 		basic_machine=m68k-atari
+ 		os=-mint
+@@ -618,6 +622,10 @@
+ 	miniframe)
+ 		basic_machine=m68000-convergent
+ 		;;
++	*mintelf | -mintelf[0-9]*)
++		basic_machine=m68k-atari
++		os=-mintelf
++		;;
+ 	*mint | -mint[0-9]* | *MiNT | *MiNT[0-9]*)
+ 		basic_machine=m68k-atari
+ 		os=-mint
+@@ -1211,6 +1219,9 @@
+ 	-xenix)
+ 		os=-xenix
+ 		;;
++	-*mintelf | -mintelf[0-9]*)
++		os=-mintelf
++		;;
+         -*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
+ 	        os=-mint
+ 		;;
+@@ -1438,6 +1449,9 @@
+ 			-mpw* | -macos*)
+ 				vendor=apple
+ 				;;
++			-*mintelf | -mintelf[0-9]*)
++				vendor=atari
++				;;
+ 			-*mint | -mint[0-9]* | -*MiNT | -MiNT[0-9]*)
+ 				vendor=atari
+ 				;;

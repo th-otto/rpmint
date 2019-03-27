@@ -1353,11 +1353,13 @@ This notably applies to Perl and Python.
 
 <li>2019/03/23 Rebuild SDL_mixer with smpeg support</li>
 
-<li>2019/03/23 Packages mpg123 added</li>
+<li>2019/03/23 Package mpg123 added</li>
 
 <li>2019/03/23 Update SDL_mixer to 1.2.13</li>
 
 <li>2019/03/23 Update pml library</li>
+
+<li>2019/03/27 Package libtheora added</li>
 
 </ul>
 

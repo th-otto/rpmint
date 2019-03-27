@@ -2013,6 +2013,21 @@ layers 1, 2 and 3 (most commonly MPEG 1.0 Layer 3 aka MP3), as well as re-usable
 and output libraries.
 '
 	),
+	'libtheora' => array(
+		'name' => 'libtheora',
+		'upstream' => 'http://www.theora.org/',
+		'source' => 'http://downloads.xiph.org/releases/theora/%{name}-%{version}.tar.bz2',
+		'version' => '1.1.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'comment' => '
+Theora is a free and open video compression format from the Xiph.org Foundation. Like all our 
+multimedia technology it can be used to distribute film and video online and on disc without 
+the licensing and royalty fees or vendor lock-in associated with other formats.
+'
+	),
 );
 
 ?>
