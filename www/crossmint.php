@@ -1038,22 +1038,54 @@ foreach ($libpackages as $package)
 		echo '<tr>' . "\n";
 		echo '<td class="linkdesc">Devel Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
+		echo '<table><tr><td>';
+		if (isset($package['atari']) && $package['atari'])
+		{
+			echo '<img class="smallicon" src="images/os-atari.png" width="16" height="16" alt="Atari"></img>' . "\n";
+		}
+		echo '</td><td>';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
 		if (isset($package['date']))
 			$filename .= '-' . $package['date'];
 		$filename .= '-dev.tar.xz';
 		$text = $package['name'] . '-' . $package['version'] . '-mint.tar.xz';
 		gen_link($filename, $text);
+		echo '</td></tr></table>';
 		echo '</td></tr>' . "\n";
-		echo '<tr><td></td><td class="sourcelink">';
+		echo '<tr><td></td>';
+		echo '<td class="sourcelink">';
 		if (!isset($package['noelf']))
 		{
+			echo '<table><tr><td>';
+			if (isset($package['atari']) && $package['atari'])
+			{
+				echo '<img class="smallicon" src="images/os-atari.png" width="16" height="16" alt="Atari"></img>' . "\n";
+			}
+			echo '</td><td>';
 			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mintelf';
 			if (isset($package['date']))
 				$filename .='-' . $package['date'];
 			$filename .= '-dev.tar.xz';
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf.tar.xz';
 			gen_link($filename, $text);
+			echo '</td></tr></table>';
+		}
+		if (isset($package['amiga']) && $package['amiga'])
+		{
+			echo '<tr><td></td>';
+			echo '<td class="sourcelink">';
+			echo '<table><tr><td>';
+			echo '<img class="smallicon" src="images/os-amigaos.png" width="16" height="16" alt="Amiga"></img>' . "\n";
+			echo '</td><td>';
+			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-amigaos';
+			if (isset($package['date']))
+				$filename .='-' . $package['date'];
+			$filename .= '-dev.tar.xz';
+			$text = $package['name'] . '-' . $package['version'] . '-amigaos.tar.xz';
+			gen_link($filename, $text);
+			echo '</td></tr></table>';
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
 		}
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
@@ -1360,6 +1392,8 @@ This notably applies to Perl and Python.
 <li>2019/03/23 Update pml library</li>
 
 <li>2019/03/27 Package libtheora added</li>
+
+<li>2019/04/02 Some libraries are now compiled for amigaos</li>
 
 </ul>
 

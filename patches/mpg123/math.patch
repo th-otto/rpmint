@@ -16,3 +16,34 @@
 -Libs: -L${libdir} -lmpg123 
 +Libs: -L${libdir} -lmpg123 -lm
  Cflags: -I${includedir} 
+--- a/configure.ac	2019-04-01 15:13:28.555432209 +0200
++++ b/configure.ac	2019-04-01 15:14:07.975431351 +0200
+@@ -2122,28 +2122,6 @@
+ 	fi
+ fi
+ 
+-case $with_optimization in
+-  0)
+-    # No Optimizations
+-    CFLAGS="$CFLAGS"
+-  ;;
+-  1)
+-    CFLAGS="-O $CFLAGS"
+-  ;;
+-  2)
+-    CFLAGS="-O2 -fomit-frame-pointer -funroll-all-loops -finline-functions -ffast-math $CFLAGS"
+-  ;;
+-  3)
+-    CFLAGS="-O3 -fomit-frame-pointer -funroll-all-loops -finline-functions -ffast-math $CFLAGS"
+-  ;;
+-  4)
+-    CFLAGS="-O4 -fomit-frame-pointer -funroll-all-loops -finline-functions -ffast-math $CFLAGS"
+-  ;;
+-  *)
+-  	AC_MSG_ERROR([Unknown optimizations level '$with_optimization'])
+-  ;;
+-esac
+-
+ dnl If using gcc, prevent a bad alignment option from breaking things.
+ dnl Let's default to safe 16-byte alignment for any special x86 or altivec stuff.
+ if test "x$GCC" = xyes && echo "$CFLAGS" | $GREP 'mpreferred-stack-boundary=' > /dev/null; then

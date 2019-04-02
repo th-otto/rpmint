@@ -1,0 +1,145 @@
+--- a/src/libFLAC/lpc.c	2019-03-31 13:43:24.762057571 +0200
++++ b/src/libFLAC/lpc.c	2019-03-31 13:44:42.314055884 +0200
+@@ -57,7 +57,7 @@
+ 	return (long)(x + _copysign(0.5, x));
+ }
+ #elif !defined(HAVE_LROUND) && defined(__GNUC__)
+-static inline long int lround(double x) {
++inline long int lround(double x) {
+ 	return (long)(x + __builtin_copysign(0.5, x));
+ }
+ /* If this fails, we are in the presence of a mid 90's compiler, move along... */
+--- a/include/share/compat.h	2019-03-31 13:48:24.542051048 +0200
++++ b/include/share/compat.h	2019-03-31 13:48:49.610050502 +0200
+@@ -62,6 +62,13 @@
+ #define FLAC__off_t off_t
+ #endif
+ 
++#ifdef __AMIGA__
++#if !defined(HAVE_FSEEKO)
++#define fseeko fseek
++#define ftello ftell
++#endif
++#endif
++
+ #if HAVE_INTTYPES_H
+ #define __STDC_FORMAT_MACROS
+ #include <inttypes.h>
+--- a/src/flac/Makefile.am	2019-03-31 14:32:07.791459991 +0200
++++ b/src/flac/Makefile.am	2019-03-31 14:32:44.551459191 +0200
+@@ -40,6 +40,7 @@
+ 	local_string_utils.c \
+ 	utils.c \
+ 	vorbiscomment.c \
++	wcwidth.c \
+ 	analyze.h \
+ 	decode.h \
+ 	encode.h \
+--- a/src/flac/main.c	2019-03-31 14:53:14.439432428 +0200
++++ b/src/flac/main.c	2019-03-31 14:53:38.863431897 +0200
+@@ -46,6 +46,10 @@
+ #include "utils.h"
+ #include "vorbiscomment.h"
+ 
++#ifdef __AMIGA__
++#define strtoll strtol
++#endif
++
+ #if 0
+ /*[JEC] was:#if HAVE_GETOPT_LONG*/
+ /*[JEC] see flac/include/share/getopt.h as to why the change */
+--- a/src/share/grabbag/seektable.c	2019-03-31 14:54:52.575430293 +0200
++++ b/src/share/grabbag/seektable.c	2019-03-31 14:55:21.883429655 +0200
+@@ -27,6 +27,10 @@
+ #include <stdlib.h> /* for atoi() */
+ #include <string.h>
+ 
++#ifdef __AMIGA__
++#define strtoll strtol
++#endif
++
+ FLAC__bool grabbag__seektable_convert_specification_to_template(const char *spec, FLAC__bool only_explicit_placeholders, FLAC__uint64 total_samples_to_encode, unsigned sample_rate, FLAC__StreamMetadata *seektable_template, FLAC__bool *spec_has_real_points)
+ {
+ 	unsigned i;
+--- a/src/test_seeking/main.c	2019-03-31 16:56:36.010771946 +0200
++++ b/src/test_seeking/main.c	2019-03-31 16:58:15.222769787 +0200
+@@ -36,6 +36,10 @@
+ #include "FLAC/stream_decoder.h"
+ #include "share/compat.h"
+ 
++#ifdef __AMIGA__
++#define strtoull strtoul
++#endif
++
+ typedef struct {
+ 	FLAC__int32 **pcm;
+ 	FLAC__bool got_data;
+@@ -79,7 +83,7 @@
+ 
+ static unsigned local_rand_(void)
+ {
+-#if !defined _MSC_VER && !defined __MINGW32__
++#if !defined _MSC_VER && !defined __MINGW32__ && !defined(__AMIGA__)
+ #define RNDFUNC random
+ #else
+ #define RNDFUNC rand
+@@ -421,7 +434,7 @@
+ 	if (count < 30)
+ 		fprintf(stderr, "WARNING: random seeks don't kick in until after 30 preprogrammed ones\n");
+ 
+-#if !defined _MSC_VER && !defined __MINGW32__
++#if !defined _MSC_VER && !defined __MINGW32__ && !defined(__AMIGA__)
+ 	{
+ 		struct timeval tv;
+ 
+--- a/src/test_streams/main.c	2019-03-31 17:02:34.352219256 +0200
++++ b/src/test_streams/main.c	2019-03-31 17:04:21.188216931 +0200
+@@ -34,7 +34,7 @@
+ #include "FLAC/ordinals.h"
+ #include "share/compat.h"
+ 
+-#if !defined _MSC_VER && !defined __MINGW32__
++#if !defined _MSC_VER && !defined __MINGW32__ && !defined(__AMIGA__)
+ #define GET_RANDOM_BYTE (((unsigned)random()) & 0xff)
+ #else
+ #define GET_RANDOM_BYTE (((unsigned)rand()) & 0xff)
+@@ -584,7 +584,7 @@
+ 		return false;
+ 
+ 	for(b = 0; b < bytes; b++) {
+-#if !defined _MSC_VER && !defined __MINGW32__
++#if !defined _MSC_VER && !defined __MINGW32__ && !defined(__AMIGA__)
+ 		FLAC__byte x = (FLAC__byte)(((unsigned)random()) & 0xff);
+ #else
+ 		FLAC__byte x = (FLAC__byte)(((unsigned)rand()) & 0xff);
+@@ -973,7 +973,7 @@
+ 
+ 		sample += sin (2.0 * k * M_PI * 1.0 / 32.0);
+ 		sample *= 0.4;
+-#if !defined _MSC_VER && !defined(__MINT__)
++#if !defined _MSC_VER && !defined(__MINT__) && !defined(__AMIGA__)
+ 		write_little_endian_int16(f, lrintf(sample * 32700.0));
+ #else
+ 		write_little_endian_int16(f, (FLAC__int16)(sample * 32700.0));
+@@ -1129,7 +1129,7 @@
+ 	(void)argv;
+ 	is_big_endian_host = (*((FLAC__byte*)(&test)))? false : true;
+ 
+-#if !defined _MSC_VER && !defined __MINGW32__
++#if !defined _MSC_VER && !defined __MINGW32__ && !defined(__AMIGA__)
+ 	{
+ 		struct timeval tv;
+ 
+--- flac-1.3.2/src/metaflac/options.c.orig	2019-03-31 17:43:02.856166410 +0200
++++ flac-1.3.2/src/metaflac/options.c	2019-03-31 17:43:55.436165266 +0200
+@@ -33,6 +33,10 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
++#ifdef __AMIGA__
++#define strtoull strtoul
++#endif
++
+ /*
+    share__getopt format struct; note we don't use short options so we just
+    set the 'val' field to 0 everywhere to indicate a valid option.

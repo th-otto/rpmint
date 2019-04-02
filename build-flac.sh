@@ -15,6 +15,8 @@ patches/flac/flac-cflags.patch
 patches/flac/lrintf.patch
 patches/flac/staticlibs.patch
 patches/flac/config.patch
+patches/flac/amigaos.patch
+patches/flac/wcwidth.patch
 patches/flac/mintelf-config.patch
 "
 
@@ -38,12 +40,11 @@ rm -rf autom4te.cache config.h.in.orig
 # autoreconf may have overwritten config.sub
 patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --with-ogg=yes"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --with-ogg=yes --disable-shared ${CONFIGURE_FLAGS_AMIGAOS}"
 
-export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
-export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
+LDFLAGS=${STACKSIZE}
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
@@ -53,7 +54,7 @@ for CPU in ${ALL_CPUS}; do
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${LDFLAGS}" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
 

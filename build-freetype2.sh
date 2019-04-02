@@ -23,18 +23,24 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -std=gnu99 -D_GNU_SOURCE"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -std=gnu99 -D_GNU_SOURCE ${CFLAGS_AMIGAOS}"
+
+#
+# Several programs on AmigaOS compile against a bundled
+# version of libpng and/or zlib, which (in most cases)
+# is an older version. So we must avoid using a newer
+# version which might reference functions that are not available there
+#
+CONFIGURE_FLAGS_AMIGAOS+=" --with-png=no"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared \
 	--with-bzip2 \
 	--with-png \
 	--with-zlib \
 	--disable-shared \
-	--enable-static
+	--enable-static \
+	${CONFIGURE_FLAGS_AMIGAOS}
 "
-
-export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
-export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"

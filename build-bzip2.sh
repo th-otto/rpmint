@@ -16,6 +16,7 @@ patches/${PACKAGENAME}/bzip2-1.0.6-patch-0003-debian-bzgrep.patch
 patches/${PACKAGENAME}/bzip2-1.0.6-patch-0004-unsafe-strcpy.patch
 patches/${PACKAGENAME}/bzip2-1.0.6-patch-0005-progress.patch
 patches/${PACKAGENAME}/bzip2-1.0.6-patch-0006-mint.patch
+patches/${PACKAGENAME}/amigaos.patch
 "
 DISABLED_PATCHES="
 patches/${PACKAGENAME}/mintelf-config.patch
@@ -62,13 +63,16 @@ patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS"
-STACKSIZE="-Wl,-stack,256k"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS ${CFLAGS_AMIGAOS}"
+case $TARGET in
+m68k-atari-mint*)
+	STACKSIZE="-Wl,-stack,256k"
+	;;
+m68k-amigaos*)
+	;;
+esac
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}"
-
-export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
-export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
@@ -77,7 +81,7 @@ for CPU in ${ALL_CPUS}; do
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"$srcdir/configure" ${CONFIGURE_FLAGS} \
-	--libdir='${exec_prefix}/lib'$multilibdir
+	--libdir='${exec_prefix}/lib'$multilibdir || exit 1
 
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1

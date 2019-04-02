@@ -12,6 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/sdl_mixer/double-free-crash.patch
 patches/sdl_mixer/config.patch
+patches/sdl_mixer/amigaos.patch
 patches/sdl_mixer/mintelf-config.patch
 "
 DISABLED_PATCHES="
@@ -34,12 +35,19 @@ rm -f aclocal.m4 ltmain.sh
 aclocal -I acinclude || exit 1
 autoconf || exit 1
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
 
-export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
-export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
+#
+# check that sdl.pc was installed.
+# without it, SDL.m4 uses the sdl-config script from the host
+# which does not work when cross-compiling
+#
+if test "`pkg-config --modversion sdl 2>/dev/null`" = ""; then
+	echo "SDL and/or sdl.pc is missing" >&2
+	exit 1
+fi
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"

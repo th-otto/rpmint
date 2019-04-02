@@ -14,3 +14,43 @@ diff -aurN bzip2-1.0.6/bzip2.c bzip2-1.0.6-mint-20140922/bzip2.c
  #endif /* BZ_UNIX */
  
  
+--- bzip2-1.0.6/bzlib.h.orig	2019-04-02 18:00:16.762853570 +0200
++++ bzip2-1.0.6/bzlib.h	2019-04-02 18:01:06.710852483 +0200
+@@ -193,7 +193,7 @@
+ BZ_EXTERN void BZ_API(BZ2_bzWrite) ( 
+       int*    bzerror, 
+       BZFILE* b, 
+-      void*   buf, 
++      const void*   buf, 
+       int     len 
+    );
+ 
+@@ -271,7 +271,7 @@
+ 
+ BZ_EXTERN int BZ_API(BZ2_bzwrite) (
+       BZFILE* b, 
+-      void*   buf, 
++      const void*   buf, 
+       int     len 
+    );
+ 
+--- bzip2-1.0.6/bzlib.c.orig	2019-04-02 18:03:30.930849345 +0200
++++ bzip2-1.0.6/bzlib.c	2019-04-02 18:03:51.718848892 +0200
+@@ -964,7 +964,7 @@
+ void BZ_API(BZ2_bzWrite)
+              ( int*    bzerror, 
+                BZFILE* b, 
+-               void*   buf, 
++               const void*   buf, 
+                int     len )
+ {
+    Int32 n, n2, ret;
+@@ -1489,7 +1489,7 @@
+ 
+ 
+ /*---------------------------------------------------*/
+-int BZ_API(BZ2_bzwrite) (BZFILE* b, void* buf, int len )
++int BZ_API(BZ2_bzwrite) (BZFILE* b, const void* buf, int len )
+ {
+    int bzerr;
+ 

@@ -1,0 +1,25 @@
+--- SDL_ttf-2.0.11/configure.in.orig	2019-04-01 13:36:13.163518371 +0200
++++ SDL_ttf-2.0.11/configure.in	2019-04-01 13:36:57.551517406 +0200
+@@ -154,6 +154,10 @@
+ 	fi
+         SYS_GL_LIBS=""
+         ;;
++    *-*-amigaos*)
++        MATHLIB="-lm"
++        SYS_GL_LIBS=""
++        ;;
+     *)
+         MATHLIB="-lm"
+         AC_PATH_X
+@@ -179,6 +179,11 @@
+ ],[
+ have_opengl=yes
+ ])
++case "$host" in
++    *-*-amigaos*)
++	have_opengl=no
++        ;;
++esac
+ AC_MSG_RESULT($have_opengl)
+ if test x$have_opengl = xyes; then
+     CFLAGS="$CFLAGS -DHAVE_OPENGL"

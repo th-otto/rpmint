@@ -37,7 +37,20 @@ sysroot=${prefix}/${TARGET}/sys-root
 #
 # prefix of the target system. Should not need to be changed.
 #
-TARGET_PREFIX=/usr
+case $TARGET in
+	m68k-amigaos*)
+		prefix=/opt/amiga/m68k-amigaos
+		sysroot=
+		PATH="/opt/amiga/bin:$PATH"
+		TARGET_PREFIX=${prefix}
+		CONFIGURE_FLAGS_AMIGAOS=" --includedir=${prefix}/sys-include"
+		CFLAGS_AMIGAOS=" -mcrt=nix20"
+		;;
+	*)
+		TARGET_PREFIX=/usr
+		;;
+esac
+
 TARGET_LIBDIR="${TARGET_PREFIX}/lib"
 TARGET_BINDIR="${TARGET_PREFIX}/bin"
 TARGET_MANDIR="${TARGET_PREFIX}/share/man"
@@ -114,14 +127,29 @@ THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 #
 # this could eventually be extracted from gcc -print-multi-lib
 #
-CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=           ; CPU_LIBEXECDIR_000=/m68000
-CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=/m68020-60 ; CPU_LIBEXECDIR_020=/m68020-60
-CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=/m5475     ; CPU_LIBEXECDIR_v4e=/m5475
-#
-# This should list the default target cpu last,
+# It should list the default target cpu last,
 # so that any files left behind are compiled for this
 #
-ALL_CPUS="020 v4e 000"
+case $TARGET in
+m68k-atari-mint*)
+	CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=           ; CPU_LIBEXECDIR_000=/m68000
+	CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=/m68020-60 ; CPU_LIBEXECDIR_020=/m68020-60
+	CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=/m5475     ; CPU_LIBEXECDIR_v4e=/m5475
+	if test "$ALL_CPUS" = ""; then
+		ALL_CPUS="020 v4e 000"
+	fi
+	;;
+m68k-amigaos*)
+	if test "$ALL_CPUS" = ""; then
+		ALL_CPUS="000 020"
+	fi
+	CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=nix/lib           ; CPU_LIBEXECDIR_000=/m68000
+	CPU_CFLAGS_020="-m68020 -msoft-float"; CPU_LIBDIR_020=nix/lib/libm020   ; CPU_LIBEXECDIR_020=/m68020
+	;;
+esac
+
+export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
+export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
 #
 # try config.guess from automake first to get the
@@ -376,6 +404,18 @@ copy_pkg_configs()
 	local i base dst
 	
 	cd "${THISPKG_DIR}"
+
+	case $TARGET in
+	m68k-amigaos*)
+		# with mcrt=nix*, the config files end up in a subdirectory; move them up
+		if test -d ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/pkgconfig; then
+			rm -rf ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/*/pkgconfig
+			mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/
+			mv ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/pkgconfig ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/pkgconfig
+		fi
+		;;
+	esac
+
 	if test -d .${sysroot}$TARGET_LIBDIR/pkgconfig; then
 	mkdir -p ./$build_prefix/lib/pkgconfig
 	
@@ -411,7 +451,7 @@ copy_pkg_configs()
 			             s,-I/usr/include,-I${includedir},g
 			             s,-I'${sysroot}${TARGET_PREFIX}/include',-I${includedir},g' $dst
 				includedir=`sed -n 's/^[ ]*includedir[ ]*=[ ]*\([^ ]*\)/\1/p' $dst`
-				if test "$includedir" = '/usr/include' -o  "$includedir" = '${prefix}/include'; then
+				if test "$includedir" = '/usr/include' -o "$includedir" = '${prefix}/include' -o "$includedir" = '${prefix}/sys-include'; then
 					sed -i 's,-I${includedir} ,,g
 					     s,-I${includedir}$,,' $dst
 				fi
@@ -430,7 +470,7 @@ copy_pkg_configs()
  		             s,-I/usr/include,-I${includedir},g
 		             s,-I'${sysroot}${TARGET_PREFIX}/include',-I${includedir},g' $i > $i.tmp
 			includedir=`sed -n 's/^[ ]*includedir[ ]*=[ ]*\([^ ]*\)/\1/p' $i.tmp`
-			if test "$includedir" = '/usr/include' -o  "$includedir" = '${prefix}/include'; then
+			if test "$includedir" = '/usr/include' -o "$includedir" = '${prefix}/include' -o "$includedir" = '${prefix}/sys-include'; then
 				sed -i 's,-I${includedir} ,,g
 				     s,-I${includedir}$,,' $i.tmp
 			fi
@@ -450,7 +490,7 @@ make_archives()
 	gzip_docs
 
 	cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" || exit 1
-	find . -type f -name "*.la" -delete -printf "rm %p\n"
+	find . \( -type f -o -xtype l \) -name "*.la" -delete -printf "rm %p\n"
 	if test -z "$NO_STRIP"; then
 		test "$LTO_CFLAGS" != "" || find . -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \;
 	fi
@@ -484,8 +524,20 @@ make_archives()
 	# remove pkgconfig dirs in architecture dependent subdirs
 	# we only need the one in the toplevel directory
 	#
-	rm -rf ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/*/pkgconfig
-	
+	case $TARGET in
+	m68k-amigaos*)
+		# with mcrt=nix*, the config files end up in a subdirectory; move them up
+		if test -d ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/pkgconfig; then
+			rm -rf ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/*/pkgconfig
+			mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/
+			mv ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/pkgconfig ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/pkgconfig
+		fi
+		;;
+	*)
+		rm -rf ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/*/pkgconfig
+		;;
+	esac
+
 	cd "${THISPKG_DIR}" || exit 1
 
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-dev.tar.xz *

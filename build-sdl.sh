@@ -28,9 +28,9 @@ patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-video-opengl --disable-threads"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-video-opengl --disable-threads ${CONFIGURE_FLAGS_AMIGAOS}"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"

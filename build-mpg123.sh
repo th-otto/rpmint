@@ -12,6 +12,7 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/math.patch
+patches/${PACKAGENAME}/amigaos.patch
 patches/${PACKAGENAME}/mintelf-config.patch
 "
 
@@ -23,12 +24,28 @@ unpack_archive
 
 cd "$srcdir"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+rm -f aclocal.m4 ltmain.sh
+libtoolize --force || exit 1
+aclocal -I m4 || exit 1
+autoconf || exit 1
+autoheader || exit 1
+automake --force --copy --add-missing || exit 1
+rm -rf autom4te.cache config.h.in.orig
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}"
+# autoreconf may have overwritten config.sub
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
 
-export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
-export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -DNO_CATCHSIGNAL ${CFLAGS_AMIGAOS}"
+
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
+LDFLAGS="${STACKSIZE}"
+
+case "$TARGET" in
+*-amigaos*)
+	# does not work yet because of link problems with socket library
+	CONFIGURE_FLAGS+=" --disable-network"
+	;;
+esac
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
@@ -37,7 +54,7 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS $LDFLAGS" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
 	${MAKE} $JOBS || exit 1
