@@ -1395,6 +1395,8 @@ This notably applies to Perl and Python.
 
 <li>2019/04/02 Some libraries are now compiled for amigaos</li>
 
+<li>2019/04/10 Update fdlibm</li>
+
 </ul>
 
 <p></p>
