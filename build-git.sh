@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=git
-VERSION=-2.16.2
+VERSION=-2.21.0
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -12,13 +12,13 @@ VERSIONPATCH=
 PATCHES="
 patches/git/0001-We-trust-the-system-is-consistent-and-do-not-let-ind.patch
 patches/git/0002-gitweb-Enable-prevent_xss-by-default.patch
-patches/git/0003-fix-broken-bash-completion-with-colored-egrep-bnc-77.patch
 patches/git/0004-cook-up-tcsh-completion-to-be-installable-bnc-853183.patch
 patches/git/0005-adapt-paths-in-zsh-completion-bnc-853183.patch
 patches/git/0006-Drop-the-last-updated-footer-in-documentation.patch
 patches/git/0007-Support-for-the-FreeMiNT-platform.patch
 patches/git/0008-Do-not-include-config.mak.uname-when-cross-compiling.patch
-patches/git/0009-We-need-to-link-to-nghttp2-when-using-lcurl.patch
+patches/git/worktree-fix-worktree-add-race.patch
+patches/git/setup-don-t-fail-if-commondir-reference-is-deleted.patch
 "
 POST_INSTALL_SCRIPTS="
 patches/git/apache2-gitweb.conf
@@ -28,16 +28,16 @@ patches/git/git.xinetd
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
-${TARGET_LIBDIR#/}/*
 ${TARGET_PREFIX#/}/libexec/git/*
 ${TARGET_MANDIR#/}/man1/*
 ${TARGET_MANDIR#/}/man5/*
 ${TARGET_MANDIR#/}/man7/*
+${TARGET_PREFIX#/}/share/doc/*
 ${TARGET_PREFIX#/}/share/git-core/*
 ${TARGET_PREFIX#/}/share/git-gui/*
 ${TARGET_PREFIX#/}/share/gitk/*
 ${TARGET_PREFIX#/}/share/gitweb/*
-${TARGET_PREFIX#/}/share/doc/*
+${TARGET_PREFIX#/}/share/perl5/*
 etc/*
 srv
 "

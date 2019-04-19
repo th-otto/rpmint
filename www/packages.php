@@ -1397,7 +1397,7 @@ programs store their man pages in either <code>/usr/share/man/</code> or
 		'name' => 'git',
 		'upstream' => 'https://git-scm.com/',
 		'source' => 'https://www.kernel.org/pub/software/scm/git/%{name}-%{version}.tar.xz',
-		'version' => '2.16.2',
+		'version' => '2.21.0',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 0,

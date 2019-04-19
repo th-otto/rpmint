@@ -1397,6 +1397,8 @@ This notably applies to Perl and Python.
 
 <li>2019/04/10 Update fdlibm</li>
 
+<li>2019/04/19 Update git to 2.21</li>
+
 </ul>
 
 <p></p>

@@ -142,6 +142,10 @@ JOBS=-j$JOBS
 MAKE=${MAKE:-make}
 
 BASE_VER=$(cat $srcdir/gcc/BASE-VER)
+if test "$BASE_VER" != "${VERSION#-}"; then
+	echo "version mismatch: this script is for gcc ${VERSION#-}, but gcc source is version $BASE_VER" >&2
+	exit 1
+fi
 gcc_dir_version=${BASE_VER}
 
 #
@@ -248,6 +252,7 @@ esac
 	--disable-libvtv \
 	--disable-libmpx \
 	--disable-libcc1 \
+	--disable-shared \
 	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root/usr/include/c++/${gcc_dir_version} \
 	--with-default-libstdcxx-abi=gcc4-compatible \
 	--with-gcc --with-gnu-as --with-gnu-ld \
@@ -270,7 +275,7 @@ esac
 
 ${MAKE} $JOBS all-gcc || exit 1
 ${MAKE} $JOBS all-target-libgcc || exit 1
-${MAKE} $JOBS || exit 1
+${MAKE} || exit 1
 
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
