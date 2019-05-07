@@ -1657,9 +1657,9 @@ The RPM Package Manager (RPM) is a powerful package management system capable of
 	),
 	'rhash' => array(
 		'name' => 'rhash',
-		'upstream' => 'http://rhash.anz.ru/?l=en',
-		'source' => 'http://downloads.sourceforge.net/%{name}/%{name}-%{version}-src.tar.gz',
-		'version' => '1.3.5',
+		'upstream' => 'https://github.com/rhash/RHash',
+		'source' => 'https://github.com/rhash/RHash/archive/v%{version}.tar.gz',
+		'version' => '1.3.8',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

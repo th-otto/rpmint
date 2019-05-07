@@ -1399,6 +1399,8 @@ This notably applies to Perl and Python.
 
 <li>2019/04/19 Update git to 2.21</li>
 
+<li>2019/05/06 Update librhash to 1.3.8</li>
+
 </ul>
 
 <p></p>
