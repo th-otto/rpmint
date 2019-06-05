@@ -1328,7 +1328,7 @@ the GNU fileutils, sh-utils, and textutils packages.
 		'upstream' => 'http://www.gnu.org/software/bash/bash.html',
 		'source' => 'ftp://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.gz',
 		'version' => '4.4',
-		'patchlevel' => '.12',
+		'patchlevel' => '.23',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 0,

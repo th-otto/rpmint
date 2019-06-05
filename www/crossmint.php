@@ -1401,6 +1401,10 @@ This notably applies to Perl and Python.
 
 <li>2019/05/06 Update librhash to 1.3.8</li>
 
+<li>2019/05/10 Update bash to patchlevel 4.4.23
+(should solve a problem with hanging configure scripts)
+</li>
+
 </ul>
 
 <p></p>

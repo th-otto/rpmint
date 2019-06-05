@@ -5,7 +5,7 @@ scriptdir=${0%/*}
 
 PACKAGENAME=bash
 VERSION=-4.4
-PATCHLEVEL=.12
+PATCHLEVEL=.23
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -23,6 +23,16 @@ patches/bash/bash-4.4-patches/bash44-009
 patches/bash/bash-4.4-patches/bash44-010
 patches/bash/bash-4.4-patches/bash44-011
 patches/bash/bash-4.4-patches/bash44-012
+patches/bash/bash-4.4-patches/bash44-013
+patches/bash/bash-4.4-patches/bash44-014
+patches/bash/bash-4.4-patches/bash44-015
+patches/bash/bash-4.4-patches/bash44-016
+patches/bash/bash-4.4-patches/bash44-017
+patches/bash/bash-4.4-patches/bash44-018
+patches/bash/bash-4.4-patches/bash44-019
+patches/bash/bash-4.4-patches/bash44-020
+patches/bash/bash-4.4-patches/bash44-021
+patches/bash/bash-4.4-patches/bash44-022
 patches/bash/bash${VERSION}.dif
 patches/bash/bash-2.03-manual.patch
 patches/bash/bash-4.0-security.patch
