@@ -1355,6 +1355,8 @@ This notably applies to Perl and Python.
 
 <li>2019/02/24 Add scripts to build native binutils/compiler</li>
 
+<li>2019/02/25 Update GCC 7 to version 7.4.0</li>
+
 <li>2019/02/27 Fortran backend added for all platforms</li>
 
 <li>2019/02/27 Package fdlibm added</li>
@@ -1557,6 +1559,9 @@ gcc 8.3:
 	cygwin32: 39min
 	cygwin64: 35min
 	macos:   29min
+	linux:   4min12sec
+
+gcc 9.1.1:
 	linux:   4min12sec
 
 -->

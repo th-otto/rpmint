@@ -200,13 +200,12 @@ Slightly older Version of GCC.
 '
 	),
 */
-/*
 	'gcc740' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '7.4.0',
-		'date' => '2019025',
+		'date' => '20190225',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-7-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
@@ -229,7 +228,7 @@ Slightly older Version of GCC.
 Slightly older Version of GCC.
 '
 	),
-*/
+/*
 	'gcc731' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
@@ -258,6 +257,7 @@ Slightly older Version of GCC.
 Slightly older Version of GCC.
 '
 	),
+*/
 /*
 	'gcc720' => array(
 		'name' => 'gcc',
