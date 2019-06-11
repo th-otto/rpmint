@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-8.3.0
-VERSIONPATCH=-20190223
+VERSION=-9.1.1
+VERSIONPATCH=-20190606
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -99,10 +99,15 @@ fi
 with_fortran=true
 
 #
+# whether to include the D backend
+#
+with_D=true
+
+#
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
-# - checking out the gcc-8-mint branch
-# - running git diff gcc-8_3_0-release HEAD
+# - checking out the gcc-9-mint branch
+# - running git diff gcc-9_1_1-release HEAD
 #
 # when a new GCC is released:
 #   cd <directory where m68k-atari-mint-gcc.git> has been cloned
@@ -211,6 +216,7 @@ enable_lto=--disable-lto
 enable_plugin=--disable-plugin
 languages=c,c++
 $with_fortran && languages="$languages,fortran"
+$with_D && languages="$languages,d"
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -327,7 +333,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
-	for i in c++ cpp g++ gcc gcov gfortran; do
+	for i in c++ cpp g++ gcc gcov gfortran gdc; do
 		if test -x ../../bin/${TARGET}-$i; then
 			rm -f ${i} ${i}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
@@ -346,7 +352,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	fi
 	if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
 		rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
-		$LN_S ${TARGET}-g++ ${TARGET}-c++
+		$LN_S ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-c++${BUILD_EXEEXT}
 	fi
 	if test -x ${TARGET}-gcc && test ! -h ${TARGET}-gcc; then
 		rm -f ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}
@@ -361,6 +367,16 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		rm -f ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}
 		mv ${TARGET}-cpp${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp${BUILD_EXEEXT}
+	fi
+
+	if test -x ${TARGET}-gdc; then
+		rm -f ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gdc-${BASE_VER}
+		mv ${TARGET}-gdc${BUILD_EXEEXT} ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT}
+		$LN_S ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gdc${BUILD_EXEEXT}
+	fi
+	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gdc-${BASE_VER}; then
+		rm -f ${TARGET}-gdc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		$LN_S ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gdc-${gcc_dir_version}${BUILD_EXEEXT}
 	fi
 	
 	cd "${INSTALL_DIR}"
@@ -382,10 +398,13 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	rm -f */*/libiberty.a
 	find . -type f -name "*.la" -delete -printf "rm %p\n"
-	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT}
-	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
-	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT}
-	${STRIP} ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${BUILD_EXEEXT}
+	for f in ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
+		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN} \
+		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT} \
+		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${BUILD_EXEEXT}; do
+		test -f "$f" && ${STRIP} "$f"
+	done
+	
 	rmdir ${PREFIX#/}/include
 	
 	if test -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN}; then

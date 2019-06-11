@@ -1,7 +1,7 @@
 #!/bin/sh
 
 downloads=$HOME/webgo24/home/www/download/mint
-date=20190223
+date=20190606
 here=`pwd`
 
 TAR=${TAR-tar}
@@ -13,8 +13,8 @@ for sys in cygwin32 cygwin64 mingw32 linux macos; do
 		"binutils-2.32-mint-*-bin-$sys.tar.xz" \
 		"binutils-2.32-mintelf-*-bin-$sys.tar.xz" \
 		"mintbin-*-mint-*-bin-$sys.tar.xz" \
-		"gcc-8.3.0-mint-*-bin-$sys.tar.xz" \
-		"gcc-8.3.0-mintelf-*-bin-$sys.tar.xz" \
+		"gcc-9.1.1-mint-*-bin-$sys.tar.xz" \
+		"gcc-9.1.1-mintelf-*-bin-$sys.tar.xz" \
 		"gemlib-*-mint-*-dev.tar.xz" \
 		"gemlib-*-mintelf-*-dev.tar.xz" \
 		"mintlib-*-mint-*-dev.tar.xz" \

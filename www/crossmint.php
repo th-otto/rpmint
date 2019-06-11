@@ -52,7 +52,7 @@ setcookie("platform", $platform, time() + 3600);
 
 include('packages.php');
 
-$gccver = 'gcc830';
+$gccver = 'gcc911';
 
 ?>
 
@@ -86,7 +86,7 @@ with respect to their own licenses.
 <li>Install <a href="http://www.cygwin.com/" <?php echo $target ?>>Cygwin 32-bit</a>.
 This will provide you a full UNIX-like environment necessary for running the GNU tools.</li>
 <li>Install the following packages, using the Cygwin setup program: <b>libmpc3</b>.</li>
-<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20190223-cygwin32.tar.xz', 'm68k-atari-mint-base-20190223-cygwin32.tar.xz') ?> (~56 MB).</li>
+<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20190606-cygwin32.tar.xz', 'm68k-atari-mint-base-20190606-cygwin32.tar.xz') ?> (~71 MB).</li>
 <li>Now you can use any tool prefixed by <code>m68k-atari-mint-</code>,
 such as <code>m68k-atari-mint-gcc</code>, <code>m68k-atari-mint-g++</code>,
 and even read the man pages.</li>
@@ -1407,6 +1407,8 @@ This notably applies to Perl and Python.
 (should solve a problem with hanging configure scripts)
 </li>
 
+<li>2019/06/07 Update GCC to version 9.1.1</li>
+
 </ul>
 
 <p></p>
@@ -1562,6 +1564,10 @@ gcc 8.3:
 	linux:   4min12sec
 
 gcc 9.1.1:
+	mingw32: 38min
+	cygwin32: 45min
+	cygwin64: 42min
+	macos:   31min
 	linux:   4min12sec
 
 -->

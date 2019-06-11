@@ -106,14 +106,14 @@ The full documentation can be found
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
-	'gcc830' => array(
+	'gcc911' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '8.3.0',
-		'date' => '20190223',
+		'version' => '9.1.1',
+		'date' => '20190606',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
-		'branch' => 'gcc-8-mint',
+		'branch' => 'gcc-9-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
@@ -140,23 +140,22 @@ files. To support this better, all libraries offered here were also recompiled
 using this format (although theoretically it should be possible to mix them).
 '
 	),
-/*
-	'gcc821' => array(
+	'gcc830' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '8.2.1',
-		'date' => '20181123',
+		'version' => '8.3.0',
+		'date' => '20190223',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-8-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
-		'crossscript' => 0,
+		'crossscript' => 1,
 		'doc' => 1,
 		'elf' => 1,
-		'fortran' => 0,
+		'fortran' => 1,
 		'cygwin32' => 1,
 		'cygwin64' => 1,
 		'mingw32' => 1,
@@ -165,41 +164,11 @@ using this format (although theoretically it should be possible to mix them).
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
+		'atari' => 1,
 		'comment' => '
 Slightly older Version of GCC.
 '
 	),
-*/
-/*
-	'gcc810' => array(
-		'name' => 'gcc',
-		'title' => 'GCC',
-		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '8.1.0',
-		'date' => '20180504',
-		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
-		'branch' => 'gcc-8-mint',
-		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
-		'patch' => 1,
-		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
-		'script' => 1,
-		'crossscript' => 0,
-		'doc' => 1,
-		'elf' => 1,
-		'fortran' => 0,
-		'cygwin32' => 1,
-		'cygwin64' => 1,
-		'mingw32' => 1,
-		'mingw64' => 0,
-		'linux32' => 0,
-		'linux64' => 1,
-		'macos32' => 0,
-		'macos64' => 1,
-		'comment' => '
-Slightly older Version of GCC.
-'
-	),
-*/
 	'gcc740' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
@@ -228,66 +197,6 @@ Slightly older Version of GCC.
 Slightly older Version of GCC.
 '
 	),
-/*
-	'gcc731' => array(
-		'name' => 'gcc',
-		'title' => 'GCC',
-		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '7.3.1',
-		'date' => '20181017',
-		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
-		'branch' => 'gcc-7-mint',
-		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
-		'patch' => 1,
-		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
-		'script' => 1,
-		'crossscript' => 0,
-		'doc' => 1,
-		'elf' => 1,
-		'fortran' => 0,
-		'cygwin32' => 1,
-		'cygwin64' => 1,
-		'mingw32' => 1,
-		'mingw64' => 0,
-		'linux32' => 0,
-		'linux64' => 1,
-		'macos32' => 0,
-		'macos64' => 1,
-		'comment' => '
-Slightly older Version of GCC.
-'
-	),
-*/
-/*
-	'gcc720' => array(
-		'name' => 'gcc',
-		'title' => 'GCC',
-		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '7.2.0',
-		'date' => '20171006',
-		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
-		'branch' => 'gcc-7-mint',
-		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
-		'patch' => 1,
-		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
-		'script' => 1,
-		'crossscript' => 0,
-		'doc' => 1,
-		'elf' => 1,
-		'fortran' => 0,
-		'cygwin32' => 1,
-		'cygwin64' => 1,
-		'mingw32' => 0,
-		'mingw64' => 0,
-		'linux32' => 0,
-		'linux64' => 1,
-		'macos32' => 0,
-		'macos64' => 1,
-		'comment' => '
-Slightly older Version of GCC.
-'
-	),
-*/
 	'mintbin' => array(
 		'name' => 'mintbin',
 		'title' => 'MiNTBin',

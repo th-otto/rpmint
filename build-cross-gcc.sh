@@ -8,8 +8,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-8.3.0
-VERSIONPATCH=-20190223
+VERSION=-9.1.1
+VERSIONPATCH=-20190606
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -79,6 +79,11 @@ fi
 # whether to include the fortran backend
 #
 with_fortran=true
+
+#
+# whether to include the D backend
+#
+with_D=true
 
 #
 # this patch can be recreated by
@@ -162,6 +167,7 @@ enable_lto=--disable-lto
 enable_plugin=--disable-plugin
 languages=c,c++
 $with_fortran && languages="$languages,fortran"
+$with_D && languages="$languages,d"
 ranlib=ranlib
 
 case "${TARGET}" in
@@ -399,7 +405,7 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	
 	rm -f */*/libiberty.a
 	find . -type f -name "*.la" -delete -printf "rm %p\n"
-	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,collect2,lto-wrapper,lto1}${TARGET_EXEEXT}
+	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1}${TARGET_EXEEXT}
 	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
 	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${TARGET_EXEEXT}
 	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${TARGET_EXEEXT}
