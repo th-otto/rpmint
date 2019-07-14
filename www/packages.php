@@ -2143,6 +2143,22 @@ multimedia technology it can be used to distribute film and video online and on 
 the licensing and royalty fees or vendor lock-in associated with other formats.
 '
 	),
+	'ping' => array(
+		'name' => 'ping',
+		'upstream' => 'http://cvsweb.netbsd.org/bsdweb.cgi/basesrc/sbin/ping/',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '20190714',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+The ping command. </br>
+Ported from BSD sources.
+'
+	),
 );
 
 ?>

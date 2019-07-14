@@ -1409,6 +1409,8 @@ This notably applies to Perl and Python.
 
 <li>2019/06/07 Update GCC to version 9.1.1</li>
 
+<li>2019/07/14 Added ping command</li>
+
 </ul>
 
 <p></p>

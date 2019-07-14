@@ -1,0 +1,228 @@
+diff -ru ping-20010219.orig/ping.c ping-20010219/ping.c
+--- ping-20010219.orig/ping.c	2019-07-14 07:23:21.337073647 +0200
++++ ping-20010219/ping.c	2019-07-14 08:08:59.521527394 +0200
+@@ -57,9 +57,6 @@
+  */
+ 
+ #include <sys/cdefs.h>
+-#ifndef lint
+-__RCSID("$NetBSD: ping.c,v 1.117 2017/10/02 10:08:11 maya Exp $");
+-#endif
+ 
+ #include <stdio.h>
+ #include <stddef.h>
+@@ -83,7 +80,6 @@
+ #include <netinet/in.h>
+ #include <netinet/ip.h>
+ #include <netinet/ip_icmp.h>
+-#include <netinet/ip_var.h>
+ #include <arpa/inet.h>
+ #include <ctype.h>
+ #include <netdb.h>
+@@ -123,6 +119,47 @@
+ #endif /*IPSEC_POLICY_IPSEC*/
+ #endif /*IPSEC*/
+ 
++#ifndef ICMP_ROUTERADVERT
++#define	ICMP_ROUTERADVERT	9		/* router advertisement */
++#endif
++#ifndef ICMP_ROUTERSOLICIT
++#define	ICMP_ROUTERSOLICIT	10		/* router solicitation */
++#endif
++
++#ifndef ICMP_UNREACH_NET_UNKNOWN
++#define	ICMP_UNREACH_NET_UNKNOWN        6	/* unknown net */
++#endif
++#ifndef ICMP_UNREACH_HOST_UNKNOWN
++#define	ICMP_UNREACH_HOST_UNKNOWN       7	/* unknown host */
++#endif
++#ifndef ICMP_UNREACH_ISOLATED
++#define	ICMP_UNREACH_ISOLATED	        8	/* src host isolated */
++#endif
++#ifndef ICMP_UNREACH_NET_PROHIB
++#define	ICMP_UNREACH_NET_PROHIB	        9	/* net denied */
++#endif
++#ifndef ICMP_UNREACH_HOST_PROHIB
++#define	ICMP_UNREACH_HOST_PROHIB        10	/* host denied */
++#endif
++#ifndef ICMP_UNREACH_TOSNET
++#define	ICMP_UNREACH_TOSNET	        11	/* bad tos for net */
++#endif
++#ifndef ICMP_UNREACH_TOSHOST
++#define	ICMP_UNREACH_TOSHOST	        12	/* bad tos for host */
++#endif
++#ifndef ICMP_UNREACH_FILTER_PROHIB
++#define	ICMP_UNREACH_FILTER_PROHIB      13	/* admin prohib */
++#endif
++#ifndef ICMP_UNREACH_HOST_PRECEDENCE
++#define	ICMP_UNREACH_HOST_PRECEDENCE    14	/* host prec vio. */
++#endif
++#ifndef ICMP_UNREACH_PRECEDENCE_CUTOFF
++#define	ICMP_UNREACH_PRECEDENCE_CUTOFF  15	/* prec cutoff */
++#endif
++
++#ifndef icmp_nextmtu
++#define	icmp_nextmtu	icmp_hun.ih_idseq.icd_seq
++#endif
+ 
+ /* MAX_DUP_CHK is the number of bits in received table, the
+  *	maximum number of received sequence numbers we can track to check
+@@ -208,6 +245,9 @@
+ static struct timespec jiggle_time;
+ static int jiggle_cnt, total_jiggled, jiggle_direction = -1;
+ 
++#undef __dead
++#define __dead
++
+ __dead static void doit(void);
+ static void prefinish(int);
+ static void prtsig(int);
+@@ -219,8 +259,8 @@
+ static void fill(void);
+ static void rnd_fill(void);
+ static double diffsec(struct timespec *, struct timespec *);
+-#if 0
+-static void timespecadd(struct timespec *, struct timespec *);
++#if 1
++static void timespecadd(struct timespec *, struct timespec *, struct timespec *);
+ #endif
+ static void sec_to_timespec(const double, struct timespec *);
+ static double timespec_to_sec(const struct timespec *);
+@@ -236,6 +276,15 @@
+ 		    struct sockaddr_in *, char *, int);
+ __dead static void usage(void);
+ 
++#define CLOCK_MONOTONIC 0
++static void clock_gettime(int type, struct timespec *ts)
++{
++	struct timeval tv;
++	gettimeofday(&tv, NULL);
++	ts->tv_sec = tv.tv_sec;
++	ts->tv_nsec = tv.tv_usec * 1000;
++}
++
+ int
+ main(int argc, char *argv[])
+ {
+@@ -489,7 +538,6 @@
+ 		(void) memcpy(&send_addr, &whereto, sizeof(send_addr));
+ 
+ 	loc_addr.sin_family = AF_INET;
+-	loc_addr.sin_len = sizeof(struct sockaddr_in);
+ 	loc_addr.sin_addr.s_addr = htonl((127 << 24) + 1);
+ 
+ 	if (len != -1)
+@@ -518,7 +566,7 @@
+ 			opack_icmp.icmp_data[i] = i;
+ 	}
+ 
+-	ident = arc4random() & 0xFFFF;
++	ident = random() & 0xFFFF;
+ 
+ 	if (options & SO_DEBUG) {
+ 		if (prog_setsockopt(s, SOL_SOCKET, SO_DEBUG,
+@@ -1352,16 +1400,16 @@
+ }
+ 
+ 
+-#if 0
++#if 1
+ static void
+ timespecadd(struct timespec *t1,
+-	   struct timespec *t2)
++	   struct timespec *t2, struct timespec *res)
+ {
+ 
+-	t1->tv_sec += t2->tv_sec;
+-	if ((t1->tv_nsec += t2->tv_nsec) >= 1000000000) {
+-		t1->tv_sec++;
+-		t1->tv_nsec -= 1000000000;
++	res->tv_sec = t1->tv_sec + t2->tv_sec;
++	if ((res->tv_nsec = t1->tv_nsec + t2->tv_nsec) >= 1000000000) {
++		res->tv_sec++;
++		res->tv_nsec -= 1000000000;
+ 	}
+ }
+ #endif
+@@ -1764,7 +1812,7 @@
+ {
+ 	int	hlen;
+ 	u_char	*cp;
+-	struct ip __aligned(4) ipb;
++	struct ip ipb;
+ 	struct ip *ip = &ipb;
+ 
+ 	(void) memcpy(ip, icp->icmp_data, sizeof(*ip));
+@@ -1935,7 +1983,6 @@
+ 
+ 	(void)memset(sa, 0, sizeof(*sa));
+ 	sa->sin_family = AF_INET;
+-	sa->sin_len = sizeof(struct sockaddr_in);
+ 
+ 	/* If it is an IP address, try to convert it to a name to
+ 	 * have something nice to display.
+@@ -1947,8 +1994,9 @@
+ 			else
+ 				hp = gethostbyaddr((char *)&sa->sin_addr,
+ 				    sizeof(sa->sin_addr), AF_INET);
+-			(void)strlcpy(realname, hp ? hp->h_name : name,
+-			    realname_len);
++			(void)strncpy(realname, hp ? hp->h_name : name,
++			    realname_len - 1);
++			realname[realname_len - 1] = '\0';
+ 		}
+ 		return;
+ 	}
+@@ -1964,7 +2012,10 @@
+ 	(void)memcpy(&sa->sin_addr, hp->h_addr, sizeof(sa->sin_addr));
+ 
+ 	if (realname)
+-		(void)strlcpy(realname, hp->h_name, realname_len);
++	{
++		(void)strncpy(realname, hp->h_name, realname_len - 1);
++		realname[realname_len - 1] = '\0';
++	}
+ }
+ 
+ 
+diff -ru ping-20010219.orig/ping_hostops.c ping-20010219/ping_hostops.c
+--- ping-20010219.orig/ping_hostops.c	2019-07-14 07:23:52.885072961 +0200
++++ ping-20010219/ping_hostops.c	2019-07-14 07:57:32.633029009 +0200
+@@ -27,9 +27,6 @@
+  */
+ 
+ #include <sys/cdefs.h>
+-#ifndef lint
+-__RCSID("$NetBSD: ping_hostops.c,v 1.2 2011/03/11 09:59:56 pooka Exp $");
+-#endif /* !lint */
+ 
+ #include <sys/types.h>
+ #include <sys/socket.h>
+diff -ru ping-20010219.orig/ping_rumpops.c ping-20010219/ping_rumpops.c
+--- ping-20010219.orig/ping_rumpops.c	2019-07-14 07:24:13.805072505 +0200
++++ ping-20010219/ping_rumpops.c	2019-07-14 07:57:22.081029239 +0200
+@@ -27,9 +27,6 @@
+  */
+ 
+ #include <sys/cdefs.h>
+-#ifndef lint
+-__RCSID("$NetBSD: ping_rumpops.c,v 1.2 2011/03/11 09:59:56 pooka Exp $");
+-#endif /* !lint */
+ 
+ #include <sys/types.h>
+ #include <sys/socket.h>
+diff -ru ping-20010219.orig/prog_ops.h ping-20010219/prog_ops.h
+--- ping-20010219.orig/prog_ops.h	2019-07-14 07:24:23.405072296 +0200
++++ ping-20010219/prog_ops.h	2019-07-14 08:10:59.385524785 +0200
+@@ -41,9 +41,9 @@
+ 
+ 	int (*op_poll)(struct pollfd *, nfds_t, int);
+ 
+-	ssize_t (*op_recvfrom)(int, void *, size_t, int,
++	int (*op_recvfrom)(int, void *, size_t, int,
+ 			       struct sockaddr *, socklen_t *);
+-	ssize_t (*op_sendto)(int, const void *, size_t, int,
++	int (*op_sendto)(int, const void *, size_t, int,
+ 			       const struct sockaddr *, socklen_t);
+ 
+ 	int (*op_close)(int);
