@@ -1847,7 +1847,7 @@ digital cameras.
 		'name' => 'tiff',
 		'upstream' => 'http://www.simplesystems.org/libtiff/',
 		'source' => 'http://download.osgeo.org/libtiff/%{name}-%{version}.tar.gz',
-		'version' => '4.0.9',
+		'version' => '4.0.10',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

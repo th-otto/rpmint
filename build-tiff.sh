@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=tiff
-VERSION=-4.0.9
+VERSION=-4.0.10
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -12,13 +12,18 @@ VERSIONPATCH=
 PATCHES="
 patches/tiff/tiff-4.0.3-seek.patch
 patches/tiff/tiff-4.0.3-compress-warning.patch
+patches/tiff/tiff-CVE-2018-8905.patch
+patches/tiff/mintelf-config.patch
+patches/tiff/disable-assertions.patch
+"
+
+# already applied in 4.10
+DISABLED_PATCHES="
 patches/tiff/tiff-4.0.9-bsc1046077-CVE-2017-9935.patch
 patches/tiff/tiff-4.0.9-bsc1081690-CVE-2018-5784.patch
 patches/tiff/tiff-CVE-2018-10963.patch
 patches/tiff/tiff-CVE-2017-18013.patch
 patches/tiff/tiff-CVE-2018-7456.patch
-patches/tiff/tiff-CVE-2018-8905.patch
-patches/tiff/mintelf-config.patch
 "
 
 BINFILES="

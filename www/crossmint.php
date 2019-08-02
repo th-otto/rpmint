@@ -1411,6 +1411,8 @@ This notably applies to Perl and Python.
 
 <li>2019/07/14 Added ping command</li>
 
+<li>2019/08/03 Update tiff to 4.0.10</li>
+
 </ul>
 
 <p></p>
