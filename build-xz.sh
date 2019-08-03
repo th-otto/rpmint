@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=xz
-VERSION=-5.2.3
+VERSION=-5.2.4
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh

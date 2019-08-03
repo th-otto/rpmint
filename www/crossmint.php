@@ -1413,6 +1413,8 @@ This notably applies to Perl and Python.
 
 <li>2019/08/03 Update tiff to 4.0.10</li>
 
+<li>2019/08/03 Update xz to 5.2.4</li>
+
 </ul>
 
 <p></p>

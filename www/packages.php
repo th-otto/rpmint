@@ -599,7 +599,8 @@ archives, install package rar.
 	'xz' => array(
 		'name' => 'xz',
 		'upstream' => 'http://tukaani.org/xz/',
-		'version' => '5.2.3',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '5.2.4',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
