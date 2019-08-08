@@ -1,0 +1,70 @@
+From 68395b99479f8a12a36a46195ddf1bf55d9d3d51 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 8 Aug 2019 17:26:29 +0200
+Subject: [PATCH] Fix printfs of file sizes
+
+---
+ bzip2.c | 5 +++--
+ bzlib.c | 2 +-
+ bzlib.h | 2 +-
+ 3 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/bzip2.c b/bzip2.c
+index f63b077..6117aec 100644
+--- a/bzip2.c
++++ b/bzip2.c
+@@ -367,7 +367,7 @@ void compressStream ( FILE *stream, FILE *zStream )
+ #ifdef _WIN32
+           fprintf(stderr, "Input-file size: %I64d\n", fileSize);
+ #else
+-          fprintf(stderr, "Input-file size: %lld\n", fileSize);
++          fprintf(stderr, "Input-file size: %lld\n", (long long int)fileSize);
+ #endif
+    }
+ 
+@@ -504,7 +504,7 @@ Bool uncompressStream ( FILE *zStream, FILE *stream )
+ #ifdef _WIN32
+ 			fprintf(stderr, "Input-file size: %I64d\n", fileSize);
+ #else
+-			fprintf(stderr, "Input-file size: %lld\n", fileSize);
++			fprintf(stderr, "Input-file size: %lld\n", (long long int)fileSize);
+ #endif
+    }
+ 
+@@ -651,6 +651,7 @@ Bool testStream ( FILE *zStream )
+ 
+       while (bzerr == BZ_OK) {
+          nread = BZ2_bzRead ( &bzerr, bzf, obuf, 5000 );
++         (void)nread;
+          if (bzerr == BZ_DATA_ERROR_MAGIC) goto errhandler;
+       }
+       if (bzerr != BZ_STREAM_END) goto errhandler;
+diff --git a/bzlib.c b/bzlib.c
+index b085d82..0b5ee4d 100644
+--- a/bzlib.c
++++ b/bzlib.c
+@@ -1234,7 +1234,7 @@ void BZ_API(BZ2_bzReadGetUnused)
+ 
+    BZ_SETERR(BZ_OK);
+    *nUnused = bzf->strm.avail_in;
+-   *unused = bzf->strm.next_in;
++   *unused = (void *)bzf->strm.next_in;
+ }
+ #endif
+ 
+diff --git a/bzlib.h b/bzlib.h
+index d1604bb..1294f56 100644
+--- a/bzlib.h
++++ b/bzlib.h
+@@ -47,7 +47,7 @@ extern "C" {
+ 
+ typedef 
+    struct {
+-      char *next_in;
++      const char *next_in;
+       unsigned int avail_in;
+       unsigned int total_in_lo32;
+       unsigned int total_in_hi32;
+-- 
+2.21.0
+
