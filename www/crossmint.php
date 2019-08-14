@@ -1417,6 +1417,8 @@ This notably applies to Perl and Python.
 
 <li>2019/08/14 Update fdlibm</li>
 
+<li>2019/08/14 Package libmad added</li>
+
 </ul>
 
 <p></p>

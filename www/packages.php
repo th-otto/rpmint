@@ -2160,6 +2160,28 @@ The ping command. </br>
 Ported from BSD sources.
 '
 	),
+	'libmad' => array(
+		'name' => 'libmad',
+		'upstream' => 'http://www.underbit.com/products/mad/',
+		'source' => 'https://sourceforge.net/projects/mad/files/libmad/%{version}/libmad-%{version}.tar.gz',
+		'version' => '0.15.1b',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+MAD is a MPEG audio decoder. It currently supports MPEG-1 and the
+MPEG-2 extension to Lower Sampling Frequencies, as well as the
+so-called MPEG 2.5 format. All three audio layers (Layer I, Layer II,
+and Layer III a.k.a. MP3) are implemented.
+</br>
+MAD supports 24-bit PCM output. MAD computes using 100%% fixed-point
+(integer) computation, so you can run it without a floating point
+unit.
+'
+	),
 );
 
 ?>
