@@ -101,7 +101,7 @@ $fdlibm = array(
 	'llogb' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'llogb', 'description' => 'Like ilogb, but returning long int.'),
 	'nearbyint' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'nearbyint', 'description' => 'Round X to integral value in floating-point format using current rounding direction, but do not raise inexact exception.', 'comments' => 'Same as rint'),
 	'round' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'round', 'description' => 'Round X to nearest integral value, rounding halfway cases away from zero.'),
-	'trunc' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'trunc', 'description' => 'Round X to the integral value in floating-point format nearest but not larger in magnitude.'),
+	'trunc' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'trunc', 'description' => 'Round X to the integral value in floating-point format nearest but not larger in magnitude.'),
 	'remquo' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'remquo', 'description' => 'Compute remainder of X and Y and put in *QUO a value with sign of x/y
 and magnitude congruent `mod 2^n&apos; to the magnitude of the integral
 quotient x/y, with n &gt;= 3.'),

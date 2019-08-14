@@ -1415,6 +1415,8 @@ This notably applies to Perl and Python.
 
 <li>2019/08/03 Update xz to 5.2.4</li>
 
+<li>2019/08/14 Update fdlibm</li>
+
 </ul>
 
 <p></p>
