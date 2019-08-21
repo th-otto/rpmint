@@ -31,7 +31,11 @@ COMMON_CFLAGS="-O2 -fomit-frame-pointer -std=gnu99 -D_GNU_SOURCE ${CFLAGS_AMIGAO
 # is an older version. So we must avoid using a newer
 # version which might reference functions that are not available there
 #
-CONFIGURE_FLAGS_AMIGAOS+=" --with-png=no"
+case $TARGET in
+m68k-amigaos*)
+	CONFIGURE_FLAGS_AMIGAOS+=" --with-png=no"
+	;;
+esac
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared \
 	--with-bzip2 \

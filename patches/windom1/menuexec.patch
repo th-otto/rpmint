@@ -1,0 +1,48 @@
+--- a/src/menu_execcmd.c	2019-08-21 13:53:55.561320551 +0200
++++ b/src/menu_execcmd.c	2019-08-21 14:03:03.793398835 +0200
+@@ -52,8 +52,10 @@
+ 
+ int menu_exec_cmd( WINDOW *win) {
+ 	int titre, entre;
+-	char cmd[10], rac[10], *str, *p;
++	char cmd[10], rac[10], *str;
+ 	OBJECT *menu;
++	int cmdlen;
++	int entlen;
+ 
+ 	menu = win?win -> menu.root:app.menu;
+ 	if( !menu) /* Y'a pas de menu */
+@@ -68,15 +70,15 @@
+ 	/* analyse du raccourci clavier */
+ 	strcpy( cmd, " ");
+ 	if( evnt.mkstate & K_ALT)
+-		strcat( cmd, "");
++		strcat( cmd, "\007");
+ 	else if( evnt.mkstate & K_CTRL)
+ 		strcat( cmd, "^");
+ 	else if( evnt.mkstate & K_RSHIFT || evnt.mkstate & K_LSHIFT)
+-		strcat( cmd, "");
++		strcat( cmd, "\001");
+ 	strcat( cmd, rac);
+-	strcat( cmd, " ");
+ 	titre = entre = 3;
+-	
++	cmdlen = (int)strlen(cmd);
++
+ 	while( menu[entre].ob_type != G_BOX)
+ 		entre ++;
+ 	
+@@ -90,8 +92,11 @@
+ 				continue;
+ 			
+ 			str = ObjcString( menu, entre, NULL);
+-			p = strstr( str, cmd);
+-			if( p != NULL && str+1 != p) {
++			entlen = (int)strlen(str);
++			while (entlen > 0 && str[entlen - 1] == ' ')
++				entlen--;
++			if (entlen > (cmdlen + 1) && strncmp(str + entlen - cmdlen, cmd, cmdlen) == 0)
++			{
+ 				ApplWrite( app.id, MN_SELECTED, titre, entre, ADR(menu), obj_root(menu,entre));
+ 				return 1;
+ 			}

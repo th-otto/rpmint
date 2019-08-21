@@ -9,7 +9,10 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/windom/cross.patch"
+PATCHES="
+patches/windom/cross.patch
+patches/windom/menuexec.patch
+"
 
 BINFILES="
 ${TARGET_BINDIR}/windom-demo.app
@@ -19,7 +22,7 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="$LTO_CFLAGS"
+COMMON_CFLAGS="-Os -fomit-frame-pointer $LTO_CFLAGS"
 
 SUBDIRS="src demo"
 

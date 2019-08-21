@@ -1419,6 +1419,8 @@ This notably applies to Perl and Python.
 
 <li>2019/08/14 Package libmad added</li>
 
+<li>2019/08/21 Fix a bug in windom libraries when scanning the menu for keyboard shortcuts</li>
+
 </ul>
 
 <p></p>

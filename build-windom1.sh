@@ -12,6 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/windom1/windom-1.21.3.patch
 patches/windom1/cross.patch
+patches/windom1/menuexec.patch
 "
 
 BINFILES="
@@ -22,7 +23,7 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="$LTO_CFLAGS"
+COMMON_CFLAGS="-Os -fomit-frame-pointer $LTO_CFLAGS"
 
 SUBDIRS="src demo"
 

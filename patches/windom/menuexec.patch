@@ -1,0 +1,50 @@
+--- a/src/menu_execcmd.c	2019-08-21 14:22:14.181373802 +0200
++++ b/src/menu_execcmd.c	2019-08-21 14:24:08.649371311 +0200
+@@ -60,8 +60,10 @@
+  */
+ int menu_exec_cmd( APPvar *app, WINDOW *win) {
+ 	int titre, entre;
+-	char cmd[10], rac[10], *str, *p;
++	char cmd[10], rac[10], *str;
+ 	OBJECT *menu;
++	int cmdlen;
++	int entlen;
+ 
+ 	menu = win?win -> menu.root:app->menu;
+ 	if( !menu) /* there's no menu */
+@@ -76,17 +78,17 @@
+ 	/* check shortcuts */
+ 	strcpy( cmd, " ");
+ 	if( app->evnt.mkstate & K_ALT)
+-		strcat( cmd, "");
++		strcat( cmd, "\007");
+ 	else if( app->evnt.mkstate & K_CTRL)
+ 		strcat( cmd, "^");
+ 	else if( app->evnt.mkstate & K_RSHIFT || app->evnt.mkstate & K_LSHIFT)
+-		strcat( cmd, "");
++		strcat( cmd, "\001");
+ 	else if ( strlen(rac)==1 ) /* a single char with no modifier -> not a shortcut key */
+ 		return 0;
+ 	strcat( cmd, rac);
+-	strcat( cmd, " ");
+ 	titre = entre = 3;
+-	
++	cmdlen = (int)strlen(cmd);
++
+ 	while( ! ob_istype(app,menu,entre,G_BOX))
+ 		entre ++;
+ 	
+@@ -100,8 +102,11 @@
+ 				continue;
+ 			
+ 			str = mt_ObjcString( app, menu, entre, NULL);
+-			p = strstr( str, cmd);
+-			if( p != NULL && str+1 != p) {
++			entlen = (int)strlen(str);
++			while (entlen > 0 && str[entlen - 1] == ' ')
++				entlen--;
++			if (entlen > (cmdlen + 1) && strncmp(str + entlen - cmdlen, cmd, cmdlen) == 0)
++			{
+ 				mt_ApplWrite( app, mt_AppId(app), MN_SELECTED, titre, entre, ADR(menu), obj_root(menu,entre));
+ 				return 1;
+ 			}
