@@ -1421,6 +1421,8 @@ This notably applies to Perl and Python.
 
 <li>2019/08/21 Fix a bug in windom libraries when scanning the menu for keyboard shortcuts</li>
 
+<li>2019/08/23 Rebuild gcc for linux with static version of isl 0.18</li>
+
 </ul>
 
 <p></p>

@@ -310,7 +310,7 @@ $srcdir/configure \
 	--enable-ssp \
 	--enable-libssp \
 	$enable_plugin \
-	--enable-decimal-float \
+	--disable-decimal-float \
 	--disable-nls \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
