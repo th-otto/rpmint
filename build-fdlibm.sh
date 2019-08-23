@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=fdlibm
-VERSION=-20190814
+VERSION=-20190823
 
 . ${scriptdir}/functions.sh
 

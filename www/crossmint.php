@@ -1423,6 +1423,8 @@ This notably applies to Perl and Python.
 
 <li>2019/08/23 Rebuild gcc for linux with static version of isl 0.18</li>
 
+<li>2019/08/23 Update fdlibm</li>
+
 </ul>
 
 <p></p>
