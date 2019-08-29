@@ -1,0 +1,535 @@
+diff -rupN pngtools-0.4.orig/configure.ac pngtools-0.4/configure.ac
+--- pngtools-0.4.orig/configure.ac	1970-01-01 01:00:00.000000000 +0100
++++ pngtools-0.4/configure.ac	2019-08-29 11:17:34.959276347 +0200
+@@ -0,0 +1,40 @@
++dnl Process this file with autoconf to produce a configure script.
++AC_INIT(pngtools, 0.4,,,)
++AC_CONFIG_AUX_DIR(config)
++AC_REVISION
++
++AC_CANONICAL_HOST
++
++AM_INIT_AUTOMAKE
++AM_MAINTAINER_MODE
++
++dnl Checks for programs.
++AC_PROG_CC
++AC_PROG_INSTALL
++
++dnl Checks for libraries.
++dnl The syntax is library name, function, action if found, action if not found
++dnl We just use the default if found action which adds -l<lib> to the LIBS var
++dnl and #defined HAVE_LIB<lib>
++
++
++dnl -lm:
++AC_CHECK_LIB(m, atan)
++
++dnl -lpng:
++AC_CHECK_LIB(png, png_get_libpng_ver)
++
++dnl STDC checks for stdlib.h stdarg.h string.h and float.h
++AC_HEADER_STDC
++AC_CHECK_HEADERS(stdio.h)
++
++dnl Headers for libraries
++AC_CHECK_HEADERS(png.h)
++
++dnl Checks for typedefs, structures, and compiler characteristics.
++
++dnl Checks for library functions.
++AC_FUNC_VPRINTF
++dnl AC_FUNC_SNPRINTF
++
++AC_OUTPUT(Makefile)
+diff -rupN pngtools-0.4.orig/configure.in pngtools-0.4/configure.in
+--- pngtools-0.4.orig/configure.in	2008-11-27 00:14:17.000000000 +0100
++++ pngtools-0.4/configure.in	1970-01-01 01:00:00.000000000 +0100
+@@ -1,37 +0,0 @@
+-dnl Process this file with autoconf to produce a configure script.
+-AC_INIT(pnginfo.c)
+-AC_CONFIG_AUX_DIR(config)
+-AC_REVISION
+-AM_INIT_AUTOMAKE(pngtools, 0.2)
+-AM_MAINTAINER_MODE
+-
+-dnl Checks for programs.
+-AC_PROG_CC
+-AC_PROG_INSTALL
+-
+-dnl Checks for libraries.
+-dnl The syntax is library name, function, action if found, action if not found
+-dnl We just use the default if found action which adds -l<lib> to the LIBS var
+-dnl and #defined HAVE_LIB<lib>
+-
+-
+-dnl -lm:
+-AC_CHECK_LIB(m, atan)
+-
+-dnl -lpng:
+-AC_CHECK_LIB(png, png_libpng_ver)
+-
+-dnl STDC checks for stdlib.h stdarg.h string.h and float.h
+-AC_HEADER_STDC
+-AC_CHECK_HEADERS(stdio.h)
+-
+-dnl Headers for libraries
+-AC_CHECK_HEADERS(png.h)
+-
+-dnl Checks for typedefs, structures, and compiler characteristics.
+-
+-dnl Checks for library functions.
+-AC_FUNC_VPRINTF
+-dnl AC_FUNC_SNPRINTF
+-
+-AC_OUTPUT(Makefile)
+diff -rupN pngtools-0.4.orig/inflateraster.c pngtools-0.4/inflateraster.c
+--- pngtools-0.4.orig/inflateraster.c	2008-11-27 00:14:17.000000000 +0100
++++ pngtools-0.4/inflateraster.c	2019-08-29 12:02:10.376164278 +0200
+@@ -1,5 +1,6 @@
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <math.h>
+ 
+ // Inflate a raster to a given pixel sample size
+ char *inflateraster(char *input, unsigned long width, unsigned long height, 
+@@ -27,7 +28,7 @@ char *inflateraster(char *input, unsigne
+   // Build the output raster
+   if((output = (char *) malloc(width * height * targetchannels * targetbytedepth)) == NULL){
+     fprintf(stderr, "Failed to allocate enough memory for output raster\n");
+-    return (char *) -1;
++    return NULL;
+   }
+ 
+   // Are we changing the bitdepth?
+diff -rupN pngtools-0.4.orig/pngchunkdesc.c pngtools-0.4/pngchunkdesc.c
+--- pngtools-0.4.orig/pngchunkdesc.c	2008-11-27 00:14:17.000000000 +0100
++++ pngtools-0.4/pngchunkdesc.c	2019-08-29 12:03:15.688162857 +0200
+@@ -20,8 +20,10 @@ DOCBOOK END
+ ******************************************************************************/
+ 
+ #include <stdio.h>
++#include <string.h>
++#include <ctype.h>
+ 
+-char *meanings[4][2] = {
++static const char *const meanings[4][2] = {
+   {"Critical", "Ancillary"},
+   {"public", "private"},
+   {"PNG 1.2 compliant", "in reserved chunk space"},
+@@ -43,4 +45,5 @@ main (int argc, char *argv[])
+ 	      isupper (s[2]) ? meanings[2][0] : meanings[2][1],
+ 	      isupper (s[3]) ? meanings[3][0] : meanings[3][1]);
+     }
++  return 0;
+ }
+diff -rupN pngtools-0.4.orig/pngchunks.c pngtools-0.4/pngchunks.c
+--- pngtools-0.4.orig/pngchunks.c	2008-11-27 00:14:17.000000000 +0100
++++ pngtools-0.4/pngchunks.c	2019-08-29 11:57:59.223223593 +0200
+@@ -2,14 +2,16 @@
+ 
+ #include <stdio.h>
+ #include <unistd.h>
+-#include <sys/mman.h>
++#include <stdlib.h>
++#include <ctype.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#include <netinet/in.h>
+ #include <fcntl.h>
+ #include <string.h>
+ #include <math.h>
+ 
+-void usage();
++void usage(void);
+ 
+ const char magic[] = {137, 'P', 'N', 'G', '\r', '\n', 26, '\n'};
+ typedef struct pngchunks_internal_header
+@@ -62,7 +64,7 @@ int main(int argc, char *argv[])
+       exit(1);
+     }
+ 
+-  if ((data = mmap (NULL, stat.st_size, PROT_READ, MAP_SHARED, fd, 0)) < 0)
++  if ((data = malloc(stat.st_size)) == NULL || read(fd, data, stat.st_size) != stat.st_size)
+     {
+       fprintf (stderr, "Could not mmap data file\n");
+       exit (1);
+@@ -162,15 +164,12 @@ int main(int argc, char *argv[])
+     }
+ 
+   // Unmap the file
+-  if(munmap(data, stat.st_size) < 0)
+-    {
+-      fprintf(stderr, "Error unmapping memory\n");
+-      exit(1);
+-    }
++  free(data);
++  return 0;
+ }
+ 
+ 
+-void usage()
++void usage(void)
+ {
+   fprintf(stderr, "Usage: pngchunks <filename>\n");
+   exit(1);
+diff -rupN pngtools-0.4.orig/pngcp.c pngtools-0.4/pngcp.c
+--- pngtools-0.4.orig/pngcp.c	2008-11-27 00:14:17.000000000 +0100
++++ pngtools-0.4/pngcp.c	2019-08-29 12:07:51.680156851 +0200
+@@ -1,5 +1,7 @@
+ #include <unistd.h>
+ #include <stdio.h>
++#include <stdlib.h>
++#include <png.h>
+ #include <math.h>
+ #include "pngcp.h"
+ 
+@@ -30,10 +32,10 @@ SEEALSO libpng libtiff tiffcp pngchunkde
+ DOCBOOK END
+ ******************************************************************************/
+ 
+-void usage();
++void usage(void);
+ 
+ int main(int argc, char *argv[]){
+-  unsigned long width, height;
++  png_uint_32 width, height;
+   int channels, targetchannels = -1, bitdepth, targetbitdepth = -1, optchar, i;
+   char *input, *output;
+   
+@@ -65,28 +67,29 @@ int main(int argc, char *argv[]){
+ 
+   // Colour depth is the number of bits per sample
+   // Bit depth is the number of samples per pixel
+-  if((input = readimage(argv[i], &width, &height, &bitdepth, &channels)) == -1){
++  if((input = readimage(argv[i], &width, &height, &bitdepth, &channels)) == NULL){
+     fprintf(stderr, "Failed to read the input raster\n");
+-    exit(42);
++    return 1;
+   }
+   if(targetbitdepth == -1) targetbitdepth = bitdepth;
+   if(targetchannels == -1) targetchannels = channels;
+   
+   if((output = inflateraster(input, width, height, bitdepth, targetbitdepth,
+-			     channels, targetchannels)) == -1){
++			     channels, targetchannels)) == NULL){
+     fprintf(stderr, "Failed to inflate the raster to the requested size\n");
+-    exit(42);
++    return 1;
+   }
+ 
+   // Now push the raster into the output file
+   if(writeimage(argv[i + 1], width, height, targetbitdepth, targetchannels, output) < 0){
+     fprintf(stderr, "Error writing the output file\n");
+-    exit(42);
++    return 1;
+   }
++  return 0;
+ }
+ 
+ void
+-usage ()
++usage (void)
+ {
+   fprintf(stderr, "Usage: pngcp [-d <target bitdepth>] [-s <target samples per pixel>] <input filename> <output filename>\n");
+   exit(1);
+diff -rupN pngtools-0.4.orig/pngcp.h pngtools-0.4/pngcp.h
+--- pngtools-0.4.orig/pngcp.h	2008-11-27 00:14:17.000000000 +0100
++++ pngtools-0.4/pngcp.h	2019-08-29 12:06:19.400158859 +0200
+@@ -1,10 +1,10 @@
+ #ifndef PNGCP_H
+ #define PNGCP_H
+ 
+-char *readimage(char *filename, unsigned long *width, unsigned long *height, 
++char *readimage(char *filename, png_uint_32 *width, png_uint_32 *height, 
+ 		      int *bitdepth, int *channels);
+ 
+-int writeimage(char *filename, unsigned long width, unsigned long height, 
++int writeimage(char *filename, png_uint_32 width, png_uint_32 height, 
+ 		     int bitdepth, int channels, char *raster);
+ 
+ char *inflateraster(char *input, unsigned long width, unsigned long height, 
+diff -rupN pngtools-0.4.orig/pnginfo.c pngtools-0.4/pnginfo.c
+--- pngtools-0.4.orig/pnginfo.c	2008-11-27 00:14:17.000000000 +0100
++++ pngtools-0.4/pnginfo.c	2019-08-29 12:10:21.376153593 +0200
+@@ -127,21 +127,33 @@ main (int argc, char *argv[])
+   // For each filename that we have:
+   for (; i < argc; i++)
+     pnginfo_displayfile (argv[i], extractBitmap, displayBitmap, tiffnames);
++  return 0;
+ }
+ 
+ void
+ pnginfo_displayfile (char *filename, int extractBitmap, int displayBitmap, int tiffnames)
+ {
+   FILE *image;
+-  unsigned long imageBufSize, width, height, runlen;
++  png_uint_32 width, height, runlen;
+   unsigned char signature;
+   int bitdepth, colourtype;
++  png_byte channels;
++  int interlace_type, compression_type, filter_type;
++  png_uint_32 res_x, res_y;
++  int unit_type;
+   png_uint_32 i, j, rowbytes;
+   png_structp png;
+   png_infop info;
+   unsigned char sig[8];
+   png_bytepp row_pointers = NULL;
+   char *bitmap;
++  png_bytep trans_alpha;
++  int num_trans;
++  png_color_16p trans_color;
++  png_colorp palette;
++  int num_palette;
++  png_textp text_ptr;
++  int num_text;
+ 
+   printf ("%s%s...\n", filename, \
+ 	  tiffnames == pnginfo_true? " (tiffinfo compatible labels)" : "");
+@@ -177,8 +189,8 @@ pnginfo_displayfile (char *filename, int
+   png_init_io (png, image);
+   png_set_sig_bytes (png, 8);
+   png_read_info (png, info);
+-  png_get_IHDR (png, info, &width, &height, &bitdepth, &colourtype, NULL,
+-		NULL, NULL);
++  png_get_IHDR (png, info, &width, &height, &bitdepth, &colourtype, &interlace_type, &compression_type, &filter_type);
++  channels = png_get_channels(png, info);
+ 
+   ///////////////////////////////////////////////////////////////////////////
+   // Start displaying information
+@@ -187,15 +199,25 @@ pnginfo_displayfile (char *filename, int
+   printf ("  Image Width: %d Image Length: %d\n", width, height);
+   if(tiffnames == pnginfo_true){
+     printf ("  Bits/Sample: %d\n", bitdepth);
+-    printf ("  Samples/Pixel: %d\n", info->channels);
+-    printf ("  Pixel Depth: %d\n", info->pixel_depth);	// Does this add value?
++    printf ("  Samples/Pixel: %d\n", channels);
++    printf ("  Pixel Depth: %d\n",channels * bitdepth);	// Does this add value?
+   }
+   else{
+     printf ("  Bitdepth (Bits/Sample): %d\n", bitdepth);
+-    printf ("  Channels (Samples/Pixel): %d\n", info->channels);
+-    printf ("  Pixel depth (Pixel Depth): %d\n", info->pixel_depth);	// Does this add value?
++    printf ("  Channels (Samples/Pixel): %d\n", channels);
++    printf ("  Pixel depth (Pixel Depth): %d\n",  channels * bitdepth);	// Does this add value?
+   }
+ 
++  png_get_tRNS(png, info, &trans_alpha, &num_trans, &trans_color);
++  png_get_PLTE(png, info, &palette, &num_palette);
++
++#if PNG_LIBPNG_VER_MAJOR >= 1 && PNG_LIBPNG_VER_MINOR >= 4
++ png_get_pHYs_dpi(png, info, &res_x, &res_y, &unit_type);
++#else
++ res_x = info->x_pixels_per_unit;
++ res_y = info->y_pixels_per_unit;
++#endif
++
+   // Photometric interp packs a lot of information
+   printf ("  Colour Type (Photometric Interpretation): ");
+ 
+@@ -207,10 +229,10 @@ pnginfo_displayfile (char *filename, int
+ 
+     case PNG_COLOR_TYPE_PALETTE:
+       printf ("PALETTED COLOUR ");
+-      if (info->num_trans > 0)
++      if (num_trans > 0)
+ 	printf ("with alpha ");
+       printf ("(%d colours, %d transparent) ",
+-	      info->num_palette, info->num_trans);
++	      num_palette, num_trans);
+       break;
+ 
+     case PNG_COLOR_TYPE_RGB:
+@@ -232,7 +254,7 @@ pnginfo_displayfile (char *filename, int
+   printf ("\n");
+ 
+   printf ("  Image filter: ");
+-  switch (info->filter_type)
++  switch (filter_type)
+     {
+     case PNG_FILTER_TYPE_BASE:
+       printf ("Single row per byte filter ");
+@@ -249,7 +271,7 @@ pnginfo_displayfile (char *filename, int
+   printf ("\n");
+ 
+   printf ("  Interlacing: ");
+-  switch (info->interlace_type)
++  switch (interlace_type)
+     {
+     case PNG_INTERLACE_NONE:
+       printf ("No interlacing ");
+@@ -266,7 +288,7 @@ pnginfo_displayfile (char *filename, int
+   printf ("\n");
+ 
+   printf ("  Compression Scheme: ");
+-  switch (info->compression_type)
++  switch (compression_type)
+     {
+     case PNG_COMPRESSION_TYPE_BASE:
+       printf ("Deflate method 8, 32k window");
+@@ -278,9 +300,8 @@ pnginfo_displayfile (char *filename, int
+     }
+   printf ("\n");
+ 
+-  printf ("  Resolution: %d, %d ",
+-	  info->x_pixels_per_unit, info->y_pixels_per_unit);
+-  switch (info->phys_unit_type)
++  printf ("  Resolution: %d, %d ",res_x, res_y);
++  switch (unit_type)
+     {
+     case PNG_RESOLUTION_UNKNOWN:
+       printf ("(unit unknown)");
+@@ -299,15 +320,17 @@ pnginfo_displayfile (char *filename, int
+   // FillOrder is always msb-to-lsb, big endian
+   printf ("  FillOrder: msb-to-lsb\n  Byte Order: Network (Big Endian)\n");
+ 
++  png_get_text(png, info, &text_ptr, &num_text);
++
+   // Text comments
+-  printf ("  Number of text strings: %d of %d\n",
+-	  info->num_text, info->max_text);
++  printf ("  Number of text strings: %d\n",
++	  num_text);
+ 
+-  for (i = 0; i < info->num_text; i++)
++  for (i = 0; i < num_text; i++)
+     {
+-      printf ("    %s ", info->text[i].key);
++      printf ("    %s ", text_ptr[i].key);
+ 
+-      switch (info->text[1].compression)
++      switch (text_ptr[1].compression)
+ 	{
+ 	case -1:
+ 	  printf ("(tEXt uncompressed)");
+@@ -332,12 +355,12 @@ pnginfo_displayfile (char *filename, int
+ 
+       printf (": ");
+       j = 0;
+-      while (info->text[i].text[j] != '\0')
++      while (text_ptr[i].text[j] != '\0')
+ 	{
+-	  if (info->text[i].text[j] == '\n')
++	  if (text_ptr[i].text[j] == '\n')
+ 	    printf ("\\n");
+ 	  else
+-	    fputc (info->text[i].text[j], stdout);
++	    fputc (text_ptr[i].text[j], stdout);
+ 
+ 	  j++;
+ 	}
+@@ -385,14 +408,14 @@ pnginfo_displayfile (char *filename, int
+ 
+ 	  printf ("Dumping the bitmap for this image:\n");
+ 	  printf ("(Expanded samples result in %d bytes per pixel, %d channels with %d bytes per channel)\n\n", 
+-		  info->channels * bytespersample, info->channels, bytespersample);
++		  channels * bytespersample, channels, bytespersample);
+ 
+ 	  // runlen is used to stop us displaying repeated byte patterns over and over --
+ 	  // I display them once, and then tell you how many times it occured in the file.
+ 	  // This currently only applies to runs on zeros -- I should one day add an
+ 	  // option to extend this to runs of other values as well
+ 	  runlen = 0;
+-	  for (i = 0; i < rowbytes * height / info->channels; i += info->channels * bytespersample)
++	  for (i = 0; i < rowbytes * height / channels; i += channels * bytespersample)
+ 	    {
+ 	      int scount, bcount, pixel;
+ 
+@@ -408,16 +431,16 @@ pnginfo_displayfile (char *filename, int
+ 
+ 	      // Determine if this is a pixel whose entire value is zero
+ 	      pixel = 0;
+-	      for(scount = 0; scount < info->channels; scount++)
++	      for(scount = 0; scount < channels; scount++)
+ 		for(bcount = 0; bcount < bytespersample; bcount++)
+ 		  pixel += bitmap[i + scount * bytespersample + bcount];
+ 
+ 	      if ((runlen == 0) && !pixel)
+ 		{
+ 		  printf ("[");
+-		  for(scount = 0; scount < info->channels; scount++){
++		  for(scount = 0; scount < channels; scount++){
+ 		    for(bcount = 0; bcount < bytespersample; bcount++) printf("00");
+-		    if(scount != info->channels - 1) printf(" ");
++		    if(scount != channels - 1) printf(" ");
+ 		  }
+ 		  printf ("] ");
+ 		  runlen++;
+@@ -425,10 +448,10 @@ pnginfo_displayfile (char *filename, int
+ 
+ 	      if (runlen == 0){
+ 		printf ("[");
+-		for(scount = 0; scount < info->channels; scount++){
++		for(scount = 0; scount < channels; scount++){
+ 		  for(bcount = 0; bcount < bytespersample; bcount++)
+ 		    printf("%02x", (unsigned char) bitmap[i + scount * bytespersample + bcount]);
+-		  if(scount != info->channels - 1) printf(" ");
++		  if(scount != channels - 1) printf(" ");
+ 		}
+ 		printf("] ");
+ 	      }
+@@ -469,7 +492,7 @@ pnginfo_xmalloc (size_t size)
+ }
+ 
+ void
+-usage ()
++usage (void)
+ {
+   pnginfo_error ("Usage: pnginfo [-d] [-D] <filenames>");
+ }
+diff -rupN pngtools-0.4.orig/pngread.c pngtools-0.4/pngread.c
+--- pngtools-0.4.orig/pngread.c	2008-11-27 00:14:17.000000000 +0100
++++ pngtools-0.4/pngread.c	2019-08-29 12:06:19.400158859 +0200
+@@ -3,11 +3,9 @@
+ #include <string.h>
+ #include <png.h>
+ #include <unistd.h>
++#include "pngcp.h"
+ 
+-char *readimage(char *filename, unsigned long *width, unsigned long *height, 
+-		int *bitdepth, int *channels);
+-
+-char *readimage(char *filename, unsigned long *width, unsigned long *height, 
++char *readimage(char *filename, png_uint_32 *width, png_uint_32 *height, 
+ 		      int *bitdepth, int *channels){
+   FILE *image;
+   png_uint_32 i, j, rowbytes;
+@@ -68,7 +66,7 @@ char *readimage(char *filename, unsigned
+   // palette is correctly reported...
+   //png_set_strip_alpha (png);
+   png_read_update_info (png, info);
+-  *channels = info->channels;
++  *channels = png_get_channels(png, info);
+   
+   rowbytes = png_get_rowbytes (png, info);
+   if((row_pointers = malloc (*height * sizeof (png_bytep))) == NULL){
+@@ -90,7 +88,7 @@ char *readimage(char *filename, unsigned
+ 
+  error:
+   free(raster);
+-  raster = (char *) -1;
++  raster = NULL;
+ 
+  cleanup:
+   if(row_pointers != NULL) free(row_pointers);
+diff -rupN pngtools-0.4.orig/pngwrite.c pngtools-0.4/pngwrite.c
+--- pngtools-0.4.orig/pngwrite.c	2008-11-27 00:14:17.000000000 +0100
++++ pngtools-0.4/pngwrite.c	2019-08-29 12:06:39.480158422 +0200
+@@ -5,7 +5,7 @@
+ #include <unistd.h>
+ #include "pngcp.h"
+ 
+-int writeimage(char *filename, unsigned long width, unsigned long height, 
++int writeimage(char *filename, png_uint_32 width, png_uint_32 height, 
+ 		      int bitdepth, int channels, char *raster){
+   FILE *image;
+   png_structp png;
+--- pngtools-0.4/Makefile.am.orig	2019-08-29 12:16:28.788145598 +0200
++++ pngtools-0.4/Makefile.am	2019-08-29 12:16:49.280145152 +0200
+@@ -1,3 +1,5 @@
++LIBS= -lpng -lz @LIBS@
++
+ bin_PROGRAMS = pnginfo pngcp pngchunkdesc pngchunks
+ 
+ pnginfo_SOURCES = pnginfo.c
