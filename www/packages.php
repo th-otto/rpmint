@@ -439,7 +439,10 @@ install the auto folder programs from <a href="http://ldg.sourceforge.net/#downl
 Windom is a C library to make GEM programming very easy. With the help
 of windom, you can focus on programming the real job of your
 application, and let windom handle complex and "automatic" GEM stuff
-(toolbar, forms, menu in windows...). 
+(toolbar, forms, menu in windows...). <br />
+<span style="color:red">Warning:</span> do not run make in the top level directory
+after unpacking the source archive; the build system is utterly broken and will
+remove your source directory.
 '
 	),
 	'windom1' => array(
