@@ -13,6 +13,7 @@ PATCHES="
 patches/windom1/windom-1.21.3.patch
 patches/windom1/cross.patch
 patches/windom1/menuexec.patch
+patches/windom1/formthumb.patch
 "
 
 BINFILES="

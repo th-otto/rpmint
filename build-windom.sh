@@ -12,6 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/windom/cross.patch
 patches/windom/menuexec.patch
+patches/windom/formthumb.patch
 "
 
 BINFILES="

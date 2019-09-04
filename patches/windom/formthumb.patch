@@ -1,0 +1,49 @@
+--- a/include/mt_wndm.h	2019-09-04 15:44:56.100819479 +0200
++++ b/include/mt_wndm.h	2019-09-04 15:45:40.416818514 +0200
+@@ -945,7 +945,7 @@
+  * @sa mt_FormBegin(), mt_FormEnd() */
+ #define mt_FormDo(a,b,c) mt_form_do(b,c,a->aes_global)
+ int     mt_FormAlert   ( APPvar *app, int but, char fmt[], ...);
+-void*   mt_FormThumb   ( APPvar *app, WINDOW *win, int *idxthb, int *idxbut, int nb);
++void*   mt_FormThumb   ( APPvar *app, WINDOW *win, const int *idxthb, const int *idxbut, int nb);
+ void    mt_FormThbSet  ( APPvar *app, WINDOW *win, int but);
+ int     mt_FormThbGet  ( APPvar *app, void   *thb, int mode);
+ 
+--- a/include/windom.h.orig	2019-09-04 15:44:12.756820422 +0200
++++ b/include/windom.h	2019-09-04 15:44:33.936819961 +0200
+@@ -340,7 +340,7 @@
+ #define FormDo(a,b)					mt_form_do(a,b,gl_appvar->aes_global)
+ 
+ /**@brief See mt_FormThumb() */
+-static inline void* FormThumb ( WINDOW *win, int *idxthb, int *idxbut, int nb) {
++static inline void* FormThumb ( WINDOW *win, const int *idxthb, const int *idxbut, int nb) {
+ 	return mt_FormThumb ( gl_appvar, win, idxthb, idxbut, nb);
+ }
+ 
+--- a/src/form_thumb.c.orig	2019-09-04 02:37:29.542114921 +0200
++++ b/src/form_thumb.c	2019-09-04 15:45:40.416818514 +0200
+@@ -107,7 +107,7 @@
+  * @sa mt_FormThbSet(), mt_FormThbGet().
+  */
+ 
+-void *mt_FormThumb( APPvar *app, WINDOW *win, int *idxthb, int *idxbut, int nb) {
++void *mt_FormThumb( APPvar *app, WINDOW *win, const int *idxthb, const int *idxbut, int nb) {
+ 	W_FORM *form = mt_DataSearch( app, win, WD_WFRM);
+ 	THUMB *thumb;
+ 	int i;
+@@ -117,13 +117,13 @@
+ 		app->error = ENSMEM;
+ 		return NULL;
+ 	}
+-	thumb -> idxthb = malloc( sizeof(int)*nb);
++	thumb -> idxthb = malloc( sizeof(thumb->idxthb[0])*nb);
+ 	if( !thumb -> idxthb) {
+ 		free( thumb);
+ 		app->error = ENSMEM;
+ 		return NULL;
+ 	}
+-	thumb -> idxbut = malloc( sizeof(int)*nb);
++	thumb -> idxbut = malloc( sizeof(thumb->idxbut[0])*nb);
+ 	if( !thumb -> idxbut) {
+ 		free( thumb->idxthb);
+ 		free( thumb);

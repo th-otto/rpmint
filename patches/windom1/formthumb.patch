@@ -1,0 +1,38 @@
+--- a/include/windom.h	2019-09-04 02:43:06.262107594 +0200
++++ b/include/windom.h	2019-09-04 02:43:57.698106475 +0200
+@@ -599,7 +599,7 @@
+ void    FormEnd     ( OBJECT *tree, MFDB *bckgrnd);
+ #define FormDo(a,b) form_do(a,b)
+ int     FormAlert   ( int but, char fmt[], ...);
+-void*   FormThumb   ( WINDOW *win, int *idxthb, int *idxbut, int nb);
++void*   FormThumb   ( WINDOW *win, const int *idxthb, const int *idxbut, int nb);
+ void    FormThbSet  ( WINDOW *win, int but);
+ int     FormThbGet  ( void   *thb, int mode);
+ 
+--- a/src/form_thumb.c	2019-09-04 02:28:41.598126410 +0200
++++ b/src/form_thumb.c	2019-09-04 02:32:57.490120841 +0200
+@@ -76,7 +76,7 @@
+ 
+ /* Cr‚ation de l'onglet */
+ 
+-void *FormThumb( WINDOW *win, int *idxthb, int *idxbut, int nb) {
++void *FormThumb( WINDOW *win, const int *idxthb, const int *idxbut, int nb) {
+ 	W_FORM *form = DataSearch( win, WD_WFRM);
+ 	THUMB *thumb;
+ 	int i;
+@@ -86,13 +86,13 @@
+ 		app.error = ENSMEM;
+ 		return NULL;
+ 	}
+-	thumb -> idxthb = malloc( sizeof(int)*nb);
++	thumb -> idxthb = malloc( sizeof(thumb->idxthb[0])*nb);
+ 	if( !thumb -> idxthb) {
+ 		free( thumb);
+ 		app.error = ENSMEM;
+ 		return NULL;
+ 	}
+-	thumb -> idxbut = malloc( sizeof(int)*nb);
++	thumb -> idxbut = malloc( sizeof(thumb->idxbut[0])*nb);
+ 	if( !thumb -> idxbut) {
+ 		free( thumb->idxthb);
+ 		free( thumb);
