@@ -1425,6 +1425,8 @@ This notably applies to Perl and Python.
 
 <li>2019/08/23 Update fdlibm</li>
 
+<li>2019/09/16 Package gnucobol added</li>
+
 </ul>
 
 <p></p>

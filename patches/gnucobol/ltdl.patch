@@ -1,0 +1,35 @@
+--- gnucobol-3.0-rc1/configure.ac.orig	2019-09-16 23:58:23.361355115 +0200
++++ gnucobol-3.0-rc1/configure.ac	2019-09-16 23:58:35.437354853 +0200
+@@ -960,7 +960,7 @@
+   fi
+ fi
+ 
+-if test "$DEFINE_DL" = "no"; then
++if test "$DEFINE_DL" = "no" -a "$with_dl" = "yes"; then
+   AC_CHECK_HEADERS([ltdl.h], [], AC_MSG_ERROR([ltdl.h is required]), [])
+   AC_CHECK_LIB([ltdl], [lt_dlopen],
+ 	[LIBCOB_LIBS="$LIBCOB_LIBS -lltdl"],
+--- gnucobol-3.0-rc1/libcob/call.c.orig	2019-09-17 00:07:01.146242533 +0200
++++ gnucobol-3.0-rc1/libcob/call.c	2019-09-17 00:08:51.834240124 +0200
+@@ -103,10 +103,20 @@ lt_dlerror (void)
+ #define	lt_dlexit()
+ #define lt_dlhandle	void *
+ 
+-#else
++#elif defined(HAVE_LTDL_H)
+ 
+ #include <ltdl.h>
+ 
++#else
++
++#define lt_dlopen(x)	-1
++#define lt_dlsym(x,y)	0
++#define lt_dlclose(x)	
++#define lt_dlerror()	""
++#define	lt_dlinit()
++#define	lt_dlexit()
++#define lt_dlhandle	void *
++
+ #endif
+ 
+ /* Force symbol exports */

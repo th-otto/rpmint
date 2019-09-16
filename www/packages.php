@@ -2185,6 +2185,25 @@ MAD supports 24-bit PCM output. MAD computes using 100%% fixed-point
 unit.
 '
 	),
+	'gnucobol' => array(
+		'name' => 'gnucobol',
+		'upstream' => 'https://sourceforge.net/projects/open-cobol/',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '3.0-rc1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+GnuCOBOL (formerly OpenCOBOL) is a COBOL compiler.
+cobc translates COBOL to executable using intermediate C sources,
+providing full access to nearly all C libraries. </br>
+<span class="important">Note: this is not a cross-compiler. Do not install these on
+a cross-development environment.</span>
+'
+	),
 );
 
 ?>
