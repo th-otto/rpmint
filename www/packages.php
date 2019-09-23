@@ -2204,6 +2204,31 @@ providing full access to nearly all C libraries. </br>
 a cross-development environment.</span>
 '
 	),
+	'zstd' => array(
+		'name' => 'zstd',
+		'upstream' => 'http://www.zstd.net/',
+		'repo' => 'https://github.com/facebook/zstd/releases',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'version' => '1.4.3',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+Zstd, short for Zstandard, is a lossless compression algorithm. Speed
+vs. compression trade-off is configurable in small increments.
+Decompression speed is preserved and remains roughly the same at all
+settings, a property shared by most LZ compression algorithms, such
+as zlib or lzma.
+
+At roughly the same ratio, zstd (v1.4.0) achieves ~870%% faster
+compression than gzip. For roughly the same time, zstd achives a
+~12%% better ratio than gzip. LZMA outperforms zstd by ~10%% faster
+compression for same ratio, or ~1-4%% size reduction for same time.
+'
+	),
 );
 
 ?>
