@@ -83,7 +83,7 @@ function gen_link($filename, $text)
 			$ext_ok = function_exists('xzopen') || $stat;
 		if ($ext_ok)
 		{
-			echo '&nbsp;<a class="listtar" href="listtar.php?filename=' . $filename . '&local=' . ($stat ? "1" : "0") . '">&lt;file&nbsp;list&gt;</a>';
+			echo '&nbsp;<a class="listtar" href="listtar.php?filename=' . urlencode($filename) . '&local=' . ($stat ? "1" : "0") . '">&lt;file&nbsp;list&gt;</a>';
 		}
 	}
 	if (!$exists)
