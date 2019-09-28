@@ -403,6 +403,8 @@ compressor. It typically compresses files to within 10% to 15% of the
 best available techniques (the PPM family of statistical compressors),
 whilst being around twice as fast at compression and six times faster
 at decompression.
+</br>
+This library is also available as a <a href="../sharedlibs.php#bzip2">shared library.</a>
 '
 	),
 	'ldg' => array(
@@ -615,6 +617,8 @@ XZ Utils is free general-purpose data compression software with a high
 compression ratio. XZ Utils were written for POSIX-like systems, but
 also work on some not-so-POSIX systems. XZ Utils are the successor to
 LZMA Utils. 
+</br>
+This library is also available as a <a href="../sharedlibs.php#lzma">shared library.</a>
 '
 	),
 	'zip' => array(
@@ -1003,6 +1007,8 @@ without user interaction or any kind of interactivity.
 		'comment' => '
 This library features TrueType fonts for open source projects. This
 version also contains an autohinter for producing improved output.
+</br>
+This library is also available as a <a href="../sharedlibs.php#freetype">shared library.</a>
 '
 	),
 	'c-ares' => array(
@@ -1845,6 +1851,8 @@ have expired, giflib can again be used instead of libungif.
 		'comment' => '
 This library is used to parse EXIF information from JPEGs created by
 digital cameras.
+</br>
+This library is also available as a <a href="../sharedlibs.php#exif">shared library.</a>
 '
 	),
 	'tiff' => array(
@@ -1861,6 +1869,8 @@ digital cameras.
 		'comment' => '
 This package contains the library and support programs for the TIFF
 image format.
+</br>
+This library is also available as a <a href="../sharedlibs.php#tiff">shared library.</a>
 '
 	),
 	'isl' => array(
