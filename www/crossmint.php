@@ -1429,6 +1429,8 @@ This notably applies to Perl and Python.
 
 <li>2019/09/23 Package zstd added</li>
 
+<li>2019/09/28 Package dosfstools added</li>
+
 </ul>
 
 <p></p>

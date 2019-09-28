@@ -2239,6 +2239,25 @@ compression than gzip. For roughly the same time, zstd achives a
 compression for same ratio, or ~1-4%% size reduction for same time.
 '
 	),
+	'dosfstools' => array(
+		'name' => 'dosfstools',
+		'upstream' => '',
+		'repo' => 'https://github.com/th-otto/dosfstools',
+		'branch' => 'mint',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '4.1+git',
+		'patch' => 0,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+The dosfstools package includes the mkdosfs and dosfsck utilities, which
+respectively make and check MS-DOS FAT file systems on hard drives or on
+floppies.
+'
+	),
 );
 
 ?>
