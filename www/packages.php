@@ -1991,7 +1991,7 @@ vcut (which allows you to cut up Vorbis files).
 	'sdl_mixer' => array(
 		'name' => 'SDL_mixer',
 		'upstream' => 'http://libsdl.org/projects/SDL_mixer/release-1.2.html',
-		'source' => 'http://libsdl.org/projects/SDL_mixer/release/%{name}-%{version}.tar.gz',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
 		'version' => '1.2.13',
 		'patch' => 1,
 		'script' => 1,
@@ -2258,6 +2258,23 @@ respectively make and check MS-DOS FAT file systems on hard drives or on
 floppies.
 '
 	),
+/*
+	'vttest' => array(
+		'name' => 'vttest',
+		'upstream' => 'http://invisible-island.net/vttest/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'version' => '20190710',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+vttest is a program to test the compatibility (or to demonstrate the non-compatibility) of so-called "VT100-compatible" terminals.
+'
+	),
+*/
 );
 
 ?>
