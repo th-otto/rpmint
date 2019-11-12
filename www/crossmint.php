@@ -1431,6 +1431,8 @@ This notably applies to Perl and Python.
 
 <li>2019/09/28 Package dosfstools added</li>
 
+<li>2019/11/12 Fix for a c99-ism in SDL</li>
+
 </ul>
 
 <p></p>

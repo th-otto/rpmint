@@ -11,7 +11,9 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="patches/sdl/sdl-1.2.15-mintelf-config.patch \
-patches/sdl/sdl-1.2.15-asm.patch"
+patches/sdl/sdl-1.2.15-asm.patch
+patches/sdl/sdl-1.2.15-c99.patch
+"
 
 unpack_archive
 

@@ -1,0 +1,15 @@
+--- a/src/video/SDL_pixels.c	2019-03-22 12:13:36.000000000 +0100
++++ b/src/video/SDL_pixels.c	2019-11-12 12:19:40.153166529 +0100
+@@ -292,10 +292,11 @@
+ Uint16 SDL_CalculatePitch(SDL_Surface *surface)
+ {
+ 	unsigned int pitch = 0;
++	Uint8 byte;
+ 
+ 	/* Surface should be 4-byte aligned for speed */
+ 	/* The code tries to prevent from an Uint16 overflow. */;
+-	for (Uint8 byte = surface->format->BytesPerPixel; byte; byte--) {
++	for (byte = surface->format->BytesPerPixel; byte; byte--) {
+ 		pitch += (unsigned int)surface->w;
+ 		if (pitch < surface->w) {
+ 			SDL_SetError("A scanline is too wide");
