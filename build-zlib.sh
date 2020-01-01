@@ -9,6 +9,10 @@ VERSIONPATCH=-20171006
 
 . ${scriptdir}/functions.sh
 
+# disable lto for this package since it is needed for native compilers
+ranlib=${TARGET}-ranlib
+LTO_CFLAGS=
+
 PATCHES="patches/zlib/zlib-1.2.11-pkgconfig.patch \
 patches/zlib/zlib-1.2.11-0012-format.patch \
 patches/zlib/zlib-1.2.11-0013-segfault.patch \

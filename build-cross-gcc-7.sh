@@ -8,8 +8,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-7.4.0
-VERSIONPATCH=-20190225
+VERSION=-7.5.0
+VERSIONPATCH=-20200101
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -58,7 +58,7 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
+MINT_BUILD_DIR="$BUILD_DIR/gcc-build7"
 
 #
 # Where to put the binary packages
@@ -76,10 +76,15 @@ else
 fi
 
 #
+# whether to include the fortran backend
+#
+with_fortran=false
+
+#
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
 # - checking out the gcc-7-mint branch
-# - running git diff gcc-7_3_0-release HEAD
+# - running git diff gcc-7_5_0-release HEAD
 #
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
 
@@ -155,7 +160,8 @@ cd "$MINT_BUILD_DIR"
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-languages=c,c++,fortran
+languages=c,c++
+$with_fortran && languages="$languages,fortran"
 ranlib=ranlib
 
 case "${TARGET}" in
@@ -294,7 +300,7 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 		--enable-ssp \
 		--enable-libssp \
 		$enable_plugin \
-		--enable-decimal-float \
+		--disable-decimal-float \
 		--disable-nls \
 		$mpfr_config \
 		--with-cpu=$with_cpu \

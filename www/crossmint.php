@@ -1433,6 +1433,8 @@ This notably applies to Perl and Python.
 
 <li>2019/11/12 Fix for a c99-ism in SDL</li>
 
+<li>2020/01/01 Update gcc 7.x to 7.5.0</li>
+
 </ul>
 
 <p></p>

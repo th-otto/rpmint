@@ -169,12 +169,12 @@ using this format (although theoretically it should be possible to mix them).
 Slightly older Version of GCC.
 '
 	),
-	'gcc740' => array(
+	'gcc750' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '7.4.0',
-		'date' => '20190225',
+		'version' => '7.5.0',
+		'date' => '20200101',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-7-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
@@ -193,6 +193,7 @@ Slightly older Version of GCC.
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
+		'atari' => 1,
 		'comment' => '
 Slightly older Version of GCC.
 '
@@ -476,7 +477,14 @@ SDL is the Simple DirectMedia Layer library. It is a low-level and cross-platfor
 library for building games or similar programs.<br />
 Thanks to Patrice Mandin, SDL is available on Atari platforms. SDL programs can
 run either in full screen or in a GEM window, depending on the SDL_VIDEODRIVER
-environment variable.
+environment variable.<br />
+<br />
+cross compiling hint: in many autoconf/automake based packages, presence of SDL
+is checked by searching for a sdl-config script. Most likely, the one found will
+be the one for your host system. This has the bad effect of adding absolute
+search paths like /usr/include/SDL and /usr/lib. If that happens, you have to
+manually edit config.status after running configure, and remove those flags.
+In some cases, you have to add -I/usr/m68k-atari-mint/sys-root/usr/include/SDL instead.
 '
 	),
 	'ncurses6' => array(
@@ -2002,7 +2010,16 @@ vcut (which allows you to cut up Vorbis files).
 		'comment' => '
 A multichannel audio mixer. It supports four channels of 16-bit stereo
 audio, plus a single channel of music, mixed by the popular MikMod MOD,
-Timidity MIDI, and SMPEG MP3 libraries.
+Timidity MIDI, and SMPEG MP3 libraries.<br />
+<br />
+cross compiling hint: on modern platforms, it is sufficient to just link
+against SDL_mixer, because the other libraries are referenced there as
+shared libraries. Since for atari we have only static libraries, you
+have to link those explictly. The correct link command (order is important) is:<br />
+<code>
+-lSDL_mixer -lSDL -lFLAC -lvorbisfile -lvorbis -lmikmod -logg -lmpg123 -lgem -lm
+</code><br />
+See also other hints about SDL.
 '
 	),
 	'sdl_image' => array(
@@ -2020,6 +2037,15 @@ Timidity MIDI, and SMPEG MP3 libraries.
 This is a simple library to load images of various formats as SDL
 surfaces. This library supports the BMP, PPM, PCX, GIF, JPEG, PNG,
 TIFF and WEBP formats.
+<br />
+cross compiling hint: on modern platforms, it is sufficient to just link
+against SDL_images, because the other libraries are referenced there as
+shared libraries. Since for atari we have only static libraries, you
+have to link those explictly. The correct link command (order is important) is:<br />
+<code>
+-lSDL -lSDL_image -ltiff -ljpeg -lpng -llzma -lz -lbz2 -lgem -lm
+</code><br />
+See also other hints about SDL.
 '
 	),
 	'sdl_ttf' => array(
@@ -2036,6 +2062,11 @@ TIFF and WEBP formats.
 		'comment' => '
 This is a sample library that allows you to use TrueType fonts in your
 SDL applications.
+The correct link command (order is important) is:<br />
+<code>
+-lSDL -lSDL_ttf -lfreetype -lpng -lz -lbz2 -lgem -lm
+</code><br />
+See also other hints about SDL.
 '
 	),
 	'sdl_net' => array(
