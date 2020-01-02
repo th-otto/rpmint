@@ -1435,6 +1435,8 @@ This notably applies to Perl and Python.
 
 <li>2020/01/01 Update gcc 7.x to 7.5.0</li>
 
+<li>2020/01/02 Update binutils to 2.33.1</li>
+
 </ul>
 
 <p></p>

@@ -8,8 +8,8 @@
 me="$0"
 
 PACKAGENAME=binutils
-VERSION=-2.32
-VERSIONPATCH=-20190223
+VERSION=-2.33.1
+VERSIONPATCH=-20200102
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
@@ -35,8 +35,8 @@ srcdir="${PACKAGENAME}${VERSION}"
 # BINUTILS_SUPPORT_DIRS is from src-release.sh
 #
 # The mint patch can be recreated by running
-# git diff binutils-2_32-branch binutils-2_32-mint
-# in my fork (https://github.com/th-otto/binutils/tree/binutils-2_31-mint)
+# git diff binutils-2_33-branch binutils-2_33-mint
+# in my fork (https://github.com/th-otto/binutils/tree/binutils-2_33-mint)
 #
 PATCHES="\
         patches/binutils/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
