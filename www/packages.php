@@ -106,12 +106,12 @@ The full documentation can be found
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
-	'gcc911' => array(
+	'gcc920' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '9.1.1',
-		'date' => '20190606',
+		'version' => '9.2.0',
+		'date' => '20200102',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-9-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
@@ -138,6 +138,9 @@ flavours: one for a.out toolchain (as the previously used version
 will still produce the same executable format, but works with elf object
 files. To support this better, all libraries offered here were also recompiled
 using this format (although theoretically it should be possible to mix them).
+<br />
+This version now was compiled against fdlibm; it is strongly recommended to
+use fdlibm instead of the ancient pml math library.
 '
 	),
 	'gcc830' => array(
@@ -235,7 +238,7 @@ $libpackages = array(
 		'title' => 'MiNTLib',
 		'upstream' => 'https://github.com/freemint/mintlib',
 		'version' => '0.60.1',
-		'date' => '20181123',
+		'date' => '20200102',
 		'repo' => 'https://github.com/freemint/mintlib',
 		'patch' => 0,
 		'script' => 1,
@@ -266,6 +269,8 @@ PML stands for Portable Math Library.<br />
 It works, but of course it is really slow on a 68000 without FPU.
 <br />
 For a comparison to fdlibm, see <a href="math.php">Math libraries for Atari</a>
+<br />
+<span style="color:red">Warning:</span>This library is deprecated. Use fdlibm instead.
 '
 	),
 	'fdlibm' => array(

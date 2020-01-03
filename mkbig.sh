@@ -1,7 +1,7 @@
 #!/bin/sh
 
 downloads=$HOME/webgo24/home/www/download/mint
-date=20190606
+date=20200102
 here=`pwd`
 
 TAR=${TAR-tar}
@@ -10,17 +10,17 @@ TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
 for sys in cygwin32 cygwin64 mingw32 linux macos; do
 	d=`mktemp -d`
 	for pkg in "gcc-4.6.4-mint-*-bin-$sys.tar.xz" \
-		"binutils-2.32-mint-*-bin-$sys.tar.xz" \
-		"binutils-2.32-mintelf-*-bin-$sys.tar.xz" \
+		"binutils-2.33.1-mint-*-bin-$sys.tar.xz" \
+		"binutils-2.33.1-mintelf-*-bin-$sys.tar.xz" \
 		"mintbin-*-mint-*-bin-$sys.tar.xz" \
-		"gcc-9.1.1-mint-*-bin-$sys.tar.xz" \
-		"gcc-9.1.1-mintelf-*-bin-$sys.tar.xz" \
+		"gcc-9.2.0-mint-*-bin-$sys.tar.xz" \
+		"gcc-9.2.0-mintelf-*-bin-$sys.tar.xz" \
 		"gemlib-*-mint-*-dev.tar.xz" \
 		"gemlib-*-mintelf-*-dev.tar.xz" \
 		"mintlib-*-mint-*-dev.tar.xz" \
 		"mintlib-*-mintelf-*-dev.tar.xz" \
-		"pml-*-mint-*-dev.tar.xz" \
-		"pml-*-mintelf-*-dev.tar.xz" \
+		"fdlibm-*-mint-dev.tar.xz" \
+		"fdlibm-*-mintelf-dev.tar.xz" \
 		"cflib-*-mint-*-dev.tar.xz" \
 		"cflib-*-mintelf-*-dev.tar.xz" ; do
 		file=`echo $downloads/$pkg 2>/dev/null`

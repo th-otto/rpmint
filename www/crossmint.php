@@ -52,7 +52,7 @@ setcookie("platform", $platform, time() + 3600);
 
 include('packages.php');
 
-$gccver = 'gcc911';
+$gccver = 'gcc920';
 
 ?>
 
@@ -101,7 +101,7 @@ and even read the man pages.</li>
 <li>binutils</li>
 <li>gcc</li>
 <li>mintlib</li>
-<li>pml</li>
+<li>fdlibm</li>
 <li>gemlib</li>
 </ol></li>
 </ol>
@@ -1436,6 +1436,8 @@ This notably applies to Perl and Python.
 <li>2020/01/01 Update gcc 7.x to 7.5.0</li>
 
 <li>2020/01/02 Update binutils to 2.33.1</li>
+
+<li>2020/01/02 Update gcc to version 9.2.0</li>
 
 </ul>
 

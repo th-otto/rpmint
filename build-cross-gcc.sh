@@ -8,8 +8,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-9.1.1
-VERSIONPATCH=-20190606
+VERSION=-9.2.0
+VERSIONPATCH=-20200102
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -313,7 +313,7 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 		--enable-ssp \
 		--enable-libssp \
 		$enable_plugin \
-		--enable-decimal-float \
+		--disable-decimal-float \
 		--disable-nls \
 		$mpfr_config \
 		--with-cpu=$with_cpu \
