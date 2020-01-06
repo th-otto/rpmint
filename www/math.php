@@ -19,6 +19,7 @@ date_default_timezone_set('UTC');
 <?php
 $imagedir = 'images/';
 $manhref = 'http://man7.org/linux/man-pages/man3/';
+$man7href = 'http://man7.org/linux/man-pages/man7/';
 
 $fdlibm = array(
 	'trig_header' => array('header' => 'Trigonometric functions.'),
@@ -40,36 +41,37 @@ $fdlibm = array(
 	'atanh' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'atanh', 'description' => 'Hyperbolic arc tangent of X.'),
 
 	'log_header' => array('header' => 'Exponential and logarithmic functions.'),
-	'exp' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'exp', 'description' => 'Exponential function of X.'),
-	'exp2' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'exp2', 'description' => 'Compute base-2 exponential of X.'),
-	'exp10' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'exp10', 'description' => 'Compute exponent to base ten.', 'comments' => 'Same as pow10()'),
-	'log' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'log', 'description' => 'Natural logarithm of X.'),
-	'log2' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'log2', 'description' => 'Compute base-2 logarithm of X.'),
-	'log10' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'log10', 'description' => 'Base-ten logarithm of X.'),
-	'frexp' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'frexp', 'description' => 'Break VALUE into a normalized fraction and an integral power of 2.', 'comments' => 'implemented in mintlib'),
-	'ldexp' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'ldexp', 'description' => 'X times (two to the EXP power).', 'comments' => 'implemented in mintlib'),
-	'modf' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'modf', 'description' => 'Break VALUE into integral and fractional parts.'),
-	'expm1' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'expm1', 'description' => 'Return exp(X) - 1.'),
-	'log1p' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'log1p', 'description' => 'Return log(1 + X).'),
-	'logb' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'logb', 'description' => 'Return the base 2 signed integral exponent of X.'),
+	'exp' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'exp', 'description' => 'Exponential function of X.'),
+	'exp2' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'exp2', 'description' => 'Compute base-2 exponential of X.'),
+	'exp10' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'exp10', 'description' => 'Compute exponent to base ten.', 'comments' => 'Same as pow10()'),
+	'log' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'log', 'description' => 'Natural logarithm of X.'),
+	'log2' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'log2', 'description' => 'Compute base-2 logarithm of X.'),
+	'log10' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'log10', 'description' => 'Base-ten logarithm of X.'),
+	'frexp' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'frexp', 'description' => 'Break VALUE into a normalized fraction and an integral power of 2.', 'comments' => 'double version also implemented in mintlib'),
+	'ldexp' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'ldexp', 'description' => 'X times (two to the EXP power).', 'comments' => 'double version also implemented in mintlib'),
+	'modf' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'modf', 'description' => 'Break VALUE into integral and fractional parts.'),
+	'expm1' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'expm1', 'description' => 'Return exp(X) - 1.'),
+	'log1p' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'log1p', 'description' => 'Return log(1 + X).'),
+	'logb' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'logb', 'description' => 'Return the base 2 signed integral exponent of X.'),
 
 	'pow_header' => array('header' => 'Power functions.'),
-	'pow' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'pow', 'description' => 'Return X to the Y power.'),
-	'pow10' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'pow10', 'description' => 'Return the value of 10 raised to the power x', 'comments' => 'Same as exp10()'),
-	'sqrt' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'sqrt', 'description' => 'Return the square root of X.'),
-	'hypot' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'hypot', 'description' => 'Return sqrt(X*X + Y*Y).'),
-	'cbrt' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'cbrt', 'description' => 'Return the cube root of X.'),
+	'pow' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'pow', 'description' => 'Return X to the Y power.'),
+	'pow2' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'exp2', 'description' => 'Compute base-2 exponential of X.', 'comments' => 'Same as exp2()'),
+	'pow10' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'pow10', 'description' => 'Return the value of 10 raised to the power x', 'comments' => 'Same as exp10()'),
+	'sqrt' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'sqrt', 'description' => 'Return the square root of X.'),
+	'hypot' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'hypot', 'description' => 'Return sqrt(X*X + Y*Y).'),
+	'cbrt' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'cbrt', 'description' => 'Return the cube root of X.'),
 
 	'round_header' => array('header' => 'Nearest integer, absolute value, and remainder functions.'),
-	'ceil' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'ceil', 'description' => 'Smallest integral value not less than X.'),
-	'fabs' => array('d' => 1, 'f' => 1, 'l' => 0, 'man' => 'fabs', 'description' => 'Absolute value of X.'),
-	'floor' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'floor', 'description' => 'Largest integer not greater than X.'),
-	'fmod' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'fmod', 'description' => 'Floating-point modulo remainder of X/Y.'),
-	'finite' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'finite', 'description' => 'Return nonzero if VALUE is finite and not NaN.', 'comments' => 'implemented in mintlib'),
-	'drem' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'drem', 'description' => 'Return the remainder of X/Y.', 'comments' => 'Obsolete synonym for remainder'),
-	'significand' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'significand', 'description' => 'Return the fractional part of X after dividing out `ilogb (X)&apos;.'),
-	'copysign' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'copysign', 'description' => 'Return X with its signed changed to Y&apos;s.'),
-	'nan' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'nan', 'description' => 'Return representation of qNaN for double type.'),
+	'ceil' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'ceil', 'description' => 'Smallest integral value not less than X.'),
+	'fabs' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'fabs', 'description' => 'Absolute value of X.'),
+	'floor' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'floor', 'description' => 'Largest integer not greater than X.'),
+	'fmod' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'fmod', 'description' => 'Floating-point modulo remainder of X/Y.'),
+	'finite' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'finite', 'description' => 'Return nonzero if VALUE is finite and not NaN.', 'comments' => 'double version also implemented in mintlib'),
+	'drem' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'drem', 'description' => 'Return the remainder of X/Y.', 'comments' => 'Obsolete synonym for remainder'),
+	'significand' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'significand', 'description' => 'Return the fractional part of X after dividing out `ilogb (X)&apos;.'),
+	'copysign' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'copysign', 'description' => 'Return X with its signed changed to Y&apos;s.'),
+	'nan' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'nan', 'description' => 'Return representation of qNaN for double type.', 'comments' => 'Implemented using GCC builtin'),
 
 	'bessel_header' => array('header' => 'Bessel functions.'),
 	'j0' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'j0', 'description' => 'Bessel function of the first kind of order 0'),
@@ -88,32 +90,32 @@ $fdlibm = array(
 	'lgamma_r' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'lgamma_r', 'description' => 'reentrant version of lgamma'),
 
 	'iso_header' => array('header' => 'ISO C99 rounding functions.'),
-	'rint' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'rint', 'description' => 'Return the integer nearest X in the direction of the prevailing rounding mode.'),
-	'nextafter' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'nextafter', 'description' => 'Return X + epsilon if X &lt; Y, X - epsilon if X > Y.'),
-	'nexttoward' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'nexttoward', 'description' => 'Return X + epsilon if X &lt; Y, X - epsilon if X > Y.'),
+	'rint' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'rint', 'description' => 'Return the integer nearest X in the direction of the prevailing rounding mode.'),
+	'nextafter' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'nextafter', 'description' => 'Return X + epsilon if X &lt; Y, X - epsilon if X > Y.'),
+	'nexttoward' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'nexttoward', 'description' => 'Return X + epsilon if X &lt; Y, X - epsilon if X > Y.'),
 	'nextdown' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'nextdown', 'description' => 'return next floating-point number toward negative infinity'),
 	'nextup' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'nextup', 'description' => 'return next floating-point number toward positive infinity'),
-	'remainder' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'remainer', 'description' => 'Return the remainder of integer divison X / Y with infinite precision.'),
-	'scalb' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'scalb', 'description' => 'Return X times (2 to the Nth power).'),
-	'scalbn' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'scalbn', 'description' => 'Return X times (2 to the Nth power).'),
-	'scalbln' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'scalbln', 'description' => 'Return X times (2 to the Nth power).'),
-	'ilogb' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'ilogb', 'description' => 'Return the binary exponent of X, which must be nonzero.'),
-	'llogb' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'llogb', 'description' => 'Like ilogb, but returning long int.'),
-	'nearbyint' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'nearbyint', 'description' => 'Round X to integral value in floating-point format using current rounding direction, but do not raise inexact exception.', 'comments' => 'Same as rint'),
-	'round' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'round', 'description' => 'Round X to nearest integral value, rounding halfway cases away from zero.'),
+	'remainder' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'remainder', 'description' => 'Return the remainder of integer divison X / Y with infinite precision.'),
+	'scalb' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'scalb', 'description' => 'Return X times (2 to the Nth power).'),
+	'scalbn' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'scalbn', 'description' => 'Return X times (2 to the Nth power).'),
+	'scalbln' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'scalbln', 'description' => 'Return X times (2 to the Nth power).', 'comments' => 'Overkill for m68k. The int argument to scalbn() will never exceed the maximum possible range.'),
+	'ilogb' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'ilogb', 'description' => 'Return the binary exponent of X, which must be nonzero.'),
+	'llogb' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'ilogb', 'description' => 'Like ilogb, but returning long int.'),
+	'nearbyint' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'nearbyint', 'description' => 'Round X to integral value in floating-point format using current rounding direction, but do not raise inexact exception.', 'comments' => 'Same as rint'),
+	'round' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'round', 'description' => 'Round X to nearest integral value, rounding halfway cases away from zero.'),
 	'trunc' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'trunc', 'description' => 'Round X to the integral value in floating-point format nearest but not larger in magnitude.'),
-	'remquo' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'remquo', 'description' => 'Compute remainder of X and Y and put in *QUO a value with sign of x/y
+	'remquo' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'remquo', 'description' => 'Compute remainder of X and Y and put in *QUO a value with sign of x/y
 and magnitude congruent `mod 2^n&apos; to the magnitude of the integral
 quotient x/y, with n &gt;= 3.'),
 
 	'conv_header' => array('header' => 'Conversion functions.'),
-	'lrint' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'lrint', 'description' => 'Round X to nearest integral value according to current rounding direction.'),
-	'llrint' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'llrint', 'description' => 'Like lrint, but returning long long int.'),
-	'lround' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'lround', 'description' => 'Round X to nearest integral value, rounding halfway cases away from zero.'),
-	'llround' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'llround', 'description' => 'Like lround, but returning long long int.'),
-	'fdim' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'fdim', 'description' => 'Return positive difference between X and Y.'),
-	'fmax' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'fmax', 'description' => 'Return maximum numeric value from X and Y.'),
-	'fmin' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'fmin', 'description' => 'Return minimum numeric value from X and Y.'),
+	'lrint' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'lrint', 'description' => 'Round X to nearest integral value according to current rounding direction.'),
+	'llrint' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'llrint', 'description' => 'Like lrint, but returning long long int.'),
+	'lround' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'lround', 'description' => 'Round X to nearest integral value, rounding halfway cases away from zero.'),
+	'llround' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'llround', 'description' => 'Like lround, but returning long long int.'),
+	'fdim' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'fdim', 'description' => 'Return positive difference between X and Y.'),
+	'fmax' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'fmax', 'description' => 'Return maximum numeric value from X and Y.'),
+	'fmin' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'fmin', 'description' => 'Return minimum numeric value from X and Y.'),
 	'fma' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'fma', 'description' => 'Multiply-add function computed as a ternary operation.'),
 	'roundeven' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'roundeven', 'description' => 'Round X to nearest integer value, rounding halfway cases to even.'),
 	'fromfp' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'fromfp', 'description' => 'Round X to nearest signed integer value, not raising inexact, with control of rounding direction and width of result.'),
@@ -126,25 +128,25 @@ quotient x/y, with n &gt;= 3.'),
    result.'),
 
 	'class_header' => array('header' => 'Classification functions.'),
-	'fpclassify' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'fpclassify', 'description' => 'Return number of classification appropriate for X.'),
-	'signbit' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'signbit', 'description' => 'Return nonzero value if sign of X is negative.', 'comments' => 'implemented in mintlib'),
-	'isfinite' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'isfinite', 'description' => 'Return nonzero value if X is not +-Inf or NaN.', 'comments' => 'implemented in mintlib'),
-	'isnormal' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'isnormal', 'description' => 'Return nonzero value if X is neither zero, subnormal, Inf, nor NaN.'),
-	'isnan' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'isnan', 'description' => 'Return nonzero if VALUE is not a number.', 'comments' => 'implemented in mintlib'),
-	'isinf' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'isinf', 'description' => 'Return 0 if VALUE is finite or NaN, +1 if it is +Infinity, -1 if it is -Infinity.', 'comments' => 'implemented in mintlib'),
-	'issignaling' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'issignaling', 'description' => 'Return nonzero value if X is a signaling NaN.'),
-	'issubnormal' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'issubnormal', 'description' => 'Return nonzero value if X is subnormal.'),
+	'fpclassify' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'fpclassify', 'description' => 'Return number of classification appropriate for X.'),
+	'signbit' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'signbit', 'description' => 'Return nonzero value if sign of X is negative.', 'comments' => 'double version also implemented in mintlib'),
+	'isfinite' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'isfinite', 'description' => 'Return nonzero value if X is not +-Inf or NaN.', 'comments' => 'double version also implemented in mintlib'),
+	'isnormal' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'isnormal', 'description' => 'Return nonzero value if X is neither zero, subnormal, Inf, nor NaN.', 'comments' => 'Implemented as macro'),
+	'isnan' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'isnan', 'description' => 'Return nonzero if VALUE is not a number.', 'comments' => 'double version also implemented in mintlib'),
+	'isinf' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'isinf', 'description' => 'Return 0 if VALUE is finite or NaN, +1 if it is +Infinity, -1 if it is -Infinity.', 'comments' => 'double version also implemented in mintlib'),
+	'issignaling' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'issignaling', 'description' => 'Return nonzero value if X is a signaling NaN.'),
+	'issubnormal' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'issubnormal', 'description' => 'Return nonzero value if X is subnormal.', 'comments' => 'Implemented as macro'),
 	'iszero' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'iszero', 'description' => 'Return nonzero value if X is zero.'),
 	'iscanonical' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'iscanonical', 'description' => 'Return nonzero value if X is canonical.'),
 
 	'order_header' => array('header' => 'relational tests without exception for NaN.'),
-	'isgreater' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'isgreater', 'description' => 'determines (x) &gt; (y) without an exception if x or y is NaN. '),
-	'isgreaterequal' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'isgreatterequal', 'description' => 'determines (x) &gt;= (y) without an exception if x or y is NaN. '),
-	'isless' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'isless', 'description' => 'determines (x) &lt; (y) without an exception if x or y is NaN. '),
-	'islessequal' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'islesseqal', 'description' => 'determines (x) &lt;= (y) without an exception if x or y is NaN. '),
-	'islessgreater' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'islessgreater', 'description' => 'determines (x) &lt; (y) || (x) &gt; (y) without an exception if x or y is NaN. This macro is not equivalent to x != y because that expression is true if x or y is NaN.'),
-	'isunordered' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'isunordered', 'description' => 'determines whether its arguments are unordered, that is, whether at least one of the arguments is a NaN.'),
-	'iseqsig' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'iseqsig', 'description' => 'Return X == Y but raising "invalid" and setting errno if X or Y is a NaN.'),
+	'isgreater' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'isgreater', 'description' => 'determines (x) &gt; (y) without an exception if x or y is NaN. ', 'comments' => 'Implemented using GCC builtin'),
+	'isgreaterequal' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'isgreatterequal', 'description' => 'determines (x) &gt;= (y) without an exception if x or y is NaN. ', 'comments' => 'Implemented using GCC builtin'),
+	'isless' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'isless', 'description' => 'determines (x) &lt; (y) without an exception if x or y is NaN. ', 'comments' => 'Implemented using GCC builtin'),
+	'islessequal' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'islesseqal', 'description' => 'determines (x) &lt;= (y) without an exception if x or y is NaN. ', 'comments' => 'Implemented using GCC builtin'),
+	'islessgreater' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'islessgreater', 'description' => 'determines (x) &lt; (y) || (x) &gt; (y) without an exception if x or y is NaN. This macro is not equivalent to x != y because that expression is true if x or y is NaN.', 'comments' => 'Implemented using GCC builtin'),
+	'isunordered' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'isunordered', 'description' => 'determines whether its arguments are unordered, that is, whether at least one of the arguments is a NaN.', 'comments' => 'Implemented using GCC builtin'),
+	'iseqsig' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'iseqsig', 'description' => 'Return X == Y but raising "invalid" and setting errno if X or Y is a NaN.', 'comments' => 'Implemented using GCC builtin'),
 
 	'misc_header' => array('header' => 'Miscellaneous functions.'),
 	'fmaxmag' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'fmaxmag', 'description' => 'Return value with maximum magnitude.'),
@@ -156,7 +158,8 @@ quotient x/y, with n &gt;= 3.'),
 	'setpayload' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'setpayload', 'description' => 'Set quiet NaN payload.'),
 	'setpayloadsig' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'setpayloadsig', 'description' => 'Set signaling NaN payload.'),
 	'matherr' => array('a' => 1, 'man' => 'matherr', 'description' => 'SVID math library exception handling', 'comments' => 'Deprecated in favour of math_error'),
-	'math_error' => array('a' => 0, 'man' => 'math_error', 'description' => 'detecting errors from mathematical functions'),
+	'math_error' => array('a' => 1, 'man7' => 'math_error', 'description' => 'detecting errors from mathematical functions',
+	  'comments' => 'Partly implemented in fdlibm. Since most of the functions are derived from glibc, see the linux manpage for notes'),
 
 	'except_header' => array('header' => 'Exception handling.'),
 	'feclearexcept' => array('a' => 0, 'man' => 'feclearexcept', 'description' => 'Clear the supported exceptions represented by EXCEPTS.'),
@@ -178,18 +181,18 @@ quotient x/y, with n &gt;= 3.'),
 	'fegetexcept' => array('a' => 0, 'man' => 'fegetexcept', 'description' => 'Return enabled exceptions.'),
 
 	'rounding_header' => array('header' => 'Rounding control.'),
-	'fegetround' => array('a' => 0, 'man' => 'fegetround', 'description' => 'Get current rounding direction.'),
-	'fesetround' => array('a' => 0, 'man' => 'fesetround', 'description' => 'Establish the rounding direction represented by ROUND.'),
+	'fegetround' => array('a' => 1, 'man' => 'fegetround', 'description' => 'Get current rounding direction.'),
+	'fesetround' => array('a' => 1, 'man' => 'fesetround', 'description' => 'Establish the rounding direction represented by ROUND.'),
 
 	'floating_header' => array('header' => 'Floating-point environment.'),
-	'fegetenv' => array('a' => 0, 'man' => 'fegetenv', 'description' => 'Store the current floating-point environment in the object pointed
+	'fegetenv' => array('a' => 1, 'man' => 'fegetenv', 'description' => 'Store the current floating-point environment in the object pointed
    to by ENVP.'),
-	'feholdexcept' => array('a' => 0, 'man' => 'feholdexcept', 'description' => 'Save the current environment in the object pointed to by ENVP, clear
+	'feholdexcept' => array('a' => 1, 'man' => 'feholdexcept', 'description' => 'Save the current environment in the object pointed to by ENVP, clear
    exception flags and install a non-stop mode (if available) for all
    exceptions.'),
-	'fesetenv' => array('a' => 0, 'man' => 'fesetenv', 'description' => 'Establish the floating-point environment represented by the object
+	'fesetenv' => array('a' => 1, 'man' => 'fesetenv', 'description' => 'Establish the floating-point environment represented by the object
    pointed to by ENVP.'),
-	'feupdateenv' => array('a' => 0, 'man' => 'feupdateenv', 'description' => 'Save current exceptions in temporary storage, install environment
+	'feupdateenv' => array('a' => 1, 'man' => 'feupdateenv', 'description' => 'Save current exceptions in temporary storage, install environment
    represented by object pointed to by ENVP and raise exceptions
    according to saved exceptions.'),
 
@@ -268,6 +271,7 @@ because ldexp and frexp are not implemented'),
 	'log2' => array('d' => 0, 'f' => 0, 'l' => 0),
 
 	'pow' => array('d' => 1, 'f' => 0, 'l' => 0),
+	'pow2' => array('d' => 0, 'f' => 0, 'l' => 0),
 	'pow10' => array('d' => 0, 'f' => 0, 'l' => 0),
 	'sqrt' => array('d' => 1, 'f' => 0, 'l' => 0, 'comments' => 'when using PML, you may get unresolved externals when using the softfloat function,
 because frexp is not implemented'),
@@ -462,6 +466,9 @@ foreach ($fdlibm as $name => $func)
 		if (isset($func['man']))
 		{
 			echo '<a href="' . $manhref . $func['man'] . '.3.html">' . $name . '</a>';
+		} elseif (isset($func['man7']))
+		{
+			echo '<a href="' . $man7href . $func['man7'] . '.7.html">' . $name . '</a>';
 		} else
 		{
 			echo $name;

@@ -1439,6 +1439,8 @@ This notably applies to Perl and Python.
 
 <li>2020/01/02 Update gcc to version 9.2.0</li>
 
+<li>2020/01/03 Update fdlibm</li>
+
 </ul>
 
 <p></p>

@@ -137,9 +137,9 @@ flavours: one for a.out toolchain (as the previously used version
 4.6.4), and one for an elf toolchain. Elf toolchain here means that it
 will still produce the same executable format, but works with elf object
 files. To support this better, all libraries offered here were also recompiled
-using this format (although theoretically it should be possible to mix them).
+using this format (although theoretically it should be possible to mix them).<br />
 <br />
-This version now was compiled against fdlibm; it is strongly recommended to
+<span style="color:red">Note:</span> This version now was compiled against fdlibm; it is strongly recommended to
 use fdlibm instead of the ancient pml math library.
 '
 	),
@@ -276,7 +276,7 @@ For a comparison to fdlibm, see <a href="math.php">Math libraries for Atari</a>
 	'fdlibm' => array(
 		'name' => 'fdlibm',
 		'upstream' => 'https://www.netlib.org/fdlibm/',
-		'version' => '20190823',
+		'version' => '20200103',
 		'repo' => 'https://github.com/freemint/fdlibm/',
 		'branch' => 'master',
 		'patch' => 0,

@@ -19,8 +19,8 @@ for sys in cygwin32 cygwin64 mingw32 linux macos; do
 		"gemlib-*-mintelf-*-dev.tar.xz" \
 		"mintlib-*-mint-*-dev.tar.xz" \
 		"mintlib-*-mintelf-*-dev.tar.xz" \
-		"fdlibm-*-mint-dev.tar.xz" \
-		"fdlibm-*-mintelf-dev.tar.xz" \
+		"fdlibm-20200103-mint-dev.tar.xz" \
+		"fdlibm-20200103-mintelf-dev.tar.xz" \
 		"cflib-*-mint-*-dev.tar.xz" \
 		"cflib-*-mintelf-*-dev.tar.xz" ; do
 		file=`echo $downloads/$pkg 2>/dev/null`

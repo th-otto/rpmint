@@ -1,9 +1,10 @@
 #!/bin/sh
 
 TMPDIR=/tmp/t
-DESTDIR=/windows/c/atari
+WINDIR=/windows/c/atari
 
 f="$1"
+towin="$2"
 
 test "$f" = "" && {
 	echo "usage: $0 <filename>" >&2
@@ -24,20 +25,23 @@ cd "$TMPDIR" || exit 1
 tar xf "$f" || exit 1
 
 if test -d usr/m68k-atari-mint/sys-root || test -d usr/m68k-atari-mintelf/sys-root; then
-	prefix="/"
-
-	find . -type d | while read f; do
-		sudo mkdir -p "${prefix}$f"
-	done
-	find . -type l | while read f; do
-		sudo cp -av "$f" "${prefix}$f"
-	done
-	find . -type f | while read f; do
-		sudo cp -av "$f" "${prefix}$f"
-	done
-
+	if test "$towin" = "win"; then
+		prefix="$WINDIR/"
+		cp -pvr usr/m68k-atari-mint*/sys-root/. "$prefix"
+	else
+		prefix="/"
+	
+		find . -type d | while read f; do
+			sudo mkdir -p "${prefix}$f"
+		done
+		find . -type l | while read f; do
+			sudo cp -av "$f" "${prefix}$f"
+		done
+		find . -type f | while read f; do
+			sudo cp -av "$f" "${prefix}$f"
+		done
+	fi
 else
-	prefix="$DESTDIR/"
-	cp -pvr . $DESTDIR/
+	prefix="$WINDIR/"
+	cp -pvr . "$prefix"
 fi
-
