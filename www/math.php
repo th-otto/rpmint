@@ -23,22 +23,22 @@ $man7href = 'http://man7.org/linux/man-pages/man7/';
 
 $fdlibm = array(
 	'trig_header' => array('header' => 'Trigonometric functions.'),
-	'acos' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'acos', 'description' => 'Arc cosine of X.'),
-	'asin' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'asin', 'description' => 'Arc sine of X.'),
-	'atan' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'atan', 'description' => 'Arc tangent of X.'),
-	'atan2' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'atan2', 'description' => 'Arc tangent of Y/X.'),
-	'cos' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'cos', 'description' => 'Cosine of X.'),
-	'sin' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'sin', 'description' => 'Sine of X.'),
-	'tan' => array('d' => 2, 'f' => 0, 'l' => 0, 'man' => 'tan', 'description' => 'Tangent of X.'),
-	'sincos' => array('d' => 0, 'f' => 0, 'l' => 0, 'man' => 'sincos', 'description' => 'Cosine and sine of X.'),
+	'acos' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'acos', 'description' => 'Arc cosine of X.'),
+	'asin' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'asin', 'description' => 'Arc sine of X.'),
+	'atan' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'atan', 'description' => 'Arc tangent of X.'),
+	'atan2' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'atan2', 'description' => 'Arc tangent of Y/X.'),
+	'cos' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'cos', 'description' => 'Cosine of X.'),
+	'sin' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'sin', 'description' => 'Sine of X.'),
+	'tan' => array('d' => 2, 'f' => 1, 'l' => 1, 'man' => 'tan', 'description' => 'Tangent of X.'),
+	'sincos' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'sincos', 'description' => 'Cosine and sine of X.'),
 
 	'hyp_header' => array('header' => 'Hyperbolic functions.'),
-	'cosh' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'cosh', 'description' => 'Hyperbolic cosine of X.'),
-	'sinh' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'sinh', 'description' => 'Hyperbolic sine of X.'),
-	'tanh' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'tanh', 'description' => 'Hyperbolic tangent of X.'),
-	'acosh' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'acosh', 'description' => 'Hyperbolic arc cosine of X.'),
-	'asinh' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'asinh', 'description' => 'Hyperbolic arc sine of X.'),
-	'atanh' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'atanh', 'description' => 'Hyperbolic arc tangent of X.'),
+	'cosh' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'cosh', 'description' => 'Hyperbolic cosine of X.'),
+	'sinh' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'sinh', 'description' => 'Hyperbolic sine of X.'),
+	'tanh' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'tanh', 'description' => 'Hyperbolic tangent of X.'),
+	'acosh' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'acosh', 'description' => 'Hyperbolic arc cosine of X.'),
+	'asinh' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'asinh', 'description' => 'Hyperbolic arc sine of X.'),
+	'atanh' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'atanh', 'description' => 'Hyperbolic arc tangent of X.'),
 
 	'log_header' => array('header' => 'Exponential and logarithmic functions.'),
 	'exp' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'exp', 'description' => 'Exponential function of X.'),
@@ -74,20 +74,20 @@ $fdlibm = array(
 	'nan' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'nan', 'description' => 'Return representation of qNaN for double type.', 'comments' => 'Implemented using GCC builtin'),
 
 	'bessel_header' => array('header' => 'Bessel functions.'),
-	'j0' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'j0', 'description' => 'Bessel function of the first kind of order 0'),
-	'j1' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'j1', 'description' => 'Bessel function of the first kind of order 1'),
-	'jn' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'jn', 'description' => 'Bessel function of the first kind of order n'),
-	'y0' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'y0', 'description' => 'Bessel function of the second kind of order 0'),
-	'y1' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'y1', 'description' => 'Bessel function of the second kind of order 1'),
-	'yn' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'yn', 'description' => 'Bessel function of the second kind of order n'),
+	'j0' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'j0', 'description' => 'Bessel function of the first kind of order 0'),
+	'j1' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'j1', 'description' => 'Bessel function of the first kind of order 1'),
+	'jn' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'jn', 'description' => 'Bessel function of the first kind of order n'),
+	'y0' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'y0', 'description' => 'Bessel function of the second kind of order 0'),
+	'y1' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'y1', 'description' => 'Bessel function of the second kind of order 1'),
+	'yn' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'yn', 'description' => 'Bessel function of the second kind of order n'),
 
 	'gamma_header' => array('header' => 'Error and gamma functions.'),
-	'erf' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'erf', 'description' => 'error function'),
-	'erfc' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'erfc', 'description' => 'complementary error function'),
-	'lgamma' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'lgamma', 'description' => 'log gamma function'),
-	'tgamma' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'tgamma', 'description' => 'true gamma function'),
-	'gamma' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'gamma', 'description' => '(logarithm of the) gamma function'),
-	'lgamma_r' => array('d' => 1, 'f' => 0, 'l' => 0, 'man' => 'lgamma_r', 'description' => 'reentrant version of lgamma'),
+	'erf' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'erf', 'description' => 'error function'),
+	'erfc' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'erfc', 'description' => 'complementary error function'),
+	'lgamma' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'lgamma', 'description' => 'log gamma function'),
+	'tgamma' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'tgamma', 'description' => 'true gamma function'),
+	'gamma' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'gamma', 'description' => '(logarithm of the) gamma function'),
+	'lgamma_r' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'lgamma_r', 'description' => 'reentrant version of lgamma'),
 
 	'iso_header' => array('header' => 'ISO C99 rounding functions.'),
 	'rint' => array('d' => 1, 'f' => 1, 'l' => 1, 'man' => 'rint', 'description' => 'Return the integer nearest X in the direction of the prevailing rounding mode.'),
@@ -162,23 +162,23 @@ quotient x/y, with n &gt;= 3.'),
 	  'comments' => 'Partly implemented in fdlibm. Since most of the functions are derived from glibc, see the linux manpage for notes'),
 
 	'except_header' => array('header' => 'Exception handling.'),
-	'feclearexcept' => array('a' => 0, 'man' => 'feclearexcept', 'description' => 'Clear the supported exceptions represented by EXCEPTS.'),
-	'fegetexceptflag' => array('a' => 0, 'man' => 'fegetexceptflag', 'description' => 'Store implementation-defined representation of the exception flags
+	'feclearexcept' => array('a' => 1, 'man' => 'feclearexcept', 'description' => 'Clear the supported exceptions represented by EXCEPTS.'),
+	'fegetexceptflag' => array('a' => 1, 'man' => 'fegetexceptflag', 'description' => 'Store implementation-defined representation of the exception flags
    indicated by EXCEPTS in the object pointed to by FLAGP.'),
-	'feraiseexcept' => array('a' => 0, 'man' => 'feraiseexcept', 'description' => 'Raise the supported exceptions represented by EXCEPTS.'),
-	'fesetexcept' => array('a' => 0, 'man' => 'fesetexcept', 'description' => 'Set the supported exception flags represented by EXCEPTS, without
+	'feraiseexcept' => array('a' => 1, 'man' => 'feraiseexcept', 'description' => 'Raise the supported exceptions represented by EXCEPTS.'),
+	'fesetexceptflag' => array('a' => 1, 'man' => 'fesetexceptflag', 'description' => 'Set the supported exception flags represented by EXCEPTS, without
    causing enabled traps to be taken.'),
-	'fetestexcept' => array('a' => 0, 'man' => 'fetestexcept', 'description' => 'Determine which of subset of the exceptions specified by EXCEPTS are
+	'fetestexcept' => array('a' => 1, 'man' => 'fetestexcept', 'description' => 'Determine which of subset of the exceptions specified by EXCEPTS are
    currently set.'),
-	'fetestexceptflag' => array('a' => 0, 'man' => 'fetestexceptflagt', 'description' => 'Determine which of subset of the exceptions specified by EXCEPTS
+	'fetestexceptflag' => array('a' => 0, 'man' => 'fetestexceptflag', 'description' => 'Determine which of subset of the exceptions specified by EXCEPTS
    are set in *FLAGP.'),
-	'feenableexcept' => array('a' => 0, 'man' => 'feenableexcept', 'description' => 'Enable individual exceptions.  Will not enable more exceptions than
+	'feenableexcept' => array('a' => 1, 'man' => 'feenableexcept', 'description' => 'Enable individual exceptions.  Will not enable more exceptions than
    EXCEPTS specifies.  Returns the previous enabled exceptions if all
    exceptions are successfully set, otherwise returns -1.'),
-	'fedisableexcept' => array('a' => 0, 'man' => 'fedisableexcept', 'description' => 'Disable individual exceptions.  Will not disable more exceptions than
+	'fedisableexcept' => array('a' => 1, 'man' => 'fedisableexcept', 'description' => 'Disable individual exceptions.  Will not disable more exceptions than
    EXCEPTS specifies.  Returns the previous enabled exceptions if all
    exceptions are successfully disabled, otherwise returns -1.'),
-	'fegetexcept' => array('a' => 0, 'man' => 'fegetexcept', 'description' => 'Return enabled exceptions.'),
+	'fegetexcept' => array('a' => 1, 'man' => 'fegetexcept', 'description' => 'Return enabled exceptions.'),
 
 	'rounding_header' => array('header' => 'Rounding control.'),
 	'fegetround' => array('a' => 1, 'man' => 'fegetround', 'description' => 'Get current rounding direction.'),
@@ -368,7 +368,7 @@ because modf is not implemented'),
 	'feclearexcept' => array('a' => 0),
 	'fegetexceptflag' => array('a' => 0),
 	'feraiseexcept' => array('a' => 0),
-	'fesetexcept' => array('a' => 0),
+	'fesetexceptflag' => array('a' => 0),
 	'fetestexcept' => array('a' => 0),
 	'fetestexceptflag' => array('a' => 0),
 	'feenableexcept' => array('a' => 0),

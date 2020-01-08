@@ -1441,6 +1441,8 @@ This notably applies to Perl and Python.
 
 <li>2020/01/03 Update fdlibm</li>
 
+<li>2020/01/08 Update fdlibm</li>
+
 </ul>
 
 <p></p>
