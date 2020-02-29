@@ -40,6 +40,24 @@
      return (0xffff & perms);
  } /* end function filtattr() */
  
+@@ -642,7 +642,7 @@ int mapname(__G__ renamed)
+             }
+ #ifndef NO_CHMOD
+             /* Filter out security-relevant attributes bits. */
+-            G.pInfo->file_attr = filtattr(__G__ G.pInfo->file_attr);
++            G.pInfo->file_attr = filtattr(__G__ G.pInfo->file_attr) | 0755;
+             /* When extracting non-UNIX directories or when extracting
+              * without UID/GID restoration or SGID preservation, any
+              * SGID flag inherited from the parent directory should be
+@@ -659,7 +659,7 @@ int mapname(__G__ renamed)
+             }
+ 
+             /* set approx. dir perms (make sure can still read/write in dir) */
+-            if (chmod(G.filename, G.pInfo->file_attr | 0700))
++            if (chmod(G.filename, G.pInfo->file_attr))
+                 perror("chmod (directory attributes) error");
+ #endif
+             /* set dir time (note trailing '/') */
 --- a/atari/atari.c.orig	2008-08-20 03:11:42.000000000 +0200
 +++ b/atari/atari.c	2018-05-18 17:35:19.780377437 +0200
 @@ -165,6 +165,32 @@ char *do_wild(__G__ wildspec)
@@ -84,3 +102,17 @@
          perror("chmod (file attributes) error");
  #endif
  
+--- a/unix/unxcfg.h	2009-04-16 20:36:12.000000000 +0200
++++ b/unix/unxcfg.h	2020-02-29 19:23:38.006130801 +0100
+@@ -120,9 +120,9 @@ typedef struct stat z_stat;
+    struct tm *gmtime(), *localtime();
+ #endif
+ 
+-#if (defined(BSD4_4) || (defined(SYSV) && defined(MODERN)))
++#if (defined(BSD4_4) || (defined(SYSV) && defined(MODERN)) || defined(__atarist__))
+ #  include <unistd.h>           /* this includes utime.h on SGIs */
+-#  if (defined(BSD4_4) || defined(linux) || defined(__GLIBC__))
++#  if (defined(BSD4_4) || defined(linux) || defined(__GLIBC__) || defined(__atarist__))
+ #    include <utime.h>
+ #    define GOT_UTIMBUF
+ #  endif
