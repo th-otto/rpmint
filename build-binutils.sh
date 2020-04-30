@@ -8,8 +8,8 @@
 me="$0"
 
 PACKAGENAME=binutils
-VERSION=-2.33.1
-VERSIONPATCH=-20200102
+VERSION=-2.34
+VERSIONPATCH=-20200429
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
@@ -35,7 +35,7 @@ srcdir="${PACKAGENAME}${VERSION}"
 # BINUTILS_SUPPORT_DIRS is from src-release.sh
 #
 # The mint patch can be recreated by running
-# git diff binutils-2_33-branch binutils-2_33-mint
+# git diff binutils-2_34-branch binutils-2_34-mint
 # in my fork (https://github.com/th-otto/binutils/tree/binutils-2_33-mint)
 #
 PATCHES="\
@@ -50,14 +50,18 @@ TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
 
 BUILD_EXEEXT=
 LN_S="ln -s"
+GCC=${GCC-gcc}
+GXX=${GXX-g++}
 case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
 	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
-	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
+	MINGW*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	MSYS*) host=msys ;;
-	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
+	CYGWIN*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
-	*) host=linux ;;
+	*) host=linux64
+	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=linux32; fi
+	   ;;
 esac
 case $host in
 	cygwin* | mingw* | msys*) BUILD_EXEEXT=.exe ;;
@@ -174,14 +178,17 @@ CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 
 case $host in
 	macos*)
-		export CC=/usr/bin/clang
-		export CXX=/usr/bin/clang++
+		GCC=/usr/bin/clang
+		GXX=/usr/bin/clang++
 		export MACOSX_DEPLOYMENT_TARGET=10.6
 		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
 		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
 		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
 		;;
 esac
+
+export CC="${GCC}"
+export CXX="${GXX}"
 
 ../$srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
