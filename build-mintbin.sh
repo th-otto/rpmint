@@ -15,7 +15,7 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-./configure --prefix=${prefix} --disable-nls --target=$TARGET
+CC="${GCC}" ./configure --prefix=${prefix} --disable-nls --target=$TARGET
 ${MAKE} $JOBS || exit 1
 
 ${MAKE} DESTDIR="${THISPKG_DIR}" install || exit 1
