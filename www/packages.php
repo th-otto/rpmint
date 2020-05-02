@@ -70,7 +70,7 @@ This is the last official version with support for it.
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '4.6.4',
-		'date' => '20170518',
+		'date' => '20200502',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-4_6-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.bz2',

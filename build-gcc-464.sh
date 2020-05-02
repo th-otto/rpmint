@@ -8,7 +8,7 @@ me="$0"
 
 PACKAGENAME=gcc
 VERSION=-4.6.4
-VERSIONPATCH=-20170518
+VERSIONPATCH=-20200502
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -170,7 +170,7 @@ for a in "" -1.16 -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 done
 test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 case $BUILD in
-	x86_64-pc-mingw32) BUILD=x86_64-pc-msys ;;
+	x86_64-pc-mingw32) BUILD=x86_64-pc-mingw32 ;;
 	i686-pc-mingw32) BUILD=i686-pc-msys ;;
 esac
 
@@ -309,7 +309,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
 	for i in c++ cpp g++ gcc gcov gfortran; do
-		if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
+		if test -x ../../bin/${TARGET}-$i; then
 			rm -f ${i} ${i}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
 		fi
@@ -321,25 +321,25 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	if test -x ${TARGET}-g++ && test ! -h ${TARGET}-g++; then
 		rm -f ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}
 		mv ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT}
-		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++
+		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++${BUILD_EXEEXT}
 	fi
 	if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
 		rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
-		$LN_S ${TARGET}-g++ ${TARGET}-c++
+		$LN_S ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-c++${BUILD_EXEEXT}
 	fi
 	if test -x ${TARGET}-gcc && test ! -h ${TARGET}-gcc; then
 		rm -f ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}
 		mv ${TARGET}-gcc${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc
+		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc${BUILD_EXEEXT}
 	fi
 	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gcc-${gcc_dir_version} && test ! -h ${TARGET}-gcc-${gcc_dir_version}; then
 		rm -f ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT}
 	fi
 	if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
 		rm -f ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}
 		mv ${TARGET}-cpp${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT}
-		$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp
+		$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp${BUILD_EXEEXT}
 	fi
 	
 	cd "${INSTALL_DIR}"
