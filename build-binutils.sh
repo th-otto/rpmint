@@ -98,7 +98,7 @@ if test ! -d "$srcdir"; then
 	exit 1
 fi
 
-if test -d /usr/lib64; then
+if test -d /usr/lib64 -a $host = linux64; then
 	BUILD_LIBDIR=${PREFIX}/lib64
 else
 	BUILD_LIBDIR=${PREFIX}/lib

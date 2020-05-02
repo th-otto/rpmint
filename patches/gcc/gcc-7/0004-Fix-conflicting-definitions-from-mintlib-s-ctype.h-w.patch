@@ -1,0 +1,42 @@
+From 6ad303dcc8a7b9ce9afecf84cfa0608749cdd26a Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sun, 24 Sep 2017 16:50:52 +0200
+Subject: [PATCH] Fix conflicting definitions from mintlib's ctype.h when
+ building the c++ library
+
+---
+ libstdc++-v3/include/c_global/cctype | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/libstdc++-v3/include/c_global/cctype b/libstdc++-v3/include/c_global/cctype
+index 6710ca9407a..b5fa2921035 100644
+--- a/libstdc++-v3/include/c_global/cctype
++++ b/libstdc++-v3/include/c_global/cctype
+@@ -41,6 +41,24 @@
+ #include <bits/c++config.h>
+ #include <ctype.h>
+ 
++#ifdef __MINT__
++/*
++ * This defines from mintlib headers conflict with
++ * usage in c++ headers
++ */
++#undef _CTc
++#undef _CTd
++#undef _CTu
++#undef _CTl
++#undef _CTs
++#undef _CTp
++#undef _CTx
++#undef _CTb
++#undef _CTg
++#undef _CTP
++#undef isblank
++#endif
++
+ #ifndef _GLIBCXX_CCTYPE
+ #define _GLIBCXX_CCTYPE 1
+ 
+-- 
+2.24.0
+

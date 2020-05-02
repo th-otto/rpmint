@@ -1,0 +1,66 @@
+From c793df24600185187072b905f69d03e660d25632 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <thotto@users.sourceforge.net>
+Date: Thu, 11 May 2017 05:56:38 +0200
+Subject: [PATCH] Change clobbered registers back to d0/d1 only, since mixed
+ calls do not work yet
+
+---
+ gcc/config/m68k/m68k.c | 6 +++---
+ gcc/config/m68k/m68k.h | 6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/gcc/config/m68k/m68k.c b/gcc/config/m68k/m68k.c
+index f2349d475ce..3d849b197da 100644
+--- a/gcc/config/m68k/m68k.c
++++ b/gcc/config/m68k/m68k.c
+@@ -1066,7 +1066,7 @@ m68k_function_type_abi (const_tree fntype)
+ static void
+ m68k_maybe_switch_abi (void)
+ {
+-  if (call_used_regs[D2_REG] == (cfun->machine->call_abi == STD_ABI))
++  if ((call_used_regs[D2_REG] != 0) == (cfun->machine->call_abi == STD_ABI))
+     reinit_regs ();
+ }
+ 
+@@ -7028,8 +7028,8 @@ m68k_conditional_register_usage (void)
+   int i;
+   HARD_REG_SET x;
+   
+-  int num_of_dregs = (TARGET_FASTCALL) ? M68K_FASTCALL_USED_DATA_REGS : M68K_STD_USED_REGS;
+-  int num_of_aregs = (TARGET_FASTCALL) ? M68K_FASTCALL_USED_ADDR_REGS : M68K_STD_USED_REGS;
++  int num_of_dregs = m68k_cfun_abi() == FASTCALL_ABI ? M68K_FASTCALL_USED_DATA_REGS : M68K_STD_USED_REGS;
++  int num_of_aregs = m68k_cfun_abi() == FASTCALL_ABI ? M68K_FASTCALL_USED_ADDR_REGS : M68K_STD_USED_REGS;
+   for (i = 0; i < 8; i++)
+     {
+       call_used_regs[i] = (i < num_of_dregs) | fixed_regs[i];
+diff --git a/gcc/config/m68k/m68k.h b/gcc/config/m68k/m68k.h
+index d1a7dcf847d..877e3335583 100644
+--- a/gcc/config/m68k/m68k.h
++++ b/gcc/config/m68k/m68k.h
+@@ -543,12 +543,12 @@ extern enum reg_class regno_reg_class[];
+ #define LIBCALL_VALUE(MODE)  m68k_libcall_value (MODE)
+ 
+ /* On the m68k, D0 is usually the only register used.  */
+-#define FUNCTION_VALUE_REGNO_P(N) ((N) == D0_REG)
++#define FUNCTION_VALUE_REGNO_P(N) ((N) == D0_REG || (N) == A0_REG || (TARGET_68881 && (N) == FP0_REG))
+ 
+ /* Define this to be true when FUNCTION_VALUE_REGNO_P is true for
+    more than one register.
+    XXX This macro is m68k specific and used only for m68kemb.h.  */
+-#define NEEDS_UNTYPED_CALL 0
++#define NEEDS_UNTYPED_CALL 1
+ 
+ /* On the m68k, all arguments are usually pushed on the stack.  */
+ /* 1 if N is a possible register number for function argument passing.  */
+@@ -565,7 +565,7 @@ extern enum reg_class regno_reg_class[];
+ 
+ /* Call clobbered regs. */
+ #define M68K_STD_USED_REGS 2
+-#define M68K_FASTCALL_USED_DATA_REGS 3
++#define M68K_FASTCALL_USED_DATA_REGS 2
+ #define M68K_FASTCALL_USED_ADDR_REGS 2
+ 
+ /* On the m68k, this is a structure:
+-- 
+2.24.0
+

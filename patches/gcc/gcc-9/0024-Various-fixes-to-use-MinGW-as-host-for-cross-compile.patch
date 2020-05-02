@@ -1,0 +1,2854 @@
+From 9a5ccff9ff73c8a7572fd6aabede5d1123ea9c95 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 6 Jun 2019 18:09:26 +0200
+Subject: [PATCH] Various fixes to use MinGW as host for cross-compiler
+
+---
+ config/lib-ld.m4               |  2 +-
+ config/lthostflags.m4          |  2 +-
+ config/mmap.m4                 |  4 ++--
+ config/picflag.m4              |  2 +-
+ fixincludes/configure          |  5 +++--
+ fixincludes/configure.ac       |  1 +
+ gcc/Makefile.in                |  5 +++--
+ gcc/ada/adaint.c               | 12 ++++++++++++
+ gcc/collect2.c                 | 10 ++++++++++
+ gcc/config.host                |  4 ++--
+ gcc/config/i386/xm-mingw32.h   |  2 +-
+ gcc/configure                  | 32 ++++++++++++++++----------------
+ gcc/file-find.c                | 14 ++++++++++++++
+ gcc/gcc.c                      | 13 +++++++++++++
+ gcc/incpath.c                  | 15 ++++++++++++++-
+ intl/configure                 |  2 +-
+ libatomic/configure            | 18 +++++++++---------
+ libbacktrace/configure         | 16 ++++++++--------
+ libbacktrace/configure.ac      |  2 +-
+ libcc1/configure               | 24 ++++++++++++------------
+ libcpp/configure               |  2 +-
+ libcpp/files.c                 | 12 ++++++------
+ libffi/acinclude.m4            |  4 ++--
+ libffi/configure               | 30 +++++++++++++++---------------
+ libffi/configure.host          |  2 +-
+ libgfortran/configure          | 26 +++++++++++++-------------
+ libgo/config/libtool.m4        | 16 ++++++++--------
+ libgo/configure                | 18 +++++++++---------
+ libgomp/configure              | 28 ++++++++++++++--------------
+ libhsail-rt/configure          | 24 ++++++++++++------------
+ libiberty/configure            | 10 +++++-----
+ libiberty/configure.ac         |  8 ++++----
+ libitm/configure               | 30 +++++++++++++++---------------
+ libobjc/configure              | 18 +++++++++---------
+ libobjc/configure.ac           |  2 +-
+ liboffloadmic/configure        | 24 ++++++++++++------------
+ liboffloadmic/plugin/configure | 24 ++++++++++++------------
+ libquadmath/configure          | 16 ++++++++--------
+ libsanitizer/configure         | 26 +++++++++++++-------------
+ libsanitizer/configure.ac      |  2 +-
+ libssp/configure               | 16 ++++++++--------
+ libstdc++-v3/configure         | 30 +++++++++++++++---------------
+ libtool.m4                     | 16 ++++++++--------
+ libvtv/configure               | 26 +++++++++++++-------------
+ lto-plugin/configure           | 16 ++++++++--------
+ zlib/configure                 | 14 +++++++-------
+ 46 files changed, 345 insertions(+), 280 deletions(-)
+
+diff --git a/config/lib-ld.m4 b/config/lib-ld.m4
+index 11d0ce77342..947835568a4 100644
+--- a/config/lib-ld.m4
++++ b/config/lib-ld.m4
+@@ -47,7 +47,7 @@ if test "$GCC" = yes; then
+   # Check if gcc -print-prog-name=ld gives a path.
+   AC_MSG_CHECKING([for ld used by GCC])
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+diff --git a/config/lthostflags.m4 b/config/lthostflags.m4
+index bc0f59ee79e..253e7aa6b06 100644
+--- a/config/lthostflags.m4
++++ b/config/lthostflags.m4
+@@ -13,7 +13,7 @@ AC_DEFUN([ACX_LT_HOST_FLAGS], [
+ AC_REQUIRE([AC_CANONICAL_SYSTEM])
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
+diff --git a/config/mmap.m4 b/config/mmap.m4
+index fba0d9d3657..5342ed8ab2c 100644
+--- a/config/mmap.m4
++++ b/config/mmap.m4
+@@ -42,7 +42,7 @@ else
+    # Systems known to be in this category are Windows (all variants),
+    # VMS, and Darwin.
+    case "$host_os" in
+-     *vms* | cygwin* | pe | mingw* | darwin* | ultrix* | hpux10* | hpux11.00)
++     *vms* | cygwin* | pe | mingw* | msys* | darwin* | ultrix* | hpux10* | hpux11.00)
+         gcc_cv_func_mmap_dev_zero=no ;;
+      *)
+         gcc_cv_func_mmap_dev_zero=yes;;
+@@ -74,7 +74,7 @@ else
+    # above for use of /dev/zero.
+    # Systems known to be in this category are Windows, VMS, and SCO Unix.
+    case "$host_os" in
+-     *vms* | cygwin* | pe | mingw* | sco* | udk* )
++     *vms* | cygwin* | pe | mingw* | msys* | sco* | udk* )
+         gcc_cv_func_mmap_anon=no ;;
+      *)
+         gcc_cv_func_mmap_anon=yes;;
+diff --git a/config/picflag.m4 b/config/picflag.m4
+index 9c6296ff0d1..b136478cf36 100644
+--- a/config/picflag.m4
++++ b/config/picflag.m4
+@@ -25,7 +25,7 @@ case "${$2}" in
+ 	;;
+     i[[34567]]86-*-cygwin* | x86_64-*-cygwin*)
+ 	;;
+-    i[[34567]]86-*-mingw* | x86_64-*-mingw*)
++    i[[34567]]86-*-mingw* | x86_64-*-mingw* | x86_64-*-msys*)
+ 	;;
+     *-*-mint*)
+ 	;;
+diff --git a/fixincludes/configure b/fixincludes/configure
+index 6e2d67b655b..25e703164f4 100755
+--- a/fixincludes/configure
++++ b/fixincludes/configure
+@@ -4816,6 +4816,7 @@ else
+ 	i?86-*-msdosdjgpp* | \
+ 	i?86-*-mingw32* | \
+ 	x86_64-*-mingw32* | \
++	*-*-msys* | \
+ 	*-*-beos* | \
+         *-*-*vms*)
+ 		TARGET=twoprocess
+@@ -5347,7 +5348,7 @@ else
+    # Systems known to be in this category are Windows (all variants),
+    # VMS, and Darwin.
+    case "$host_os" in
+-     *vms* | cygwin* | pe | mingw* | darwin* | ultrix* | hpux10* | hpux11.00)
++     *vms* | cygwin* | pe | mingw* | msys* | darwin* | ultrix* | hpux10* | hpux11.00)
+         gcc_cv_func_mmap_dev_zero=no ;;
+      *)
+         gcc_cv_func_mmap_dev_zero=yes;;
+@@ -5404,7 +5405,7 @@ else
+    # above for use of /dev/zero.
+    # Systems known to be in this category are Windows, VMS, and SCO Unix.
+    case "$host_os" in
+-     *vms* | cygwin* | pe | mingw* | sco* | udk* )
++     *vms* | cygwin* | pe | mingw* | msys* | sco* | udk* )
+         gcc_cv_func_mmap_anon=no ;;
+      *)
+         gcc_cv_func_mmap_anon=yes;;
+diff --git a/fixincludes/configure.ac b/fixincludes/configure.ac
+index 14813b910f1..60513f4783b 100644
+--- a/fixincludes/configure.ac
++++ b/fixincludes/configure.ac
+@@ -52,6 +52,7 @@ fi],
+ 	i?86-*-msdosdjgpp* | \
+ 	i?86-*-mingw32* | \
+ 	x86_64-*-mingw32* | \
++	*-*-msys* | \
+ 	*-*-beos* | \
+         *-*-*vms*)
+ 		TARGET=twoprocess
+diff --git a/gcc/Makefile.in b/gcc/Makefile.in
+index 78605e15bd0..33b434bbebb 100644
+--- a/gcc/Makefile.in
++++ b/gcc/Makefile.in
+@@ -444,7 +444,7 @@ USER_H_INC_NEXT_POST = @user_headers_inc_next_post@
+ # The GCC to use for compiling crt*.o.
+ # Usually the one we just built.
+ # Don't use this as a dependency--use $(GCC_PASSES).
+-GCC_FOR_TARGET = $(STAGE_CC_WRAPPER) ./xgcc -B./ -B$(build_tooldir)/bin/ -isystem $(build_tooldir)/include -isystem $(build_tooldir)/sys-include -L$(objdir)/../ld
++GCC_FOR_TARGET = $(STAGE_CC_WRAPPER) ./xgcc -B./ -B$(mingw_build_tooldir)/bin/ -isystem $(mingw_build_tooldir)/include -isystem $(mingw_build_tooldir)/sys-include -L$(objdir)/../ld
+ 
+ # Set if the compiler was configured with --with-build-sysroot.
+ SYSROOT_CFLAGS_FOR_TARGET = @SYSROOT_CFLAGS_FOR_TARGET@
+@@ -690,6 +690,7 @@ build_exeext = @build_exeext@
+ EVAL_MINGW := case `uname -s` in MINGW*) echo yes;; *) echo no;; esac
+ MINGW := $(shell $(EVAL_MINGW))
+ mingw_srcdir = $(shell if test "${MINGW}" = yes; then cmd //c echo ${srcdir}; else echo ${srcdir}; fi)
++mingw_build_tooldir = $(shell if test "${MINGW}" = yes; then cmd //c echo ${build_tooldir}; else echo ${build_tooldir}; fi)
+ 
+ # Directory in which to put man pages.
+ mandir = @mandir@
+@@ -1175,7 +1176,7 @@ FLAGS_TO_PASS = \
+ 	"prefix=$(prefix)" \
+ 	"local_prefix=$(local_prefix)" \
+ 	"gxx_include_dir=$(gcc_gxx_include_dir)" \
+-	"build_tooldir=$(build_tooldir)" \
++	"build_tooldir=$(mingw_build_tooldir)" \
+ 	"gcc_tooldir=$(gcc_tooldir)" \
+ 	"bindir=$(bindir)" \
+ 	"libexecsubdir=$(libexecsubdir)" \
+diff --git a/gcc/ada/adaint.c b/gcc/ada/adaint.c
+index 4a75b590911..f14c55fef39 100644
+--- a/gcc/ada/adaint.c
++++ b/gcc/ada/adaint.c
+@@ -114,6 +114,16 @@
+ #include "version.h"
+ #endif
+ 
++/*
++ * these are from xm-mingw32.h, but this is only included
++ * for the target; we need those definitions here also
++ * when using MinGW as host for a cross-compiler
++ */
++#ifdef __MINGW32__
++#undef HOST_EXECUTABLE_SUFFIX
++#define HOST_EXECUTABLE_SUFFIX ".exe"
++#endif
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -199,6 +209,8 @@ UINT __gnat_current_ccs_encoding;
+ #include <signal.h>
+ #undef DIR_SEPARATOR
+ #define DIR_SEPARATOR '\\'
++#undef PATH_SEPARATOR
++#define PATH_SEPARATOR ';'
+ 
+ #else
+ #include <utime.h>
+diff --git a/gcc/collect2.c b/gcc/collect2.c
+index eb84f84639b..66ebf3514fb 100644
+--- a/gcc/collect2.c
++++ b/gcc/collect2.c
+@@ -158,6 +158,16 @@ int do_collecting = 0;
+ #define DO_COLLECT_EXPORT_LIST 0
+ #endif
+ 
++/*
++ * these are from xm-mingw32.h, but this is only included
++ * for the target; we need those definitions here also
++ * when using MinGW as host for a cross-compiler
++ */
++#ifdef __MINGW32__
++#undef HOST_EXECUTABLE_SUFFIX
++#define HOST_EXECUTABLE_SUFFIX ".exe"
++#endif
++
+ /* Nonzero if we should suppress the automatic demangling of identifiers
+    in linker error messages.  Set from COLLECT_NO_DEMANGLE.  */
+ int no_demangle;
+diff --git a/gcc/config.host b/gcc/config.host
+index 816a0f06cb7..33bb03f4ec6 100644
+--- a/gcc/config.host
++++ b/gcc/config.host
+@@ -234,7 +234,7 @@ case ${host} in
+     host_exeext=.exe
+     host_lto_plugin_soname=cyglto_plugin-0.dll
+     ;;
+-  i[34567]86-*-mingw32*)
++  i[34567]86-*-mingw32* | i[34567]86-*-msys*)
+     host_xm_file=i386/xm-mingw32.h
+     host_xmake_file="${host_xmake_file} i386/x-mingw32"
+     host_exeext=.exe
+@@ -242,7 +242,7 @@ case ${host} in
+     host_extra_gcc_objs="${host_extra_gcc_objs} driver-mingw32.o"
+     host_lto_plugin_soname=liblto_plugin-0.dll
+     ;;
+-  x86_64-*-mingw*)
++  x86_64-*-mingw* | x86_64-*-msys*)
+     use_long_long_for_widest_fast_int=yes
+     host_xm_file=i386/xm-mingw32.h
+     host_xmake_file="${host_xmake_file} i386/x-mingw32"
+diff --git a/gcc/config/i386/xm-mingw32.h b/gcc/config/i386/xm-mingw32.h
+index 7a7ce600f6e..c6cf83d54e5 100644
+--- a/gcc/config/i386/xm-mingw32.h
++++ b/gcc/config/i386/xm-mingw32.h
+@@ -28,7 +28,7 @@ along with GCC; see the file COPYING3.  If not see
+ #define HOST_BIT_BUCKET2 "/dev/null"
+ 
+ /*  The st_ino field of struct stat is always 0.  */
+-#define HOST_LACKS_INODE_NUMBERS
++#define HOST_LACKS_INODE_NUMBERS 1
+ 
+ #ifdef __MINGW32__
+ #undef __USE_MINGW_ANSI_STDIO
+diff --git a/gcc/configure b/gcc/configure
+index d478fceb1b1..e905007d6f4 100755
+--- a/gcc/configure
++++ b/gcc/configure
+@@ -5154,7 +5154,7 @@ case "${target}" in
+ 	;;
+     i[34567]86-*-cygwin* | x86_64-*-cygwin*)
+ 	;;
+-    i[34567]86-*-mingw* | x86_64-*-mingw*)
++    i[34567]86-*-mingw* | x86_64-*-mingw* | *-*-msys*)
+ 	;;
+     i[34567]86-*-interix[3-9]*)
+ 	# Interix 3.x gcc -fpic/-fPIC options generate broken code.
+@@ -9973,7 +9973,7 @@ else
+    # Systems known to be in this category are Windows (all variants),
+    # VMS, and Darwin.
+    case "$host_os" in
+-     *vms* | cygwin* | pe | mingw* | darwin* | ultrix* | hpux10* | hpux11.00)
++     *vms* | cygwin* | pe | mingw* | msys* | darwin* | ultrix* | hpux10* | hpux11.00)
+         gcc_cv_func_mmap_dev_zero=no ;;
+      *)
+         gcc_cv_func_mmap_dev_zero=yes;;
+@@ -10030,7 +10030,7 @@ else
+    # above for use of /dev/zero.
+    # Systems known to be in this category are Windows, VMS, and SCO Unix.
+    case "$host_os" in
+-     *vms* | cygwin* | pe | mingw* | sco* | udk* )
++     *vms* | cygwin* | pe | mingw* | msys* | sco* | udk* )
+         gcc_cv_func_mmap_anon=no ;;
+      *)
+         gcc_cv_func_mmap_anon=yes;;
+@@ -10333,7 +10333,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by GCC" >&5
+ $as_echo_n "checking for ld used by GCC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -12849,7 +12849,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -16384,7 +16384,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -16815,7 +16815,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -17716,14 +17716,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -17747,7 +17747,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -18378,7 +18378,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -19252,7 +19252,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -19605,7 +19605,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
+         # as there is no search path for DLLs.
+         hardcode_libdir_flag_spec_CXX='-L$libdir'
+@@ -21378,14 +21378,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -21408,7 +21408,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+diff --git a/gcc/file-find.c b/gcc/file-find.c
+index 0b7ec2b5497..ec444ff83b7 100644
+--- a/gcc/file-find.c
++++ b/gcc/file-find.c
+@@ -22,6 +22,20 @@ along with GCC; see the file COPYING3.  If not see
+ #include "filenames.h"
+ #include "file-find.h"
+ 
++/*
++ * these are from xm-mingw32.h, but this is only included
++ * for the target; we need those definitions here also
++ * when using MinGW as host for a cross-compiler
++ */
++#if defined(__MSDOS__) || defined(_WIN32) || defined(__OS2__) || defined (__CYGWIN__)
++#undef HOST_EXECUTABLE_SUFFIX
++#define HOST_EXECUTABLE_SUFFIX ".exe"
++#endif
++#if defined(__MSDOS__) || defined(_WIN32) || defined(__OS2__)
++#undef PATH_SEPARATOR
++#define PATH_SEPARATOR ';'
++#endif
++
+ static bool debug = false;
+ 
+ void
+diff --git a/gcc/gcc.c b/gcc/gcc.c
+index 1ddac14007e..fcb438e9aca 100644
+--- a/gcc/gcc.c
++++ b/gcc/gcc.c
+@@ -45,12 +45,25 @@ compilation is specified by a string called a "spec".  */
+ #include "filenames.h"
+ #include "spellcheck.h"
+ 
++/*
++ * these are from xm-mingw32.h, but this is only included
++ * for the target; we need those definitions here also
++ * when using MinGW as host for a cross-compiler
++ */
+ #ifdef __MINGW32__
+ #undef HOST_BIT_BUCKET
+ #undef HOST_BIT_BUCKET2
++#undef HOST_EXECUTABLE_SUFFIX
+ /* This is the name of the null device on windows.  */
+ #define HOST_BIT_BUCKET "nul"
+ #define HOST_BIT_BUCKET2 "/dev/null"
++#define HOST_EXECUTABLE_SUFFIX ".exe"
++#endif
++
++#if defined(__MSDOS__) || defined(_WIN32) || defined(__OS2__)
++#  define HOST_LACKS_INODE_NUMBERS 1
++#  undef PATH_SEPARATOR
++#  define PATH_SEPARATOR ';'
+ #endif
+ 
+ 
+diff --git a/gcc/incpath.c b/gcc/incpath.c
+index bcbe2082905..c143655a9be 100644
+--- a/gcc/incpath.c
++++ b/gcc/incpath.c
+@@ -27,6 +27,12 @@
+ #include "incpath.h"
+ #include "cppdefault.h"
+ 
++#if defined(__MSDOS__) || defined(_WIN32) || defined(__OS2__)
++#  define HOST_LACKS_INODE_NUMBERS 1
++#  undef PATH_SEPARATOR
++#  define PATH_SEPARATOR ';'
++#endif
++
+ /* Microsoft Windows does not natively support inodes.
+    VMS has non-numeric inodes.  */
+ #ifdef VMS
+@@ -177,10 +183,17 @@ add_standard_paths (const char *sysroot, const char *iprefix,
+ 	    {
+ 	      char *sysroot_no_trailing_dir_separator = xstrdup (sysroot);
+ 	      size_t sysroot_len = strlen (sysroot);
++	      const char *fname;
+ 
+ 	      if (sysroot_len > 0 && sysroot[sysroot_len - 1] == DIR_SEPARATOR)
+ 		sysroot_no_trailing_dir_separator[sysroot_len - 1] = '\0';
+-	      str = concat (sysroot_no_trailing_dir_separator, p->fname, NULL);
++	      fname = p->fname;
++#if defined(__MSDOS__) || defined(_WIN32) || defined(__OS2__)
++	      /* skip the C:/msys64/ part of p->fname */
++	      if (HAS_DRIVE_SPEC(fname))
++		fname = strchr(fname + 3, DIR_SEPARATOR);
++#endif
++	      str = concat (sysroot_no_trailing_dir_separator, fname, NULL);
+ 	      free (sysroot_no_trailing_dir_separator);
+ 	    }
+ 	  else if (!p->add_sysroot && relocated
+diff --git a/intl/configure b/intl/configure
+index 2f35993148e..57dd2553b33 100755
+--- a/intl/configure
++++ b/intl/configure
+@@ -5033,7 +5033,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by GCC" >&5
+ $as_echo_n "checking for ld used by GCC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+diff --git a/libatomic/configure b/libatomic/configure
+index e7076a0ff64..706e2fecf25 100755
+--- a/libatomic/configure
++++ b/libatomic/configure
+@@ -5289,7 +5289,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -9089,7 +9089,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -9520,7 +9520,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -10421,14 +10421,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -10452,7 +10452,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -11083,7 +11083,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -11702,7 +11702,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
+@@ -15050,7 +15050,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+diff --git a/libbacktrace/configure b/libbacktrace/configure
+index 51d7cb4582a..6ab7c76dc9e 100755
+--- a/libbacktrace/configure
++++ b/libbacktrace/configure
+@@ -5694,7 +5694,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -9226,7 +9226,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -9657,7 +9657,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -10558,14 +10558,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -10589,7 +10589,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -11220,7 +11220,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -13120,7 +13120,7 @@ fi
+ # Check for the fcntl function.
+ if test -n "${with_target_subdir}"; then
+    case "${host}" in
+-   *-*-mingw*) have_fcntl=no ;;
++   *-*-mingw* | *-*-msys*) have_fcntl=no ;;
+    spu-*-*) have_fcntl=no ;;
+    *) have_fcntl=yes ;;
+    esac
+diff --git a/libbacktrace/configure.ac b/libbacktrace/configure.ac
+index dd25095dcf8..3a0e3e2d418 100644
+--- a/libbacktrace/configure.ac
++++ b/libbacktrace/configure.ac
+@@ -369,7 +369,7 @@ fi
+ # Check for the fcntl function.
+ if test -n "${with_target_subdir}"; then
+    case "${host}" in
+-   *-*-mingw*) have_fcntl=no ;;
++   *-*-mingw* | *-*-msys*) have_fcntl=no ;;
+    spu-*-*) have_fcntl=no ;;
+    *) have_fcntl=yes ;;
+    esac
+diff --git a/libcc1/configure b/libcc1/configure
+index 53f40d31135..795537ecd0c 100755
+--- a/libcc1/configure
++++ b/libcc1/configure
+@@ -4978,7 +4978,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -8509,7 +8509,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -8940,7 +8940,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -9841,14 +9841,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -9872,7 +9872,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -10503,7 +10503,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -11783,7 +11783,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -12136,7 +12136,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
+         # as there is no search path for DLLs.
+         hardcode_libdir_flag_spec_CXX='-L$libdir'
+@@ -13909,14 +13909,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -13939,7 +13939,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+diff --git a/libcpp/configure b/libcpp/configure
+index a7aa35c5be0..46e67c3c6b8 100755
+--- a/libcpp/configure
++++ b/libcpp/configure
+@@ -6591,7 +6591,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by GCC" >&5
+ $as_echo_n "checking for ld used by GCC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+diff --git a/libcpp/files.c b/libcpp/files.c
+index 9eb7e2ee8db..dc012ea4858 100644
+--- a/libcpp/files.c
++++ b/libcpp/files.c
+@@ -247,7 +247,7 @@ static int stat_st_mode_symlink (char const* path, struct stat* buf)
+ 
+ #else
+ 
+-#define stat_st_mode_symlink (_name, _buf) stat ((_name), (_buf))
++#define stat_st_mode_symlink(_name, _buf) stat ((_name), (_buf))
+ 
+ #endif
+ 
+@@ -292,14 +292,13 @@ open_file (_cpp_file *file)
+   */
+   if (file->fd > 0)
+     {
+-      char filepath[MAX_PATH];
+-      strncpy (filepath, file->path, sizeof(filepath) - 1);
+-      char* dirsep = &filepath[0];
++      char *filepath = xstrdup(file->path);
++      char* dirsep = filepath;
+       while ( (dirsep = strchr (dirsep, '\\')) != NULL)
+         *dirsep = '/';
+       if (strstr(file->path, "/../"))
+ 	{
+-	  dirsep = &filepath[0];
++	  dirsep = filepath;
+ 	  char dirsepc;
+ 	  /* Check each directory in the chain. */
+ 	  while ( (dirsep = strpbrk (dirsep, "\\/")) != NULL)
+@@ -308,7 +307,7 @@ open_file (_cpp_file *file)
+ 	      *dirsep = '\0';
+ 	      if (stat_st_mode_symlink (filepath, &file->st) == -1)
+ 	        {
+-	          *dirsep = dirsepc;
++	          free(filepath);
+ 	          close (file->fd);
+ 	          file->fd = -1;
+ 	          return false;
+@@ -316,6 +315,7 @@ open_file (_cpp_file *file)
+ 	      *dirsep++ = dirsepc;
+ 	    }
+ 	}
++	free(filepath);
+     }
+ #endif
+ 
+diff --git a/libffi/acinclude.m4 b/libffi/acinclude.m4
+index 270dadfcc18..cd949ab9aed 100644
+--- a/libffi/acinclude.m4
++++ b/libffi/acinclude.m4
+@@ -37,7 +37,7 @@ else
+    # Systems known to be in this category are Windows (all variants),
+    # VMS, and Darwin.
+    case "$host_os" in
+-     vms* | cygwin* | pe | mingw* | darwin* | ultrix* | hpux10* | hpux11.00)
++     vms* | cygwin* | pe | mingw* | msys* | darwin* | ultrix* | hpux10* | hpux11.00)
+ 	ac_cv_func_mmap_dev_zero=no ;;
+      *)
+ 	ac_cv_func_mmap_dev_zero=yes;;
+@@ -69,7 +69,7 @@ else
+    # above for use of /dev/zero.
+    # Systems known to be in this category are Windows, VMS, and SCO Unix.
+    case "$host_os" in
+-     vms* | cygwin* | pe | mingw* | sco* | udk* )
++     vms* | cygwin* | pe | mingw* | mwys* | sco* | udk* )
+ 	ac_cv_func_mmap_anon=no ;;
+      *)
+ 	ac_cv_func_mmap_anon=yes;;
+diff --git a/libffi/configure b/libffi/configure
+index 4c041034083..0030cf61d31 100755
+--- a/libffi/configure
++++ b/libffi/configure
+@@ -5485,7 +5485,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -9292,7 +9292,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -9723,7 +9723,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -10624,14 +10624,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -10655,7 +10655,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -11286,7 +11286,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -12160,7 +12160,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -12513,7 +12513,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
+         # as there is no search path for DLLs.
+         hardcode_libdir_flag_spec_CXX='-L$libdir'
+@@ -14286,14 +14286,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -14316,7 +14316,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -15058,7 +15058,7 @@ else
+    # Systems known to be in this category are Windows (all variants),
+    # VMS, and Darwin.
+    case "$host_os" in
+-     vms* | cygwin* | pe | mingw* | darwin* | ultrix* | hpux10* | hpux11.00)
++     vms* | cygwin* | pe | mingw* | msys* | darwin* | ultrix* | hpux10* | hpux11.00)
+ 	ac_cv_func_mmap_dev_zero=no ;;
+      *)
+ 	ac_cv_func_mmap_dev_zero=yes;;
+@@ -15115,7 +15115,7 @@ else
+    # above for use of /dev/zero.
+    # Systems known to be in this category are Windows, VMS, and SCO Unix.
+    case "$host_os" in
+-     vms* | cygwin* | pe | mingw* | sco* | udk* )
++     vms* | cygwin* | pe | mingw* | msys* | sco* | udk* )
+ 	ac_cv_func_mmap_anon=no ;;
+      *)
+ 	ac_cv_func_mmap_anon=yes;;
+@@ -16211,7 +16211,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+diff --git a/libffi/configure.host b/libffi/configure.host
+index 786b32c5bb0..94ae7516a90 100644
+--- a/libffi/configure.host
++++ b/libffi/configure.host
+@@ -65,7 +65,7 @@ case "${host}" in
+ 	;;
+ 
+   i?86-win32* | i?86-*-cygwin* | i?86-*-mingw* | i?86-*-os2* | i?86-*-interix* \
+-  | x86_64-*-cygwin* | x86_64-*-mingw*)
++  | x86_64-*-cygwin* | x86_64-*-mingw* | *-*-msys*)
+ 	TARGETDIR=x86
+ 	if test $ac_cv_sizeof_size_t = 4; then
+ 	  TARGET=X86_WIN32
+diff --git a/libgfortran/configure b/libgfortran/configure
+index 091195ce2a8..ddd717bc2e7 100755
+--- a/libgfortran/configure
++++ b/libgfortran/configure
+@@ -6463,7 +6463,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -10413,7 +10413,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -10850,7 +10850,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -11754,14 +11754,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -11785,7 +11785,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -12419,7 +12419,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -13053,7 +13053,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
+@@ -14267,7 +14267,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, FC) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec_FC='-L$libdir'
+@@ -14692,7 +14692,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec_FC=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -15390,14 +15390,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -15420,7 +15420,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+diff --git a/libgo/config/libtool.m4 b/libgo/config/libtool.m4
+index e7447537353..01d538037f2 100644
+--- a/libgo/config/libtool.m4
++++ b/libgo/config/libtool.m4
+@@ -1733,7 +1733,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -2209,14 +2209,14 @@ bsdi[[45]]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -2240,7 +2240,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ m4_if([$1], [],[
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"])
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[[.]]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -2846,7 +2846,7 @@ if test "$GCC" = yes; then
+   # Check if gcc -print-prog-name=ld gives a path.
+   AC_MSG_CHECKING([for ld used by $CC])
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -4408,7 +4408,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, $1) is actually meaningless,
+       # as there is no search path for DLLs.
+       _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='-L$libdir'
+@@ -4781,7 +4781,7 @@ _LT_EOF
+       _LT_TAGVAR(export_dynamic_flag_spec, $1)=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -5725,7 +5725,7 @@ if test "$_lt_caught_CXX_error" != yes; then
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, $1) is actually meaningless,
+         # as there is no search path for DLLs.
+         _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='-L$libdir'
+diff --git a/libgo/configure b/libgo/configure
+index 0d5845e1546..27eb5d971c4 100755
+--- a/libgo/configure
++++ b/libgo/configure
+@@ -4956,7 +4956,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -9078,7 +9078,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -9509,7 +9509,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -10410,14 +10410,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -10441,7 +10441,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -11072,7 +11072,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -12495,7 +12495,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, GO) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec_GO='-L$libdir'
+@@ -12926,7 +12926,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec_GO=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+diff --git a/libgomp/configure b/libgomp/configure
+index eb8ad0f6788..ccbde564278 100755
+--- a/libgomp/configure
++++ b/libgomp/configure
+@@ -5327,7 +5327,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -9133,7 +9133,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -9564,7 +9564,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -10465,14 +10465,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -10496,7 +10496,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -11127,7 +11127,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -11746,7 +11746,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
+@@ -12998,7 +12998,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, FC) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec_FC='-L$libdir'
+@@ -13417,7 +13417,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec_FC=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -14112,14 +14112,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -14142,7 +14142,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -16466,7 +16466,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+diff --git a/libhsail-rt/configure b/libhsail-rt/configure
+index 6a086102d08..d53c4400a7d 100755
+--- a/libhsail-rt/configure
++++ b/libhsail-rt/configure
+@@ -5142,7 +5142,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -8941,7 +8941,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -9372,7 +9372,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -10273,14 +10273,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -10304,7 +10304,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -10935,7 +10935,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -11809,7 +11809,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -12162,7 +12162,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
+         # as there is no search path for DLLs.
+         hardcode_libdir_flag_spec_CXX='-L$libdir'
+@@ -13935,14 +13935,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -13965,7 +13965,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+diff --git a/libiberty/configure b/libiberty/configure
+index c63996426b1..627acd3cbdb 100755
+--- a/libiberty/configure
++++ b/libiberty/configure
+@@ -5183,7 +5183,7 @@ case "${host}" in
+ 	;;
+     i[34567]86-*-cygwin* | x86_64-*-cygwin*)
+ 	;;
+-    i[34567]86-*-mingw* | x86_64-*-mingw*)
++    i[34567]86-*-mingw* | x86_64-*-mingw* | x86_64-*-msys*)
+ 	;;
+     *-*-mint*)
+ 	;;
+@@ -6041,7 +6041,7 @@ _ACEOF
+   # Mingw provides and which ones we will be expected to provide.
+ 
+   case "${host}" in
+-  *-*-mingw*)
++  *-*-mingw* | *-*-msys*)
+     case " $LIBOBJS " in
+   *" asprintf.$ac_objext "* ) ;;
+   *) LIBOBJS="$LIBOBJS asprintf.$ac_objext"
+@@ -6257,7 +6257,7 @@ fi
+ 
+ 
+ case "${host}" in
+-  *-*-cygwin* | *-*-mingw* | *-*-mint*)
++  *-*-cygwin* | *-*-mingw* | *-*-mint* | *-*-msys*)
+     $as_echo "#define HAVE_SYS_ERRLIST 1" >>confdefs.h
+ 
+     $as_echo "#define HAVE_SYS_NERR 1" >>confdefs.h
+@@ -6371,7 +6371,7 @@ if test -z "${setobjs}"; then
+     ac_cv_func_getpagesize=yes
+     ;;
+ 
+-  *-*-mingw32*)
++  *-*-mingw32* | *-*-msys*)
+     # Under mingw32, sys_nerr and sys_errlist exist, but they are
+     # macros, so the test below won't find them.
+     libiberty_cv_var_sys_nerr=yes
+@@ -7140,7 +7140,7 @@ fi
+ 
+ # Figure out which version of pexecute to use.
+ case "${host}" in
+-     *-*-mingw* | *-*-winnt*)	pexecute=pex-win32  ;;
++     *-*-mingw* | *-*-winnt* | *-*-msys*)	pexecute=pex-win32  ;;
+      *-*-msdosdjgpp*)		pexecute=pex-djgpp  ;;
+      *-*-msdos*)		pexecute=pex-msdos  ;;
+      *)				pexecute=pex-unix   ;;
+diff --git a/libiberty/configure.ac b/libiberty/configure.ac
+index 78932a7a6b5..2385b463782 100644
+--- a/libiberty/configure.ac
++++ b/libiberty/configure.ac
+@@ -470,7 +470,7 @@ if test -n "${with_target_subdir}"; then
+   # Mingw provides and which ones we will be expected to provide.
+ 
+   case "${host}" in
+-  *-*-mingw*)
++  *-*-mingw* | *-*-msys*)
+     AC_LIBOBJ([asprintf])
+     AC_LIBOBJ([basename])
+     AC_LIBOBJ([bcmp])
+@@ -549,7 +549,7 @@ AC_SUBST(CHECK)
+ AC_SUBST(target_header_dir)
+ 
+ case "${host}" in
+-  *-*-cygwin* | *-*-mingw* | *-*-mint*)
++  *-*-cygwin* | *-*-mingw* | *-*-mint* | *-*-msys*)
+     AC_DEFINE(HAVE_SYS_ERRLIST)
+     AC_DEFINE(HAVE_SYS_NERR)
+     ;;
+@@ -607,7 +607,7 @@ if test -z "${setobjs}"; then
+     ac_cv_func_getpagesize=yes
+     ;;
+ 
+-  *-*-mingw32*)
++  *-*-mingw32* | *-*-msys*)
+     # Under mingw32, sys_nerr and sys_errlist exist, but they are
+     # macros, so the test below won't find them.
+     libiberty_cv_var_sys_nerr=yes
+@@ -694,7 +694,7 @@ fi
+ 
+ # Figure out which version of pexecute to use.
+ case "${host}" in
+-     *-*-mingw* | *-*-winnt*)	pexecute=pex-win32  ;;
++     *-*-mingw* | *-*-winnt* | *-*-msys*)	pexecute=pex-win32  ;;
+      *-*-msdosdjgpp*)		pexecute=pex-djgpp  ;;
+      *-*-msdos*)		pexecute=pex-msdos  ;;
+      *)				pexecute=pex-unix   ;;
+diff --git a/libitm/configure b/libitm/configure
+index fb742d79eb1..92513d56218 100644
+--- a/libitm/configure
++++ b/libitm/configure
+@@ -5965,7 +5965,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -9766,7 +9766,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -10197,7 +10197,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -11098,14 +11098,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -11129,7 +11129,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -11760,7 +11760,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -12634,7 +12634,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -12987,7 +12987,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
+         # as there is no search path for DLLs.
+         hardcode_libdir_flag_spec_CXX='-L$libdir'
+@@ -14760,14 +14760,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -14790,7 +14790,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -16075,7 +16075,7 @@ else
+    # Systems known to be in this category are Windows (all variants),
+    # VMS, and Darwin.
+    case "$host_os" in
+-     *vms* | cygwin* | pe | mingw* | darwin* | ultrix* | hpux10* | hpux11.00)
++     *vms* | cygwin* | pe | mingw* | msys* | darwin* | ultrix* | hpux10* | hpux11.00)
+         gcc_cv_func_mmap_dev_zero=no ;;
+      *)
+         gcc_cv_func_mmap_dev_zero=yes;;
+@@ -16132,7 +16132,7 @@ else
+    # above for use of /dev/zero.
+    # Systems known to be in this category are Windows, VMS, and SCO Unix.
+    case "$host_os" in
+-     *vms* | cygwin* | pe | mingw* | sco* | udk* )
++     *vms* | cygwin* | pe | mingw* | msys* | sco* | udk* )
+         gcc_cv_func_mmap_anon=no ;;
+      *)
+         gcc_cv_func_mmap_anon=yes;;
+@@ -16879,7 +16879,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+diff --git a/libobjc/configure b/libobjc/configure
+index ce67738bc5e..f4ce26eb12c 100755
+--- a/libobjc/configure
++++ b/libobjc/configure
+@@ -3385,7 +3385,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
+@@ -3408,7 +3408,7 @@ case "${host}" in
+     # Darwin needs -single_module when linking libobjc
+     extra_ldflags_libobjc='$(lt_host_flags) -Wl,-single_module'
+     ;;
+-  *-cygwin*|*-mingw*)
++  *-cygwin*|*-mingw*|*-*-msys*)
+     # Tell libtool to build DLLs on Windows
+     extra_ldflags_libobjc='$(lt_host_flags)'
+     ;;
+@@ -4608,7 +4608,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -8456,7 +8456,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -8893,7 +8893,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -9797,14 +9797,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -9828,7 +9828,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -10462,7 +10462,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+diff --git a/libobjc/configure.ac b/libobjc/configure.ac
+index a5c082c49cd..3455e7a6b04 100644
+--- a/libobjc/configure.ac
++++ b/libobjc/configure.ac
+@@ -143,7 +143,7 @@ case "${host}" in
+     # Darwin needs -single_module when linking libobjc
+     extra_ldflags_libobjc='$(lt_host_flags) -Wl,-single_module'
+     ;;
+-  *-cygwin*|*-mingw*)
++  *-cygwin*|*-mingw*|*-*-msys*)
+     # Tell libtool to build DLLs on Windows
+     extra_ldflags_libobjc='$(lt_host_flags)'
+     ;;
+diff --git a/liboffloadmic/configure b/liboffloadmic/configure
+index 52b55177990..0bd409b1a42 100644
+--- a/liboffloadmic/configure
++++ b/liboffloadmic/configure
+@@ -5601,7 +5601,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -9132,7 +9132,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -9563,7 +9563,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -10464,14 +10464,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -10495,7 +10495,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -11126,7 +11126,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -12000,7 +12000,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -12353,7 +12353,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
+         # as there is no search path for DLLs.
+         hardcode_libdir_flag_spec_CXX='-L$libdir'
+@@ -14126,14 +14126,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -14156,7 +14156,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+diff --git a/liboffloadmic/plugin/configure b/liboffloadmic/plugin/configure
+index 2ae61621c00..442bbb7ba75 100644
+--- a/liboffloadmic/plugin/configure
++++ b/liboffloadmic/plugin/configure
+@@ -4980,7 +4980,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -8779,7 +8779,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -9210,7 +9210,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -10111,14 +10111,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -10142,7 +10142,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -10773,7 +10773,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -11647,7 +11647,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -12000,7 +12000,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
+         # as there is no search path for DLLs.
+         hardcode_libdir_flag_spec_CXX='-L$libdir'
+@@ -13773,14 +13773,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -13803,7 +13803,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+diff --git a/libquadmath/configure b/libquadmath/configure
+index 5283adbdd63..95b3f7c6e8c 100755
+--- a/libquadmath/configure
++++ b/libquadmath/configure
+@@ -4974,7 +4974,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -8512,7 +8512,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -8949,7 +8949,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -9853,14 +9853,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -9884,7 +9884,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -10518,7 +10518,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -11152,7 +11152,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
+diff --git a/libsanitizer/configure b/libsanitizer/configure
+index 226da62cf5a..fd10ee6a836 100755
+--- a/libsanitizer/configure
++++ b/libsanitizer/configure
+@@ -6532,7 +6532,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -10063,7 +10063,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -10494,7 +10494,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -11395,14 +11395,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -11426,7 +11426,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -12057,7 +12057,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -12931,7 +12931,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -13284,7 +13284,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
+         # as there is no search path for DLLs.
+         hardcode_libdir_flag_spec_CXX='-L$libdir'
+@@ -15057,14 +15057,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -15087,7 +15087,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -16675,7 +16675,7 @@ fi
+ # Check for the fcntl function.
+ if test -n "${with_target_subdir}"; then
+    case "${host}" in
+-   *-*-mingw*) have_fcntl=no ;;
++   *-*-mingw* | *-*-msys*) have_fcntl=no ;;
+    *) have_fcntl=yes ;;
+    esac
+ else
+diff --git a/libsanitizer/configure.ac b/libsanitizer/configure.ac
+index 02c7398fcc6..cfa8cf766b9 100644
+--- a/libsanitizer/configure.ac
++++ b/libsanitizer/configure.ac
+@@ -294,7 +294,7 @@ fi
+ # Check for the fcntl function.
+ if test -n "${with_target_subdir}"; then
+    case "${host}" in
+-   *-*-mingw*) have_fcntl=no ;;
++   *-*-mingw* | *-*-msys*) have_fcntl=no ;;
+    *) have_fcntl=yes ;;
+    esac
+ else
+diff --git a/libssp/configure b/libssp/configure
+index c5738ba7460..9bafcfd3908 100755
+--- a/libssp/configure
++++ b/libssp/configure
+@@ -5156,7 +5156,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -8700,7 +8700,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -9137,7 +9137,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -10041,14 +10041,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -10072,7 +10072,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -10706,7 +10706,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -11340,7 +11340,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
+diff --git a/libstdc++-v3/configure b/libstdc++-v3/configure
+index d2efa8785a4..22ee0be4606 100755
+--- a/libstdc++-v3/configure
++++ b/libstdc++-v3/configure
+@@ -5897,7 +5897,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -9558,7 +9558,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -9995,7 +9995,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -10899,14 +10899,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -10930,7 +10930,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -11564,7 +11564,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -12453,7 +12453,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -12812,7 +12812,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
+         # as there is no search path for DLLs.
+         hardcode_libdir_flag_spec_CXX='-L$libdir'
+@@ -14585,14 +14585,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -14615,7 +14615,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -15223,7 +15223,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
+@@ -22157,7 +22157,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -28509,7 +28509,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by GCC" >&5
+ $as_echo_n "checking for ld used by GCC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+diff --git a/libtool.m4 b/libtool.m4
+index 29c1f920489..c1f06880006 100644
+--- a/libtool.m4
++++ b/libtool.m4
+@@ -1734,7 +1734,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -2210,14 +2210,14 @@ bsdi[[45]]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -2241,7 +2241,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ m4_if([$1], [],[
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"])
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[[.]]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -2847,7 +2847,7 @@ if test "$GCC" = yes; then
+   # Check if gcc -print-prog-name=ld gives a path.
+   AC_MSG_CHECKING([for ld used by $CC])
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -4409,7 +4409,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, $1) is actually meaningless,
+       # as there is no search path for DLLs.
+       _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='-L$libdir'
+@@ -4782,7 +4782,7 @@ _LT_EOF
+       _LT_TAGVAR(export_dynamic_flag_spec, $1)=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -5726,7 +5726,7 @@ if test "$_lt_caught_CXX_error" != yes; then
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, $1) is actually meaningless,
+         # as there is no search path for DLLs.
+         _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='-L$libdir'
+diff --git a/libvtv/configure b/libvtv/configure
+index bfdf34954e4..4f535bf83ee 100755
+--- a/libvtv/configure
++++ b/libvtv/configure
+@@ -6433,7 +6433,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -9964,7 +9964,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -10395,7 +10395,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -11296,14 +11296,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -11327,7 +11327,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -11958,7 +11958,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -12832,7 +12832,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -13185,7 +13185,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+         esac
+         ;;
+ 
+-      cygwin* | mingw* | pw32* | cegcc*)
++      cygwin* | mingw* | msys* | pw32* | cegcc*)
+         # _LT_TAGVAR(hardcode_libdir_flag_spec, CXX) is actually meaningless,
+         # as there is no search path for DLLs.
+         hardcode_libdir_flag_spec_CXX='-L$libdir'
+@@ -14958,14 +14958,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -14988,7 +14988,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+       soname_spec='`echo ${libname} | sed -e 's/^lib/cyg/'``echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+ 
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -15593,7 +15593,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
+diff --git a/lto-plugin/configure b/lto-plugin/configure
+index 8fdcab96d20..66403255b8f 100755
+--- a/lto-plugin/configure
++++ b/lto-plugin/configure
+@@ -5968,7 +5968,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -9500,7 +9500,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -9931,7 +9931,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -10832,14 +10832,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -10863,7 +10863,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -11494,7 +11494,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+@@ -12113,7 +12113,7 @@ CC="$lt_save_CC"
+ 
+ 
+ case $host in
+-  *-cygwin* | *-mingw*)
++  *-cygwin* | *-mingw* | *-msys*)
+     # 'host' will be top-level target in the case of a target lib,
+     # we must compare to with_cross_host to decide if this is a native
+     # or cross-compiler and select where to install dlls appropriately.
+diff --git a/zlib/configure b/zlib/configure
+index 81018feee48..6ec78a78748 100755
+--- a/zlib/configure
++++ b/zlib/configure
+@@ -4544,7 +4544,7 @@ if test "$GCC" = yes; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+   case $host in
+-  *-*-mingw*)
++  *-*-mingw*|*-*-msys*)
+     # gcc leaves a trailing carriage return which upsets mingw
+     ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+   *)
+@@ -8356,7 +8356,7 @@ _LT_EOF
+       fi
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # _LT_TAGVAR(hardcode_libdir_flag_spec, ) is actually meaningless,
+       # as there is no search path for DLLs.
+       hardcode_libdir_flag_spec='-L$libdir'
+@@ -8793,7 +8793,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
+       export_dynamic_flag_spec=-rdynamic
+       ;;
+ 
+-    cygwin* | mingw* | pw32* | cegcc*)
++    cygwin* | mingw* | msys* | pw32* | cegcc*)
+       # When not using gcc, we currently assume that we are using
+       # Microsoft Visual C++.
+       # hardcode_libdir_flag_spec is actually meaningless, as there is
+@@ -9697,14 +9697,14 @@ bsdi[45]*)
+   # libtool to hard-code these into programs
+   ;;
+ 
+-cygwin* | mingw* | pw32* | cegcc*)
++cygwin* | mingw* | msys* | pw32* | cegcc*)
+   version_type=windows
+   shrext_cmds=".dll"
+   need_version=no
+   need_lib_prefix=no
+ 
+   case $GCC,$host_os in
+-  yes,cygwin* | yes,mingw* | yes,pw32* | yes,cegcc*)
++  yes,cygwin* | yes,mingw* | yes,msys* | yes,pw32* | yes,cegcc*)
+     library_names_spec='$libname.dll.a'
+     # DLL is installed to $(libdir)/../bin by postinstall_cmds
+     postinstall_cmds='base_file=`basename \${file}`~
+@@ -9728,7 +9728,7 @@ cygwin* | mingw* | pw32* | cegcc*)
+ 
+       sys_lib_search_path_spec="$sys_lib_search_path_spec /usr/lib/w32api"
+       ;;
+-    mingw* | cegcc*)
++    mingw* | msys* | cegcc*)
+       # MinGW DLLs use traditional 'lib' prefix
+       soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
+       ;;
+@@ -10362,7 +10362,7 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
+-  mingw* | pw32* | cegcc*)
++  mingw* | msys* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+     ;;
+-- 
+2.24.0
+

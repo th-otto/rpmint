@@ -1,0 +1,38 @@
+From ba83ecb5830b46c689ea973a610a59961c1259fd Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 6 Jun 2019 17:28:34 +0200
+Subject: [PATCH] gcc: make xmmintrin header cplusplus compatible [deprecated]
+
+---
+ gcc/config/i386/xmmintrin.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/gcc/config/i386/xmmintrin.h b/gcc/config/i386/xmmintrin.h
+index 58284378514..706850e3f3e 100644
+--- a/gcc/config/i386/xmmintrin.h
++++ b/gcc/config/i386/xmmintrin.h
+@@ -64,6 +64,10 @@ _mm_prefetch (const void *__P, enum _mm_hint __I)
+ #define __DISABLE_SSE__
+ #endif /* __SSE__ */
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
++
+ /* The Intel API is flexible enough that we must allow aliasing with other
+    vector types, and their scalar components.  */
+ typedef float __m128 __attribute__ ((__vector_size__ (16), __may_alias__));
+@@ -1251,6 +1255,10 @@ do {									\
+   (row3) = __builtin_ia32_movhlps (__t3, __t2);				\
+ } while (0)
+ 
++#ifdef __cplusplus
++}
++#endif
++
+ /* For backward source compatibility.  */
+ # include <emmintrin.h>
+ 
+-- 
+2.24.0
+

@@ -1,0 +1,41 @@
+From a1e12649eb1e5c736e7c420ae886cb56f634999d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Vincent=20Rivi=C3=A8re?= <vincent.riviere@freesbee.fr>
+Date: Fri, 30 Oct 2015 12:02:36 +0100
+Subject: [PATCH] Fix compilation with GCC 5.x
+
+---
+ gcc/cp/cfns.gperf | 3 +++
+ gcc/cp/cfns.h     | 3 +++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/gcc/cp/cfns.gperf b/gcc/cp/cfns.gperf
+index ef1ed083d32..83a0957dd08 100644
+--- a/gcc/cp/cfns.gperf
++++ b/gcc/cp/cfns.gperf
+@@ -18,6 +18,9 @@ along with GCC; see the file COPYING3.  If not see
+ <http://www.gnu.org/licenses/>.  */
+ #ifdef __GNUC__
+ __inline
++#ifdef __GNUC_STDC_INLINE__
++__attribute__ ((__gnu_inline__))
++#endif
+ #endif
+ static unsigned int hash (const char *, unsigned int);
+ #ifdef __GNUC__
+diff --git a/gcc/cp/cfns.h b/gcc/cp/cfns.h
+index 62cdfab93aa..2fb9b4632b9 100644
+--- a/gcc/cp/cfns.h
++++ b/gcc/cp/cfns.h
+@@ -53,6 +53,9 @@ __inline
+ static unsigned int hash (const char *, unsigned int);
+ #ifdef __GNUC__
+ __inline
++#ifdef __GNUC_STDC_INLINE__
++__attribute__ ((__gnu_inline__))
++#endif
+ #endif
+ const char * libc_name_p (const char *, unsigned int);
+ /* maximum key range = 391, duplicates = 0 */
+-- 
+2.24.0
+

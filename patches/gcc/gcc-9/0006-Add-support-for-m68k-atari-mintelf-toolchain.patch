@@ -1,0 +1,113 @@
+From 430346214304d9330cda2ae9aabe9485a632f2fa Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 6 Jun 2019 19:18:46 +0200
+Subject: [PATCH] Add support for m68k-atari-mintelf toolchain
+
+---
+ config.sub             |  9 +++++++++
+ gcc/config.gcc         |  9 +++++++++
+ gcc/config/m68k/mint.h | 28 ++++++++++++++++++++++++++++
+ 3 files changed, 46 insertions(+)
+
+diff --git a/config.sub b/config.sub
+index 75bb6a3135b..0c38fbd4e6c 100755
+--- a/config.sub
++++ b/config.sub
+@@ -1332,6 +1332,12 @@ case $os in
+ 	psos*)
+ 		os=psos
+ 		;;
++	mintelf)
++		os=mintelf
++		;;
++	mint | mint[0-9]*)
++		os=mint
++		;;
+ 	# Now accept the basic system types.
+ 	# The portable systems comes first.
+ 	# Each alternative MUST end in a * to match a version number.
+@@ -1481,6 +1487,9 @@ case $os in
+ 	ose*)
+ 		os=ose
+ 		;;
++	*mintelf)
++		os=mintelf
++		;;
+ 	*mint | mint[0-9]* | *MiNT | MiNT[0-9]*)
+ 		os=mint
+ 		;;
+diff --git a/gcc/config.gcc b/gcc/config.gcc
+index c42f183f0ab..2e4d995a55c 100644
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -2132,6 +2132,15 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
+ 	tm_defines="${tm_defines} MOTOROLA=1"
+ 	tmake_file="${tmake_file} m68k/t-floatlib m68k/t-linux m68k/t-mlibs"
+ 	;;
++m68k-*-mintelf*)
++	default_m68k_cpu=68000
++	default_cf_cpu=5475
++	tm_file="${tm_file} dbxelf.h elfos.h m68k/mint.h m68k/mint-stdint.h"
++	tm_defines="${tm_defines} MOTOROLA=1"
++	tmake_file="m68k/t-floatlib m68k/t-mint"
++	gas=yes
++	gnu_ld=yes
++	;;
+ m68k-*-mint*)
+ 	default_m68k_cpu=68000
+ 	default_cf_cpu=5475
+diff --git a/gcc/config/m68k/mint.h b/gcc/config/m68k/mint.h
+index e48fdc036a1..a6ad0f74557 100644
+--- a/gcc/config/m68k/mint.h
++++ b/gcc/config/m68k/mint.h
+@@ -134,9 +134,13 @@ along with GCC; see the file COPYING3.  If not see
+       {							\
+ 	if (ADDRESS_REG_P (operands[0]))		\
+ 	  return "jmp %%pc@(2,%0:l)";			\
++	else if (TARGET_LONG_JUMP_TABLE_OFFSETS)	\
++	  return "jmp %%pc@(2,%0:l)";			\
+ 	else						\
+ 	  return "ext%.l %0\n\tjmp %%pc@(2,%0:l)";	\
+       }							\
++    else if (TARGET_LONG_JUMP_TABLE_OFFSETS)		\
++      return "jmp %%pc@(2,%0:l)";			\
+     else						\
+       return "jmp %%pc@(2,%0:w)";			\
+   } while (0)
+@@ -150,9 +154,33 @@ along with GCC; see the file COPYING3.  If not see
+    assembler operation to identify the following data as uninitialized global
+    data.  */
+ 
++#ifdef USING_ELFOS_H
++#define BSS_SECTION_ASM_OP "\t.section\t.bss"
++
++#define TARGET_HAVE_NAMED_SECTIONS true
++
++/* Currently, JUMP_TABLES_IN_TEXT_SECTION must be defined in order to
++   keep switch tables in the text section.  */
++   
++#define JUMP_TABLES_IN_TEXT_SECTION 1
++
++#define EH_TABLES_CAN_BE_READ_ONLY 1
++
++/*
++ * our object format is elf, but not our executable format
++ */
++#undef HAVE_INITFINI_ARRAY_SUPPORT
++#define HAVE_INITFINI_ARRAY_SUPPORT 0
++
++#undef OBJECT_FORMAT_ELF 
++#undef INIT_SECTION_ASM_OP
++#undef FINI_SECTION_ASM_OP
++
++#else
+ #define BSS_SECTION_ASM_OP "\t.bss"
+ 
+ #define TARGET_HAVE_NAMED_SECTIONS false
++#endif
+ 
+ /* A C statement (sans semicolon) to output to the stdio stream
+    FILE the assembler definition of uninitialized global DECL named
+-- 
+2.24.0
+

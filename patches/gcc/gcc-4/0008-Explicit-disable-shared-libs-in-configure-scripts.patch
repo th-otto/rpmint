@@ -1,0 +1,278 @@
+From 9465984b69d8eb459f1ca480c68562023564645c Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 12 Apr 2019 17:17:34 +0200
+Subject: [PATCH] Explicit disable shared libs in configure scripts
+
+Newer binutils may support building shared libraries-- but not for
+our target platform. The libtool fragments in the configure script(s)
+use a stupid approach of grepping for *any* elf target.
+---
+ boehm-gc/configure          | 4 ++++
+ gcc/configure               | 9 +++++++++
+ libffi/configure            | 4 ++++
+ libgfortran/configure       | 4 ++++
+ libgo/configure             | 4 ++++
+ libgomp/configure           | 4 ++++
+ libjava/classpath/configure | 4 ++++
+ libjava/configure           | 4 ++++
+ libmudflap/configure        | 4 ++++
+ libobjc/configure           | 4 ++++
+ libquadmath/configure       | 4 ++++
+ libssp/configure            | 4 ++++
+ libstdc++-v3/configure      | 9 +++++++++
+ lto-plugin/configure        | 4 ++++
+ zlib/configure              | 4 ++++
+ 15 files changed, 70 insertions(+)
+
+diff --git a/boehm-gc/configure b/boehm-gc/configure
+index 92996f9dc49..fc3118cbfc6 100755
+--- a/boehm-gc/configure
++++ b/boehm-gc/configure
+@@ -9293,6 +9293,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/gcc/configure b/gcc/configure
+index f21de36e0b0..ad548bb9545 100755
+--- a/gcc/configure
++++ b/gcc/configure
+@@ -15455,6 +15455,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+@@ -17269,6 +17273,11 @@ else
+     lt_cv_dlopen_libs=
+     ;;
+ 
++  mint*)
++    lt_cv_dlopen="no"
++    lt_cv_dlopen_libs=
++    ;;
++
+   darwin*)
+   # if libdl is installed we need to link against it
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -ldl" >&5
+diff --git a/libffi/configure b/libffi/configure
+index ffec21ec9d7..6b414a1c9df 100755
+--- a/libffi/configure
++++ b/libffi/configure
+@@ -8696,6 +8696,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/libgfortran/configure b/libgfortran/configure
+index 4f0e5767636..0e0844fbace 100755
+--- a/libgfortran/configure
++++ b/libgfortran/configure
+@@ -10015,6 +10015,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/libgo/configure b/libgo/configure
+index ca3544e5f2b..327881918b4 100644
+--- a/libgo/configure
++++ b/libgo/configure
+@@ -8822,6 +8822,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/libgomp/configure b/libgomp/configure
+index 0dd65c77434..cdaf3720209 100755
+--- a/libgomp/configure
++++ b/libgomp/configure
+@@ -9012,6 +9012,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/libjava/classpath/configure b/libjava/classpath/configure
+index e0962284e72..309fc328cdd 100755
+--- a/libjava/classpath/configure
++++ b/libjava/classpath/configure
+@@ -9714,6 +9714,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/libjava/configure b/libjava/configure
+index bf035eb1e9c..86ff1e7a7f6 100755
+--- a/libjava/configure
++++ b/libjava/configure
+@@ -11249,6 +11249,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/libmudflap/configure b/libmudflap/configure
+index adf55002e68..bf52b149c1c 100755
+--- a/libmudflap/configure
++++ b/libmudflap/configure
+@@ -8513,6 +8513,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/libobjc/configure b/libobjc/configure
+index 24dc36faf20..59e4a5fea2a 100755
+--- a/libobjc/configure
++++ b/libobjc/configure
+@@ -8486,6 +8486,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/libquadmath/configure b/libquadmath/configure
+index 9d979337d18..fc45ba2710c 100755
+--- a/libquadmath/configure
++++ b/libquadmath/configure
+@@ -8410,6 +8410,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/libssp/configure b/libssp/configure
+index b693b539b83..53a3ac87a1b 100755
+--- a/libssp/configure
++++ b/libssp/configure
+@@ -8553,6 +8553,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/libstdc++-v3/configure b/libstdc++-v3/configure
+index 125a7206e31..e9478a0b373 100755
+--- a/libstdc++-v3/configure
++++ b/libstdc++-v3/configure
+@@ -9387,6 +9387,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+@@ -11213,6 +11217,11 @@ else
+     lt_cv_dlopen_libs=
+     ;;
+ 
++  mint*)
++    lt_cv_dlopen="no"
++    lt_cv_dlopen_libs=
++    ;;
++
+   darwin*)
+   # if libdl is installed we need to link against it
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -ldl" >&5
+diff --git a/lto-plugin/configure b/lto-plugin/configure
+index 48b414e99f7..4a4ea507b91 100755
+--- a/lto-plugin/configure
++++ b/lto-plugin/configure
+@@ -8462,6 +8462,10 @@ _LT_EOF
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     *)
+       if $LD --help 2>&1 | $GREP ': supported targets:.* elf' > /dev/null; then
+ 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+diff --git a/zlib/configure b/zlib/configure
+index 263badc4901..b0392e1c5ff 100755
+--- a/zlib/configure
++++ b/zlib/configure
+@@ -8282,6 +8282,10 @@ _LT_EOF
+       esac
+       ;;
+ 
++    mint*)
++      ld_shlibs=no
++      ;;
++
+     sunos4*)
+       archive_cmds='$LD -assert pure-text -Bshareable -o $lib $libobjs $deplibs $linker_flags'
+       wlarc=
+-- 
+2.24.0
+

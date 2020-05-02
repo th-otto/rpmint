@@ -1,0 +1,39 @@
+From 1e78a402b131404d3e73be98fa6c5afe55937596 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 6 Jun 2019 17:39:24 +0200
+Subject: [PATCH] Enable shared gnat implib
+
+Provide GNAT runtime import libraries to
+allow to link against shared runtime
+
+Original commit:
+https://github.com/Alexpux/MINGW-packages/commit/51b4eb3b702fdb38df0460180c2f8209a686aaec
+---
+ gcc/ada/gcc-interface/Makefile.in | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/gcc/ada/gcc-interface/Makefile.in b/gcc/ada/gcc-interface/Makefile.in
+index a0a5bb2415f..fb5dde04927 100644
+--- a/gcc/ada/gcc-interface/Makefile.in
++++ b/gcc/ada/gcc-interface/Makefile.in
+@@ -746,13 +746,16 @@ gnatlib-shared-win32:
+ 		$(PICFLAG_FOR_TARGET) \
+ 		-o libgnat$(hyphen)$(LIBRARY_VERSION)$(soext) \
+ 		$(GNATRTL_NONTASKING_OBJS) $(LIBGNAT_OBJS) \
+-		$(SO_OPTS)libgnat$(hyphen)$(LIBRARY_VERSION)$(soext) $(MISCLIB)
++		$(SO_OPTS)libgnat$(hyphen)$(LIBRARY_VERSION)$(soext) \
++		-Wl,-out-implib,libgnat$(hyphen)$(LIBRARY_VERSION).dll.a \
++		$(MISCLIB)
+ 	cd $(RTSDIR); `echo "$(GCC_FOR_TARGET)" \
+                 | sed -e 's,\./xgcc,../../xgcc,' -e 's,-B\./,-B../../,'` -shared -shared-libgcc \
+ 		$(PICFLAG_FOR_TARGET) \
+ 		-o libgnarl$(hyphen)$(LIBRARY_VERSION)$(soext) \
+ 		$(GNATRTL_TASKING_OBJS) \
+ 		$(SO_OPTS)libgnarl$(hyphen)$(LIBRARY_VERSION)$(soext) \
++		-Wl,-out-implib,libgnarl$(hyphen)$(LIBRARY_VERSION).dll.a \
+ 		$(THREADSLIB) -Wl,libgnat$(hyphen)$(LIBRARY_VERSION)$(soext)
+ 
+ gnatlib-shared-darwin:
+-- 
+2.24.0
+

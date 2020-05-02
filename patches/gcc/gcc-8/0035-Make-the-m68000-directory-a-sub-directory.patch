@@ -1,0 +1,34 @@
+From 0dd58e9a8b081633f04d136c501fb8c87466ac01 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 25 Feb 2019 03:18:18 +0100
+Subject: [PATCH] Make the m68000 directory a sub-directory
+
+---
+ gcc/config/m68k/t-mint | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/gcc/config/m68k/t-mint b/gcc/config/m68k/t-mint
+index 24f3278f508..dbc2491ebf1 100644
+--- a/gcc/config/m68k/t-mint
++++ b/gcc/config/m68k/t-mint
+@@ -21,11 +21,15 @@ ifeq ($(filter m$(M68K_MLIB_DEFAULT),$(M68K_MLIB_CPUS)),)
+ $(error Error default cpu '$(target_cpu_default)' is not in multilib set '$(M68K_MLIB_CPUS)')
+ endif
+ 
+-MULTILIB_OPTIONS = m68020-60/mcpu=5475 mshort
++MULTILIB_OPTIONS = m68000/m68020-60/mcpu=5475 mshort
+ 
+-MULTILIB_DIRNAMES = m68020-60 m5475 mshort
++MULTILIB_DIRNAMES = m68000 m68020-60 m5475 mshort
+ 
+ MULTILIB_MATCHES = \
++	m68000=m68000 \
++	m68000=mc68000 \
++	m68000=mcpu?68000 \
++	m68000=march?68000 \
+ 	m68020-60=m68881 \
+ 	m68020-60=m68020 \
+ 	m68020-60=m68020-40 \
+-- 
+2.24.0
+

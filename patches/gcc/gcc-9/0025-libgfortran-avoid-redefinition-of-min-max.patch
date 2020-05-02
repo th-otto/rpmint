@@ -1,0 +1,956 @@
+From be2ac3b3d94ea2e4de70f2b050a3c9cdca47672d Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 6 Jun 2019 18:31:34 +0200
+Subject: [PATCH] libgfortran: avoid redefinition of min/max
+
+---
+ libgfortran/generated/matmul_c10.c       | 10 ++++++++++
+ libgfortran/generated/matmul_c16.c       | 10 ++++++++++
+ libgfortran/generated/matmul_c4.c        | 10 ++++++++++
+ libgfortran/generated/matmul_c8.c        | 10 ++++++++++
+ libgfortran/generated/matmul_i1.c        | 10 ++++++++++
+ libgfortran/generated/matmul_i16.c       |  6 ++++++
+ libgfortran/generated/matmul_i2.c        | 10 ++++++++++
+ libgfortran/generated/matmul_i4.c        | 10 ++++++++++
+ libgfortran/generated/matmul_i8.c        | 10 ++++++++++
+ libgfortran/generated/matmul_r10.c       | 10 ++++++++++
+ libgfortran/generated/matmul_r16.c       | 10 ++++++++++
+ libgfortran/generated/matmul_r4.c        | 10 ++++++++++
+ libgfortran/generated/matmul_r8.c        | 10 ++++++++++
+ libgfortran/generated/matmulavx128_c10.c |  4 ++++
+ libgfortran/generated/matmulavx128_c16.c |  4 ++++
+ libgfortran/generated/matmulavx128_c4.c  |  4 ++++
+ libgfortran/generated/matmulavx128_c8.c  |  4 ++++
+ libgfortran/generated/matmulavx128_i1.c  |  4 ++++
+ libgfortran/generated/matmulavx128_i16.c |  4 ++++
+ libgfortran/generated/matmulavx128_i2.c  |  4 ++++
+ libgfortran/generated/matmulavx128_i4.c  |  4 ++++
+ libgfortran/generated/matmulavx128_i8.c  |  4 ++++
+ libgfortran/generated/matmulavx128_r10.c |  4 ++++
+ libgfortran/generated/matmulavx128_r16.c |  4 ++++
+ libgfortran/generated/matmulavx128_r4.c  |  4 ++++
+ libgfortran/generated/matmulavx128_r8.c  |  4 ++++
+ libgfortran/m4/matmul_internal.m4        |  2 ++
+ 27 files changed, 180 insertions(+)
+
+diff --git a/libgfortran/generated/matmul_c10.c b/libgfortran/generated/matmul_c10.c
+index bd2763f4b31..6af7b191b25 100644
+--- a/libgfortran/generated/matmul_c10.c
++++ b/libgfortran/generated/matmul_c10.c
+@@ -242,6 +242,8 @@ matmul_c10_avx (gfc_array_c10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_c10_avx2 (gfc_array_c10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_c10_avx512f (gfc_array_c10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_c10_vanilla (gfc_array_c10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_c10 (gfc_array_c10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_c16.c b/libgfortran/generated/matmul_c16.c
+index 98acaa70a67..503c26821cc 100644
+--- a/libgfortran/generated/matmul_c16.c
++++ b/libgfortran/generated/matmul_c16.c
+@@ -242,6 +242,8 @@ matmul_c16_avx (gfc_array_c16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_c16_avx2 (gfc_array_c16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_c16_avx512f (gfc_array_c16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_c16_vanilla (gfc_array_c16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_c16 (gfc_array_c16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_c4.c b/libgfortran/generated/matmul_c4.c
+index f88d09cb365..76b51b502b5 100644
+--- a/libgfortran/generated/matmul_c4.c
++++ b/libgfortran/generated/matmul_c4.c
+@@ -242,6 +242,8 @@ matmul_c4_avx (gfc_array_c4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_c4_avx2 (gfc_array_c4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_c4_avx512f (gfc_array_c4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_c4_vanilla (gfc_array_c4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_c4 (gfc_array_c4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_c8.c b/libgfortran/generated/matmul_c8.c
+index 3c9cf1c6ead..055bae84724 100644
+--- a/libgfortran/generated/matmul_c8.c
++++ b/libgfortran/generated/matmul_c8.c
+@@ -242,6 +242,8 @@ matmul_c8_avx (gfc_array_c8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_c8_avx2 (gfc_array_c8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_c8_avx512f (gfc_array_c8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_c8_vanilla (gfc_array_c8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_c8 (gfc_array_c8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_i1.c b/libgfortran/generated/matmul_i1.c
+index e3f40c7baa9..6bf57a94d7b 100644
+--- a/libgfortran/generated/matmul_i1.c
++++ b/libgfortran/generated/matmul_i1.c
+@@ -242,6 +242,8 @@ matmul_i1_avx (gfc_array_i1 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_i1_avx2 (gfc_array_i1 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_i1_avx512f (gfc_array_i1 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_i1_vanilla (gfc_array_i1 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_i1 (gfc_array_i1 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_i16.c b/libgfortran/generated/matmul_i16.c
+index 3189a018452..76d23edce1a 100644
+--- a/libgfortran/generated/matmul_i16.c
++++ b/libgfortran/generated/matmul_i16.c
+@@ -242,6 +242,8 @@ matmul_i16_avx (gfc_array_i16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_i16_avx2 (gfc_array_i16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_i16_avx512f (gfc_array_i16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_i2.c b/libgfortran/generated/matmul_i2.c
+index e480b9092ca..61455a2728d 100644
+--- a/libgfortran/generated/matmul_i2.c
++++ b/libgfortran/generated/matmul_i2.c
+@@ -242,6 +242,8 @@ matmul_i2_avx (gfc_array_i2 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_i2_avx2 (gfc_array_i2 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_i2_avx512f (gfc_array_i2 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_i2_vanilla (gfc_array_i2 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_i2 (gfc_array_i2 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_i4.c b/libgfortran/generated/matmul_i4.c
+index ab532be7fb3..43d3ca93d41 100644
+--- a/libgfortran/generated/matmul_i4.c
++++ b/libgfortran/generated/matmul_i4.c
+@@ -242,6 +242,8 @@ matmul_i4_avx (gfc_array_i4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_i4_avx2 (gfc_array_i4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_i4_avx512f (gfc_array_i4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_i4_vanilla (gfc_array_i4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_i4 (gfc_array_i4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_i8.c b/libgfortran/generated/matmul_i8.c
+index 78d5af209e3..8e93ff0031b 100644
+--- a/libgfortran/generated/matmul_i8.c
++++ b/libgfortran/generated/matmul_i8.c
+@@ -242,6 +242,8 @@ matmul_i8_avx (gfc_array_i8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_i8_avx2 (gfc_array_i8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_i8_avx512f (gfc_array_i8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_i8_vanilla (gfc_array_i8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_i8 (gfc_array_i8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_r10.c b/libgfortran/generated/matmul_r10.c
+index 8304a97f1c5..e1936a932d4 100644
+--- a/libgfortran/generated/matmul_r10.c
++++ b/libgfortran/generated/matmul_r10.c
+@@ -242,6 +242,8 @@ matmul_r10_avx (gfc_array_r10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_r10_avx2 (gfc_array_r10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_r10_avx512f (gfc_array_r10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_r10_vanilla (gfc_array_r10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_r10 (gfc_array_r10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_r16.c b/libgfortran/generated/matmul_r16.c
+index 48730af542c..0801dd4e210 100644
+--- a/libgfortran/generated/matmul_r16.c
++++ b/libgfortran/generated/matmul_r16.c
+@@ -242,6 +242,8 @@ matmul_r16_avx (gfc_array_r16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_r16_avx2 (gfc_array_r16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_r16_avx512f (gfc_array_r16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_r16_vanilla (gfc_array_r16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_r16 (gfc_array_r16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_r4.c b/libgfortran/generated/matmul_r4.c
+index 17f7cea6821..30031bd94ae 100644
+--- a/libgfortran/generated/matmul_r4.c
++++ b/libgfortran/generated/matmul_r4.c
+@@ -242,6 +242,8 @@ matmul_r4_avx (gfc_array_r4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_r4_avx2 (gfc_array_r4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_r4_avx512f (gfc_array_r4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_r4_vanilla (gfc_array_r4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_r4 (gfc_array_r4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmul_r8.c b/libgfortran/generated/matmul_r8.c
+index 70adc4e8417..69d7d8a9af7 100644
+--- a/libgfortran/generated/matmul_r8.c
++++ b/libgfortran/generated/matmul_r8.c
+@@ -242,6 +242,8 @@ matmul_r8_avx (gfc_array_r8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -810,6 +812,8 @@ matmul_r8_avx2 (gfc_array_r8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1378,6 +1382,8 @@ matmul_r8_avx512f (gfc_array_r8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -1960,6 +1966,8 @@ matmul_r8_vanilla (gfc_array_r8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -2602,6 +2610,8 @@ matmul_r8 (gfc_array_r8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_c10.c b/libgfortran/generated/matmulavx128_c10.c
+index 58520e19282..184e41c3115 100644
+--- a/libgfortran/generated/matmulavx128_c10.c
++++ b/libgfortran/generated/matmulavx128_c10.c
+@@ -207,6 +207,8 @@ matmul_c10_avx128_fma3 (gfc_array_c10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_c10_avx128_fma4 (gfc_array_c10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_c16.c b/libgfortran/generated/matmulavx128_c16.c
+index 0ec72450d1b..92591188326 100644
+--- a/libgfortran/generated/matmulavx128_c16.c
++++ b/libgfortran/generated/matmulavx128_c16.c
+@@ -207,6 +207,8 @@ matmul_c16_avx128_fma3 (gfc_array_c16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_c16_avx128_fma4 (gfc_array_c16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_c4.c b/libgfortran/generated/matmulavx128_c4.c
+index cd97bf3e375..11cca25ae71 100644
+--- a/libgfortran/generated/matmulavx128_c4.c
++++ b/libgfortran/generated/matmulavx128_c4.c
+@@ -207,6 +207,8 @@ matmul_c4_avx128_fma3 (gfc_array_c4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_c4_avx128_fma4 (gfc_array_c4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_c8.c b/libgfortran/generated/matmulavx128_c8.c
+index 8d770c02251..3c6c8c9f76d 100644
+--- a/libgfortran/generated/matmulavx128_c8.c
++++ b/libgfortran/generated/matmulavx128_c8.c
+@@ -207,6 +207,8 @@ matmul_c8_avx128_fma3 (gfc_array_c8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_c8_avx128_fma4 (gfc_array_c8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_i1.c b/libgfortran/generated/matmulavx128_i1.c
+index 16d5ec2781b..57a74c30bd0 100644
+--- a/libgfortran/generated/matmulavx128_i1.c
++++ b/libgfortran/generated/matmulavx128_i1.c
+@@ -207,6 +207,8 @@ matmul_i1_avx128_fma3 (gfc_array_i1 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_i1_avx128_fma4 (gfc_array_i1 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_i16.c b/libgfortran/generated/matmulavx128_i16.c
+index 26c2a75b905..23a9359b4ba 100644
+--- a/libgfortran/generated/matmulavx128_i16.c
++++ b/libgfortran/generated/matmulavx128_i16.c
+@@ -207,6 +207,8 @@ matmul_i16_avx128_fma3 (gfc_array_i16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_i16_avx128_fma4 (gfc_array_i16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_i2.c b/libgfortran/generated/matmulavx128_i2.c
+index 13e5fd46275..b62cf01986c 100644
+--- a/libgfortran/generated/matmulavx128_i2.c
++++ b/libgfortran/generated/matmulavx128_i2.c
+@@ -207,6 +207,8 @@ matmul_i2_avx128_fma3 (gfc_array_i2 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_i2_avx128_fma4 (gfc_array_i2 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_i4.c b/libgfortran/generated/matmulavx128_i4.c
+index 1e8a3253b8e..50123a1cacf 100644
+--- a/libgfortran/generated/matmulavx128_i4.c
++++ b/libgfortran/generated/matmulavx128_i4.c
+@@ -207,6 +207,8 @@ matmul_i4_avx128_fma3 (gfc_array_i4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_i4_avx128_fma4 (gfc_array_i4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_i8.c b/libgfortran/generated/matmulavx128_i8.c
+index 2b6256f821b..06d11efd687 100644
+--- a/libgfortran/generated/matmulavx128_i8.c
++++ b/libgfortran/generated/matmulavx128_i8.c
+@@ -207,6 +207,8 @@ matmul_i8_avx128_fma3 (gfc_array_i8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_i8_avx128_fma4 (gfc_array_i8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_r10.c b/libgfortran/generated/matmulavx128_r10.c
+index d1c12a0f0c9..a5a66da0069 100644
+--- a/libgfortran/generated/matmulavx128_r10.c
++++ b/libgfortran/generated/matmulavx128_r10.c
+@@ -207,6 +207,8 @@ matmul_r10_avx128_fma3 (gfc_array_r10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_r10_avx128_fma4 (gfc_array_r10 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_r16.c b/libgfortran/generated/matmulavx128_r16.c
+index 750f79d4e6f..1a7b70e7831 100644
+--- a/libgfortran/generated/matmulavx128_r16.c
++++ b/libgfortran/generated/matmulavx128_r16.c
+@@ -207,6 +207,8 @@ matmul_r16_avx128_fma3 (gfc_array_r16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_r16_avx128_fma4 (gfc_array_r16 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_r4.c b/libgfortran/generated/matmulavx128_r4.c
+index a3af0c5bfb3..82be01b7983 100644
+--- a/libgfortran/generated/matmulavx128_r4.c
++++ b/libgfortran/generated/matmulavx128_r4.c
+@@ -207,6 +207,8 @@ matmul_r4_avx128_fma3 (gfc_array_r4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_r4_avx128_fma4 (gfc_array_r4 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/generated/matmulavx128_r8.c b/libgfortran/generated/matmulavx128_r8.c
+index 42eba2116a4..c67ee03579d 100644
+--- a/libgfortran/generated/matmulavx128_r8.c
++++ b/libgfortran/generated/matmulavx128_r8.c
+@@ -207,6 +207,8 @@ matmul_r8_avx128_fma3 (gfc_array_r8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+@@ -776,6 +778,8 @@ matmul_r8_avx128_fma4 (gfc_array_r8 * const restrict retarray,
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+diff --git a/libgfortran/m4/matmul_internal.m4 b/libgfortran/m4/matmul_internal.m4
+index 32a1e01e12f..89f7396c8ed 100644
+--- a/libgfortran/m4/matmul_internal.m4
++++ b/libgfortran/m4/matmul_internal.m4
+@@ -158,6 +158,8 @@ sinclude(`matmul_asm_'rtype_code`.m4')dnl
+      itself.  */
+ 
+ #define POW3(x) (((float) (x)) * ((float) (x)) * ((float) (x)))
++#undef min
++#undef max
+ #define min(a,b) ((a) <= (b) ? (a) : (b))
+ #define max(a,b) ((a) >= (b) ? (a) : (b))
+ 
+-- 
+2.24.0
+

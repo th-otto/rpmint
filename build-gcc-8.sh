@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-8.3.0
-VERSIONPATCH=-20190223
+VERSION=-8.4.1
+VERSIONPATCH=-20200501
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -26,14 +26,18 @@ TARGET=${1:-m68k-atari-mint}
 #
 TAR=${TAR-tar}
 TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
+GCC=${GCC-gcc}
+GXX=${GXX-g++}
 case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
 	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
-	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
-	MSYS*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
-	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
+	MINGW*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
+	MSYS*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
+	CYGWIN*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
-	*) host=linux ;;
+	*) host=linux64
+	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=linux32; fi
+	   ;;
 esac
 case $host in
 	mingw* | msys*) PREFIX=${MINGW_PREFIX} ;;
@@ -87,7 +91,11 @@ DIST_DIR="$here/pkgs"
 # Where to look up the source tree.
 #
 srcdir="$HOME/m68k-atari-mint-gcc"
-srcdir="$here/${PACKAGENAME}${VERSION}"
+if test -d "$srcdir"; then
+	touch ".patched-${PACKAGENAME}${VERSION}"
+else
+	srcdir="$here/${PACKAGENAME}${VERSION}"
+fi
 
 #
 # whether to include the fortran backend
@@ -97,8 +105,8 @@ with_fortran=true
 #
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
-# - checking out the gcc-8-mint branch
-# - running git diff gcc-8_3_0-release HEAD
+# - checking out the mint/gcc-8 branch
+# - running git diff releases/gcc-8.4.1 HEAD
 #
 # when a new GCC is released:
 #   cd <directory where m68k-atari-mint-gcc.git> has been cloned
@@ -110,8 +118,8 @@ with_fortran=true
 #      git fetch --all
 #      git push --tags
 #   merge new release into our branch:
-#      git checkout gcc-8-mint
-#      git merge gcc-8_3_0-release (& commit)
+#      git checkout mint/gcc-8
+#      git merge releases/gcc-8.4.1 (& commit)
 #      git push
 #
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
@@ -250,8 +258,8 @@ mpfr_config=
 
 case $host in
 	macos*)
-		export CC=/usr/bin/clang
-		export CXX=/usr/bin/clang++
+		GCC=/usr/bin/clang
+		GXX=/usr/bin/clang++
 		export MACOSX_DEPLOYMENT_TARGET=10.6
 		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
 		CXXFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
@@ -265,6 +273,9 @@ case $BUILD in
 		mpfr_config="--with-mpc=${MINGW_PREFIX} --with-gmp=${MINGW_PREFIX} --with-mpfr=${MINGW_PREFIX}"
 		;;
 esac
+
+export CC="${GCC}"
+export CXX="${GXX}"
 
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
@@ -307,6 +318,15 @@ $srcdir/configure \
 	$mpfr_config \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
 	--enable-languages="$languages"
+
+case $host in
+	linux32)
+		# make sure to pick up the just-compiled 32bit version of ld, not
+		# some previous 64bit version
+		sed -i "s|S\[\"build_tooldir\"\]=.*|S[\"build_tooldir\"]=\"${PKG_DIR}${PREFIX}/${TARGET}\"|" config.status
+		./config.status
+		;;
+esac
 
 ${MAKE} $JOBS all-gcc || exit 1
 ${MAKE} $JOBS all-target-libgcc || exit 1

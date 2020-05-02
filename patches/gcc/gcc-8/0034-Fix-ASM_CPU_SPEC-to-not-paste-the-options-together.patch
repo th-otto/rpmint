@@ -1,0 +1,27 @@
+From 6fc242c96ecbcc2101abaed8a4dd740107b82fbb Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sun, 24 Feb 2019 16:17:48 +0100
+Subject: [PATCH] Fix ASM_CPU_SPEC to not paste the options together
+
+---
+ gcc/config/m68k/m68k.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gcc/config/m68k/m68k.h b/gcc/config/m68k/m68k.h
+index d425765404e..955e7da3002 100644
+--- a/gcc/config/m68k/m68k.h
++++ b/gcc/config/m68k/m68k.h
+@@ -37,8 +37,8 @@ along with GCC; see the file COPYING3.  If not see
+ 
+ #define ASM_CPU_SPEC "\
+ %{m68851}%{mno-68851} %{m68881}%{mno-68881} %{msoft-float:-mno-float} \
+-%{m68020-40:-m68040}%{m68020-60:-m68040}\
+-%{mcpu=*:-mcpu=%*}%{march=*:-march=%*}\
++%{m68020-40:-m68040} %{m68020-60:-m68040} \
++%{mcpu=*:-mcpu=%*} %{march=*:-march=%*}\
+ "
+ #define ASM_PCREL_SPEC "%{" FPIE_OR_FPIC_SPEC ":--pcrel} \
+  %{mpcrel:%{" NO_FPIE_AND_FPIC_SPEC ":--pcrel}} \
+-- 
+2.24.0
+

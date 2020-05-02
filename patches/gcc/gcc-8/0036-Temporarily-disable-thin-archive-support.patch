@@ -1,0 +1,39 @@
+From 26f35af2138a209c3439631d96a056b4269a46a8 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Tue, 26 Feb 2019 01:27:04 +0100
+Subject: [PATCH] Temporarily disable thin archive support
+
+---
+ gcc/configure    | 2 +-
+ gcc/configure.ac | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gcc/configure b/gcc/configure
+index ef062139c66..dc2c7e54f8e 100755
+--- a/gcc/configure
++++ b/gcc/configure
+@@ -28286,7 +28286,7 @@ if ($AR --version | sed 1q | grep "GNU ar" \
+     && $CC $CFLAGS -c conftest.c \
+     && $AR rcT conftest.a conftest.o \
+     && $CC $CFLAGS $LDFLAGS -o conftest conftest.a) >/dev/null 2>&1; then
+-  thin_archive_support=yes
++  thin_archive_support=no
+ fi
+ rm -f conftest.c conftest.o conftest.a conftest
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $thin_archive_support" >&5
+diff --git a/gcc/configure.ac b/gcc/configure.ac
+index b066cc609e1..abad178a708 100644
+--- a/gcc/configure.ac
++++ b/gcc/configure.ac
+@@ -5106,7 +5106,7 @@ if ($AR --version | sed 1q | grep "GNU ar" \
+     && $CC $CFLAGS -c conftest.c \
+     && $AR rcT conftest.a conftest.o \
+     && $CC $CFLAGS $LDFLAGS -o conftest conftest.a) >/dev/null 2>&1; then
+-  thin_archive_support=yes
++  thin_archive_support=no
+ fi
+ rm -f conftest.c conftest.o conftest.a conftest
+ AC_MSG_RESULT($thin_archive_support)
+-- 
+2.24.0
+

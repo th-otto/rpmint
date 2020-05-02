@@ -1,0 +1,46 @@
+From 5a10f9ea88cbb4bf4b52c45c05b0c027d27a5125 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Tue, 10 Apr 2018 12:04:08 +0200
+Subject: [PATCH] Warn about for loop initial declarations when requested in
+ c99 mode
+
+---
+ gcc/c/c-decl.c | 7 +++++++
+ libcpp/macro.c | 3 ++-
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/gcc/c/c-decl.c b/gcc/c/c-decl.c
+index ed609d29f96..4fe9416fb69 100644
+--- a/gcc/c/c-decl.c
++++ b/gcc/c/c-decl.c
+@@ -9443,6 +9443,13 @@ check_for_loop_decls (location_t loc, bool turn_off_iso_c99_error)
+ 	}
+       return NULL_TREE;
+     }
++  if (warn_c90_c99_compat > 0)
++  {
++	warning_at (loc, OPT_Wc90_c99_compat,
++	   "%<for%> loop initial declarations "
++		"are only allowed in C99 or C11 mode");
++    
++  }
+   /* C99 subclause 6.8.5 paragraph 3:
+ 
+        [#3]  The  declaration  part  of  a for statement shall only
+diff --git a/libcpp/macro.c b/libcpp/macro.c
+index de18c2210cf..daf5b64bad7 100644
+--- a/libcpp/macro.c
++++ b/libcpp/macro.c
+@@ -2918,7 +2918,8 @@ parse_params (cpp_reader *pfile, cpp_macro *macro)
+ 			"anonymous variadic macros were introduced in C99");
+ 		}
+ 	      else if (CPP_OPTION (pfile, cpp_warn_c90_c99_compat) > 0
+-		       && ! CPP_OPTION (pfile, cplusplus))
++		       && ! CPP_OPTION (pfile, cplusplus)
++		  && CPP_OPTION (pfile, warn_variadic_macros))
+ 		cpp_error (pfile, CPP_DL_WARNING,
+ 			   "anonymous variadic macros were introduced in C99");
+ 	    }
+-- 
+2.24.0
+

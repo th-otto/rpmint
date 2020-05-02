@@ -1,0 +1,29 @@
+From 9daf7f7007ba4f7a640202ebe4e92e7d7c4ae058 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 8 Nov 2018 04:56:39 +0100
+Subject: [PATCH] Remove override of STRICT_ALIGNMENT in mint patch, this
+ causes code for compiled for m68000 to access odd addresses
+
+---
+ gcc/config/m68k/mint.h | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/gcc/config/m68k/mint.h b/gcc/config/m68k/mint.h
+index ee6f56b4200..e873e17d30e 100644
+--- a/gcc/config/m68k/mint.h
++++ b/gcc/config/m68k/mint.h
+@@ -19,11 +19,6 @@ You should have received a copy of the GNU General Public License
+ along with GCC; see the file COPYING3.  If not see
+ <http://www.gnu.org/licenses/>.  */
+ 
+-/* for 68k machines this only needs to be TRUE for the 68000 */
+-
+-#undef STRICT_ALIGNMENT
+-#define STRICT_ALIGNMENT 0
+-
+ /* Here are four prefixes that are used by asm_fprintf to
+    facilitate customization for alternate assembler syntaxes.
+    Machines with no likelihood of an alternate syntax need not
+-- 
+2.24.0
+

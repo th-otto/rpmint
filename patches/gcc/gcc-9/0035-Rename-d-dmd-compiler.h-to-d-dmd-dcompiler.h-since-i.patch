@@ -1,0 +1,46 @@
+From 9b6270135ebfea10fbe692809dff294ecb0abd21 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 10 Jun 2019 07:34:50 +0200
+Subject: [PATCH] Rename d/dmd/compiler.h to d/dmd/dcompiler.h since it clashes
+ with mintlib
+
+---
+ gcc/d/d-frontend.cc                   | 2 +-
+ gcc/d/dmd/{compiler.h => dcompiler.h} | 0
+ gcc/d/dmd/globals.h                   | 2 +-
+ 3 files changed, 2 insertions(+), 2 deletions(-)
+ rename gcc/d/dmd/{compiler.h => dcompiler.h} (100%)
+
+diff --git a/gcc/d/d-frontend.cc b/gcc/d/d-frontend.cc
+index ccd5f50130f..7b82ec51625 100644
+--- a/gcc/d/d-frontend.cc
++++ b/gcc/d/d-frontend.cc
+@@ -20,7 +20,7 @@ along with GCC; see the file COPYING3.  If not see
+ #include "coretypes.h"
+ 
+ #include "dmd/aggregate.h"
+-#include "dmd/compiler.h"
++#include "dmd/dcompiler.h"
+ #include "dmd/declaration.h"
+ #include "dmd/errors.h"
+ #include "dmd/expression.h"
+diff --git a/gcc/d/dmd/compiler.h b/gcc/d/dmd/dcompiler.h
+similarity index 100%
+rename from gcc/d/dmd/compiler.h
+rename to gcc/d/dmd/dcompiler.h
+diff --git a/gcc/d/dmd/globals.h b/gcc/d/dmd/globals.h
+index 1094679b837..3b32652dc9e 100644
+--- a/gcc/d/dmd/globals.h
++++ b/gcc/d/dmd/globals.h
+@@ -14,7 +14,7 @@
+ #include "root/ctfloat.h"
+ #include "root/outbuffer.h"
+ #include "root/filename.h"
+-#include "compiler.h"
++#include "dcompiler.h"
+ 
+ // Can't include arraytypes.h here, need to declare these directly.
+ template <typename TYPE> struct Array;
+-- 
+2.24.0
+

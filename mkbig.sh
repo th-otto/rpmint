@@ -1,20 +1,20 @@
 #!/bin/sh
 
 downloads=$HOME/webgo24/home/www/download/mint
-date=20200102
+date=20200501
 here=`pwd`
 
 TAR=${TAR-tar}
 TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
 
-for sys in cygwin32 cygwin64 mingw32 linux macos; do
+for sys in cygwin32 cygwin64 mingw32 linux32 linux64 macos; do
 	d=`mktemp -d`
 	for pkg in "gcc-4.6.4-mint-*-bin-$sys.tar.xz" \
-		"binutils-2.33.1-mint-*-bin-$sys.tar.xz" \
-		"binutils-2.33.1-mintelf-*-bin-$sys.tar.xz" \
+		"binutils-2.34-mint-*-bin-$sys.tar.xz" \
+		"binutils-2.34-mintelf-*-bin-$sys.tar.xz" \
 		"mintbin-*-mint-*-bin-$sys.tar.xz" \
-		"gcc-9.2.0-mint-*-bin-$sys.tar.xz" \
-		"gcc-9.2.0-mintelf-*-bin-$sys.tar.xz" \
+		"gcc-9.3.1-mint-*-bin-$sys.tar.xz" \
+		"gcc-9.3.1-mintelf-*-bin-$sys.tar.xz" \
 		"gemlib-*-mint-*-dev.tar.xz" \
 		"gemlib-*-mintelf-*-dev.tar.xz" \
 		"mintlib-*-mint-*-dev.tar.xz" \

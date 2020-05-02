@@ -1,0 +1,1673 @@
+From 93d506b35328becd6b1099168337ae28f8613dbf Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sun, 7 May 2017 00:57:01 +0200
+Subject: [PATCH] Add support for m68k-atari-mint target
+
+---
+ config-ml.in                                  |  17 ++
+ config.guess                                  |  12 +-
+ config/picflag.m4                             |   2 +
+ configure                                     |   6 +
+ configure.ac                                  |   6 +
+ gcc/config.gcc                                |   9 +
+ gcc/config/m68k/m68k.c                        |   1 +
+ gcc/config/m68k/m68k.h                        |   5 +-
+ gcc/config/m68k/math-68881.h                  |  75 +++---
+ gcc/config/m68k/mint.h                        | 193 ++++++++++++++
+ gcc/config/m68k/t-mint                        |  59 +++++
+ gcc/configure                                 |   4 +
+ gcc/symtab.c                                  |   2 +-
+ libdecnumber/decNumberLocal.h                 |   2 +-
+ libffi/configure                              |   6 +
+ libgcc/config.host                            |   3 +
+ libgcc/config/m68k/lb1sf68.S                  |   4 +
+ libgfortran/configure                         |   6 +
+ libgomp/configure                             |   6 +
+ libiberty/configure                           |   4 +-
+ libiberty/configure.ac                        |   2 +-
+ libiberty/hex.c                               |   2 +-
+ libiberty/safe-ctype.c                        |   2 +-
+ libobjc/configure                             |   6 +
+ libssp/configure                              |   6 +
+ libssp/ssp.c                                  |  10 +
+ libstdc++-v3/config/os/mint/ctype_base.h      |  67 +++++
+ .../config/os/mint/ctype_configure_char.cc    | 243 ++++++++++++++++++
+ libstdc++-v3/config/os/mint/ctype_inline.h    | 166 ++++++++++++
+ libstdc++-v3/config/os/mint/os_defines.h      |  36 +++
+ libstdc++-v3/configure                        |   8 +-
+ libstdc++-v3/configure.host                   |   4 +
+ libstdc++-v3/crossconfig.m4                   |   2 +-
+ libtool.m4                                    |   6 +
+ zlib/configure                                |   6 +
+ 35 files changed, 941 insertions(+), 47 deletions(-)
+ create mode 100644 gcc/config/m68k/mint.h
+ create mode 100644 gcc/config/m68k/t-mint
+ create mode 100644 libstdc++-v3/config/os/mint/ctype_base.h
+ create mode 100644 libstdc++-v3/config/os/mint/ctype_configure_char.cc
+ create mode 100644 libstdc++-v3/config/os/mint/ctype_inline.h
+ create mode 100644 libstdc++-v3/config/os/mint/os_defines.h
+
+diff --git a/config-ml.in b/config-ml.in
+index 47f153350e4..a61d1f41b3d 100644
+--- a/config-ml.in
++++ b/config-ml.in
+@@ -346,6 +346,23 @@ m68*-*-*)
+ 	    esac
+ 	  done
+ 	fi
++	case "${host}" in
++	  *-*-mint*)
++	    case "${srcdir}" in
++	      */libgcc ) : ;;
++	      *)
++	        old_multidirs="${multidirs}"
++	        multidirs=""
++	        for x in ${old_multidirs}; do
++		  case "$x" in
++		    *mshort ) : ;;
++		    *) multidirs="${multidirs} ${x}" ;;
++		  esac
++		done
++		;;
++	    esac
++	    ;;
++	esac
+ 	;;
+ mips*-*-*)
+ 	if [ x$enable_single_float = xno ]
+diff --git a/config.guess b/config.guess
+index 588fe82a42a..d8edbdcce50 100755
+--- a/config.guess
++++ b/config.guess
+@@ -439,22 +439,22 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
+     # MiNT.  But MiNT is downward compatible to TOS, so this should
+     # be no problem.
+     atarist[e]:*MiNT:*:* | atarist[e]:*mint:*:* | atarist[e]:*TOS:*:*)
+-	echo m68k-atari-mint${UNAME_RELEASE}
++	echo m68k-atari-mint
+ 	exit ;;
+     atari*:*MiNT:*:* | atari*:*mint:*:* | atarist[e]:*TOS:*:*)
+-	echo m68k-atari-mint${UNAME_RELEASE}
++	echo m68k-atari-mint
+ 	exit ;;
+     *falcon*:*MiNT:*:* | *falcon*:*mint:*:* | *falcon*:*TOS:*:*)
+-	echo m68k-atari-mint${UNAME_RELEASE}
++	echo m68k-atari-mint
+ 	exit ;;
+     milan*:*MiNT:*:* | milan*:*mint:*:* | *milan*:*TOS:*:*)
+-	echo m68k-milan-mint${UNAME_RELEASE}
++	echo m68k-milan-mint
+ 	exit ;;
+     hades*:*MiNT:*:* | hades*:*mint:*:* | *hades*:*TOS:*:*)
+-	echo m68k-hades-mint${UNAME_RELEASE}
++	echo m68k-hades-mint
+ 	exit ;;
+     *:*MiNT:*:* | *:*mint:*:* | *:*TOS:*:*)
+-	echo m68k-unknown-mint${UNAME_RELEASE}
++	echo m68k-unknown-mint
+ 	exit ;;
+     m68k:machten:*:*)
+ 	echo m68k-apple-machten${UNAME_RELEASE}
+diff --git a/config/picflag.m4 b/config/picflag.m4
+index 8b106f9af88..9c6296ff0d1 100644
+--- a/config/picflag.m4
++++ b/config/picflag.m4
+@@ -27,6 +27,8 @@ case "${$2}" in
+ 	;;
+     i[[34567]]86-*-mingw* | x86_64-*-mingw*)
+ 	;;
++    *-*-mint*)
++	;;
+     i[[34567]]86-*-interix[[3-9]]*)
+ 	# Interix 3.x gcc -fpic/-fPIC options generate broken code.
+ 	# Instead, we relocate shared libraries at runtime.
+diff --git a/configure b/configure
+index 0601395512f..f25ca1754e7 100755
+--- a/configure
++++ b/configure
+@@ -3162,6 +3162,9 @@ if test x$enable_libgomp = x ; then
+ 	;;
+     nvptx*-*-*)
+ 	;;
++    *-*-mint*)
++        # Enable libmudflap by default in MiNT.
++	;;
+     *)
+ 	noconfigdirs="$noconfigdirs target-libgomp"
+ 	;;
+@@ -3501,6 +3504,9 @@ case "${target}" in
+   m68hc11-*-*|m6811-*-*|m68hc12-*-*|m6812-*-*)
+     libgloss_dir=m68hc11
+     ;;
++  m68k-*-mint*)
++    noconfigdirs="$noconfigdirs target-libiberty"
++    ;;
+   m68*-*-* | fido-*-*)
+     libgloss_dir=m68k
+     ;;
+diff --git a/configure.ac b/configure.ac
+index c3433336523..16e0c54cda3 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -514,6 +514,9 @@ if test x$enable_libgomp = x ; then
+ 	;;
+     nvptx*-*-*)
+ 	;;
++    *-*-mint*)
++        # Enable libmudflap by default in MiNT.
++	;;
+     *)
+ 	noconfigdirs="$noconfigdirs target-libgomp"
+ 	;;
+@@ -832,6 +835,9 @@ case "${target}" in
+   m68hc11-*-*|m6811-*-*|m68hc12-*-*|m6812-*-*)
+     libgloss_dir=m68hc11
+     ;;
++  m68k-*-mint*)
++    noconfigdirs="$noconfigdirs target-libiberty"
++    ;;
+   m68*-*-* | fido-*-*)
+     libgloss_dir=m68k
+     ;;
+diff --git a/gcc/config.gcc b/gcc/config.gcc
+index a5defb0f005..a19b6a04dd1 100644
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -1999,6 +1999,15 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
+ 	tm_defines="${tm_defines} MOTOROLA=1"
+ 	tmake_file="${tmake_file} m68k/t-floatlib m68k/t-linux m68k/t-mlibs"
+ 	;;
++m68k-*-mint*)
++	default_m68k_cpu=68000
++	default_cf_cpu=5475
++	tm_file="${tm_file} m68k/mint.h"
++	tm_defines="${tm_defines} MOTOROLA=1"
++	tmake_file="m68k/t-floatlib m68k/t-mint"
++	gas=yes
++	gnu_ld=yes
++	;;
+ m68k-*-rtems*)
+ 	default_m68k_cpu=68020
+ 	default_cf_cpu=5206
+diff --git a/gcc/config/m68k/m68k.c b/gcc/config/m68k/m68k.c
+index 495a80b759e..ae23c53b52e 100644
+--- a/gcc/config/m68k/m68k.c
++++ b/gcc/config/m68k/m68k.c
+@@ -65,6 +65,7 @@ along with GCC; see the file COPYING3.  If not see
+ #include "optabs.h"
+ #include "builtins.h"
+ #include "rtl-iter.h"
++#include "dbxout.h"
+ 
+ /* This file should be included last.  */
+ #include "target-def.h"
+diff --git a/gcc/config/m68k/m68k.h b/gcc/config/m68k/m68k.h
+index 506fa4e50e7..d425765404e 100644
+--- a/gcc/config/m68k/m68k.h
++++ b/gcc/config/m68k/m68k.h
+@@ -131,7 +131,10 @@ along with GCC; see the file COPYING3.  If not see
+ 	}								\
+ 									\
+       if (TARGET_68881)							\
+-	builtin_define ("__HAVE_68881__");				\
++	{								\
++	  builtin_define ("__HAVE_68881__");				\
++	  builtin_define ("__M68881__"); /* Non-standard */		\
++	}								\
+ 									\
+       if (TARGET_COLDFIRE)						\
+ 	{								\
+diff --git a/gcc/config/m68k/math-68881.h b/gcc/config/m68k/math-68881.h
+index 6d9f8b2d4a1..9fad2950508 100644
+--- a/gcc/config/m68k/math-68881.h
++++ b/gcc/config/m68k/math-68881.h
+@@ -44,6 +44,16 @@
+ 
+ #include <errno.h>
+ 
++/* GCC 4.3 and above with -std=c99 or -std=gnu99 implements ISO C99
++   inline semantics, unless -fgnu89-inline is used.  */
++#ifdef __cplusplus
++# define __MATH_68881_INLINE inline
++#elif defined __GNUC_STDC_INLINE__
++# define __MATH_68881_INLINE extern __inline __attribute__ ((__gnu_inline__))
++#else
++# define __MATH_68881_INLINE extern __inline
++#endif
++
+ #undef HUGE_VAL
+ #ifdef __sun__
+ /* The Sun assembler fails to handle the hex constant in the usual defn.  */
+@@ -64,7 +74,7 @@
+ })
+ #endif
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ sin (double x)
+ {
+   double value;
+@@ -75,7 +85,7 @@ sin (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ cos (double x)
+ {
+   double value;
+@@ -86,7 +96,7 @@ cos (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ tan (double x)
+ {
+   double value;
+@@ -97,7 +107,7 @@ tan (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ asin (double x)
+ {
+   double value;
+@@ -108,7 +118,7 @@ asin (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ acos (double x)
+ {
+   double value;
+@@ -119,7 +129,7 @@ acos (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ atan (double x)
+ {
+   double value;
+@@ -130,7 +140,7 @@ atan (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ atan2 (double y, double x)
+ {
+   double pi, pi_over_2;
+@@ -187,7 +197,7 @@ atan2 (double y, double x)
+     }
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ sinh (double x)
+ {
+   double value;
+@@ -198,7 +208,7 @@ sinh (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ cosh (double x)
+ {
+   double value;
+@@ -209,7 +219,7 @@ cosh (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ tanh (double x)
+ {
+   double value;
+@@ -220,7 +230,7 @@ tanh (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ atanh (double x)
+ {
+   double value;
+@@ -231,7 +241,7 @@ atanh (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ exp (double x)
+ {
+   double value;
+@@ -242,7 +252,7 @@ exp (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ expm1 (double x)
+ {
+   double value;
+@@ -253,7 +263,7 @@ expm1 (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ log (double x)
+ {
+   double value;
+@@ -264,7 +274,7 @@ log (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ log1p (double x)
+ {
+   double value;
+@@ -275,7 +285,7 @@ log1p (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ log10 (double x)
+ {
+   double value;
+@@ -286,7 +296,7 @@ log10 (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ sqrt (double x)
+ {
+   double value;
+@@ -297,13 +307,13 @@ sqrt (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ hypot (double x, double y)
+ {
+   return sqrt (x*x + y*y);
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ pow (double x, double y)
+ {
+   if (x > 0)
+@@ -352,7 +362,7 @@ pow (double x, double y)
+     }
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ fabs (double x)
+ {
+   double value;
+@@ -363,7 +373,7 @@ fabs (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ ceil (double x)
+ {
+   int rounding_mode, round_up;
+@@ -385,7 +395,7 @@ ceil (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ floor (double x)
+ {
+   int rounding_mode, round_down;
+@@ -408,7 +418,7 @@ floor (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ rint (double x)
+ {
+   int rounding_mode, round_nearest;
+@@ -430,7 +440,7 @@ rint (double x)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ fmod (double x, double y)
+ {
+   double value;
+@@ -442,7 +452,7 @@ fmod (double x, double y)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ drem (double x, double y)
+ {
+   double value;
+@@ -454,19 +464,20 @@ drem (double x, double y)
+   return value;
+ }
+ 
+-__inline extern double
+-scalb (double x, int n)
++__MATH_68881_INLINE double
++scalb (double x, double n)
+ {
+   double value;
++  int exp = (int)(n);
+ 
+   __asm ("fscale%.l %2,%0"
+ 	 : "=f" (value)
+ 	 : "0" (x),
+-	   "dmi" (n));
++	   "dmi" (exp));
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ logb (double x)
+ {
+   double exponent;
+@@ -477,7 +488,7 @@ logb (double x)
+   return exponent;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ ldexp (double x, int n)
+ {
+   double value;
+@@ -489,7 +500,7 @@ ldexp (double x, int n)
+   return value;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ frexp (double x, int *exp)
+ {
+   double float_exponent;
+@@ -514,7 +525,7 @@ frexp (double x, int *exp)
+   return mantissa;
+ }
+ 
+-__inline extern double
++__MATH_68881_INLINE double
+ modf (double x, double *ip)
+ {
+   double temp;
+diff --git a/gcc/config/m68k/mint.h b/gcc/config/m68k/mint.h
+new file mode 100644
+index 00000000000..c964349c078
+--- /dev/null
++++ b/gcc/config/m68k/mint.h
+@@ -0,0 +1,193 @@
++/* Definitions of target machine for GNU compiler.
++   Atari ST TOS/MiNT.
++   Copyright (C) 1994, 1995, 2007, 2008, 2009, 2010, 2011
++   Free Software Foundation, Inc.
++
++This file is part of GCC.
++
++GCC is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation; either version 3, or (at your option)
++any later version.
++
++GCC is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU General Public License for more details.
++
++You should have received a copy of the GNU General Public License
++along with GCC; see the file COPYING3.  If not see
++<http://www.gnu.org/licenses/>.  */
++
++/* for 68k machines this only needs to be TRUE for the 68000 */
++
++#undef STRICT_ALIGNMENT
++#define STRICT_ALIGNMENT 0
++
++/* Here are four prefixes that are used by asm_fprintf to
++   facilitate customization for alternate assembler syntaxes.
++   Machines with no likelihood of an alternate syntax need not
++   define these and need not use asm_fprintf.  */
++
++/* The prefix for register names.  Note that REGISTER_NAMES
++   is supposed to include this prefix. Also note that this is NOT an
++   fprintf format string, it is a literal string */
++
++#undef REGISTER_PREFIX
++#define REGISTER_PREFIX "%"
++
++/* The prefix for local (compiler generated) labels.
++   These labels will not appear in the symbol table.  */
++
++#undef LOCAL_LABEL_PREFIX
++#define LOCAL_LABEL_PREFIX "."
++
++#undef ASM_COMMENT_START
++#define ASM_COMMENT_START "|"
++
++#undef WCHAR_TYPE
++#define WCHAR_TYPE "short unsigned int"
++
++#undef WCHAR_TYPE_SIZE
++#define WCHAR_TYPE_SIZE SHORT_TYPE_SIZE
++
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS()		\
++  do						\
++    {						\
++      builtin_define ("__MINT__");		\
++      builtin_define_std ("atarist");		\
++      builtin_assert ("machine=atari");		\
++      builtin_assert ("system=mint");		\
++    }						\
++  while (0)
++
++/* The following defines are nonstandard
++   and are kept only for compatibility
++   with older versions of GCC for MiNT.  */
++
++#undef CPP_SPEC
++#define CPP_SPEC			\
++  "%{m68000:-D__M68000__} "		\
++  "%{mc68020:-D__M68020__} "		\
++  "%{m68020:-D__M68020__} "		\
++  "%{m68030:-D__M68020__} "		\
++  "%{m68040:-D__M68020__} "		\
++  "%{m68060:-D__M68020__} "		\
++  "%{m68020-40:-D__M68020__} "		\
++  "%{m68020-60:-D__M68020__} "		\
++  "%{!m680*:%{!mc680*:-D__M68000__}} "	\
++  "%{mshort:-D__MSHORT__}"
++
++#define STARTFILE_SPEC	"%{pg|p|profile:gcrt0.o%s;:crt0.o%s}"
++#define LIB_SPEC	"-lc"
++
++/* Every structure or union's size must be a multiple of 2 bytes.  */
++#define STRUCTURE_SIZE_BOUNDARY 16
++
++/* The -g option generates stabs debug information.  */
++#define DBX_DEBUGGING_INFO 1
++
++/* Do not break .stabs pseudos into continuations.  */
++#define DBX_CONTIN_LENGTH 0
++
++/* This is the char to use for continuation (in case we need to turn
++   continuation back on).  */
++#define DBX_CONTIN_CHAR '?'
++
++/* This is the assembler directive to equate two values.  */
++#undef SET_ASM_OP
++#define SET_ASM_OP		"\t.set\t"
++
++/* This is how we tell the assembler that a symbol is weak.  */
++#undef ASM_WEAKEN_LABEL
++#define ASM_WEAKEN_LABEL(FILE,NAME) \
++  do { fputs ("\t.weak\t", FILE); assemble_name (FILE, NAME); \
++       fputc ('\n', FILE); } while (0)
++
++/* Don't default to pcc-struct-return, because gcc is the only compiler, and
++   we want to retain compatibility with older gcc versions.  */
++#define DEFAULT_PCC_STRUCT_RETURN 0
++
++/* The system headers are C++-aware.  */
++#define NO_IMPLICIT_EXTERN_C
++
++/* By default, the vtable entries are void pointers, the so the alignment
++   is the same as pointer alignment.  The value of this macro specifies
++   the alignment of the vtable entry in bits.  It should be defined only
++   when special alignment is necessary.
++
++   MiNT: The default value of 32 is too much and unsupported by a.out-mintprg.
++*/
++#define TARGET_VTABLE_ENTRY_ALIGN 16
++
++/* If we have a definition of INCOMING_RETURN_ADDR_RTX, assume that
++   the rest of the DWARF 2 frame unwind support is also provided.
++   
++   All configurations that don't use elf must be explicit about not using
++   dwarf unwind information.
++
++   MiNT: DWARF 2 frame unwind is not supported by a.out-mint.
++*/
++#define DWARF2_UNWIND_INFO 0
++
++/* config/m68k.md has an explicit reference to the program counter,
++   prefix this by the register prefix.  */
++
++#define ASM_RETURN_CASE_JUMP				\
++  do {							\
++    if (TARGET_COLDFIRE)				\
++      {							\
++	if (ADDRESS_REG_P (operands[0]))		\
++	  return "jmp %%pc@(2,%0:l)";			\
++	else						\
++	  return "ext%.l %0\n\tjmp %%pc@(2,%0:l)";	\
++      }							\
++    else						\
++      return "jmp %%pc@(2,%0:w)";			\
++  } while (0)
++
++/* The ADDR_DIFF_VEC must exactly follow the previous instruction.  */
++
++#undef ADDR_VEC_ALIGN
++#define ADDR_VEC_ALIGN(ADDR_VEC) 0
++
++/* If defined, a C expression whose value is a string containing the
++   assembler operation to identify the following data as uninitialized global
++   data.  */
++
++#define BSS_SECTION_ASM_OP "\t.bss"
++
++#define TARGET_HAVE_NAMED_SECTIONS false
++
++/* A C statement (sans semicolon) to output to the stdio stream
++   FILE the assembler definition of uninitialized global DECL named
++   NAME whose size is SIZE bytes and alignment is ALIGN bytes.
++   Try to use asm_output_aligned_bss to implement this macro.  */
++
++#define ASM_OUTPUT_ALIGNED_BSS(FILE, DECL, NAME, SIZE, ALIGN) \
++  asm_output_aligned_bss (FILE, DECL, NAME, SIZE, ALIGN)
++
++/* Disable -fpic and -fPIC since bsr.l _label@PLTPC
++   is unsupported by the assembler.  */
++
++#undef  SUBTARGET_OVERRIDE_OPTIONS
++#define SUBTARGET_OVERRIDE_OPTIONS					\
++do {									\
++  if (flag_pic && !TARGET_PCREL)					\
++      error ("-f%s is not supported on this target",			\
++	       (flag_pic > 1) ? "PIC" : "pic");				\
++} while (0)
++
++
++/* Workaround for GCC bug #35067 about multiple thunks.  */
++
++#undef MAKE_DECL_ONE_ONLY
++#define MAKE_DECL_ONE_ONLY(DECL) (DECL_WEAK (DECL) = 1)
++
++/* Avoid requiring -static with -fmudflap like in config/bfin/uclinux.h */
++#define MFWRAP_SPEC " %{fmudflap|fmudflapth: \
++ --wrap=malloc --wrap=free --wrap=calloc --wrap=realloc\
++ --wrap=mmap --wrap=munmap --wrap=alloca\
++ %{fmudflapth: --wrap=pthread_create\
++}} %{fmudflap|fmudflapth: --wrap=main}"
+diff --git a/gcc/config/m68k/t-mint b/gcc/config/m68k/t-mint
+new file mode 100644
+index 00000000000..24f3278f508
+--- /dev/null
++++ b/gcc/config/m68k/t-mint
+@@ -0,0 +1,59 @@
++# 
++# Use multiple libraries
++# 
++
++M68K_AWK = $(strip $(shell $(AWK) 'BEGIN { FS="[ \t]*[,()][ \t]*"; ORS=" " }; \
++	/^M68K_DEVICE/ { CPU=$$3; FLAGS=$$8; \
++	CPU_NAME=substr($$2,2,length($$2)-2); \
++	MLIB=substr($$5,2,length($$5)-2); \
++	if ($1) print $2 }' $(srcdir)/config/m68k/m68k-devices.def))
++
++# Add a multilib for each distinct architecture.  M68K_MLIB_CPU, if defined,
++# adds additional restrictions.
++M68K_MLIB_CPUS := $(call M68K_AWK,\
++	(CPU_NAME == MLIB) $(M68K_MLIB_CPU), \
++	"m"MLIB)
++
++# Make the default cpu the default multilib.
++M68K_MLIB_DEFAULT := $(call M68K_AWK, CPU == "$(target_cpu_default)", MLIB)
++
++ifeq ($(filter m$(M68K_MLIB_DEFAULT),$(M68K_MLIB_CPUS)),)
++$(error Error default cpu '$(target_cpu_default)' is not in multilib set '$(M68K_MLIB_CPUS)')
++endif
++
++MULTILIB_OPTIONS = m68020-60/mcpu=5475 mshort
++
++MULTILIB_DIRNAMES = m68020-60 m5475 mshort
++
++MULTILIB_MATCHES = \
++	m68020-60=m68881 \
++	m68020-60=m68020 \
++	m68020-60=m68020-40 \
++	m68020-60=mc68020 \
++	m68020-60=m68030 \
++	m68020-60=m68040 \
++	m68020-60=m68060 \
++	m68020-60=mcpu?68020 \
++	m68020-60=mcpu?68030 \
++	m68020-60=mcpu?68040 \
++	m68020-60=mcpu?68060 \
++	m68020-60=march?68020 \
++	m68020-60=march?68030 \
++	m68020-60=march?68040 \
++	m68020-60=march?68060 \
++	mcpu?5475=mcfv4e \
++	mcpu?5475=mcpu?5470 \
++	mcpu?5475=mcpu?5471 \
++	mcpu?5475=mcpu?5472 \
++	mcpu?5475=mcpu?5473 \
++	mcpu?5475=mcpu?5474 \
++	mcpu?5475=mcpu?547x \
++	mcpu?5475=mcpu?5480 \
++	mcpu?5475=mcpu?5481 \
++	mcpu?5475=mcpu?5482 \
++	mcpu?5475=mcpu?5483 \
++	mcpu?5475=mcpu?5484 \
++	mcpu?5475=mcpu?5485 \
++	mcpu?5475=mcpu?548x
++
++MULTILIB_EXCEPTIONS :=
+diff --git a/gcc/configure b/gcc/configure
+index 6121e163259..95ba5131e88 100755
+--- a/gcc/configure
++++ b/gcc/configure
+@@ -13009,6 +13009,10 @@ else
+     lt_cv_sys_max_cmd_len=8192;
+     ;;
+ 
++  mint*)
++    lt_cv_sys_max_cmd_len=8192;
++    ;;
++
+   netbsd* | freebsd* | openbsd* | darwin* | dragonfly*)
+     # This has been around since 386BSD, at least.  Likely further.
+     if test -x /sbin/sysctl; then
+diff --git a/gcc/symtab.c b/gcc/symtab.c
+index c1533083573..061e4a718e0 100644
+--- a/gcc/symtab.c
++++ b/gcc/symtab.c
+@@ -2198,7 +2198,7 @@ increase_alignment_1 (symtab_node *n, void *v)
+ void
+ symtab_node::increase_alignment (unsigned int align)
+ {
+-  gcc_assert (can_increase_alignment_p () && align < MAX_OFILE_ALIGNMENT);
++  gcc_assert (can_increase_alignment_p () && align <= MAX_OFILE_ALIGNMENT);
+   ultimate_alias_target()->call_for_symbol_and_aliases (increase_alignment_1,
+ 						        (void *)(size_t) align,
+ 						        true);
+diff --git a/libdecnumber/decNumberLocal.h b/libdecnumber/decNumberLocal.h
+index 93645b3cd02..bc2ad40abc5 100644
+--- a/libdecnumber/decNumberLocal.h
++++ b/libdecnumber/decNumberLocal.h
+@@ -187,7 +187,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+   #if (DECNUMMAXE != DEC_MAX_EMAX)
+     #error Maximum exponent mismatch
+   #endif
+-  #if (DECNUMMINE != DEC_MIN_EMIN)
++  #if !(DECNUMMINE == DEC_MIN_EMIN) /* gcc 2.95.3 has bug in '!=' operator for negative constants */
+     #error Minimum exponent mismatch
+   #endif
+ 
+diff --git a/libffi/configure b/libffi/configure
+index 790a291011f..800ab265755 100755
+--- a/libffi/configure
++++ b/libffi/configure
+@@ -5674,6 +5674,12 @@ else
+     lt_cv_sys_max_cmd_len=8192;
+     ;;
+ 
++  mint*)
++    # On MiNT this test can take minutes to run, and I'm not sure it's
++    # healthy for this platform. Let's restrict it to 8192.
++    lt_cv_sys_max_cmd_len=8192;
++    ;;
++
+   amigaos*)
+     # On AmigaOS with pdksh, this test takes hours, literally.
+     # So we just punt and use a minimum line length of 8192.
+diff --git a/libgcc/config.host b/libgcc/config.host
+index 11b4acaff55..d2db5663b7b 100644
+--- a/libgcc/config.host
++++ b/libgcc/config.host
+@@ -861,6 +861,9 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
+ 	fi
+ 	md_unwind_header=m68k/linux-unwind.h
+ 	;;
++m68k-*-mint*)
++	tmake_file="$tmake_file m68k/t-floatlib"
++	;;
+ m68k-*-rtems*)
+ 	tmake_file="$tmake_file m68k/t-floatlib"
+ 	extra_parts="$extra_parts crti.o crtn.o"
+diff --git a/libgcc/config/m68k/lb1sf68.S b/libgcc/config/m68k/lb1sf68.S
+index 1d9392a4ef7..aca906ffc31 100644
+--- a/libgcc/config/m68k/lb1sf68.S
++++ b/libgcc/config/m68k/lb1sf68.S
+@@ -666,7 +666,9 @@ ROUND_TO_MINUS    = 3 | round result towards minus infinity
+ 	.globl SYM (__negdf2)
+ 	.globl SYM (__cmpdf2)
+ 	.globl SYM (__cmpdf2_internal)
++#ifdef __ELF__
+ 	.hidden SYM (__cmpdf2_internal)
++#endif
+ 
+ 	.text
+ 	.even
+@@ -2581,7 +2583,9 @@ ROUND_TO_MINUS    = 3 | round result towards minus infinity
+ 	.globl SYM (__negsf2)
+ 	.globl SYM (__cmpsf2)
+ 	.globl SYM (__cmpsf2_internal)
++#ifdef __ELF__
+ 	.hidden SYM (__cmpsf2_internal)
++#endif
+ 
+ | These are common routines to return and signal exceptions.	
+ 
+diff --git a/libgfortran/configure b/libgfortran/configure
+index 91fce8fecd0..ca3b275fcea 100755
+--- a/libgfortran/configure
++++ b/libgfortran/configure
+@@ -7035,6 +7035,12 @@ else
+     lt_cv_sys_max_cmd_len=8192;
+     ;;
+ 
++  mint*)
++    # On MiNT this test can take minutes to run, and I'm not sure it's
++    # healthy for this platform. Let's restrict it to 8192.
++    lt_cv_sys_max_cmd_len=8192;
++    ;;
++
+   amigaos*)
+     # On AmigaOS with pdksh, this test takes hours, literally.
+     # So we just punt and use a minimum line length of 8192.
+diff --git a/libgomp/configure b/libgomp/configure
+index ced7606b355..7c0c50421ec 100755
+--- a/libgomp/configure
++++ b/libgomp/configure
+@@ -5442,6 +5442,12 @@ else
+     lt_cv_sys_max_cmd_len=8192;
+     ;;
+ 
++  mint*)
++    # On MiNT this test can take minutes to run, and I'm not sure it's
++    # healthy for this platform. Let's restrict it to 8192.
++    lt_cv_sys_max_cmd_len=8192;
++    ;;
++
+   amigaos*)
+     # On AmigaOS with pdksh, this test takes hours, literally.
+     # So we just punt and use a minimum line length of 8192.
+diff --git a/libiberty/configure b/libiberty/configure
+index ccadfaa8224..064ed4cf17d 100755
+--- a/libiberty/configure
++++ b/libiberty/configure
+@@ -5112,6 +5112,8 @@ case "${host}" in
+ 	;;
+     i[34567]86-*-mingw* | x86_64-*-mingw*)
+ 	;;
++    *-*-mint*)
++	;;
+     i[34567]86-*-interix[3-9]*)
+ 	# Interix 3.x gcc -fpic/-fPIC options generate broken code.
+ 	# Instead, we relocate shared libraries at runtime.
+@@ -6185,7 +6187,7 @@ fi
+ 
+ 
+ case "${host}" in
+-  *-*-cygwin* | *-*-mingw*)
++  *-*-cygwin* | *-*-mingw* | *-*-mint*)
+     $as_echo "#define HAVE_SYS_ERRLIST 1" >>confdefs.h
+ 
+     $as_echo "#define HAVE_SYS_NERR 1" >>confdefs.h
+diff --git a/libiberty/configure.ac b/libiberty/configure.ac
+index 6917cfaf4fb..1755be7ea90 100644
+--- a/libiberty/configure.ac
++++ b/libiberty/configure.ac
+@@ -550,7 +550,7 @@ AC_SUBST(CHECK)
+ AC_SUBST(target_header_dir)
+ 
+ case "${host}" in
+-  *-*-cygwin* | *-*-mingw*)
++  *-*-cygwin* | *-*-mingw* | *-*-mint*)
+     AC_DEFINE(HAVE_SYS_ERRLIST)
+     AC_DEFINE(HAVE_SYS_NERR)
+     ;;
+diff --git a/libiberty/hex.c b/libiberty/hex.c
+index ffc5b2ba5f0..2d116b19b43 100644
+--- a/libiberty/hex.c
++++ b/libiberty/hex.c
+@@ -24,7 +24,7 @@ Boston, MA 02110-1301, USA.  */
+ #include "libiberty.h"
+ #include "safe-ctype.h" /* for HOST_CHARSET_ASCII */
+ 
+-#if EOF != -1
++#if !(EOF == -1)	/* gcc 2.95.3 has bug in '!=' operator for negative constants */
+  #error "hex.c requires EOF == -1"
+ #endif
+ 
+diff --git a/libiberty/safe-ctype.c b/libiberty/safe-ctype.c
+index e993af98ac0..7de08f35b72 100644
+--- a/libiberty/safe-ctype.c
++++ b/libiberty/safe-ctype.c
+@@ -118,7 +118,7 @@ sets of characters:
+ #include <safe-ctype.h>
+ #include <stdio.h>  /* for EOF */
+ 
+-#if EOF != -1
++#if !(EOF == -1)	/* gcc 2.95.3 has bug in '!=' operator for negative constants */
+  #error "<safe-ctype.h> requires EOF == -1"
+ #endif
+ 
+diff --git a/libobjc/configure b/libobjc/configure
+index d1a032fbf6a..ab37fb112e6 100755
+--- a/libobjc/configure
++++ b/libobjc/configure
+@@ -4898,6 +4898,12 @@ else
+     lt_cv_sys_max_cmd_len=8192;
+     ;;
+ 
++  mint*)
++    # On MiNT this test can take minutes to run, and I'm not sure it's
++    # healthy for this platform. Let's restrict it to 8192.
++    lt_cv_sys_max_cmd_len=8192;
++    ;;
++
+   amigaos*)
+     # On AmigaOS with pdksh, this test takes hours, literally.
+     # So we just punt and use a minimum line length of 8192.
+diff --git a/libssp/configure b/libssp/configure
+index 4e88e4916cc..8ed8c799182 100755
+--- a/libssp/configure
++++ b/libssp/configure
+@@ -5280,6 +5280,12 @@ else
+     lt_cv_sys_max_cmd_len=8192;
+     ;;
+ 
++  mint*)
++    # On MiNT this test can take minutes to run, and I'm not sure it's
++    # healthy for this platform. Let's restrict it to 8192.
++    lt_cv_sys_max_cmd_len=8192;
++    ;;
++
+   amigaos*)
+     # On AmigaOS with pdksh, this test takes hours, literally.
+     # So we just punt and use a minimum line length of 8192.
+diff --git a/libssp/ssp.c b/libssp/ssp.c
+index 741377ddd40..a3b029417ad 100644
+--- a/libssp/ssp.c
++++ b/libssp/ssp.c
+@@ -65,6 +65,9 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+ #ifdef HAVE_SYSLOG_H
+ # include <syslog.h>
+ #endif
++#ifdef __MINT__
++#include <mint/osbind.h>
++#endif
+ 
+ void *__stack_chk_guard = 0;
+ 
+@@ -114,6 +117,9 @@ fail (const char *msg1, size_t msg1len, const char *msg3)
+ {
+ #ifdef __GNU_LIBRARY__
+   extern char * __progname;
++#elif defined (__MINT__)
++  extern char * program_invocation_short_name;
++  #define __progname program_invocation_short_name
+ #else
+   static const char __progname[] = "";
+ #endif
+@@ -155,6 +161,9 @@ fail (const char *msg1, size_t msg1len, const char *msg3)
+     syslog (LOG_CRIT, "%s", msg3);
+ #endif /* HAVE_SYSLOG_H */
+ 
++#ifdef __MINT__
++    Pterm(127);
++#else
+   /* Try very hard to exit.  Note that signals may be blocked preventing
+      the first two options from working.  The use of volatile is here to
+      prevent optimizers from "knowing" that __builtin_trap is called first,
+@@ -176,6 +185,7 @@ fail (const char *msg1, size_t msg1len, const char *msg3)
+           break;
+         }
+   }
++#endif
+ }
+ 
+ void
+diff --git a/libstdc++-v3/config/os/mint/ctype_base.h b/libstdc++-v3/config/os/mint/ctype_base.h
+new file mode 100644
+index 00000000000..c1d8f0c3ab1
+--- /dev/null
++++ b/libstdc++-v3/config/os/mint/ctype_base.h
+@@ -0,0 +1,67 @@
++// Locale support -*- C++ -*-
++
++// Copyright (C) 1997-2017 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 3, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// Under Section 7 of GPL version 3, you are granted additional
++// permissions described in the GCC Runtime Library Exception, version
++// 3.1, as published by the Free Software Foundation.
++
++// You should have received a copy of the GNU General Public License and
++// a copy of the GCC Runtime Library Exception along with this program;
++// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
++// <http://www.gnu.org/licenses/>.
++
++//
++// ISO C++ 14882: 22.1  Locales
++//
++
++//  We don't use the C-locale masks defined in usr/include/ctype.h
++//  because those masks do not conform to the requirements of 22.2.1.
++//  In particular, a separate 'print' bitmask does not exist (isprint(c)
++//  relies on a combination of flags) and the  '_ALPHA' mask is also a
++//  combination of simple bitmasks.  Thus, we define libstdc++-specific
++//  masks here, based on the generic masks, and the corresponding
++//  classic_table in ctype_noninline.h.
++
++namespace std _GLIBCXX_VISIBILITY(default)
++{
++_GLIBCXX_BEGIN_NAMESPACE_VERSION
++
++  /// @brief  Base class for ctype.
++  struct ctype_base
++  {
++    // Non-standard typedefs.
++    typedef const int* 		__to_type;
++
++    // NB: Offsets into ctype<char>::_M_table force a particular size
++    // on the mask type. Because of this, we don't use an enum.
++    typedef unsigned short 	mask;   
++    static const mask upper	= 1 << 0;
++    static const mask lower	= 1 << 1;
++    static const mask alpha	= 1 << 2;
++    static const mask digit	= 1 << 3;
++    static const mask xdigit	= 1 << 4;
++    static const mask space	= 1 << 5;
++    static const mask print	= 1 << 6;
++    static const mask graph	= (1 << 2) | (1 << 3) | (1 << 9);  // alnum|punct
++    static const mask cntrl	= 1 << 8;
++    static const mask punct 	= 1 << 9;
++    static const mask alnum	= (1 << 2) | (1 << 3);  // alpha|digit
++#if __cplusplus >= 201103L
++    static const mask blank	= 1 << 10;
++#endif
++  };
++
++_GLIBCXX_END_NAMESPACE_VERSION
++} // namespace
+diff --git a/libstdc++-v3/config/os/mint/ctype_configure_char.cc b/libstdc++-v3/config/os/mint/ctype_configure_char.cc
+new file mode 100644
+index 00000000000..840c4730312
+--- /dev/null
++++ b/libstdc++-v3/config/os/mint/ctype_configure_char.cc
+@@ -0,0 +1,243 @@
++// Locale support -*- C++ -*-
++
++// Copyright (C) 2011-2017 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 3, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// Under Section 7 of GPL version 3, you are granted additional
++// permissions described in the GCC Runtime Library Exception, version
++// 3.1, as published by the Free Software Foundation.
++
++// You should have received a copy of the GNU General Public License and
++// a copy of the GCC Runtime Library Exception along with this program;
++// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
++// <http://www.gnu.org/licenses/>.
++
++/** @file ctype_configure_char.cc */
++
++//
++// ISO C++ 14882: 22.1  Locales
++//
++
++#include <locale>
++#include <cstdlib>
++#include <cstring>
++
++namespace std _GLIBCXX_VISIBILITY(default)
++{
++_GLIBCXX_BEGIN_NAMESPACE_VERSION
++
++  // The classic table used in libstdc++ is *not* the C _ctype table
++  // used by mscvrt, but is based on the ctype masks defined for libstdc++
++  // in ctype_base.h.
++
++  const ctype_base::mask*
++  ctype<char>::classic_table() throw()
++  {
++    static const ctype_base::mask _S_classic_table[256] =
++    {
++      cntrl /* null */,
++      cntrl /* ^A */,
++      cntrl /* ^B */,
++      cntrl /* ^C */,
++      cntrl /* ^D */,
++      cntrl /* ^E */,
++      cntrl /* ^F */,
++      cntrl /* ^G */,
++      cntrl /* ^H */,
++      ctype_base::mask(space | cntrl | blank) /* tab */,
++      ctype_base::mask(space | cntrl) /* LF */,
++      ctype_base::mask(space | cntrl) /* ^K */,
++      ctype_base::mask(space | cntrl) /* FF */,
++      ctype_base::mask(space | cntrl) /* ^M */,
++      cntrl /* ^N */,
++      cntrl /* ^O */,
++      cntrl /* ^P */,
++      cntrl /* ^Q */,
++      cntrl /* ^R */,
++      cntrl /* ^S */,
++      cntrl /* ^T */,
++      cntrl /* ^U */,
++      cntrl /* ^V */,
++      cntrl /* ^W */,
++      cntrl /* ^X */,
++      cntrl /* ^Y */,
++      cntrl /* ^Z */,
++      cntrl /* esc */,
++      cntrl /* ^\ */,
++      cntrl /* ^] */,
++      cntrl /* ^^ */,
++      cntrl /* ^_ */,
++      ctype_base::mask(space | print | blank) /*   */,
++      ctype_base::mask(punct | print) /* ! */,
++      ctype_base::mask(punct | print) /* " */,
++      ctype_base::mask(punct | print) /* # */,
++      ctype_base::mask(punct | print) /* $ */,
++      ctype_base::mask(punct | print) /* % */,
++      ctype_base::mask(punct | print) /* & */,
++      ctype_base::mask(punct | print) /* ' */,
++      ctype_base::mask(punct | print) /* ( */,
++      ctype_base::mask(punct | print) /* ) */,
++      ctype_base::mask(punct | print) /* * */,
++      ctype_base::mask(punct | print) /* + */,
++      ctype_base::mask(punct | print) /* , */,
++      ctype_base::mask(punct | print) /* - */,
++      ctype_base::mask(punct | print) /* . */,
++      ctype_base::mask(punct | print) /* / */,
++      ctype_base::mask(digit | xdigit | print) /* 0 */,
++      ctype_base::mask(digit | xdigit | print) /* 1 */,
++      ctype_base::mask(digit | xdigit | print) /* 2 */,
++      ctype_base::mask(digit | xdigit | print) /* 3 */,
++      ctype_base::mask(digit | xdigit | print) /* 4 */,
++      ctype_base::mask(digit | xdigit | print) /* 5 */,
++      ctype_base::mask(digit | xdigit | print) /* 6 */,
++      ctype_base::mask(digit | xdigit | print) /* 7 */,
++      ctype_base::mask(digit | xdigit | print) /* 8 */,
++      ctype_base::mask(digit | xdigit | print) /* 9 */,
++      ctype_base::mask(punct | print) /* : */,
++      ctype_base::mask(punct | print) /* ; */,
++      ctype_base::mask(punct | print) /* < */,
++      ctype_base::mask(punct | print) /* = */,
++      ctype_base::mask(punct | print) /* > */,
++      ctype_base::mask(punct | print) /* ? */,
++      ctype_base::mask(punct | print) /* ! */,
++      ctype_base::mask(alpha | upper | xdigit | print) /* A */,
++      ctype_base::mask(alpha | upper | xdigit | print) /* B */,
++      ctype_base::mask(alpha | upper | xdigit | print) /* C */,
++      ctype_base::mask(alpha | upper | xdigit | print) /* D */,
++      ctype_base::mask(alpha | upper | xdigit | print) /* E */,
++      ctype_base::mask(alpha | upper | xdigit | print) /* F */,
++      ctype_base::mask(alpha | upper | print) /* G */,
++      ctype_base::mask(alpha | upper | print) /* H */,
++      ctype_base::mask(alpha | upper | print) /* I */,
++      ctype_base::mask(alpha | upper | print) /* J */,
++      ctype_base::mask(alpha | upper | print) /* K */,
++      ctype_base::mask(alpha | upper | print) /* L */,
++      ctype_base::mask(alpha | upper | print) /* M */,
++      ctype_base::mask(alpha | upper | print) /* N */,
++      ctype_base::mask(alpha | upper | print) /* O */,
++      ctype_base::mask(alpha | upper | print) /* P */,
++      ctype_base::mask(alpha | upper | print) /* Q */,
++      ctype_base::mask(alpha | upper | print) /* R */,
++      ctype_base::mask(alpha | upper | print) /* S */,
++      ctype_base::mask(alpha | upper | print) /* T */,
++      ctype_base::mask(alpha | upper | print) /* U */,
++      ctype_base::mask(alpha | upper | print) /* V */,
++      ctype_base::mask(alpha | upper | print) /* W */,
++      ctype_base::mask(alpha | upper | print) /* X */,
++      ctype_base::mask(alpha | upper | print) /* Y */,
++      ctype_base::mask(alpha | upper | print) /* Z */,
++      ctype_base::mask(punct | print) /* [ */,
++      ctype_base::mask(punct | print) /* \ */,
++      ctype_base::mask(punct | print) /* ] */,
++      ctype_base::mask(punct | print) /* ^ */,
++      ctype_base::mask(punct | print) /* _ */,
++      ctype_base::mask(punct | print) /* ` */,
++      ctype_base::mask(alpha | lower | xdigit | print) /* a */,
++      ctype_base::mask(alpha | lower | xdigit | print) /* b */,
++      ctype_base::mask(alpha | lower | xdigit | print) /* c */,
++      ctype_base::mask(alpha | lower | xdigit | print) /* d */,
++      ctype_base::mask(alpha | lower | xdigit | print) /* e */,
++      ctype_base::mask(alpha | lower | xdigit | print) /* f */,
++      ctype_base::mask(alpha | lower | print) /* g */,
++      ctype_base::mask(alpha | lower | print) /* h */,
++      ctype_base::mask(alpha | lower | print) /* i */,
++      ctype_base::mask(alpha | lower | print) /* j */,
++      ctype_base::mask(alpha | lower | print) /* k */,
++      ctype_base::mask(alpha | lower | print) /* l */,
++      ctype_base::mask(alpha | lower | print) /* m */,
++      ctype_base::mask(alpha | lower | print) /* n */,
++      ctype_base::mask(alpha | lower | print) /* o */,
++      ctype_base::mask(alpha | lower | print) /* p */,
++      ctype_base::mask(alpha | lower | print) /* q */,
++      ctype_base::mask(alpha | lower | print) /* r */,
++      ctype_base::mask(alpha | lower | print) /* s */,
++      ctype_base::mask(alpha | lower | print) /* t */,
++      ctype_base::mask(alpha | lower | print) /* u */,
++      ctype_base::mask(alpha | lower | print) /* v */,
++      ctype_base::mask(alpha | lower | print) /* w */,
++      ctype_base::mask(alpha | lower | print) /* x */,
++      ctype_base::mask(alpha | lower | print) /* y */,
++      ctype_base::mask(alpha | lower | print) /* x */,
++      ctype_base::mask(punct | print) /* { */,
++      ctype_base::mask(punct | print) /* | */,
++      ctype_base::mask(punct | print) /* } */,
++      ctype_base::mask(punct | print) /* ~ */,
++      cntrl /* del (0x7f)*/,
++      /* The next 128 entries are all 0.   */
++      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
++    };
++    return _S_classic_table;
++  }
++
++  ctype<char>::ctype(__c_locale, const mask* __table, bool __del,
++		     size_t __refs)
++  : facet(__refs), _M_del(__table != 0 && __del),
++  _M_toupper(NULL), _M_tolower(NULL),
++  _M_table(__table ? __table : classic_table())
++  {
++    memset(_M_widen, 0, sizeof(_M_widen));
++    _M_widen_ok = 0;
++    memset(_M_narrow, 0, sizeof(_M_narrow));
++    _M_narrow_ok = 0;
++  }
++
++  ctype<char>::ctype(const mask* __table, bool __del, size_t __refs)
++  : facet(__refs), _M_del(__table != 0 && __del),
++  _M_toupper(NULL), _M_tolower(NULL),
++  _M_table(__table ? __table : classic_table())
++  {
++    memset(_M_widen, 0, sizeof(_M_widen));
++    _M_widen_ok = 0;
++    memset(_M_narrow, 0, sizeof(_M_narrow));
++    _M_narrow_ok = 0;
++  }
++
++  char
++  ctype<char>::do_toupper(char __c) const
++  { return (this->is(ctype_base::lower, __c) ? (__c - 'a' + 'A') : __c); }
++
++  const char*
++  ctype<char>::do_toupper(char* __low, const char* __high) const
++  {
++    while (__low < __high)
++      {
++	*__low = this->do_toupper(*__low);
++	++__low;
++      }
++    return __high;
++  }
++
++  char
++  ctype<char>::do_tolower(char __c) const
++  { return (this->is(ctype_base::upper, __c) ? (__c - 'A' + 'a') : __c); }
++
++  const char*
++  ctype<char>::do_tolower(char* __low, const char* __high) const
++  {
++    while (__low < __high)
++      {
++	*__low = this->do_tolower(*__low);
++	++__low;
++      }
++    return __high;
++  }
++
++_GLIBCXX_END_NAMESPACE_VERSION
++} // namespace
+diff --git a/libstdc++-v3/config/os/mint/ctype_inline.h b/libstdc++-v3/config/os/mint/ctype_inline.h
+new file mode 100644
+index 00000000000..5066840b9ea
+--- /dev/null
++++ b/libstdc++-v3/config/os/mint/ctype_inline.h
+@@ -0,0 +1,166 @@
++// Locale support -*- C++ -*-
++
++// Copyright (C) 2000-2017 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 3, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// Under Section 7 of GPL version 3, you are granted additional
++// permissions described in the GCC Runtime Library Exception, version
++// 3.1, as published by the Free Software Foundation.
++
++// You should have received a copy of the GNU General Public License and
++// a copy of the GCC Runtime Library Exception along with this program;
++// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
++// <http://www.gnu.org/licenses/>.
++
++/** @file bits/ctype_inline.h
++ *  This is an internal header file, included by other library headers.
++ *  Do not attempt to use it directly. @headername{locale}
++ */
++
++//
++// ISO C++ 14882: 22.1  Locales
++//
++
++// ctype bits to be inlined go here. Non-inlinable (ie virtual do_*)
++// functions go in ctype.cc
++
++namespace std _GLIBCXX_VISIBILITY(default)
++{
++_GLIBCXX_BEGIN_NAMESPACE_VERSION
++
++  bool
++  ctype<char>::
++  is(mask __m, char __c) const
++  {
++    if (_M_table)
++      return _M_table[static_cast<unsigned char>(__c)] & __m;
++    else
++      {
++	bool __ret = false;
++	const size_t __bitmasksize = 15;
++	size_t __bitcur = 0; // Lowest bitmask in ctype_base == 0
++	for (; __bitcur <= __bitmasksize; ++__bitcur)
++	  {
++	    const mask __bit = static_cast<mask>(1 << __bitcur);
++	    if (__m & __bit)
++	      {
++		bool __testis;
++		switch (__bit)
++		  {
++		  case space:
++		    __testis = isspace(__c);
++		    break;
++		  case print:
++		    __testis = isprint(__c);
++		    break;
++		  case cntrl:
++		    __testis = iscntrl(__c);
++		    break;
++		  case upper:
++		    __testis = isupper(__c);
++		    break;
++		  case lower:
++		    __testis = islower(__c);
++		    break;
++		  case alpha:
++		    __testis = isalpha(__c);
++		    break;
++		  case digit:
++		    __testis = isdigit(__c);
++		    break;
++		  case punct:
++		    __testis = ispunct(__c);
++		    break;
++		  case xdigit:
++		    __testis = isxdigit(__c);
++		    break;
++		  case alnum:
++		    __testis = isalnum(__c);
++		    break;
++		  case graph:
++		    __testis = isgraph(__c);
++		    break;
++#ifdef _GLIBCXX_USE_C99_CTYPE_TR1
++		  case blank:
++		    __testis = isblank(__c);
++		    break;
++#endif
++		  default:
++		    __testis = false;
++		    break;
++		  }
++		__ret |= __testis;
++	      }
++	  }
++	return __ret;
++      }
++  }
++
++  const char*
++  ctype<char>::
++  is(const char* __low, const char* __high, mask* __vec) const
++  {
++    if (_M_table)
++      while (__low < __high)
++	*__vec++ = _M_table[static_cast<unsigned char>(*__low++)];
++    else
++      {
++	// Highest bitmask in ctype_base == 11.
++	const size_t __bitmasksize = 15;
++	for (;__low < __high; ++__vec, ++__low)
++	  {
++	    mask __m = 0;
++	    // Lowest bitmask in ctype_base == 0
++	    size_t __i = 0;
++	    for (;__i <= __bitmasksize; ++__i)
++	      {
++		const mask __bit = static_cast<mask>(1 << __i);
++		if (this->is(__bit, *__low))
++		  __m |= __bit;
++	      }
++	    *__vec = __m;
++	  }
++      }
++    return __high;
++  }
++
++  const char*
++  ctype<char>::
++  scan_is(mask __m, const char* __low, const char* __high) const
++  {
++    if (_M_table)
++      while (__low < __high
++	     && !(_M_table[static_cast<unsigned char>(*__low)] & __m))
++	++__low;
++    else
++      while (__low < __high && !this->is(__m, *__low))
++	++__low;
++    return __low;
++  }
++
++  const char*
++  ctype<char>::
++  scan_not(mask __m, const char* __low, const char* __high) const
++  {
++    if (_M_table)
++      while (__low < __high
++	     && (_M_table[static_cast<unsigned char>(*__low)] & __m) != 0)
++	++__low;
++    else
++      while (__low < __high && this->is(__m, *__low) != 0)
++	++__low;
++    return __low;
++  }
++
++_GLIBCXX_END_NAMESPACE_VERSION
++} // namespace
+diff --git a/libstdc++-v3/config/os/mint/os_defines.h b/libstdc++-v3/config/os/mint/os_defines.h
+new file mode 100644
+index 00000000000..11d2f9e1c82
+--- /dev/null
++++ b/libstdc++-v3/config/os/mint/os_defines.h
+@@ -0,0 +1,36 @@
++// Specific definitions for generic platforms  -*- C++ -*-
++
++// Copyright (C) 2000-2017 Free Software Foundation, Inc.
++//
++// This file is part of the GNU ISO C++ Library.  This library is free
++// software; you can redistribute it and/or modify it under the
++// terms of the GNU General Public License as published by the
++// Free Software Foundation; either version 3, or (at your option)
++// any later version.
++
++// This library is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++
++// Under Section 7 of GPL version 3, you are granted additional
++// permissions described in the GCC Runtime Library Exception, version
++// 3.1, as published by the Free Software Foundation.
++
++// You should have received a copy of the GNU General Public License and
++// a copy of the GCC Runtime Library Exception along with this program;
++// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
++// <http://www.gnu.org/licenses/>.
++
++/** @file bits/os_defines.h
++ *  This is an internal header file, included by other library headers.
++ *  Do not attempt to use it directly. @headername{iosfwd}
++ */
++
++#ifndef _GLIBCXX_OS_DEFINES
++#define _GLIBCXX_OS_DEFINES 1
++
++// System-specific #define, typedefs, corrections, etc, go here.  This
++// file will come before all others.
++
++#endif
+diff --git a/libstdc++-v3/configure b/libstdc++-v3/configure
+index ba094be6f15..ff97a78ee3b 100755
+--- a/libstdc++-v3/configure
++++ b/libstdc++-v3/configure
+@@ -5998,6 +5998,12 @@ else
+     lt_cv_sys_max_cmd_len=8192;
+     ;;
+ 
++  mint*)
++    # On MiNT this test can take minutes to run, and I'm not sure it's
++    # healthy for this platform. Let's restrict it to 8192.
++    lt_cv_sys_max_cmd_len=8192;
++    ;;
++
+   amigaos*)
+     # On AmigaOS with pdksh, this test takes hours, literally.
+     # So we just punt and use a minimum line length of 8192.
+@@ -53783,7 +53789,7 @@ $as_echo "#define HAVE_TLS 1" >>confdefs.h
+ 	;;
+     esac
+     ;;
+-  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin* | *-solaris*)
++  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin* | *-solaris* | *-mint*)
+ 
+   # All these tests are for C++; save the language and the compiler flags.
+   # The CXXFLAGS thing is suspicious, but based on similar bits previously
+diff --git a/libstdc++-v3/configure.host b/libstdc++-v3/configure.host
+index caea9de9c76..d50502318bf 100644
+--- a/libstdc++-v3/configure.host
++++ b/libstdc++-v3/configure.host
+@@ -286,6 +286,10 @@ case "${host_os}" in
+     esac
+     OPT_LDFLAGS="${OPT_LDFLAGS} \$(lt_host_flags)"
+     ;;
++  mint*)
++    SECTION_FLAGS="${SECTION_FLAGS} -D_GNU_SOURCE"
++    os_include_dir="os/mint"
++    ;;
+   netbsd*)
+     os_include_dir="os/bsd/netbsd"
+     ;;
+diff --git a/libstdc++-v3/crossconfig.m4 b/libstdc++-v3/crossconfig.m4
+index fa56795b25e..335da8d82e0 100644
+--- a/libstdc++-v3/crossconfig.m4
++++ b/libstdc++-v3/crossconfig.m4
+@@ -183,7 +183,7 @@ case "${host}" in
+ 	;;
+     esac
+     ;;
+-  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin* | *-solaris*)
++  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-cygwin* | *-solaris* | *-mint*)
+     GLIBCXX_CHECK_COMPILER_FEATURES
+     GLIBCXX_CHECK_LINKER_FEATURES
+     GLIBCXX_CHECK_MATH_SUPPORT
+diff --git a/libtool.m4 b/libtool.m4
+index 24d13f34409..b1022802d0d 100644
+--- a/libtool.m4
++++ b/libtool.m4
+@@ -1513,6 +1513,12 @@ AC_CACHE_VAL([lt_cv_sys_max_cmd_len], [dnl
+     lt_cv_sys_max_cmd_len=8192;
+     ;;
+ 
++  mint*)
++    # On MiNT this test can take minutes to run, and I'm not sure it's
++    # healthy for this platform. Let's restrict it to 8192.
++    lt_cv_sys_max_cmd_len=8192;
++    ;;
++
+   netbsd* | freebsd* | openbsd* | darwin* | dragonfly*)
+     # This has been around since 386BSD, at least.  Likely further.
+     if test -x /sbin/sysctl; then
+diff --git a/zlib/configure b/zlib/configure
+index ee5527c4a40..6c0162be2f0 100755
+--- a/zlib/configure
++++ b/zlib/configure
+@@ -4658,6 +4658,12 @@ else
+     lt_cv_sys_max_cmd_len=8192;
+     ;;
+ 
++  mint*)
++    # On MiNT this test can take minutes to run, and I'm not sure it's
++    # healthy for this platform. Let's restrict it to 8192.
++    lt_cv_sys_max_cmd_len=8192;
++    ;;
++
+   amigaos*)
+     # On AmigaOS with pdksh, this test takes hours, literally.
+     # So we just punt and use a minimum line length of 8192.
+-- 
+2.24.0
+

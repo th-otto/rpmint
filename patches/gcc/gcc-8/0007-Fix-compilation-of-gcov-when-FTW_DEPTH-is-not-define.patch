@@ -1,0 +1,34 @@
+From 422ab022d6f8bdd92fef14a506d0ca6a118f7b93 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Feb 2018 18:11:06 +0100
+Subject: [PATCH] Fix compilation of gcov when FTW_DEPTH is not defined
+
+---
+ gcc/gcov-tool.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gcc/gcov-tool.c b/gcc/gcov-tool.c
+index 15fd710b18c..3b5f3172011 100644
+--- a/gcc/gcov-tool.c
++++ b/gcc/gcov-tool.c
+@@ -52,7 +52,7 @@ extern void gcov_set_verbose (void);
+ /* Set to verbose output mode.  */
+ static bool verbose;
+ 
+-#if HAVE_FTW_H
++#if defined(HAVE_FTW_H) && defined(FTW_DEPTH)
+ 
+ /* Remove file NAME if it has a gcda suffix. */
+ 
+@@ -81,7 +81,7 @@ unlink_gcda_file (const char *name,
+ static int
+ unlink_profile_dir (const char *path ATTRIBUTE_UNUSED)
+ {
+-#if HAVE_FTW_H
++#if defined(HAVE_FTW_H) && defined(FTW_DEPTH)
+     return nftw(path, unlink_gcda_file, 64, FTW_DEPTH | FTW_PHYS);
+ #else
+     return -1;
+-- 
+2.24.0
+

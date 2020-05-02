@@ -1,0 +1,26 @@
+From d1a2298716a1d8a2b9aab653b3e41cb96704b3a2 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sat, 26 Aug 2017 03:38:59 +0200
+Subject: [PATCH] Fix handling of math optimization functions
+
+---
+ gcc/config/m68k/mint.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/gcc/config/m68k/mint.h b/gcc/config/m68k/mint.h
+index c964349c078..c41b38f6c1f 100644
+--- a/gcc/config/m68k/mint.h
++++ b/gcc/config/m68k/mint.h
+@@ -45,6 +45,9 @@ along with GCC; see the file COPYING3.  If not see
+ #undef ASM_COMMENT_START
+ #define ASM_COMMENT_START "|"
+ 
++#undef TARGET_LIBC_HAS_FUNCTION
++#define TARGET_LIBC_HAS_FUNCTION no_c99_libc_has_function
++
+ #undef WCHAR_TYPE
+ #define WCHAR_TYPE "short unsigned int"
+ 
+-- 
+2.24.0
+

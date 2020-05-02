@@ -1,0 +1,25 @@
+From 1773cac7eaaf577efe13d1aa0c7079543d84bc4d Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 16 Feb 2018 15:48:41 +0100
+Subject: [PATCH] gcc-4.7-stdthreads.patch
+
+---
+ libgcc/gthr-posix.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libgcc/gthr-posix.h b/libgcc/gthr-posix.h
+index e2f952f6c1c..30c89fda4aa 100644
+--- a/libgcc/gthr-posix.h
++++ b/libgcc/gthr-posix.h
+@@ -82,7 +82,7 @@ typedef struct timespec __gthread_time_t;
+ # define __GTHREAD_COND_INIT_FUNCTION __gthread_cond_init_function
+ #endif
+ 
+-#if SUPPORTS_WEAK && GTHREAD_USE_WEAK
++#if SUPPORTS_WEAK && GTHREAD_USE_WEAK && !defined(__MINGW32__)
+ # ifndef __gthrw_pragma
+ #  define __gthrw_pragma(pragma)
+ # endif
+-- 
+2.24.0
+

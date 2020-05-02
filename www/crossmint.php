@@ -52,7 +52,7 @@ setcookie("platform", $platform, time() + 3600);
 
 include('packages.php');
 
-$gccver = 'gcc920';
+$gccver = 'gcc931';
 
 ?>
 
@@ -86,7 +86,7 @@ with respect to their own licenses.
 <li>Install <a href="http://www.cygwin.com/" <?php echo $target ?>>Cygwin 32-bit</a>.
 This will provide you a full UNIX-like environment necessary for running the GNU tools.</li>
 <li>Install the following packages, using the Cygwin setup program: <b>libmpc3</b>.</li>
-<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20190606-cygwin32.tar.xz', 'm68k-atari-mint-base-20190606-cygwin32.tar.xz') ?> (~71 MB).</li>
+<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20200501-cygwin32.tar.xz', 'm68k-atari-mint-base-20190606-cygwin32.tar.xz') ?> (~71 MB).</li>
 <li>Now you can use any tool prefixed by <code>m68k-atari-mint-</code>,
 such as <code>m68k-atari-mint-gcc</code>, <code>m68k-atari-mint-g++</code>,
 and even read the man pages.</li>
@@ -106,7 +106,7 @@ and even read the man pages.</li>
 </ol></li>
 </ol>
 
-<p>Note: the binutils and gcc packages where built with a prefix of /mingw32. If you are
+<p>Note: the binutils and gcc packages were built with a prefix of /mingw32. If you are
 using an older installation using MSYS from <a href="http://www.mingw.org/"<?php echo $target ?>>mingw.org</a>
 you should extract them by using <br />
 <code>tar -C /mingw --strip-components=1 -xf &lt;archive&gt;</code>
@@ -121,13 +121,13 @@ work on other linux distros too, but will require at least glibc 2.14.</p>
 <p>&nbsp;</p>
 
 <p>
-The cygwin packages where built on a recent system (cygwin dll 2.10.0). Should there be problems,
+The cygwin packages were built on a recent system (cygwin dll 2.10.0). Should there be problems,
 you may have to upgrade your version, or recompile it yourself.</p>
 
 <p>&nbsp;</p>
 
 <p>
-The macOS packages where built on macOS 10.12 (Sierra), with a deployment target of 10.6 (Snow Leopard).
+The macOS packages were built on macOS 10.12 (Sierra), with a deployment target of 10.6 (Snow Leopard).
 </p>
 
 <p>&nbsp;</p>
@@ -141,7 +141,7 @@ to remove these directories.</p>
 
 <p>Note: On cygwin, sometimes tar fails to extract symlinks. Although cygwin
 supports symlinks on a NTFS filesystem, that filesystem cannot create links
-to non-existant files. Depending on wether the original file or link appears
+to non-existant files. Depending on whether the original file or link appears
 first in the archive, that might fail. Just extracting the same archive again
 should fix that.
 </p>
@@ -150,13 +150,13 @@ should fix that.
 <p>&nbsp;</p>
 
 <p><span class="important">Important Note for the native compilers:</span><br />
-Unlike Miro's gcc 4.6.4 compiler toolchain, all native compilers (even the coldfire version)
+Unlike Miro's gcc 4.6.4 compiler toolchain, all native compilers (even the ColdFire version)
 will produce m68k code by default. This was done since for each package with libraries,
 there is only one version that contains all 3 flavours (68000, 68020-60 and cf).
-Configuring the toolchain to produce eg. coldfire code by default would mean
+Configuring the toolchain to produce eg. ColdFire code by default would mean
 that there would have been 3 versions of them, because the directory layout has to
-be different. That means you have to use exclicit -mcpu=5475 when using the native coldire version,
-and you want to produce coldfire code.
+be different. That means you have to explicitly specify -mcpu=5475 when using the native ColdFire version,
+if you want to produce ColdFire code.
 </p>
 -->
 
@@ -562,7 +562,7 @@ foreach ($basepackages as $package)
 	{
 		echo '<tr>' . "\n";
 		echo '<td class="icon"><img src="images/os-linux.png" width="32" height="32" alt="Linux"></img></td>' . "\n";
-		echo '<td class="linkdesc">Linux Package:</td>' . "\n";
+		echo '<td class="linkdesc">Linux64 Package:</td>' . "\n";
 		echo '<td class="sourcelink">';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
  		if (isset($package['date']))
@@ -904,7 +904,7 @@ if ($package['linux64'] && ($platform == 'linux64' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
 	echo '<td class="icon"><img src="images/os-linux.png" width="32" height="32" alt="Linux"></img></td>' . "\n";
-	echo '<td class="linkdesc">Linux Archive:</td>' . "\n";
+	echo '<td class="linkdesc">Linux64 Archive:</td>' . "\n";
 	echo '<td class="sourcelink">';
 	$filename = $download_dir . $basename . '-linux64.tar.xz';
 	$text = $basename . '-linux64.tar.xz';
@@ -951,21 +951,21 @@ package of them for all host systems. They have all been built and packaged on l
 </p>
 
 <p>All of these libraries have been compiled with gcc 7.x, but they can be used with other versions, too.
-Also, they all have been compiled also for the elf toolchain. Of these, most where compiled with -flto (link-time-optimization),
+Also, they all have been compiled for the elf toolchain. Most of these were compiled with -flto (link-time-optimization),
 a feature that is not available for a.out libraries. For some (notably mintlib) this is not yet possible.
 </p>
 
 <p>&nbsp;</p>
 
 <p>For packages that also build binaries, the *-dev packages will have
-executables in <code>&lt;sys-root&gt;/usr/bin</code> that where
+executables in <code>&lt;sys-root&gt;/usr/bin</code> that were
 compiled for 68k.</p>
 <p>&nbsp;</p>
 <p>For native installation, there will also be *-bin
 packages for other machines. <span class="important">Do not install these on
 a cross-development environment</span>(at least not to your usual installation
 directory), as this may overwrite your system binaries.</p> They are meant
-to be installed in a MiNT environment, and therefore where packaged with pathes
+to be installed in a MiNT environment, and therefore were packaged with paths
 like <code>/usr/bin</code>. In general, the binaries won't be of much use
 in a cross-development installation.
 
@@ -1509,6 +1509,10 @@ This notably applies to Perl and Python.
 
 <li>2020/04/29 Update binutils to 2.34</li>
 
+<li>2020/05/01 Update gcc 8.x to 8.4.1</li>
+
+<li>2020/05/02 Update gcc to version 9.3.1</li>
+
 </ul>
 
 <p></p>
@@ -1529,12 +1533,12 @@ Feel free to <a href="mailto:admin@tho-otto.de">send me your comments</a>!<br />
 His work is available <a href="http://vincent.riviere.free.fr/soft/m68k-atari-mint/"<?php echo $target ?>>here</a>.</p>
 
 <p>
-<b>Patrice Mandin</b> has made a lot of work for porting GCC and the binutils
+<b>Patrice Mandin</b> has done a lot of work for porting GCC and the binutils
 to the MiNT platform. His work is available
 <a href="http://patrice.mandin.pagesperso-orange.fr/v3/en/patch-utils.html"<?php echo $target ?>>here</a>.</p>
 
 <p>
-<b>Olivier Landemarre</b> has made its own port of GCC 4.2 to the the MiNT platform.
+<b>Olivier Landemarre</b> has made his own port of GCC 4.2 to the MiNT platform.
 He also has <a href="http://gem.lutece.net/discussion/archives/cat_listedeliens.html"<?php echo $target ?>>
 a great list of Atari-related stuff</a>.</p>
 
@@ -1557,7 +1561,7 @@ on <a href="http://cs.atari.org/"<?php echo $target ?>>the Czech and Slovak Atar
 <p>
 <b>Keith Scroggins</b> has ported <a href="http://www.scummvm.org/"<?php echo $target ?>>ScummVM</a> to MiNT.
 Build instructions are available <a href="http://wiki.scummvm.org/index.php/Compiling_ScummVM/Atari/FreeMiNT"<?php echo $target ?>>here</a>.
-He has also made his own native port of GCC 4.0.1 several years before me, his work is available <a href="http://www.radix.net/~kws/mint/old/"<?php echo $target ?>>here</a>.</p>
+He also made his own native port of GCC 4.0.1 several years before me; his work is available <a href="http://www.radix.net/~kws/mint/old/"<?php echo $target ?>>here</a>.</p>
 
 <p>
 <b>Miro Krop&#xe1;&#x010d;ek</b> has compiled the GCC 4.6.4 port for the MiNT host.

@@ -1,0 +1,162 @@
+From 0335a06186b3f0e2fc2dcbc0d96835a4f8610265 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 16 Feb 2018 18:48:16 +0100
+Subject: [PATCH] Accept /dev/null as alias for HOST_BIT_BUCKET on MinGW
+ (needed to make selftests work)
+
+---
+ gcc/cgraphclones.c           |  2 +-
+ gcc/config.gcc               |  2 ++
+ gcc/config/i386/xm-mingw32.h |  1 +
+ gcc/config/m68k/xm-mint.h    |  4 ++++
+ gcc/gcc.c                    | 11 ++++++++++-
+ gcc/lto-wrapper.c            |  3 ++-
+ gcc/system.h                 |  3 +++
+ gcc/toplev.c                 | 11 ++++++++++-
+ 8 files changed, 33 insertions(+), 4 deletions(-)
+ create mode 100644 gcc/config/m68k/xm-mint.h
+
+diff --git a/gcc/cgraphclones.c b/gcc/cgraphclones.c
+index 1fb8e3816a2..0f2f245fa85 100644
+--- a/gcc/cgraphclones.c
++++ b/gcc/cgraphclones.c
+@@ -522,7 +522,7 @@ clone_function_name_1 (const char *name, const char *suffix)
+ {
+   size_t len = strlen (name);
+   char *tmp_name, *prefix;
+-  char *at_suffix = NULL;
++  const char *at_suffix;
+ 
+   prefix = XALLOCAVEC (char, len + strlen (suffix) + 2);
+   /* name + 1 to skip fastcall which begins with '@' */
+diff --git a/gcc/config.gcc b/gcc/config.gcc
+index 36adf5a760d..fe36ae4047a 100644
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -2008,6 +2008,7 @@ m68k-*-mintelf*)
+ 	tm_file="${tm_file} dbxelf.h elfos.h m68k/mint.h"
+ 	tm_defines="${tm_defines} MOTOROLA=1"
+ 	tmake_file="m68k/t-floatlib m68k/t-mint"
++	xm_file=m68k/xm-mint.h
+ 	gas=yes
+ 	gnu_ld=yes
+ 	;;
+@@ -2017,6 +2018,7 @@ m68k-*-mint*)
+ 	tm_file="${tm_file} m68k/mint.h"
+ 	tm_defines="${tm_defines} MOTOROLA=1"
+ 	tmake_file="m68k/t-floatlib m68k/t-mint"
++	xm_file=m68k/xm-mint.h
+ 	gas=yes
+ 	gnu_ld=yes
+ 	;;
+diff --git a/gcc/config/i386/xm-mingw32.h b/gcc/config/i386/xm-mingw32.h
+index f1dbc23d80e..42dbfb0048a 100644
+--- a/gcc/config/i386/xm-mingw32.h
++++ b/gcc/config/i386/xm-mingw32.h
+@@ -25,6 +25,7 @@ along with GCC; see the file COPYING3.  If not see
+ 
+ /* This is the name of the null device on windows.  */
+ #define HOST_BIT_BUCKET "nul"
++#define HOST_BIT_BUCKET2 "/dev/null"
+ 
+ /*  The st_ino field of struct stat is always 0.  */
+ #define HOST_LACKS_INODE_NUMBERS
+diff --git a/gcc/config/m68k/xm-mint.h b/gcc/config/m68k/xm-mint.h
+new file mode 100644
+index 00000000000..e876f251d06
+--- /dev/null
++++ b/gcc/config/m68k/xm-mint.h
+@@ -0,0 +1,4 @@
++/* This is the name of the null device on MiNT.  */
++#define HOST_BIT_BUCKET "/dev/null"
++#define HOST_BIT_BUCKET2 "nul:"
++
+diff --git a/gcc/gcc.c b/gcc/gcc.c
+index a716f708259..9cb6333642e 100644
+--- a/gcc/gcc.c
++++ b/gcc/gcc.c
+@@ -44,6 +44,14 @@ compilation is specified by a string called a "spec".  */
+ #include "filenames.h"
+ #include "spellcheck.h"
+ 
++#ifdef __MINGW32__
++#undef HOST_BIT_BUCKET
++#undef HOST_BIT_BUCKET2
++/* This is the name of the null device on windows.  */
++#define HOST_BIT_BUCKET "nul"
++#define HOST_BIT_BUCKET2 "/dev/null"
++#endif
++
+ 
+ 
+ /* Manage the manipulation of env vars.
+@@ -4487,7 +4495,8 @@ process_command (unsigned int decoded_options_count,
+ 
+   if (output_file
+       && strcmp (output_file, "-") != 0
+-      && strcmp (output_file, HOST_BIT_BUCKET) != 0)
++      && strcmp (output_file, HOST_BIT_BUCKET) != 0
++      && strcmp (output_file, HOST_BIT_BUCKET2) != 0)
+     {
+       int i;
+       for (i = 0; i < n_infiles; i++)
+diff --git a/gcc/lto-wrapper.c b/gcc/lto-wrapper.c
+index f1f059cbfc0..825e59bc5bd 100644
+--- a/gcc/lto-wrapper.c
++++ b/gcc/lto-wrapper.c
+@@ -1191,7 +1191,8 @@ run_gcc (unsigned argc, char *argv[])
+   if (linker_output)
+     {
+       char *output_dir, *base, *name;
+-      bool bit_bucket = strcmp (linker_output, HOST_BIT_BUCKET) == 0;
++      bool bit_bucket = strcmp (linker_output, HOST_BIT_BUCKET) == 0 ||
++                        strcmp (linker_output, HOST_BIT_BUCKET2) == 0;
+ 
+       output_dir = xstrdup (linker_output);
+       base = output_dir;
+diff --git a/gcc/system.h b/gcc/system.h
+index 4abc321c71d..eba39f446c6 100644
+--- a/gcc/system.h
++++ b/gcc/system.h
+@@ -701,6 +701,9 @@ extern int vsnprintf (char *, size_t, const char *, va_list);
+ #ifndef HOST_BIT_BUCKET
+ #define HOST_BIT_BUCKET "/dev/null"
+ #endif
++#ifndef HOST_BIT_BUCKET2
++#define HOST_BIT_BUCKET2 ""
++#endif
+ 
+ #ifndef offsetof
+ #define offsetof(TYPE, MEMBER)	((size_t) &((TYPE *) 0)->MEMBER)
+diff --git a/gcc/toplev.c b/gcc/toplev.c
+index b066bcc7229..c37710af1be 100644
+--- a/gcc/toplev.c
++++ b/gcc/toplev.c
+@@ -99,6 +99,14 @@ along with GCC; see the file COPYING3.  If not see
+ #include <isl/version.h>
+ #endif
+ 
++#ifdef __MINGW32__
++#undef HOST_BIT_BUCKET
++#undef HOST_BIT_BUCKET2
++/* This is the name of the null device on windows.  */
++#define HOST_BIT_BUCKET "nul"
++#define HOST_BIT_BUCKET2 "/dev/null"
++#endif
++
+ static void general_init (const char *, bool);
+ static void do_compile ();
+ static void process_options (void);
+@@ -866,7 +874,8 @@ init_asm_output (const char *name)
+       if (!strcmp (asm_file_name, "-"))
+ 	asm_out_file = stdout;
+       else if (!canonical_filename_eq (asm_file_name, name)
+-	       || !strcmp (asm_file_name, HOST_BIT_BUCKET))
++	       || !strcmp (asm_file_name, HOST_BIT_BUCKET)
++	       || !strcmp (asm_file_name, HOST_BIT_BUCKET2))
+ 	asm_out_file = fopen (asm_file_name, "w");
+       else
+ 	/* Use UNKOWN_LOCATION to prevent gcc from printing the first
+-- 
+2.24.0
+

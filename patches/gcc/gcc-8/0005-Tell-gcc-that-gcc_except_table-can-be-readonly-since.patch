@@ -1,0 +1,27 @@
+From bfe98a60989d1c354aa7f9640b42a214848caa80 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Wed, 11 Oct 2017 19:26:43 +0200
+Subject: [PATCH] Tell gcc that gcc_except_table can be readonly, since we
+ don't need any runtime relocations. This allows it to be merged with the text
+ section, avoiding a gap between the text and data section
+
+---
+ gcc/config/m68k/mint.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/gcc/config/m68k/mint.h b/gcc/config/m68k/mint.h
+index c9984f7773f..6cf6c868700 100644
+--- a/gcc/config/m68k/mint.h
++++ b/gcc/config/m68k/mint.h
+@@ -172,6 +172,8 @@ along with GCC; see the file COPYING3.  If not see
+    keep switch tables in the text section.  */
+    
+ #define JUMP_TABLES_IN_TEXT_SECTION 1
++
++#define EH_TABLES_CAN_BE_READ_ONLY 1
+ #else
+ #define BSS_SECTION_ASM_OP "\t.bss"
+ 
+-- 
+2.24.0
+

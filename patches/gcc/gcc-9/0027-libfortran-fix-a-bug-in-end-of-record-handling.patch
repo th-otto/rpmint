@@ -1,0 +1,65 @@
+From d69d83468363ba6351e134597eaaa71a0833c27b Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 6 Jun 2019 18:35:00 +0200
+Subject: [PATCH] libfortran: fix a bug in end-of-record handling
+
+---
+ libgfortran/io/transfer.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/libgfortran/io/transfer.c b/libgfortran/io/transfer.c
+index c43360f6332..8fd7bf0cccf 100644
+--- a/libgfortran/io/transfer.c
++++ b/libgfortran/io/transfer.c
+@@ -2625,7 +2625,7 @@ us_read (st_parameter_dt *dtp, int continued)
+   else
+     n = compile_options.record_marker;
+ 
+-  nr = sread (dtp->u.p.current_unit->s, &i, n);
++  nr = sread (dtp->u.p.current_unit->s, &i8, n);
+   if (unlikely (nr < 0))
+     {
+       generate_error (&dtp->common, LIBERROR_BAD_US, NULL);
+@@ -2648,12 +2648,11 @@ us_read (st_parameter_dt *dtp, int continued)
+       switch (nr)
+ 	{
+ 	case sizeof(GFC_INTEGER_4):
+-	  memcpy (&i4, &i, sizeof (i4));
++	  memcpy (&i4, &i8, sizeof (i4));
+ 	  i = i4;
+ 	  break;
+ 
+ 	case sizeof(GFC_INTEGER_8):
+-	  memcpy (&i8, &i, sizeof (i8));
+ 	  i = i8;
+ 	  break;
+ 
+@@ -2669,14 +2668,14 @@ us_read (st_parameter_dt *dtp, int continued)
+       switch (nr)
+ 	{
+ 	case sizeof(GFC_INTEGER_4):
+-	  memcpy (&u32, &i, sizeof (u32));
++	  memcpy (&u32, &i8, sizeof (u32));
+ 	  u32 = __builtin_bswap32 (u32);
+ 	  memcpy (&i4, &u32, sizeof (i4));
+ 	  i = i4;
+ 	  break;
+ 
+ 	case sizeof(GFC_INTEGER_8):
+-	  memcpy (&u64, &i, sizeof (u64));
++	  memcpy (&u64, &i8, sizeof (u64));
+ 	  u64 = __builtin_bswap64 (u64);
+ 	  memcpy (&i8, &u64, sizeof (i8));
+ 	  i = i8;
+@@ -2711,7 +2710,7 @@ static void
+ us_write (st_parameter_dt *dtp, int continued)
+ {
+   ssize_t nbytes;
+-  gfc_offset dummy;
++  uint64_t dummy;
+ 
+   dummy = 0;
+ 
+-- 
+2.24.0
+

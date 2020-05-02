@@ -1,0 +1,195 @@
+From fdae49ecafe34160bd814db26725480ac33be9ad Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 6 Jun 2019 18:34:28 +0200
+Subject: [PATCH] libgfortran: get rid of warnings
+
+---
+ libgfortran/intrinsics/date_and_time.c        |  3 +++
+ libgfortran/intrinsics/execute_command_line.c |  3 +++
+ libgfortran/io/async.c                        | 19 +++++++++++++++++++
+ libgfortran/io/list_read.c                    |  4 ++--
+ libgfortran/io/unit.c                         |  2 +-
+ libgfortran/io/write.c                        |  6 +++---
+ 6 files changed, 31 insertions(+), 6 deletions(-)
+
+diff --git a/libgfortran/intrinsics/date_and_time.c b/libgfortran/intrinsics/date_and_time.c
+index d536404a214..b235672611a 100644
+--- a/libgfortran/intrinsics/date_and_time.c
++++ b/libgfortran/intrinsics/date_and_time.c
+@@ -126,6 +126,9 @@ extern void date_and_time (char *, char *, char *, gfc_array_i4 *,
+ 			   GFC_INTEGER_4, GFC_INTEGER_4, GFC_INTEGER_4);
+ export_proto(date_and_time);
+ 
++#pragma GCC diagnostic ignored "-Wformat-truncation"
++
++
+ void
+ date_and_time (char *__date, char *__time, char *__zone,
+ 	       gfc_array_i4 *__values, GFC_INTEGER_4 __date_len,
+diff --git a/libgfortran/intrinsics/execute_command_line.c b/libgfortran/intrinsics/execute_command_line.c
+index 1a471632172..e97cadc61bc 100644
+--- a/libgfortran/intrinsics/execute_command_line.c
++++ b/libgfortran/intrinsics/execute_command_line.c
+@@ -94,6 +94,9 @@ execute_command_line (const char *command, bool wait, int *exitstat,
+       set_cmdstat (cmdstat, EXEC_NOERROR);
+ 
+ #if defined(HAVE_SIGACTION) && defined(HAVE_WAITPID)
++#ifndef SA_RESTART
++#  define SA_RESTART 0
++#endif
+       static bool sig_init_saved;
+       bool sig_init = __atomic_load_n (&sig_init_saved, __ATOMIC_RELAXED);
+       if (!sig_init)
+diff --git a/libgfortran/io/async.c b/libgfortran/io/async.c
+index e3d1d01122e..63e403b1c79 100644
+--- a/libgfortran/io/async.c
++++ b/libgfortran/io/async.c
+@@ -499,6 +499,9 @@ init_async_unit (gfc_unit *u)
+ void
+ enqueue_transfer (async_unit *au, transfer_args *arg, enum aio_do type)
+ {
++  (void)au;
++  (void)arg;
++  (void)type;
+   return;
+ }
+ 
+@@ -507,6 +510,8 @@ enqueue_transfer (async_unit *au, transfer_args *arg, enum aio_do type)
+ int
+ enqueue_done_id (async_unit *au, enum aio_do type)
+ {
++  (void)au;
++  (void)type;
+   return 0;
+ }
+ 
+@@ -515,6 +520,8 @@ enqueue_done_id (async_unit *au, enum aio_do type)
+ void
+ enqueue_done (async_unit *au, enum aio_do type)
+ {
++  (void)au;
++  (void)type;
+   return;
+ }
+ 
+@@ -523,6 +530,7 @@ enqueue_done (async_unit *au, enum aio_do type)
+ void
+ enqueue_close (async_unit *au)
+ {
++  (void)au;
+   return;
+ }
+ 
+@@ -531,6 +539,9 @@ enqueue_close (async_unit *au)
+ void
+ enqueue_data_transfer_init (async_unit *au, st_parameter_dt *dt, int read_flag)
+ {
++  (void)au;
++  (void)dt;
++  (void)read_flag;
+   return;
+ }
+ 
+@@ -539,6 +550,8 @@ enqueue_data_transfer_init (async_unit *au, st_parameter_dt *dt, int read_flag)
+ bool
+ collect_async_errors (st_parameter_common *cmp, async_unit *au)
+ {
++  (void)cmp;
++  (void)au;
+   return false;
+ }
+ 
+@@ -547,6 +560,9 @@ collect_async_errors (st_parameter_common *cmp, async_unit *au)
+ bool
+ async_wait_id (st_parameter_common *cmp, async_unit *au, int i)
+ {
++  (void)cmp;
++  (void)au;
++  (void)i;
+   return false;
+ }
+ 
+@@ -555,6 +571,8 @@ async_wait_id (st_parameter_common *cmp, async_unit *au, int i)
+ bool
+ async_wait (st_parameter_common *cmp, async_unit *au)
+ {
++  (void)cmp;
++  (void)au;
+   return false;
+ }
+ 
+@@ -563,6 +581,7 @@ async_wait (st_parameter_common *cmp, async_unit *au)
+ void
+ async_close (async_unit *au)
+ {
++  (void)au;
+   return;
+ }
+ 
+diff --git a/libgfortran/io/list_read.c b/libgfortran/io/list_read.c
+index d9af255a034..a8a904f39a5 100644
+--- a/libgfortran/io/list_read.c
++++ b/libgfortran/io/list_read.c
+@@ -2222,7 +2222,7 @@ list_formatted_read_scalar (st_parameter_dt *dtp, bt type, void *p,
+ 
+ 	  /* Call the user defined formatted READ procedure.  */
+ 	  dtp->u.p.current_unit->child_dtio++;
+-	  dtp->u.p.fdtio_ptr (p, &unit, iotype, &vlist,
++	  dtp->u.p.fdtio_ptr (p, &unit, iotype, (gfc_array_i4 *)&vlist,
+ 			      child_iostat, child_iomsg,
+ 			      iotype_len, child_iomsg_len);
+ 	  dtp->u.p.child_saved_iostat = *child_iostat;
+@@ -3024,7 +3024,7 @@ nml_read_obj (st_parameter_dt *dtp, namelist_info *nl, index_type offset,
+ 
+ 		/* Call the user defined formatted READ procedure.  */
+ 		dtp->u.p.current_unit->child_dtio++;
+-		dtio_ptr ((void *)&list_obj, &unit, iotype, &vlist,
++		dtio_ptr ((void *)&list_obj, &unit, iotype, (gfc_array_i4 *)&vlist,
+ 			  child_iostat, child_iomsg,
+ 			  iotype_len, child_iomsg_len);
+ 		dtp->u.p.child_saved_iostat = *child_iostat;
+diff --git a/libgfortran/io/unit.c b/libgfortran/io/unit.c
+index c0dbfad2c78..8798d39b3a4 100644
+--- a/libgfortran/io/unit.c
++++ b/libgfortran/io/unit.c
+@@ -600,7 +600,7 @@ init_units (void)
+ 
+   if (sizeof (max_offset) == 8)
+     {
+-      max_offset = GFC_INTEGER_8_HUGE;
++      max_offset = (gfc_offset) GFC_INTEGER_8_HUGE;
+       /* Why this weird value? Because if the recl specifier in the
+ 	 inquire statement is a 4 byte value, u->recl is truncated,
+ 	 and this trick ensures it becomes HUGE(0) rather than -1.
+diff --git a/libgfortran/io/write.c b/libgfortran/io/write.c
+index c8811e200e0..d5f45e0606c 100644
+--- a/libgfortran/io/write.c
++++ b/libgfortran/io/write.c
+@@ -1915,7 +1915,7 @@ list_formatted_write_scalar (st_parameter_dt *dtp, bt type, void *p, int kind,
+ 
+ 	  /* Call the user defined formatted WRITE procedure.  */
+ 	  dtp->u.p.current_unit->child_dtio++;
+-	  dtp->u.p.fdtio_ptr (p, &unit, iotype, &vlist,
++	  dtp->u.p.fdtio_ptr (p, &unit, iotype, (gfc_full_array_i4 *)&vlist,
+ 			      child_iostat, child_iomsg,
+ 			      iotype_len, child_iomsg_len);
+ 	  dtp->u.p.current_unit->child_dtio--;
+@@ -2247,13 +2247,13 @@ nml_write_obj (st_parameter_dt *dtp, namelist_info *obj, index_type offset,
+ 		      list_obj.data = p;
+ 		      list_obj.vptr = obj->vtable;
+ 		      list_obj.len = 0;
+-		      dtio_ptr ((void *)&list_obj, &unit, iotype, &vlist,
++		      dtio_ptr ((void *)&list_obj, &unit, iotype, (gfc_full_array_i4 *)&vlist,
+ 				child_iostat, child_iomsg,
+ 				iotype_len, child_iomsg_len);
+ 		    }
+ 		  else
+ 		    {
+-		      dtio_ptr (p, &unit, iotype, &vlist,
++		      dtio_ptr (p, &unit, iotype, (gfc_full_array_i4 *)&vlist,
+ 				child_iostat, child_iomsg,
+ 				iotype_len, child_iomsg_len);
+ 		    }
+-- 
+2.24.0
+

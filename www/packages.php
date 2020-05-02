@@ -30,7 +30,7 @@ The full documentation can be found
 <a href="https://sourceware.org/binutils/docs-2.31/" ' . $target . '>here</a>.<br />
 <br />
 Note that official support for m68k-aout has been removed since binutils-2.31.<br />
-This is a version were that support has been added back in.
+This is a version where that support has been added back in.
 '
 	),
 	'binutils230' => array(
@@ -106,14 +106,14 @@ The full documentation can be found
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
-	'gcc920' => array(
+	'gcc931' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '9.2.0',
-		'date' => '20200102',
+		'version' => '9.3.1',
+		'date' => '20200501',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
-		'branch' => 'gcc-9-mint',
+		'branch' => 'mint/gcc-9',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
@@ -126,14 +126,14 @@ GCC contains everything to compile C programs, except a standard library and a m
 		'cygwin64' => 1,
 		'mingw32' => 1,
 		'mingw64' => 0,
-		'linux32' => 0,
+		'linux32' => 1,
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 1,
 		'comment' => '
 This is the currently most recent official version of GCC. It comes in two
-flavours: one for a.out toolchain (as the previously used version
+flavours: one for an a.out toolchain (as with the previously used version
 4.6.4), and one for an elf toolchain. Elf toolchain here means that it
 will still produce the same executable format, but works with elf object
 files. To support this better, all libraries offered here were also recompiled
@@ -143,14 +143,14 @@ using this format (although theoretically it should be possible to mix them).<br
 use fdlibm instead of the ancient pml math library.
 '
 	),
-	'gcc830' => array(
+	'gcc841' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '8.3.0',
-		'date' => '20190223',
+		'version' => '8.4.1',
+		'date' => '20200501',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
-		'branch' => 'gcc-8-mint',
+		'branch' => 'mint/gcc-8',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
@@ -163,13 +163,13 @@ use fdlibm instead of the ancient pml math library.
 		'cygwin64' => 1,
 		'mingw32' => 1,
 		'mingw64' => 0,
-		'linux32' => 0,
+		'linux32' => 1,
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 1,
 		'comment' => '
-Slightly older Version of GCC.
+Slightly older version of GCC.
 '
 	),
 	'gcc750' => array(
@@ -179,7 +179,7 @@ Slightly older Version of GCC.
 		'version' => '7.5.0',
 		'date' => '20200101',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
-		'branch' => 'gcc-7-mint',
+		'branch' => 'mint/gcc-7',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
@@ -192,13 +192,13 @@ Slightly older Version of GCC.
 		'cygwin64' => 1,
 		'mingw32' => 1,
 		'mingw64' => 0,
-		'linux32' => 0,
+		'linux32' => 1,
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 1,
 		'comment' => '
-Slightly older Version of GCC.
+Slightly older version of GCC.
 '
 	),
 	'mintbin' => array(
@@ -246,7 +246,7 @@ $libpackages = array(
 		'atari' => 1,
 		'amiga' => 0,
 		'comment' => '
-MiNTLib is a standard C library. It allows to build software which runs on MiNT and TOS
+MiNTLib is a standard C library. It allows you to build software which runs on MiNT and TOS
 operating systems. Unlike other packages, I used the latest sources from the CVS repository
 instead of the latest official release.
 '
@@ -286,7 +286,7 @@ For a comparison to fdlibm, see <a href="math.php">Math libraries for Atari</a>
 		'amiga' => 0,
 		'comment' => '
 fdlibm is a portable math library that was originally <br />
-developed by Sun Microsystem. <br />
+developed by Sun Microsystems. <br />
 You should be able to use it at a replacement for PML,
 but note that all packages provided here were compiled using PML.
 <br />
@@ -307,8 +307,8 @@ For a comparison to PML, see <a href="math.php">Math libraries for Atari</a>
 		'atari' => 1,
 		'amiga' => 0,
 		'comment' => '
-The GEMlib allows to write graphical programs using GEM.<br />
-It is maintained by Arnaud Bercegeay, the official releases are available
+GEMlib allows you to write graphical programs using GEM.<br />
+It is maintained by Arnaud Bercegeay; the official releases are available
 on the <a href="http://arnaud.bercegeay.free.fr/gemlib/"' . $target . '>GEMlib&apos;s homepage</a>.
 However, the latest sources are available
 on the <a href="https://github.com/freemint/lib"' . $target . '>FreeMiNT&apos;s GitHub repository</a>.
@@ -331,14 +331,14 @@ on the <a href="https://github.com/freemint/lib"' . $target . '>FreeMiNT&apos;s 
 CFLIB is Christian Felsch&apos;s GEM utility library. It provide advanced controls,
 such as check boxes, radio buttons, combo boxes... It also allows windowed
 dialogs.<br />
-BUG: On plain TOS, the CFLIB makes intensive usage of the GEM USERDEF feature.
+BUG: On plain TOS, CFLIB makes intensive use of the GEM USERDEF feature.
 Due to bad GEM design, USERDEF callbacks are called in supervisor mode using
 the very small internal AES stack. Unfortunately, some GemLib functions such
 as v_gtext() needs an insane amout of stack (more than 2 KB). So some USERDEF
-callbacks quickly produces an AES internal stack overflow, and crashes all the
+callbacks quickly produces an AES internal stack overflow, and crash the entire
 system.<br />
-Concretely, due to this issue, programs using the CFLIB work fine on XaAES
-and TOS 4.04, but crashes on TOS 1.62 and EmuTOS.
+Concretely, due to this issue, programs using CFLIB work fine on XaAES
+and TOS 4.04, but crash on TOS 1.62 and early versions of EmuTOS.
 '
 	),
 	'gemma' => array(
@@ -424,9 +424,9 @@ This library is also available as a <a href="../sharedlibs.php#bzip2">shared lib
 		'atari' => 1,
 		'amiga' => 0,
 		'comment' => '
-LDG stands for Gem Dynamical Libraries (actually Librairies Dynamiques
-GEM in french). It&apos;s a system allowing GEM applications to load and to
-share externals modules. 
+LDG stands for GEM Dynamic Libraries (actually Librairies Dynamiques
+GEM in French). It&apos;s a system allowing GEM applications to load and to
+share external modules. 
 <br />
 Only the libraries are compiled. To use modules, you also have to
 install the auto folder programs from <a href="http://ldg.sourceforge.net/#download">http://ldg.sourceforge.net/</a>. 
@@ -484,8 +484,8 @@ Thanks to Patrice Mandin, SDL is available on Atari platforms. SDL programs can
 run either in full screen or in a GEM window, depending on the SDL_VIDEODRIVER
 environment variable.<br />
 <br />
-cross compiling hint: in many autoconf/automake based packages, presence of SDL
-is checked by searching for a sdl-config script. Most likely, the one found will
+Cross compiling hint: in many autoconf/automake based packages, the presence of SDL
+is checked for by searching for a sdl-config script. Most likely, the one found will
 be the one for your host system. This has the bad effect of adding absolute
 search paths like /usr/include/SDL and /usr/lib. If that happens, you have to
 manually edit config.status after running configure, and remove those flags.
@@ -590,7 +590,7 @@ of DOS-like and UNIX-like platforms on a variety of architectures.
 		'atari' => 1,
 		'amiga' => 0,
 		'comment' => '
-LHa for UNIX - Note: This software is licensed under the ORIGINAL
+LHA for UNIX - Note: This software is licensed under the ORIGINAL
 LICENSE. It is written in man/lha.n in Japanese 
 '
 	),
@@ -753,7 +753,7 @@ that are actually collections of many other files; the program provides
 users with an organized and systematic method of controlling a large amount
 of data. Despite its name, that is an acronym of "tape archiver", GNU Tar
 is able to direct its output to any available devices, files or other programs,
-it may as well access remote devices or files.
+it is also able to access remote devices or files.
 '
 	),
 	'libiconv' => array(
@@ -768,7 +768,7 @@ it may as well access remote devices or files.
 		'atari' => 1,
 		'amiga' => 0,
 		'comment' => '
-libiconv library provides an iconv() implementation, for use on
+The libiconv library provides an iconv() implementation, for use on
 systems which don&apos;t have one, or whose implementation cannot convert
 from/to Unicode.</br>
 This library is also available as a <a href="../sharedlibs.php#libiconv">shared library.</a>
@@ -1599,7 +1599,7 @@ The RPM Package Manager (RPM) is a powerful package management system capable of
 		'atari' => 1,
 		'amiga' => 0,
 		'comment' => '
-RHash (Recurcive Hasher) is a console utility for computing and
+RHash (Recursive Hasher) is a console utility for computing and
 verifying magnet links and hash sums of files.<br />
 It supports CRC32, MD4, MD5, SHA1/SHA2, Tiger, DC++ TTH, BitTorrent
 BTIH, AICH, eDonkey hash, GOST R 34.11-94, RIPEMD-160, HAS-160, EDON-R,
@@ -2017,10 +2017,10 @@ A multichannel audio mixer. It supports four channels of 16-bit stereo
 audio, plus a single channel of music, mixed by the popular MikMod MOD,
 Timidity MIDI, and SMPEG MP3 libraries.<br />
 <br />
-cross compiling hint: on modern platforms, it is sufficient to just link
+Cross compiling hint: on modern platforms, it is sufficient to just link
 against SDL_mixer, because the other libraries are referenced there as
 shared libraries. Since for atari we have only static libraries, you
-have to link those explictly. The correct link command (order is important) is:<br />
+have to link those explicitly. The correct link command (order is important) is:<br />
 <code>
 -lSDL_mixer -lSDL -lFLAC -lvorbisfile -lvorbis -lmikmod -logg -lmpg123 -lgem -lm
 </code><br />
@@ -2043,10 +2043,10 @@ This is a simple library to load images of various formats as SDL
 surfaces. This library supports the BMP, PPM, PCX, GIF, JPEG, PNG,
 TIFF and WEBP formats.
 <br />
-cross compiling hint: on modern platforms, it is sufficient to just link
+Cross compiling hint: on modern platforms, it is sufficient to just link
 against SDL_images, because the other libraries are referenced there as
 shared libraries. Since for atari we have only static libraries, you
-have to link those explictly. The correct link command (order is important) is:<br />
+have to link those explicitly. The correct link command (order is important) is:<br />
 <code>
 -lSDL -lSDL_image -ltiff -ljpeg -lpng -llzma -lz -lbz2 -lgem -lm
 </code><br />
@@ -2226,7 +2226,7 @@ MPEG-2 extension to Lower Sampling Frequencies, as well as the
 so-called MPEG 2.5 format. All three audio layers (Layer I, Layer II,
 and Layer III a.k.a. MP3) are implemented.
 </br>
-MAD supports 24-bit PCM output. MAD computes using 100%% fixed-point
+MAD supports 24-bit PCM output. MAD computes using 100% fixed-point
 (integer) computation, so you can run it without a floating point
 unit.
 '
@@ -2269,10 +2269,10 @@ Decompression speed is preserved and remains roughly the same at all
 settings, a property shared by most LZ compression algorithms, such
 as zlib or lzma.
 
-At roughly the same ratio, zstd (v1.4.0) achieves ~870%% faster
+At roughly the same ratio, zstd (v1.4.0) achieves ~870% faster
 compression than gzip. For roughly the same time, zstd achives a
-~12%% better ratio than gzip. LZMA outperforms zstd by ~10%% faster
-compression for same ratio, or ~1-4%% size reduction for same time.
+~12% better ratio than gzip. LZMA outperforms zstd by ~10% faster
+compression for the same ratio, or ~1-4% size reduction for same time.
 '
 	),
 	'dosfstools' => array(

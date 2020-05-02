@@ -1,0 +1,150 @@
+From 3f1b79864a87bce4b5a7b9c55a5f0a59460c9327 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Tue, 26 Feb 2019 14:43:50 +0100
+Subject: [PATCH] libgfortran: get rid of warnings
+
+---
+ libgfortran/caf/single.c               | 4 ++--
+ libgfortran/intrinsics/date_and_time.c | 3 +++
+ libgfortran/io/list_read.c             | 4 ++--
+ libgfortran/io/transfer.c              | 2 +-
+ libgfortran/io/unit.c                  | 2 +-
+ libgfortran/io/write.c                 | 6 +++---
+ libgfortran/runtime/environ.c          | 2 ++
+ 7 files changed, 14 insertions(+), 9 deletions(-)
+
+diff --git a/libgfortran/caf/single.c b/libgfortran/caf/single.c
+index 1ad13bd5643..a529f6a00fb 100644
+--- a/libgfortran/caf/single.c
++++ b/libgfortran/caf/single.c
+@@ -2810,14 +2810,14 @@ _gfortran_caf_sendget_by_ref (caf_token_t dst_token, int dst_image_index,
+   GFC_DESCRIPTOR_RANK (&temp) = -1;
+   GFC_DESCRIPTOR_TYPE (&temp) = dst_type;
+ 
+-  _gfortran_caf_get_by_ref (src_token, src_image_index, &temp, src_refs,
++  _gfortran_caf_get_by_ref (src_token, src_image_index, (gfc_descriptor_t *)&temp, src_refs,
+ 			    dst_kind, src_kind, may_require_tmp, true,
+ 			    src_stat, src_type);
+ 
+   if (src_stat && *src_stat != 0)
+     return;
+ 
+-  _gfortran_caf_send_by_ref (dst_token, dst_image_index, &temp, dst_refs,
++  _gfortran_caf_send_by_ref (dst_token, dst_image_index, (gfc_descriptor_t *)&temp, dst_refs,
+ 			     dst_kind, dst_kind, may_require_tmp, true,
+ 			     dst_stat, dst_type);
+   if (GFC_DESCRIPTOR_DATA (&temp))
+diff --git a/libgfortran/intrinsics/date_and_time.c b/libgfortran/intrinsics/date_and_time.c
+index 78a7cd0e48b..0de28f24224 100644
+--- a/libgfortran/intrinsics/date_and_time.c
++++ b/libgfortran/intrinsics/date_and_time.c
+@@ -126,6 +126,9 @@ extern void date_and_time (char *, char *, char *, gfc_array_i4 *,
+ 			   GFC_INTEGER_4, GFC_INTEGER_4, GFC_INTEGER_4);
+ export_proto(date_and_time);
+ 
++#pragma GCC diagnostic ignored "-Wformat-truncation"
++
++
+ void
+ date_and_time (char *__date, char *__time, char *__zone,
+ 	       gfc_array_i4 *__values, GFC_INTEGER_4 __date_len,
+diff --git a/libgfortran/io/list_read.c b/libgfortran/io/list_read.c
+index ebaad1a1557..9767b011e87 100644
+--- a/libgfortran/io/list_read.c
++++ b/libgfortran/io/list_read.c
+@@ -2222,7 +2222,7 @@ list_formatted_read_scalar (st_parameter_dt *dtp, bt type, void *p,
+ 
+ 	  /* Call the user defined formatted READ procedure.  */
+ 	  dtp->u.p.current_unit->child_dtio++;
+-	  dtp->u.p.fdtio_ptr (p, &unit, iotype, &vlist,
++	  dtp->u.p.fdtio_ptr (p, &unit, iotype, (gfc_array_i4 *)&vlist,
+ 			      child_iostat, child_iomsg,
+ 			      iotype_len, child_iomsg_len);
+ 	  dtp->u.p.child_saved_iostat = *child_iostat;
+@@ -3024,7 +3024,7 @@ nml_read_obj (st_parameter_dt *dtp, namelist_info *nl, index_type offset,
+ 
+ 		/* Call the user defined formatted READ procedure.  */
+ 		dtp->u.p.current_unit->child_dtio++;
+-		dtio_ptr ((void *)&list_obj, &unit, iotype, &vlist,
++		dtio_ptr ((void *)&list_obj, &unit, iotype, (gfc_array_i4 *)&vlist,
+ 			  child_iostat, child_iomsg,
+ 			  iotype_len, child_iomsg_len);
+ 		dtp->u.p.child_saved_iostat = *child_iostat;
+diff --git a/libgfortran/io/transfer.c b/libgfortran/io/transfer.c
+index b28cfafec61..db2eab37e19 100644
+--- a/libgfortran/io/transfer.c
++++ b/libgfortran/io/transfer.c
+@@ -2460,7 +2460,7 @@ transfer_array (st_parameter_dt *dtp, gfc_array_char *desc, int kind,
+     return;
+ 
+   iotype = (bt) GFC_DESCRIPTOR_TYPE (desc);
+-  size = iotype == BT_CHARACTER ? (index_type) charlen : GFC_DESCRIPTOR_SIZE (desc);
++  size = iotype == BT_CHARACTER ? (index_type) charlen : (index_type) GFC_DESCRIPTOR_SIZE (desc);
+ 
+   rank = GFC_DESCRIPTOR_RANK (desc);
+ 
+diff --git a/libgfortran/io/unit.c b/libgfortran/io/unit.c
+index 559dba92635..c4bc1c5bb11 100644
+--- a/libgfortran/io/unit.c
++++ b/libgfortran/io/unit.c
+@@ -597,7 +597,7 @@ init_units (void)
+ 
+   if (sizeof (max_offset) == 8)
+     {
+-      max_offset = GFC_INTEGER_8_HUGE;
++      max_offset = (gfc_offset) GFC_INTEGER_8_HUGE;
+       /* Why this weird value? Because if the recl specifier in the
+ 	 inquire statement is a 4 byte value, u->recl is truncated,
+ 	 and this trick ensures it becomes HUGE(0) rather than -1.
+diff --git a/libgfortran/io/write.c b/libgfortran/io/write.c
+index 7aceff6cb27..035e120514f 100644
+--- a/libgfortran/io/write.c
++++ b/libgfortran/io/write.c
+@@ -1911,7 +1911,7 @@ list_formatted_write_scalar (st_parameter_dt *dtp, bt type, void *p, int kind,
+ 
+ 	  /* Call the user defined formatted WRITE procedure.  */
+ 	  dtp->u.p.current_unit->child_dtio++;
+-	  dtp->u.p.fdtio_ptr (p, &unit, iotype, &vlist,
++	  dtp->u.p.fdtio_ptr (p, &unit, iotype, (gfc_array_i4 *)&vlist,
+ 			      child_iostat, child_iomsg,
+ 			      iotype_len, child_iomsg_len);
+ 	  dtp->u.p.current_unit->child_dtio--;
+@@ -2243,13 +2243,13 @@ nml_write_obj (st_parameter_dt *dtp, namelist_info *obj, index_type offset,
+ 		      list_obj.data = p;
+ 		      list_obj.vptr = obj->vtable;
+ 		      list_obj.len = 0;
+-		      dtio_ptr ((void *)&list_obj, &unit, iotype, &vlist,
++		      dtio_ptr ((void *)&list_obj, &unit, iotype, (gfc_array_i4 *)&vlist,
+ 				child_iostat, child_iomsg,
+ 				iotype_len, child_iomsg_len);
+ 		    }
+ 		  else
+ 		    {
+-		      dtio_ptr (p, &unit, iotype, &vlist,
++		      dtio_ptr (p, &unit, iotype, (gfc_array_i4 *)&vlist,
+ 				child_iostat, child_iomsg,
+ 				iotype_len, child_iomsg_len);
+ 		    }
+diff --git a/libgfortran/runtime/environ.c b/libgfortran/runtime/environ.c
+index 22faad348da..89089f141d2 100644
+--- a/libgfortran/runtime/environ.c
++++ b/libgfortran/runtime/environ.c
+@@ -100,6 +100,7 @@ init_integer (variable * v)
+ 
+ /* Initialize an integer environment variable which has to be positive.  */
+ 
++#if 0
+ static void
+ init_unsigned_integer (variable * v)
+ {
+@@ -115,6 +116,7 @@ init_unsigned_integer (variable * v)
+ 
+   *v->var = atoi (p);
+ }
++#endif
+ 
+ 
+ /* Initialize a boolean environment variable. We only look at the first
+-- 
+2.24.0
+

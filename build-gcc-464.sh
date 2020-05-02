@@ -18,6 +18,12 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 TARGET=m68k-atari-mint
 
 #
+# the hosts compiler
+#
+GCC=${GCC-gcc}
+GXX=${GXX-g++}
+
+#
 # The prefix where the executables should
 # be installed later. If installed properly,
 # this actually does not matter much, since
@@ -29,11 +35,13 @@ TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
 case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
 	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
-	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
-	MSYS*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
-	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
+	MINGW*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
+	MSYS*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
+	CYGWIN*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
-	*) host=linux ;;
+	*) host=linux64
+	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=linux32; fi
+	   ;;
 esac
 case $host in
 	mingw* | msys*) PREFIX=${MINGW_PREFIX} ;;
@@ -123,7 +131,7 @@ if test ! -f "${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h"; then
 	exit 1
 fi
 
-if test -d /usr/lib64; then
+if test -d /usr/lib64 -a $host = linux64; then
 	BUILD_LIBDIR=${PREFIX}/lib64
 else
 	BUILD_LIBDIR=${PREFIX}/lib
@@ -223,8 +231,8 @@ mpfr_config=
 
 case $host in
 	macos*)
-		export CC=/usr/bin/clang
-		export CXX=/usr/bin/clang++
+		GCC=/usr/bin/clang
+		GXX=/usr/bin/clang++
 		export MACOSX_DEPLOYMENT_TARGET=10.6
 		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
 		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
@@ -232,6 +240,9 @@ case $host in
 		mpfr_config="--with-mpc=${CROSSTOOL_DIR} --with-gmp=${CROSSTOOL_DIR} --with-mpfr=${CROSSTOOL_DIR}"
 		;;
 esac
+
+export CC="${GCC}"
+export CXX="${GXX}"
 
 ../$srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
@@ -265,13 +276,22 @@ esac
 	--enable-ssp \
 	--enable-libssp \
 	$enable_plugin \
-	--enable-decimal-float \
+	--disable-decimal-float \
 	--disable-nls \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
 	$mpfr_config \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
 	--enable-languages="$languages"
+
+case $host in
+	linux32)
+		# make sure to pick up the just-compiled 32bit version of ld, not
+		# some previous 64bit version
+		sed -i "s|S\[\"build_tooldir\"\]=.*|S[\"build_tooldir\"]=\"${PKG_DIR}${PREFIX}/${TARGET}\"|" config.status
+		./config.status
+		;;
+esac
 
 ${MAKE} $JOBS all-gcc || exit 1
 ${MAKE} $JOBS all-target-libgcc || exit 1

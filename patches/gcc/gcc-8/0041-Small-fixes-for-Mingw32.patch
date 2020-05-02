@@ -1,0 +1,44 @@
+From 206147f2185b7684968a15f1aedb2d62a5be9633 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 1 Mar 2019 01:20:54 +0100
+Subject: [PATCH] Small fixes for Mingw32
+
+---
+ gcc/pretty-print.c    | 7 +++++++
+ libiberty/strsignal.c | 2 +-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/gcc/pretty-print.c b/gcc/pretty-print.c
+index 6243aed3dac..837143108e4 100644
+--- a/gcc/pretty-print.c
++++ b/gcc/pretty-print.c
+@@ -42,6 +42,13 @@ along with GCC; see the file COPYING3.  If not see
+ #define WIN32_LEAN_AND_MEAN 1
+ #include <windows.h>
+ 
++#ifndef COMMON_LVB_REVERSE_VIDEO
++#define COMMON_LVB_REVERSE_VIDEO 0x4000
++#endif
++#ifndef COMMON_LVB_UNDERSCORE
++#define COMMON_LVB_UNDERSCORE 0x8000
++#endif
++
+ /* Write all bytes in [s,s+n) into the specified stream.
+    Errors are ignored.  */
+ static void
+diff --git a/libiberty/strsignal.c b/libiberty/strsignal.c
+index 666b1b4f15e..2f607023097 100644
+--- a/libiberty/strsignal.c
++++ b/libiberty/strsignal.c
+@@ -551,7 +551,7 @@ followed by a newline.
+ #ifndef HAVE_PSIGNAL
+ 
+ void
+-psignal (int signo, char *message)
++psignal (int signo, const char *message)
+ {
+   if (signal_names == NULL)
+     {
+-- 
+2.24.0
+
