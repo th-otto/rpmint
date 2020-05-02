@@ -85,7 +85,7 @@ This is the last official version with support for it.
 		'cygwin64' => 1,
 		'mingw32' => 1,
 		'mingw64' => 0,
-		'linux32' => 0,
+		'linux32' => 1,
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
