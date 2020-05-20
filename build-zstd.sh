@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=zstd
-VERSION=-1.4.3
+VERSION=-1.4.4
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh

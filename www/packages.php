@@ -2294,6 +2294,22 @@ respectively make and check MS-DOS FAT file systems on hard drives or on
 floppies.
 '
 	),
+	'opkg' => array(
+		'name' => 'opkg',
+		'upstream' => 'https://git.yoctoproject.org/cgit/cgit.cgi/opkg/',
+		'branch' => '',
+		'source' => 'https://git.yoctoproject.org/cgit/cgit.cgi/%{name}/snapshot/%{name}-%{version}.tar.bz2',
+		'version' => '0.4.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+Opkg lightweight package management system
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

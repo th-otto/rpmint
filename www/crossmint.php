@@ -1513,6 +1513,8 @@ This notably applies to Perl and Python.
 
 <li>2020/05/02 Update gcc to version 9.3.1</li>
 
+<li>2020/05/05 Package opkg added</li>
+
 </ul>
 
 <p></p>

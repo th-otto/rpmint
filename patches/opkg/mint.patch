@@ -1,0 +1,70 @@
+diff -ru opkg-0.4.2.orig/configure.ac opkg-0.4.2/configure.ac
+--- opkg-0.4.2.orig/configure.ac	2019-12-16 21:38:38.000000000 +0100
++++ opkg-0.4.2/configure.ac	2020-05-05 18:34:31.245685792 +0200
+@@ -279,7 +279,7 @@
+ AC_TYPE_SIGNAL
+ AC_FUNC_UTIME_NULL
+ AC_FUNC_VPRINTF
+-AC_CHECK_FUNCS([memmove memset mkdir regcomp strchr strcspn strdup strerror strndup strrchr strstr strtol strtoul sysinfo utime])
++AC_CHECK_FUNCS([memmove memset mkdir regcomp strchr strcspn strdup strerror strndup strrchr strstr strtol strtoul sysinfo utime mkdtemp])
+ 
+ CLEAN_DATE=`date +"%B %Y" | tr -d '\n'`
+ 
+diff -ru opkg-0.4.2.orig/libopkg/file_util.c opkg-0.4.2/libopkg/file_util.c
+--- opkg-0.4.2.orig/libopkg/file_util.c	2019-12-16 21:38:38.000000000 +0100
++++ opkg-0.4.2/libopkg/file_util.c	2020-05-05 18:26:25.501693329 +0200
+@@ -468,7 +468,7 @@
+         if (!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))
+             continue;
+ 
+-#ifdef _BSD_SOURCE
++#ifdef DT_DIR
+         if (dent->d_type == DT_DIR) {
+             ret = rm_r(dent->d_name);
+             if (ret == -1)
+diff -ru opkg-0.4.2.orig/libopkg/opkg_conf.c opkg-0.4.2/libopkg/opkg_conf.c
+--- opkg-0.4.2.orig/libopkg/opkg_conf.c	2019-12-16 21:38:38.000000000 +0100
++++ opkg-0.4.2/libopkg/opkg_conf.c	2020-05-05 18:39:42.349680964 +0200
+@@ -968,3 +968,16 @@
+         }
+     }
+ }
++
++#ifndef HAVE_MKDTEMP
++char *mkdtemp(char *template)
++{
++	if (mktemp(template) == NULL)
++		return NULL;
++
++	if (mkdir(template, 0700) < 0)
++		return NULL;
++
++	return template;
++}
++#endif
+diff -ru opkg-0.4.2.orig/libopkg/opkg_conf.h opkg-0.4.2/libopkg/opkg_conf.h
+--- opkg-0.4.2.orig/libopkg/opkg_conf.h	2019-12-16 21:38:38.000000000 +0100
++++ opkg-0.4.2/libopkg/opkg_conf.h	2020-05-05 18:36:30.381683943 +0200
+@@ -206,6 +206,10 @@
+ 
+ char *opkg_solver_version_alloc(void);
+ 
++#ifndef HAVE_MKDTEMP
++char *mkdtemp(char *template);
++#endif
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff -ru opkg-0.4.2.orig/libopkg/pkg.c opkg-0.4.2/libopkg/pkg.c
+--- opkg-0.4.2.orig/libopkg/pkg.c	2019-12-16 21:38:38.000000000 +0100
++++ opkg-0.4.2/libopkg/pkg.c	2020-05-05 18:37:09.885683330 +0200
+@@ -675,7 +675,7 @@
+             }
+         } else if (strcasecmp(field, "Installed-Time") == 0) {
+             if (pkg->installed_time) {
+-                fprintf(fp, "Installed-Time: %lu\n", pkg->installed_time);
++                fprintf(fp, "Installed-Time: %lu\n", (unsigned long)pkg->installed_time);
+             }
+         } else {
+             goto UNKNOWN_FMT_FIELD;
