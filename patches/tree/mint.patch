@@ -1,0 +1,28 @@
+diff -rup tree-1.8.0.orig/tree.c tree-1.8.0/tree.c
+--- tree-1.8.0.orig/tree.c	2018-01-10 17:47:14.000000000 +0100
++++ tree-1.8.0/tree.c	2020-07-13 09:43:19.758650577 +0200
+@@ -109,9 +109,11 @@ int main(int argc, char **argv)
+   setlocale(LC_COLLATE, "");
+ 
+   charset = getcharset();
++#ifndef __MINT__ /* !HAVE_LANGINGO_H */
+   if (charset == NULL && strcmp(nl_langinfo(CODESET), "UTF-8") == 0) {
+     charset = "UTF-8";
+   }
++#endif
+ 
+ /* Until I get rid of this hack, make it linux/cygwin/HP nonstop only: */
+ #if defined (LINUX) || defined (CYGWIN) || defined (__TANDEM)
+diff -rup tree-1.8.0.orig/tree.h tree-1.8.0/tree.h
+--- tree-1.8.0.orig/tree.h	2018-01-10 17:50:55.000000000 +0100
++++ tree-1.8.0/tree.h	2020-07-13 09:42:12.294648572 +0200
+@@ -52,7 +52,9 @@
+ #endif
+ 
+ #include <locale.h>
++#ifndef __MINT__ /* !HAVE_LANGINGO_H */
+ #include <langinfo.h>
++#endif
+ #include <wchar.h>
+ #include <wctype.h>
+ 

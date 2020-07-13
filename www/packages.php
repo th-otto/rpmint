@@ -2339,6 +2339,24 @@ floppies.
 Opkg lightweight package management system
 '
 	),
+	'tree' => array(
+		'name' => 'tree',
+		'upstream' => 'http://mama.indstate.edu/users/ice/tree/',
+		'branch' => '',
+		'source' => 'http://mama.indstate.edu/users/ice/tree/src/%{name}-%{version}.tgz',
+		'version' => '1.8.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+Tree is a recursive directory listing command that produces a depth
+indented listing of files, which is colorized ala dircolors if the
+LS_COLORS environment variable is set and output is to tty.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

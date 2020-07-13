@@ -1519,6 +1519,8 @@ This notably applies to Perl and Python.
 
 <li>2020/07/13 Handle process (S_IFMEM) files in findutils and coreutils</li>
 
+<li>2020/07/13 Package tree added</li>
+
 </ul>
 
 <p></p>
