@@ -7,15 +7,11 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-7.5.0
-VERSIONPATCH=-20200101
-REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
-# For which target we build-
-# should be either m68k-atari-mint or m68k-atari-mintelf
+# For which target we build
 #
-TARGET=${1:-m68k-atari-mint}
+TARGET=m68k-elf
 
 #
 # the hosts compiler
@@ -56,7 +52,7 @@ case $host in
 	mingw* | msys*) here=`pwd` ;;
 	*) here=`pwd` ;;
 esac
-ARCHIVES_DIR="$HOME/packages"
+ARCHIVES_DIR="$here"
 
 #
 # where to look for mpfr/gmp/mpc/isl etc.
@@ -77,7 +73,7 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-build7"
+MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
 
 #
 # Where to put the executables for later use.
@@ -95,68 +91,28 @@ DIST_DIR="$here/pkgs"
 # Where to look up the source tree.
 #
 srcdir="$HOME/m68k-atari-mint-gcc"
-if test -d "$srcdir"; then
-	touch ".patched-${PACKAGENAME}${VERSION}"
-else
-	srcdir="$here/${PACKAGENAME}${VERSION}"
+if ! test -d "$srcdir"; then
+	echo "this script requires an up-to-date checkout in $srcdir" >&2
+	exit 1
 fi
 
 #
 # whether to include the fortran backend
 #
-with_fortran=true
+with_fortran=false
 
 #
-# this patch can be recreated by
-# - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
-# - checking out the mint/gcc-7 branch
-# - running git diff releases/gcc-7.5.0 HEAD
+# whether to include the D backend
 #
-# when a new GCC is released:
-#   cd <directory where m68k-atari-mint-gcc.git> has been cloned
-#   fetch new commits from upstream:
-#      git checkout master
-#      git pull --rebase upstream master
-#      git push
-#   fetch new tags etc:
-#      git fetch --all
-#      git push --tags
-#   merge new release into our branch:
-#      git checkout mint/gcc-7
-#      git merge releases/gcc-7.5.0 (& commit)
-#      git push
-#
-PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
+with_D=false
 
-if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
-	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
-	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
-	         "${PACKAGENAME}${VERSION}.tar.xz" \
-	         "${PACKAGENAME}${VERSION}.tar.bz2"; do
-		if test -f "$f"; then tar xvf "$f" || exit 1; fi
-	done
-	if test ! -d "$srcdir"; then
-		echo "$srcdir: no such directory" >&2
-		exit 1
-	fi
-	for f in $PATCHES; do
-	  if test -f "$f"; then
-	    cd "$srcdir" && patch -p1 < "$BUILD_DIR/$f" || exit 1
-	  else
-	    echo "missing patch $f" >&2
-	    exit 1
-	  fi
-	  cd "$BUILD_DIR"
-	done
-	touch ".patched-${PACKAGENAME}${VERSION}"
-fi
 
 if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
 	exit 1
 fi
-if test ! -f "${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h"; then
-	echo "mintlib headers must be installed in ${PREFIX}/${TARGET}/sys-root/usr/include" >&2
+if test ! -f "${PREFIX}/m68k-atari-mint/sys-root/usr/include/compiler.h"; then
+	echo "mintlib headers must be installed in ${PREFIX}/m68k-atari-mint/sys-root/usr/include" >&2
 	exit 1
 fi
 
@@ -177,12 +133,9 @@ else
 fi
 JOBS=-j$JOBS
 MAKE=${MAKE:-make}
+JOBS=
 
 BASE_VER=$(cat $srcdir/gcc/BASE-VER)
-if test "$BASE_VER" != "${VERSION#-}"; then
-	echo "version mismatch: this script is for gcc ${VERSION#-}, but gcc source is version $BASE_VER" >&2
-	exit 1
-fi
 gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
 
 #
@@ -217,8 +170,9 @@ LDFLAGS_FOR_TARGET=
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-languages=c,c++
+languages=c
 $with_fortran && languages="$languages,fortran"
+$with_D && languages="$languages,d"
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -301,7 +255,7 @@ $srcdir/configure \
 	--disable-libmpx \
 	--disable-libcc1 \
 	--disable-werror \
-	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root/usr/include/c++/${gcc_dir_version} \
+	--with-gxx-include-dir=${PREFIX}/m68k-atari-mint/sys-root/usr/include/c++/${gcc_dir_version} \
 	--with-default-libstdcxx-abi=gcc4-compatible \
 	--with-gcc-major-version-only \
 	--with-gcc --with-gnu-as --with-gnu-ld \
@@ -320,7 +274,7 @@ $srcdir/configure \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
 	$mpfr_config \
-	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
+	--with-sysroot="${PREFIX}/m68k-atari-mint/sys-root" \
 	--enable-languages="$languages"
 
 case $host in
@@ -338,7 +292,7 @@ ${MAKE} $JOBS || exit 1
 
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
-for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
+for INSTALL_DIR in "${THISPKG_DIR}"; do
 	
 	cd "$MINT_BUILD_DIR"
 	${MAKE} DESTDIR="${INSTALL_DIR}" install >/dev/null || exit 1
@@ -347,7 +301,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
-	for i in c++ cpp g++ gcc gcov gfortran; do
+	for i in c++ cpp g++ gcc gcov gfortran gdc; do
 		if test -x ../../bin/${TARGET}-$i; then
 			rm -f ${i} ${i}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
@@ -373,7 +327,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		mv ${TARGET}-gcc${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc${BUILD_EXEEXT}
 	fi
-	if test ${BASE_VER} != ${gcc_dir_version}; then
+	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gcc-${gcc_dir_version} && test ! -h ${TARGET}-gcc-${gcc_dir_version}; then
 		rm -f ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT}
 	fi
@@ -383,6 +337,16 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp${BUILD_EXEEXT}
 	fi
 
+	if test -x ${TARGET}-gdc; then
+		rm -f ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gdc-${BASE_VER}
+		mv ${TARGET}-gdc${BUILD_EXEEXT} ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT}
+		$LN_S ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gdc${BUILD_EXEEXT}
+	fi
+	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gdc-${BASE_VER}; then
+		rm -f ${TARGET}-gdc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		$LN_S ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gdc-${gcc_dir_version}${BUILD_EXEEXT}
+	fi
+	
 	cd "${INSTALL_DIR}"
 	
 	rm -f ${PREFIX#/}/share/info/dir
@@ -435,6 +399,19 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 			test "$i" = "." || rmdir "$i"
 		done
 	}
+
+	# these are currently identically compiled 2 times; FIXME
+	if test `"${INSTALL_DIR}/${PREFIX}/bin/${TARGET}-gcc" -m68000 -print-multi-directory` = "m68000"; then
+		for dir in . mshort mfastcall mfastcall/mshort; do
+			for f in libgcov.a libgcc.a libcaf_single.a; do
+				rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/$dir/$f
+			done
+		done
+		for dir in mfastcall/mshort mfastcall mshort; do
+			rmdir ${BUILD_LIBDIR#/}/gcc/${TARGET}/$dir 2>/dev/null
+		done
+	fi
+
 done
 
 cd "${THISPKG_DIR}" || exit 1

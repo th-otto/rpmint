@@ -52,7 +52,7 @@ setcookie("platform", $platform, time() + 3600);
 
 include('packages.php');
 
-$gccver = 'gcc931';
+$gccver = 'gcc1010';
 
 ?>
 
@@ -86,7 +86,7 @@ with respect to their own licenses.
 <li>Install <a href="http://www.cygwin.com/" <?php echo $target ?>>Cygwin 32-bit</a>.
 This will provide you a full UNIX-like environment necessary for running the GNU tools.</li>
 <li>Install the following packages, using the Cygwin setup program: <b>libmpc3</b>.</li>
-<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20200501-cygwin32.tar.xz', 'm68k-atari-mint-base-20190606-cygwin32.tar.xz') ?> (~71 MB).</li>
+<li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20200519-cygwin32.tar.xz', 'm68k-atari-mint-base-20200519-cygwin32.tar.xz') ?> (~71 MB).</li>
 <li>Now you can use any tool prefixed by <code>m68k-atari-mint-</code>,
 such as <code>m68k-atari-mint-gcc</code>, <code>m68k-atari-mint-g++</code>,
 and even read the man pages.</li>
@@ -303,7 +303,7 @@ foreach ($basepackages as $package)
 		if (isset($package['date']))
 			$filename .= '-' . $package['date'];
 		$filename .= '.sh';
-		$text = 'build-' . $package['name'] . '-' . $package['version'] . '-sh';
+		$text = 'build-' . $package['name'] . '-' . $package['version'] . '.sh';
 		gen_link($filename, $text);
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
@@ -319,7 +319,7 @@ foreach ($basepackages as $package)
 		if (isset($package['date']))
 			$filename .= '-' . $package['date'];
 		$filename .= '.sh';
-		$text = 'build-cross-' . $package['name'] . '-' . $package['version'] . '-sh';
+		$text = 'build-cross-' . $package['name'] . '-' . $package['version'] . '.sh';
 		gen_link($filename, $text);
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
@@ -1515,6 +1515,8 @@ This notably applies to Perl and Python.
 
 <li>2020/05/05 Package opkg added</li>
 
+<li>2020/05/20 Update GCC to version 10.1.0</li>
+
 </ul>
 
 <p></p>
@@ -1675,6 +1677,9 @@ gcc 9.1.1:
 	cygwin64: 42min
 	macos:   31min
 	linux:   4min12sec
+
+gcc 10.0.1:
+	linux:   6min23sec
 
 -->
 </body>

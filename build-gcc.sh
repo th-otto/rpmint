@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-9.3.1
-VERSIONPATCH=-20200501
+VERSION=-10.1.0
+VERSIONPATCH=-20200519
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -104,18 +104,18 @@ fi
 #
 # whether to include the fortran backend
 #
-with_fortran=true
+with_fortran=false
 
 #
 # whether to include the D backend
 #
-with_D=true
+with_D=false
 
 #
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
-# - checking out the mint/gcc-9 branch
-# - running git diff releases/gcc-9.3.1 HEAD
+# - checking out the mint/gcc-10 branch
+# - running git diff releases/gcc-10.1.0 HEAD
 #
 # when a new GCC is released:
 #   cd <directory where m68k-atari-mint-gcc.git> has been cloned
@@ -222,7 +222,7 @@ LDFLAGS_FOR_TARGET=
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-languages=c,c++
+languages=c
 $with_fortran && languages="$languages,fortran"
 $with_D && languages="$languages,d"
 ranlib=ranlib
@@ -333,6 +333,7 @@ case $host in
 	linux32)
 		# make sure to pick up the just-compiled 32bit version of ld, not
 		# some previous 64bit version
+		# symptom of using a wrong linker is an error message "error loading plugin: wrong ELF class: ELFCLASS32" in the config.log
 		sed -i "s|S\[\"build_tooldir\"\]=.*|S[\"build_tooldir\"]=\"${PKG_DIR}${PREFIX}/${TARGET}\"|" config.status
 		./config.status
 		;;
@@ -379,7 +380,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		mv ${TARGET}-gcc${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc${BUILD_EXEEXT}
 	fi
-	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gcc-${gcc_dir_version} && test ! -h ${TARGET}-gcc-${gcc_dir_version}; then
+	if test ${BASE_VER} != ${gcc_dir_version}; then
 		rm -f ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT}
 	fi
@@ -453,7 +454,8 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	}
 
 	# these are currently identically compiled 2 times; FIXME
-	if test `"${INSTALL_DIR}/${PREFIX}/bin/${TARGET}-gcc" -m68000 -print-multi-directory` = "m68000"; then
+	m68000=`"${INSTALL_DIR}/${PREFIX}/bin/${TARGET}-gcc" -m68000 -print-multi-directory`
+	if test "$m68000" = "m68000"; then
 		for dir in . mshort mfastcall mfastcall/mshort; do
 			for f in libgcov.a libgcc.a libcaf_single.a; do
 				rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/$dir/$f

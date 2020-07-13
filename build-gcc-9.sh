@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-7.5.0
-VERSIONPATCH=-20200101
+VERSION=-9.3.1
+VERSIONPATCH=-20200501
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -56,7 +56,7 @@ case $host in
 	mingw* | msys*) here=`pwd` ;;
 	*) here=`pwd` ;;
 esac
-ARCHIVES_DIR="$HOME/packages"
+ARCHIVES_DIR="$here"
 
 #
 # where to look for mpfr/gmp/mpc/isl etc.
@@ -77,7 +77,7 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-build7"
+MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
 
 #
 # Where to put the executables for later use.
@@ -107,10 +107,15 @@ fi
 with_fortran=true
 
 #
+# whether to include the D backend
+#
+with_D=true
+
+#
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
-# - checking out the mint/gcc-7 branch
-# - running git diff releases/gcc-7.5.0 HEAD
+# - checking out the mint/gcc-9 branch
+# - running git diff releases/gcc-9.3.1 HEAD
 #
 # when a new GCC is released:
 #   cd <directory where m68k-atari-mint-gcc.git> has been cloned
@@ -122,8 +127,8 @@ with_fortran=true
 #      git fetch --all
 #      git push --tags
 #   merge new release into our branch:
-#      git checkout mint/gcc-7
-#      git merge releases/gcc-7.5.0 (& commit)
+#      git checkout mint/gcc-9
+#      git merge releases/gcc-9.3.1 (& commit)
 #      git push
 #
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
@@ -219,6 +224,7 @@ enable_lto=--disable-lto
 enable_plugin=--disable-plugin
 languages=c,c++
 $with_fortran && languages="$languages,fortran"
+$with_D && languages="$languages,d"
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -347,7 +353,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
-	for i in c++ cpp g++ gcc gcov gfortran; do
+	for i in c++ cpp g++ gcc gcov gfortran gdc; do
 		if test -x ../../bin/${TARGET}-$i; then
 			rm -f ${i} ${i}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
@@ -373,7 +379,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		mv ${TARGET}-gcc${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc${BUILD_EXEEXT}
 	fi
-	if test ${BASE_VER} != ${gcc_dir_version}; then
+	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gcc-${gcc_dir_version} && test ! -h ${TARGET}-gcc-${gcc_dir_version}; then
 		rm -f ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT}
 	fi
@@ -383,6 +389,16 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp${BUILD_EXEEXT}
 	fi
 
+	if test -x ${TARGET}-gdc; then
+		rm -f ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gdc-${BASE_VER}
+		mv ${TARGET}-gdc${BUILD_EXEEXT} ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT}
+		$LN_S ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gdc${BUILD_EXEEXT}
+	fi
+	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gdc-${BASE_VER}; then
+		rm -f ${TARGET}-gdc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
+		$LN_S ${TARGET}-gdc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gdc-${gcc_dir_version}${BUILD_EXEEXT}
+	fi
+	
 	cd "${INSTALL_DIR}"
 	
 	rm -f ${PREFIX#/}/share/info/dir
@@ -435,6 +451,19 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 			test "$i" = "." || rmdir "$i"
 		done
 	}
+
+	# these are currently identically compiled 2 times; FIXME
+	if test `"${INSTALL_DIR}/${PREFIX}/bin/${TARGET}-gcc" -m68000 -print-multi-directory` = "m68000"; then
+		for dir in . mshort mfastcall mfastcall/mshort; do
+			for f in libgcov.a libgcc.a libcaf_single.a; do
+				rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/$dir/$f
+			done
+		done
+		for dir in mfastcall/mshort mfastcall mshort; do
+			rmdir ${BUILD_LIBDIR#/}/gcc/${TARGET}/$dir 2>/dev/null
+		done
+	fi
+
 done
 
 cd "${THISPKG_DIR}" || exit 1

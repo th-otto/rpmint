@@ -8,8 +8,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-9.3.1
-VERSIONPATCH=-20200501
+VERSION=-10.1.0
+VERSIONPATCH=-20200519
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -324,7 +324,10 @@ chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
 	${MAKE} configure-gcc || exit 1
 #	cd gcc || exit 1
 #	sed -i 's/^S\["thin_archive_support"\]="\([^"]*\)"$/S\["thin_archive_support"\]="no"/' config.status
-#	./config.status
+# c++ complains about an unknown option?
+test -f gcc/config.status || exit 1
+sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
+	./config.status
 	
 	cd "$MINT_BUILD_DIR" || exit 1
 

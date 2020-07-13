@@ -18,6 +18,12 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 TARGET=${1:-m68k-atari-mint}
 
 #
+# the hosts compiler
+#
+GCC=${GCC-gcc}
+GXX=${GXX-g++}
+
+#
 # The prefix where the executables should
 # be installed later. If installed properly,
 # this actually does not matter much, since
@@ -26,8 +32,6 @@ TARGET=${1:-m68k-atari-mint}
 #
 TAR=${TAR-tar}
 TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
-GCC=${GCC-gcc}
-GXX=${GXX-g++}
 case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
 	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
@@ -156,7 +160,7 @@ if test ! -f "${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h"; then
 	exit 1
 fi
 
-if test -d /usr/lib64; then
+if test -d /usr/lib64 -a $host = linux64; then
 	BUILD_LIBDIR=${PREFIX}/lib64
 else
 	BUILD_LIBDIR=${PREFIX}/lib
@@ -369,7 +373,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		mv ${TARGET}-gcc${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc${BUILD_EXEEXT}
 	fi
-	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gcc-${gcc_dir_version} && test ! -h ${TARGET}-gcc-${gcc_dir_version}; then
+	if test ${BASE_VER} != ${gcc_dir_version}; then
 		rm -f ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT}
 	fi

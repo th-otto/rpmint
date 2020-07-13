@@ -1,0 +1,38 @@
+From 1a742f3c15797c07212b5896d2e75b340bb9ca11 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Tue, 19 May 2020 13:10:35 +0200
+Subject: [PATCH] Increase maximum allowed alignments
+
+a.out has a default alignment of 4 bytes, but that is now the maximum.
+Using the default fails to compile some c++ sources.
+---
+ gcc/config/m68k/mint.h | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/gcc/config/m68k/mint.h b/gcc/config/m68k/mint.h
+index a6ad0f74557..a16dc9d4330 100644
+--- a/gcc/config/m68k/mint.h
++++ b/gcc/config/m68k/mint.h
+@@ -207,6 +207,19 @@ do {									\
+ #undef MAKE_DECL_ONE_ONLY
+ #define MAKE_DECL_ONE_ONLY(DECL) (DECL_WEAK (DECL) = 1)
+ 
++/* No data type wants to be aligned rounder than this.
++   For m68k, some types (doubles for example) are aligned on 8 byte
++   boundaries */
++#undef BIGGEST_ALIGNMENT
++#define BIGGEST_ALIGNMENT (64 * 8)
++
++#ifndef USING_ELFOS_H
++/* The maximum alignment which the object file format can support in
++   bits.  */
++#undef	MAX_OFILE_ALIGNMENT
++#define MAX_OFILE_ALIGNMENT (0x8000 * 8)
++#endif
++
+ /* Avoid requiring -static with -fmudflap like in config/bfin/uclinux.h */
+ #define MFWRAP_SPEC " %{fmudflap|fmudflapth: \
+  --wrap=malloc --wrap=free --wrap=calloc --wrap=realloc\
+-- 
+2.24.0
+

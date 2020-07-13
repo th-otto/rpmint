@@ -106,14 +106,14 @@ The full documentation can be found
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
-	'gcc931' => array(
+	'gcc1010' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '9.3.1',
-		'date' => '20200501',
+		'version' => '10.1.0',
+		'date' => '20200519',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
-		'branch' => 'mint/gcc-9',
+		'branch' => 'mint/gcc-10',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
@@ -141,6 +141,35 @@ using this format (although theoretically it should be possible to mix them).<br
 <br />
 <span style="color:red">Note:</span> This version now was compiled against fdlibm; it is strongly recommended to
 use fdlibm instead of the ancient pml math library.
+'
+	),
+	'gcc931' => array(
+		'name' => 'gcc',
+		'title' => 'GCC',
+		'upstream' => 'http://gcc.gnu.org/',
+		'version' => '9.3.1',
+		'date' => '20200501',
+		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
+		'branch' => 'mint/gcc-9',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
+		'patch' => 1,
+		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
+		'script' => 1,
+		'crossscript' => 1,
+		'doc' => 1,
+		'elf' => 1,
+		'fortran' => 1,
+		'cygwin32' => 1,
+		'cygwin64' => 1,
+		'mingw32' => 1,
+		'mingw64' => 0,
+		'linux32' => 1,
+		'linux64' => 1,
+		'macos32' => 0,
+		'macos64' => 1,
+		'atari' => 1,
+		'comment' => '
+Slightly older version of GCC.
 '
 	),
 	'gcc841' => array(
@@ -2255,7 +2284,7 @@ a cross-development environment.</span>
 		'upstream' => 'http://www.zstd.net/',
 		'repo' => 'https://github.com/facebook/zstd/releases',
 		'source' => $download_dir . '%{name}-%{version}.tar.gz',
-		'version' => '1.4.3',
+		'version' => '1.4.4',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
