@@ -4,15 +4,21 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=findutils
-VERSION=-4.6.0
+VERSION=-4.7.0
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/findutils/findutils-4.4.2-xautofs.patch
-patches/findutils/sv-bug-48030-find-exec-plus-does-not-pass-all-arguments.patch
+patches/findutils/findutils-4.7-xautofs.patch
 patches/findutils/mintelf-config.patch
+patches/findutils/findutils-4.7-mint.patch
+patches/findutils/notexinfo-clean.patch
+"
+
+DISABLED_PATCHES="
+patches/findutils/sv-bug-48030-find-exec-plus-does-not-pass-all-arguments.patch
+patches/findutils/findutils-4.6-mint.patch
 "
 
 # patches/findutils/findutils-mktemp.patch

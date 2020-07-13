@@ -1,3 +1,6 @@
+/*
+ * coreutils-8.28 also triggers this bug
+ */
 typedef struct __stdio_file FILE;
 extern int sprintf (char *__restrict __s, const char *__restrict __format, ...);
 

@@ -25,6 +25,7 @@ patches/coreutils/sh-utils-2.0-mint.patch
 patches/coreutils/coreutils-mint-physmem.patch
 patches/coreutils/dummy-man-patch
 patches/coreutils/coreutils-mint-mountlist.patch
+patches/coreutils/coreutils-mint-procfile.patch
 patches/coreutils/mintelf-config.patch
 "
 

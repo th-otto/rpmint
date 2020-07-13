@@ -1,0 +1,62 @@
+diff -rup -x '*.o' coreutils-8.28.orig/lib/file-type.c coreutils-8.28/lib/file-type.c
+--- coreutils-8.28.orig/lib/file-type.c	2017-09-01 09:12:43.000000000 +0200
++++ coreutils-8.28/lib/file-type.c	2020-06-26 20:09:50.383005875 +0200
+@@ -107,5 +107,8 @@ file_type (struct stat const *st)
+   if (S_ISWHT (st->st_mode))
+     return _("whiteout");
+ 
++  if (S_ISMEM (st->st_mode))
++    return _("memory");
++
+   return _("weird file");
+ }
+diff -rup -x '*.o' coreutils-8.28.orig/lib/filemode.c coreutils-8.28/lib/filemode.c
+--- coreutils-8.28.orig/lib/filemode.c	2017-09-01 09:12:43.000000000 +0200
++++ coreutils-8.28/lib/filemode.c	2020-06-26 20:05:50.910998760 +0200
+@@ -78,7 +78,7 @@ ftypelet (mode_t bits)
+     return 'C';
+   if (S_ISDOOR (bits))
+     return 'D';
+-  if (S_ISMPB (bits) || S_ISMPC (bits) || S_ISMPX (bits))
++  if (S_ISMPB (bits) || S_ISMPC (bits) || S_ISMPX (bits) || S_ISMEM (bits))
+     return 'm';
+   if (S_ISNWK (bits))
+     return 'n';
+diff -rup -x '*.o' coreutils-8.28.orig/lib/sys_stat.in.h coreutils-8.28/lib/sys_stat.in.h
+--- coreutils-8.28.orig/lib/sys_stat.in.h	2017-09-01 09:14:49.000000000 +0200
++++ coreutils-8.28/lib/sys_stat.in.h	2020-06-26 20:04:41.254996690 +0200
+@@ -163,6 +163,7 @@ struct stat
+ # undef S_ISNWK
+ # undef S_ISREG
+ # undef S_ISSOCK
++# undef S_ISMEM
+ #endif
+ 
+ #ifndef S_ISBLK
+@@ -259,6 +260,14 @@ struct stat
+ # endif
+ #endif
+ 
++#ifndef S_ISMEM
++# ifdef __S_IFMEM
++#  define S_ISMEM(m) (((m) & S_IFMT) == __S_IFMEM)
++# else
++#  define S_ISMEM(m) 0
++# endif
++#endif
++
+ 
+ #ifndef S_TYPEISMQ
+ # define S_TYPEISMQ(p) 0
+diff -rup -x '*.o' coreutils-8.28.orig/src/ls.c coreutils-8.28/src/ls.c
+--- coreutils-8.28.orig/src/ls.c	2020-06-26 13:56:18.450185557 +0200
++++ coreutils-8.28/src/ls.c	2020-06-26 20:08:06.135002777 +0200
+@@ -4643,6 +4643,8 @@ get_type_indicator (bool stat_ok, mode_t
+         c = '=';
+       else if (stat_ok && S_ISDOOR (mode))
+         c = '>';
++      else if (stat_ok && S_ISMEM (mode))
++        c = '>';
+       else
+         c = 0;
+     }

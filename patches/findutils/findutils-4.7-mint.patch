@@ -1,0 +1,166 @@
+diff -ru findutils-4.7.0.orig/find/defs.h findutils-4.7.0/find/defs.h
+--- findutils-4.7.0.orig/find/defs.h	2020-06-27 12:12:19.289395132 +0200
++++ findutils-4.7.0/find/defs.h	2020-06-27 12:25:51.413419262 +0200
+@@ -181,6 +181,9 @@
+ # ifdef S_IFDOOR
+     FTYPE_DOOR,
+ # endif
++# ifdef __S_IFMEM
++    FTYPE_MEM,
++# endif
+     FTYPE_COUNT
+   };
+ 
+diff -ru findutils-4.7.0.orig/find/parser.c findutils-4.7.0/find/parser.c
+--- findutils-4.7.0.orig/find/parser.c	2020-06-27 12:12:19.289395132 +0200
++++ findutils-4.7.0/find/parser.c	2020-06-27 12:27:59.029423053 +0200
+@@ -2767,6 +2767,18 @@
+ 	     pred_string, (*typeletter));
+ #endif
+ 	break;
++      case 'm':			/* memory or process */
++#ifdef __S_IFMEM
++	type_cell = FTYPE_MEM;
++	rate = 1.0e-5f;
++#else
++	type_cell = 0;
++	die (EXIT_FAILURE, 0,
++	     _("%s %c is not supported because memory regions "
++	       "are not supported on the platform find was compiled on."),
++	     pred_string, (*typeletter));
++#endif
++	break;
+       default:			/* None of the above ... nuke 'em. */
+ 	type_cell = 0;
+ 	die (EXIT_FAILURE, 0,
+diff -ru findutils-4.7.0.orig/find/pred.c findutils-4.7.0/find/pred.c
+--- findutils-4.7.0.orig/find/pred.c	2019-06-23 11:00:40.000000000 +0200
++++ findutils-4.7.0/find/pred.c	2020-06-27 12:25:11.261418069 +0200
+@@ -1089,6 +1089,10 @@
+   else if (S_ISDOOR (mode))
+     type = FTYPE_DOOR;
+ # endif
++# ifdef __S_IFMEM
++  else if (S_ISMEM (mode))
++    type = FTYPE_MEM;
++# endif
+ #else /* S_IFMT */
+   /* Unix system; check `mode' the fast way. */
+   switch (mode & S_IFMT)
+diff -ru findutils-4.7.0.orig/find/print.c findutils-4.7.0/find/print.c
+--- findutils-4.7.0.orig/find/print.c	2019-06-23 11:00:40.000000000 +0200
++++ findutils-4.7.0/find/print.c	2020-06-27 12:22:57.297414088 +0200
+@@ -864,6 +864,9 @@
+ #ifdef S_IFDOOR
+   HANDLE_TYPE(S_IFDOOR, "D");   /* Door (e.g. on Solaris) */
+ #endif
++#ifdef __S_IFMEM
++  HANDLE_TYPE(__S_IFMEM, "m");  /* memory region or process */
++#endif
+   return "U";                   /* Unknown */
+ }
+ 
+diff -ru findutils-4.7.0.orig/gl/lib/mountlist.c findutils-4.7.0/gl/lib/mountlist.c
+--- findutils-4.7.0.orig/gl/lib/mountlist.c	2019-08-29 21:14:54.000000000 +0200
++++ findutils-4.7.0/gl/lib/mountlist.c	2020-06-27 12:22:57.293414088 +0200
+@@ -234,6 +234,66 @@
+ #if MOUNTED_GETMNTINFO          /* Mac OS X, FreeBSD, OpenBSD, also (obsolete) 4.4BSD */
+ 
+ # if ! HAVE_STRUCT_STATFS_F_FSTYPENAME
++
++#ifdef __MINT__	
++#include <sys/statfs.h>
++#include <mint/dcntl.h>
++
++static char *
++fstype_to_string (long t)
++{
++  switch (t)
++    {
++    case FS_OLDTOS:
++      return "tos";
++    case FS_FAT12:
++      return "fat12";
++    case FS_FAT16:
++      return "fat16";
++    case FS_FAT32:
++      return "fat32";
++    case FS_VFAT12:
++      return "vfat12";
++    case FS_VFAT16:
++      return "vfat16";
++    case FS_VFAT32:
++      return "vfat32";
++    case FS_MINIX:
++      return "minix";
++    case FS_RAMFS:
++      return "ramfs";
++    case FS_EXT2:
++      return "ext2";
++    case FS_HSIERRA:
++      return "hsierra";
++    case FS_ISO9669:
++      return "iso9669";
++    case FS_JOLIET:
++      return "joliet";
++    case FS_HFS:
++      return "hfs";
++    case FS_CDRAW:
++      return "cdraw";
++    case FS_STONX:
++      return "stonx";
++#ifndef FS_NFS2
++#define FS_NFS2 (12L << 16)
++#endif
++    case FS_NFS2:
++      return "nfs";
++#ifndef FS_HOSTFS
++#define FS_HOSTFS (15L << 16)
++#endif
++    case FS_HOSTFS:
++      return "hostfs";
++    default:
++      return "unknown";
++    }
++    blub
++}
++
++#else /* __MINT__ */
++
+ static char *
+ fstype_to_string (short int t)
+ {
+@@ -328,6 +388,7 @@
+     }
+ }
+ # endif
++#endif
+ 
+ static char *
+ fsp_to_string (const struct statfs *fsp)
+diff -ru findutils-4.7.0.orig/gl/lib/sys_stat.in.h findutils-4.7.0/gl/lib/sys_stat.in.h
+--- findutils-4.7.0.orig/gl/lib/sys_stat.in.h	2019-08-29 21:14:54.000000000 +0200
++++ findutils-4.7.0/gl/lib/sys_stat.in.h	2020-06-27 12:22:57.297414088 +0200
+@@ -170,6 +170,7 @@
+ # undef S_ISNWK
+ # undef S_ISREG
+ # undef S_ISSOCK
++# undef S_ISMEM
+ #endif
+ 
+ #ifndef S_ISBLK
+@@ -266,6 +267,14 @@
+ # endif
+ #endif
+ 
++#ifndef S_ISMEM
++# ifdef __S_IFMEM
++#  define S_ISMEM(m) (((m) & S_IFMT) == __S_IFMEM)
++# else
++#  define S_ISMEM(m) 0
++# endif
++#endif
++
+ 
+ #ifndef S_TYPEISMQ
+ # define S_TYPEISMQ(p) 0

@@ -1,0 +1,89 @@
+diff -ru findutils-4.7.0.orig/find/defs.h findutils-4.7.0/find/defs.h
+--- findutils-4.7.0.orig/find/defs.h	2019-06-23 11:00:40.000000000 +0200
++++ findutils-4.7.0/find/defs.h	2020-06-27 12:12:19.289395132 +0200
+@@ -574,6 +574,9 @@
+   /* If true, don't cross filesystem boundaries. */
+   bool stay_on_filesystem;
+ 
++  /* If true, don't descend directores on autofs filesystems */
++  bool bypass_autofs;
++
+   /* If true, we ignore the problem where we find that a directory entry
+    * no longer exists by the time we get around to processing it.
+    */
+diff -ru findutils-4.7.0.orig/find/find.1 findutils-4.7.0/find/find.1
+--- findutils-4.7.0.orig/find/find.1	2019-06-23 11:00:40.000000000 +0200
++++ findutils-4.7.0/find/find.1	2020-06-27 12:12:19.289395132 +0200
+@@ -567,6 +567,9 @@
+ .IP "\-version, \-\-version"
+ Print the \fBfind\fR version number and exit.
+ 
++.IP \-xautofs
++Don't descend directories on autofs filesystems.
++
+ .IP \-xdev
+ Don't descend directories on other filesystems.
+ 
+diff -ru findutils-4.7.0.orig/find/ftsfind.c findutils-4.7.0/find/ftsfind.c
+--- findutils-4.7.0.orig/find/ftsfind.c	2019-08-29 21:06:31.000000000 +0200
++++ findutils-4.7.0/find/ftsfind.c	2020-06-27 12:12:19.289395132 +0200
+@@ -479,6 +479,12 @@
+ 	}
+     }
+ 
++  if (options.bypass_autofs &&
++      0 == strcmp ("autofs", filesystem_type (&statbuf, ent->fts_name)))
++    {
++      fts_set(p, ent, FTS_SKIP); /* descend no further */
++    }
++
+   if ( (ent->fts_info == FTS_D) && !options.do_dir_first )
+     {
+       /* this is the preorder visit, but user said -depth */
+diff -ru findutils-4.7.0.orig/find/parser.c findutils-4.7.0/find/parser.c
+--- findutils-4.7.0.orig/find/parser.c	2019-08-29 21:10:57.000000000 +0200
++++ findutils-4.7.0/find/parser.c	2020-06-27 12:12:19.289395132 +0200
+@@ -138,6 +138,7 @@
+ static bool parse_user          (const struct parser_table*, char *argv[], int *arg_ptr);
+ static bool parse_wholename     (const struct parser_table*, char *argv[], int *arg_ptr);
+ static bool parse_xdev          (const struct parser_table*, char *argv[], int *arg_ptr);
++static bool parse_xautofs       (const struct parser_table*, char *argv[], int *arg_ptr);
+ static bool parse_ignore_race   (const struct parser_table*, char *argv[], int *arg_ptr);
+ static bool parse_noignore_race (const struct parser_table*, char *argv[], int *arg_ptr);
+ static bool parse_warn          (const struct parser_table*, char *argv[], int *arg_ptr);
+@@ -302,6 +303,7 @@
+   PARSE_TEST_NP    ("wholename",             wholename), /* GNU, replaced -path, but now -path is standardized since POSIX 2008 */
+   {ARG_TEST,       "writable",               parse_accesscheck, pred_writable}, /* GNU, 4.3.0+ */
+   PARSE_OPTION     ("xdev",                  xdev), /* POSIX */
++  PARSE_OPTION     ("xautofs",               xautofs),
+   PARSE_TEST       ("xtype",                 xtype),	     /* GNU */
+ #ifdef UNIMPLEMENTED_UNIX
+   /* It's pretty ugly for find to know about archive formats.
+@@ -2604,6 +2606,16 @@
+ }
+ 
+ static bool
++parse_xautofs(const struct parser_table* entry, char **argv, int *arg_ptr)
++{
++  (void) argv;
++  (void) arg_ptr;
++  (void) entry;
++  options.bypass_autofs = true;
++  return true;
++}
++
++static bool
+ parse_ignore_race (const struct parser_table* entry, char **argv, int *arg_ptr)
+ {
+   options.ignore_readdir_race = true;
+diff -ru findutils-4.7.0.orig/find/util.c findutils-4.7.0/find/util.c
+--- findutils-4.7.0.orig/find/util.c	2019-08-29 21:06:31.000000000 +0200
++++ findutils-4.7.0/find/util.c	2020-06-27 12:12:19.289395132 +0200
+@@ -1044,6 +1044,7 @@
+ 
+   p->full_days = false;
+   p->stay_on_filesystem = false;
++  p->bypass_autofs = false;
+   p->ignore_readdir_race = false;
+ 
+   if (p->posixly_correct)

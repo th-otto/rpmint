@@ -1517,6 +1517,8 @@ This notably applies to Perl and Python.
 
 <li>2020/05/20 Update GCC to version 10.1.0</li>
 
+<li>2020/07/13 Handle process (S_IFMEM) files in findutils and coreutils</li>
+
 </ul>
 
 <p></p>
