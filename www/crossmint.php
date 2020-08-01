@@ -1521,6 +1521,8 @@ This notably applies to Perl and Python.
 
 <li>2020/07/13 Package tree added</li>
 
+<li>2020/08/01 Package libxmp added</li>
+
 </ul>
 
 <p></p>
