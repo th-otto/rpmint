@@ -10,7 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/grep/mintelf-config.patch
+patches/${PACKAGENAME}/mintelf-config.patch
 "
 
 

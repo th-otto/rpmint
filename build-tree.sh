@@ -10,8 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/tree/tree-makefile.patch
-patches/tree/mint.patch
+patches/${PACKAGENAME}/tree-makefile.patch
+patches/${PACKAGENAME}/mint.patch
 "
 
 DISABLED_PATCHES="

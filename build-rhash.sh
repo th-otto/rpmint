@@ -13,7 +13,7 @@ srcarchive=${PACKAGENAME}${VERSION}
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/rhash/rhash-1.3.8-shared.patch
+patches/${PACKAGENAME}/rhash-1.3.8-shared.patch
 "
 
 BINFILES="
