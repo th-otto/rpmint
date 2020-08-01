@@ -2378,6 +2378,26 @@ Many compressed module formats are supported, including popular Unix, DOS,
 and Amiga file packers including gzip, bzip2, SQSH, Powerpack, etc.
 '
 	),
+	'asap' => array(
+		'name' => 'asap',
+		'upstream' => 'http://asap.sourceforge.net/',
+		'branch' => '',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'version' => '5.0.1',
+		'patch' => 0,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+ASAP is a player of Atari 8-bit chiptunes for modern computers and
+mobile devices. It emulates the POKEY sound chip and the 6502
+processor. The project was initially based on the routines from the
+Atari800 emulator, but the current version has an original emulation
+core.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
