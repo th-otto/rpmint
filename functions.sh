@@ -414,7 +414,7 @@ copy_pkg_configs()
 		# with mcrt=nix*, the config files end up in a subdirectory; move them up
 		if test -d ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/pkgconfig; then
 			rm -rf ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/*/pkgconfig
-			mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/
+			mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib
 			mv ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/pkgconfig ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/pkgconfig
 		fi
 		;;
