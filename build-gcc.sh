@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-10.1.0
-VERSIONPATCH=-20200519
+VERSION=-10.2.0
+VERSIONPATCH=-20200808
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -115,7 +115,7 @@ with_D=false
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
 # - checking out the mint/gcc-10 branch
-# - running git diff releases/gcc-10.1.0 HEAD
+# - running git diff releases/gcc-10.2.0 HEAD
 #
 # when a new GCC is released:
 #   cd <directory where m68k-atari-mint-gcc.git> has been cloned
@@ -127,8 +127,8 @@ with_D=false
 #      git fetch --all
 #      git push --tags
 #   merge new release into our branch:
-#      git checkout mint/gcc-9
-#      git merge releases/gcc-9.3.1 (& commit)
+#      git checkout mint/gcc-10
+#      git merge releases/gcc-10.2.0 (& commit)
 #      git push
 #
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
