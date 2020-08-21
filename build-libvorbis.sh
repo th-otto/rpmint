@@ -12,11 +12,11 @@ VERSIONPATCH=
 PATCHES="
 patches/libvorbis/libvorbis-m4.dif
 patches/libvorbis/libvorbis-lib64.dif
-patches/libvorbis/vorbis-CVE-2017-14160.patch
-patches/libvorbis/vorbis-CVE-2018-10393.patch
-patches/libvorbis/vorbis-CVE-2018-10392.patch
-patches/libvorbis/staticlibs.patch
-patches/libvorbis/mintelf-config.patch
+patches/libvorbis/libvorbis-CVE-2017-14160.patch
+patches/libvorbis/libvorbis-CVE-2018-10393.patch
+patches/libvorbis/libvorbis-CVE-2018-10392.patch
+patches/libvorbis/libvorbis-staticlibs.patch
+patches/libvorbis/libvorbis-mintelf-config.patch
 "
 
 

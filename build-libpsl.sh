@@ -10,8 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/libpsl/mint-no-langinfo.patch
-patches/libpsl/mintelf-config.patch
+patches/libpsl/libpsl-mint-no-langinfo.patch
+patches/libpsl/libpsl-mintelf-config.patch
 "
 
 BINFILES="

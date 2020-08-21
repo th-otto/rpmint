@@ -12,33 +12,33 @@ srcarchive=Python${VERSION}
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/python2/python-2.7-dirs.patch
-patches/python2/python-distutils-rpm-8.patch
-patches/python2/python-2.7.5-multilib.patch
-patches/python2/python-2.5.1-sqlite.patch
-patches/python2/python-2.7.4-canonicalize2.patch
-patches/python2/python-2.6-gettext-plurals.patch
-patches/python2/python-2.6b3-curses-panel.patch
-patches/python2/sparc_longdouble.patch
-patches/python2/python-2.7.2-fix_date_time_compiler.patch
-patches/python2/python-bundle-lang.patch
-patches/python2/python-2.7-libffi-aarch64.patch
-patches/python2/python-bsddb6.diff
-patches/python2/python-2.7.9-ssl_ca_path.patch
-patches/python2/python-ncurses-6.0-accessors.patch
-patches/python2/reproducible.patch
-patches/python2/python-fix-shebang.patch
-patches/python2/python-skip_random_failing_tests.patch
-patches/python2/python-sorted_tar.patch
-patches/python2/python-path.patch
-patches/python2/mintelf-config.patch
-patches/python2/mint.patch
-patches/python2/python-mintnosharedmod.patch
-patches/python2/python-mintsetupdist.patch
-patches/python2/math.patch
+patches/python2/python2-2.7-dirs.patch
+patches/python2/python2-distutils-rpm-8.patch
+patches/python2/python2-2.7.5-multilib.patch
+patches/python2/python2-2.5.1-sqlite.patch
+patches/python2/python2-2.7.4-canonicalize2.patch
+patches/python2/python2-2.6-gettext-plurals.patch
+patches/python2/python2-2.6b3-curses-panel.patch
+patches/python2/python2-sparc_longdouble.patch
+patches/python2/python2-2.7.2-fix_date_time_compiler.patch
+patches/python2/python2-bundle-lang.patch
+patches/python2/python2-2.7-libffi-aarch64.patch
+patches/python2/python2-bsddb6.diff
+patches/python2/python2-2.7.9-ssl_ca_path.patch
+patches/python2/python2-ncurses-6.0-accessors.patch
+patches/python2/python2-reproducible.patch
+patches/python2/python2-fix-shebang.patch
+patches/python2/python2-skip_random_failing_tests.patch
+patches/python2/python2-sorted_tar.patch
+patches/python2/python2-path.patch
+patches/python2/python2-mintelf-config.patch
+patches/python2/python2-mint.patch
+patches/python2/python2-mintnosharedmod.patch
+patches/python2/python2-mintsetupdist.patch
+patches/python2/python2-math.patch
 "
 DISABLED_PATCHES="
-patches/python2/remove-static-libpython.diff
+patches/python2/python2-remove-static-libpython.diff
 "
 POST_INSTALL_SCRIPTS="
 patches/python2/python.csh
@@ -69,7 +69,7 @@ sed -i 's/^version_required/dnl version_required/' configure.ac
 
 autoreconf -f -i
 # autoreconf may have overwritten config.sub
-# patch -p1 < "$BUILD_DIR/patches/python2/mintelf-config.patch"
+# patch -p1 < "$BUILD_DIR/patches/python2/python2-mintelf-config.patch"
 # prevent make from trying to rebuild asdl stuff, which requires existing
 # python installation
 touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
@@ -148,9 +148,9 @@ EOF
 	# startup script
 	########################################
 	install -d -D -m 755 ${buildroot}${TARGET_SYSCONFDIR}/profile.d
-	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/pythonstart ${buildroot}${TARGET_SYSCONFDIR}
-	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/python.sh ${buildroot}${TARGET_SYSCONFDIR}/profile.d
-	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/python.csh ${buildroot}${TARGET_SYSCONFDIR}/profile.d
+	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/python2-pythonstart ${buildroot}${TARGET_SYSCONFDIR}/pythonstart
+	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/python2-python.sh ${buildroot}${TARGET_SYSCONFDIR}/profile.d/python.sh
+	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/python2-python.csh ${buildroot}${TARGET_SYSCONFDIR}/profile.d/python.csh
 
 	make_bin_archive $CPU
 done

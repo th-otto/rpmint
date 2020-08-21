@@ -10,9 +10,9 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/sdl_ttf/config.patch
-patches/sdl_ttf/amigaos.patch
-patches/sdl_ttf/mintelf-config.patch
+patches/sdl_ttf/sdl_ttf-config.patch
+patches/sdl_ttf/sdl_ttf-amigaos.patch
+patches/sdl_ttf/sdl_ttf-mintelf-config.patch
 "
 
 unpack_archive
@@ -26,7 +26,7 @@ autoconf || exit 1
 automake --add-missing || exit 1
 
 # autoreconf may have overwritten config.sub
-patch -p1 -f -i "$BUILD_DIR/patches/sdl_ttf/mintelf-config.patch"
+patch -p1 -f -i "$BUILD_DIR/patches/sdl_ttf/sdl_ttf-mintelf-config.patch"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 

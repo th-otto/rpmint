@@ -11,7 +11,7 @@ VERSIONPATCH=
 
 PATCHES="
 patches/make/make-testcases_timeout.diff
-patches/make/mintelf-config.patch
+patches/make/make-mintelf-config.patch
 "
 
 DISABLED_PATCHES="

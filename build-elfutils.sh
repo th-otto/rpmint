@@ -10,13 +10,13 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/elfutils/disable-tests-with-ptrace.patch
-patches/elfutils/0001-backends-Add-support-for-EM_PPC64-GNU_ATTRIBUTES.patch
-patches/elfutils/ppc-machine-flags.patch
-patches/elfutils/no-threads.patch
-patches/elfutils/mint.patch
-patches/elfutils/mintelf-config.patch
-patches/elfutils/lto-warnings.patch
+patches/elfutils/elfutils-disable-tests-with-ptrace.patch
+patches/elfutils/elfutils-0001-backends-Add-support-for-EM_PPC64-GNU_ATTRIBUTES.patch
+patches/elfutils/elfutils-ppc-machine-flags.patch
+patches/elfutils/elfutils-no-threads.patch
+patches/elfutils/elfutils-mint.patch
+patches/elfutils/elfutils-mintelf-config.patch
+patches/elfutils/elfutils-lto-warnings.patch
 "
 
 BINFILES="
@@ -39,7 +39,7 @@ sed --in-place "s/^MODVERSION=.*\$/MODVERSION=\"${MODVERSION}\"/" configure.ac
 
 autoreconf -fi
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/elfutils-mintelf-config.patch"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 

@@ -10,10 +10,10 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/libogg/m4.diff
-patches/libogg/lib64.dif
-patches/libogg/config.patch
-patches/libogg/mintelf-config.patch
+patches/libogg/libogg-m4.diff
+patches/libogg/libogg-lib64.dif
+patches/libogg/libogg-config.patch
+patches/libogg/libogg-mintelf-config.patch
 "
 
 unpack_archive
@@ -29,7 +29,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libogg-mintelf-config.patch"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 

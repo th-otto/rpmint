@@ -10,10 +10,10 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/opkg/mint.patch
+patches/opkg/opkg-mint.patch
 "
 DISABLED_PATCHES="
-patches/opkg/mintelf-config.patch
+patches/opkg/opkg-mintelf-config.patch
 "
 
 POST_INSTALL_SCRIPTS="
@@ -37,7 +37,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/opkg/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/opkg/opkg-mintelf-config.patch"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 

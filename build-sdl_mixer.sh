@@ -10,15 +10,15 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/sdl_mixer/double-free-crash.patch
-patches/sdl_mixer/config.patch
-patches/sdl_mixer/amigaos.patch
-patches/sdl_mixer/mintelf-config.patch
+patches/sdl_mixer/sdl_mixer-double-free-crash.patch
+patches/sdl_mixer/sdl_mixer-config.patch
+patches/sdl_mixer/sdl_mixer-amigaos.patch
+patches/sdl_mixer/sdl_mixer-mintelf-config.patch
 "
 DISABLED_PATCHES="
-patches/sdl_mixer/mikmod1.patch
-patches/sdl_mixer/mikmod2.patch
-patches/sdl_mixer/smpeg-config.patch
+patches/sdl_mixer/sdl_mixer-mikmod1.patch
+patches/sdl_mixer/sdl_mixer-mikmod2.patch
+patches/sdl_mixer/sdl_mixer-smpeg-config.patch
 "
 
 BINFILES="

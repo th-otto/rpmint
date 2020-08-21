@@ -11,7 +11,7 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/tree-makefile.patch
-patches/${PACKAGENAME}/mint.patch
+patches/${PACKAGENAME}/tree-mint.patch
 "
 
 DISABLED_PATCHES="

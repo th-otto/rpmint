@@ -13,8 +13,8 @@ srcarchive=lua${VERSION}
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/lua53/lua-build-system.patch
-patches/lua53/lua-buildconf.patch
+patches/lua53/lua53-build-system.patch
+patches/lua53/lua53-buildconf.patch
 "
 
 BINFILES="

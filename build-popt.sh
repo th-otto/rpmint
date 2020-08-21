@@ -12,8 +12,8 @@ VERSIONPATCH=
 PATCHES="
 patches/popt/popt-libc-updates.patch
 patches/popt/popt-alignment-checks.patch
-patches/popt/glibc-clashes.patch
-patches/popt/mintelf-config.patch
+patches/popt/popt-glibc-clashes.patch
+patches/popt/popt-mintelf-config.patch
 "
 
 BINFILES=""
@@ -24,7 +24,7 @@ cd "$MINT_BUILD_DIR"
 
 autoreconf -fi
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/popt/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/popt/popt-mintelf-config.patch"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 

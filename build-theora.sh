@@ -11,8 +11,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/config.patch
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/${PACKAGENAME}/libtheora-config.patch
+patches/${PACKAGENAME}/libtheora-mintelf-config.patch
 "
 
 unpack_archive

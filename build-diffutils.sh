@@ -10,8 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/diffutils/diff-3.6-mint.patch
-patches/diffutils/mintelf-config.patch
+patches/diffutils/diffutils-diff-3.6-mint.patch
+patches/diffutils/diffutils-mintelf-config.patch
 "
 
 BINFILES="

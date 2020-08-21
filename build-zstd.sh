@@ -10,10 +10,10 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/compiler.h.patch
+patches/${PACKAGENAME}/zstd-compiler.h.patch
 "
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/pzstd.1.patch
+patches/${PACKAGENAME}/zstd-pzstd.1.patch
 "
 
 BINFILES="

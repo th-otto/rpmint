@@ -12,12 +12,12 @@ VERSIONPATCH=
 PATCHES="
 patches/flac/flac-CVE-2017-6888.patch
 patches/flac/flac-cflags.patch
-patches/flac/lrintf.patch
-patches/flac/staticlibs.patch
-patches/flac/config.patch
-patches/flac/amigaos.patch
-patches/flac/wcwidth.patch
-patches/flac/mintelf-config.patch
+patches/flac/flac-lrintf.patch
+patches/flac/flac-staticlibs.patch
+patches/flac/flac-config.patch
+patches/flac/flac-amigaos.patch
+patches/flac/flac-wcwidth.patch
+patches/flac/flac-mintelf-config.patch
 "
 
 BINFILES="
@@ -38,7 +38,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/flac-mintelf-config.patch"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 

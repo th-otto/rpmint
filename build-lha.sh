@@ -10,7 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/lha/mintelf-config.patch
+patches/lha/lha-mintelf-config.patch
 patches/lha/lha-1.14i-ext.patch
 "
 

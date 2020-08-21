@@ -11,7 +11,7 @@ VERSIONPATCH=
 
 PATCHES="
 patches/gdbm/gdbm-no-build-date.patch
-patches/gdbm/mintelf-config.patch
+patches/gdbm/gdbm-mintelf-config.patch
 "
 
 BINFILES="

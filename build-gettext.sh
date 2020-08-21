@@ -10,7 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/gettext/mintelf-config.patch
+patches/gettext/gettext-mintelf-config.patch
 "
 
 BINFILES="

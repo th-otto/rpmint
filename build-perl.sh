@@ -16,19 +16,19 @@ patches/perl/perl-nroff.patch
 patches/perl/perl-netcmdutf8.patch
 patches/perl/perl-HiRes.t-timeout.patch
 patches/perl/perl-saverecontext.patch
-patches/perl/skip_time_hires.patch
+patches/perl/perl-skip_time_hires.patch
 patches/perl/perl-incfix.patch
 patches/perl/perl-5.18.2-overflow.patch
 patches/perl/perl-reproducible.patch
-patches/perl/perl_skip_flaky_tests_powerpc.patch
-patches/perl/posix-sigaction.patch
-patches/perl/rpm-macros.patch
-patches/perl/mint-hints.patch
-patches/perl/mint-inet6.patch
-patches/perl/cpan-db-file.patch
-patches/perl/fp-classify.patch
-patches/perl/gdbm-compat-link-order.patch
-patches/perl/cross-use-correct-strip.patch
+patches/perl/perl-skip_flaky_tests_powerpc.patch
+patches/perl/perl-posix-sigaction.patch
+patches/perl/perl-rpm-macros.patch
+patches/perl/perl-mint-hints.patch
+patches/perl/perl-mint-inet6.patch
+patches/perl/perl-cpan-db-file.patch
+patches/perl/perl-fp-classify.patch
+patches/perl/perl-gdbm-compat-link-order.patch
+patches/perl/perl-cross-use-correct-strip.patch
 "
 DISABLED_PATCHES="
 patches/perl/perl-5.6.0-db1.patch
@@ -39,7 +39,7 @@ patches/perl/perl-5.6.0-prereq.patch
 patches/perl/perl-5.6.0-mint.patch
 patches/perl/perl-5.6.0-makedepend.patch
 patches/perl/perl-5.6.0-cross.patch
-patches/perl/mint-workaround-exit.patch
+patches/perl/perl-mint-workaround-exit.patch
 "
 
 

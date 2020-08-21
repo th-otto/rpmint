@@ -14,7 +14,7 @@ patches/${PACKAGENAME}/pngtools-0.4.patch
 "
 
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/${PACKAGENAME}/pngtools-mintelf-config.patch
 "
 
 BINFILES="
@@ -30,7 +30,7 @@ aclocal || exit 1
 autoconf || exit 1
 automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/pngtools-mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

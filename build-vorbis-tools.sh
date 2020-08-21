@@ -10,13 +10,13 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/vorbis-tools/warning-fixes.diff
+patches/vorbis-tools/vorbis-tools-warning-fixes.diff
 patches/vorbis-tools/vorbis-tools-cflags.diff
-patches/vorbis-tools/vcut-fix-segfault.diff
+patches/vorbis-tools/vorbis-tools-vcut-fix-segfault.diff
 patches/vorbis-tools/vorbis-tools-r19117-CVE-2014-9640.patch
 patches/vorbis-tools/vorbis-tools-oggenc-CVE-2014-9639.patch
-patches/vorbis-tools/oggenc-Fix-large-alloca-on-bad-AIFF-input.patch
-patches/vorbis-tools/mintelf-config.patch
+patches/vorbis-tools/vorbis-tools-oggenc-Fix-large-alloca-on-bad-AIFF-input.patch
+patches/vorbis-tools/vorbis-tools-mintelf-config.patch
 "
 
 BINFILES="

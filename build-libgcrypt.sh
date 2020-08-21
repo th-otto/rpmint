@@ -28,11 +28,11 @@ patches/libgcrypt/libgcrypt-1.6.1-fips-cavs.patch
 patches/libgcrypt/libgcrypt-1.6.1-fips-cfgrandom.patch
 patches/libgcrypt/libgcrypt-fix-rng.patch
 patches/libgcrypt/libgcrypt-init-at-elf-load-fips.patch
-patches/libgcrypt/drbg_test.patch
+patches/libgcrypt/libgcrypt-drbg_test.patch
 patches/libgcrypt/libgcrypt-fips_run_selftest_at_constructor.patch
 patches/libgcrypt/libgcrypt-1.6.3-aliasing.patch
-patches/libgcrypt/mint.patch
-patches/libgcrypt/mintelf-config.patch
+patches/libgcrypt/libgcrypt-mint.patch
+patches/libgcrypt/libgcrypt-mintelf-config.patch
 "
 
 unpack_archive

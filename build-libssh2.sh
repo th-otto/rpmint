@@ -10,8 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/zlib-static.patch
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/${PACKAGENAME}/libssh2-zlib-static.patch
+patches/${PACKAGENAME}/libssh2-mintelf-config.patch
 "
 # libssh2-ocloexec.patch
 
@@ -32,7 +32,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libssh2-mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

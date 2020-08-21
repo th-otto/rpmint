@@ -11,9 +11,9 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/math.patch
-patches/${PACKAGENAME}/amigaos.patch
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/${PACKAGENAME}/mpg123-math.patch
+patches/${PACKAGENAME}/mpg123-amigaos.patch
+patches/${PACKAGENAME}/mpg123-mintelf-config.patch
 "
 
 BINFILES="
@@ -33,7 +33,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mpg123-mintelf-config.patch"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -DNO_CATCHSIGNAL ${CFLAGS_AMIGAOS}"
 

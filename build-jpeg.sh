@@ -16,7 +16,7 @@ ${TARGET_MANDIR#/}/man1/*
 "
 
 PATCHES="
-patches/c-ares/mintelf-config.patch
+patches/jpeg/jpeg-mintelf-config.patch
 patches/jpeg/jpeg-8d-0007-mintslb.patch 
 "
 

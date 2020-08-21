@@ -10,8 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/libxml2/fix-perl.diff
-patches/libxml2/mintelf-config.patch
+patches/libxml2/libxml2-fix-perl.diff
+patches/libxml2/libxml2-mintelf-config.patch
 "
 
 BINFILES="

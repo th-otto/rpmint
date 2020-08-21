@@ -10,10 +10,10 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/libuv/mint.patch
+patches/libuv/libuv-mint.patch
 "
 DISABLED_PATCHES="
-patches/libuv/mintelf-config.patch
+patches/libuv/libuv-mintelf-config.patch
 "
 
 BINFILES="
@@ -33,7 +33,7 @@ export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
 ./autogen.sh
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libuv-mintelf-config.patch"
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}

@@ -10,8 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/libarchive/fix-CVE-2017-14166.patch
-patches/libarchive/mintelf-config.patch
+patches/libarchive/libarchive-fix-CVE-2017-14166.patch
+patches/libarchive/libarchive-mintelf-config.patch
 "
 
 BINFILES="
@@ -25,7 +25,7 @@ cd "$MINT_BUILD_DIR"
 
 autoreconf -fi
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/libarchive/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/libarchive/libarchive-mintelf-config.patch"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 

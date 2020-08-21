@@ -11,8 +11,8 @@ VERSIONPATCH=
 
 PATCHES="
 patches/gnucobol/gnucobol-CFLAGS.patch
-patches/gnucobol/ltdl.patch
-patches/gnucobol/mintelf-config.patch
+patches/gnucobol/gnucobol-ltdl.patch
+patches/gnucobol/gnucobol-mintelf-config.patch
 "
 
 DISABLED_PATCHES="
@@ -37,7 +37,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/gnucobol-mintelf-config.patch"
 
 export LANG=POSIX
 export LC_ALL=POSIX

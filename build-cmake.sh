@@ -11,25 +11,25 @@ VERSIONPATCH=
 
 PATCHES="
 patches/cmake/cmake-fix-ruby-test.patch
-patches/cmake/mint-rules.patch
-patches/cmake/form.patch
-patches/cmake/system-libs.patch
+patches/cmake/cmake-mint-rules.patch
+patches/cmake/cmake-form.patch
+patches/cmake/cmake-system-libs.patch
 patches/cmake/cmake-3.10.1_boost-1.66.patch
-patches/cmake/feature-python-interp-search-order.patch
-patches/cmake/c17-default.patch
-patches/cmake/0001-Cannot-use-C-reference-in-C-code.patch
-patches/cmake/0001-No-SA_SIGINFO.patch
-patches/cmake/mint-c++-math.patch
-patches/cmake/no-isystem.patch
+patches/cmake/cmake-feature-python-interp-search-order.patch
+patches/cmake/cmake-c17-default.patch
+patches/cmake/cmake-0001-Cannot-use-C-reference-in-C-code.patch
+patches/cmake/cmake-0001-No-SA_SIGINFO.patch
+patches/cmake/cmake-mint-c++-math.patch
+patches/cmake/cmake-no-isystem.patch
 patches/cmake/replace-find_package-with-pkgconfig.patch
 "
 POST_INSTALL_SCRIPTS="
 patches/cmake/cmake.macros
 patches/cmake/cmake.attr
-patches/cmake/mint.cmake
-patches/cmake/mint-cross.cmake
-patches/cmake/mintelf.cmake
-patches/cmake/mintelf-cross.cmake
+patches/cmake/cmake-mint.cmake
+patches/cmake/cmake-mint-cross.cmake
+patches/cmake/cmake-mintelf.cmake
+patches/cmake/cmake-mintelf-cross.cmake
 "
 
 BINFILES="
@@ -75,7 +75,7 @@ CONFIGURE_FLAGS="
 #
 sed -e 's,CMAKE_C_COMPILER [^)]*),CMAKE_C_COMPILER '"$gcc"'),' \
     -e 's,CMAKE_CXX_COMPILER [^)]*),CMAKE_CXX_COMPILER '"$gxx"'),' \
-    "$BUILD_DIR/patches/cmake/${CMAKE_SYSTEM_NAME}-cross.cmake" > "$MINT_BUILD_DIR/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
+    "$BUILD_DIR/patches/cmake/cmake-${CMAKE_SYSTEM_NAME}-cross.cmake" > "$MINT_BUILD_DIR/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -100,13 +100,13 @@ for CPU in ${ALL_CPUS}; do
 	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake.macros -D ${buildroot}${TARGET_SYSCONFDIR}/rpm/macros.cmake
 	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake.attr -D ${buildroot}${TARGET_PREFIX}/lib/rpm/fileattrs/cmake.attr
 	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake.prov -D ${buildroot}${TARGET_PREFIX}/lib/rpm/cmake.prov
-	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/${CMAKE_SYSTEM_NAME}.cmake -D ${buildroot}${TARGET_PREFIX}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake
+	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake-${CMAKE_SYSTEM_NAME}.cmake -D ${buildroot}${TARGET_PREFIX}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake
 	if test "${CMAKE_SYSTEM_NAME}" = mint; then
 		ln -s ${CMAKE_SYSTEM_NAME}.cmake "${buildroot}${TARGET_PREFIX}/share/cmake/Modules/Platform/FreeMiNT.cmake"
 	fi
 	
-	# install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/${CMAKE_SYSTEM_NAME}-cross.cmake -D "${THISPKG_DIR}${prefix}/${TARGET}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
-	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/${CMAKE_SYSTEM_NAME}-cross.cmake -D "${THISPKG_DIR}${prefix}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
+	# install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake-${CMAKE_SYSTEM_NAME}-cross.cmake -D "${THISPKG_DIR}${prefix}/${TARGET}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
+	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake-${CMAKE_SYSTEM_NAME}-cross.cmake -D "${THISPKG_DIR}${prefix}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
 	if test "${CMAKE_SYSTEM_NAME}" = mint; then
 		ln -s ${CMAKE_SYSTEM_NAME}.cmake "${THISPKG_DIR}${prefix}/share/cmake/Modules/Platform/FreeMiNT.cmake"
 	fi

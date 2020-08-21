@@ -10,7 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/${PACKAGENAME}/smpeg-mintelf-config.patch
 "
 
 BINFILES="
@@ -28,7 +28,7 @@ libtoolize --force || exit 1
 aclocal -I acinclude || exit 1
 autoconf || exit 1
 automake --copy --add-missing
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/smpeg-mintelf-config.patch"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 

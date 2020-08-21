@@ -13,8 +13,8 @@ PATCHES="
 patches/tiff/tiff-4.0.3-seek.patch
 patches/tiff/tiff-4.0.3-compress-warning.patch
 patches/tiff/tiff-CVE-2018-8905.patch
-patches/tiff/mintelf-config.patch
-patches/tiff/disable-assertions.patch
+patches/tiff/tiff-mintelf-config.patch
+patches/tiff/tiff-disable-assertions.patch
 "
 
 # already applied in 4.10

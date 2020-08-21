@@ -31,7 +31,7 @@ Patch3: bzip2-1.0.6-patch-0004-unsafe-strcpy.patch
 Patch4: bzip2-1.0.6-patch-0005-progress.patch
 Patch5: bzip2-1.0.6-patch-0006-mint.patch
 Patch6: bzip2-1.0.6-patch-0007-Fix-printfs-of-file-sizes.patch
-Patch7: amigaos.patch
+Patch7: bzip2-amigaos.patch
 
 %rpmint_build_arch
 

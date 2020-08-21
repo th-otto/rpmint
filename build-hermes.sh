@@ -13,11 +13,11 @@ VERSIONPATCH=
 BINFILES=""
 
 PATCHES="
-patches/hermes/Hermes-1.3.3-64bit.patch
-patches/hermes/Hermes-1.3.3-debian.patch
-patches/hermes/ns-recipe.patch
-patches/hermes/warnings.patch
-patches/hermes/mintelf-config.patch
+patches/hermes/hermes-1.3.3-64bit.patch
+patches/hermes/hermes-1.3.3-debian.patch
+patches/hermes/hermes-ns-recipe.patch
+patches/hermes/hermes-warnings.patch
+patches/hermes/hermes-mintelf-config.patch
 "
 
 unpack_archive

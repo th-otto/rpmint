@@ -10,18 +10,18 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/groff/groff_1.22.3-1.debian.diff
+patches/groff/groff-1.22.3-1.debian.diff
 patches/groff/groff-1.20.1-destbufferoverflow.patch
 patches/groff/groff-1.20.1-nroff-empty-LANGUAGE.patch
 patches/groff/groff-1.20.1-deunicode.patch
 patches/groff/groff-1.21-CVE-2009-5044.patch
 patches/groff/groff-1.21-CVE-2009-5080.patch
 patches/groff/groff-1.21-CVE-2009-5081.patch
-patches/groff/0001-locale-support-in-papersize-definition.patch
-patches/groff/0002-documentation-for-the-locale-keyword.patch
+patches/groff/groff-0001-locale-support-in-papersize-definition.patch
+patches/groff/groff-0002-documentation-for-the-locale-keyword.patch
 patches/groff/groff-force-locale-usage.patch
 patches/groff/groff-multi-thread.patch
-patches/groff/mintelf-config.patch
+patches/groff/groff-mintelf-config.patch
 "
 
 BINFILES="
@@ -101,7 +101,8 @@ for CPU in ${ALL_CPUS}; do
 	rm -fv ${THISPKG_DIR}${sysroot}${prefix}/libexec/charset.alias
 
 	install -d -m 755 ${THISPKG_DIR}${sysroot}/etc/profile.d/
-	install -m 644 ${BUILD_DIR}/patches/groff/zzz-groff.csh ${BUILD_DIR}/patches/groff/zzz-groff.sh ${THISPKG_DIR}${sysroot}/etc/profile.d/
+	install -m 644 ${BUILD_DIR}/patches/groff/groff-zzz-groff.csh ${THISPKG_DIR}${sysroot}/etc/profile.d/zzz-groff.csh
+	install -m 644 ${BUILD_DIR}/patches/groff/groff-zzz-groff.sh ${THISPKG_DIR}${sysroot}/etc/profile.d/zzz-groff.sh
 	
 	make_bin_archive $CPU
 done
@@ -110,8 +111,8 @@ move_prefix
 configured_prefix="${prefix}"
 
 PATCHES="$PATCHES
-patches/groff/zzz-groff.csh
-patches/groff/zzz-groff.sh
+patches/groff/groff-zzz-groff.csh
+patches/groff/groff-zzz-groff.sh
 "
 
 make_archives

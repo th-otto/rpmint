@@ -14,7 +14,7 @@ ${TARGET_BINDIR#/}/*
 ${TARGET_MANDIR#/}/man3/*
 "
 
-PATCHES="patches/c-ares/mintelf-config.patch"
+PATCHES="patches/c-ares/c-ares-mintelf-config.patch"
 
 unpack_archive
 

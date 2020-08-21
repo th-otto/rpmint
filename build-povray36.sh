@@ -10,10 +10,10 @@ VERSIONPATCH=-fdlibm
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/povray/36-autoconf.patch
+patches/povray/povray36-autoconf.patch
 "
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/mintelf-config-36.patch
+patches/${PACKAGENAME}/povray36-mintelf-config.patch
 "
 
 BINFILES="
@@ -50,7 +50,7 @@ rm -rf autom4te.cache config.h.in.orig
 ) || exit 1
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config-36.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/povray36-mintelf-config.patch"
 
 cp -a config/config.sub libraries/zlib/config.sub
 cp -a config/config.sub libraries/png/config.sub

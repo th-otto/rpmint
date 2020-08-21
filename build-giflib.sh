@@ -13,8 +13,8 @@ PATCHES="
 patches/giflib/giflib-visibility.patch
 patches/giflib/giflib-automake-1_13.patch
 patches/giflib/giflib-CVE-2016-3977.patch
-patches/giflib/fix-autoconf11.patch
-patches/giflib/mintelf-config.patch
+patches/giflib/giflib-fix-autoconf11.patch
+patches/giflib/giflib-mintelf-config.patch
 "
 
 BINFILES="
@@ -30,7 +30,7 @@ export LANG=POSIX
 export LC_ALL=POSIX
 autoreconf -fiv
 # patch it again in case it was replaced by autoreconf
-patch -p1 -i ${BUILD_DIR}/patches/giflib/mintelf-config.patch || :
+patch -p1 -i ${BUILD_DIR}/patches/giflib/giflib-mintelf-config.patch || :
 
 cd "$MINT_BUILD_DIR"
 

@@ -9,7 +9,7 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/libidn2/mintelf-config.patch"
+PATCHES="patches/libidn2/libidn2-mintelf-config.patch"
 
 BINFILES="
 ${TARGET_BINDIR#/}/*

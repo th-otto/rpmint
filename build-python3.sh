@@ -15,30 +15,30 @@ python_version=$(echo ${VERSION#-} | head -c 3)
 
 
 PATCHES="
-patches/python3/Python-3.0b1-record-rpm.patch
-patches/python3/python-3.6.0-multilib-new.patch
-patches/python3/python-3.3.0b1-localpath.patch
-patches/python3/python-3.3.0b1-fix_date_time_compiler.patch
-patches/python3/python-3.3.0b1-curses-panel.patch
-patches/python3/python-3.3.0b1-test-posix_fadvise.patch
-patches/python3/python-3.3.3-skip-distutils-test_sysconfig_module.patch
-patches/python3/subprocess-raise-timeout.patch
-patches/python3/0001-allow-for-reproducible-builds-of-python-packages.patch
-patches/python3/distutils-reproducible-compile.patch
-patches/python3/skip_random_failing_tests.patch
-patches/python3/fix-localeconv-encoding-for-LC_NUMERIC.patch
+patches/python3/python3-3.0b1-record-rpm.patch
+patches/python3/python3-3.6.0-multilib-new.patch
+patches/python3/python3-3.3.0b1-localpath.patch
+patches/python3/python3-3.3.0b1-fix_date_time_compiler.patch
+patches/python3/python3-3.3.0b1-curses-panel.patch
+patches/python3/python3-3.3.0b1-test-posix_fadvise.patch
+patches/python3/python3-3.3.3-skip-distutils-test_sysconfig_module.patch
+patches/python3/python3-subprocess-raise-timeout.patch
+patches/python3/python3-0001-allow-for-reproducible-builds-of-python-packages.patch
+patches/python3/python3-distutils-reproducible-compile.patch
+patches/python3/python3-skip_random_failing_tests.patch
+patches/python3/python3-fix-localeconv-encoding-for-LC_NUMERIC.patch
 patches/python3/python3-sorted_tar.patch
-patches/python3/ctypes-pass-by-value.patch
-patches/python3/mintelf-config.patch
-patches/python3/mint.patch
-patches/python3/python-mintnosharedmod.patch
-patches/python3/python-mintsetupdist.patch
-patches/python3/cross-config.patch
+patches/python3/python3-ctypes-pass-by-value.patch
+patches/python3/python3-mintelf-config.patch
+patches/python3/python3-mint.patch
+patches/python3/python3-mintnosharedmod.patch
+patches/python3/python3-mintsetupdist.patch
+patches/python3/python3-cross-config.patch
 "
 DISABLED_PATCHES="
 "
 POST_INSTALL_SCRIPTS="
-patches/python3/macros.python3
+patches/python3/python3-macros.python3
 "
 
 
@@ -61,7 +61,7 @@ sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
 
 autoreconf -f -i
 # autoreconf may have overwritten config.sub
-# patch -p1 < "$BUILD_DIR/patches/python3/mintelf-config.patch"
+# patch -p1 < "$BUILD_DIR/patches/python3/python3-mintelf-config.patch"
 # prevent make from trying to rebuild asdl stuff, which requires existing
 # python installation
 touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
@@ -122,7 +122,7 @@ EOF
 
 	# RPM macros
 	mkdir -p ${buildroot}${TARGET_SYSCONFDIR}/rpm
-	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/macros.python3 ${buildroot}${TARGET_SYSCONFDIR}/rpm
+	install -m 644 ${BUILD_DIR}/patches/${PACKAGENAME}/python3-macros.python3 ${buildroot}${TARGET_SYSCONFDIR}/rpm/macros.python3
 
 	# scripts
 	install -m 755 Tools/scripts/pydoc3 ${buildroot}${prefix}/bin/pydoc3-${python_version}

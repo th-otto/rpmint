@@ -9,7 +9,7 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/libunistring/mintelf-config.patch"
+PATCHES="patches/libunistring/libunistring-mintelf-config.patch"
 
 BINFILES=""
 

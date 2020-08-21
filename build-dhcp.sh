@@ -13,23 +13,23 @@ PATCHES="
 patches/dhcp/dhcp-3.0.3-mint-20111009.patch
 "
 
-# patches/dhcp/0001-dhcp-4.1.1-default-paths.patch
-# patches/dhcp/0002-dhcp-4.1.1-paranoia.patch
-# patches/dhcp/0003-dhcp-4.2.2-man-includes.patch
-# patches/dhcp/0004-dhcp-4.1.1-tmpfile.patch
-# patches/dhcp/0005-dhcp-4.1.1-dhclient-exec-filedes.patch
-# patches/dhcp/0006-dhcp-4.3.2-dhclient-send-hostname-or-fqdn.patch
-# patches/dhcp/0007-dhcp-4.1.1-P1-lpf-bind-msg-fix.patch
-# patches/dhcp/0009-dhcp-4.2.6-close-on-exec.patch
-# patches/dhcp/0010-dhcp-4.2.2-quiet-dhclient.patch
-# patches/dhcp/0011-Fixed-linux-interface-discovery-using-getifaddrs.patch
-# patches/dhcp/0013-dhcp-4.2.x-dhcpv6-decline-on-DAD-failure.872609.patch
-# patches/dhcp/0015-Expose-next-server-DHCPv4-option-to-dhclient-script.patch
-# patches/dhcp/0016-infiniband-support.patch
-# patches/dhcp/0017-server-no-success-report-before-send.919959.patch
-# patches/dhcp/0018-client-fail-on-script-pre-init-error-bsc-912098.patch
-# patches/dhcp/0019-dhcp-4.2.4-P1-interval.patch
-# patches/dhcp/0020-dhcp-4.x.x-fixed-improper-lease-duration-checking.patch
+# patches/dhcp/dhcp-0001-dhcp-4.1.1-default-paths.patch
+# patches/dhcp/dhcp-0002-dhcp-4.1.1-paranoia.patch
+# patches/dhcp/dhcp-0003-dhcp-4.2.2-man-includes.patch
+# patches/dhcp/dhcp-0004-dhcp-4.1.1-tmpfile.patch
+# patches/dhcp/dhcp-0005-dhcp-4.1.1-dhclient-exec-filedes.patch
+# patches/dhcp/dhcp-0006-dhcp-4.3.2-dhclient-send-hostname-or-fqdn.patch
+# patches/dhcp/dhcp-0007-dhcp-4.1.1-P1-lpf-bind-msg-fix.patch
+# patches/dhcp/dhcp-0009-dhcp-4.2.6-close-on-exec.patch
+# patches/dhcp/dhcp-0010-dhcp-4.2.2-quiet-dhclient.patch
+# patches/dhcp/dhcp-0011-Fixed-linux-interface-discovery-using-getifaddrs.patch
+# patches/dhcp/dhcp-0013-dhcp-4.2.x-dhcpv6-decline-on-DAD-failure.872609.patch
+# patches/dhcp/dhcp-0015-Expose-next-server-DHCPv4-option-to-dhclient-script.patch
+# patches/dhcp/dhcp-0016-infiniband-support.patch
+# patches/dhcp/dhcp-0017-server-no-success-report-before-send.919959.patch
+# patches/dhcp/dhcp-0018-client-fail-on-script-pre-init-error-bsc-912098.patch
+# patches/dhcp/dhcp-0019-dhcp-4.2.4-P1-interval.patch
+# patches/dhcp/dhcp-0020-dhcp-4.x.x-fixed-improper-lease-duration-checking.patch
 # patches/dhcp/dhcp-4.3-mint.patch
 
 

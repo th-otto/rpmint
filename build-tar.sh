@@ -10,13 +10,13 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/tar/mintelf-config.patch
+patches/tar/tar-mintelf-config.patch
 patches/tar/tar-wildcards.patch
 patches/tar/tar-backup-spec-fix-paths.patch
-patches/tar/paxutils-rtapelib_mtget.patch
+patches/tar/tar-paxutils-rtapelib_mtget.patch
 patches/tar/tar-ignore_lone_zero_blocks.patch
-patches/tar/add_readme-tests.patch
-patches/tar/add-return-values-to-backup-scripts.patch
+patches/tar/tar-add_readme-tests.patch
+patches/tar/tar-add-return-values-to-backup-scripts.patch
 patches/tar/tar-1.29-extract_pathname_bypass.patch
 "
 # patches/tar/tar-recursive--files-from.patch

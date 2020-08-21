@@ -11,7 +11,7 @@ srcarchive="${PACKAGENAME}60"
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/unzip.dif
+patches/${PACKAGENAME}/unzip-config.dif
 patches/${PACKAGENAME}/unzip-iso8859_2.patch
 patches/${PACKAGENAME}/unzip-optflags.patch
 patches/${PACKAGENAME}/unzip-5.52-filename_too_long.patch
@@ -19,14 +19,14 @@ patches/${PACKAGENAME}/unzip-no_file_name_translation.patch
 patches/${PACKAGENAME}/unzip-open_missing_mode.patch
 patches/${PACKAGENAME}/unzip-no-build-date.patch
 patches/${PACKAGENAME}/unzip-dont_call_isprint.patch
-patches/${PACKAGENAME}/Fix-CVE-2014-8139-unzip.patch
-patches/${PACKAGENAME}/Fix-CVE-2014-8140-and-CVE-2014-8141.patch
-patches/${PACKAGENAME}/CVE-2015-7696.patch
-patches/${PACKAGENAME}/CVE-2015-7697.patch
-patches/${PACKAGENAME}/CVE-2016-9844.patch
-patches/${PACKAGENAME}/CVE-2014-9913.patch
-patches/${PACKAGENAME}/CVE-2018-1000035.patch
-patches/${PACKAGENAME}/atari-chmod-0.patch
+patches/${PACKAGENAME}/unzip-Fix-CVE-2014-8139-unzip.patch
+patches/${PACKAGENAME}/unzip-Fix-CVE-2014-8140-and-CVE-2014-8141.patch
+patches/${PACKAGENAME}/unzip-CVE-2015-7696.patch
+patches/${PACKAGENAME}/unzip-CVE-2015-7697.patch
+patches/${PACKAGENAME}/unzip-CVE-2016-9844.patch
+patches/${PACKAGENAME}/unzip-CVE-2014-9913.patch
+patches/${PACKAGENAME}/unzip-CVE-2018-1000035.patch
+patches/${PACKAGENAME}/unzip-atari-chmod-0.patch
 "
 # patches/unzip/unzip-5.52-use_librcc.patch
 

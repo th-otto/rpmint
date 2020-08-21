@@ -10,15 +10,15 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/dont-mess-with-rpmoptflags.diff
-patches/${PACKAGENAME}/mint-build.patch
+patches/${PACKAGENAME}/curl-dont-mess-with-rpmoptflags.diff
+patches/${PACKAGENAME}/curl-mint-build.patch
 patches/${PACKAGENAME}/curl-secure-getenv.patch
-patches/${PACKAGENAME}/staticlibs.patch
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/${PACKAGENAME}/curl-staticlibs.patch
+patches/${PACKAGENAME}/curl-mintelf-config.patch
 "
-# patches/curl/libcurl-ocloexec.patch
+# patches/curl/curl-libcurl-ocloexec.patch
 # patches/curl/curl-man3.patch
-# patches/curl/ppc-build.patch
+# patches/curl/curl-ppc-build.patch
 # patches/curl/curl-http-Don-t-wait-on-CONNECT-when-there-is-no-proxy.patch
 
 BINFILES="
@@ -41,7 +41,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/curl-mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

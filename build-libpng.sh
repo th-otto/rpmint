@@ -10,7 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/libpng/mintelf-config.patch
+patches/libpng/libpng-mintelf-config.patch
 patches/libpng/libpng-1.6.34-0001-config.patch
 "
 
@@ -20,7 +20,7 @@ cd "$srcdir"
 
 autoreconf -fiv
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libpng-mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

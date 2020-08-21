@@ -10,8 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/sdl_net/config.patch
-patches/sdl_net/mintelf-config.patch
+patches/sdl_net/sdl_net-config.patch
+patches/sdl_net/sdl_net-mintelf-config.patch
 "
 
 unpack_archive
@@ -25,7 +25,7 @@ autoconf || exit 1
 automake --add-missing || exit 1
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/sdl_net-mintelf-config.patch"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 

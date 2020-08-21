@@ -9,7 +9,7 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/arc/time.patch"
+PATCHES="patches/arc/arc-time.patch"
 
 BINFILES="
 ${TARGET_BINDIR}/arc

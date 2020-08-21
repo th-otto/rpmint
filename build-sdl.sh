@@ -26,7 +26,7 @@ autoconf || exit 1
 #automake --add-missing || exit 1
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/sdl-1.2.15-mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

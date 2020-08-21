@@ -10,8 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/xmp_atari.patch
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/${PACKAGENAME}/libxmp-xmp_atari.patch
+patches/${PACKAGENAME}/libxmp-mintelf-config.patch
 "
 
 unpack_archive

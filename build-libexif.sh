@@ -11,9 +11,9 @@ VERSIONPATCH=
 
 PATCHES="
 patches/libexif/libexif-build-date.patch
-patches/libexif/CVE-2016-6328.patch
-patches/libexif/CVE-2017-7544.patch
-patches/libexif/mintelf-config.patch
+patches/libexif/libexif-CVE-2016-6328.patch
+patches/libexif/libexif-CVE-2017-7544.patch
+patches/libexif/libexif-mintelf-config.patch
 "
 
 BINFILES="

@@ -14,9 +14,9 @@ srcdir="$here/freetype${VERSION}"
 MINT_BUILD_DIR="$srcdir"
 
 PATCHES="
-patches/freetype2/bugzilla-308961-cmex-workaround.patch
-patches/freetype2/mintelf-config.patch
-patches/freetype2/static-config.patch
+patches/freetype2/freetype2-bugzilla-308961-cmex-workaround.patch
+patches/freetype2/freetype2-mintelf-config.patch
+patches/freetype2/freetype2-static-config.patch
 "
 
 unpack_archive

@@ -10,15 +10,15 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/zgrep.diff
-patches/${PACKAGENAME}/zmore.diff
-patches/${PACKAGENAME}/non-exec-stack.diff
-patches/${PACKAGENAME}/zdiff.diff
-patches/${PACKAGENAME}/xz_lzma.patch
-patches/${PACKAGENAME}/manpage-no-date.patch
+patches/${PACKAGENAME}/gzip-zgrep.diff
+patches/${PACKAGENAME}/gzip-zmore.diff
+patches/${PACKAGENAME}/gzip-non-exec-stack.diff
+patches/${PACKAGENAME}/gzip-zdiff.diff
+patches/${PACKAGENAME}/gzip-xz_lzma.patch
+patches/${PACKAGENAME}/gzip-manpage-no-date.patch
 patches/${PACKAGENAME}/gzip-1.9-mint.patch
-patches/${PACKAGENAME}/mintelf-config.patch
-patches/${PACKAGENAME}/gnulib-strerror_r.patch
+patches/${PACKAGENAME}/gzip-mintelf-config.patch
+patches/${PACKAGENAME}/gzip-gnulib-strerror_r.patch
 "
 
 

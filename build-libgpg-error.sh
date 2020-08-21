@@ -15,9 +15,9 @@ ${TARGET_BINDIR#/}
 "
 
 PATCHES="
-patches/libgpg-error/fix_aarch64.patch
-patches/libgpg-error/mint.patch
-patches/libgpg-error/mintelf-config.patch
+patches/libgpg-error/libgpg-error-fix_aarch64.patch
+patches/libgpg-error/libgpg-error-mint.patch
+patches/libgpg-error/libgpg-error-mintelf-config.patch
 "
 
 unpack_archive

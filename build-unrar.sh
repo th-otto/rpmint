@@ -13,7 +13,7 @@ srcdir="$here/${PACKAGENAME}"
 MINT_BUILD_DIR="$srcdir"
 srcarchive=${PACKAGENAME}src${VERSION}
 
-PATCHES="patches/unrar/wprintf.patch"
+PATCHES="patches/unrar/unrar-wprintf.patch"
 
 BINFILES="
 ${TARGET_BINDIR#/}/unrar

@@ -10,8 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/libsolv/mint.patch
-patches/libsolv/lto.patch
+patches/libsolv/libsolv-mint.patch
+patches/libsolv/libsolv-lto.patch
 "
 
 BINFILES="

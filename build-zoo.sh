@@ -10,7 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/zoo/zoo.patch
+patches/zoo/zoo-config.patch
 patches/zoo/zoo-2.10-tempfile.patch
 patches/zoo/zoo-gcc.patch
 patches/zoo/zoo-2.10-CAN-2005-2349.patch

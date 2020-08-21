@@ -10,8 +10,8 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/gcc7-fix.patch
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/${PACKAGENAME}/bison-gcc7-fix.patch
+patches/${PACKAGENAME}/bison-mintelf-config.patch
 "
 
 BINFILES="
@@ -33,7 +33,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/bison-mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

@@ -13,11 +13,11 @@ PATCHES="
 patches/${PACKAGENAME}/povray-3.6.9.7-ini.patch
 patches/${PACKAGENAME}/povray-3.6.9.7-fix.patch
 patches/${PACKAGENAME}/povray-3.6.9.7-boost-link.patch
-patches/${PACKAGENAME}/reproducible.patch
+patches/${PACKAGENAME}/povray-reproducible.patch
 "
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/autoconf.patch
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/${PACKAGENAME}/povray37-autoconf.patch
+patches/${PACKAGENAME}/povray37-mintelf-config.patch
 "
 
 BINFILES="
@@ -40,7 +40,7 @@ rm -rf libraries
 ( cd unix && ./prebuild.sh )
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/povray37-mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

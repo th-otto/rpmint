@@ -23,10 +23,10 @@ patches/coreutils/coreutils-test_without_valgrind.patch
 patches/coreutils/sh-utils-2.0-getgid.patch
 patches/coreutils/sh-utils-2.0-mint.patch
 patches/coreutils/coreutils-mint-physmem.patch
-patches/coreutils/dummy-man-patch
+patches/coreutils/coreutils-dummy-man-patch
 patches/coreutils/coreutils-mint-mountlist.patch
 patches/coreutils/coreutils-mint-procfile.patch
-patches/coreutils/mintelf-config.patch
+patches/coreutils/coreutils-mintelf-config.patch
 "
 
 # patches/coreutils/coreutils-remove_hostname_documentation.patch
@@ -53,7 +53,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # patch it again in case it was replaced by autoreconf
-patch -p1 -i ${BUILD_DIR}/patches/coreutils/mintelf-config.patch || :
+patch -p1 -i ${BUILD_DIR}/patches/coreutils/coreutils-mintelf-config.patch || :
 
 cd "$MINT_BUILD_DIR"
 

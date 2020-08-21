@@ -10,9 +10,9 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/libmikmod/config.patch
+patches/libmikmod/libmikmod-cflags.patch
 patches/libmikmod/libmikmod-config.patch
-patches/libmikmod/mintelf-config.patch
+patches/libmikmod/libmikmod-mintelf-config.patch
 "
 
 unpack_archive
@@ -28,7 +28,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libmikmod-mintelf-config.patch"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 

@@ -11,7 +11,7 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/nghttp2-remove-python-build.patch
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/${PACKAGENAME}/nghttp2-mintelf-config.patch
 "
 
 BINFILES=""
@@ -31,7 +31,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/nghttp2-mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

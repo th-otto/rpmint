@@ -10,20 +10,20 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/git/0001-We-trust-the-system-is-consistent-and-do-not-let-ind.patch
-patches/git/0002-gitweb-Enable-prevent_xss-by-default.patch
-patches/git/0004-cook-up-tcsh-completion-to-be-installable-bnc-853183.patch
-patches/git/0005-adapt-paths-in-zsh-completion-bnc-853183.patch
-patches/git/0006-Drop-the-last-updated-footer-in-documentation.patch
-patches/git/0007-Support-for-the-FreeMiNT-platform.patch
-patches/git/0008-Do-not-include-config.mak.uname-when-cross-compiling.patch
-patches/git/worktree-fix-worktree-add-race.patch
-patches/git/setup-don-t-fail-if-commondir-reference-is-deleted.patch
+patches/git/git-0001-We-trust-the-system-is-consistent-and-do-not-let-ind.patch
+patches/git/git-0002-gitweb-Enable-prevent_xss-by-default.patch
+patches/git/git-0004-cook-up-tcsh-completion-to-be-installable-bnc-853183.patch
+patches/git/git-0005-adapt-paths-in-zsh-completion-bnc-853183.patch
+patches/git/git-0006-Drop-the-last-updated-footer-in-documentation.patch
+patches/git/git-0007-Support-for-the-FreeMiNT-platform.patch
+patches/git/git-0008-Do-not-include-config.mak.uname-when-cross-compiling.patch
+patches/git/git-worktree-fix-worktree-add-race.patch
+patches/git/git-setup-don-t-fail-if-commondir-reference-is-deleted.patch
 "
 POST_INSTALL_SCRIPTS="
-patches/git/apache2-gitweb.conf
+patches/git/git-apache2-gitweb.conf
 patches/git/git-daemon.service
-patches/git/git.xinetd
+patches/git/git-git.xinetd
 "
 
 BINFILES="
@@ -139,10 +139,10 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} ${all_make_args} DESTDIR="${buildroot}" install install-doc
 	${MAKE} ${all_make_args} DESTDIR="${buildroot}" -C contrib/subtree install install-doc
 	install -d "${buildroot}/etc/apache2/conf.d"
-	install -m 644 "${BUILD_DIR}/patches/git/apache2-gitweb.conf" "${buildroot}/etc/apache2/conf.d/gitweb.conf"
+	install -m 644 "${BUILD_DIR}/patches/git/git-apache2-gitweb.conf" "${buildroot}/etc/apache2/conf.d/gitweb.conf"
 	install -d -m 755 "${buildroot}/srv/git"
 	install -d -m 755 "${buildroot}/etc/xinetd.d"
-	install -m 644 "${BUILD_DIR}/patches/git/git.xinetd" "${buildroot}/etc/xinetd.d/git"
+	install -m 644 "${BUILD_DIR}/patches/git/git-git.xinetd" "${buildroot}/etc/xinetd.d/git"
 	install -m 644 -D contrib/completion/git-completion.bash "${buildroot}/etc/bash_completion.d/git.sh"
 	install -m 644 -D contrib/completion/git-prompt.sh "${buildroot}/etc/bash_completion.d/git-prompt.sh"
 	install -m 755 -D contrib/workdir/git-new-workdir "${buildroot}/${TARGET_BINDIR}"

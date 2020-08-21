@@ -10,7 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/expat/mintelf-config.patch
+patches/expat/elfutils-mintelf-config.patch
 "
 # patches/expat/expat-1.95.2-mint.patch
 

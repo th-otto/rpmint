@@ -11,10 +11,10 @@ VERSIONPATCH=
 
 PATCHES="
 patches/db/db${VERSION}.patch
-patches/db/mintelf-config.patch
-patches/db/rpm-no-fsync.patch
+patches/db/db-mintelf-config.patch
+patches/db/db-rpm-no-fsync.patch
 patches/db/db-malloc-align.patch
-patches/db/lockstub.patch
+patches/db/db-lockstub.patch
 "
 
 BINFILES="

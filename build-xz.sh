@@ -9,7 +9,7 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/xz/mintelf-config.patch"
+PATCHES="patches/xz/xz-mintelf-config.patch"
 
 BINFILES="
 ${TARGET_BINDIR#/}/*

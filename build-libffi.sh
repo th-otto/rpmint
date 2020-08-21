@@ -15,7 +15,7 @@ VERSIONPATCH=
 BINFILES=""
 
 PATCHES="
-patches/libffi/mintelf-config.patch
+patches/libffi/libffi-mintelf-config.patch
 "
 
 unpack_archive

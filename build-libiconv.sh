@@ -9,7 +9,7 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/libiconv/mintelf-config.patch"
+PATCHES="patches/libiconv/libiconv-mintelf-config.patch"
 
 BINFILES="
 ${TARGET_BINDIR#/}/*

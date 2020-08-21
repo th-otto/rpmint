@@ -14,10 +14,10 @@ ranlib=${TARGET}-ranlib
 LTO_CFLAGS=
 
 PATCHES="
-patches/${PACKAGENAME}/coldfire.patch
+patches/${PACKAGENAME}/gmp-coldfire.patch
 "
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/${PACKAGENAME}/gmp-mintelf-config.patch
 "
 
 unpack_archive
@@ -29,7 +29,7 @@ autoconf || exit 1
 autoheader || exit 1
 automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/gmp-mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 

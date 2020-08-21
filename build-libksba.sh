@@ -14,7 +14,7 @@ BINFILES="
 "
 
 PATCHES="
-patches/libksba/mintelf-config.patch
+patches/libksba/libksab-mintelf-config.patch
 "
 
 unpack_archive

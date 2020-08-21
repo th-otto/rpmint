@@ -11,13 +11,13 @@ VERSIONPATCH=
 
 PATCHES="
 patches/findutils/findutils-4.7-xautofs.patch
-patches/findutils/mintelf-config.patch
+patches/findutils/findutils-mintelf-config.patch
 patches/findutils/findutils-4.7-mint.patch
-patches/findutils/notexinfo-clean.patch
+patches/findutils/findutils-notexinfo-clean.patch
 "
 
 DISABLED_PATCHES="
-patches/findutils/sv-bug-48030-find-exec-plus-does-not-pass-all-arguments.patch
+patches/findutils/findutils-sv-bug-48030-find-exec-plus-does-not-pass-all-arguments.patch
 patches/findutils/findutils-4.6-mint.patch
 "
 

@@ -47,28 +47,28 @@ patches/bash/bash-4.1-completion.dif
 patches/bash/bash-4.0-setlocale.dif
 patches/bash/bash-4.3-winch.dif
 patches/bash/bash-4.1-bash.bashrc.dif
-patches/bash/man2html-no-timestamp.patch
+patches/bash/bash-man2html-no-timestamp.patch
 patches/bash/bash-4.3-perl522.patch
 patches/bash/bash-4.3-extra-import-func.patch
 patches/bash/bash-4.4-paths.patch
 patches/bash/bash-4.4-profile.patch
 patches/bash/bash-4.4-mint.patch
-patches/bash/mintelf-config.patch
-patches/bash/cross-comp.patch
+patches/bash/bash-mintelf-config.patch
+patches/bash/bash-cross-comp.patch
 "
 
 DISABLED_PATCHES="
 patches/bash/bash-4.3-pathtemp.patch
 patches/bash/bash-4.2-nscdunmap.dif
 patches/bash/bash-4.2-endpw.dif
-patches/bash/readline-7.0.dif
-patches/bash/readline-6.3-input.dif
-patches/bash/readline-5.2-conf.patch
-patches/bash/readline-6.2-metamode.patch
-patches/bash/readline-6.2-endpw.dif
-patches/bash/readline-6.2-xmalloc.dif
-patches/bash/readline-6.3-destdir.patch
-patches/bash/readline-6.3-rltrace.patch
+patches/bash/bash-readline-7.0.dif
+patches/bash/bash-readline-6.3-input.dif
+patches/bash/bash-readline-5.2-conf.patch
+patches/bash/bash-readline-6.2-metamode.patch
+patches/bash/bash-readline-6.2-endpw.dif
+patches/bash/bash-readline-6.2-xmalloc.dif
+patches/bash/bash-readline-6.3-destdir.patch
+patches/bash/bash-readline-6.3-rltrace.patch
 "
 
 BINFILES="
@@ -228,8 +228,8 @@ for CPU in ${ALL_CPUS}; do
 	rm -f ${TARGET_LIBDIR#/}$multilibdir/charset.alias	
 
 	mkdir -p ${THISPKG_DIR}${sysroot}/etc/skel
-	install -m 644 ${BUILD_DIR}/patches/bash/dot.bashrc    ${THISPKG_DIR}${sysroot}/etc/skel/.bashrc
-	install -m 644 ${BUILD_DIR}/patches/bash/dot.profile   ${THISPKG_DIR}${sysroot}/etc/skel/.profile
+	install -m 644 ${BUILD_DIR}/patches/bash/bash-dot.bashrc    ${THISPKG_DIR}${sysroot}/etc/skel/.bashrc
+	install -m 644 ${BUILD_DIR}/patches/bash/bash-dot.profile   ${THISPKG_DIR}${sysroot}/etc/skel/.profile
     touch -t 199605181720.50 ${THISPKG_DIR}${sysroot}/etc/skel/.bash_history
     chmod 600 ${THISPKG_DIR}${sysroot}/etc/skel/.bash_history
     

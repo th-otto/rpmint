@@ -34,7 +34,7 @@ patches/file/file-secure_getenv.patch
 patches/file/file-5.28-btrfs-image.dif
 patches/file/file-5.32-mint.patch
 patches/file/file-5.32.dif
-patches/file/mintelf-config.patch
+patches/file/file-mintelf-config.patch
 "
 # patches/file/file-5.16-ocloexec.patch
 
@@ -58,7 +58,7 @@ autoreconf -fiv
 test -s src/magic.h.in || cp -p src/magic.h src/magic.h.in
 rm -fv src/magic.h
 # patch it again in case it was replaced by autoreconf
-patch -p1 -i ${BUILD_DIR}/patches/file/mintelf-config.patch || :
+patch -p1 -i ${BUILD_DIR}/patches/file/file-mintelf-config.patch || :
 
 cd "$MINT_BUILD_DIR"
 

@@ -13,7 +13,7 @@ VERSIONPATCH=
 BINFILES=""
 
 PATCHES="
-patches/libassuan/mintelf-config.patch
+patches/libassuan/libassuan-mintelf-config.patch
 "
 
 unpack_archive

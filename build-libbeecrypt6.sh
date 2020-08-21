@@ -16,9 +16,9 @@ patches/libbeecrypt6/beecrypt-4.1.2.patch
 patches/libbeecrypt6/beecrypt-4.1.2-build.patch
 patches/libbeecrypt6/beecrypt-4.1.2-fix_headers.patch
 patches/libbeecrypt6/beecrypt-libdir.patch
-patches/libbeecrypt6/no-asm-m68k.patch
-patches/libbeecrypt6/mintelf-config.patch
-patches/libbeecrypt6/enable-cplusplus.patch
+patches/libbeecrypt6/beecrypt-no-asm-m68k.patch
+patches/libbeecrypt6/beecrypt-mintelf-config.patch
+patches/libbeecrypt6/beecrypt-enable-cplusplus.patch
 "
 
 BINFILES=""

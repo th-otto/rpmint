@@ -10,9 +10,9 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/gawk/gawk_ppc64le_ignore_transient_test_time_failure.patch
+patches/gawk/gawk-ppc64le_ignore_transient_test_time_failure.patch
 patches/gawk/gawk-4.1.4-mint.patch
-patches/gawk/mintelf-config.patch
+patches/gawk/gawk-mintelf-config.patch
 "
 
 

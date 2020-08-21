@@ -11,7 +11,7 @@ VERSIONPATCH=
 
 MINT_BUILD_DIR="$srcdir/src/devel"
 
-PATCHES="patches/ldg/cross.patch"
+PATCHES="patches/ldg/ldg-cross.patch"
 
 unpack_archive
 

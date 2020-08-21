@@ -10,9 +10,9 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/windom/cross.patch
-patches/windom/menuexec.patch
-patches/windom/formthumb.patch
+patches/windom/windom-cross.patch
+patches/windom/windom-menuexec.patch
+patches/windom/windom-formthumb.patch
 "
 
 BINFILES="
