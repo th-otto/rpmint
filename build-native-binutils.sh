@@ -49,7 +49,7 @@ PATCHES="\
         patches/binutils/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
 "
 ALLPATCHES="$PATCHES \
-        patches/binutils/m68k-segmentalign.patch \
+        patches/binutils/binutils-m68k-segmentalign.patch \
 "
 
 TAR=${TAR-tar}

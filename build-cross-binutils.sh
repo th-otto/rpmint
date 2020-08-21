@@ -44,21 +44,23 @@ PATCHES="\
         patches/binutils/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
 "
 ALLPATCHES="$PATCHES \
-        patches/binutils/m68k-segmentalign.patch \
+        patches/binutils/binutils-m68k-segmentalign.patch \
 "
 
 TAR=${TAR-tar}
 TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
 
 LN_S="ln -s"
+GCC=${GCC-gcc}
+GXX=${GXX-g++}
 case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
 	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
-	MINGW*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
+	MINGW*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	MSYS*) host=msys ;;
-	CYGWIN*) if echo "" | gcc -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
+	CYGWIN*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
-	*) host=linux ;;
+	*) host=linux64 ;;
 esac
 case $host in
 	cygwin* | mingw* | msys*) BUILD_EXEEXT=.exe ;;
@@ -126,6 +128,7 @@ bfd_targets=""
 enable_plugins=--disable-plugins
 enable_lto=--disable-lto
 ranlib=ranlib
+STRIP=${STRIP-strip -p}
 
 # add opposite of default mingw32 target for binutils,
 # and also host target
@@ -212,7 +215,7 @@ for CPU in ${ALL_CPUS}; do
 		--libexecdir='${libdir}' \
 		CFLAGS="$CFLAGS_FOR_BUILD" \
 		CXXFLAGS="$CXXFLAGS_FOR_BUILD" \
-		LDFLAGS="$LDFLAGS_FOR_BUILD $STACKSIZE" \
+		LDFLAGS="$LDFLAGS_FOR_BUILD ${STACKSIZE}" \
 		$bfd_targets \
 		--with-pkgversion="$REVISION" \
 		--with-stage1-ldflags= \

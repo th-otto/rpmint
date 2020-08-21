@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+          "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xml:lang="en" lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>m68k-atari-mint cross-tools</title>
+<meta name="keywords" content="ORCS, CAT, GC, PBEM, PBM, GC-Ork, GCORK, ARAnyM, UDO, EmuTOS, GCC" />
+<link rel="stylesheet" type="text/css" href="../../../home.css" />
+</head>
+
+<body>
+<h1>m68k-atari-mint cross-tools</h1>
+
+
+<!-- https://www.virtualbox.org/wiki/Linux_Downloads -->
+
+<h3 id="Debian-basedLinuxdistributions">Debian-based Linux distributions</h3>
+<p>
+Add the following line to your <tt>/etc/apt/sources.list</tt>. According to your distribution, replace '<tt>&lt;mydist&gt;</tt>' with '<tt>eoan</tt>', '<tt>bionic</tt>', '<tt>xenial</tt>', '<tt>buster</tt>', '<tt>stretch</tt>', or '<tt>jessie</tt>':
+</p>
+<pre class="wiki">deb [arch=amd64] https://tho-otto.de/download/mint/rpm/debian &lt;mydist&gt; contrib
+</pre><p>
+The public key for apt-secure can be downloaded
+</p>
+<ul><li><a href="atari-mint-cross.asc">here</a> for Debian/Ubuntu distributions.
+</li></ul><p>
+You can add this key with
+</p>
+<pre class="wiki">sudo apt-key add atari-mint-cross.asc
+</pre><p>
+or combine downloading and registering:
+</p>
+<pre class="wiki">wget -q https://tho-otto.de/download/mint/rpm/atari-mint-cross.asc -O- | sudo apt-key add -
+</pre><p>
+The key fingerprint for atari-mint-cross.asc is
+</p>
+<pre class="wiki">CC2E 22F1 B649 2FD3 EACF  F8BF 3C95 69A5 6896 9A28
+Thorsten Otto (m68k atari mint signing key) &lt;admin@tho-otto.de&gt;
+</pre><p>
+To install VirtualBox, do
+</p>
+<pre class="wiki">sudo apt-get update
+sudo apt-get install virtualbox-6.1
+</pre><p>
+Replace <tt>virtualbox-6.1</tt> by <tt>virtualbox-6.0</tt> or <tt>virtualbox-5.2</tt> to install the latest VirtualBox 6.0 or 5.2 build.
+</p>
+<p>
+What to do when experiencing <strong>The following signatures were invalid: BADSIG ...</strong> when refreshing the packages from the repository?
+</p>
+<pre class="wiki"># sudo -s -H
+# apt-get clean
+# rm /var/lib/apt/lists/*
+# rm /var/lib/apt/lists/partial/*
+# apt-get clean
+# apt-get update
+</pre><h3 id="RPM-basedLinuxdistributions">RPM-based Linux distributions</h3>
+<p>
+We provide a yum/dnf-style repository for Oracle Linux/Fedora/RHEL/openSUSE. All .rpm packages are signed. The public key for rpm can be downloaded <a href="atari-mint-cross.asc">here</a>. You can add this key <em>(not normally necessary, see below!)</em> with
+</p>
+<pre class="wiki">sudo rpm --import atari-mint-cross.asc
+</pre><p>
+or combine downloading and registering:
+</p>
+<pre class="wiki">wget -q https://tho-otto.de/download/mint/rpm/atari-mint-cross.asc -O- | rpm --import -
+</pre><p>
+The key fingerprint is
+</p>
+<pre class="wiki">CC2E 22F1 B649 2FD3 EACF  F8BF 3C95 69A5 6896 9A28
+Thorsten Otto (m68k atari mint signing key) &lt;admin@tho-otto.de&gt;
+</pre><p>
+After importing the public key, the package signature can be checked with
+</p>
+<pre class="wiki">rpm --checksig PACKAGE_NAME
+</pre><p>
+<em>Note that importing the key is not necessary for yum users (Oracle Linux/Fedora/RHEL/CentOS) when using one of the atari-mint-cross .repo files from below as yum downloads and imports the public key automatically! Zypper users should run
+</em></p>
+<pre class="wiki">sudo zypper refresh
+</pre><p>
+<em>
+</em></p>
+<p>
+The package signature is checked by yum/dnf/zypper as well:
+</p>
+<ul><li>Users of <strong>Oracle Linux</strong> / <strong>RHEL</strong> can add <a href="atari-mint-cross-rhel.repo"><span class="icon"> </span>the RedHat repo file</a> to <em>/etc/yum.repos.d/</em>.
+</li><li>Users of <strong>Fedora</strong> can add <a class="ext-link" href="atari-mint-cross-fedora.repo"><span class="icon"> </span>the Fedora repo file</a> to <em>/etc/yum.repos.d/</em>.
+</li><li>Users of <strong>openSUSE</strong> can add <a class="ext-link" href="atari-mint-cross-opensuse.repo"><span class="icon"> </span>the openSUSE repo file</a> to <em>/etc/zypp/repos.d/</em>.
+</li></ul></div>

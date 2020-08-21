@@ -36,13 +36,13 @@ srcdir="${PACKAGENAME}${VERSION}"
 #
 # The mint patch can be recreated by running
 # git diff binutils-2_34-branch binutils-2_34-mint
-# in my fork (https://github.com/th-otto/binutils/tree/binutils-2_33-mint)
+# in my fork (https://github.com/th-otto/binutils/tree/binutils-2_34-mint)
 #
 PATCHES="\
         patches/binutils/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
 "
 ALLPATCHES="$PATCHES \
-        patches/binutils/m68k-segmentalign.patch \
+        patches/binutils/binutils-m68k-segmentalign.patch \
 "
 
 TAR=${TAR-tar}

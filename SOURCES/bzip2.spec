@@ -33,21 +33,23 @@ Patch5: bzip2-1.0.6-patch-0006-mint.patch
 Patch6: bzip2-1.0.6-patch-0007-Fix-printfs-of-file-sizes.patch
 Patch7: bzip2-amigaos.patch
 
+BuildRequires:  autoconf
+BuildRequires:  automake
+BuildRequires:  libtool
+BuildRequires:  pkgconfig
+
 %rpmint_build_arch
 
-%define pkgdescription \
-Bzip2 is a freely available, patent-free, high quality data compressor. \
-Bzip2 compresses files to within 10 to 15 percent of the capabilities  \
-of the best techniques available.  However, bzip2 has the added benefit  \
-of being approximately two times faster at compression and six times  \
-faster at decompression than those techniques.  Bzip2 is not the  \
-fastest compression utility, but it does strike a balance between speed  \
-and compression capability. \
- \
-Install bzip2 if you need a compression utility.
-
 %description
-%{pkgdescription}
+Bzip2 is a freely available, patent-free, high quality data compressor.
+Bzip2 compresses files to within 10 to 15 percent of the capabilities 
+of the best techniques available.  However, bzip2 has the added benefit 
+of being approximately two times faster at compression and six times 
+faster at decompression than those techniques.  Bzip2 is not the 
+fastest compression utility, but it does strike a balance between speed 
+and compression capability.
+
+Install bzip2 if you need a compression utility.
 
 %package devel
 Summary:        Header files and libraries for developing apps which will use bzip2.

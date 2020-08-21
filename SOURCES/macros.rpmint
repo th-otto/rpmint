@@ -49,6 +49,12 @@ export PKG_CONFIG_LIBDIR="%{_rpmint_cross_pkgconfigdir}" \
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR" \
 %nil
 
+%rpmint_essential() \
+%if "%{buildtype}" == "cross" \
+BuildRequires:  cross-mint-essential \
+%else \
+BuildRequires:  mint-devel-essential \
+%endif
 
 %rpmint_move_pkgconfig_libs_private() \
 	# If a *.pc has a Libs.private entry, \
