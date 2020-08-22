@@ -23,12 +23,14 @@ index da50dfda4..e5f61dfa4 100644
  
   /* Per-dbi options */
   { "nommap",	0,POPT_BIT_SET,		&staticdbicfg.dbi_oflags, DB_NOMMAP,
-@@ -85,6 +87,8 @@ static const struct poptOption rdbOptions[] = {
+@@ -85,6 +87,10 @@ static const struct poptOption rdbOptions[] = {
  	NULL, NULL },
   { "lockdbfd",	0,POPT_ARG_NONE,	&staticdbicfg.dbi_lockdbfd, 0,
  	NULL, NULL },
++#ifdef DB_NOFSYNC
 + { "nofsync",	0,POPT_BIT_SET,		&staticdbicfg.dbi_oflags, DB_NOFSYNC,
 +	NULL, NULL },
++#endif
  
      POPT_TABLEEND
  };
