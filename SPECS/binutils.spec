@@ -38,6 +38,7 @@ BuildRequires:  pkgconfig
 BuildRequires:  cross-mint-gcc
 BuildRequires:  cross-mint-mintlib
 BuildRequires:  cross-mint-fdlibm
+%define _target_platform %{_rpmint_target_platform}
 %if "%{buildtype}" == "v4e"
 %define _arch m5475
 %else
@@ -48,7 +49,6 @@ BuildRequires:  cross-mint-fdlibm
 %endif
 %endif
 %endif
-%nil
 
 %description
 C compiler utilities: ar, as, gprof, ld, nm, objcopy, objdump, ranlib,
@@ -229,7 +229,7 @@ cd build-dir
 		CXXFLAGS="$CXXFLAGS_FOR_BUILD" \
 		LDFLAGS="$LDFLAGS_FOR_BUILD ${STACKSIZE}" \
 		$bfd_targets \
-		--with-pkgversion="$REVISION" \
+		--with-pkgversion="%{release}" \
 		--with-stage1-ldflags= \
 		--with-boot-ldflags="$LDFLAGS_FOR_BUILD" \
 		--with-gcc --with-gnu-as --with-gnu-ld \

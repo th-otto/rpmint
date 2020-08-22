@@ -29,15 +29,15 @@ ${MAKE} prefix=${THISPKG_DIR}${sysroot}${TARGET_PREFIX} install || exit 1
 
 cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" || exit 1
 
-find . -name 00README | xargs rm -f
-find . -name COPYING | xargs rm -f
-find . -name COPYING.LIB | xargs rm -f
-find . -name COPYMINT | xargs rm -f
-find . -name BINFILES | xargs rm -f
-find . -name MISCFILES | xargs rm -f
-find . -name SRCFILES | xargs rm -f
-find . -name EXTRAFILES | xargs rm -f
-find . -name Makefile | xargs rm -f
-find . -name clean-include | xargs rm -f
+find . \( -name 00README \
+	-o -name COPYING \
+	-o -name COPYING.LIB \
+	-o -name COPYMINT \
+	-o -name BINFILES \
+	-o -name MISCFILES \
+	-o -name SRCFILES \
+	-o -name EXTRAFILES \
+	-o -name Makefile \
+	-o -name clean-include \) -delete -printf "rm %%p\n"
 
 make_archives

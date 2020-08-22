@@ -2,6 +2,7 @@
 # RPM macros for RPMint filesystem layout.
 #
 
+%_rpmint_target_platform  m68k-atari-mint
 %_rpmint_target_prefix    %{_prefix}
 %_rpmint_target           m68k-atari-mint
 %_rpmint_installdir       %{_prefix}/%{_rpmint_target}
@@ -22,6 +23,7 @@
 %if "%{buildtype}" == "cross" \
 BuildArch:      noarch \
 %else \
+%define _target_platform %{_rpmint_target_platform} \
 %if "%{buildtype}" == "v4e" \
 %define _arch m5475 \
 %else \
