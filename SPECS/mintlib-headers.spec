@@ -26,10 +26,11 @@ Header files for MiNTLib
 %install
 
 %if "%{buildtype}" == "cross"
-make prefix=${RPM_BUILD_ROOT}%{_rpmint_sysroot}/usr install-include-recursive
+prefix=%{_rpmint_prefix}
 %else
-make prefix=${RPM_BUILD_ROOT}/usr install-include-recursive
+prefix=%{_rpmint_target_prefix}
 %endif
+make prefix=${RPM_BUILD_ROOT}${prefix} install-include-recursive
 
 pushd ${RPM_BUILD_ROOT}
 find . \( -name 00README \
