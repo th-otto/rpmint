@@ -1525,6 +1525,8 @@ This notably applies to Perl and Python.
 
 <li>2020/08/01 Package asap added</li>
 
+<li>2020/08/23 Package p7zip added</li>
+
 </ul>
 
 <p></p>

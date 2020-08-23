@@ -1,0 +1,161 @@
+diff -rup -x '*.o' a/C/Threads.c b/C/Threads.c
+--- a/C/Threads.c	2009-06-06 11:00:26.000000000 +0200
++++ b/C/Threads.c	2020-08-23 10:20:05.519193156 +0200
+@@ -5,7 +5,6 @@
+ #ifdef ENV_BEOS
+ #include <kernel/OS.h>
+ #else
+-#include <pthread.h>
+ #include <stdlib.h>
+ #endif
+ 
+diff -rup -x '*.o' a/C/Threads.h b/C/Threads.h
+--- a/C/Threads.h	2014-12-21 14:23:30.000000000 +0100
++++ b/C/Threads.h	2020-08-23 10:19:53.815192808 +0200
+@@ -11,8 +11,31 @@
+ #include <kernel/OS.h>
+ #define MAX_THREAD 256
+ #else
++#ifdef _7ZIP_ST
++#define MAX_THREAD 1
++typedef struct { int dummy; } pthread_mutex_t;
++typedef struct { int dummy; } pthread_cond_t;
++typedef struct { int dummy; } pthread_attr_t;
++#define PTHREAD_CREATE_JOINABLE 0
++typedef int pthread_t;
++#define pthread_mutex_init(m,b)
++#define pthread_mutex_lock(m)
++#define pthread_mutex_unlock(m)
++#define pthread_mutex_destroy(m)
++#define pthread_cond_init(c,b)
++#define pthread_cond_wait(c,m)
++#define pthread_cond_destroy(c)
++#define pthread_cond_broadcast(c)
++#define pthread_attr_init(a) 0
++#define pthread_attr_destroy(a) 0
++#define pthread_attr_setdetachstate(a,b) 0
++#define pthread_create(a,b,c,d) (-1)
++#define pthread_join(a,b) (-1)
++#define pthread_detach(a)
++#else
+ #include <pthread.h>
+ #endif
++#endif
+ 
+ /* #define DEBUG_SYNCHRO 1 */
+ 
+diff -rup -x '*.o' a/CPP/Windows/Synchronization2.h b/CPP/Windows/Synchronization2.h
+--- a/CPP/Windows/Synchronization2.h	2009-06-06 10:59:00.000000000 +0200
++++ b/CPP/Windows/Synchronization2.h	2020-08-23 10:18:19.039189992 +0200
+@@ -75,27 +75,39 @@ public:
+   CSynchro() { _isValid = false; }
+   ~CSynchro() {
+     if (_isValid) {
++#ifndef _7ZIP_ST
+       ::pthread_mutex_destroy(&_object);
+       ::pthread_cond_destroy(&_cond);
++#endif
+     }
+     _isValid = false;
+   }
+   void Create() {
++#ifndef _7ZIP_ST
+     ::pthread_mutex_init(&_object,0);
+     ::pthread_cond_init(&_cond,0);
++#endif
+   }
+   void Enter() { 
++#ifndef _7ZIP_ST
+      ::pthread_mutex_lock(&_object);
++#endif
+   }
+   void Leave() {
++#ifndef _7ZIP_ST
+     ::pthread_mutex_unlock(&_object);
++#endif
+   }
+   void WaitCond() { 
++#ifndef _7ZIP_ST
+     ::pthread_cond_wait(&_cond, &_object);
++#endif
+   }
+   void LeaveAndSignal() { 
++#ifndef _7ZIP_ST
+     ::pthread_cond_broadcast(&_cond);
+     ::pthread_mutex_unlock(&_object);
++#endif
+   }
+ };
+ #endif // #ifdef DEBUG_SYNCHRO
+diff -rup -x '*.o' a/CPP/Windows/System.cpp b/CPP/Windows/System.cpp
+--- a/CPP/Windows/System.cpp	2016-05-19 18:47:31.000000000 +0200
++++ b/CPP/Windows/System.cpp	2020-08-23 11:22:02.580785899 +0200
+@@ -19,6 +19,10 @@
+ #include <be/kernel/OS.h>
+ #endif
+ 
++#if defined(__MINT__)
++#include <mint/mintbind.h>
++#include <mint/sysctl.h>
++#endif
+ 
+ #include "Common/MyTypes.h"
+ 
+@@ -87,6 +91,16 @@ namespace NWindows
+ 			if (nbcpu < 1) nbcpu = 1;
+ 			return nbcpu;
+ 		}
++		#elif defined(__MINT__)
++		UInt32 GetNumberOfProcessors() {
++			long names[2];
++			long ncpu = 1;
++			size_t len = sizeof(ncpu);
++			names[0] = CTL_HW;
++			names[1] = HW_NCPU;
++			Psysctl(names, 2, &ncpu, &len, 0, 0);
++			return ncpu;
++		}
+ 		#else
+ 		#warning Generic GetNumberOfProcessors
+ 		UInt32 GetNumberOfProcessors() {
+@@ -159,6 +173,16 @@ namespace NWindows
+ 			get_system_info(&info);
+ 			size = info.max_pages;
+ 			size *= 4096;
++#elif defined(__MINT__)
++			long names[2];
++			size_t memsize = 0;
++			size_t len = sizeof(memsize);
++			names[0] = CTL_HW;
++			names[1] = HW_FREEPHYSMEM;
++			if (Psysctl(names, 2, &memsize, &len, 0, 0) == 0 && memsize != 0)
++				size = memsize >> 1;
++			else
++				size = 4 * 1024 * 1024;
+ #else
+ #warning Generic GetRamSize
+ 			isDefined = false;
+diff -rup -x '*.o' a/CPP/myWindows/StdAfx.h b/CPP/myWindows/StdAfx.h
+--- a/CPP/myWindows/StdAfx.h	2015-10-03 20:34:40.000000000 +0200
++++ b/CPP/myWindows/StdAfx.h	2020-08-23 10:09:18.075173919 +0200
+@@ -10,7 +10,7 @@
+ 
+ #define NO_INLINE /* FIXME */
+ 
+-#ifdef ENV_HAVE_PTHREAD
++#if defined(ENV_HAVE_PTHREAD) && !defined(_7ZIP_ST)
+ #include <pthread.h>
+ #endif
+ 
+--- a/CPP/7zip/Crypto/Rar5Aes.cpp.orig	2020-08-23 12:07:18.191430196 +0200
++++ b/CPP/7zip/Crypto/Rar5Aes.cpp	2020-08-23 12:07:23.815430363 +0200
+@@ -162,8 +162,8 @@
+ };
+ 
+ 
+-#ifndef _7ZIP_ST
+   static CKey g_Key;
++#ifndef _7ZIP_ST
+   static NWindows::NSynchronization::CCriticalSection g_GlobalKeyCacheCriticalSection;
+   #define MT_LOCK NWindows::NSynchronization::CCriticalSectionLock lock(g_GlobalKeyCacheCriticalSection);
+ #else

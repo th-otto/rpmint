@@ -2296,8 +2296,8 @@ Zstd, short for Zstandard, is a lossless compression algorithm. Speed
 vs. compression trade-off is configurable in small increments.
 Decompression speed is preserved and remains roughly the same at all
 settings, a property shared by most LZ compression algorithms, such
-as zlib or lzma.
-
+as zlib or lzma. </br>
+ </br>
 At roughly the same ratio, zstd (v1.4.0) achieves ~870% faster
 compression than gzip. For roughly the same time, zstd achives a
 ~12% better ratio than gzip. LZMA outperforms zstd by ~10% faster
@@ -2372,8 +2372,8 @@ LS_COLORS environment variable is set and output is to tty.
 		'comment' => '
 Libxmp is a library that renders module files to PCM data. It supports
 over 90 mainstream and obscure module formats including Protracker (MOD),
-Scream Tracker 3 (S3M), Fast Tracker II (XM), and Impulse Tracker (IT).
-
+Scream Tracker 3 (S3M), Fast Tracker II (XM), and Impulse Tracker (IT). </br>
+ </br>
 Many compressed module formats are supported, including popular Unix, DOS,
 and Amiga file packers including gzip, bzip2, SQSH, Powerpack, etc.
 '
@@ -2396,6 +2396,29 @@ mobile devices. It emulates the POKEY sound chip and the 6502
 processor. The project was initially based on the routines from the
 Atari800 emulator, but the current version has an original emulation
 core.
+'
+	),
+	'p7zip' => array(
+		'name' => 'p7zip',
+		'upstream' => 'http://p7zip.sourceforge.net/',
+		'branch' => '',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'version' => '16.02',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+p7zip is a quick port of 7z.exe and 7za.exe (command line version of
+7zip, see www.7-zip.org) for Unix. 7-Zip is a file archiver with
+highest compression ratio. Since 4.10, p7zip (like 7-zip) supports
+little-endian and big-endian machines. </br>
+ </br>
+This package provides: </br>
+ * 7za - a stand-alone executable (handles less archive formats than 7z) </br>
+ * p7zip - a gzip-like wrapper around 7zr/7za
 '
 	),
 /*
