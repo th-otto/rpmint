@@ -2402,7 +2402,7 @@ core.
 		'name' => 'p7zip',
 		'upstream' => 'http://p7zip.sourceforge.net/',
 		'branch' => '',
-		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
 		'version' => '16.02',
 		'patch' => 1,
 		'script' => 1,
