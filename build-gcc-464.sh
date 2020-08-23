@@ -200,7 +200,8 @@ case "${TARGET}" in
     		enable_plugin=--enable-plugin
     	esac
     	languages="$languages,lto"
-    	ranlib=gcc-ranlib
+		# not here; we are just building it
+		# ranlib=gcc-ranlib
 		;;
 esac
 BUILD_EXEEXT=

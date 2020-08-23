@@ -224,15 +224,16 @@ STRIP=${STRIP-strip -p}
 
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
-    	enable_lto=--enable-lto
-		case "${BUILD}" in
+        enable_lto=--enable-lto
+        case "${BUILD}" in
         *-*-linux*)
-    		enable_plugin=--enable-plugin
-    	esac
-    	languages="$languages,lto"
-		# not here; we are just building it
-		# ranlib=gcc-ranlib
-		;;
+            enable_plugin=--enable-plugin
+            ;;
+        esac
+        languages="$languages,lto"
+        # not here; we are just building it
+        # ranlib=gcc-ranlib
+        ;;
 esac
 BUILD_EXEEXT=
 LN_S="ln -s"
@@ -283,7 +284,7 @@ export CXX="${GXX}"
 
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
-	--prefix="${PREFIX}" $local_prefix \
+	--prefix="${PREFIX}" \
 	--libdir="$BUILD_LIBDIR" \
 	--bindir="${PREFIX}/bin" \
 	--libexecdir='${libdir}' \

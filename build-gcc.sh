@@ -222,7 +222,7 @@ LDFLAGS_FOR_TARGET=
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-languages=c
+languages=c,c++
 $with_fortran && languages="$languages,fortran"
 $with_D && languages="$languages,d"
 ranlib=ranlib
@@ -230,15 +230,16 @@ STRIP=${STRIP-strip -p}
 
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
-    	enable_lto=--enable-lto
-		case "${BUILD}" in
+        enable_lto=--enable-lto
+        case "${BUILD}" in
         *-*-linux*)
-    		enable_plugin=--enable-plugin
-    	esac
-    	languages="$languages,lto"
-		# not here; we are just building it
-		# ranlib=gcc-ranlib
-		;;
+            enable_plugin=--enable-plugin
+            ;;
+        esac
+        languages="$languages,lto"
+        # not here; we are just building it
+        # ranlib=gcc-ranlib
+        ;;
 esac
 BUILD_EXEEXT=
 LN_S="ln -s"
@@ -272,7 +273,7 @@ case $host in
 		GXX=/usr/bin/clang++
 		export MACOSX_DEPLOYMENT_TARGET=10.6
 		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
-		CXXFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
+		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
 		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
 		mpfr_config="--with-mpc=${CROSSTOOL_DIR} --with-gmp=${CROSSTOOL_DIR} --with-mpfr=${CROSSTOOL_DIR}"
 		;;
@@ -289,7 +290,7 @@ export CXX="${GXX}"
 
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
-	--prefix="${PREFIX}" $local_prefix \
+	--prefix="${PREFIX}" \
 	--libdir="$BUILD_LIBDIR" \
 	--bindir="${PREFIX}/bin" \
 	--libexecdir='${libdir}' \
