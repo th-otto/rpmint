@@ -131,7 +131,7 @@ diff -rup -x '*.o' a/CPP/Windows/System.cpp b/CPP/Windows/System.cpp
 +			if (Psysctl(names, 2, &memsize, &len, 0, 0) == 0 && memsize != 0)
 +				size = memsize >> 1;
 +			else
-+				size = 4 * 1024 * 1024;
++				size = Malloc(-1) >> 1;
  #else
  #warning Generic GetRamSize
  			isDefined = false;
@@ -159,3 +159,150 @@ diff -rup -x '*.o' a/CPP/myWindows/StdAfx.h b/CPP/myWindows/StdAfx.h
    static NWindows::NSynchronization::CCriticalSection g_GlobalKeyCacheCriticalSection;
    #define MT_LOCK NWindows::NSynchronization::CCriticalSectionLock lock(g_GlobalKeyCacheCriticalSection);
  #else
+diff -rup -x '*.o' ../p7zip-16.02/CPP/7zip/UI/Console/Main.cpp ./CPP/7zip/UI/Console/Main.cpp
+--- ../p7zip-16.02/CPP/7zip/UI/Console/Main.cpp	2015-11-06 16:35:36.000000000 +0100
++++ ./CPP/7zip/UI/Console/Main.cpp	2020-08-23 16:21:03.483283050 +0200
+@@ -484,6 +484,11 @@ int Main2(
+   #endif
+ )
+ {
++	if (numArgs > 0 && (args[0] == 0 || args[0][0] == '\0'))
++	{
++	   static char arg0[] = "/usr/bin/7za";
++	   args[0] = arg0;
++	}
+   #if defined(_WIN32) && !defined(UNDER_CE)
+   SetFileApisToOEM();
+   #endif
+diff -rup -x '*.o' ../p7zip-16.02/CPP/7zip/UI/Console/MainAr.cpp ./CPP/7zip/UI/Console/MainAr.cpp
+--- ../p7zip-16.02/CPP/7zip/UI/Console/MainAr.cpp	2015-06-19 20:53:54.000000000 +0200
++++ ./CPP/7zip/UI/Console/MainAr.cpp	2020-08-23 16:06:02.615256283 +0200
+@@ -46,6 +46,10 @@ static void PrintError(const char *messa
+ 
+ #define NT_CHECK_FAIL_ACTION *g_StdStream << "Unsupported Windows version"; return NExitCode::kFatalError;
+ 
++#ifdef __MINT__
++#include <osbind.h>
++#endif
++
+ int MY_CDECL main
+ (
+   #ifndef _WIN32
+@@ -72,45 +76,47 @@ int MY_CDECL main
+   catch(const CNewException &)
+   {
+     PrintError(kMemoryExceptionMessage);
+-    return (NExitCode::kMemoryError);
++    res = NExitCode::kMemoryError;
+   }
+   catch(const NConsoleClose::CCtrlBreakException &)
+   {
+     PrintError(kUserBreakMessage);
+-    return (NExitCode::kUserBreak);
++    res = NExitCode::kUserBreak;
+   }
+   catch(const CArcCmdLineException &e)
+   {
+     PrintError(kException_CmdLine_Error_Message);
+     if (g_ErrStream)
+       *g_ErrStream << e << endl;
+-    return (NExitCode::kUserError);
++    res = NExitCode::kUserError;
+   }
+   catch(const CSystemException &systemError)
+   {
+     if (systemError.ErrorCode == E_OUTOFMEMORY)
+     {
+       PrintError(kMemoryExceptionMessage);
+-      return (NExitCode::kMemoryError);
+-    }
++      res = NExitCode::kMemoryError;
++    } else
+     if (systemError.ErrorCode == E_ABORT)
+     {
+       PrintError(kUserBreakMessage);
+-      return (NExitCode::kUserBreak);
+-    }
++      res = NExitCode::kUserBreak;
++    } else
++    {
+     if (g_ErrStream)
+     {
+       PrintError("System ERROR:");
+       *g_ErrStream << NError::MyFormatMessage(systemError.ErrorCode) << endl;
+     }
+-    return (NExitCode::kFatalError);
++    res = NExitCode::kFatalError;
++    }
+   }
+   catch(NExitCode::EEnum &exitCode)
+   {
+     FlushStreams();
+     if (g_ErrStream)
+       *g_ErrStream << kInternalExceptionMessage << exitCode << endl;
+-    return (exitCode);
++    res = exitCode;
+   }
+   catch(const UString &s)
+   {
+@@ -119,7 +125,7 @@ int MY_CDECL main
+       PrintError(kExceptionErrorMessage);
+       *g_ErrStream << s << endl;
+     }
+-    return (NExitCode::kFatalError);
++    res = NExitCode::kFatalError;
+   }
+   catch(const AString &s)
+   {
+@@ -128,7 +134,7 @@ int MY_CDECL main
+       PrintError(kExceptionErrorMessage);
+       *g_ErrStream << s << endl;
+     }
+-    return (NExitCode::kFatalError);
++    res = NExitCode::kFatalError;
+   }
+   catch(const char *s)
+   {
+@@ -137,7 +143,7 @@ int MY_CDECL main
+       PrintError(kExceptionErrorMessage);
+       *g_ErrStream << s << endl;
+     }
+-    return (NExitCode::kFatalError);
++    res = NExitCode::kFatalError;
+   }
+   catch(const wchar_t *s)
+   {
+@@ -146,7 +152,7 @@ int MY_CDECL main
+       PrintError(kExceptionErrorMessage);
+       *g_ErrStream << s << endl;
+     }
+-    return (NExitCode::kFatalError);
++    res = NExitCode::kFatalError;
+   }
+   catch(int t)
+   {
+@@ -154,14 +160,22 @@ int MY_CDECL main
+     {
+       FlushStreams();
+       *g_ErrStream << kInternalExceptionMessage << t << endl;
+-      return (NExitCode::kFatalError);
++      res = NExitCode::kFatalError;
+     }
+   }
+   catch(...)
+   {
+     PrintError(kUnknownExceptionMessage);
+-    return (NExitCode::kFatalError);
++    res = NExitCode::kFatalError;
+   }
+ 
++#ifdef __MINT__
++	if (getenv("SHELL") == 0)
++	{
++		fputs("press key", stdout);
++		fflush(stdout);
++		Cnecin();
++	}
++#endif
+   return res;
+ }
