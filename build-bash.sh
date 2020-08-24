@@ -127,22 +127,20 @@ CONFIGURE_FLAGS="$COMMON_CONFIGURE_FLAGS \
 MINSH_CONFIGURE_FLAGS="$COMMON_CONFIGURE_FLAGS \
 	--enable-minimal-config \
 	--enable-arith-for-command \
+	--disable-readline \
+	--without-installed-readline \
+	--disable-history \
 	--enable-array-variables \
 	--enable-brace-expansion \
 	--enable-casemod-attributes \
 	--enable-casemod-expansion \
-	--enable-command-timing \
 	--enable-cond-command \
 	--enable-cond-regexp \
-	--enable-coprocesses \
 	--enable-directory-stack \
 	--enable-dparen-arithmetic \
 	--enable-extended-glob \
-	--enable-job-control \
-	--enable-net-redirections \
-	--enable-process-substitution \
 "
-minsh=false
+minsh=true
 
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
@@ -168,6 +166,17 @@ EOF
 	append_gnulib_cache
 }
 
+disable_iconv()
+{
+	# even if we have iconv, we don't want to use it,
+	# because mintlib does not support locales, and it
+	# just bloats the binary
+	sed -i 's/^D\["HAVE_ICONV"\]="[ ]*[01]"$/D\["HAVE_ICONV="\]=" 0"/
+s/^S\["LIBICONV"\]="\([^"]*\)"$/S\["LIBICONV"\]=""/
+s/^S\["LTLIBICONV"\]="\([^"]*\)"$/S\["LTLIBICONV"\]=""/' config.status
+	./config.status
+}
+
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
@@ -180,10 +189,11 @@ for CPU in ${ALL_CPUS}; do
 	if $minsh; then
 		CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 		LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
-		"$srcdir/configure" ${CONFIGURE_FLAGS} \
+		"$srcdir/configure" ${MINSH_CONFIGURE_FLAGS} \
 		--libdir='${exec_prefix}/lib'$multilibdir \
 		--libexecdir='${exec_prefix}/libexec/bash'$multilibexecdir
 		hack_lto_cflags
+		disable_iconv
 
 		${MAKE} ${JOBS} Program=sh sh || exit 1
 		${MAKE} distclean
@@ -194,7 +204,10 @@ for CPU in ${ALL_CPUS}; do
 	--libdir='${exec_prefix}/lib'$multilibdir \
 	--libexecdir='${exec_prefix}/libexec/bash'$multilibexecdir
 
+	sed -i 's/^install:.*/install:/' examples/loadables/Makefile
+
 	hack_lto_cflags
+	disable_iconv
 
 	${MAKE} ${JOBS} || exit 1
 
@@ -241,6 +254,6 @@ configured_prefix="${prefix}"
 copy_pkg_configs
 
 # not really patches, just to get them in the archive
-PATCHES="$PATCHES patches/bash/dot.bashrc patches/bash/dot.profile"
+PATCHES="$PATCHES patches/bash/bash-dot.bashrc patches/bash/bash-dot.profile"
 
 make_archives

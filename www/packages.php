@@ -1302,6 +1302,9 @@ read from standard input or from a file.  Bash incorporates useful
 features from the Korn and C shells (ksh and csh).  Bash is intended to
 be a conformant implementation of the IEEE Posix Shell and Tools
 specification (IEEE Working Group 1003.2).
+<br />
+<span style="color:red">Note:</span> /bin/sh is now a bash compiled
+with minimal configuration (ie. no line editing features)
 '
 	),
 	'make' => array(

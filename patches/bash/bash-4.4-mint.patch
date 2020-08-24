@@ -87,3 +87,43 @@ diff -rupN bash-4.4.orig/lib/sh/oslib.c bash-4.4/lib/sh/oslib.c
  #endif /* CROSS_COMPILING */
  
  #if defined (HAVE_UNISTD_H)
+--- bash-4.4/nojobs.c.orig	2020-08-24 22:35:23.706201438 +0200
++++ bash-4.4/nojobs.c	2020-08-24 22:35:44.186202046 +0200
+@@ -76,7 +76,6 @@
+ extern int interactive, interactive_shell, login_shell;
+ extern int subshell_environment;
+ extern int last_command_exit_value, last_command_exit_signal;
+-extern int interrupt_immediately;
+ extern sh_builtin_func_t *this_shell_builtin;
+ #if defined (HAVE_POSIX_SIGNALS)
+ extern sigset_t top_level_mask;
+--- bash-4.4/parse.y.orig	2020-08-24 22:33:48.730198616 +0200
++++ bash-4.4/parse.y	2020-08-24 22:34:25.674199713 +0200
+@@ -206,7 +206,7 @@
+ static char *error_token_from_token __P((int));
+ static char *error_token_from_text __P((void));
+ static void print_offending_line __P((void));
+-static void report_syntax_error __P((char *));
++static void report_syntax_error __P((const char *));
+ 
+ static void handle_eof_input_unit __P((void));
+ static void prompt_again __P((void));
+@@ -5861,7 +5861,7 @@
+ yyerror (msg)
+      const char *msg;
+ {
+-  report_syntax_error ((char *)NULL);
++  report_syntax_error (NULL);
+   reset_parser ();
+   return (0);
+ }
+@@ -5968,8 +5968,7 @@
+    then place it in MESSAGE, otherwise pass NULL and this will figure
+    out an appropriate message for you. */
+ static void
+-report_syntax_error (message)
+-     char *message;
++report_syntax_error (const char *message)
+ {
+   char *msg, *p;
+ 

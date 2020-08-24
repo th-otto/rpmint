@@ -219,9 +219,9 @@ Comments
 
 <?php
 
-foreach ($basepackages as $package)
+foreach ($basepackages as $key => $package)
 {
-	echo '<tr>';
+	echo '<tr id="' . $key . '">' . "\n";
 	echo '<td>';
 	$title = isset($package['title']) ? $package['title'] : $package['name'];
 	echo '<a href="' . $package['upstream'] . '"' . $target . '>' . $title . "</a>\n";
@@ -992,7 +992,7 @@ Comments
 
 foreach ($libpackages as $package)
 {
-	echo '<tr>' . "\n";
+	echo '<tr id="' . $package['name'] . '">' . "\n";
 	echo '<td>';
 	$title = isset($package['title']) ? $package['title'] : $package['name'];
 	echo '<a href="' . $package['upstream'] . '"' . $target . '>' . $title . "</a>";
@@ -1528,6 +1528,8 @@ This notably applies to Perl and Python.
 <li>2020/08/23 Package p7zip added</li>
 
 <li>2020/08/24 Package netpbm added</li>
+
+<li>2020/08/24 Recompile bash without libiconv</li>
 
 </ul>
 
