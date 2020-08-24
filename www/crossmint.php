@@ -1527,6 +1527,8 @@ This notably applies to Perl and Python.
 
 <li>2020/08/23 Package p7zip added</li>
 
+<li>2020/08/24 Package netpbm added</li>
+
 </ul>
 
 <p></p>

@@ -2421,6 +2421,32 @@ This package provides: </br>
  * p7zip - a gzip-like wrapper around 7zr/7za
 '
 	),
+	'netpbm' => array(
+		'name' => 'netpbm',
+		'upstream' => 'http://netpbm.sourceforge.net/',
+		'branch' => '',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '10.91.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'noelf' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+These are the Portable Bitmap Plus Utilities. </br>
+ </br>
+This package provides tools for graphics conversion. Using these
+tools, images can be converted from virtually any format into any
+other format. A few of the supported formats include: GIF,
+PC-Paintbrush, IFF ILBM, Gould Scanner file, MTV ray tracer, Atari
+Degas .pi1 and .pi3, Macintosh PICT, HP Paintjet file, QRT raytracer,
+AUTOCAD slide, Atari Spectrum (compressed and uncompressed), Andrew
+Toolkit raster object, and many more. On top of that, man pages are
+included for all tools.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

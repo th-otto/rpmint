@@ -1,0 +1,50 @@
+--- netpbm-10.91.1/generator/pbmtext.c.orig	2020-08-24 19:11:40.628343219 +0200
++++ netpbm-10.91.1/generator/pbmtext.c	2020-08-24 19:22:55.820363280 +0200
+@@ -930,6 +930,7 @@
+ 
+ 
+ 
++#ifndef __MINT__
+ static void
+ fgetWideString(PM_WCHAR *    const widestring,
+                unsigned int  const size,
+@@ -962,6 +963,7 @@
+         *errorP = NULL;
+     }
+ }
++#endif
+ 
+ 
+ 
+@@ -1053,6 +1055,7 @@
+        at a time with 'fgetc' and 'fgetwc'.
+     */
+ 
++#ifndef __MINT__
+     int const wideCode = fwide(ifP, 0);
+         /* Width orientation for *ifP: positive means wide, negative means
+            byte, zero means undecided.
+@@ -1065,6 +1068,7 @@
+         /* *ifP is wide-oriented */
+         fgetWideString(widestring, size, ifP, eofP, errorP);
+     else
++#endif
+         fgetNarrowString(widestring, size, ifP, eofP, errorP);
+ }
+ 
+@@ -1446,8 +1450,15 @@
+         unsigned int line;  /* Line number in input text */
+ 
+         for (line = 0; line < lp.lineCount; ++line) {
++#ifdef __MINT__
++			const wchar_t *str = lp.textArray[line];
++			while (*str)
++				fputc(*str++, ofP);
++			fputc('\n', ofP);
++#else
+             fputws(lp.textArray[line], ofP);
+             fputwc(L'\n', ofP);
++#endif
+         }
+     }
+ }
