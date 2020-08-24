@@ -184,6 +184,8 @@ if test "$BASE_VER" != "${VERSION#-}"; then
 	exit 1
 fi
 gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
+gccsubdir=${BUILD_LIBDIR}/gcc/${TARGET}/${gcc_dir_version}
+gxxinclude=/usr/include/c++/${gcc_dir_version}
 
 #
 # try config.guess from automake first to get the
@@ -302,7 +304,7 @@ $srcdir/configure \
 	--disable-libmpx \
 	--disable-libcc1 \
 	--disable-werror \
-	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root/usr/include/c++/${gcc_dir_version} \
+	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root/${gxxinclude} \
 	--with-default-libstdcxx-abi=gcc4-compatible \
 	--with-gcc-major-version-only \
 	--with-gcc --with-gnu-as --with-gnu-ld \
@@ -386,6 +388,14 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 
 	cd "${INSTALL_DIR}"
 	
+# that directory only contains the gdb pretty printers;
+# on the host we don't want them because they would conflict
+# with the system ones; on the target we don't need them
+# because gdb does not work
+	rm -rf ${PREFIX#/}/share/gcc-${gcc_dir_version}
+	if test -d ${PREFIX#/}/${TARGET}/lib; then find ${PREFIX#/}/${TARGET}/lib -name "libstdc++*.py" -delete; fi
+	if test -d ${PREFIX#/}/lib; then find ${PREFIX#/}/lib -name "libstdc++*.py" -delete; fi
+
 	rm -f ${PREFIX#/}/share/info/dir
 	for f in ${PREFIX#/}/share/man/*/* ${PREFIX#/}/share/info/*; do
 		case $f in
@@ -394,15 +404,33 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		esac
 	done
 	
-	case $host in
-		cygwin*) LTO_PLUGIN=cyglto_plugin-0.dll; MY_LTO_PLUGIN=cyglto_plugin_mintelf.dll ;;
-		mingw* | msys*) LTO_PLUGIN=liblto_plugin-0.dll; MY_LTO_PLUGIN=liblto_plugin_mintelf.dll ;;
-		macos*) LTO_PLUGIN=liblto_plugin.dylib; MY_LTO_PLUGIN=liblto_plugin_mintelf.dylib ;;
-		*) LTO_PLUGIN=liblto_plugin.so.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf.so.0.0.0 ;;
-	esac
-	
 	rm -f */*/libiberty.a
 	find . -type f -name "*.la" -delete -printf "rm %p\n"
+
+#
+# move compiler dependant libraries to the gcc subdirectory
+#
+	pushd ${INSTALL_DIR}${PREFIX}/${TARGET}/lib || exit 1
+	for i in libgfortran.spec libgomp.spec libitm.spec libsanitizer.spec libmpx.spec; do
+		test -f $i && mv $i ${INSTALL_DIR}${gccsubdir}
+		find . -name "$i" -delete
+	done
+	test -f libgfortran.spec && mv libgfortran.spec ${INSTALL_DIR}${gccsubdir}
+	find . -name "lib*.a" | tar -c --files-from=- | tar -x -C ${INSTALL_DIR}${gccsubdir}
+	find . -name "lib*.a" -delete
+	rmdir m*/*/*/* || :
+	rmdir m*/*/* || :
+	rmdir m*/* || :
+	rmdir m* || :
+	popd
+
+	case $host in
+		cygwin*) LTO_PLUGIN=cyglto_plugin-0.dll; MY_LTO_PLUGIN=cyglto_plugin_mintelf-${gcc_dir_version}.dll ;;
+		mingw* | msys*) LTO_PLUGIN=liblto_plugin-0.dll; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}.dll ;;
+		macos*) LTO_PLUGIN=liblto_plugin.dylib; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}.dylib ;;
+		*) LTO_PLUGIN=liblto_plugin.so.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf.so.${gcc_dir_version} ;;
+	esac
+	
 	for f in ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT} \
@@ -420,10 +448,8 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		cd "${INSTALL_DIR}"
 	fi
 	
-	find ${PREFIX#/}/${TARGET} -name "*.a" -exec "${strip}" -S -x '{}' \;
-	find ${PREFIX#/}/${TARGET} -name "*.a" -exec "${ranlib}" '{}' \;
-	find ${BUILD_LIBDIR#/}/gcc/${TARGET} -name "*.a" -exec "${strip}" -S -x '{}' \;
-	find ${BUILD_LIBDIR#/}/gcc/${TARGET} -name "*.a" -exec "${ranlib}" '{}' \;
+	find ${PREFIX#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
+	find ${PREFIX#/} -name "*.a" -exec "${ranlib}" '{}' \;
 	
 	cd ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/include-fixed && {
 		for i in `find . -type f`; do
