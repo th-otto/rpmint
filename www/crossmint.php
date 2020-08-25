@@ -299,11 +299,11 @@ foreach ($basepackages as $key => $package)
 		echo '<td class="icon"></td>' . "\n";
 		echo '<td class="linkdesc">Build script:</td>' . "\n";
 		echo '<td class="sourcelink">';
-		$filename = $download_dir . 'build-' . $package['name'] . '-' . $package['version'];
+		$filename = $download_dir . $package['name'] . '-' . $package['version'];
 		if (isset($package['date']))
 			$filename .= '-' . $package['date'];
-		$filename .= '.sh';
-		$text = 'build-' . $package['name'] . '-' . $package['version'] . '.sh';
+		$filename .= '-build.sh';
+		$text = $package['name'] . '-' . $package['version'] . '-build.sh';
 		gen_link($filename, $text);
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
@@ -315,11 +315,11 @@ foreach ($basepackages as $key => $package)
 		echo '<td class="icon"></td>' . "\n";
 		echo '<td class="linkdesc">Build script:</td>' . "\n";
 		echo '<td class="sourcelink">';
-		$filename = $download_dir . 'build-cross-' . $package['name'] . '-' . $package['version'];
+		$filename = $download_dir . 'cross-' . $package['name'] . '-' . $package['version'];
 		if (isset($package['date']))
 			$filename .= '-' . $package['date'];
-		$filename .= '.sh';
-		$text = 'build-cross-' . $package['name'] . '-' . $package['version'] . '.sh';
+		$filename .= '-build.sh';
+		$text = 'cross-' . $package['name'] . '-' . $package['version'] . '-build.sh';
 		gen_link($filename, $text);
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
@@ -1072,11 +1072,11 @@ foreach ($libpackages as $package)
 		echo '<tr>' . "\n";
 		echo '<td class="linkdesc">Build script:</td>' . "\n";
 		echo '<td class="sourcelink">';
-		$filename = $download_dir . 'build-' . $package['name'] . '-' . $package['version'];
+		$filename = $download_dir . $package['name'] . '-' . $package['version'];
 		if (isset($package['date']))
 			$filename .= '-' . $package['date'];
-		$filename .= '.sh';
-		$text = 'build-' . $package['name'] . '-' . $package['version'] . '.sh';
+		$filename .= '-build.sh';
+		$text = $package['name'] . '-' . $package['version'] . '-build.sh';
 		gen_link($filename, $text);
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
