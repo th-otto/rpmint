@@ -98,8 +98,12 @@ Requires:       %{cross_pkgname} = %{version}-%{release}
 Requires:       %{cross_pkgname}-c++ = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libstdc++-devel = %{version}-%{release}
+Provides:       cross-mint-c++ = %{version}-%{release}
+Provides:       cross-mint-gcc-c++ = %{version}-%{release}
 %else
 Provides:       libstdc++-devel = %{version}-%{release}
+Provides:       c++ = %{version}-%{release}
+Provides:       c++-compiler
 %endif
 
 %description c++
@@ -113,8 +117,10 @@ Requires:       %{cross_pkgname} = %{version}-%{release}
 Requires:       %{cross_pkgname}-objc = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libobjc = %{version}-%{release}
+Provides:       cross-mint-gcc-objc = %{version}-%{release}
 %else
 Provides:       libobjc = %{version}-%{release}
+Provides:       gcc-objc = %{version}-%{release}
 %endif
 
 %description objc
@@ -129,6 +135,11 @@ Group:          Development/Languages/Other
 Requires:       %{cross_pkgname}-c++ = %{version}-%{release}
 Requires:       %{cross_pkgname}-obj-c++ = %{version}-%{release}
 Requires:       %{cross_pkgname}-objc = %{version}-%{release}
+%if "%{buildtype}" == "cross"
+Provides:       cross-mint-gcc-obj-c++ = %{version}-%{release}
+%else
+Provides:       gcc-obj-c++ = %{version}-%{release}
+%endif
 
 %description obj-c++
 This package contains the GNU Objective C++ compiler. Objective C++ is an
@@ -143,8 +154,10 @@ Requires:       %{cross_pkgname} = %{version}-%{release}
 Requires:       %{cross_pkgname}-ada = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libada = %{version}-%{release}
+Provides:       cross-mint-gcc-ada = %{version}-%{release}
 %else
 Provides:       libada = %{version}-%{release}
+Provides:       gcc-ada = %{version}-%{release}
 %endif
 
 %description ada
@@ -159,8 +172,10 @@ Requires:       %{cross_pkgname} = %{version}-%{release}
 Requires:       %{cross_pkgname}-fortran = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libgfortran = %{version}-%{release}
+Provides:       cross-mint-gcc-fortan = %{version}-%{release}
 %else
 Provides:       libgfortran = %{version}-%{release}
+Provides:       gcc-fortan = %{version}-%{release}
 %endif
 
 %description fortran
@@ -174,8 +189,10 @@ Requires:       %{cross_pkgname} = %{version}-%{release}
 Requires:       %{cross_pkgname}-go = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libgo = %{version}-%{release}
+Provides:       cross-mint-gcc-go = %{version}-%{release}
 %else
 Provides:       libgo = %{version}-%{release}
+Provides:       gcc-go = %{version}-%{release}
 %endif
 
 %description go
@@ -191,22 +208,24 @@ Requires:       %{cross_pkgname}-d = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libgdruntime = %{version}-%{release}
 Provides:       cross-mint-libgphobos = %{version}-%{release}
+Provides:       cross-mint-gcc-d = %{version}-%{release}
 %else
 Provides:       cross-mint-libgdruntime = %{version}-%{release}
 Provides:       cross-mint-libgphobos = %{version}-%{release}
+Provides:       gcc-d = %{version}-%{release}
 %endif
 
 %description d
 This package contains a D compiler and associated development
 files based on the GNU GCC technology.
 
-%package -n gcc-doc
+%package doc
 Summary:        The system GNU Compiler documentation
 License:        GFDL-1.2
 Group:          Development/Languages/C and C++
 BuildArch:      noarch
 
-%description -n gcc-doc
+%description doc
 The system GNU Compiler documentation.
 
 %prep

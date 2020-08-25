@@ -5,18 +5,30 @@
 %endif
 
 Summary:        Header files for fdlibm
-Name:           cross-mint-fdlibm-headers
+%if "%{buildtype}" == "cross"
+Name:           cross-mint-%{pkgname}-headers
+%else
+Name:           %{pkgname}-headers
+%endif
 Version:        20200108
 Release:        1
-License:        LGPL-2.1-or-later AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND GPL-2.0-or-later
+License:        Public domain
+Group:          System/Libraries
+
 Packager:       Thorsten Otto <admin@tho-otto.de>
 Vendor:         RPMint
+URL:            https://www.netlib.org/fdlibm/
+
+Prefix:         %{_prefix}
+BuildRoot:      %{_tmppath}/%{name}-root
+
 Source:         %{pkgname}-%{version}.tar.xz
 
 %rpmint_build_arch
 
 %description
-Header files for fdlibm
+Header files for fdlibm.
+This package is only needed to boostrap compilation of GCC.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
@@ -37,6 +49,9 @@ make -f Makefile.in DESTDIR=${RPM_BUILD_ROOT} prefix=${prefix} src_dir=. install
 	cp -a include/bits/m68k/fenv.h include/bits/m68k/fpu_control.h ${RPM_BUILD_ROOT}${prefix}/include/bits/m68k
 }
 
+%clean
+[ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+
 %files
 %defattr(-,root,root)
 %if "%{buildtype}" == "cross"
@@ -45,6 +60,4 @@ make -f Makefile.in DESTDIR=${RPM_BUILD_ROOT} prefix=${prefix} src_dir=. install
 %{_rpmint_target_prefix}/include/*
 %endif
 
-%clean
-[ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
-
+%changelog

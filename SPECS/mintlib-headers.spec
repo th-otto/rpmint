@@ -5,7 +5,11 @@
 %endif
 
 Summary:        Header files for MiNTLib
-Name:           cross-mint-mintlib-headers
+%if "%{buildtype}" == "cross"
+Name:           cross-mint-%{pkgname}-headers
+%else
+Name:           %{pkgname}-headers
+%endif
 Version:        0.60.1
 Release:        1
 License:        LGPL-2.1-or-later AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND GPL-2.0-or-later
@@ -16,7 +20,8 @@ Source:         %{pkgname}-%{version}.tar.xz
 %rpmint_build_arch
 
 %description
-Header files for MiNTLib
+Header files for MiNTLib.
+This package is only needed to boostrap compilation of GCC.
 
 %prep
 %setup -q -n %{pkgname}-%{version}

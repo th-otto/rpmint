@@ -19,6 +19,10 @@
 %_rpmint_mandir           %{_rpmint_datadir}/man
 %_rpmint_infodir          %{_rpmint_datadir}/info
 
+%_rpmint_target_ar        %{_rpmint_target}-ar
+%_rpmint_target_ranlib    %{_rpmint_target}-ranlib
+%_rpmint_target_strip     %{_rpmint_target}-strip
+
 %rpmint_build_arch \
 %if "%{buildtype}" == "cross" \
 BuildArch:      noarch \
@@ -38,9 +42,9 @@ BuildArch:      noarch \
 
 %rpmint_cflags() \
 TARGET=%{_rpmint_target} \
-ar="${TARGET}-ar" \
-ranlib="${TARGET}-ranlib" \
-strip="${TARGET}-strip" \
+ar="%{_rpmint_target_ar}" \
+ranlib="%{_rpmint_target_ranlib}" \
+strip="%{_rpmint_target_strip}" \
 LN_S="ln -s" \
 COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS ${CFLAGS_AMIGAOS}" \
 ALL_CPUS="020 v4e 000" \
@@ -218,10 +222,10 @@ BuildRequires:  mint-devel-essential \
 %rpmint_strip_archives() \
 	find ${RPM_BUILD_ROOT} \\\( -type f -o -xtype l \\\) -name "*.la" -delete -printf "rm %%p\\\n" \
 	if test -z "$NO_STRIP"; then \
-		test "$LTO_CFLAGS" != "" || find ${RPM_BUILD_ROOT} -name "*.a" ! -type l -exec "${strip}" -S -x '{}' \\\; \
+		test "$LTO_CFLAGS" != "" || find ${RPM_BUILD_ROOT} -name "*.a" ! -type l -exec "%{_rpmint_target_strip}" -S -x '{}' \\\; \
 	fi \
 	if test -z "$NO_RANLIB"; then \
-		find ${RPM_BUILD_ROOT} -name "*.a" ! -type l -exec "${ranlib}" '{}' \\\; \
+		find ${RPM_BUILD_ROOT} -name "*.a" ! -type l -exec "%{_rpmint_target_ranlib}" '{}' \\\; \
 	fi \
 %nil
 
@@ -235,7 +239,7 @@ BuildRequires:  mint-devel-essential \
 		if test -z "$NO_STRIP"; then \
 			if test ! -d "$i" -a ! -h "$i"; then \
 				# don't fail on scripts \
-				"${strip}" "$i" || : \
+				"%{_rpmint_target_strip}" "$i" || : \
 			fi \
 		fi \
 		dir="${i%/*}" \

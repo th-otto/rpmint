@@ -4,7 +4,7 @@
 %define buildtype cross
 %endif
 
-Summary:        A file compression utility.
+Summary:        A file compression utility
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
@@ -165,8 +165,8 @@ rmdir ${RPM_BUILD_ROOT}%{_prefix} 2>/dev/null || :
 %else
 %{_rpmint_target_prefix}/include/*
 %{_rpmint_target_prefix}/lib/*.a
-%{_rpmint_target_prefix}/lib/m68020-60/*.a
-%{_rpmint_target_prefix}/lib/m5475/*.a
+%{_rpmint_target_prefix}/lib/*/*.a
+%{_rpmint_target_prefix}/lib/*/*/*.a
 %{_rpmint_target_prefix}/lib/pkgconfig/*.pc
 %endif
 
