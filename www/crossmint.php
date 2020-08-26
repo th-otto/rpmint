@@ -1531,6 +1531,8 @@ This notably applies to Perl and Python.
 
 <li>2020/08/24 Recompile bash without libiconv</li>
 
+<li>2020/08/26 Package mksh added</li>
+
 </ul>
 
 <p></p>

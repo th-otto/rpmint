@@ -2450,6 +2450,24 @@ Toolkit raster object, and many more. On top of that, man pages are
 included for all tools.
 '
 	),
+	'mksh' => array(
+		'name' => 'mksh',
+		'upstream' => 'http://www.mirbsd.org/mksh.htm',
+		'branch' => '',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => 'R57',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+The MirBSD Korn Shell is an actively developed free implementation of the Korn
+Shell programming language and a successor to the Public Domain Korn Shell
+(pdksh).
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
