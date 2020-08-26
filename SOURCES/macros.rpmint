@@ -185,38 +185,42 @@ BuildRequires:  mint-devel-essential \
 %nil
 
 %rpmint_gzip_docs() \
-	pushd "${RPM_BUILD_ROOT}%{_rpmint_sysroot}%{_rpmint_target_prefix}" \
-	rm -f share/info/dir \
-	if test -d share/man; then \
-		find share/man -type f | while read f; do \
-			case $f in \
-			*.gz) ;; \
-			*) \
-				if test -h $f; then \
-					t=$(readlink $f) \
-					case $t in \
+	for dir in %{_rpmint_sysroot}%{_rpmint_target_prefix} %{_rpmint_target_prefix}; do \
+		if test -d "${RPM_BUILD_ROOT}${dir}"; then \
+			pushd "${RPM_BUILD_ROOT}${dir}" \
+			rm -f share/info/dir \
+			if test -d share/man; then \
+				find share/man -type f | while read f; do \
+					case $f in \
 					*.gz) ;; \
 					*) \
-						rm -f $f $f.gz \
-						$LN_S $t.gz $f.gz \
+						if test -h $f; then \
+							t=$(readlink $f) \
+							case $t in \
+							*.gz) ;; \
+							*) \
+								rm -f $f $f.gz \
+								$LN_S $t.gz $f.gz \
+								;; \
+							esac \
+						else \
+							rm -f ${f}.gz; gzip -9 $f \
+						fi \
 						;; \
 					esac \
-				else \
-					rm -f ${f}.gz; gzip -9 $f \
-				fi \
-				;; \
-			esac \
-		done \
-	fi \
-	if test -d share/info; then \
-		find share/info -type f | while read f; do \
-			case $f in \
-			*.gz) ;; \
-			*) rm -f ${f}.gz; gzip -9 $f ;; \
-			esac \
-		done \
-	fi \
-	popd \
+				done \
+			fi \
+			if test -d share/info; then \
+				find share/info -type f | while read f; do \
+					case $f in \
+					*.gz) ;; \
+					*) rm -f ${f}.gz; gzip -9 $f ;; \
+					esac \
+				done \
+			fi \
+			popd \
+		fi \
+	done \
 %nil
 
 %rpmint_strip_archives() \

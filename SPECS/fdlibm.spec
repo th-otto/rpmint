@@ -17,7 +17,8 @@ Group:          System/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
 Vendor:         RPMint
-URL:            https://www.netlib.org/fdlibm/
+URL:            https://github.com/freemint/fdlibm
+#URL:            https://www.netlib.org/fdlibm/
 
 Prefix:         %{_prefix}
 BuildRoot:      %{_tmppath}/%{name}-root
@@ -42,15 +43,6 @@ FDLIBM is intended to provide a reasonably portable (see
 assumptions below), reference quality (below one ulp for
 major functions like sin,cos,exp,log) math library 
 (libm.a)
-
-%package devel
-Summary:        Include Files and Libraries Mandatory for Development
-Group:          Development/Libraries/C and C++
-Requires:       fdlibm = %{version}
-
-%description devel
-These libraries are needed to develop programs which use the standard math
-library.
 
 %prep
 %setup -q -n %{pkgname}-%{version}

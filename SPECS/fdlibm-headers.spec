@@ -17,7 +17,8 @@ Group:          System/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
 Vendor:         RPMint
-URL:            https://www.netlib.org/fdlibm/
+URL:            https://github.com/freemint/fdlibm
+#URL:            https://www.netlib.org/fdlibm/
 
 Prefix:         %{_prefix}
 BuildRoot:      %{_tmppath}/%{name}-root
@@ -28,7 +29,7 @@ Source:         %{pkgname}-%{version}.tar.xz
 
 %description
 Header files for fdlibm.
-This package is only needed to boostrap compilation of GCC.
+This package is only needed to bootstrap compilation of GCC.
 
 %prep
 %setup -q -n %{pkgname}-%{version}

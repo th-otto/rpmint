@@ -21,7 +21,7 @@ Source:         %{pkgname}-%{version}.tar.xz
 
 %description
 Header files for MiNTLib.
-This package is only needed to boostrap compilation of GCC.
+This package is only needed to bootstrap compilation of GCC.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
