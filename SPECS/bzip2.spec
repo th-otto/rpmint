@@ -3,6 +3,7 @@
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
+%rpmint_header
 
 Summary:        A file compression utility
 %if "%{buildtype}" == "cross"
@@ -16,7 +17,6 @@ License:        BSD
 Group:          Productivity/Archiving/Compression
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-Vendor:         RPMint
 URL:            http://www.bzip.org/
 
 Prefix:         %{_prefix}
@@ -38,7 +38,20 @@ BuildRequires:  automake
 BuildRequires:  libtool
 BuildRequires:  pkgconfig
 
-%rpmint_build_arch
+%if "%{buildtype}" == "cross"
+BuildArch:      noarch
+%else
+%define _target_platform %{_rpmint_target_platform}
+%if "%{buildtype}" == "v4e"
+%define _arch m5475
+%else
+%if "%{buildtype}" == "020"
+%define _arch m68020
+%else
+%define _arch m68k
+%endif
+%endif
+%endif
 
 %description
 Bzip2 is a freely available, patent-free, high quality data compressor.
@@ -93,7 +106,7 @@ automake --force --copy --add-missing || exit 1
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
 STACKSIZE="-Wl,-stack,256k"
 
-[ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
@@ -105,7 +118,7 @@ for CPU in ${ALL_CPUS}; do
 	--libdir='${exec_prefix}/lib'$multilibdir || exit 1
 
 	make
-	make DESTDIR=${RPM_BUILD_ROOT}%{_rpmint_sysroot} install
+	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
 	# compress manpages
 	%rpmint_gzip_docs
@@ -114,7 +127,7 @@ for CPU in ${ALL_CPUS}; do
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
-		rm -f ${RPM_BUILD_ROOT}%{_rpmint_bindir}/*
+		rm -f %{buildroot}%{_rpmint_bindir}/*
 	fi
 	%rpmint_make_bin_archive $CPU
 	%endif
@@ -128,7 +141,7 @@ done
 %rpmint_cflags
 
 # already done in loop above
-# make install DESTDIR=${RPM_BUILD_ROOT}%{_rpmint_sysroot}
+# make install DESTDIR=%{buildroot}%{_rpmint_sysroot}
 
 %rpmint_strip_archives
 
@@ -136,13 +149,13 @@ done
 configured_prefix="%{_rpmint_target_prefix}"
 %rpmint_copy_pkg_configs
 %else
-[ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}%{_rpmint_sysroot}
-rmdir ${RPM_BUILD_ROOT}%{_rpmint_installdir} || :
-rmdir ${RPM_BUILD_ROOT}%{_prefix} 2>/dev/null || :
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}%{_rpmint_sysroot}
+rmdir %{buildroot}%{_rpmint_installdir} || :
+rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %endif
 
 %clean
-[ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 
 %files
@@ -158,15 +171,13 @@ rmdir ${RPM_BUILD_ROOT}%{_prefix} 2>/dev/null || :
 %if "%{buildtype}" == "cross"
 %{_rpmint_includedir}/*
 %{_rpmint_libdir}/*.a
-%{_rpmint_libdir}/m68020-60/*.a
-%{_rpmint_libdir}/m5475/*.a
+%{_rpmint_libdir}/*/*.a
 %{_rpmint_libdir}/pkgconfig/*.pc
 %{_rpmint_cross_pkgconfigdir}/*.pc
 %else
 %{_rpmint_target_prefix}/include/*
 %{_rpmint_target_prefix}/lib/*.a
 %{_rpmint_target_prefix}/lib/*/*.a
-%{_rpmint_target_prefix}/lib/*/*/*.a
 %{_rpmint_target_prefix}/lib/pkgconfig/*.pc
 %endif
 
@@ -193,6 +204,9 @@ rmdir ${RPM_BUILD_ROOT}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Thu Aug 27 2020 Thorsten Otto <admin@tho-otto.de>
+- RPMint spec file
+
 * Fri Jan 26 2018 Thorsten Otto <admin@tho-otto.de>
 - updated to 1.0.6
 - updated Packager and Vendor

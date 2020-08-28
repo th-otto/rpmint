@@ -56,7 +56,7 @@ case $host in
 	mingw* | msys*) here=`pwd` ;;
 	*) here=`pwd` ;;
 esac
-ARCHIVES_DIR="$HOME/packages"
+ARCHIVES_DIR="$here"
 
 #
 # where to look for mpfr/gmp/mpc/isl etc.
@@ -77,7 +77,7 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-build8"
+MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
 
 #
 # Where to put the executables for later use.
@@ -105,6 +105,11 @@ fi
 # whether to include the fortran backend
 #
 with_fortran=true
+
+#
+# whether to include the D backend
+#
+with_D=false
 
 #
 # this patch can be recreated by
@@ -221,6 +226,7 @@ enable_lto=--disable-lto
 enable_plugin=--disable-plugin
 languages=c,c++
 $with_fortran && languages="$languages,fortran"
+$with_D && languages="$languages,d"
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -269,7 +275,7 @@ case $host in
 		GXX=/usr/bin/clang++
 		export MACOSX_DEPLOYMENT_TARGET=10.6
 		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
-		CXXFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
+		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
 		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
 		mpfr_config="--with-mpc=${CROSSTOOL_DIR} --with-gmp=${CROSSTOOL_DIR} --with-mpfr=${CROSSTOOL_DIR}"
 		;;
@@ -330,6 +336,7 @@ case $host in
 	linux32)
 		# make sure to pick up the just-compiled 32bit version of ld, not
 		# some previous 64bit version
+		# symptom of using a wrong linker is an error message "error loading plugin: wrong ELF class: ELFCLASS32" in the config.log
 		sed -i "s|S\[\"build_tooldir\"\]=.*|S[\"build_tooldir\"]=\"${PKG_DIR}${PREFIX}/${TARGET}\"|" config.status
 		./config.status
 		;;
@@ -350,7 +357,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
-	for i in c++ cpp g++ gcc gcov gfortran; do
+	for i in c++ cpp g++ gcc gcov gfortran gdc; do
 		if test -x ../../bin/${TARGET}-$i; then
 			rm -f ${i} ${i}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
@@ -371,15 +378,19 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
 		$LN_S ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-c++${BUILD_EXEEXT}
 	fi
-	if test -x ${TARGET}-gcc && test ! -h ${TARGET}-gcc; then
-		rm -f ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}
-		mv ${TARGET}-gcc${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc${BUILD_EXEEXT}
-	fi
-	if test ${BASE_VER} != ${gcc_dir_version}; then
-		rm -f ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT}
-	fi
+	for tool in gcc gfortran gdc gccgo go gofmt; do
+		if test -x ${TARGET}-${tool} && test ! -h ${TARGET}-${tool}; then
+			rm -f ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}
+			rm -f ${TARGET}-${tool}-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}
+			mv ${TARGET}-${tool}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT}
+			$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}${BUILD_EXEEXT}
+			if test ${BASE_VER} != ${gcc_dir_version}; then
+				rm -f ${TARGET}-${tool}-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}
+				rm -f ${tool}-${gcc_dir_version}${BUILD_EXEEXT} ${tool}-${gcc_dir_version}${BUILD_EXEEXT}
+				$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}${BUILD_EXEEXT}
+			fi
+		fi
+	done
 	if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
 		rm -f ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}
 		mv ${TARGET}-cpp${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT}
@@ -411,13 +422,13 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 # move compiler dependant libraries to the gcc subdirectory
 #
 	pushd ${INSTALL_DIR}${PREFIX}/${TARGET}/lib || exit 1
-	for i in libgfortran.spec libgomp.spec libitm.spec libsanitizer.spec libmpx.spec; do
+	libs=`find . -name "lib*.a" ! -path "*/gcc/*"`
+	tar -c $libs | tar -x -C ${INSTALL_DIR}${gccsubdir}
+	rm -f $libs
+	for i in libgfortran.spec libgomp.spec libitm.spec libsanitizer.spec libmpx.spec libgphobos.spec; do
 		test -f $i && mv $i ${INSTALL_DIR}${gccsubdir}
 		find . -name "$i" -delete
 	done
-	test -f libgfortran.spec && mv libgfortran.spec ${INSTALL_DIR}${gccsubdir}
-	find . -name "lib*.a" | tar -c --files-from=- | tar -x -C ${INSTALL_DIR}${gccsubdir}
-	find . -name "lib*.a" -delete
 	rmdir m*/*/*/* || :
 	rmdir m*/*/* || :
 	rmdir m*/* || :
@@ -431,10 +442,10 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		*) LTO_PLUGIN=liblto_plugin.so.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf.so.${gcc_dir_version} ;;
 	esac
 	
-	for f in ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
-		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN} \
-		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT} \
-		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${BUILD_EXEEXT}; do
+	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
+		${gccsubdir#/}/${LTO_PLUGIN} \
+		${gccsubdir#/}/plugin/gengtype${BUILD_EXEEXT} \
+		${gccsubdir#/}/install-tools/fixincl${BUILD_EXEEXT}; do
 		test -f "$f" && ${STRIP} "$f"
 	done
 
@@ -448,8 +459,10 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		cd "${INSTALL_DIR}"
 	fi
 	
-	find ${PREFIX#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
-	find ${PREFIX#/} -name "*.a" -exec "${ranlib}" '{}' \;
+	find ${PREFIX#/}/${TARGET} -name "*.a" -exec "${strip}" -S -x '{}' \;
+	find ${PREFIX#/}/${TARGET} -name "*.a" -exec "${ranlib}" '{}' \;
+	find ${gccsubdir#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
+	find ${gccsubdir#/} -name "*.a" -exec "${ranlib}" '{}' \;
 	
 	cd ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/include-fixed && {
 		for i in `find . -type f`; do
@@ -462,6 +475,20 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 			test "$i" = "." || rmdir "$i"
 		done
 	}
+
+	# these are currently identically compiled 2 times; FIXME
+	m68000=`"${INSTALL_DIR}/${PREFIX}/bin/${TARGET}-gcc" -m68000 -print-multi-directory`
+	if test "$m68000" = "m68000"; then
+		for dir in . mshort mfastcall mfastcall/mshort; do
+			for f in libgcov.a libgcc.a libcaf_single.a; do
+				rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/$dir/$f
+			done
+		done
+		for dir in mfastcall/mshort mfastcall mshort; do
+			rmdir ${BUILD_LIBDIR#/}/gcc/${TARGET}/$dir 2>/dev/null
+		done
+	fi
+
 done
 
 cd "${THISPKG_DIR}" || exit 1
@@ -478,14 +505,13 @@ rm -rf ${PREFIX#/}/share/gcc*/python
 # create a separate archive for the fortran backend
 #
 if $with_fortran; then
-fortran="
-${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/finclude
-${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/f951
-"
-fortran="$fortran "`find ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version} -name libcaf_single.a`
-fortran="$fortran "`find ${PREFIX#/} -name "*gfortran*"`
+fortran=${gccsubdir#/}/finclude
+fortran="$fortran "${gccsubdir#/}/*/finclude
+fortran="$fortran "${gccsubdir#/}/f951
+fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
+fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
-rm -f $fortran
+rm -rf $fortran
 fi
 
 #

@@ -2,6 +2,7 @@
 # RPM macros for RPMint filesystem layout.
 #
 
+%_rpmint_vendor           RPMint
 %_rpmint_target_platform  m68k-atari-mint
 %_rpmint_target_prefix    /usr
 %_rpmint_target           m68k-atari-mint
@@ -23,15 +24,25 @@
 %_rpmint_target_ranlib    %{_rpmint_target}-ranlib
 %_rpmint_target_strip     %{_rpmint_target}-strip
 
+%_rpmint_buildtype %{expand:%%{!?%{buildtype}:cross}}
+
+%rpmint_header \
+%define _build_pkgcheck  %{_topdir}/rpmmintsign \
+%define _build_pkgcheck_srpm  %{_topdir}/rpmmintsign \
+%define _os mint \
+ \
+Vendor:         RPMint \
+%nil
+
 %rpmint_build_arch \
-%if "%{buildtype}" == "cross" \
+%if "%{_rpmint_buildtype}" == "cross" \
 BuildArch:      noarch \
 %else \
 %define _target_platform %{_rpmint_target_platform} \
-%if "%{buildtype}" == "v4e" \
+%if "%{_rpmint_buildtype}" == "v4e" \
 %define _arch m5475 \
 %else \
-%if "%{buildtype}" == "020" \
+%if "%{_rpmint_buildtype}" == "020" \
 %define _arch m68020 \
 %else \
 %define _arch m68k \
@@ -56,7 +67,7 @@ export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR" \
 %nil
 
 %rpmint_essential() \
-%if "%{buildtype}" == "cross" \
+%if "%{_rpmint_buildtype}" == "cross" \
 BuildRequires:  cross-mint-essential \
 %else \
 BuildRequires:  mint-devel-essential \
@@ -186,8 +197,8 @@ BuildRequires:  mint-devel-essential \
 
 %rpmint_gzip_docs() \
 	for dir in %{_rpmint_sysroot}%{_rpmint_target_prefix} %{_rpmint_target_prefix}; do \
-		if test -d "${RPM_BUILD_ROOT}${dir}"; then \
-			pushd "${RPM_BUILD_ROOT}${dir}" \
+		if test -d "%{buildroot}${dir}"; then \
+			pushd "%{buildroot}${dir}" \
 			rm -f share/info/dir \
 			if test -d share/man; then \
 				find share/man -type f | while read f; do \
@@ -224,21 +235,17 @@ BuildRequires:  mint-devel-essential \
 %nil
 
 %rpmint_strip_archives() \
-	find ${RPM_BUILD_ROOT} \\\( -type f -o -xtype l \\\) -name "*.la" -delete -printf "rm %%p\\\n" \
+	find %{buildroot} \\\( -type f -o -xtype l \\\) -name "*.la" -delete -printf "rm %%p\\\n" \
 	if test -z "$NO_STRIP"; then \
-		test "$LTO_CFLAGS" != "" || find ${RPM_BUILD_ROOT} -name "*.a" ! -type l -exec "%{_rpmint_target_strip}" -S -x '{}' \\\; \
+		test "$LTO_CFLAGS" != "" || find %{buildroot} -name "*.a" ! -type l -exec "%{_rpmint_target_strip}" -S -x '{}' \\\; \
 	fi \
 	if test -z "$NO_RANLIB"; then \
-		find ${RPM_BUILD_ROOT} -name "*.a" ! -type l -exec "%{_rpmint_target_ranlib}" '{}' \\\; \
+		find %{buildroot} -name "*.a" ! -type l -exec "%{_rpmint_target_ranlib}" '{}' \\\; \
 	fi \
 %nil
 
 %rpmint_make_bin_archive() \
-	archdir="%1" \
-	if test "%1" = "%%1"; then archdir="000"; fi \
-	archdir="" \
- \
-	pushd "${RPM_BUILD_ROOT}%{_rpmint_sysroot}" \
+	pushd "%{buildroot}%{_rpmint_sysroot}" \
 	for i in `find . \\\( -path "*/bin/*" -o -path "*/sbin/*" -o -path "*/libexec/*" \\\)`; do \
 		if test -z "$NO_STRIP"; then \
 			if test ! -d "$i" -a ! -h "$i"; then \
@@ -248,90 +255,105 @@ BuildRequires:  mint-devel-essential \
 		fi \
 		dir="${i%/*}" \
 		file="${i##*/}" \
-		mkdir -p "${RPM_BUILD_ROOT}/$archdir/$dir" \
-		cp -a "$i" "${RPM_BUILD_ROOT}/$archdir/$dir" \
+		mkdir -p "%{buildroot}/$dir" \
+		cp -a "$i" "%{buildroot}/$dir" \
 	done \
 	for i in `find . -maxdepth 1 -type d`; do \
 		test "$i" = "." && continue \
-		cp -ar "$i" "${RPM_BUILD_ROOT}/$archdir" \
+		cp -ar "$i" "%{buildroot}" \
 	done \
  \
 	popd \
 %nil
 
+%rpmint_install_info() \
+%if "%{buildtype}" == "cross" \
+%install_info --info-dir=%{_rpmint_infodir} %{_rpmint_infodir}/%{1}.info%{ext_info} \
+%else \
+%install_info --info-dir=%{_rpmint_target_prefix}/share/info %{_rpmint_target_prefix}/share/info/%{1}.info%{ext_info} \
+%endif \
+%nil
+
+%rpmint_uninstall_info() \
+%if "%{buildtype}" == "cross" \
+%install_info_delete --info-dir=%{_rpmint_infodir} %{_rpmint__infodir}/%{1}.info%{ext_info} \
+%else \
+%install_info_delete --info-dir=%{_rpmint_target_prefix} %{_rpmint_target_prefix}/share/info//%{1}.info%{ext_info} \
+%endif \
+%nil
 
 %rpmint_append_gnulib_cache() \
-cat <<EOF >>config.cache \
-ac_cv_func_malloc_0_nonnull=yes \
-ac_cv_func_realloc_0_nonnull=yes \
-ac_cv_func_chown_works=yes \
-ac_cv_func_getgroups=yes \
-ac_cv_func_getgroups_works=yes \
-am_cv_func_working_getline=yes \
-ac_cv_func_working_mktime=yes \
-ac_cv_func_gettimeofday=yes \
-gl_cv_func_chown_slash_works=yes \
-gl_cv_func_chown_ctime_works=yes \
-gl_cv_func_fflush_stdin=yes \
-gl_cv_func_fcntl_f_dupfd_works=yes \
-gl_cv_func_getcwd_abort_bug=no \
-gl_cv_func_getcwd_path_max=yes \
-gl_cv_func_getcwd_null=yes \
-gl_cv_func_getdtablesize_works=yes \
-gl_cv_func_getgroups=yes \
-gl_cv_func_getgroups_works=yes \
-gl_cv_func_getopt_gnu=yes \
-gl_cv_func_getopt_posix=yes \
-gl_cv_func_working_getdelim=yes \
-gl_cv_func_malloc_0_nonnull=1 \
-gl_cv_func_mbrlen_empty_input=yes \
-gl_cv_func_memchr_works=yes \
-gl_cv_func_working_mktime=yes \
-gl_cv_func_perror_works=yes \
-gl_cv_func_printf_sizes_c99=yes \
-gl_cv_func_printf_infinite=yes \
-gl_cv_func_printf_infinite_long_double=no \
-gl_cv_func_printf_directive_a=no \
-gl_cv_func_printf_directive_f=no \
-gl_cv_func_printf_directive_n=yes \
-gl_cv_func_printf_directive_ls=no \
-gl_cv_func_printf_positions=yes \
-gl_cv_func_printf_flag_grouping=yes \
-gl_cv_func_printf_flag_zero=yes \
-gl_cv_func_printf_enomem=yes \
-gl_cv_func_realpath_works=yes \
-gl_cv_func_rmdir_works=yes \
-gl_cv_func_snprintf_truncation_c99=yes \
-gl_cv_func_snprintf_retval_c99=yes \
-gl_cv_func_snprintf_directive_n=yes \
-gl_cv_func_symlink_works=yes \
-gl_cv_func_vsnprintf_zerosize_c99=yes \
-gl_cv_func_signbit=yes \
-gl_cv_func_signbit_gcc=yes \
-gl_cv_func_stpncpy=yes \
-gl_cv_func_working_strerror=yes \
-gl_cv_func_strerror_0_works=yes \
-gl_cv_func_memchr_works=yes \
-gl_cv_func_strstr_works_always=yes \
-gl_cv_func_strstr_linear=yes \
-gl_cv_func_strtod_works=yes \
-gl_cv_func_fcntl_f_dupfd_works=no \
-gl_cv_func_fdopendir_works=yes \
-gl_cv_func_gettimeofday_clobber=no \
-gl_cv_func_ungetc_works=yes \
-gl_cv_func_link_follows_symlink=no \
-gl_cv_func_lstat_dereferences_slashed_symlink=yes \
-gl_cv_func_mkdir_trailing_dot_works=yes \
-gl_cv_func_mkdir_trailing_slash_works=yes \
-gl_cv_func_readlink_works=yes \
-gl_cv_func_setenv_works=yes \
-gl_cv_func_sleep_works=yes \
-gl_cv_func_snprintf_usable=yes \
-gl_cv_func_stat_file_slash=yes \
-gl_cv_func_unsetenv_works=yes \
-gl_cv_func_vsnprintf_usable=yes \
-gl_cv_func_working_utimes=yes \
-gl_cv_struct_dirent_d_ino=yes \
-gl_cv_func_wcwidth_works=yes \
-EOF \
+cat <<EOF >>config.cache\
+ac_cv_func_malloc_0_nonnull=yes\
+ac_cv_func_realloc_0_nonnull=yes\
+ac_cv_func_chown_works=yes\
+ac_cv_func_getgroups=yes\
+ac_cv_func_getgroups_works=yes\
+am_cv_func_working_getline=yes\
+ac_cv_func_working_mktime=yes\
+ac_cv_func_gettimeofday=yes\
+gl_cv_func_chown_slash_works=yes\
+gl_cv_func_chown_ctime_works=yes\
+gl_cv_func_fflush_stdin=yes\
+gl_cv_func_fcntl_f_dupfd_works=yes\
+gl_cv_func_getcwd_abort_bug=no\
+gl_cv_func_getcwd_path_max=yes\
+gl_cv_func_getcwd_null=yes\
+gl_cv_func_getdtablesize_works=yes\
+gl_cv_func_getgroups=yes\
+gl_cv_func_getgroups_works=yes\
+gl_cv_func_getopt_gnu=yes\
+gl_cv_func_getopt_posix=yes\
+gl_cv_func_working_getdelim=yes\
+gl_cv_func_malloc_0_nonnull=1\
+gl_cv_func_mbrlen_empty_input=yes\
+gl_cv_func_memchr_works=yes\
+gl_cv_func_working_mktime=yes\
+gl_cv_func_perror_works=yes\
+gl_cv_func_printf_sizes_c99=yes\
+gl_cv_func_printf_infinite=yes\
+gl_cv_func_printf_infinite_long_double=no\
+gl_cv_func_printf_directive_a=no\
+gl_cv_func_printf_directive_f=no\
+gl_cv_func_printf_directive_n=yes\
+gl_cv_func_printf_directive_ls=no\
+gl_cv_func_printf_positions=yes\
+gl_cv_func_printf_flag_grouping=yes\
+gl_cv_func_printf_flag_zero=yes\
+gl_cv_func_printf_enomem=yes\
+gl_cv_func_realpath_works=yes\
+gl_cv_func_rmdir_works=yes\
+gl_cv_func_snprintf_truncation_c99=yes\
+gl_cv_func_snprintf_retval_c99=yes\
+gl_cv_func_snprintf_directive_n=yes\
+gl_cv_func_symlink_works=yes\
+gl_cv_func_vsnprintf_zerosize_c99=yes\
+gl_cv_func_signbit=yes\
+gl_cv_func_signbit_gcc=yes\
+gl_cv_func_stpncpy=yes\
+gl_cv_func_working_strerror=yes\
+gl_cv_func_strerror_0_works=yes\
+gl_cv_func_memchr_works=yes\
+gl_cv_func_strstr_works_always=yes\
+gl_cv_func_strstr_linear=yes\
+gl_cv_func_strtod_works=yes\
+gl_cv_func_fcntl_f_dupfd_works=no\
+gl_cv_func_fdopendir_works=yes\
+gl_cv_func_gettimeofday_clobber=no\
+gl_cv_func_ungetc_works=yes\
+gl_cv_func_link_follows_symlink=no\
+gl_cv_func_lstat_dereferences_slashed_symlink=yes\
+gl_cv_func_mkdir_trailing_dot_works=yes\
+gl_cv_func_mkdir_trailing_slash_works=yes\
+gl_cv_func_readlink_works=yes\
+gl_cv_func_setenv_works=yes\
+gl_cv_func_sleep_works=yes\
+gl_cv_func_snprintf_usable=yes\
+gl_cv_func_stat_file_slash=yes\
+gl_cv_func_unsetenv_works=yes\
+gl_cv_func_vsnprintf_usable=yes\
+gl_cv_func_working_utimes=yes\
+gl_cv_struct_dirent_d_ino=yes\
+gl_cv_func_wcwidth_works=yes\
+EOF\
 %nil

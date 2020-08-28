@@ -3,6 +3,7 @@
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
+%rpmint_header
 
 Summary:        Header files for MiNTLib
 %if "%{buildtype}" == "cross"
@@ -14,10 +15,22 @@ Version:        0.60.1
 Release:        1
 License:        LGPL-2.1-or-later AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND GPL-2.0-or-later
 Packager:       Thorsten Otto <admin@tho-otto.de>
-Vendor:         RPMint
 Source:         %{pkgname}-%{version}.tar.xz
 
-%rpmint_build_arch
+%if "%{buildtype}" == "cross"
+BuildArch:      noarch
+%else
+%define _target_platform %{_rpmint_target_platform}
+%if "%{buildtype}" == "v4e"
+%define _arch m5475
+%else
+%if "%{buildtype}" == "020"
+%define _arch m68020
+%else
+%define _arch m68k
+%endif
+%endif
+%endif
 
 %description
 Header files for MiNTLib.

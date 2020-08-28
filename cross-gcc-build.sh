@@ -8,8 +8,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-10.1.0
-VERSIONPATCH=-20200519
+VERSION=-10.2.0
+VERSIONPATCH=-20200808
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -143,6 +143,8 @@ if test "$BASE_VER" != "${VERSION#-}"; then
 	exit 1
 fi
 gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
+gccsubdir=${TARGET_LIBDIR}/gcc/${TARGET}/${gcc_dir_version}
+gxxinclude=/usr/include/c++/${gcc_dir_version}
 
 #
 # try config.guess from automake first to get the
@@ -230,8 +232,11 @@ ALL_CPUS="020 v4e 000"
 export AS_FOR_TARGET="$as"
 export RANLIB_FOR_TARGET="$ranlib"
 export STRIP_FOR_TARGET="$strip"
-export CC_FOR_TARGET="${TARGET}-gcc"
-export CXX_FOR_TARGET="${TARGET}-g++"
+export CC_FOR_TARGET="${TARGET}-gcc${VERSION}"
+export GCC_FOR_TARGET="${TARGET}-gcc${VERSION}"
+export CXX_FOR_TARGET="${TARGET}-g++${VERSION}"
+export GFORTRAN_FOR_TARGET="${TARGET}-gfortran${VERSION}"
+export GOC_FOR_TARGET="${TARGET}-goc${VERSION}"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$here" || exit 1
@@ -245,7 +250,10 @@ for CPU in ${ALL_CPUS}; do
 	eval with_cpu=\${WITH_CPU_$CPU}
 	STACKSIZE="-Wl,-stack,512k"
 
-cat <<'EOF' > "$MINT_BUILD_DIR/gcc-wrapper.sh"
+GCC_WRAPPER="$MINT_BUILD_DIR/gcc-wrapper.sh"
+GXX_WRAPPER="$MINT_BUILD_DIR/gxx-wrapper.sh"
+
+cat <<'EOF' > "${GCC_WRAPPER}"
 #!/bin/sh
 
 #
@@ -271,19 +279,19 @@ for i in "$@"; do
 done
 EOF
 
-cp "$MINT_BUILD_DIR/gcc-wrapper.sh" "$MINT_BUILD_DIR/gxx-wrapper.sh"
-cat <<EOF >> "$MINT_BUILD_DIR/gcc-wrapper.sh"
-eval exec "${TARGET}-gcc" \$cpu_flags \$args
+cp "${GCC_WRAPPER}" "${GXX_WRAPPER}"
+cat <<EOF >> "${GCC_WRAPPER}"
+eval exec "${TARGET}-gcc${VERSION}" \$cpu_flags \$args
 EOF
-cat <<EOF >> "$MINT_BUILD_DIR/gxx-wrapper.sh"
-eval exec "${TARGET}-g++" \$cpu_flags \$args
+cat <<EOF >> "${GXX_WRAPPER}"
+eval exec "${TARGET}-g++${VERSION}" \$cpu_flags \$args
 EOF
 
-chmod 755 "$MINT_BUILD_DIR/gcc-wrapper.sh"
-chmod 755 "$MINT_BUILD_DIR/gxx-wrapper.sh"
+chmod 755 "${GCC_WRAPPER}"
+chmod 755 "${GXX_WRAPPER}"
 
-	export CC="${MINT_BUILD_DIR}/gcc-wrapper.sh $CPU_CFLAGS"
-	export CXX="${MINT_BUILD_DIR}/gxx-wrapper.sh $CPU_CFLAGS"
+	export CC="${GCC_WRAPPER} $CPU_CFLAGS"
+	export CXX="${GXX_WRAPPER} $CPU_CFLAGS"
 
 	export LDFLAGS="$STACKSIZE"
 	export CFLAGS="-O2 -fomit-frame-pointer"
@@ -341,7 +349,7 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	cd "$MINT_BUILD_DIR"
 
 	rm -rf "${THISPKG_DIR}${TARGET_BINDIR}" "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin" "${THISPKG_DIR}${TARGET_LIBDIR}"
-	rm -rf "${THISPKG_DIR}${TARGET_LIBDIR}/gcc/${TARGET}/${gcc_dir_version}"
+	rm -rf "${THISPKG_DIR}${gccsubdir}"
 
 	${MAKE} DESTDIR="${THISPKG_DIR}" install >/dev/null || exit 1
 	
@@ -349,7 +357,7 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	
 	cd "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
 	
-	for i in c++ cpp g++ gcc gcov gfortran gcc-ar gcc-nm gcc-ranlib; do
+	for i in c++ cpp g++ gcc gcov gfortran gdc gcc-ar gcc-nm gcc-ranlib; do
 		cd "${THISPKG_DIR}${TARGET_BINDIR}"
 		test -f "$i" || continue
 		rm -f ${TARGET}-${i} ${TARGET}-${i}${TARGET_EXEEXT}
@@ -371,25 +379,27 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 		$LN_S ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-g++-${gcc_dir_version}${TARGET_EXEEXT}
 		rm -f g++-${BASE_VER}${TARGET_EXEEXT} g++-${BASE_VER}
 		rm -f g++-${gcc_dir_version}${TARGET_EXEEXT} g++-${gcc_dir_version}${TARGET_EXEEXT}
+		$LN_S ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} g++-${BASE_VER}${TARGET_EXEEXT}
 		$LN_S ${TARGET}-g++-${gcc_dir_version}${TARGET_EXEEXT} g++-${gcc_dir_version}${TARGET_EXEEXT}
-		$LN_S g++-${BASE_VER}${TARGET_EXEEXT} g++-${BASE_VER}${TARGET_EXEEXT}
 	fi
 	
 	if test -x ${TARGET}-c++; then
 		rm -f ${TARGET}-c++${TARGET_EXEEXT} ${TARGET}-c++
-		$LN_S ${TARGET}-g++ ${TARGET}-c++
+		$LN_S ${TARGET}-g++${TARGET_EXEEXT} ${TARGET}-c++${TARGET_EXEEXT}
 	fi
-	if test -x ${TARGET}-gcc; then
-		rm -f ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc-${BASE_VER}
-		rm -f ${TARGET}-gcc-${gcc_dir_version}${TARGET_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
-		mv ${TARGET}-gcc${TARGET_EXEEXT} ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc${TARGET_EXEEXT}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${TARGET_EXEEXT}
-		rm -f gcc-${BASE_VER}${TARGET_EXEEXT} gcc-${BASE_VER}
-		rm -f gcc-${gcc_dir_version}${TARGET_EXEEXT} gcc-${gcc_dir_version}${TARGET_EXEEXT}
-		$LN_S ${TARGET}-gcc-${gcc_dir_version}${TARGET_EXEEXT} gcc-${gcc_dir_version}${TARGET_EXEEXT}
-		$LN_S gcc-${BASE_VER}${TARGET_EXEEXT} gcc-${BASE_VER}${TARGET_EXEEXT}
-	fi
+	for tool in gcc gfortran gdc gccgo go gofmt; do
+		if test -x ${TARGET}-${tool}; then
+			rm -f ${TARGET}-${tool}-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-${tool}-${BASE_VER}
+			rm -f ${TARGET}-${tool}-${gcc_dir_version}${TARGET_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}
+			mv ${TARGET}-${tool}${TARGET_EXEEXT} ${TARGET}-${tool}-${BASE_VER}${TARGET_EXEEXT}
+			$LN_S ${TARGET}-${tool}-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-${tool}${TARGET_EXEEXT}
+			$LN_S ${TARGET}-${tool}-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}${TARGET_EXEEXT}
+			rm -f ${tool}-${BASE_VER}${TARGET_EXEEXT} ${tool}-${BASE_VER}
+			rm -f ${tool}-${gcc_dir_version}${TARGET_EXEEXT} ${tool}-${gcc_dir_version}${TARGET_EXEEXT}
+			$LN_S ${TARGET}-${tool}-${BASE_VER}${TARGET_EXEEXT} ${tool}-${BASE_VER}${TARGET_EXEEXT}
+			$LN_S ${TARGET}-${tool}-${gcc_dir_version}${TARGET_EXEEXT} ${tool}-${gcc_dir_version}${TARGET_EXEEXT}
+		fi
+	done
 	if test -x ${TARGET}-cpp; then
 		rm -f ${TARGET}-cpp-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-cpp-${BASE_VER}
 		mv ${TARGET}-cpp${TARGET_EXEEXT} ${TARGET}-cpp-${BASE_VER}${TARGET_EXEEXT}
@@ -398,6 +408,14 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	
 	cd "${THISPKG_DIR}"
 	
+# that directory only contains the gdb pretty printers;
+# on the host we don't want them because they would conflict
+# with the system ones; on the target we don't need them
+# because gdb does not work
+	rm -rf ${TARGET_PREFIX#/}/share/gcc-${gcc_dir_version}
+	if test -d ${TARGET_PREFIX#/}/${TARGET}/lib; then find ${TARGET_PREFIX#/}/${TARGET}/lib -name "libstdc++*.py" -delete; fi
+	if test -d ${TARGET_PREFIX#/}/lib; then find ${TARGET_PREFIX#/}/lib -name "libstdc++*.py" -delete; fi
+
 	rm -f ${TARGET_PREFIX#/}/share/info/dir
 	for f in ${TARGET_PREFIX#/}/share/man/*/* ${TARGET_PREFIX#/}/share/info/*; do
 		case $f in
@@ -408,11 +426,31 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	
 	rm -f */*/libiberty.a
 	find . -type f -name "*.la" -delete -printf "rm %p\n"
-	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1}${TARGET_EXEEXT}
-	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN}
-	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${TARGET_EXEEXT}
-	${strip} ${TARGET_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${TARGET_EXEEXT}
-	
+
+#
+# move compiler dependant libraries to the gcc subdirectory
+#
+	pushd ${THISPKG_DIR}${TARGET_PREFIX}/lib || exit 1
+	libs=`find . -name "lib*.a" ! -path "*/gcc/*"`
+	tar -c $libs | tar -x -C ${THISPKG_DIR}${gccsubdir}
+	rm -f $libs
+	for i in libgfortran.spec libgomp.spec libitm.spec libsanitizer.spec libmpx.spec libgphobos.spec; do
+		test -f $i && mv $i ${THISPKG_DIR}${gccsubdir}
+		find . -name "$i" -delete
+	done
+	rmdir m*/*/*/* || :
+	rmdir m*/*/* || :
+	rmdir m*/* || :
+	rmdir m* || :
+	popd
+
+	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${TARGET_EXEEXT} \
+		${gccsubdir#/}/${LTO_PLUGIN} \
+		${gccsubdir#/}/plugin/gengtype${TARGET_EXEEXT} \
+		${gccsubdir#/}/install-tools/fixincl${TARGET_EXEEXT}; do
+		test -f "$f" && ${strip} "$f"
+	done
+
 	find ${TARGET_PREFIX#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
 	find ${TARGET_PREFIX#/} -name "*.a" -exec "${ranlib}" '{}' \;
 	
@@ -429,6 +467,18 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	}
 	
 	cd "${THISPKG_DIR}" || exit 1
+	
+	# these are currently identically compiled 2 times; FIXME
+	if test "$CPU_LIBDIR_000" != ""; then
+		for dir in . mshort mfastcall mfastcall/mshort; do
+			for f in libgcov.a libgcc.a libcaf_single.a; do
+				rm -f ${TARGET_LIBDIR#/}/gcc/${TARGET}/$dir/$f
+			done
+		done
+		for dir in mfastcall/mshort mfastcall mshort; do
+			rmdir ${TARGET_LIBDIR#/}/gcc/${TARGET}/$dir 2>/dev/null
+		done
+	fi
 	
 	# these get still wrong, if the host cross-compiler
 	# has a different configuration than the target
@@ -470,14 +520,14 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	# create a separate archive for the fortran backend
 	#
 	if $with_fortran; then
-fortran="
-${TARGET_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/finclude
-${TARGET_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/f951
-"
-		fortran="$fortran "`find ${TARGET_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version} -name libcaf_single.a`
-		fortran="$fortran "`find ${prefix#/} -name "*gfortran*"`
+		fortran=${gccsubdir#/}/finclude
+		fortran="$fortran "${gccsubdir#/}/*/finclude
+		fortran="$fortran "${gccsubdir#/}/f951
+		fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
+		fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
+		fortran="$fortran "`find ${TARGET_PREFIX#/}/bin -name "*gfortran*"`
 		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${CPU}.tar.xz $fortran || exit 1
-		rm -f $fortran
+		rm -rf $fortran
 	fi
 
 	#
@@ -493,4 +543,4 @@ fi
 
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint.tar.xz ${PATCHES}
 
-cp -p "$me" ${DIST_DIR}/build-cross-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh
+cp -p "$me" ${DIST_DIR}/cross-${PACKAGENAME}${VERSION}${VERSIONPATCH}-build.sh

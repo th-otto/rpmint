@@ -282,4 +282,4 @@ fi
 	
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint.tar.xz ${ALLPATCHES}
 
-cp -p "$me" ${DIST_DIR}/build-cross-${PACKAGENAME}${VERSION}${VERSIONPATCH}.sh
+cp -p "$me" ${DIST_DIR}/cross-${PACKAGENAME}${VERSION}${VERSIONPATCH}-build.sh

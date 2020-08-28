@@ -3,6 +3,7 @@
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
+%rpmint_header
 
 Summary:        Freely Distributable C math library
 %if "%{buildtype}" == "cross"
@@ -16,7 +17,6 @@ License:        Public domain
 Group:          System/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-Vendor:         RPMint
 URL:            https://github.com/freemint/fdlibm
 #URL:            https://www.netlib.org/fdlibm/
 
@@ -33,7 +33,20 @@ Provides:       %{pkgname}-headers = %{version}
 
 BuildRequires:  cross-mint-gcc
 
-%rpmint_build_arch
+%if "%{buildtype}" == "cross"
+BuildArch:      noarch
+%else
+%define _target_platform %{_rpmint_target_platform}
+%if "%{buildtype}" == "v4e"
+%define _arch m5475
+%else
+%if "%{buildtype}" == "020"
+%define _arch m68020
+%else
+%define _arch m68k
+%endif
+%endif
+%endif
 
 %description
 FDLIBM (Freely Distributable LIBM) is a C math library 

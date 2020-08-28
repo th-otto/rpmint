@@ -1,4 +1,4 @@
-%define gcc_major_ver 4
+%define gcc_major_ver 7
 %define pkgname gcc%{gcc_major_ver}
 
 %if "%{?buildtype}" == ""
@@ -35,9 +35,9 @@
 
 Summary:        The system GNU C Compiler
 Name:           %{cross_pkgname}
-Version:        4.6.4
+Version:        7.5.0
 Release:        1
-%define releasedate 20200502
+%define releasedate 20200101
 License:        GPL-3.0+
 Group:          Development/Languages/C and C++
 %if "%{buildtype}" != "cross"
@@ -54,7 +54,7 @@ Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.bz2
+Source0: https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz
 Source1: gcc-download-prerequisites
 Patch0: gcc-%{version}-mint-%{releasedate}.patch
 

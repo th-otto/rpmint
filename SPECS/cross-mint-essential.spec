@@ -1,18 +1,20 @@
+%define pkgname essential
+
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
+%rpmint_header
 
 Summary:        Atari MiNT cross-compiler tools
 %if "%{buildtype}" == "cross"
-Name:           cross-mint-essential
+Name:           cross-mint-%{pkgname}
 %else
-Name:           mint-devel-essential
+Name:           mint-devel-%{pkgname}
 %endif
 Version:        1.0
 Release:        1
 License:        GPL
 Packager:       Thorsten Otto <admin@tho-otto.de>
-Vendor:         RPMint
 BuildArch:      noarch
 
 %description
@@ -27,7 +29,20 @@ BuildRequires:  cross-mint-mintlib
 BuildRequires:  cross-mint-fdlibm
 BuildRequires:  cross-mint-gemlib
 
-%rpmint_build_arch
+%if "%{buildtype}" == "cross"
+BuildArch:      noarch
+%else
+%define _target_platform %{_rpmint_target_platform}
+%if "%{buildtype}" == "v4e"
+%define _arch m5475
+%else
+%if "%{buildtype}" == "020"
+%define _arch m68020
+%else
+%define _arch m68k
+%endif
+%endif
+%endif
 
 %prep
 mkdir -p ${RPM_BUILD_ROOT}

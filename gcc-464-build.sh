@@ -390,7 +390,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		*) LTO_PLUGIN=liblto_plugin.so.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf.so.${gcc_dir_version} ;;
 	esac
 	
-	for f in ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
+	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${BUILD_EXEEXT}; do
@@ -407,8 +407,10 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		cd "${INSTALL_DIR}"
 	fi
 	
-	find ${PREFIX#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
-	find ${PREFIX#/} -name "*.a" -exec "${ranlib}" '{}' \;
+	find ${PREFIX#/}/${TARGET} -name "*.a" -exec "${strip}" -S -x '{}' \;
+	find ${PREFIX#/}/${TARGET} -name "*.a" -exec "${ranlib}" '{}' \;
+	find ${gccsubdir#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
+	find ${gccsubdir#/} -name "*.a" -exec "${ranlib}" '{}' \;
 	
 	cd ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/include-fixed && {
 		for i in `find . -type f`; do

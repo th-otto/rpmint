@@ -3,6 +3,7 @@
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
+%rpmint_header
 
 Summary:        GNU Binutils
 %if "%{buildtype}" == "cross"
@@ -16,7 +17,6 @@ License:        GFDL-1.3-only AND GPL-3.0-or-later
 Group:          Development/Tools/Building
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-Vendor:         RPMint
 URL:            http://www.gnu.org/software/binutils/
 
 Prefix:         %{_prefix}

@@ -3,6 +3,7 @@
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
+%rpmint_header
 
 Summary:        Header files for fdlibm
 %if "%{buildtype}" == "cross"
@@ -16,7 +17,6 @@ License:        Public domain
 Group:          System/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-Vendor:         RPMint
 URL:            https://github.com/freemint/fdlibm
 #URL:            https://www.netlib.org/fdlibm/
 
@@ -25,7 +25,20 @@ BuildRoot:      %{_tmppath}/%{name}-root
 
 Source:         %{pkgname}-%{version}.tar.xz
 
-%rpmint_build_arch
+%if "%{buildtype}" == "cross"
+BuildArch:      noarch
+%else
+%define _target_platform %{_rpmint_target_platform}
+%if "%{buildtype}" == "v4e"
+%define _arch m5475
+%else
+%if "%{buildtype}" == "020"
+%define _arch m68020
+%else
+%define _arch m68k
+%endif
+%endif
+%endif
 
 %description
 Header files for fdlibm.
