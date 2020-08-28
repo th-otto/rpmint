@@ -31,7 +31,21 @@ BuildRequires:  cross-mint-gemlib
 
 %if "%{buildtype}" == "cross"
 BuildArch:      noarch
+Requires:       cross-mint-binutils
+Requires:       cross-mint-mintbin
+Requires:       cross-mint-gcc
+Requires:       cross-mint-mintlib
+Requires:       cross-mint-fdlibm
+Requires:       cross-mint-gemlib
+
 %else
+Requires:       binutils
+Requires:       mintbin
+Requires:       gcc
+Requires:       mintlib
+Requires:       fdlibm
+Requires:       gemlib
+
 %define _target_platform %{_rpmint_target_platform}
 %if "%{buildtype}" == "v4e"
 %define _arch m5475
