@@ -235,7 +235,7 @@ Slightly older version of GCC.
 		'title' => 'MiNTBin',
 		'upstream' => 'https://github.com/freemint/mintbin',
 		'version' => '0.3',
-		'date' => '20171006',
+		'date' => '20200828',
 		'repo' => 'https://github.com/freemint/mintbin',
 		'source' => $download_dir . '%{name}-%{version}.tar.xz',
 		'patch' => 0,

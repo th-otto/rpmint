@@ -23,27 +23,27 @@ This package depends on all the essential tools
 to cross-build Atari MiNT software.
 
 BuildRequires:  cross-mint-binutils
-BuildRequires:  cross-mint-mintbin
 BuildRequires:  cross-mint-gcc
 BuildRequires:  cross-mint-mintlib
 BuildRequires:  cross-mint-fdlibm
+BuildRequires:  cross-mint-mintbin
 BuildRequires:  cross-mint-gemlib
 
 %if "%{buildtype}" == "cross"
 BuildArch:      noarch
 Requires:       cross-mint-binutils
-Requires:       cross-mint-mintbin
 Requires:       cross-mint-gcc
 Requires:       cross-mint-mintlib
 Requires:       cross-mint-fdlibm
+Requires:       cross-mint-mintbin
 Requires:       cross-mint-gemlib
 
 %else
 Requires:       binutils
-Requires:       mintbin
 Requires:       gcc
 Requires:       mintlib
 Requires:       fdlibm
+Requires:       mintbin
 Requires:       gemlib
 
 %define _target_platform %{_rpmint_target_platform}

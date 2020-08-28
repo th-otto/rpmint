@@ -117,7 +117,7 @@ for CPU in ${ALL_CPUS}; do
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir || exit 1
 
-	make
+	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
 	# compress manpages
