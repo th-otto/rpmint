@@ -1,37 +1,40 @@
-%define pkgname mpfr
+%define pkgname mpc
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        The GNU multiple-precision floating-point library
+Summary:        MPC multiple-precision complex shared library
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        3.1.4
+Version:        1.1.0
 Release:        1
 License:        LGPL-3.0+
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://www.mpfr.org/
+URL:            http://www.multiprecision.org/mpc/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0:        http://www.mpfr.org/%{pkgname}-%{version}/%{pkgname}-%{version}.tar.xz
-Patch1:         mpfr-%{version}-mintelf-config.patch
+Source0:        https://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.gz
+Patch1:         mpc-mintelf-config.patch
 
 BuildRequires:  cross-mint-gcc-c++
 BuildRequires:  cross-mint-gmp
+BuildRequires:  cross-mint-mpfr
 %if "%{buildtype}" == "cross"
 Requires:       cross-mint-gmp
+Requires:       cross-mint-mpfr
 %else
 Requires:       gmp
+Requires:       mpfr
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -50,17 +53,17 @@ BuildArch:      noarch
 %endif
 
 %description
-The MPFR library is a C library for multiple-precision floating-point
-computations with exact rounding (also called correct rounding). It is
-based on the GMP multiple-precision library.
+MPC is a C library for the arithmetic of complex numbers with
+arbitrarily high precision and correct rounding of the result. It is
+built upon and follows the same principles as MPFR.
 
 %package doc
-Summary:        Documentation files for multiple-precision floating-point library
+Summary:        Documentation files for MPC multiple-precision complex shared library
 Group:          System/Libraries
 BuildArch:      noarch
 
 %description doc
-Documentation for multiple-precision floating-point library.
+Documentation for MPC multiple-precision complex shared library.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
@@ -143,10 +146,8 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %defattr(-,root,root)
 %if "%{buildtype}" == "cross"
 %doc %{_rpmint_infodir}
-%{_rpmint_docdir}/%{pkgname}
 %else
 %doc %{_rpmint_target_prefix}/share/info
-%{_rpmint_target_prefix}/share/doc/%{pkgname}
 %endif
 
 %post doc
