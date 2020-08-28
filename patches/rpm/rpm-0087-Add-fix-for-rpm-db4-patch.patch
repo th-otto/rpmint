@@ -1,0 +1,56 @@
+From 4e896826e4dfb0ae6af536757ebccf72bf6e474c Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sat, 29 Aug 2020 15:51:49 +0200
+Subject: [PATCH 87/87] Add fix for rpm db4 patch
+
+---
+ lib/backend/db3.c   | 2 ++
+ rpmio/rpmsq.h       | 3 ---
+ scripts/Makefile.am | 2 +-
+ 3 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/lib/backend/db3.c b/lib/backend/db3.c
+index 531332035..9615f0a63 100644
+--- a/lib/backend/db3.c
++++ b/lib/backend/db3.c
+@@ -90,8 +90,10 @@ static const struct poptOption rdbOptions[] = {
+ 	NULL, NULL },
+  { "lockdbfd",	0,POPT_ARG_NONE,	&staticdbicfg.dbi_lockdbfd, 0,
+ 	NULL, NULL },
++#ifdef DB_NOFSYNC
+  { "nofsync",	0,POPT_BIT_SET,		&staticdbicfg.dbi_oflags, DB_NOFSYNC,
+ 	NULL, NULL },
++#endif
+ 
+     POPT_TABLEEND
+ };
+diff --git a/rpmio/rpmsq.h b/rpmio/rpmsq.h
+index 7404c9767..23206457c 100644
+--- a/rpmio/rpmsq.h
++++ b/rpmio/rpmsq.h
+@@ -19,9 +19,6 @@ extern "C" {
+  * @param info		(siginfo_t) signal info
+  * @param context	signal context
+  */
+-#ifndef HAVE_SIGINFO_T
+-typedef struct _siginfo_t siginfo_t;
+-#endif
+ typedef void (*rpmsqAction_t) (int signum, siginfo_t * info, void * context);
+ 
+ /** \ingroup rpmsq
+diff --git a/scripts/Makefile.am b/scripts/Makefile.am
+index fe3977254..44490d2b7 100644
+--- a/scripts/Makefile.am
++++ b/scripts/Makefile.am
+@@ -30,7 +30,7 @@ EXTRA_DIST = \
+ rpmconfig_SCRIPTS = \
+ 	brp-compress brp-python-bytecompile brp-java-gcjcompile \
+ 	brp-strip brp-strip-comment-note brp-python-hardlink \
+-	brp-suse \
++	brp-mint \
+ 	brp-strip-shared brp-strip-static-archive \
+ 	check-files check-prereqs \
+ 	check-buildroot check-rpaths check-rpaths-worker \
+-- 
+2.24.0
+

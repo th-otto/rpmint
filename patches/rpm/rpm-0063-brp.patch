@@ -1,15 +1,15 @@
 From abd15db4afeeffd5883e9752a049f155d25d76c2 Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 06:21:49 +0100
-Subject: [PATCH 63/63] brp
+Subject: [PATCH 63/87] brp
 
 ---
  scripts/Makefile.am            |  1 +
  scripts/brp-strip              |  1 +
  scripts/brp-strip-comment-note |  2 ++
- scripts/brp-mint               | 13 +++++++++++++
+ scripts/brp-suse               | 13 +++++++++++++
  4 files changed, 17 insertions(+)
- create mode 100644 scripts/brp-mint
+ create mode 100644 scripts/brp-suse
 
 diff --git a/scripts/Makefile.am b/scripts/Makefile.am
 index 154f8af10..fe3977254 100644
@@ -19,7 +19,7 @@ index 154f8af10..fe3977254 100644
  rpmconfig_SCRIPTS = \
  	brp-compress brp-python-bytecompile brp-java-gcjcompile \
  	brp-strip brp-strip-comment-note brp-python-hardlink \
-+	brp-mint \
++	brp-suse \
  	brp-strip-shared brp-strip-static-archive \
  	check-files check-prereqs \
  	check-buildroot check-rpaths check-rpaths-worker \
@@ -48,11 +48,11 @@ index 833ac78e5..86527da90 100755
  	sed -n -e 's/^\(.*\):[ 	]*ELF.*, stripped.*/\1/p'`; do
  	note="-R .note"
  	if $OBJDUMP -h $f | grep '^[ 	]*[0-9]*[ 	]*.note[ 	]' -A 1 | \
-diff --git a/scripts/brp-mint b/scripts/brp-mint
+diff --git a/scripts/brp-suse b/scripts/brp-suse
 new file mode 100644
 index 000000000..f7e024cc2
 --- /dev/null
-+++ b/scripts/brp-mint
++++ b/scripts/brp-suse
 @@ -0,0 +1,13 @@
 +#! /bin/sh
 +
@@ -61,12 +61,12 @@ index 000000000..f7e024cc2
 +       exit 0
 +fi
 +
-+for script in /usr/lib/rpm/brp-mint.d/brp*; do
++for script in /usr/lib/rpm/brp-suse.d/brp*; do
 +  if test -x "$script"; then
 +    echo "calling $script"
 +    $script || exit 1
 +  fi
 +done
 -- 
-2.16.2
+2.24.0
 

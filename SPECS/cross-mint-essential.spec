@@ -15,12 +15,6 @@ Version:        1.0
 Release:        1
 License:        GPL
 Packager:       Thorsten Otto <admin@tho-otto.de>
-BuildArch:      noarch
-
-%description
-Atari MiNT cross-compiler tools.
-This package depends on all the essential tools
-to cross-build Atari MiNT software.
 
 BuildRequires:  cross-mint-binutils
 BuildRequires:  cross-mint-gcc
@@ -57,6 +51,11 @@ Requires:       gemlib
 %endif
 %endif
 %endif
+
+%description
+Atari MiNT cross-compiler tools.
+This package depends on all the essential tools
+to cross-build Atari MiNT software.
 
 %prep
 mkdir -p ${RPM_BUILD_ROOT}

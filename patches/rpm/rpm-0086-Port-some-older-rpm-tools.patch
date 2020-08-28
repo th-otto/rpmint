@@ -1,6 +1,40 @@
---- a/Makefile.am	2020-08-22 07:42:05.820274210 +0200
-+++ b/Makefile.am	2020-08-22 10:02:23.057326934 +0200
-@@ -97,6 +97,8 @@
+From 9c09c1e6f76a4b1d3aab4094b4f5b43aee7b3b04 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sat, 29 Aug 2020 09:24:04 +0200
+Subject: [PATCH 86/87] Port some older rpm tools
+
+---
+ .gitignore     |   1 +
+ Makefile.am    |  10 +++
+ rpmarchive.c   |  43 ++++++++++
+ rpmdump.c      | 223 +++++++++++++++++++++++++++++++++++++++++++++++++
+ rpmheader.c    |  49 +++++++++++
+ rpmlead.c      |  99 ++++++++++++++++++++++
+ rpmsignature.c |  42 ++++++++++
+ 7 files changed, 467 insertions(+)
+ create mode 100644 rpmarchive.c
+ create mode 100644 rpmdump.c
+ create mode 100644 rpmheader.c
+ create mode 100644 rpmlead.c
+ create mode 100644 rpmsignature.c
+
+diff --git a/.gitignore b/.gitignore
+index 5d29afeaa..9b371b49a 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -7,6 +7,7 @@
+ /db3
+ /db
+ /db-4.5.20
++/db-4.8.30
+ /lib/rpmdb_*
+ !/lib/rpmdb_internal.h
+ /po/*.gmo
+diff --git a/Makefile.am b/Makefile.am
+index 0f5f278f5..45f216f03 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -97,6 +97,8 @@ bin_PROGRAMS =		rpm rpm2cpio rpmbuild rpmdb rpmkeys rpmsign rpmspec
  if WITH_ARCHIVE
  bin_PROGRAMS += 	rpm2archive 
  endif
@@ -9,7 +43,7 @@
  
  rpmlibexec_PROGRAMS =
  rpmconfig_SCRIPTS =	mkinstalldirs \
-@@ -152,6 +154,14 @@
+@@ -152,6 +154,14 @@ rpm2archive_SOURCES =	rpm2archive.c debug.h system.h
  rpm2archive_LDADD =	lib/librpm.la rpmio/librpmio.la
  rpm2archive_LDADD +=	@WITH_POPT_LIB@ @WITH_ARCHIVE_LIB@
  
@@ -24,89 +58,30 @@
  
  if LIBELF
  if LIBDW
---- /dev/null	2020-08-14 19:15:24.192440446 +0200
-+++ b/rpmlead.c	2020-08-22 08:36:32.628371273 +0200
-@@ -0,0 +1,99 @@
-+/* rpmlead: spit out the lead portion of a package */
+diff --git a/rpmarchive.c b/rpmarchive.c
+new file mode 100644
+index 000000000..08f91fbb5
+--- /dev/null
++++ b/rpmarchive.c
+@@ -0,0 +1,43 @@
++/* rpmarchive: spit out the main archive portion of a package */
 +
 +#include "system.h"
-+#include <string.h>
-+#include <errno.h>
-+#include <netinet/in.h>
 +
-+#include "rpmio.h"
 +#include "rpmlead.h"
-+#include "lib/header_internal.h"	/* Freadall() */
-+
-+struct rpmlead_s {
-+    unsigned char magic[4];
-+    unsigned char major;
-+    unsigned char minor;
-+    short type;
-+    short archnum;
-+    char name[66];
-+    short osnum;
-+    short signature_type;       /*!< Signature header type (RPMSIG_HEADERSIG) */
-+    char reserved[16];      /*!< Pad to 96 bytes -- 8 byte aligned! */
-+};
-+
-+static unsigned char const lead_magic[] = {
-+    RPMLEAD_MAGIC0, RPMLEAD_MAGIC1, RPMLEAD_MAGIC2, RPMLEAD_MAGIC3
-+};
-+#define RPMSIGTYPE_HEADERSIG 5
-+
-+static void leadCheck(struct rpmlead_s *lead)
-+{
-+    if (memcmp(lead->magic, lead_magic, sizeof(lead_magic)))
-+    {
-+		fprintf(stderr, _("not an rpm package"));
-+		exit(EXIT_FAILURE);
-+    }
-+    if (lead->signature_type != htons(RPMSIGTYPE_HEADERSIG))
-+    {
-+		fprintf(stderr, _("illegal signature type"));
-+		exit(EXIT_FAILURE);
-+    }
-+    if (lead->major < 3 || lead->major > 4)
-+    {
-+		fprintf(stderr, _("unsupported RPM package version"));
-+		exit(EXIT_FAILURE);
-+    }
-+}
-+
-+static void readLead(FD_t fd, struct rpmlead_s *l)
-+{
-+    memset(l, 0, sizeof(*l));
-+    if (Fread(l, 1, sizeof(*l), fd) != sizeof(*l))
-+    {
-+		if (Ferror(fd))
-+		{
-+		    fprintf(stderr, _("read failed: %s (%d)\n"), Fstrerror(fd), errno);
-+			exit(EXIT_FAILURE);
-+		} else
-+		{
-+		    fprintf(stderr, _("not an rpm package\n"));
-+			exit(EXIT_FAILURE);
-+		}
-+    } else
-+    {
-+		leadCheck(l);
-+    }
-+}
-+
-+static void writeLead(FD_t fd, struct rpmlead_s *l)
-+{
-+	if (Fwrite(l, 1, sizeof(*l), fd) == sizeof(*l))
-+	{
-+    }
-+}
-+
++#include "signature.h"
++#include "header.h"
 +
 +int main(int argc, char **argv)
 +{
-+	FD_t fdi, fdo;
-+	struct rpmlead_s lead;
++	FD_t fdi,
++	 fdo;
++	char buffer[1024];
++	struct rpmlead lead;
++	Header hd;
++	int ct;
 +
++	setprogname(argv[0]);				/* Retrofit glibc __progname */
 +	if (argc == 1)
 +	{
 +		fdi = Fopen("-", "r.ufdio");
@@ -116,18 +91,27 @@
 +	}
 +	if (fdi == NULL || Ferror(fdi))
 +	{
-+		perror(argv[1]);
-+		return EXIT_FAILURE;
++		perror("input");
++		exit(EXIT_FAILURE);
 +	}
 +
 +	readLead(fdi, &lead);
-+	fdo = Fopen("-", "w.ufdio");
-+	writeLead(fdo, &lead);
++	rpmReadSignature(fdi, NULL, lead.signature_type);
++	hd = headerRead(fdi, (lead.major >= 3) ? HEADER_MAGIC_YES : HEADER_MAGIC_NO);
 +
-+	return EXIT_SUCCESS;
++	fdo = Fopen("-", "w.ufdio");
++	while ((ct = Fread(buffer, sizeof(buffer), 1, fdi)))
++	{
++		Fwrite(buffer, ct, 1, fdo);
++	}
++
++	return 0;
 +}
---- /dev/null	2020-08-14 19:15:24.192440446 +0200
-+++ b/rpmdump.c	2020-08-22 09:44:32.133295115 +0200
+diff --git a/rpmdump.c b/rpmdump.c
+new file mode 100644
+index 000000000..15428adf0
+--- /dev/null
++++ b/rpmdump.c
 @@ -0,0 +1,223 @@
 +#include "system.h"
 +
@@ -186,7 +170,7 @@
 +
 +	/* Now write the index */
 +	p = h->index;
-+	fprintf(f, "\n             CT  TAG                      TYPE               OFSET      COUNT\n");
++	fprintf(f, "\n             CT  TAG                      TYPE               OFFSET     COUNT\n");
 +	             /* "Entry      : %.3d %-14s %-18s 0x%.8x %.8d\n", */
 +	for (i = 0; i < h->indexUsed; i++)
 +	{
@@ -347,13 +331,16 @@
 +	}
 +	Fclose(fdi);
 +
-+	headerDump(h, stdout, HEADER_DUMP_INLINE, rpmTagTable);
++	headerDump(h, stdout, 0, rpmTagTable);
 +	headerFree(h);
 +
 +	return 0;
 +}
---- /dev/null	2020-08-14 19:15:24.192440446 +0200
-+++ b/rpmheader.c	2020-08-22 09:31:38.122825544 +0200
+diff --git a/rpmheader.c b/rpmheader.c
+new file mode 100644
+index 000000000..301139adb
+--- /dev/null
++++ b/rpmheader.c
 @@ -0,0 +1,49 @@
 +/* rpmheader: spit out the header portion of a package */
 +
@@ -404,8 +391,116 @@
 +
 +	return rc;
 +}
---- /dev/null	2020-08-14 19:15:24.192440446 +0200
-+++ b/rpmsignature.c	2020-08-22 08:01:24.896308649 +0200
+diff --git a/rpmlead.c b/rpmlead.c
+new file mode 100644
+index 000000000..28371d694
+--- /dev/null
++++ b/rpmlead.c
+@@ -0,0 +1,99 @@
++/* rpmlead: spit out the lead portion of a package */
++
++#include "system.h"
++#include <string.h>
++#include <errno.h>
++#include <netinet/in.h>
++
++#include "rpmio.h"
++#include "rpmlead.h"
++#include "lib/header_internal.h"	/* Freadall() */
++
++struct rpmlead_s {
++    unsigned char magic[4];
++    unsigned char major;
++    unsigned char minor;
++    short type;
++    short archnum;
++    char name[66];
++    short osnum;
++    short signature_type;       /*!< Signature header type (RPMSIG_HEADERSIG) */
++    char reserved[16];      /*!< Pad to 96 bytes -- 8 byte aligned! */
++};
++
++static unsigned char const lead_magic[] = {
++    RPMLEAD_MAGIC0, RPMLEAD_MAGIC1, RPMLEAD_MAGIC2, RPMLEAD_MAGIC3
++};
++#define RPMSIGTYPE_HEADERSIG 5
++
++static void leadCheck(struct rpmlead_s *lead)
++{
++    if (memcmp(lead->magic, lead_magic, sizeof(lead_magic)))
++    {
++		fprintf(stderr, _("not an rpm package"));
++		exit(EXIT_FAILURE);
++    }
++    if (lead->signature_type != htons(RPMSIGTYPE_HEADERSIG))
++    {
++		fprintf(stderr, _("illegal signature type"));
++		exit(EXIT_FAILURE);
++    }
++    if (lead->major < 3 || lead->major > 4)
++    {
++		fprintf(stderr, _("unsupported RPM package version"));
++		exit(EXIT_FAILURE);
++    }
++}
++
++static void readLead(FD_t fd, struct rpmlead_s *l)
++{
++    memset(l, 0, sizeof(*l));
++    if (Fread(l, 1, sizeof(*l), fd) != sizeof(*l))
++    {
++		if (Ferror(fd))
++		{
++		    fprintf(stderr, _("read failed: %s (%d)\n"), Fstrerror(fd), errno);
++			exit(EXIT_FAILURE);
++		} else
++		{
++		    fprintf(stderr, _("not an rpm package\n"));
++			exit(EXIT_FAILURE);
++		}
++    } else
++    {
++		leadCheck(l);
++    }
++}
++
++static void writeLead(FD_t fd, struct rpmlead_s *l)
++{
++	if (Fwrite(l, 1, sizeof(*l), fd) == sizeof(*l))
++	{
++    }
++}
++
++
++int main(int argc, char **argv)
++{
++	FD_t fdi, fdo;
++	struct rpmlead_s lead;
++
++	if (argc == 1)
++	{
++		fdi = Fopen("-", "r.ufdio");
++	} else
++	{
++		fdi = Fopen(argv[1], "r.ufdio");
++	}
++	if (fdi == NULL || Ferror(fdi))
++	{
++		perror(argv[1]);
++		return EXIT_FAILURE;
++	}
++
++	readLead(fdi, &lead);
++	fdo = Fopen("-", "w.ufdio");
++	writeLead(fdo, &lead);
++
++	return EXIT_SUCCESS;
++}
+diff --git a/rpmsignature.c b/rpmsignature.c
+new file mode 100644
+index 000000000..d50979c19
+--- /dev/null
++++ b/rpmsignature.c
 @@ -0,0 +1,42 @@
 +/* rpmsignature: spit out the signature portion of a package */
 +
@@ -449,49 +544,6 @@
 +
 +	return 0;
 +}
---- /dev/null	2020-08-14 19:15:24.192440446 +0200
-+++ b/rpmarchive.c	2020-08-22 08:01:24.896308649 +0200
-@@ -0,0 +1,43 @@
-+/* rpmarchive: spit out the main archive portion of a package */
-+
-+#include "system.h"
-+
-+#include "rpmlead.h"
-+#include "signature.h"
-+#include "header.h"
-+
-+int main(int argc, char **argv)
-+{
-+	FD_t fdi,
-+	 fdo;
-+	char buffer[1024];
-+	struct rpmlead lead;
-+	Header hd;
-+	int ct;
-+
-+	setprogname(argv[0]);				/* Retrofit glibc __progname */
-+	if (argc == 1)
-+	{
-+		fdi = Fopen("-", "r.ufdio");
-+	} else
-+	{
-+		fdi = Fopen(argv[1], "r.ufdio");
-+	}
-+	if (fdi == NULL || Ferror(fdi))
-+	{
-+		perror("input");
-+		exit(EXIT_FAILURE);
-+	}
-+
-+	readLead(fdi, &lead);
-+	rpmReadSignature(fdi, NULL, lead.signature_type);
-+	hd = headerRead(fdi, (lead.major >= 3) ? HEADER_MAGIC_YES : HEADER_MAGIC_NO);
-+
-+	fdo = Fopen("-", "w.ufdio");
-+	while ((ct = Fread(buffer, sizeof(buffer), 1, fdi)))
-+	{
-+		Fwrite(buffer, ct, 1, fdo);
-+	}
-+
-+	return 0;
-+}
+-- 
+2.24.0
+

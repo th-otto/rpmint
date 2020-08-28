@@ -1,11 +1,11 @@
 From 0f6f42481dc8ebae1d4ab4867739c003057f670d Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:02:39 +0100
-Subject: [PATCH 10/63] Fix global (DB_PRIVATE) lock code: fix recursion
+Subject: [PATCH 10/87] Fix global (DB_PRIVATE) lock code: fix recursion
  counter, retry failed lock operations for up to 3 minutes.
 
 ---
- lib/backend/db3.c | 54 +++++++++++++++++++++++++++++++++++++++---------------
+ lib/backend/db3.c | 54 ++++++++++++++++++++++++++++++++++-------------
  lib/backend/dbi.h |  1 +
  2 files changed, 40 insertions(+), 15 deletions(-)
 
@@ -122,5 +122,5 @@ index 02f49c8fd..1f6d179b4 100644
  
  enum dbcFlags_e {
 -- 
-2.16.2
+2.24.0
 

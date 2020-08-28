@@ -1,7 +1,7 @@
 From 357a7e17e34381a405f16882b64db18ea330a06a Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:00:21 +0100
-Subject: [PATCH 07/63] Support a database-local fsync setting. Needs berkeley
+Subject: [PATCH 07/87] Support a database-local fsync setting. Needs berkeley
  db patch.
 
 ---
@@ -23,17 +23,15 @@ index da50dfda4..e5f61dfa4 100644
  
   /* Per-dbi options */
   { "nommap",	0,POPT_BIT_SET,		&staticdbicfg.dbi_oflags, DB_NOMMAP,
-@@ -85,6 +87,10 @@ static const struct poptOption rdbOptions[] = {
+@@ -85,6 +87,8 @@ static const struct poptOption rdbOptions[] = {
  	NULL, NULL },
   { "lockdbfd",	0,POPT_ARG_NONE,	&staticdbicfg.dbi_lockdbfd, 0,
  	NULL, NULL },
-+#ifdef DB_NOFSYNC
 + { "nofsync",	0,POPT_BIT_SET,		&staticdbicfg.dbi_oflags, DB_NOFSYNC,
 +	NULL, NULL },
-+#endif
  
      POPT_TABLEEND
  };
 -- 
-2.16.2
+2.24.0
 

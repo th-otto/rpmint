@@ -94,8 +94,9 @@ patches/rpm/rpm-0082-coldfire.patch
 patches/rpm/rpm-0083-Fix-some-mismatch-between-open-mode-permissions.patch
 patches/rpm/rpm-0084-Remove-fstack-protector-as-it-requires-all-packages-.patch
 patches/rpm/rpm-0085-Remove-i18n-translation-in-rpmmalloc.c-as-it-is-refe.patch
+patches/rpm/rpm-0086-Port-some-older-rpm-tools.patch
+patches/rpm/rpm-0087-Add-fix-for-rpm-db4-patch.patch
 patches/rpm/rpm-mintelf-config.patch
-patches/rpm/rpm-tools.patch
 "
 DISABLED_PATCHES="
 patches/rpm/rpm-remove-brp-strips.patch

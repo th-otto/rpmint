@@ -1,7 +1,7 @@
 From 24ac6b8cb5adf90829f39ccb489d19264893e684 Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:03:22 +0100
-Subject: [PATCH 11/63] Suspend exclusive database lock when scriptlets get
+Subject: [PATCH 11/87] Suspend exclusive database lock when scriptlets get
  called, allowing read access in scriptlets. Only needed for DB_PRIVATE (aka
  global) locking.
 
@@ -137,5 +137,5 @@ index c69a8b3c1..c4bb272ab 100644
      /* Map warn-only errors to "notfound" for script stop callback */
      stoprc = (rc != RPMRC_OK && warn_only) ? RPMRC_NOTFOUND : rc;
 -- 
-2.16.2
+2.24.0
 
