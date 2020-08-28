@@ -1,40 +1,37 @@
-%define pkgname mpc
+%define pkgname isl
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        MPC multiple-precision complex shared library
+Summary:        Integer Set Library
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.1.0
+Version:        0.18
 Release:        1
 License:        LGPL-3.0+
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://www.multiprecision.org/mpc/
+URL:            http://isl.gforge.inria.fr/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0:        https://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.gz
+Source0:        http://isl.gforge.inria.fr/%{pkgname}-%{version}.tar.xz
 Patch1:         %{pkgname}-mintelf-config.patch
 
 BuildRequires:  cross-mint-gcc-c++
 BuildRequires:  cross-mint-gmp
-BuildRequires:  cross-mint-mpfr
 %if "%{buildtype}" == "cross"
 Requires:       cross-mint-gmp
-Requires:       cross-mint-mpfr
 %else
 Requires:       gmp
-Requires:       mpfr
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -53,17 +50,17 @@ BuildArch:      noarch
 %endif
 
 %description
-MPC is a C library for the arithmetic of complex numbers with
-arbitrarily high precision and correct rounding of the result. It is
-built upon and follows the same principles as MPFR.
+ISL is a library for manipulating sets and relations of integer points
+bounded by linear constraints.
+It is used by Cloog and the GCC Graphite optimization framework.
 
 %package doc
-Summary:        Documentation files for MPC multiple-precision complex shared library
+Summary:        Documentation files for ISL
 Group:          System/Libraries
 BuildArch:      noarch
 
 %description doc
-Documentation for MPC multiple-precision complex shared library.
+Documentation for ISL.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
@@ -136,25 +133,14 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %{_rpmint_includedir}/*
 %{_rpmint_libdir}/*.a
 %{_rpmint_libdir}/*/*.a
+%{_rpmint_libdir}/pkgconfig/*.pc
+%{_rpmint_cross_pkgconfigdir}/*.pc
 %else
 %{_rpmint_target_prefix}/include/*
 %{_rpmint_target_prefix}/lib/*.a
 %{_rpmint_target_prefix}/lib/*/*.a
+%{_rpmint_target_prefix}/lib/pkgconfig/*.pc
 %endif
-
-%files doc
-%defattr(-,root,root)
-%if "%{buildtype}" == "cross"
-%doc %{_rpmint_infodir}
-%else
-%doc %{_rpmint_target_prefix}/share/info
-%endif
-
-%post doc
-%rpmint_install_info %{pkgname}
-
-%preun doc
-%rpmint_uninstall_info %{pkgname}
 
 
 %changelog

@@ -75,14 +75,15 @@ BuildRequires:  zlib-devel
 BuildRequires:  gcc-ada
 %endif
 
+BuildRequires:  cross-mint-gmp >= 6.0.0
+BuildRequires:  cross-mint-mpfr >= 3.0.0
+BuildRequires:  cross-mint-mpc >= 1.0.0
+BuildRequires:  cross-mint-isl >= 0.18
+
 %if "%{buildtype}" != "cross"
 BuildRequires:  cross-mint-%{pkgname} = %{version}
 BuildRequires:  cross-mint-mintlib
 BuildRequires:  cross-mint-fdlibm
-#BuildRequires:  cross-mint-gmp >= 6.0.0
-#BuildRequires:  cross-mint-mpfr >= 3.0.0
-#BuildRequires:  cross-mint-mpc >= 1.0.0
-#BuildRequires:  cross-mint-isl >= 0.18
 %define _target_platform %{_rpmint_target_platform}
 %if "%{buildtype}" == "v4e"
 %define _arch m5475

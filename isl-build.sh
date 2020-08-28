@@ -13,7 +13,7 @@ VERSIONPATCH=
 ranlib=${TARGET}-ranlib
 LTO_CFLAGS=
 
-PATCHES="patches/mpc/curl-mintelf-config.patch"
+PATCHES="patches/isl/isl-mintelf-config.patch"
 
 unpack_archive
 
