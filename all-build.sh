@@ -87,7 +87,7 @@ for pkg in gemlib \
 	libksba \
 	libgcrypt \
 ; do
-	script=build-${pkg}.sh
+	script=${pkg}-build.sh
 	ls -l $script
 done
 

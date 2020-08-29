@@ -253,4 +253,4 @@ fi
 	
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${PACKAGENAME}${VERSION}-mint.tar.xz ${ALLPATCHES}
 
-cp -p "$me" ${DIST_DIR}/build-native-${PACKAGENAME}${VERSION}.sh
+cp -p "$me" ${DIST_DIR}/${PACKAGENAME}${VERSION}-native-build.sh

@@ -338,9 +338,9 @@ For a comparison to PML, see <a href="math.php">Math libraries for Atari</a>
 		'comment' => '
 GEMlib allows you to write graphical programs using GEM.<br />
 It is maintained by Arnaud Bercegeay; the official releases are available
-on the <a href="http://arnaud.bercegeay.free.fr/gemlib/"' . $target . '>GEMlib&apos;s homepage</a>.
+on the <a href="http://arnaud.bercegeay.free.fr/gemlib">GEMlib&apos;s homepage</a>.
 However, the latest sources are available
-on the <a href="https://github.com/freemint/lib"' . $target . '>FreeMiNT&apos;s GitHub repository</a>.
+on the <a href="https://github.com/freemint/gemlib">FreeMiNT&apos;s GitHub repository</a>.
 '
 	),
 	'cflib' => array(
