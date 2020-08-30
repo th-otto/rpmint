@@ -1,7 +1,7 @@
-From b2a547d722f9c54d8eda879ceaa939217679cec7 Mon Sep 17 00:00:00 2001
+From 8148b1d1133eb7702bd2ffa9f08225324b1ca762 Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:31:01 +0100
-Subject: [PATCH 15/87] find ksyms
+Subject: [PATCH 15/78] find ksyms
 
 ---
  scripts/Makefile.am         |  2 +
@@ -12,25 +12,25 @@ Subject: [PATCH 15/87] find ksyms
  create mode 100644 scripts/find-requires.ksyms
 
 diff --git a/scripts/Makefile.am b/scripts/Makefile.am
-index ab1441d54..1e3327d68 100644
+index ed75b3063..67ce2a836 100644
 --- a/scripts/Makefile.am
 +++ b/scripts/Makefile.am
-@@ -19,6 +19,7 @@ EXTRA_DIST = \
+@@ -18,6 +18,7 @@ EXTRA_DIST = \
  	tgpg vpkg-provides.sh \
  	find-requires find-provides \
  	find-requires.php find-provides.php \
 +	find-requires.ksyms find-provides.ksyms \
- 	mono-find-requires mono-find-provides \
  	ocaml-find-requires.sh ocaml-find-provides.sh \
  	pkgconfigdeps.sh libtooldeps.sh metainfo.prov \
-@@ -35,6 +36,7 @@ rpmconfig_SCRIPTS = \
+ 	fontconfig.prov desktop-file.prov script.req 
+@@ -31,6 +32,7 @@ rpmconfig_SCRIPTS = \
+ 	debuginfo.prov \
  	find-lang.sh find-requires find-provides \
  	perl.prov perl.req pythondeps.sh pythondistdeps.py \
- 	python-macro-helper \
 +	find-requires.ksyms find-provides.ksyms \
  	metainfo.prov \
- 	mono-find-requires mono-find-provides \
  	pkgconfigdeps.sh libtooldeps.sh \
+ 	ocaml-find-requires.sh ocaml-find-provides.sh \
 diff --git a/scripts/find-provides.ksyms b/scripts/find-provides.ksyms
 new file mode 100644
 index 000000000..e485c3bf5

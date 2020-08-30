@@ -1,0 +1,33 @@
+From 76364d97554d046392dc215f924a51e469fda582 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:45:20 +0100
+Subject: [PATCH 34/78] debuginfo mono
+
+---
+ scripts/find-debuginfo.sh | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/scripts/find-debuginfo.sh b/scripts/find-debuginfo.sh
+index 69ba69421..666cb1b9e 100755
+--- a/scripts/find-debuginfo.sh
++++ b/scripts/find-debuginfo.sh
+@@ -370,6 +370,16 @@ while read nlinks inum f; do
+       ;;
+     *) continue ;;
+   esac
++  # double check that we really have an ELF file,
++  # to handle monodevelop-debugger-gdb and monodevelop-debugger-mdb
++  ftype=`/usr/bin/file $f | cut -d: -f2-`
++  case $ftype in
++    *ELF*) ;;
++    *)
++       echo "$f is not an ELF file, skipping"
++       continue
++       ;;
++  esac
+   if [ $nlinks -gt 1 ]; then
+     var=seen_$inum
+     if test -n "${!var}"; then
+-- 
+2.24.0
+

@@ -1,0 +1,40 @@
+From ffeb1b097e7bff43e60292dbb445bf01e10dda82 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:50:13 +0100
+Subject: [PATCH 39/78] remove translations
+
+---
+ scripts/find-lang.sh | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/scripts/find-lang.sh b/scripts/find-lang.sh
+index b02b4f13d..b2e3e23ad 100755
+--- a/scripts/find-lang.sh
++++ b/scripts/find-lang.sh
+@@ -119,6 +119,23 @@ fi
+ MO_NAME_NEW=$MO_NAME.tmp.$$
+ rm -f $MO_NAME_NEW
+ 
++# remove languages we do not yet support - but give out statistics
++test -d "$TOP_DIR/usr/share/locale/" && find "$TOP_DIR/usr/share/locale/" -maxdepth 1 -type d | sed 's:'"$TOP_DIR"/usr/share/locale/'::; /^$/d' | while read dir; do
++  if ! rpm -ql filesystem | egrep -q "/usr/share/locale/$dir"$; then
++    find $TOP_DIR/usr/share/locale/$dir -name *.mo | sed 's:'"$TOP_DIR"'::' | while read file; do
++      echo -n "removing translation $file: "
++      msgunfmt "$TOP_DIR/$file" | msgfmt --statistics -o /dev/null -
++    done
++    rm -rf $TOP_DIR/usr/share/locale/$dir
++  fi
++done
++test -d "$TOP_DIR/usr/share/help/" && find $TOP_DIR/usr/share/help/ -maxdepth 1 -type d | sed 's:'"$TOP_DIR"/usr/share/help/'::; /^$/d' | while read dir; do
++  if ! rpm -ql filesystem | egrep -q "/usr/share/help/$dir"$; then
++    echo "removing help translation /usr/share/help/$dir"
++    rm -rf $TOP_DIR/usr/share/help/$dir
++  fi
++done
++
+ for NAME in ${NAMES[@]}; do
+ 
+ find "$TOP_DIR" -type f -o -type l|sed '
+-- 
+2.24.0
+

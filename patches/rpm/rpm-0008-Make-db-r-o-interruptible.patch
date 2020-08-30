@@ -1,14 +1,14 @@
-From e6e39259e117a695d7a839f1eb83a3c6d5a90153 Mon Sep 17 00:00:00 2001
+From cd05415089aec173fa16565d278e54de33f746c8 Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:01:21 +0100
-Subject: [PATCH 08/87] Make db r/o interruptible
+Subject: [PATCH 08/78] Make db r/o interruptible
 
 ---
- lib/rpmdb.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ lib/rpmdb.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/lib/rpmdb.c b/lib/rpmdb.c
-index 39eeea2a8..88399c9fb 100644
+index 29f2bf8f3..116dc2a89 100644
 --- a/lib/rpmdb.c
 +++ b/lib/rpmdb.c
 @@ -387,9 +387,11 @@ int rpmdbClose(rpmdb db)
@@ -32,15 +32,6 @@ index 39eeea2a8..88399c9fb 100644
  	rpmsqActivate(0);
      }
  exit:
-@@ -505,7 +507,7 @@ static int openDatabase(const char * prefix,
-     /* Try to ensure db home exists, error out if we can't even create */
-     rc = rpmioMkpath(rpmdbHome(db), 0755, getuid(), getgid());
-     if (rc == 0) {
--	if (rpmdbRock == NULL) {
-+	if (rpmdbRock == NULL && (db->db_mode & (O_RDWR|O_WRONLY)) != 0) {
- 	    rpmsqActivate(1);
- 	}
- 
 -- 
 2.24.0
 

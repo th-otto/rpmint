@@ -1,7 +1,7 @@
-From 0f6f42481dc8ebae1d4ab4867739c003057f670d Mon Sep 17 00:00:00 2001
+From 37018c62c405e11f54bee52eb421d309fea85f28 Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:02:39 +0100
-Subject: [PATCH 10/87] Fix global (DB_PRIVATE) lock code: fix recursion
+Subject: [PATCH 10/78] Fix global (DB_PRIVATE) lock code: fix recursion
  counter, retry failed lock operations for up to 3 minutes.
 
 ---
@@ -10,7 +10,7 @@ Subject: [PATCH 10/87] Fix global (DB_PRIVATE) lock code: fix recursion
  2 files changed, 40 insertions(+), 15 deletions(-)
 
 diff --git a/lib/backend/db3.c b/lib/backend/db3.c
-index e5f61dfa4..93bc27801 100644
+index c821e70d0..83131546e 100644
 --- a/lib/backend/db3.c
 +++ b/lib/backend/db3.c
 @@ -34,6 +34,8 @@ struct dbiCursor_s {
@@ -22,7 +22,7 @@ index e5f61dfa4..93bc27801 100644
  /** \ingroup dbi
   */
  static const struct poptOption rdbOptions[] = {
-@@ -755,6 +757,8 @@ static int db3_dbiClose(dbiIndex dbi, unsigned int flags)
+@@ -757,6 +759,8 @@ static int db3_dbiClose(dbiIndex dbi, unsigned int flags)
  
  	rpmlog(RPMLOG_DEBUG, "closed   db index       %s/%s\n",
  		dbhome, dbi->dbi_file);
@@ -31,7 +31,7 @@ index e5f61dfa4..93bc27801 100644
      }
  
      db_fini(rdb, dbhome ? dbhome : "");
-@@ -794,6 +798,7 @@ static int dbiFlock(dbiIndex dbi, int mode)
+@@ -796,6 +800,7 @@ static int dbiFlock(dbiIndex dbi, int mode)
  	rc = 1;
      } else {
  	const char *dbhome = rpmdbHome(dbi->dbi_rpmdb);
@@ -39,7 +39,7 @@ index e5f61dfa4..93bc27801 100644
  	struct flock l;
  	memset(&l, 0, sizeof(l));
  	l.l_whence = 0;
-@@ -803,20 +808,38 @@ static int dbiFlock(dbiIndex dbi, int mode)
+@@ -805,20 +810,38 @@ static int dbiFlock(dbiIndex dbi, int mode)
  		    ? F_RDLCK : F_WRLCK;
  	l.l_pid = 0;
  
@@ -92,7 +92,7 @@ index e5f61dfa4..93bc27801 100644
  	}
      }
      return rc;
-@@ -833,7 +856,6 @@ static int db3_dbiOpen(rpmdb rdb, rpmDbiTagVal rpmtag, dbiIndex * dbip, int flag
+@@ -835,7 +858,6 @@ static int db3_dbiOpen(rpmdb rdb, rpmDbiTagVal rpmtag, dbiIndex * dbip, int flag
      DB * db = NULL;
      DBTYPE dbtype = DB_UNKNOWN;
      uint32_t oflags;
@@ -100,7 +100,7 @@ index e5f61dfa4..93bc27801 100644
  
      if (dbip)
  	*dbip = NULL;
-@@ -913,6 +935,8 @@ static int db3_dbiOpen(rpmdb rdb, rpmDbiTagVal rpmtag, dbiIndex * dbip, int flag
+@@ -915,6 +937,8 @@ static int db3_dbiOpen(rpmdb rdb, rpmDbiTagVal rpmtag, dbiIndex * dbip, int flag
  	dbi->dbi_flags |= DBI_CREATED;
      if (oflags & DB_RDONLY)
  	dbi->dbi_flags |= DBI_RDONLY;
@@ -110,7 +110,7 @@ index e5f61dfa4..93bc27801 100644
      if (!verifyonly && rc == 0 && dbi->cfg.dbi_lockdbfd && _lockdbfd++ == 0) {
  	rc = dbiFlock(dbi, rdb->db_mode);
 diff --git a/lib/backend/dbi.h b/lib/backend/dbi.h
-index 02f49c8fd..1f6d179b4 100644
+index 83330494b..4ca19294a 100644
 --- a/lib/backend/dbi.h
 +++ b/lib/backend/dbi.h
 @@ -83,6 +83,7 @@ enum dbiFlags_e {

@@ -1,7 +1,7 @@
-From 49d6973ccf269b409bba2189570e32b3313986b5 Mon Sep 17 00:00:00 2001
+From a6737fb7dc55e7f589d808af1eacf54ae71cb521 Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:37:03 +0100
-Subject: [PATCH 25/87] rpm short changelog
+Subject: [PATCH 25/78] rpm short changelog
 
 ---
  build/pack.c           | 66 ++++++++++++++++++++++++++++++++++++++++++
@@ -9,11 +9,11 @@ Subject: [PATCH 25/87] rpm short changelog
  2 files changed, 71 insertions(+)
 
 diff --git a/build/pack.c b/build/pack.c
-index 1348b5f67..4bcbcfd31 100644
+index e6cec1816..5d49c524d 100644
 --- a/build/pack.c
 +++ b/build/pack.c
-@@ -641,6 +641,71 @@ static rpmRC checkPackages(char *pkgcheck)
-     return RPMRC_OK;
+@@ -743,11 +743,77 @@ static rpmRC packageBinary(rpmSpec spec, Package pkg, const char *cookie, int ch
+     return rc;
  }
  
 +static void trimChangelog(Header h)
@@ -83,20 +83,18 @@ index 1348b5f67..4bcbcfd31 100644
 +
  rpmRC packageBinaries(rpmSpec spec, const char *cookie, int cheating)
  {
-     rpmRC rc;
-@@ -648,6 +713,7 @@ rpmRC packageBinaries(rpmSpec spec, const char *cookie, int cheating)
+     rpmRC rc = RPMRC_OK;
      Package pkg;
-     char *pkglist = NULL;
  
 +    trimChangelog(spec->packages->header);
-     for (pkg = spec->packages; pkg != NULL; pkg = pkg->next) {
- 	char *fn;
- 
+     /* Run binary creation in parallel */
+     #pragma omp parallel
+     #pragma omp single
 diff --git a/build/parseChangelog.c b/build/parseChangelog.c
-index d3d7d33b7..105bb20c3 100644
+index ad6d834a1..121ff991b 100644
 --- a/build/parseChangelog.c
 +++ b/build/parseChangelog.c
-@@ -255,6 +255,11 @@ static rpmRC addChangelog(Header h, ARGV_const_t sb)
+@@ -253,6 +253,11 @@ static rpmRC addChangelog(Header h, ARGV_const_t sb)
  	    goto exit;
  	}
  

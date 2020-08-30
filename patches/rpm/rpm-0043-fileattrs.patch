@@ -1,0 +1,114 @@
+From 9ee183dea3e5191f94ad68b4120f486c622937d8 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:53:36 +0100
+Subject: [PATCH 43/78] fileattrs
+
+---
+ fileattrs/Makefile.am   | 1 +
+ fileattrs/elf.attr      | 3 ++-
+ fileattrs/elflib.attr   | 4 ++++
+ fileattrs/firmware.attr | 2 ++
+ fileattrs/kernel.attr   | 2 ++
+ fileattrs/kmp.attr      | 4 ++++
+ fileattrs/perl.attr     | 3 ++-
+ fileattrs/perllib.attr  | 3 ++-
+ fileattrs/sysvinit.attr | 2 ++
+ 9 files changed, 21 insertions(+), 3 deletions(-)
+ create mode 100644 fileattrs/elflib.attr
+ create mode 100644 fileattrs/firmware.attr
+ create mode 100644 fileattrs/kernel.attr
+ create mode 100644 fileattrs/kmp.attr
+ create mode 100644 fileattrs/sysvinit.attr
+
+diff --git a/fileattrs/Makefile.am b/fileattrs/Makefile.am
+index e0ca5b6bc..6b4dfd765 100644
+--- a/fileattrs/Makefile.am
++++ b/fileattrs/Makefile.am
+@@ -8,6 +8,7 @@ fattrsdir = $(rpmconfigdir)/fileattrs
+ fattrs_DATA = \
+ 	debuginfo.attr desktop.attr elf.attr font.attr libtool.attr metainfo.attr \
+ 	perl.attr perllib.attr pkgconfig.attr python.attr pythondist.attr ocaml.attr \
++	elflib.attr firmware.attr kernel.attr kmp.attr sysvinit.attr \
+ 	script.attr
+ 
+ EXTRA_DIST = $(fattrs_DATA)
+diff --git a/fileattrs/elf.attr b/fileattrs/elf.attr
+index 5805dd0ee..78fc73ab5 100644
+--- a/fileattrs/elf.attr
++++ b/fileattrs/elf.attr
+@@ -1,4 +1,5 @@
+ %__elf_provides		%{_rpmconfigdir}/elfdeps --provides %{?__filter_GLIBC_PRIVATE:--filter-private}
+ %__elf_requires		%{_rpmconfigdir}/elfdeps --requires %{?__filter_GLIBC_PRIVATE:--filter-private}
+-%__elf_magic		^(setuid,? )?(setgid,? )?(sticky )?ELF (32|64)-bit.*$
++%__elf_magic		^(setuid,? )?(setgid,? )?(sticky )?ELF (32|64)-bit.*executable
+ %__elf_flags		exeonly
++%__elf_exclude_path	^/usr/lib/debug/
+diff --git a/fileattrs/elflib.attr b/fileattrs/elflib.attr
+new file mode 100644
+index 000000000..a8aafa6f1
+--- /dev/null
++++ b/fileattrs/elflib.attr
+@@ -0,0 +1,4 @@
++%__elflib_provides	%{_rpmconfigdir}/elfdeps --assume-exec --provides %{?__filter_GLIBC_PRIVATE:--filter-private}
++%__elflib_requires	%{_rpmconfigdir}/elfdeps --assume-exec --requires %{?__filter_GLIBC_PRIVATE:--filter-private}
++%__elflib_magic		^(setuid )?(setgid )?(sticky )?ELF (32|64)-bit.*shared object
++%__elflib_exclude_path	^/usr/lib/debug/
+diff --git a/fileattrs/firmware.attr b/fileattrs/firmware.attr
+new file mode 100644
+index 000000000..2d577aa44
+--- /dev/null
++++ b/fileattrs/firmware.attr
+@@ -0,0 +1,2 @@
++%__firmware_provides	%{_rpmconfigdir}/firmware.prov
++%__firmware_path	/lib/firmware/
+diff --git a/fileattrs/kernel.attr b/fileattrs/kernel.attr
+new file mode 100644
+index 000000000..a79fde56a
+--- /dev/null
++++ b/fileattrs/kernel.attr
+@@ -0,0 +1,2 @@
++%__kernel_provides	%{_rpmconfigdir}/find-provides.ksyms --opensuse 0%{?is_opensuse}
++%__kernel_path		^(/lib/modules/[^/]*/kernel/.*\.ko(\.gz)?|/boot/vmlinu[xz].*)$
+diff --git a/fileattrs/kmp.attr b/fileattrs/kmp.attr
+new file mode 100644
+index 000000000..772ea3021
+--- /dev/null
++++ b/fileattrs/kmp.attr
+@@ -0,0 +1,4 @@
++%__kmp_provides		%{_rpmconfigdir}/find-provides.ksyms --opensuse 0%{?is_opensuse}
++%__kmp_requires		%{_rpmconfigdir}/find-requires.ksyms --opensuse 0%{?is_opensuse}
++%__kmp_supplements	%{_rpmconfigdir}/find-supplements.ksyms
++%__kmp_path		^/lib/modules/[^/]*/(updates|extra)/.*\.ko(\.gz)?
+diff --git a/fileattrs/perl.attr b/fileattrs/perl.attr
+index 0daef58d5..89383c213 100644
+--- a/fileattrs/perl.attr
++++ b/fileattrs/perl.attr
+@@ -1,3 +1,4 @@
+-%__perl_requires	%{_rpmconfigdir}/perl.req
++# disabled for now
++#%__perl_requires	%{_rpmconfigdir}/perl.req
+ %__perl_magic		^.*[Pp]erl .*$
+ %__perl_flags		exeonly
+diff --git a/fileattrs/perllib.attr b/fileattrs/perllib.attr
+index fcad48099..77463c841 100644
+--- a/fileattrs/perllib.attr
++++ b/fileattrs/perllib.attr
+@@ -1,5 +1,6 @@
+ %__perllib_provides	%{_rpmconfigdir}/perl.prov
+-%__perllib_requires	%{_rpmconfigdir}/perl.req
++#disabled for now
++#%__perllib_requires	%{_rpmconfigdir}/perl.req
+ %__perllib_magic	^Perl[[:digit:]] module source.*
+ %__perllib_path		\\.pm$
+ %__perllib_flags	magic_and_path
+diff --git a/fileattrs/sysvinit.attr b/fileattrs/sysvinit.attr
+new file mode 100644
+index 000000000..81810e54b
+--- /dev/null
++++ b/fileattrs/sysvinit.attr
+@@ -0,0 +1,2 @@
++%__sysvinit_provides	%{_rpmconfigdir}/sysvinitdeps.sh --provides
++%__sysvinit_path	^/etc/init\.d/
+-- 
+2.24.0
+

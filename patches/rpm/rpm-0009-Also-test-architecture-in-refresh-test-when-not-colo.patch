@@ -1,7 +1,7 @@
-From ea4bd7ae6a5d67891606e0bc566d50f4339fae35 Mon Sep 17 00:00:00 2001
+From 19732aba33076233b8ae0afd6559062f8da3e17e Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:02:13 +0100
-Subject: [PATCH 09/87] Also test architecture in "refresh" test when not
+Subject: [PATCH 09/78] Also test architecture in "refresh" test when not
  colored. This allows updates to different architectures.
 
 ---
@@ -9,15 +9,15 @@ Subject: [PATCH 09/87] Also test architecture in "refresh" test when not
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/lib/psm.c b/lib/psm.c
-index 2c6c9c550..9da166385 100644
+index cde5dc6c4..90bafc2db 100644
 --- a/lib/psm.c
 +++ b/lib/psm.c
-@@ -512,13 +512,14 @@ void rpmpsmNotify(rpmpsm psm, int what, rpm_loff_t amount)
+@@ -516,13 +516,14 @@ void rpmpsmNotify(rpmpsm psm, int what, rpm_loff_t amount)
   */
  static void markReplacedInstance(rpmts ts, rpmte te)
  {
 +    /* this must match rpmNameVersionCompare in depends.c */
-     rpmdbMatchIterator mi = rpmtsInitIterator(ts, RPMDBI_NAME, rpmteN(te), 0);
+     rpmdbMatchIterator mi = rpmtsPrunedIterator(ts, RPMDBI_NAME, rpmteN(te), 1);
      rpmdbSetIteratorRE(mi, RPMTAG_EPOCH, RPMMIRE_STRCMP, rpmteE(te));
      rpmdbSetIteratorRE(mi, RPMTAG_VERSION, RPMMIRE_STRCMP, rpmteV(te));
      rpmdbSetIteratorRE(mi, RPMTAG_RELEASE, RPMMIRE_STRCMP, rpmteR(te));

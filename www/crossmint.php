@@ -115,7 +115,7 @@ you should extract them by using <br />
 <p>&nbsp;</p>
 
 <p>
-The linux packages were built on openSUSE tumbleweed (kernel 4.15.2, glibc 2.26). They should
+The linux packages were built on openSUSE tumbleweed (kernel 5.3.12, glibc 2.30). They should
 work on other linux distros too, but will require at least glibc 2.14.</p>
 
 <p>&nbsp;</p>
@@ -1532,6 +1532,8 @@ This notably applies to Perl and Python.
 <li>2020/08/24 Recompile bash without libiconv</li>
 
 <li>2020/08/26 Package mksh added</li>
+
+<li>2020/08/30 Update rpm to version 4.15.1</li>
 
 </ul>
 

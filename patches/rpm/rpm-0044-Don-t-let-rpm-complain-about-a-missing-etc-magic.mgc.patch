@@ -1,0 +1,26 @@
+From 22b006697fd8a0a0eb6ce4805acddd6cc347cf3d Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:54:22 +0100
+Subject: [PATCH 44/78] Don't let rpm complain about a missing /etc/magic.mgc
+ file
+
+---
+ build/rpmfc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/build/rpmfc.c b/build/rpmfc.c
+index b8da3731b..3601ca119 100644
+--- a/build/rpmfc.c
++++ b/build/rpmfc.c
+@@ -1072,7 +1072,7 @@ static int initAttrs(rpmfc fc)
+ 
+ rpmRC rpmfcClassify(rpmfc fc, ARGV_t argv, rpm_mode_t * fmode)
+ {
+-    int msflags = MAGIC_CHECK | MAGIC_COMPRESS | MAGIC_NO_CHECK_TOKENS;
++    int msflags = MAGIC_COMPRESS | MAGIC_NO_CHECK_TOKENS;
+     int nerrors = 0;
+     rpmRC rc = RPMRC_FAIL;
+ 
+-- 
+2.24.0
+

@@ -1,14 +1,14 @@
-From 0f1a6b51b7ce0dc28a550329c1a4baf62b018264 Mon Sep 17 00:00:00 2001
+From 9a74dfd57cb87b4c5f7ad0298ff6b280c4e56a32 Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:31:30 +0100
-Subject: [PATCH 16/87] find lang
+Subject: [PATCH 16/78] find lang
 
 ---
  scripts/find-lang.sh | 73 ++++++++++++++++++++++++++------------------
  1 file changed, 44 insertions(+), 29 deletions(-)
 
 diff --git a/scripts/find-lang.sh b/scripts/find-lang.sh
-index fdca18ec4..05e055993 100755
+index 1542a43fb..b02b4f13d 100755
 --- a/scripts/find-lang.sh
 +++ b/scripts/find-lang.sh
 @@ -22,11 +22,11 @@ the top of the tree containing the files to be processed--should be
@@ -148,7 +148,7 @@ index fdca18ec4..05e055993 100755
 +/^$/d' >> $MO_NAME_NEW
  
  KDE3_HTML=`kde-config --expandvars --install html 2>/dev/null`
- if [ x"$KDE3_HTML" != x -a -d "$TOP_DIR$KDE3_HTML" ]; then
+ if [ x"$KDE3_HTML" != x ] && [ -d "$TOP_DIR$KDE3_HTML" ]; then
 @@ -193,7 +203,7 @@ s:'"$TOP_DIR"'::
  '"$ALL_NAME$KDE"'s:\(.*/HTML/\)\([^/_]\+\)\(.*/[a-zA-Z0-9.\_\-]\+$\):%lang(\2) \1\2\3:
  s:^\([^%].*\)::

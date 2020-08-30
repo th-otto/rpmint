@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=rpm
-VERSION=-4.14.1
+VERSION=-4.15.1
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -36,71 +36,63 @@ patches/rpm/rpm-0023-rpmqpack.patch
 patches/rpm/rpm-0024-build.patch
 patches/rpm/rpm-0025-rpm-short-changelog.patch
 patches/rpm/rpm-0026-whatrequires-doc.patch
-patches/rpm/rpm-0027-requires-ge-macro.patch
-patches/rpm/rpm-0028-From-Jan-Blunck-jblunck-suse.de.patch
-patches/rpm/rpm-0029-Add-firmware-files-in-lib-firmware-into-RPM-provides.patch
-patches/rpm/rpm-0030-specfilemacro.patch
-patches/rpm/rpm-0031-Module-aliases-modinfo-F-alias-module-may-contain-sp.patch
-patches/rpm/rpm-0032-Hmm-SUSE-doesn-t-use-it-so-what-s-the-purpose-of-thi.patch
-patches/rpm/rpm-0033-debugsubpkg.patch
-patches/rpm/rpm-0034-debuglink.patch
-patches/rpm/rpm-0035-debuginfo-mono.patch
-patches/rpm/rpm-0036-Prefer-sys-vfs.h-as-statvfs-stats-all-filesystems-ag.patch
-patches/rpm/rpm-0037-safeugid.patch
-patches/rpm/rpm-0038-no-prereq-deprec.patch
-patches/rpm/rpm-0039-sysvinitdeps.patch
-patches/rpm/rpm-0040-remove-translations.patch
-patches/rpm/rpm-0041-Add-rpmtsHeaderAddDB-and-rpmtsHeaderRemoveDB-so-that.patch
-patches/rpm/rpm-0042-db-private.patch
-patches/rpm/rpm-0043-Disable-file-coloring-for-SUSE-systems.patch
-patches/rpm/rpm-0044-fileattrs.patch
-patches/rpm/rpm-0045-Don-t-let-rpm-complain-about-a-missing-etc-magic.mgc.patch
-patches/rpm/rpm-0046-assumeexec.patch
-patches/rpm/rpm-0047-mono-find-requires.patch
-patches/rpm/rpm-0048-Disable-dependency-tracking-for-build.patch
-patches/rpm/rpm-0049-lang-no-c.patch
-patches/rpm/rpm-0050-headerchk2.patch
-patches/rpm/rpm-0051-brp-compress-no-img.patch
-patches/rpm/rpm-0052-weak-deps-compat.patch
-patches/rpm/rpm-0053-check-sep-warn.patch
-patches/rpm/rpm-0054-enable-postin-scripts-error.patch
-patches/rpm/rpm-0055-rpm-findlang-inject-metainfo.patch
-patches/rpm/rpm-0056-empty-manifest.patch
-patches/rpm/rpm-0057-find-lang-qt-qm.patch
-patches/rpm/rpm-0058-debugedit-macro.patch
-patches/rpm/rpm-0059-python-dist-deps.patch
-patches/rpm/rpm-0060-debugedit-bnc1076819.patch
-patches/rpm/rpm-0061-hardlinks.patch
-patches/rpm/rpm-0062-auto-config-update-aarch64-ppc64le.patch
-patches/rpm/rpm-0063-brp.patch
-patches/rpm/rpm-0064-Define-possible-missing-constants-for-pathconf-sysco.patch
-patches/rpm/rpm-0065-Check-wether-nanosleep-is-available.patch
-patches/rpm/rpm-0066-Check-wether-mkdtemp-is-available.patch
-patches/rpm/rpm-0067-Fix-detection-of-__progname.patch
-patches/rpm/rpm-0068-Remove-dependance-on-__errno_location.patch
-patches/rpm/rpm-0069-Move-library-dependant-cppflags-to-globals.patch
-patches/rpm/rpm-0070-Do-not-blindly-add-fPIC-to-RPMCFLAGS-libtool-takes-c.patch
-patches/rpm/rpm-0071-Fix-tests-wether-lzma-supports-multi-threading.patch
-patches/rpm/rpm-0072-Fix-test-for-lmagic-which-might-need-zlib.patch
-patches/rpm/rpm-0073-Only-use-pthreads-if-available.patch
-patches/rpm/rpm-0074-Add-missing-include-of-rpmug.h.patch
-patches/rpm/rpm-0075-Add-detection-of-default-machine-m68k.patch
-patches/rpm/rpm-0076-Add-missing-include-of-signal.h.patch
-patches/rpm/rpm-0077-Fix-type-of-callback-functions.patch
-patches/rpm/rpm-0078-Avoid-a-warning-using-64bit-constant.patch
-patches/rpm/rpm-0079-MiNT-attribute-visibility-is-not-available.patch
-patches/rpm/rpm-0080-Only-use-dlopen-if-available.patch
-patches/rpm/rpm-0082-coldfire.patch
-patches/rpm/rpm-0083-Fix-some-mismatch-between-open-mode-permissions.patch
-patches/rpm/rpm-0084-Remove-fstack-protector-as-it-requires-all-packages-.patch
-patches/rpm/rpm-0085-Remove-i18n-translation-in-rpmmalloc.c-as-it-is-refe.patch
-patches/rpm/rpm-0086-Port-some-older-rpm-tools.patch
-patches/rpm/rpm-0087-Add-fix-for-rpm-db4-patch.patch
-patches/rpm/rpm-mintelf-config.patch
+patches/rpm/rpm-0027-From-Jan-Blunck-jblunck-suse.de-Subject-Do-the-symbo.patch
+patches/rpm/rpm-0028-Add-firmware-files-in-lib-firmware-into-RPM-provides.patch
+patches/rpm/rpm-0029-specfilemacro.patch
+patches/rpm/rpm-0030-Module-aliases-modinfo-F-alias-module-may-contain-sp.patch
+patches/rpm/rpm-0031-Hmm-SUSE-doesn-t-use-it-so-what-s-the-purpose-of-thi.patch
+patches/rpm/rpm-0032-debugsubpkg.patch
+patches/rpm/rpm-0033-debuglink.patch
+patches/rpm/rpm-0034-debuginfo-mono.patch
+patches/rpm/rpm-0035-Prefer-sys-vfs.h-as-statvfs-stats-all-filesystems-ag.patch
+patches/rpm/rpm-0036-safeugid.patch
+patches/rpm/rpm-0037-no-prereq-deprec.patch
+patches/rpm/rpm-0038-sysvinitdeps.patch
+patches/rpm/rpm-0039-remove-translations.patch
+patches/rpm/rpm-0040-Add-rpmtsHeaderAddDB-and-rpmtsHeaderRemoveDB-so-that.patch
+patches/rpm/rpm-0041-db-private.patch
+patches/rpm/rpm-0042-Disable-file-coloring-for-SUSE-systems.patch
+patches/rpm/rpm-0043-fileattrs.patch
+patches/rpm/rpm-0044-Don-t-let-rpm-complain-about-a-missing-etc-magic.mgc.patch
+patches/rpm/rpm-0045-assumeexec.patch
+patches/rpm/rpm-0046-Disable-dependency-tracking-for-build.patch
+patches/rpm/rpm-0047-lang-no-c.patch
+patches/rpm/rpm-0048-headerchk2.patch
+patches/rpm/rpm-0049-brp-compress-no-img.patch
+patches/rpm/rpm-0050-weak-deps-compat.patch
+patches/rpm/rpm-0051-check-sep-warn.patch
+patches/rpm/rpm-0052-enable-postin-scripts-error.patch
+patches/rpm/rpm-0053-rpm-findlang-inject-metainfo.patch
+patches/rpm/rpm-0054-empty-manifest.patch
+patches/rpm/rpm-0055-find-lang-qt-qm.patch
+patches/rpm/rpm-0056-brp.patch
+patches/rpm/rpm-0057-Define-possible-missing-constants-for-pathconf-sysco.patch
+patches/rpm/rpm-0058-Check-wether-nanosleep-is-available.patch
+patches/rpm/rpm-0059-Check-wether-mkdtemp-is-available.patch
+patches/rpm/rpm-0060-Fix-detection-of-__progname.patch
+patches/rpm/rpm-0061-Remove-dependance-on-__errno_location.patch
+patches/rpm/rpm-0062-Move-library-dependant-cppflags-to-globals.patch
+patches/rpm/rpm-0063-Fix-tests-wether-lzma-supports-multi-threading.patch
+patches/rpm/rpm-0064-Fix-test-for-lmagic-which-might-need-zlib.patch
+patches/rpm/rpm-0065-Only-use-pthreads-if-available.patch
+patches/rpm/rpm-0066-Add-missing-include-of-rpmug.h.patch
+patches/rpm/rpm-0067-Add-detection-of-default-machine-m68k.patch
+patches/rpm/rpm-0068-Add-missing-include-of-signal.h.patch
+patches/rpm/rpm-0069-Avoid-a-warning-using-64bit-constant.patch
+patches/rpm/rpm-0070-MiNT-attribute-visibility-is-not-available.patch
+patches/rpm/rpm-0071-Only-use-dlopen-if-available.patch
+patches/rpm/rpm-0073-Fix-type-of-callback-functions.patch
+patches/rpm/rpm-0074-Fix-some-mismatch-between-open-mode-permissions.patch
+patches/rpm/rpm-0075-Remove-i18n-translation-in-rpmmalloc.c-as-it-is-refe.patch
+patches/rpm/rpm-0076-Port-some-older-rpm-tools.patch
+patches/rpm/rpm-0077-Add-some-debug-messages.patch
+patches/rpm/rpm-0078-Compatibility-fixes-for-Lua-5.3.patch
+patches/rpm/rpm-0079-A-few-more-MiNT-patches-for-4.15.1.patch
 "
 DISABLED_PATCHES="
 patches/rpm/rpm-remove-brp-strips.patch
 patches/rpm/rpm-lua-compat.patch
+patches/config.sub
 "
 
 POST_INSTALL_SCRIPTS="
@@ -136,7 +128,7 @@ rm -f m4/libtool.m4
 rm -f m4/lt*.m4
 autoreconf -fi
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/rpm/rpm-mintelf-config.patch"
+cp "$BUILD_DIR/patches/config.sub" .
 
 sed -e 's/@suse_version@/%{?suse_version}%{!?suse_version:0}/' \
     -e 's/@sles_version@/%{?sles_version}%{!?sles_version:0}/' \
@@ -171,6 +163,7 @@ CONFIGURE_FLAGS="--host=${TARGET} \
 	--disable-shared \
 	--disable-python \
 	--disable-plugins \
+	--disable-openmp \
 "
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"

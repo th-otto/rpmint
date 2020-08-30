@@ -1,19 +1,19 @@
-From 6012421b073e956bf335566380aea2d3f26925c0 Mon Sep 17 00:00:00 2001
+From 9da289a33f70ece4e5d2283205f102aac0f55034 Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:28:41 +0100
-Subject: [PATCH 12/87] brp compress
+Subject: [PATCH 12/78] brp compress
 
 ---
- scripts/brp-compress | 57 ++++++++++++++++++++++++++++++++------------
- 1 file changed, 42 insertions(+), 15 deletions(-)
+ scripts/brp-compress | 55 +++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 41 insertions(+), 14 deletions(-)
 
 diff --git a/scripts/brp-compress b/scripts/brp-compress
-index e6b69a9e4..b795a87fb 100755
+index 1a5692ff8..8e0b92bc3 100755
 --- a/scripts/brp-compress
 +++ b/scripts/brp-compress
-@@ -5,51 +5,78 @@ if [ -z "$RPM_BUILD_ROOT" -o "$RPM_BUILD_ROOT" = "/" ]; then
- 	exit 0
- fi
+@@ -7,12 +7,39 @@ fi
+ 
+ PREFIX=${1:-/usr}
  
 +LC_ALL=
 +LANG=
@@ -48,10 +48,11 @@ index e6b69a9e4..b795a87fb 100755
 +    done
 +}
 +
- for d in ./usr/man/man* ./usr/man/*/man* ./usr/info \
- 	./usr/share/man/man* ./usr/share/man/*/man* ./usr/share/info \
- 	./usr/kerberos/man ./usr/X11R6/man/man* ./usr/lib/perl5/man/man* \
- 	./usr/share/doc/*/man/man* ./usr/lib/*/man/man* ./usr/share/fish/man/man*
+ for d in .${PREFIX}/man/man* .${PREFIX}/man/*/man* .${PREFIX}/info \
+ 	.${PREFIX}/share/man/man* .${PREFIX}/share/man/*/man* \
+ 	.${PREFIX}/share/info .${PREFIX}/kerberos/man \
+@@ -21,39 +48,39 @@ for d in .${PREFIX}/man/man* .${PREFIX}/man/*/man* .${PREFIX}/info \
+ 	.${PREFIX}/share/fish/man/man*
  do
      [ -d $d ] || continue
 -    for f in `find $d -type f ! -name dir`
@@ -79,8 +80,7 @@ index e6b69a9e4..b795a87fb 100755
 -		    [ "$afile" != "$b" ] && rm -f $afile
 +		    [ "$afile" != "$b" ] && rm -f "$afile"
  		done
--		$COMPRESS -f $b
-+		$COMPRESS -f "$b"
+ 		$COMPRESS -f $b
  		for afile in $others ; do
 -		    [ "$afile" != "$b" ] && ln $b$COMPRESS_EXT $afile$COMPRESS_EXT
 +		    [ "$afile" != "$b" ] && ln "$b$COMPRESS_EXT" "$afile$COMPRESS_EXT"

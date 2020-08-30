@@ -1,0 +1,42 @@
+From 523cc631b1ce82b56ebc092f5bca7ab33dce10c3 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 06:00:54 +0100
+Subject: [PATCH 52/78] enable postin scripts error
+
+---
+ lib/transaction.c | 2 ++
+ macros.in         | 5 +++++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/lib/transaction.c b/lib/transaction.c
+index c8fa3ac2b..0244937b5 100644
+--- a/lib/transaction.c
++++ b/lib/transaction.c
+@@ -1607,6 +1607,8 @@ rpmRC runScript(rpmts ts, rpmte te, Header h, ARGV_const_t prefixes,
+     int warn_only = !(rpmScriptFlags(script) & RPMSCRIPT_FLAG_CRITICAL);
+     rpmdb rdb = rpmtsGetRdb(ts);
+ 
++    if (stag == RPMTAG_POSTIN && rpmExpandNumeric("%{_fail_on_postinstall_errors}"))
++        warn_only = 0;
+     /* Create a temporary transaction element for triggers from rpmdb */
+     if (te == NULL) {
+ 	te = rpmteNew(ts, h, TR_RPMDB, NULL, NULL, 0);
+diff --git a/macros.in b/macros.in
+index 223f7fcdd..11d2f7d12 100644
+--- a/macros.in
++++ b/macros.in
+@@ -1502,6 +1502,11 @@ end}
+ %{expand:%__scm_setup_%{__scm} %{!-v:-q}}\
+ %{!-N:%autopatch %{-v} %{-p:-p%{-p*}}}
+ 
++# Should errors in %post scriptlet be propagated as errors? 
++#
++# Note: set to 1 for legacy compatibility.
++%_fail_on_postinstall_errors  0
++
+ # \endverbatim
+ #*/
+ 
+-- 
+2.24.0
+

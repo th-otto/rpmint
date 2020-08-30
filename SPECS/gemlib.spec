@@ -16,7 +16,7 @@ Release:        20200812
 License:        Public domain
 Group:          System/Libraries
 
-Packager:       Thorsten Otto <admin@tho-otto.de>
+Packager:       %{packager}
 URL:            https://github.com/freemint/gemlib
 #URL:           http://arnaud.bercegeay.free.fr/gemlib/
 

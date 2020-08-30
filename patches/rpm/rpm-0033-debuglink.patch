@@ -1,0 +1,25 @@
+From ea10625a095f84d8fa7fa52ac60afea99e0613b8 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:44:42 +0100
+Subject: [PATCH 33/78] debuglink
+
+---
+ scripts/find-debuginfo.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scripts/find-debuginfo.sh b/scripts/find-debuginfo.sh
+index cb4327f0c..69ba69421 100755
+--- a/scripts/find-debuginfo.sh
++++ b/scripts/find-debuginfo.sh
+@@ -343,7 +343,7 @@ debug_link()
+ get_debugfn()
+ {
+   dn=$(dirname "${1#$RPM_BUILD_ROOT}")
+-  bn=$(basename "$1" .debug)${unique_debug_suffix}.debug
++  bn=$(basename "$1")${unique_debug_suffix}.debug
+   debugdn=${debugdir}${dn}
+   debugfn=${debugdn}/${bn}
+ }
+-- 
+2.24.0
+

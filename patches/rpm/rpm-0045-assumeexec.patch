@@ -1,0 +1,41 @@
+From 545bd3659fd32ae711bec9457b435bcdf7fd9f83 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:54:45 +0100
+Subject: [PATCH 45/78] assumeexec
+
+---
+ tools/elfdeps.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/tools/elfdeps.c b/tools/elfdeps.c
+index 6d9094874..c62e23330 100644
+--- a/tools/elfdeps.c
++++ b/tools/elfdeps.c
+@@ -18,6 +18,7 @@ int soname_only = 0;
+ int fake_soname = 1;
+ int filter_soname = 1;
+ int require_interp = 0;
++int assume_exec = 0;
+ 
+ typedef struct elfInfo_s {
+     Elf *elf;
+@@ -300,7 +301,7 @@ static int processFile(const char *fn, int dtype)
+     if (ehdr->e_type == ET_DYN || ehdr->e_type == ET_EXEC) {
+ 	ei->marker = mkmarker(ehdr);
+     	ei->isDSO = (ehdr->e_type == ET_DYN);
+-	ei->isExec = (st.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH));
++	ei->isExec = assume_exec || (st.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH));
+ 
+ 	processProgHeaders(ei, ehdr);
+ 	processSections(ei);
+@@ -366,6 +367,7 @@ int main(int argc, char *argv[])
+ 	{ "no-fake-soname", 0, POPT_ARG_VAL, &fake_soname, 0, NULL, NULL },
+ 	{ "no-filter-soname", 0, POPT_ARG_VAL, &filter_soname, 0, NULL, NULL },
+ 	{ "require-interp", 0, POPT_ARG_VAL, &require_interp, -1, NULL, NULL },
++	{ "assume-exec", 0, POPT_ARG_VAL, &assume_exec, -1, NULL, NULL },
+ 	POPT_AUTOHELP 
+ 	POPT_TABLEEND
+     };
+-- 
+2.24.0
+

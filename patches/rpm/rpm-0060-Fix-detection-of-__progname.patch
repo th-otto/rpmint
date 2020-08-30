@@ -1,0 +1,58 @@
+From 898d444575d0ee439f922fef908030e7a1d99d76 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 16:12:42 +0100
+Subject: [PATCH 60/78] Fix detection of __progname
+
+---
+ configure.ac | 2 +-
+ rpmio/argv.c | 5 +++++
+ system.h     | 4 +++-
+ 3 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index f5fed789f..086e080fa 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -781,7 +781,7 @@ AC_CHECK_FUNCS(unshare, [], [], [#include <sched.h>])
+ 
+ AC_MSG_CHECKING([whether __progname is defined])
+ AC_LINK_IFELSE([AC_LANG_PROGRAM([extern const char *__progname;],
+-	   [if (*__progname == 0) return 0;])],
++	   [__progname = "hello";])],
+ 	   AC_DEFINE([HAVE___PROGNAME], [1], [Define if __progname is defined])
+ 	   AC_MSG_RESULT([yes]),
+ 	   AC_MSG_RESULT([no]))
+diff --git a/rpmio/argv.c b/rpmio/argv.c
+index 2cb01ea9f..f0f46f528 100644
+--- a/rpmio/argv.c
++++ b/rpmio/argv.c
+@@ -10,6 +10,11 @@
+ 
+ #include "debug.h"
+ 
++#if !defined(HAVE_SETPROGNAME) && !defined(HAVE___PROGNAME)
++const char *__progname = "foo";
++#endif
++
++
+ void argvPrint(const char * msg, ARGV_const_t argv, FILE * fp)
+ {
+     ARGV_const_t av;
+diff --git a/system.h b/system.h
+index 570cef13a..afefdedcf 100644
+--- a/system.h
++++ b/system.h
+@@ -107,7 +107,9 @@ extern int fdatasync(int fildes);
+   extern const char *__progname;
+ # define xgetprogname(pn) __progname
+ #else
+-# error "Did not find any sutable implementation of xsetprogname/xgetprogname"
++  extern const char *__progname;
++# define xsetprogname(pn) __progname = pn
++# define xgetprogname(pn) __progname
+ #endif
+ 
+ /* Take care of NLS matters.  */
+-- 
+2.24.0
+

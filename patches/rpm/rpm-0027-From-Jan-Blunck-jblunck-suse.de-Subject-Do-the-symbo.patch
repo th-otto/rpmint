@@ -1,0 +1,41 @@
+From 89e6e67f99711c60b403ea794691b11da69b5e6a Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 05:38:35 +0100
+Subject: [PATCH 27/78] From: Jan Blunck <jblunck@suse.de> Subject: Do the
+ symbolic links right in the first place
+
+Since brp-symlink relinks symbolic links to enforce a certain policy we should
+do it right in the first place. So this patch changes find-debuginfo.sh scripts
+behavior to reflect that policy.
+
+Signed-off-by: Jan Blunck <jblunck@suse.de>
+---
+ scripts/find-debuginfo.sh | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/find-debuginfo.sh b/scripts/find-debuginfo.sh
+index 39685ff6c..7f79bf9b8 100755
+--- a/scripts/find-debuginfo.sh
++++ b/scripts/find-debuginfo.sh
+@@ -327,7 +327,17 @@ debug_link()
+   local l="/usr/lib/debug$2"
+   local t="$1"
+   echo >> "$LINKSFILE" "$l $t"
+-  link_relative "$t" "$l" "$RPM_BUILD_ROOT"
++
++  # this should correspond to what brp-symlink is doing
++  case $t in
++      /usr*)
++	  link_relative "$t" "$l" "$RPM_BUILD_ROOT"
++	  ;;
++      *)
++	  mkdir -p "$(dirname "$RPM_BUILD_ROOT$l")" && \
++	      ln -snf "$t" "$RPM_BUILD_ROOT$l"
++	  ;;
++  esac
+ }
+ 
+ get_debugfn()
+-- 
+2.24.0
+

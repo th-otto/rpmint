@@ -1,17 +1,17 @@
-From e96b5270f766ba819087e563133025c34714a61b Mon Sep 17 00:00:00 2001
+From f452b32b65a108ba21188db94cf6407a5b66427d Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:32:09 +0100
-Subject: [PATCH 17/87] Adjust default values in macros.in
+Subject: [PATCH 17/78] Adjust default values in macros.in
 
 ---
  macros.in | 245 +++++++++++++++++++++++++++++++++++++++++++++++++++---
  1 file changed, 233 insertions(+), 12 deletions(-)
 
 diff --git a/macros.in b/macros.in
-index b5286dc5e..2c3c3e1bd 100644
+index daaeb9a71..3c50d8fce 100644
 --- a/macros.in
 +++ b/macros.in
-@@ -224,7 +224,8 @@ package or when debugging this package.\
+@@ -217,7 +217,8 @@ package or when debugging this package.\
  %endif\
  %{nil}
  
@@ -21,7 +21,7 @@ index b5286dc5e..2c3c3e1bd 100644
  %_defaultlicensedir	%{_datadir}/licenses
  
  # Following macros for filtering auto deps must not be used in spec files.
-@@ -278,7 +279,8 @@ package or when debugging this package.\
+@@ -276,7 +277,8 @@ package or when debugging this package.\
  %_tmppath		%{_var}/tmp
  
  #	Path to top of build area.
@@ -31,8 +31,8 @@ index b5286dc5e..2c3c3e1bd 100644
  
  #	The path to the unzip executable (legacy, use %{__unzip} instead).
  %_unzipbin		%{__unzip}
-@@ -382,7 +384,7 @@ package or when debugging this package.\
- #		"w6.lzdio"	lzma-alone level 6, lzma's default
+@@ -388,7 +390,7 @@ package or when debugging this package.\
+ #		"w.ufdio"	uncompressed
  #
  #%_source_payload	w9.gzdio
 -#%_binary_payload	w9.gzdio
@@ -40,7 +40,7 @@ index b5286dc5e..2c3c3e1bd 100644
  
  #	Algorithm to use for generating file checksum digests on build.
  #	If not specified or 0, MD5 is used.
-@@ -489,6 +491,19 @@ package or when debugging this package.\
+@@ -495,6 +497,19 @@ package or when debugging this package.\
  #
  #%_include_minidebuginfo	1
  
@@ -60,7 +60,7 @@ index b5286dc5e..2c3c3e1bd 100644
  #
  # Include a .gdb_index section in the .debug files.
  # Requires _enable_debug_packages and gdb-add-index installed.
-@@ -521,7 +536,7 @@ package or when debugging this package.\
+@@ -527,7 +542,7 @@ package or when debugging this package.\
  #   Same as for "separate" but if the __debug_package global is set then
  #   the -debuginfo package will have a compatibility link for the main
  #   ELF /usr/lib/debug/.build-id/xx/yyy -> /usr/lib/.build-id/xx/yyy
@@ -69,7 +69,7 @@ index b5286dc5e..2c3c3e1bd 100644
  
  # Whether build-ids should be made unique between package version/releases
  # when generating debuginfo packages. If set to 1 this will pass
-@@ -550,10 +565,10 @@ package or when debugging this package.\
+@@ -556,10 +571,10 @@ package or when debugging this package.\
  %_unique_debug_srcs	1
  
  # Whether rpm should put debug source files into its own subpackage
@@ -82,7 +82,7 @@ index b5286dc5e..2c3c3e1bd 100644
  
  #
  # Use internal dependency generator rather than external helpers?
-@@ -566,16 +581,22 @@ package or when debugging this package.\
+@@ -572,16 +587,22 @@ package or when debugging this package.\
  # Directories whose contents should be considered as documentation.
  %__docdir_path %{_datadir}/doc:%{_datadir}/man:%{_datadir}/info:%{_datadir}/gtk-doc/html:%{?_docdir}:%{?_mandir}:%{?_infodir}:%{?_javadocdir}:/usr/doc:/usr/man:/usr/info:/usr/X11R6/man
  
@@ -107,7 +107,7 @@ index b5286dc5e..2c3c3e1bd 100644
  
  # 
  # Path to file attribute classifications for automatic dependency 
-@@ -654,10 +675,10 @@ package or when debugging this package.\
+@@ -660,10 +681,10 @@ package or when debugging this package.\
  # Misc BDB tuning options
  %__dbi_other			mp_mmapsize=128Mb mp_size=1Mb
  
@@ -120,7 +120,7 @@ index b5286dc5e..2c3c3e1bd 100644
  
  #==============================================================================
  # ---- GPG/PGP/PGP5 signature macros.
-@@ -969,7 +990,7 @@ package or when debugging this package.\
+@@ -1000,7 +1021,7 @@ package or when debugging this package.\
  %_build_vendor		%{_host_vendor}
  %_build_os		%{_host_os}
  %_host			@host@
@@ -129,18 +129,18 @@ index b5286dc5e..2c3c3e1bd 100644
  %_host_cpu		@host_cpu@
  %_host_vendor		@host_vendor@
  %_host_os		@host_os@
-@@ -1095,7 +1116,9 @@ package or when debugging this package.\
+@@ -1119,7 +1140,9 @@ package or when debugging this package.\
  
  #------------------------------------------------------------------------------
  # arch macro for all supported ARM processors
--%arm	armv3l armv4b armv4l armv4tl armv5tl armv5tel armv5tejl armv6l armv6hl armv7l armv7hl armv7hnl
+-%arm	armv3l armv4b armv4l armv4tl armv5tl armv5tel armv5tejl armv6l armv6hl armv7l armv7hl armv7hnl armv8l armv8hl armv8hnl armv8hcnl
 +%arm    armv3l armv4b armv4l armv4tl armv5b armv5l armv5teb armv5tel armv5tejl armv6l armv6hl armv7l armv7hl armv7hnl
 +%arml   armv3l armv4l armv5l armv5tel armv6l armv6hl armv7l armv7hl armv7hnl
 +%armb   armv4b armv5b armv5teb
  
  #------------------------------------------------------------------------------
  # arch macro for 32-bit MIPS processors
-@@ -1125,6 +1148,183 @@ package or when debugging this package.\
+@@ -1149,6 +1172,183 @@ package or when debugging this package.\
  # arch macro for all supported Alpha processors
  %alpha	alpha alphaev56 alphaev6 alphaev67
  
@@ -324,7 +324,7 @@ index b5286dc5e..2c3c3e1bd 100644
  #------------------------------------------------------------------------------
  # arch macro for all supported PowerPC 64 processors
  %power64	ppc64 ppc64p7 ppc64le
-@@ -1257,3 +1457,24 @@ end}
+@@ -1292,3 +1492,24 @@ end}
  
  # \endverbatim
  #*/

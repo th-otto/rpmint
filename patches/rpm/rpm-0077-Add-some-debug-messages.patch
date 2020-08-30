@@ -1,0 +1,37 @@
+From b2317ad494205a8f39d93ecd42e37e7d1e2ac611 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sun, 30 Aug 2020 01:09:14 +0200
+Subject: [PATCH 77/78] Add some debug messages
+
+---
+ lib/rpmrc.c   | 1 +
+ rpmio/macro.c | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/lib/rpmrc.c b/lib/rpmrc.c
+index a1055e640..011ee2247 100644
+--- a/lib/rpmrc.c
++++ b/lib/rpmrc.c
+@@ -502,6 +502,7 @@ static rpmRC doReadRC(rpmrcCtx ctx, const char * urlfn)
+     rpmRC rc = RPMRC_FAIL;
+ 
+     fn = rpmGetPath(urlfn, NULL);
++    rpmlog(RPMLOG_DEBUG, "reading rc file: %s\n", fn);
+     if (rpmioSlurp(fn, (uint8_t **) &buf, NULL) || buf == NULL) {
+ 	goto exit;
+     }
+diff --git a/rpmio/macro.c b/rpmio/macro.c
+index 485aa0d1c..200738666 100644
+--- a/rpmio/macro.c
++++ b/rpmio/macro.c
+@@ -1649,6 +1649,7 @@ static int loadMacroFile(rpmMacroContext mc, const char * fn)
+     if (fd == NULL)
+ 	goto exit;
+ 
++    rpmlog(RPMLOG_DEBUG, "read macro file: %s\n", fn);
+     pushMacro(mc, "__file_name", NULL, fn, RMIL_MACROFILES, ME_NONE);
+ 
+     buf[0] = '\0';
+-- 
+2.24.0
+

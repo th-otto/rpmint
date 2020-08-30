@@ -1,7 +1,7 @@
-From 24ac6b8cb5adf90829f39ccb489d19264893e684 Mon Sep 17 00:00:00 2001
+From b7bbdbab32badd38d518f0f4b7b39cbb1213d2f4 Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Thu, 15 Mar 2018 05:03:22 +0100
-Subject: [PATCH 11/87] Suspend exclusive database lock when scriptlets get
+Subject: [PATCH 11/78] Suspend exclusive database lock when scriptlets get
  called, allowing read access in scriptlets. Only needed for DB_PRIVATE (aka
  global) locking.
 
@@ -14,10 +14,10 @@ Subject: [PATCH 11/87] Suspend exclusive database lock when scriptlets get
  5 files changed, 55 insertions(+), 2 deletions(-)
 
 diff --git a/lib/backend/db3.c b/lib/backend/db3.c
-index 93bc27801..f96d62c5c 100644
+index 83131546e..e0e89796d 100644
 --- a/lib/backend/db3.c
 +++ b/lib/backend/db3.c
-@@ -552,6 +552,46 @@ static void db3_dbSetFSync(rpmdb rdb, int enable)
+@@ -554,6 +554,46 @@ static void db3_dbSetFSync(rpmdb rdb, int enable)
  
  static int db3_Ctrl(rpmdb rdb, dbCtrlOp ctrl)
  {
@@ -65,7 +65,7 @@ index 93bc27801..f96d62c5c 100644
  }
  
 diff --git a/lib/backend/dbi.h b/lib/backend/dbi.h
-index 1f6d179b4..b39745774 100644
+index 4ca19294a..abbe34688 100644
 --- a/lib/backend/dbi.h
 +++ b/lib/backend/dbi.h
 @@ -17,7 +17,9 @@ typedef enum dbCtrlOp_e {
@@ -80,10 +80,10 @@ index 1f6d179b4..b39745774 100644
  
  typedef struct dbiIndex_s * dbiIndex;
 diff --git a/lib/rpmdb.c b/lib/rpmdb.c
-index 88399c9fb..25ade7304 100644
+index 116dc2a89..8ce43c58b 100644
 --- a/lib/rpmdb.c
 +++ b/lib/rpmdb.c
-@@ -2639,6 +2639,12 @@ int rpmdbCtrl(rpmdb db, rpmdbCtrlOp ctrl)
+@@ -2644,6 +2644,12 @@ int rpmdbCtrl(rpmdb db, rpmdbCtrlOp ctrl)
      case RPMDB_CTRL_INDEXSYNC:
  	dbctrl = DB_CTRL_INDEXSYNC;
  	break;
@@ -97,7 +97,7 @@ index 88399c9fb..25ade7304 100644
      return dbctrl ? dbCtrl(db, dbctrl) : 1;
  }
 diff --git a/lib/rpmdb.h b/lib/rpmdb.h
-index 78765bb15..fde5e0957 100644
+index 1ac712ef6..951d53cc5 100644
 --- a/lib/rpmdb.h
 +++ b/lib/rpmdb.h
 @@ -35,7 +35,9 @@ typedef enum rpmdbCtrlOp_e {
@@ -112,25 +112,25 @@ index 78765bb15..fde5e0957 100644
  
  /** \ingroup rpmdb
 diff --git a/lib/transaction.c b/lib/transaction.c
-index c69a8b3c1..c4bb272ab 100644
+index e51cff25a..b3565505c 100644
 --- a/lib/transaction.c
 +++ b/lib/transaction.c
-@@ -1459,6 +1459,7 @@ rpmRC runScript(rpmts ts, rpmte te, Header h, ARGV_const_t prefixes,
- 		     stag != RPMTAG_PREUN &&
- 		     stag != RPMTAG_PRETRANS &&
- 		     stag != RPMTAG_VERIFYSCRIPT);
+@@ -1601,6 +1601,7 @@ rpmRC runScript(rpmts ts, rpmte te, Header h, ARGV_const_t prefixes,
+     rpmTagVal stag = rpmScriptTag(script);
+     FD_t sfd = NULL;
+     int warn_only = !(rpmScriptFlags(script) & RPMSCRIPT_FLAG_CRITICAL);
 +    rpmdb rdb = rpmtsGetRdb(ts);
  
-     /* Fake up a transaction element for triggers from rpmdb */
+     /* Create a temporary transaction element for triggers from rpmdb */
      if (te == NULL) {
-@@ -1470,10 +1471,12 @@ rpmRC runScript(rpmts ts, rpmte te, Header h, ARGV_const_t prefixes,
+@@ -1612,10 +1613,12 @@ rpmRC runScript(rpmts ts, rpmte te, Header h, ARGV_const_t prefixes,
      if (sfd == NULL)
  	sfd = rpmtsScriptFd(ts);
  
 +    rpmdbCtrl(rdb, RPMDB_CTRL_SUSPEND_DBLOCK);
      rpmswEnter(rpmtsOp(ts, RPMTS_OP_SCRIPTLETS), 0);
      rc = rpmScriptRun(script, arg1, arg2, sfd,
- 		      prefixes, warn_only, rpmtsPlugins(ts));
+ 		      prefixes, rpmtsPlugins(ts));
      rpmswExit(rpmtsOp(ts, RPMTS_OP_SCRIPTLETS), 0);
 +    rpmdbCtrl(rdb, RPMDB_CTRL_RESUME_DBLOCK);
  

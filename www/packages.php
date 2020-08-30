@@ -235,7 +235,7 @@ Slightly older version of GCC.
 		'title' => 'MiNTBin',
 		'upstream' => 'https://github.com/freemint/mintbin',
 		'version' => '0.3',
-		'date' => '20200828',
+		'date' => '20171006',
 		'repo' => 'https://github.com/freemint/mintbin',
 		'source' => $download_dir . '%{name}-%{version}.tar.xz',
 		'patch' => 0,
@@ -1281,7 +1281,13 @@ the GNU fileutils, sh-utils, and textutils packages.
   realpath rm rmdir runcon seq sha1sum sha224sum sha256sum sha384sum sha512sum
   shred shuf sleep sort split stat stdbuf stty sum sync tac tail tee test
   timeout touch tr true truncate tsort tty uname unexpand uniq unlink
-  uptime users vdir wc who whoami yes
+  uptime users vdir wc who whoami yes ]<br />
+<br />
+This package does not provide man pages, since those are generated automatically
+by running the tools and parsing the --help message, which does not work when
+cross-compiling. However that also means that those man pages do not
+provide any useful information beyond what is availble by just running
+&lt;tool&gt; --help.
 '
 	),
 	'bash' => array(
@@ -1602,8 +1608,8 @@ parsing arbitrary strings into argv[] arrays using shell-like rules.
 	'rpm' => array(
 		'name' => 'rpm',
 		'upstream' => 'http://www.rpm.org/',
-		'source' => 'http://ftp.rpm.org/releases/rpm-4.14.x/rpm-4.14.1.tar.bz2',
-		'version' => '4.14.1',
+		'source' => 'http://ftp.rpm.org/releases/rpm-4.15.x/rpm-%{version}.tar.bz2',
+		'version' => '4.15.1',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

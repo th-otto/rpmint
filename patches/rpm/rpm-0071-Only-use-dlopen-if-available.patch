@@ -1,0 +1,62 @@
+From be7a34d11dd5188cc3765658edd4ee32b3d814ce Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 15 Mar 2018 17:55:05 +0100
+Subject: [PATCH 71/78] Only use dlopen() if available
+
+---
+ lib/rpmplugins.c | 10 ++++++++++
+ system.h         |  2 ++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/lib/rpmplugins.c b/lib/rpmplugins.c
+index 65e684e84..be7fa9603 100644
+--- a/lib/rpmplugins.c
++++ b/lib/rpmplugins.c
+@@ -55,6 +55,7 @@ rpmPlugins rpmpluginsNew(rpmts ts)
+ static rpmPlugin rpmPluginNew(const char *name, const char *path,
+ 			      const char *opts)
+ {
++#ifdef HAVE_DLFCN_H
+     rpmPlugin plugin = NULL;
+     rpmPluginHooks hooks = NULL;
+     char *error;
+@@ -84,6 +85,13 @@ static rpmPlugin rpmPluginNew(const char *name, const char *path,
+     free(hooks_name);
+ 
+     return plugin;
++#else
++	(void) name;
++	(void) path;
++	(void) opts;
++	rpmlog(RPMLOG_ERR, _("dlopen not supported on this platform\n"));
++    return NULL;
++#endif
+ }
+ 
+ static rpmPlugin rpmPluginFree(rpmPlugin plugin)
+@@ -92,7 +100,9 @@ static rpmPlugin rpmPluginFree(rpmPlugin plugin)
+ 	rpmPluginHooks hooks = plugin->hooks;
+ 	if (hooks->cleanup)
+ 	    hooks->cleanup(plugin);
++#ifdef HAVE_DLFCN_H
+ 	dlclose(plugin->handle);
++#endif
+ 	free(plugin->name);
+ 	free(plugin->opts);
+ 	free(plugin);
+diff --git a/system.h b/system.h
+index 06717b136..7b5f9565c 100644
+--- a/system.h
++++ b/system.h
+@@ -131,6 +131,8 @@ extern int fdatasync(int fildes);
+ 
+ #include "misc/fnmatch.h"
+ 
++#ifdef HAVE_DLFCN_H
+ #include <dlfcn.h>
++#endif
+ 
+ #endif	/* H_SYSTEM */
+-- 
+2.24.0
+

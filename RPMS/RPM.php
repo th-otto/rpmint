@@ -11,6 +11,8 @@ define('RPM_TYPE_STRING',       6);
 define('RPM_TYPE_BIN',          7);
 define('RPM_TYPE_STRING_ARRAY', 8);
 define('RPM_TYPE_I18NSTRING',   9);
+define('RPM_TYPE_ASN1',         10); /* obsolete */
+define('RPM_TYPE_OPENPGP',      11); /* obsolete */
 
 
 /* 
@@ -170,157 +172,160 @@ define('RPMREADER_FILECONTEXTS',              1147); /* s[] - obsolete */
 define('RPMREADER_FSCONTEXTS',                1148); /* s[] extension */
 define('RPMREADER_RECONTEXTS',                1149); /* s[] extension */
 define('RPMREADER_POLICIES',                  1150); /* s[] selinux *.te policy file. */
-define('RPMTAG_PRETRANS',                     1151); /* s */
-define('RPMTAG_POSTTRANS',                    1152); /* s */
-define('RPMTAG_PRETRANSPROG',                 1153); /* s[] */
-define('RPMTAG_POSTTRANSPROG',                1154); /* s[] */
-define('RPMTAG_DISTTAG',                      1155); /* s */
-define('RPMTAG_OLDSUGGESTSNAME',              1156); /* s[] - obsolete */
-define('RPMTAG_OLDSUGGESTS',                  RPMTAG_OLDSUGGESTSNAME); /* s[] - obsolete */
+define('RPMREADER_PRETRANS',                  1151); /* s */
+define('RPMREADER_POSTTRANS',                 1152); /* s */
+define('RPMREADER_PRETRANSPROG',              1153); /* s[] */
+define('RPMREADER_POSTTRANSPROG',             1154); /* s[] */
+define('RPMREADER_DISTTAG',                   1155); /* s */
+define('RPMREADER_OLDSUGGESTSNAME',           1156); /* s[] - obsolete */
+define('RPMREADER_OLDSUGGESTS',               RPMREADER_OLDSUGGESTSNAME); /* s[] - obsolete */
 
-define('RPMTAG_OLDSUGGESTSVERSION',           1157); /* s[] - obsolete */
-define('RPMTAG_OLDSUGGESTSFLAGS',             1158); /* i[] - obsolete */
-define('RPMTAG_OLDENHANCESNAME',              1159); /* s[] - obsolete */
-define('RPMTAG_OLDENHANCES',                  RPMTAG_OLDENHANCESNAME); /* s[] - obsolete */
-define('RPMTAG_OLDENHANCESVERSION',           1160); /* s[] - obsolete */
-define('RPMTAG_OLDENHANCESFLAGS',             1161); /* i[] - obsolete */
-define('RPMTAG_PRIORITY',                     1162); /* i[] extension placeholder (unimplemented) */
-define('RPMTAG_CVSID',                        1163); /* s (unimplemented) */
-define('RPMTAG_SVNID',                        RPMTAG_CVSID); /* s (unimplemented) */
-define('RPMTAG_BLINKPKGID',                   1164); /* s[] (unimplemented) */
-define('RPMTAG_BLINKHDRID',                   1165); /* s[] (unimplemented) */
-define('RPMTAG_BLINKNEVRA',                   1166); /* s[] (unimplemented) */
-define('RPMTAG_FLINKPKGID',                   1167); /* s[] (unimplemented) */
-define('RPMTAG_FLINKHDRID',                   1168); /* s[] (unimplemented) */
-define('RPMTAG_FLINKNEVRA',                   1169); /* s[] (unimplemented) */
-define('RPMTAG_PACKAGEORIGIN',                1170); /* s (unimplemented) */
-define('RPMTAG_TRIGGERPREIN',                 1171); /* internal */
-define('RPMTAG_BUILDSUGGESTS',                1172); /* internal (unimplemented) */
-define('RPMTAG_BUILDENHANCES',                1173); /* internal (unimplemented) */
-define('RPMTAG_SCRIPTSTATES',                 1174); /* i[] scriptlet exit codes (unimplemented) */
-define('RPMTAG_SCRIPTMETRICS',                1175); /* i[] scriptlet execution times (unimplemented) */
-define('RPMTAG_BUILDCPUCLOCK',                1176); /* i (unimplemented) */
-define('RPMTAG_FILEDIGESTALGOS',              1177); /* i[] (unimplemented) */
-define('RPMTAG_VARIANTS',                     1178); /* s[] (unimplemented) */
-define('RPMTAG_XMAJOR',                       1179); /* i (unimplemented) */
-define('RPMTAG_XMINOR',                       1180); /* i (unimplemented) */
-define('RPMTAG_REPOTAG',                      1181); /* s (unimplemented) */
-define('RPMTAG_KEYWORDS',                     1182); /* s[] (unimplemented) */
-define('RPMTAG_BUILDPLATFORMS',               1183); /* s[] (unimplemented) */
-define('RPMTAG_PACKAGECOLOR',                 1184); /* i (unimplemented) */
-define('RPMTAG_PACKAGEPREFCOLOR',             1185); /* i (unimplemented) */
-define('RPMTAG_XATTRSDICT',                   1186); /* s[] (unimplemented) */
-define('RPMTAG_FILEXATTRSX',                  1187); /* i[] (unimplemented) */
-define('RPMTAG_DEPATTRSDICT',                 1188); /* s[] (unimplemented) */
-define('RPMTAG_CONFLICTATTRSX',               1189); /* i[] (unimplemented) */
-define('RPMTAG_OBSOLETEATTRSX',               1190); /* i[] (unimplemented) */
-define('RPMTAG_PROVIDEATTRSX',                1191); /* i[] (unimplemented) */
-define('RPMTAG_REQUIREATTRSX',                1192); /* i[] (unimplemented) */
-define('RPMTAG_BUILDPROVIDES',                1193); /* internal (unimplemented) */
-define('RPMTAG_BUILDOBSOLETES',               1194); /* internal (unimplemented) */
-define('RPMTAG_DBINSTANCE',                   1195); /* i extension */
-define('RPMTAG_NVRA',                         1196); /* s extension */
+define('RPMREADER_OLDSUGGESTSVERSION',        1157); /* s[] - obsolete */
+define('RPMREADER_OLDSUGGESTSFLAGS',          1158); /* i[] - obsolete */
+define('RPMREADER_OLDENHANCESNAME',           1159); /* s[] - obsolete */
+define('RPMREADER_OLDENHANCES',               RPMREADER_OLDENHANCESNAME); /* s[] - obsolete */
+define('RPMREADER_OLDENHANCESVERSION',        1160); /* s[] - obsolete */
+define('RPMREADER_OLDENHANCESFLAGS',          1161); /* i[] - obsolete */
+define('RPMREADER_PRIORITY',                  1162); /* i[] extension placeholder (unimplemented) */
+define('RPMREADER_CVSID',                     1163); /* s (unimplemented) */
+define('RPMREADER_SVNID',                     RPMREADER_CVSID); /* s (unimplemented) */
+define('RPMREADER_BLINKPKGID',                1164); /* s[] (unimplemented) */
+define('RPMREADER_BLINKHDRID',                1165); /* s[] (unimplemented) */
+define('RPMREADER_BLINKNEVRA',                1166); /* s[] (unimplemented) */
+define('RPMREADER_FLINKPKGID',                1167); /* s[] (unimplemented) */
+define('RPMREADER_FLINKHDRID',                1168); /* s[] (unimplemented) */
+define('RPMREADER_FLINKNEVRA',                1169); /* s[] (unimplemented) */
+define('RPMREADER_PACKAGEORIGIN',             1170); /* s (unimplemented) */
+define('RPMREADER_TRIGGERPREIN',              1171); /* internal */
+define('RPMREADER_BUILDSUGGESTS',             1172); /* internal (unimplemented) */
+define('RPMREADER_BUILDENHANCES',             1173); /* internal (unimplemented) */
+define('RPMREADER_SCRIPTSTATES',              1174); /* i[] scriptlet exit codes (unimplemented) */
+define('RPMREADER_SCRIPTMETRICS',             1175); /* i[] scriptlet execution times (unimplemented) */
+define('RPMREADER_BUILDCPUCLOCK',             1176); /* i (unimplemented) */
+define('RPMREADER_FILEDIGESTALGOS',           1177); /* i[] (unimplemented) */
+define('RPMREADER_VARIANTS',                  1178); /* s[] (unimplemented) */
+define('RPMREADER_XMAJOR',                    1179); /* i (unimplemented) */
+define('RPMREADER_XMINOR',                    1180); /* i (unimplemented) */
+define('RPMREADER_REPOTAG',                   1181); /* s (unimplemented) */
+define('RPMREADER_KEYWORDS',                  1182); /* s[] (unimplemented) */
+define('RPMREADER_BUILDPLATFORMS',            1183); /* s[] (unimplemented) */
+define('RPMREADER_PACKAGECOLOR',              1184); /* i (unimplemented) */
+define('RPMREADER_PACKAGEPREFCOLOR',          1185); /* i (unimplemented) */
+define('RPMREADER_XATTRSDICT',                1186); /* s[] (unimplemented) */
+define('RPMREADER_FILEXATTRSX',               1187); /* i[] (unimplemented) */
+define('RPMREADER_DEPATTRSDICT',              1188); /* s[] (unimplemented) */
+define('RPMREADER_CONFLICTATTRSX',            1189); /* i[] (unimplemented) */
+define('RPMREADER_OBSOLETEATTRSX',            1190); /* i[] (unimplemented) */
+define('RPMREADER_PROVIDEATTRSX',             1191); /* i[] (unimplemented) */
+define('RPMREADER_REQUIREATTRSX',             1192); /* i[] (unimplemented) */
+define('RPMREADER_BUILDPROVIDES',             1193); /* internal (unimplemented) */
+define('RPMREADER_BUILDOBSOLETES',            1194); /* internal (unimplemented) */
+define('RPMREADER_DBINSTANCE',                1195); /* i extension */
+define('RPMREADER_NVRA',                      1196); /* s extension */
 
 /* tags 1997-4999 reserved */
-define('RPMTAG_FILENAMES',                    5000); /* s[] extension */
-define('RPMTAG_FILEPROVIDE',                  5001); /* s[] extension */
-define('RPMTAG_FILEREQUIRE',                  5002); /* s[] extension */
-define('RPMTAG_FSNAMES',                      5003); /* s[] (unimplemented) */
-define('RPMTAG_FSSIZES',                      5004); /* l[] (unimplemented) */
-define('RPMTAG_TRIGGERCONDS',                 5005); /* s[] extension */
-define('RPMTAG_TRIGGERTYPE',                  5006); /* s[] extension */
-define('RPMTAG_ORIGFILENAMES',                5007); /* s[] extension */
-define('RPMTAG_LONGFILESIZES',                5008); /* l[] */
-define('RPMTAG_LONGSIZE',                     5009); /* l */
-define('RPMTAG_FILECAPS',                     5010); /* s[] */
-define('RPMTAG_FILEDIGESTALGO',               5011); /* i file digest algorithm */
-define('RPMTAG_BUGURL',                       5012); /* s */
-define('RPMTAG_EVR',                          5013); /* s extension */
-define('RPMTAG_NVR',                          5014); /* s extension */
-define('RPMTAG_NEVR',                         5015); /* s extension */
-define('RPMTAG_NEVRA',                        5016); /* s extension */
-define('RPMTAG_HEADERCOLOR',                  5017); /* i extension */
-define('RPMTAG_VERBOSE',                      5018); /* i extension */
-define('RPMTAG_EPOCHNUM',                     5019); /* i extension */
-define('RPMTAG_PREINFLAGS',                   5020); /* i */
-define('RPMTAG_POSTINFLAGS',                  5021); /* i */
-define('RPMTAG_PREUNFLAGS',                   5022); /* i */
-define('RPMTAG_POSTUNFLAGS',                  5023); /* i */
-define('RPMTAG_PRETRANSFLAGS',                5024); /* i */
-define('RPMTAG_POSTTRANSFLAGS',               5025); /* i */
-define('RPMTAG_VERIFYSCRIPTFLAGS',            5026); /* i */
-define('RPMTAG_TRIGGERSCRIPTFLAGS',           5027); /* i[] */
-define('RPMTAG_COLLECTIONS',                  5029); /* s[] list of collections (unimplemented) */
-define('RPMTAG_POLICYNAMES',                  5030); /* s[] */
-define('RPMTAG_POLICYTYPES',                  5031); /* s[] */
-define('RPMTAG_POLICYTYPESINDEXES',           5032); /* i[] */
-define('RPMTAG_POLICYFLAGS',                  5033); /* i[] */
-define('RPMTAG_VCS',                          5034); /* s */
-define('RPMTAG_ORDERNAME',                    5035); /* s[] */
-define('RPMTAG_ORDERVERSION',                 5036); /* s[] */
-define('RPMTAG_ORDERFLAGS',                   5037); /* i[] */
-define('RPMTAG_MSSFMANIFEST',                 5038); /* s[] reservation (unimplemented) */
-define('RPMTAG_MSSFDOMAIN',                   5039); /* s[] reservation (unimplemented) */
-define('RPMTAG_INSTFILENAMES',                5040); /* s[] extension */
-define('RPMTAG_REQUIRENEVRS',                 5041); /* s[] extension */
-define('RPMTAG_PROVIDENEVRS',                 5042); /* s[] extension */
-define('RPMTAG_OBSOLETENEVRS',                5043); /* s[] extension */
-define('RPMTAG_CONFLICTNEVRS',                5044); /* s[] extension */
-define('RPMTAG_FILENLINKS',                   5045); /* i[] extension */
-define('RPMTAG_RECOMMENDNAME',                5046); /* s[] */
-define('RPMTAG_RECOMMENDS',                   RPMTAG_RECOMMENDNAME); /* s[] */
-define('RPMTAG_RECOMMENDVERSION',             5047); /* s[] */
-define('RPMTAG_RECOMMENDFLAGS',               5048); /* i[] */
-define('RPMTAG_SUGGESTNAME',                  5049); /* s[] */
-define('RPMTAG_SUGGESTS',                     RPMTAG_SUGGESTNAME); /* s[] */
-define('RPMTAG_SUGGESTVERSION',               5050); /* s[] extension */
-define('RPMTAG_SUGGESTFLAGS',                 5051); /* i[] extension */
-define('RPMTAG_SUPPLEMENTNAME',               5052); /* s[] */
-define('RPMTAG_SUPPLEMENTS',                  RPMTAG_SUPPLEMENTNAME); /* s[] */
-define('RPMTAG_SUPPLEMENTVERSION',            5053); /* s[] */
-define('RPMTAG_SUPPLEMENTFLAGS',              5054); /* i[] */
-define('RPMTAG_ENHANCENAME',                  5055); /* s[] */
-define('RPMTAG_ENHANCES',                     RPMTAG_ENHANCENAME); /* s[] */
-define('RPMTAG_ENHANCEVERSION',               5056); /* s[] */
-define('RPMTAG_ENHANCEFLAGS',                 5057); /* i[] */
-define('RPMTAG_RECOMMENDNEVRS',               5058); /* s[] extension */
-define('RPMTAG_SUGGESTNEVRS',                 5059); /* s[] extension */
-define('RPMTAG_SUPPLEMENTNEVRS',              5060); /* s[] extension */
-define('RPMTAG_ENHANCENEVRS',                 5061); /* s[] extension */
-define('RPMTAG_ENCODING',                     5062); /* s */
-define('RPMTAG_FILETRIGGERIN',                5063); /* internal */
-define('RPMTAG_FILETRIGGERUN',                5064); /* internal */
-define('RPMTAG_FILETRIGGERPOSTUN',            5065); /* internal */
-define('RPMTAG_FILETRIGGERSCRIPTS',           5066); /* s[] */
-define('RPMTAG_FILETRIGGERSCRIPTPROG',        5067); /* s[] */
-define('RPMTAG_FILETRIGGERSCRIPTFLAGS',       5068); /* i[] */
-define('RPMTAG_FILETRIGGERNAME',              5069); /* s[] */
-define('RPMTAG_FILETRIGGERINDEX',             5070); /* i[] */
-define('RPMTAG_FILETRIGGERVERSION',           5071); /* s[] */
-define('RPMTAG_FILETRIGGERFLAGS',             5072); /* i[] */
-define('RPMTAG_TRANSFILETRIGGERIN',           5073); /* internal */
-define('RPMTAG_TRANSFILETRIGGERUN',           5074); /* internal */
-define('RPMTAG_TRANSFILETRIGGERPOSTUN',       5075); /* internal */
-define('RPMTAG_TRANSFILETRIGGERSCRIPTS',      5076); /* s[] */
-define('RPMTAG_TRANSFILETRIGGERSCRIPTPROG',   5077); /* s[] */
-define('RPMTAG_TRANSFILETRIGGERSCRIPTFLAGS',  5078); /* i[] */
-define('RPMTAG_TRANSFILETRIGGERNAME',         5079); /* s[] */
-define('RPMTAG_TRANSFILETRIGGERINDEX',        5080); /* i[] */
-define('RPMTAG_TRANSFILETRIGGERVERSION',      5081); /* s[] */
-define('RPMTAG_TRANSFILETRIGGERFLAGS',        5082); /* i[] */
-define('RPMTAG_REMOVEPATHPOSTFIXES',          5083); /* s internal */
-define('RPMTAG_FILETRIGGERPRIORITIES',        5084); /* i[] */
-define('RPMTAG_TRANSFILETRIGGERPRIORITIES',   5085); /* i[] */
-define('RPMTAG_FILETRIGGERCONDS',             5086); /* s[] extension */
-define('RPMTAG_FILETRIGGERTYPE',              5087); /* s[] extension */
-define('RPMTAG_TRANSFILETRIGGERCONDS',        5088); /* s[] extension */
-define('RPMTAG_TRANSFILETRIGGERTYPE',         5089); /* s[] extension */
-define('RPMTAG_FILESIGNATURES',               5090); /* s[] */
-define('RPMTAG_FILESIGNATURELENGTH',          5091); /* i */
-define('RPMTAG_PAYLOADDIGEST',                5092); /* s[] */
-define('RPMTAG_PAYLOADDIGESTALGO',            5093); /* i */
+define('RPMREADER_FILENAMES',                 5000); /* s[] extension */
+define('RPMREADER_FILEPROVIDE',               5001); /* s[] extension */
+define('RPMREADER_FILEREQUIRE',               5002); /* s[] extension */
+define('RPMREADER_FSNAMES',                   5003); /* s[] (unimplemented) */
+define('RPMREADER_FSSIZES',                   5004); /* l[] (unimplemented) */
+define('RPMREADER_TRIGGERCONDS',              5005); /* s[] extension */
+define('RPMREADER_TRIGGERTYPE',               5006); /* s[] extension */
+define('RPMREADER_ORIGFILENAMES',             5007); /* s[] extension */
+define('RPMREADER_LONGFILESIZES',             5008); /* l[] */
+define('RPMREADER_LONGSIZE',                  5009); /* l */
+define('RPMREADER_FILECAPS',                  5010); /* s[] */
+define('RPMREADER_FILEDIGESTALGO',            5011); /* i file digest algorithm */
+define('RPMREADER_BUGURL',                    5012); /* s */
+define('RPMREADER_EVR',                       5013); /* s extension */
+define('RPMREADER_NVR',                       5014); /* s extension */
+define('RPMREADER_NEVR',                      5015); /* s extension */
+define('RPMREADER_NEVRA',                     5016); /* s extension */
+define('RPMREADER_HEADERCOLOR',               5017); /* i extension */
+define('RPMREADER_VERBOSE',                   5018); /* i extension */
+define('RPMREADER_EPOCHNUM',                  5019); /* i extension */
+define('RPMREADER_PREINFLAGS',                5020); /* i */
+define('RPMREADER_POSTINFLAGS',               5021); /* i */
+define('RPMREADER_PREUNFLAGS',                5022); /* i */
+define('RPMREADER_POSTUNFLAGS',               5023); /* i */
+define('RPMREADER_PRETRANSFLAGS',             5024); /* i */
+define('RPMREADER_POSTTRANSFLAGS',            5025); /* i */
+define('RPMREADER_VERIFYSCRIPTFLAGS',         5026); /* i */
+define('RPMREADER_TRIGGERSCRIPTFLAGS',        5027); /* i[] */
+define('RPMREADER_COLLECTIONS',               5029); /* s[] list of collections (unimplemented) */
+define('RPMREADER_POLICYNAMES',               5030); /* s[] */
+define('RPMREADER_POLICYTYPES',               5031); /* s[] */
+define('RPMREADER_POLICYTYPESINDEXES',        5032); /* i[] */
+define('RPMREADER_POLICYFLAGS',               5033); /* i[] */
+define('RPMREADER_VCS',                       5034); /* s */
+define('RPMREADER_ORDERNAME',                 5035); /* s[] */
+define('RPMREADER_ORDERVERSION',              5036); /* s[] */
+define('RPMREADER_ORDERFLAGS',                5037); /* i[] */
+define('RPMREADER_MSSFMANIFEST',              5038); /* s[] reservation (unimplemented) */
+define('RPMREADER_MSSFDOMAIN',                5039); /* s[] reservation (unimplemented) */
+define('RPMREADER_INSTFILENAMES',             5040); /* s[] extension */
+define('RPMREADER_REQUIRENEVRS',              5041); /* s[] extension */
+define('RPMREADER_PROVIDENEVRS',              5042); /* s[] extension */
+define('RPMREADER_OBSOLETENEVRS',             5043); /* s[] extension */
+define('RPMREADER_CONFLICTNEVRS',             5044); /* s[] extension */
+define('RPMREADER_FILENLINKS',                5045); /* i[] extension */
+define('RPMREADER_RECOMMENDNAME',             5046); /* s[] */
+define('RPMREADER_RECOMMENDS',                RPMREADER_RECOMMENDNAME); /* s[] */
+define('RPMREADER_RECOMMENDVERSION',          5047); /* s[] */
+define('RPMREADER_RECOMMENDFLAGS',            5048); /* i[] */
+define('RPMREADER_SUGGESTNAME',               5049); /* s[] */
+define('RPMREADER_SUGGESTS',                  RPMREADER_SUGGESTNAME); /* s[] */
+define('RPMREADER_SUGGESTVERSION',            5050); /* s[] extension */
+define('RPMREADER_SUGGESTFLAGS',              5051); /* i[] extension */
+define('RPMREADER_SUPPLEMENTNAME',            5052); /* s[] */
+define('RPMREADER_SUPPLEMENTS',               RPMREADER_SUPPLEMENTNAME); /* s[] */
+define('RPMREADER_SUPPLEMENTVERSION',         5053); /* s[] */
+define('RPMREADER_SUPPLEMENTFLAGS',           5054); /* i[] */
+define('RPMREADER_ENHANCENAME',               5055); /* s[] */
+define('RPMREADER_ENHANCES',                  RPMREADER_ENHANCENAME); /* s[] */
+define('RPMREADER_ENHANCEVERSION',            5056); /* s[] */
+define('RPMREADER_ENHANCEFLAGS',              5057); /* i[] */
+define('RPMREADER_RECOMMENDNEVRS',            5058); /* s[] extension */
+define('RPMREADER_SUGGESTNEVRS',              5059); /* s[] extension */
+define('RPMREADER_SUPPLEMENTNEVRS',           5060); /* s[] extension */
+define('RPMREADER_ENHANCENEVRS',              5061); /* s[] extension */
+define('RPMREADER_ENCODING',                  5062); /* s */
+define('RPMREADER_FILETRIGGERIN',             5063); /* internal */
+define('RPMREADER_FILETRIGGERUN',             5064); /* internal */
+define('RPMREADER_FILETRIGGERPOSTUN',         5065); /* internal */
+define('RPMREADER_FILETRIGGERSCRIPTS',        5066); /* s[] */
+define('RPMREADER_FILETRIGGERSCRIPTPROG',     5067); /* s[] */
+define('RPMREADER_FILETRIGGERSCRIPTFLAGS',    5068); /* i[] */
+define('RPMREADER_FILETRIGGERNAME',           5069); /* s[] */
+define('RPMREADER_FILETRIGGERINDEX',          5070); /* i[] */
+define('RPMREADER_FILETRIGGERVERSION',        5071); /* s[] */
+define('RPMREADER_FILETRIGGERFLAGS',          5072); /* i[] */
+define('RPMREADER_TRANSFILETRIGGERIN',        5073); /* internal */
+define('RPMREADER_TRANSFILETRIGGERUN',        5074); /* internal */
+define('RPMREADER_TRANSFILETRIGGERPOSTUN',    5075); /* internal */
+define('RPMREADER_TRANSFILETRIGGERSCRIPTS',   5076); /* s[] */
+define('RPMREADER_TRANSFILETRIGGERSCRIPTPROG',  5077); /* s[] */
+define('RPMREADER_TRANSFILETRIGGERSCRIPTFLAGS', 5078); /* i[] */
+define('RPMREADER_TRANSFILETRIGGERNAME',      5079); /* s[] */
+define('RPMREADER_TRANSFILETRIGGERINDEX',     5080); /* i[] */
+define('RPMREADER_TRANSFILETRIGGERVERSION',   5081); /* s[] */
+define('RPMREADER_TRANSFILETRIGGERFLAGS',     5082); /* i[] */
+define('RPMREADER_REMOVEPATHPOSTFIXES',       5083); /* s internal */
+define('RPMREADER_FILETRIGGERPRIORITIES',     5084); /* i[] */
+define('RPMREADER_TRANSFILETRIGGERPRIORITIES', 5085); /* i[] */
+define('RPMREADER_FILETRIGGERCONDS',          5086); /* s[] extension */
+define('RPMREADER_FILETRIGGERTYPE',           5087); /* s[] extension */
+define('RPMREADER_TRANSFILETRIGGERCONDS',     5088); /* s[] extension */
+define('RPMREADER_TRANSFILETRIGGERTYPE',      5089); /* s[] extension */
+define('RPMREADER_FILESIGNATURES',            5090); /* s[] */
+define('RPMREADER_FILESIGNATURELENGTH',       5091); /* i */
+define('RPMREADER_PAYLOADDIGEST',             5092); /* s[] */
+define('RPMREADER_PAYLOADDIGESTALGO',         5093); /* i */
+define('RPMREADER_AUTOINSTALLED',             5094); /* i reservation (unimplemented) */
+define('RPMREADER_IDENTITY',                  5095); /* s reservation (unimplemented) */
+define('RPMREADER_MODULARITYLABEL',           5096); /* s */
 
-define('RPMREADER_MAXIMUM', 5093);
+define('RPMREADER_MAXIMUM', 5096);
 
 
 /*
@@ -381,7 +386,7 @@ define('RPMFILE_STATE_NETSHARED',    3);
 define('RPMFILE_STATE_WRONGCOLOR',   4);
 
 /*
- * Exported File Attributes (ie RPMTAG_FILEFLAGS)
+ * Exported File Attributes (ie RPMREADER_FILEFLAGS)
  */
 define('RPMFILE_NONE',      0);
 define('RPMFILE_CONFIG',    0x0001);	/* from %%config */
@@ -406,6 +411,29 @@ define('RPMTAG_HEADERSIGNATURES',   62);   /* Signatures. */
 define('RPMTAG_HEADERIMMUTABLE',	63);   /* Original image. */
 define('RPMTAG_HEADERREGIONS',      64);   /* Regions. */
 define('RPMTAG_HEADERI18NTABLE',    100);  /* s[] I18N string locales. */
+
+define('RPMTAG_SIG_BASE',           256);  /* internal Broken SHA1, take 1. */
+define('RPMTAG_SIGSIZE',            257);  /* i */
+define('RPMTAG_SIGLEMD5_1',         258);  /* internal - obsolete */
+define('RPMTAG_PGP',                259);  /* x */
+define('RPMTAG_SIGLEMD5_2',         260);  /* internal - obsolete */
+define('RPMTAG_MD5',                261);  /* x */
+define('RPMTAG_PKGID',              RPMTAG_MD5);  /* x */
+define('RPMTAG_GPP',                262);  /* x */
+define('RPMTAG_PGP5',               263);  /* internal - obsolete */
+define('RPMTAG_BADSHA1_1',          264);  /* internal Broken SHA1, take 1. */
+define('RPMTAG_BADSHA1_2',          265);  /* internal Broken SHA1, take 2. */
+define('RPMTAG_PUBKEYS',            266);  /* s[]. */
+define('RPMTAG_DSAHEADER',          267);  /* internal DSA header signature. */
+define('RPMTAG_RSAHEADER',          268);  /* internal RSA header signature. */
+define('RPMTAG_SHA1HEADER',         269);  /* internal sha1 header digest. */
+define('RPMTAG_LONGSIZE',           270);  /* internal Header+Payload size (64bit) in bytes. */
+define('RPMTAG_LONGARCHIVESIZE',    271);  /* internal uncompressed payload size (64bit) in bytes. */
+define('RPMTAG_SHA256HEADER',       273);
+define('RPMTAG_FILESIGNATURES',     274);
+define('RPMTAG_FILESIGNATURELENGTH',275);
+
+
 define('RPMSIGTAG_SIZE',            1000); /* internal Header+Payload size (32bit) in bytes. */
 define('RPMSIGTAG_LEMD5_1',         1001); /* internal Broken MD5, take 1 @deprecated legacy. */
 define('RPMSIGTAG_PGP',             1002); /* internal PGP 2.6.3 signature. */
@@ -416,14 +444,16 @@ define('RPMSIGTAG_GPG',             1005); /* internal GnuPG signature. */
 define('RPMSIGTAG_PGP5',            1006); /* internal PGP5 signature @deprecated legacy. */
 define('RPMSIGTAG_PAYLOADSIZE',     1007); /* internal uncompressed payload size (32bit) in bytes. */
 define('RPMSIGTAG_RESERVEDSPACE',   1008); /* internal space reserved for signatures */
-define('RPMSIGTAG_BADSHA1_1',       264);  /* internal Broken SHA1, take 1. */
-define('RPMSIGTAG_BADSHA1_2',       265);  /* internal Broken SHA1, take 2. */
-define('RPMSIGTAG_DSA',             267);  /* internal DSA header signature. */
-define('RPMSIGTAG_RSA',             268);  /* internal RSA header signature. */
-define('RPMSIGTAG_SHA1',            269);  /* internal sha1 header digest. */
+define('RPMSIGTAG_BADSHA1_1',       RPMTAG_BADSHA1_1);  /* internal Broken SHA1, take 1. */
+define('RPMSIGTAG_BADSHA1_2',       RPMTAG_BADSHA1_2);  /* internal Broken SHA1, take 2. */
+define('RPMSIGTAG_DSA',             RPMTAG_DSAHEADER);  /* internal DSA header signature. */
+define('RPMSIGTAG_RSA',             RPMTAG_RSAHEADER);  /* internal RSA header signature. */
+define('RPMSIGTAG_SHA1',            RPMTAG_SHA1HEADER);  /* internal sha1 header digest. */
 define('RPMSIGTAG_LONGSIZE',        270);  /* internal Header+Payload size (64bit) in bytes. */
 define('RPMSIGTAG_LONGARCHIVESIZE', 271);  /* internal uncompressed payload size (64bit) in bytes. */
 define('RPMSIGTAG_SHA256',          273);
+define('RPMSIGTAG_FILESIGNATURES',  RPMTAG_FILESIGNATURES);
+define('RPMSIGTAG_FILESIGNATURELENGTH',  RPMTAG_FILESIGNATURELENGTH);
 
 
 
@@ -511,7 +541,7 @@ class RPM {
 		return true;
 	}
 	
-	private function _rpm_validity() : bool
+	private function _rpm_validity(bool $error_report) : bool
 	{
 		if (!$this->data)
 		{
@@ -521,6 +551,8 @@ class RPM {
 		{
 			if (strlen($this->data) < 96)
 			{
+				if ($error_report)
+					trigger_error("File " . $this->filename . " is not an RPM file", E_USER_WARNING);
 				return false;
 			}
 			$this->lead = unpack("Nmagic/Cmajor/Cminor/ntype/narchnum/a66name/nosnum/nsignature_type" /* "/C16reserved" */, $this->data);
@@ -541,10 +573,20 @@ class RPM {
 		}
 		if ($this->lead['magic'] != 0xedabeedb) /* RPMLEAD_MAGIC */
 		{
+			if ($error_report)
+				trigger_error($this->filename . ": not an RPM file", E_USER_WARNING);
 			return false;
 		}
 		if ($this->lead['signature_type'] != 5) /* RPMSIGTYPE_HEADERSIG */
 		{
+			if ($error_report)
+				trigger_error($this->filename . ": illegal signature type", E_USER_WARNING);
+			return false;
+		}
+		if ($this->lead['major'] < 3 || $this->lead['major'] > 4)
+		{
+			if ($error_report)
+				trigger_error($this->filename . ": unsupported RPM package version", E_USER_WARNING);
 			return false;
 		}
 		/* echo "<td><pre>\n"; print_r($this->lead); echo "</pre></td>\n";  */
@@ -587,7 +629,7 @@ class RPM {
 		return $rh;
 	}
 	
-	private function _rpm_import_indices($offset) : bool
+	private function _rpm_import_indices(int $offset) : bool
 	{
 		$this->idxlist = array();
 		$count = $this->num_indices;
@@ -617,9 +659,8 @@ class RPM {
 			trigger_error("can't open " . $this->filename);
 			return false;
 		}
-		if (!$this->_rpm_validity())
+		if (!$this->_rpm_validity(true))
 		{
-			trigger_error("File " . $this->filename . " is not an RPM file", E_USER_WARNING);
 			$this->_close();
 			return false;
 		}
@@ -660,7 +701,7 @@ class RPM {
 		{
 			return false;
 		}
-		if (!$this->_rpm_validity())
+		if (!$this->_rpm_validity(false))
 		{
 			return false;
 		}
@@ -696,6 +737,8 @@ class RPM {
 					return substr($this->data, $offset, $datacount);
 				case RPM_TYPE_INT8:
 				case RPM_TYPE_BIN:
+				case RPM_TYPE_ASN1:
+				case RPM_TYPE_OPENPGP:
 					$a = array();
 					for ($j = 0; $j < $datacount; $j++)
 					{
