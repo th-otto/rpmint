@@ -30,7 +30,7 @@ if ($dir = opendir($dirname))
 		$title = '';
 		if ($rpm = rpm_open($file))
 		{
-			$summary = rpm_get_tag($rpm, RPMREADER_SUMMARY);
+			$summary = rpm_get_tag($rpm, RPMTAG_SUMMARY);
 			if (is_array($summary))
 			{
 				$summary = implode("\n", $summary);
