@@ -58,15 +58,21 @@ if ($dir = opendir($dirname))
  	{
 		echo '<tr>';
 		$title = '';
+		$time = '';
+		$size = '';
 		if ($rpm = rpm_open($file))
 		{
 			$summary = $rpm->get_tag_as_string(RPMTAG_SUMMARY);
 			$title .= $summary;
+			$time = usertime($rpm->get_tag(RPMTAG_BUILDTIME));
+			$size = $rpm->filesize_string(filesize($file));
 			rpm_close($rpm);
 		}
 		echo "<th scope=\"row\"><a href=\"$file\" title=\"" . htmlspecialchars($title) . "\">$file</a></th>";
 		echo "<td>" . htmlspecialchars($title) . "</td>";
 		$dir = implode("/", array_slice(explode("/", dirname($_SERVER['PHP_SELF'])), -2));
+		echo "<td>$time</td>";
+		echo "<td align=\"right\">$size</td>";
 		echo "<td><a href=\"../../rpmdetails.php?file=$dir/$file\">Details</a></td>";
 		echo "</tr>\n";
  	}

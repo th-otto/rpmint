@@ -79,25 +79,6 @@ function tagrow($name, $value, $strong = false)
 	echo "</tr>";
 }
 
-function filesize_string($size)
-{
-	if (is_null($size))
-		return null;
-	if ($size < 1000)
-		return round($size) . "B";
-	$size /= 1024;
-	if ($size < 1000)
-		return round($size) . "KB";
-	$size /= 1024;
-	if ($size < 1000)
-		return round($size) . "MB";
-	$size /= 1024;
-	if ($size < 1000)
-		return round($size) . "GB";
-	$size /= 1024;
-	return round($size) . "TB";
-}
-
 function print_requireflags($name, $flags, $version)
 {
 	echo "<tr>\n";
@@ -148,8 +129,8 @@ tagrow("Package version", $rpm->get_tag_as_string(RPMTAG_VERSION));
 tagrow("Package release", $rpm->get_tag_as_string(RPMTAG_RELEASE));
 tagrow("Homepage", $rpm->get_tag_as_string(RPMTAG_URL));
 tagrow("Licence", $rpm->get_tag_as_string(RPMTAG_LICENSE));
-tagrow("Download size", filesize_string(filesize($filename)));
-tagrow("Installed size", filesize_string($rpm->get_tag(RPMTAG_SIZE)));
+tagrow("Download size", $rpm->filesize_string(filesize($filename)));
+tagrow("Installed size", $rpm->filesize_string($rpm->get_tag(RPMTAG_SIZE)));
 tagrow("Category", $rpm->get_tag_as_string(RPMTAG_GROUP));
 ?>
 </tbody>
@@ -228,6 +209,9 @@ $dirindexes = $rpm->get_tag(RPMTAG_DIRINDEXES, true);
 $basenames = $rpm->get_tag(RPMTAG_BASENAMES, true);
 $dirnames = $rpm->get_tag(RPMTAG_DIRNAMES, true);
 $links = $rpm->get_tag(RPMTAG_FILELINKTOS, true);
+$modes = $rpm->get_tag(RPMTAG_FILEMODES, true);
+$sizes = $rpm->get_tag(RPMTAG_FILESIZES, true);
+$mtimes = $rpm->get_tag(RPMTAG_FILEMTIMES, true);
 if (!is_null($basenames))
 {
 	echo "<h2>Files</h2>\n";
@@ -237,6 +221,11 @@ if (!is_null($basenames))
 	{
 		$name = $dirnames[$dirindexes[$key]] . $name;
 		echo "<tr><td>";
+		echo $rpm->perm_string($modes[$key]);
+		echo "&nbsp;";
+		echo str_replace(" ", "&nbsp;", sprintf("%10u ", $sizes[$key]));
+		echo usertime($mtimes[$key]);
+		echo "&nbsp;";
 		echo htmlspecialchars($name);
 		if ($links[$key] != '')
 		{
@@ -263,7 +252,7 @@ if (!is_null($texts))
 	foreach ($texts as $key => $text)
 	{
 		echo '<span class="bold">* ';
-		echo usertime($time[$key], 'YYYY/MM/DD');
+		echo usertime($time[$key], 'ddd MMM DD YYYY');
 		echo "</span> - ";
 		echo htmlspecialchars($names[$key]);
 		echo "\n";

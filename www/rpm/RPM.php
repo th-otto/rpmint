@@ -395,6 +395,50 @@ class RPM {
 		return $s;
 	}
 
+	public function perm_string(int $mode) : string
+	{
+		switch (($mode >> 12) & 0x0f)
+		{
+			case 8: $perm = '-'; break;
+			case 4: $perm = 'd'; break;
+			case 10: $perm = 'l'; break;
+			case 1: $perm = 'p'; break;
+			case 12: $perm = 's'; break;
+			case 2: $perm = 'c'; break;
+			case 6: $perm = 'b'; break;
+			default: $perm = '?'; break;
+		}
+		$perm .= $mode & 0x100 ? 'r' : '-';
+		$perm .= $mode & 0x080 ? 'w' : '-';
+		$perm .= $mode & 0x800 ? ($mode & 0x040 ? 's' : 'S') : ($mode & 0x040 ? 'x' : '-');
+		$perm .= $mode & 0x020 ? 'r' : '-';
+		$perm .= $mode & 0x010 ? 'w' : '-';
+		$perm .= $mode & 0x400 ? ($mode & 0x008 ? 's' : 'S') : ($mode & 0x008 ? 'x' : '-');
+		$perm .= $mode & 0x004 ? 'r' : '-';
+		$perm .= $mode & 0x002 ? 'w' : '-';
+		$perm .= $mode & 0x200 ? ($mode & 0x001 ? 't' : 'T') : ($mode & 0x001 ? 'x' : '-');
+		return $perm;
+	}
+
+	public function filesize_string($size)
+	{
+		if (is_null($size))
+			return null;
+		if ($size < 1000)
+			return round($size) . "B";
+		$size /= 1024;
+		if ($size < 1000)
+			return round($size) . "KB";
+		$size /= 1024;
+		if ($size < 1000)
+			return round($size) . "MB";
+		$size /= 1024;
+		if ($size < 1000)
+			return round($size) . "GB";
+		$size /= 1024;
+		return round($size) . "TB";
+	}
+
 	public function get_tag(int $tagnum, bool $return_as_array = false)
 	{
 		if (!$this->rpmh)
