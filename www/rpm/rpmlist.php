@@ -15,15 +15,23 @@ require_once('RPM.php');
 </head>
 
 <body>
+
+<div class="container">
+
+<div class="header">
 <h1>m68k-atari-mint cross-tools: <?php echo $type; ?></h1>
+<hr/>
+</div>
+
+<div class="content">
+<div class="d-flex">
+<div class="flex-grow-1 mw-0">
+
+<table class="table-small table-bordered table-hover table-striped">
+<tbody>
 
 <?php
-// $dirname = dirname($_SERVER['PHP_SELF']);
 $dirname = ".";
-
-// echo "<pre>" . dirname($_SERVER['PHP_SELF']) . "</pre>\n";
-
-echo "<table>\n";
 
 if ($dir = opendir($dirname))
 {
@@ -43,27 +51,31 @@ if ($dir = opendir($dirname))
  	sort($files);
  	foreach ($files as $file)
  	{
-		echo '<tr valign="top">';
+		echo '<tr>';
 		$title = '';
 		if ($rpm = rpm_open($file))
 		{
-			$summary = rpm_get_tag($rpm, RPMTAG_SUMMARY);
-			if (is_array($summary))
-			{
-				$summary = implode("\n", $summary);
-			}
+			$summary = $rpm->get_tag_as_string(RPMTAG_SUMMARY);
 			$title .= $summary;
 			rpm_close($rpm);
 		}
-		echo "<td valign=\"top\"><ul><li><a href=\"$file\" title=\"" . htmlspecialchars($title) . "\">$file</a></li></ul></td>";
-		echo "<td valign=\"top\">" . htmlspecialchars($title) . "</td>";
-		echo "<td valign=\"top\"><a href=\"../../rpmdetails.php?file=$file\">Details</a></td>";
+		echo "<th scope=\"row\"><a href=\"$file\" title=\"" . htmlspecialchars($title) . "\">$file</a></th>";
+		echo "<td>" . htmlspecialchars($title) . "</td>";
+		$dir = implode("/", array_slice(explode("/", dirname($_SERVER['PHP_SELF'])), -2));
+		echo "<td><a href=\"../../rpmdetails.php?file=$dir/$file\">Details</a></td>";
 		echo "</tr>\n";
  	}
 }
 
-echo "</table>\n";
 ?>
+
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
 
 <p></p>
 <p></p>

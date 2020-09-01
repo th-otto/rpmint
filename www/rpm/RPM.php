@@ -77,6 +77,17 @@ class RPM {
 		21 => 'darwin',
 	);
 
+	private static $sensesigns = array(
+		RPMSENSE_ANY                      => '',
+		RPMSENSE_EQUAL                    => '=',
+		RPMSENSE_LESS                     => '<',
+		RPMSENSE_GREATER                  => '>',
+		RPMSENSE_GREATER | RPMSENSE_LESS  => '<>',
+		RPMSENSE_LESS    | RPMSENSE_EQUAL => '<=',
+		RPMSENSE_GREATER | RPMSENSE_EQUAL => '>=',
+		RPMSENSE_GREATER | RPMSENSE_LESS | RPMSENSE_EQUAL => '<=>',
+	);
+
 	private static $type_names = array(
 		RPM_TYPE_NULL => array('type' => RPM_TYPE_NULL, 'name' => 'NULL'),
 		RPM_TYPE_CHAR => array('type' => RPM_TYPE_CHAR, 'name' => 'CHAR'),
@@ -129,7 +140,13 @@ class RPM {
 					trigger_error("File " . $this->filename . " is not an RPM file", E_USER_WARNING);
 				return false;
 			}
-			$this->lead = unpack("Nmagic/Cmajor/Cminor/ntype/narchnum/a66name/nosnum/nsignature_type" /* "/C16reserved" */, $this->data);
+			if (PHP_VERSION_ID < 50500)
+			{
+				$this->lead = unpack("Nmagic/Cmajor/Cminor/ntype/narchnum/a66name/nosnum/nsignature_type" /* "/C16reserved" */, $this->data);
+			} else
+			{
+				$this->lead = unpack("Nmagic/Cmajor/Cminor/ntype/narchnum/Z66name/nosnum/nsignature_type" /* "/C16reserved" */, $this->data);
+			}
 			if (isset(self::$arch_canon[$this->lead['archnum']]))
 			{
 				$this->lead['archname'] = self::$arch_canon[$this->lead['archnum']];
@@ -203,7 +220,12 @@ class RPM {
 			printf("%-7u %-32s %-4u %-12s 0x%08x 0x%08x %u\n", $idxlist[$i]['tag'], self::tagname($idxlist[$i]['tag']), $idxlist[$i]['type'], self::typename($idxlist[$i]['type']), $idxlist[$i]['offset'], $idxlist[$i]['pos'], $idxlist[$i]['count']);
 		}
 	}
-	
+
+	function dump_header()
+	{
+		$this->_rpm_dump_header($this->rpmh);
+	}
+
 	private function _rpm_import_indices(array &$rh) : bool
 	{
 		$rh['idxlist'] = array();
@@ -297,6 +319,11 @@ class RPM {
 		return $this->lead['type'] == 1; /* RPMLEAD_SOURCE */
 	}
 	
+	public function name() : string
+	{
+		return $this->lead['name'];
+	}
+	
 	public static function version() : string
 	{
 		return '0.4.0';
@@ -317,7 +344,24 @@ class RPM {
 		return 'unknown type ' . $type;
 	}
 	
-	public function get_tag(int $tagnum)
+	public static function requireflags(int $flags) : string
+	{
+		if (isset(self::$sensesigns[$flags & RPMSENSE_SENSEMASK]))
+			return self::$sensesigns[$flags & RPMSENSE_SENSEMASK];
+		return '';
+	}
+	
+	public function get_tag_as_string(int $tagnum)
+	{
+		$s = $this->get_tag($tagnum);
+		if (is_array($s))
+		{
+			$s = implode("\n", $s);
+		}
+		return $s;
+	}
+
+	public function get_tag(int $tagnum, bool $return_as_array = false)
 	{
 		if (!$this->rpmh)
 			return false;
@@ -339,7 +383,7 @@ class RPM {
 				case RPM_TYPE_BIN:
 				case RPM_TYPE_ASN1:
 				case RPM_TYPE_OPENPGP:
-					if ($datacount == 1)
+					if ($datacount == 1 && !$return_as_array)
 					{
 						return ord($this->data[$offset]);
 					}
@@ -351,7 +395,7 @@ class RPM {
 					}
 					return $a;
 				case RPM_TYPE_INT16:
-					if ($datacount == 1)
+					if ($datacount == 1 && !$return_as_array)
 					{
 						$n = unpack("n", $this->data, $offset);
 						return $n[1];
@@ -365,6 +409,11 @@ class RPM {
 					}
 					return $a;
 				case RPM_TYPE_INT32:
+					if ($datacount == 1 && !$return_as_array)
+					{
+						$n = unpack("N", $this->data, $offset);
+						return $n[1];
+					}
 					$a = array();
 					for ($j = 0; $j < $datacount; $j++)
 					{
@@ -374,6 +423,11 @@ class RPM {
 					}
 					return $a;
 				case RPM_TYPE_INT64:
+					if ($datacount == 1 && !$return_as_array)
+					{
+						$n = unpack("J", $this->data, $offset);
+						return $n[1];
+					}
 					$a = array();
 					for ($j = 0; $j < $datacount; $j++)
 					{
@@ -413,7 +467,8 @@ function rpm_open(string $filename)
 {
 	try {
 		$rsrc = new RPM($filename);
-		$rsrc->open();
+		if (!$rsrc->open())
+			return null;
 	} catch (Exception $e)
 	{
 		return null;
