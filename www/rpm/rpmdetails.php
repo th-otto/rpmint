@@ -251,9 +251,9 @@ if (!is_null($basenames))
 ?>
 
 <?php
-$texts = $rpm->get_tag(RPMTAG_CHANGELOGTEXT);
-$names = $rpm->get_tag(RPMTAG_CHANGELOGNAME);
-$time = $rpm->get_tag(RPMTAG_CHANGELOGTIME);
+$texts = $rpm->get_tag(RPMTAG_CHANGELOGTEXT, true);
+$names = $rpm->get_tag(RPMTAG_CHANGELOGNAME, true);
+$time = $rpm->get_tag(RPMTAG_CHANGELOGTIME, true);
 if (!is_null($texts))
 {
 	echo "<h2>Changelog</h2>\n";
