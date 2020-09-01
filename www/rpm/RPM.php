@@ -21,8 +21,8 @@ include('rpmtagtbl.php');
 
 class RPM {
 	private $filename = '';
-	private $data = 0;
-	private $datalen = 0;
+	private $data = '';
+	private $stream = 0;
 	private $lead = 0;
 	private $sig = 0;
 	private $rpmh = 0;
@@ -105,36 +105,51 @@ class RPM {
 
 	private function _close() : bool
 	{
-		unset($this->data);
-		unset($this->lead);
-		$this->datalen = 0;
+		if ($this->stream)
+		{
+			fclose($this->stream);
+			$this->stream = 0;
+		}
+		/* data is retained until object is deleted */
 		return true;
 	}
 	
 	private function _open() : bool
 	{
-		if (!$this->data)
+		if (!$this->stream)
 		{
-			$this->data = file_get_contents($this->filename);
-			if ($this->data)
-				$this->datalen = strlen($this->data);
+			$this->stream = fopen($this->filename, "rb");
+			$this->data = '';
+			$this->lead = 0;
 		}
-		if (!$this->data)
+		if (!$this->stream)
 		{
 			return false;
 		}
 		return true;
 	}
 	
+	private function _rpm_fread(int $size) : bool
+	{
+		$data = fread($this->stream, $size);
+		if (strlen($data) != $size)
+		{
+			return false;
+		}
+		$this->data .= $data;
+		return true;
+	}
+	
 	private function _rpm_validity(bool $error_report) : bool
 	{
-		if (!$this->data)
+		if (!$this->stream)
 		{
 			return false;
 		}
 		if (!$this->lead)
 		{
-			if (strlen($this->data) < (96 + 16))
+			$this->data = '';
+			if (!$this->_rpm_fread(96))
 			{
 				if ($error_report)
 					trigger_error("File " . $this->filename . " is not an RPM file", E_USER_WARNING);
@@ -186,6 +201,10 @@ class RPM {
 	
 	private function _rpm_fetch_header(int $offset)
 	{
+		if (!$this->_rpm_fread(16))
+		{
+			return 0;
+		}
 		$rh = unpack("C3magic/Cversion/Nreserved/Nnum_indices/Nstore_size", $this->data, $offset);
 		if ($rh['magic1'] != 0x8e || $rh['magic2'] != 0xad || $rh['magic3'] != 0xe8 || /* HDR_MGK: rpm_header_magic */
 			$rh['version'] != 1 ||
@@ -194,7 +213,12 @@ class RPM {
 			return 0;
 		}
 		$rh['begin_byte'] = $offset;
-		$rh['data_start'] = $offset + 16 + $rh['num_indices'] * 16;
+		$datasize = $rh['num_indices'] * 16;
+		if (!$this->_rpm_fread($datasize + $rh['store_size']))
+		{
+			return 0;
+		}
+		$rh['data_start'] = $offset + 16 + $datasize;
 		return $rh;
 	}
 	
@@ -207,6 +231,10 @@ class RPM {
 		$sigsize = 16 + $this->sig['num_indices'] * 16 + $this->sig['store_size'];
 		$pad = (8 - ($sigsize % 8)) % 8;
 		$offset += $sigsize + $pad;
+		if ($pad != 0)
+		{
+			$this->_rpm_fread($pad);
+		}
 		return $offset;
 	}
 	
@@ -299,6 +327,12 @@ class RPM {
 	public function __destruct()
 	{
 		$this->_close();
+		unset($this->filename);
+		unset($this->data);
+		unset($this->stream);
+		unset($this->lead);
+		unset($this->sig);
+		unset($this->rpmh);
 	}
 
 	public function is_valid() : bool

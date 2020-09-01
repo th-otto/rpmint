@@ -1,6 +1,9 @@
 <?php
 include('rpmvars.php');
-include($_SERVER['DOCUMENT_ROOT'] . '/functions.php');
+$document_root = $_SERVER['DOCUMENT_ROOT'];
+if ($document_root != '')
+	$document_root .= '/';
+include($document_root . 'functions.php');
 
 require_once('RPM.php');
 ?>
@@ -21,14 +24,26 @@ require_once('RPM.php');
 
 <?php
 if (!isset($_GET['file']))
-	exit(1);
-$filename = $_GET['file'];
+{
+	if (isset($argv[1]))
+	{
+		$filename = $argv[1];
+	} else
+	{
+		echo "<pre>\n";
+		echo "no filename\n";
+		exit(1);
+	}
+} else
+{
+	$filename = $_GET['file'];
+}
 $rpm = rpm_open($filename);
 if (!$rpm)
 {
 	echo "<pre>\n";
 	echo "failed\n";
-	exit(0);
+	exit(1);
 }
 $srcfilename = null;
 if (!$rpm->is_source())

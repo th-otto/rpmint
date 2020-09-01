@@ -1,6 +1,9 @@
 <?php
 include('rpmvars.php');
-include($_SERVER['DOCUMENT_ROOT'] . '/functions.php');
+$document_root = $_SERVER['DOCUMENT_ROOT'];
+if ($document_root != '')
+	$document_root .= '/';
+include($document_root . 'functions.php');
 
 require_once('RPM.php');
 ?>
