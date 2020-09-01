@@ -319,10 +319,10 @@ class RPM {
 	
 	public function get_tag(int $tagnum)
 	{
-		$idxlist = &$this->rpmh;
-		if (!$idxlist)
+		if (!$this->rpmh)
 			return false;
-		$count = $idxlist['num_indices'];
+		$idxlist = &$this->rpmh['idxlist'];
+		$count = $this->rpmh['num_indices'];
 		for ($i = 0; $i < $count; $i++)
 		{
 			if ($idxlist[$i]['tag'] == $tagnum)
@@ -354,13 +354,13 @@ class RPM {
 					if ($datacount == 1)
 					{
 						$n = unpack("n", $this->data, $offset);
-						return $n[0];
+						return $n[1];
 					}
 					$a = array();
 					for ($j = 0; $j < $datacount; $j++)
 					{
 						$n = unpack("n", $this->data, $offset);
-						array_push($a, $n[0]);
+						array_push($a, $n[1]);
 						$offset += 2;
 					}
 					return $a;
@@ -369,7 +369,7 @@ class RPM {
 					for ($j = 0; $j < $datacount; $j++)
 					{
 						$n = unpack("N", $this->data, $offset);
-						array_push($a, $n[0]);
+						array_push($a, $n[1]);
 						$offset += 4;
 					}
 					return $a;
@@ -378,7 +378,7 @@ class RPM {
 					for ($j = 0; $j < $datacount; $j++)
 					{
 						$n = unpack("J", $this->data, $offset);
-						array_push($a, $n[0]);
+						array_push($a, $n[1]);
 						$offset += 8;
 					}
 					return $a;
@@ -389,7 +389,6 @@ class RPM {
 					for ($j = 0; $j < $datacount; $j++)
 					{
 						$n = unpack("Z*", $this->data, $offset);
-						/* print_r($n); */
 						$s = $n[1];
 						array_push($a, $s);
 						$offset += strlen($s) + 1;
@@ -410,7 +409,7 @@ function rpm_version() : string
 	return RPM::version();
 }
 
-function rpm_open(string $filename) : object
+function rpm_open(string $filename)
 {
 	try {
 		$rsrc = new RPM($filename);
@@ -422,18 +421,18 @@ function rpm_open(string $filename) : object
 	return $rsrc;
 }
 
-function rpm_close(object $rsrc) : bool
+function rpm_close($rsrc) : bool
 {
 	unset($rsrc);
 	return true;
 }
 
-function rpm_get_tag(object $rsrc, int $tagnum)
+function rpm_get_tag($rsrc, int $tagnum)
 {
 	return $rsrc->get_tag($tagnum);
 }
 
-function rpm_is_valid(string $filename)
+function rpm_is_valid(string $filename) : bool
 {
 	try {	
 		$rsrc = new RPM($filename);
