@@ -1,6 +1,6 @@
 <?php
-error_reporting(E_ALL);
-ini_set("display_errors", 1);
+include('rpmvars.php');
+include($_SERVER['DOCUMENT_ROOT'] . '/functions.php');
 
 require_once('RPM.php');
 ?>
@@ -12,6 +12,9 @@ require_once('RPM.php');
 <title>m68k-atari-mint cross-tools</title>
 <meta name="keywords" content="ARAnyM, EmuTOS, GCC, Atari, MiNT" />
 <link rel="stylesheet" type="text/css" href="rpm.css" />
+<link rel="stylesheet" type="text/css" href="/tippy/tippy.css" />
+<script type="text/javascript" src="/moment.min.js" charset="UTF-8"></script>
+<script type="text/javascript" src="/functions.js" charset="UTF-8"></script>
 </head>
 
 <body>
@@ -27,15 +30,23 @@ if (!$rpm)
 	echo "failed\n";
 	exit(0);
 }
-$srcfilename = $rpm->get_tag_as_string(RPMTAG_SOURCERPM);
-if (is_null($srcfilename))
+$srcfilename = null;
+if (!$rpm->is_source())
 {
-	$cmps = explode(".", $fileName);
-	$ext = array_pop($cmps);
-	array_push($cmps, "src");
-	array_push($cmps, $ext);
-	$srcfilename = implode(".", $cmps);
+	$srcfilename = $rpm->get_tag_as_string(RPMTAG_SOURCERPM);
+	if (is_null($srcfilename))
+	{
+		$cmps = explode(".", $filename);
+		$ext = array_pop($cmps);
+		array_push($cmps, "src");
+		array_push($cmps, $ext);
+		$srcfilename = implode(".", $cmps);
+	}
+} else
+{
+	$srcfilename = $filename;
 }
+
 
 function tagrow($name, $value, $strong = false)
 {
@@ -117,7 +128,7 @@ tagrow("Architecture", $rpm->get_tag_as_string(RPMTAG_ARCH));
 tagrow("Distribution", $rpm->get_tag_as_string(RPMTAG_DISTRIBUTION));
 tagrow("Vendor", $rpm->get_tag_as_string(RPMTAG_VENDOR));
 tagrow("Package filename", basename($filename));
-tagrow("Package name", $rpm->name());
+tagrow("Package name", $rpm->get_tag_as_string(RPMTAG_NAME));
 tagrow("Package version", $rpm->get_tag_as_string(RPMTAG_VERSION));
 tagrow("Package release", $rpm->get_tag_as_string(RPMTAG_RELEASE));
 tagrow("Homepage", $rpm->get_tag_as_string(RPMTAG_URL));
@@ -135,47 +146,65 @@ tagrow("Category", $rpm->get_tag_as_string(RPMTAG_GROUP));
 </pre>
 </div>
 
-<h2>Requires</h2>
-<table class="table-small table-bordered table-striped">
-<tbody class="text-break">
 <?php
 $names = $rpm->get_tag(RPMTAG_REQUIRENAME, true);
 $flags = $rpm->get_tag(RPMTAG_REQUIREFLAGS, true);
 $version = $rpm->get_tag(RPMTAG_REQUIREVERSION, true);
-foreach ($names as $key => $name)
+if (!is_null($names))
 {
-	print_requireflags($name, $flags[$key], $version[$key]);
+	echo "<h2>Requires</h2>\n";
+	echo "<table class=\"table-small table-bordered table-striped\">\n";
+	echo "<tbody class=\"text-break\">\n";
+	foreach ($names as $key => $name)
+	{
+		print_requireflags($name, $flags[$key], $version[$key]);
+	}
+	echo "</tbody>\n";
+	echo "</table>\n";
 }
 ?>
-</tbody>
-</table>
 
-<h2>Provides</h2>
-<table class="table-small table-bordered table-striped">
-<tbody class="text-break">
 <?php
 $names = $rpm->get_tag(RPMTAG_PROVIDENAME, true);
 $flags = $rpm->get_tag(RPMTAG_PROVIDEFLAGS, true);
 $version = $rpm->get_tag(RPMTAG_PROVIDEVERSION, true);
-foreach ($names as $key => $name)
+if (!is_null($names))
 {
-	print_requireflags($name, $flags[$key], $version[$key]);
+	echo "<h2>Provides</h2>\n";
+	echo "<table class=\"table-small table-bordered table-striped\">\n";
+	echo "<tbody class=\"text-break\">\n";
+	foreach ($names as $key => $name)
+	{
+		print_requireflags($name, $flags[$key], $version[$key]);
+	}
+	echo "</tbody>\n";
+	echo "</table>\n";
 }
 ?>
-</tbody>
-</table>
 
 <h2 id="download">Download</h2>
 <table class="table table-bordered">
 <tbody>
-<tr>
-<th class="text-nowrap" scope="row">Binary Package</th>
-<td class="text-break"><?php echo htmlspecialchars(basename($filename)); ?></td>
-</tr>
-<tr>
-<th class="text-nowrap" scope="row">Source Package</th>
-<td class="text-break"><?php echo htmlspecialchars($srcfilename); ?></td>
-</tr>
+<?php
+if (!$rpm->is_source())
+{
+	echo "<tr>\n";
+	echo "<th class=\"text-nowrap\" scope=\"row\">Binary Package</th>\n";
+	echo "<td class=\"text-break\">";
+	gen_link($filename, basename($filename), true);
+	echo "</td>\n";
+	echo "</tr>\n";
+}
+if (!is_null($srcfilename))
+{
+	echo "<tr>\n";
+	echo "<th class=\"text-nowrap\" scope=\"row\">Source Package</th>\n";
+	echo "<td class=\"text-break\">";
+	gen_link($srcfilename, basename($srcfilename), false);
+	echo "</td>\n";
+	echo "</tr>\n";
+}
+?>
 </tbody>
 </table>
 
@@ -218,7 +247,9 @@ if (!is_null($texts))
 	echo "<pre>\n";
 	foreach ($texts as $key => $text)
 	{
-		echo "* ";
+		echo '<span class="bold">* ';
+		echo usertime($time[$key], 'YYYY/MM/DD');
+		echo "</span> - ";
 		echo htmlspecialchars($names[$key]);
 		echo "\n";
 		echo htmlspecialchars($texts[$key]);
@@ -246,6 +277,13 @@ if (!is_null($texts))
 <a href="."> <img src="../../images/home1.png" width="180" height="60" style="border:0" alt="Back" /></a>
 </p>
 </div>
+
+<script type="text/javascript" charset="UTF-8" src="/tippy/tippy.min.js"></script>
+<script type="text/javascript" charset="UTF-8">
+<?php gen_linktitles(); ?>
+<!-- tippy('.tippybtn'); --!>
+</script>
+
 
 </body>
 </html>

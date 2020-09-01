@@ -44,25 +44,40 @@ function last_changetime($filename)
 }
 
 
-function gen_link($filename, $text)
+function gen_link($filename, $text, $must_exist = true)
 {
 	global $download_dir;
 	global $linkcount;
 	global $linkstats;
 	
 	$stat = 0;
-	$exists = 1;
-	if (substr($filename, 0, strlen($download_dir)) == $download_dir)
+	$exists = 0;
+	if ($download_dir === '' || substr($filename, 0, strlen($download_dir)) == $download_dir)
 	{
+		$reporting = error_reporting(E_ALL & ~E_WARNING);
 		$stat = stat($filename);
-		if (!$stat)
+		if ($stat)
 		{
-			$exists = 0;
+			$exists = 1;
+		}
+		error_reporting($reporting);
+	} else
+	{
+		$scheme = parse_url($filename, PHP_URL_SCHEME);
+		if ($scheme == 'http' || $scheme == 'https' || $scheme == 'ftp' || $scheme == 'ftps')
+		{
+			$exists = 1;
 		}
 	}
+
 	++$linkcount;
 	$id = 'tippylink' . $linkcount;
-	echo '<a class="archive tippybtn" href="' . $filename . '" id="' . $id. '"';
+	echo '<a class="archive tippybtn"';
+	if ($exists)
+	{
+		echo 'href="' . htmlspecialchars($filename) . '"';
+	}
+	echo ' id="' . $id. '"';
 	if ($exists && $stat)
 	{
 		echo ' title="size: ' . intdiv($stat['size'], 1024) . 'K&#10;"';
@@ -70,7 +85,7 @@ function gen_link($filename, $text)
 		$stat['filename'] = $filename;
 		$linkstats[$id] = $stat;
 	}
-	echo '>' . $text . '</a>';
+	echo '>' . htmlspecialchars($text) . '</a>';
 	if ($exists)
 	{
 		$ext_ok = 0;
@@ -86,7 +101,7 @@ function gen_link($filename, $text)
 			echo '&nbsp;<a class="listtar" href="listtar.php?filename=' . urlencode($filename) . '&local=' . ($stat ? "1" : "0") . '">&lt;file&nbsp;list&gt;</a>';
 		}
 	}
-	if (!$exists)
+	if (!$exists && $must_exist)
 	{
 		echo '<div class="error">missing</div>';
 	}
