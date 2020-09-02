@@ -4,16 +4,18 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=libexif
-VERSION=-0.6.21
+VERSION=-0.6.22
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
 patches/libexif/libexif-build-date.patch
-patches/libexif/libexif-CVE-2016-6328.patch
 patches/libexif/libexif-CVE-2017-7544.patch
 patches/libexif/libexif-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/libexif/libexif-CVE-2016-6328.patch
 "
 
 BINFILES="

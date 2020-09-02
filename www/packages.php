@@ -1892,7 +1892,7 @@ have expired, giflib can again be used instead of libungif.
 		'name' => 'libexif',
 		'upstream' => 'http://libexif.sourceforge.net',
 		'source' => 'https://downloads.sourceforge.net/project/libexif/%{name}/%{version}/%{name}-%{version}.tar.bz2',
-		'version' => '0.6.21',
+		'version' => '0.6.22',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
