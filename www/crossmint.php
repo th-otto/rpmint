@@ -1535,6 +1535,8 @@ This notably applies to Perl and Python.
 
 <li>2020/08/30 Update rpm to version 4.15.1</li>
 
+<li>2020/09/02 Package cpio added</li>
+
 </ul>
 
 <p></p>

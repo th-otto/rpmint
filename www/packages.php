@@ -2474,6 +2474,26 @@ Shell programming language and a successor to the Public Domain Korn Shell
 (pdksh).
 '
 	),
+	'cpio' => array(
+		'name' => 'cpio',
+		'upstream' => 'https://www.gnu.org/software/cpio/cpio.html',
+		'branch' => '',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.bz2',
+		'version' => '2.13',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+GNU cpio is a program to manage archives of files. Cpio copies files
+into or out of a cpio or tar archive. An archive is a file that contains
+other files plus information about them, such as their pathname, owner,
+time stamps, and access permissions. The archive can be another file on
+the disk, a magnetic tape, or a pipe.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

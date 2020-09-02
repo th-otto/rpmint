@@ -1,0 +1,48 @@
+--- a/src/util.c.orig	2020-09-02 01:47:10.019039730 +0200
++++ b/src/util.c	2020-09-02 01:54:38.291053049 +0200
+@@ -48,6 +48,9 @@
+ extern int errno;
+ #endif
+ 
++int tape_eof( int tape_des);
++int tape_eod( int tape_des);
++
+ /* Write `output_size' bytes of `output_buffer' to file
+    descriptor OUT_DES and reset `output_size' and `out_buff'.  */
+ 
+@@ -847,6 +850,7 @@ tape_offline (int tape_des)
+ int
+ tape_eof( int tape_des)
+ {
++#ifdef MTIOCGET
+   struct mtget status;
+ 
+   if (rmtioctl (tape_des, MTIOCGET, (char*)&status) == -1) {
+@@ -857,6 +861,9 @@ tape_eof( int tape_des)
+   if (GMT_EOF(status.mt_gstat)) {
+       return 1;
+   }
++#else
++  error (1, ENOSYS, "Operation not supported");
++#endif
+ 
+   return 0;
+ }
+@@ -864,6 +871,7 @@ tape_eof( int tape_des)
+ int
+ tape_eod( int tape_des)
+ {
++#ifdef MTIOCGET
+   struct mtget status;
+ 
+   if (rmtioctl (tape_des, MTIOCGET, (char*)&status) == -1) {
+@@ -874,6 +882,9 @@ tape_eod( int tape_des)
+   if (GMT_EOD(status.mt_gstat)) {
+       return 1;
+   }
++#else
++  error (1, ENOSYS, "Operation not supported");
++#endif
+ 
+   return 0;
+ }

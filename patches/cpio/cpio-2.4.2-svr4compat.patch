@@ -1,0 +1,10 @@
+--- a/src/main.c.orig	2020-09-02 01:12:39.902978223 +0200
++++ b/src/main.c	2020-09-02 01:12:46.470978418 +0200
+@@ -329,6 +329,7 @@ parse_opt (int key, char *arg, struct ar
+     case 'c':		/* Use the old portable ASCII format.  */
+       if (archive_format != arf_unknown)
+ 	USAGE_ERROR ((0, 0, _("Archive format multiply defined")));
++#define	SVR4_COMPAT
+ #ifdef SVR4_COMPAT
+       archive_format = arf_newascii; /* -H newc.  */
+ #else

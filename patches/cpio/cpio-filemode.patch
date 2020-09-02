@@ -1,0 +1,71 @@
+diff -rup cpio-2.12.orig/src/copyin.c cpio-2.12/src/copyin.c
+--- cpio-2.12.orig/src/copyin.c	2020-09-02 02:06:33.674084995 +0200
++++ cpio-2.12/src/copyin.c	2020-09-02 02:44:38.382152878 +0200
+@@ -776,8 +776,10 @@ long_format (struct cpio_file_stat *file
+   char mbuf[11];
+   char tbuf[40];
+   time_t when;
++  struct stat st;
+ 
+-  mode_string (file_hdr->c_mode, mbuf);
++  cpio_to_stat(&st, file_hdr);
++  mode_string (st.st_mode, mbuf);
+   mbuf[10] = '\0';
+ 
+   /* Get time values ready to print.  */
+diff -rup cpio-2.12.orig/src/copyout.c cpio-2.12/src/copyout.c
+--- cpio-2.12.orig/src/copyout.c	2020-09-02 02:06:33.658084994 +0200
++++ cpio-2.12/src/copyout.c	2020-09-02 03:02:56.802185514 +0200
+@@ -655,7 +655,7 @@ process_copy_out ()
+ 	  
+ 	  if (archive_format == arf_tar || archive_format == arf_ustar)
+ 	    {
+-	      if (file_hdr.c_mode & CP_IFDIR)
++	      if ((file_hdr.c_mode & CP_IFMT) == CP_IFDIR)
+ 		{
+ 		  int len = strlen (input_name.ds_string);
+ 		  /* Make sure the name ends with a slash */
+diff -rup cpio-2.12.orig/src/util.c cpio-2.12/src/util.c
+--- cpio-2.12.orig/src/util.c	2020-09-02 02:06:33.678084995 +0200
++++ cpio-2.12/src/util.c	2020-09-02 03:00:05.022180410 +0200
+@@ -1215,32 +1215,32 @@ cpio_to_stat (struct stat *st, struct cp
+   st->st_dev = makedev (hdr->c_dev_maj, hdr->c_dev_min);
+   st->st_ino = hdr->c_ino;
+   st->st_mode = hdr->c_mode & 0777;
+-  if (hdr->c_mode & CP_IFREG)
++  if ((hdr->c_mode & CP_IFMT) == CP_IFREG)
+     st->st_mode |= S_IFREG;
+-  else if (hdr->c_mode & CP_IFDIR)
++  else if ((hdr->c_mode & CP_IFMT) == CP_IFDIR)
+     st->st_mode |= S_IFDIR;
+ #ifdef S_IFBLK
+-  else if (hdr->c_mode & CP_IFBLK)
++  else if ((hdr->c_mode & CP_IFMT) == CP_IFBLK)
+     st->st_mode |= S_IFBLK;
+ #endif
+ #ifdef S_IFCHR
+-  else if (hdr->c_mode & CP_IFCHR)
++  else if ((hdr->c_mode & CP_IFMT) == CP_IFCHR)
+     st->st_mode |= S_IFCHR;
+ #endif
+ #ifdef S_IFFIFO
+-  else if (hdr->c_mode & CP_IFIFO)
++  else if ((hdr->c_mode & CP_IFMT) == CP_IFIFO)
+     st->st_mode |= S_IFIFO;
+ #endif
+ #ifdef S_IFLNK
+-  else if (hdr->c_mode & CP_IFLNK)
++  else if ((hdr->c_mode & CP_IFMT) == CP_IFLNK)
+     st->st_mode |= S_IFLNK;
+ #endif
+ #ifdef S_IFSOCK
+-  else if (hdr->c_mode & CP_IFSOCK)
++  else if ((hdr->c_mode & CP_IFMT) == CP_IFSOCK)
+     st->st_mode |= S_IFSOCK;
+ #endif
+ #ifdef S_IFNWK
+-  else if (hdr->c_mode & CP_IFNWK)
++  else if ((hdr->c_mode & CP_IFMT) == CP_IFNWK)
+     st->st_mode |= S_IFNWK;
+ #endif
+   st->st_nlink = hdr->c_nlink;

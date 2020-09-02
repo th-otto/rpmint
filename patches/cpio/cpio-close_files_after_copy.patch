@@ -1,0 +1,24 @@
+Index: src/copyin.c
+===================================================================
+--- a/src/copyin.c.orig	2010-08-10 16:45:19.000000000 +0200
++++ b/src/copyin.c	2010-08-10 16:45:19.000000000 +0200
+@@ -1482,6 +1482,19 @@ process_copy_in ()
+ 
+   cpio_file_stat_free (&file_hdr);
+   
++  if (tty_in)
++  {
++    fclose(tty_in);
++  }
++  if (tty_out)
++  {
++    fclose(tty_out);
++  }
++  if (rename_in)
++  {
++    fclose(rename_in);
++  }
++
+   if (append_flag)
+     return;
+ 
