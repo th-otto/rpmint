@@ -15,6 +15,7 @@ Version:        0.60.1
 Release:        1
 License:        LGPL-2.1-or-later AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND GPL-2.0-or-later
 Packager:       Thorsten Otto <admin@tho-otto.de>
+URL:            https://github.com/freemint/mintlib
 Source:         %{pkgname}-%{version}.tar.xz
 
 %if "%{buildtype}" == "cross"

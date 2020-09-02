@@ -63,7 +63,7 @@ if (!$rpm->is_source())
 }
 
 
-function tagrow($name, $value, $strong = false)
+function tagrow($name, $value, $strong = false, $quote = true)
 {
 	if (is_null($value))
 		return;
@@ -72,7 +72,16 @@ function tagrow($name, $value, $strong = false)
 	echo '<td class="text-break">';
 	if ($strong)
 		echo "<strong>";
-	echo htmlspecialchars($value);
+	$scheme = parse_url($value, PHP_URL_SCHEME);
+	if ($quote)
+		$value = htmlspecialchars($value);
+	if ($scheme == 'http' || $scheme == 'https' || $scheme == 'ftp' || $scheme == 'ftps')
+	{
+		echo "<a href=\"$value\">$value</a>";
+	} else
+	{
+		echo $value;
+	}
 	if ($strong)
 		echo "</strong>";
 	echo "</td>\n";
@@ -127,7 +136,9 @@ tagrow("Package filename", basename($filename));
 tagrow("Package name", $rpm->get_tag_as_string(RPMTAG_NAME));
 tagrow("Package version", $rpm->get_tag_as_string(RPMTAG_VERSION));
 tagrow("Package release", $rpm->get_tag_as_string(RPMTAG_RELEASE));
-tagrow("Homepage", $rpm->get_tag_as_string(RPMTAG_URL));
+tagrow("Build Date", usertime($rpm->get_tag(RPMTAG_BUILDTIME)), false, false);
+tagrow("URL", $rpm->get_tag_as_string(RPMTAG_URL));
+tagrow("BUGURL", $rpm->get_tag_as_string(RPMTAG_BUGURL));
 tagrow("Licence", $rpm->get_tag_as_string(RPMTAG_LICENSE));
 tagrow("Download size", $rpm->filesize_string(filesize($filename)));
 tagrow("Installed size", $rpm->filesize_string($rpm->get_tag(RPMTAG_SIZE)));
@@ -167,6 +178,42 @@ $version = $rpm->get_tag(RPMTAG_PROVIDEVERSION, true);
 if (!is_null($names))
 {
 	echo "<h2>Provides</h2>\n";
+	echo "<table class=\"table-small table-bordered table-striped\">\n";
+	echo "<tbody class=\"text-break\">\n";
+	foreach ($names as $key => $name)
+	{
+		print_requireflags($name, $flags[$key], $version[$key]);
+	}
+	echo "</tbody>\n";
+	echo "</table>\n";
+}
+?>
+
+<?php
+$names = $rpm->get_tag(RPMTAG_CONFLICTNAME, true);
+$flags = $rpm->get_tag(RPMTAG_CONFLICTFLAGS, true);
+$version = $rpm->get_tag(RPMTAG_CONFLICTVERSION, true);
+if (!is_null($names))
+{
+	echo "<h2>Conflicts</h2>\n";
+	echo "<table class=\"table-small table-bordered table-striped\">\n";
+	echo "<tbody class=\"text-break\">\n";
+	foreach ($names as $key => $name)
+	{
+		print_requireflags($name, $flags[$key], $version[$key]);
+	}
+	echo "</tbody>\n";
+	echo "</table>\n";
+}
+?>
+
+<?php
+$names = $rpm->get_tag(RPMTAG_OBSOLETENAME, true);
+$flags = $rpm->get_tag(RPMTAG_OBSOLETEFLAGS, true);
+$version = $rpm->get_tag(RPMTAG_OBSOLETEVERSION, true);
+if (!is_null($names))
+{
+	echo "<h2>Obsoletes</h2>\n";
 	echo "<table class=\"table-small table-bordered table-striped\">\n";
 	echo "<tbody class=\"text-break\">\n";
 	foreach ($names as $key => $name)

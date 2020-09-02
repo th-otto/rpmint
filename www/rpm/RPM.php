@@ -424,19 +424,19 @@ class RPM {
 	{
 		if (is_null($size))
 			return null;
-		if ($size < 1000)
+		if ($size < 1024)
 			return round($size) . "B";
 		$size /= 1024;
-		if ($size < 1000)
-			return round($size) . "KB";
+		if ($size < 1024)
+			return round($size,1) . "KB";
 		$size /= 1024;
-		if ($size < 1000)
-			return round($size) . "MB";
+		if ($size < 1024)
+			return round($size,1) . "MB";
 		$size /= 1024;
-		if ($size < 1000)
-			return round($size) . "GB";
+		if ($size < 1024)
+			return round($size,1) . "GB";
 		$size /= 1024;
-		return round($size) . "TB";
+		return round($size,1) . "TB";
 	}
 
 	public function get_tag(int $tagnum, bool $return_as_array = false)
