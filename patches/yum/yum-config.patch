@@ -1,0 +1,453 @@
+diff -rup yum-3.4.3.orig/Makefile yum-3.4.3/Makefile
+--- yum-3.4.3.orig/Makefile	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/Makefile	2020-09-02 11:36:48.735389024 +0200
+@@ -1,3 +1,8 @@
++SHELL=/bin/sh
++PREFIX=/usr
++SYSCONFDIR=/etc
++LOCALSTATEDIR=/var
++
+ SUBDIRS = rpmUtils yum etc docs po
+ PYFILES = $(wildcard *.py)
+ PYLINT_MODULES =  *.py yum rpmUtils
+@@ -22,23 +27,23 @@ subdirs:
+ 	for d in $(SUBDIRS); do make PYTHON=$(PYTHON) -C $$d; [ $$? = 0 ] || exit 1 ; done
+ 
+ install:
+-	mkdir -p $(DESTDIR)/usr/share/yum-cli
++	mkdir -p $(DESTDIR)$(PREFIX)/share/yum-cli
+ 	for p in $(PYFILES) ; do \
+-		install -m 644 $$p $(DESTDIR)/usr/share/yum-cli/$$p; \
++		install -m 644 $$p $(DESTDIR)$(PREFIX)/share/yum-cli/$$p; \
+ 	done
+-	mv $(DESTDIR)/usr/share/yum-cli/yum-updatesd.py $(DESTDIR)/usr/share/yum-cli/yumupd.py
+-	$(PYTHON) -c "import compileall; compileall.compile_dir('$(DESTDIR)/usr/share/yum-cli', 1, '$(PYDIR)', 1)"
++	mv $(DESTDIR)$(PREFIX)/share/yum-cli/yum-updatesd.py $(DESTDIR)$(PREFIX)/share/yum-cli/yumupd.py
++	$(PYTHON) -c "import compileall; compileall.compile_dir('$(DESTDIR)$(PREFIX)/share/yum-cli', 1, '$(PYDIR)', 1)"
+ 
+-	mkdir -p $(DESTDIR)/usr/bin $(DESTDIR)/usr/sbin
+-	install -m 755 bin/yum.py $(DESTDIR)/usr/bin/yum
+-	install -m 755 bin/yum-updatesd.py $(DESTDIR)/usr/sbin/yum-updatesd
++	mkdir -p $(DESTDIR)$(PREFIX)/bin $(DESTDIR)$(PREFIX)/sbin
++	install -m 755 bin/yum.py $(DESTDIR)$(PREFIX)/bin/yum
++	install -m 755 bin/yum-updatesd.py $(DESTDIR)$(PREFIX)/sbin/yum-updatesd
+ 
+-	mkdir -p $(DESTDIR)/var/cache/yum
+-	mkdir -p $(DESTDIR)/var/lib/yum
++	mkdir -p $(DESTDIR)$(LOCALSTATEDIR)/cache/yum
++	mkdir -p $(DESTDIR)$(LOCALSTATEDIR)/lib/yum	
+ 
+ 	for d in $(SUBDIRS); do make PYTHON=$(PYTHON) DESTDIR=`cd $(DESTDIR); pwd` -C $$d install; [ $$? = 0 ] || exit 1; done
+ 
+-.PHONY: docs test
++.PHONY: docs test install
+ 
+ DOCS = yum rpmUtils callback.py yumcommands.py shell.py output.py cli.py utils.py\
+ 	   yummain.py 
+diff -rup yum-3.4.3.orig/docs/Makefile yum-3.4.3/docs/Makefile
+--- yum-3.4.3.orig/docs/Makefile	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/docs/Makefile	2020-09-02 11:36:48.739389024 +0200
+@@ -1,3 +1,6 @@
++PREFIX=/usr
++SYSCONFDIR=/etc
++
+ all:
+ 	echo "Nothing to do"
+ 
+@@ -6,10 +9,10 @@ clean:
+ 	rm -fr epydoc
+ 
+ install:
+-	mkdir -p $(DESTDIR)/usr/share/man/man5
+-	mkdir -p $(DESTDIR)/usr/share/man/man8
+-	install -m 644 yum.8 $(DESTDIR)/usr/share/man/man8/yum.8
+-	install -m 644 yum-shell.8 $(DESTDIR)/usr/share/man/man8/yum-shell.8
+-	install -m 644 yum.conf.5 $(DESTDIR)/usr/share/man/man5/yum.conf.5
+-	install -m 644 yum-updatesd.8 $(DESTDIR)/usr/share/man/man8/yum-updatesd.8
+-	install -m 644 yum-updatesd.conf.5 $(DESTDIR)/usr/share/man/man5/yum-updatesd.conf.5
++	mkdir -p $(DESTDIR)$(PREFIX)/share/man/man5
++	mkdir -p $(DESTDIR)$(PREFIX)/share/man/man8
++	install -m 644 yum.8 $(DESTDIR)$(PREFIX)/share/man/man8/yum.8
++	install -m 644 yum-shell.8 $(DESTDIR)$(PREFIX)/share/man/man8/yum-shell.8
++	install -m 644 yum.conf.5 $(DESTDIR)$(PREFIX)/share/man/man5/yum.conf.5
++	install -m 644 yum-updatesd.8 $(DESTDIR)$(PREFIX)/share/man/man8/yum-updatesd.8
++	install -m 644 yum-updatesd.conf.5 $(DESTDIR)$(PREFIX)/share/man/man5/yum-updatesd.conf.5
+diff -rup yum-3.4.3.orig/etc/Makefile yum-3.4.3/etc/Makefile
+--- yum-3.4.3.orig/etc/Makefile	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/etc/Makefile	2020-09-02 11:36:48.739389024 +0200
+@@ -1,4 +1,7 @@
+-YUMETC=$(DESTDIR)/etc/yum
++PREFIX=/usr
++SYSCONFDIR=/etc
++
++YUMETC=$(DESTDIR)$(SYSCONFDIR)/yum
+ 
+ all:
+ 	echo "Nothing to do"
+@@ -7,32 +10,32 @@ clean:
+ 	rm -f *.pyc *.pyo *~
+ 
+ install:
+-	mkdir -p $(DESTDIR)/etc/yum/
+-	mkdir -p $(DESTDIR)/etc/yum/protected.d
+-	mkdir -p $(DESTDIR)/etc/yum/repos.d
+-	mkdir -p $(DESTDIR)/etc/yum/vars
++	mkdir -p $(YUMETC)
++	mkdir -p $(YUMETC)/protected.d
++	mkdir -p $(YUMETC)/repos.d
++	mkdir -p $(YUMETC)/vars
+ 
+ 	install -m 644 yum.conf $(YUMETC)/yum.conf
+ 
+ 	install -m 644 version-groups.conf $(YUMETC)/version-groups.conf
+ 
+-	mkdir -p $(DESTDIR)/etc/logrotate.d
+-	install -m 644 yum.logrotate $(DESTDIR)/etc/logrotate.d/yum
++	mkdir -p $(DESTDIR)$(SYSCONFDIR)/logrotate.d
++	install -m 644 yum.logrotate $(DESTDIR)$(SYSCONFDIR)/logrotate.d/yum
+ 
+-	mkdir -p $(DESTDIR)/etc/rc.d/init.d
+-	install -m 755 yum-updatesd.init $(DESTDIR)/etc/rc.d/init.d/yum-updatesd
++	mkdir -p $(DESTDIR)$(SYSCONFDIR)/rc.d/init.d
++	install -m 755 yum-updatesd.init $(DESTDIR)$(SYSCONFDIR)/rc.d/init.d/yum-updatesd
+ 
+-	mkdir -p $(DESTDIR)/etc/dbus-1/system.d/
+-	install -m 755 yum-updatesd-dbus.conf $(DESTDIR)/etc/dbus-1/system.d/yum-updatesd.conf
++	mkdir -p $(DESTDIR)$(SYSCONFDIR)/dbus-1/system.d/
++	install -m 755 yum-updatesd-dbus.conf $(DESTDIR)$(SYSCONFDIR)/dbus-1/system.d/yum-updatesd.conf
+ 
+-	install -m 755 yum-updatesd.conf $(DESTDIR)/etc/yum/yum-updatesd.conf
+-
+-	mkdir -p $(DESTDIR)/etc/bash_completion.d
+-	install -m 644 yum.bash $(DESTDIR)/etc/bash_completion.d
+-	mkdir -p $(DESTDIR)/etc/cron.daily
+-	mkdir -p $(DESTDIR)/etc/sysconfig/
+-	install -D -m 755 0yum.cron $(DESTDIR)/etc/cron.daily/0yum.cron
+-	install -D -m 755 yum-cron $(DESTDIR)/etc/rc.d/init.d/yum-cron
++	install -m 755 yum-updatesd.conf $(DESTDIR)$(SYSCONFDIR)/yum/yum-updatesd.conf
++
++	mkdir -p $(YUMETC)/bash_completion.d
++	install -m 644 yum.bash $(YUMETC)/bash_completion.d
++	mkdir -p $(YUMETC)/cron.daily
++	mkdir -p $(YUMETC)/sysconfig/
++	install -D -m 755 0yum.cron $(YUMETC)/cron.daily/0yum.cron
++	install -D -m 755 yum-cron $(YUMETC)/rc.d/init.d/yum-cron
+ 	install -D -m 644 yum-daily.yum $(YUMETC)/yum-daily.yum
+ 	install -D -m 644 yum-weekly.yum $(YUMETC)/yum-weekly.yum
+-	install -D -m 644 yum-cron.sysconf $(DESTDIR)/etc/sysconfig/yum-cron
++	install -D -m 644 yum-cron.sysconf $(DESTDIR)/etc/sysconfig/yum-cron
+diff -rup yum-3.4.3.orig/po/Makefile yum-3.4.3/po/Makefile
+--- yum-3.4.3.orig/po/Makefile	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/po/Makefile	2020-09-02 11:36:48.739389024 +0200
+@@ -1,11 +1,16 @@
+-INSTALL= /usr/bin/install -c
++SHELL=/bin/sh
++PREFIX=/usr
++SYSCONFDIR=/etc
++LOCALSTATEDIR=/var
++
++INSTALL= /usr/bin/install -c
+ INSTALL_PROGRAM= ${INSTALL}
+ INSTALL_DATA= ${INSTALL} -m 644
+-INSTALLNLSDIR=$(DESTDIR)/usr/share/locale
++INSTALLNLSDIR=$(PREFIX)/share/locale
+ top_srcdir = "."
+ 
+ 
+-MSGMERGE = intltool-update -x --gettext-package=$(NLSPACKAGE) --dist
++MSGMERGE = intltool-update -x --gettext-package=$(NLSPACKAGE) --dist
+ 
+ NLSPACKAGE = yum
+ 
+@@ -24,7 +29,7 @@ POTFILES.in:
+ 	done >> $@
+ 
+ $(NLSPACKAGE).pot: $(POTFILES) POTFILES.in
+-	intltool-update --gettext-package=$(NLSPACKAGE) --pot
++	intltool-update --gettext-package=$(NLSPACKAGE) --pot
+ 
+ update-po: Makefile $(NLSPACKAGE).pot refresh-po
+ 
+@@ -57,15 +62,15 @@ distclean: clean
+ depend:
+ 
+ install:	all
+-	mkdir -p $(PREFIX)/$(INSTALLNLSDIR)
++	mkdir -p $(DESTDIR)/$(INSTALLNLSDIR)
+ 	for n in $(CATALOGS); do \
+ 	    l=`basename $$n .po`; \
+ 	    mo=$$l.mo; \
+ 	    if [ ! -f $$mo ]; then continue; fi; \
+-	    $(INSTALL) -m 755 -d $(PREFIX)/$(INSTALLNLSDIR)/$$l; \
+-	    $(INSTALL) -m 755 -d $(PREFIX)/$(INSTALLNLSDIR)/$$l/LC_MESSAGES; \
++	    $(INSTALL) -m 755 -d $(DESTDIR)/$(INSTALLNLSDIR)/$$l; \
++	    $(INSTALL) -m 755 -d $(DESTDIR)/$(INSTALLNLSDIR)/$$l/LC_MESSAGES; \
+ 	    $(INSTALL) -m 644 $$mo \
+-		$(PREFIX)/$(INSTALLNLSDIR)/$$l/LC_MESSAGES/$(NLSPACKAGE).mo; \
++		$(DESTDIR)/$(INSTALLNLSDIR)/$$l/LC_MESSAGES/$(NLSPACKAGE).mo; \
+ 	done
+ 
+ %.mo: %.po
+diff -rup yum-3.4.3.orig/rpmUtils/Makefile yum-3.4.3/rpmUtils/Makefile
+--- yum-3.4.3.orig/rpmUtils/Makefile	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/rpmUtils/Makefile	2020-09-02 11:36:48.739389024 +0200
+@@ -1,8 +1,9 @@
+-PYTHON=python
++PYTHON=python
+ PACKAGE = $(shell basename `pwd`)
+ PYFILES = $(wildcard *.py)
+ PYVER := $(shell $(PYTHON) -c 'import sys; print "%.3s" %(sys.version)')
+ PYSYSDIR := $(shell $(PYTHON) -c 'import sys; print sys.prefix')
++PYSYSDIR := /usr
+ PYLIBDIR = $(PYSYSDIR)/lib/python$(PYVER)
+ PKGDIR = $(PYLIBDIR)/site-packages/$(PACKAGE)
+ 
+@@ -13,7 +14,7 @@ clean:
+ 	rm -f *.pyc *.pyo *~
+ 
+ install:
+-	mkdir -p $(DESTDIR)/$(PKGDIR)
++	mkdir -p $(DESTDIR)/$(PKGDIR)
+ 	for p in $(PYFILES) ; do \
+ 		install -m 644 $$p $(DESTDIR)/$(PKGDIR)/$$p; \
+ 	done
+diff -rup yum-3.4.3.orig/rpmUtils/arch.py yum-3.4.3/rpmUtils/arch.py
+--- yum-3.4.3.orig/rpmUtils/arch.py	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/rpmUtils/arch.py	2020-09-02 11:36:48.739389024 +0200
+@@ -13,6 +13,7 @@ multilibArches = { "x86_64":  ( "athlon"
+ 
+ arches = {
+     # ia32
++    "pentium4": "i686",
+     "athlon": "i686",
+     "i686": "i586",
+     "geode": "i586",
+diff -rup yum-3.4.3.orig/yum/Makefile yum-3.4.3/yum/Makefile
+--- yum-3.4.3.orig/yum/Makefile	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/yum/Makefile	2020-09-02 11:36:48.739389024 +0200
+@@ -1,8 +1,9 @@
+-PYTHON=python
++PYTHON=python
+ PACKAGE = $(shell basename `pwd`)
+ PYFILES = $(wildcard *.py)
+ PYVER := $(shell $(PYTHON) -c 'import sys; print "%.3s" %(sys.version)')
+ PYSYSDIR := $(shell $(PYTHON) -c 'import sys; print sys.prefix')
++PYSYSDIR := /usr
+ PYLIBDIR = $(PYSYSDIR)/lib/python$(PYVER)
+ PKGDIR = $(PYLIBDIR)/site-packages/$(PACKAGE)
+ 
+@@ -13,7 +14,7 @@ clean:
+ 	rm -f *.pyc *.pyo *~
+ 
+ install:
+-	mkdir -p $(DESTDIR)/$(PKGDIR)
++	mkdir -p $(DESTDIR)/$(PKGDIR)
+ 	for p in $(PYFILES) ; do \
+ 		install -m 644 $$p $(DESTDIR)/$(PKGDIR)/$$p; \
+ 	done
+diff -rup yum-3.4.3.orig/yum/__init__.py yum-3.4.3/yum/__init__.py
+--- yum-3.4.3.orig/yum/__init__.py	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/yum/__init__.py	2020-09-02 11:36:48.739389024 +0200
+@@ -1552,6 +1552,8 @@ class YumBase(depsolve.Depsolve):
+             if hasattr(cb, i):
+                 fn = getattr(cb, i)
+                 try:
++                    if i == 'ts_done_fn' and hasattr(cb, '_ts_done'):
++                        getattr(cb, '_ts_done').close()
+                     misc.unlink_f(fn)
+                 except (IOError, OSError), e:
+                     self.logger.critical(_('Failed to remove transaction file %s') % fn)
+@@ -1783,6 +1785,7 @@ class YumBase(depsolve.Depsolve):
+             try: oldpid = int(fd.readline())
+             except ValueError:
+                 # bogus data in the pid file. Throw away.
++                fd.close()
+                 self._unlock(lockfile)
+             else:
+                 if oldpid == os.getpid(): # if we own the lock, we're fine
+@@ -1791,6 +1794,7 @@ class YumBase(depsolve.Depsolve):
+                 except OSError, e:
+                     if e[0] == errno.ESRCH:
+                         # The pid doesn't exist
++                        fd.close()
+                         self._unlock(lockfile)
+                     else:
+                         # Whoa. What the heck happened?
+diff -rup yum-3.4.3.orig/yum/history.py yum-3.4.3/yum/history.py
+--- yum-3.4.3.orig/yum/history.py	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/yum/history.py	2020-09-02 11:36:48.739389024 +0200
+@@ -561,10 +561,13 @@ class YumHistory:
+         self._conn = None
+         
+         self.conf = yum.misc.GenericHolder()
+-        if not os.path.normpath(db_path).startswith(root):
+-            self.conf.db_path  = os.path.normpath(root + '/' + db_path)
+-        else:
+-            self.conf.db_path = os.path.normpath('/' + db_path)
++        # YD dbpath is already root based
++        self.conf.db_path  = os.path.normpath(db_path)
++
++        #if not os.path.normpath(db_path).startswith(root):
++        #    self.conf.db_path  = os.path.normpath(root + '/' + db_path)
++        #else:
++        #    self.conf.db_path = os.path.normpath('/' + db_path)
+         self.conf.writable = False
+         self.conf.readable = True
+ 
+diff -rup yum-3.4.3.orig/yum/misc.py yum-3.4.3/yum/misc.py
+--- yum-3.4.3.orig/yum/misc.py	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/yum/misc.py	2020-09-02 11:36:48.739389024 +0200
+@@ -110,7 +110,9 @@ def re_primary_filename(filename):
+         positives). Note that this is a superset of re_primary_dirname(). """
+     if re_primary_dirname(filename):
+         return True
+-    if filename == '/usr/lib/sendmail':
++    if filename.startswith('/etc/'):
++        return True
++    if filename == '/usr/lib/sendmail':
+         return True
+     return False
+ 
+@@ -991,10 +993,10 @@ def setup_locale(override_codecs=True, o
+         os.environ['LC_ALL'] = 'C'
+         locale.setlocale(locale.LC_ALL, 'C')
+         
+-    if override_codecs:
+-        import codecs
+-        sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
+-        sys.stdout.errors = 'replace'
++    #if override_codecs:
++    #    import codecs
++    #    sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
++    #    sys.stdout.errors = 'replace'
+ 
+ 
+ def get_my_lang_code():
+diff -rup yum-3.4.3.orig/yum/rpmsack.py yum-3.4.3/yum/rpmsack.py
+--- yum-3.4.3.orig/yum/rpmsack.py	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/yum/rpmsack.py	2020-09-02 11:36:48.739389024 +0200
+@@ -218,10 +218,12 @@ class RPMDBPackageSack(PackageSackBase):
+         if cachedir is None:
+             cachedir = persistdir + "/rpmdb-indexes"
+         self.setCacheDir(cachedir)
+-        if not os.path.normpath(persistdir).startswith(self.root):
+-            self._persistdir = root +  '/' + persistdir
+-        else:
++        # YD InstallRoot already added while reading .conf file
+             self._persistdir = persistdir
++        #if not os.path.normpath(persistdir).startswith(self.root):
++        #    self._persistdir = root +  '/' + persistdir
++        #else:
++        #    self._persistdir = persistdir
+         self._have_cached_rpmdbv_data = None
+         self._cached_conflicts_data = None
+         # Store the result of what happens, if a transaction completes.
+@@ -364,7 +366,8 @@ class RPMDBPackageSack(PackageSackBase):
+             pkg = self.searchNevra(n, e, v, r, a)
+             if not pkg:
+                 # Wibble?
+-                self._deal_with_bad_rpmdbcache("dCDPT(pkg checksums)")
++                self._deal_with_bad_rpmdbcache("dCDPT(pkg checksums): %s" %
++                                               txmbr)
+                 continue
+ 
+             pkg = pkg[0]
+@@ -382,10 +385,12 @@ class RPMDBPackageSack(PackageSackBase):
+     def setCacheDir(self, cachedir):
+         """ Sets the internal cachedir value for the rpmdb, to be the
+             "rpmdb-indexes" directory in the persisent yum storage. """
+-        if not os.path.normpath(cachedir).startswith(self.root):
+-            self._cachedir = self.root + '/' + cachedir
+-        else:
+-            self._cachedir = '/' + cachedir
++	# YD already root based
++        self._cachedir = cachedir + "/installed/"
++        #if not os.path.normpath(cachedir).startswith(self.root):
++        #    self._cachedir = self.root + '/' + cachedir
++        #else:
++        #    self._cachedir = '/' + cachedir
+ 
+         if hasattr(self, 'yumdb'): # Need to keep this upto date, after init.
+             version_path = os.path.normpath(self._cachedir + '/version')
+@@ -571,7 +576,7 @@ class RPMDBPackageSack(PackageSackBase):
+             if repat.match(epoch + ":%(name)s-%(version)s-%(release)s.%(arch)s"
+                            % hdr):
+                 return True
+-            if repat.match("%(name)s-%(epoch)s:%(version)s-%(release)s.%(arch)s"
++            if repat.match("%(name)s-" + epoch + ":%(version)s-%(release)s.%(arch)s"
+                            % hdr):
+                 return True
+         return False
+@@ -989,7 +994,8 @@ class RPMDBPackageSack(PackageSackBase):
+             if fo.readline() != '': # Should be EOF
+                 return
+         except ValueError:
+-            self._deal_with_bad_rpmdbcache("pkg checksums")
++            self._deal_with_bad_rpmdbcache("pkg checksums %s-%s:%s-%s.%s" %
++                                           (n, e, v, r, a))
+             return
+ 
+         if not load_packages:
+@@ -1223,7 +1229,7 @@ class RPMDBPackageSack(PackageSackBase):
+                 if not pkgs:
+                     self._pkgname_fails.add(name)
+             else:
+-                pkgs = self.returnPkgs()
++                pkgs = self.returnPackages()
+             for po in pkgs:
+                 for tag in ('arch', 'rel', 'ver', 'epoch'):
+                     if loc[tag] is not None and loc[tag] != getattr(po, tag):
+diff -rup yum-3.4.3.orig/yum/rpmtrans.py yum-3.4.3/yum/rpmtrans.py
+--- yum-3.4.3.orig/yum/rpmtrans.py	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/yum/rpmtrans.py	2020-09-02 11:36:48.739389024 +0200
+@@ -315,6 +315,7 @@ class RPMTransaction:
+             self._ts_done = open(ts_done_fn, 'w')
+         except (IOError, OSError), e:
+             self.display.errorlog('could not open ts_done file: %s' % e)
++            self._ts_done.close()
+             self._ts_done = None
+             return False
+         self._fdSetCloseOnExec(self._ts_done.fileno())
+@@ -332,6 +333,7 @@ class RPMTransaction:
+             #  Having incomplete transactions is probably worse than having
+             # nothing.
+             self.display.errorlog('could not write to ts_done file: %s' % e)
++            self._ts_done.close()
+             self._ts_done = None
+             misc.unlink_f(self.ts_done_fn)
+ 
+@@ -415,6 +417,7 @@ class RPMTransaction:
+             fo = open(tsfn, 'w')
+         except (IOError, OSError), e:
+             self.display.errorlog('could not open ts_all file: %s' % e)
++            self._ts_done.close()
+             self._ts_done = None
+             return
+ 
+@@ -428,7 +431,9 @@ class RPMTransaction:
+             #  Having incomplete transactions is probably worse than having
+             # nothing.
+             self.display.errorlog('could not write to ts_all file: %s' % e)
++            fo.close()
+             misc.unlink_f(tsfn)
++            self._ts_done.close()
+             self._ts_done = None
+ 
+     def callback( self, what, bytes, total, h, user ):
+diff -rup yum-3.4.3.orig/yum/yumRepo.py yum-3.4.3/yum/yumRepo.py
+--- yum-3.4.3.orig/yum/yumRepo.py	2011-06-28 22:27:22.000000000 +0200
++++ yum-3.4.3/yum/yumRepo.py	2020-09-02 11:36:48.739389024 +0200
+@@ -1387,11 +1387,13 @@ class YumRepository(Repository, config.R
+             remote_size += int(ndata.size)
+ 
+         for (ndata, nmdtype) in downloading_with_size:
++            if (hasattr(urlgrabber.progress, 'text_meter_total_size')):
+             urlgrabber.progress.text_meter_total_size(remote_size, local_size)
+             if not self._retrieveMD(nmdtype, retrieve_can_fail=True):
+                 self._revertOldRepoXML()
+                 return False
+             local_size += int(ndata.size)
++            if (hasattr(urlgrabber.progress, 'text_meter_total_size')):        
+         urlgrabber.progress.text_meter_total_size(0)
+         for (ndata, nmdtype) in downloading_no_size:
+             if not self._retrieveMD(nmdtype, retrieve_can_fail=True):
