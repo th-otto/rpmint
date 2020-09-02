@@ -1,0 +1,74 @@
+From c1f8434a6360fbe36fae65bddd01d60119bc2a03 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 31 Aug 2020 02:49:21 +0200
+Subject: [PATCH] Rename some functions to avoid clashes with GEMDOS functions
+ of same name
+
+---
+ rpmio/rpmio.c | 11 +++++++++--
+ rpmio/rpmio.h | 27 +++++++++++++++++++++++++++
+ 2 files changed, 36 insertions(+), 2 deletions(-)
+
+diff --git a/rpmio/rpmio.c b/rpmio/rpmio.c
+index 0c23cd7d6..330f62492 100644
+--- a/rpmio/rpmio.c
++++ b/rpmio/rpmio.c
+@@ -1773,8 +1773,15 @@ void rpmSetCloseOnExec(void)
+ {
+     const int min_fd = STDERR_FILENO; /* don't touch stdin/out/err */
+     int fd;
+-
+-    DIR *dir = opendir("/proc/self/fd");
++    DIR *dir;
++#if defined(__MINT__) && 0
++    /* disabled, because it would be even slower than the loop below */
++    char self[80];
++    sprintf(self, "/kern/%d/fd", (int)getpid());
++    dir = opendir(self);
++#else
++    dir = opendir("/proc/self/fd");
++#endif
+     if (dir == NULL) { /* /proc not available */
+ 	/* iterate over all possible fds, might be slow */
+ 	struct rlimit rl;
+diff --git a/rpmio/rpmio.h b/rpmio/rpmio.h
+index 4239ef474..db41896e4 100644
+--- a/rpmio/rpmio.h
++++ b/rpmio/rpmio.h
+@@ -20,6 +20,33 @@
+ extern "C" {
+ #endif
+ 
++#undef Fstrerror
++#undef Fread
++#undef Fwrite
++#undef Fseek
++#undef Ftell
++#undef Fclose
++#undef Fdopen
++#undef Fopen
++#undef Fflush
++#undef Ferror
++#undef Fileno
++#undef Fcntl
++#undef Fdescr
++#define Fstrerror rpmioFstrerror
++#define Fread rpmioFread
++#define Fwrite rpmioFwrite
++#define Fseek rpmioFseek
++#define Ftell rpmioFtell
++#define Fclose rpmioFclose
++#define Fdopen rpmioFdopen
++#define Fopen rpmioFopen
++#define Fflush rpmioFflush
++#define Ferror rpmioFerror
++#define Fileno rpmioFileno
++#define Fcntl rpmioFcntl
++#define Fdescr rpmioFdescr
++
+ /** \ingroup rpmio
+  */
+ typedef const struct FDIO_s * FDIO_t;
+-- 
+2.24.0
+

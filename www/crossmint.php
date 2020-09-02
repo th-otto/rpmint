@@ -1539,6 +1539,8 @@ This notably applies to Perl and Python.
 
 <li>2020/09/02 Update libexif to version 0.6.22</li>
 
+<li>2020/09/02 Update rpm to version 4.15.1</li>
+
 </ul>
 
 <p></p>

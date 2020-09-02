@@ -88,6 +88,9 @@ patches/rpm/rpm-0076-Port-some-older-rpm-tools.patch
 patches/rpm/rpm-0077-Add-some-debug-messages.patch
 patches/rpm/rpm-0078-Compatibility-fixes-for-Lua-5.3.patch
 patches/rpm/rpm-0079-A-few-more-MiNT-patches-for-4.15.1.patch
+patches/rpm/rpm-0080-Rename-some-functions-to-avoid-clashes-with-GEMDOS-f.patch
+patches/rpm/rpm-0081-Omit-some-tag-alias-names-from-table.patch
+patches/rpm/rpm-0082-Fixes-for-different-filetypes-between-MiNT-Linux.patch
 "
 DISABLED_PATCHES="
 patches/rpm/rpm-remove-brp-strips.patch

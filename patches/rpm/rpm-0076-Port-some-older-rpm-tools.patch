@@ -1,17 +1,17 @@
-From f6c63143b231228a5719ea63d7bddb6ae3885e97 Mon Sep 17 00:00:00 2001
+From c436fb90cf802145eb7e8795117b09d2927554f9 Mon Sep 17 00:00:00 2001
 From: Thorsten Otto <admin@tho-otto.de>
 Date: Sat, 29 Aug 2020 09:24:04 +0200
-Subject: [PATCH 76/78] Port some older rpm tools
+Subject: [PATCH] Port some older rpm tools
 
 ---
- .gitignore     |   4 +
- Makefile.am    |  10 +++
+ .gitignore     |   5 ++
+ Makefile.am    |  13 +++
  rpmarchive.c   |  43 ++++++++++
  rpmdump.c      | 223 +++++++++++++++++++++++++++++++++++++++++++++++++
  rpmheader.c    |  49 +++++++++++
  rpmlead.c      |  99 ++++++++++++++++++++++
- rpmsignature.c |  42 ++++++++++
- 7 files changed, 470 insertions(+)
+ rpmsignature.c |  43 ++++++++++
+ 7 files changed, 475 insertions(+)
  create mode 100644 rpmarchive.c
  create mode 100644 rpmdump.c
  create mode 100644 rpmheader.c
@@ -19,19 +19,19 @@ Subject: [PATCH 76/78] Port some older rpm tools
  create mode 100644 rpmsignature.c
 
 diff --git a/Makefile.am b/Makefile.am
-index 895ecc81d..b7f18d331 100644
+index 895ecc81d..9ae572bd1 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -110,6 +110,8 @@ bin_PROGRAMS =		rpm rpm2cpio rpmbuild rpmdb rpmkeys rpmsign rpmspec
  if WITH_ARCHIVE
  bin_PROGRAMS += 	rpm2archive 
  endif
-+bin_PROGRAMS += 	rpmlead rpmdump rpmheader
-+#bin_PROGRAMS += 	rpmsignature rpmarchive
++bin_PROGRAMS += 	rpmlead rpmdump rpmheader rpmsignature
++#bin_PROGRAMS += 	rpmarchive
  
  rpmlibexec_PROGRAMS =
  rpmconfig_SCRIPTS =	mkinstalldirs \
-@@ -165,6 +167,14 @@ rpm2archive_SOURCES =	rpm2archive.c debug.h system.h
+@@ -165,6 +167,17 @@ rpm2archive_SOURCES =	rpm2archive.c debug.h system.h
  rpm2archive_LDADD =	lib/librpm.la rpmio/librpmio.la
  rpm2archive_LDADD +=	@WITH_POPT_LIB@ @WITH_ARCHIVE_LIB@
  
@@ -43,6 +43,9 @@ index 895ecc81d..b7f18d331 100644
 +
 +rpmheader_SOURCES =	rpmheader.c
 +rpmheader_LDADD =       lib/librpm.la rpmio/librpmio.la
++
++rpmsignature_SOURCES =	rpmsignature.c
++rpmsignature_LDADD =    lib/librpm.la rpmio/librpmio.la
  
  if LIBELF
  if LIBDW
@@ -486,25 +489,25 @@ index 000000000..28371d694
 +}
 diff --git a/rpmsignature.c b/rpmsignature.c
 new file mode 100644
-index 000000000..d50979c19
+index 000000000..976112b7e
 --- /dev/null
 +++ b/rpmsignature.c
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,43 @@
 +/* rpmsignature: spit out the signature portion of a package */
 +
 +#include "system.h"
 +
++#include <rpmlib.h>
 +#include "rpmlead.h"
 +#include "signature.h"
 +
 +int main(int argc, char **argv)
 +{
-+	FD_t fdi,
-+	 fdo;
-+	struct rpmlead lead;
++	FD_t fdi, fdo;
 +	Header sig;
++	char *emsg;
++	int rc;
 +
-+	setprogname(argv[0]);				/* Retrofit glibc __progname */
 +	if (argc == 1)
 +	{
 +		fdi = Fopen("-", "r.ufdio");
@@ -518,17 +521,18 @@ index 000000000..d50979c19
 +		exit(1);
 +	}
 +
-+	readLead(fdi, &lead);
-+	rpmReadSignature(fdi, &sig, lead.signature_type);
-+	switch (lead.signature_type)
++	if ((rc = rpmLeadRead(fdi, &emsg)) != RPMRC_OK)
 +	{
-+	case RPMSIG_NONE:
-+		fprintf(stderr, _("No signature available.\n"));
-+		break;
-+	default:
-+		fdo = Fopen("-", "w.ufdio");
-+		rpmWriteSignature(fdo, sig);
++		fprintf(stderr, "%s\n", emsg);
++		return EXIT_FAILURE;
 +	}
++	if ((rc = rpmReadSignature(fdi, &sig, &emsg)) != RPMRC_OK)
++	{
++		fprintf(stderr, "%s\n", emsg);
++		return EXIT_FAILURE;
++	}
++	fdo = Fopen("-", "w.ufdio");
++	rpmWriteSignature(fdo, sig);
 +
 +	return 0;
 +}
