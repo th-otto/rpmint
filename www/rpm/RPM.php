@@ -1,6 +1,7 @@
 <?php
 include('rpmtag.php');
 include('rpmtagtbl.php');
+require_once('PGP.php');
 
 /*
  * RPM:
@@ -283,7 +284,7 @@ class RPM {
 	{
 		if (!$this->_open())
 		{
-			trigger_error("can't open " . $this->filename);
+			trigger_error("can't open " . $this->filename, E_USER_WARNING);
 			return false;
 		}
 		if (!$this->_rpm_validity(true))
@@ -439,12 +440,10 @@ class RPM {
 		return round($size,1) . "TB";
 	}
 
-	public function get_tag(int $tagnum, bool $return_as_array = false)
+	private function _get_tag(int $tagnum, bool $return_as_array, array &$rh)
 	{
-		if (!$this->rpmh)
-			return false;
-		$idxlist = &$this->rpmh['idxlist'];
-		$count = $this->rpmh['num_indices'];
+		$idxlist = &$rh['idxlist'];
+		$count = $rh['num_indices'];
 		for ($i = 0; $i < $count; $i++)
 		{
 			if ($idxlist[$i]['tag'] == $tagnum)
@@ -461,6 +460,7 @@ class RPM {
 				case RPM_TYPE_BIN:
 				case RPM_TYPE_ASN1:
 				case RPM_TYPE_OPENPGP:
+					/*
 					if ($datacount == 1 && !$return_as_array)
 					{
 						return ord($this->data[$offset]);
@@ -472,6 +472,8 @@ class RPM {
 						$offset++;
 					}
 					return $a;
+					*/
+					return substr($this->data, $offset, $datacount);
 				case RPM_TYPE_INT16:
 					if ($datacount == 1 && !$return_as_array)
 					{
@@ -528,11 +530,50 @@ class RPM {
 					return $a;
 				default:
 					trigger_error($this->filename . ": invalid data type " . $idxlist[$i]['type'] . " in tag " . sprintf("0x%x", $idxlist[$i]['tag']), E_USER_WARNING);
-					return false;
+					return null;
 				}
 			}
 		}
 		return null;
+	}
+
+	public function get_tag(int $tagnum, bool $return_as_array = false)
+	{
+		if (!$this->rpmh)
+			return null;
+		return $this->_get_tag($tagnum, $return_as_array, $this->rpmh);
+	}
+
+	public function get_signature()
+	{
+		if (!$this->sig)
+			return null;
+		$sig = $this->_get_tag(RPMTAG_DSAHEADER, false, $this->sig);
+		if (is_null($sig))
+			$sig = $this->_get_tag(RPMTAG_RSAHEADER, false, $this->sig);
+		if (is_null($sig))
+			$sig = $this->_get_tag(RPMTAG_SIGGPG, false, $this->sig);
+		if (is_null($sig))
+			$sig = $this->_get_tag(RPMTAG_SIGPGP, false, $this->sig);
+		if (is_null($sig))
+			return null;
+		try {
+			$pgp = new PGP($sig);
+			$sigp = array();
+			if ($pgp->prt_params(PGPTAG_SIGNATURE, $sigp))
+				throw new Exception("not an OpenPGP signature");
+			$key_algo = $pgp->dig_params_algo($sigp, PGPVAL_PUBKEYALGO);
+			$hash_algo = $pgp->dig_params_algo($sigp, PGPVAL_HASHALGO);
+			$dbuf = usertime($sigp['time'], 'ddd MMM DD YYYY HH:mm:ss ZZ');
+			$keyid = $pgp->hexstr($sigp['signid']);
+			$val = sprintf("V%d %s/%s, %s, Key ID %s", $sigp['version'], $pgp->val_string(PGPVAL_PUBKEYALGO, $key_algo), $pgp->val_string(PGPVAL_HASHALGO, $hash_algo), $dbuf, $keyid);
+			return $val;
+		} catch (Exception $e)
+		{
+			if (defined('STDERR'))
+				fprintf(STDERR, "%s\n", $e->getMessage());
+			return $e->getMessage();
+		}
 	}
 }
 

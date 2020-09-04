@@ -91,6 +91,7 @@ patches/rpm/rpm-0079-A-few-more-MiNT-patches-for-4.15.1.patch
 patches/rpm/rpm-0080-Rename-some-functions-to-avoid-clashes-with-GEMDOS-f.patch
 patches/rpm/rpm-0081-Omit-some-tag-alias-names-from-table.patch
 patches/rpm/rpm-0082-Fixes-for-different-filetypes-between-MiNT-Linux.patch
+patches/rpm/rpm-0083-Print-correct-digest-library-being-used-in-armor-out.patch
 "
 DISABLED_PATCHES="
 patches/rpm/rpm-remove-brp-strips.patch

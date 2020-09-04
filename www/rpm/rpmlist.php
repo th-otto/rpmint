@@ -73,7 +73,7 @@ if ($dir = opendir($dirname))
 		$dir = implode("/", array_slice(explode("/", dirname($_SERVER['PHP_SELF'])), -2));
 		echo "<td>$time</td>";
 		echo "<td align=\"right\">$size</td>";
-		echo "<td><a href=\"../../rpmdetails.php?file=$dir/$file\">Details</a></td>";
+		echo "<td><a href=\"../../rpmdetails.php?file=" . urlencode("$dir/$file") . "\">Details</a></td>";
 		echo "</tr>\n";
  	}
 }

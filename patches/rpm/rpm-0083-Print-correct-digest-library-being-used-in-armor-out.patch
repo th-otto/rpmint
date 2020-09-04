@@ -1,0 +1,49 @@
+From a7996f445eb92df8cf06da524b4fec059e885a73 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 4 Sep 2020 14:24:12 +0200
+Subject: [PATCH] Print correct digest library being used in armor output
+
+---
+ rpmio/Makefile.am | 4 ++++
+ rpmio/rpmpgp.c    | 2 +-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/rpmio/Makefile.am b/rpmio/Makefile.am
+index a1cfbee22..827d738c6 100644
+--- a/rpmio/Makefile.am
++++ b/rpmio/Makefile.am
+@@ -26,14 +26,18 @@ librpmio_la_SOURCES = \
+ 
+ if WITH_BEECRYPT
+ librpmio_la_SOURCES += digest_beecrypt.c
++AM_CPPFLAGS += -DDIGEST_VERSION='" (BeeCrypt)"'
+ else
+ if WITH_OPENSSL
+ librpmio_la_SOURCES += digest_openssl.c
++AM_CPPFLAGS += -DDIGEST_VERSION='" (OpenSSL)"'
+ else
+ if WITH_LIBGCRYPT
+ librpmio_la_SOURCES += digest_libgcrypt.c
++AM_CPPFLAGS += -DDIGEST_VERSION='" (Libgcrypt)"'
+ else
+ librpmio_la_SOURCES += digest_nss.c
++AM_CPPFLAGS += -DDIGEST_VERSION='" (NSS-3)"'
+ endif
+ endif
+ endif
+diff --git a/rpmio/rpmpgp.c b/rpmio/rpmpgp.c
+index 46cd0f31a..34fb13691 100644
+--- a/rpmio/rpmpgp.c
++++ b/rpmio/rpmpgp.c
+@@ -1386,7 +1386,7 @@ char * pgpArmorWrap(int atype, const unsigned char * s, size_t ns)
+     free(crc);
+     free(enc);
+ 
+-    rasprintf(&val, "-----BEGIN PGP %s-----\nVersion: rpm-" VERSION " (NSS-3)\n\n"
++    rasprintf(&val, "-----BEGIN PGP %s-----\nVersion: rpm-" VERSION DIGEST_VERSION "\n\n"
+ 		    "%s\n-----END PGP %s-----\n",
+ 		    valstr, buf != NULL ? buf : "", valstr);
+ 
+-- 
+2.24.0
+
