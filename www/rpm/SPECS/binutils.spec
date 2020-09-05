@@ -5,6 +5,10 @@
 %endif
 %rpmint_header
 
+%if "%{?build_32bit}" == ""
+%define build_32bit 0
+%endif
+
 Summary:        GNU Binutils
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
@@ -34,7 +38,28 @@ BuildRequires:  automake
 BuildRequires:  libtool
 BuildRequires:  pkgconfig
 
-%if "%{buildtype}" != "cross"
+#
+# Note: the following sections are designed to build the 32bit
+# versions on an x86-64 system, they are *not* designed to build
+# on a 32bit system.
+# In order not to compromise your normal 64bit versions of the tools
+# (which would be installed to /usr/bin), you should install this package
+# manually with a different target installation prefix,
+# (by using the --relocate option of rpm)
+# and put that <prefix>/bin on your path when building the 32bit
+# version of gcc.
+# 
+%if "%{buildtype}" == "cross"
+%if %{build_32bit}
+%define _target_cpu i686
+%define _host_cpu i686
+%define _arch i686
+BuildRequires:  gcc-c++-32bit
+Provides:       cross-mint-%{pkgname}-32bit = %{version}-%{release}
+%else
+BuildRequires:  gcc-c++
+%endif
+%else
 BuildRequires:  cross-mint-gcc
 BuildRequires:  cross-mint-mintlib
 BuildRequires:  cross-mint-fdlibm
@@ -81,6 +106,10 @@ WITH_CPU_v4e=5475
 
 GCC=${GCC-gcc}
 GXX=${GXX-g++}
+%if %{build_32bit}
+GCC="${GCC} -m32"
+GXX="${GXX} -m32"
+%endif
 BUILD_EXEEXT=
 PREFIX=/usr
 
@@ -92,7 +121,9 @@ case `uname -s` in
 	CYGWIN*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
 	*) host=linux64
-	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=linux32; fi
+%if %{build_32bit}
+	   host=linux32
+%endif
 	   ;;
 esac
 case $host in
@@ -101,11 +132,16 @@ esac
 case $host in
 	mingw* | msys*) LN_S="cp -p" ;;
 esac
-if test $host = linux64; then
-	BUILD_LIBDIR=%{_libdir}
-else
-	BUILD_LIBDIR=%{_prefix}/lib
-fi
+%if %{build_32bit}
+%define build_libdir %{_prefix}/lib
+%else
+%if "%{buildtype}" == "cross"
+%define build_libdir %{_libdir}
+%else
+%define build_libdir %{_rpmint_target_prefix}/lib
+%endif
+%endif
+BUILD_LIBDIR=%{build_libdir}
 
 #
 # try config.guess from automake first to get the

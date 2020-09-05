@@ -44,7 +44,10 @@ Group:          Development/Languages/C and C++
 Provides:       c_compiler
 %endif
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-gcc
+Provides:       cross-mint-gcc = %{version}-%{release}
+%if %{build_32bit}
+Provides:       cross-mint-gcc-32bit = %{version}-%{release}
+%endif
 %endif
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
@@ -58,7 +61,6 @@ Source0: https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz
 Source1: gcc-download-prerequisites
 Patch0: gcc-%{version}-mint-%{releasedate}.patch
 
-BuildRequires:  gcc-c++
 BuildRequires:  cross-mint-binutils
 BuildRequires:  cross-mint-mintlib-headers
 BuildRequires:  cross-mint-fdlibm-headers
@@ -80,7 +82,18 @@ BuildRequires:  cross-mint-mpfr >= 3.0.0
 BuildRequires:  cross-mint-mpc >= 1.0.0
 BuildRequires:  cross-mint-isl >= 0.18
 
-%if "%{buildtype}" != "cross"
+%if "%{buildtype}" == "cross"
+%if %{build_32bit}
+%define _target_cpu i686
+%define _host_cpu i686
+%define _arch i686
+BuildRequires:  gcc-c++-32bit
+BuildRequires:  cross-mint-binutils-32bit
+Provides:       cross-mint-%{pkgname}-32bit = %{version}-%{release}
+%else
+BuildRequires:  gcc-c++
+%endif
+%else
 BuildRequires:  cross-mint-%{pkgname} = %{version}
 BuildRequires:  cross-mint-mintlib
 BuildRequires:  cross-mint-fdlibm
@@ -109,6 +122,9 @@ Requires:       %{cross_pkgname}-c++ = %{version}-%{release}
 Provides:       cross-mint-libstdc++-devel = %{version}-%{release}
 Provides:       cross-mint-c++ = %{version}-%{release}
 Provides:       cross-mint-gcc-c++ = %{version}-%{release}
+%if %{build_32bit}
+Provides:       cross-mint-gcc-c++-32bit = %{version}-%{release}
+%endif
 %else
 %if %{build_cp}
 BuildRequires:  cross-mint-%{pkgname}-c++ = %{version}

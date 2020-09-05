@@ -6,13 +6,28 @@ if ($document_root != '')
 include($document_root . 'functions.php');
 
 require_once('RPM.php');
+
+if (!isset($_GET['file']))
+{
+	if (isset($argv[1]))
+	{
+		$filename = $argv[1];
+	} else
+	{
+		$filename = '';
+	}
+} else
+{
+	$filename = $_GET['file'];
+}
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
           "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xml:lang="en" lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>m68k-atari-mint cross-tools</title>
+<title><?php echo htmlspecialchars(basename($filename)) . " RPMint Download"; ?></title>
 <meta name="keywords" content="ARAnyM, EmuTOS, GCC, Atari, MiNT" />
 <link rel="stylesheet" type="text/css" href="rpm.css" />
 <link rel="stylesheet" type="text/css" href="/tippy/tippy.css" />
@@ -23,20 +38,11 @@ require_once('RPM.php');
 <body>
 
 <?php
-if (!isset($_GET['file']))
+if ($filename == '')
 {
-	if (isset($argv[1]))
-	{
-		$filename = $argv[1];
-	} else
-	{
-		echo "<pre>\n";
-		echo "no filename\n";
-		exit(1);
-	}
-} else
-{
-	$filename = $_GET['file'];
+	echo "<pre>\n";
+	echo "no filename\n";
+	exit(1);
 }
 $rpm = rpm_open($filename);
 if (!$rpm)
@@ -137,6 +143,7 @@ tagrow("Package name", $rpm->get_tag_as_string(RPMTAG_NAME));
 tagrow("Package version", $rpm->get_tag_as_string(RPMTAG_VERSION));
 tagrow("Package release", $rpm->get_tag_as_string(RPMTAG_RELEASE));
 tagrow("Build Date", usertime($rpm->get_tag(RPMTAG_BUILDTIME), 'ddd MMM DD YYYY HH:mm:ss ZZ'), false, false);
+tagrow("Relocations", $rpm->get_tag_as_string(RPMTAG_PREFIXES));
 tagrow("URL", $rpm->get_tag_as_string(RPMTAG_URL));
 tagrow("BUGURL", $rpm->get_tag_as_string(RPMTAG_BUGURL));
 tagrow("Licence", $rpm->get_tag_as_string(RPMTAG_LICENSE));
