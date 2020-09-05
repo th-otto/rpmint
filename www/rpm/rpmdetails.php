@@ -63,6 +63,7 @@ if (!$rpm->is_source())
 		array_push($cmps, $ext);
 		$srcfilename = implode(".", $cmps);
 	}
+	$srcfilename = dirname(dirname($filename)) . "/src/" . basename($srcfilename);
 } else
 {
 	$srcfilename = $filename;
