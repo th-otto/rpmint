@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=coreutils
-VERSION=-8.28
+VERSION=-8.32
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -20,18 +20,25 @@ patches/coreutils/coreutils-skip-gnulib-test-tls.patch
 patches/coreutils/coreutils-tests-shorten-extreme-factor-tests.patch
 patches/coreutils/coreutils-disable_tests.patch
 patches/coreutils/coreutils-test_without_valgrind.patch
+patches/coreutils/coreutils-ls-restore-8.31-behavior-on-removed-dirs.patch
+patches/coreutils/coreutils-gnulib-disable-test-float.patch
 patches/coreutils/sh-utils-2.0-getgid.patch
 patches/coreutils/sh-utils-2.0-mint.patch
 patches/coreutils/coreutils-mint-physmem.patch
 patches/coreutils/coreutils-dummy-man-patch
 patches/coreutils/coreutils-mint-mountlist.patch
 patches/coreutils/coreutils-mint-procfile.patch
-patches/coreutils/coreutils-mintelf-config.patch
+patches/coreutils/coreutils-mint-thread.patch
+"
+DISABLED_PATCHES="
+patches/config.sub
 "
 
+# patches/coreutils/coreutils-mintelf-config.patch
 # patches/coreutils/coreutils-remove_hostname_documentation.patch
 # patches/coreutils/coreutils-remove_kill_documentation.patch
 # patches/coreutils/coreutils-build-timeout-as-pie.patch
+# patches/coreutils/coreutils-use-python3.patch
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
@@ -51,8 +58,8 @@ autoheader || exit 1
 automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
-# patch it again in case it was replaced by autoreconf
-patch -p1 -i ${BUILD_DIR}/patches/coreutils/coreutils-mintelf-config.patch || :
+# autoreconf may have overwritten config.sub
+cp "$BUILD_DIR/patches/config.sub" build-aux/
 
 cd "$MINT_BUILD_DIR"
 

@@ -1,18 +1,19 @@
---- sh-utils-2.0/src/uptime.c.orig	Mon May 10 17:10:54 1999
-+++ sh-utils-2.0/src/uptime.c	Fri Sep  7 01:59:52 2001
-@@ -18,6 +18,9 @@
+diff -rup coreutils-8.32.orig/src/uptime.c coreutils-8.32/src/uptime.c
+--- coreutils-8.32.orig/src/uptime.c	2020-02-04 20:27:08.000000000 +0100
++++ coreutils-8.32/src/uptime.c	2020-09-05 14:50:36.618758792 +0200
+@@ -17,6 +17,9 @@
  /* Created by hacking who.c by Kaveh Ghazi ghazi@caip.rutgers.edu.  */
  
  #include <config.h>
 +#ifdef __MINT__
 +#define HAVE_PROC_UPTIME 1
 +#endif
- #include <getopt.h>
  #include <stdio.h>
  
-@@ -58,7 +61,11 @@
+ #include <sys/types.h>
+@@ -62,7 +65,11 @@ print_uptime (size_t n, const STRUCT_UTM
+ #ifdef HAVE_PROC_UPTIME
    FILE *fp;
-   double upsecs;
  
 +#ifdef __MINT__
 +  fp = fopen ("/kern/uptime", "r");

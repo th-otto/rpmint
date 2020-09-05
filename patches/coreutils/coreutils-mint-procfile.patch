@@ -25,7 +25,7 @@ diff -rup -x '*.o' coreutils-8.28.orig/lib/filemode.c coreutils-8.28/lib/filemod
 diff -rup -x '*.o' coreutils-8.28.orig/lib/sys_stat.in.h coreutils-8.28/lib/sys_stat.in.h
 --- coreutils-8.28.orig/lib/sys_stat.in.h	2017-09-01 09:14:49.000000000 +0200
 +++ coreutils-8.28/lib/sys_stat.in.h	2020-06-26 20:04:41.254996690 +0200
-@@ -163,6 +163,7 @@ struct stat
+@@ -170,6 +170,7 @@ struct stat
  # undef S_ISNWK
  # undef S_ISREG
  # undef S_ISSOCK
@@ -33,7 +33,7 @@ diff -rup -x '*.o' coreutils-8.28.orig/lib/sys_stat.in.h coreutils-8.28/lib/sys_
  #endif
  
  #ifndef S_ISBLK
-@@ -259,6 +260,14 @@ struct stat
+@@ -266,6 +267,14 @@ struct stat
  # endif
  #endif
  
@@ -51,7 +51,7 @@ diff -rup -x '*.o' coreutils-8.28.orig/lib/sys_stat.in.h coreutils-8.28/lib/sys_
 diff -rup -x '*.o' coreutils-8.28.orig/src/ls.c coreutils-8.28/src/ls.c
 --- coreutils-8.28.orig/src/ls.c	2020-06-26 13:56:18.450185557 +0200
 +++ coreutils-8.28/src/ls.c	2020-06-26 20:08:06.135002777 +0200
-@@ -4643,6 +4643,8 @@ get_type_indicator (bool stat_ok, mode_t
+@@ -4832,6 +4832,8 @@ get_type_indicator (bool stat_ok, mode_t
          c = '=';
        else if (stat_ok && S_ISDOOR (mode))
          c = '>';

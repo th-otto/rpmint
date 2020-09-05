@@ -1541,6 +1541,8 @@ This notably applies to Perl and Python.
 
 <li>2020/09/02 Update rpm to version 4.15.1</li>
 
+<li>2020/09/05 Update coreutils to version 8.32</li>
+
 </ul>
 
 <p></p>

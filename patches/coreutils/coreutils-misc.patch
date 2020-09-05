@@ -37,7 +37,7 @@ Index: tests/misc/help-version.sh
 ===================================================================
 --- a/tests/misc/help-version.sh.orig
 +++ b/tests/misc/help-version.sh
-@@ -238,6 +238,7 @@ parted_setup () { args="-s $tmp_in mklab
+@@ -239,6 +239,7 @@ parted_setup () { args="-s $tmp_in mklab
  for i in $built_programs; do
    # Skip these.
    case $i in chroot|stty|tty|false|chcon|runcon|coreutils) continue;; esac
@@ -59,84 +59,3 @@ Index: tests/other-fs-tmpdir
  if test -z "$other_partition_tmpdir"; then
    skip_ \
  "requires a writable directory on a different disk partition,
---- coreutils-8.28/src/ls.c.orig	2017-10-23 08:42:03.060596139 +0200
-+++ coreutils-8.28/src/ls.c	2017-10-23 08:43:41.272594002 +0200
-@@ -160,6 +160,9 @@
- # define st_author st_uid
- #endif
- 
-+#undef MAX
-+#define MAX(a, b) ((a < b) ? (b) : (a))
-+
- enum filetype
-   {
-     unknown,
---- coreutils-8.28/src/od.c.orig	2017-10-23 08:48:57.508587120 +0200
-+++ coreutils-8.28/src/od.c	2017-10-23 08:49:21.964586588 +0200
-@@ -49,6 +49,9 @@
- typedef unsigned long int unsigned_long_long_int;
- #endif
- 
-+#undef MAX
-+#define MAX(a, b) ((a < b) ? (b) : (a))
-+
- enum size_spec
-   {
-     NO_SIZE,
---- coreutils-8.28/src/sort.c.orig	2017-10-23 08:51:11.988584194 +0200
-+++ coreutils-8.28/src/sort.c	2017-10-23 08:56:55.728576714 +0200
-@@ -62,6 +62,9 @@
- #include "xnanosleep.h"
- #include "xstrtol.h"
- 
-+#undef MAX
-+#define MAX(a, b) ((a < b) ? (b) : (a))
-+
- #ifndef RLIMIT_DATA
- struct rlimit { size_t rlim_cur; };
- # define getrlimit(Resource, Rlp) (-1)
-@@ -1335,7 +1338,7 @@
-   free (node);
- }
- 
--#if HAVE_LANGINFO_CODESET
-+#if defined(HAVE_LANGINFO_CODESET) || defined(HAVE_MBRTOWC)
- 
- static int
- struct_month_cmp (void const *m1, void const *m2)
-@@ -1470,7 +1473,15 @@
- 
-   for (i = 0; i < MONTHS_PER_YEAR; i++)
-     {
-+#ifdef HAVE_NL_LANGINFO
-       s = (char *) nl_langinfo (ABMON_1 + i);
-+#else
-+	  static const char	mon_name[][4] = {
-+		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-+		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-+	  };
-+	  s = (char *) mon_name[i];
-+#endif
-       s_len = strlen (s);
-       monthtab[i].name = name = (char *) xmalloc (s_len + 1);
-       monthtab[i].val = i + 1;
---- coreutils-8.28/src/stat.c.orig	2017-10-23 08:58:49.524574237 +0200
-+++ coreutils-8.28/src/stat.c	2017-10-23 09:00:00.308572697 +0200
-@@ -74,6 +74,9 @@
- #include "find-mount-point.h"
- #include "xvasprintf.h"
- 
-+#undef MAX
-+#define MAX(a, b) ((a < b) ? (b) : (a))
-+
- #if USE_STATVFS
- # define STRUCT_STATXFS_F_FSID_IS_INTEGER STRUCT_STATVFS_F_FSID_IS_INTEGER
- # define HAVE_STRUCT_STATXFS_F_TYPE HAVE_STRUCT_STATVFS_F_TYPE
-@@ -163,6 +166,7 @@
- #endif
- 
- /* FIXME: these are used by printf.c, too */
-+#undef isodigit
- #define isodigit(c) ('0' <= (c) && (c) <= '7')
- #define octtobin(c) ((c) - '0')
- #define hextobin(c) ((c) >= 'a' && (c) <= 'f' ? (c) - 'a' + 10 : \
