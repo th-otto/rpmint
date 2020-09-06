@@ -4,14 +4,15 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=bison
-VERSION=-3.0.4
+VERSION=-3.6.4
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="
+PATCHES=""
+DISABLED_PATCHES="
 patches/${PACKAGENAME}/bison-gcc7-fix.patch
-patches/${PACKAGENAME}/bison-mintelf-config.patch
+patches/config.sub
 "
 
 BINFILES="
@@ -20,6 +21,7 @@ ${TARGET_PREFIX#/}/share/info/*
 ${TARGET_PREFIX#/}/share/man/man1/*
 ${TARGET_PREFIX#/}/share/doc/bison/*
 ${TARGET_PREFIX#/}/share/aclocal/*
+${TARGET_PREFIX#/}/share/bison/*
 "
 
 unpack_archive
@@ -33,7 +35,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/bison-mintelf-config.patch"
+cp "$BUILD_DIR/patches/config.sub" build-aux/
 
 cd "$MINT_BUILD_DIR"
 

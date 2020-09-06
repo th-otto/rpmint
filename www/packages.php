@@ -839,7 +839,7 @@ patterns in text.
 		'name' => 'bison',
 		'upstream' => 'http://www.gnu.org/software/bison/bison.html',
 		'source' => 'http://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
-		'version' => '3.0.4',
+		'version' => '3.6.4',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

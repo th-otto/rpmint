@@ -1543,6 +1543,8 @@ This notably applies to Perl and Python.
 
 <li>2020/09/05 Update coreutils to version 8.32</li>
 
+<li>2020/09/06 Update bison to version 3.6.4</li>
+
 </ul>
 
 <p></p>
