@@ -264,6 +264,7 @@ if (!is_null($srcfilename))
 $dirindexes = $rpm->get_tag(RPMTAG_DIRINDEXES, true);
 $basenames = $rpm->get_tag(RPMTAG_BASENAMES, true);
 $dirnames = $rpm->get_tag(RPMTAG_DIRNAMES, true);
+$oldnames = $rpm->get_tag(RPMTAG_OLDFILENAMES, true);
 $links = $rpm->get_tag(RPMTAG_FILELINKTOS, true);
 $modes = $rpm->get_tag(RPMTAG_FILEMODES, true);
 $sizes = $rpm->get_tag(RPMTAG_FILESIZES, true);
@@ -276,6 +277,29 @@ if (!is_null($basenames))
 	foreach ($basenames as $key => $name)
 	{
 		$name = $dirnames[$dirindexes[$key]] . $name;
+		echo "<tr><td>";
+		echo $rpm->perm_string($modes[$key]);
+		echo "&nbsp;";
+		echo str_replace(" ", "&nbsp;", sprintf("%10u ", $sizes[$key]));
+		echo usertime($mtimes[$key]);
+		echo "&nbsp;";
+		echo htmlspecialchars($name);
+		if ($links[$key] != '')
+		{
+			echo " -&gt; ";
+			echo htmlspecialchars($links[$key]);
+		}
+		echo "</td></tr>\n";
+	}
+	echo "</tbody>\n";
+	echo "</table>\n";
+} else if (!is_null($oldnames))
+{
+	echo "<h2>Files</h2>\n";
+	echo "<table class=\"table-small table-bordered table-striped\">\n";
+	echo "<tbody class=\"mono text-break\">\n";
+	foreach ($oldnames as $key => $name)
+	{
 		echo "<tr><td>";
 		echo $rpm->perm_string($modes[$key]);
 		echo "&nbsp;";

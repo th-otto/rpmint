@@ -71,7 +71,7 @@ if ($dir = opendir($dirname))
 		echo "<th scope=\"row\"><a href=\"$file\" title=\"" . htmlspecialchars($title) . "\">$file</a></th>";
 		echo "<td>" . htmlspecialchars($title) . "</td>";
 		$dir = implode("/", array_slice(explode("/", dirname($_SERVER['PHP_SELF'])), -2));
-		echo "<td>$time</td>";
+		echo "<td class=\"nobreak\">$time</td>";
 		echo "<td align=\"right\">$size</td>";
 		echo "<td><a href=\"../../rpmdetails.php?file=" . urlencode("$dir/$file") . "\">Details</a></td>";
 		echo "</tr>\n";

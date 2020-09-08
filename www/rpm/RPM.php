@@ -407,6 +407,8 @@ class RPM {
 			case 12: $perm = 's'; break;
 			case 2: $perm = 'c'; break;
 			case 6: $perm = 'b'; break;
+			/* bug from old versions of atari cpio: */
+			case 14: $perm = 'l'; break;
 			default: $perm = '?'; break;
 		}
 		$perm .= $mode & 0x100 ? 'r' : '-';

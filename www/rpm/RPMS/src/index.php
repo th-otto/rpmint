@@ -1,4 +1,4 @@
 <?php
-$type = 'source packages';
+$type = 'Source packages';
 include('../../rpmlist.php')
 ?>
