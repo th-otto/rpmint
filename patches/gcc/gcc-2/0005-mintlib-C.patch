@@ -1,0 +1,416 @@
+From c9e9730b97f968b1281ea25d9b2ed256a4120fe6 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sun, 6 Sep 2020 17:05:19 +0200
+Subject: [PATCH 05/14] mintlib C++
+
+---
+ libio/config/mint.mt | 10 ++++++++++
+ libio/configure.in   |  1 +
+ libio/gen-params     |  2 +-
+ libio/genops.c       |  6 ------
+ libio/iofclose.c     |  6 ------
+ libio/iofdopen.c     |  4 ----
+ libio/iofeof.c       |  6 ------
+ libio/ioferror.c     |  6 ------
+ libio/iofflush.c     |  4 ----
+ libio/iofgetpos.c    |  4 ----
+ libio/iofgets.c      |  4 ----
+ libio/iofopen.c      |  4 ----
+ libio/iofputs.c      |  4 ----
+ libio/iofread.c      |  4 ----
+ libio/iofsetpos.c    |  4 ----
+ libio/ioftell.c      |  4 ----
+ libio/iofwrite.c     |  4 ----
+ libio/iogetc.c       |  8 --------
+ libio/iogetdelim.c   |  5 -----
+ libio/iogets.c       |  4 ----
+ libio/iopopen.c      |  4 ----
+ libio/ioputc.c       |  8 --------
+ libio/ioputs.c       |  4 ----
+ libio/iosetbuffer.c  |  4 ----
+ libio/iosetvbuf.c    |  4 ----
+ libio/ioungetc.c     |  4 ----
+ libio/iovsprintf.c   |  7 -------
+ libio/iovsscanf.c    | 10 ----------
+ 28 files changed, 12 insertions(+), 127 deletions(-)
+ create mode 100644 libio/config/mint.mt
+
+diff --git a/libio/config/mint.mt b/libio/config/mint.mt
+new file mode 100644
+index 00000000000..43c68fd0eea
+--- /dev/null
++++ b/libio/config/mint.mt
+@@ -0,0 +1,10 @@
++
++G_CONFIG_ARGS = HAVE_PRINTF_FP=0 HAVE_LONG_DOUBLE_IO=0
++
++# STDIO_OBJECTS=
++
++# We have the rest in /usr/include.
++#USER_INCLUDES=PlotFile.h SFile.h builtinbuf.h editbuf.h fstream.h \
++#	indstream.h iomanip.h iostream.h istream.h ostream.h \
++#	parsestream.h pfstream.h procbuf.h stdiostream.h stream.h \
++#	streambuf.h strfile.h strstream.h
+diff --git a/libio/configure.in b/libio/configure.in
+index ac494296fe2..a25164cc227 100644
+--- a/libio/configure.in
++++ b/libio/configure.in
+@@ -50,6 +50,7 @@ frags=
+ 
+ case "${target}" in
+   *-hpux*)       frags=hpux.mt ;;
++  *-mint*)       frags=mint.mt ;;
+   alpha*-*-linux-gnulibc1)
+ 		 frags="linux.mt linuxaxp1.mt mtsafe.mt" ;;
+   powerpc*-*-linux-gnulibc1)
+diff --git a/libio/gen-params b/libio/gen-params
+index afb8f3b03c0..9a73059e62b 100755
+--- a/libio/gen-params
++++ b/libio/gen-params
+@@ -712,7 +712,7 @@ fi
+ cat >dummy.c <<EOF
+ int main()
+ {
+-    return __printf_fp ();
++    return __p_xx_rintf_fp ();
+ }
+ EOF
+ 
+diff --git a/libio/genops.c b/libio/genops.c
+index b899e150afa..47a532b6fe2 100644
+--- a/libio/genops.c
++++ b/libio/genops.c
+@@ -935,12 +935,6 @@ __io_defs io_defs__;
+ 
+ #endif /* TODO */
+ 
+-#ifdef weak_alias
+-weak_alias (_IO_cleanup, _cleanup)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-void _cleanup () __attribute__ ((weak, alias ("_IO_cleanup")));
+-#endif
+-
+ #ifdef text_set_element
+ text_set_element(__libc_atexit, _cleanup);
+ #endif
+diff --git a/libio/iofclose.c b/libio/iofclose.c
+index 7db336c5d53..fa0446fe6c3 100644
+--- a/libio/iofclose.c
++++ b/libio/iofclose.c
+@@ -52,9 +52,3 @@ _IO_fclose (fp)
+ 
+   return status;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fclose, fclose)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int fclose (_IO_FILE *) __attribute__ ((weak, alias("_IO_fclose")));
+-#endif
+diff --git a/libio/iofdopen.c b/libio/iofdopen.c
+index 841e7032b80..a5f4b8319fb 100644
+--- a/libio/iofdopen.c
++++ b/libio/iofdopen.c
+@@ -128,7 +128,3 @@ _IO_fdopen (fd, mode)
+ 
+   return (_IO_FILE *) &new_f->fp;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fdopen, fdopen)
+-#endif
+diff --git a/libio/iofeof.c b/libio/iofeof.c
+index 7bf8cba285b..a4c449cb4a7 100644
+--- a/libio/iofeof.c
++++ b/libio/iofeof.c
+@@ -37,9 +37,3 @@ _IO_feof (fp)
+   _IO_funlockfile (fp);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_feof, feof)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int feof (_IO_FILE *) __attribute__ ((weak, alias("_IO_feof")));
+-#endif
+diff --git a/libio/ioferror.c b/libio/ioferror.c
+index 3019e796a1f..c2ea7327e03 100644
+--- a/libio/ioferror.c
++++ b/libio/ioferror.c
+@@ -37,9 +37,3 @@ _IO_ferror (fp)
+   _IO_funlockfile (fp);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_ferror, ferror)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int ferror (_IO_FILE *) __attribute__ ((weak, alias("_IO_ferror")));
+-#endif
+diff --git a/libio/iofflush.c b/libio/iofflush.c
+index 540c99d535e..0fa3c2b507a 100644
+--- a/libio/iofflush.c
++++ b/libio/iofflush.c
+@@ -43,7 +43,3 @@ _IO_fflush (fp)
+       return result;
+     }
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fflush, fflush)
+-#endif
+diff --git a/libio/iofgetpos.c b/libio/iofgetpos.c
+index 716be4bca10..a0a119db9c9 100644
+--- a/libio/iofgetpos.c
++++ b/libio/iofgetpos.c
+@@ -49,7 +49,3 @@ _IO_fgetpos (fp, posp)
+   *posp = pos;
+   return 0;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fgetpos, fgetpos)
+-#endif
+diff --git a/libio/iofgets.c b/libio/iofgets.c
+index 74754d5d1ea..9695fc1882f 100644
+--- a/libio/iofgets.c
++++ b/libio/iofgets.c
+@@ -50,7 +50,3 @@ _IO_fgets (buf, n, fp)
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fgets, fgets)
+-#endif
+diff --git a/libio/iofopen.c b/libio/iofopen.c
+index 1dbeccb81a8..1bd59d3cbca 100644
+--- a/libio/iofopen.c
++++ b/libio/iofopen.c
+@@ -58,7 +58,3 @@ _IO_fopen (filename, mode)
+   free (new_f);
+   return NULL;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fopen, fopen)
+-#endif
+diff --git a/libio/iofputs.c b/libio/iofputs.c
+index 1a329bbe26f..6aa3edcb296 100644
+--- a/libio/iofputs.c
++++ b/libio/iofputs.c
+@@ -43,7 +43,3 @@ _IO_fputs (str, fp)
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fputs, fputs)
+-#endif
+diff --git a/libio/iofread.c b/libio/iofread.c
+index c83d2b638c9..9559d708c23 100644
+--- a/libio/iofread.c
++++ b/libio/iofread.c
+@@ -43,7 +43,3 @@ _IO_fread (buf, size, count, fp)
+   _IO_cleanup_region_end (1);
+   return bytes_requested == bytes_read ? count : bytes_read / size;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fread, fread)
+-#endif
+diff --git a/libio/iofsetpos.c b/libio/iofsetpos.c
+index a8d816f5a39..f8de16ad6ea 100644
+--- a/libio/iofsetpos.c
++++ b/libio/iofsetpos.c
+@@ -50,7 +50,3 @@ _IO_fsetpos (fp, posp)
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fsetpos, fsetpos)
+-#endif
+diff --git a/libio/ioftell.c b/libio/ioftell.c
+index d8a1ce1d242..d22807b0f39 100644
+--- a/libio/ioftell.c
++++ b/libio/ioftell.c
+@@ -47,7 +47,3 @@ _IO_ftell (fp)
+     }
+   return _IO_pos_as_off (pos);
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_ftell, ftell)
+-#endif
+diff --git a/libio/iofwrite.c b/libio/iofwrite.c
+index 5bc525ffc70..3cddf9a940b 100644
+--- a/libio/iofwrite.c
++++ b/libio/iofwrite.c
+@@ -48,7 +48,3 @@ _IO_fwrite (buf, size, count, fp)
+   else
+     return written / size;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_fwrite, fwrite)
+-#endif
+diff --git a/libio/iogetc.c b/libio/iogetc.c
+index 6a11e47334d..82dc908249e 100644
+--- a/libio/iogetc.c
++++ b/libio/iogetc.c
+@@ -40,11 +40,3 @@ _IO_getc (fp)
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#undef getc
+-
+-#ifdef weak_alias
+-weak_alias (_IO_getc, getc)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int getc (_IO_FILE *) __attribute__ ((weak, alias("_IO_getc")));
+-#endif
+diff --git a/libio/iogetdelim.c b/libio/iogetdelim.c
+index 50918b3e8dc..aafc7890629 100644
+--- a/libio/iogetdelim.c
++++ b/libio/iogetdelim.c
+@@ -118,8 +118,3 @@ unlock_return:
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_getdelim, __getdelim)
+-weak_alias (_IO_getdelim, getdelim)
+-#endif
+diff --git a/libio/iogets.c b/libio/iogets.c
+index 9e88ca1037a..37799f280e8 100644
+--- a/libio/iogets.c
++++ b/libio/iogets.c
+@@ -62,10 +62,6 @@ unlock_return:
+   return retval;
+ }
+ 
+-#ifdef weak_alias
+-weak_alias (_IO_gets, gets)
+-#endif
+-
+ #ifdef _LIBC
+ link_warning (gets, "the `gets' function is dangerous and should not be used.")
+ #endif
+diff --git a/libio/iopopen.c b/libio/iopopen.c
+index 58f97495c11..cc255dd753c 100644
+--- a/libio/iopopen.c
++++ b/libio/iopopen.c
+@@ -181,10 +181,6 @@ _IO_popen (command, mode)
+   return NULL;
+ }
+ 
+-#ifdef strong_alias
+-strong_alias (_IO_popen, popen);
+-#endif
+-
+ int
+ _IO_proc_close (fp)
+      _IO_FILE *fp;
+diff --git a/libio/ioputc.c b/libio/ioputc.c
+index 38a3ec9a00b..1758001481d 100644
+--- a/libio/ioputc.c
++++ b/libio/ioputc.c
+@@ -34,11 +34,3 @@ _IO_putc (c, fp)
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#undef putc
+-
+-#ifdef weak_alias
+-weak_alias (_IO_putc, putc)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int putc (int, _IO_FILE *) __attribute__ ((weak, alias("_IO_putc")));
+-#endif
+diff --git a/libio/ioputs.c b/libio/ioputs.c
+index ab5e6aaa4cc..dcae89c536f 100644
+--- a/libio/ioputs.c
++++ b/libio/ioputs.c
+@@ -43,7 +43,3 @@ _IO_puts (str)
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_puts, puts)
+-#endif
+diff --git a/libio/iosetbuffer.c b/libio/iosetbuffer.c
+index f140a9ad046..418a1793a15 100644
+--- a/libio/iosetbuffer.c
++++ b/libio/iosetbuffer.c
+@@ -40,7 +40,3 @@ _IO_setbuffer (fp, buf, size)
+   (void) _IO_SETBUF (fp, buf, size);
+   _IO_cleanup_region_end (1);
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_setbuffer, setbuffer)
+-#endif
+diff --git a/libio/iosetvbuf.c b/libio/iosetvbuf.c
+index 65eeea51a6f..0465fdd7e11 100644
+--- a/libio/iosetvbuf.c
++++ b/libio/iosetvbuf.c
+@@ -94,7 +94,3 @@ unlock_return:
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_setvbuf, setvbuf)
+-#endif
+diff --git a/libio/ioungetc.c b/libio/ioungetc.c
+index 07f38e747bf..de4fb336e49 100644
+--- a/libio/ioungetc.c
++++ b/libio/ioungetc.c
+@@ -40,7 +40,3 @@ _IO_ungetc (c, fp)
+   _IO_cleanup_region_end (1);
+   return result;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_ungetc, ungetc)
+-#endif
+diff --git a/libio/iovsprintf.c b/libio/iovsprintf.c
+index 617a5888405..1f8489054f8 100644
+--- a/libio/iovsprintf.c
++++ b/libio/iovsprintf.c
+@@ -51,10 +51,3 @@ _IO_vsprintf (string, format, args)
+   _IO_cleanup_region_end (1);
+   return ret;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_vsprintf, vsprintf)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int vsprintf (char *, const char *, _IO_va_list)
+-	      __attribute__ ((weak, alias("_IO_vsprintf")));
+-#endif
+diff --git a/libio/iovsscanf.c b/libio/iovsscanf.c
+index 6bdc3ccf018..43ba9afaa3f 100644
+--- a/libio/iovsscanf.c
++++ b/libio/iovsscanf.c
+@@ -47,13 +47,3 @@ _IO_vsscanf (string, format, args)
+   _IO_cleanup_region_end (1);
+   return ret;
+ }
+-
+-#ifdef weak_alias
+-weak_alias (_IO_vsscanf, __vsscanf)
+-weak_alias (_IO_vsscanf, vsscanf)
+-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
+-int __vsscanf (const char *, const char *, _IO_va_list)
+-	    __attribute__ ((weak, alias("_IO_vsscanf")));
+-int vsscanf (const char *, const char *, _IO_va_list)
+-	    __attribute__ ((weak, alias("_IO_vsscanf")));
+-#endif
+-- 
+2.24.0
+

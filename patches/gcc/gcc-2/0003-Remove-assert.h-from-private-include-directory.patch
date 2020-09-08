@@ -1,0 +1,24 @@
+From d98d723ccbcf225fee48e8f087c513b069a7ee8b Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sun, 6 Sep 2020 16:48:56 +0200
+Subject: [PATCH 03/14] Remove assert.h from private include directory
+
+---
+ gcc/Makefile.in | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/gcc/Makefile.in b/gcc/Makefile.in
+index 85bf9f8da5d..d3a696cd31c 100644
+--- a/gcc/Makefile.in
++++ b/gcc/Makefile.in
+@@ -2118,6 +2118,7 @@ stmp-int-hdrs: stmp-fixinc $(USER_H) xlimits.h
+ 	  cp $(srcdir)/config/$(FLOAT_H) include/float.h && \
+ 	  chmod a+r include/float.h; \
+ 	else :; fi
++	rm -f include/assert.h
+ # Install the README
+ 	rm -f include/README
+ 	cp $(srcdir)/README-fixinc include/README
+-- 
+2.24.0
+

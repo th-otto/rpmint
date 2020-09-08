@@ -92,9 +92,19 @@ PKG_DIR="$here/binary-package"
 DIST_DIR="$here/pkgs"
 
 #
-# Where to expect the unpacked source tree.
+# Where to look up the source tree.
 #
 srcdir="${PACKAGENAME}${VERSION}"
+
+#
+# whether to include the fortran backend
+#
+with_fortran=true
+
+#
+# whether to include the D backend
+#
+with_D=false
 
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
 	patches/gcc/${PACKAGENAME}${VERSION}-fastcall.patch"
@@ -191,20 +201,23 @@ LDFLAGS_FOR_TARGET=
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
 languages=c,c++
+$with_fortran && languages="$languages,fortran"
+$with_D && languages="$languages,d"
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
 case "${TARGET}" in
     *-*-*elf* | *-*-linux*)
-    	enable_lto=--enable-lto
-		case "${BUILD}" in
+        enable_lto=--enable-lto
+        case "${BUILD}" in
         *-*-linux*)
-    		enable_plugin=--enable-plugin
-    	esac
-    	languages="$languages,lto"
-		# not here; we are just building it
-		# ranlib=gcc-ranlib
-		;;
+            enable_plugin=--enable-plugin
+            ;;
+        esac
+        languages="$languages,lto"
+        # not here; we are just building it
+        # ranlib=gcc-ranlib
+        ;;
 esac
 BUILD_EXEEXT=
 LN_S="ln -s"
@@ -222,7 +235,7 @@ if test -x "$try"; then
 	as="${PKG_DIR}/${PREFIX}/bin/${TARGET}-as"
 else
 	ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
-	strip=`which "${TARGET}-strip"`
+	strip=`which "${TARGET}-strip" 2>/dev/null`
 	as=`which "${TARGET}-as" 2>/dev/null`
 fi
 if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
@@ -291,6 +304,7 @@ case $host in
 	linux32)
 		# make sure to pick up the just-compiled 32bit version of ld, not
 		# some previous 64bit version
+		# symptom of using a wrong linker is an error message "error loading plugin: wrong ELF class: ELFCLASS32" in the config.log
 		sed -i "s|S\[\"build_tooldir\"\]=.*|S[\"build_tooldir\"]=\"${PKG_DIR}${PREFIX}/${TARGET}\"|" config.status
 		./config.status
 		;;
@@ -300,18 +314,20 @@ ${MAKE} $JOBS all-gcc || exit 1
 ${MAKE} $JOBS all-target-libgcc || exit 1
 ${MAKE} || exit 1
 
+gcc_major_version=$(echo $BASE_VER | cut -d '.' -f 1)
+
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
 for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "$MINT_BUILD_DIR"
-	${MAKE} DESTDIR="${INSTALL_DIR}" install || exit 1
+	${MAKE} DESTDIR="${INSTALL_DIR}" install >/dev/null || exit 1
 	
 	mkdir -p "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
-	for i in c++ cpp g++ gcc gcov gfortran; do
+	for i in c++ cpp g++ gcc gcov gfortran gdc; do
 		if test -x ../../bin/${TARGET}-$i; then
 			rm -f ${i} ${i}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
@@ -323,8 +339,10 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	if test -x ${TARGET}-g++ && test ! -h ${TARGET}-g++; then
 		rm -f ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}
+		rm -f ${TARGET}-g++-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_major_version}
 		mv ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++${BUILD_EXEEXT}
+		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_major_version}${BUILD_EXEEXT}
 	fi
 	if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
 		rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
@@ -335,16 +353,16 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		mv ${TARGET}-gcc${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc${BUILD_EXEEXT}
 	fi
-	if test ${BASE_VER} != ${gcc_dir_version} && test -x ${TARGET}-gcc-${gcc_dir_version} && test ! -h ${TARGET}-gcc-${gcc_dir_version}; then
-		rm -f ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_dir_version}${BUILD_EXEEXT}
+	if test ${BASE_VER} != ${gcc_major_version} && test -x ${TARGET}-gcc-${gcc_major_version} && test ! -h ${TARGET}-gcc-${gcc_major_version}; then
+		rm -f ${TARGET}-gcc-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_major_version}
+		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_major_version}${BUILD_EXEEXT}
 	fi
 	if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
 		rm -f ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}
 		mv ${TARGET}-cpp${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp${BUILD_EXEEXT}
 	fi
-	
+
 	cd "${INSTALL_DIR}"
 	
 # that directory only contains the gdb pretty printers;
@@ -370,13 +388,13 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 # move compiler dependant libraries to the gcc subdirectory
 #
 	pushd ${INSTALL_DIR}${PREFIX}/${TARGET}/lib || exit 1
-	for i in libgfortran.spec libgomp.spec libitm.spec libsanitizer.spec libmpx.spec; do
+	libs=`find . -name "lib*.a" ! -path "*/gcc/*"`
+	tar -c $libs | tar -x -C ${INSTALL_DIR}${gccsubdir}
+	rm -f $libs
+	for i in libgfortran.spec libgomp.spec libitm.spec libsanitizer.spec libmpx.spec libgphobos.spec; do
 		test -f $i && mv $i ${INSTALL_DIR}${gccsubdir}
 		find . -name "$i" -delete
 	done
-	test -f libgfortran.spec && mv libgfortran.spec ${INSTALL_DIR}${gccsubdir}
-	find . -name "lib*.a" | tar -c --files-from=- | tar -x -C ${INSTALL_DIR}${gccsubdir}
-	find . -name "lib*.a" -delete
 	rmdir m*/*/*/* || :
 	rmdir m*/*/* || :
 	rmdir m*/* || :
@@ -391,9 +409,9 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	esac
 	
 	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
-		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN} \
-		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT} \
-		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${BUILD_EXEEXT}; do
+		${gccsubdir#/}/${LTO_PLUGIN} \
+		${gccsubdir#/}/plugin/gengtype${BUILD_EXEEXT} \
+		${gccsubdir#/}/install-tools/fixincl${BUILD_EXEEXT}; do
 		test -f "$f" && ${STRIP} "$f"
 	done
 
@@ -435,6 +453,22 @@ rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/gcc*/python
 
+#
+# create a separate archive for the fortran backend
+#
+if $with_fortran; then
+fortran=${gccsubdir#/}/finclude
+fortran="$fortran "${gccsubdir#/}/*/finclude
+fortran="$fortran "${gccsubdir#/}/f951
+fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
+fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
+rm -rf $fortran
+fi
+
+#
+# create archive for all others
+#
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
 
 cd "${BUILD_DIR}"

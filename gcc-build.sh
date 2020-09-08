@@ -258,9 +258,9 @@ if test -x "$try"; then
 	strip="${PKG_DIR}/${PREFIX}/bin/${TARGET}-strip"
 	as="${PKG_DIR}/${PREFIX}/bin/${TARGET}-as"
 else
-	ranlib=`which ${TARGET}-${ranlib}`
-	strip=`which "${TARGET}-strip"`
-	as=`which "${TARGET}-as"`
+	ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
+	strip=`which "${TARGET}-strip" 2>/dev/null`
+	as=`which "${TARGET}-as" 2>/dev/null`
 fi
 if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 	echo "cross-binutil tools for ${TARGET} not found" >&2
@@ -310,7 +310,7 @@ $srcdir/configure \
 	--disable-libmpx \
 	--disable-libcc1 \
 	--disable-werror \
-	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root/${gxxinclude} \
+	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root${gxxinclude} \
 	--with-default-libstdcxx-abi=gcc4-compatible \
 	--with-gcc-major-version-only \
 	--with-gcc --with-gnu-as --with-gnu-ld \
@@ -346,6 +346,8 @@ ${MAKE} $JOBS all-gcc || exit 1
 ${MAKE} $JOBS all-target-libgcc || exit 1
 ${MAKE} $JOBS || exit 1
 
+gcc_major_version=$(echo $BASE_VER | cut -d '.' -f 1)
+
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
 for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
@@ -369,10 +371,10 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	if test -x ${TARGET}-g++ && test ! -h ${TARGET}-g++; then
 		rm -f ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}
-		rm -f ${TARGET}-g++-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_dir_version}
+		rm -f ${TARGET}-g++-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_major_version}
 		mv ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++${BUILD_EXEEXT}
-		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_dir_version}${BUILD_EXEEXT}
+		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_major_version}${BUILD_EXEEXT}
 	fi
 	if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
 		rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
@@ -381,13 +383,13 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	for tool in gcc gfortran gdc gccgo go gofmt; do
 		if test -x ${TARGET}-${tool} && test ! -h ${TARGET}-${tool}; then
 			rm -f ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}
-			rm -f ${TARGET}-${tool}-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}
+			rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
 			mv ${TARGET}-${tool}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT}
 			$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}${BUILD_EXEEXT}
-			if test ${BASE_VER} != ${gcc_dir_version}; then
-				rm -f ${TARGET}-${tool}-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}
-				rm -f ${tool}-${gcc_dir_version}${BUILD_EXEEXT} ${tool}-${gcc_dir_version}${BUILD_EXEEXT}
-				$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}${BUILD_EXEEXT}
+			if test ${BASE_VER} != ${gcc_major_version}; then
+				rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
+				rm -f ${tool}-${gcc_major_version}${BUILD_EXEEXT} ${tool}-${gcc_major_version}${BUILD_EXEEXT}
+				$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
 			fi
 		fi
 	done

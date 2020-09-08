@@ -1,0 +1,2648 @@
+From 1c812c0274ac8669a050de8e80634300132049f6 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 7 Sep 2020 12:54:42 +0200
+Subject: [PATCH 04/14] Add support for m68k-atari-mint target
+
+---
+ config.guess              | 290 +++++++++++++++---------
+ config.sub                | 261 ++++++++++------------
+ gcc/Makefile.in           |  22 ++
+ gcc/ch/Makefile.in        |   1 +
+ gcc/config.in             | 335 ++++++++++++++++------------
+ gcc/config/m68k/mint.h    | 455 ++++++++++++++++++++++++++++++++++++++
+ gcc/config/m68k/t-mint    |  48 ++++
+ gcc/config/m68k/x-mint    |   2 +
+ gcc/config/m68k/xm-mint.h |  39 ++++
+ gcc/configure             |   8 +
+ gcc/cp/Make-lang.in       |   1 +
+ gcc/cp/Makefile.in        |   1 +
+ gcc/f/Make-lang.in        |   1 +
+ gcc/f/Makefile.in         |   1 +
+ gcc/fixinc/Makefile.in    |   2 +-
+ gcc/fixinc/mkfixinc.sh    |   1 +
+ gcc/java/Make-lang.in     |   1 +
+ gcc/java/Makefile.in      |   5 +
+ gcc/objc/Make-lang.in     |   1 +
+ include/libiberty.h       |   3 +
+ include/objalloc.h        |   2 +
+ 21 files changed, 1090 insertions(+), 390 deletions(-)
+ create mode 100644 gcc/config/m68k/mint.h
+ create mode 100644 gcc/config/m68k/t-mint
+ create mode 100644 gcc/config/m68k/x-mint
+ create mode 100644 gcc/config/m68k/xm-mint.h
+
+diff --git a/config.guess b/config.guess
+index 5b1e6191ce6..885de5058a5 100755
+--- a/config.guess
++++ b/config.guess
+@@ -1,6 +1,7 @@
+ #! /bin/sh
+ # Attempt to guess a canonical system name.
+-#   Copyright (C) 1992, 93, 94, 95, 96, 97, 1998, 1999 Free Software Foundation, Inc.
++#   Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999
++#   Free Software Foundation, Inc.
+ #
+ # This file is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU General Public License as published by
+@@ -23,6 +24,7 @@
+ 
+ # Written by Per Bothner <bothner@cygnus.com>.
+ # The master version of this file is at the FSF in /home/gd/gnu/lib.
++# Please send patches to the Autoconf mailing list <autoconf@gnu.org>.
+ #
+ # This script attempts to guess a canonical system name similar to
+ # config.sub.  If it succeeds, it prints the system name on stdout, and
+@@ -35,6 +37,20 @@
+ # (but try to keep the structure clean).
+ #
+ 
++# Use $HOST_CC if defined. $CC may point to a cross-compiler
++if test x"$CC_FOR_BUILD" = x; then
++  if test x"$HOST_CC" != x; then
++    CC_FOR_BUILD="$HOST_CC"
++  else
++    if test x"$CC" != x; then
++      CC_FOR_BUILD="$CC"
++    else
++      CC_FOR_BUILD=cc
++    fi
++  fi
++fi
++
++
+ # This is needed to find uname on a Pyramid OSx when run in the BSD universe.
+ # (ghazi@noc.rutgers.edu 8/24/94.)
+ if (test -f /.attbin/uname) >/dev/null 2>&1 ; then
+@@ -46,7 +62,8 @@ UNAME_RELEASE=`(uname -r) 2>/dev/null` || UNAME_RELEASE=unknown
+ UNAME_SYSTEM=`(uname -s) 2>/dev/null` || UNAME_SYSTEM=unknown
+ UNAME_VERSION=`(uname -v) 2>/dev/null` || UNAME_VERSION=unknown
+ 
+-trap 'rm -f dummy.c dummy.o dummy; exit 1' 1 2 15
++dummy=dummy-$$
++trap 'rm -f $dummy.c $dummy.o $dummy; exit 1' 1 2 15
+ 
+ # Note: order is significant - the case branches are not exclusive.
+ 
+@@ -59,7 +76,7 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
+ 	# A Tn.n version is a released field test version.
+ 	# A Xn.n version is an unreleased experimental baselevel.
+ 	# 1.2 uses "1.2" for uname -r.
+-	cat <<EOF >dummy.s
++	cat <<EOF >$dummy.s
+ 	.globl main
+ 	.ent main
+ main:
+@@ -76,9 +93,9 @@ main:
+ 	ret \$31,(\$26),1
+ 	.end main
+ EOF
+-	${CC-cc} dummy.s -o dummy 2>/dev/null
++	$CC_FOR_BUILD $dummy.s -o $dummy 2>/dev/null
+ 	if test "$?" = 0 ; then
+-		./dummy
++		./$dummy
+ 		case "$?" in
+ 			7)
+ 				UNAME_MACHINE="alpha"
+@@ -97,15 +114,15 @@ EOF
+ 				;;
+ 		esac
+ 	fi
+-	rm -f dummy.s dummy
++	rm -f $dummy.s $dummy
+ 	echo ${UNAME_MACHINE}-dec-osf`echo ${UNAME_RELEASE} | sed -e 's/^[VTX]//' | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+ 	exit 0 ;;
+     Alpha\ *:Windows_NT*:*)
+-        # How do we know it's Interix rather than generic posix subsystem?
+-	# Should we change UNAME_MACHINE based on the output of uname 
+-	# instead of the specific alpha model.
++	# How do we know it's Interix rather than the generic POSIX subsystem?
++	# Should we change UNAME_MACHINE based on the output of uname instead
++	# of the specific Alpha model?
+ 	echo alpha-pc-interix
+-	exit 0;;
++	exit 0 ;;
+     21064:Windows_NT:50:3)
+ 	echo alpha-dec-winnt3.5
+ 	exit 0 ;;
+@@ -148,7 +165,7 @@ EOF
+     SR2?01:HI-UX/MPP:*:*)
+ 	echo hppa1.1-hitachi-hiuxmpp
+ 	exit 0;;
+-    Pyramid*:OSx*:*:*|MIS*:OSx*:*:*)
++    Pyramid*:OSx*:*:* | MIS*:OSx*:*:* | MIS*:SMP_DC-OSx*:*:*)
+ 	# akee@wpdis03.wpafb.af.mil (Earle F. Ake) contributed MIS and NILE.
+ 	if test "`(/bin/universe) 2>/dev/null`" = att ; then
+ 		echo pyramid-pyramid-sysv3
+@@ -156,7 +173,7 @@ EOF
+ 		echo pyramid-pyramid-bsd
+ 	fi
+ 	exit 0 ;;
+-    NILE:*:*:dcosx)
++    NILE*:*:*:dcosx)
+ 	echo pyramid-pyramid-svr4
+ 	exit 0 ;;
+     sun4H:SunOS:5.*:*)
+@@ -207,6 +224,32 @@ EOF
+     atari*:OpenBSD:*:*)
+ 	echo m68k-unknown-openbsd${UNAME_RELEASE}
+ 	exit 0 ;;
++    # The situation for MiNT is a little confusing.  The machine name
++    # can be virtually everything (everything which is not
++    # "atarist" or "atariste" at least should have a processor 
++    # > m68000).  The system name ranges from "MiNT" over "FreeMiNT"
++    # to the lowercase version "mint" (or "freemint").  Finally
++    # the system name "TOS" denotes a system which is actually not
++    # MiNT.  But MiNT is downward compatible to TOS, so this should
++    # be no problem.
++    atarist[e]:*MiNT:*:* | atarist[e]:*mint:*:* | atarist[e]:*TOS:*:*)
++        echo m68k-atari-mint${UNAME_RELEASE}
++	exit 0 ;;
++    atari*:*MiNT:*:* | atari*:*mint:*:* | atarist[e]:*TOS:*:*)
++	echo m68k-atari-mint${UNAME_RELEASE}
++        exit 0 ;;
++    *falcon*:*MiNT:*:* | *falcon*:*mint:*:* | *falcon*:*TOS:*:*)
++        echo m68k-atari-mint${UNAME_RELEASE}
++	exit 0 ;;
++    milan*:*MiNT:*:* | milan*:*mint:*:* | *milan*:*TOS:*:*)
++        echo m68k-milan-mint${UNAME_RELEASE}
++        exit 0 ;;
++    hades*:*MiNT:*:* | hades*:*mint:*:* | *hades*:*TOS:*:*)
++        echo m68k-hades-mint${UNAME_RELEASE}
++        exit 0 ;;
++    *:*MiNT:*:* | *:*mint:*:* | *:*TOS:*:*)
++        echo m68k-unknown-mint${UNAME_RELEASE}
++        exit 0 ;;
+     sun3*:NetBSD:*:*)
+ 	echo m68k-sun-netbsd${UNAME_RELEASE}
+ 	exit 0 ;;
+@@ -228,6 +271,9 @@ EOF
+     powerpc:machten:*:*)
+ 	echo powerpc-apple-machten${UNAME_RELEASE}
+ 	exit 0 ;;
++    macppc:NetBSD:*:*)
++        echo powerpc-apple-netbsd${UNAME_RELEASE}
++        exit 0 ;;
+     RISC*:Mach:*:*)
+ 	echo mips-dec-mach_bsd4.3
+ 	exit 0 ;;
+@@ -237,12 +283,16 @@ EOF
+     VAX*:ULTRIX*:*:*)
+ 	echo vax-dec-ultrix${UNAME_RELEASE}
+ 	exit 0 ;;
+-    2020:CLIX:*:*)
++    2020:CLIX:*:* | 2430:CLIX:*:*)
+ 	echo clipper-intergraph-clix${UNAME_RELEASE}
+ 	exit 0 ;;
+     mips:*:*:UMIPS | mips:*:*:RISCos)
+-	sed 's/^	//' << EOF >dummy.c
+-	int main (argc, argv) int argc; char **argv; {
++	sed 's/^	//' << EOF >$dummy.c
++#ifdef __cplusplus
++	int main (int argc, char *argv[]) {
++#else
++	int main (argc, argv) int argc; char *argv[]; {
++#endif
+ 	#if defined (host_mips) && defined (MIPSEB)
+ 	#if defined (SYSTYPE_SYSV)
+ 	  printf ("mips-mips-riscos%ssysv\n", argv[1]); exit (0);
+@@ -257,10 +307,10 @@ EOF
+ 	  exit (-1);
+ 	}
+ EOF
+-	${CC-cc} dummy.c -o dummy \
+-	  && ./dummy `echo "${UNAME_RELEASE}" | sed -n 's/\([0-9]*\).*/\1/p'` \
+-	  && rm dummy.c dummy && exit 0
+-	rm -f dummy.c dummy
++	$CC_FOR_BUILD $dummy.c -o $dummy \
++	  && ./$dummy `echo "${UNAME_RELEASE}" | sed -n 's/\([0-9]*\).*/\1/p'` \
++	  && rm $dummy.c $dummy && exit 0
++	rm -f $dummy.c $dummy
+ 	echo mips-mips-riscos${UNAME_RELEASE}
+ 	exit 0 ;;
+     Night_Hawk:Power_UNIX:*:*)
+@@ -312,7 +362,7 @@ EOF
+ 	exit 0 ;;
+     *:AIX:2:3)
+ 	if grep bos325 /usr/include/stdio.h >/dev/null 2>&1; then
+-		sed 's/^		//' << EOF >dummy.c
++		sed 's/^		//' << EOF >$dummy.c
+ 		#include <sys/systemcfg.h>
+ 
+ 		main()
+@@ -323,8 +373,8 @@ EOF
+ 			exit(0);
+ 			}
+ EOF
+-		${CC-cc} dummy.c -o dummy && ./dummy && rm dummy.c dummy && exit 0
+-		rm -f dummy.c dummy
++		$CC_FOR_BUILD $dummy.c -o $dummy && ./$dummy && rm $dummy.c $dummy && exit 0
++		rm -f $dummy.c $dummy
+ 		echo rs6000-ibm-aix3.2.5
+ 	elif grep bos324 /usr/include/stdio.h >/dev/null 2>&1; then
+ 		echo rs6000-ibm-aix3.2.4
+@@ -333,7 +383,8 @@ EOF
+ 	fi
+ 	exit 0 ;;
+     *:AIX:*:4)
+-	if /usr/sbin/lsattr -EHl proc0 | grep POWER >/dev/null 2>&1; then
++	IBM_CPU_ID=`/usr/sbin/lsdev -C -c processor -S available | head -1 | awk '{ print $1 }'`
++	if /usr/sbin/lsattr -EHl ${IBM_CPU_ID} | grep POWER >/dev/null 2>&1; then
+ 		IBM_ARCH=rs6000
+ 	else
+ 		IBM_ARCH=powerpc
+@@ -366,33 +417,29 @@ EOF
+     hp300:4.4BSD:*:* | 9000/[34]??:4.3bsd:2.*:*)
+ 	echo m68k-hp-bsd4.4
+ 	exit 0 ;;
+-    *9??*:MPE/iX:*:*)
+-	echo hppa1.0-hp-mpeix
+-	exit 0 ;;
+     9000/[34678]??:HP-UX:*:*)
+ 	case "${UNAME_MACHINE}" in
+ 	    9000/31? )            HP_ARCH=m68000 ;;
+ 	    9000/[34]?? )         HP_ARCH=m68k ;;
+-	    9000/[678][0-9][0-9] )
+-
+-              sed 's/^              //' << EOF >dummy.c
++	    9000/[678][0-9][0-9])
++              sed 's/^              //' << EOF >$dummy.c
+               #include <stdlib.h>
+               #include <unistd.h>
+-              
++
+               int main ()
+               {
+               #if defined(_SC_KERNEL_BITS)
+                   long bits = sysconf(_SC_KERNEL_BITS);
+-              #endif 
++              #endif
+                   long cpu  = sysconf (_SC_CPU_VERSION);
+-              
+-                  switch (cpu) 
++
++                  switch (cpu)
+               	{
+               	case CPU_PA_RISC1_0: puts ("hppa1.0"); break;
+               	case CPU_PA_RISC1_1: puts ("hppa1.1"); break;
+-              	case CPU_PA_RISC2_0: 
++              	case CPU_PA_RISC2_0:
+               #if defined(_SC_KERNEL_BITS)
+-              	    switch (bits) 
++              	    switch (bits)
+               		{
+               		case 64: puts ("hppa2.0w"); break;
+               		case 32: puts ("hppa2.0n"); break;
+@@ -400,20 +447,20 @@ EOF
+               		} break;
+               #else  /* !defined(_SC_KERNEL_BITS) */
+               	    puts ("hppa2.0"); break;
+-              #endif 
++              #endif
+               	default: puts ("hppa1.0"); break;
+               	}
+                   exit (0);
+               }
+ EOF
+-	(${CC-cc} dummy.c -o dummy 2>/dev/null ) && HP_ARCH=`./dummy`
+-	rm -f dummy.c dummy
++	($CC_FOR_BUILD $dummy.c -o $dummy 2>/dev/null ) && HP_ARCH=`./$dummy`
++	rm -f $dummy.c $dummy
+ 	esac
+ 	HPUX_REV=`echo ${UNAME_RELEASE}|sed -e 's/[^.]*.[0B]*//'`
+ 	echo ${HP_ARCH}-hp-hpux${HPUX_REV}
+ 	exit 0 ;;
+     3050*:HI-UX:*:*)
+-	sed 's/^	//' << EOF >dummy.c
++	sed 's/^	//' << EOF >$dummy.c
+ 	#include <unistd.h>
+ 	int
+ 	main ()
+@@ -438,8 +485,8 @@ EOF
+ 	  exit (0);
+ 	}
+ EOF
+-	${CC-cc} dummy.c -o dummy && ./dummy && rm dummy.c dummy && exit 0
+-	rm -f dummy.c dummy
++	$CC_FOR_BUILD $dummy.c -o $dummy && ./$dummy && rm $dummy.c $dummy && exit 0
++	rm -f $dummy.c $dummy
+ 	echo unknown-hitachi-hiuxwe2
+ 	exit 0 ;;
+     9000/7??:4.3bsd:*:* | 9000/8?[79]:4.3bsd:*:* )
+@@ -448,6 +495,9 @@ EOF
+     9000/8??:4.3bsd:*:*)
+ 	echo hppa1.0-hp-bsd
+ 	exit 0 ;;
++    *9??*:MPE/iX:*:*)
++	echo hppa1.0-hp-mpeix
++	exit 0 ;;
+     hp7??:OSF1:*:* | hp8?[79]:OSF1:*:* )
+ 	echo hppa1.1-hp-osf
+ 	exit 0 ;;
+@@ -499,6 +549,9 @@ EOF
+     CRAY*TS:*:*:*)
+ 	echo t90-cray-unicos${UNAME_RELEASE}
+ 	exit 0 ;;
++    CRAY*T3E:*:*:*)
++	echo t3e-cray-unicosmk${UNAME_RELEASE}
++	exit 0 ;;
+     CRAY-2:*:*:*)
+ 	echo cray2-cray-unicos
+         exit 0 ;;
+@@ -516,15 +569,23 @@ EOF
+     hp300:OpenBSD:*:*)
+ 	echo m68k-unknown-openbsd${UNAME_RELEASE}
+ 	exit 0 ;;
+-    i?86:BSD/386:*:* | *:BSD/OS:*:*)
++    i?86:BSD/386:*:* | i?86:BSD/OS:*:*)
+ 	echo ${UNAME_MACHINE}-pc-bsdi${UNAME_RELEASE}
+ 	exit 0 ;;
++    sparc*:BSD/OS:*:*)
++	echo sparc-unknown-bsdi${UNAME_RELEASE}
++	exit 0 ;;
++    *:BSD/OS:*:*)
++	echo ${UNAME_MACHINE}-unknown-bsdi${UNAME_RELEASE}
++	exit 0 ;;
+     *:FreeBSD:*:*)
+-        if test -x /usr/bin/objformat -a "elf" = "`/usr/bin/objformat`"; then
+-          echo ${UNAME_MACHINE}-unknown-freebsdelf
+-        else
+-	  echo ${UNAME_MACHINE}-unknown-freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-_].*//'`
+-      fi
++	if test -x /usr/bin/objformat; then
++	    if test "elf" = "`/usr/bin/objformat`"; then
++		echo ${UNAME_MACHINE}-unknown-freebsdelf`echo ${UNAME_RELEASE}|sed -e 's/[-_].*//'`
++		exit 0
++	    fi
++	fi
++	echo ${UNAME_MACHINE}-unknown-freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'`
+ 	exit 0 ;;
+     *:NetBSD:*:*)
+ 	echo ${UNAME_MACHINE}-unknown-netbsd`echo ${UNAME_RELEASE}|sed -e 's/[-_].*/\./'`
+@@ -533,23 +594,22 @@ EOF
+ 	echo ${UNAME_MACHINE}-unknown-openbsd`echo ${UNAME_RELEASE}|sed -e 's/[-_].*/\./'`
+ 	exit 0 ;;
+     i*:CYGWIN*:*)
+-	echo ${UNAME_MACHINE}-pc-cygwin32
++	echo ${UNAME_MACHINE}-pc-cygwin
+ 	exit 0 ;;
+     i*:MINGW*:*)
+ 	echo ${UNAME_MACHINE}-pc-mingw32
+ 	exit 0 ;;
+     i*:Windows_NT*:* | Pentium*:Windows_NT*:*)
+-        # How do we know it's Interix rather than generic posix subsystem?
++	# How do we know it's Interix rather than the generic POSIX subsystem?
+ 	# It also conflicts with pre-2.0 versions of AT&T UWIN. Should we
+-	# change UNAME_MACHINE based on the output of uname instead of
+-	# i386?
++	# UNAME_MACHINE based on the output of uname instead of i386?
+ 	echo i386-pc-interix
+ 	exit 0 ;;
+     i*:UWIN*:*)
+ 	echo ${UNAME_MACHINE}-pc-uwin
+ 	exit 0 ;;
+     p*:CYGWIN*:*)
+-	echo powerpcle-unknown-cygwin32
++	echo powerpcle-unknown-cygwin
+ 	exit 0 ;;
+     prep*:SunOS:5.*:*)
+ 	echo powerpcle-unknown-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
+@@ -558,16 +618,17 @@ EOF
+ 	echo `echo ${UNAME_MACHINE}|sed -e 's,[-/].*$,,'`-unknown-gnu`echo ${UNAME_RELEASE}|sed -e 's,/.*$,,'`
+ 	exit 0 ;;
+     *:Linux:*:*)
+-	# uname on the ARM produces all sorts of strangeness, and we need to
+-	# filter it out.
+-	case "$UNAME_MACHINE" in
+-	  armv*)		      UNAME_MACHINE=$UNAME_MACHINE ;;
+-	  arm* | sa110*)	      UNAME_MACHINE="arm" ;;
+-	esac
++#	# uname on the ARM produces all sorts of strangeness, and we need to
++#	# filter it out.
++#	case "$UNAME_MACHINE" in
++#	  armv*)		      UNAME_MACHINE=$UNAME_MACHINE ;;
++#	  arm* | sa110*)	      UNAME_MACHINE="arm" ;;
++#	esac
+ 
+ 	# The BFD linker knows what the default object file format is, so
+-	# first see if it will tell us.
+-	ld_help_string=`ld --help 2>&1`
++	# first see if it will tell us. cd to the root directory to prevent
++	# problems with other programs or directories called `ld' in the path.
++	ld_help_string=`cd /; ld --help 2>&1`
+ 	ld_supported_emulations=`echo $ld_help_string \
+ 			 | sed -ne '/supported emulations:/!d
+ 				    s/[ 	][ 	]*/ /g
+@@ -580,9 +641,10 @@ EOF
+ 	  sparclinux) echo "${UNAME_MACHINE}-unknown-linux-gnuaout" ; exit 0 ;;
+ 	  armlinux)   echo "${UNAME_MACHINE}-unknown-linux-gnuaout" ; exit 0 ;;
+ 	  m68klinux)  echo "${UNAME_MACHINE}-unknown-linux-gnuaout" ; exit 0 ;;
+-	  elf32ppc | elf32ppclinux)
++	  elf32arm)   echo "${UNAME_MACHINE}-unknown-linux-gnu"     ; exit 0 ;;
++	  elf32ppc)
+ 		# Determine Lib Version
+-		cat >dummy.c <<EOF
++		cat >$dummy.c <<EOF
+ #include <features.h>
+ #if defined(__GLIBC__)
+ extern char __libc_version[];
+@@ -601,19 +663,19 @@ main(argc, argv)
+ }
+ EOF
+ 		LIBC=""
+-		${CC-cc} dummy.c -o dummy 2>/dev/null
++		$CC_FOR_BUILD $dummy.c -o $dummy 2>/dev/null
+ 		if test "$?" = 0 ; then
+-			./dummy | grep 1\.99 > /dev/null
++			./$dummy | grep 1\.99 > /dev/null
+ 			if test "$?" = 0 ; then
+ 				LIBC="libc1"
+ 			fi
+ 		fi	
+-		rm -f dummy.c dummy
++		rm -f $dummy.c $dummy
+ 		echo powerpc-unknown-linux-gnu${LIBC} ; exit 0 ;;
+ 	esac
+ 
+ 	if test "${UNAME_MACHINE}" = "alpha" ; then
+-		sed 's/^	//'  <<EOF >dummy.s
++		sed 's/^	//'  <<EOF >$dummy.s
+ 		.globl main
+ 		.ent main
+ 	main:
+@@ -631,9 +693,9 @@ EOF
+ 		.end main
+ EOF
+ 		LIBC=""
+-		${CC-cc} dummy.s -o dummy 2>/dev/null
++		$CC_FOR_BUILD $dummy.s -o $dummy 2>/dev/null
+ 		if test "$?" = 0 ; then
+-			./dummy
++			./$dummy
+ 			case "$?" in
+ 			7)
+ 				UNAME_MACHINE="alpha"
+@@ -650,22 +712,23 @@ EOF
+ 			16)
+ 				UNAME_MACHINE="alphaev6"
+ 				;;
+-			esac	
++			esac
+ 
+-			objdump --private-headers dummy | \
++			objdump --private-headers $dummy | \
+ 			  grep ld.so.1 > /dev/null
+ 			if test "$?" = 0 ; then
+ 				LIBC="libc1"
+ 			fi
+-		fi	
+-		rm -f dummy.s dummy
++		fi
++		rm -f $dummy.s $dummy
+ 		echo ${UNAME_MACHINE}-unknown-linux-gnu${LIBC} ; exit 0
+ 	elif test "${UNAME_MACHINE}" = "mips" ; then
+-	  cat >dummy.c <<EOF
+-main(argc, argv)
+-     int argc;
+-     char *argv[];
+-{
++	  cat >$dummy.c <<EOF
++#ifdef __cplusplus
++	int main (int argc, char *argv[]) {
++#else
++	int main (argc, argv) int argc; char *argv[]; {
++#endif
+ #ifdef __MIPSEB__
+   printf ("%s-unknown-linux-gnu\n", argv[1]);
+ #endif
+@@ -675,8 +738,8 @@ main(argc, argv)
+   return 0;
+ }
+ EOF
+-	  ${CC-cc} dummy.c -o dummy 2>/dev/null && ./dummy "${UNAME_MACHINE}" && rm dummy.c dummy && exit 0
+-	  rm -f dummy.c dummy
++	  $CC_FOR_BUILD $dummy.c -o $dummy 2>/dev/null && ./$dummy "${UNAME_MACHINE}" && rm $dummy.c $dummy && exit 0
++	  rm -f $dummy.c $dummy
+ 	else
+ 	  # Either a pre-BFD a.out linker (linux-gnuoldld)
+ 	  # or one that does not give us useful --help.
+@@ -695,12 +758,13 @@ EOF
+ 	    ;;
+ 	  esac
+ 	  # Determine whether the default compiler is a.out or elf
+-	  cat >dummy.c <<EOF
++	  cat >$dummy.c <<EOF
+ #include <features.h>
+-main(argc, argv)
+-     int argc;
+-     char *argv[];
+-{
++#ifdef __cplusplus
++	int main (int argc, char *argv[]) {
++#else
++	int main (argc, argv) int argc; char *argv[]; {
++#endif
+ #ifdef __ELF__
+ # ifdef __GLIBC__
+ #  if __GLIBC__ >= 2
+@@ -717,8 +781,8 @@ main(argc, argv)
+   return 0;
+ }
+ EOF
+-	  ${CC-cc} dummy.c -o dummy 2>/dev/null && ./dummy "${UNAME_MACHINE}" && rm dummy.c dummy && exit 0
+-	  rm -f dummy.c dummy
++	  $CC_FOR_BUILD $dummy.c -o $dummy 2>/dev/null && ./$dummy "${UNAME_MACHINE}" && rm $dummy.c $dummy && exit 0
++	  rm -f $dummy.c $dummy
+ 	fi ;;
+ # ptx 4.0 does uname -s correctly, with DYNIX/ptx in there.  earlier versions
+ # are messed up and put the nodename in both sysname and nodename.
+@@ -741,17 +805,13 @@ EOF
+ 	fi
+ 	exit 0 ;;
+     i?86:*:5:7*)
+-       UNAME_REL=`(/bin/uname -X|egrep Release|sed -e 's/.*= //')`
+-       (/bin/uname -X|egrep i80486 >/dev/null) && UNAME_MACHINE=i486
+-       (/bin/uname -X|egrep '^Machine.*Pentium' >/dev/null) \
+-               && UNAME_MACHINE=i586
+-# 5.0.4c returns "Pent II".  5.0.5 returns PentII
+-       (/bin/uname -X|egrep '^Machine.*Pent.*II' >/dev/null) \
+-               && UNAME_MACHINE=i686
+-       (/bin/uname -X|egrep '^Machine.*Pentium Pro' >/dev/null) \
+-               && UNAME_MACHINE=i686
+-       echo ${UNAME_MACHINE}-${UNAME_SYSTEM}${UNAME_VERSION}-sysv${UNAME_RELEASE}
+-       exit 0 ;;
++	UNAME_REL=`(/bin/uname -X|egrep Release|sed -e 's/.*= //')`
++	(/bin/uname -X|egrep i80486 >/dev/null) && UNAME_MACHINE=i486
++	(/bin/uname -X|egrep '^Machine.*Pentium' >/dev/null) && UNAME_MACHINE=i586
++	(/bin/uname -X|egrep '^Machine.*Pent.*II' >/dev/null) && UNAME_MACHINE=i686
++	(/bin/uname -X|egrep '^Machine.*Pentium Pro' >/dev/null) && UNAME_MACHINE=i585
++	echo ${UNAME_MACHINE}-${UNAME_SYSTEM}${UNAME_VERSION}-sysv${UNAME_RELEASE}
++	exit 0 ;;
+     i?86:*:3.2:*)
+ 	if test -f /usr/options/cb.name; then
+ 		UNAME_REL=`sed -n 's/.*Version //p' </usr/options/cb.name`
+@@ -761,12 +821,10 @@ EOF
+ 		(/bin/uname -X|egrep i80486 >/dev/null) && UNAME_MACHINE=i486
+ 		(/bin/uname -X|egrep '^Machine.*Pentium' >/dev/null) \
+ 			&& UNAME_MACHINE=i586
+-		(/bin/uname -X|egrep '^Machine.*PentII' >/dev/null) \
++		(/bin/uname -X|egrep '^Machine.*Pent ?II' >/dev/null) \
+ 			&& UNAME_MACHINE=i686
+-		(/bin/uname -X|egrep '^Machine.*Pent II' >/dev/null) \
++		(/bin/uname -X|egrep '^Machine.*Pentium Pro' >/dev/null) \
+ 			&& UNAME_MACHINE=i686
+-                (/bin/uname -X|egrep '^Machine.*Pentium Pro' >/dev/null) \
+-                        && UNAME_MACHINE=i686
+ 		echo ${UNAME_MACHINE}-pc-sco$UNAME_REL
+ 	else
+ 		echo ${UNAME_MACHINE}-pc-sysv32
+@@ -813,7 +871,7 @@ EOF
+     mc68030:UNIX_System_V:4.*:*)
+ 	echo m68k-atari-sysv4
+ 	exit 0 ;;
+-    i?86:LynxOS:2.*:*)
++    i?86:LynxOS:2.*:* | i?86:LynxOS:3.[01]*:*)
+ 	echo i386-unknown-lynxos${UNAME_RELEASE}
+ 	exit 0 ;;
+     TSUNAMI:LynxOS:2.*:*)
+@@ -825,6 +883,9 @@ EOF
+     SM[BE]S:UNIX_SV:*:*)
+ 	echo mips-dde-sysv${UNAME_RELEASE}
+ 	exit 0 ;;
++    RM*:ReliantUNIX-*:*:*)
++	echo mips-sni-sysv4
++	exit 0 ;;
+     RM*:SINIX-*:*:*)
+ 	echo mips-sni-sysv4
+ 	exit 0 ;;
+@@ -858,7 +919,7 @@ EOF
+     news*:NEWS-OS:*:6*)
+ 	echo mips-sony-newsos6
+ 	exit 0 ;;
+-    R3000:*System_V*:*:* | R4000:UNIX_SYSV:*:* | R4000:UNIX_SV:*:*)
++    R[34]000:*System_V*:*:* | R4000:UNIX_SYSV:*:* | R*000:UNIX_SV:*:*)
+ 	if [ -d /usr/nec ]; then
+ 	        echo mips-nec-sysv${UNAME_RELEASE}
+ 	else
+@@ -874,12 +935,24 @@ EOF
+     BePC:BeOS:*:*)	# BeOS running on Intel PC compatible.
+ 	echo i586-pc-beos
+ 	exit 0 ;;
++    SX-4:SUPER-UX:*:*)
++	echo sx4-nec-superux${UNAME_RELEASE}
++	exit 0 ;;
++    SX-5:SUPER-UX:*:*)
++	echo sx5-nec-superux${UNAME_RELEASE}
++	exit 0 ;;
++    Power*:Rhapsody:*:*)
++	echo powerpc-apple-rhapsody${UNAME_RELEASE}
++	exit 0 ;;
++    *:Rhapsody:*:*)
++	echo ${UNAME_MACHINE}-apple-rhapsody${UNAME_RELEASE}
++	exit 0 ;;
+ esac
+ 
+ #echo '(No uname command or uname output not recognized.)' 1>&2
+ #echo "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" 1>&2
+ 
+-cat >dummy.c <<EOF
++cat >$dummy.c <<EOF
+ #ifdef _SEQUENT_
+ # include <sys/types.h>
+ # include <sys/utsname.h>
+@@ -917,7 +990,10 @@ main ()
+ #endif
+   int version;
+   version=`(hostinfo | sed -n 's/.*NeXT Mach \([0-9]*\).*/\1/p') 2>/dev/null`;
+-  printf ("%s-next-nextstep%d\n", __ARCHITECTURE__, version);
++  if (version < 4)
++    printf ("%s-next-nextstep%d\n", __ARCHITECTURE__, version);
++  else
++    printf ("%s-next-openstep%d\n", __ARCHITECTURE__, version);
+   exit (0);
+ #endif
+ 
+@@ -977,8 +1053,8 @@ main ()
+ }
+ EOF
+ 
+-${CC-cc} dummy.c -o dummy 2>/dev/null && ./dummy && rm dummy.c dummy && exit 0
+-rm -f dummy.c dummy
++$CC_FOR_BUILD $dummy.c -o $dummy 2>/dev/null && ./$dummy && rm $dummy.c $dummy && exit 0
++rm -f $dummy.c $dummy
+ 
+ # Apollos put the system type in the environment.
+ 
+diff --git a/config.sub b/config.sub
+index 567459eb1f5..70610bde50f 100755
+--- a/config.sub
++++ b/config.sub
+@@ -98,14 +98,14 @@ case $os in
+ 		os=
+ 		basic_machine=$1
+ 		;;
+-	-sim | -cisco | -oki | -wec | -winbond )	# EGCS LOCAL
++	-sim | -cisco | -oki | -wec | -winbond)
+ 		os=
+ 		basic_machine=$1
+ 		;;
+-	-scout)						# EGCS LOCAL
++	-scout)
+ 		;;
+-	-wrs)						# EGCS LOCAL
+-		os=-vxworks
++	-wrs)
++		os=vxworks
+ 		basic_machine=$1
+ 		;;
+ 	-hiux*)
+@@ -156,6 +156,10 @@ case $os in
+ 	-psos*)
+ 		os=-psos
+ 		;;
++	-mint | -mint[0-9]*)
++		basic_machine=m68k-atari
++		os=-mint
++		;;
+ esac
+ 
+ # Decode aliases for certain CPU-COMPANY combinations.
+@@ -163,38 +167,22 @@ case $basic_machine in
+ 	# Recognize the basic CPU types without company name.
+ 	# Some are omitted here because they have special meanings below.
+ 	tahoe | i860 | m32r | m68k | m68000 | m88k | ns32k | arc | arm \
+-		| arme[lb] | pyramid | mn10200 | mn10300 \
+-		| tron | a29k | 580 | i960 | h8300 \
++		| arme[lb] | pyramid | mn10200 | mn10300 | tron | a29k \
++		| 580 | i960 | h8300 \
+ 		| hppa | hppa1.0 | hppa1.1 | hppa2.0 | hppa2.0w | hppa2.0n \
+-		| alpha | alphaev5 | alphaev56 | alphapca56 | alphaev6 \
++		| alpha | alphaev[4-7] | alphaev56 | alphapca5[67] \
+ 		| we32k | ns16k | clipper | i370 | sh | powerpc | powerpcle \
+-		| 1750a | dsp16xx | pdp11 \
+-		| mips64 | mipsel | mips64el | mips64orion | mips64orionel \
+-		| mipstx39 | mipstx39el \
+-		| sparc | sparclet | sparclite | sparc64 | sparcv9 | v850 | c4x)
+-		basic_machine=$basic_machine-unknown
+-		;;
+-	m88110 | m680[012346]0 | m683?2 | m68360 | m5200 | z8k | v70 \
+-	        | h8500 | w65) # EGCS LOCAL
+-		;;
+-	thumb)
+-		basic_machine=$basic_machine-unknown
+-		;;
+-	mips64vr4300 | mips64vr4300el) # EGCS LOCAL jsmith/vr4300
+-		basic_machine=$basic_machine-unknown
+-		;;
+-	mips64vr4100 | mips64vr4100el) # EGCS LOCAL jsmith/vr4100
++		| 1750a | dsp16xx | pdp11 | mips16 | mips64 | mipsel | mips64el \
++		| mips64orion | mips64orionel | mipstx39 | mipstx39el \
++		| mips64vr4300 | mips64vr4300el | mips64vr4100 | mips64vr4100el \
++		| mips64vr5000 | miprs64vr5000el \
++		| sparc | sparclet | sparclite | sparc64 | sparcv9 | v850 | c4x \
++		| thumb | d10v)
+ 		basic_machine=$basic_machine-unknown
+ 		;;
+-	mips64vr5000 | mips64vr5000el) # EGCS LOCAL ian/vr5000
+-		basic_machine=$basic_machine-unknown
+-		;;
+-	mips16)
+-		basic_machine=$basic_machine-unknown
+-		;;
+-	d10v)
+-		basic_machine=$basic_machine-unknown
++	m88110 | m680[12346]0 | m683?2 | m68360 | m5200 | z8k | v70 | h8500 | w65)
+ 		;;
++
+ 	# We use `pc' rather than `unknown'
+ 	# because (1) that's what they normally are, and
+ 	# (2) the word "unknown" tends to confuse beginning users.
+@@ -210,41 +198,24 @@ case $basic_machine in
+ 	vax-* | tahoe-* | i[34567]86-* | i860-* | m32r-* | m68k-* | m68000-* \
+ 	      | m88k-* | sparc-* | ns32k-* | fx80-* | arc-* | arm-* | c[123]* \
+ 	      | mips-* | pyramid-* | tron-* | a29k-* | romp-* | rs6000-* \
+-	      | power-* | none-* | 580-* | cray2-* | h8300-* | i960-* \
++	      | power-* | none-* | 580-* | cray2-* | h8300-* | h8500-* | i960-* \
+ 	      | xmp-* | ymp-* \
+-	      | hppa-* | hppa1.0-* | hppa1.1-* \
+-	      | hppa2.0-* | hppa2.0w-* | hppa2.0n-* \
+-	      | alpha-* | alphaev5-* | alphaev56-* | alphapca56-* \
+-	      | alphaev6-* | we32k-* | cydra-* | ns16k-* | pn-* | np1-* \
+-	      | xps100-* | clipper-* | orion-* \
++	      | hppa-* | hppa1.0-* | hppa1.1-* | hppa2.0-* | hppa2.0w-* | hppa2.0n-* \
++	      | alpha-* | alphaev[4-7]-* | alphaev56-* | alphapca5[67]-* \
++	      | we32k-* | cydra-* | ns16k-* | pn-* | np1-* | xps100-* \
++	      | clipper-* | orion-* \
+ 	      | sparclite-* | pdp11-* | sh-* | powerpc-* | powerpcle-* \
+-	      | sparc64-* | sparcv9-* | sparc86x-* | mips64-* | mipsel-* \
+-	      | mips64el-* | mips64orion-* | mips64orionel-*  \
++	      | sparc64-* | sparcv9-* | sparc86x-* | mips16-* | mips64-* | mipsel-* \
++	      | mips64el-* | mips64orion-* | mips64orionel-* \
++	      | mips64vr4100-* | mips64vr4100el-* | mips64vr4300-* | mips64vr4300el-* \
+ 	      | mipstx39-* | mipstx39el-* \
+-	      | f301-* | arm*-*)
+-		;;
+-	m88110-* | m680[01234]0-* | m683?2-* | m68360-* | z8k-* | h8500-* | d10v-*) # EGCS LOCAL
+-		;;
+-	thumb-*) # EGCS LOCAL angela/thumb
+-		;;
+-	v850-*) # EGCS LOCAL
+-	        ;;
+-	d30v-*) # EGCS LOCAL
+-	        ;;
+-	mips64vr4300-* | mips64vr4300el-*) # EGCS LOCAL jsmith/vr4300
+-		;;
+-	mips64vr4100-* | mips64vr4100el-*) # EGCS LOCAL jsmith/vr4100
+-		;;
+-	mips16-*) # EGCS LOCAL krk/mips16
+-		;;
+-	tic30-*) # EGCS LOCAL ian/tic30
+-		;;
+-	c30-*) # EGCS LOCAL ian/tic30
+-		basic_machine=tic30-unknown
++	      | f301-* | armv*-* | t3e-* \
++	      | m88110-* | m680[01234]0-* | m683?2-* | m68360-* | z8k-* | d10v-* \
++	      | thumb-* | v850-* | d30v-* | tic30-* | c30-* )
+ 		;;
+ 	# Recognize the various machine names and aliases which stand
+ 	# for a CPU type and a company and sometimes even an OS.
+-	386bsd)						# EGCS LOCAL
++	386bsd)
+ 		basic_machine=i386-unknown
+ 		os=-bsd
+ 		;;
+@@ -254,11 +225,11 @@ case $basic_machine in
+ 	3b*)
+ 		basic_machine=we32k-att
+ 		;;
+-	a29khif)					# EGCS LOCAL
++	a29khif)
+ 		basic_machine=a29k-amd
+ 		os=-udi
+ 		;;
+-	adobe68k)					# EGCS LOCAL
++	adobe68k)
+ 		basic_machine=m68010-adobe
+ 		os=-scout
+ 		;;
+@@ -291,7 +262,7 @@ case $basic_machine in
+ 		basic_machine=m68k-apollo
+ 		os=-sysv
+ 		;;
+-	apollo68bsd)					# EGCS LOCAL
++	apollo68bsd)
+ 		basic_machine=m68k-apollo
+ 		os=-bsd
+ 		;;
+@@ -371,7 +342,7 @@ case $basic_machine in
+ 	encore | umax | mmax)
+ 		basic_machine=ns32k-encore
+ 		;;
+-	es1800 | OSE68k | ose68k | ose | OSE)		# EGCS LOCAL
++	es1800 | OSE68k | ose68k | ose | OSE)
+ 		basic_machine=m68k-ericsson
+ 		os=-ose
+ 		;;
+@@ -393,11 +364,11 @@ case $basic_machine in
+ 		basic_machine=h8300-hitachi
+ 		os=-hms
+ 		;;
+-	h8300xray)					# EGCS LOCAL
++	h8300xray)
+ 		basic_machine=h8300-hitachi
+ 		os=-xray
+ 		;;
+-	h8500hms)					# EGCS LOCAL
++	h8500hms)
+ 		basic_machine=h8500-hitachi
+ 		os=-hms
+ 		;;
+@@ -416,22 +387,6 @@ case $basic_machine in
+ 		basic_machine=m68k-hp
+ 		os=-hpux
+ 		;;
+-        w89k-*)						# EGCS LOCAL
+-                basic_machine=hppa1.1-winbond
+-                os=-proelf
+-                ;;
+-        op50n-*)					# EGCS LOCAL
+-                basic_machine=hppa1.1-oki
+-                os=-proelf
+-                ;;
+-        op60c-*)					# EGCS LOCAL
+-                basic_machine=hppa1.1-oki
+-                os=-proelf
+-                ;;
+-        hppro)						# EGCS LOCAL
+-                basic_machine=hppa1.1-hp
+-                os=-proelf
+-                ;;
+ 	hp3k9[0-9][0-9] | hp9[0-9][0-9])
+ 		basic_machine=hppa1.0-hp
+ 		;;
+@@ -441,22 +396,21 @@ case $basic_machine in
+ 	hp9k3[2-9][0-9])
+ 		basic_machine=m68k-hp
+ 		;;
+-	hp9k6[0-9][0-9] | hp6[0-9][0-9] )
++	hp9k6[0-9][0-9] | hp6[0-9][0-9])
+ 		basic_machine=hppa1.0-hp
+ 		;;
+-	hp9k7[0-79][0-9] | hp7[0-79][0-9] )
++	hp9k7[0-79][0-9] | hp7[0-79][0-9])
+ 		basic_machine=hppa1.1-hp
+ 		;;
+-	hp9k78[0-9] | hp78[0-9] )
++	hp9k78[0-9] | hp78[0-9])
+ 		# FIXME: really hppa2.0-hp
+ 		basic_machine=hppa1.1-hp
+ 		;;
+-	hp9k8[67]1 | hp8[67]1 | hp9k80[24] | hp80[24] | \
+-	hp9k8[78]9 | hp8[78]9 | hp9k893 | hp893 )
++	hp9k8[67]1 | hp8[67]1 | hp9k80[24] | hp80[24] | hp9k8[78]9 | hp8[78]9 | hp9k893 | hp893)
+ 		# FIXME: really hppa2.0-hp
+ 		basic_machine=hppa1.1-hp
+ 		;;
+-	hp9k8[0-9][13679] | hp8[0-9][13679] )
++	hp9k8[0-9][13679] | hp8[0-9][13679])
+ 		basic_machine=hppa1.1-hp
+ 		;;
+ 	hp9k8[0-9][0-9] | hp8[0-9][0-9])
+@@ -465,10 +419,14 @@ case $basic_machine in
+ 	hppa-next)
+ 		os=-nextstep3
+ 		;;
+-	hppaosf)					# EGCS LOCAL
++	hppaosf)
+ 		basic_machine=hppa1.1-hp
+ 		os=-osf
+ 		;;
++	hppro)
++		basic_machine=hppa1.1-hp
++		os=-proelf
++		;;
+ 	i370-ibm* | ibm*)
+ 		basic_machine=i370-ibm
+ 		os=-mvs
+@@ -490,15 +448,15 @@ case $basic_machine in
+ 		basic_machine=`echo $1 | sed -e 's/86.*/86-pc/'`
+ 		os=-solaris2
+ 		;;
+-	i386mach)					# EGCS LOCAL
++	i386mach)
+ 		basic_machine=i386-mach
+ 		os=-mach
+ 		;;
+-	i386-vsta | vsta)				# EGCS LOCAL
++	i386-vsta | vsta)
+ 		basic_machine=i386-unknown
+ 		os=-vsta
+ 		;;
+-	i386-go32 | go32)				# EGCS LOCAL
++	i386-go32 | go32)
+ 		basic_machine=i386-unknown
+ 		os=-go32
+ 		;;
+@@ -534,6 +492,10 @@ case $basic_machine in
+ 	miniframe)
+ 		basic_machine=m68000-convergent
+ 		;;
++	*mint | -mint[0-9]* | *MiNT | *MiNT[0-9]*)
++		basic_machine=m68k-atari
++		os=-mint
++		;;
+ 	mipsel*-linux*)
+ 		basic_machine=mipsel-unknown
+ 		os=-linux-gnu
+@@ -548,12 +510,12 @@ case $basic_machine in
+ 	mips3*)
+ 		basic_machine=`echo $basic_machine | sed -e 's/mips3/mips64/'`-unknown
+ 		;;
+-	monitor)					# EGCS LOCAL
++	monitor)
+ 		basic_machine=m68k-rom68k
+ 		os=-coff
+ 		;;
+-	msdos)						# EGCS LOCAL
+-		basic_machine=i386-unknown	
++	msdos)
++		basic_machine=i386-unknown
+ 		os=-msdos
+ 		;;
+ 	ncr3000)
+@@ -561,7 +523,7 @@ case $basic_machine in
+ 		os=-sysv4
+ 		;;
+ 	netbsd386)
+-		basic_machine=i386-unknown		# EGCS LOCAL
++		basic_machine=i386-unknown
+ 		os=-netbsd
+ 		;;
+ 	netwinder)
+@@ -580,7 +542,7 @@ case $basic_machine in
+ 		basic_machine=mips-sony
+ 		os=-newsos
+ 		;;
+-	necv70)						# EGCS LOCAL
++	necv70)
+ 		basic_machine=v70-nec
+ 		os=-sysv
+ 		;;
+@@ -609,18 +571,22 @@ case $basic_machine in
+ 		basic_machine=i960-intel
+ 		os=-nindy
+ 		;;
+-	mon960)						# EGCS LOCAL
++	mon960)
+ 		basic_machine=i960-intel
+ 		os=-mon960
+ 		;;
+ 	np1)
+ 		basic_machine=np1-gould
+ 		;;
+-	OSE68000 | ose68000)				# EGCS LOCAL
++	op50n-* | op60c-*)
++		basic_machine=hppa1.1-oki
++		os=-proelf
++		;;
++	OSE68000 | ose68000)
+ 		basic_machine=m68000-ericsson
+ 		os=-ose
+ 		;;
+-	os68k)						# EGCS LOCAL
++	os68k)
+ 		basic_machine=m68k-none
+ 		os=-os68k
+ 		;;
+@@ -677,7 +643,7 @@ case $basic_machine in
+ 	ps2)
+ 		basic_machine=i386-ibm
+ 		;;
+-	rom68k)						# EGCS LOCAL
++	rom68k)
+ 		basic_machine=m68k-rom68k
+ 		os=-coff
+ 		;;
+@@ -687,7 +653,7 @@ case $basic_machine in
+ 	rtpc | rtpc-*)
+ 		basic_machine=romp-ibm
+ 		;;
+-	sa29200)					# EGCS LOCAL
++	sa29200)
+ 		basic_machine=a29k-amd
+ 		os=-udi
+ 		;;
+@@ -698,7 +664,7 @@ case $basic_machine in
+ 		basic_machine=sh-hitachi
+ 		os=-hms
+ 		;;
+-	sparclite-wrs)					# EGCS LOCAL
++	sparclite-wrs)
+ 		basic_machine=sparclite-wrs
+ 		os=-vxworks
+ 		;;
+@@ -709,10 +675,10 @@ case $basic_machine in
+ 	spur)
+ 		basic_machine=spur-unknown
+ 		;;
+-	st2000)						# EGCS LOCAL
++	st2000)
+ 		basic_machine=m68k-tandem
+ 		;;
+-	stratus)					# EGCS LOCAL
++	stratus)
+ 		basic_machine=i860-stratus
+ 		os=-sysv4
+ 		;;
+@@ -760,6 +726,10 @@ case $basic_machine in
+ 		basic_machine=i386-sequent
+ 		os=-dynix
+ 		;;
++	t3e)
++		basic_machine=t3e-cray
++		os=-unicos
++		;;
+ 	tx39)
+ 		basic_machine=mipstx39-unknown
+ 		;;
+@@ -777,7 +747,7 @@ case $basic_machine in
+ 		basic_machine=a29k-nyu
+ 		os=-sym1
+ 		;;
+-	v810 | necv810)					# EGCS LOCAL
++	v810 | necv810)
+ 		basic_machine=v810-nec
+ 		os=-none
+ 		;;
+@@ -804,9 +774,13 @@ case $basic_machine in
+ 		basic_machine=a29k-wrs
+ 		os=-vxworks
+ 		;;
+-	w65*)						# EGCS LOCAL
+- 		basic_machine=w65-wdc
+- 		os=-none
++	w65*)
++		basic_machine=w65-wdc
++		os=-none
++		;;
++	w89k-*)
++		basic_machine=hppa1.1-winbond
++		os=-proelf
+ 		;;
+ 	xmp)
+ 		basic_machine=xmp-cray
+@@ -815,7 +789,7 @@ case $basic_machine in
+         xps | xps100)
+ 		basic_machine=xps100-honeywell
+ 		;;
+-	z8k-*-coff)					# EGCS LOCAL
++	z8k-*-coff)
+ 		basic_machine=z8k-unknown
+ 		os=-sim
+ 		;;
+@@ -826,13 +800,13 @@ case $basic_machine in
+ 
+ # Here we handle the default manufacturer of certain CPU types.  It is in
+ # some cases the only manufacturer, in others, it is the most popular.
+-	w89k)						# EGCS LOCAL
++	w89k)
+ 		basic_machine=hppa1.1-winbond
+ 		;;
+-	op50n)						# EGCS LOCAL
++	op50n)
+ 		basic_machine=hppa1.1-oki
+ 		;;
+-	op60c)						# EGCS LOCAL
++	op60c)
+ 		basic_machine=hppa1.1-oki
+ 		;;
+ 	mips)
+@@ -869,16 +843,16 @@ case $basic_machine in
+ 	orion105)
+ 		basic_machine=clipper-highlevel
+ 		;;
+-	mac | mpw | mac-mpw)				# EGCS LOCAL
++	mac | mpw | mac-mpw)
+ 		basic_machine=m68k-apple
+ 		;;
+-	pmac | pmac-mpw)				# EGCS LOCAL
++	pmac | pmac-mpw)
+ 		basic_machine=powerpc-apple
+ 		;;
+- 	c4x*)
+- 		basic_machine=c4x-none
+- 		os=-coff
+-  		;;
++	c4x*)
++		basic_machine=c4x-none
++		os=-coff
++		;;
+ 	*)
+ 		echo Invalid configuration \`$1\': machine \`$basic_machine\' not recognized 1>&2
+ 		exit 1
+@@ -937,18 +911,16 @@ case $os in
+ 	      | -udi* | -eabi* | -lites* | -ieee* | -go32* | -aux* \
+ 	      | -cygwin* | -pe* | -psos* | -moss* | -proelf* | -rtems* \
+ 	      | -mingw32* | -linux-gnu* | -uxpv* | -beos* | -mpeix* | -udk* \
+-	      | -interix* | -uwin* )
++	      | -interix* | -uwin* | -rhapsody* | -openstep* | -oskit*)
+ 	# Remember, each alternative MUST END IN *, to match a version number.
+ 		;;
+-	# EGCS LOCAL
+ 	-sim | -es1800* | -hms* | -xray | -os68k* | -none* | -v88r* \
+-	      | -windows* | -osx | -abug |  -netware* | -os9* | -beos* \
+-	      | -macos* | -mpw* | -magic* | -mon960* | -lnews* )
++	      | -windows* | -osx | -abug | -netware* | -os9* | -beos* \
++	      | -macos* | -mpw* | -magic* | -mon960* | -lnews*)
+ 		;;
+ 	-mac*)
+ 		os=`echo $os | sed -e 's|mac|macos|'`
+ 		;;
+-	# END EGCS LOCAL
+ 	-linux*)
+ 		os=`echo $os | sed -e 's|linux|linux-gnu|'`
+ 		;;
+@@ -973,7 +945,7 @@ case $os in
+ 	-acis*)
+ 		os=-aos
+ 		;;
+-	-386bsd)					# EGCS LOCAL
++	-386bsd)
+ 		os=-bsd
+ 		;;
+ 	-ctix* | -uts*)
+@@ -1007,15 +979,18 @@ case $os in
+ 	# This must come after -sysvr4.
+ 	-sysv*)
+ 		;;
+-	-ose*)						# EGCS LOCAL
++	-ose*)
+ 		os=-ose
+ 		;;
+-	-es1800*)					# EGCS LOCAL
++	-es1800*)
+ 		os=-ose
+ 		;;
+ 	-xenix)
+ 		os=-xenix
+ 		;;
++        -*mint | -*MiNT)
++	        os=-mint
++		;;
+ 	-none)
+ 		;;
+ 	*)
+@@ -1065,15 +1040,15 @@ case $basic_machine in
+ 		# default.
+ 		# os=-sunos4
+ 		;;
+-	m68*-cisco)					# EGCS LOCAL
++	m68*-cisco)
+ 		os=-aout
+ 		;;
+-	mips*-cisco)					# EGCS LOCAL
++	mips*-cisco)
++		os=-elf
++		;;
++	mips*-*)
+ 		os=-elf
+ 		;;
+-        mips*-*)                                        # EGCS LOCAL
+-                os=-elf
+-                ;;
+ 	*-tti)	# must be before sparc entry or we get the wrong os.
+ 		os=-sysv3
+ 		;;
+@@ -1086,13 +1061,13 @@ case $basic_machine in
+ 	*-ibm)
+ 		os=-aix
+ 		;;
+-	*-wec)						# EGCS LOCAL
++	*-wec)
+ 		os=-proelf
+ 		;;
+-	*-winbond)					# EGCS LOCAL
++	*-winbond)
+ 		os=-proelf
+ 		;;
+-	*-oki)						# EGCS LOCAL
++	*-oki)
+ 		os=-proelf
+ 		;;
+ 	*-hp)
+@@ -1158,15 +1133,18 @@ case $basic_machine in
+ 	f301-fujitsu)
+ 		os=-uxpv
+ 		;;
+-	*-rom68k)					# EGCS LOCAL
++	*-rom68k)
+ 		os=-coff
+ 		;;
+-	*-*bug)						# EGCS LOCAL
++	*-*bug)
+ 		os=-coff
+ 		;;
+-	*-apple)					# EGCS LOCAL
++	*-apple)
+ 		os=-macos
+ 		;;
++	*-atari*)
++		os=-mint
++		;;
+ 	*)
+ 		os=-none
+ 		;;
+@@ -1224,12 +1202,15 @@ case $basic_machine in
+ 			-aux*)
+ 				vendor=apple
+ 				;;
+-			-hms*)				# EGCS LOCAL
++			-hms*)
+ 				vendor=hitachi
+ 				;;
+-			-mpw* | -macos*)		# EGCS LOCAL
++			-mpw* | -macos*)
+ 				vendor=apple
+ 				;;
++			-*mint | -*MiNT)
++				vendor=atari
++				;;
+ 		esac
+ 		basic_machine=`echo $basic_machine | sed "s/unknown/$vendor/"`
+ 		;;
+diff --git a/gcc/Makefile.in b/gcc/Makefile.in
+index d3a696cd31c..15c3782dc91 100644
+--- a/gcc/Makefile.in
++++ b/gcc/Makefile.in
+@@ -888,6 +888,7 @@ xgcc$(exeext): gcc.o gccspec.o version.o intl.o prefix.o \
+    version.o $(LIBDEPS) $(EXTRA_GCC_OBJS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gcc.o gccspec.o intl.o \
+ 	  prefix.o version.o $(EXTRA_GCC_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ # We call this executable `xcpp' rather than `cpp'
+ # since the real preprocessor is named `cpp'.  It too is renamed
+@@ -898,6 +899,7 @@ cpp$(exeext): gcc.o cppspec.o version.o intl.o prefix.o \
+    version.o $(LIBDEPS) $(EXTRA_GCC_OBJS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gcc.o cppspec.o intl.o \
+ 	  prefix.o version.o $(EXTRA_GCC_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ # Dump a specs file to make -B./ read these specs over installed ones.
+ specs: xgcc$(exeext)
+@@ -912,6 +914,7 @@ gcc-cross: xgcc$(exeext)
+ 
+ cc1$(exeext): $(P) $(OBJS) $(C_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(C_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=960k $@
+ 
+ # Build the version of limits.h that we will install.
+ xlimits.h: glimits.h limitx.h limity.h
+@@ -1364,6 +1367,7 @@ collect2$(exeext): $(COLLECT2_OBJS) $(LIBDEPS)
+ # Don't try modifying collect2 (aka ld) in place--it might be linking this.
+ 	-rm -f collect2$(exeext)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(COLLECT2_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ collect2.o : collect2.c $(CONFIG_H) system.h gstab.h intl.h \
+ 	$(srcdir)/../include/obstack.h $(DEMANGLE_H) collect2.h
+@@ -1431,6 +1435,7 @@ s-check : gencheck $(srcdir)/move-if-change
+ gencheck : gencheck.o $(lang_tree_files) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 gencheck.o $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ gencheck.o : gencheck.c tree.def $(CONFIG_H) hconfig.h system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) \
+@@ -1778,6 +1783,7 @@ $(MD_FILE): $(MD_DEPS)
+ genconfig : genconfig.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	  genconfig.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ genconfig.o : genconfig.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genconfig.c
+@@ -1785,6 +1791,7 @@ genconfig.o : genconfig.c $(RTL_H) $(build_xm_file) system.h
+ genflags : genflags.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genflags.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ genflags.o : genflags.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genflags.c
+@@ -1792,6 +1799,7 @@ genflags.o : genflags.c $(RTL_H) $(build_xm_file) system.h
+ gencodes : gencodes.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 gencodes.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ gencodes.o : gencodes.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/gencodes.c
+@@ -1799,6 +1807,7 @@ gencodes.o : gencodes.c $(RTL_H) $(build_xm_file) system.h
+ genemit : genemit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genemit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ genemit.o : genemit.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genemit.c
+@@ -1806,6 +1815,7 @@ genemit.o : genemit.c $(RTL_H) $(build_xm_file) system.h
+ genopinit : genopinit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genopinit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ genopinit.o : genopinit.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genopinit.c
+@@ -1813,6 +1823,7 @@ genopinit.o : genopinit.c $(RTL_H) $(build_xm_file) system.h
+ genrecog : genrecog.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genrecog.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ genrecog.o : genrecog.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genrecog.c
+@@ -1820,6 +1831,7 @@ genrecog.o : genrecog.c $(RTL_H) $(build_xm_file) system.h
+ genextract : genextract.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genextract.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ genextract.o : genextract.c $(RTL_H) $(build_xm_file) system.h insn-config.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genextract.c
+@@ -1827,6 +1839,7 @@ genextract.o : genextract.c $(RTL_H) $(build_xm_file) system.h insn-config.h
+ genpeep : genpeep.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genpeep.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ genpeep.o : genpeep.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genpeep.c
+@@ -1834,6 +1847,7 @@ genpeep.o : genpeep.c $(RTL_H) $(build_xm_file) system.h
+ genattr : genattr.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genattr.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ genattr.o : genattr.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genattr.c
+@@ -1841,6 +1855,7 @@ genattr.o : genattr.c $(RTL_H) $(build_xm_file) system.h
+ genattrtab : genattrtab.o $(HOST_RTL) $(HOST_PRINT) $(HOST_RTLANAL) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genattrtab.o $(HOST_RTL) $(HOST_PRINT) $(HOST_RTLANAL) $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ genattrtab.o : genattrtab.c $(RTL_H)  $(build_xm_file) system.h insn-config.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genattrtab.c
+@@ -1848,6 +1863,7 @@ genattrtab.o : genattrtab.c $(RTL_H)  $(build_xm_file) system.h insn-config.h
+ genoutput : genoutput.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 genoutput.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ genoutput.o : genoutput.c $(RTL_H) $(build_xm_file) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genoutput.c
+@@ -1855,6 +1871,7 @@ genoutput.o : genoutput.c $(RTL_H) $(build_xm_file) system.h
+ gengenrtl : gengenrtl.o $(HOST_LIBDEPS)
+ 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
+ 	 gengenrtl.o $(HOST_LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ gengenrtl.o : gengenrtl.c $(RTL_BASE_H) system.h
+ 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/gengenrtl.c
+@@ -1960,6 +1977,7 @@ cpp0$(exeext): $(CCCP)$(exeext)
+ CCCP_OBJS = cccp.o cexp.o intl.o prefix.o version.o @extra_cpp_objs@ mbchar.o 
+ cccp$(exeext): $(CCCP_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(CCCP_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ cexp.o: $(srcdir)/cexp.c $(CONFIG_H) system.h
+ 	$(CC) $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) -c $(srcdir)/cexp.c
+ $(srcdir)/cexp.c: $(srcdir)/cexp.y
+@@ -1990,6 +2008,7 @@ libcpp.a: $(LIBCPP_OBJS)
+ cppmain$(exeext): cppmain.o intl.o libcpp.a $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o cppmain$(exeext) cppmain.o \
+ 	intl.o libcpp.a $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ cppmain.o: cppmain.c $(CONFIG_H) cpplib.h intl.h system.h
+ 
+@@ -2020,9 +2039,11 @@ PROTO_OBJS = getpwd.o intl.o version.o
+ 
+ protoize$(exeext): protoize.o $(PROTO_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ protoize.o $(PROTO_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ unprotoize$(exeext): unprotoize.o $(PROTO_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ unprotoize.o $(PROTO_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ protoize.o: protoize.c $(srcdir)/../include/getopt.h $(CONFIG_H) system.h \
+    Makefile
+@@ -2088,6 +2109,7 @@ gcov.o: gcov.c gcov-io.h intl.h system.h
+ GCOV_OBJS = gcov.o intl.o
+ gcov$(exeext): $(GCOV_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) $(GCOV_OBJS) $(LIBS) -o $@
++	test "${host_canonical}" != m68k-atari-mint || atari-mint-stack --fix=128k $@
+ #
+ # Build the include directory.  The stamp files are stmp-* rather than
+ # s-* so that mostlyclean does not force the include directory to
+diff --git a/gcc/ch/Makefile.in b/gcc/ch/Makefile.in
+index 5dbc26a238a..c12d9f5c3a9 100644
+--- a/gcc/ch/Makefile.in
++++ b/gcc/ch/Makefile.in
+@@ -206,6 +206,7 @@ OBJDEPS = ../stamp-objlist
+ ../cc1chill$(exeext): $(P) $(CHILL_OBJS) $(OBJDEPS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(CHILL_OBJS) \
+ 	      $(OBJS) $(C_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=960k $@
+ 
+ # This executable is used in the CHILL regression 
+ # test script
+diff --git a/gcc/config.in b/gcc/config.in
+index c804a2b682e..d29dfeb256b 100644
+--- a/gcc/config.in
++++ b/gcc/config.in
+@@ -1,4 +1,4 @@
+-/* config.in.  Generated automatically from configure.in by autoheader.  */
++/* config.in.  Generated from configure.in by autoheader.  */
+ /* Define if you can safely include both <string.h> and <strings.h>.  */
+ #undef STRING_WITH_STRINGS
+ 
+@@ -130,237 +130,288 @@
+ /* Define to the version of the distribution.  */
+ #undef VERSION
+ 
+-/* Define if using alloca.c.  */
+-#undef C_ALLOCA
+-
+-/* Define to empty if the keyword does not work.  */
+-#undef const
+-
+-/* Define to one of _getb67, GETB67, getb67 for Cray-2 and Cray-YMP systems.
+-   This function is required for alloca.c support on those systems.  */
++/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
++   systems. This function is required for `alloca.c' support on those systems.
++   */
+ #undef CRAY_STACKSEG_END
+ 
+-/* Define if you have alloca, as a function or macro.  */
++/* Define to 1 if using `alloca.c'. */
++#undef C_ALLOCA
++
++/* Define to 1 if you have `alloca', as a function or macro. */
+ #undef HAVE_ALLOCA
+ 
+-/* Define if you have <alloca.h> and it should be used (not on Ultrix).  */
++/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
++   */
+ #undef HAVE_ALLOCA_H
+ 
+-/* Define if you don't have vprintf but do have _doprnt.  */
+-#undef HAVE_DOPRNT
+-
+-/* Define if you have a working `mmap' system call.  */
+-#undef HAVE_MMAP
+-
+-/* Define if you have <sys/wait.h> that is POSIX.1 compatible.  */
+-#undef HAVE_SYS_WAIT_H
+-
+-/* Define if you have <vfork.h>.  */
+-#undef HAVE_VFORK_H
+-
+-/* Define if you have the vprintf function.  */
+-#undef HAVE_VPRINTF
+-
+-/* Define as __inline if that's what the C compiler calls it.  */
+-#undef inline
+-
+-/* Define to `long' if <sys/types.h> doesn't define.  */
+-#undef off_t
+-
+-/* Define to `int' if <sys/types.h> doesn't define.  */
+-#undef pid_t
+-
+-/* Define to `unsigned' if <sys/types.h> doesn't define.  */
+-#undef size_t
+-
+-/* If using the C implementation of alloca, define if you know the
+-   direction of stack growth for your system; otherwise it will be
+-   automatically deduced at run-time.
+- STACK_DIRECTION > 0 => grows toward higher addresses
+- STACK_DIRECTION < 0 => grows toward lower addresses
+- STACK_DIRECTION = 0 => direction of growth unknown
+- */
+-#undef STACK_DIRECTION
+-
+-/* Define if you have the ANSI C header files.  */
+-#undef STDC_HEADERS
+-
+-/* Define if `sys_siglist' is declared by <signal.h>.  */
+-#undef SYS_SIGLIST_DECLARED
+-
+-/* Define if you can safely include both <sys/time.h> and <time.h>.  */
+-#undef TIME_WITH_SYS_TIME
+-
+-/* Define vfork as fork if vfork does not work.  */
+-#undef vfork
+-
+-/* Define if you have the __argz_count function.  */
+-#undef HAVE___ARGZ_COUNT
+-
+-/* Define if you have the __argz_next function.  */
+-#undef HAVE___ARGZ_NEXT
+-
+-/* Define if you have the __argz_stringify function.  */
+-#undef HAVE___ARGZ_STRINGIFY
++/* Define to 1 if you have the <argz.h> header file. */
++#undef HAVE_ARGZ_H
+ 
+-/* Define if you have the atoll function.  */
++/* Define to 1 if you have the `atoll' function. */
+ #undef HAVE_ATOLL
+ 
+-/* Define if you have the atoq function.  */
++/* Define to 1 if you have the `atoq' function. */
+ #undef HAVE_ATOQ
+ 
+-/* Define if you have the bcmp function.  */
++/* Define to 1 if you have the `bcmp' function. */
+ #undef HAVE_BCMP
+ 
+-/* Define if you have the bcopy function.  */
++/* Define to 1 if you have the `bcopy' function. */
+ #undef HAVE_BCOPY
+ 
+-/* Define if you have the bsearch function.  */
++/* Define to 1 if you have the `bsearch' function. */
+ #undef HAVE_BSEARCH
+ 
+-/* Define if you have the bzero function.  */
++/* Define to 1 if you have the `bzero' function. */
+ #undef HAVE_BZERO
+ 
+-/* Define if you have the dcgettext function.  */
++/* Define to 1 if you have the `dcgettext' function. */
+ #undef HAVE_DCGETTEXT
+ 
+-/* Define if you have the fputc_unlocked function.  */
++/* Define to 1 if you have the declaration of `sys_siglist', and to 0 if you
++   don't. */
++#undef HAVE_DECL_SYS_SIGLIST
++
++/* Define to 1 if you have the <direct.h> header file. */
++#undef HAVE_DIRECT_H
++
++/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
++#undef HAVE_DOPRNT
++
++/* Define to 1 if you have the <fcntl.h> header file. */
++#undef HAVE_FCNTL_H
++
++/* Define to 1 if you have the `fork' function. */
++#undef HAVE_FORK
++
++/* Define to 1 if you have the `fputc_unlocked' function. */
+ #undef HAVE_FPUTC_UNLOCKED
+ 
+-/* Define if you have the fputs_unlocked function.  */
++/* Define to 1 if you have the `fputs_unlocked' function. */
+ #undef HAVE_FPUTS_UNLOCKED
+ 
+-/* Define if you have the getcwd function.  */
++/* Define to 1 if you have the `getcwd' function. */
+ #undef HAVE_GETCWD
+ 
+-/* Define if you have the getpagesize function.  */
++/* Define to 1 if you have the `getpagesize' function. */
+ #undef HAVE_GETPAGESIZE
+ 
+-/* Define if you have the getrlimit function.  */
++/* Define to 1 if you have the `getrlimit' function. */
+ #undef HAVE_GETRLIMIT
+ 
+-/* Define if you have the gettimeofday function.  */
++/* Define to 1 if you have the `gettimeofday' function. */
+ #undef HAVE_GETTIMEOFDAY
+ 
+-/* Define if you have the index function.  */
++/* Define to 1 if you have the `index' function. */
+ #undef HAVE_INDEX
+ 
+-/* Define if you have the isascii function.  */
++/* Define to 1 if you have the <inttypes.h> header file. */
++#undef HAVE_INTTYPES_H
++
++/* Define to 1 if you have the `isascii' function. */
+ #undef HAVE_ISASCII
+ 
+-/* Define if you have the kill function.  */
++/* Define to 1 if you have the `kill' function. */
+ #undef HAVE_KILL
+ 
+-/* Define if you have the munmap function.  */
++/* Define to 1 if you have the `i' library (-li). */
++#undef HAVE_LIBI
++
++/* Define to 1 if you have the <limits.h> header file. */
++#undef HAVE_LIMITS_H
++
++/* Define to 1 if you have the <locale.h> header file. */
++#undef HAVE_LOCALE_H
++
++/* Define to 1 if you have the <malloc.h> header file. */
++#undef HAVE_MALLOC_H
++
++/* Define to 1 if you have the <memory.h> header file. */
++#undef HAVE_MEMORY_H
++
++/* Define to 1 if you have a working `mmap' system call. */
++#undef HAVE_MMAP
++
++/* Define to 1 if you have the `munmap' function. */
+ #undef HAVE_MUNMAP
+ 
+-/* Define if you have the popen function.  */
++/* Define to 1 if you have the <nl_types.h> header file. */
++#undef HAVE_NL_TYPES_H
++
++/* Define to 1 if you have the `popen' function. */
+ #undef HAVE_POPEN
+ 
+-/* Define if you have the putc_unlocked function.  */
++/* Define to 1 if you have the `putc_unlocked' function. */
+ #undef HAVE_PUTC_UNLOCKED
+ 
+-/* Define if you have the putenv function.  */
++/* Define to 1 if you have the `putenv' function. */
+ #undef HAVE_PUTENV
+ 
+-/* Define if you have the rindex function.  */
++/* Define to 1 if you have the `rindex' function. */
+ #undef HAVE_RINDEX
+ 
+-/* Define if you have the setenv function.  */
++/* Define to 1 if you have the `setenv' function. */
+ #undef HAVE_SETENV
+ 
+-/* Define if you have the setlocale function.  */
++/* Define to 1 if you have the `setlocale' function. */
+ #undef HAVE_SETLOCALE
+ 
+-/* Define if you have the setrlimit function.  */
++/* Define to 1 if you have the `setrlimit' function. */
+ #undef HAVE_SETRLIMIT
+ 
+-/* Define if you have the stpcpy function.  */
++/* Define to 1 if you have the <stab.h> header file. */
++#undef HAVE_STAB_H
++
++/* Define to 1 if you have the <stddef.h> header file. */
++#undef HAVE_STDDEF_H
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#undef HAVE_STDINT_H
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#undef HAVE_STDLIB_H
++
++/* Define to 1 if you have the `stpcpy' function. */
+ #undef HAVE_STPCPY
+ 
+-/* Define if you have the strcasecmp function.  */
++/* Define to 1 if you have the `strcasecmp' function. */
+ #undef HAVE_STRCASECMP
+ 
+-/* Define if you have the strchr function.  */
++/* Define to 1 if you have the `strchr' function. */
+ #undef HAVE_STRCHR
+ 
+-/* Define if you have the strdup function.  */
++/* Define to 1 if you have the `strdup' function. */
+ #undef HAVE_STRDUP
+ 
+-/* Define if you have the strerror function.  */
++/* Define to 1 if you have the `strerror' function. */
+ #undef HAVE_STRERROR
+ 
+-/* Define if you have the strrchr function.  */
++/* Define to 1 if you have the <strings.h> header file. */
++#undef HAVE_STRINGS_H
++
++/* Define to 1 if you have the <string.h> header file. */
++#undef HAVE_STRING_H
++
++/* Define to 1 if you have the `strrchr' function. */
+ #undef HAVE_STRRCHR
+ 
+-/* Define if you have the strsignal function.  */
++/* Define to 1 if you have the `strsignal' function. */
+ #undef HAVE_STRSIGNAL
+ 
+-/* Define if you have the strtoul function.  */
++/* Define to 1 if you have the `strtoul' function. */
+ #undef HAVE_STRTOUL
+ 
+-/* Define if you have the sysconf function.  */
++/* Define to 1 if you have the `sysconf' function. */
+ #undef HAVE_SYSCONF
+ 
+-/* Define if you have the <argz.h> header file.  */
+-#undef HAVE_ARGZ_H
++/* Define to 1 if you have the <sys/file.h> header file. */
++#undef HAVE_SYS_FILE_H
+ 
+-/* Define if you have the <direct.h> header file.  */
+-#undef HAVE_DIRECT_H
++/* Define to 1 if you have the <sys/param.h> header file. */
++#undef HAVE_SYS_PARAM_H
+ 
+-/* Define if you have the <fcntl.h> header file.  */
+-#undef HAVE_FCNTL_H
++/* Define to 1 if you have the <sys/resource.h> header file. */
++#undef HAVE_SYS_RESOURCE_H
+ 
+-/* Define if you have the <limits.h> header file.  */
+-#undef HAVE_LIMITS_H
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#undef HAVE_SYS_STAT_H
+ 
+-/* Define if you have the <locale.h> header file.  */
+-#undef HAVE_LOCALE_H
++/* Define to 1 if you have the <sys/times.h> header file. */
++#undef HAVE_SYS_TIMES_H
+ 
+-/* Define if you have the <malloc.h> header file.  */
+-#undef HAVE_MALLOC_H
++/* Define to 1 if you have the <sys/time.h> header file. */
++#undef HAVE_SYS_TIME_H
+ 
+-/* Define if you have the <nl_types.h> header file.  */
+-#undef HAVE_NL_TYPES_H
++/* Define to 1 if you have the <sys/types.h> header file. */
++#undef HAVE_SYS_TYPES_H
+ 
+-/* Define if you have the <stab.h> header file.  */
+-#undef HAVE_STAB_H
++/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
++#undef HAVE_SYS_WAIT_H
+ 
+-/* Define if you have the <stddef.h> header file.  */
+-#undef HAVE_STDDEF_H
++/* Define to 1 if you have the <time.h> header file. */
++#undef HAVE_TIME_H
+ 
+-/* Define if you have the <stdlib.h> header file.  */
+-#undef HAVE_STDLIB_H
++/* Define to 1 if you have the <unistd.h> header file. */
++#undef HAVE_UNISTD_H
+ 
+-/* Define if you have the <string.h> header file.  */
+-#undef HAVE_STRING_H
++/* Define to 1 if you have the `vfork' function. */
++#undef HAVE_VFORK
+ 
+-/* Define if you have the <strings.h> header file.  */
+-#undef HAVE_STRINGS_H
++/* Define to 1 if you have the <vfork.h> header file. */
++#undef HAVE_VFORK_H
+ 
+-/* Define if you have the <sys/file.h> header file.  */
+-#undef HAVE_SYS_FILE_H
++/* Define to 1 if you have the `vprintf' function. */
++#undef HAVE_VPRINTF
+ 
+-/* Define if you have the <sys/param.h> header file.  */
+-#undef HAVE_SYS_PARAM_H
++/* Define to 1 if `fork' works. */
++#undef HAVE_WORKING_FORK
+ 
+-/* Define if you have the <sys/resource.h> header file.  */
+-#undef HAVE_SYS_RESOURCE_H
++/* Define to 1 if `vfork' works. */
++#undef HAVE_WORKING_VFORK
+ 
+-/* Define if you have the <sys/stat.h> header file.  */
+-#undef HAVE_SYS_STAT_H
++/* Define to 1 if you have the `__argz_count' function. */
++#undef HAVE___ARGZ_COUNT
+ 
+-/* Define if you have the <sys/time.h> header file.  */
+-#undef HAVE_SYS_TIME_H
++/* Define to 1 if you have the `__argz_next' function. */
++#undef HAVE___ARGZ_NEXT
+ 
+-/* Define if you have the <sys/times.h> header file.  */
+-#undef HAVE_SYS_TIMES_H
++/* Define to 1 if you have the `__argz_stringify' function. */
++#undef HAVE___ARGZ_STRINGIFY
+ 
+-/* Define if you have the <time.h> header file.  */
+-#undef HAVE_TIME_H
++/* Define to the address where bug reports for this package should be sent. */
++#undef PACKAGE_BUGREPORT
+ 
+-/* Define if you have the <unistd.h> header file.  */
+-#undef HAVE_UNISTD_H
++/* Define to the full name of this package. */
++#undef PACKAGE_NAME
+ 
+-/* Define if you have the i library (-li).  */
+-#undef HAVE_LIBI
++/* Define to the full name and version of this package. */
++#undef PACKAGE_STRING
++
++/* Define to the one symbol short name of this package. */
++#undef PACKAGE_TARNAME
++
++/* Define to the home page for this package. */
++#undef PACKAGE_URL
++
++/* Define to the version of this package. */
++#undef PACKAGE_VERSION
++
++/* If using the C implementation of alloca, define if you know the
++   direction of stack growth for your system; otherwise it will be
++   automatically deduced at runtime.
++	STACK_DIRECTION > 0 => grows toward higher addresses
++	STACK_DIRECTION < 0 => grows toward lower addresses
++	STACK_DIRECTION = 0 => direction of growth unknown */
++#undef STACK_DIRECTION
++
++/* Define to 1 if you have the ANSI C header files. */
++#undef STDC_HEADERS
++
++/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
++#undef TIME_WITH_SYS_TIME
++
++/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
++   `char[]'. */
++#undef YYTEXT_POINTER
++
++/* Define to empty if `const' does not conform to ANSI C. */
++#undef const
++
++/* Define to `__inline__' or `__inline' if that's what the C compiler
++   calls it, or to nothing if 'inline' is not supported under any name.  */
++#ifndef __cplusplus
++#undef inline
++#endif
++
++/* Define to `long int' if <sys/types.h> does not define. */
++#undef off_t
++
++/* Define to `int' if <sys/types.h> does not define. */
++#undef pid_t
++
++/* Define to `unsigned int' if <sys/types.h> does not define. */
++#undef size_t
++
++/* Define as `fork' if `vfork' does not work. */
++#undef vfork
+diff --git a/gcc/config/m68k/mint.h b/gcc/config/m68k/mint.h
+new file mode 100644
+index 00000000000..c7e50d48756
+--- /dev/null
++++ b/gcc/config/m68k/mint.h
+@@ -0,0 +1,455 @@
++/* Definitions of target machine for GNU compiler.
++   Atari ST TOS/MiNT.
++   Copyright (C) 1994, 1995 Free Software Foundation, Inc.
++
++This file is part of GNU CC.
++
++GNU CC is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation; either version 1, or (at your option)
++any later version.
++
++GNU CC is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU General Public License for more details.
++
++You should have received a copy of the GNU General Public License
++along with GNU CC; see the file COPYING.  If not, write to
++the Free Software Foundation, 59 Temple Place - Suite 330,
++Boston, MA 02111-1307, USA.  */
++
++
++#define MOTOROLA		/* Use Motorola syntax */
++#define USE_GAS			/* But GAS wants jbsr instead of jsr */
++
++#include "m68k/m68k.h"
++
++#if defined(__GNUC__)
++#if defined(alloca)
++#undef alloca
++#endif
++#define alloca(x) __builtin_alloca(x)
++#endif
++
++
++#define TARGET_DEFAULT 0
++
++
++/* The prefix for local (compiler generated) labels.
++ * These labels will not appear in the symbol table. */
++#undef LOCAL_LABEL_PREFIX
++#define LOCAL_LABEL_PREFIX ""
++
++/* The prefix to add to user-visible assembler symbols. */
++#undef USER_LABEL_PREFIX
++#define USER_LABEL_PREFIX "_"
++
++#define ASM_COMMENT_START "|"
++
++/* Pass the architecture flags to the assembler. */ 
++#define COMMON_ASM_SPEC \
++  "%{mc68000:-m68000} " \
++  "%{m68000} " \
++  "%{mc68020:-m68020} " \
++  "%{m68020*:-m68020} " \
++  "%{m68030} " \
++  "%{m68040} " \
++  "%{m68060} " \
++  "%{m68881} %{mno-68881} " \
++  "%{m68851} %{mno-68851} " \
++  "%{m68302} %{mno-68302} " \
++  "%{m68332} %{mno-68332}"
++
++#define ASM_SPEC COMMON_ASM_SPEC " %{!m680*:%{!mc680*:-m68000}}"
++
++#undef SUBTARGET_SWITCHES
++#define SUBTARGET_SWITCHES			\
++  { "int", 010000},				\
++  { "noint", -010000},
++
++#define COMMON_CPP_SPEC \
++  "%{mshort:-D__MSHORT__}"
++
++#define CPP_SPEC \
++  "%{m68000:-D__M68000__ -D__mc68000__ %{!ansi:-Dmc68000}} " \
++  "%{mc68020:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020}} " \
++  "%{m68020:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020}} " \
++  "%{m68030:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020}} " \
++  "%{m68040:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020} %{!mno-68881:-D__M68881__}} " \
++  "%{m68060:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020} %{!mno-68881:-D__M68881__}} " \
++  "%{m68020-40:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020} %{!mno-68881:-D__M68881__}} " \
++  "%{m68020-60:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020} %{!mno-68881:-D__M68881__}} " \
++  "%{!m680*:%{!mc680*:-D__M68000__ -D__mc68000__ %{!ansi:-Dmc68000}}} " \
++  "%{m68881:-D__M68881__} " \
++  COMMON_CPP_SPEC
++
++/* Names to predefine in the preprocessor for this target machine
++ */
++#define CPP_PREDEFINES \
++  "-D__MINT__ -Datarist -Acpu(m68k) -Amachine(atari) -Asystem(mint)"
++
++#define __LIBC_MULTILIB \
++  "%{m68020-*:020}"\
++  "%{m68881:%{!m68020-*:020}}"\
++  "%{m68040:%{!m68020-*:%{!m68881:020}}}"\
++  "%{m68060:%{!m68020-*:%{!m68881:%{!m68040:020}}}}"
++
++#undef EXTRA_SPECS
++#define EXTRA_SPECS                                                 \
++  {"sys_root", TOOLDIR_BASE_PREFIX "m68k-atari-mint/sys-root"},    \
++
++#define STARTFILE_SPEC	"%(sys_root)/usr/lib/%{pg:g}crt0.o%s"
++/* #define LIB_SPEC	"-lc%{g:_g}%{pg:_p}%{mshort:16}"__LIBC_MULTILIB */
++#define LIB_SPEC	"-L%(sys_root)/usr/lib -lc"__LIBC_MULTILIB
++#define LIBGCC_SPEC	"-lgcc"
++#define LINK_SPEC	""
++/* #define LINKER_NAME	"ld" */
++/* #define MATH_LIBRARY	"-lm" */
++
++#define MULTILIB_DEFAULTS { "m68000" }
++
++#define HAVE_ATEXIT
++
++#define DO_GLOBAL_CTORS_BODY	\
++do {	                        \
++  extern char* _base;		\
++  func_ptr *p = (func_ptr*) ((char*) &__CTOR_LIST__ + sizeof (func_ptr)); \
++  while (*p) {			\
++    if (((char *) (*p)) < (_base + 0x100)) \
++      *p = (func_ptr) (_base + (unsigned long) *p + 0x100); \
++    p++;			\
++    (*(p-1)) ();		\
++  }				\
++} while (0)
++
++#define DO_GLOBAL_DTORS_BODY	\
++do {	                        \
++  extern char* _base;		\
++  func_ptr *p = (func_ptr*) ((char*) &__DTOR_LIST__ + sizeof (func_ptr)); \
++  while (*p) {			\
++    if (((char *) (*p)) < (_base + 0x100)) \
++      *p = (func_ptr) (_base + (unsigned long) *p + 0x100); \
++    p++;			\
++    (*(p-1)) ();		\
++  }				\
++} while (0)
++
++
++#define PTRDIFF_TYPE	"long int"
++#define SIZE_TYPE	"long unsigned int"
++
++
++/* We must override m68k.h
++ */
++#undef WCHAR_TYPE
++#undef WCHAR_TYPE_SIZE
++
++#define WCHAR_TYPE	"short unsigned int"
++#define WCHAR_TYPE_SIZE	16
++#define WCHAR_UNSIGNED	1
++
++
++/* Alignment of field after `int : 0' in a structure.
++ * recent gcc's have this as 16, this is left in for the benfit of
++ * older gcc
++ */
++#undef EMPTY_FIELD_BOUNDARY
++#define EMPTY_FIELD_BOUNDARY 16
++
++/* Every structure or union's size must be a multiple of 2 bytes.  */
++#define STRUCTURE_SIZE_BOUNDARY 16
++
++#undef PREFERRED_DEBUGGING_TYPE
++#define PREFERRED_DEBUGGING_TYPE DBX_DEBUG
++#define DBX_DEBUGGING_INFO
++
++/* All configurations that don't use elf must be explicit about not using
++   dwarf unwind information. egcs doesn't try too hard to check internal
++   configuration files...  */
++#define DWARF2_UNWIND_INFO 0
++
++#ifdef abort
++#undef abort
++#define abort fancy_abort
++#endif
++
++/* Allow folding division by zero.  */
++#define REAL_INFINITY
++
++/* Generate calls to memcpy, memcmp and memset.  */
++#define TARGET_MEM_FUNCTIONS
++
++/* The value of `EDOM' on the target machine.  */
++#define TARGET_EDOM 89
++
++/* This is how to create a rtl expression that refers to the global
++   "variable" `errno'.  */
++#define GEN_ERRNO_RTX \
++  gen_rtx (MEM, TARGET_SHORT ? HImode : SImode, \
++	   gen_rtx (SYMBOL_REF, Pmode, "errno"))
++
++#define FUNCTION_VALUEX(MODE)					\
++  gen_rtx (REG, (MODE), (TARGET_68881 && FLOAT_MODE_P (MODE) ? 16 : 0))
++
++#undef FUNCTION_VALUE
++#define FUNCTION_VALUE(VALTYPE,FUNC) FUNCTION_VALUEX (TYPE_MODE (VALTYPE))
++#undef LIBCALL_VALUE
++#define LIBCALL_VALUE(MODE) FUNCTION_VALUEX (MODE)
++
++/* 1 if N is a possible register number for a function value.  */
++#undef FUNCTION_VALUE_REGNO_P
++#define FUNCTION_VALUE_REGNO_P(N) ((N) == 0 || (TARGET_68881 && (N) == 16))
++
++/* Define this to be true when FUNCTION_VALUE_REGNO_P is true for
++   more than one register.  */
++#undef NEEDS_UNTYPED_CALL
++#define NEEDS_UNTYPED_CALL (TARGET_68881)
++
++/* This is how to output an assembler line defining a `double' constant.  */
++
++#undef ASM_OUTPUT_DOUBLE
++#define ASM_OUTPUT_DOUBLE(FILE,VALUE)				\
++  {								\
++    if (REAL_VALUE_ISINF (VALUE))				\
++      {								\
++	if (REAL_VALUE_NEGATIVE (VALUE))			\
++	  fprintf (FILE, "\t.double 0r-Inf\n");			\
++	else							\
++	  fprintf (FILE, "\t.double 0rInf\n");			\
++      }								\
++    else if (REAL_VALUE_ISNAN (VALUE))				\
++      { long l[2];						\
++	REAL_VALUE_TO_TARGET_DOUBLE (VALUE, l);			\
++	fprintf (FILE, "\t.long 0x%lx\n\t.long 0x%lx\n", l[0], l[1]); \
++      }								\
++    else if (REAL_VALUE_MINUS_ZERO (VALUE))			\
++      {								\
++	fprintf (FILE, "\t.double 0r-0.0\n");			\
++      }								\
++    else							\
++      { char dstr[30];						\
++	REAL_VALUE_TO_DECIMAL (VALUE, "%.17g", dstr);		\
++	fprintf (FILE, "\t.double 0r%s\n", dstr);		\
++      }								\
++    }
++
++/* This is how to output an assembler line defining a `float' constant.  */
++
++#undef ASM_OUTPUT_FLOAT
++#define ASM_OUTPUT_FLOAT(FILE,VALUE)				\
++  {								\
++    if (REAL_VALUE_ISINF (VALUE))				\
++      {								\
++	if (REAL_VALUE_NEGATIVE (VALUE))			\
++	  fprintf (FILE, "\t.single 0r-Inf\n");			\
++	else							\
++	  fprintf (FILE, "\t.single 0rInf\n");			\
++      }								\
++    else if (REAL_VALUE_ISNAN (VALUE))				\
++      { long l;							\
++	REAL_VALUE_TO_TARGET_SINGLE (VALUE, l);			\
++	fprintf (FILE, "\t.long 0x%lx\n", l);			\
++      }								\
++    else if (REAL_VALUE_MINUS_ZERO (VALUE))			\
++      {								\
++	fprintf (FILE, "\t.single 0r-0.0\n");			\
++      }								\
++    else							\
++      { char dstr[30];						\
++	REAL_VALUE_TO_DECIMAL (VALUE, "%.9g", dstr);		\
++	fprintf (FILE, "\t.single 0r%s\n", dstr);		\
++      }								\
++    }
++
++/* This is how to output an assembler lines defining floating operands.  */
++  
++#undef ASM_OUTPUT_FLOAT_OPERAND
++#define ASM_OUTPUT_FLOAT_OPERAND(CODE,FILE,VALUE)		\
++ do {								\
++      if (CODE != 'f' || REAL_VALUE_ISNAN (VALUE))		\
++	{							\
++	  long l;						\
++	  REAL_VALUE_TO_TARGET_SINGLE (VALUE, l);		\
++	  asm_fprintf (FILE, "%I");				\
++	  fprintf (FILE, "0x%lx", l);				\
++	}							\
++      else if (REAL_VALUE_ISINF (VALUE))			\
++	{							\
++	  if (REAL_VALUE_NEGATIVE (VALUE))			\
++	    asm_fprintf (FILE, "%I0r-Inf");			\
++	  else							\
++	    asm_fprintf (FILE, "%I0rInf");			\
++	}							\
++      else if (REAL_VALUE_MINUS_ZERO (VALUE))			\
++	{							\
++	  asm_fprintf (FILE, "%I0r-0.0");			\
++	}							\
++      else							\
++	{ char dstr[30];					\
++	  REAL_VALUE_TO_DECIMAL (VALUE, "%.9g", dstr);		\
++	  asm_fprintf (FILE, "%I0r%s", dstr);			\
++	}							\
++    } while (0)
++
++#undef ASM_OUTPUT_DOUBLE_OPERAND
++#define ASM_OUTPUT_DOUBLE_OPERAND(FILE,VALUE)				\
++ do { if (REAL_VALUE_ISINF (VALUE))					\
++	{								\
++	  if (REAL_VALUE_NEGATIVE (VALUE))				\
++	    asm_fprintf (FILE, "%I0r-Inf");				\
++	  else								\
++	    asm_fprintf (FILE, "%I0rInf");				\
++	}								\
++      else if (REAL_VALUE_ISNAN (VALUE))				\
++	{								\
++	  long l[2];							\
++	  REAL_VALUE_TO_TARGET_DOUBLE (VALUE, l);			\
++	  asm_fprintf (FILE, "%I");					\
++	  fprintf (FILE, "0x%lx%08lx", l[0], l[1]);			\
++	}								\
++      else if (REAL_VALUE_MINUS_ZERO (VALUE))				\
++	{								\
++	  asm_fprintf (FILE, "%I0r-0.0");				\
++	}								\
++      else								\
++	{ char dstr[30];						\
++	  REAL_VALUE_TO_DECIMAL (VALUE, "%.17g", dstr);			\
++	  asm_fprintf (FILE, "%I0r%s", dstr);				\
++	}								\
++    } while (0)
++
++
++#define ASM_OUTPUT_EXTERNAL_LIBCALL(asm_out_file,fun)
++
++/* This is the assembler directive to equate two values.  */
++#undef SET_ASM_OP
++#define SET_ASM_OP    ".set"
++
++/* This is how we tell the assembler that a symbol is weak.  */
++#undef ASM_WEAKEN_LABEL
++#define ASM_WEAKEN_LABEL(FILE,NAME) \
++  do { fputs ("\t.weak\t", FILE); assemble_name (FILE, NAME); \
++       fputc ('\n', FILE); } while (0)
++
++#if 0
++/* Define this macro if references to a symbol must be treated
++   differently depending on something about the variable or function
++   named by the symbol (such as what section it is in).
++
++   The macro definition, if any, is executed immediately after the
++   rtl for DECL has been created and stored in `DECL_RTL (DECL)'.
++   The value of the rtl will be a `mem' whose address is a
++   `symbol_ref'.
++
++   The usual thing for this macro to do is to record a flag in the
++   `symbol_ref' (such as `SYMBOL_REF_FLAG') or to store a modified
++   name string in the `symbol_ref' (if one bit is not enough
++   information).
++
++   On the Atari we use this to indicate if a symbol is in text or
++   data space, as well as to distinguish functions from data. */
++
++#define ENCODE_SECTION_INFO(DECL)\
++do									\
++  {									\
++    if (TREE_CODE (DECL) == FUNCTION_DECL)				\
++      {									\
++        SYMBOL_REF_FLAG (XEXP (DECL_RTL (DECL), 0)) = 1;		\
++	SYMBOL_REF_USED (XEXP (DECL_RTL (DECL), 0)) = 1;		\
++      }									\
++    else								\
++      {									\
++	rtx rtl = (TREE_CODE_CLASS (TREE_CODE (DECL)) != 'd'		\
++		   ? TREE_CST_RTL (DECL) : DECL_RTL (DECL));		\
++	if (RTX_UNCHANGING_P (rtl) && !MEM_VOLATILE_P (rtl))		\
++	  SYMBOL_REF_FLAG (XEXP (rtl, 0)) = 1;				\
++      }									\
++  }									\
++while (0)
++
++#undef SELECT_RTX_SECTION
++#define SELECT_RTX_SECTION(MODE, X) readonly_data_section ();
++#endif
++
++/* Don't default to pcc-struct-return, because gcc is the only compiler, and
++   we want to retain compatibility with older gcc versions.  */
++#undef PCC_STATIC_STRUCT_RETURN
++#define DEFAULT_PCC_STRUCT_RETURN 0
++
++/* Define this macro if the system header files support C++ as well
++   as C.  This macro inhibits the usual method of using system header
++   files in C++, which is to pretend that the file's contents are
++   enclosed in `extern "C" {...}'.  */
++#define NO_IMPLICIT_EXTERN_C
++
++/* Currently, JUMP_TABLES_IN_TEXT_SECTION must be defined in order to
++ * keep switch tables in the text section.  */
++#define JUMP_TABLES_IN_TEXT_SECTION 1
++
++/* Use the default action for outputting the case label. */
++#undef ASM_OUTPUT_CASE_LABEL
++#define ASM_RETURN_CASE_JUMP			\
++  do {						\
++    if (TARGET_5200)				\
++      return "ext%.l %0\n\tjmp %%pc@(2,%0:l)";	\
++    else					\
++      return "jmp %%pc@(2,%0:w)";		\
++  } while (0)
++
++/* In m68k svr4, a symbol_ref rtx can be a valid PIC operand if it is
++ * an operand of a function call. */
++#undef LEGITIMATE_PIC_OPERAND_P
++#define LEGITIMATE_PIC_OPERAND_P(X) \
++  ((! symbolic_operand (X, VOIDmode) \
++    && ! (GET_CODE (X) == CONST_DOUBLE && CONST_DOUBLE_MEM (X)	\
++	  && GET_CODE (CONST_DOUBLE_MEM (X)) == MEM		\
++	  && symbolic_operand (XEXP (CONST_DOUBLE_MEM (X), 0), VOIDmode))) \
++   || (GET_CODE (X) == SYMBOL_REF && SYMBOL_REF_FLAG (X)))
++
++/* Turn off function cse if we are doing PIC. We always want function
++ * call to be done as `bsr foo@PLTPC', so it will force the assembler
++ * to create the PLT entry for `foo'.  Doing function cse will cause
++ * the address of `foo' to be loaded into a register, which is exactly
++ * what we want to avoid when we are doing PIC on svr4 m68k. */
++#undef SUBTARGET_OVERRIDE_OPTIONS
++#define SUBTARGET_OVERRIDE_OPTIONS \
++  if (flag_pic) flag_no_function_cse = 1;
++
++/* Finalize the trampoline by flushing the insn cache. */
++#undef FINALIZE_TRAMPOLINE
++#define FINALIZE_TRAMPOLINE(TRAMP)					\
++  emit_library_call (gen_rtx_SYMBOL_REF (Pmode, "__clear_cache"),	\
++		     0, VOIDmode, 2, TRAMP, Pmode,			\
++		     plus_constant (TRAMP, TRAMPOLINE_SIZE), Pmode);
++
++/* Output code to add DELTA to the first argument, and then jump to FUNCTION.
++ * Used for C++ multiple inheritance. */
++#define ASM_OUTPUT_MI_THUNK(FILE, THUNK_FNDECL, DELTA, FUNCTION)	\
++do {									\
++  if (DELTA > 0 && DELTA <= 8)						\
++    asm_fprintf (FILE, "\taddq.l %I%d,4(%Rsp)\n", DELTA);		\
++  else if (DELTA < 0 && DELTA >= -8)					\
++    asm_fprintf (FILE, "\tsubq.l %I%d,4(%Rsp)\n", -DELTA);		\
++  else									\
++    asm_fprintf (FILE, "\tadd.l %I%d,4(%Rsp)\n", DELTA);		\
++									\
++  if (flag_pic)								\
++    {									\
++      fprintf (FILE, "\tbra.l ");					\
++      assemble_name (FILE, XSTR (XEXP (DECL_RTL (FUNCTION), 0), 0));	\
++      fprintf (FILE, "@PLTPC\n");					\
++    }									\
++  else									\
++    {									\
++      fprintf (FILE, "\tjmp ");						\
++      assemble_name (FILE, XSTR (XEXP (DECL_RTL (FUNCTION), 0), 0));	\
++      fprintf (FILE, "\n");						\
++    }									\
++} while (0)
++
++/* Output assembler code to FILE to increment profiler label # LABELNO
++ * for profiling a function entry. */
++#undef FUNCTION_PROFILER
++#define FUNCTION_PROFILER(FILE, LABELNO) \
++  asm_fprintf (FILE, "\tlea %LLP%d,%Ra0\n\tjsr mcount\n", (LABELNO))
+diff --git a/gcc/config/m68k/t-mint b/gcc/config/m68k/t-mint
+new file mode 100644
+index 00000000000..782e86855b8
+--- /dev/null
++++ b/gcc/config/m68k/t-mint
+@@ -0,0 +1,48 @@
++# 
++# libgcc1 stuff
++# neccessary for our default 68000 target
++# 
++
++CROSS_LIBGCC1 = libgcc1-asm.a
++LIBGCC1 = libgcc1-asm.a
++
++LIB1ASMSRC = m68k/lb1sf68.asm
++LIB1ASMFUNCS = _mulsi3 _udivsi3 _divsi3 _umodsi3 _modsi3 \
++   _double _float _floatex \
++   _eqdf2 _nedf2 _gtdf2 _gedf2 _ltdf2 _ledf2 \
++   _eqsf2 _nesf2 _gtsf2 _gesf2 _ltsf2 _lesf2
++
++# These are really part of libgcc1, but this will cause them to be
++# built correctly, so...
++LIB2FUNCS_EXTRA = fpgnulib.c xfgnulib.c
++
++fpgnulib.c: $(srcdir)/config/m68k/fpgnulib.c
++	cp $(srcdir)/config/m68k/fpgnulib.c fpgnulib.c
++xfgnulib.c: $(srcdir)/config/m68k/fpgnulib.c
++	echo '#define EXTFLOAT' > xfgnulib.c
++	cat $(srcdir)/config/m68k/fpgnulib.c >> xfgnulib.c
++
++# 
++# compile without debugging informations
++# Guido wanted that :-/
++# 
++LIBGCC2_DEBUG_CFLAGS = 
++
++# 
++# Use multiple libraries
++# 
++MULTILIB_OPTIONS = m68000/m68020-60 mshort
++MULTILIB_DIRNAMES =
++MULTILIB_MATCHES = m68000=mc68000 m68020-60=m68881 m68020-60=m68020-40 m68020-60=m68040 m68020-60=m68060
++
++LIBGCC = stmp-multilib
++INSTALL_LIBGCC = install-multilib
++
++# 
++# Don't run fixproto
++STMP_FIXPROTO =
++
++# 
++# Don't install the header files
++# hmm, why? ... disabled now
++#INSTALL_HEADERS =
+diff --git a/gcc/config/m68k/x-mint b/gcc/config/m68k/x-mint
+new file mode 100644
+index 00000000000..7075d5d3259
+--- /dev/null
++++ b/gcc/config/m68k/x-mint
+@@ -0,0 +1,2 @@
++CC = gcc
++CFLAGS = -D_GNU_SOURCE
+diff --git a/gcc/config/m68k/xm-mint.h b/gcc/config/m68k/xm-mint.h
+new file mode 100644
+index 00000000000..9a76a0111f2
+--- /dev/null
++++ b/gcc/config/m68k/xm-mint.h
+@@ -0,0 +1,39 @@
++/* Definitions of host machine for GNU compiler.
++   Atari ST TOS/MiNT.
++   Copyright (C) 1994, 1995 Free Software Foundation, Inc.
++
++This file is part of GNU CC.
++
++GNU CC is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License as published by
++the Free Software Foundation; either version 1, or (at your option)
++any later version.
++
++GNU CC is distributed in the hope that it will be useful,
++but WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++GNU General Public License for more details.
++
++You should have received a copy of the GNU General Public License
++along with GNU CC; see the file COPYING.  If not, write to
++the Free Software Foundation, 59 Temple Place - Suite 330,
++Boston, MA 02111-1307, USA.  */
++
++#include "m68k/xm-m68k.h"
++
++/* make sure this is the case. some versions did'nt def this */
++#ifndef HOST_WORDS_BIG_ENDIAN
++#define HOST_WORDS_BIG_ENDIAN
++#endif
++
++/* make alloca defn more cross-compilable */
++
++#if defined(__GNUC__)
++#if defined(alloca)
++#undef alloca
++#endif
++#define alloca(x) __builtin_alloca(x)
++#endif
++
++#define NO_STAB_H
++#define HAVE_GETWD
+diff --git a/gcc/configure b/gcc/configure
+index 38d3db4fe27..447d6a61185 100755
+--- a/gcc/configure
++++ b/gcc/configure
+@@ -4105,6 +4105,14 @@ for machine in $build $host $target; do
+ 		fi
+ 		extra_headers=math-68881.h
+ 	        ;;
++	m68k-atari-mint*)	# Atari compatible running MiNT
++		tm_file=m68k/mint.h
++		xm_file=m68k/xm-mint.h
++		tmake_file=m68k/t-mint
++		xmake_file=m68k/x-mint
++		fixincludes=Makefile.in
++		install_headers_dir=install-headers-tar
++		;;
+ 	m68k-bull-sysv*)		# Bull DPX/2
+ 		if test x$gas = xyes
+ 		then
+diff --git a/gcc/cp/Make-lang.in b/gcc/cp/Make-lang.in
+index d5d4e4d4cef..e6497ad216e 100644
+--- a/gcc/cp/Make-lang.in
++++ b/gcc/cp/Make-lang.in
+@@ -91,6 +91,7 @@ GXX_OBJS = gcc.o g++spec.o intl.o prefix.o version.o
+ g++$(exeext): $(GXX_OBJS) $(EXTRA_GCC_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ \
+ 	  $(GXX_OBJS) $(EXTRA_GCC_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ # Create a version of the g++ driver which calls the cross-compiler.
+ g++-cross$(exeext): g++$(exeext)
+diff --git a/gcc/cp/Makefile.in b/gcc/cp/Makefile.in
+index 1a5b32c40c8..add97a9bd43 100644
+--- a/gcc/cp/Makefile.in
++++ b/gcc/cp/Makefile.in
+@@ -197,6 +197,7 @@ OBJDEPS = ../stamp-objlist ../c-common.o ../c-pragma.o
+ compiler: ../cc1plus$(exeext)
+ ../cc1plus$(exeext): $(P) $(OBJDEPS) $(CXX_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(CXX_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=960k $@
+ 
+ Makefile: $(srcdir)/Makefile.in $(srcdir)/../configure
+ 	cd ..; $(SHELL) config.status
+diff --git a/gcc/f/Make-lang.in b/gcc/f/Make-lang.in
+index a531abb5707..b86293c7c69 100644
+--- a/gcc/f/Make-lang.in
++++ b/gcc/f/Make-lang.in
+@@ -84,6 +84,7 @@ g77$(exeext): gcc.o g77spec.o g77version.o version.o prefix.o intl.o \
+ 	if [ -f lang-f77 ]; then \
+ 	  $(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gcc.o g77spec.o g77version.o \
+ 	   version.o prefix.o intl.o $(EXTRA_GCC_OBJS) $(LIBS); \
++	  test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@; \
+ 	else true; fi
+ 
+ # Create a version of the g77 driver which calls the cross-compiler.
+diff --git a/gcc/f/Makefile.in b/gcc/f/Makefile.in
+index 96975a5d7cd..dd081aacdcf 100644
+--- a/gcc/f/Makefile.in
++++ b/gcc/f/Makefile.in
+@@ -213,6 +213,7 @@ compiler: ../f771$(exeext)
+ ../f771$(exeext): $(P) $(F77_OBJS) $(OBJDEPS) $(LIBDEPS)
+ 	rm -f f771$(exeext)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(F77_OBJS) $(OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=960k $@
+ 
+ Makefile: $(srcdir)/Makefile.in $(srcdir)/../configure
+ 	cd ..; $(SHELL) config.status
+diff --git a/gcc/fixinc/Makefile.in b/gcc/fixinc/Makefile.in
+index 9182337c76a..675769ac0d3 100644
+--- a/gcc/fixinc/Makefile.in
++++ b/gcc/fixinc/Makefile.in
+@@ -76,7 +76,7 @@ $(OBJ): $(HDR)
+ 
+ fixincl: $(OBJ)
+ 	@echo $(CC) -o $@ $(OBJ) $(LIBERTY) $(LIB) ; \
+-	if $(CC) -o $@ $(OBJ) $(LIBERTY) $(LIB) ; then : ; else \
++	if $(CC) -o $@ $(OBJ) $(LIBERTY) $(LIB) && { test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@; } ; then : ; else \
+ 	rm -f $@ ; (echo "#! /bin/sh" ; echo exit 1 ) > $@ ; \
+ 	chmod 777 $@ ; fi
+ 
+diff --git a/gcc/fixinc/mkfixinc.sh b/gcc/fixinc/mkfixinc.sh
+index 2c1a26c057f..a658c92dc23 100755
+--- a/gcc/fixinc/mkfixinc.sh
++++ b/gcc/fixinc/mkfixinc.sh
+@@ -87,6 +87,7 @@ case $machine in
+ 	i[34567]86-*-pe | i[34567]86-*-cygwin* | \
+ 	i[34567]86-*-mingw32* | \
+ 	mips-sgi-irix5cross64 | \
++	m68k-*-mint* | \
+ 	powerpc-*-eabiaix* | \
+ 	powerpc-*-eabisim* | \
+ 	powerpc-*-eabi*    | \
+diff --git a/gcc/java/Make-lang.in b/gcc/java/Make-lang.in
+index 39397f267fc..9697dde27ce 100644
+--- a/gcc/java/Make-lang.in
++++ b/gcc/java/Make-lang.in
+@@ -89,6 +89,7 @@ $(GCJ)$(exeext): gcc.o jvspec.o version.o \
+ 	   prefix.o intl.o $(LIBDEPS) $(EXTRA_GCC_OBJS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gcc.o jvspec.o prefix.o intl.o \
+ 	  version.o $(EXTRA_GCC_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ # Create a version of the $(GCJ) driver which calls the cross-compiler.
+ $(GCJ)-cross$(exeext): $(GCJ)$(exeext)
+diff --git a/gcc/java/Makefile.in b/gcc/java/Makefile.in
+index 90f45fdde56..ce21bef2a89 100644
+--- a/gcc/java/Makefile.in
++++ b/gcc/java/Makefile.in
+@@ -191,24 +191,29 @@ compiler: ../jc1$(exeext) ../jv-scan$(exeext)
+ 	rm -f ../jc1$(exeext)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ \
+ 	      $(JAVA_OBJS) $(OBJS) $(SUBDIR_OBSTACK) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=960k $@
+ ../jv-scan$(exeext): $(P) $(JAVA_OBJS_LITE) $(OBJDEPS) $(LIBDEPS)
+ 	rm -f ../jv-scan$(exeext)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ \
+ 	      $(JAVA_OBJS_LITE) $(SUBDIR_OBSTACK) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ ../jcf-dump$(exeext): jcf-dump.o jcf-io.o jcf-depend.o jcf-path.o \
+ 		zextract.o
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ jcf-dump.o jcf-io.o \
+ 	  jcf-depend.o jcf-path.o zextract.o $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ # Dependencies here must be kept in sync with dependencies in Make-lang.in.
+ ../jvgenmain$(exeext):  jvgenmain.o mangle.o $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ jvgenmain.o mangle.o ../obstack.o $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ ../gcjh$(exeext): gjavah.o jcf-io.o jcf-depend.o jcf-path.o \
+ 		zextract.o $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gjavah.o jcf-io.o \
+ 	  jcf-depend.o jcf-path.o zextract.o $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=128k $@
+ 
+ Makefile: $(srcdir)/Makefile.in $(srcdir)/../configure
+ 	cd ..; $(SHELL) config.status
+diff --git a/gcc/objc/Make-lang.in b/gcc/objc/Make-lang.in
+index 9a84f0f59ca..3709947e46c 100644
+--- a/gcc/objc/Make-lang.in
++++ b/gcc/objc/Make-lang.in
+@@ -61,6 +61,7 @@ OBJC_OBJS = objc-parse.o objc-act.o $(C_AND_OBJC_OBJS)
+ 
+ cc1obj$(exeext): $(P) $(OBJS) $(OBJC_OBJS) $(LIBDEPS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(OBJC_OBJS) $(LIBS)
++	test "${host_canonical}" != m68k-atari-mint || m68k-atari-mint-stack --fix=960k $@
+ 
+ # Objective C language specific files.
+ 
+diff --git a/include/libiberty.h b/include/libiberty.h
+index cf313662ef4..1f22e1e68dd 100644
+--- a/include/libiberty.h
++++ b/include/libiberty.h
+@@ -16,6 +16,9 @@ extern "C" {
+ 
+ #include "ansidecl.h"
+ 
++#include <string.h>
++#include <stdlib.h>
++
+ /* Build an argument vector from a string.  Allocates memory using
+    malloc.  Use freeargv to free the vector.  */
+ 
+diff --git a/include/objalloc.h b/include/objalloc.h
+index 0b451cdc295..4be3d2b0d10 100644
+--- a/include/objalloc.h
++++ b/include/objalloc.h
+@@ -22,6 +22,8 @@ Boston, MA 02111-1307, USA.  */
+ 
+ #include "ansidecl.h"
+ 
++#include <stdlib.h>
++
+ /* These routines allocate space for an object.  The assumption is
+    that the object will want to allocate space as it goes along, but
+    will never want to free any particular block.  There is a function
+-- 
+2.24.0
+

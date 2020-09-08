@@ -1,0 +1,43 @@
+From 3fa759048af517dc60fc64423e721db5802e8df7 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 7 Sep 2020 09:59:34 +0200
+Subject: [PATCH 07/14] Fix overlapping strcpy in makeinfo
+
+---
+ texinfo/makeinfo/makeinfo.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/texinfo/makeinfo/makeinfo.c b/texinfo/makeinfo/makeinfo.c
+index 3094a650d61..e3f39158602 100644
+--- a/texinfo/makeinfo/makeinfo.c
++++ b/texinfo/makeinfo/makeinfo.c
+@@ -1683,7 +1683,7 @@ canon_white (string)
+     {
+       if (!cr_or_whitespace (string[x]))
+         {
+-          strcpy (string, string + x);
++          memmove (string, string + x, strlen(string + x) + 1);
+           break;
+         }
+     }
+@@ -9072,7 +9072,7 @@ cm_macro ()
+           (line[16] == 0 || whitespace (line[16])))
+         {
+           for (i = 16; whitespace (line[i]); i++);
+-          strcpy (line, line + i);
++          memmove (line, line + i, strlen(line + i) + 1);
+           flags |= ME_RECURSE;
+           if (!*line)
+             {
+@@ -9086,7 +9086,7 @@ cm_macro ()
+           (line[10] == 0 || whitespace (line[10])))
+         {
+           for (i = 10; whitespace (line[i]); i++);
+-          strcpy (line, line + i);
++          memmove (line, line + i, strlen(line + 1) + 1);
+ 
+           if (arglist && arglist[0] && !arglist[1])
+             {
+-- 
+2.24.0
+

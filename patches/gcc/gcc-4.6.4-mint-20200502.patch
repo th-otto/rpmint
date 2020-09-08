@@ -3266,7 +3266,7 @@ index 71b7c4f273f..877e3335583 100644
 +};
 +#endif
 diff --git a/gcc/config/m68k/m68k.md b/gcc/config/m68k/m68k.md
-index f89037f2e96..9e9fd150c5a 100644
+index f89037f2e96..3118c1d01a1 100644
 --- a/gcc/config/m68k/m68k.md
 +++ b/gcc/config/m68k/m68k.md
 @@ -129,8 +129,11 @@
@@ -3281,6 +3281,18 @@ index f89037f2e96..9e9fd150c5a 100644
     (PIC_REG		13)
     (A6_REG		14)
     (SP_REG		15)
+@@ -1070,7 +1073,10 @@
+ (define_insn ""
+   [(set (match_operand:QI 0 "nonimmediate_operand" "=d,*a,m")
+ 	(match_operand:QI 1 "general_src_operand" "dmSi*a,di*a,dmSi"))]
+-  "!TARGET_COLDFIRE"
++  "!TARGET_COLDFIRE
++   && (!MEM_P (operands[0])
++       || GET_CODE (XEXP (operands[0], 0)) != PRE_DEC
++       || XEXP (XEXP (operands[0], 0), 0) != stack_pointer_rtx)"
+   "* return output_move_qimode (operands);")
+ 
+ (define_insn ""
 diff --git a/gcc/config/m68k/m68k.opt b/gcc/config/m68k/m68k.opt
 index d5aa9fa7698..c04afa3c9a7 100644
 --- a/gcc/config/m68k/m68k.opt
