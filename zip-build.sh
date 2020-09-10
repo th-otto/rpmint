@@ -16,8 +16,11 @@ patches/zip/zip-3.0-add_options_to_help.patch
 patches/zip/zip-3.0-nonexec-stack.patch
 patches/zip/zip-3.0-optflags.patch
 patches/zip/zip-3.0-tempfile.patch
-patches/zip/zip-notimestamp.patch
 patches/zip/zip-3.0-nomutilation.patch
+patches/zip/zip-3.0-atari.patch
+"
+DISABLED_PATCHES="
+patches/zip/zip-notimestamp.patch
 "
 
 BINFILES="

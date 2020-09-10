@@ -27,6 +27,7 @@ patches/${PACKAGENAME}/unzip-CVE-2016-9844.patch
 patches/${PACKAGENAME}/unzip-CVE-2014-9913.patch
 patches/${PACKAGENAME}/unzip-CVE-2018-1000035.patch
 patches/${PACKAGENAME}/unzip-atari-chmod-0.patch
+patches/${PACKAGENAME}/unzip-symlinks.patch
 "
 # patches/unzip/unzip-5.52-use_librcc.patch
 

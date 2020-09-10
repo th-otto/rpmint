@@ -1,0 +1,113 @@
+diff -rup unzip60.orig/unix/unix.c unzip60/unix/unix.c
+--- unzip60.orig/unix/unix.c	2020-09-10 02:40:07.467099689 +0200
++++ unzip60/unix/unix.c	2020-09-10 03:02:53.115140265 +0200
+@@ -432,6 +432,15 @@ int mapattr(__G)
+                  * We restrict symlink support to those "made-by" hosts that
+                  * are known to support symbolic links.
+                  */
++                /*
++                 * map standard unix filetypes to host
++                 */
++                switch (G.pInfo->file_attr & UNX_IFMT)
++                {
++                	case UNX_IFLNK:
++                	case 0160000: /* bug from older zip versions */
++                	G.pInfo->file_attr = (G.pInfo->file_attr & ~UNX_IFMT) | S_IFLNK; break;
++                }
+                 G.pInfo->symlink = S_ISLNK(G.pInfo->file_attr) &&
+                                    SYMLINK_HOST(G.pInfo->hostnum);
+ #endif
+diff -rup unzip60.orig/unzpriv.h unzip60/unzpriv.h
+--- unzip60.orig/unzpriv.h	2020-09-10 02:40:07.387099687 +0200
++++ unzip60/unzpriv.h	2020-09-10 03:03:05.295140627 +0200
+@@ -1714,6 +1714,35 @@
+ #define DF_DMY            1    /* date format 26/10/91 (most of the world) */
+ #define DF_YMD            2    /* date format 91/10/26 (a few countries) */
+ 
++/* Define OS-specific attributes for use on ALL platforms--the S_xxxx
++ * versions of these are defined differently (or not defined) by different
++ * compilers and operating systems. */
++
++#define UNX_IFMT       0170000     /* Unix file type mask */
++#define UNX_IFREG      0100000     /* Unix regular file */
++#define UNX_IFSOCK     0140000     /* Unix socket (BSD, not SysV or Amiga) */
++#define UNX_IFLNK      0120000     /* Unix symbolic link (not SysV, Amiga) */
++#define UNX_IFBLK      0060000     /* Unix block special       (not Amiga) */
++#define UNX_IFDIR      0040000     /* Unix directory */
++#define UNX_IFCHR      0020000     /* Unix character special   (not Amiga) */
++#define UNX_IFIFO      0010000     /* Unix fifo    (BCC, not MSC or Amiga) */
++#define UNX_ISUID      04000       /* Unix set user id on execution */
++#define UNX_ISGID      02000       /* Unix set group id on execution */
++#define UNX_ISVTX      01000       /* Unix directory permissions control */
++#define UNX_ENFMT      UNX_ISGID   /* Unix record locking enforcement flag */
++#define UNX_IRWXU      00700       /* Unix read, write, execute: owner */
++#define UNX_IRUSR      00400       /* Unix read permission: owner */
++#define UNX_IWUSR      00200       /* Unix write permission: owner */
++#define UNX_IXUSR      00100       /* Unix execute permission: owner */
++#define UNX_IRWXG      00070       /* Unix read, write, execute: group */
++#define UNX_IRGRP      00040       /* Unix read permission: group */
++#define UNX_IWGRP      00020       /* Unix write permission: group */
++#define UNX_IXGRP      00010       /* Unix execute permission: group */
++#define UNX_IRWXO      00007       /* Unix read, write, execute: other */
++#define UNX_IROTH      00004       /* Unix read permission: other */
++#define UNX_IWOTH      00002       /* Unix write permission: other */
++#define UNX_IXOTH      00001       /* Unix execute permission: other */
++
+ /*---------------------------------------------------------------------------
+     Extra-field block ID values and offset info.
+   ---------------------------------------------------------------------------*/
+diff -rup unzip60.orig/zipinfo.c unzip60/zipinfo.c
+--- unzip60.orig/zipinfo.c	2020-09-10 02:40:07.423099688 +0200
++++ unzip60/zipinfo.c	2020-09-10 03:03:05.299140627 +0200
+@@ -28,35 +28,6 @@
+ 
+ #ifndef NO_ZIPINFO  /* strings use up too much space in small-memory systems */
+ 
+-/* Define OS-specific attributes for use on ALL platforms--the S_xxxx
+- * versions of these are defined differently (or not defined) by different
+- * compilers and operating systems. */
+-
+-#define UNX_IFMT       0170000     /* Unix file type mask */
+-#define UNX_IFREG      0100000     /* Unix regular file */
+-#define UNX_IFSOCK     0140000     /* Unix socket (BSD, not SysV or Amiga) */
+-#define UNX_IFLNK      0120000     /* Unix symbolic link (not SysV, Amiga) */
+-#define UNX_IFBLK      0060000     /* Unix block special       (not Amiga) */
+-#define UNX_IFDIR      0040000     /* Unix directory */
+-#define UNX_IFCHR      0020000     /* Unix character special   (not Amiga) */
+-#define UNX_IFIFO      0010000     /* Unix fifo    (BCC, not MSC or Amiga) */
+-#define UNX_ISUID      04000       /* Unix set user id on execution */
+-#define UNX_ISGID      02000       /* Unix set group id on execution */
+-#define UNX_ISVTX      01000       /* Unix directory permissions control */
+-#define UNX_ENFMT      UNX_ISGID   /* Unix record locking enforcement flag */
+-#define UNX_IRWXU      00700       /* Unix read, write, execute: owner */
+-#define UNX_IRUSR      00400       /* Unix read permission: owner */
+-#define UNX_IWUSR      00200       /* Unix write permission: owner */
+-#define UNX_IXUSR      00100       /* Unix execute permission: owner */
+-#define UNX_IRWXG      00070       /* Unix read, write, execute: group */
+-#define UNX_IRGRP      00040       /* Unix read permission: group */
+-#define UNX_IWGRP      00020       /* Unix write permission: group */
+-#define UNX_IXGRP      00010       /* Unix execute permission: group */
+-#define UNX_IRWXO      00007       /* Unix read, write, execute: other */
+-#define UNX_IROTH      00004       /* Unix read permission: other */
+-#define UNX_IWOTH      00002       /* Unix write permission: other */
+-#define UNX_IXOTH      00001       /* Unix execute permission: other */
+-
+ #define VMS_IRUSR      UNX_IRUSR   /* VMS read/owner */
+ #define VMS_IWUSR      UNX_IWUSR   /* VMS write/owner */
+ #define VMS_IXUSR      UNX_IXUSR   /* VMS execute/owner */
+@@ -1297,6 +1268,7 @@ static int zi_long(__G__ pEndprev, error
+         switch ((unsigned)(xattr & UNX_IFMT)) {
+             case (unsigned)UNX_IFDIR:   attribs[0] = 'd';  break;
+             case (unsigned)UNX_IFREG:   attribs[0] = '-';  break;
++            case (unsigned)0160000: /* bug from older zip versions */
+             case (unsigned)UNX_IFLNK:   attribs[0] = 'l';  break;
+             case (unsigned)UNX_IFBLK:   attribs[0] = 'b';  break;
+             case (unsigned)UNX_IFCHR:   attribs[0] = 'c';  break;
+@@ -2103,6 +2075,7 @@ static int zi_short(__G)   /* return PK-
+             switch ((unsigned)(xattr & UNX_IFMT)) {
+                 case (unsigned)UNX_IFDIR:   attribs[0] = 'd';  break;
+                 case (unsigned)UNX_IFREG:   attribs[0] = '-';  break;
++                case (unsigned)0160000: /* bug from older zip versions */
+                 case (unsigned)UNX_IFLNK:   attribs[0] = 'l';  break;
+                 case (unsigned)UNX_IFBLK:   attribs[0] = 'b';  break;
+                 case (unsigned)UNX_IFCHR:   attribs[0] = 'c';  break;

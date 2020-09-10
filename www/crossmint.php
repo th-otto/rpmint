@@ -1545,6 +1545,8 @@ This notably applies to Perl and Python.
 
 <li>2020/09/06 Update bison to version 3.6.4</li>
 
+<li>2020/09/10 Fix a bug in zip/unzip storing wrong filetype for symlinks</li>
+
 </ul>
 
 <p></p>

@@ -1,0 +1,885 @@
+diff -rup zip30.orig/atari/Makefile zip30/atari/Makefile
+--- zip30.orig/atari/Makefile	2007-01-07 02:48:12.000000000 +0100
++++ zip30/atari/Makefile	2020-09-09 23:53:31.013831313 +0200
+@@ -2,29 +2,34 @@
+ 
+ MAKE = make
+ SHELL = /bin/sh
++LN = ln -s
++
++CROSSPREFIX = m68k-atari-mint-
+ 
+ # (to use the Gnu compiler, change cc to gcc in CC and BIND)
+-CC = cc
++CC = $(CROSSPREFIX)gcc
+ BIND = $(CC)
+ AS = $(CC) -c
+ E =
+-CPP = /lib/cpp
++CPP = $(CC) -E
+ 
+ # probably can change this to 'install' if you have it
+ INSTALL = cp
+ 
+ # target directories - where to install executables and man pages to
+-BINDIR = /usr/local/bin
++prefix = /usr
++BINDIR = ${prefix}/bin
+ manext=1
+-MANDIR = /usr/local/man/man$(manext)
++MANDIR = ${prefix}/share/man/man$(manext)
+ 
+ # flags
+ #   CFLAGS    flags for C compile
+ #   LFLAGS1   flags after output file spec, before obj file list
+ #   LFLAGS2   flags after obj file list (libraries, etc)
+-CFLAGS = -O
++CFLAGS_NOOPT = -I. -DUNIX -DIZ_ISO2OEM_ARRAY -O2 -DBZIP2_SUPPORT -DUIDGID_NOT_16BIT -DUNICODE_SUPPORT -DHAVE_DIRENT_H -DHAVE_TERMIOS_H $(LOCAL_ZIP)
++CFLAGS = -O2 -fomit-frame-pointer $(CFLAGS_NOOPT)
+ LFLAGS1 =
+-LFLAGS2 = -s
++LFLAGS2 = -lbz2 -s
+ 
+ # object file lists
+ OBJZ = zip.o zipfile.o zipup.o fileio.o util.o crc32.o globals.o \
+@@ -32,9 +37,11 @@ OBJZ = zip.o zipfile.o zipup.o fileio.o
+ 
+ OBJI = deflate.o trees.o
+ OBJA =
+-OBJU = zipfile_.o fileio_.o util_.o globals.o atari_.o
++OCRCU8 = crc32_.o
++OCRCTB =
++OBJU = zipfile_.o fileio_.o util_.o globals.o atari_.o $(OCRCU8)
+ OBJN = zipnote.o  $(OBJU)
+-OBJC = zipcloak.o $(OBJU) crc32_.o crypt_.o ttyio.o
++OBJC = zipcloak.o $(OBJU) $(OCRCTB) crypt_.o ttyio.o
+ OBJS = zipsplit.o $(OBJU)
+ 
+ ZIP_H = zip.h ziperr.h tailor.h atari/osdep.h
+@@ -52,6 +59,10 @@ ZIP_H = zip.h ziperr.h tailor.h atari/os
+ .1.doc:
+ 	nroff -man $< | col -b | uniq > $@
+ 
++ZIPS = zip$E zipnote$E zipsplit$E zipcloak$E
++
++zips: $(ZIPS)
++
+ # rules for zip, zipnote, zipcloak, zipsplit, and the Zip MANUAL.
+ $(OBJZ): $(ZIP_H)
+ $(OBJI): $(ZIP_H)
+@@ -71,16 +82,19 @@ match.o: match.s
+ 	mv _match.o match.o
+ 	rm -f _match.s
+ 
+-ZIPS = zip$E zipnote$E zipsplit$E zipcloak$E
++atari.o: atari/atari.c
++	$(CC) -c $(CFLAGS) $< -o $@
++
++atari_.o: atari/atari.c
++	$(CC) -c $(CFLAGS) -DUTIL -o $@ $<
+ 
+-zips: $(ZIPS)
+ zipsman: $(ZIPS) $(ZIPMANUAL)
+ 
+ zip$E: $(OBJZ) $(OBJI) $(OBJA)
+ 	$(BIND) -o zip$E $(LFLAGS1) $(OBJZ) $(OBJI) $(OBJA) $(LFLAGS2)
+ zipnote$E: $(OBJN)
+ 	$(BIND) -o zipnote$E $(LFLAGS1) $(OBJN) $(LFLAGS2)
+-zipcloak$E: $(OBJC)
++zipcloak$E: $(OBJC) $(OCRCTB)
+ 	$(BIND) -o zipcloak$E $(LFLAGS1) $(OBJC) $(LFLAGS2)
+ zipsplit$E: $(OBJS)
+ 	$(BIND) -o zipsplit$E $(LFLAGS1) $(OBJS) $(LFLAGS2)
+diff -rup zip30.orig/atari/atari.c zip30/atari/atari.c
+--- zip30.orig/atari/atari.c	2004-12-04 13:55:20.000000000 +0100
++++ zip30/atari/atari.c	2020-09-09 19:44:26.697928018 +0200
+@@ -15,7 +15,7 @@
+ #include <dirent.h>
+ #include <mintbind.h>
+ #include <osbind.h>
+-#include <ostruct.h>
++#include <utime.h>
+ 
+ 
+ #define PAD 0
+@@ -28,10 +28,9 @@ local ulg label_mode = 0;
+ local time_t label_utim = 0;
+ 
+ 
+-local char *readd(d)
+-DIR *d;                 /* directory stream to read from */
+ /* Return a pointer to the next name in the directory stream d, or NULL if
+    no more entries or an error occurs. */
++local char *readd(DIR *d)
+ {
+   struct dirent *e;
+ 
+@@ -39,17 +38,18 @@ DIR *d;                 /* directory str
+   return e == NULL ? (char *) NULL : e->d_name;
+ }
+ 
+-local char *getVolumeLabel(drive, vtime, vmode, utim)
+-  int drive;  /* drive name: 'A' .. 'Z' or '\0' for current drive */
+-  ulg *vtime; /* volume label creation time (DOS format) */
+-  ulg *vmode; /* volume label file mode */
+-  time_t utim;/* volume label creation time (UNIX format) */
+-
+ /* If a volume label exists for the given drive, return its name and
+    set its time and mode. The returned name must be static data. */
++local char *getVolumeLabel(
++  int drive,  /* drive name: 'A' .. 'Z' or '\0' for current drive */
++  ulg *vtime, /* volume label creation time (DOS format) */
++  ulg *vmode, /* volume label file mode */
++  time_t *utim)/* volume label creation time (UNIX format) */
+ {
+   static char vol[14];
+-  _DTA *dtaptr;
++  char *res = NULL;
++  _DTA *old;
++  _DTA dta;
+ 
+   if (drive) {
+     vol[0] = (char)drive;
+@@ -58,164 +58,17 @@ local char *getVolumeLabel(drive, vtime,
+     strcpy(vol, "/");
+   }
+   strcat(vol, "*.*");
++  old = Fgetdta();
++  Fsetdta(&dta);
+   if (Fsfirst(vol, FA_LABEL) == 0) {
+-    dtaptr = Fgetdta();
+-    strncpy(vol, dtaptr->dta_name, sizeof(vol)-1);
+-    *vtime = ((ulg)dtaptr->dta_date << 16) |
+-             ((ulg)dtaptr->dta_time & 0xffff);
+-    *vmode = (ulg)dtaptr->dta_attribute;
+-    return vol;
+-  }
+-  return NULL;
+-}
+-
+-char GetFileMode(char *name)
+-{
+-   struct stat sb;
+-
+-   sb.st_attr = 0;
+-   Fxattr(linkput ? 1 : 0, name, &sb);
+-   if (errno == EINVAL) {
+-      _DTA *dtaptr, *old;
+-      old = Fgetdta();
+-      Fsfirst(name, FA_RDONLY+FA_HIDDEN+FA_SYSTEM+FA_DIR);
+-      dtaptr = Fgetdta();
+-      sb.st_attr = dtaptr->dta_attribute;
+-      Fsetdta(old);
+-   }
+-   return sb.st_attr & 0x3f;
+-}
+-
+-
+-int wild2(w)
+-char *w;                /* path/pattern to match */
+-/* If not in exclude mode, expand the pattern based on the contents of the
+-   file system.  Return an error code in the ZE_ class. */
+-{
+-  DIR *d;               /* stream for reading directory */
+-  char *e;              /* name found in directory */
+-  int r;                /* temporary variable */
+-  char *n;              /* constructed name from directory */
+-  int f;                /* true if there was a match */
+-  char *a;              /* alloc'ed space for name */
+-  char *p;              /* path */
+-  char *q;              /* name */
+-  char v[5];            /* space for device current directory */
+-
+-  if (volume_label == 1) {
+-    volume_label = 2;
+-    label = getVolumeLabel(w[1] == ':' ? to_up(w[0]) : '\0',
+-                           &label_time, &label_mode, &label_utim);
+-    if (label != NULL) {
+-       newname(label, 0, 0);
+-    }
+-    if (w[1] == ':' && w[2] == '\0') return ZE_OK;
+-    /* "zip -$ foo a:" can be used to force drive name */
+-  }
+-
+-  /* special handling of stdin request */
+-  if (strcmp(w, "-") == 0)   /* if compressing stdin */
+-    return newname(w, 0, 0);
+-
+-  /* Allocate and copy pattern */
+-  if ((p = a = malloc(strlen(w) + 1)) == NULL)
+-    return ZE_MEM;
+-  strcpy(p, w);
+-
+-  /* Normalize path delimiter as '/'. */
+-  for (q = p; *q; q++)                  /* use / consistently */
+-    if (*q == '\\')
+-      *q = '/';
+-
+-  /* Only name can have special matching characters */
+-  if ((q = isshexp(p)) != NULL &&
+-      (strrchr(q, '/') != NULL || strrchr(q, ':') != NULL))
+-  {
+-    free((zvoid *)a);
+-    return ZE_PARMS;
+-  }
+-
+-  /* Separate path and name into p and q */
+-  if ((q = strrchr(p, '/')) != NULL && (q == p || q[-1] != ':'))
+-  {
+-    *q++ = '\0';                        /* path/name -> path, name */
+-    if (*p == '\0')                     /* path is just / */
+-      p = strcpy(v, "/.");
+-  }
+-  else if ((q = strrchr(p, ':')) != NULL)
+-  {                                     /* has device and no or root path */
+-    *q++ = '\0';
+-    p = strcat(strcpy(v, p), ":");      /* copy device as path */
+-    if (*q == '/')                      /* -> device:/., name */
+-    {
+-      strcat(p, "/");
+-      q++;
+-    }
+-    strcat(p, ".");
+-  }
+-  else if (recurse && (strcmp(p, ".") == 0 ||  strcmp(p, "..") == 0))
+-  {                                    /* current or parent directory */
+-    /* I can't understand Mark's code so I am adding a hack here to get
+-     * "zip -r foo ." to work. Allow the dubious "zip -r foo .." but
+-     * reject "zip -rm foo ..".
+-     */
+-    if (dispose && strcmp(p, "..") == 0)
+-       ziperr(ZE_PARMS, "cannot remove parent directory");
+-    q = "*.*";
+-  }
+-  else                                  /* no path or device */
+-  {
+-    q = p;
+-    p = strcpy(v, ".");
+-  }
+-  if (recurse && *q == '\0') {
+-    q = "*.*";
+-  }
+-  /* Search that level for matching names */
+-  if ((d = opendir(p)) == NULL)
+-  {
+-    free((zvoid *)a);
+-    return ZE_MISS;
+-  }
+-  if ((r = strlen(p)) > 1 &&
+-      (strcmp(p + r - 2, ":.") == 0 || strcmp(p + r - 2, "/.") == 0))
+-    *(p + r - 1) = '\0';
+-  f = 0;
+-  while ((e = readd(d)) != NULL) {
+-    if (strcmp(e, ".") && strcmp(e, "..") && MATCH(q, e, 0))
+-    {
+-      f = 1;
+-      if (strcmp(p, ".") == 0) {                /* path is . */
+-        r = procname(e, 0);                     /* name is name */
+-        if (r) {
+-           f = 0;
+-           break;
+-        }
+-      } else
+-      {
+-        if ((n = malloc(strlen(p) + strlen(e) + 2)) == NULL)
+-        {
+-          free((zvoid *)a);
+-          closedir(d);
+-          return ZE_MEM;
+-        }
+-        n = strcpy(n, p);
+-        if (n[r = strlen(n) - 1] != '/' && n[r] != ':')
+-          strcat(n, "/");
+-        r = procname(strcat(n, e), 0);          /* name is path/name */
+-        free((zvoid *)n);
+-        if (r) {
+-          f = 0;
+-          break;
+-        }
+-      }
+-    }
++    strncpy(vol, dta.dta_name, sizeof(vol)-1);
++    *vtime = ((ulg)dta.dta_date << 16) |
++             ((ulg)dta.dta_time & 0xffff);
++    *vmode = (ulg)dta.dta_attribute;
++    res = vol;
+   }
+-  closedir(d);
+-
+-  /* Done */
+-  free((zvoid *)a);
+-  return f ? ZE_OK : ZE_MISS;
++  Fsetdta(old);
++  return res;
+ }
+ 
+ 
+@@ -517,7 +370,7 @@ ulg d;                  /* dos-style tim
+ ulg filetime(f, a, n, t)
+ char *f;                /* name of file to get info on */
+ ulg *a;                 /* return value: file attributes */
+-long *n;                /* return value: file size */
++zoff_t *n;                /* return value: file size */
+ iztimes *t;             /* return value: access, modific. and creation times */
+ /* If file *f does not exist, return 0.  Else, return the file's last
+    modified date and time as an MSDOS date and time.  The date and
+@@ -531,7 +384,7 @@ iztimes *t;             /* return value:
+    If f is "-", use standard input as the file. If f is a device, return
+    a file size of -1 */
+ {
+-  struct stat s;        /* results of stat() */
++  z_stat s;         /* results of stat() */
+   /* convert FNMAX to malloc - 11/8/04 EG */
+   char *name;
+   int len = strlen(f);
+@@ -552,25 +405,62 @@ iztimes *t;             /* return value:
+   if (name[len - 1] == '/')
+     name[len - 1] = '\0';
+   /* not all systems allow stat'ing a file with / appended */
+-
+   if (strcmp(f, "-") == 0) {
+-    if (fstat(fileno(stdin), &s) != 0) {
++    if (zfstat(fileno(stdin), &s) != 0) {
+       free(name);
+       error("fstat(stdin)");
+     }
+-  } else if (LSSTAT(name, &s) != 0) {
+-             /* Accept about any file kind including directories
+-              * (stored with trailing / with -r option)
+-              */
++  }
++  else if (LSSTAT(name, &s) != 0) {
++    /* Accept about any file kind including directories
++     * (stored with trailing / with -r option)
++     */
+     free(name);
+     return 0;
+   }
++  free(name);
+ 
+   if (a != NULL) {
+-/*  *a = ((ulg)s.st_mode << 16) | (ulg)GetFileMode(name); */
+-    *a = ((ulg)s.st_mode << 16) | (ulg)s.st_attr;
++/*
++**  The following defines are copied from the unizip source and represent the
++**  legacy Unix mode flags.  These fixed bit masks are no longer required
++**  by XOPEN standards - the S_IS### macros being the new recommended method.
++**  The approach here of setting the legacy flags by testing the macros should
++**  work under any _XOPEN_SOURCE environment (and will just rebuild the same bit
++**  mask), but is required if the legacy bit flags differ from legacy Unix.
++*/
++#define UNX_IFDIR      0040000     /* Unix directory */
++#define UNX_IFREG      0100000     /* Unix regular file */
++#define UNX_IFSOCK     0140000     /* Unix socket (BSD, not SysV or Amiga) */
++#define UNX_IFLNK      0120000     /* Unix symbolic link (not SysV, Amiga) */
++#define UNX_IFBLK      0060000     /* Unix block special       (not Amiga) */
++#define UNX_IFCHR      0020000     /* Unix character special   (not Amiga) */
++#define UNX_IFIFO      0010000     /* Unix fifo    (BCC, not MSC or Amiga) */
++    {
++    mode_t legacy_modes;
++
++    /* Initialize with permission bits--which are not implementation-optional */
++    legacy_modes = s.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO | S_ISUID | S_ISGID | S_ISVTX);
++    if (S_ISDIR(s.st_mode))
++      legacy_modes |= UNX_IFDIR;
++    if (S_ISREG(s.st_mode))
++      legacy_modes |= UNX_IFREG;
++    if (S_ISLNK(s.st_mode))
++      legacy_modes |= UNX_IFLNK;
++    if (S_ISBLK(s.st_mode))
++      legacy_modes |= UNX_IFBLK;
++    if (S_ISCHR(s.st_mode))
++      legacy_modes |= UNX_IFCHR;
++    if (S_ISFIFO(s.st_mode))
++      legacy_modes |= UNX_IFIFO;
++    if (S_ISSOCK(s.st_mode))
++      legacy_modes |= UNX_IFSOCK;
++    *a = ((ulg)legacy_modes << 16) | !(s.st_mode & S_IWRITE);
++    }
++    if ((s.st_mode & S_IFMT) == S_IFDIR) {
++      *a |= MSDOS_DIR_ATTR;
++    }
+   }
+-  free(name);
+   if (n != NULL)
+     *n = S_ISREG(s.st_mode) ? s.st_size : -1L;
+   if (t != NULL) {
+@@ -582,47 +472,254 @@ iztimes *t;             /* return value:
+   return unix2dostime(&s.st_mtime);
+ }
+ 
++#ifndef QLZIP /* QLZIP Unix2QDOS cross-Zip supplies an extended variant */
++
++int set_new_unix_extra_field(z, s)
++  struct zlist far *z;
++  z_stat *s;
++  /* New unix extra field.
++     Currently only UIDs and GIDs are stored. */
++{
++  int uid_size;
++  int gid_size;
++  int ef_data_size;
++  char *extra;
++  char *cextra;
++  ulg id;
++  int b;
++
++  uid_size = sizeof(s->st_uid);
++  gid_size = sizeof(s->st_gid);
++
++/* New extra field
++   tag       (2 bytes)
++   size      (2 bytes)
++   version   (1 byte)
++   uid_size  (1 byte - size in bytes)
++   uid       (variable)
++   gid_size  (1 byte - size in bytes)
++   gid       (variable)
++ */
++   
++  ef_data_size = 1 + 1 + uid_size + 1 + gid_size;
++
++  if ((extra = (char *)malloc(z->ext + 4 + ef_data_size)) == NULL)
++    return ZE_MEM;
++  if ((cextra = (char *)malloc(z->ext + 4 + ef_data_size)) == NULL)
++    return ZE_MEM;
++
++  if (z->ext)
++    memcpy(extra, z->extra, z->ext);
++  if (z->cext)
++    memcpy(cextra, z->cextra, z->cext);
++
++  free(z->extra);
++  z->extra = extra;
++  free(z->cextra);
++  z->cextra = cextra;
++
++  z->extra[z->ext + 0] = 'u';
++  z->extra[z->ext + 1] = 'x';
++  z->extra[z->ext + 2] = (char)ef_data_size;     /* length of data part */
++  z->extra[z->ext + 3] = 0;
++  z->extra[z->ext + 4] = 1;                      /* version */
++
++  /* UID */
++  z->extra[z->ext + 5] = (char)(uid_size);       /* uid size in bytes */
++  b = 6;
++  id = (ulg)(s->st_uid);
++  z->extra[z->ext + b] = (char)(id & 0xFF);
++  if (uid_size > 1) {
++    b++;
++    id = id >> 8;
++    z->extra[z->ext + b] = (char)(id & 0xFF);
++    if (uid_size > 2) {
++      b++;
++      id = id >> 8;
++      z->extra[z->ext + b] = (char)(id & 0xFF);
++      b++;
++      id = id >> 8;
++      z->extra[z->ext + b] = (char)(id & 0xFF);
++      if (uid_size == 8) {
++        b++;
++        id = id >> 8;
++        z->extra[z->ext + b] = (char)(id & 0xFF);
++        b++;
++        id = id >> 8;
++        z->extra[z->ext + b] = (char)(id & 0xFF);
++        b++;
++        id = id >> 8;
++        z->extra[z->ext + b] = (char)(id & 0xFF);
++        b++;
++        id = id >> 8;
++        z->extra[z->ext + b] = (char)(id & 0xFF);
++      }
++    }
++  }
++
++  /* GID */
++  b++;
++  z->extra[z->ext + b] = (char)(gid_size);       /* gid size in bytes */
++  b++;
++  id = (ulg)(s->st_gid);
++  z->extra[z->ext + b] = (char)(id & 0xFF);
++  if (gid_size > 1) {
++    b++;
++    id = id >> 8;
++    z->extra[z->ext + b] = (char)(id & 0xFF);
++    if (gid_size > 2) {
++      b++;
++      id = id >> 8;
++      z->extra[z->ext + b] = (char)(id & 0xFF);
++      b++;
++      id = id >> 8;
++      z->extra[z->ext + b] = (char)(id & 0xFF);
++      if (gid_size == 8) {
++        b++;
++        id = id >> 8;
++        z->extra[z->ext + b] = (char)(id & 0xFF);
++        b++;
++        id = id >> 8;
++        z->extra[z->ext + b] = (char)(id & 0xFF);
++        b++;
++        id = id >> 8;
++        z->extra[z->ext + b] = (char)(id & 0xFF);
++        b++;
++        id = id >> 8;
++        z->extra[z->ext + b] = (char)(id & 0xFF);
++      }
++    }
++  }
++
++  /* copy local extra field to central directory extra field */
++  memcpy((z->cextra) + z->cext, (z->extra) + z->ext, 4 + ef_data_size);
++
++  z->ext = z->ext + 4 + ef_data_size;
++  z->cext = z->cext + 4 + ef_data_size;
++
++  return ZE_OK;
++}
++
++
+ int set_extra_field(z, z_utim)
+   struct zlist far *z;
+   iztimes *z_utim;
+   /* create extra field and change z->att if desired */
+ {
+ #ifdef USE_EF_UT_TIME
++  z_stat s;
++  char *name;
++  int len = strlen(z->name);
++
+ #ifdef IZ_CHECK_TZ
+   if (!zp_tz_is_valid) return ZE_OK;    /* skip silently if no valid TZ info */
+ #endif
+ 
+-  if ((z->extra = (char *)malloc(EB_HEADSIZE+EB_UT_LEN(2))) == NULL)
++  /* For the full sized UT local field including the UID/GID fields, we
++   * have to stat the file again. */
++
++  if ((name = malloc(len + 1)) == NULL) {
++    ZIPERR(ZE_MEM, "set_extra_field");
++  }
++  strcpy(name, z->name);
++  if (name[len - 1] == '/')
++    name[len - 1] = '\0';
++  /* not all systems allow stat'ing a file with / appended */
++  if (LSSTAT(name, &s)) {
++    free(name);
++    return ZE_OPEN;
++  }
++  free(name);
++
++#define EB_L_UT_SIZE    (EB_HEADSIZE + EB_UT_LEN(2))
++#define EB_C_UT_SIZE    (EB_HEADSIZE + EB_UT_LEN(1))
++
++/* The flag UIDGID_NOT_16BIT should be set by the pre-compile configuration
++   script when it detects st_uid or st_gid sizes differing from 16-bit.
++ */
++#ifndef UIDGID_NOT_16BIT
++  /* The following "second-level" check for st_uid and st_gid members being
++     16-bit wide is only added as a safety precaution in case the "first-level"
++     check failed to define the UIDGID_NOT_16BIT symbol.
++     The first-level check should have been implemented in the automatic
++     compile configuration process.
++   */
++# ifdef UIDGID_ARE_16B
++#  undef UIDGID_ARE_16B
++# endif
++  /* The following expression is a compile-time constant and should (hopefully)
++     get optimized away by any sufficiently intelligent compiler!
++   */
++# define UIDGID_ARE_16B  (sizeof(s.st_uid) == 2 && sizeof(s.st_gid) == 2)
++
++# define EB_L_UX2_SIZE   (EB_HEADSIZE + EB_UX2_MINLEN)
++# define EB_C_UX2_SIZE   EB_HEADSIZE
++# define EF_L_UNIX_SIZE  (EB_L_UT_SIZE + (UIDGID_ARE_16B ? EB_L_UX2_SIZE : 0))
++# define EF_C_UNIX_SIZE  (EB_C_UT_SIZE + (UIDGID_ARE_16B ? EB_C_UX2_SIZE : 0))
++#else
++# define EF_L_UNIX_SIZE EB_L_UT_SIZE
++# define EF_C_UNIX_SIZE EB_C_UT_SIZE
++#endif /* !UIDGID_NOT_16BIT */
++
++  if ((z->extra = (char *)malloc(EF_L_UNIX_SIZE)) == NULL)
+     return ZE_MEM;
+-  if ((z->cextra = (char *)malloc(EB_HEADSIZE+EB_UT_LEN(1))) == NULL)
++  if ((z->cextra = (char *)malloc(EF_C_UNIX_SIZE)) == NULL)
+     return ZE_MEM;
+ 
+   z->extra[0]  = 'U';
+   z->extra[1]  = 'T';
+-  z->extra[2]  = EB_UT_LEN(2);          /* length of data part of e.f. */
++  z->extra[2]  = (char)EB_UT_LEN(2);    /* length of data part of local e.f. */
+   z->extra[3]  = 0;
+-  z->extra[4]  = EB_UT_FL_MTIME | EB_UT_FL_ATIME;
+-  z->extra[5]  = (char)(z_utim->mtime);
+-  z->extra[6]  = (char)(z_utim->mtime >> 8);
+-  z->extra[7]  = (char)(z_utim->mtime >> 16);
+-  z->extra[8]  = (char)(z_utim->mtime >> 24);
+-  z->extra[9]  = (char)(z_utim->atime);
+-  z->extra[10] = (char)(z_utim->atime >> 8);
+-  z->extra[11] = (char)(z_utim->atime >> 16);
+-  z->extra[12] = (char)(z_utim->atime >> 24);
+-
+-  z->ext = (EB_HEADSIZE+EB_UX_LEN(2));
+-
+-  memcpy(z->cextra, z->extra, (EB_HEADSIZE+EB_UT_LEN(1)));
+-  z->cextra[EB_LEN] = EB_UT_LEN(1);
+-  z->cext = (EB_HEADSIZE+EB_UX_LEN(1));
++  z->extra[4]  = EB_UT_FL_MTIME | EB_UT_FL_ATIME;    /* st_ctime != creation */
++  z->extra[5]  = (char)(s.st_mtime);
++  z->extra[6]  = (char)(s.st_mtime >> 8);
++  z->extra[7]  = (char)(s.st_mtime >> 16);
++  z->extra[8]  = (char)(s.st_mtime >> 24);
++  z->extra[9]  = (char)(s.st_atime);
++  z->extra[10] = (char)(s.st_atime >> 8);
++  z->extra[11] = (char)(s.st_atime >> 16);
++  z->extra[12] = (char)(s.st_atime >> 24);
++
++#ifndef UIDGID_NOT_16BIT
++  /* Only store the UID and GID in the old Ux extra field if the runtime
++     system provides them in 16-bit wide variables.  */
++  if (UIDGID_ARE_16B) {
++    z->extra[13] = 'U';
++    z->extra[14] = 'x';
++    z->extra[15] = (char)EB_UX2_MINLEN; /* length of data part of local e.f. */
++    z->extra[16] = 0;
++    z->extra[17] = (char)(s.st_uid);
++    z->extra[18] = (char)(s.st_uid >> 8);
++    z->extra[19] = (char)(s.st_gid);
++    z->extra[20] = (char)(s.st_gid >> 8);
++  }
++#endif /* !UIDGID_NOT_16BIT */
++
++  z->ext = EF_L_UNIX_SIZE;
++
++  memcpy(z->cextra, z->extra, EB_C_UT_SIZE);
++  z->cextra[EB_LEN] = (char)EB_UT_LEN(1);
++#ifndef UIDGID_NOT_16BIT
++  if (UIDGID_ARE_16B) {
++    /* Copy header of Ux extra field from local to central */
++    memcpy(z->cextra+EB_C_UT_SIZE, z->extra+EB_L_UT_SIZE, EB_C_UX2_SIZE);
++    z->cextra[EB_LEN+EB_C_UT_SIZE] = 0;
++  }
++#endif
++  z->cext = EF_C_UNIX_SIZE;
++
++  /* new unix extra field */
++  set_new_unix_extra_field(z, &s);
+ 
+   return ZE_OK;
+ #else /* !USE_EF_UT_TIME */
+-  return (int)(z-z);
++  return ZE_OK;
+ #endif /* ?USE_EF_UT_TIME */
+ }
+ 
++#endif /* !QLZIP */
++
++
+ int deletedir(d)
+ char *d;                /* directory to delete */
+ /* Delete the directory *d if it is empty, do nothing otherwise.
+@@ -642,40 +739,34 @@ char *d;                /* directory to
+ 
+ void version_local()
+ {
+-    static ZCONST char CompiledWith[] = "Compiled with %s%s for %s%s%s%s.\n\n";
+-#ifdef __TURBOC__
+-    char buf[40];
+-#endif
+-
+-    printf(CompiledWith,
+-
+-#ifdef __GNUC__
+-      "gcc ", __VERSION__,
++#  if defined(__PUREC__)
++   char compiler_name[40];
++   sprintf(compiler_name, "Pure-C (0x%04x)", __PUREC__);
++#  define COMPILER_NAME compiler_name
++#  elif defined(__TURBOC__)
++   char compiler_name[40];
++   sprintf(compiler_name, "Turbo C (0x%04x)", __TURBOC__);
++#  define COMPILER_NAME compiler_name
++#  elif defined(__GNUC__)
++#  define COMPILER_NAME "gcc " __VERSION__
+ #else
+-#  if 0
+-      "cc ", (sprintf(buf, " version %d", _RELEASE), buf),
+-#  else
+-#  ifdef __TURBOC__
+-      "Turbo C", (sprintf(buf, " (0x%04x = %d)", __TURBOC__, __TURBOC__), buf),
+-#  else
+-      "unknown compiler", "",
+-#  endif
+-#  endif
++#  define COMPILER_NAME "cc"
+ #endif
+ 
+ #ifdef __MINT__
+-      "Atari TOS/MiNT",
++#define OS_NAME "Atari (TOS/MiNT)"
+ #else
+-      "Atari TOS",
++#define OS_NAME "Atari (TOS)"
+ #endif
+ 
+-      " (Atari ST/TT/Falcon030)",
+-
++/* Define the compile date string */
+ #ifdef __DATE__
+-      " on ", __DATE__
++#  define COMPILE_DATE " on " __DATE__
+ #else
+-      "", ""
++#  define COMPILE_DATE ""
+ #endif
+-      );
++
++    printf( "Compiled with %s for %s%s.\n\n",
++           COMPILER_NAME, OS_NAME, COMPILE_DATE);
+ 
+ } /* end function version_local() */
+diff -rup zip30.orig/atari/osdep.h zip30/atari/osdep.h
+--- zip30.orig/atari/osdep.h	1999-11-06 21:36:46.000000000 +0100
++++ zip30/atari/osdep.h	2020-09-09 17:37:40.292940620 +0200
+@@ -18,3 +18,10 @@
+ 
+ #include <sys/types.h>
+ #include <sys/stat.h>
++  typedef struct stat z_stat;
++
++
++/* Enable the "UT" extra field (time info) */
++#if !defined(NO_EF_UT_TIME) && !defined(USE_EF_UT_TIME)
++#  define USE_EF_UT_TIME
++#endif
+diff -rup zip30.orig/unix/Makefile zip30/unix/Makefile
+--- zip30.orig/unix/Makefile	2020-09-09 16:17:02.367523355 +0200
++++ zip30/unix/Makefile	2020-09-09 19:54:05.777945224 +0200
+@@ -80,7 +80,9 @@ ZIP_H = zip.h ziperr.h tailor.h unix/osd
+ .SUFFIXES:
+ .SUFFIXES: _.o .o .c .doc .1
+ .c_.o:
+-	$(CC) -c $(CFLAGS) -DUTIL -o $@ $<
++	rm -f $*_.c; ln $< $*_.c
++	$(CC) $(CFLAGS) -DUTIL -c $*_.c
++	rm -f $*_.c
+ 
+ .c.o:
+ 	$(CC) -c $(CFLAGS) $<
+@@ -114,10 +116,10 @@ crc_i386.o: crc_i386.S
+ 	rm -f _crc_i386.s
+ 
+ unix.o: unix/unix.c
+-	$(CC) -c $(CFLAGS) unix/unix.c
++	$(CC) -c $(CFLAGS) -o $@ $<
+ 
+ unix_.o: unix/unix.c
+-	$(CC) -c $(CFLAGS) -DUTIL -o $@ unix/unix.c
++	$(CC) -c $(CFLAGS) -DUTIL -o $@ $<
+ 
+ ZIPS = zip$E zipcloak$E zipnote$E zipsplit$E
+ 
+diff -rup zip30.orig/unix/osdep.h zip30/unix/osdep.h
+--- zip30.orig/unix/osdep.h	2005-07-12 08:41:08.000000000 +0200
++++ zip30/unix/osdep.h	2020-09-09 17:37:06.084939603 +0200
+@@ -67,7 +67,7 @@
+ 
+ 
+ /* Process files in binary mode */
+-#if defined(__DJGPP__) || defined(__CYGWIN__)
++#if defined(__DJGPP__) || defined(__CYGWIN__) || defined(__atarist__) || defined(__TOS__)
+ #  define FOPR "rb"
+ #  define FOPM "r+b"
+ #  define FOPW "wb"
+diff -rup zip30.orig/unix/unix.c zip30/unix/unix.c
+--- zip30.orig/unix/unix.c	2020-09-09 16:17:02.379523355 +0200
++++ zip30/unix/unix.c	2020-09-09 19:06:00.954336184 +0200
+@@ -383,7 +383,7 @@ ulg filetime(f, a, n, t)
+   free(name);
+ 
+   if (a != NULL) {
+-#ifndef OS390
++#if !defined(OS390) && !defined(__atarist__)
+     *a = ((ulg)s.st_mode << 16) | !(s.st_mode & S_IWRITE);
+ #else
+ /*
+@@ -739,7 +739,7 @@ void version_local()
+     char compiler_name[80];
+ #  endif
+ #else
+-#  if (defined( __SUNPRO_C))
++#  if (defined( __SUNPRO_C)) || defined(__PUREC__) || defined(__TURBOC__)
+     char compiler_name[33];
+ #  else
+ #    if (defined( __HP_cc) || defined( __IBMC__))
+@@ -786,6 +786,12 @@ void version_local()
+ #  if defined(__SUNPRO_C)
+     sprintf( compiler_name, "Sun C version %x", __SUNPRO_C);
+ #    define COMPILER_NAME compiler_name
++#  elif defined(__PUREC__)
++     sprintf(compiler_name, "Pure-C (0x%04x)", __PUREC__);
++#    define COMPILER_NAME compiler_name
++#  elif defined(__TURBOC__)
++     sprintf(compiler_name, "Turbo C (0x%04x)", __TURBOC__);
++#    define COMPILER_NAME compiler_name
+ #  else
+ #    if (defined( __HP_cc))
+     if ((__HP_cc% 100) == 0)
+@@ -994,7 +1000,15 @@ void version_local()
+ #    endif /* __ppc__ */
+ #  endif /* __i386__ */
+ #else
++#ifdef __MINT__
++#define OS_NAME "TOS/MiNT"
++#else
++#if defined(__atarist__) || defined(__TOS__)
++#define OS_NAME "TOS"
++#else
+ #  define OS_NAME "Unknown"
++#endif /* __atarist__ */
++#endif /* __MINT__ */
+ #endif /* Apple */
+ #endif /* QNX Neutrino */
+ #endif /* QNX 4 */
+diff -rup zip30.orig/zipup.c zip30/zipup.c
+--- zip30.orig/zipup.c	2008-06-18 05:40:16.000000000 +0200
++++ zip30/zipup.c	2020-09-09 17:31:37.020929826 +0200
+@@ -1768,16 +1768,16 @@ int *cmpr_method;
+     } else
+ #endif /* MMAP || BIG_MEM */
+     {
+-        bstrm.next_in = (char *)f_ibuf;
++        bstrm.next_in = f_ibuf;
+     }
+-    bstrm.avail_in = file_read(bstrm.next_in, ibuf_sz);
++    bstrm.avail_in = file_read((char *)bstrm.next_in, ibuf_sz);
+     if (file_binary_final == 0) {
+       /* check for binary as library does not */
+-      if (!is_text_buf(bstrm.next_in, ibuf_sz))
++      if (!is_text_buf(bstrm.next_in, bstrm.avail_in))
+         file_binary_final = 1;
+     }
+     if (bstrm.avail_in < ibuf_sz) {
+-        unsigned more = file_read(bstrm.next_in + bstrm.avail_in,
++        unsigned more = file_read((char *)bstrm.next_in + bstrm.avail_in,
+                                   (ibuf_sz - bstrm.avail_in));
+         if (more == (unsigned) EOF || more == 0) {
+             maybe_stored = TRUE;
+@@ -1785,7 +1785,7 @@ int *cmpr_method;
+             bstrm.avail_in += more;
+         }
+     }
+-    bstrm.next_out = (char *)f_obuf;
++    bstrm.next_out = f_obuf;
+     bstrm.avail_out = OBUF_SZ;
+ 
+     if (!maybe_stored) {
+@@ -1845,7 +1845,7 @@ int *cmpr_method;
+ #else
+             bstrm.next_in = (char *)f_ibuf;
+ #endif
+-            bstrm.avail_in = file_read(bstrm.next_in, ibuf_sz);
++            bstrm.avail_in = file_read((char *)bstrm.next_in, ibuf_sz);
+             if (file_binary_final == 0) {
+               /* check for binary as library does not */
+               if (!is_text_buf(bstrm.next_in, ibuf_sz))
