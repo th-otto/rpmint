@@ -18,6 +18,7 @@ patches/zip/zip-3.0-optflags.patch
 patches/zip/zip-3.0-tempfile.patch
 patches/zip/zip-3.0-nomutilation.patch
 patches/zip/zip-3.0-atari.patch
+patches/zip/zip-3.0-no-setbuf.patch
 "
 DISABLED_PATCHES="
 patches/zip/zip-notimestamp.patch
@@ -38,12 +39,14 @@ COMMON_CFLAGS="-O3 -fomit-frame-pointer $LTO_CFLAGS"
 
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
+STACKSIZE="-Wl,-stack,256k"
+
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	${MAKE} -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" CPP="${TARGET}-gcc -E $CPU_CFLAGS $COMMON_CFLAGS" generic || exit 1
+	${MAKE} -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" CPP="${TARGET}-gcc -E $CPU_CFLAGS $COMMON_CFLAGS" generic || exit 1
 	${MAKE} -f unix/Makefile BINDIR="${THISPKG_DIR}${sysroot}${TARGET_BINDIR}" MANDIR=${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1 install
 	${MAKE} -f unix/Makefile clean
 	make_bin_archive $CPU

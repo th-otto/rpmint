@@ -1,0 +1,69 @@
+--- a/zip.c	2020-12-22 13:20:54.400365163 +0100
++++ b/zip.c	2020-12-22 14:25:21.323303817 +0100
+@@ -2160,9 +2160,6 @@ char **argv;            /* command line
+   int retcode;          /* return code for dll */
+ #endif /* WINDLL */
+ #endif
+-#if (!defined(VMS) && !defined(CMS_MVS))
+-  char *zipbuf;         /* stdio buffer for the zip file */
+-#endif /* !VMS && !CMS_MVS */
+   FILE *comment_stream; /* set to stderr if anything is read from stdin */
+   int all_current;      /* used by File Sync to determine if all entries are current */
+ 
+@@ -3928,23 +3925,6 @@ char **argv;            /* command line
+     }
+ #endif
+ 
+-#if (!defined(VMS) && !defined(CMS_MVS))
+-    /* Use large buffer to speed up stdio: */
+-#if (defined(_IOFBF) || !defined(BUFSIZ))
+-    zipbuf = (char *)malloc(ZBSZ);
+-#else
+-    zipbuf = (char *)malloc(BUFSIZ);
+-#endif
+-    if (zipbuf == NULL) {
+-      ZIPERR(ZE_MEM, tempzip);
+-    }
+-# ifdef _IOFBF
+-    setvbuf(y, zipbuf, _IOFBF, ZBSZ);
+-# else
+-    setbuf(y, zipbuf);
+-# endif /* _IOBUF */
+-#endif /* !VMS  && !CMS_MVS */
+-
+ 
+     if ((r = readzipfile()) != ZE_OK) {
+       ZIPERR(r, zipfile);
+@@ -4930,23 +4910,6 @@ char **argv;            /* command line
+ #endif
+   }
+ 
+-#if (!defined(VMS) && !defined(CMS_MVS))
+-  /* Use large buffer to speed up stdio: */
+-#if (defined(_IOFBF) || !defined(BUFSIZ))
+-  zipbuf = (char *)malloc(ZBSZ);
+-#else
+-  zipbuf = (char *)malloc(BUFSIZ);
+-#endif
+-  if (zipbuf == NULL) {
+-    ZIPERR(ZE_MEM, tempzip);
+-  }
+-# ifdef _IOFBF
+-  setvbuf(y, zipbuf, _IOFBF, ZBSZ);
+-# else
+-  setbuf(y, zipbuf);
+-# endif /* _IOBUF */
+-#endif /* !VMS  && !CMS_MVS */
+-
+   /* If not seekable set some flags 3/14/05 EG */
+   output_seekable = 1;
+   if (!is_seekable(y)) {
+@@ -6031,8 +5994,5 @@ char **argv;            /* command line
+   }
+ 
+   /* Finish up (process -o, -m, clean up).  Exit code depends on o. */
+-#if (!defined(VMS) && !defined(CMS_MVS))
+-  free((zvoid *) zipbuf);
+-#endif /* !VMS && !CMS_MVS */
+   RETURN(finish(o ? ZE_OPEN : ZE_OK));
+ }
