@@ -20,15 +20,31 @@
     static ZCONST char Far LongFileTrailer[] =
       "--------          -------  ---                       \
       -------\n%s         %s %4s                            %lu file%s\n";
-@@ -396,7 +396,7 @@ int list_files(__G)    /* return PK-type
+@@ -143,6 +143,7 @@ int list_files(__G)    /* return PK-type
+   ---------------------------------------------------------------------------*/
+ 
+     G.pInfo = &info;
++    memset(&info, 0, sizeof(info));
+     date_format = DATE_FORMAT;
+     dt_sepchar = DATE_SEPCHAR;
+ 
+@@ -393,12 +394,14 @@ int list_files(__G)    /* return PK-type
+             else
+                 sprintf(cfactorstr, LoadFarString(CompFactorStr), sgn, cfactor);
+             if (longhdr)
++            {
++            	mapattr(__G);
                  Info(slide, 0, ((char *)slide, LoadFarString(LongHdrStats),
                    FmZofft(G.crec.ucsize, "8", "u"), methbuf,
                    FmZofft(csiz, "8", "u"), cfactorstr,
 -                  mo, dt_sepchar, dy, dt_sepchar, yr, hh, mm,
-+                  mo, dt_sepchar, dy, dt_sepchar, yr, hh, mm, G.pInfo->file_attr,
++                  mo, dt_sepchar, dy, dt_sepchar, yr, hh, mm, (unsigned long)G.pInfo->file_attr,
                    G.crec.crc32, (G.pInfo->lcflag? '^':' ')));
-             else
+-            else
++            } else
  #ifdef OS2_EAS
+                 Info(slide, 0, ((char *)slide, LoadFarString(ShortHdrStats),
+                   FmZofft(G.crec.ucsize, "9", "u"), ea_size, acl_size,
 --- a/unix/unix.c.orig	2018-05-18 17:21:13.220395859 +0200
 +++ b/unix/unix.c	2018-05-18 17:28:33.592386276 +0200
 @@ -336,6 +336,8 @@ static unsigned filtattr(__G__ perms)
@@ -40,7 +56,7 @@
      return (0xffff & perms);
  } /* end function filtattr() */
  
-@@ -642,7 +642,7 @@ int mapname(__G__ renamed)
+@@ -640,7 +640,7 @@ int mapname(__G__ renamed)
              }
  #ifndef NO_CHMOD
              /* Filter out security-relevant attributes bits. */
@@ -49,7 +65,7 @@
              /* When extracting non-UNIX directories or when extracting
               * without UID/GID restoration or SGID preservation, any
               * SGID flag inherited from the parent directory should be
-@@ -659,7 +659,7 @@ int mapname(__G__ renamed)
+@@ -657,7 +657,7 @@ int mapname(__G__ renamed)
              }
  
              /* set approx. dir perms (make sure can still read/write in dir) */

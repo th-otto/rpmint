@@ -1547,6 +1547,8 @@ This notably applies to Perl and Python.
 
 <li>2020/09/10 Fix a bug in zip/unzip storing wrong filetype for symlinks</li>
 
+<li>2020/12/23 Support BZIP2 in unzip/li>
+
 </ul>
 
 <p></p>

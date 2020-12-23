@@ -47,6 +47,7 @@ COMMON_CFLAGS="-O3 -fomit-frame-pointer \
 -D_GNU_SOURCE -DRCC_LAZY -DWILD_STOP_AT_DIR \
 -DUNICODE_WCHAR -DNO_LCHMOD \
 -DDATE_FORMAT=DF_YMD -I. -fno-strict-aliasing \
+-DUSE_BZIP2 \
 $LTO_CFLAGS"
 
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -57,7 +58,7 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	${MAKE} -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc" CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LD="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" unix_make || exit 1
-	${MAKE} -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc" CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LD="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" unzips || exit 1
+	${MAKE} -f unix/Makefile prefix=${prefix} CC="${TARGET}-gcc" CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LD="${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS" L_BZ2=-lbz2 unzips || exit 1
 	${MAKE} -f unix/Makefile prefix="${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" MANDIR=${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1 \
 		INSTALL=install INSTALL_D="install -d" install
 	${MAKE} -f unix/Makefile clean
