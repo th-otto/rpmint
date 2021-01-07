@@ -1,6 +1,6 @@
 --- a/list.c.orig	2018-05-18 17:10:32.348409804 +0200
 +++ b/list.c	2018-05-18 17:26:09.368389414 +0200
-@@ -52,16 +52,16 @@
+@@ -52,19 +52,19 @@
  #endif
  
     static ZCONST char Far HeadersL[]  =
@@ -19,7 +19,11 @@
 +     "%s  %-7s%s %4s %02u%c%02u%c%02u %02u:%02u %04lo    %08lx %c";
     static ZCONST char Far LongFileTrailer[] =
       "--------          -------  ---                       \
-      -------\n%s         %s %4s                            %lu file%s\n";
+-     -------\n%s         %s %4s                            %lu file%s\n";
++             -------\n%s         %s %4s                                    %lu file%s\n";
+ #ifdef OS2_EAS
+    static ZCONST char Far ShortHdrStats[] =
+      "%s %6lu %6lu  %02u%c%02u%c%02u %02u:%02u  %c";
 @@ -143,6 +143,7 @@ int list_files(__G)    /* return PK-type
    ---------------------------------------------------------------------------*/
  
@@ -38,7 +42,7 @@
                    FmZofft(G.crec.ucsize, "8", "u"), methbuf,
                    FmZofft(csiz, "8", "u"), cfactorstr,
 -                  mo, dt_sepchar, dy, dt_sepchar, yr, hh, mm,
-+                  mo, dt_sepchar, dy, dt_sepchar, yr, hh, mm, (unsigned long)G.pInfo->file_attr,
++                  mo, dt_sepchar, dy, dt_sepchar, yr, hh, mm, (unsigned long)G.pInfo->file_attr & 0x1fff,
                    G.crec.crc32, (G.pInfo->lcflag? '^':' ')));
 -            else
 +            } else
