@@ -1,0 +1,56 @@
+From 68395b99479f8a12a36a46195ddf1bf55d9d3d51 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 8 Aug 2019 17:26:29 +0200
+Subject: [PATCH] Fix printfs of file sizes
+
+---
+ bzip2.c | 5 +++--
+ bzlib.c | 2 +-
+ bzlib.h | 2 +-
+ 3 files changed, 5 insertions(+), 4 deletions(-)
+
+diff -rup a/bzip2.c b/bzip2.c
+--- a/bzip2.c	2021-01-07 00:16:08.725730872 +0100
++++ b/bzip2.c	2021-01-07 00:16:40.125731805 +0100
+@@ -362,7 +362,7 @@ void compressStream ( FILE *stream, FILE
+ #ifdef _WIN32
+           fprintf(stderr, "Input-file size: %I64d\n", fileSize);
+ #else
+-          fprintf(stderr, "Input-file size: %lld\n", fileSize);
++          fprintf(stderr, "Input-file size: %lld\n", (long long int)fileSize);
+ #endif
+    }
+ 
+@@ -499,7 +499,7 @@ Bool uncompressStream ( FILE *zStream, F
+ #ifdef _WIN32
+ 			fprintf(stderr, "Input-file size: %I64d\n", fileSize);
+ #else
+-			fprintf(stderr, "Input-file size: %lld\n", fileSize);
++			fprintf(stderr, "Input-file size: %lld\n", (long long int)fileSize);
+ #endif
+    }
+ 
+diff -rup a/bzlib.c b/bzlib.c
+--- a/bzlib.c	2021-01-07 00:16:08.725730872 +0100
++++ b/bzlib.c	2021-01-07 00:16:40.125731805 +0100
+@@ -1234,7 +1234,7 @@ void BZ_API(BZ2_bzReadGetUnused)
+ 
+    BZ_SETERR(BZ_OK);
+    *nUnused = bzf->strm.avail_in;
+-   *unused = bzf->strm.next_in;
++   *unused = (void *)bzf->strm.next_in;
+ }
+ #endif
+ 
+diff -rup a/bzlib.h b/bzlib.h
+--- a/bzlib.h	2021-01-07 00:16:08.725730872 +0100
++++ b/bzlib.h	2021-01-07 00:16:40.125731805 +0100
+@@ -47,7 +47,7 @@ extern "C" {
+ 
+ typedef 
+    struct {
+-      char *next_in;
++      const char *next_in;
+       unsigned int avail_in;
+       unsigned int total_in_lo32;
+       unsigned int total_in_hi32;

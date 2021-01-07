@@ -1,0 +1,286 @@
+Ripped from Mandrake
+
+http://bugs.gentoo.org/82192
+
+diff -rupN bzip2-1.0.6.orig/bzip2.1 bzip2-1.0.6/bzip2.1
+--- bzip2-1.0.6.orig/bzip2.1	2010-09-11 11:35:11.000000000 +0200
++++ bzip2-1.0.6/bzip2.1	2014-02-25 19:57:34.340000013 +0100
+@@ -235,6 +235,10 @@ less), use \-s for everything.  See MEMO
+ Suppress non-essential warning messages.  Messages pertaining to
+ I/O errors and other critical events will not be suppressed.
+ .TP
++.B \-p \-\-show\-progress
++Show percentage of input\-file done and while compressing show the percentage
++of the original file the new file is.
++.TP
+ .B \-v --verbose
+ Verbose mode -- show the compression ratio for each file processed.
+ Further \-v's increase the verbosity level, spewing out lots of
+diff -rupN bzip2-1.0.6.orig/bzip2.c bzip2-1.0.6/bzip2.c
+--- bzip2-1.0.6.orig/bzip2.c	2014-02-25 19:56:53.209000013 +0100
++++ bzip2-1.0.6/bzip2.c	2014-02-25 20:15:39.681000012 +0100
+@@ -47,14 +47,16 @@
+   Some stuff for all platforms.
+ --*/
+ 
++#include "bzlib_private.h"
++
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <signal.h>
+ #include <math.h>
+ #include <errno.h>
++#include <time.h>
+ #include <ctype.h>
+-#include "bzlib.h"
+ 
+ #define ERROR_IF_EOF(i)       { if ((i) == EOF)  ioError(); }
+ #define ERROR_IF_NOT_ZERO(i)  { if ((i) != 0)    ioError(); }
+@@ -75,6 +77,7 @@
+ #   include <sys/times.h>
+ 
+ #   define PATH_SEP    '/'
++#   define PATH_SEP2    '\\'
+ #   define MY_LSTAT    lstat
+ #   define MY_STAT     stat
+ #   define MY_S_ISREG  S_ISREG
+@@ -110,7 +113,7 @@
+         } while ( 0 )
+ #   endif
+ 
+-#   ifdef __CYGWIN__
++#   if defined(__CYGWIN__) || defined(__MINGW32__)
+ #     include <io.h>
+ #     include <fcntl.h>
+ #     undef SET_BINARY_MODE
+@@ -132,6 +135,7 @@
+ 
+ #   define NORETURN       /**/
+ #   define PATH_SEP       '\\'
++#   define PATH_SEP2       '/'
+ #   define MY_LSTAT       _stati64
+ #   define MY_STAT        _stati64
+ #   define MY_S_ISREG(x)  ((x) & _S_IFREG)
+@@ -165,7 +169,7 @@ typedef int             Int32;
+ typedef unsigned int    UInt32;
+ typedef short           Int16;
+ typedef unsigned short  UInt16;
+-                                       
++
+ #define True  ((Bool)1)
+ #define False ((Bool)0)
+ 
+@@ -209,6 +213,7 @@ Char    *progName;
+ Char    progNameReally[FILE_NAME_LEN];
+ FILE    *outputHandleJustInCase;
+ Int32   workFactor;
++Char    showProgress;
+ 
+ static void    panic                 ( const Char* ) NORETURN;
+ static void    ioError               ( void )        NORETURN;
+@@ -334,6 +339,8 @@ void compressStream ( FILE *stream, FILE
+    UInt32  nbytes_in_lo32, nbytes_in_hi32;
+    UInt32  nbytes_out_lo32, nbytes_out_hi32;
+    Int32   bzerr, bzerr_dummy, ret;
++   bzoff_t  fileSize = 0; /* initialized to make the compiler stop crying */
++   time_t  startTime, currentTime;
+ 
+    SET_BINARY_MODE(stream);
+    SET_BINARY_MODE(zStream);
+@@ -341,12 +348,25 @@ void compressStream ( FILE *stream, FILE
+    if (ferror(stream)) goto errhandler_io;
+    if (ferror(zStream)) goto errhandler_io;
+ 
++   if ((srcMode == SM_F2F || srcMode == SM_F2O) && showProgress == True) {
++      (void)fseek(stream, 0, SEEK_END);
++      fileSize = ftello(stream);
++      rewind(stream);
++      if (verbosity >= 1)
++#ifdef _WIN32
++          fprintf(stderr, "Input-file size: %I64d\n", fileSize);
++#else
++          fprintf(stderr, "Input-file size: %lld\n", fileSize);
++#endif
++   }
++
+    bzf = BZ2_bzWriteOpen ( &bzerr, zStream, 
+                            blockSize100k, verbosity, workFactor );   
+    if (bzerr != BZ_OK) goto errhandler;
+ 
+    if (verbosity >= 2) fprintf ( stderr, "\n" );
+ 
++   time(&startTime);
+    while (True) {
+ 
+       if (myfeof(stream)) break;
+@@ -355,6 +375,22 @@ void compressStream ( FILE *stream, FILE
+       if (nIbuf > 0) BZ2_bzWrite ( &bzerr, bzf, (void*)ibuf, nIbuf );
+       if (bzerr != BZ_OK) goto errhandler;
+ 
++      if ((srcMode == SM_F2F || srcMode == SM_F2O) && showProgress == True) {
++         time(&currentTime);
++
++         if ((currentTime - startTime) > 1) { /* show progress every 2 seconds */
++            bzoff_t curInPos = ftello(stream);
++            bzoff_t curOutPos = ftello(zStream);
++
++            startTime = currentTime;
++
++            fprintf(stderr, "%.2f%% done", (curInPos * 100.0) / fileSize);
++            if (srcMode == SM_F2F)
++               fprintf(stderr, ", new size: %.2f%%", (curOutPos * 100.0) / curInPos);
++
++            fprintf(stderr, "    \r");
++         }
++      }
+    }
+ 
+    BZ2_bzWriteClose64 ( &bzerr, bzf, 0, 
+@@ -439,6 +475,8 @@ Bool uncompressStream ( FILE *zStream, F
+    Int32   nUnused;
+    void*   unusedTmpV;
+    UChar*  unusedTmp;
++   bzoff_t fileSize = 0; /* initialized to make the compiler stop crying */
++   time_t  startTime, currentTime;
+ 
+    nUnused = 0;
+    streamNo = 0;
+@@ -446,9 +484,23 @@ Bool uncompressStream ( FILE *zStream, F
+    SET_BINARY_MODE(stream);
+    SET_BINARY_MODE(zStream);
+ 
++   if ((srcMode == SM_F2F || srcMode == SM_F2O) && showProgress == True) {
++      bzoff_t dummy = ftello(zStream);
++      (void)fseeko(zStream, 0, SEEK_END);
++      fileSize = ftello(zStream);
++      (void)fseeko(zStream, dummy, SEEK_SET);
++      if (verbosity >= 1)
++#ifdef _WIN32
++			fprintf(stderr, "Input-file size: %I64d\n", fileSize);
++#else
++			fprintf(stderr, "Input-file size: %lld\n", fileSize);
++#endif
++   }
++
+    if (ferror(stream)) goto errhandler_io;
+    if (ferror(zStream)) goto errhandler_io;
+ 
++   time(&startTime);
+    while (True) {
+ 
+       bzf = BZ2_bzReadOpen ( 
+@@ -464,6 +516,16 @@ Bool uncompressStream ( FILE *zStream, F
+          if ((bzerr == BZ_OK || bzerr == BZ_STREAM_END) && nread > 0)
+             fwrite ( obuf, sizeof(UChar), nread, stream );
+          if (ferror(stream)) goto errhandler_io;
++
++         if ((srcMode == SM_F2F || srcMode == SM_F2O) && showProgress == True) {
++            time(&currentTime);
++            if ((currentTime - startTime) >= 2) {
++               bzoff_t curInPos = ftello(zStream);
++               startTime = currentTime;
++
++               fprintf(stderr, "%.2f%% done\r", (curInPos * 100.0) / fileSize);
++            }
++         }
+       }
+       if (bzerr != BZ_STREAM_END) goto errhandler;
+ 
+@@ -1803,6 +1865,7 @@ IntNative main ( IntNative argc, Char *a
+    deleteOutputOnInterrupt = False;
+    exitValue               = 0;
+    i = j = 0; /* avoid bogus warning from egcs-1.1.X */
++   showProgress            = False;
+ 
+    /*-- Set up signal handlers for mem access errors --*/
+    signal (SIGSEGV, mySIGSEGVorSIGBUScatcher);
+@@ -1818,7 +1881,7 @@ IntNative main ( IntNative argc, Char *a
+    copyFileName ( progNameReally, argv[0] );
+    progName = &progNameReally[0];
+    for (tmp = &progNameReally[0]; *tmp != '\0'; tmp++)
+-      if (*tmp == PATH_SEP) progName = tmp + 1;
++      if (*tmp == PATH_SEP || *tmp == PATH_SEP2) progName = tmp + 1;
+ 
+ 
+    /*-- Copy flags from env var BZIP2, and 
+@@ -1880,6 +1943,7 @@ IntNative main ( IntNative argc, Char *a
+                case 'k': keepInputFiles   = True; break;
+                case 's': smallMode        = True; break;
+                case 'q': noisy            = False; break;
++               case 'p': showProgress     = True; break;
+                case '1': blockSize100k    = 1; break;
+                case '2': blockSize100k    = 2; break;
+                case '3': blockSize100k    = 3; break;
+@@ -1916,6 +1980,7 @@ IntNative main ( IntNative argc, Char *a
+       if (ISFLAG("--keep"))              keepInputFiles   = True;    else
+       if (ISFLAG("--small"))             smallMode        = True;    else
+       if (ISFLAG("--quiet"))             noisy            = False;   else
++      if (ISFLAG("--show-progress"))     showProgress     = True;    else
+       if (ISFLAG("--version"))           license();                  else
+       if (ISFLAG("--license"))           license();                  else
+       if (ISFLAG("--exponential"))       workFactor = 1;             else 
+diff -rupN bzip2-1.0.6.orig/bzlib_private.h bzip2-1.0.6/bzlib_private.h
+--- bzip2-1.0.6.orig/bzlib_private.h	2010-09-11 00:41:55.000000000 +0200
++++ bzip2-1.0.6/bzlib_private.h	2014-02-25 20:00:23.093000014 +0100
+@@ -22,6 +22,14 @@
+ #ifndef _BZLIB_PRIVATE_H
+ #define _BZLIB_PRIVATE_H
+ 
++#define _FILE_OFFSET_BITS 64
++#define _LARGEFILE64_SOURCE 1
++
++#ifdef __MINGW32__
++#define __USE_MINGW_ANSI_STDIO 1
++#define __USE_MINGW_FSEEK 1
++#endif
++
+ #include <stdlib.h>
+ 
+ #ifndef BZ_NO_STDIO
+@@ -30,6 +38,20 @@
+ #include <string.h>
+ #endif
+ 
++#ifdef _WIN32
++#ifdef __MINGW32__
++#define fseeko fseeko64
++#define ftello ftello64
++#else
++#define fseeko _fseeki64
++#define ftello _ftelli64
++#endif
++#define bzoff_t __int64
++#endif
++#ifndef bzoff_t
++#define bzoff_t off_t
++#endif
++
+ #include "bzlib.h"
+ 
+ 
+diff -rupN bzip2-1.0.6.orig/spewG.c bzip2-1.0.6/spewG.c
+--- bzip2-1.0.6.orig/spewG.c	2010-09-11 00:33:49.000000000 +0200
++++ bzip2-1.0.6/spewG.c	2014-02-25 20:00:23.093000014 +0100
+@@ -38,16 +38,18 @@ char buf[N_BUF];
+ int main ( int argc, char** argv )
+ {
+    int ii, kk, p;
+-   srandom(1);
+-   setbuffer ( stdout, buf, N_BUF );
++   srand(1);
++   setvbuf ( stdout, buf, _IOFBF, N_BUF );
+    for (kk = 0; kk < MEGABYTES * 515; kk+=3) {
+-      p = 25+random()%50;
++      p = 25+rand()%50;
+       for (ii = 0; ii < p; ii++)
+          printf ( "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" );
+       for (ii = 0; ii < p-1; ii++)
+          printf ( "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" );
+       for (ii = 0; ii < p+1; ii++)
+          printf ( "ccccccccccccccccccccccccccccccccccccc" );
++      if (ferror(stdout))
++         return 1;
+    }
+    fflush(stdout);
+    return 0;

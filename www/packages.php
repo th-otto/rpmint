@@ -423,9 +423,9 @@ This library is also available as a <a href="../sharedlibs.php#libpng">shared li
 	),
 	'bzip2' => array(
 		'name' => 'bzip2',
-		'upstream' => 'http://www.bzip.org/',
-		'source' => 'http://www.bzip.org/%{version}/%{name}-%{version}.tar.gz',
-		'version' => '1.0.6',
+		'upstream' => 'https://www.sourceware.org/bzip2/',
+		'source' => 'ftp://sourceware.org/pub/%{name}/%{name}-%{version}.tar.gz',
+		'version' => '1.0.8',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

@@ -4,23 +4,23 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=bzip2
-VERSION=-1.0.6
+VERSION=-1.0.8
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
 patches/${PACKAGENAME}/bzip2-1.0.6-patch-0001-configure.patch
-patches/${PACKAGENAME}/bzip2-1.0.6-patch-0002-cygming.patch
-patches/${PACKAGENAME}/bzip2-1.0.6-patch-0003-debian-bzgrep.patch
-patches/${PACKAGENAME}/bzip2-1.0.6-patch-0004-unsafe-strcpy.patch
-patches/${PACKAGENAME}/bzip2-1.0.6-patch-0005-progress.patch
+patches/${PACKAGENAME}/bzip2-1.0.8-patch-0002-cygming.patch
+patches/${PACKAGENAME}/bzip2-1.0.8-patch-0005-progress.patch
 patches/${PACKAGENAME}/bzip2-1.0.6-patch-0006-mint.patch
-patches/${PACKAGENAME}/bzip2-1.0.6-patch-0007-Fix-printfs-of-file-sizes.patch
+patches/${PACKAGENAME}/bzip2-1.0.7-patch-0007-Fix-printfs-of-file-sizes.patch
 patches/${PACKAGENAME}/bzip2-amigaos.patch
 "
 DISABLED_PATCHES="
 patches/${PACKAGENAME}/bzip2-mintelf-config.patch
+patches/${PACKAGENAME}/bzip2-1.0.6-patch-0003-debian-bzgrep.patch
+patches/${PACKAGENAME}/bzip2-1.0.6-patch-0004-unsafe-strcpy.patch
 "
 
 BINFILES="
@@ -64,7 +64,7 @@ patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/bzip2-mintelf-config.patch"
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS"
 case $TARGET in
 m68k-atari-mint*)
 	STACKSIZE="-Wl,-stack,256k"
@@ -79,7 +79,7 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${CFLAGS_AMIGAOS}" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"$srcdir/configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir || exit 1
