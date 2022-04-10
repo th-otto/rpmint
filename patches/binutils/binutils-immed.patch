@@ -1,0 +1,165 @@
+diff --git a/opcodes/m68k-opc.c b/opcodes/m68k-opc.c
+index 25a89f7e35..aa4de69285 100644
+--- a/opcodes/m68k-opc.c
++++ b/opcodes/m68k-opc.c
+@@ -51,17 +51,23 @@ const struct m68k_opcode m68k_opcodes[] =
+ 
+ /* The add opcode can generate the adda, addi, and addq instructions.  */
+ {"addb", 2,	one(0050000),	one(0170700), "Qd$b", m68000up },
++#if 0
+ {"addb", 4,	one(0003000),	one(0177700), "#b$s", m68000up },
++#endif
+ {"addb", 2,	one(0150000),	one(0170700), ";bDd", m68000up },
+ {"addb", 2,	one(0150400),	one(0170700), "Dd~b", m68000up },
+ {"addw", 2,	one(0050100),	one(0170700), "Qd%w", m68000up },
+ {"addw", 2,	one(0150300),	one(0170700), "*wAd", m68000up },
++#if 0
+ {"addw", 4,	one(0003100),	one(0177700), "#w$s", m68000up },
++#endif
+ {"addw", 2,	one(0150100),	one(0170700), "*wDd", m68000up },
+ {"addw", 2,	one(0150500),	one(0170700), "Dd~w", m68000up },
+ {"addl", 2,	one(0050200),	one(0170700), "Qd%l", m68000up | mcfisa_a },
++#if 0
+ {"addl", 6,	one(0003200),	one(0177700), "#l$s", m68000up },
+ {"addl", 6,	one(0003200),	one(0177700), "#lDs", mcfisa_a },
++#endif
+ {"addl", 2,	one(0150700),	one(0170700), "*lAd", m68000up | mcfisa_a },
+ {"addl", 2,	one(0150200),	one(0170700), "*lDd", m68000up | mcfisa_a },
+ {"addl", 2,	one(0150600),	one(0170700), "Dd~l", m68000up | mcfisa_a },
+@@ -84,21 +90,29 @@ const struct m68k_opcode m68k_opcodes[] =
+ {"andi", 4,	one(0001174),	one(0177777), "#wSs", m68000up },
+ 
+ /* The and opcode can generate the andi instruction.  */
++#if 0
+ {"andb", 4,	one(0001000),	one(0177700), "#b$s", m68000up },
+ {"andb", 4,	one(0001074),	one(0177777), "#bCs", m68000up },
++#endif
+ {"andb", 2,	one(0140000),	one(0170700), ";bDd", m68000up },
+ {"andb", 2,	one(0140400),	one(0170700), "Dd~b", m68000up },
++#if 0
+ {"andw", 4,	one(0001100),	one(0177700), "#w$s", m68000up },
+ {"andw", 4,	one(0001174),	one(0177777), "#wSs", m68000up },
++#endif
+ {"andw", 2,	one(0140100),	one(0170700), ";wDd", m68000up },
+ {"andw", 2,	one(0140500),	one(0170700), "Dd~w", m68000up },
++#if 0
+ {"andl", 6,	one(0001200),	one(0177700), "#l$s", m68000up },
+ {"andl", 6,	one(0001200),	one(0177700), "#lDs", mcfisa_a },
++#endif
+ {"andl", 2,	one(0140200),	one(0170700), ";lDd", m68000up | mcfisa_a },
+ {"andl", 2,	one(0140600),	one(0170700), "Dd~l", m68000up | mcfisa_a },
++#if 0
+ {"and", 4,	one(0001100),	one(0177700), "#w$w", m68000up },
+ {"and", 4,	one(0001074),	one(0177777), "#bCs", m68000up },
+ {"and", 4,	one(0001174),	one(0177777), "#wSs", m68000up },
++#endif
+ {"and", 2,	one(0140100),	one(0170700), ";wDd", m68000up },
+ {"and", 2,	one(0140500),	one(0170700), "Dd~w", m68000up },
+ 
+@@ -277,19 +291,25 @@ const struct m68k_opcode m68k_opcodes[] =
+ {"cmpml", 2,	one(0130610),	one(0170770), "+s+d", m68000up },
+ 
+ /* The cmp opcode can generate the cmpa, cmpm, and cmpi instructions.  */
++#if 0
+ {"cmpb", 4,	one(0006000),	one(0177700), "#b@s", m68000up },
+ {"cmpb", 4,	one(0006000),	one(0177700), "#bDs", mcfisa_b | mcfisa_c },
++#endif
+ {"cmpb", 2,	one(0130410),	one(0170770), "+s+d", m68000up },
+ {"cmpb", 2,	one(0130000),	one(0170700), ";bDd", m68000up },
+ {"cmpb", 2,	one(0130000),	one(0170700), "*bDd", mcfisa_b | mcfisa_c },
+ {"cmpw", 2,	one(0130300),	one(0170700), "*wAd", m68000up },
++#if 0
+ {"cmpw", 4,	one(0006100),	one(0177700), "#w@s", m68000up },
+ {"cmpw", 4,	one(0006100),	one(0177700), "#wDs", mcfisa_b | mcfisa_c },
++#endif
+ {"cmpw", 2,	one(0130510),	one(0170770), "+s+d", m68000up },
+ {"cmpw", 2,	one(0130100),	one(0170700), "*wDd", m68000up | mcfisa_b | mcfisa_c },
+ {"cmpl", 2,	one(0130700),	one(0170700), "*lAd", m68000up | mcfisa_a },
++#if 0
+ {"cmpl", 6,	one(0006200),	one(0177700), "#l@s", m68000up },
+ {"cmpl", 6,	one(0006200),	one(0177700), "#lDs", mcfisa_a },
++#endif
+ {"cmpl", 2,	one(0130610),	one(0170770), "+s+d", m68000up },
+ {"cmpl", 2,	one(0130200),	one(0170700), "*lDd", m68000up | mcfisa_a },
+ 
+@@ -363,18 +383,26 @@ const struct m68k_opcode m68k_opcodes[] =
+ {"eori", 4,	one(0005100),	one(0177700), "#w$s", m68000up },
+ 
+ /* The eor opcode can generate the eori instruction.  */
++#if 0
+ {"eorb", 4,	one(0005000),	one(0177700), "#b$s", m68000up },
+ {"eorb", 4,	one(0005074),	one(0177777), "#bCs", m68000up },
++#endif
+ {"eorb", 2,	one(0130400),	one(0170700), "Dd$s", m68000up },
++#if 0
+ {"eorw", 4,	one(0005100),	one(0177700), "#w$s", m68000up },
+ {"eorw", 4,	one(0005174),	one(0177777), "#wSs", m68000up },
++#endif
+ {"eorw", 2,	one(0130500),	one(0170700), "Dd$s", m68000up },
++#if 0
+ {"eorl", 6,	one(0005200),	one(0177700), "#l$s", m68000up },
+ {"eorl", 6,	one(0005200),	one(0177700), "#lDs", mcfisa_a },
++#endif
+ {"eorl", 2,	one(0130600),	one(0170700), "Dd$s", m68000up | mcfisa_a },
++#if 0
+ {"eor", 4,	one(0005074),	one(0177777), "#bCs", m68000up },
+ {"eor", 4,	one(0005174),	one(0177777), "#wSs", m68000up },
+ {"eor", 4,	one(0005100),	one(0177700), "#w$s", m68000up },
++#endif
+ {"eor", 2,	one(0130500),	one(0170700), "Dd$s", m68000up },
+ 
+ {"exg", 2,	one(0140500),	one(0170770), "DdDs", m68000up },
+@@ -1746,21 +1774,29 @@ const struct m68k_opcode m68k_opcodes[] =
+ {"ori", 4,	one(0000174),	one(0177777), "#wSs", m68000up },
+ 
+ /* The or opcode can generate the ori instruction.  */
++#if 0
+ {"orb", 4,	one(0000000),	one(0177700), "#b$s", m68000up },
+ {"orb", 4,	one(0000074),	one(0177777), "#bCs", m68000up },
++#endif
+ {"orb", 2,	one(0100000),	one(0170700), ";bDd", m68000up },
+ {"orb", 2,	one(0100400),	one(0170700), "Dd~s", m68000up },
++#if 0
+ {"orw", 4,	one(0000100),	one(0177700), "#w$s", m68000up },
+ {"orw", 4,	one(0000174),	one(0177777), "#wSs", m68000up },
++#endif
+ {"orw", 2,	one(0100100),	one(0170700), ";wDd", m68000up },
+ {"orw", 2,	one(0100500),	one(0170700), "Dd~s", m68000up },
++#if 0
+ {"orl", 6,	one(0000200),	one(0177700), "#l$s", m68000up },
+ {"orl", 6,	one(0000200),	one(0177700), "#lDs", mcfisa_a },
++#endif
+ {"orl", 2,	one(0100200),	one(0170700), ";lDd", m68000up | mcfisa_a },
+ {"orl", 2,	one(0100600),	one(0170700), "Dd~s", m68000up | mcfisa_a },
++#if 0
+ {"or", 4,	one(0000074),	one(0177777), "#bCs", m68000up },
+ {"or", 4,	one(0000100),	one(0177700), "#w$s", m68000up },
+ {"or", 4,	one(0000174),	one(0177777), "#wSs", m68000up },
++#endif
+ {"or", 2,	one(0100100),	one(0170700), ";wDd", m68000up },
+ {"or", 2,	one(0100500),	one(0170700), "Dd~s", m68000up },
+ 
+@@ -2146,17 +2182,23 @@ const struct m68k_opcode m68k_opcodes[] =
+ 
+ /* The sub opcode can generate the suba, subi, and subq instructions.  */
+ {"subb", 2,	one(0050400),	one(0170700), "Qd%s", m68000up },
++#if 0
+ {"subb", 4,	one(0002000),	one(0177700), "#b$s", m68000up },
++#endif
+ {"subb", 2,	one(0110000),	one(0170700), ";bDd", m68000up },
+ {"subb", 2,	one(0110400),	one(0170700), "Dd~s", m68000up },
+ {"subw", 2,	one(0050500),	one(0170700), "Qd%s", m68000up },
++#if 0
+ {"subw", 4,	one(0002100),	one(0177700), "#w$s", m68000up },
++#endif
+ {"subw", 2,	one(0110300),	one(0170700), "*wAd", m68000up },
+ {"subw", 2,	one(0110100),	one(0170700), "*wDd", m68000up },
+ {"subw", 2,	one(0110500),	one(0170700), "Dd~s", m68000up },
+ {"subl", 2,	one(0050600),	one(0170700), "Qd%s", m68000up | mcfisa_a },
++#if 0
+ {"subl", 6,	one(0002200),	one(0177700), "#l$s", m68000up },
+ {"subl", 6,	one(0002200),	one(0177700), "#lDs", mcfisa_a },
++#endif
+ {"subl", 2,	one(0110700),	one(0170700), "*lAd", m68000up | mcfisa_a },
+ {"subl", 2,	one(0110200),	one(0170700), "*lDd", m68000up | mcfisa_a },
+ {"subl", 2,	one(0110600),	one(0170700), "Dd~s", m68000up | mcfisa_a },
