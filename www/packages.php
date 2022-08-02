@@ -2494,6 +2494,26 @@ time stamps, and access permissions. The archive can be another file on
 the disk, a magnetic tape, or a pipe.
 '
 	),
+	'libwebp' => array(
+		'name' => 'libwebp',
+		'upstream' => 'https://chromium.googlesource.com/webm/libwebp',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'version' => '1.2.3',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+WebP codec is a library to encode and decode images in WebP format.
+This package contains the library that can be used in other programs to
+add WebP support, as well as the command line tools &apos;cwebp&apos; and &apos;dwebp&apos;
+to compress and decompress images respectively.</br>
+
+Original MiNT-Patch by medmed.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

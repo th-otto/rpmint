@@ -1553,6 +1553,8 @@ This notably applies to Perl and Python.
 
 <li>2021/01/07 Update bzip to 1.08</li>
 
+<li>2022/08/02 Package libwebp added</li>
+
 </ul>
 
 <p></p>
