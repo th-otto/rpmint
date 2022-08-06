@@ -1,0 +1,42 @@
+diff -rup unzip60.orig/extract.c unzip60/extract.c
+--- unzip60.orig/extract.c	2021-01-07 10:17:02.872214166 +0100
++++ unzip60/extract.c	2022-08-06 17:09:42.915205603 +0200
+@@ -729,7 +729,7 @@ int extract_or_test_files(__G)    /* ret
+         free((zvoid *)fn_matched);
+     }
+     if (xn_matched) {
+-        if (reached_end) for (i = 0;  i < G.xfilespecs;  ++i)
++        if (reached_end && !G.ignore_non_matched) for (i = 0;  i < G.xfilespecs;  ++i)
+             if (!xn_matched[i])
+                 Info(slide, 0x401, ((char *)slide,
+                   LoadFarString(ExclFilenameNotMatched), G.pxnames[i]));
+diff -rup unzip60.orig/globals.h unzip60/globals.h
+--- unzip60.orig/globals.h	2009-02-22 20:25:04.000000000 +0100
++++ unzip60/globals.h	2022-08-06 17:09:04.435206913 +0200
+@@ -181,6 +181,7 @@ typedef struct Globals {
+     unsigned filespecs;   /* number of real file specifications to be matched */
+     unsigned xfilespecs;  /* number of excluded filespecs to be matched */
+     int process_all_files;
++    int ignore_non_matched;
+     int overwrite_mode;   /* 0 - query, 1 - always, 2 - never */
+     int create_dirs;      /* used by main(), mapname(), checkdir() */
+     int extract_flag;
+diff -rup unzip60.orig/unzip.c unzip60/unzip.c
+--- unzip60.orig/unzip.c	2021-01-07 10:17:02.856214165 +0100
++++ unzip60/unzip.c	2022-08-06 17:09:42.027205633 +0200
+@@ -1232,6 +1232,15 @@ int unzip(__G__ argc, argv)
+     } else
+         G.process_all_files = TRUE;      /* for speed */
+ 
++	if (G.extract_flag && G.xfilespecs == 0)
++	{
++		static char *macos_xnames[] = { "__MACOSX/*", "*/.DS_Store", NULL };
++		G.pxnames = macos_xnames;
++		G.xfilespecs = 2;
++		G.process_all_files = FALSE;
++		G.ignore_non_matched = TRUE;
++	}
++	
+     if (uO.exdir != (char *)NULL && !G.extract_flag)    /* -d ignored */
+         Info(slide, 0x401, ((char *)slide, LoadFarString(NotExtracting)));
+ #endif /* ?(SFX && !SFX_EXDIR) */
