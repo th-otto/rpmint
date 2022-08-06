@@ -2598,6 +2598,26 @@ Original MiNT-Patch by medmed.
 A standalone library of the Fraunhofer FDK AAC code from Android.
 '
 	),
+	'mp4v2' => array(
+		'name' => 'mp4v2',
+		'upstream' => 'https://mp4v2.org/',
+		'source' => 'https://github.com/enzo1982/mp4v2/archive/refs/tags/v%{version}.tar.gz',
+		'version' => '2.1.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+The MP4v2 library provides an API to create and modify MP4 files as
+defined by ISO-IEC:14496-1:2001 MPEG-4 Systems. This file format is
+derived from Apple&apos;s QuickTime file format that has been used as a
+multimedia file format in a variety of platforms and applications. It
+is a very powerful and extensible format that can accommodate
+practically any type of media.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

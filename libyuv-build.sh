@@ -37,6 +37,7 @@ for CPU in ${ALL_CPUS}; do
 	RANLIB=${ranlib} \
 	NM=${TARGET}-nm \
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	${MAKE} -f linux.mk V=1 $JOBS || exit 1
 
 	# there is no install target :/

@@ -1,0 +1,15 @@
+diff --git a/include/mp4v2/platform.h b/include/mp4v2/platform.h
+index 7a64a87..ab675fd 100644
+--- a/include/mp4v2/platform.h
++++ b/include/mp4v2/platform.h
+@@ -19,6 +19,10 @@
+ #else
+ #   define MP4V2_EXPORT __attribute__((visibility("default")))
+ #endif
++#ifdef __MINT__
++#undef MP4V2_EXPORT
++#define MP4V2_EXPORT
++#endif
+ 
+ #if defined( __GNUC__ )
+ #   define MP4V2_DEPRECATED __attribute__((deprecated))

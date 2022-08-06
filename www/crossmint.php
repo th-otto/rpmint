@@ -1563,6 +1563,8 @@ This notably applies to Perl and Python.
 
 <li>2022/08/06 Package fdk-aac added</li>
 
+<li>2022/08/06 Package mp4v2 added</li>
+
 </ul>
 
 <p></p>
