@@ -1,0 +1,26 @@
+diff --git a/include/libyuv/row.h b/include/libyuv/row.h
+index 1a1cf4b6..bbb8d993 100644
+--- a/include/libyuv/row.h
++++ b/include/libyuv/row.h
+@@ -750,7 +750,7 @@ typedef __declspec(align(32)) int8_t lvec8[32];
+ typedef __declspec(align(32)) uint16_t ulvec16[16];
+ typedef __declspec(align(32)) uint32_t ulvec32[8];
+ typedef __declspec(align(32)) uint8_t ulvec8[32];
+-#elif !defined(__pnacl__) && (defined(__GNUC__) || defined(__clang__))
++#elif !defined(__pnacl__) && !defined(__m68k__) && (defined(__GNUC__) || defined(__clang__))
+ // Caveat GCC 4.2 to 4.7 have a known issue using vectors with const.
+ #if defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2)
+ #define SIMD_ALIGNED(var) var __attribute__((aligned(32)))
+diff --git a/unit_test/unit_test.h b/unit_test/unit_test.h
+index 0a8df4d2..b601c50e 100644
+--- a/unit_test/unit_test.h
++++ b/unit_test/unit_test.h
+@@ -98,7 +98,7 @@ static inline double get_time() {
+ #ifndef SIMD_ALIGNED
+ #if defined(_MSC_VER) && !defined(__CLR_VER)
+ #define SIMD_ALIGNED(var) __declspec(align(16)) var
+-#elif defined(__GNUC__) && !defined(__pnacl__)
++#elif defined(__GNUC__) && !defined(__m68k__) && !defined(__pnacl__)
+ #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
+ #else
+ #define SIMD_ALIGNED(var) var

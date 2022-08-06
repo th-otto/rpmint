@@ -1557,6 +1557,8 @@ This notably applies to Perl and Python.
 
 <li>2022/08/05 Package pth added</li>
 
+<li>2022/08/06 Package libyuv added</li>
+
 </ul>
 
 <p></p>

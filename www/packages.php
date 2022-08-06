@@ -2545,6 +2545,21 @@ termination, and even customized callback functions.
 Original MiNT-Patch by Patrice Mandin & medmed.
 '
 	),
+	'libyuv' => array(
+		'name' => 'libyuv',
+		'upstream' => 'https://chromium.googlesource.com/libyuv/libyuv/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'version' => '1837',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+libyuv is an open source project that includes YUV scaling and conversion functionality.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
