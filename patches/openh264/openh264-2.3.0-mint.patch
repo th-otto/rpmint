@@ -1,0 +1,417 @@
+diff -rupN openh264-2.3.0.orig/Makefile openh264-2.3.0/Makefile
+--- openh264-2.3.0.orig/Makefile	2022-06-10 03:51:46.000000000 +0200
++++ openh264-2.3.0/Makefile	2022-08-06 09:55:41.411918638 +0200
+@@ -7,8 +7,12 @@ vpath %.S $(SRC_PATH)
+ vpath %.rc $(SRC_PATH)
+ vpath %.pc.in $(SRC_PATH)
+ 
++ifeq ($(OS),)
+ OS=$(shell uname | tr A-Z a-z | tr -d \\-0-9. | sed -E 's/^(net|open|free)bsd/bsd/')
++endif
++ifeq ($(ARCH),)
+ ARCH=$(shell uname -m)
++endif
+ LIBPREFIX=lib
+ LIBSUFFIX=a
+ CCAS=$(CC)
+@@ -84,7 +88,10 @@ include $(SRC_PATH)build/platform-$(OS).
+ 
+ MODULE := $(LIBPREFIX)$(MODULE_NAME).$(SHAREDLIBSUFFIX)
+ 
++ifneq (freemint, $((OS)))
+ CFLAGS += -DGENERATED_VERSION_HEADER
++endif
++
+ LDFLAGS +=
+ 
+ ifeq (Yes, $(GCOV))
+@@ -222,11 +229,12 @@ endif
+ 
+ libraries: $(LIBPREFIX)$(PROJECT_NAME).$(LIBSUFFIX)
+ 
++ifneq (freemint, $(OS))
+ # No point in building dylib for ios
+ ifneq (ios, $(OS))
+ libraries: $(LIBPREFIX)$(PROJECT_NAME).$(SHAREDLIBSUFFIX)
+ endif
+-
++endif
+ LIBRARIES += $(LIBPREFIX)$(PROJECT_NAME).$(LIBSUFFIX) $(LIBPREFIX)$(PROJECT_NAME).$(SHAREDLIBSUFFIXFULLVER)
+ 
+ $(LIBPREFIX)$(PROJECT_NAME).$(LIBSUFFIX): $(ENCODER_OBJS) $(DECODER_OBJS) $(PROCESSING_OBJS) $(COMMON_OBJS)
+@@ -316,9 +324,13 @@ ifneq ($(EXTRA_LIBRARY),)
+ 	install -m 644 $(EXTRA_LIBRARY) $(DESTDIR)$(PREFIX)/$(LIBDIR_NAME)
+ endif
+ 
++ifneq (freemint, $(OS))
+ install: install-static-lib install-shared
+ 	@:
+-
++else
++install: install-static-lib
++	@:
++endif
+ ifneq ($(HAVE_GTEST),Yes)
+ binaries:
+ 	@:
+diff -rupN openh264-2.3.0.orig/build/platform-freemint.mk openh264-2.3.0/build/platform-freemint.mk
+--- openh264-2.3.0.orig/build/platform-freemint.mk	1970-01-01 01:00:00.000000000 +0100
++++ openh264-2.3.0/build/platform-freemint.mk	2022-08-06 10:01:43.995906287 +0200
+@@ -0,0 +1,7 @@
++include $(SRC_PATH)build/arch.mk
++STATIC_LDFLAGS += -lpthread -lm 
++CFLAGS += -fomit-frame-pointer -fno-strict-aliasing -O2
++CFLAGS_OPT = -O2
++LDFLAGS += -lpthread -lm 
++ASMFLAGS += -f elf
++SHARED =
+diff -rupN openh264-2.3.0.orig/codec/common/inc/WelsTask.h openh264-2.3.0/codec/common/inc/WelsTask.h
+--- openh264-2.3.0.orig/codec/common/inc/WelsTask.h	2022-06-10 03:51:46.000000000 +0200
++++ openh264-2.3.0/codec/common/inc/WelsTask.h	2022-08-06 09:51:46.867926627 +0200
+@@ -41,7 +41,7 @@
+ #ifndef _WELS_TASK_H_
+ #define _WELS_TASK_H_
+ 
+-#include "codec_def.h"
++#include "../../api/wels/codec_def.h"
+ 
+ namespace WelsCommon {
+ 
+diff -rupN openh264-2.3.0.orig/codec/common/inc/WelsThreadLib.h openh264-2.3.0/codec/common/inc/WelsThreadLib.h
+--- openh264-2.3.0.orig/codec/common/inc/WelsThreadLib.h	2022-06-10 03:51:46.000000000 +0200
++++ openh264-2.3.0/codec/common/inc/WelsThreadLib.h	2022-08-06 09:51:46.867926627 +0200
+@@ -38,6 +38,7 @@
+  *************************************************************************************
+  */
+ 
++
+ #ifndef   _WELS_THREAD_API_H_
+ #define   _WELS_THREAD_API_H_
+ 
+@@ -78,8 +79,13 @@ typedef    HANDLE                    WEL
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <string.h>
++#ifndef __MINT__
+ #include <pthread.h>
+ #include <semaphore.h>
++#else
++#include <pth.h>
++#include <pthread.h>
++#endif
+ #include <signal.h>
+ #include <errno.h>
+ #include <time.h>
+@@ -88,12 +94,13 @@ typedef    HANDLE                    WEL
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ 
++
+ typedef   pthread_t    WELS_THREAD_HANDLE;
+ typedef  void* (*LPWELS_THREAD_ROUTINE) (void*);
+ 
+ typedef   pthread_mutex_t           WELS_MUTEX;
+ 
+-#ifdef __APPLE__
++#if defined(__APPLE) || defined(__MINT__)
+ typedef   pthread_cond_t            WELS_EVENT;
+ #else
+ typedef   sem_t*                    WELS_EVENT;
+diff -rupN openh264-2.3.0.orig/codec/common/inc/macros.h openh264-2.3.0/codec/common/inc/macros.h
+--- openh264-2.3.0.orig/codec/common/inc/macros.h	2022-06-10 03:51:46.000000000 +0200
++++ openh264-2.3.0/codec/common/inc/macros.h	2022-08-06 09:58:31.831912833 +0200
+@@ -75,6 +75,10 @@
+ 
+ #define ALIGNED_DECLARE( type, var, n ) __declspec(align(n)) type var
+ 
++#elif defined(__MINT__)
++
++#define ALIGNED_DECLARE( type, var, n ) type var
++
+ #elif defined(__GNUC__)
+ 
+ #define ALIGNED_DECLARE( type, var, n ) type var __attribute__((aligned(n)))
+diff -rupN openh264-2.3.0.orig/codec/common/src/WelsThread.cpp openh264-2.3.0/codec/common/src/WelsThread.cpp
+--- openh264-2.3.0.orig/codec/common/src/WelsThread.cpp	2022-06-10 03:51:46.000000000 +0200
++++ openh264-2.3.0/codec/common/src/WelsThread.cpp	2022-08-06 09:51:46.867926627 +0200
+@@ -74,11 +74,15 @@ void CWelsThread::Thread() {
+ }
+ 
+ WELS_THREAD_ERROR_CODE CWelsThread::Start() {
++#ifndef __MINT__
++
+ #ifndef __APPLE__
+   if (NULL == m_hEvent) {
+     return WELS_THREAD_ERROR_GENERAL;
+   }
+ #endif
++
++#endif
+   if (GetRunning()) {
+     return WELS_THREAD_ERROR_OK;
+   }
+diff -rupN openh264-2.3.0.orig/codec/common/src/WelsThreadLib.cpp openh264-2.3.0/codec/common/src/WelsThreadLib.cpp
+--- openh264-2.3.0.orig/codec/common/src/WelsThreadLib.cpp	2022-06-10 03:51:46.000000000 +0200
++++ openh264-2.3.0/codec/common/src/WelsThreadLib.cpp	2022-08-06 09:51:46.871926627 +0200
+@@ -49,8 +49,12 @@
+ #include <sys/param.h>
+ #include <unistd.h>
+ #ifndef __Fuchsia__
++#ifdef __MINT__
++#include <mint/sysctl.h>
++#else
+ #include <sys/sysctl.h>
+ #endif
++#endif
+ #ifdef __APPLE__
+ #define HW_NCPU_NAME "hw.logicalcpu"
+ #else
+@@ -68,7 +72,6 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ 
+-
+ #if defined(_WIN32) || defined(__CYGWIN__)
+ 
+ WELS_THREAD_ERROR_CODE    WelsMutexInit (WELS_MUTEX*    mutex) {
+@@ -222,6 +225,7 @@ WELS_THREAD_ERROR_CODE    WelsQueryLogic
+   return WELS_THREAD_ERROR_OK;
+ }
+ 
++
+ #else //platform: #ifdef _WIN32
+ 
+ WELS_THREAD_ERROR_CODE    WelsThreadCreate (WELS_THREAD_HANDLE* thread,  LPWELS_THREAD_ROUTINE  routine,
+@@ -232,6 +236,7 @@ WELS_THREAD_ERROR_CODE    WelsThreadCrea
+   err = pthread_attr_init (&at);
+   if (err)
+     return err;
++#ifndef __MINT__    
+ #if !defined(__ANDROID__) && !defined(__Fuchsia__)
+   err = pthread_attr_setscope (&at, PTHREAD_SCOPE_SYSTEM);
+   if (err)
+@@ -240,6 +245,7 @@ WELS_THREAD_ERROR_CODE    WelsThreadCrea
+   if (err)
+     return err;
+ #endif
++#endif
+   err = pthread_create (thread, &at, routine, arg);
+ 
+   pthread_attr_destroy (&at);
+@@ -269,7 +275,7 @@ WELS_THREAD_HANDLE        WelsThreadSelf
+ // unnamed semaphores aren't supported on OS X
+ 
+ WELS_THREAD_ERROR_CODE    WelsEventOpen (WELS_EVENT* p_event, const char* event_name) {
+-#ifdef __APPLE__
++#if defined(__APPLE) || defined(__MINT__)
+   WELS_THREAD_ERROR_CODE err= pthread_cond_init (p_event, NULL);
+   return err;
+ #else
+@@ -290,7 +296,7 @@ WELS_THREAD_ERROR_CODE    WelsEventOpen
+ }
+ WELS_THREAD_ERROR_CODE    WelsEventClose (WELS_EVENT* event, const char* event_name) {
+   //printf("event_close:%x, %s\n", event, event_name);
+-#ifdef __APPLE__
++#if defined(__APPLE) || defined(__MINT__)
+   WELS_THREAD_ERROR_CODE err = pthread_cond_destroy (event);
+   return err;
+ #else
+@@ -308,7 +314,7 @@ void WelsSleep (uint32_t dwMilliSecond)
+ WELS_THREAD_ERROR_CODE   WelsEventSignal (WELS_EVENT* event, WELS_MUTEX *pMutex, int* iCondition) {
+   WELS_THREAD_ERROR_CODE err = 0;
+   //fprintf( stderr, "before signal it, event=%x iCondition= %d..\n", event, *iCondition );
+-#ifdef __APPLE__
++#if defined(__APPLE) || defined(__MINT__)
+   WelsMutexLock (pMutex);
+   (*iCondition) --;
+   WelsMutexUnlock (pMutex);
+@@ -334,7 +340,7 @@ WELS_THREAD_ERROR_CODE   WelsEventSignal
+ }
+ 
+ WELS_THREAD_ERROR_CODE WelsEventWait (WELS_EVENT* event, WELS_MUTEX* pMutex, int& iCondition) {
+-#ifdef __APPLE__
++#if defined(__APPLE) || defined(__MINT__)
+   int err = 0;
+   WelsMutexLock(pMutex);
+   //fprintf( stderr, "WelsEventWait event %x %d..\n", event, iCondition );
+@@ -351,7 +357,7 @@ WELS_THREAD_ERROR_CODE WelsEventWait (WE
+ WELS_THREAD_ERROR_CODE    WelsEventWaitWithTimeOut (WELS_EVENT* event, uint32_t dwMilliseconds, WELS_MUTEX* pMutex) {
+ 
+   if (dwMilliseconds != (uint32_t) - 1) {
+-#if defined(__APPLE__)
++#if defined(__APPLE__) || defined(__MINT__)
+     return pthread_cond_wait (event, pMutex);
+ #else
+     return sem_wait (*event);
+@@ -366,7 +372,7 @@ WELS_THREAD_ERROR_CODE    WelsEventWaitW
+     ts.tv_sec = tv.tv_sec + ts.tv_nsec / 1000000000;
+     ts.tv_nsec %= 1000000000;
+ 
+-#if defined(__APPLE__)
++#if defined(__APPLE__) || defined(__MINT__)
+     return pthread_cond_timedwait (event, pMutex, &ts);
+ #else
+     return sem_timedwait (*event, &ts);
+@@ -382,7 +388,7 @@ WELS_THREAD_ERROR_CODE    WelsMultipleEv
+ 
+   if (nCount == 0)
+     return WELS_THREAD_ERROR_WAIT_FAILED;
+-#if defined(__APPLE__)
++#if defined(__APPLE__) || defined(__MINT__)
+   if (master_event != NULL) {
+     // This design relies on the events actually being semaphores;
+     // if multiple events in the list have been signalled, the master
+@@ -505,7 +511,7 @@ WELS_THREAD_ERROR_CODE    WelsQueryLogic
+ 
+   return WELS_THREAD_ERROR_OK;
+ 
+-#elif defined(__EMSCRIPTEN__)
++#elif defined(__EMSCRIPTEN__) || defined(__MINT__)
+ 
+   // There is not yet a way to determine CPU count in emscripten JS environment.
+   pInfo->ProcessorCount = 1;
+diff -rupN openh264-2.3.0.orig/codec/console/enc/src/welsenc.cpp openh264-2.3.0/codec/console/enc/src/welsenc.cpp
+--- openh264-2.3.0.orig/codec/console/enc/src/welsenc.cpp	2022-06-10 03:51:46.000000000 +0200
++++ openh264-2.3.0/codec/console/enc/src/welsenc.cpp	2022-08-06 09:51:46.871926627 +0200
+@@ -92,7 +92,9 @@ int     g_iEncodedFrame  = 0;
+ #define _FILE_OFFSET_BITS 64
+ #endif
+ 
++#ifndef __MINT__
+ #include <iostream>
++#endif
+ using namespace std;
+ using namespace WelsEnc;
+ 
+@@ -1135,7 +1137,11 @@ int main (int argc, char** argv)
+ 
+   iRet = CreateSVCEncHandle (&pSVCEncoder);
+   if (iRet) {
++#ifndef __MINT__
+     cout << "WelsCreateSVCEncoder() failed!!" << endl;
++#else 
++    fprintf(stdout, "WelsCreateSVCEncoder() failed!!");
++#endif
+     goto exit;
+   }
+ 
+@@ -1150,7 +1156,11 @@ int main (int argc, char** argv)
+       } else if (argc == 2 && ! strcmp (argv[1], "-h"))
+         PrintHelp();
+       else {
++#ifndef __MINT__
+         cout << "You specified pCommand is invalid!!" << endl;
++#else 
++        fprintf(stdout, "You specified pCommand is invalid!!");
++#endif
+         goto exit;
+       }
+     } else {
+diff -rupN openh264-2.3.0.orig/codec/decoder/core/src/wels_decoder_thread.cpp openh264-2.3.0/codec/decoder/core/src/wels_decoder_thread.cpp
+--- openh264-2.3.0.orig/codec/decoder/core/src/wels_decoder_thread.cpp	2022-06-10 03:51:46.000000000 +0200
++++ openh264-2.3.0/codec/decoder/core/src/wels_decoder_thread.cpp	2022-08-06 09:51:46.871926627 +0200
+@@ -49,8 +49,12 @@
+ #include <sys/param.h>
+ #include <unistd.h>
+ #ifndef __Fuchsia__
++#ifdef __MINT__
++#include <mint/sysctl.h>
++#else
+ #include <sys/sysctl.h>
+ #endif
++#endif
+ #ifdef __APPLE__
+ #define HW_NCPU_NAME "hw.logicalcpu"
+ #else
+@@ -229,7 +233,7 @@ int SemCreate (SWelsDecSemphore* s, long
+ }
+ 
+ int SemWait (SWelsDecSemphore* s, int32_t timeout) {
+-#if defined(__APPLE__)
++#if defined(__APPLE__) || defined(__MINT__)
+   pthread_mutex_lock (& (s->m));
+ #endif
+   int rc = 0;
+@@ -237,7 +241,7 @@ int SemWait (SWelsDecSemphore* s, int32_
+     while ((s->v) == 0) {
+       if (timeout == WELS_DEC_THREAD_WAIT_INFINITE || timeout < 0) {
+         // infinite wait until released
+-#if defined(__APPLE__)
++#if defined(__APPLE__) || defined(__MINT__)
+         rc = pthread_cond_wait (& (s->e), & (s->m));
+ #else
+         rc = sem_wait (s->e);
+@@ -246,7 +250,7 @@ int SemWait (SWelsDecSemphore* s, int32_
+       } else {
+         struct timespec ts;
+         getTimespecFromTimeout (&ts, timeout);
+-#if defined(__APPLE__)
++#if defined(__APPLE__) || defined(__MINT__)
+         rc = pthread_cond_timedwait (& (s->e), & (s->m), &ts);
+ #else
+         rc = sem_timedwait (s->e, &ts);
+@@ -271,7 +275,7 @@ int SemWait (SWelsDecSemphore* s, int32_
+       rc = 1;
+     }
+   }
+-#if defined(__APPLE__)
++#if defined(__APPLE__) || defined(__MINT__)
+   pthread_mutex_unlock (& (s->m));
+ #endif
+   // set return value
+@@ -283,7 +287,7 @@ int SemWait (SWelsDecSemphore* s, int32_
+ 
+ void SemRelease (SWelsDecSemphore* s, long* o_pPrevCount) {
+   long prevcount;
+-#ifdef __APPLE__
++#if defined(__APPLE) || defined(__MINT__)
+   pthread_mutex_lock (& (s->m));
+   prevcount = s->v;
+   if (s->v < s->max)
+diff -rupN openh264-2.3.0.orig/codec/encoder/core/src/slice_multi_threading.cpp openh264-2.3.0/codec/encoder/core/src/slice_multi_threading.cpp
+--- openh264-2.3.0.orig/codec/encoder/core/src/slice_multi_threading.cpp	2022-06-10 03:51:46.000000000 +0200
++++ openh264-2.3.0/codec/encoder/core/src/slice_multi_threading.cpp	2022-08-06 09:51:46.871926627 +0200
+@@ -41,7 +41,9 @@
+ 
+ #include <assert.h>
+ #if !defined(_WIN32)
++#ifndef __MINT__
+ #include <semaphore.h>
++#endif
+ #include <unistd.h>
+ #endif//!_WIN32
+ #ifndef SEM_NAME_MAX
+@@ -147,7 +149,12 @@ int32_t NeedDynamicAdjust (SSlice** ppSl
+     fRmse += (fDiffRatio * fDiffRatio);
+     ++ iSliceIdx;
+   } while (iSliceIdx + 1 < iSliceNum);
++  #ifdef __MINT__
++  fRmse = sqrt (fRmse / iSliceNum);
++  #else
+   fRmse = sqrtf (fRmse / iSliceNum);
++  #endif
++
+   if (iSliceNum >= 8) {
+     fThr += THRESHOLD_RMSE_CORE8;
+   } else if (iSliceNum >= 4) {
+diff -rupN openh264-2.3.0.orig/test/common/CWelsListTest.cpp openh264-2.3.0/test/common/CWelsListTest.cpp
+--- openh264-2.3.0.orig/test/common/CWelsListTest.cpp	2022-06-10 03:51:46.000000000 +0200
++++ openh264-2.3.0/test/common/CWelsListTest.cpp	2022-08-06 09:51:46.871926627 +0200
+@@ -291,7 +291,7 @@ TEST (CWelsNonDuplicatedList, CWelsNonDu
+   }
+   EXPECT_TRUE (0 == cNonDuplicatedIntList.size());
+ }
+-
++#ifndef __MINT__
+ #ifndef __APPLE__
+ TEST (CWelsNonDuplicatedList, CWelsNonDuplicatedListOnThread) {
+   CWelsNonDuplicatedList<CWelsTaskThread> cThreadList;
+@@ -351,7 +351,7 @@ TEST (CWelsNonDuplicatedList, CWelsNonDu
+   delete pTaskThread3;
+ }
+ #endif
+-
++#endif
+ 
+ TEST (CWelsList, CWelsListReadWithIdx) {
+   CWelsList<int32_t> cThreadList;

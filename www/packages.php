@@ -2548,7 +2548,7 @@ Original MiNT-Patch by Patrice Mandin & medmed.
 	'libyuv' => array(
 		'name' => 'libyuv',
 		'upstream' => 'https://chromium.googlesource.com/libyuv/libyuv/',
-		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
 		'version' => '1837',
 		'patch' => 1,
 		'script' => 1,
@@ -2558,6 +2558,29 @@ Original MiNT-Patch by Patrice Mandin & medmed.
 		'amiga' => 0,
 		'comment' => '
 libyuv is an open source project that includes YUV scaling and conversion functionality.
+</br></br>
+You need to use g++ to link against this library.
+'
+	),
+	'openh264' => array(
+		'name' => 'openh264',
+		'upstream' => 'https://github.com/cisco/openh264',
+		'source' => 'https://github.com/cisco/openh264/archive/refs/tags/v2.3.0.tar.gz',
+		'version' => '2.3.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+OpenH264 is a codec library which supports H.264 encoding and decoding.
+It is suitable for use in real time applications such as WebRTC. See
+<a href="http://www.openh264.org/">http://www.openh264.org/</a> for more details.
+</br></br>
+Needs the pth library from above.</br>
+You need to use g++ to link against this library.</br>
+Original MiNT-Patch by medmed.
 '
 	),
 /*

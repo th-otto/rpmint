@@ -1559,6 +1559,8 @@ This notably applies to Perl and Python.
 
 <li>2022/08/06 Package libyuv added</li>
 
+<li>2022/08/06 Package openh264 added</li>
+
 </ul>
 
 <p></p>
