@@ -1561,6 +1561,8 @@ This notably applies to Perl and Python.
 
 <li>2022/08/06 Package openh264 added</li>
 
+<li>2022/08/06 Package fdk-aac added</li>
+
 </ul>
 
 <p></p>

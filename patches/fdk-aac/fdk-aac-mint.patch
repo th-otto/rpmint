@@ -1,0 +1,31 @@
+diff --git a/libFDK/include/FDK_archdef.h b/libFDK/include/FDK_archdef.h
+index b4fef8a..b0ffd84 100644
+--- a/libFDK/include/FDK_archdef.h
++++ b/libFDK/include/FDK_archdef.h
+@@ -215,6 +215,13 @@ amm-info@iis.fraunhofer.de
+ #undef POW2COEFF_16BIT
+ #undef LDCOEFF_16BIT
+ 
++#elif defined(__mc68000__)
++#define ARCH_PREFER_MULT_16x16
++#undef SINETABLE_16BIT
++#undef POW2COEFF_16BIT
++#undef LDCOEFF_16BIT
++#undef WINDOWTABLE_16BIT
++
+ #elif defined(__x86__)
+ #define ARCH_PREFER_MULT_32x16
+ #define SINETABLE_16BIT
+diff --git a/libSYS/include/machine_type.h b/libSYS/include/machine_type.h
+index bd97669..cc19a41 100644
+--- a/libSYS/include/machine_type.h
++++ b/libSYS/include/machine_type.h
+@@ -258,7 +258,7 @@ it. Hence, a fully platform-independant way to use alignment is not supported.
+ /* RAM_ALIGN keyword causes memory alignment of global variables. */
+ #if defined(_MSC_VER)
+ #define RAM_ALIGN __declspec(align(ALIGNMENT_DEFAULT))
+-#elif defined(__GNUC__)
++#elif defined(__GNUC__) && !defined(__MINT__)
+ #define RAM_ALIGN __attribute__((aligned(ALIGNMENT_DEFAULT)))
+ #else
+ #define RAM_ALIGN

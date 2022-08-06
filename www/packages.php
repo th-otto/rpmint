@@ -2583,6 +2583,21 @@ You need to use g++ to link against this library.</br>
 Original MiNT-Patch by medmed.
 '
 	),
+	'fdk-aac' => array(
+		'name' => 'fdk-aac',
+		'upstream' => 'https://github.com/mstorsjo/fdk-aac',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '2.0.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+A standalone library of the Fraunhofer FDK AAC code from Android.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
