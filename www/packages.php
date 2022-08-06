@@ -2514,6 +2514,37 @@ to compress and decompress images respectively.</br>
 Original MiNT-Patch by medmed.
 '
 	),
+	'pth' => array(
+		'name' => 'pth',
+		'upstream' => 'https://www.gnu.org/software/pth/',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.gz',
+		'version' => '2.0.7',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => 'Pth is a very portable POSIX/ANSI-C
+based library for Unix platforms which provides non-preemptive
+priority-based scheduling for multiple threads of execution (aka
+``multithreading&apos;&apos;) inside event-driven applications. All threads run
+in the same address space of the server application, but each thread
+has it&apos;s own individual program-counter, run-time stack, signal mask
+and errno variable. </br>
+</br>
+The thread scheduling itself is done in a cooperative way, i.e., the
+threads are managed by a priority- and event-based non-preemptive
+scheduler. The intention is that this way one can achieve better
+portability and run-time performance than with preemptive scheduling.
+The event facility allows threads to wait until various types of events
+occur, including pending I/O on filedescriptors, asynchronous signals,
+elapsed timers, pending I/O on message ports, thread and process
+termination, and even customized callback functions. 
+</br>
+Original MiNT-Patch by Patrice Mandin & medmed.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

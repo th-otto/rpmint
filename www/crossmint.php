@@ -1555,6 +1555,8 @@ This notably applies to Perl and Python.
 
 <li>2022/08/02 Package libwebp added</li>
 
+<li>2022/08/05 Package pth added</li>
+
 </ul>
 
 <p></p>
