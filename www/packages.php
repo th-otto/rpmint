@@ -2579,8 +2579,9 @@ It is suitable for use in real time applications such as WebRTC. See
 <a href="http://www.openh264.org/">http://www.openh264.org/</a> for more details.
 </br></br>
 Needs the pth library from above.</br>
-You need to use g++ to link against this library.</br>
-Original MiNT-Patch by medmed.
+You need to use g++ to link against this library.
+Original MiNT-Patch by medmed.</br>
+A simple GEM example can be found in <a href="https://www.atari-forum.com/viewtopic.php?p=436559#p436559">this thread</a>
 '
 	),
 	'fdk-aac' => array(

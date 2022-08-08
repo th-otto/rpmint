@@ -43,7 +43,7 @@ for CPU in ${ALL_CPUS}; do
 
 	OS=freemint \
 	ARCH=m68k \
-	${MAKE} PREFIX="${THISPKG_DIR}${sysroot}/usr" install || exit 1
+	${MAKE} PREFIX="${THISPKG_DIR}${sysroot}/usr" LIBDIR_NAME='lib'$multilibdir install || exit 1
 	mkdir -p "${THISPKG_DIR}${sysroot}/usr/bin"
 	cp h264dec h264enc "${THISPKG_DIR}${sysroot}/usr/bin"
 	
