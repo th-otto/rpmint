@@ -161,7 +161,7 @@ export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 # On some distros it is patched to have the
 # vendor name included.
 #
-for a in "" -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
+for a in "" -1.16 -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null`
 	test "$BUILD" != "" && break
 	test "$host" = "macos" && BUILD=`/opt/local/share/automake${a}/config.guess 2>/dev/null`

@@ -520,8 +520,7 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	# create a separate archive for the fortran backend
 	#
 	if $with_fortran; then
-		fortran=${gccsubdir#/}/finclude
-		fortran="$fortran "${gccsubdir#/}/*/finclude
+		fortran=`find ${gccsubdir#/} -name finclude`
 		fortran="$fortran "${gccsubdir#/}/f951
 		fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
 		fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`

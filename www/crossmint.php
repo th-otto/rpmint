@@ -1565,6 +1565,8 @@ This notably applies to Perl and Python.
 
 <li>2022/08/06 Package mp4v2 added</li>
 
+<li>2022/08/18 Update gcc 10.x to 10.2.0</li>
+
 </ul>
 
 <p></p>
@@ -1726,7 +1728,11 @@ gcc 9.1.1:
 	macos:   31min
 	linux:   4min12sec
 
-gcc 10.0.1:
+gcc 10.2.0:
+	mingw32: 50min
+	cygwin32: 85min
+	cygwin64: 88min
+	macos:   32min
 	linux:   6min23sec
 
 -->

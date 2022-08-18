@@ -106,12 +106,12 @@ The full documentation can be found
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
-	'gcc1010' => array(
+	'gcc1020' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '10.1.0',
-		'date' => '20200519',
+		'version' => '10.2.0',
+		'date' => '20200808',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-10',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
