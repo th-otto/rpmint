@@ -1569,6 +1569,8 @@ This notably applies to Perl and Python.
 
 <li>2022/08/20 Update gcc 10.x to 10.4.0</li>
 
+<li>2022/09/11 Update binutils to 2.39</li>
+
 </ul>
 
 <p></p>

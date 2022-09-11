@@ -4,10 +4,10 @@ $basepackages = array(
 	'binutils' => array(
 		'name' => 'binutils',
 		'upstream' => 'http://www.gnu.org/software/binutils/',
-		'version' => '2.34',
-		'date' => '20200429',
+		'version' => '2.39',
+		'date' => '20220911',
 		'repo' => 'https://github.com/th-otto/binutils',
-		'branch' => 'binutils-2_34-mint',
+		'branch' => 'binutils-2_39-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'script' => 1,
@@ -27,7 +27,7 @@ $basepackages = array(
 		'comment' => '
 The binutils are a collection of low-level language tools.<br />
 The full documentation can be found
-<a href="https://sourceware.org/binutils/docs-2.31/" ' . $target . '>here</a>.<br />
+<a href="https://sourceware.org/binutils/docs-2.39/" ' . $target . '>here</a>.<br />
 <br />
 Note that official support for m68k-aout has been removed since binutils-2.31.<br />
 This is a version where that support has been added back in.
