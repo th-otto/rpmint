@@ -1571,6 +1571,8 @@ This notably applies to Perl and Python.
 
 <li>2022/09/11 Update binutils to 2.39</li>
 
+<li>2022/09/14 Update zlib to 1.2.12</li>
+
 </ul>
 
 <p></p>
