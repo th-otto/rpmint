@@ -1,0 +1,117 @@
+--- zita-resampler-1.8.0/source/Makefile.orig	2022-09-14 18:39:38.053073317 +0200
++++ zita-resampler-1.8.0/source/Makefile	2022-09-14 18:46:43.097058839 +0200
+@@ -31,40 +31,37 @@
+ DISTDIR = zita-resampler-$(VERSION)
+ 
+ CPPFLAGS += -I. -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS
+-CPPFLAGS += -DENABLE_SSE2
+-CXXFLAGS += -Wall -fPIC -O2 -ffast-math
+-CXXFLAGS += -march=native
++CXXFLAGS += -Wall -O2 -ffast-math -fomit-frame-pointer -fno-strict-aliasing
+ LDFLAGS += 
+ LDLIBS +=
+ 
+ 
+-ZITA-RESAMPLER_SO = libzita-resampler.so
+-ZITA-RESAMPLER_MAJ = $(ZITA-RESAMPLER_SO).$(MAJVERS)
+-ZITA-RESAMPLER_MIN = $(ZITA-RESAMPLER_MAJ).$(MINVERS)
+-ZITA-RESAMPLER_DEP =
++ZITA-RESAMPLER_A = libzita-resampler.a
++# ZITA-RESAMPLER_MAJ = $(ZITA-RESAMPLER_A).$(MAJVERS)
++# ZITA-RESAMPLER_MIN = $(ZITA-RESAMPLER_MAJ).$(MINVERS)
++ZITA-RESAMPLER_DEP = -lm -lpthread
+ ZITA-RESAMPLER_O = resampler.o vresampler.o resampler-table.o cresampler.o
+ ZITA-RESAMPLER_H = zita-resampler/resampler.h zita-resampler/resampler-table.h \
+ 	zita-resampler/vresampler.h zita-resampler/cresampler.h
+ 
+ 
+-$(ZITA-RESAMPLER_MIN): $(ZITA-RESAMPLER_O)
+-	$(CXX) -shared $(LDFLAGS) -Wl,-soname,$(ZITA-RESAMPLER_MAJ) -o $(ZITA-RESAMPLER_MIN) $(ZITA-RESAMPLER_O) $(ZITA-RESAMPLER_DEP)
++$(ZITA-RESAMPLER_A): $(ZITA-RESAMPLER_O)
++	$(AR) $(ARFLAGS) $@ $^
++	$(RANLIB) $@
+ 
+ $(ZITA-RESAMPLER_O):	$(ZITA-RESAMPLER_H)
+ 
+ 
+-install:	$(ZITA-RESAMPLER_MIN)
+-	install -d $(DESTDIR)$(INCDIR)/zita-resampler
+-	install -d $(DESTDIR)$(LIBDIR)
++install:	$(ZITA-RESAMPLER_A)
++	mkdir -p $(DESTDIR)$(INCDIR)/zita-resampler
++	mkdir -p $(DESTDIR)$(LIBDIR)
+ 	install -m 644 $(ZITA-RESAMPLER_H)   $(DESTDIR)$(INCDIR)/zita-resampler
+-	install -m 755 $(ZITA-RESAMPLER_MIN) $(DESTDIR)$(LIBDIR)
+-	ldconfig
+-	ln -sf $(ZITA-RESAMPLER_MIN) $(DESTDIR)$(LIBDIR)/$(ZITA-RESAMPLER_SO)
++	install -m 755 $(ZITA-RESAMPLER_A) $(DESTDIR)$(LIBDIR)
+ 
+ uninstall:
+ 	/bin/rm -rf $(DESTDIR)$(INCDIR)/zita-resampler
+ 	/bin/rm -rf $(DESTDIR)$(LIBDIR)/libzita-resampler*
+ 
+ clean:
+-	/bin/rm -rf *~ *.o *.a *.d *.so.* zita-resampler/*~
++	/bin/rm -rf *~ *.o *.a *.d *.a zita-resampler/*~
+ 
+diff -urN --exclude=.git --exclude=.vscode zita-resampler-1.8.0/apps/audiofile.h zita-resampler-1.8.0-mint/apps/audiofile.h
+--- zita-resampler-1.8.0/apps/audiofile.h	2014-09-09 06:27:16.000000000 +0200
++++ zita-resampler-1.8.0-mint/apps/audiofile.h	2022-09-11 18:19:55.000000000 +0200
+@@ -26,6 +26,9 @@
+ #include <stdio.h>
+ #include <stdint.h>
+ #include <sndfile.h>
++#ifdef __MINT__
++#include <pthread.h>
++#endif
+ #include "dither.h"
+ 
+ 
+--- zita-resampler-1.8.0/apps/Makefile.orig	2022-09-14 18:58:44.469034268 +0200
++++ zita-resampler-1.8.0/apps/Makefile	2022-09-14 19:01:14.365029162 +0200
+@@ -25,14 +25,14 @@
+ VERSION = 1.6.0
+ CPPFLAGS += -MMD -MP -DVERSION=\"$(VERSION)\"
+ CXXFLAGS += -O2  -ffast-math -Wall
+-CXXFLAGS += -march=native
++CPPFLAGS += -I../source
+ 
+ 
+ all:	zresample zretune zresample.1.gz zretune.1.gz
+ 
+ 
+ ZRESAMPLE_O = zresample.o audiofile.o dither.o
+-zresample:	LDLIBS += -lzita-resampler -lsndfile -lrt
++zresample:	LDLIBS += -L../source -lzita-resampler -lpthread  -lsndfile 
+ zresample:	$(ZRESAMPLE_O)
+ 	$(CXX) $(LDFLAGS) -o $@ $(ZRESAMPLE_O) $(LDLIBS)
+ $(ZRESAMPLE_O):
+@@ -40,7 +39,7 @@
+ 
+ 
+ ZRETUNE_O = zretune.o audiofile.o dither.o
+-zretune:	LDLIBS += -lzita-resampler -lsndfile -lrt
++zretune:	LDLIBS += -L../source -lzita-resampler -lpthread  -lsndfile 
+ zretune:	$(ZRETUNE_O)
+ 	$(CXX) $(LDFLAGS) -o $@ $(ZRETUNE_O) $(LDLIBS)
+ $(ZRETUNE_O):
+--- zita-resampler-1.8.0/apps/Makefile.orig	2022-09-14 19:15:21.985000290 +0200
++++ zita-resampler-1.8.0/apps/Makefile	2022-09-14 19:15:55.128999161 +0200
+@@ -55,8 +55,8 @@
+ 
+ 
+ install:	all
+-	install -d $(BINDIR)
+-	install -d $(MANDIR)
++	mkdir -p $(DESTDIR)$(BINDIR)
++	mkdir -p $(DESTDIR)$(MANDIR)
+ 	install -m 755 zresample $(DESTDIR)$(BINDIR)
+ 	install -m 755 zretune $(DESTDIR)$(BINDIR)
+ 	install -m 644 zresample.1.gz $(DESTDIR)$(MANDIR)
+@@ -69,5 +69,5 @@
+ 	/bin/rm -f $(MANDIR)/zretune.1.gz
+ 
+ clean:
+-	/bin/rm -f *~ *.o *.a *.d *.so *.gz zresample zretune
++	rm -f *~ *.o *.a *.d *.so *.gz zresample zretune
+ 

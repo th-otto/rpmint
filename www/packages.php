@@ -2619,6 +2619,55 @@ is a very powerful and extensible format that can accommodate
 practically any type of media.
 '
 	),
+	'libsndfile' => array(
+		'name' => 'libsndfile',
+		'upstream' => 'https://github.com/libsndfile/libsndfile',
+		'source' => 'https://github.com/libsndfile/libsndfile/releases/download/%{version}/%{name}-%{version}.tar.xz',
+		'version' => '1.1.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+libsndfile is a C library for reading and writing files containing sampled audio data.
+'
+	),
+	'zita-resampler' => array(
+		'name' => 'zita-resampler',
+		'upstream' => 'https://kokkinizita.linuxaudio.org/linuxaudio/zita-resampler/resampler.html',
+		'source' => 'https://kokkinizita.linuxaudio.org/linuxaudio/downloads/%{name}-%{version}.tar.bz2',
+		'version' => '1.8.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+Libzita-resampler is a C++ library for resampling audio signals. It is
+designed to be used within a real-time processing context, to be fast,
+and to provide high-quality sample rate conversion.
+</br></br>
+The library operates on signals represented in single-precision
+floating point format. For multichannel operation both the input and
+output signals are assumed to be stored as interleaved samples.
+</br></br>
+The API allows a trade-off between quality and CPU load. For the latter
+a range of approximately 1:6 is available. Even at the highest quality
+setting libzita-resampler will be faster than most similar libraries,
+e.g. libsamplerate.
+</br></br>
+The source distribution includes the resample application. Input format
+is any file readable by libsndfile, output is either WAV (WAVEX for
+more than 2 channels) or CAF. Apart from resampling you can change the
+sample format to 16-bit, 24-bit or float, and for 16-bit output, add
+dithering. Available dithering types are rectangular, triangular, and
+Lipschitz&apos; optimised error feedback filter. Some examples of dithering
+can be seen <a href="https://kokkinizita.linuxaudio.org/linuxaudio/dithering.html">here</a>.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

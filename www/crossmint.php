@@ -1573,6 +1573,10 @@ This notably applies to Perl and Python.
 
 <li>2022/09/14 Update zlib to 1.2.12</li>
 
+<li>2022/09/15 Package libsndfile added </li>
+
+<li>2022/09/15 Package zita-resampler added </li>
+
 </ul>
 
 <p></p>
