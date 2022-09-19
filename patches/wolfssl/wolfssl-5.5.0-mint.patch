@@ -1,0 +1,260 @@
+diff --git a/examples/echoserver/echoserver.c b/examples/echoserver/echoserver.c
+index 7b8adb822..48f602c98 100644
+--- a/examples/echoserver/echoserver.c
++++ b/examples/echoserver/echoserver.c
+@@ -67,7 +67,7 @@
+ 
+ static void SignalReady(void* args, word16 port)
+ {
+-#if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__)
++#if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
+     /* signal ready to tcp_accept */
+     func_args* server_args = (func_args*)args;
+     tcp_ready* ready = server_args->signal;
+diff --git a/testsuite/testsuite.c b/testsuite/testsuite.c
+index ee6190831..0e83af8b8 100644
+--- a/testsuite/testsuite.c
++++ b/testsuite/testsuite.c
+@@ -431,7 +431,7 @@ static void simple_test(func_args* args)
+  */
+ void wait_tcp_ready(func_args* args)
+ {
+-#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
++#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
+     PTHREAD_CHECK_RET(pthread_mutex_lock(&args->signal->mutex));
+ 
+     if (!args->signal->ready)
+@@ -464,7 +464,7 @@ void wait_tcp_ready(func_args* args)
+  */
+ void start_thread(THREAD_FUNC fun, func_args* args, THREAD_TYPE* thread)
+ {
+-#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
++#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
+     PTHREAD_CHECK_RET(pthread_create(thread, 0, fun, args));
+     return;
+ #elif defined(WOLFSSL_TIRTOS)
+diff --git a/wolfcrypt/test/test.c b/wolfcrypt/test/test.c
+index 60be38ba1..a2dd0097f 100644
+--- a/wolfcrypt/test/test.c
++++ b/wolfcrypt/test/test.c
+@@ -1663,6 +1663,7 @@ static int _SaveDerAndPem(const byte* der, int derSz,
+ 
+     derFile = XFOPEN(fileDer, "wb");
+     if (!derFile) {
++        fprintf(stderr, "%s: %s\n", fileDer, strerror(errno));
+         return errBase + 0;
+     }
+     ret = (int)XFWRITE(der, 1, derSz, derFile);
+@@ -1698,6 +1699,7 @@ static int _SaveDerAndPem(const byte* der, int derSz,
+     #if !defined(NO_FILESYSTEM) && !defined(NO_WRITE_TEMP_FILES)
+         pemFile = XFOPEN(filePem, "wb");
+         if (!pemFile) {
++            fprintf(stderr, "%s: %s\n", filePem, strerror(errno));
+             XFREE(pem, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+             return errBase + 3;
+         }
+@@ -12798,6 +12800,8 @@ WOLFSSL_TEST_SUBROUTINE int memory_test(void)
+     #define CERT_PATH_SEP "\\"
+ #endif
+ 
++#undef CERT_PREFIX
++#undef CERT_WRITE_TEMP_DIR
+ #ifndef CERT_PREFIX
+     #define CERT_PREFIX "./"
+ #endif
+@@ -14676,6 +14680,7 @@ WOLFSSL_TEST_SUBROUTINE int rsa_no_pad_test(void)
+ #elif !defined(NO_FILESYSTEM)
+     file = XFOPEN(clientKey, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+         err_sys("can't open clientKey, Please run from wolfSSL home dir", -40);
+         ERROR_OUT(-7801, exit_rsa_nopadding);
+     }
+@@ -14899,6 +14904,7 @@ static int rsa_even_mod_test(WC_RNG* rng, RsaKey* key)
+ #elif !defined(NO_FILESYSTEM)
+     file = XFOPEN(clientKey, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+         err_sys("can't open ./certs/client-key.der, "
+                 "Please run from wolfSSL home dir", -40);
+         ERROR_OUT(-7801, exit_rsa_even_mod);
+@@ -16127,6 +16133,7 @@ WOLFSSL_TEST_SUBROUTINE int rsa_test(void)
+ #elif !defined(NO_FILESYSTEM)
+     file = XFOPEN(clientKey, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+         err_sys("can't open ./certs/client-key.der, "
+                 "Please run from wolfSSL home dir", -40);
+         ERROR_OUT(-7901, exit_rsa);
+@@ -16464,6 +16471,7 @@ WOLFSSL_TEST_SUBROUTINE int rsa_test(void)
+ #else
+     file = XFOPEN(clientKeyPub, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", clientKeyPub, strerror(errno));
+         err_sys("can't open ./certs/client-keyPub.der, "
+                 "Please run from wolfSSL home dir", -40);
+         ERROR_OUT(-7945, exit_rsa);
+@@ -20580,6 +20588,7 @@ WOLFSSL_TEST_SUBROUTINE int openssl_pkey1_test(void)
+         f = XFOPEN(clientKey, "rb");
+ 
+         if (!f) {
++            fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+             err_sys("can't open ./certs/client-key.der, "
+                     "Please run from wolfSSL home dir", -41);
+             ret = -9000;
+@@ -37038,7 +37047,10 @@ static int pkcs7_load_certs_keys(
+ #else
+     keyFile = XFOPEN(clientKey, "rb");
+     if (!keyFile)
++    {
++        fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+         return -12125;
++	}
+ 
+     *rsaClientPrivKeyBufSz = (word32)XFREAD(rsaClientPrivKeyBuf, 1,
+                                            *rsaClientPrivKeyBufSz, keyFile);
+@@ -37095,7 +37107,10 @@ static int pkcs7_load_certs_keys(
+ #else
+     keyFile = XFOPEN(eccClientKey, "rb");
+     if (!keyFile)
++    {
++        fprintf(stderr, "%s: %s\n", eccClientKey, strerror(errno));
+         return -12131;
++	}
+ 
+     *eccClientPrivKeyBufSz = (word32)XFREAD(eccClientPrivKeyBuf, 1,
+                                            *eccClientPrivKeyBufSz, keyFile);
+@@ -44228,6 +44243,7 @@ static int rsa_onlycb_test(myCryptoDevCtx *ctx)
+ #elif !defined(NO_FILESYSTEM)
+     file = XFOPEN(clientKey, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+         err_sys("can't open ./certs/client-key.der, "
+                 "Please run from wolfSSL home dir", -40);
+         ERROR_OUT(-8001, exit_onlycb);
+diff --git a/wolfssl/test.h b/wolfssl/test.h
+index ec4569973..5a97bf8cb 100644
+--- a/wolfssl/test.h
++++ b/wolfssl/test.h
+@@ -157,7 +157,9 @@
+     #include <sys/ioctl.h>
+     #include <sys/time.h>
+     #include <sys/socket.h>
++#ifndef SINGLE_THREADED
+     #include <pthread.h>
++#endif
+     #include <fcntl.h>
+     #ifdef TEST_IPV6
+         #include <netdb.h>
+@@ -552,7 +554,7 @@ typedef struct tcp_ready {
+     word16 ready;              /* predicate */
+     word16 port;
+     char*  srfName;     /* server ready file name */
+-#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
++#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
+     pthread_mutex_t mutex;
+     pthread_cond_t  cond;
+ #endif
+@@ -2093,7 +2095,7 @@
+         }
+     #endif
+ 
+-#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
++#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
+     /* signal ready to accept data */
+     {
+     tcp_ready* ready = args->signal;
+@@ -2140,7 +2142,7 @@ static WC_INLINE void tcp_accept(SOCKET_T* sockfd, SOCKET_T* clientfd,
+     if(do_listen) {
+         tcp_listen(sockfd, &port, useAnyAddr, udp, sctp);
+ 
+-    #if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__)
++    #if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
+         /* signal ready to tcp_accept */
+         if (args)
+             ready = args->signal;
+diff --git a/wolfssl/wolfcrypt/settings.h b/wolfssl/wolfcrypt/settings.h
+index 934213852..3da4706d8 100644
+--- a/wolfssl/wolfcrypt/settings.h
++++ b/wolfssl/wolfcrypt/settings.h
+@@ -1857,7 +1857,9 @@ extern void uITRON4_free(void *p) ;
+    requirement here.  The record header of SSL/TLS will prevent easy alignment.
+    This hint tries to help as much as possible.  */
+ #ifndef WOLFSSL_GENERAL_ALIGNMENT
+-    #ifdef WOLFSSL_AESNI
++    #if defined(__MINT__)
++        #define WOLFSSL_GENERAL_ALIGNMENT 0
++    #elif defined(WOLFSSL_AESNI)
+         #define WOLFSSL_GENERAL_ALIGNMENT 16
+     #elif defined(XSTREAM_ALIGN)
+         #define WOLFSSL_GENERAL_ALIGNMENT  4
+diff --git a/wolfssl/wolfcrypt/types.h b/wolfssl/wolfcrypt/types.h
+index 5da08120b..52f46cd7b 100644
+--- a/wolfssl/wolfcrypt/types.h
++++ b/wolfssl/wolfcrypt/types.h
+@@ -309,7 +309,7 @@ typedef struct w64wrapper {
+         #if defined(_MSC_VER)
+             #define THREAD_LS_T __declspec(thread)
+         /* Thread local storage only in FreeRTOS v8.2.1 and higher */
+-        #elif defined(FREERTOS) || defined(FREERTOS_TCP) || \
++        #elif defined(FREERTOS) || defined(FREERTOS_TCP) || defined(__MINT__) || \
+                                                          defined(WOLFSSL_ZEPHYR)
+             #define THREAD_LS_T
+         #else
+@@ -830,9 +830,9 @@ typedef struct w64wrapper {
+             #define XTOUPPER(c)     toupper((c))
+         #endif
+         #if defined(OPENSSL_ALL) || defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
+-        #define XISALNUM(c)     isalnum((c))
+-        #define XISASCII(c)     isascii((c))
+-        #define XISSPACE(c)     isspace((c))
++        #define XISALNUM(c)     isalnum((unsigned char)(c))
++        #define XISASCII(c)     isascii((unsigned char)(c))
++        #define XISSPACE(c)     isspace((unsigned char)(c))
+         #endif
+         /* needed by wolfSSL_check_domain_name() */
+         #define XTOLOWER(c)      tolower((c))
+@@ -1152,7 +1155,9 @@ typedef struct w64wrapper {
+         #endif /* !ALIGN16 */
+ 
+         #if !defined (ALIGN32)
+-            #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__) || \
++            #if defined(__MINT__)
++                #define ALIGN32
++            #elif defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__) || \
+                 defined(__llvm__)
+                 #define ALIGN32 __attribute__ ( (aligned (32)))
+             #elif defined(_MSC_VER)
+@@ -1165,7 +1167,9 @@ typedef struct w64wrapper {
+         #endif /* !ALIGN32 */
+ 
+         #if !defined(ALIGN64)
+-            #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__) || \
++            #if defined(__MINT__)
++                #define ALIGN64
++            #elif defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__) || \
+                 defined(__llvm__)
+                 #define ALIGN64 __attribute__ ( (aligned (64)))
+             #elif defined(_MSC_VER)
+@@ -1177,7 +1184,9 @@ typedef struct w64wrapper {
+             #endif
+         #endif /* !ALIGN64 */
+ 
+-        #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__) || \
++        #if defined(__MINT__)
++            #define ALIGN128
++        #elif defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__) || \
+             defined(__llvm__)
+             #define ALIGN128 __attribute__ ( (aligned (128)))
+         #elif defined(_MSC_VER)
+@@ -1188,7 +1197,9 @@ typedef struct w64wrapper {
+             #define ALIGN128
+         #endif
+ 
+-        #if defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)  || \
++        #if defined(__MINT__)
++            #define ALIGN256
++        #elif defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)  || \
+             defined(__llvm__)
+             #define ALIGN256 __attribute__ ( (aligned (256)))
+         #elif defined(_MSC_VER)

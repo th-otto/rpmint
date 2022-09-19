@@ -2668,6 +2668,28 @@ Lipschitz&apos; optimised error feedback filter. Some examples of dithering
 can be seen <a href="https://kokkinizita.linuxaudio.org/linuxaudio/dithering.html">here</a>.
 '
 	),
+	'wolfssl' => array(
+		'name' => 'wolfssl',
+		'upstream' => 'https://www.wolfssl.com/',
+		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
+		'version' => '5.5.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+The wolfSSL embedded TLS library is a lightweight, portable,
+C-language-based SSL/TLS library targeted at IoT, embedded, and RTOS
+environments primarily because of its size, speed, and feature set. It
+works seamlessly in desktop, enterprise, and cloud environments as
+well. wolfSSL supports industry standards up to the current TLS 1.3 and
+DTLS 1.3, is up to 20 times smaller than OpenSSL, offers a simple API,
+an OpenSSL compatibility layer, OCSP and CRL support, is backed by the
+robust wolfCrypt cryptography library, and much more.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

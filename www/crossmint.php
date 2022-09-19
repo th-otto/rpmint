@@ -1577,6 +1577,8 @@ This notably applies to Perl and Python.
 
 <li>2022/09/15 Package zita-resampler added </li>
 
+<li>2022/09/19 Package wolfssl added </li>
+
 </ul>
 
 <p></p>
