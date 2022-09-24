@@ -5,7 +5,7 @@ scriptdir=${0%/*}
 
 PACKAGENAME=gemlib
 VERSION=-0.44.0
-VERSIONPATCH=-20200812
+VERSIONPATCH=-20220920
 
 . ${scriptdir}/functions.sh
 
@@ -20,7 +20,7 @@ JOBS=-j1
 
 cd "$srcdir"
 if test "$LTO_CFLAGS" != ""; then
-	sed -i "\@^DEFINITIONS =@i OPTS += $LTO_CFLAGS" CONFIGVARS
+	: sed -i "\@^DEFINITIONS =@i OPTS += $LTO_CFLAGS" CONFIGVARS
 fi
 
 #
