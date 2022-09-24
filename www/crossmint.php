@@ -1579,6 +1579,8 @@ This notably applies to Perl and Python.
 
 <li>2022/09/19 Package wolfssl added </li>
 
+<li>2022/09/23 Update openssl to 1.1.1p</li>
+
 </ul>
 
 <p></p>

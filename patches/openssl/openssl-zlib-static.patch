@@ -1,21 +1,11 @@
-diff -rup openssl-1.0.2l.orig/Makefile.org openssl-1.0.2l/Makefile.org
---- openssl-1.0.2l.orig/Makefile.org	2017-05-25 14:54:38.000000000 +0200
-+++ openssl-1.0.2l/Makefile.org	2017-10-19 16:32:53.925520072 +0200
-@@ -375,7 +375,7 @@ libcrypto.pc: Makefile
+--- ./Configurations/unix-Makefile.tmpl.orig	2022-09-23 16:30:10.771929639 +0200
++++ ./Configurations/unix-Makefile.tmpl	2022-09-23 16:33:09.243923560 +0200
+@@ -964,7 +964,7 @@
+ 	    echo 'Name: OpenSSL-libcrypto'; \
  	    echo 'Description: OpenSSL cryptography library'; \
  	    echo 'Version: '$(VERSION); \
- 	    echo 'Requires: '; \
 -	    echo 'Libs: -L$${libdir} -lcrypto'; \
-+	    echo 'Libs: -L$${libdir} -lcrypto $(EX_LIBS)'; \
- 	    echo 'Libs.private: $(EX_LIBS)'; \
- 	    echo 'Cflags: -I$${includedir} $(KRB5_INCLUDES)' ) > libcrypto.pc
- 
-@@ -389,7 +389,7 @@ libssl.pc: Makefile
- 	    echo 'Description: Secure Sockets Layer and cryptography libraries'; \
- 	    echo 'Version: '$(VERSION); \
- 	    echo 'Requires.private: libcrypto'; \
--	    echo 'Libs: -L$${libdir} -lssl'; \
-+	    echo 'Libs: -L$${libdir} -lssl $(EX_LIBS)'; \
- 	    echo 'Libs.private: $(EX_LIBS)'; \
- 	    echo 'Cflags: -I$${includedir} $(KRB5_INCLUDES)' ) > libssl.pc
++	    echo 'Libs: -L$${libdir} -lcrypto $(LIB_EX_LIBS)'; \
+ 	    echo 'Libs.private: $(LIB_EX_LIBS)'; \
+ 	    echo 'Cflags: -I$${includedir}' ) > libcrypto.pc
  

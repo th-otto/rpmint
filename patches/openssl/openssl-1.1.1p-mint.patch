@@ -1,0 +1,106 @@
+--- a/Configurations/10-main.conf.orig	2022-09-23 15:42:09.767852786 +0200
++++ b/Configurations/10-main.conf	2022-09-23 16:02:14.015811766 +0200
+@@ -918,6 +918,39 @@ my %targets = (
+         ranlib           => "true",
+     },
+ 
++#### FreeMiNT Configurations
++    "mint-common" => {
++        inherit_from     => [ "BASE_unix" ],
++        CC               => "gcc",
++        CXX              => "g++",
++        CFLAGS           => add(picker(default => "-Wall",
++                                   debug   => "-O0 -g",
++                                   release => "-O3 -fomit-frame-pointer")),
++        # DEVRANDM_WAIT_USE_SELECT is needed to avoid "PRNG is not seeded" in sshd log
++        cppflags         => "-DOPENSSL_USE_IPV6=0 -DDEVRANDM_WAIT_USE_SELECT=0",
++        lib_cppflags     => "-DB_ENDIAN",
++        thread_scheme    => "(unknown)",
++        sys_id           => "FreeMiNT",
++        lflags           => add("-s"),
++    },
++    "mint" => {
++        inherit_from     => [ "mint-common" ],
++        CC               => add("-m68000"),
++        CXX              => add("-m68000"),
++    },
++    "mint020" => {
++        inherit_from     => [ "mint-common" ],
++        CC               => add("-m68020-60"),
++        CXX              => add("-m68020-60"),
++        multilib         => "/m68020-60",
++    },
++    "mintv4e" => {
++        inherit_from     => [ "mint-common" ],
++        CC               => add("-mcpu=5475"),
++        CXX              => add("-mcpu=5475"),
++        multilib         => "/m5475",
++    },
++
+ #### *BSD
+     "BSD-generic32" => {
+         # As for thread cflag. Idea is to maintain "collective" set of
+--- a/crypto/ec/curve448/field.h.orig	2022-09-23 20:09:58.002980991 +0200
++++ b/crypto/ec/curve448/field.h	2022-09-23 20:10:21.922980177 +0200
+@@ -31,6 +31,10 @@
+ #  define RESTRICT
+ #  define ALIGNED
+ # endif
++#ifdef __MINT__
++#undef ALIGNED
++#define ALIGNED
++#endif
+ 
+ typedef struct gf_s {
+     word_t limb[NLIMBS];
+--- a/test/rsa_complex.c.orig	2022-09-23 20:12:19.590976168 +0200
++++ b/test/rsa_complex.c	2022-09-23 20:12:46.926975237 +0200
+@@ -13,7 +13,7 @@
+  * for function arguments.
+  */
+ #if defined(__STDC_VERSION__)
+-# if __STDC_VERSION__ >= 199901L
++# if (__STDC_VERSION__ >= 199901L) && !defined(__MINT__)
+ #  include <complex.h>
+ # endif
+ #endif
+--- a/include/internal/tsan_assist.h.orig	2022-09-24 11:08:32.428974779 +0200
++++ b/include/internal/tsan_assist.h	2022-09-24 11:09:42.908972379 +0200
+@@ -48,7 +48,7 @@
+  */
+ 
+ #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+-    && !defined(__STDC_NO_ATOMICS__)
++    && !defined(__STDC_NO_ATOMICS__) && !defined(__MINT__)
+ # include <stdatomic.h>
+ 
+ # if defined(ATOMIC_POINTER_LOCK_FREE) \
+@@ -62,7 +62,7 @@
+ #  define tsan_st_rel(ptr, val) atomic_store_explicit((ptr), (val), memory_order_release)
+ # endif
+ 
+-#elif defined(__GNUC__) && defined(__ATOMIC_RELAXED)
++#elif defined(__GNUC__) && defined(__ATOMIC_RELAXED) && !defined(__MINT__)
+ 
+ # if defined(__GCC_ATOMIC_POINTER_LOCK_FREE) \
+           && __GCC_ATOMIC_POINTER_LOCK_FREE >= 2
+--- a/include/internal/refcount.h.orig	2022-09-24 11:04:04.964983890 +0200
++++ b/include/internal/refcount.h	2022-09-24 11:04:44.116982556 +0200
+@@ -17,7 +17,7 @@
+ # endif
+ 
+ # if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+-     && !defined(__STDC_NO_ATOMICS__)
++     && !defined(__STDC_NO_ATOMICS__) && !defined(__MINT__)
+ #  include <stdatomic.h>
+ #  define HAVE_C11_ATOMICS
+ # endif
+@@ -53,7 +53,7 @@ static inline int CRYPTO_DOWN_REF(_Atomi
+     return 1;
+ }
+ 
+-# elif defined(__GNUC__) && defined(__ATOMIC_RELAXED) && __GCC_ATOMIC_INT_LOCK_FREE > 0
++# elif defined(__GNUC__) && defined(__ATOMIC_RELAXED) && __GCC_ATOMIC_INT_LOCK_FREE > 0 && !defined(__MINT__)
+ 
+ #  define HAVE_ATOMICS 1
+ 

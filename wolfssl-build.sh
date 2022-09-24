@@ -11,6 +11,7 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/wolfssl-5.5.0-mint.patch
+patches/${PACKAGENAME}/single-thread.patch
 "
 DISABLED_PATCHES="
 patches/${PACKAGENAME}/mintelf-config.patch
@@ -35,6 +36,10 @@ CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
 	--enable-supportedcurves \
 	--disable-jobserver \
 	--enable-sp \
+	--enable-ed25519 \
+	--enable-des3 \
+	--enable-ripemd \
+	--enable-all-crypto \
 	--enable-singlethreaded \
 	--disable-asyncthreads \
 	${CONFIGURE_FLAGS_AMIGAOS}"

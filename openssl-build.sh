@@ -4,13 +4,13 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=openssl
-VERSION=-1.0.2l
+VERSION=-1.1.1p
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/openssl/openssl-1.0.2l-mint.patch
+patches/openssl/openssl-1.1.1p-mint.patch
 patches/openssl/openssl-zlib-static.patch
 "
 
@@ -41,23 +41,18 @@ CONFIGURE_FLAGS="--prefix=${prefix} --cross-compile-prefix=${TARGET}- --openssld
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
-"$srcdir/Configure" ${CONFIGURE_FLAGS} mint020
-${MAKE} $JOBS || exit 1
-${MAKE} MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
-${MAKE} distclean
-make_bin_archive 020
+targetconf_000=mint
+targetconf_020=mint020
+targetconf_v4e=mintv4e
 
-"$srcdir/Configure" ${CONFIGURE_FLAGS} mintv4e
-${MAKE} $JOBS || exit 1
-${MAKE} MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
-${MAKE} distclean
-make_bin_archive v4e
-
-"$srcdir/Configure" ${CONFIGURE_FLAGS} mint
-${MAKE} $JOBS || exit 1
-${MAKE} MANDIR=${TARGET_MANDIR} INSTALL_PREFIX="${THISPKG_DIR}${sysroot}" install || exit 1
-#${MAKE} distclean
-make_bin_archive 000
+for CPU in ${ALL_CPUS}; do
+	eval targetconf=\${targetconf_$CPU}
+	"$srcdir/Configure" ${CONFIGURE_FLAGS} $targetconf
+	${MAKE} $JOBS || exit 1
+	${MAKE} MANDIR=${TARGET_MANDIR} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+	${MAKE} distclean
+	make_bin_archive $CPU
+done
 
 move_prefix
 configured_prefix="${prefix}"

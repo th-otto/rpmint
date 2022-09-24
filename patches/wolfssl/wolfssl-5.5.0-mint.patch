@@ -1,38 +1,3 @@
-diff --git a/examples/echoserver/echoserver.c b/examples/echoserver/echoserver.c
-index 7b8adb822..48f602c98 100644
---- a/examples/echoserver/echoserver.c
-+++ b/examples/echoserver/echoserver.c
-@@ -67,7 +67,7 @@
- 
- static void SignalReady(void* args, word16 port)
- {
--#if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__)
-+#if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
-     /* signal ready to tcp_accept */
-     func_args* server_args = (func_args*)args;
-     tcp_ready* ready = server_args->signal;
-diff --git a/testsuite/testsuite.c b/testsuite/testsuite.c
-index ee6190831..0e83af8b8 100644
---- a/testsuite/testsuite.c
-+++ b/testsuite/testsuite.c
-@@ -431,7 +431,7 @@ static void simple_test(func_args* args)
-  */
- void wait_tcp_ready(func_args* args)
- {
--#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-+#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
-     PTHREAD_CHECK_RET(pthread_mutex_lock(&args->signal->mutex));
- 
-     if (!args->signal->ready)
-@@ -464,7 +464,7 @@ void wait_tcp_ready(func_args* args)
-  */
- void start_thread(THREAD_FUNC fun, func_args* args, THREAD_TYPE* thread)
- {
--#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-+#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
-     PTHREAD_CHECK_RET(pthread_create(thread, 0, fun, args));
-     return;
- #elif defined(WOLFSSL_TIRTOS)
 diff --git a/wolfcrypt/test/test.c b/wolfcrypt/test/test.c
 index 60be38ba1..a2dd0097f 100644
 --- a/wolfcrypt/test/test.c
@@ -132,47 +97,6 @@ index 60be38ba1..a2dd0097f 100644
          err_sys("can't open ./certs/client-key.der, "
                  "Please run from wolfSSL home dir", -40);
          ERROR_OUT(-8001, exit_onlycb);
-diff --git a/wolfssl/test.h b/wolfssl/test.h
-index ec4569973..5a97bf8cb 100644
---- a/wolfssl/test.h
-+++ b/wolfssl/test.h
-@@ -157,7 +157,9 @@
-     #include <sys/ioctl.h>
-     #include <sys/time.h>
-     #include <sys/socket.h>
-+#ifndef SINGLE_THREADED
-     #include <pthread.h>
-+#endif
-     #include <fcntl.h>
-     #ifdef TEST_IPV6
-         #include <netdb.h>
-@@ -552,7 +554,7 @@ typedef struct tcp_ready {
-     word16 ready;              /* predicate */
-     word16 port;
-     char*  srfName;     /* server ready file name */
--#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-+#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
-     pthread_mutex_t mutex;
-     pthread_cond_t  cond;
- #endif
-@@ -2093,7 +2095,7 @@
-         }
-     #endif
- 
--#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-+#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
-     /* signal ready to accept data */
-     {
-     tcp_ready* ready = args->signal;
-@@ -2140,7 +2142,7 @@ static WC_INLINE void tcp_accept(SOCKET_T* sockfd, SOCKET_T* clientfd,
-     if(do_listen) {
-         tcp_listen(sockfd, &port, useAnyAddr, udp, sctp);
- 
--    #if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__)
-+    #if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
-         /* signal ready to tcp_accept */
-         if (args)
-             ready = args->signal;
 diff --git a/wolfssl/wolfcrypt/settings.h b/wolfssl/wolfcrypt/settings.h
 index 934213852..3da4706d8 100644
 --- a/wolfssl/wolfcrypt/settings.h
