@@ -283,7 +283,8 @@ esac
 
 case $BUILD in
 	i686-*-msys* | x86_64-*-msys*)
-		mpfr_config="--with-mpc=${MINGW_PREFIX} --with-gmp=${MINGW_PREFIX} --with-mpfr=${MINGW_PREFIX}"
+		# we use in-tree versions of those libraries now
+		# mpfr_config="--with-mpc=${MINGW_PREFIX} --with-gmp=${MINGW_PREFIX} --with-mpfr=${MINGW_PREFIX}"
 		;;
 esac
 
@@ -507,8 +508,7 @@ rm -rf ${PREFIX#/}/share/gcc*/python
 # create a separate archive for the fortran backend
 #
 if $with_fortran; then
-fortran=${gccsubdir#/}/finclude
-fortran="$fortran "${gccsubdir#/}/*/finclude
+fortran=`find ${gccsubdir#/} -name finclude`
 fortran="$fortran "${gccsubdir#/}/f951
 fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
 fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`

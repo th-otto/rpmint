@@ -18,7 +18,14 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 TARGET=${1:-m68k-atari-mint}
 
 #
-# the hosts compiler
+# The hosts compiler.
+# To build the 32bit version for linux,
+# invoke this script with
+# GCC="gcc -m32" GXX="g++ -m32"
+# You will also need to have various 32bit flavours
+# of system libraries installed.
+# For other 32bit hosts (mingw32 and cygwin32)
+# use the appropriate shell for that system.
 #
 GCC=${GCC-gcc}
 GXX=${GXX-g++}
@@ -283,7 +290,8 @@ esac
 
 case $BUILD in
 	i686-*-msys* | x86_64-*-msys*)
-		mpfr_config="--with-mpc=${MINGW_PREFIX} --with-gmp=${MINGW_PREFIX} --with-mpfr=${MINGW_PREFIX}"
+		# we use in-tree versions of those libraries now
+		# mpfr_config="--with-mpc=${MINGW_PREFIX} --with-gmp=${MINGW_PREFIX} --with-mpfr=${MINGW_PREFIX}"
 		;;
 esac
 
@@ -507,8 +515,7 @@ rm -rf ${PREFIX#/}/share/gcc*/python
 # create a separate archive for the fortran backend
 #
 if $with_fortran; then
-fortran=${gccsubdir#/}/finclude
-fortran="$fortran "${gccsubdir#/}/*/finclude
+fortran=`find ${gccsubdir#/} -name finclude`
 fortran="$fortran "${gccsubdir#/}/f951
 fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
 fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
