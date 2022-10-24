@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=wolfssl
-VERSION=-5.5.0
+VERSION=-5.5.1
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh

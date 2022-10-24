@@ -1581,6 +1581,8 @@ This notably applies to Perl and Python.
 
 <li>2022/09/23 Update openssl to 1.1.1p</li>
 
+<li>2022/10/24 Update wolfssl to 5.5.1</li>
+
 </ul>
 
 <p></p>
