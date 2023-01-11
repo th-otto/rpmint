@@ -119,6 +119,11 @@ with_fortran=true
 with_D=true
 
 #
+# whether to include the ada backend
+#
+with_ada=false
+
+#
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
 # - checking out the mint/gcc-10 branch
@@ -231,9 +236,11 @@ LDFLAGS_FOR_TARGET=
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
+enable_libphobos=
 languages=c,c++
 $with_fortran && languages="$languages,fortran"
-$with_D && languages="$languages,d"
+$with_ada && languages="$languages,ada"
+$with_D && { languages="$languages,d"; enable_libphobos=; } # --enable-libphobos does not work because of missing swapcontext() in mintlib
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -286,6 +293,10 @@ case $host in
 		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
 		mpfr_config="--with-mpc=${CROSSTOOL_DIR} --with-gmp=${CROSSTOOL_DIR} --with-mpfr=${CROSSTOOL_DIR}"
 		;;
+#	linux64)
+#		CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD -include $srcdir/gcc/libcwrap.h"
+#		CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
+#		;;
 esac
 
 case $BUILD in
@@ -294,6 +305,25 @@ case $BUILD in
 		# mpfr_config="--with-mpc=${MINGW_PREFIX} --with-gmp=${MINGW_PREFIX} --with-mpfr=${MINGW_PREFIX}"
 		;;
 esac
+
+if $with_ada; then
+# Using the host gnatmake like
+#   CC="gcc%%{hostsuffix}" GNATBIND="gnatbind%%{hostsuffix}"
+#   GNATMAKE="gnatmake%%{hostsuffix}"
+# doesn't work due to PR33857, so an un-suffixed gnatmake has to be
+# available
+	adahostsuffix=-11
+	if test ! -x /usr/bin/gnatmake${adahostsuffix}; then
+		echo "need gnatmake${adahostsuffix} to build ada" >&2
+		exit 1
+	fi
+	mkdir -p host-tools/bin
+	cp -a /usr/bin/gnatmake${adahostsuffix} host-tools/bin/gnatmake
+	cp -a /usr/bin/gnatlink${adahostsuffix} host-tools/bin/gnatlink
+	cp -a /usr/bin/gnatbind${adahostsuffix} host-tools/bin/gnatbind
+	ln -sf /usr/lib64 host-tools/lib64
+	export PATH="`pwd`/host-tools/bin:$PATH"
+fi
 
 export CC="${GCC}"
 export CXX="${GXX}"
@@ -329,6 +359,7 @@ $srcdir/configure \
 	--disable-threads \
 	--disable-win32-registry \
 	$enable_lto \
+	$enable_libphobos \
 	--enable-ssp \
 	--enable-libssp \
 	$enable_plugin \
@@ -399,6 +430,13 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 				rm -f ${tool}-${gcc_major_version}${BUILD_EXEEXT} ${tool}-${gcc_major_version}${BUILD_EXEEXT}
 				$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
 			fi
+		fi
+	done
+	for tool in gnat gnatbind gnatshop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep gnatxref; do
+		if test -x ${TARGET}-${tool} && test ! -h ${TARGET}-${tool}; then
+			rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
+			mv ${TARGET}-${tool}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
+			$LN_S ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}${BUILD_EXEEXT}
 		fi
 	done
 	if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
@@ -521,6 +559,32 @@ fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
 fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
 rm -rf $fortran
+fi
+
+#
+# create a separate archive for the D backend
+#
+if $with_D; then
+D=
+test -d ${gccsubdir#/}include/d && D="$D "${gccsubdir#/}include/d
+D="$D "`find ${gccsubdir#/} -name "libgdruntim*"`
+D="$D "`find ${gccsubdir#/} -name "libgphobos*"`
+D="$D "`find ${gccsubdir#/} -name "d21*"`
+D="$D "${PREFIX#/}/bin/*-gdc*
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-d-${host}.tar.xz $D || exit 1
+rm -rf $D
+fi
+
+#
+# create a separate archive for the ada backend
+#
+if $with_ada; then
+ada=`find ${gccsubdir#/} -name adainclude`
+ada="$ada "`find ${gccsubdir#/} -name adalib`
+ada="$ada "`find ${gccsubdir#/} -name "gnat1*"`
+ada="$ada "${PREFIX#/}/bin/gnat*
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-ada-${host}.tar.xz $ada || exit 1
+rm -rf $ada
 fi
 
 #
