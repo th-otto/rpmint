@@ -318,9 +318,9 @@ if $with_ada; then
 		exit 1
 	fi
 	mkdir -p host-tools/bin
-	cp -a /usr/bin/gnatmake${adahostsuffix} host-tools/bin/gnatmake
-	cp -a /usr/bin/gnatlink${adahostsuffix} host-tools/bin/gnatlink
-	cp -a /usr/bin/gnatbind${adahostsuffix} host-tools/bin/gnatbind
+	cp -a -H /usr/bin/gnatmake${adahostsuffix} host-tools/bin/gnatmake
+	cp -a -H /usr/bin/gnatlink${adahostsuffix} host-tools/bin/gnatlink
+	cp -a -H /usr/bin/gnatbind${adahostsuffix} host-tools/bin/gnatbind
 	ln -sf /usr/lib64 host-tools/lib64
 	export PATH="`pwd`/host-tools/bin:$PATH"
 fi
