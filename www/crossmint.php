@@ -115,20 +115,21 @@ you should extract them by using <br />
 <p>&nbsp;</p>
 
 <p>
-The linux packages were built on openSUSE tumbleweed (kernel 5.3.12, glibc 2.30). They should
-work on other linux distros too, but will require at least glibc 2.14.</p>
-
-<p>&nbsp;</p>
-
-<p>
 The cygwin packages were built on a recent system (cygwin dll 2.10.0). Should there be problems,
 you may have to upgrade your version, or recompile it yourself.</p>
 
-<p>&nbsp;</p>
+<p>Note: On cygwin, sometimes tar fails to extract symlinks. Although cygwin
+supports symlinks on a NTFS filesystem, that filesystem cannot create links
+to non-existant files. Depending on whether the original file or link appears
+first in the archive, that might fail. Just extracting the same archive again
+should fix that.
+</p>
+
+<h1>Notes for linux:</h1>
 
 <p>
-The macOS packages were built on macOS 10.12 (Sierra), with a deployment target of 10.6 (Snow Leopard).
-</p>
+The linux packages were built on openSUSE tumbleweed (kernel 6.1.3, glibc 2.36). They should
+work on other linux distros too, but will require at least glibc 2.14.</p>
 
 <p>&nbsp;</p>
 
@@ -137,14 +138,20 @@ Everything is installed in <code>/usr/m68k-atari-mint</code> and <code>/usr/lib/
 If you want to completely uninstall the tools, you just have
 to remove these directories.</p>
 
+<h1>Notes for macOS:</h1>
+
+<p>
+The macOS packages were built on macOS 10.12 (Sierra), with a deployment target of 10.6 (Snow Leopard).
+</p>
+
+<p>
+Everything is installed in <code>/opt/crossmint</code>.<br />
+If you want to completely uninstall the tools, you just have
+to remove this directory.</p>
+
 <p>&nbsp;</p>
 
-<p>Note: On cygwin, sometimes tar fails to extract symlinks. Although cygwin
-supports symlinks on a NTFS filesystem, that filesystem cannot create links
-to non-existant files. Depending on whether the original file or link appears
-first in the archive, that might fail. Just extracting the same archive again
-should fix that.
-</p>
+<p>&nbsp;</p>
 
 <!--
 <p>&nbsp;</p>
@@ -2028,6 +2035,10 @@ This notably applies to Perl and Python.
 <li>2022/10/24 Update wolfssl to 5.5.1</li>
 
 <li>2023/01/11 Move D backend to separate archives</li>
+
+<li>2023/01/24 Add libde265 1.0.9</li>
+
+<li>2023/01/24 Add libheif 1.14.2</li>
 
 </ul>
 

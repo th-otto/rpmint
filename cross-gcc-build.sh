@@ -8,8 +8,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-10.4.0
-VERSIONPATCH=-20220818
+VERSION=-12.2.0
+VERSIONPATCH=-20230112
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -84,6 +84,11 @@ with_fortran=true
 # whether to include the D backend
 #
 with_D=true
+
+#
+# whether to include the ada backend
+#
+with_ada=true
 
 #
 # this patch can be recreated by
@@ -167,8 +172,10 @@ cd "$MINT_BUILD_DIR"
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
+enable_libphobos=
 languages=c,c++
 $with_fortran && languages="$languages,fortran"
+$with_ada && languages="$languages,ada"
 $with_D && languages="$languages,d"
 ranlib=ranlib
 
@@ -292,6 +299,9 @@ chmod 755 "${GXX_WRAPPER}"
 
 	export CC="${GCC_WRAPPER} $CPU_CFLAGS"
 	export CXX="${GXX_WRAPPER} $CPU_CFLAGS"
+	export GNATMAKE=${TARGET}-gnatmake
+	export GNATLINK=${TARGET}-gnatlink
+	export GNATBIND=${TARGET}-gnatbind
 
 	export LDFLAGS="$STACKSIZE"
 	export CFLAGS="-O2 -fomit-frame-pointer"
@@ -366,6 +376,14 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 		cd "${THISPKG_DIR}${TARGET_PREFIX}/${TARGET}/bin"
 		rm -f ${i} ${i}${TARGET_EXEEXT}
 		$LN_S ../../bin/$i${TARGET_EXEEXT} $i
+	done
+	
+	for i in gnat gnatbind gnatchop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep gnatxref; do
+		cd "${THISPKG_DIR}${TARGET_BINDIR}"
+		test -f "$i" || continue
+		rm -f ${TARGET}-${i} ${TARGET}-${i}${TARGET_EXEEXT}
+		mv $i ${TARGET}-$i
+		$LN_S ${TARGET}-$i $i
 	done
 	
 	cd "${THISPKG_DIR}${TARGET_BINDIR}"
@@ -527,6 +545,32 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 		fortran="$fortran "`find ${TARGET_PREFIX#/}/bin -name "*gfortran*"`
 		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${CPU}.tar.xz $fortran || exit 1
 		rm -rf $fortran
+	fi
+
+	#
+	# create a separate archive for the D backend
+	#
+	if $with_D; then
+		D=
+		test -d ${gccsubdir#/}include/d && D="$D "${gccsubdir#/}include/d
+		D="$D "`find ${gccsubdir#/} -name "libgdruntim*"`
+		D="$D "`find ${gccsubdir#/} -name "libgphobos*"`
+		D="$D "`find ${gccsubdir#/} -name "d21*"`
+		D="$D "${TARGET_PREFIX#/}/bin/*-gdc*
+		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-d-${CPU}.tar.xz $D || exit 1
+		rm -rf $D
+	fi
+
+	#
+	# create a separate archive for the ada backend
+	#
+	if $with_ada; then
+		ada=`find ${gccsubdir#/} -name adainclude`
+		ada="$ada "`find ${gccsubdir#/} -name adalib`
+		ada="$ada "`find ${gccsubdir#/} -name "gnat1*"`
+		ada="$ada "`find ${TARGET_PREFIX#/}/bin -name "*gnat*"`
+		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-ada-${CPU}.tar.xz $ada || exit 1
+		rm -rf $ada
 	fi
 
 	#

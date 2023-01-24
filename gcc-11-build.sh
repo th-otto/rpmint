@@ -432,7 +432,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 			fi
 		fi
 	done
-	for tool in gnat gnatbind gnatshop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep gnatxref; do
+	for tool in gnat gnatbind gnatchop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep gnatxref; do
 		if test -x ${TARGET}-${tool} && test ! -h ${TARGET}-${tool}; then
 			rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
 			mv ${TARGET}-${tool}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}

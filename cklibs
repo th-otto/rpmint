@@ -1,0 +1,19 @@
+TARGET=${1:-m68k-atari-mint}
+
+for i in cpp g++ gcc gcc-ar gcc-nm gcc-ranlib gconv gconv-dump gcov-tool gdc gfortran gnat gnatbind gnatlink gnatls; do
+	f=$HOME/mintstd/binary7-package/usr/bin/${TARGET}-$i
+	if test -f $f; then
+		ls -l $f
+		glibc-check $f
+		echo ""
+	fi
+done
+
+for i in cc1 cc1plus collect2 d21 f951 gnat1 lto-wrapper liblto_plugin.so.0.0.0; do
+	f=$HOME/mintstd/binary7-package/usr/lib64/gcc/${TARGET}/12/$i
+	if test -f $f; then
+		ls -l $f
+		glibc-check $f
+		echo ""
+	fi
+done

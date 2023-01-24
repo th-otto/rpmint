@@ -1,0 +1,569 @@
+diff -rup libde265-1.0.9-orig/dec265/hdrcopy.cc libde265-1.0.9/dec265/hdrcopy.cc
+--- libde265-1.0.9-orig/dec265/hdrcopy.cc	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/dec265/hdrcopy.cc	2023-01-24 13:55:43.484853516 +0100
+@@ -46,9 +46,9 @@ void process_nal(NAL_unit* nal)
+   bitreader_init(&reader, nal->data(), nal->size());
+ 
+   nal_header nal_hdr;
+-  nal_hdr.read(&reader);
++  nal_hdr.nal_read(&reader);
+   writer.write_startcode();
+-  nal_hdr.write(writer);
++  nal_hdr.nal_write(writer);
+ 
+   printf("NAL: 0x%x 0x%x -  unit type:%s temporal id:%d\n",
+          nal->data()[0], nal->data()[1],
+@@ -61,16 +61,16 @@ void process_nal(NAL_unit* nal)
+   }
+   else switch (nal_hdr.nal_unit_type) {
+     case NAL_UNIT_VPS_NUT:
+-      vps.read(&errqueue, &reader);
++      vps.vps_read(&errqueue, &reader);
+       vps.dump(1);
+-      vps.write(&errqueue, writer);
++      vps.vps_write(&errqueue, writer);
+       writer.flush_VLC();
+       break;
+ 
+     case NAL_UNIT_SPS_NUT:
+-      sps.read(&errqueue, &reader);
++      sps.sps_read_fix(&errqueue, &reader);
+       sps.dump(1);
+-      sps.write(&errqueue, writer);
++      sps.sps_write(&errqueue, writer);
+       writer.flush_VLC();
+       break;
+ 
+diff -rup libde265-1.0.9-orig/libde265/de265.cc libde265-1.0.9/libde265/de265.cc
+--- libde265-1.0.9-orig/libde265/de265.cc	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/de265.cc	2023-01-24 14:31:50.609973941 +0100
+@@ -173,16 +173,20 @@ LIBDE265_API int de265_isOK(de265_error
+ 
+ static int de265_init_count;
+ 
++#ifdef _GLIBCXX_HAS_GTHREADS
+ static std::mutex& de265_init_mutex()
+ {
+   static std::mutex de265_init_mutex;
+   return de265_init_mutex;
+ }
++#endif
+ 
+ 
+ LIBDE265_API de265_error de265_init()
+ {
++#ifdef _GLIBCXX_HAS_GTHREADS
+   std::lock_guard<std::mutex> lock(de265_init_mutex());
++#endif
+ 
+   de265_init_count++;
+ 
+@@ -207,7 +211,9 @@ LIBDE265_API de265_error de265_init()
+ 
+ LIBDE265_API de265_error de265_free()
+ {
++#ifdef _GLIBCXX_HAS_GTHREADS
+   std::lock_guard<std::mutex> lock(de265_init_mutex());
++#endif
+ 
+   if (de265_init_count<=0) {
+     return DE265_ERROR_LIBRARY_NOT_INITIALIZED;
+diff -rup libde265-1.0.9-orig/libde265/decctx.cc libde265-1.0.9/libde265/decctx.cc
+--- libde265-1.0.9-orig/libde265/decctx.cc	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/decctx.cc	2023-01-24 13:55:43.488853511 +0100
+@@ -531,7 +531,7 @@ de265_error decoder_context::read_vps_NA
+   logdebug(LogHeaders,"---> read VPS\n");
+ 
+   std::shared_ptr<video_parameter_set> new_vps = std::make_shared<video_parameter_set>();
+-  de265_error err = new_vps->read(this,&reader);
++  de265_error err = new_vps->vps_read(this,&reader);
+   if (err != DE265_OK) {
+     return err;
+   }
+@@ -552,7 +552,7 @@ de265_error decoder_context::read_sps_NA
+   std::shared_ptr<seq_parameter_set> new_sps = std::make_shared<seq_parameter_set>();
+   de265_error err;
+ 
+-  if ((err=new_sps->read(this, &reader)) != DE265_OK) {
++  if ((err=new_sps->sps_read_fix(this, &reader)) != DE265_OK) {
+     return err;
+   }
+ 
+@@ -580,7 +580,7 @@ de265_error decoder_context::read_pps_NA
+ 
+   std::shared_ptr<pic_parameter_set> new_pps = std::make_shared<pic_parameter_set>();
+ 
+-  bool success = new_pps->read(&reader,this);
++  bool success = new_pps->pps_read_fix(&reader,this);
+ 
+   if (param_pps_headers_fd>=0) {
+     new_pps->dump(param_pps_headers_fd);
+@@ -632,7 +632,7 @@ de265_error decoder_context::read_slice_
+ 
+   slice_segment_header* shdr = new slice_segment_header;
+   bool continueDecoding;
+-  de265_error err = shdr->read(&reader,this, &continueDecoding);
++  de265_error err = shdr->shdr_read(&reader,this, &continueDecoding);
+   if (!continueDecoding) {
+     if (img) { img->integrity = INTEGRITY_NOT_DECODED; }
+     nal_parser.free_NAL_unit(nal);
+@@ -1202,7 +1202,7 @@ de265_error decoder_context::decode_NAL(
+   bitreader_init(&reader, nal->data(), nal->size());
+ 
+   nal_header nal_hdr;
+-  nal_hdr.read(&reader);
++  nal_hdr.nal_read(&reader);
+   ctx->process_nal_hdr(&nal_hdr);
+ 
+   if (nal_hdr.nuh_layer_id > 0) {
+diff -rup libde265-1.0.9-orig/libde265/encoder/encoder-context.cc libde265-1.0.9/libde265/encoder/encoder-context.cc
+--- libde265-1.0.9-orig/libde265/encoder/encoder-context.cc	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/encoder/encoder-context.cc	2023-01-24 13:55:43.488853511 +0100
+@@ -25,7 +25,6 @@
+ 
+ #include <math.h>
+ 
+-
+ encoder_context::encoder_context()
+ {
+   encoder_started=false;
+@@ -174,8 +173,8 @@ de265_error encoder_context::encode_head
+   en265_packet* pck;
+ 
+   nal.set(NAL_UNIT_VPS_NUT);
+-  nal.write(cabac_encoder);
+-  vps->write(this, cabac_encoder);
++  nal.nal_write(cabac_encoder);
++  vps->vps_write(this, cabac_encoder);
+   cabac_encoder.add_trailing_bits();
+   cabac_encoder.flush_VLC();
+   pck = create_packet(EN265_PACKET_VPS);
+@@ -183,8 +182,8 @@ de265_error encoder_context::encode_head
+   output_packets.push_back(pck);
+ 
+   nal.set(NAL_UNIT_SPS_NUT);
+-  nal.write(cabac_encoder);
+-  sps->write(this, cabac_encoder);
++  nal.nal_write(cabac_encoder);
++  sps->sps_write(this, cabac_encoder);
+   cabac_encoder.add_trailing_bits();
+   cabac_encoder.flush_VLC();
+   pck = create_packet(EN265_PACKET_SPS);
+@@ -192,8 +191,8 @@ de265_error encoder_context::encode_head
+   output_packets.push_back(pck);
+ 
+   nal.set(NAL_UNIT_PPS_NUT);
+-  nal.write(cabac_encoder);
+-  pps->write(this, cabac_encoder, sps.get());
++  nal.nal_write(cabac_encoder);
++  pps->pps_write_fix(this, cabac_encoder, sps.get());
+   cabac_encoder.add_trailing_bits();
+   cabac_encoder.flush_VLC();
+   pck = create_packet(EN265_PACKET_PPS);
+@@ -271,8 +270,8 @@ de265_error encoder_context::encode_pict
+ 
+   //shdr.slice_pic_order_cnt_lsb = poc & 0xFF;
+ 
+-  imgdata->nal.write(cabac_encoder);
+-  imgdata->shdr.write(this, cabac_encoder, sps.get(), pps.get(), imgdata->nal.nal_unit_type);
++  imgdata->nal.nal_write(cabac_encoder);
++  imgdata->shdr.shdr_write(this, cabac_encoder, sps.get(), pps.get(), imgdata->nal.nal_unit_type);
+   cabac_encoder.add_trailing_bits();
+   cabac_encoder.flush_VLC();
+ 
+diff -rup libde265-1.0.9-orig/libde265/nal.cc libde265-1.0.9/libde265/nal.cc
+--- libde265-1.0.9-orig/libde265/nal.cc	2021-01-24 20:57:57.000000000 +0100
++++ libde265-1.0.9/libde265/nal.cc	2023-01-24 13:55:43.488853511 +0100
+@@ -23,7 +23,7 @@
+ #include <assert.h>
+ 
+ 
+-void nal_header::read(bitreader* reader)
++void nal_header::nal_read(bitreader* reader)
+ {
+   skip_bits(reader,1);
+   nal_unit_type = get_bits(reader,6);
+@@ -32,7 +32,7 @@ void nal_header::read(bitreader* reader)
+ }
+ 
+ 
+-void nal_header::write(CABAC_encoder& out) const
++void nal_header::nal_write(CABAC_encoder& out) const
+ {
+   out.skip_bits(1);
+   out.write_bits(nal_unit_type,6);
+diff -rup libde265-1.0.9-orig/libde265/nal.h libde265-1.0.9/libde265/nal.h
+--- libde265-1.0.9-orig/libde265/nal.h	2021-01-24 20:57:57.000000000 +0100
++++ libde265-1.0.9/libde265/nal.h	2023-01-24 13:55:43.488853511 +0100
+@@ -40,8 +40,8 @@ struct nal_header {
+     nuh_temporal_id = 0;
+   }
+ 
+-  void read(bitreader* reader);
+-  void write(CABAC_encoder& writer) const;
++  void nal_read(bitreader* reader);
++  void nal_write(CABAC_encoder& writer) const;
+ 
+   void set(int unit_type, int layer_id=0, int temporal_id=0) {
+     nal_unit_type  =unit_type;
+diff -rup libde265-1.0.9-orig/libde265/pps.cc libde265-1.0.9/libde265/pps.cc
+--- libde265-1.0.9-orig/libde265/pps.cc	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/pps.cc	2023-01-24 13:55:43.488853511 +0100
+@@ -44,7 +44,7 @@ void pps_range_extension::reset()
+ }
+ 
+ 
+-bool pps_range_extension::read(bitreader* br, decoder_context* ctx, const pic_parameter_set* pps)
++bool pps_range_extension::pps_range_read(bitreader* br, decoder_context* ctx, const pic_parameter_set* pps)
+ {
+   const seq_parameter_set* sps = ctx->get_sps(pps->seq_parameter_set_id);
+ 
+@@ -267,7 +267,7 @@ void pic_parameter_set::set_defaults(enu
+ }
+ 
+ 
+-bool pic_parameter_set::read(bitreader* br, decoder_context* ctx)
++bool pic_parameter_set::pps_read_fix(bitreader* br, decoder_context* ctx)
+ {
+   reset();
+ 
+@@ -506,7 +506,7 @@ bool pic_parameter_set::read(bitreader*
+     pps_extension_6bits = get_bits(br,6);
+ 
+     if (pps_range_extension_flag) {
+-      bool success = range_extension.read(br, ctx, this);
++      bool success = range_extension.pps_range_read(br, ctx, this);
+       if (!success) {
+         return false;
+       }
+@@ -720,7 +720,7 @@ void pic_parameter_set::set_derived_valu
+ }
+ 
+ 
+-bool pic_parameter_set::write(error_queue* errqueue, CABAC_encoder& out,
++bool pic_parameter_set::pps_write_fix(error_queue* errqueue, CABAC_encoder& out,
+                               const seq_parameter_set* sps)
+ {
+   if (pic_parameter_set_id >= DE265_MAX_PPS_SETS) {
+diff -rup libde265-1.0.9-orig/libde265/pps.h libde265-1.0.9/libde265/pps.h
+--- libde265-1.0.9-orig/libde265/pps.h	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/pps.h	2023-01-24 13:55:43.488853511 +0100
+@@ -41,7 +41,7 @@ class pps_range_extension
+ 
+   void reset();
+ 
+-  bool read(bitreader*, decoder_context*, const pic_parameter_set*);
++  bool pps_range_read(bitreader*, decoder_context*, const pic_parameter_set*);
+   void dump(int fd) const;
+ 
+   uint8_t log2_max_transform_skip_block_size;
+@@ -62,8 +62,8 @@ public:
+   ~pic_parameter_set();
+ 
+   void reset() { set_defaults(); }
+-  bool read(bitreader*, decoder_context*);
+-  bool write(error_queue*, CABAC_encoder&,
++  bool pps_read_fix(bitreader*, decoder_context*);
++  bool pps_write_fix(error_queue*, CABAC_encoder&,
+              const seq_parameter_set* sps);
+ 
+   bool is_tile_start_CTB(int ctbX,int ctbY) const;
+diff -rup libde265-1.0.9-orig/libde265/slice.cc libde265-1.0.9/libde265/slice.cc
+--- libde265-1.0.9-orig/libde265/slice.cc	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/slice.cc	2023-01-24 13:55:43.488853511 +0100
+@@ -353,7 +353,7 @@ void slice_segment_header::reset()
+ }
+ 
+ 
+-de265_error slice_segment_header::read(bitreader* br, decoder_context* ctx,
++de265_error slice_segment_header::shdr_read(bitreader* br, decoder_context* ctx,
+                                        bool* continueDecoding)
+ {
+   *continueDecoding = false;
+@@ -879,7 +879,7 @@ de265_error slice_segment_header::read(b
+ }
+ 
+ 
+-de265_error slice_segment_header::write(error_queue* errqueue, CABAC_encoder& out,
++de265_error slice_segment_header::shdr_write(error_queue* errqueue, CABAC_encoder& out,
+                                         const seq_parameter_set* sps,
+                                         const pic_parameter_set* pps,
+                                         uint8_t nal_unit_type)
+diff -rup libde265-1.0.9-orig/libde265/slice.h libde265-1.0.9/libde265/slice.h
+--- libde265-1.0.9-orig/libde265/slice.h	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/slice.h	2023-01-24 13:55:43.488853511 +0100
+@@ -133,8 +133,8 @@ public:
+     reset();
+   }
+ 
+-  de265_error read(bitreader* br, decoder_context*, bool* continueDecoding);
+-  de265_error write(error_queue*, CABAC_encoder&,
++  de265_error shdr_read(bitreader* br, decoder_context*, bool* continueDecoding);
++  de265_error shdr_write(error_queue*, CABAC_encoder&,
+                     const seq_parameter_set* sps,
+                     const pic_parameter_set* pps,
+                     uint8_t nal_unit_type);
+diff -rup libde265-1.0.9-orig/libde265/sps.cc libde265-1.0.9/libde265/sps.cc
+--- libde265-1.0.9-orig/libde265/sps.cc	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/sps.cc	2023-01-24 13:56:33.808788131 +0100
+@@ -195,7 +195,7 @@ void seq_parameter_set::set_resolution(i
+ }
+ 
+ 
+-de265_error seq_parameter_set::read(error_queue* errqueue, bitreader* br)
++de265_error seq_parameter_set::sps_read_fix(error_queue* errqueue, bitreader* br)
+ {
+   int vlc;
+ 
+@@ -207,7 +207,7 @@ de265_error seq_parameter_set::read(erro
+ 
+   sps_temporal_id_nesting_flag = get_bits(br,1);
+ 
+-  profile_tier_level_.read(br, sps_max_sub_layers);
++  profile_tier_level_.ptl_read(br, sps_max_sub_layers);
+ 
+   READ_VLC(seq_parameter_set_id, uvlc);
+   if (seq_parameter_set_id >= DE265_MAX_SPS_SETS) {
+@@ -435,7 +435,7 @@ de265_error seq_parameter_set::read(erro
+ 
+   vui_parameters_present_flag = get_bits(br,1);
+   if (vui_parameters_present_flag) {
+-    de265_error err = vui.read(errqueue, br, this);
++    de265_error err = vui.vui_read(errqueue, br, this);
+     if (err) {
+       return err;
+     }
+@@ -453,7 +453,7 @@ de265_error seq_parameter_set::read(erro
+   }
+ 
+   if (sps_range_extension_flag) {
+-    de265_error err = range_extension.read(errqueue, br);
++    de265_error err = range_extension.sps_range_read(errqueue, br);
+     if (err != DE265_OK) { return err; }
+   }
+ 
+@@ -1069,7 +1069,7 @@ void set_default_scaling_lists(scaling_l
+ }
+ 
+ 
+-de265_error seq_parameter_set::write(error_queue* errqueue, CABAC_encoder& out)
++de265_error seq_parameter_set::sps_write(error_queue* errqueue, CABAC_encoder& out)
+ {
+   out.write_bits(video_parameter_set_id, 4);
+   if (sps_max_sub_layers>7) {
+@@ -1079,7 +1079,7 @@ de265_error seq_parameter_set::write(err
+ 
+   out.write_bit(sps_temporal_id_nesting_flag);
+ 
+-  profile_tier_level_.write(out, sps_max_sub_layers);
++  profile_tier_level_.ptl_write(out, sps_max_sub_layers);
+ 
+   out.write_uvlc(seq_parameter_set_id);
+ 
+@@ -1295,7 +1295,7 @@ de265_error seq_parameter_set::write(err
+ }
+ 
+ 
+-de265_error sps_range_extension::read(error_queue* errqueue, bitreader* br)
++de265_error sps_range_extension::sps_range_read(error_queue* errqueue, bitreader* br)
+ {
+   transform_skip_rotation_enabled_flag    = get_bits(br,1);
+   transform_skip_context_enabled_flag     = get_bits(br,1);
+diff -rup libde265-1.0.9-orig/libde265/sps.h libde265-1.0.9/libde265/sps.h
+--- libde265-1.0.9-orig/libde265/sps.h	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/sps.h	2023-01-24 13:55:43.488853511 +0100
+@@ -78,7 +78,7 @@ class sps_range_extension
+   uint8_t persistent_rice_adaptation_enabled_flag;
+   uint8_t cabac_bypass_alignment_enabled_flag;
+ 
+-  de265_error read(error_queue*, bitreader*);
++  de265_error sps_range_read(error_queue*, bitreader*);
+   void dump(int fd) const;
+ };
+ 
+@@ -88,8 +88,8 @@ public:
+   seq_parameter_set();
+   ~seq_parameter_set();
+ 
+-  de265_error read(error_queue*, bitreader*);
+-  de265_error write(error_queue*, CABAC_encoder&);
++  de265_error sps_read_fix(error_queue*, bitreader*);
++  de265_error sps_write(error_queue*, CABAC_encoder&);
+ 
+   void dump(int fd) const;
+ 
+diff -rup libde265-1.0.9-orig/libde265/threads.h libde265-1.0.9/libde265/threads.h
+--- libde265-1.0.9-orig/libde265/threads.h	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/threads.h	2023-01-24 13:54:19.448962703 +0100
+@@ -41,6 +41,7 @@
+ typedef pthread_t        de265_thread;
+ typedef pthread_mutex_t  de265_mutex;
+ typedef pthread_cond_t   de265_cond;
++#undef system
+ 
+ #else // _WIN32
+ #if !defined(NOMINMAX)
+diff -rup libde265-1.0.9-orig/libde265/vps.cc libde265-1.0.9/libde265/vps.cc
+--- libde265-1.0.9-orig/libde265/vps.cc	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/vps.cc	2023-01-24 13:55:43.488853511 +0100
+@@ -99,7 +99,7 @@ void video_parameter_set::set_defaults(e
+ }
+ 
+ 
+-de265_error video_parameter_set::read(error_queue* errqueue, bitreader* reader)
++de265_error video_parameter_set::vps_read(error_queue* errqueue, bitreader* reader)
+ {
+   int vlc;
+ 
+@@ -116,7 +116,7 @@ de265_error video_parameter_set::read(er
+   vps_temporal_id_nesting_flag = get_bits(reader,1);
+   skip_bits(reader, 16);
+ 
+-  profile_tier_level_.read(reader, vps_max_sub_layers);
++  profile_tier_level_.ptl_read(reader, vps_max_sub_layers);
+ 
+   /*
+     read_bit_rate_pic_rate_info(reader, &bit_rate_pic_rate_info,
+@@ -221,7 +221,7 @@ if (layer[i].vps_max_dec_pic_buffering =
+ }
+ 
+ 
+-de265_error video_parameter_set::write(error_queue* errqueue, CABAC_encoder& out) const
++de265_error video_parameter_set::vps_write(error_queue* errqueue, CABAC_encoder& out) const
+ {
+   if (video_parameter_set_id >= DE265_MAX_VPS_SETS) return DE265_ERROR_CODED_PARAMETER_OUT_OF_RANGE;
+   out.write_bits(video_parameter_set_id,4);
+@@ -235,7 +235,7 @@ de265_error video_parameter_set::write(e
+   out.write_bit(vps_temporal_id_nesting_flag);
+   out.write_bits(0xFFFF, 16);
+ 
+-  profile_tier_level_.write(out, vps_max_sub_layers);
++  profile_tier_level_.ptl_write(out, vps_max_sub_layers);
+ 
+   /*
+   read_bit_rate_pic_rate_info(reader, &bit_rate_pic_rate_info,
+@@ -307,7 +307,7 @@ de265_error video_parameter_set::write(e
+ }
+ 
+ 
+-void profile_data::read(bitreader* reader)
++void profile_data::pdata_read(bitreader* reader)
+ {
+   if (profile_present_flag) {
+     profile_space = get_bits(reader,2);
+@@ -331,14 +331,14 @@ void profile_data::read(bitreader* reade
+ }
+ 
+ 
+-void profile_tier_level::read(bitreader* reader,
++void profile_tier_level::ptl_read(bitreader* reader,
+                               int max_sub_layers)
+ {
+   // --- read the general profile ---
+ 
+   general.profile_present_flag = true;
+   general.level_present_flag = true;
+-  general.read(reader);
++  general.pdata_read(reader);
+ 
+ 
+   // --- read the profile/levels of the sub-layers ---
+@@ -359,12 +359,12 @@ void profile_tier_level::read(bitreader*
+ 
+   for (int i=0; i<max_sub_layers-1; i++)
+     {
+-      sub_layer[i].read(reader);
++      sub_layer[i].pdata_read(reader);
+     }
+ }
+ 
+ 
+-void profile_data::write(CABAC_encoder& out) const
++void profile_data::pdata_write(CABAC_encoder& out) const
+ {
+   if (profile_present_flag)
+     {
+@@ -390,12 +390,12 @@ void profile_data::write(CABAC_encoder&
+     }
+ }
+ 
+-void profile_tier_level::write(CABAC_encoder& out, int max_sub_layers) const
++void profile_tier_level::ptl_write(CABAC_encoder& out, int max_sub_layers) const
+ {
+   assert(general.profile_present_flag==true);
+   assert(general.level_present_flag==true);
+ 
+-  general.write(out);
++  general.pdata_write(out);
+ 
+   for (int i=0; i<max_sub_layers-1; i++)
+     {
+@@ -413,7 +413,7 @@ void profile_tier_level::write(CABAC_enc
+ 
+   for (int i=0; i<max_sub_layers-1; i++)
+     {
+-      sub_layer[i].write(out);
++      sub_layer[i].pdata_write(out);
+     }
+ }
+ 
+diff -rup libde265-1.0.9-orig/libde265/vps.h libde265-1.0.9/libde265/vps.h
+--- libde265-1.0.9-orig/libde265/vps.h	2021-01-24 20:57:57.000000000 +0100
++++ libde265-1.0.9/libde265/vps.h	2023-01-24 13:55:43.488853511 +0100
+@@ -50,8 +50,8 @@ enum profile_idc {
+ 
+ class profile_data {
+ public:
+-  void read(bitreader* reader);
+-  void write(CABAC_encoder& writer) const;
++  void pdata_read(bitreader* reader);
++  void pdata_write(CABAC_encoder& writer) const;
+   void dump(bool general, FILE* fh) const;
+ 
+   void set_defaults(enum profile_idc, int level_major, int level_minor);
+@@ -82,8 +82,8 @@ public:
+ class profile_tier_level
+ {
+ public:
+-  void read(bitreader* reader, int max_sub_layers);
+-  void write(CABAC_encoder& writer, int max_sub_layers) const;
++  void ptl_read(bitreader* reader, int max_sub_layers);
++  void ptl_write(CABAC_encoder& writer, int max_sub_layers) const;
+   void dump(int max_sub_layers, FILE* fh) const;
+ 
+   profile_data general;
+@@ -129,8 +129,8 @@ typedef struct {
+ class video_parameter_set
+ {
+ public:
+-  de265_error read(error_queue* errqueue, bitreader* reader);
+-  de265_error write(error_queue* errqueue, CABAC_encoder& out) const;
++  de265_error vps_read(error_queue* errqueue, bitreader* reader);
++  de265_error vps_write(error_queue* errqueue, CABAC_encoder& out) const;
+   void dump(int fd) const;
+ 
+   void set_defaults(enum profile_idc profile, int level_major, int level_minor);
+diff -rup libde265-1.0.9-orig/libde265/vui.cc libde265-1.0.9/libde265/vui.cc
+--- libde265-1.0.9-orig/libde265/vui.cc	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/vui.cc	2023-01-24 13:55:43.488853511 +0100
+@@ -229,7 +229,7 @@ de265_error video_usability_information:
+   return DE265_OK;
+ }
+ 
+-de265_error video_usability_information::read(error_queue* errqueue, bitreader* br,
++de265_error video_usability_information::vui_read(error_queue* errqueue, bitreader* br,
+                                               const seq_parameter_set* sps)
+ {
+   int vlc;
+diff -rup libde265-1.0.9-orig/libde265/vui.h libde265-1.0.9/libde265/vui.h
+--- libde265-1.0.9-orig/libde265/vui.h	2022-10-18 11:34:40.000000000 +0200
++++ libde265-1.0.9/libde265/vui.h	2023-01-24 13:57:36.536706629 +0100
+@@ -48,7 +48,7 @@ class video_usability_information
+   video_usability_information();
+   
+   de265_error hrd_parameters(error_queue*, bitreader*, const seq_parameter_set*);
+-  de265_error read(error_queue*, bitreader*, const seq_parameter_set*);
++  de265_error vui_read(error_queue*, bitreader*, const seq_parameter_set*);
+   void dump(int fd) const;
+ 
+ 

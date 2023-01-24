@@ -7,25 +7,18 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-12.2.0
-VERSIONPATCH=-20230112
+VERSION=-6.2.1
+VERSIONPATCH=-20220824
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
 # For which target we build-
 # should be either m68k-atari-mint or m68k-atari-mintelf
 #
-TARGET=${1:-m68k-atari-mint}
+TARGET=${1:-m68k-amigaos}
 
 #
-# The hosts compiler.
-# To build the 32bit version for linux,
-# invoke this script with
-# GCC="gcc -m32" GXX="g++ -m32"
-# You will also need to have various 32bit flavours
-# of system libraries installed.
-# For other 32bit hosts (mingw32 and cygwin32)
-# use the appropriate shell for that system.
+# the hosts compiler
 #
 GCC=${GCC-gcc}
 GXX=${GXX-g++}
@@ -54,6 +47,26 @@ case $host in
 	mingw* | msys*) PREFIX=${MINGW_PREFIX} ;;
 	macos*) PREFIX=/opt/cross-mint ;;
 	*) PREFIX=/usr ;;
+esac
+case $TARGET in
+	m68k-amigaos*)
+		PATH="/opt/amiga/bin:$PATH"
+		PREFIX=/opt/amiga
+		sysroot=
+		headers=--with-headers=$PREFIX/$TARGET/sys-include
+		if test ! -f "${PREFIX}/${TARGET}/sys-include/_newlib_version.h"; then
+			echo "amigaos headers must be installed in ${PREFIX}/${TARGET}/sys-include" >&2
+			exit 1
+		fi
+		;;
+	*)
+		sysroot=--with-sysroot="${PREFIX}/${TARGET}/sys-root"
+		headers=
+		if test ! -f "${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h"; then
+			echo "mintlib headers must be installed in ${PREFIX}/${TARGET}/sys-root/usr/include" >&2
+			exit 1
+		fi
+		;;
 esac
 
 #
@@ -84,14 +97,14 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
+MINT_BUILD_DIR="$BUILD_DIR/amiga-build"
 
 #
 # Where to put the executables for later use.
 # This should be the same as the one configured
 # in the binutils script
 #
-PKG_DIR="$here/binary7-package"
+PKG_DIR="$here/amiga-package"
 
 #
 # Where to put the binary packages
@@ -103,55 +116,36 @@ DIST_DIR="$here/pkgs"
 #
 srcdir="$HOME/m68k-atari-mint-gcc"
 if test -d "$srcdir"; then
-	touch ".patched-${PACKAGENAME}${VERSION}"
+	if test -f "$srcdir/gcc/config/m68k/mint.h"; then
+		# MiNT patches already applied
+		touch ".patched-${PACKAGENAME}${VERSION}"
+	fi
 else
-	srcdir="$here/${PACKAGENAME}${VERSION}"
+	echo "$srcdir not found" >&2
+	echo "please clone https://github.com/th-otto/m68k-atari-mint-gcc" >&2
+	echo "and checkout the mint/gcc-6 branch" >&2
+	exit 1 
 fi
 
 #
 # whether to include the fortran backend
 #
-with_fortran=true
+with_fortran=false
 
 #
 # whether to include the D backend
 #
-with_D=true
-
-#
-# whether to include the ada backend
-#
-with_ada=true
+with_D=false
 
 #
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
-# - checking out the mint/gcc-12 branch
-# - running git diff releases/gcc-12.2.0 HEAD
-#
-# when a new GCC is released:
-#   cd <directory where m68k-atari-mint-gcc.git> has been cloned
-#   fetch new commits from upstream:
-#      git checkout master
-#      git pull --rebase upstream master
-#      git push
-#   fetch new tags etc:
-#      git fetch --all
-#      git push --tags
-#   merge new release into our branch:
-#      git checkout mint/gcc-12
-#      git merge releases/gcc-12.2.0 (& commit)
-#      git push
+# - checking out the mint/gcc-6 branch
+# - running git diff releases/gcc-6.5.0 HEAD
 #
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
-	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
-	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
-	         "${PACKAGENAME}${VERSION}.tar.xz" \
-	         "${PACKAGENAME}${VERSION}.tar.bz2"; do
-		if test -f "$f"; then tar xvf "$f" || exit 1; fi
-	done
 	if test ! -d "$srcdir"; then
 		echo "$srcdir: no such directory" >&2
 		exit 1
@@ -170,10 +164,6 @@ fi
 
 if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
-	exit 1
-fi
-if test ! -f "${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h"; then
-	echo "mintlib headers must be installed in ${PREFIX}/${TARGET}/sys-root/usr/include" >&2
 	exit 1
 fi
 
@@ -200,7 +190,7 @@ if test "$BASE_VER" != "${VERSION#-}"; then
 	echo "version mismatch: this script is for gcc ${VERSION#-}, but gcc source is version $BASE_VER" >&2
 	exit 1
 fi
-gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
+gcc_dir_version=${BASE_VER}
 gccsubdir=${BUILD_LIBDIR}/gcc/${TARGET}/${gcc_dir_version}
 gxxinclude=/usr/include/c++/${gcc_dir_version}
 
@@ -227,7 +217,7 @@ mkdir -p "$MINT_BUILD_DIR"
 
 cd "$MINT_BUILD_DIR"
 
-CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer"
+CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer -Wno-implicit-fallthrough"
 CFLAGS_FOR_TARGET="-O2 -fomit-frame-pointer"
 LDFLAGS_FOR_BUILD=""
 CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
@@ -236,11 +226,9 @@ LDFLAGS_FOR_TARGET=
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
-enable_libphobos=
-languages=c,c++
+languages=c
 $with_fortran && languages="$languages,fortran"
-$with_ada && languages="$languages,ada"
-$with_D && { languages="$languages,d"; enable_libphobos=; } # --enable-libphobos does not work because of missing swapcontext() in mintlib
+$with_D && languages="$languages,d"
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -283,54 +271,23 @@ fi
 
 mpfr_config=
 
-unset GLIBC_SO
-
 case $host in
 	macos*)
 		GCC=/usr/bin/clang
 		GXX=/usr/bin/clang++
-		export MACOSX_DEPLOYMENT_TARGET=10.7
+		export MACOSX_DEPLOYMENT_TARGET=10.6
 		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
 		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
 		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
 		mpfr_config="--with-mpc=${CROSSTOOL_DIR} --with-gmp=${CROSSTOOL_DIR} --with-mpfr=${CROSSTOOL_DIR}"
 		;;
-	linux64)
-		CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD -include $srcdir/gcc/libcwrap.h"
-		CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
-		export GLIBC_SO="$srcdir/gcc/glibc.so"
-		;;
 esac
 
 case $BUILD in
 	i686-*-msys* | x86_64-*-msys*)
-		# we use in-tree versions of those libraries now
-		# mpfr_config="--with-mpc=${MINGW_PREFIX} --with-gmp=${MINGW_PREFIX} --with-mpfr=${MINGW_PREFIX}"
+		mpfr_config="--with-mpc=${MINGW_PREFIX} --with-gmp=${MINGW_PREFIX} --with-mpfr=${MINGW_PREFIX}"
 		;;
 esac
-
-if $with_ada; then
-# Using the host gnatmake like
-#   CC="gcc%%{hostsuffix}" GNATBIND="gnatbind%%{hostsuffix}"
-#   GNATMAKE="gnatmake%%{hostsuffix}"
-# doesn't work due to PR33857, so an un-suffixed gnatmake has to be
-# available
-	adahostsuffix=-12
-	if test ! -x /usr/bin/gnatmake${adahostsuffix}; then
-		echo "need gnatmake${adahostsuffix} to build ada" >&2
-		exit 1
-	fi
-	mkdir -p host-tools/bin
-	cp -a -H /usr/bin/gnatmake${adahostsuffix} host-tools/bin/gnatmake
-	cp -a -H /usr/bin/gnatlink${adahostsuffix} host-tools/bin/gnatlink
-	cp -a -H /usr/bin/gnatbind${adahostsuffix} host-tools/bin/gnatbind
-	if test $host = linux64; then
-		ln -sf /usr/lib64 host-tools/lib64
-	else
-		ln -sf /usr/lib host-tools/lib
-	fi
-	export PATH="`pwd`/host-tools/bin:$PATH"
-fi
 
 export CC="${GCC}"
 export CXX="${GXX}"
@@ -357,17 +314,14 @@ $srcdir/configure \
 	--disable-werror \
 	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root${gxxinclude} \
 	--with-default-libstdcxx-abi=gcc4-compatible \
-	--with-gcc-major-version-only \
 	--with-gcc --with-gnu-as --with-gnu-ld \
 	--with-system-zlib \
-	--without-static-standard-libraries \
 	--disable-libgomp \
 	--without-newlib \
 	--disable-libstdcxx-pch \
 	--disable-threads \
 	--disable-win32-registry \
 	$enable_lto \
-	$enable_libphobos \
 	--enable-ssp \
 	--enable-libssp \
 	$enable_plugin \
@@ -376,7 +330,8 @@ $srcdir/configure \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
 	$mpfr_config \
-	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
+	$headers \
+	$sysroot \
 	--enable-languages="$languages"
 
 case $host in
@@ -440,13 +395,6 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 			fi
 		fi
 	done
-	for tool in gnat gnatbind gnatchop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep gnatxref; do
-		if test -x ${TARGET}-${tool} && test ! -h ${TARGET}-${tool}; then
-			rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
-			mv ${TARGET}-${tool}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
-			$LN_S ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}${BUILD_EXEEXT}
-		fi
-	done
 	if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
 		rm -f ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}
 		mv ${TARGET}-cpp${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT}
@@ -471,6 +419,13 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		esac
 	done
 	
+	# This is a experimental for of gcc-6,
+	# and we don't want it to replace the default compilers
+	for f in c++ cpp g++ gcc gcc-ar gcc-nm gcc-ranlib gcov gcov gcov-dump gcov-tool; do
+		rm -f "${INSTALL_DIR}/${PREFIX}/bin/${TARGET}-$f"
+		rm -f "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin/$f"
+	done
+
 	rm -f */*/libiberty.a
 	find . -type f -name "*.la" -delete -printf "rm %p\n"
 
@@ -561,38 +516,13 @@ rm -rf ${PREFIX#/}/share/gcc*/python
 # create a separate archive for the fortran backend
 #
 if $with_fortran; then
-	fortran=`find ${gccsubdir#/} -name finclude`
-	fortran="$fortran "${gccsubdir#/}/f951
-	fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
-	fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
-	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
-	rm -rf $fortran
-fi
-
-#
-# create a separate archive for the D backend
-#
-if $with_D; then
-	D=
-	test -d ${gccsubdir#/}include/d && D="$D "${gccsubdir#/}include/d
-	D="$D "`find ${gccsubdir#/} -name "libgdruntim*"`
-	D="$D "`find ${gccsubdir#/} -name "libgphobos*"`
-	D="$D "`find ${gccsubdir#/} -name "d21*"`
-	D="$D "${PREFIX#/}/bin/*-gdc*
-	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-d-${host}.tar.xz $D || exit 1
-	rm -rf $D
-fi
-
-#
-# create a separate archive for the ada backend
-#
-if $with_ada; then
-	ada=`find ${gccsubdir#/} -name adainclude`
-	ada="$ada "`find ${gccsubdir#/} -name adalib`
-	ada="$ada "`find ${gccsubdir#/} -name "gnat1*"`
-	ada="$ada "${PREFIX#/}/bin/${TARGET}-gnat*
-	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-ada-${host}.tar.xz $ada || exit 1
-	rm -rf $ada
+fortran=${gccsubdir#/}/finclude
+fortran="$fortran "${gccsubdir#/}/*/finclude
+fortran="$fortran "${gccsubdir#/}/f951
+fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
+fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
+rm -rf $fortran
 fi
 
 #

@@ -1,0 +1,50 @@
+diff -rup libheif-1.14.2.orig/examples/heif_thumbnailer.cc libheif-1.14.2/examples/heif_thumbnailer.cc
+--- libheif-1.14.2.orig/examples/heif_thumbnailer.cc	2023-01-03 12:53:56.000000000 +0100
++++ libheif-1.14.2/examples/heif_thumbnailer.cc	2023-01-24 15:56:39.670983885 +0100
+@@ -31,6 +31,7 @@
+ #if defined(HAVE_UNISTD_H)
+ #  include <unistd.h>
+ #endif
++#include <getopt.h>
+ 
+ #include <string>
+ #include <iostream>
+diff -rup libheif-1.14.2.orig/libheif/heif_colorconversion.cc libheif-1.14.2/libheif/heif_colorconversion.cc
+--- libheif-1.14.2.orig/libheif/heif_colorconversion.cc	2023-01-03 12:53:56.000000000 +0100
++++ libheif-1.14.2/libheif/heif_colorconversion.cc	2023-01-24 15:55:34.183075675 +0100
+@@ -872,10 +872,17 @@ Op_YCbCr420_to_RGB24::convert_colorspace
+                                                  colorProfile->get_colour_primaries());
+   }
+ 
++#if __cplusplus >= 201103L && defined(_GLIBCXX_USE_C99_MATH_TR1)
+   int r_cr = static_cast<int>(std::lround(256 * coeffs.r_cr));
+   int g_cr = static_cast<int>(std::lround(256 * coeffs.g_cr));
+   int g_cb = static_cast<int>(std::lround(256 * coeffs.g_cb));
+   int b_cb = static_cast<int>(std::lround(256 * coeffs.b_cb));
++#else
++  int r_cr = static_cast<int>(round(256 * coeffs.r_cr));
++  int g_cr = static_cast<int>(round(256 * coeffs.g_cr));
++  int g_cb = static_cast<int>(round(256 * coeffs.g_cb));
++  int b_cb = static_cast<int>(round(256 * coeffs.b_cb));
++#endif
+ 
+   const uint8_t* in_y, * in_cb, * in_cr;
+   int in_y_stride = 0, in_cb_stride = 0, in_cr_stride = 0;
+@@ -995,10 +1002,17 @@ Op_YCbCr420_to_RGB32::convert_colorspace
+                                                  colorProfile->get_colour_primaries());
+   }
+ 
++#if __cplusplus >= 201103L && defined(_GLIBCXX_USE_C99_MATH_TR1)
+   int r_cr = static_cast<int>(std::lround(256 * coeffs.r_cr));
+   int g_cr = static_cast<int>(std::lround(256 * coeffs.g_cr));
+   int g_cb = static_cast<int>(std::lround(256 * coeffs.g_cb));
+   int b_cb = static_cast<int>(std::lround(256 * coeffs.b_cb));
++#else
++  int r_cr = static_cast<int>(::round(256 * coeffs.r_cr));
++  int g_cr = static_cast<int>(::round(256 * coeffs.g_cr));
++  int g_cb = static_cast<int>(::round(256 * coeffs.g_cb));
++  int b_cb = static_cast<int>(::round(256 * coeffs.b_cb));
++#endif
+ 
+ 
+   const bool with_alpha = input->has_channel(heif_channel_Alpha);

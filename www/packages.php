@@ -112,6 +112,47 @@ The full documentation can be found
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
+/*
+	'gcc1220' => array(
+		'name' => 'gcc',
+		'title' => 'GCC',
+		'upstream' => 'http://gcc.gnu.org/',
+		'version' => '12.2.0',
+		'date' => '20230112',
+		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
+		'branch' => 'mint/gcc-12',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
+		'patch' => 1,
+		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
+		'script' => 1,
+		'crossscript' => 1,
+		'doc' => 1,
+		'elf' => 1,
+		'fortran' => 1,
+		'D' => 1,
+		'ada' => 1,
+		'cygwin32' => 1,
+		'cygwin64' => 1,
+		'mingw32' => 1,
+		'mingw64' => 0,
+		'linux32' => 1,
+		'linux64' => 1,
+		'macos32' => 0,
+		'macos64' => 1,
+		'atari' => 1,
+		'comment' => '
+This is the currently most recent official version of GCC. It comes in two
+flavours: one for an a.out toolchain (as with the previously used version
+4.6.4), and one for an elf toolchain. Elf toolchain here means that it
+will still produce the same executable format, but works with elf object
+files. To support this better, all libraries offered here were also recompiled
+using this format (although theoretically it should be possible to mix them).<br />
+<br />
+<span style="color:red">Note:</span> This version now was compiled against fdlibm; it is strongly recommended to
+use fdlibm instead of the ancient pml math library.
+'
+	),
+*/
 	'gcc1040' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
@@ -140,15 +181,7 @@ GCC contains everything to compile C programs, except a standard library and a m
 		'macos64' => 1,
 		'atari' => 1,
 		'comment' => '
-This is the currently most recent official version of GCC. It comes in two
-flavours: one for an a.out toolchain (as with the previously used version
-4.6.4), and one for an elf toolchain. Elf toolchain here means that it
-will still produce the same executable format, but works with elf object
-files. To support this better, all libraries offered here were also recompiled
-using this format (although theoretically it should be possible to mix them).<br />
-<br />
-<span style="color:red">Note:</span> This version now was compiled against fdlibm; it is strongly recommended to
-use fdlibm instead of the ancient pml math library.
+Slightly older version of GCC.
 '
 	),
 	'gcc931' => array(
@@ -2705,6 +2738,54 @@ well. wolfSSL supports industry standards up to the current TLS 1.3 and
 DTLS 1.3, is up to 20 times smaller than OpenSSL, offers a simple API,
 an OpenSSL compatibility layer, OCSP and CRL support, is backed by the
 robust wolfCrypt cryptography library, and much more.
+'
+	),
+	'libde265' => array(
+		'name' => 'libde265',
+		'upstream' => 'https://github.com/strukturag/libde265/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'repo' => 'https://github.com/strukturag/libde265',
+		'version' => '1.0.9',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+libde265 is an open source implementation of the h.265 video codec. It
+is written from scratch and has a plain C API to enable a simple
+integration into other software.
+</br>
+</br></br>
+Needs the pth library from above.</br>
+You need to use g++ to link against this library.
+Original MiNT-Patch contributed by medmed.</br>
+'
+	),
+	'libheif' => array(
+		'name' => 'libheif',
+		'upstream' => 'https://github.com/strukturag/libheif/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'repo' => 'https://github.com/strukturag/libheif',
+		'version' => '1.14.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'comment' => '
+libheif is an ISO/IEC 23008-12:2017 HEIF and AVIF (AV1 Image File
+Format) file format decoder and encoder.
+</br>
+HEIF and AVIF are new image file formats employing HEVC (h.265) or AV1
+image coding, respectively, for the best compression ratios currently
+possible.
+</br>
+libheif makes use of libde265 for HEIF image decoding and x265 for
+encoding. For AVIF, libaom, dav1d, svt-av1, or rav1e are used as
+codecs.
 '
 	),
 /*
