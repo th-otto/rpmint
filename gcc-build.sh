@@ -309,31 +309,43 @@ case $BUILD in
 		;;
 esac
 
+case $GCC in
+	*-[0-9]*)
+		adahostsuffix=-"${GCC##*-}"
+		;;
+	*)
+		adahostsuffix=
+		;;
+esac
 if $with_ada; then
 # Using the host gnatmake like
 #   CC="gcc%%{hostsuffix}" GNATBIND="gnatbind%%{hostsuffix}"
 #   GNATMAKE="gnatmake%%{hostsuffix}"
 # doesn't work due to PR33857, so an un-suffixed gnatmake has to be
 # available
-	adahostsuffix=-12
 	if test ! -x /usr/bin/gnatmake${adahostsuffix}; then
 		echo "need gnatmake${adahostsuffix} to build ada" >&2
 		exit 1
 	fi
 	mkdir -p host-tools/bin
-	cp -a -H /usr/bin/gnatmake${adahostsuffix} host-tools/bin/gnatmake
-	cp -a -H /usr/bin/gnatlink${adahostsuffix} host-tools/bin/gnatlink
-	cp -a -H /usr/bin/gnatbind${adahostsuffix} host-tools/bin/gnatbind
+	$LN_S -f /usr/bin/gnatmake${adahostsuffix} host-tools/bin/gnatmake
+	$LN_S -f /usr/bin/gnatlink${adahostsuffix} host-tools/bin/gnatlink
+	$LN_S -f /usr/bin/gnatbind${adahostsuffix} host-tools/bin/gnatbind
+	$LN_S -f /usr/bin/gnatls${adahostsuffix} host-tools/bin/gnatls
+	$LN_S -f /usr/bin/gcc${adahostsuffix} host-tools/bin/gcc
 	if test $host = linux64; then
-		ln -sf /usr/lib64 host-tools/lib64
+		$LN_S -f /usr/lib64 host-tools/lib64
 	else
-		ln -sf /usr/lib host-tools/lib
+		$LN_S -f /usr/lib host-tools/lib
 	fi
 	export PATH="`pwd`/host-tools/bin:$PATH"
 fi
 
 export CC="${GCC}"
 export CXX="${GXX}"
+GNATMAKE="gnatmake${adahostsuffix}"
+GNATBIND="gnatbind${adahostsuffix}"
+GNATLINK="gnatlink${adahostsuffix}"
 
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
@@ -350,6 +362,9 @@ $srcdir/configure \
 	CXXFLAGS_FOR_TARGET="$CXXFLAGS_FOR_TARGET" \
 	LDFLAGS_FOR_BUILD="$LDFLAGS_FOR_BUILD" \
 	LDFLAGS="$LDFLAGS_FOR_BUILD" \
+	GNATMAKE_FOR_HOST="${GNATMAKE}" \
+	GNATBIND_FOR_HOST="${GNATBIND}" \
+	GNATLINK_FOR_HOST="${GNATLINK}" \
 	--with-pkgversion="$REVISION" \
 	--disable-libvtv \
 	--disable-libmpx \
