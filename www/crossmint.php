@@ -384,7 +384,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-d-cygwin32.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['ada'])
+		if ($package['ada'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -431,7 +431,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-d-cygwin32.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['ada'])
+			if ($package['ada'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -484,7 +484,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-d-cygwin64.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['ada'])
+		if ($package['ada'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -531,7 +531,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-d-cygwin64.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['ada'])
+			if ($package['ada'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -584,7 +584,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-d-mingw32.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['ada'])
+		if ($package['ada'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -631,7 +631,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-d-mingw32.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['ada'])
+			if ($package['ada'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -684,7 +684,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-d-mingw64.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['ada'])
+		if ($package['ada'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -731,7 +731,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-d-mingw64.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['ada'])
+			if ($package['ada'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -993,7 +993,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-d-macos.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['ada'])
+		if ($package['ada'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -1040,7 +1040,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-d-macos.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['ada'])
+			if ($package['ada'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -1084,7 +1084,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-d-000.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['ada'])
+		if ($package['ada'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -1119,7 +1119,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-d-000.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['ada'])
+			if ($package['ada'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -1154,7 +1154,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-d-020.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['ada'])
+		if ($package['ada'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -1189,7 +1189,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-d-020.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['ada'])
+			if ($package['ada'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -1224,7 +1224,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-d-v4e.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['ada'])
+		if ($package['ada'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -1259,7 +1259,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-d-v4e.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['ada'])
+			if ($package['ada'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";

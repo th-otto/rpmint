@@ -122,6 +122,15 @@ with_D=true
 # whether to include the ada backend
 #
 with_ada=true
+case $host in
+	linux64 | linux32)
+		;;
+	*)
+		# ADA is currently only available for linux
+		with_ada=false
+		;;
+esac
+
 
 #
 # this patch can be recreated by
