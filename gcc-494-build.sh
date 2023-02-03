@@ -7,8 +7,8 @@
 me="$0"
 
 PACKAGENAME=gcc
-VERSION=-4.6.4
-VERSIONPATCH=-20200502
+VERSION=-4.9.4
+VERSIONPATCH=-20230203
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -21,7 +21,7 @@ TARGET=m68k-atari-mint
 # the hosts compiler
 #
 GCC=${GCC-gcc}
-GXX=${GXX-g++}
+GXX=${GXX-g++ -std=gnu++11}
 
 #
 # The prefix where the executables should
@@ -77,7 +77,7 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-build4"
+MINT_BUILD_DIR="$BUILD_DIR/gcc-build49"
 
 #
 # Where to put the executables for later use.
@@ -99,15 +99,14 @@ srcdir="${PACKAGENAME}${VERSION}"
 #
 # whether to include the fortran backend
 #
-with_fortran=true
+with_fortran=false
 
 #
 # whether to include the D backend
 #
 with_D=false
 
-PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
-	patches/gcc/${PACKAGENAME}${VERSION}-fastcall.patch"
+PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
@@ -457,12 +456,13 @@ rm -rf ${PREFIX#/}/share/gcc*/python
 # create a separate archive for the fortran backend
 #
 if $with_fortran; then
-	fortran=`find ${gccsubdir#/} -name finclude`
-	fortran="$fortran "${gccsubdir#/}/f951
-	fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
-	fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
-	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
-	rm -rf $fortran
+fortran=${gccsubdir#/}/finclude
+fortran="$fortran "${gccsubdir#/}/*/finclude
+fortran="$fortran "${gccsubdir#/}/f951
+fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
+fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
+rm -rf $fortran
 fi
 
 #
