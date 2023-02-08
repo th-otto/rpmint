@@ -9,7 +9,7 @@ me="$0"
 
 PACKAGENAME=binutils
 VERSION=-2.39
-VERSIONPATCH=-20220911
+VERSIONPATCH=-20230206
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
@@ -75,7 +75,7 @@ if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
 	         "${PACKAGENAME}${VERSION}.tar.xz" \
 	         "${PACKAGENAME}${VERSION}.tar.bz2"; do
-		if test -f "$f"; then tar xvf "$f" || exit 1; fi
+		if test -f "$f"; then $TAR xf "$f" || exit 1; fi
 	done
 	if test ! -d "$srcdir"; then
 		echo "$srcdir: no such directory" >&2
@@ -165,6 +165,9 @@ case "${TARGET}" in
     	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
     	bfd_targets="${bfd_targets}m68k-atari-mintelf"
 		;;
+    *-*-darwin*)
+        bfd_targets="${bfd_targets},aarch64-apple-darwin"
+		;;
 esac
 
 rm -rf "$MINT_BUILD_DIR"
@@ -180,10 +183,21 @@ case $host in
 	macos*)
 		GCC=/usr/bin/clang
 		GXX=/usr/bin/clang++
-		export MACOSX_DEPLOYMENT_TARGET=10.6
-		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
-		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
-		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
+		MACOSX_DEPLOYMENT_TARGET=10.6
+		ARCHS="-arch x86_64"
+		case `$GCC --print-target-triple 2>/dev/null` in
+		arm64* | aarch64*)
+			BUILD_ARM64=yes
+			;;
+		esac
+		if test "$BUILD_ARM64" = yes; then
+			ARCHS="${ARCHS} -arch arm64"
+			MACOSX_DEPLOYMENT_TARGET=11
+		fi
+		export MACOSX_DEPLOYMENT_TARGET
+		CFLAGS_FOR_BUILD="-pipe -O2 ${ARCHS}"
+		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ ${ARCHS}"
+		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names ${ARCHS}"
 		;;
 esac
 

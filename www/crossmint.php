@@ -141,7 +141,14 @@ to remove these directories.</p>
 <h1>Notes for macOS:</h1>
 
 <p>
-The macOS packages were built on macOS 10.12 (Sierra), with a deployment target of 10.6 (Snow Leopard).
+The macOS packages were built on macOS 10.13 (High Sierra), with a deployment target of 10.9 (Mavericks).
+</p>
+
+<p>
+Some of the packages (binutils, gcc &amp; mintbin) are now also available as universal x86_64/arm64 binaries.
+Those are build using the same scripts as provided here, but are run in a github runner. The whole repo for these
+script is available <a href="https://github.com/th-otto/crossmint/" title="crossmint">here</a>. The resulting binaries
+are available <a href="snapshots/crossmint/macos" title="macos">here<a>.
 </p>
 
 <p>
@@ -1290,7 +1297,7 @@ foreach ($basepackages as $key => $package)
 <h1>Complete toolchains</h1>
 
 <p>These archives are just repackaged from the packages above, and some packages below.
-Particularly, they contain the packages for binutils, GCC, mintbin, gemlib, pml,
+Particularly, they contain the packages for binutils, GCC, mintbin, gemlib, fdlibm,
 mintlib, and cflib.</p>
 
 <p>&nbsp;</p>

@@ -75,12 +75,12 @@ ARCHIVES_DIR=$HOME/packages
 #
 test -z "${PACKAGENAME}" && { echo "PACKAGENAME not set" >&2; exit 1; }
 test -z "${VERSION}" && { echo "VERSION not set" >&2; exit 1; }
-srcdir="$here/${PACKAGENAME}${VERSION}"
+srcdir="${here}/${PACKAGENAME}${VERSION}"
 
 #
 # Where to look for patches, write logs etc.
 #
-BUILD_DIR="$here"
+BUILD_DIR="${here}"
 
 #
 # Where to configure and build the package
@@ -92,12 +92,12 @@ MINT_BUILD_DIR="$srcdir"
 # This should be the same as the one configured
 # in the binutils script
 #
-PKG_DIR="$here/binary7-package"
+PKG_DIR="${here}/binary7-package"
 
 #
 # Where to put the binary packages
 #
-DIST_DIR="$here/pkgs"
+DIST_DIR="${here}/pkgs"
 
 
 BUILD_EXEEXT=
@@ -182,6 +182,41 @@ case "${TARGET}" in
 		;;
 esac
 
+
+#
+# install binutils & gcc if needed
+#
+if test ! -f "${prefix}/bin/${TARGET}-${ranlib}"; then
+	if test "${GITHUB_REPOSITORY}" != ""; then
+		echo "fetching binutils"
+		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.39-${TARGET##*-}-20230206-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
+		echo "fetching gcc"
+		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/gcc-7/gcc-7.5.0-${TARGET##*-}-20230206-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
+		if test "${PACKAGENAME}" != mintbin; then
+			echo "fetching mintbin"
+			wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/mintbin/mintbin-0.3-${TARGET##*-}-20230206-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
+		fi
+		if test "${prefix}" != /usr; then
+			export PATH="${prefix}/bin:$PATH"
+		fi
+	fi
+fi
+
+#
+# install mintlib & fdlibm if needed
+#
+if ! test -f ${sysroot}/usr/include/compiler.h; then
+	if test "${GITHUB_REPOSITORY}" != ""; then
+		sudo mkdir -p "${sysroot}/usr"
+		echo "fetching mintlib"
+		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-latest.tar.bz2" | sudo $TAR -C "${sysroot}/usr" -xjf -
+		echo "fetching fdlibm"
+		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-latest.tar.bz2" | sudo $TAR -C "${sysroot}/usr" -xjf -
+	fi
+fi
+
+
+
 gcc=`which "${TARGET}-gcc"`
 cxx=`which "${TARGET}-g++"`
 ar="${TARGET}-ar"
@@ -208,11 +243,11 @@ unpack_archive()
 		         "$ARCHIVES_DIR/${srcarchive}.tar.bz2" \
 		         "$ARCHIVES_DIR/${srcarchive}.tar.gz" \
 		         "$ARCHIVES_DIR/${srcarchive}.tgz" \
-		         "${here}${srcarchive}.tar.xz" \
-		         "${here}${srcarchive}.tar.lz" \
-		         "${here}${srcarchive}.tar.bz2" \
-		         "${here}${srcarchive}.tar.gz" \
-		         "${here}${srcarchive}.tgz"; do
+		         "${here}/${srcarchive}.tar.xz" \
+		         "${here}/${srcarchive}.tar.lz" \
+		         "${here}/${srcarchive}.tar.bz2" \
+		         "${here}/${srcarchive}.tar.gz" \
+		         "${here}/${srcarchive}.tgz"; do
 			if test -f "$f"; then missing=false; tar xf "$f" || exit 1; fi
 		done
 		if $missing; then
