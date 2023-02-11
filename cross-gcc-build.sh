@@ -9,7 +9,7 @@ me="$0"
 
 PACKAGENAME=gcc
 VERSION=-12.2.0
-VERSIONPATCH=-20230112
+VERSIONPATCH=-20230210
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -82,13 +82,14 @@ with_fortran=true
 
 #
 # whether to include the D backend
+# (currently does not work natively because of missing libphobos)
 #
-with_D=true
+with_D=false
 
 #
 # whether to include the ada backend
 #
-with_ada=true
+with_ada=false
 
 #
 # this patch can be recreated by
@@ -176,7 +177,7 @@ enable_libphobos=
 languages=c,c++
 $with_fortran && languages="$languages,fortran"
 $with_ada && languages="$languages,ada"
-$with_D && languages="$languages,d"
+$with_D && { languages="$languages,d"; enable_libphobos=; } # --enable-libphobos does not work because of missing swapcontext() in mintlib
 ranlib=ranlib
 
 case "${TARGET}" in
@@ -328,6 +329,7 @@ chmod 755 "${GXX_WRAPPER}"
 		--disable-threads \
 		--disable-win32-registry \
 		$enable_lto \
+		$enable_libphobos \
 		--enable-ssp \
 		--enable-libssp \
 		$enable_plugin \

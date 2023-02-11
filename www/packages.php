@@ -112,13 +112,12 @@ The full documentation can be found
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
-/*
 	'gcc1220' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '12.2.0',
-		'date' => '20230112',
+		'date' => '20230210',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-12',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
@@ -135,7 +134,7 @@ GCC contains everything to compile C programs, except a standard library and a m
 		'cygwin64' => 1,
 		'mingw32' => 1,
 		'mingw64' => 0,
-		'linux32' => 1,
+		'linux32' => 0,
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
@@ -152,7 +151,6 @@ using this format (although theoretically it should be possible to mix them).<br
 use fdlibm instead of the ancient pml math library.
 '
 	),
-*/
 	'gcc1040' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
@@ -355,7 +353,7 @@ For a comparison to fdlibm, see <a href="math.php">Math libraries for Atari</a>
 	'fdlibm' => array(
 		'name' => 'fdlibm',
 		'upstream' => 'https://www.netlib.org/fdlibm/',
-		'version' => '20200108',
+		'version' => '20230210',
 		'repo' => 'https://github.com/freemint/fdlibm/',
 		'branch' => 'master',
 		'patch' => 0,

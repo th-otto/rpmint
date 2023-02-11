@@ -8,7 +8,7 @@ me="$0"
 
 PACKAGENAME=gcc
 VERSION=-4.6.4
-VERSIONPATCH=-20230206
+VERSIONPATCH=-20230210
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -137,12 +137,23 @@ patches/gmp/gmp-6.2.1-arm64-invert_limb.patch
 "
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
+	found=false
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
 	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
 	         "${PACKAGENAME}${VERSION}.tar.xz" \
 	         "${PACKAGENAME}${VERSION}.tar.bz2"; do
-		if test -f "$f"; then $TAR xf "$f" || exit 1; fi
+		if test -f "$f"; then
+			found=true
+			$TAR xf "$f" || exit 1
+			break
+		fi
 	done
+	if ! $found; then
+		echo "no archive found for ${PACKAGENAME}${VERSION}" >&2
+		echo "download it from https://ftp.gnu.org/gnu/gcc/ and" >&2
+		echo "put it in this directory, or in $ARCHIVES_DIR" >&2
+		exit 1
+	fi
 	if test ! -d "$srcdir"; then
 		echo "$srcdir: no such directory" >&2
 		exit 1
@@ -171,9 +182,7 @@ if ! test -f ${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
 		sudo mkdir -p ${PREFIX}/${TARGET}/sys-root/usr
 		echo "fetching mintlib"
-		# wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
-		# hack to get libstdc++ configured
-		wget -q -O - "https://tho-otto.de/download/mint/${TARGET}-mintlib-fastcall.tar.xz" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xJf -
+		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
 		echo "fetching fdlibm"
 		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
 	fi

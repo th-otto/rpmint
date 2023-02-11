@@ -8,7 +8,7 @@ me="$0"
 
 PACKAGENAME=gcc
 VERSION=-12.2.0
-VERSIONPATCH=-20230112
+VERSIONPATCH=-20230210
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -166,12 +166,23 @@ patches/gmp/gmp-6.2.1-arm64-invert_limb.patch
 "
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
+	found=false
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
 	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
 	         "${PACKAGENAME}${VERSION}.tar.xz" \
 	         "${PACKAGENAME}${VERSION}.tar.bz2"; do
-		if test -f "$f"; then $TAR xf "$f" || exit 1; fi
+		if test -f "$f"; then
+			found=true
+			$TAR xf "$f" || exit 1
+			break
+		fi
 	done
+	if ! $found; then
+		echo "no archive found for ${PACKAGENAME}${VERSION}" >&2
+		echo "download it from https://ftp.gnu.org/gnu/gcc/ and" >&2
+		echo "put it in this directory, or in $ARCHIVES_DIR" >&2
+		exit 1
+	fi
 	if test ! -d "$srcdir"; then
 		echo "$srcdir: no such directory" >&2
 		exit 1
@@ -798,6 +809,8 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	}
 
 	# these are currently identically compiled 2 times; FIXME
+	# this only happens if gcc was patched to put the m68000 libraries also
+	# in a sub-directory of /usr/lib
 	m68000=`"${INSTALL_DIR}/${PREFIX}/bin/${TARGET}-gcc" -m68000 -print-multi-directory`
 	if test "$m68000" = "m68000"; then
 		for dir in . mshort mfastcall mfastcall/mshort; do

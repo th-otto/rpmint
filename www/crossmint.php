@@ -379,7 +379,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-fortran-cygwin32.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['D'])
+		if ($package['D'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -426,7 +426,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-fortran-cygwin32.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['D'])
+			if ($package['D'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -479,7 +479,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-fortran-cygwin64.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['D'])
+		if ($package['D'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -526,7 +526,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-fortran-cygwin64.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['D'])
+			if ($package['D'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -579,7 +579,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-fortran-mingw32.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['D'])
+		if ($package['D'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -626,7 +626,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-fortran-mingw32.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['D'])
+			if ($package['D'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -679,7 +679,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-fortran-mingw64.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['D'])
+		if ($package['D'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -726,7 +726,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-fortran-mingw64.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['D'])
+			if ($package['D'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -988,7 +988,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-fortran-macos.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['D'])
+		if ($package['D'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -1035,7 +1035,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-fortran-macos.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['D'])
+			if ($package['D'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -1082,7 +1082,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-fortran-000.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['D'])
+		if ($package['D'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -1117,7 +1117,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-fortran-000.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['D'])
+			if ($package['D'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -1152,7 +1152,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-fortran-020.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['D'])
+		if ($package['D'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -1187,7 +1187,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-fortran-020.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['D'])
+			if ($package['D'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -1222,7 +1222,7 @@ foreach ($basepackages as $key => $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mint-fortran-v4e.tar.xz';
 			gen_link($filename, $text);
 		}
-		if ($package['D'])
+		if ($package['D'] && 0)
 		{
 			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
@@ -1257,7 +1257,7 @@ foreach ($basepackages as $key => $package)
 				$text = $package['name'] . '-' . $package['version'] . '-mintelf-fortran-v4e.tar.xz';
 				gen_link($filename, $text);
 			}
-			if ($package['D'])
+			if ($package['D'] && 0)
 			{
 				echo '</td>' . "\n";
 				echo '</tr>' . "\n";
@@ -2047,6 +2047,10 @@ This notably applies to Perl and Python.
 
 <li>2023/01/24 Add libheif 1.14.2</li>
 
+<li>2023/02/11 Update fdlibm</li>
+
+<li>2023/02/11 Update gcc to version 12.2.0</li>
+
 </ul>
 
 <p></p>
@@ -2214,6 +2218,13 @@ gcc 10.2.0:
 	cygwin64: 88min
 	macos:   32min
 	linux:   6min23sec
+
+gcc 12.2.0:
+	mingw32: 76min
+	cygwin32: 129min
+	cygwin64: 129min
+	macos:   57min
+	linux:   11min8sec
 
 -->
 </body>
