@@ -2055,6 +2055,8 @@ This notably applies to Perl and Python.
 
 <li>2023/02/12 Recompile binutils for linux</li>
 
+<li>2023/02/12 Update mintlib</li>
+
 </ul>
 
 <p></p>

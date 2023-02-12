@@ -19,8 +19,8 @@ fi
 
 fullname=`sed -n 's/Name:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
 echo "pkgname: ${fullname}"
-version=`sed -n 's/Version:[ \t]*\(.*\)/\1/p' "$specfile"`
-release=`sed -n 's/Release:[ \t]*\(.*\)/\1/p' "$specfile"`
+version=`sed -n 's/^Version:[ \t]*\(.*\)/\1/p' "$specfile"`
+release=`sed -n 's/^Release:[ \t]*\(.*\)/\1/p' "$specfile"`
 arch=
 if test "$arch" = ""; then
 	rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
