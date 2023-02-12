@@ -1,0 +1,84 @@
+#!/bin/sh
+
+me="$0"
+scriptdir=${0%/*}
+
+. ${scriptdir}/debfuncs.sh
+
+pkgname="$1"
+test "${pkgname}" == "" && {
+	echo "missing package name" >&2
+	exit 1
+}
+
+specfile="${topdir}/SPECS/${pkgname}.spec"
+if ! test -f "$specfile"; then
+	echo "package ${pkgname} not found" >&2
+	exit 1
+fi
+
+fullname=`sed -n 's/Name:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
+echo "pkgname: ${fullname}"
+version=`sed -n 's/Version:[ \t]*\(.*\)/\1/p' "$specfile"`
+release=`sed -n 's/Release:[ \t]*\(.*\)/\1/p' "$specfile"`
+arch=
+if test "$arch" = ""; then
+	rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
+	if test -f "$rpmfile"; then
+		arch="all"
+	fi
+fi
+if test "$arch" = ""; then
+	rpmfile="$RPMS/x86_64/${fullname}-${version}-${release}.x86_64.rpm"
+	if test -f "$rpmfile"; then
+		arch="amd64"
+	fi
+fi
+if test "$arch" = ""; then
+	echo "no rpmfile found" >&2
+	exit 1
+fi
+#rpm -q --info "$rpmfile"
+
+pkgdir="${DEBIAN}/specs/${pkgname}"
+mkdir -p "${pkgdir}/DEBIAN"
+
+maintainer=`rpm -q --queryformat '%{packager}' "$rpmfile"`
+url=`rpm -q --queryformat '%{url}' "$rpmfile"`
+summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
+description=`rpm -q --queryformat '%{description}' "$rpmfile" | sed -e 's/^$/./' -e 's/^/ /'`
+requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib`
+
+if test "${requires}" != ""; then
+	requires="Depends: "`echo ${requires} | sed -e 's/ /,/g'
+`
+fi
+
+cd "${pkgdir}"
+
+cat << EOF > "DEBIAN/control"
+Package: ${fullname}
+Version: ${version}-${release}
+Maintainer: ${maintainer}
+Architecture: ${arch}
+Homepage: ${url}
+${requires}Description: ${summary}
+${description}
+
+
+EOF
+
+
+rm -f *.deb control.tar.xz data.tar.xz debian-binary md5sums control
+rm -rf usr etc
+
+rpm2cpio "$rpmfile" | cpio -id
+find usr -type f | xargs md5sum > DEBIAN/md5sums
+if test -d etc; then find etc -type f | xargs md5sum >> DEBIAN/md5sums; fi
+
+rm -rf usr etc
+
+dpkg --build . "$POOL/main" || exit 1
+
+debfile="${fullname}_${version}-${release}_${arch}.deb"
+

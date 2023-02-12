@@ -1,0 +1,65 @@
+#!/bin/sh
+
+me="$0"
+scriptdir=${0%/*}
+
+. ${scriptdir}/debfuncs.sh
+
+gpg_name=CC2E22F1B6492FD3EACFF8BF3C9569A568969A28
+
+cd "${REPO}" || exit 1
+for dist in xenial bionic focal jammy kinetic; do
+	mkdir -p "dists/${dist}/main/binary-amd64"
+	mkdir -p "dists/${dist}/main/binary-i386"
+	mkdir -p "dists/${dist}/main/all"
+	dpkg-scanpackages --arch amd64 pool/main > dists/${dist}/main/binary-amd64/Packages
+	dpkg-scanpackages --arch i386 pool/main > dists/${dist}/main/binary-i386/Packages
+	dpkg-scanpackages --arch all pool/main > dists/${dist}/main/all/Packages
+done
+find dists -name Packages | xargs -n 1 gzip -f -9 -k
+find dists -name Packages | xargs -n 1 xz -f -9 -k
+
+
+do_hash() {
+    HASH_NAME=$1
+    HASH_CMD=$2
+    echo "${HASH_NAME}:"
+    for f in $(find -type f); do
+        f=$(echo $f | cut -c3-) # remove ./ prefix
+        if [ "$f" = "Release" ]; then
+            continue
+        fi
+        echo " $(${HASH_CMD} ${f}  | cut -d" " -f1) $(wc -c $f)"
+    done
+}
+
+generate_release() {
+dist=$1
+distvers=$2
+mkdir -p "${REPO}/dists/${dist}"
+cd "${REPO}/dists/${dist}" || exit 1
+cat << EOF > Release
+Origin: apt_repo-thotto
+Label: crossmint
+Suite: ${dist}
+Codename: ${dist}
+Version: ${distvers}
+Architectures: amd64 arm64 i386
+Components: main
+Description: m68k-atari-mint cross-tools for Ubuntu ${dist} ${distvers}
+Date: $(date -Ru)
+EOF
+do_hash "MD5Sum" "md5sum" >> Release
+do_hash "SHA1" "sha1sum" >> Release
+do_hash "SHA256" "sha256sum" >> Release
+#gpg --armor --export ${gpg_name} > Release.gpg
+cat Release | gpg --default-key ${gpg_name} -abs > Release.gpg
+cat Release | gpg --default-key ${gpg_name} -abs --clearsign > InRelease
+}
+
+
+generate_release xenial 16.04
+generate_release bionic 18.04
+generate_release focal 20.04
+generate_release jammy 22.04
+generate_release kinetic 22.10
