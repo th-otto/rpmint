@@ -2051,6 +2051,8 @@ This notably applies to Perl and Python.
 
 <li>2023/02/11 Update gcc to version 12.2.0</li>
 
+<li>2023/02/12 Update gemlib</li>
+
 </ul>
 
 <p></p>
