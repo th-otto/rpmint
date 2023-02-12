@@ -2053,6 +2053,8 @@ This notably applies to Perl and Python.
 
 <li>2023/02/12 Update gemlib</li>
 
+<li>2023/02/12 Recompile binutils for linux</li>
+
 </ul>
 
 <p></p>

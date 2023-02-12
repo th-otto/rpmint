@@ -56,9 +56,36 @@ index 670e0598f55..118ed69f0b7 100644
  	    -e "s,@bfd_version_string@,$$bfd_version_string," \
  	    -e "s,@bfd_version_package@,$$bfd_version_package," \
 diff --git a/bfd/Makefile.in b/bfd/Makefile.in
-index a26f74d7199..9094b84cf16 100644
+index a26f74d7199..b83e9140ba3 100644
 --- a/bfd/Makefile.in
 +++ b/bfd/Makefile.in
+@@ -187,7 +187,7 @@ am__objects_1 = archive.lo archures.lo bfd.lo bfdio.lo bfdwin.lo \
+ 	format.lo hash.lo init.lo libbfd.lo linker.lo merge.lo \
+ 	opncls.lo reloc.lo section.lo simple.lo stab-syms.lo stabs.lo \
+ 	syms.lo targets.lo binary.lo ihex.lo srec.lo tekhex.lo \
+-	verilog.lo
++	verilog.lo stat64.lo
+ am_libbfd_la_OBJECTS = $(am__objects_1)
+ libbfd_la_OBJECTS = $(am_libbfd_la_OBJECTS)
+ AM_V_lt = $(am__v_lt_@AM_V@)
+@@ -542,7 +542,7 @@ BFD32_LIBS = \
+ 	coff-bfd.lo compress.lo corefile.lo elf-properties.lo format.lo \
+ 	hash.lo init.lo libbfd.lo linker.lo merge.lo opncls.lo reloc.lo \
+ 	section.lo simple.lo stab-syms.lo stabs.lo syms.lo targets.lo \
+-	binary.lo ihex.lo srec.lo tekhex.lo verilog.lo
++	binary.lo ihex.lo srec.lo tekhex.lo verilog.lo stat64.lo
+ 
+ BFD64_LIBS = archive64.lo
+ BFD32_LIBS_CFILES = \
+@@ -550,7 +550,7 @@ BFD32_LIBS_CFILES = \
+ 	compress.c corefile.c elf-properties.c format.c hash.c \
+ 	init.c libbfd.c linker.c merge.c opncls.c reloc.c \
+ 	section.c simple.c stab-syms.c stabs.c syms.c targets.c \
+-	binary.c ihex.c srec.c tekhex.c verilog.c
++	binary.c ihex.c srec.c tekhex.c verilog.c stat64.c
+ 
+ BFD64_LIBS_CFILES = archive64.c
+ 
 @@ -728,6 +728,7 @@ ALL_MACHINES_CFILES = \
  BFD32_BACKENDS = \
  	aout-cris.lo \
@@ -946,6 +973,16 @@ index a4c6c8e8854..429f67a6602 100644
    m68*-*-*)
      targ_defvec=m68k_elf32_vec
      ;;
+diff --git a/bfd/config.in b/bfd/config.in
+index f54a3cacbea..78d76f3ee3f 100644
+--- a/bfd/config.in
++++ b/bfd/config.in
+@@ -341,3 +341,5 @@
+ 
+ /* Use structured /proc on Solaris. */
+ #undef _STRUCTURED_PROC
++
++#include "libcwrap.h"
 diff --git a/bfd/configure b/bfd/configure
 index 4f591b750d8..ef601e7c6c6 100755
 --- a/bfd/configure
@@ -1175,6 +1212,15 @@ index 26ef78359db..21423a35901 100644
  #endif
    if (arch[0] == '1')
      {
+diff --git a/bfd/glibc.so b/bfd/glibc.so
+new file mode 100644
+index 00000000000..408ef8ba856
+--- /dev/null
++++ b/bfd/glibc.so
+@@ -0,0 +1,3 @@
++/* GNU ld script  */
++OUTPUT_FORMAT(elf64-x86-64)
++GROUP ( /lib64/libdl.so.2 /lib64/libc.so.6 /usr/lib64/libc_nonshared.a AS_NEEDED ( /lib64/ld-linux-x86-64.so.2 ) )
 diff --git a/bfd/libaout.h b/bfd/libaout.h
 index 31b24d3af2b..f1e46db84f3 100644
 --- a/bfd/libaout.h
@@ -2966,6 +3012,118 @@ index 36999fe9a40..1291d32f762 100644
    return flag;
  }
  
+diff --git a/bfd/stat64.c b/bfd/stat64.c
+new file mode 100644
+index 00000000000..5e77c91c95e
+--- /dev/null
++++ b/bfd/stat64.c
+@@ -0,0 +1,106 @@
++#ifndef _GNU_SOURCE
++#define _GNU_SOURCE
++#endif
++#define _FILE_OFFSET_BITS 64
++
++#define __asm__(x)
++#include <sys/stat.h>
++#undef __asm__
++
++#include "libcwrap.h"
++
++#if defined (__cplusplus)
++extern "C" {
++#endif
++
++#ifdef __LINUX_GLIBC_WRAP_H
++
++#if __GLIBC_PREREQ(2, 33)
++
++#include <stdarg.h>
++#include <fcntl.h>
++
++/*
++ * avoid references to stat/lstat/fstat, which are only available in glibc >= 2.33
++ */
++
++extern int __fxstat(int __ver, int __fildes, struct stat *__stat_buf)
++     __attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (3)));
++extern int __xstat(int __ver, const char *__filename,
++      struct stat *__stat_buf) __attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (2, 3)));
++extern int __lxstat(int __ver, const char *__filename,
++       struct stat *__stat_buf) __attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (2, 3)));
++extern int __fxstatat (int __ver, int __fildes, const char *__filename,
++         struct stat *__stat_buf, int __flag)
++     __attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (3, 4)));
++#ifdef __USE_LARGEFILE64
++extern int __xstat64(int __ver, const char *__filename,
++      struct stat64 *__stat_buf) __attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (2, 3)));
++extern int __lxstat64(int __ver, const char *__filename,
++       struct stat64 *__stat_buf) __attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (2, 3)));
++extern int __fxstat64(int __ver, int __fildes, struct stat64 *__stat_buf)
++     __attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (3)));
++#endif
++
++__attribute__((__nothrow__))
++int stat(const char *__path, struct stat *__statbuf)
++{
++	return __xstat(1, __path, __statbuf);
++}
++
++__attribute__((__nothrow__)) 
++int lstat (const char *__path, struct stat *__statbuf)
++{
++	return __lxstat(1, __path, __statbuf);
++}
++
++__attribute__((__nothrow__)) 
++int fstat(int __fd, struct stat *__statbuf)
++{
++	return __fxstat(1, __fd, __statbuf);
++}
++
++__attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (1, 2)))
++int stat64(const char *__restrict __path, struct stat64 *__restrict __statbuf)
++{
++	return __xstat64(1, __path, __statbuf);
++}
++
++__attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (1, 2)))
++int lstat64 (const char *__restrict __path, struct stat64 *__restrict __statbuf)
++{
++	return __lxstat64(1, __path, __statbuf);
++}
++
++__attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (2)))
++int fstat64(int __fd, struct stat64 *__statbuf)
++{
++	return __fxstat64(1, __fd, __statbuf);
++}
++
++__attribute__((__nothrow__)) 
++int fstatat(int __fd, const char *__restrict __filename, struct stat *__restrict __statbuf, int __flag)
++{
++	return __fxstatat(1, __fd, __filename, __statbuf, __flag);
++}
++
++#undef fcntl
++int fcntl64(int fd, int cmd, ...)
++{
++  va_list ap;
++  void *arg;
++
++  va_start (ap, cmd);
++  arg = va_arg (ap, void *);
++  va_end (ap);
++
++  return fcntl(fd, cmd, arg);
++}
++
++#endif /* __GLIBC_PREREQ */
++
++#endif /* __linux__ */
++
++#if defined (__cplusplus)
++}
++#endif
 diff --git a/bfd/targets.c b/bfd/targets.c
 index 3284bb88aa8..eba2e8f00a4 100644
 --- a/bfd/targets.c
@@ -3003,7 +3161,7 @@ index 3284bb88aa8..eba2e8f00a4 100644
  	&s12z_elf32_vec,
  
 diff --git a/binutils/Makefile.am b/binutils/Makefile.am
-index 751fbacce12..271351f1948 100644
+index 751fbacce12..ec1703ae8d3 100644
 --- a/binutils/Makefile.am
 +++ b/binutils/Makefile.am
 @@ -35,7 +35,7 @@ EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
@@ -3015,8 +3173,80 @@ index 751fbacce12..271351f1948 100644
  
  # Automake 1.10+ disables lex and yacc output file regeneration if
  # maintainer mode is disabled.  Avoid this.
+@@ -247,7 +247,7 @@ dllwrap_DEPENDENCIES =   $(LIBINTL_DEP) $(LIBIBERTY)
+ bfdtest1_DEPENDENCIES =  $(LIBINTL_DEP) $(LIBIBERTY) $(BFDLIB)
+ bfdtest2_DEPENDENCIES =  $(LIBINTL_DEP) $(LIBIBERTY) $(BFDLIB)
+ 
+-LDADD = $(BFDLIB) $(LIBIBERTY) $(LIBINTL)
++LDADD = $(BFDLIB) $(LIBIBERTY) $(LIBINTL) $(GLIBC_SO)
+ 
+ size_SOURCES = size.c $(BULIBS)
+ 
+@@ -256,10 +256,10 @@ objcopy_SOURCES = objcopy.c not-strip.c rename.c $(WRITE_DEBUG_SRCS) $(BULIBS)
+ strings_SOURCES = strings.c $(BULIBS)
+ 
+ readelf_SOURCES = readelf.c version.c unwind-ia64.c dwarf.c demanguse.c $(ELFLIBS)
+-readelf_LDADD   = $(LIBCTF_NOBFD) $(LIBINTL) $(LIBIBERTY) $(ZLIB) $(DEBUGINFOD_LIBS) $(MSGPACK_LIBS)
++readelf_LDADD   = ../bfd/stat64.o $(LIBCTF_NOBFD) $(LIBINTL) $(LIBIBERTY) $(ZLIB) $(DEBUGINFOD_LIBS) $(MSGPACK_LIBS) $(GLIBC_SO)
+ 
+ elfedit_SOURCES = elfedit.c version.c $(ELFLIBS)
+-elfedit_LDADD = $(LIBINTL) $(LIBIBERTY)
++elfedit_LDADD = ../bfd/stat64.o $(LIBINTL) $(LIBIBERTY) $(GLIBC_SO)
+ 
+ strip_new_SOURCES = objcopy.c is-strip.c rename.c $(WRITE_DEBUG_SRCS) $(BULIBS)
+ 
+@@ -267,7 +267,7 @@ nm_new_SOURCES = nm.c demanguse.c $(BULIBS)
+ 
+ objdump_SOURCES = objdump.c dwarf.c prdbg.c demanguse.c $(DEBUG_SRCS) $(BULIBS) $(ELFLIBS)
+ EXTRA_objdump_SOURCES = od-xcoff.c
+-objdump_LDADD = $(OBJDUMP_PRIVATE_OFILES) $(OPCODES) $(LIBCTF) $(BFDLIB) $(LIBIBERTY) $(LIBINTL) $(DEBUGINFOD_LIBS)
++objdump_LDADD = $(OBJDUMP_PRIVATE_OFILES) $(OPCODES) $(LIBCTF) $(BFDLIB) $(LIBIBERTY) $(LIBINTL) $(DEBUGINFOD_LIBS) $(GLIBC_SO)
+ 
+ objdump.@OBJEXT@:objdump.c
+ if am__fastdepCC
+@@ -286,11 +286,11 @@ cxxfilt_SOURCES = cxxfilt.c $(BULIBS)
+ ar_SOURCES = arparse.y arlex.l ar.c not-ranlib.c arsup.c rename.c binemul.c \
+ 	emul_$(EMULATION).c $(BULIBS)
+ EXTRA_ar_SOURCES = $(CFILES)
+-ar_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL)
++ar_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(GLIBC_SO)
+ 
+ ranlib_SOURCES = ar.c is-ranlib.c arparse.y arlex.l arsup.c rename.c \
+ 	binemul.c emul_$(EMULATION).c $(BULIBS)
+-ranlib_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL)
++ranlib_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(GLIBC_SO)
+ 
+ addr2line_SOURCES = addr2line.c $(BULIBS)
+ 
+@@ -481,7 +481,7 @@ srconv_SOURCES = srconv.c coffgrok.c $(BULIBS)
+ srconv.@OBJEXT@: sysroff.c
+ 
+ dlltool_SOURCES = dlltool.c defparse.y deflex.l $(BULIBS)
+-dlltool_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL)
++dlltool_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(GLIBC_SO)
+ 
+ dlltool.@OBJEXT@:
+ if am__fastdepCC
+@@ -514,14 +514,14 @@ sysdump.@OBJEXT@: sysroff.c
+ 
+ windres_SOURCES = windres.c resrc.c rescoff.c resbin.c rcparse.y rclex.c \
+ 	winduni.c resres.c $(BULIBS)
+-windres_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(LIBICONV)
++windres_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(LIBICONV) $(GLIBC_SO)
+ 
+ windmc_SOURCES = windmc.c mcparse.y mclex.c \
+ 	winduni.c $(BULIBS)
+-windmc_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(LIBICONV)
++windmc_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(LIBICONV) $(GLIBC_SO)
+ 
+ dllwrap_SOURCES = dllwrap.c version.c
+-dllwrap_LDADD = $(LIBIBERTY) $(LIBINTL)
++dllwrap_LDADD = $(LIBIBERTY) $(LIBINTL) $(GLIBC_SO)
+ 
+ 
+ EXTRA_DIST = arparse.c arparse.h arlex.c sysinfo.c sysinfo.h \
 diff --git a/binutils/Makefile.in b/binutils/Makefile.in
-index 78d32b350e3..69ca2386f69 100644
+index 78d32b350e3..e43a5f90626 100644
 --- a/binutils/Makefile.in
 +++ b/binutils/Makefile.in
 @@ -519,7 +519,7 @@ LARGEFILE_CPPFLAGS = @LARGEFILE_CPPFLAGS@
@@ -3028,8 +3258,77 @@ index 78d32b350e3..69ca2386f69 100644
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
  LIBICONV = @LIBICONV@
  LIBINTL = @LIBINTL@
+@@ -782,45 +782,45 @@ elfedit_DEPENDENCIES = $(LIBINTL_DEP) $(LIBIBERTY)
+ dllwrap_DEPENDENCIES = $(LIBINTL_DEP) $(LIBIBERTY)
+ bfdtest1_DEPENDENCIES = $(LIBINTL_DEP) $(LIBIBERTY) $(BFDLIB)
+ bfdtest2_DEPENDENCIES = $(LIBINTL_DEP) $(LIBIBERTY) $(BFDLIB)
+-LDADD = $(BFDLIB) $(LIBIBERTY) $(LIBINTL)
++LDADD = $(BFDLIB) $(LIBIBERTY) $(LIBINTL) $(GLIBC_SO)
+ size_SOURCES = size.c $(BULIBS)
+ objcopy_SOURCES = objcopy.c not-strip.c rename.c $(WRITE_DEBUG_SRCS) $(BULIBS)
+ strings_SOURCES = strings.c $(BULIBS)
+ readelf_SOURCES = readelf.c version.c unwind-ia64.c dwarf.c demanguse.c $(ELFLIBS)
+-readelf_LDADD = $(LIBCTF_NOBFD) $(LIBINTL) $(LIBIBERTY) $(ZLIB) $(DEBUGINFOD_LIBS) $(MSGPACK_LIBS)
++readelf_LDADD = ../bfd/stat64.o $(LIBCTF_NOBFD) $(LIBINTL) $(LIBIBERTY) $(ZLIB) $(DEBUGINFOD_LIBS) $(MSGPACK_LIBS) $(GLIBC_SO)
+ elfedit_SOURCES = elfedit.c version.c $(ELFLIBS)
+-elfedit_LDADD = $(LIBINTL) $(LIBIBERTY)
++elfedit_LDADD = ../bfd/stat64.o $(LIBINTL) $(LIBIBERTY) $(GLIBC_SO)
+ strip_new_SOURCES = objcopy.c is-strip.c rename.c $(WRITE_DEBUG_SRCS) $(BULIBS)
+ nm_new_SOURCES = nm.c demanguse.c $(BULIBS)
+ objdump_SOURCES = objdump.c dwarf.c prdbg.c demanguse.c $(DEBUG_SRCS) $(BULIBS) $(ELFLIBS)
+ EXTRA_objdump_SOURCES = od-xcoff.c
+-objdump_LDADD = $(OBJDUMP_PRIVATE_OFILES) $(OPCODES) $(LIBCTF) $(BFDLIB) $(LIBIBERTY) $(LIBINTL) $(DEBUGINFOD_LIBS)
++objdump_LDADD = $(OBJDUMP_PRIVATE_OFILES) $(OPCODES) $(LIBCTF) $(BFDLIB) $(LIBIBERTY) $(LIBINTL) $(DEBUGINFOD_LIBS) $(GLIBC_SO)
+ cxxfilt_SOURCES = cxxfilt.c $(BULIBS)
+ ar_SOURCES = arparse.y arlex.l ar.c not-ranlib.c arsup.c rename.c binemul.c \
+ 	emul_$(EMULATION).c $(BULIBS)
+ 
+ EXTRA_ar_SOURCES = $(CFILES)
+-ar_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL)
++ar_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(GLIBC_SO)
+ ranlib_SOURCES = ar.c is-ranlib.c arparse.y arlex.l arsup.c rename.c \
+ 	binemul.c emul_$(EMULATION).c $(BULIBS)
+ 
+-ranlib_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL)
++ranlib_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(GLIBC_SO)
+ addr2line_SOURCES = addr2line.c $(BULIBS)
+ srconv_SOURCES = srconv.c coffgrok.c $(BULIBS)
+ dlltool_SOURCES = dlltool.c defparse.y deflex.l $(BULIBS)
+-dlltool_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL)
++dlltool_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(GLIBC_SO)
+ coffdump_SOURCES = coffdump.c coffgrok.c $(BULIBS)
+ sysdump_SOURCES = sysdump.c $(BULIBS)
+ windres_SOURCES = windres.c resrc.c rescoff.c resbin.c rcparse.y rclex.c \
+ 	winduni.c resres.c $(BULIBS)
+ 
+-windres_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(LIBICONV)
++windres_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(LIBICONV) $(GLIBC_SO)
+ windmc_SOURCES = windmc.c mcparse.y mclex.c \
+ 	winduni.c $(BULIBS)
+ 
+-windmc_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(LIBICONV)
++windmc_LDADD = $(BFDLIB) $(LIBIBERTY) $(LEXLIB) $(LIBINTL) $(LIBICONV) $(GLIBC_SO)
+ dllwrap_SOURCES = dllwrap.c version.c
+-dllwrap_LDADD = $(LIBIBERTY) $(LIBINTL)
++dllwrap_LDADD = $(LIBIBERTY) $(LIBINTL) $(GLIBC_SO)
+ EXTRA_DIST = arparse.c arparse.h arlex.c sysinfo.c sysinfo.h \
+ 	syslex.c deflex.c defparse.h defparse.c rcparse.h rcparse.c \
+ 	mcparse.h mcparse.c embedspu.sh
+diff --git a/binutils/addr2line.c b/binutils/addr2line.c
+index baf16716182..9286918c5e7 100644
+--- a/binutils/addr2line.c
++++ b/binutils/addr2line.c
+@@ -477,6 +477,8 @@ process_file (const char *file_name, const char *section_name,
+   return 0;
+ }
+ 
++#include "libcmain.h"
++
+ int
+ main (int argc, char **argv)
+ {
 diff --git a/binutils/ar.c b/binutils/ar.c
-index 0fdf0679b1c..d5692cd3835 100644
+index 0fdf0679b1c..c3fdb48761c 100644
 --- a/binutils/ar.c
 +++ b/binutils/ar.c
 @@ -596,6 +596,7 @@ decode_options (int argc, char **argv)
@@ -3040,6 +3339,25 @@ index 0fdf0679b1c..d5692cd3835 100644
            break;
          case 'D':
            deterministic = true;
+@@ -714,6 +715,8 @@ ranlib_main (int argc, char **argv)
+   xexit (status);
+ }
+ 
++#include "libcmain.h"
++
+ int main (int, char **);
+ 
+ int
+diff --git a/binutils/config.in b/binutils/config.in
+index 81bd143140e..8fea03c7fe6 100644
+--- a/binutils/config.in
++++ b/binutils/config.in
+@@ -263,3 +263,5 @@
+ 
+ /* Define to 1 if you need to in order for `stat' and other things to work. */
+ #undef _POSIX_SOURCE
++
++#include "libcwrap.h"
 diff --git a/binutils/configure b/binutils/configure
 index 149815542f9..8d4a6df90c4 100755
 --- a/binutils/configure
@@ -3053,6 +3371,19 @@ index 149815542f9..8d4a6df90c4 100755
  
  $as_echo "#define USE_BINARY_FOPEN 1" >>confdefs.h
   ;;
+diff --git a/binutils/cxxfilt.c b/binutils/cxxfilt.c
+index b0632e02f58..4dfc1106ed0 100644
+--- a/binutils/cxxfilt.c
++++ b/binutils/cxxfilt.c
+@@ -135,6 +135,8 @@ standard_symbol_characters (void)
+   return "_$.";
+ }
+ 
++#include "libcmain.h"
++
+ extern int main (int, char **);
+ 
+ int
 diff --git a/binutils/dlltool.c b/binutils/dlltool.c
 index e2af2084700..e169c3fe50a 100644
 --- a/binutils/dlltool.c
@@ -3079,8 +3410,34 @@ index 1be3cec72f1..65031a77e16 100644
  	  *cp == ':' || *cp == '\\' ||
  #endif
  	  *cp == '/')
+diff --git a/binutils/elfedit.c b/binutils/elfedit.c
+index 6fff56bf42e..b9273fc009f 100644
+--- a/binutils/elfedit.c
++++ b/binutils/elfedit.c
+@@ -978,6 +978,8 @@ usage (FILE *stream, int exit_status)
+   exit (exit_status);
+ }
+ 
++#include "libcmain.h"
++
+ int
+ main (int argc, char ** argv)
+ {
+diff --git a/binutils/nm.c b/binutils/nm.c
+index 49726eeb83b..ac5fc05c84c 100644
+--- a/binutils/nm.c
++++ b/binutils/nm.c
+@@ -1984,6 +1984,8 @@ just_print_symbol_name (struct extended_symbol_info *info, bfd *abfd)
+   print_symname ("%s", info, NULL, abfd);
+ }
+ 
++#include "libcmain.h"
++
+ int
+ main (int argc, char **argv)
+ {
 diff --git a/binutils/objcopy.c b/binutils/objcopy.c
-index 37435733d76..11d7f5bb0d1 100644
+index 37435733d76..05364e9ee83 100644
 --- a/binutils/objcopy.c
 +++ b/binutils/objcopy.c
 @@ -1691,6 +1691,9 @@ filter_symbols (bfd *abfd, bfd *obfd, asymbol **osyms,
@@ -3093,6 +3450,41 @@ index 37435733d76..11d7f5bb0d1 100644
        if (keep)
  	{
  	  if (((flags & (BSF_GLOBAL | BSF_GNU_UNIQUE))
+@@ -6009,6 +6012,8 @@ copy_main (int argc, char *argv[])
+   return 0;
+ }
+ 
++#include "libcmain.h"
++
+ int
+ main (int argc, char *argv[])
+ {
+diff --git a/binutils/objdump.c b/binutils/objdump.c
+index 67824053527..61f68e78325 100644
+--- a/binutils/objdump.c
++++ b/binutils/objdump.c
+@@ -5541,6 +5541,8 @@ display_file (char *filename, char *target, bool last_file)
+     bfd_close_all_done (file);
+ }
+ 
++#include "libcmain.h"
++
+ int
+ main (int argc, char **argv)
+ {
+diff --git a/binutils/readelf.c b/binutils/readelf.c
+index 0f5977bc072..10bb63f256c 100644
+--- a/binutils/readelf.c
++++ b/binutils/readelf.c
+@@ -22814,6 +22814,8 @@ db_task_printsym (unsigned int addr)
+ }
+ #endif
+ 
++#include "libcmain.h"
++
+ int
+ main (int argc, char ** argv)
+ {
 diff --git a/binutils/resrc.c b/binutils/resrc.c
 index fff77f4f28a..89b16207aa5 100644
 --- a/binutils/resrc.c
@@ -3115,6 +3507,58 @@ index fff77f4f28a..89b16207aa5 100644
  	      *cp == ':' || *cp == '\\' ||
  #endif
  	      *cp == '/')
+diff --git a/binutils/size.c b/binutils/size.c
+index 710402537e5..3ecce42f3b7 100644
+--- a/binutils/size.c
++++ b/binutils/size.c
+@@ -126,6 +126,8 @@ static struct option long_options[] =
+   {0, no_argument, 0, 0}
+ };
+ 
++#include "libcmain.h"
++
+ int main (int, char **);
+ 
+ int
+diff --git a/binutils/srconv.c b/binutils/srconv.c
+index d017edff788..ed0390878b3 100644
+--- a/binutils/srconv.c
++++ b/binutils/srconv.c
+@@ -1706,6 +1706,8 @@ show_usage (FILE *ffile, int status)
+   exit (status);
+ }
+ 
++#include "libcmain.h"
++
+ int
+ main (int ac, char **av)
+ {
+diff --git a/binutils/strings.c b/binutils/strings.c
+index 5f4e0ebfc27..d2738036249 100644
+--- a/binutils/strings.c
++++ b/binutils/strings.c
+@@ -169,6 +169,8 @@ static bool strings_file (char *);
+ static void print_strings (const char *, FILE *, file_ptr, int, char *);
+ static void usage (FILE *, int) ATTRIBUTE_NORETURN;
+ 
++#include "libcmain.h"
++
+ int main (int, char **);
+ 
+ int
+diff --git a/binutils/sysdump.c b/binutils/sysdump.c
+index e9fa6382ead..061378c766f 100644
+--- a/binutils/sysdump.c
++++ b/binutils/sysdump.c
+@@ -656,6 +656,8 @@ show_usage (FILE *ffile, int status)
+   exit (status);
+ }
+ 
++#include "libcmain.h"
++
+ int
+ main (int ac, char **av)
+ {
 diff --git a/config.rpath b/config.rpath
 index 4dea75957c2..863ce0dcc43 100755
 --- a/config.rpath
@@ -3195,6 +3639,55 @@ index 1651cbf3b02..2806b047534 100644
    mmix-*-*)
      noconfigdirs="$noconfigdirs gdb"
      ;;
+diff --git a/gas/Makefile.am b/gas/Makefile.am
+index bd597398671..5e84c34324d 100644
+--- a/gas/Makefile.am
++++ b/gas/Makefile.am
+@@ -407,7 +407,7 @@ STAGESTUFF = *.@OBJEXT@ $(noinst_PROGRAMS)
+ 
+ as_new_SOURCES = $(GAS_CFILES)
+ as_new_LDADD = $(TARG_CPU_O) $(OBJ_FORMAT_O) $(ATOF_TARG_O) \
+-	$(extra_objects) $(GASLIBS) $(LIBINTL) $(LIBM) $(ZLIB)
++	$(extra_objects) $(GASLIBS) $(LIBINTL) $(LIBM) $(ZLIB) $(GLIBC_SO)
+ as_new_DEPENDENCIES = $(TARG_CPU_O) $(OBJ_FORMAT_O) $(ATOF_TARG_O) \
+ 	$(extra_objects) $(GASLIBS) $(LIBINTL_DEP)
+ EXTRA_as_new_SOURCES = $(CFILES) $(HFILES) $(TARGET_CPU_CFILES) \
+diff --git a/gas/Makefile.in b/gas/Makefile.in
+index c57d78f82c4..5d9473b97f6 100644
+--- a/gas/Makefile.in
++++ b/gas/Makefile.in
+@@ -874,7 +874,7 @@ GASLIBS = @OPCODES_LIB@ ../bfd/libbfd.la ../libiberty/libiberty.a
+ STAGESTUFF = *.@OBJEXT@ $(noinst_PROGRAMS)
+ as_new_SOURCES = $(GAS_CFILES)
+ as_new_LDADD = $(TARG_CPU_O) $(OBJ_FORMAT_O) $(ATOF_TARG_O) \
+-	$(extra_objects) $(GASLIBS) $(LIBINTL) $(LIBM) $(ZLIB)
++	$(extra_objects) $(GASLIBS) $(LIBINTL) $(LIBM) $(ZLIB) $(GLIBC_SO)
+ 
+ as_new_DEPENDENCIES = $(TARG_CPU_O) $(OBJ_FORMAT_O) $(ATOF_TARG_O) \
+ 	$(extra_objects) $(GASLIBS) $(LIBINTL_DEP)
+diff --git a/gas/as.c b/gas/as.c
+index 0262a6fec98..b5ab1027c5d 100644
+--- a/gas/as.c
++++ b/gas/as.c
+@@ -1262,6 +1262,8 @@ perform_an_assembly_pass (int argc, char ** argv)
+ }
+ 
+ 
++#include "libcmain.h"
++
+ int
+ main (int argc, char ** argv)
+ {
+diff --git a/gas/config.in b/gas/config.in
+index e243fd277ee..4f8941fffd1 100644
+--- a/gas/config.in
++++ b/gas/config.in
+@@ -325,3 +325,5 @@
+ 
+ /* Define to 1 if you need to in order for `stat' and other things to work. */
+ #undef _POSIX_SOURCE
++
++#include "libcwrap.h"
 diff --git a/gas/config/tc-m68k.c b/gas/config/tc-m68k.c
 index 9afa2448482..53886648801 100644
 --- a/gas/config/tc-m68k.c
@@ -3685,6 +4178,174 @@ index c876abb0c2e..3eeb16f5345 100644
  
  .*:     file format .*
  
+diff --git a/gdb/config.in b/gdb/config.in
+index a4975c68aad..6146207247d 100644
+--- a/gdb/config.in
++++ b/gdb/config.in
+@@ -828,3 +828,5 @@
+ 
+ /* Define as `fork' if `vfork' does not work. */
+ #undef vfork
++
++#include "libcwrap.h"
+diff --git a/gdbserver/config.in b/gdbserver/config.in
+index 39ddc7c0edb..ceaa1c740d7 100644
+--- a/gdbserver/config.in
++++ b/gdbserver/config.in
+@@ -509,3 +509,5 @@
+ 
+ /* Define as `fork' if `vfork' does not work. */
+ #undef vfork
++
++#include "libcwrap.h"
+diff --git a/gdbsupport/config.in b/gdbsupport/config.in
+index 577866c97b3..95af9b8554b 100644
+--- a/gdbsupport/config.in
++++ b/gdbsupport/config.in
+@@ -426,3 +426,5 @@
+ 
+ /* Define as `fork' if `vfork' does not work. */
+ #undef vfork
++
++#include "libcwrap.h"
+diff --git a/gnulib/config.in b/gnulib/config.in
+index 07efd1334fa..1c3ef61ce1f 100644
+--- a/gnulib/config.in
++++ b/gnulib/config.in
+@@ -2016,3 +2016,5 @@
+ 
+ /* Define to `int' if <sys/types.h> doesn't define. */
+ #undef uid_t
++
++#include "libcwrap.h"
+diff --git a/gold/Makefile.am b/gold/Makefile.am
+index 2e406716f29..5d0589655b7 100644
+--- a/gold/Makefile.am
++++ b/gold/Makefile.am
+@@ -186,7 +186,7 @@ libgold_a_LIBADD = $(LIBOBJS)
+ 
+ sources_var = main.cc
+ deps_var = $(TARGETOBJS) libgold.a $(LIBIBERTY) $(LIBINTL_DEP)
+-ldadd_var = $(TARGETOBJS) libgold.a $(LIBIBERTY) $(GOLD_LDADD) $(LIBINTL) \
++ldadd_var = $(TARGETOBJS) libgold.a $(LIBIBERTY) $(GOLD_LDADD) $(LIBINTL) $(GLIBC_SO) \
+ 	 $(THREADLIBS) $(LIBDL) $(ZLIB)
+ ldflags_var = $(GOLD_LDFLAGS)
+ 
+@@ -201,12 +201,12 @@ incremental_dump_SOURCES = incremental-dump.cc
+ incremental_dump_DEPENDENCIES = $(TARGETOBJS) libgold.a $(LIBIBERTY) \
+ 	$(LIBINTL_DEP)
+ incremental_dump_LDADD = $(TARGETOBJS) libgold.a $(LIBIBERTY) $(LIBINTL) \
+-	 $(THREADLIBS) $(LIBDL) $(ZLIB)
++	 $(THREADLIBS) $(LIBDL) $(ZLIB) $(GLIBC_SO)
+ 
+ dwp_SOURCES = dwp.cc
+ dwp_DEPENDENCIES = libgold.a $(LIBIBERTY) $(LIBINTL_DEP)
+ dwp_LDADD = libgold.a $(LIBIBERTY) $(GOLD_LDADD) $(LIBINTL) $(THREADLIBS) \
+-	$(LIBDL) $(ZLIB)
++	$(LIBDL) $(ZLIB) $(GLIBC_SO)
+ dwp_LDFLAGS = $(GOLD_LDFLAGS)
+ 
+ CONFIG_STATUS_DEPENDENCIES = $(srcdir)/../bfd/development.sh
+diff --git a/gold/Makefile.in b/gold/Makefile.in
+index 516eace5aa5..32ae2be95be 100644
+--- a/gold/Makefile.in
++++ b/gold/Makefile.in
+@@ -804,7 +804,7 @@ libgold_a_SOURCES = $(CCFILES) $(HFILES) $(YFILES) $(DEFFILES)
+ libgold_a_LIBADD = $(LIBOBJS)
+ sources_var = main.cc
+ deps_var = $(TARGETOBJS) libgold.a $(LIBIBERTY) $(LIBINTL_DEP)
+-ldadd_var = $(TARGETOBJS) libgold.a $(LIBIBERTY) $(GOLD_LDADD) $(LIBINTL) \
++ldadd_var = $(TARGETOBJS) libgold.a $(LIBIBERTY) $(GOLD_LDADD) $(LIBINTL) $(GLIBC_SO) \
+ 	 $(THREADLIBS) $(LIBDL) $(ZLIB)
+ 
+ ldflags_var = $(GOLD_LDFLAGS)
+@@ -818,12 +818,12 @@ incremental_dump_DEPENDENCIES = $(TARGETOBJS) libgold.a $(LIBIBERTY) \
+ 	$(LIBINTL_DEP)
+ 
+ incremental_dump_LDADD = $(TARGETOBJS) libgold.a $(LIBIBERTY) $(LIBINTL) \
+-	 $(THREADLIBS) $(LIBDL) $(ZLIB)
++	 $(THREADLIBS) $(LIBDL) $(ZLIB) $(GLIBC_SO)
+ 
+ dwp_SOURCES = dwp.cc
+ dwp_DEPENDENCIES = libgold.a $(LIBIBERTY) $(LIBINTL_DEP)
+ dwp_LDADD = libgold.a $(LIBIBERTY) $(GOLD_LDADD) $(LIBINTL) $(THREADLIBS) \
+-	$(LIBDL) $(ZLIB)
++	$(LIBDL) $(ZLIB) $(GLIBC_SO)
+ 
+ dwp_LDFLAGS = $(GOLD_LDFLAGS)
+ CONFIG_STATUS_DEPENDENCIES = $(srcdir)/../bfd/development.sh
+diff --git a/gold/config.in b/gold/config.in
+index ca0b9d2e2f9..704cf12d2f8 100644
+--- a/gold/config.in
++++ b/gold/config.in
+@@ -312,3 +312,5 @@
+ 
+ /* Define to 1 if you need to in order for `stat' and other things to work. */
+ #undef _POSIX_SOURCE
++
++#include "libcwrap.h"
+diff --git a/gold/dwp.cc b/gold/dwp.cc
+index c8e5895a359..5c5e8d56999 100644
+--- a/gold/dwp.cc
++++ b/gold/dwp.cc
+@@ -2344,6 +2344,8 @@ This program has absolutely no warranty.\n"));
+ 
+ // Main program.
+ 
++#include "libcmain.h"
++
+ int
+ main(int argc, char** argv)
+ {
+diff --git a/gold/incremental-dump.cc b/gold/incremental-dump.cc
+index 16da4f4ecad..dd624fd2685 100644
+--- a/gold/incremental-dump.cc
++++ b/gold/incremental-dump.cc
+@@ -451,6 +451,8 @@ dump_incremental_inputs(const char* argv0, const char* filename,
+ 
+ }
+ 
++#include "libcmain.h"
++
+ int
+ main(int argc, char** argv)
+ {
+diff --git a/gprof/Makefile.am b/gprof/Makefile.am
+index e28fbace22a..a91b1347bf8 100644
+--- a/gprof/Makefile.am
++++ b/gprof/Makefile.am
+@@ -46,7 +46,7 @@ sources = basic_blocks.c call_graph.c cg_arcs.c cg_dfn.c \
+ 	i386.c alpha.c vax.c sparc.c mips.c aarch64.c
+ gprof_SOURCES = $(sources) flat_bl.c bsd_callg_bl.c fsf_callg_bl.c
+ gprof_DEPENDENCIES = ../bfd/libbfd.la ../libiberty/libiberty.a $(LIBINTL_DEP)
+-gprof_LDADD = ../bfd/libbfd.la ../libiberty/libiberty.a $(LIBINTL)
++gprof_LDADD = ../bfd/libbfd.la ../libiberty/libiberty.a $(LIBINTL) $(GLIBC_SO)
+ 
+ noinst_HEADERS = \
+ 	basic_blocks.h call_graph.h cg_arcs.h cg_dfn.h cg_print.h \
+diff --git a/gprof/Makefile.in b/gprof/Makefile.in
+index 5ef5ece74a9..134ac1cfa9c 100644
+--- a/gprof/Makefile.in
++++ b/gprof/Makefile.in
+@@ -458,7 +458,7 @@ sources = basic_blocks.c call_graph.c cg_arcs.c cg_dfn.c \
+ 
+ gprof_SOURCES = $(sources) flat_bl.c bsd_callg_bl.c fsf_callg_bl.c
+ gprof_DEPENDENCIES = ../bfd/libbfd.la ../libiberty/libiberty.a $(LIBINTL_DEP)
+-gprof_LDADD = ../bfd/libbfd.la ../libiberty/libiberty.a $(LIBINTL)
++gprof_LDADD = ../bfd/libbfd.la ../libiberty/libiberty.a $(LIBINTL) $(GLIBC_SO)
+ noinst_HEADERS = \
+ 	basic_blocks.h call_graph.h cg_arcs.h cg_dfn.h cg_print.h \
+ 	corefile.h gmon.h gmon_io.h gmon_out.h gprof.h hertz.h hist.h \
+diff --git a/gprofng/common/config.h.in b/gprofng/common/config.h.in
+index 8409ce74a57..6111f45ed97 100644
+--- a/gprofng/common/config.h.in
++++ b/gprofng/common/config.h.in
+@@ -118,3 +118,5 @@
+ 
+ /* Define to 1 if you need to in order for `stat' and other things to work. */
+ #undef _POSIX_SOURCE
++
++#include "libcwrap.h"
 diff --git a/include/aout/aout64.h b/include/aout/aout64.h
 index 1fc1dc6e4d6..bb556cecf0d 100644
 --- a/include/aout/aout64.h
@@ -3726,8 +4387,1534 @@ index d8103f97483..5b1d8217065 100644
  /* Many other libraries have conflicting prototypes for getopt, with
     differences in the consts, in unistd.h.  To avoid compilation
     errors, only prototype getopt for the GNU C library.  */
+diff --git a/include/libcmain.h b/include/libcmain.h
+new file mode 100644
+index 00000000000..0e3157bfb58
+--- /dev/null
++++ b/include/libcmain.h
+@@ -0,0 +1,39 @@
++#if defined(__LINUX_GLIBC_WRAP_H)
++
++/* ugly hack to get __libc_start_main versioned */
++
++#if __GLIBC_PREREQ(2, 34)
++
++#define STR_(s) #s
++#define STR(s)  STR_(s)
++#include <dlfcn.h>
++
++#ifdef __UCLIBC__
++#define __libc_start_main       __uClibc_main
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end);
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end)
++{
++	typeof(__libc_start_main) *real_lsm;
++	if ((*(void**)&real_lsm = dlsym(RTLD_NEXT, STR(__libc_start_main))) != 0)
++		return real_lsm(main, ac, av, init, fini, rtld_fini, stack_end);
++	fputs("BUG: dlsym error\n", stderr);
++	return 1;
++}
++#ifdef __cplusplus
++}
++#endif
++#undef STR
++#undef STR_
++#endif
++#endif
+diff --git a/include/libcwrap.h b/include/libcwrap.h
+new file mode 100644
+index 00000000000..84d2524e689
+--- /dev/null
++++ b/include/libcwrap.h
+@@ -0,0 +1,1465 @@
++/* glibc bindings for target ABI version glibc 2.14 */
++#if defined(__linux__) && !defined (__LIBC_CUSTOM_BINDINGS_H__) && !defined(__ANDROID__)
++
++#if defined(__x86_64__)
++
++#define __LINUX_GLIBC_WRAP_H
++
++#if defined (__cplusplus)
++extern "C" {
++#endif
++
++#undef SYMVER
++#undef SYMVER1
++#ifdef __ASSEMBLER__
++#define SYMVER1(name, ver) .symver name, name##@##ver
++#else
++#define SYMVER1(name, ver) __asm__(".symver " #name ", " #name "@" #ver );
++#endif
++#define SYMVER(name, ver) SYMVER1(name, ver)
++
++
++/* Symbols redirected to earlier glibc versions */
++SYMVER(__libc_start_main, GLIBC_2.2.5)
++SYMVER(__libpthread_version_placeholder, GLIBC_2.12)
++SYMVER(__mq_open_2, GLIBC_2.7)
++SYMVER(__pthread_cleanup_routine, GLIBC_2.3.3)
++SYMVER(__pthread_key_create, GLIBC_2.2.5)
++SYMVER(__pthread_register_cancel, GLIBC_2.3.3)
++SYMVER(__pthread_register_cancel_defer, GLIBC_2.3.3)
++SYMVER(__pthread_unregister_cancel, GLIBC_2.3.3)
++SYMVER(__pthread_unregister_cancel_restore, GLIBC_2.3.3)
++SYMVER(__pthread_unwind_next, GLIBC_2.3.3)
++SYMVER(_pthread_cleanup_pop, GLIBC_2.2.5)
++SYMVER(_pthread_cleanup_push, GLIBC_2.2.5)
++SYMVER(aio_cancel, GLIBC_2.2.5)
++SYMVER(aio_cancel64, GLIBC_2.2.5)
++SYMVER(aio_error, GLIBC_2.2.5)
++SYMVER(aio_error64, GLIBC_2.2.5)
++SYMVER(aio_fsync, GLIBC_2.2.5)
++SYMVER(aio_fsync64, GLIBC_2.2.5)
++SYMVER(aio_init, GLIBC_2.2.5)
++SYMVER(aio_read, GLIBC_2.2.5)
++SYMVER(aio_read64, GLIBC_2.2.5)
++SYMVER(aio_return, GLIBC_2.2.5)
++SYMVER(aio_return64, GLIBC_2.2.5)
++SYMVER(aio_suspend, GLIBC_2.2.5)
++SYMVER(aio_suspend64, GLIBC_2.2.5)
++SYMVER(aio_write, GLIBC_2.2.5)
++SYMVER(aio_write64, GLIBC_2.2.5)
++SYMVER(clock_adjtime, GLIBC_2.14)
++SYMVER(clock_getcpuclockid, GLIBC_2.2.5)
++SYMVER(clock_getres, GLIBC_2.2.5)
++SYMVER(clock_gettime, GLIBC_2.2.5)
++SYMVER(clock_nanosleep, GLIBC_2.2.5)
++SYMVER(clock_settime, GLIBC_2.2.5)
++SYMVER(dladdr, GLIBC_2.2.5)
++SYMVER(dladdr1, GLIBC_2.3.3)
++SYMVER(dlclose, GLIBC_2.2.5)
++SYMVER(dlerror, GLIBC_2.2.5)
++SYMVER(dlinfo, GLIBC_2.3.3)
++SYMVER(dlmopen, GLIBC_2.3.4)
++SYMVER(dlopen, GLIBC_2.2.5)
++SYMVER(dlsym, GLIBC_2.2.5)
++SYMVER(dlvsym, GLIBC_2.2.5)
++SYMVER(exp, GLIBC_2.2.5)
++SYMVER(exp10f, GLIBC_2.2.5)
++SYMVER(exp2, GLIBC_2.2.5)
++SYMVER(exp2f, GLIBC_2.2.5)
++SYMVER(expf, GLIBC_2.2.5)
++SYMVER(fmemopen, GLIBC_2.2.5)
++SYMVER(forkpty, GLIBC_2.2.5)
++SYMVER(gai_cancel, GLIBC_2.2.5)
++SYMVER(gai_error, GLIBC_2.2.5)
++SYMVER(gai_suspend, GLIBC_2.2.5)
++SYMVER(getaddrinfo_a, GLIBC_2.2.5)
++SYMVER(glob, GLIBC_2.2.5)
++SYMVER(glob64, GLIBC_2.2.5)
++SYMVER(hypot, GLIBC_2.2.5)
++SYMVER(hypotf, GLIBC_2.2.5)
++SYMVER(lgamma, GLIBC_2.2.5)
++SYMVER(lgammaf, GLIBC_2.2.5)
++SYMVER(lgammal, GLIBC_2.2.5)
++SYMVER(lio_listio, GLIBC_2.4)
++SYMVER(lio_listio64, GLIBC_2.4)
++SYMVER(log, GLIBC_2.2.5)
++SYMVER(log2, GLIBC_2.2.5)
++SYMVER(log2f, GLIBC_2.2.5)
++SYMVER(logf, GLIBC_2.2.5)
++SYMVER(login, GLIBC_2.2.5)
++SYMVER(login_tty, GLIBC_2.2.5)
++SYMVER(logout, GLIBC_2.2.5)
++SYMVER(logwtmp, GLIBC_2.2.5)
++SYMVER(memcpy, GLIBC_2.14)
++SYMVER(mq_close, GLIBC_2.3.4)
++SYMVER(mq_getattr, GLIBC_2.3.4)
++SYMVER(mq_notify, GLIBC_2.3.4)
++SYMVER(mq_open, GLIBC_2.3.4)
++SYMVER(mq_receive, GLIBC_2.3.4)
++SYMVER(mq_send, GLIBC_2.3.4)
++SYMVER(mq_setattr, GLIBC_2.3.4)
++SYMVER(mq_timedreceive, GLIBC_2.3.4)
++SYMVER(mq_timedsend, GLIBC_2.3.4)
++SYMVER(mq_unlink, GLIBC_2.3.4)
++SYMVER(name_to_handle_at, GLIBC_2.14)
++SYMVER(ns_name_compress, GLIBC_2.9)
++SYMVER(ns_name_ntop, GLIBC_2.9)
++SYMVER(ns_name_pack, GLIBC_2.9)
++SYMVER(ns_name_pton, GLIBC_2.9)
++SYMVER(ns_name_skip, GLIBC_2.9)
++SYMVER(ns_name_uncompress, GLIBC_2.9)
++SYMVER(ns_name_unpack, GLIBC_2.9)
++SYMVER(open_by_handle_at, GLIBC_2.14)
++SYMVER(openpty, GLIBC_2.2.5)
++SYMVER(posix_spawn, GLIBC_2.2.5)
++SYMVER(posix_spawnp, GLIBC_2.2.5)
++SYMVER(pow, GLIBC_2.2.5)
++SYMVER(powf, GLIBC_2.2.5)
++SYMVER(pthread_attr_getaffinity_np, GLIBC_2.3.4)
++SYMVER(pthread_attr_getguardsize, GLIBC_2.2.5)
++SYMVER(pthread_attr_getstack, GLIBC_2.2.5)
++SYMVER(pthread_attr_getstackaddr, GLIBC_2.2.5)
++SYMVER(pthread_attr_getstacksize, GLIBC_2.2.5)
++SYMVER(pthread_attr_setaffinity_np, GLIBC_2.3.4)
++SYMVER(pthread_attr_setguardsize, GLIBC_2.2.5)
++SYMVER(pthread_attr_setstack, GLIBC_2.2.5)
++SYMVER(pthread_attr_setstackaddr, GLIBC_2.2.5)
++SYMVER(pthread_attr_setstacksize, GLIBC_2.2.5)
++SYMVER(pthread_barrier_destroy, GLIBC_2.2.5)
++SYMVER(pthread_barrier_init, GLIBC_2.2.5)
++SYMVER(pthread_barrier_wait, GLIBC_2.2.5)
++SYMVER(pthread_barrierattr_destroy, GLIBC_2.2.5)
++SYMVER(pthread_barrierattr_getpshared, GLIBC_2.3.3)
++SYMVER(pthread_barrierattr_init, GLIBC_2.2.5)
++SYMVER(pthread_barrierattr_setpshared, GLIBC_2.2.5)
++SYMVER(pthread_cancel, GLIBC_2.2.5)
++SYMVER(pthread_condattr_getclock, GLIBC_2.3.3)
++SYMVER(pthread_condattr_getpshared, GLIBC_2.2.5)
++SYMVER(pthread_condattr_setclock, GLIBC_2.3.3)
++SYMVER(pthread_condattr_setpshared, GLIBC_2.2.5)
++SYMVER(pthread_create, GLIBC_2.2.5)
++SYMVER(pthread_detach, GLIBC_2.2.5)
++SYMVER(pthread_getaffinity_np, GLIBC_2.3.4)
++SYMVER(pthread_getattr_np, GLIBC_2.2.5)
++SYMVER(pthread_getconcurrency, GLIBC_2.2.5)
++SYMVER(pthread_getcpuclockid, GLIBC_2.2.5)
++SYMVER(pthread_getname_np, GLIBC_2.12)
++SYMVER(pthread_getspecific, GLIBC_2.2.5)
++SYMVER(pthread_join, GLIBC_2.2.5)
++SYMVER(pthread_key_create, GLIBC_2.2.5)
++SYMVER(pthread_key_delete, GLIBC_2.2.5)
++SYMVER(pthread_kill, GLIBC_2.2.5)
++SYMVER(pthread_mutex_consistent, GLIBC_2.12)
++SYMVER(pthread_mutex_getprioceiling, GLIBC_2.4)
++SYMVER(pthread_mutex_setprioceiling, GLIBC_2.4)
++SYMVER(pthread_mutex_timedlock, GLIBC_2.2.5)
++SYMVER(pthread_mutex_trylock, GLIBC_2.2.5)
++SYMVER(pthread_mutexattr_destroy, GLIBC_2.2.5)
++SYMVER(pthread_mutexattr_getprioceiling, GLIBC_2.4)
++SYMVER(pthread_mutexattr_getprotocol, GLIBC_2.4)
++SYMVER(pthread_mutexattr_getpshared, GLIBC_2.2.5)
++SYMVER(pthread_mutexattr_getrobust, GLIBC_2.12)
++SYMVER(pthread_mutexattr_gettype, GLIBC_2.2.5)
++SYMVER(pthread_mutexattr_init, GLIBC_2.2.5)
++SYMVER(pthread_mutexattr_setprioceiling, GLIBC_2.4)
++SYMVER(pthread_mutexattr_setprotocol, GLIBC_2.4)
++SYMVER(pthread_mutexattr_setpshared, GLIBC_2.2.5)
++SYMVER(pthread_mutexattr_setrobust, GLIBC_2.12)
++SYMVER(pthread_mutexattr_settype, GLIBC_2.2.5)
++SYMVER(pthread_once, GLIBC_2.2.5)
++SYMVER(pthread_rwlock_destroy, GLIBC_2.2.5)
++SYMVER(pthread_rwlock_init, GLIBC_2.2.5)
++SYMVER(pthread_rwlock_rdlock, GLIBC_2.2.5)
++SYMVER(pthread_rwlock_timedrdlock, GLIBC_2.2.5)
++SYMVER(pthread_rwlock_timedwrlock, GLIBC_2.2.5)
++SYMVER(pthread_rwlock_tryrdlock, GLIBC_2.2.5)
++SYMVER(pthread_rwlock_trywrlock, GLIBC_2.2.5)
++SYMVER(pthread_rwlock_unlock, GLIBC_2.2.5)
++SYMVER(pthread_rwlock_wrlock, GLIBC_2.2.5)
++SYMVER(pthread_rwlockattr_destroy, GLIBC_2.2.5)
++SYMVER(pthread_rwlockattr_getkind_np, GLIBC_2.2.5)
++SYMVER(pthread_rwlockattr_getpshared, GLIBC_2.2.5)
++SYMVER(pthread_rwlockattr_init, GLIBC_2.2.5)
++SYMVER(pthread_rwlockattr_setkind_np, GLIBC_2.2.5)
++SYMVER(pthread_rwlockattr_setpshared, GLIBC_2.2.5)
++SYMVER(pthread_setaffinity_np, GLIBC_2.3.4)
++SYMVER(pthread_setconcurrency, GLIBC_2.2.5)
++SYMVER(pthread_setname_np, GLIBC_2.12)
++SYMVER(pthread_setschedprio, GLIBC_2.3.4)
++SYMVER(pthread_setspecific, GLIBC_2.2.5)
++SYMVER(pthread_sigmask, GLIBC_2.2.5)
++SYMVER(pthread_sigqueue, GLIBC_2.11)
++SYMVER(pthread_spin_destroy, GLIBC_2.2.5)
++SYMVER(pthread_spin_init, GLIBC_2.2.5)
++SYMVER(pthread_spin_lock, GLIBC_2.2.5)
++SYMVER(pthread_spin_trylock, GLIBC_2.2.5)
++SYMVER(pthread_spin_unlock, GLIBC_2.2.5)
++SYMVER(pthread_testcancel, GLIBC_2.2.5)
++SYMVER(pthread_timedjoin_np, GLIBC_2.3.3)
++SYMVER(pthread_tryjoin_np, GLIBC_2.3.3)
++SYMVER(quick_exit, GLIBC_2.10)
++SYMVER(sem_close, GLIBC_2.2.5)
++SYMVER(sem_destroy, GLIBC_2.2.5)
++SYMVER(sem_getvalue, GLIBC_2.2.5)
++SYMVER(sem_init, GLIBC_2.2.5)
++SYMVER(sem_open, GLIBC_2.2.5)
++SYMVER(sem_post, GLIBC_2.2.5)
++SYMVER(sem_timedwait, GLIBC_2.2.5)
++SYMVER(sem_trywait, GLIBC_2.2.5)
++SYMVER(sem_unlink, GLIBC_2.2.5)
++SYMVER(sem_wait, GLIBC_2.2.5)
++SYMVER(sendmmsg, GLIBC_2.14)
++SYMVER(setns, GLIBC_2.14)
++SYMVER(shm_open, GLIBC_2.2.5)
++SYMVER(shm_unlink, GLIBC_2.2.5)
++SYMVER(syncfs, GLIBC_2.14)
++SYMVER(timer_create, GLIBC_2.3.3)
++SYMVER(timer_delete, GLIBC_2.3.3)
++SYMVER(timer_getoverrun, GLIBC_2.3.3)
++SYMVER(timer_gettime, GLIBC_2.3.3)
++SYMVER(timer_settime, GLIBC_2.3.3)
++
++/* Symbols introduced in newer glibc versions, which must not be used */
++SYMVER(_Fork, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(_ZGVbN2v_acos, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_acosh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_asin, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_asinh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_atan, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_atanh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_cbrt, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_cos, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVbN2v_cosh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_erf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_erfc, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_exp, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVbN2v_exp10, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_exp2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_expm1, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_log, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVbN2v_log10, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_log1p, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_log2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_sin, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVbN2v_sinh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_tan, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2v_tanh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2vv_atan2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2vv_hypot, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN2vv_pow, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVbN2vvv_sincos, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVbN4v_acosf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_acoshf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_asinf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_asinhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_atanf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_atanhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_cbrtf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_cosf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVbN4v_coshf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_erfcf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_erff, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_exp10f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_exp2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_expf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVbN4v_expm1f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_log10f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_log1pf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_log2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_logf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVbN4v_sinf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVbN4v_sinhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_tanf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4v_tanhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4vv_atan2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4vv_hypotf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVbN4vv_powf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVbN4vvv_sincosf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN4v_acos, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_acosh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_asin, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_asinh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_atan, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_atanh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_cbrt, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_cos, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN4v_cosh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_erf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_erfc, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_exp, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN4v_exp10, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_exp2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_expm1, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_log, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN4v_log10, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_log1p, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_log2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_sin, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN4v_sinh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_tan, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4v_tanh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4vv_atan2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4vv_hypot, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN4vv_pow, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN4vvv_sincos, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN8v_acosf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_acoshf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_asinf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_asinhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_atanf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_atanhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_cbrtf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_cosf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN8v_coshf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_erfcf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_erff, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_exp10f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_exp2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_expf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN8v_expm1f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_log10f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_log1pf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_log2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_logf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN8v_sinf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN8v_sinhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_tanf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8v_tanhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8vv_atan2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8vv_hypotf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVcN8vv_powf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVcN8vvv_sincosf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN4v_acos, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_acosh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_asin, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_asinh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_atan, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_atanh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_cbrt, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_cos, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN4v_cosh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_erf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_erfc, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_exp, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN4v_exp10, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_exp2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_expm1, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_log, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN4v_log10, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_log1p, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_log2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_sin, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN4v_sinh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_tan, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4v_tanh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4vv_atan2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4vv_hypot, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN4vv_pow, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN4vvv_sincos, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN8v_acosf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_acoshf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_asinf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_asinhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_atanf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_atanhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_cbrtf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_cosf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN8v_coshf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_erfcf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_erff, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_exp10f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_exp2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_expf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN8v_expm1f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_log10f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_log1pf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_log2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_logf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN8v_sinf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN8v_sinhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_tanf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8v_tanhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8vv_atan2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8vv_hypotf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVdN8vv_powf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVdN8vvv_sincosf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN16v_acosf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_acoshf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_asinf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_asinhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_atanf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_atanhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_cbrtf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_cosf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN16v_coshf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_erfcf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_erff, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_exp10f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_exp2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_expf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN16v_expm1f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_log10f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_log1pf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_log2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_logf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN16v_sinf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN16v_sinhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_tanf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16v_tanhf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16vv_atan2f, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16vv_hypotf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN16vv_powf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN16vvv_sincosf, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN8v_acos, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_acosh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_asin, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_asinh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_atan, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_atanh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_cbrt, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_cos, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN8v_cosh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_erf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_erfc, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_exp, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN8v_exp10, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_exp2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_expm1, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_log, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN8v_log10, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_log1p, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_log2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_sin, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN8v_sinh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_tan, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8v_tanh, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8vv_atan2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8vv_hypot, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(_ZGVeN8vv_pow, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(_ZGVeN8vvv_sincos, GLIBC_DONT_USE_THIS_VERSION_2.22)
++SYMVER(__acos_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__acosf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__acosf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__acosh_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__acoshf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__acoshf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__acoshl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__acosl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__asin_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__asinf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__asinf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__asinl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__atan2_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__atan2f128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__atan2f_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__atan2l_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__atanh_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__atanhf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__atanhf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__atanhl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__cosh_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__coshf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__coshf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__coshl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__cxa_thread_atexit_impl, GLIBC_DONT_USE_THIS_VERSION_2.18)
++SYMVER(__exp10_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__exp10f128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__exp10f_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__exp10l_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__exp2_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__exp2f128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__exp2f_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__exp2l_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__exp_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__expf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__expf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__expl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__explicit_bzero_chk, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(__fdelt_chk, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__fdelt_warn, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__finitef128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__fmod_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__fmodf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__fmodf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__fmodl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__fpclassifyf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__gamma_r_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__gammaf128_r_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__gammaf_r_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__gammal_r_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__getauxval, GLIBC_DONT_USE_THIS_VERSION_2.16)
++SYMVER(__hypot_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__hypotf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__hypotf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__hypotl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__iscanonicall, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(__iseqsig, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(__iseqsigf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(__iseqsigf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__iseqsigl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(__isinff128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__isnanf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__issignaling, GLIBC_DONT_USE_THIS_VERSION_2.18)
++SYMVER(__issignalingf, GLIBC_DONT_USE_THIS_VERSION_2.18)
++SYMVER(__issignalingf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__issignalingl, GLIBC_DONT_USE_THIS_VERSION_2.18)
++SYMVER(__j0_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__j0f128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__j0f_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__j0l_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__j1_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__j1f128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__j1f_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__j1l_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__jn_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__jnf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__jnf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__jnl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__lgamma_r_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__lgammaf128_r_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__lgammaf_r_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__lgammal_r_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__libc_single_threaded, GLIBC_DONT_USE_THIS_VERSION_2.32)
++SYMVER(__log10_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__log10f128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__log10f_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__log10l_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__log2_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__log2f128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__log2f_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__log2l_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__log_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__logf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__logf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__logl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__memcmpeq, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(__poll_chk, GLIBC_DONT_USE_THIS_VERSION_2.16)
++SYMVER(__pow_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__powf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__powf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__powl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__ppoll_chk, GLIBC_DONT_USE_THIS_VERSION_2.16)
++SYMVER(__remainder_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__remainderf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__remainderf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__remainderl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__rseq_flags, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(__rseq_offset, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(__rseq_size, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(__rtld_version_placeholder, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(__scalb_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__scalbf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__scalbl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__signbitf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__signgam, GLIBC_DONT_USE_THIS_VERSION_2.23)
++SYMVER(__sinh_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__sinhf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__sinhf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__sinhl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__sqrt_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__sqrtf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__sqrtf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__sqrtl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__strtof128_internal, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__wcstof128_internal, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__x86_get_cpuid_feature_leaf, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(__y0_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__y0f128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__y0f_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__y0l_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__y1_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__y1f128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__y1f_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__y1l_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__yn_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__ynf128_finite, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(__ynf_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(__ynl_finite, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(_dl_find_object, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(acosf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(acosf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(acosf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(acosf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(acosf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(acoshf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(acoshf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(acoshf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(acoshf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(acoshf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(aligned_alloc, GLIBC_DONT_USE_THIS_VERSION_2.16)
++SYMVER(arc4random, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(arc4random_buf, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(arc4random_uniform, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(asinf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(asinf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(asinf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(asinf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(asinf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(asinhf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(asinhf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(asinhf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(asinhf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(asinhf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atan2f128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(atan2f32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atan2f32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atan2f64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atan2f64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atanf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(atanf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atanf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atanf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atanf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atanhf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(atanhf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atanhf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atanhf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(atanhf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(c16rtomb, GLIBC_DONT_USE_THIS_VERSION_2.16)
++SYMVER(c32rtomb, GLIBC_DONT_USE_THIS_VERSION_2.16)
++SYMVER(c8rtomb, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(cabsf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(cabsf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cabsf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cabsf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cabsf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cacosf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(cacosf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cacosf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cacosf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cacosf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cacoshf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(cacoshf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cacoshf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cacoshf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cacoshf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(call_once, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(canonicalize, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(canonicalizef, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(canonicalizef128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(canonicalizef32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(canonicalizef32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(canonicalizef64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(canonicalizef64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(canonicalizel, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(cargf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(cargf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cargf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cargf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cargf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(casinf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(casinf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(casinf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(casinf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(casinf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(casinhf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(casinhf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(casinhf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(casinhf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(casinhf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(catanf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(catanf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(catanf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(catanf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(catanf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(catanhf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(catanhf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(catanhf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(catanhf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(catanhf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cbrtf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(cbrtf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cbrtf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cbrtf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cbrtf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ccosf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(ccosf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ccosf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ccosf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ccosf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ccoshf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(ccoshf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ccoshf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ccoshf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ccoshf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ceilf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(ceilf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ceilf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ceilf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ceilf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cexpf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(cexpf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cexpf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cexpf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cexpf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cimagf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(cimagf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cimagf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cimagf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cimagf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(clog10f128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(clog10f32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(clog10f32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(clog10f64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(clog10f64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(clogf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(clogf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(clogf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(clogf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(clogf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(close_range, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(closefrom, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(cnd_broadcast, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(cnd_destroy, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(cnd_init, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(cnd_signal, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(cnd_timedwait, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(cnd_wait, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(conjf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(conjf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(conjf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(conjf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(conjf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(copy_file_range, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(copysignf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(copysignf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(copysignf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(copysignf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(copysignf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cosf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(cosf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cosf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cosf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cosf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(coshf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(coshf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(coshf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(coshf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(coshf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cpowf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(cpowf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cpowf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cpowf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cpowf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cprojf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(cprojf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cprojf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cprojf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(cprojf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(crealf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(crealf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(crealf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(crealf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(crealf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csinf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(csinf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csinf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csinf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csinf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csinhf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(csinhf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csinhf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csinhf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csinhf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csqrtf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(csqrtf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csqrtf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csqrtf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(csqrtf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ctanf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(ctanf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ctanf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ctanf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ctanf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ctanhf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(ctanhf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ctanhf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ctanhf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ctanhf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(daddl, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(ddivl, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(dfmal, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(dmull, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(dn_comp, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(dn_expand, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(dn_skipname, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(dsqrtl, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(dsubl, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(epoll_pwait2, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(erfcf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(erfcf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(erfcf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(erfcf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(erfcf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(erff128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(erff32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(erff32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(erff64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(erff64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(execveat, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(exp10f128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(exp10f32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(exp10f32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(exp10f64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(exp10f64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(exp2f128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(exp2f32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(exp2f32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(exp2f64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(exp2f64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(expf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(expf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(expf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(expf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(expf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(explicit_bzero, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(expm1f128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(expm1f32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(expm1f32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(expm1f64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(expm1f64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(f32addf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32addf32x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32addf64, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32addf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32divf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32divf32x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32divf64, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32divf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32fmaf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32fmaf32x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32fmaf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32fmaf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32mulf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32mulf32x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32mulf64, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32mulf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32sqrtf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32sqrtf32x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32sqrtf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32sqrtf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32subf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32subf32x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32subf64, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32subf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xaddf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xaddf64, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xaddf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xdivf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xdivf64, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xdivf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xfmaf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32xfmaf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32xfmaf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32xmulf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xmulf64, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xmulf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xsqrtf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32xsqrtf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32xsqrtf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f32xsubf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xsubf64, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f32xsubf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64addf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64addf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64divf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64divf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64fmaf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f64fmaf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f64mulf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64mulf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64sqrtf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f64sqrtf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f64subf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64subf64x, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64xaddf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64xdivf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64xfmaf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f64xmulf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(f64xsqrtf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(f64xsubf128, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(fabsf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(fabsf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fabsf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fabsf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fabsf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fadd, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(faddl, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(fcntl64, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(fdimf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(fdimf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fdimf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fdimf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fdimf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fdiv, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(fdivl, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(fegetmode, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fesetexcept, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fesetmode, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fetestexceptflag, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(ffma, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(ffmal, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(floorf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(floorf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(floorf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(floorf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(floorf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(fmaf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaxf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(fmaxf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaxf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaxf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaxf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaximum, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_mag, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_mag_num, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_mag_numf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_mag_numf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_mag_numf32, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_mag_numf32x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_mag_numf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_mag_numf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_mag_numl, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_magf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_magf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_magf32, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_magf32x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_magf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_magf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_magl, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_num, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_numf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_numf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_numf32, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_numf32x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_numf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_numf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximum_numl, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximumf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximumf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximumf32, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximumf32x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximumf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximumf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaximuml, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fmaxmag, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fmaxmagf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fmaxmagf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(fmaxmagf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaxmagf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaxmagf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaxmagf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmaxmagl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fminf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(fminf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fminf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fminf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fminf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fminimum, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_mag, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_mag_num, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_mag_numf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_mag_numf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_mag_numf32, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_mag_numf32x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_mag_numf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_mag_numf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_mag_numl, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_magf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_magf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_magf32, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_magf32x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_magf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_magf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_magl, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_num, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_numf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_numf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_numf32, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_numf32x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_numf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_numf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimum_numl, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimumf, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimumf128, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimumf32, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimumf32x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimumf64, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimumf64x, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminimuml, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fminmag, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fminmagf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fminmagf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(fminmagf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fminmagf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fminmagf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fminmagf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fminmagl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fmodf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(fmodf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmodf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmodf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmodf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fmul, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(fmull, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(frexpf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(frexpf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(frexpf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(frexpf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(frexpf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fromfp, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fromfpf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fromfpf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(fromfpf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fromfpf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fromfpf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fromfpf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fromfpl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fromfpx, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fromfpxf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fromfpxf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(fromfpxf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fromfpxf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fromfpxf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fromfpxf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(fromfpxl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(fsconfig, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(fsmount, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(fsopen, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(fspick, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(fsqrt, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fsqrtl, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(fstat, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(fstat64, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(fstatat, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(fstatat64, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(fsub, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(fsubl, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(fts64_children, GLIBC_DONT_USE_THIS_VERSION_2.23)
++SYMVER(fts64_close, GLIBC_DONT_USE_THIS_VERSION_2.23)
++SYMVER(fts64_open, GLIBC_DONT_USE_THIS_VERSION_2.23)
++SYMVER(fts64_read, GLIBC_DONT_USE_THIS_VERSION_2.23)
++SYMVER(fts64_set, GLIBC_DONT_USE_THIS_VERSION_2.23)
++SYMVER(getauxval, GLIBC_DONT_USE_THIS_VERSION_2.16)
++SYMVER(getcpu, GLIBC_DONT_USE_THIS_VERSION_2.29)
++SYMVER(getdents64, GLIBC_DONT_USE_THIS_VERSION_2.30)
++SYMVER(getentropy, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(getpayload, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(getpayloadf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(getpayloadf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(getpayloadf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(getpayloadf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(getpayloadf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(getpayloadf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(getpayloadl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(getrandom, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(gettid, GLIBC_DONT_USE_THIS_VERSION_2.30)
++SYMVER(hypotf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(hypotf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(hypotf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(hypotf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(hypotf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ilogbf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(ilogbf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ilogbf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ilogbf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ilogbf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(j0f128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(j0f32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(j0f32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(j0f64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(j0f64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(j1f128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(j1f32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(j1f32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(j1f64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(j1f64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(jnf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(jnf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(jnf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(jnf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(jnf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ldexpf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(ldexpf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ldexpf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ldexpf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ldexpf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lgammaf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(lgammaf128_r, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(lgammaf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lgammaf32_r, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lgammaf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lgammaf32x_r, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lgammaf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lgammaf64_r, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lgammaf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lgammaf64x_r, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llogb, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(llogbf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(llogbf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(llogbf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llogbf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llogbf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llogbf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llogbl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(llrintf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(llrintf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llrintf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llrintf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llrintf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llroundf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(llroundf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llroundf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llroundf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(llroundf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log10f128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(log10f32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log10f32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log10f64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log10f64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log1pf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(log1pf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log1pf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log1pf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log1pf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log2f128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(log2f32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log2f32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log2f64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(log2f64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(logbf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(logbf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(logbf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(logbf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(logbf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(logf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(logf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(logf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(logf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(logf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lrintf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(lrintf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lrintf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lrintf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lrintf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lroundf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(lroundf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lroundf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lroundf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lroundf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(lstat, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(lstat64, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(mallinfo2, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(mbrtoc16, GLIBC_DONT_USE_THIS_VERSION_2.16)
++SYMVER(mbrtoc32, GLIBC_DONT_USE_THIS_VERSION_2.16)
++SYMVER(mbrtoc8, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(memfd_create, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(mknod, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(mknodat, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(mlock2, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(modff128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(modff32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(modff32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(modff64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(modff64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(mount_setattr, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(move_mount, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(mtx_destroy, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(mtx_init, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(mtx_lock, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(mtx_timedlock, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(mtx_trylock, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(mtx_unlock, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(nanf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(nanf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nanf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nanf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nanf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nearbyintf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(nearbyintf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nearbyintf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nearbyintf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nearbyintf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextafterf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(nextafterf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextafterf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextafterf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextafterf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextdown, GLIBC_DONT_USE_THIS_VERSION_2.24)
++SYMVER(nextdownf, GLIBC_DONT_USE_THIS_VERSION_2.24)
++SYMVER(nextdownf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(nextdownf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextdownf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextdownf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextdownf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextdownl, GLIBC_DONT_USE_THIS_VERSION_2.24)
++SYMVER(nextup, GLIBC_DONT_USE_THIS_VERSION_2.24)
++SYMVER(nextupf, GLIBC_DONT_USE_THIS_VERSION_2.24)
++SYMVER(nextupf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(nextupf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextupf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextupf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextupf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(nextupl, GLIBC_DONT_USE_THIS_VERSION_2.24)
++SYMVER(open_tree, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(pidfd_getfd, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(pidfd_open, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(pidfd_send_signal, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(pkey_alloc, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(pkey_free, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(pkey_get, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(pkey_mprotect, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(pkey_set, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(posix_spawn_file_actions_addchdir_np, GLIBC_DONT_USE_THIS_VERSION_2.29)
++SYMVER(posix_spawn_file_actions_addclosefrom_np, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(posix_spawn_file_actions_addfchdir_np, GLIBC_DONT_USE_THIS_VERSION_2.29)
++SYMVER(posix_spawn_file_actions_addtcsetpgrp_np, GLIBC_DONT_USE_THIS_VERSION_2.35)
++SYMVER(powf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(powf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(powf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(powf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(powf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(preadv2, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(preadv64v2, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(process_madvise, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(process_mrelease, GLIBC_DONT_USE_THIS_VERSION_2.36)
++SYMVER(process_vm_readv, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(process_vm_writev, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(pthread_attr_getsigmask_np, GLIBC_DONT_USE_THIS_VERSION_2.32)
++SYMVER(pthread_attr_setsigmask_np, GLIBC_DONT_USE_THIS_VERSION_2.32)
++SYMVER(pthread_clockjoin_np, GLIBC_DONT_USE_THIS_VERSION_2.31)
++SYMVER(pthread_cond_clockwait, GLIBC_DONT_USE_THIS_VERSION_2.30)
++SYMVER(pthread_getattr_default_np, GLIBC_DONT_USE_THIS_VERSION_2.18)
++SYMVER(pthread_mutex_clocklock, GLIBC_DONT_USE_THIS_VERSION_2.30)
++SYMVER(pthread_rwlock_clockrdlock, GLIBC_DONT_USE_THIS_VERSION_2.30)
++SYMVER(pthread_rwlock_clockwrlock, GLIBC_DONT_USE_THIS_VERSION_2.30)
++SYMVER(pthread_setattr_default_np, GLIBC_DONT_USE_THIS_VERSION_2.18)
++SYMVER(pwritev2, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(pwritev64v2, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(reallocarray, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(remainderf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(remainderf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(remainderf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(remainderf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(remainderf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(remquof128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(remquof32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(remquof32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(remquof64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(remquof64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(renameat2, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(res_dnok, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_hnok, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_mailok, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_mkquery, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_nmkquery, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_nquery, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_nquerydomain, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_nsearch, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_nsend, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_ownok, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_query, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_querydomain, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_search, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(res_send, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(rintf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(rintf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(rintf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(rintf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(rintf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(roundeven, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(roundevenf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(roundevenf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(roundevenf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(roundevenf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(roundevenf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(roundevenf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(roundevenl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(roundf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(roundf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(roundf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(roundf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(roundf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(scalblnf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(scalblnf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(scalblnf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(scalblnf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(scalblnf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(scalbnf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(scalbnf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(scalbnf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(scalbnf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(scalbnf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(scandirat, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(scandirat64, GLIBC_DONT_USE_THIS_VERSION_2.15)
++SYMVER(secure_getenv, GLIBC_DONT_USE_THIS_VERSION_2.17)
++SYMVER(sem_clockwait, GLIBC_DONT_USE_THIS_VERSION_2.30)
++SYMVER(setpayload, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(setpayloadf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(setpayloadf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(setpayloadf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(setpayloadf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(setpayloadf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(setpayloadf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(setpayloadl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(setpayloadsig, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(setpayloadsigf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(setpayloadsigf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(setpayloadsigf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(setpayloadsigf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(setpayloadsigf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(setpayloadsigf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(setpayloadsigl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(sigabbrev_np, GLIBC_DONT_USE_THIS_VERSION_2.32)
++SYMVER(sigdescr_np, GLIBC_DONT_USE_THIS_VERSION_2.32)
++SYMVER(sincosf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(sincosf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sincosf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sincosf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sincosf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sinf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(sinf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sinf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sinf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sinf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sinhf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(sinhf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sinhf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sinhf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sinhf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sqrtf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(sqrtf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sqrtf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sqrtf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(sqrtf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(stat, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(stat64, GLIBC_DONT_USE_THIS_VERSION_2.33)
++SYMVER(statx, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(strerrordesc_np, GLIBC_DONT_USE_THIS_VERSION_2.32)
++SYMVER(strerrorname_np, GLIBC_DONT_USE_THIS_VERSION_2.32)
++SYMVER(strfromd, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(strfromf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(strfromf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(strfromf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(strfromf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(strfromf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(strfromf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(strfroml, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(strtof128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(strtof128_l, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(strtof32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(strtof32_l, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(strtof32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(strtof32x_l, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(strtof64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(strtof64_l, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(strtof64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(strtof64x_l, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tanf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(tanf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tanf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tanf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tanf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tanhf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(tanhf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tanhf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tanhf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tanhf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tgammaf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(tgammaf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tgammaf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tgammaf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tgammaf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tgkill, GLIBC_DONT_USE_THIS_VERSION_2.30)
++SYMVER(thrd_create, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(thrd_current, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(thrd_detach, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(thrd_equal, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(thrd_exit, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(thrd_join, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(thrd_sleep, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(thrd_yield, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(timespec_get, GLIBC_DONT_USE_THIS_VERSION_2.16)
++SYMVER(timespec_getres, GLIBC_DONT_USE_THIS_VERSION_2.34)
++SYMVER(totalorder, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(totalorderf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(totalorderf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(totalorderf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(totalorderf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(totalorderf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(totalorderf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(totalorderl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(totalordermag, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(totalordermagf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(totalordermagf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(totalordermagf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(totalordermagf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(totalordermagf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(totalordermagf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(totalordermagl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(truncf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(truncf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(truncf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(truncf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(truncf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(tss_create, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(tss_delete, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(tss_get, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(tss_set, GLIBC_DONT_USE_THIS_VERSION_2.28)
++SYMVER(twalk_r, GLIBC_DONT_USE_THIS_VERSION_2.30)
++SYMVER(ufromfp, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(ufromfpf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(ufromfpf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(ufromfpf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ufromfpf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ufromfpf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ufromfpf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ufromfpl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(ufromfpx, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(ufromfpxf, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(ufromfpxf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(ufromfpxf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ufromfpxf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ufromfpxf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ufromfpxf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ufromfpxl, GLIBC_DONT_USE_THIS_VERSION_2.25)
++SYMVER(wcstof128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(wcstof128_l, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(wcstof32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(wcstof32_l, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(wcstof32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(wcstof32x_l, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(wcstof64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(wcstof64_l, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(wcstof64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(wcstof64x_l, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(y0f128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(y0f32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(y0f32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(y0f64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(y0f64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(y1f128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(y1f32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(y1f32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(y1f64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(y1f64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ynf128, GLIBC_DONT_USE_THIS_VERSION_2.26)
++SYMVER(ynf32, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ynf32x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ynf64, GLIBC_DONT_USE_THIS_VERSION_2.27)
++SYMVER(ynf64x, GLIBC_DONT_USE_THIS_VERSION_2.27)
++
++#undef SYMVER
++#undef SYMVER1
++
++#if defined (__cplusplus)
++}
++#endif
++
++
++#endif /* __x86_64__ */
++#endif /* __linux__ */
+diff --git a/intl/config.h.in b/intl/config.h.in
+index 9c9b53dc0ea..60c9df76760 100644
+--- a/intl/config.h.in
++++ b/intl/config.h.in
+@@ -278,3 +278,5 @@
+ /* Define to unsigned long or unsigned long long if <stdint.h> and
+    <inttypes.h> don't define. */
+ #undef uintmax_t
++
++#include "libcwrap.h"
 diff --git a/ld/Makefile.am b/ld/Makefile.am
-index d31021c13e2..36447de65ab 100644
+index d31021c13e2..665a085111a 100644
 --- a/ld/Makefile.am
 +++ b/ld/Makefile.am
 @@ -318,6 +318,9 @@ ALL_EMULATION_SOURCES = \
@@ -3740,8 +5927,17 @@ index d31021c13e2..36447de65ab 100644
  	em9s12zelf.c \
  	emcorepe.c \
  	emn10200.c \
+@@ -959,7 +962,7 @@ ld_new_SOURCES = ldgram.y ldlex-wrapper.c lexsup.c ldlang.c mri.c ldctor.c ldmai
+ 	ldbuildid.c
+ ld_new_DEPENDENCIES = $(EMULATION_OFILES) $(EMUL_EXTRA_OFILES) \
+ 		      $(BFDLIB) $(LIBCTF) $(LIBIBERTY) $(LIBINTL_DEP) $(JANSSON_LIBS)
+-ld_new_LDADD = $(EMULATION_OFILES) $(EMUL_EXTRA_OFILES) $(BFDLIB) $(LIBCTF) $(LIBIBERTY) $(LIBINTL) $(ZLIB) $(JANSSON_LIBS)
++ld_new_LDADD = $(EMULATION_OFILES) $(EMUL_EXTRA_OFILES) $(BFDLIB) $(LIBCTF) $(LIBIBERTY) $(LIBINTL) $(ZLIB) $(JANSSON_LIBS) $(GLIBC_SO)
+ 
+ # Dependency tracking for the generated emulation files.
+ EXTRA_ld_new_SOURCES += $(ALL_EMULATION_SOURCES) $(ALL_64_EMULATION_SOURCES)
 diff --git a/ld/Makefile.in b/ld/Makefile.in
-index ee0c98f65b0..5537e731f15 100644
+index ee0c98f65b0..1883efc69d2 100644
 --- a/ld/Makefile.in
 +++ b/ld/Makefile.in
 @@ -815,6 +815,9 @@ ALL_EMULATION_SOURCES = \
@@ -3754,6 +5950,15 @@ index ee0c98f65b0..5537e731f15 100644
  	em9s12zelf.c \
  	emcorepe.c \
  	emn10200.c \
+@@ -1011,7 +1014,7 @@ ld_new_SOURCES = ldgram.y ldlex-wrapper.c lexsup.c ldlang.c mri.c ldctor.c ldmai
+ ld_new_DEPENDENCIES = $(EMULATION_OFILES) $(EMUL_EXTRA_OFILES) \
+ 		      $(BFDLIB) $(LIBCTF) $(LIBIBERTY) $(LIBINTL_DEP) $(JANSSON_LIBS)
+ 
+-ld_new_LDADD = $(EMULATION_OFILES) $(EMUL_EXTRA_OFILES) $(BFDLIB) $(LIBCTF) $(LIBIBERTY) $(LIBINTL) $(ZLIB) $(JANSSON_LIBS)
++ld_new_LDADD = $(EMULATION_OFILES) $(EMUL_EXTRA_OFILES) $(BFDLIB) $(LIBCTF) $(LIBIBERTY) $(LIBINTL) $(ZLIB) $(JANSSON_LIBS) $(GLIBC_SO) $(GLIBC_SO)
+ #
+ #
+ # Build a dummy plugin using libtool.
 @@ -1492,6 +1495,9 @@ distclean-compile:
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/em68hc12elfb.Po@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/em68kelf.Po@am__quote@
@@ -3764,6 +5969,16 @@ index ee0c98f65b0..5537e731f15 100644
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/em9s12zelf.Po@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emcorepe.Po@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/emmo.Po@am__quote@
+diff --git a/ld/config.in b/ld/config.in
+index d4c1fc420b5..9ff1d51a217 100644
+--- a/ld/config.in
++++ b/ld/config.in
+@@ -256,3 +256,5 @@
+ 
+ /* Define to 1 if you need to in order for `stat' and other things to work. */
+ #undef _POSIX_SOURCE
++
++#include "libcwrap.h"
 diff --git a/ld/configure b/ld/configure
 index e58fb7f3a35..ce64a54ac51 100755
 --- a/ld/configure
@@ -4195,6 +6410,19 @@ index 731ae5f7aed..e97bb467ecf 100644
  			       (const char *) NULL);
  	  if (ldfile_try_open_bfd (name, entry))
  	    {
+diff --git a/ld/ldmain.c b/ld/ldmain.c
+index ea72b14a301..1a4811d7c63 100644
+--- a/ld/ldmain.c
++++ b/ld/ldmain.c
+@@ -240,6 +240,8 @@ ld_bfd_error_handler (const char *fmt, va_list ap)
+   (*default_bfd_error_handler) (fmt, ap);
+ }
+ 
++#include "libcmain.h"
++
+ int
+ main (int argc, char **argv)
+ {
 diff --git a/ld/scripttempl/m68kmint.sc b/ld/scripttempl/m68kmint.sc
 new file mode 100644
 index 00000000000..a0aa896b283
@@ -4336,6 +6564,46 @@ index 00000000000..e47e0fbc68e
 +
 +}
 +EOF
+diff --git a/libbacktrace/config.h.in b/libbacktrace/config.h.in
+index cdb416e6406..8b8026ff1cf 100644
+--- a/libbacktrace/config.h.in
++++ b/libbacktrace/config.h.in
+@@ -182,3 +182,5 @@
+ 
+ /* Define to 1 if you need to in order for `stat' and other things to work. */
+ #undef _POSIX_SOURCE
++
++#include "libcwrap.h"
+diff --git a/libctf/config.h.in b/libctf/config.h.in
+index 5db637c7903..29d3fb6d467 100644
+--- a/libctf/config.h.in
++++ b/libctf/config.h.in
+@@ -182,3 +182,5 @@
+ 
+ /* Define to 1 if you need to in order for `stat' and other things to work. */
+ #undef _POSIX_SOURCE
++
++#include "libcwrap.h"
+diff --git a/libdecnumber/config.in b/libdecnumber/config.in
+index 98dc67d7f06..970990a645c 100644
+--- a/libdecnumber/config.in
++++ b/libdecnumber/config.in
+@@ -92,3 +92,5 @@
+ 
+ /* Define to `long int' if <sys/types.h> does not define. */
+ #undef off_t
++
++#include "libcwrap.h"
+diff --git a/libiberty/config.in b/libiberty/config.in
+index f7052b5d958..9ffb27209bd 100644
+--- a/libiberty/config.in
++++ b/libiberty/config.in
+@@ -575,3 +575,5 @@
+ 
+ /* Define as `fork' if `vfork' does not work. */
+ #undef vfork
++
++#include "libcwrap.h"
 diff --git a/libiberty/dyn-string.c b/libiberty/dyn-string.c
 index b96a0cdd300..a1f32664298 100644
 --- a/libiberty/dyn-string.c
@@ -4375,6 +6643,16 @@ index 3fa4723f1a2..f5919fa72aa 100644
   #error "<safe-ctype.h> requires EOF == -1"
  #endif
  
+diff --git a/opcodes/config.in b/opcodes/config.in
+index 4cd636e52ed..1a9aa0912e1 100644
+--- a/opcodes/config.in
++++ b/opcodes/config.in
+@@ -120,3 +120,5 @@
+ 
+ /* Define to 1 if you need to in order for `stat' and other things to work. */
+ #undef _POSIX_SOURCE
++
++#include "libcwrap.h"
 diff --git a/opcodes/m68k-opc.c b/opcodes/m68k-opc.c
 index c1165ca5cfc..a1f1ac0a8ca 100644
 --- a/opcodes/m68k-opc.c
@@ -4426,3 +6704,43 @@ index c1165ca5cfc..a1f1ac0a8ca 100644
  {"fmovem", 4,	two(0xF000, 0xA000), two(0xF1C0, 0xE3FF), "Iis8%s", mfloat },
  {"fmovem", 4,	two(0xF000, 0x8000), two(0xF1C0, 0xE3FF), "Ii*ss8", mfloat },
  {"fmovem", 4,	two(0xF000, 0xA000), two(0xF1C0, 0xE3FF), "IiL8~s", mfloat },
+diff --git a/readline/readline/config.h.in b/readline/readline/config.h.in
+index 6de47b58743..d6dd95e8ee7 100644
+--- a/readline/readline/config.h.in
++++ b/readline/readline/config.h.in
+@@ -300,3 +300,5 @@
+ #endif
+ 
+ /* VARARGS defines moved to rlstdc.h */
++
++#include "libcwrap.h"
+diff --git a/readline/readline/examples/rlfe/config.h.in b/readline/readline/examples/rlfe/config.h.in
+index a843fecc4ac..e40b54ed36e 100644
+--- a/readline/readline/examples/rlfe/config.h.in
++++ b/readline/readline/examples/rlfe/config.h.in
+@@ -381,3 +381,5 @@
+ #undef HAVE_SGTTY_H
+ 
+ #undef HAVE_SYS_SELECT_H
++
++#include "libcwrap.h"
+diff --git a/sim/config.h.in b/sim/config.h.in
+index 8e84759df04..f1f2c3a53c0 100644
+--- a/sim/config.h.in
++++ b/sim/config.h.in
+@@ -526,3 +526,5 @@
+ 
+ /* Define to `int' if <sys/types.h> doesn't define. */
+ #undef uid_t
++
++#include "libcwrap.h"
+diff --git a/sim/ppc/config.in b/sim/ppc/config.in
+index 442835a9a76..735105bcf78 100644
+--- a/sim/ppc/config.in
++++ b/sim/ppc/config.in
+@@ -61,3 +61,5 @@
+    Windows, we use the Windows API when building for MinGW, but the POSIX API
+    when building for Cygwin. */
+ #undef USE_WIN32API
++
++#include "libcwrap.h"

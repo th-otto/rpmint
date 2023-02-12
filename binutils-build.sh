@@ -179,6 +179,8 @@ CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer"
 LDFLAGS_FOR_BUILD="-s"
 CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 
+unset GLIBC_SO
+
 case $host in
 	macos*)
 		GCC=/usr/bin/clang
@@ -198,6 +200,11 @@ case $host in
 		CFLAGS_FOR_BUILD="-pipe -O2 ${ARCHS}"
 		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ ${ARCHS}"
 		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names ${ARCHS}"
+		;;
+	linux64)
+		CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
+		CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
+		export GLIBC_SO="$here/$srcdir/bfd/glibc.so"
 		;;
 esac
 
