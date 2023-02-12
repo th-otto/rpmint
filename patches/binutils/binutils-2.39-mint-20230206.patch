@@ -4178,46 +4178,6 @@ index c876abb0c2e..3eeb16f5345 100644
  
  .*:     file format .*
  
-diff --git a/gdb/config.in b/gdb/config.in
-index a4975c68aad..6146207247d 100644
---- a/gdb/config.in
-+++ b/gdb/config.in
-@@ -828,3 +828,5 @@
- 
- /* Define as `fork' if `vfork' does not work. */
- #undef vfork
-+
-+#include "libcwrap.h"
-diff --git a/gdbserver/config.in b/gdbserver/config.in
-index 39ddc7c0edb..ceaa1c740d7 100644
---- a/gdbserver/config.in
-+++ b/gdbserver/config.in
-@@ -509,3 +509,5 @@
- 
- /* Define as `fork' if `vfork' does not work. */
- #undef vfork
-+
-+#include "libcwrap.h"
-diff --git a/gdbsupport/config.in b/gdbsupport/config.in
-index 577866c97b3..95af9b8554b 100644
---- a/gdbsupport/config.in
-+++ b/gdbsupport/config.in
-@@ -426,3 +426,5 @@
- 
- /* Define as `fork' if `vfork' does not work. */
- #undef vfork
-+
-+#include "libcwrap.h"
-diff --git a/gnulib/config.in b/gnulib/config.in
-index 07efd1334fa..1c3ef61ce1f 100644
---- a/gnulib/config.in
-+++ b/gnulib/config.in
-@@ -2016,3 +2016,5 @@
- 
- /* Define to `int' if <sys/types.h> doesn't define. */
- #undef uid_t
-+
-+#include "libcwrap.h"
 diff --git a/gold/Makefile.am b/gold/Makefile.am
 index 2e406716f29..5d0589655b7 100644
 --- a/gold/Makefile.am
@@ -6564,16 +6524,6 @@ index 00000000000..e47e0fbc68e
 +
 +}
 +EOF
-diff --git a/libbacktrace/config.h.in b/libbacktrace/config.h.in
-index cdb416e6406..8b8026ff1cf 100644
---- a/libbacktrace/config.h.in
-+++ b/libbacktrace/config.h.in
-@@ -182,3 +182,5 @@
- 
- /* Define to 1 if you need to in order for `stat' and other things to work. */
- #undef _POSIX_SOURCE
-+
-+#include "libcwrap.h"
 diff --git a/libctf/config.h.in b/libctf/config.h.in
 index 5db637c7903..29d3fb6d467 100644
 --- a/libctf/config.h.in
@@ -6582,16 +6532,6 @@ index 5db637c7903..29d3fb6d467 100644
  
  /* Define to 1 if you need to in order for `stat' and other things to work. */
  #undef _POSIX_SOURCE
-+
-+#include "libcwrap.h"
-diff --git a/libdecnumber/config.in b/libdecnumber/config.in
-index 98dc67d7f06..970990a645c 100644
---- a/libdecnumber/config.in
-+++ b/libdecnumber/config.in
-@@ -92,3 +92,5 @@
- 
- /* Define to `long int' if <sys/types.h> does not define. */
- #undef off_t
 +
 +#include "libcwrap.h"
 diff --git a/libiberty/config.in b/libiberty/config.in
@@ -6704,43 +6644,3 @@ index c1165ca5cfc..a1f1ac0a8ca 100644
  {"fmovem", 4,	two(0xF000, 0xA000), two(0xF1C0, 0xE3FF), "Iis8%s", mfloat },
  {"fmovem", 4,	two(0xF000, 0x8000), two(0xF1C0, 0xE3FF), "Ii*ss8", mfloat },
  {"fmovem", 4,	two(0xF000, 0xA000), two(0xF1C0, 0xE3FF), "IiL8~s", mfloat },
-diff --git a/readline/readline/config.h.in b/readline/readline/config.h.in
-index 6de47b58743..d6dd95e8ee7 100644
---- a/readline/readline/config.h.in
-+++ b/readline/readline/config.h.in
-@@ -300,3 +300,5 @@
- #endif
- 
- /* VARARGS defines moved to rlstdc.h */
-+
-+#include "libcwrap.h"
-diff --git a/readline/readline/examples/rlfe/config.h.in b/readline/readline/examples/rlfe/config.h.in
-index a843fecc4ac..e40b54ed36e 100644
---- a/readline/readline/examples/rlfe/config.h.in
-+++ b/readline/readline/examples/rlfe/config.h.in
-@@ -381,3 +381,5 @@
- #undef HAVE_SGTTY_H
- 
- #undef HAVE_SYS_SELECT_H
-+
-+#include "libcwrap.h"
-diff --git a/sim/config.h.in b/sim/config.h.in
-index 8e84759df04..f1f2c3a53c0 100644
---- a/sim/config.h.in
-+++ b/sim/config.h.in
-@@ -526,3 +526,5 @@
- 
- /* Define to `int' if <sys/types.h> doesn't define. */
- #undef uid_t
-+
-+#include "libcwrap.h"
-diff --git a/sim/ppc/config.in b/sim/ppc/config.in
-index 442835a9a76..735105bcf78 100644
---- a/sim/ppc/config.in
-+++ b/sim/ppc/config.in
-@@ -61,3 +61,5 @@
-    Windows, we use the Windows API when building for MinGW, but the POSIX API
-    when building for Cygwin. */
- #undef USE_WIN32API
-+
-+#include "libcwrap.h"

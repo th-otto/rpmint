@@ -15,8 +15,8 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        2.34
-Release:        20200821
+Version:        2.39
+Release:        20230206
 License:        GFDL-1.3-only AND GPL-3.0-or-later
 Group:          Development/Tools/Building
 
@@ -150,7 +150,7 @@ BUILD_LIBDIR=%{build_libdir}
 # vendor name included.
 #
 for a in "" -1.16 -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
-	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null`
+	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null || true`
 	test "$BUILD" != "" && break
 	test "$host" = "macos" && BUILD=`/opt/local/share/automake${a}/config.guess 2>/dev/null`
 	test "$BUILD" != "" && break
@@ -203,6 +203,14 @@ case "${TARGET}" in
     	bfd_targets="${bfd_targets}m68k-atari-mintelf"
 		;;
 esac
+
+CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=/m68000    ; WITH_CPU_000=m68000
+CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=/m68020-60 ; WITH_CPU_020=m68020-60
+CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=/m5475     ; WITH_CPU_v4e=5475
+CPU_CFLAGS_000=-m68000    ; CPU_LIBDIR_000=           ; WITH_CPU_000=m68000
+CPU_CFLAGS_020=-m68020-60 ; CPU_LIBDIR_020=           ; WITH_CPU_020=m68020-60
+CPU_CFLAGS_v4e=-mcpu=5475 ; CPU_LIBDIR_v4e=           ; WITH_CPU_v4e=5475
+
 
 CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer"
 LDFLAGS_FOR_BUILD="-s"
@@ -260,38 +268,48 @@ cd build-dir
 	--libdir="${PREFIX}/lib" \
 %endif
 	--bindir="${PREFIX}/bin" \
-		--libexecdir='${libdir}' \
-		CFLAGS="$CFLAGS_FOR_BUILD" \
-		CXXFLAGS="$CXXFLAGS_FOR_BUILD" \
-		LDFLAGS="$LDFLAGS_FOR_BUILD ${STACKSIZE}" \
-		$bfd_targets \
-		--with-pkgversion="%{release}" \
-		--with-stage1-ldflags= \
-		--with-boot-ldflags="$LDFLAGS_FOR_BUILD" \
-		--with-gcc --with-gnu-as --with-gnu-ld \
-		--disable-werror \
-		--disable-threads \
-		--enable-new-dtags \
-		--enable-relro \
-		--enable-default-hash-style=both \
-		$enable_lto \
-		$enable_plugins \
-		--disable-nls \
-		--with-system-zlib \
-		--with-system-readline \
+	--libexecdir='${libdir}' \
+	CFLAGS="$CFLAGS_FOR_BUILD" \
+	CXXFLAGS="$CXXFLAGS_FOR_BUILD" \
+	LDFLAGS="$LDFLAGS_FOR_BUILD ${STACKSIZE}" \
+	$bfd_targets \
+	--with-pkgversion="%{release}" \
+	--with-stage1-ldflags= \
+	--with-boot-ldflags="$LDFLAGS_FOR_BUILD" \
+	--with-gcc --with-gnu-as --with-gnu-ld \
+	--disable-werror \
+	--disable-threads \
+	--enable-new-dtags \
+	--enable-relro \
+	--enable-default-hash-style=both \
+	$enable_lto \
+	$enable_plugins \
+	--disable-nls \
+	--with-system-zlib \
+	--with-system-readline \
 %if "%{buildtype}" == "cross"
-		--with-sysroot="${PREFIX}/${TARGET}/sys-root"
+	--with-sysroot="${PREFIX}/${TARGET}/sys-root"
 %else
-		--with-cpu=$with_cpu \
-		--with-build-sysroot="/usr/${TARGET}/sys-root"
+	--with-cpu=$with_cpu \
+	--with-build-sysroot="/usr/${TARGET}/sys-root"
 %endif
 
 make %{?_smp_mflags}
 
-# not quite right, but do the install already here;
-# rpmbuild will use a different script during install,
-# and our local variables are lost
 
+
+%install
+
+%rpmint_cflags
+
+cd build-dir
+
+%if "%{buildtype}" != "cross"
+eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
+eval multilibdir=\${CPU_LIBDIR_$CPU}
+%endif
+
+PREFIX=/usr
 case $host in
 	mingw*) if test "${PREFIX}" = /usr; then PREFIX=${MINGW_PREFIX}; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
 	macos*) if test "${PREFIX}" = /usr; then PREFIX=/opt/cross-mint; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
@@ -330,6 +348,7 @@ ${strip} ${PREFIX#/}/bin/*
 rm -f ${BUILD_LIBDIR#/}/libiberty.a
 
 rm -f ${PREFIX#/}/share/info/dir
+rm -f ${PREFIX#/}/lib/bfd-plugins/libdep.so
 %if "%{buildtype}" == "cross"
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
@@ -341,15 +360,6 @@ for f in ${PREFIX#/}/share/man/*/* ${PREFIX#/}/share/info/*; do
 	esac
 done
 %endif
-
-
-
-%install
-
-%rpmint_cflags
-
-# already done above
-# make install DESTDIR=${RPM_BUILD_ROOT}
 
 %clean
 [ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
@@ -376,5 +386,8 @@ done
 
 
 %changelog
+* Sun Feb 12 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to binutils 2.39
+
 * Fri Aug 21 2020 Thorsten Otto <admin@tho-otto.de>
 - first RPMint spec file for binutils 2.34

@@ -31,6 +31,7 @@ Provides:       cross-mint-%{pkgname}-headers = %{version}
 Provides:       %{pkgname}-headers = %{version}
 %endif
 
+# cannot use rpmint_essential() here, because gemlib is part of the essential package
 BuildRequires:  cross-mint-gcc
 
 %if "%{buildtype}" == "cross"

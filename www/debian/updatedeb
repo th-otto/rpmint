@@ -8,7 +8,7 @@ scriptdir=${0%/*}
 gpg_name=CC2E22F1B6492FD3EACFF8BF3C9569A568969A28
 
 cd "${REPO}" || exit 1
-for dist in xenial bionic focal jammy kinetic; do
+for dist in xenial bionic eoan focal jammy kinetic bullseye buster stretch jessie; do
 	mkdir -p "dists/${dist}/main/binary-amd64"
 	mkdir -p "dists/${dist}/main/binary-i386"
 	mkdir -p "dists/${dist}/main/all"
@@ -60,6 +60,13 @@ cat Release | gpg --default-key ${gpg_name} -abs --clearsign > InRelease
 
 generate_release xenial 16.04
 generate_release bionic 18.04
+generate_release eoan 19.10
 generate_release focal 20.04
 generate_release jammy 22.04
 generate_release kinetic 22.10
+
+generate_release jessie 8.0
+generate_release stretch 9.0
+generate_release buster 10.0
+generate_release bullseye 11.0
+
