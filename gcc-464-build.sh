@@ -107,7 +107,12 @@ DIST_DIR="$here/pkgs"
 #
 # Where to look up the source tree.
 #
-srcdir="$here/${PACKAGENAME}${VERSION}"
+srcdir="$HOME/m68k-atari-mint-gcc"
+if test -d "$srcdir"; then
+	touch ".patched-${PACKAGENAME}${VERSION}"
+else
+	srcdir="$here/${PACKAGENAME}${VERSION}"
+fi
 
 #
 # whether to include the fortran backend
@@ -123,6 +128,16 @@ with_D=false
 # whether to include the ada backend
 #
 with_ada=false
+case $host in
+	linux64 | linux32)
+		;;
+	*)
+		# ADA is currently only available for linux
+		with_ada=false
+		# D backend takes too long on github runners
+		with_D=false
+		;;
+esac
 
 
 #
@@ -354,8 +369,18 @@ case $host in
 		;;
 esac
 
+case $BUILD in
+	i686-*-msys* | x86_64-*-msys*)
+		# we use in-tree versions of those libraries now
+		# mpfr_config="--with-mpc=${MINGW_PREFIX} --with-gmp=${MINGW_PREFIX} --with-mpfr=${MINGW_PREFIX}"
+		;;
+esac
+
 export CC="${GCC}"
 export CXX="${GXX}"
+GNATMAKE="gnatmake${adahostsuffix}"
+GNATBIND="gnatbind${adahostsuffix}"
+GNATLINK="gnatlink${adahostsuffix}"
 
 
 fail()
@@ -388,6 +413,9 @@ $srcdir/configure \
 	CXXFLAGS_FOR_TARGET="$CXXFLAGS_FOR_TARGET" \
 	LDFLAGS_FOR_BUILD="$LDFLAGS_FOR_BUILD" \
 	LDFLAGS="$LDFLAGS_FOR_BUILD" \
+	GNATMAKE_FOR_HOST="${GNATMAKE}" \
+	GNATBIND_FOR_HOST="${GNATBIND}" \
+	GNATLINK_FOR_HOST="${GNATLINK}" \
 	--with-pkgversion="$REVISION" \
 	--disable-libvtv \
 	--disable-libmpx \

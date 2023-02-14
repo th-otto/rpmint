@@ -390,6 +390,11 @@ case $BUILD in
 		;;
 esac
 
+#
+# Note: for ADA, you have to use the same major of gcc as the one we are compiling here.
+# If your hosts compiler is a newer one, set
+# GCC=gcc-7 GXX=g++-7 before running this script
+#
 case $GCC in
 	*-[0-9]*)
 		adahostsuffix=-"${GCC##*-}"
@@ -542,7 +547,8 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
 		$LN_S ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-c++${BUILD_EXEEXT}
 	fi
-	for tool in gcc gfortran gdc gccgo go gofmt; do
+	for tool in gcc gfortran gdc gccgo go gofmt \
+	            gnat gnatbind gnatchop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep gnatxref; do
 		if test -x ${TARGET}-${tool} && test ! -h ${TARGET}-${tool}; then
 			rm -f ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}
 			rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
@@ -553,13 +559,6 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 				rm -f ${tool}-${gcc_major_version}${BUILD_EXEEXT} ${tool}-${gcc_major_version}${BUILD_EXEEXT}
 				$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
 			fi
-		fi
-	done
-	for tool in gnat gnatbind gnatchop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep gnatxref; do
-		if test -x ${TARGET}-${tool} && test ! -h ${TARGET}-${tool}; then
-			rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
-			mv ${TARGET}-${tool}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
-			$LN_S ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}${BUILD_EXEEXT}
 		fi
 	done
 	if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then

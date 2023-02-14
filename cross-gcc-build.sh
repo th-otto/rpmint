@@ -6,6 +6,8 @@
 #
 
 me="$0"
+scriptdir=${0%/*}
+scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
 VERSION=-12.2.0
@@ -94,18 +96,35 @@ with_ada=false
 #
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
-# - checking out the gcc-7-mint branch
-# - running git diff gcc-7_2_0-release HEAD
+# - checking out the mint/gcc-12 branch
+# - running git diff releases/gcc-12.2.0 HEAD
 #
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
+OTHER_PATCHES="
+patches/gmp/gmp-universal.patch
+patches/gmp/gmp-6.2.1-CVE-2021-43618.patch
+patches/gmp/gmp-6.2.1-arm64-invert_limb.patch
+gmp-for-gcc.sh
+"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
+	found=false
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
 	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
 	         "${PACKAGENAME}${VERSION}.tar.xz" \
 	         "${PACKAGENAME}${VERSION}.tar.bz2"; do
-		if test -f "$f"; then tar xvf "$f" || exit 1; fi
+		if test -f "$f"; then
+			found=true
+			$TAR xf "$f" || exit 1
+			break
+		fi
 	done
+	if ! $found; then
+		echo "no archive found for ${PACKAGENAME}${VERSION}" >&2
+		echo "download it from https://ftp.gnu.org/gnu/gcc/ and" >&2
+		echo "put it in this directory, or in $ARCHIVES_DIR" >&2
+		exit 1
+	fi
 	if test ! -d "$srcdir"; then
 		echo "$srcdir: no such directory" >&2
 		exit 1
@@ -126,8 +145,22 @@ if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
 	exit 1
 fi
+
+#
+# install mintlib if needed, so libstdc++ can be configured
+#
+if ! test -f ${prefix}/${TARGET}/sys-root/usr/include/compiler.h; then
+	if test "${GITHUB_REPOSITORY}" != ""; then
+		sudo mkdir -p ${PREFIX}/${TARGET}/sys-root/usr
+		echo "fetching mintlib"
+		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+		echo "fetching fdlibm"
+		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+	fi
+fi
+
 if test ! -f "${prefix}/${TARGET}/sys-root/usr/include/compiler.h"; then
-	echo "mintlib must be installed in ${prefix}/${TARGET}/sys-root/usr/include" >&2
+	echo "mintlib headers must be installed in ${prefix}/${TARGET}/sys-root/usr/include" >&2
 	exit 1
 fi
 
@@ -157,6 +190,7 @@ gxxinclude=/usr/include/c++/${gcc_dir_version}
 # canonical build system name.
 # On some distros it is patched to have the
 # vendor name included.
+# FIXME: maybe use $GCC -dumpmachine intead?
 #
 for a in "" -1.16 -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null`
@@ -236,6 +270,16 @@ fi
 # so that any files left behind are compiled for this
 #
 ALL_CPUS="020 v4e 000"
+
+
+
+fail()
+{
+	component="$1"
+	echo "configuring $component failed"
+	exit 1
+}
+
 
 export AS_FOR_TARGET="$as"
 export RANLIB_FOR_TARGET="$ranlib"
@@ -338,7 +382,7 @@ chmod 755 "${GXX_WRAPPER}"
 		$mpfr_config \
 		--with-cpu=$with_cpu \
 		--with-build-sysroot="${prefix}/${TARGET}/sys-root" \
-		--enable-languages="$languages"
+		--enable-languages="$languages" || fail "gcc"
 	
 # there seems to be a problem with thin archives
 	${MAKE} configure-gcc || exit 1
