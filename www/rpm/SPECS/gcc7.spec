@@ -21,6 +21,16 @@
 %define build_go 0
 %define build_ada 0
 %define build_d 0
+%if %{gcc_major_ver} < 7
+%define build_fortran 0
+%endif
+%if %{gcc_major_ver} < 13
+%define build_modula 0
+%endif
+# D currently does not work natively because of missing libphobos
+%if "%{buildtype}" != "cross"
+%define build_d 0
+%endif
 
 %if %{build_objcp}
 %define build_cp 1
@@ -34,10 +44,14 @@
 %endif
 
 Summary:        The system GNU C Compiler
-Name:           %{cross_pkgname}
+%if "%{buildtype}" == "cross"
+Name:           cross-mint-%{pkgname}
+%else
+Name:           %{pkgname}
+%endif
 Version:        7.5.0
-Release:        1
-%define releasedate 20200101
+Release:        2
+%define releasedate 20230210
 License:        GPL-3.0+
 Group:          Development/Languages/C and C++
 %if "%{buildtype}" != "cross"
@@ -57,9 +71,22 @@ Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
+%define gmp_version https://gmplib.org/download/gmp/gmp-6.2.1.tar.xz
+%define mpfr_version https://www.mpfr.org/mpfr-3.1.4/mpfr-3.1.4.tar.xz
+%define mpc_version https://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz
+%define isl_version https://libisl.sourceforge.io/isl-0.18.tar.xz
+
 Source0: https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz
-Source1: gcc-download-prerequisites
+Source2: gmp-for-gcc.sh
+Source3: %{gmp_version}
+Source4: %{mpfr_version}
+Source5: %{mpc_version}
+Source6: %{isl_version}
+
 Patch0: gcc-%{version}-mint-%{releasedate}.patch
+Patch1: gmp-universal.patch
+Patch2: gmp-6.2.1-CVE-2021-43618.patch
+Patch3: gmp-6.2.1-arm64-invert_limb.patch
 
 BuildRequires:  cross-mint-binutils
 BuildRequires:  cross-mint-mintlib-headers
@@ -73,14 +100,19 @@ BuildRequires:  bison
 BuildRequires:  flex
 BuildRequires:  perl
 BuildRequires:  zlib-devel
+%if %{gcc_major_ver} >= 10
+BuildRequires:  zstd-devel
+%endif
 %if %{build_ada}
-BuildRequires:  gcc-ada
+BuildRequires:  gcc%{gcc_major_ver}-ada
 %endif
 
-BuildRequires:  cross-mint-gmp >= 6.0.0
-BuildRequires:  cross-mint-mpfr >= 3.0.0
-BuildRequires:  cross-mint-mpc >= 1.0.0
-BuildRequires:  cross-mint-isl >= 0.18
+%if "%{buildtype}" != "cross"
+BuildRequires:  gmp >= 6.0.0
+BuildRequires:  mpfr >= 3.0.0
+BuildRequires:  mpc >= 1.0.0
+BuildRequires:  isl >= 0.18
+%endif
 
 %if "%{buildtype}" == "cross"
 %if %{build_32bit}
@@ -116,8 +148,8 @@ The system GNU C Compiler.
 Summary:        The GNU C++ Compiler
 License:        GPL-3.0-or-later
 Group:          Development/Languages/C and C++
-Requires:       %{cross_pkgname} = %{version}-%{release}
-Requires:       %{cross_pkgname}-c++ = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}-c++ = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libstdc++-devel = %{version}-%{release}
 Provides:       cross-mint-c++ = %{version}-%{release}
@@ -141,8 +173,8 @@ This package contains the GNU compiler for C++.
 Summary:        GNU Objective C Compiler
 License:        GPL-3.0-or-later
 Group:          Development/Languages/Other
-Requires:       %{cross_pkgname} = %{version}-%{release}
-Requires:       %{cross_pkgname}-objc = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}-objc = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libobjc = %{version}-%{release}
 Provides:       cross-mint-gcc-objc = %{version}-%{release}
@@ -163,9 +195,9 @@ Nextstep OS. The source code is available in the gcc package.
 Summary:        GNU Objective C++ Compiler
 License:        GPL-3.0-or-later
 Group:          Development/Languages/Other
-Requires:       %{cross_pkgname}-c++ = %{version}-%{release}
-Requires:       %{cross_pkgname}-obj-c++ = %{version}-%{release}
-Requires:       %{cross_pkgname}-objc = %{version}-%{release}
+Requires:       %{name}-c++ = %{version}-%{release}
+Requires:       %{name}-obj-c++ = %{version}-%{release}
+Requires:       %{name}-objc = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-gcc-obj-c++ = %{version}-%{release}
 %else
@@ -184,8 +216,8 @@ Nextstep OS. The source code is available in the gcc package.
 Summary:        GNU Ada Compiler Based on GCC (GNAT)
 License:        GPL-3.0-or-later
 Group:          Development/Languages/Other
-Requires:       %{cross_pkgname} = %{version}-%{release}
-Requires:       %{cross_pkgname}-ada = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}-ada = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libada = %{version}-%{release}
 Provides:       cross-mint-gcc-ada = %{version}-%{release}
@@ -205,8 +237,8 @@ tools based on the GNU GCC technology.
 Summary:        The GNU Fortran Compiler and Support Files
 License:        GPL-3.0-or-later
 Group:          Development/Languages/Fortran
-Requires:       %{cross_pkgname} = %{version}-%{release}
-Requires:       %{cross_pkgname}-fortran = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}-fortran = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libgfortran = %{version}-%{release}
 Provides:       cross-mint-gcc-fortan = %{version}-%{release}
@@ -225,8 +257,8 @@ This is the Fortran compiler of the GNU Compiler Collection (GCC).
 Summary:        GNU Go Compiler
 License:        GPL-3.0-or-later
 Group:          Development/Languages/Other
-Requires:       %{cross_pkgname} = %{version}-%{release}
-Requires:       %{cross_pkgname}-go = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}-go = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libgo = %{version}-%{release}
 Provides:       cross-mint-gcc-go = %{version}-%{release}
@@ -246,8 +278,8 @@ files based on the GNU GCC technology.
 Summary:        GNU D Compiler
 License:        GPL-3.0-or-later
 Group:          Development/Languages/Other
-Requires:       %{cross_pkgname} = %{version}-%{release}
-Requires:       %{cross_pkgname}-d = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}-d = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libgdruntime = %{version}-%{release}
 Provides:       cross-mint-libgphobos = %{version}-%{release}
@@ -274,15 +306,52 @@ BuildArch:      noarch
 %description doc
 The system GNU Compiler documentation.
 
+# ##################################
+# P R E P
+# ##################################
 %prep
 %setup -q -n gcc-%{version}
 %patch0 -p1
 
+srcdir="${RPM_BUILD_DIR}/gcc-%{version}"
+
 %if "%{buildtype}" == "cross"
-sh %{SOURCE1} ${RPM_SOURCE_DIR}
+# dont run this on Darwin, we want universal binaries there,
+# which cant be built by the gcc configure scripts,
+# and are done by gmp-for-gcc.sh instead
+case `uname -s` in
+	Darwin*) ;;
+	*)
+	for archive in %{gmp_version} %{mpfr_version} %{mpc_version} %{isl_version}; do
+		basearchive=${archive##*/}
+		package="${basearchive%.tar*}"
+		if ! test -f "${RPM_SOURCE_DIR}/${basearchive}"; then
+			echo "fetching ${archive}"
+			wget -nv "${archive}" -O "${RPM_SOURCE_DIR}/${basearchive}"
+		fi
+		tar -C "${srcdir}" -xf "${RPM_SOURCE_DIR}/${basearchive}"
+		basepackage="${package%%-*}"
+		ln -sf "${package}" "${srcdir}/${basepackage}"
+		if test "$basepackage" = gmp; then
+(
+cd $package
+%patch1 -p1
+%patch2 -p1
+# following patch was taken from SuSE, but failes to compile with clang
+# %patch3 -p1
+)
+		fi
+	done
+	;;
+	esac
 %endif
 
+# ##################################
+# B U I L D
+# ##################################
 %build
+
+srcdir="${RPM_BUILD_DIR}/gcc-%{version}"
 
 %rpmint_cflags
 %if "%{buildtype}" == "cross"
@@ -295,13 +364,9 @@ WITH_CPU_v4e=5475
 
 GCC=${GCC-gcc}
 GXX=${GXX-g++}
-%if %{build_32bit}
-GCC="${GCC} -m32"
-GXX="${GXX} -m32"
-%endif
 BUILD_EXEEXT=
 TARGET_EXEEXT=
-PREFIX=/usr
+PREFIX=%{_prefix}
 
 case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
@@ -309,13 +374,14 @@ case `uname -s` in
 	MINGW*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	MSYS*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	CYGWIN*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
-	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
+	Darwin*) host=macos; TAR_OPTS= ;;
 	*) host=linux64
 %if %{build_32bit}
 	   host=linux32
 %endif
 	   ;;
 esac
+LN_S="ln -s"
 case $host in
 	cygwin* | mingw* | msys*) BUILD_EXEEXT=.exe ;;
 esac
@@ -359,7 +425,7 @@ gcc_dir_version=%{gcc_dir_version}
 	test "$host" = "macos" && BUILD=`/opt/local/share/automake${a}/config.guess 2>/dev/null`; \
 	test "$BUILD" != "" && break; \
 done; \
-test "$BUILD" = "" && BUILD=`$srcdir/config.guess`; \
+test "$BUILD" = "" && BUILD=`${srcdir}/config.guess`; \
 case $BUILD in \
 	(x86_64-pc-mingw32) BUILD=x86_64-pc-mingw32 ;; \
 	(i686-pc-mingw32) BUILD=i686-pc-msys ;; \
@@ -392,16 +458,13 @@ languages=$languages,d
 %endif
 
 
-ranlib=ranlib
-%define enable_plugins 0
+%define enable_plugin 0
 %define enable_lto %(case "%{_rpmint_target}" in (*-*-*elf* | *-*-linux*) echo 1;; (*) echo 0;; esac)
 %if %{enable_lto}
 %if "%{buildtype}" == "cross"
-%define enable_plugins %(case "%{BUILD}" in (*-*-linux*) echo 1;; (*) echo 0;; esac)
+%define enable_plugin %(case "%{BUILD}" in (*-*-linux*) echo 1;; (*) echo 0;; esac)
 %endif
 languages="$languages,lto"
-# not here; we are just building it
-# ranlib=gcc-ranlib
 %endif
 
 CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer"
@@ -433,29 +496,95 @@ CXXFLAGS_FOR_BUILD+=" ${CPU_CFLAGS}"
 STACKSIZE="-Wl,-stack,512k"
 %endif
 
+mpfr_config=
+
+unset GLIBC_SO
+without_zstd=
+
 case $host in
 	macos*)
 		GCC=/usr/bin/clang
 		GXX=/usr/bin/clang++
-		export MACOSX_DEPLOYMENT_TARGET=10.6
-		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
-		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
-		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
+		MACOSX_DEPLOYMENT_TARGET=10.9
+		ARCHS="-arch x86_64"
+		case `$GCC --print-target-triple 2>/dev/null` in
+		arm64* | aarch64*)
+			BUILD_ARM64=yes
+			;;
+		esac
+		if test `uname -r | cut -d . -f 1` -ge 20; then
+			BUILD_ARM64=yes
+		fi
+		if test "$BUILD_ARM64" = yes; then
+			ARCHS="${ARCHS} -arch arm64"
+			MACOSX_DEPLOYMENT_TARGET=11
+		fi
+		export MACOSX_DEPLOYMENT_TARGET
+		CFLAGS_FOR_BUILD="-pipe -O2 ${ARCHS}"
+		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ ${ARCHS}"
+		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names ${ARCHS}"
+		mpfr_config="--with-mpc=${CROSSTOOL_DIR}"
+		# zstd gives link errors on github runners
+		without_zstd=--without-zstd
+		;;
+	linux64)
+		CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD -include $srcdir/gcc/libcwrap.h"
+		CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
+		export GLIBC_SO="$srcdir/gcc/glibc.so"
 		;;
 esac
 
+%if %{build_ada}
+# Using the host gnatmake like
+#   CC="gcc%%{hostsuffix}" GNATBIND="gnatbind%%{hostsuffix}"
+#   GNATMAKE="gnatmake%%{hostsuffix}"
+# doesn't work due to PR33857, so an un-suffixed gnatmake has to be
+# available
+	adahostsuffix=-%{gcc_major_ver}
+	GCC=gcc${adahostsuffix}
+	GXX=g++${adahostsuffix}
+	if test ! -x /usr/bin/gnatmake${adahostsuffix}; then
+		echo "need gnatmake${adahostsuffix} to build ada" >&2
+		exit 1
+	fi
+	mkdir -p host-tools/bin
+	$LN_S -f /usr/bin/gnatmake${adahostsuffix} host-tools/bin/gnatmake
+	$LN_S -f /usr/bin/gnatlink${adahostsuffix} host-tools/bin/gnatlink
+	$LN_S -f /usr/bin/gnatbind${adahostsuffix} host-tools/bin/gnatbind
+	$LN_S -f /usr/bin/gnatls${adahostsuffix} host-tools/bin/gnatls
+	$LN_S -f /usr/bin/gcc${adahostsuffix} host-tools/bin/gcc
+	if test $host = linux64; then
+		$LN_S -f /usr/lib64 host-tools/lib64
+	else
+		$LN_S -f /usr/lib host-tools/lib
+	fi
+	export PATH="`pwd`/host-tools/bin:$PATH"
+%endif
+
+%if %{build_32bit}
+GCC="${GCC} -m32"
+GXX="${GXX} -m32"
+%endif
+
 export CC="${GCC}"
 export CXX="${GXX}"
+GNATMAKE="gnatmake${adahostsuffix}"
+GNATBIND="gnatbind${adahostsuffix}"
+GNATLINK="gnatlink${adahostsuffix}"
 
-ranlib=${TARGET}-${ranlib}
-strip="${TARGET}-strip"
-as="${TARGET}-as"
-STRIP=${STRIP-strip}
+
+fail()
+{
+	component="$1"
+	echo "configuring $component failed"
+	exit 1
+}
+
+
 %if "%{buildtype}" != "cross"
-STRIP=${strip}
-export AS_FOR_TARGET="$as"
-export RANLIB_FOR_TARGET="$ranlib"
-export STRIP_FOR_TARGET="$strip"
+export AS_FOR_TARGET=%{_rpmint_target}-as
+export RANLIB_FOR_TARGET=%{_rpmint_target}-ranlib
+export STRIP_FOR_TARGET=%{_rpmint_target}-strip
 export CC_FOR_TARGET="${TARGET}-gcc-%{version}"
 export GCC_FOR_TARGET="${TARGET}-gcc-%{version}"
 export CXX_FOR_TARGET="${TARGET}-g++-%{version}"
@@ -541,6 +670,9 @@ export CXXFLAGS="-O2 -fomit-frame-pointer"
 	CXXFLAGS_FOR_TARGET="$CXXFLAGS_FOR_TARGET" \
 	LDFLAGS_FOR_BUILD="$LDFLAGS_FOR_BUILD" \
 	LDFLAGS="$LDFLAGS_FOR_BUILD ${STACKSIZE}" \
+	GNATMAKE_FOR_HOST="${GNATMAKE}" \
+	GNATBIND_FOR_HOST="${GNATBIND}" \
+	GNATLINK_FOR_HOST="${GNATLINK}" \
 %endif
 	--with-pkgversion="MiNT %{releasedate}" \
 	--disable-libvtv \
@@ -561,6 +693,8 @@ export CXXFLAGS="-O2 -fomit-frame-pointer"
 %endif
 	--with-gcc --with-gnu-as --with-gnu-ld \
 	--with-system-zlib \
+	--without-static-standard-libraries \
+	--without-stage1-ldflags \
 	--disable-libgomp \
 	--without-newlib \
 	--disable-libstdcxx-pch \
@@ -572,13 +706,14 @@ export CXXFLAGS="-O2 -fomit-frame-pointer"
 %endif
 	--enable-ssp \
 	--enable-libssp \
-%if %{enable_plugins}
+%if %{enable_plugin}
 	--enable-plugin \
 %else
 	--disable-plugin \
 %endif
 	--disable-decimal-float \
 	--disable-nls \
+	$mpfr_config \
 %if "%{buildtype}" == "cross"
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
@@ -591,7 +726,7 @@ export CXXFLAGS="-O2 -fomit-frame-pointer"
 	--with-sysroot="%{_rpmint_target_prefix}/${TARGET}/sys-root" \
 %endif
 %endif
-	--enable-languages="$languages"
+	--enable-languages="$languages" || fail "gcc"
 
 %if "%{buildtype}" != "cross"
 make configure-gcc
@@ -606,22 +741,53 @@ make %{?_smp_mflags} all-gcc
 make %{?_smp_mflags} all-target-libgcc
 make %{?_smp_mflags}
 
-# not quite right, but do the install already here;
-# rpmbuild will use a different script during install,
-# and our local variables are lost
+# ##################################
+# I N S T A L L
+# ##################################
+%install
 
-case $host in
+%rpmint_cflags
+
+gcc_major_version=%{gcc_major_ver}
+gcc_dir_version=%{gcc_dir_version}
+BASE_VER=%{version}
+BUILD_LIBDIR=%{build_libdir}
+
+cd build-dir
+
+%if "%{buildtype}" != "cross"
+eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
+eval multilibdir=\${CPU_LIBDIR_$CPU}
+%endif
+
+PREFIX=%{_prefix}
+case "$host" in
 	mingw*) if test "${PREFIX}" = /usr; then PREFIX=${MINGW_PREFIX}; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
 	macos*) if test "${PREFIX}" = /usr; then PREFIX=/opt/cross-mint; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
 esac
 
-make DESTDIR="%{buildroot}" install
+%if "%{buildtype}" == "cross"
+	libdir="$BUILD_LIBDIR"
+	libexecdir="$BUILD_LIBDIR"
+%else
+	libdir="'${exec_prefix}/lib'$multilibdir"
+	libexecdir="${PREFIX}/lib"
+%endif
 
-mkdir -p "%{buildroot}${PREFIX}/${TARGET}/bin"
+make DESTDIR="${RPM_BUILD_ROOT}" prefix="${PREFIX}" libdir="$libdir" libexecdir="$libexecdir" bindir="${PREFIX}/bin" install
+
+mkdir -p "${RPM_BUILD_ROOT}${PREFIX}/${TARGET}/bin"
+
+# ranlib is always used for target libraries
+ranlib=%{_rpmint_target}-ranlib
+# strip is sometimes used for host executables,
+# sometimes for target libraries
+strip_for_host="strip -p"
+strip_for_target="%{_rpmint_target}-strip -p"
 
 tools="c++ cpp g++ gcc gcov gfortran gdc"
 %if "%{buildtype}" == "cross"
-cd "%{buildroot}${PREFIX}/${TARGET}/bin"
+cd "${RPM_BUILD_ROOT}${PREFIX}/${TARGET}/bin"
 for i in $tools; do
 	if test -x ../../bin/${TARGET}-$i; then
 		rm -f ${i} ${i}${BUILD_EXEEXT}
@@ -631,57 +797,50 @@ done
 %else
 BUILD_EXEEXT=${TARGET_EXEEXT}
 for i in $tools gcc-ar gcc-nm gcc-ranlib; do
-	cd "%{buildroot}${PREFIX}/bin"
+	cd "${RPM_BUILD_ROOT}${PREFIX}/bin"
 	test -f "$i" || continue
 	rm -f ${TARGET}-${i} ${TARGET}-${i}${TARGET_EXEEXT}
 	mv $i ${TARGET}-$i
 	$LN_S ${TARGET}-$i $i
-	cd "%{buildroot}${PREFIX}/${TARGET}/bin"
+	cd "${RPM_BUILD_ROOT}${PREFIX}/${TARGET}/bin"
 	rm -f ${i} ${i}${TARGET_EXEEXT}
 	$LN_S ../../bin/$i${TARGET_EXEEXT} $i
 done
 %endif
 
-cd "%{buildroot}${PREFIX}/bin"
-${STRIP} *
+cd "${RPM_BUILD_ROOT}${PREFIX}/bin"
+${strip_for_host} *
 
 	if test -x ${TARGET}-g++ && test ! -h ${TARGET}-g++; then
 		rm -f ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}
 		rm -f ${TARGET}-g++-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_dir_version}
 		mv ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++${BUILD_EXEEXT}
-		if test ${BASE_VER} != ${gcc_dir_version}; then
-		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_dir_version}${BUILD_EXEEXT}
-		fi
+		$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_major_version}${BUILD_EXEEXT}
 %if "%{buildtype}" != "cross"
 		rm -f g++-${BASE_VER}${TARGET_EXEEXT} g++-${BASE_VER}
 		rm -f g++-${gcc_dir_version}${TARGET_EXEEXT} g++-${gcc_dir_version}${TARGET_EXEEXT}
 		$LN_S ${TARGET}-g++-${BASE_VER}${TARGET_EXEEXT} g++-${BASE_VER}${TARGET_EXEEXT}
-		if test ${BASE_VER} != ${gcc_dir_version}; then
-		$LN_S ${TARGET}-g++-${gcc_dir_version}${TARGET_EXEEXT} g++-${gcc_dir_version}${TARGET_EXEEXT}
-		fi
+		$LN_S ${TARGET}-g++-${gcc_dir_version}${TARGET_EXEEXT} g++-${gcc_major_version}${TARGET_EXEEXT}
 %endif
 	fi
 	if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
 		rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
 		$LN_S ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-c++${BUILD_EXEEXT}
 	fi
-	for tool in gcc gfortran gdc gccgo go gofmt; do
+	for tool in gcc gfortran gdc gccgo go gofmt \
+                    gnat gnatbind gnatchop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep gnatxref; do
 		if test -x ${TARGET}-${tool} && test ! -h ${TARGET}-${tool}; then
 			rm -f ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}
-			rm -f ${TARGET}-${tool}-${gcc_dir_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}
+			rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
 			mv ${TARGET}-${tool}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT}
 			$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}${BUILD_EXEEXT}
-			if test ${BASE_VER} != ${gcc_dir_version}; then
-			$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}${BUILD_EXEEXT}
-			fi
+			$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
 %if "%{buildtype}" != "cross"
 			rm -f ${tool}-${BASE_VER}${BUILD_EXEEXT} ${tool}-${BASE_VER}
-			rm -f ${tool}-${gcc_dir_version}${BUILD_EXEEXT} ${tool}-${gcc_dir_version}${BUILD_EXEEXT}
+			rm -f ${tool}-${gcc_major_version}${BUILD_EXEEXT} ${tool}-${gcc_major_version}${BUILD_EXEEXT}
 			$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${tool}-${BASE_VER}${BUILD_EXEEXT}
-			if test ${BASE_VER} != ${gcc_dir_version}; then
-			$LN_S ${TARGET}-${tool}-${gcc_dir_version}${BUILD_EXEEXT} ${tool}-${gcc_dir_version}${BUILD_EXEEXT}
-			fi
+			$LN_S ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${tool}-${gcc_major_version}${BUILD_EXEEXT}
 %endif
 		fi
 	done
@@ -691,7 +850,7 @@ ${STRIP} *
 		$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp${BUILD_EXEEXT}
 	fi
 
-cd "%{buildroot}"
+cd "${RPM_BUILD_ROOT}"
 
 # that directory only contains the gdb pretty printers;
 # on the host we don't want them because they would conflict
@@ -709,6 +868,7 @@ rm -f ${PREFIX#/}/share/info/libquadmath*
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 %else
+rm -f ${PREFIX#/}/share/info/dir
 for f in ${PREFIX#/}/share/man/*/* ${PREFIX#/}/share/info/*; do
 	case $f in
 	*.gz) ;;
@@ -726,15 +886,15 @@ rmdir ${PREFIX#/}/share || :
 # move compiler dependant libraries to the gcc subdirectory
 #
 %if "%{buildtype}" == "cross"
-	pushd %{buildroot}${PREFIX}/${TARGET}/lib
+	pushd ${RPM_BUILD_ROOT}${PREFIX}/${TARGET}/lib
 %else
-	pushd %{buildroot}${PREFIX}/lib
+	pushd ${RPM_BUILD_ROOT}${PREFIX}/lib
 %endif
 	libs=`find . -name "lib*.a" ! -path "*/gcc/*"`
-	tar -c $libs | tar -x -C %{buildroot}%{gccsubdir}
+	tar -c $libs | tar -x -C ${RPM_BUILD_ROOT}%{gccsubdir}
 	rm -f $libs
 	for i in libgfortran.spec libgomp.spec libitm.spec libsanitizer.spec libmpx.spec libgphobos.spec; do
-		test -f $i && mv $i %{buildroot}%{gccsubdir}
+		test -f $i && mv $i ${RPM_BUILD_ROOT}%{gccsubdir}
 		find . -name "$i" -delete
 	done
 	rmdir m*/*/*/* || :
@@ -751,11 +911,13 @@ rmdir ${PREFIX#/}/share || :
 	esac
 %define lto_plugin liblto_plugin.so.0.0.0
 
+	# remove fixincl; it is not needed for cross-compiler and may introduce unneeded dependencies
+	rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl
 	for f in ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${BUILD_EXEEXT}; do
-		test -f "$f" && ${STRIP} "$f"
+		test -f "$f" && ${strip_for_host} "$f"
 	done
 	rmdir ${PREFIX#/}/include || :
 	
@@ -767,8 +929,8 @@ rmdir ${PREFIX#/}/share || :
 		cd "${INSTALL_DIR}"
 	fi
 	
-	find ${PREFIX#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
-	find ${PREFIX#/} -name "*.a" -exec "${ranlib}" '{}' \;
+	find ${PREFIX#/} -name "*.a" -exec ${strip_for_target} -S -x '{}' \;
+	find ${PREFIX#/} -name "*.a" -exec ${ranlib} '{}' \;
 	
 	cd ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/include-fixed && {
 		for i in `find . -type f`; do
@@ -783,13 +945,9 @@ rmdir ${PREFIX#/}/share || :
 	}
 
 
-%install
-
-%rpmint_cflags
-
-# already done above
-# make install DESTDIR=%{buildroot}
-
+# ##################################
+# C L E A N
+# ##################################
 %clean
 [ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
@@ -827,20 +985,14 @@ rmdir ${PREFIX#/}/share || :
 %endif
 %{gccsubdir}/libssp*
 %{gccsubdir}/*/libssp*
-%if %{build_fastcall}
-%{gccsubdir}/*/*/libssp*
-%endif
 %if %{gcc_major_ver} < 6
 %{gccsubdir}/libmudflap*
 %{gccsubdir}/*/libmudflap*
-%if %{build_fastcall}
-%{gccsubdir}/*/*/libmudflap*
-%endif
 %endif
 %if %{enable_lto}
 %{gccsubdir}/lto1
 %endif
-%if %{enable_plugins}
+%if %{enable_plugin}
 %{gccsubdir}/liblto_plugin*
 %{gccsubdir}/plugin
 %{_prefix}/lib/bfd-plugins
@@ -891,14 +1043,8 @@ rmdir ${PREFIX#/}/share || :
 %{gccsubdir}/cc1plus
 %{gccsubdir}/libstdc++*
 %{gccsubdir}/*/libstdc++*
-%if %{build_fastcall}
-%{gccsubdir}/*/*/libstdc++*
-%endif
 %{gccsubdir}/libsupc++*
 %{gccsubdir}/*/libsupc++*
-%if %{build_fastcall}
-%{gccsubdir}/*/*/libsupc++*
-%endif
 %endif
 
 %if %{build_objc}
@@ -912,9 +1058,6 @@ rmdir ${PREFIX#/}/share || :
 %{gccsubdir}/cc1obj
 %{gccsubdir}/libobjc*
 %{gccsubdir}/*/libobjc*
-%if %{build_fastcall}
-%{gccsubdir}/*/*/libobjc*
-%endif
 %endif
 
 %if %{build_objcp}
@@ -936,15 +1079,9 @@ rmdir ${PREFIX#/}/share || :
 %{gccsubdir}/*/finclude
 %{gccsubdir}/libgfortran*
 %{gccsubdir}/*/libgfortran*
-%if %{build_fastcall}
-%{gccsubdir}/*/*/libgfortran*
-%endif
 %if %{gcc_major_ver} >= 6
 %{gccsubdir}/libcaf*
 %{gccsubdir}/*/libcaf*
-%if %{build_fastcall}
-%{gccsubdir}/*/*/libcaf*
-%endif
 %endif
 %endif
 
@@ -979,9 +1116,6 @@ rmdir ${PREFIX#/}/share || :
 %{gccsubdir}/cgo
 %{gccsubdir}/libgo*
 %{gccsubdir}/*/libgo*
-%if %{build_fastcall}
-%{gccsubdir}/*/*/libgo*
-%endif
 %{build_libdir}/go/%{gcc_dir_version}
 %endif
 
@@ -997,17 +1131,14 @@ rmdir ${PREFIX#/}/share || :
 %{gccsubdir}/d
 %{gccsubdir}/libgphobos*
 %{gccsubdir}/*/libphobos*
-%if %{build_fastcall}
-%{gccsubdir}/*/*/libphobos*
-%endif
 %{gccsubdir}/libgdruntime*
 %{gccsubdir}/*/libgdruntime*
-%if %{build_fastcall}
-%{gccsubdir}/*/*/libgdruntime*
-%endif
 %endif
 
 
 %changelog
+* Tue Feb 14 2023 Thorsten Otto <admin@tho-otto.de>
+- Some cleanup to properly use install section 
+
 * Fri Aug 21 2020 Thorsten Otto <admin@tho-otto.de>
 - first RPMint spec file
