@@ -101,7 +101,7 @@ BuildRequires:  flex
 BuildRequires:  perl
 BuildRequires:  zlib-devel
 %if %{gcc_major_ver} >= 10
-BuildRequires:  zstd-devel
+BuildRequires:  libzstd-devel
 %endif
 %if %{build_ada}
 BuildRequires:  gcc%{gcc_major_ver}-ada
@@ -1089,7 +1089,6 @@ rmdir ${PREFIX#/}/share || :
 %files ada
 %defattr(-,root,root)
 %{_rpmint_target_prefix}/bin/%{_rpmint_target_platform}-gnat*
-%{_rpmint_target_prefix}/%{_rpmint_target}/bin/gnat*
 %if "%{buildtype}" != "cross"
 %{_rpmint_target_prefix}/bin/gnat*
 %endif

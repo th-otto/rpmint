@@ -1,4 +1,4 @@
-%define gcc_major_ver 7
+%define gcc_major_ver 12
 %define pkgname gcc%{gcc_major_ver}
 
 %if "%{?buildtype}" == ""
@@ -19,7 +19,7 @@
 %define build_objc 0
 %define build_objcp 0
 %define build_go 0
-%define build_ada 0
+%define build_ada 1
 %define build_d 0
 %if %{gcc_major_ver} < 7
 %define build_fortran 0
@@ -49,7 +49,7 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        7.5.0
+Version:        12.2.0
 Release:        2
 %define releasedate 20230210
 License:        GPL-3.0+
@@ -142,7 +142,9 @@ BuildRequires:  cross-mint-fdlibm
 %endif
 
 %description
-The system GNU C Compiler.
+The GNU Compiler Collection includes front ends for C, C++,
+Objective-C, Fortran, and Go, as well as libraries for these
+languages (libstdc++, libgcj,...).
 
 %package c++
 Summary:        The GNU C++ Compiler
@@ -913,7 +915,7 @@ rmdir ${PREFIX#/}/share || :
 
 	# remove fixincl; it is not needed for cross-compiler and may introduce unneeded dependencies
 	rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl
-	for f in ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
+	for f in ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,g++-mapper-server}${BUILD_EXEEXT} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${BUILD_EXEEXT}; do
@@ -1045,6 +1047,9 @@ rmdir ${PREFIX#/}/share || :
 %{gccsubdir}/*/libstdc++*
 %{gccsubdir}/libsupc++*
 %{gccsubdir}/*/libsupc++*
+%if %{gcc_major_ver} >= 12
+%{gccsubdir}/g++-mapper-server
+%endif
 %endif
 
 %if %{build_objc}
@@ -1094,9 +1099,12 @@ rmdir ${PREFIX#/}/share || :
 %endif
 %{gccsubdir}/gnat1
 %{gccsubdir}/adalib
+%{gccsubdir}/*/adalib
 %{gccsubdir}/adainclude
+%{gccsubdir}/*/adainclude
 %if %{gcc_major_ver} >= 10
 %{gccsubdir}/ada_target_properties
+%{gccsubdir}/*/ada_target_properties
 %endif
 %endif
 

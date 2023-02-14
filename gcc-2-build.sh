@@ -431,7 +431,7 @@ find ${PREFIX}/${TARGET}/lib -depth -type d -exec rmdir '{}' \;
 ln -s sys-root/usr/lib ${PREFIX}/${TARGET}/lib || exit 1
 
 
-for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f77,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
+for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f77,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,g++-mapper-server}${BUILD_EXEEXT} \
 	${gccsubdir#/}/${LTO_PLUGIN} \
 	${gccsubdir#/}/plugin/gengtype${BUILD_EXEEXT} \
 	${gccsubdir#/}/install-tools/fixincl${BUILD_EXEEXT}; do
