@@ -47,8 +47,9 @@ maintainer=`rpm -q --queryformat '%{packager}' "$rpmfile"`
 url=`rpm -q --queryformat '%{url}' "$rpmfile"`
 summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
 description=`rpm -q --queryformat '%{description}' "$rpmfile" | sed -e 's/^$/./' -e 's/^/ /'`
-requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib | grep -v "lib.*\.so"`
-group=`rpm -q --queryformat '%{summary}' "$rpmfile"`
+requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib | grep -v "lib.*\.so" | grep -v /bin/sh`
+group=`rpm -q --queryformat '%{group}' "$rpmfile"`
+provides=`rpm -q --queryformat '%{provides}' "$rpmfile"`
 
 if test "${requires}" != ""; then
 	requires="Depends: "`echo ${requires} | sed -e 's/ /,/g'`"
@@ -57,6 +58,11 @@ fi
 
 if test "${group}" != ""; then
 	group="Section: ${group}
+"
+fi
+
+if test "${provides}" != ""; then
+	provides="Provides: ${provides}
 "
 fi
 
@@ -69,7 +75,7 @@ Version: ${version}-${release}
 Maintainer: ${maintainer}
 Architecture: ${arch}
 Homepage: ${url}
-${requires}${group}Description: ${summary}
+${requires}${group}${provides}Description: ${summary}
 ${description}
 
 

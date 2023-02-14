@@ -911,6 +911,8 @@ rmdir ${PREFIX#/}/share || :
 	esac
 %define lto_plugin liblto_plugin.so.0.0.0
 
+	# remove fixincl; it is not needed for cross-compiler and may introduce unneeded dependencies
+	rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl
 	for f in ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT} \
