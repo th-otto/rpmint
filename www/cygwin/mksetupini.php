@@ -1,21 +1,5 @@
-#!/usr/bin/php
 <?php
 declare(strict_types=1);
-
-/* kinds of packages */
-enum PkgKind: int {
-	case binary = 0;
-	case source = 1;
-	case all = 2;
-}
-
-/* kinds of hint file, and their allowed keys */
-enum HintType: int {
-	case pvr = 0;
-	case override = 1;
-	case spvr = 2;
-}
-
 
 define('RELEASE_DIR', 'release');
 define('DIR_SEP', "/");
@@ -203,6 +187,16 @@ function safe_opendir(string $filename) #: \resource
 }
 
 
+function safe_file(string $filename) : array|false
+{
+	$report = error_reporting();
+	error_reporting($report & ~E_WARNING);
+	$lines = file($filename);
+	error_reporting($report);
+	return $lines;
+}
+
+
 class SetupVersion {
 	public string $version_string;
 	public string $epoch;
@@ -311,7 +305,7 @@ class SetupVersion {
 		for ($i = 0; $i < $len; $i++)
 		{
 			/* sort a non-digit sequence before a digit sequence */
-			if (ctype_digit($a[$i][0]) != ctype_digit($b[$i][0]))
+			if (ctype_digit($a[$i][0]) !== ctype_digit($b[$i][0]))
 				return ctype_digit($a[$i]) ? 1 : -1;
 			/* compare as numbers */
 			if (ctype_digit($a[$i]))
@@ -366,10 +360,121 @@ class RepoPath {
 }
 
 
+/* kinds of hint file, and their allowed keys */
+enum HintType: int {
+	case pvr = 0;
+	case spvr = 1;
+	case override = 2;
+}
+
+
 /* information we keep about a hint file */
 class Hint {
 	public RepoPath $repopath;
 	public array $hints;
+
+	/*
+	 * types of key:
+	 * 'multilineval' - always have a value, which may be multiline
+	 * 'val'          - always have a value
+	 * 'optval'       - may have an empty value
+	 * 'noval'        - always have an empty value
+	 */
+	private static $keytypes = ['multilineval', 'val', 'optval', 'noval'];
+	private static bool $licensing = false;
+	
+	private static array $hintkeys = [
+		0 /* HintType::pvr->value */ => [
+		    'ldesc' => 'multilineval',
+		    'category' => 'multi',
+		    'sdesc' => 'val',
+		    'test' => 'noval',   /* mark the package as a test version */
+		    'version' => 'val',  /* version override */
+		    'disable-check' => 'val',
+		    'notes' => 'val',    /* tool notes; not significant to calm itself */
+		    'message' => 'multilineval',
+		    'external-source' => 'val',
+		    'requires' => 'optval',
+		    'obsoletes' => 'optval',
+		    'provides' => 'val',
+		    'conflicts' => 'val',
+		],
+		
+		1 /* HintType::spvr->value */ => [
+		    'ldesc' => 'multilineval',
+		    'category' => 'multi',
+		    'sdesc' => 'val',
+		    'test' => 'noval',   /* mark the package as a test version */
+		    'version' => 'val',  /* version override */
+		    'disable-check' => 'val',
+		    'notes' => 'val',    /* tool notes; not significant to calm itself */
+		    'skip' => 'noval',   /* in all spvr hints, but ignored */
+		    'homepage' => 'val',
+		    'build-depends' => 'optval',
+		    'license' => 'val',
+		],
+		
+		2 /* HintType::override->value */ => [
+		    'keep' => 'val',
+		    'keep-count' => 'val',
+		    'keep-count-test' => 'val',
+		    'keep-days' => 'val',
+		    'keep-superseded-test' => 'noval',
+		    'disable-check' => 'val',
+		    'replace-versions' => 'val',
+		    'noretain' => 'val',
+		],
+	];
+	
+	/* valid categories */
+	public static array $categories = [
+		'accessibility' => true,
+		'admin' => true,
+		'archive' => true,
+		'audio' => true,
+		'base' => true,
+		'comm' => true,
+		'database' => true,
+		'debug' => true,
+		'devel' => true,
+		'doc' => true,
+		'editors' => true,
+		'games' => true,
+		'gnome' => true,
+		'graphics' => true,
+		'interpreters' => true,
+		'kde' => true,
+		'libs' => true,
+		'lua' => true,
+		'lxde' => true,
+		'mail' => true,
+		'mate' => true,
+		'math' => true,
+		'net' => true,
+		'ocaml' => true,
+		'office' => true,
+		'perl' => true,
+		'php' => true,
+		'publishing' => true,
+		'python' => true,
+		'ruby' => true,
+		'scheme' => true,
+		'science' => true,
+		'security' => true,
+		'shells' => true,
+		'source' => true,  /* added to all source packages created by deduplicator to ensure they have a category */
+		'sugar' => true,
+		'system' => true,
+		'tcl' => true,
+		'text' => true,
+		'utils' => true,
+		'video' => true,
+		'virtual' => true,
+		'web' => true,
+		'x11' => true,
+		'xfce' => true,
+		'_obsolete' => true,
+	];
 
 	public function __construct(?string $arch, ?string $path, ?string $filename)
 	{
@@ -377,12 +482,292 @@ class Hint {
 		$this->hints = []; /* XXX: duplicates version_hints, for the moment */
 	}
 
-	public static function file_parse(string $filename, HintType $kind, bool $strict): array
+	private static function item_lexer(array &$lines, int &$i, string &$item, string &$error) : bool
 	{
-		return array();
+		if ($i >= count($lines))
+			return false;
+		
+		$line = $lines[$i];
+		$i++;
+		$item = '';
+		$error = '';
+        /* validate that .hint file is UTF-8 encoded */
+		if (mb_detect_encoding($line, "UTF-8") !== "UTF-8")
+		{
+			$error = 'invalid UTF-8';
+			return true;
+		}
+
+        /* discard lines starting with '#' */
+        if (str_starts_with($line, '#'))
+        	return true;
+        
+        /* discard empty lines */
+		$line = trim($line);
+		if ($line === '')
+			return true;
+		
+        /* line containing quoted text */
+       	$quotations = substr_count($line, '"');
+		if ($quotations === 2)
+		{
+			$item = $line;
+			return true;
+		}
+
+        /* if the line contains an opening quote */
+		if ($quotations === 1)
+		{
+            while ($i < count(lines))
+            {
+                /*
+                 * multi-line quoted text preserves any leading space used for
+                 * indentation, but removes any trailing space
+                 */
+                $line = $line . "\n" . rtrim($lines[$i]);
+                $i++;
+                /* multi-line quoted text is only terminated by a quote at the */
+                /* end of the line */
+                if (str_ends_with($line, '"'))
+                {
+		            $item = $line;
+                    return true;
+                }
+            }
+            $item = $line;
+            $error = "unterminated quote";
+            return true;
+		}
+		
+        /* an unquoted line */
+        $item = $line;
+		return true;
+	}
+
+	public static function file_parse(string $filename, ?HintType $kind, bool $strict): ?array
+	{
+	    $errors = [];
+	    $warnings = [];
+		$hints = [];
+		$i = 0;
+		$item = '';
+		$error = '';
+
+		if (($lines = safe_file($filename)) === false)
+			return null;
+
+        /* parse as key:value items */
+        while (self::item_lexer($lines, $i, $item, $error))
+        {
+        	if ($error !== '')
+        		$errors[] = "$error at line $i";
+        	if ($item == '')
+        		continue;
+
+        	$quotations = substr_count($item, '"');
+        	if ($quotations !== 0 && $quotations !== 2)
+        		$errors[] = "double-quote within double-quotes at line $i (hint files have no escape character)";
+        	
+        	if (preg_match('/^([^:\s]+):\s*(.*)$/', $item, $match))
+        	{
+        		$key = $match[1];
+        		$value = $match[2];
+        		if ($kind !== null)
+        		{
+        			if (!isset(self::$hintkeys[$kind->value][$key]))
+        			{
+        				$errors[] = "unknown key $key at line $i";
+        				continue;
+        			}
+        			$valtype = self::$hintkeys[$kind->value][$key];
+                    /* check if the key occurs more than once */
+                    if (isset($hints[$key]))
+                        $errors[] = "duplicate key $key at line $i";
+                    
+                    /* check the value meets any key-specific constraints */
+                    if (($valtype === 'val' || $valtype === 'multi') && $value === '')
+                        $errors[] = "$key has empty value";
+					
+                    if ($valtype === 'noval' && $value !== '')
+                        $errors[] = "$key has non-empty value '$value'";
+
+                    /* only 'ldesc' and 'message' are allowed a multi-line value */
+                    if ($valtype !== 'multilineval'  && substr_count($value, "\n") > 0)
+                        $errors[] = "key $key has multi-line value";
+        		}
+
+                /* validate all categories are in the category list (case-insensitively) */
+                if ($key === 'category')
+                {
+                	foreach (explode(' ', $value) as $c)
+                	{
+                		$c = strtolower(trim($c));
+                		if (!isset(self::$categories[$c]))
+                			$errors[] = "unknown category '$c'";
+                	}
+                }
+                
+                /* verify that value for ldesc or sdesc is quoted (genini forces this) */
+                if ($key === 'sdesc' || $key === 'ldesc')
+                {
+                    if (!str_starts_with($value, '"') || !str_ends_with($value, '"'))
+                        $errors[] = "$key value should be quoted";
+
+                    /* warn about and fix common typos in ldesc/sdesc */
+                    list($value, $msg) = self::typofix($value);
+                    if (!empty($msg))
+                        $warnings[] = join(',', $msg) . " in $key";
+				}
+                
+                /* if sdesc ends with a '.', warn and fix it */
+                if ($key === 'sdesc')
+                    if (substr($value, -1) === '.')
+                    {
+                        $warnings[] = "$key ends with '.'";
+                        $value = substr($value, 0, -1);
+                    }
+
+                /* if sdesc contains '  ', warn and fix it */
+                if ($key === 'sdesc')
+                    if (strpos($value, '  '))
+                    {
+                        $warnings[] = "$key contains '  '";
+                        $value = str_replace('  ', ' ', $value);
+					}
+				
+                /* message must have an id and some text */
+                if ($key === 'message')
+                    if (!preg_match('/(\S+)\s+(\S.*)/', $value))
+                        $errors[] = "$key value must have id and text";
+
+                /* license must be a valid spdx license expression */
+                if ($key === 'license' && $self::licensing)
+                {
+				}
+
+                /* warn if value starts with a quote followed by whitespace */
+                if (preg_match('/^"[ \t]+/', $value))
+                    $warnings[] = "value for key $key starts with quoted whitespace";
+
+                /* store the key:value */
+                if ($valtype === 'multi')
+                {
+					if (strpos($value, ','))
+			        	$a = explode(',', $value);
+			        else
+			        	$a = explode(' ', $value);
+			        foreach ($a as $c)
+			        {
+			        	$c = trim($c);
+		                $hints[$key][$c] = $c;
+		            }
+	            } else
+	            {
+	                $hints[$key] = $value;
+	            }
+			} else
+			{
+                $errors[] = "unknown construct '$item' at line $i";
+        	}
+        }
+		
+        if (isset($hints['skip']) && count($hints) === 1)
+            $errors[] = "hint only contains skip: key, please update to cygport >= 0.22.0";
+
+        /* for the pvr kind, 'category' and 'sdesc' must be present */
+        /* (genini also requires 'requires' but that seems wrong) */
+        /* for the spvr kind, 'homepage' must be present for new packages */
+        if ($kind === HintType::pvr || $kind === HintType::spvr)
+        {
+            if (!isset($hints['category']))
+               $errors[] = "required key 'category' missing";
+            if (!isset($hints['sdesc']))
+               $errors[] = "required key 'sdesc' missing";
+            if ($kind === HintType::spvr && $strict && !isset($hints['homepage']))
+               $errors[] = "required key 'sdesc' missing";
+
+            if ($kind === HintType::spvr && $strict)
+                if (!isset($hints['license']))
+                    $warnings[] = "key 'license' missing";
+        }
+
+        /*
+         * warn if ldesc and sdesc seem transposed
+         *
+         * (Unfortunately we can't be totally strict about this, as some
+         * packages like to repeat the basic description in ldesc in every
+         * subpackage, but add to sdesc to distinguish the subpackages)
+         */
+        if (isset($hints['ldesc']))
+            if (strlen($hints['sdesc']) > 2 * strlen($hints['ldesc']))
+                $warnings[] = 'sdesc is much longer than ldesc';
+
+        /* sort these hints, as differences in ordering are uninteresting */
+        if (isset($hints['build-depends']))
+            $hints['build-depends'] = self::split_trim_sort_join($hints['build-depends'], ', ');
+
+        if (isset($hints['obsoletes']))
+            $hints['obsoletes'] = self::split_trim_sort_join($hints['obsoletes'], ', ');
+
+        if (isset($hints['replace-versions']))
+            $hints['replace-versions'] = self::split_trim_sort_join($hints['replace-versions'], ' ');
+	
+	    if (!empty($errors))
+	        $hints['parse-errors'] = $errors;
+	
+	    if (!empty($warnings))
+	        $hints['parse-warnings'] = $warnings;
+	
+		return $hints;
+	}
+	
+	private static function split_trim_sort_join(string $s, string $join): string
+	{
+		if (strpos($s, ','))
+        	$a = explode(',', $s);
+        else
+        	$a = explode(' ', $s);
+        $a = array_map("trim", $a);
+		return join($join, $a);
+	}
+		
+	/*
+	 * words that package maintainers apparently can't spell correctly
+	 */
+	private static $words = [
+	    [' accomodates ', ' accommodates '],
+	    [' consistant ', ' consistent '],
+	    [' examing ', ' examining '],
+	    [' extremly ', ' extremely '],
+	    [' interm ', ' interim '],
+	    [' procesors ', ' processors '],
+	    [' utilitzed ', ' utilized '],
+	    [' utilties ', ' utilities '],
+	];
+
+
+	private static function typofix(string $value): array
+	{
+		$msg = [];
+		foreach (self::$words as list($wrong, $right))
+		{
+			if (strpos($value, $wrong))
+			{
+				$value = str_replace($wrong, $right, $value);
+				$msg[] = trim($wrong) . " -> " . trim($right);
+			}
+		}
+		return [$value, $msg];
 	}
 }
 
+
+/* kinds of packages */
+enum PkgKind: int {
+	case binary = 0;
+	case source = 1;
+	case all = 2;
+}
 
 /* information we keep about a package */
 class Package {
@@ -642,7 +1027,7 @@ class packages {
 		 */
 		if (isset($hints['sdesc']))
 		{
-			if (preg_match('/^"(.*?)(\s*:|\s+-)/', hints['sdesc'], $colon))
+			if (preg_match('/^"(.*?)(\s*:|\s+-)/', $hints['sdesc'], $colon))
 			{
 				$package_basename = preg_replace('/^lib(.*?)(|-devel|\d*)$/', '\1', $p);
 				if (str_starts_with(strtoupper($package_basename), strtoupper($colon[1])))
@@ -658,7 +1043,7 @@ class packages {
 	/*
 	 * read a single package
 	 */
-	private function read_one_package(array &$packages, string $p, string $basedir, string $relpath, array $files, PkgKind $kind, bool $upload): bool
+	private function read_one_package(array &$packages, string $p, string $relpath, array $files, PkgKind $kind, bool $upload): bool
 	{
 		$warnings = false;
 
@@ -793,7 +1178,7 @@ class packages {
 
 				/* collect the attributes for each tar file */
 				$t = new Tar($arch, $relpath, $f, $vr);
-				$filename = $basedir . DIR_SEP . $relpath . DIR_SEP . $f;
+				$filename = $this->releasearea . DIR_SEP . $relpath . DIR_SEP . $f;
 				if (($stat = stat($filename)) !== false)
 				{
 					$t->size = $stat['size'];
@@ -922,11 +1307,11 @@ class packages {
 	 * (may contain at most one source package and one binary package)
 	 * (return True if problems, False otherwise)
 	 */
-	private function read_package_dir(array &$packages, string $basedir, string $relpath, int $depth, bool $upload = false): bool
+	private function read_package_dir(array &$packages, string $relpath, int $depth, bool $upload = false): bool
 	{
 		$result = true;
 
-		if (($dh = safe_opendir($basedir . DIR_SEP . $relpath)) !== false)
+		if (($dh = safe_opendir($this->releasearea . DIR_SEP . $relpath)) !== false)
 		{
 			$fl = array(
 				PkgKind::binary->value => array(),
@@ -946,13 +1331,13 @@ class packages {
 					else
 						$relfile = $relpath . DIR_SEP . $file;
 					mksetup::debug("processing $relfile");
-					if (is_dir($basedir . DIR_SEP . $relfile))
+					if (is_dir($this->releasearea . DIR_SEP . $relfile))
 					{
-						if (!$this->read_package_dir($packages, $basedir, $relfile, $depth + 1, $upload))
+						if (!$this->read_package_dir($packages, $relfile, $depth + 1, $upload))
 						{
 							$result = false;
 						}
-					} else if (is_file($basedir . DIR_SEP . $relfile))
+					} else if (is_file($this->releasearea . DIR_SEP . $relfile))
 					{
 						$files_found = true;
 						/* ignore dotfiles, backup files and checksum files */
@@ -984,7 +1369,7 @@ class packages {
 						}
 					} else
 					{
-						if (is_link($basedir . DIR_SEP . $relfile))
+						if (is_link($this->releasearea . DIR_SEP . $relfile))
 							mksetup::error_log("dangling symlink $relfile");
 						else
 							mksetup::error_log("ignoring unknown file $relfile");
@@ -998,7 +1383,7 @@ class packages {
 			{
 				if ($files_found && $depth > 0)
 				{
-					mksetup::error_log("no .hint files in $basedir/$relpath but has files");
+					mksetup::error_log("no .hint files in {$this->releasearea}/$relpath but has files");
 					return false;
 				}
 				return $result;
@@ -1009,7 +1394,7 @@ class packages {
 			{
 				/* only create a package if there's archives for it to contain */
 				if (!empty($fl[$kind->value]))
-					if (!$this->read_one_package($packages, $p, $basedir, $relpath, array_merge($fl[$kind->value], $fl[PkgKind::all->value]), $kind, $upload))
+					if (!$this->read_one_package($packages, $p, $relpath, array_merge($fl[$kind->value], $fl[PkgKind::all->value]), $kind, $upload))
 						$result = false;
 			}
 			return $result;
@@ -1034,7 +1419,7 @@ class packages {
 			$this->packages[$root] = array();
 			$releasedir = $this->releasearea . DIR_SEP . $root;
 			mksetup::verbose("reading packages from ${releasedir}");
-			if (!$this->read_package_dir($this->packages[$root], $this->releasearea, $root . DIR_SEP . RELEASE_DIR, 0))
+			if (!$this->read_package_dir($this->packages[$root], $root . DIR_SEP . RELEASE_DIR, 0))
 				$status = false;
 			mksetup::verbose(count($this->packages[$root]) . " packages read from ${releasedir}");
 		}
@@ -1136,7 +1521,7 @@ class packages {
 			$valid_requires[$pn] = true;
 			foreach ($p->version_hints as $hints)
 				if (isset($hints['provides']))
-					array_update($valid_requires, split(' ', $hints['provides']));
+					array_update($valid_requires, explode(' ', $hints['provides']));
 
 			/* reset computed package state */
 			$p->has_requires = false;
@@ -1330,7 +1715,7 @@ class packages {
 			$obsolete = false;
 			foreach ($p->version_hints as $vr)
 			{
-				if (isset($vr['category']) && array_search('_obsolete', $vr['category']) !== false)
+				if (isset($vr['category']['_obsolete']))
 					$obsolete = true;
 			}
 
@@ -1450,11 +1835,11 @@ class packages {
 
 			/* If the install tarball is empty, we should probably either be marked */
 			/* obsolete (if we have no dependencies) or virtual (if we do) */
-			if ($p->kind == PkgKind::binary && !$p->not_for_output)
+			if ($p->kind === PkgKind::binary && !$p->not_for_output)
 			{
 			}
 			/* If the source tarball is empty, that can't be right! */
-			else if ($p->kind == PkgKind::source)
+			else if ($p->kind === PkgKind::source)
 			{
 
 			}
@@ -1564,13 +1949,13 @@ class packages {
 			uasort($sorted_versions, "Tar::reverse_compare");
 			foreach ($sorted_versions as $v => $tar)
 			{
-				if ($p->kind != PkgKind::source)
+				if ($p->kind !== PkgKind::source)
 					continue;
 				
 				if ($tar->is_empty)
 					continue;
 
-				if (isset($p->version_hints[$v]['category']) && array_search('_obsolete', $p->version_hints[$v]['category']) !== false)
+				if (isset($p->version_hints[$v]['category']['_obsolete']))
 					continue;
 				
 				if (!$tar->is_used)
@@ -1599,7 +1984,7 @@ class packages {
 				$obsolete = false;
 				foreach ($install_p->version_hints as $vr)
 				{
-					if (isset($vr['category']) && array_search('_obsolete', $vr['category']) !== false)
+					if (isset($vr['category']['_obsolete']))
 						$obsolete = true;
 				}
 				if ($obsolete)
@@ -1640,7 +2025,7 @@ class packages {
 				// uasort($sorted_versions, "Tar::reverse_compare");
 				foreach ($sorted_versions as $vn => $v)
 				{
-					if ($most_common and count($v) != 1)
+					if ($most_common && count($v) !== 1)
 						$out[] = "$vn (" . count($v) . " others)";
 					else
 						$out[] = "$vn (" . join(',', $v);
@@ -1774,7 +2159,7 @@ class packages {
 
 			$category = '';
 			if (isset($po->version_hints[$bv]['category']))
-				$category = $po->version_hints[$bv]['category'];
+				$category = join(' ', $po->version_hints[$bv]['category']);
 			if ($po->orphaned)
 				$category .= ' unmaintained';
 
@@ -1858,8 +2243,8 @@ class packages {
 				/* skip over versions which have a special place in the ordering: */
 				/* 'curr' has already been done, 'prev' and 'test' will be done */
 				/* later */
-				if ($version === $curr_version || $version == $prev_version ||
-					$version == $test_version)
+				if ($version === $curr_version || $version === $prev_version ||
+					$version === $test_version)
 					continue;
 
 				/* test versions receive the test label */
@@ -2284,7 +2669,7 @@ options:
 		{
 			if (isset($p->hints['category']))
 			{
-				foreach (explode(' ', $p->hints['category']) as $c)
+				foreach ($p->hints['category'] as $c)
 				{
 					$c = strtolower($c);
 					if (!isset($histogram[$c]))

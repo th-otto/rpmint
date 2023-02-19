@@ -10,6 +10,7 @@ cd /srv/www/htdocs/cygtest || exit 1
 
 for ARCH in x86 x86_64 noarch; do
 	php $scriptdir/mksetupini.php --arch ${ARCH} --releasearea=. || exit 1
-	bzip2 -k ${ARCH}/setup.ini
-	xz -6e -k ${ARCH}/setup.ini
+	bzip2 -f -k ${ARCH}/setup.ini
+	xz -f -6e -k ${ARCH}/setup.ini
+	zstd -q -f -k ${ARCH}/setup.ini
 done
