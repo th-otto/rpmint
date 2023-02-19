@@ -5,6 +5,10 @@
 # but it should run fine on other GNU environments.
 
 me="$0"
+
+unset CDPATH
+unset LANG LANGUAGE LC_ALL LC_CTYPE LC_TIME LC_NUMERIC LC_COLLATE LC_MONETARY LC_MESSAGES
+
 scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
@@ -366,13 +370,6 @@ case $host in
 		CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD -include $srcdir/gcc/libcwrap.h"
 		CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 		export GLIBC_SO="$srcdir/gcc/glibc.so"
-		;;
-esac
-
-case $BUILD in
-	i686-*-msys* | x86_64-*-msys*)
-		# we use in-tree versions of those libraries now
-		# mpfr_config="--with-mpc=${MINGW_PREFIX} --with-gmp=${MINGW_PREFIX} --with-mpfr=${MINGW_PREFIX}"
 		;;
 esac
 

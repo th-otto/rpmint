@@ -6,6 +6,12 @@
 
 me="$0"
 
+unset CDPATH
+unset LANG LANGUAGE LC_ALL LC_CTYPE LC_TIME LC_NUMERIC LC_COLLATE LC_MONETARY LC_MESSAGES
+
+scriptdir=${0%/*}
+scriptdir=`cd "${scriptdir}"; pwd`
+
 PACKAGENAME=gcc
 VERSION=-4.9.4
 VERSIONPATCH=-20230203
@@ -18,7 +24,14 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 TARGET=m68k-atari-mint
 
 #
-# the hosts compiler
+# The hosts compiler.
+# To build the 32bit version for linux,
+# invoke this script with
+# GCC="gcc -m32" GXX="g++ -m32"
+# You will also need to have various 32bit flavours
+# of system libraries installed.
+# For other 32bit hosts (mingw32 and cygwin32)
+# use the appropriate shell for that system.
 #
 GCC=${GCC-gcc}
 GXX=${GXX-g++ -std=gnu++11}
@@ -32,13 +45,14 @@ GXX=${GXX-g++ -std=gnu++11}
 #
 TAR=${TAR-tar}
 TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
+SED_INPLACE=-i
 case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
 	MINGW32*) host=mingw32; MINGW_PREFIX=/mingw32; ;;
 	MINGW*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	MSYS*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=mingw32; else host=mingw64; fi; MINGW_PREFIX=/$host ;;
 	CYGWIN*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
-	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
+	Darwin*) host=macos; STRIP=strip; TAR_OPTS=; SED_INPLACE="-i ''" ;;
 	*) host=linux64
 	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=linux32; fi
 	   ;;
@@ -64,6 +78,9 @@ ARCHIVES_DIR="$here"
 # libmpc.
 # Should be a static compiled version, so the
 # compiler does not depend on non-standard shared libs
+# We will compile now the required libraries before
+# trying to compile gcc, in order to produce universal
+# libraries
 #
 CROSSTOOL_DIR="$HOME/crosstools"
 
@@ -94,7 +111,7 @@ DIST_DIR="$here/pkgs"
 #
 # Where to look up the source tree.
 #
-srcdir="${PACKAGENAME}${VERSION}"
+srcdir="$here/${PACKAGENAME}${VERSION}"
 
 #
 # whether to include the fortran backend
@@ -106,15 +123,54 @@ with_fortran=false
 #
 with_D=false
 
+#
+# whether to include the ada backend
+#
+with_ada=false
+case $host in
+	linux64 | linux32)
+		;;
+	*)
+		# ADA is currently only available for linux
+		with_ada=false
+		# D backend takes too long on github runners
+		with_D=false
+		;;
+esac
+
+
+#
+# this patch can be recreated by
+# - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
+# - checking out the mint/gcc-4.6 branch
+# - running git diff releases/gcc-4.6 HEAD
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
+OTHER_PATCHES="
+patches/gcc/${PACKAGENAME}${VERSION}-fastcall.patch
+patches/gmp/gmp-universal.patch
+patches/gmp/gmp-6.2.1-CVE-2021-43618.patch
+patches/gmp/gmp-6.2.1-arm64-invert_limb.patch
+gmp-for-gcc.sh
+"
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
+	found=false
 	for f in "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.xz" \
 	         "$ARCHIVES_DIR/${PACKAGENAME}${VERSION}.tar.bz2" \
 	         "${PACKAGENAME}${VERSION}.tar.xz" \
 	         "${PACKAGENAME}${VERSION}.tar.bz2"; do
-		if test -f "$f"; then tar xvf "$f" || exit 1; fi
+		if test -f "$f"; then
+			found=true
+			$TAR xf "$f" || exit 1
+			break
+		fi
 	done
+	if ! $found; then
+		echo "no archive found for ${PACKAGENAME}${VERSION}" >&2
+		echo "download it from https://ftp.gnu.org/gnu/gcc/ and" >&2
+		echo "put it in this directory, or in $ARCHIVES_DIR" >&2
+		exit 1
+	fi
 	if test ! -d "$srcdir"; then
 		echo "$srcdir: no such directory" >&2
 		exit 1
@@ -135,6 +191,20 @@ if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
 	exit 1
 fi
+
+#
+# install mintlib if needed, so libstdc++ can be configured
+#
+if ! test -f ${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h; then
+	if test "${GITHUB_REPOSITORY}" != ""; then
+		sudo mkdir -p ${PREFIX}/${TARGET}/sys-root/usr
+		echo "fetching mintlib"
+		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+		echo "fetching fdlibm"
+		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+	fi
+fi
+
 if test ! -f "${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h"; then
 	echo "mintlib headers must be installed in ${PREFIX}/${TARGET}/sys-root/usr/include" >&2
 	exit 1
@@ -172,6 +242,7 @@ gxxinclude=/usr/include/c++/${gcc_dir_version}
 # canonical build system name.
 # On some distros it is patched to have the
 # vendor name included.
+# FIXME: maybe use $GCC -dumpmachine intead?
 #
 for a in "" -1.16 -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 	BUILD=`/usr/share/automake${a}/config.guess 2>/dev/null`
@@ -199,9 +270,11 @@ LDFLAGS_FOR_TARGET=
 
 enable_lto=--disable-lto
 enable_plugin=--disable-plugin
+enable_libphobos=
 languages=c,c++
 $with_fortran && languages="$languages,fortran"
-$with_D && languages="$languages,d"
+$with_ada && languages="$languages,ada"
+$with_D && { languages="$languages,d"; enable_libphobos=; } # --enable-libphobos does not work because of missing swapcontext() in mintlib
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -227,6 +300,21 @@ case $host in
 	mingw* | msys*) LN_S="cp -p" ;;
 esac
 
+
+#
+# install binutils if needed
+#
+mkdir -p "${PKG_DIR}"
+if test ! -f "${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"; then
+	if test "${GITHUB_REPOSITORY}" != ""; then
+		echo "fetching binutils"
+		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.39-${TARGET##*-}-20230206-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
+		export PATH="${PKG_DIR}${PREFIX}/bin:$PATH"
+	fi
+fi
+
+
+
 try="${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"
 if test -x "$try"; then
 	ranlib="$try"
@@ -244,22 +332,60 @@ fi
 
 mpfr_config=
 
+unset GLIBC_SO
+without_zstd=
+
 case $host in
 	macos*)
 		GCC=/usr/bin/clang
 		GXX=/usr/bin/clang++
-		export MACOSX_DEPLOYMENT_TARGET=10.6
-		CFLAGS_FOR_BUILD="-pipe -O2 -arch x86_64"
-		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ -arch x86_64"
-		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names -arch x86_64"
-		mpfr_config="--with-mpc=${CROSSTOOL_DIR} --with-gmp=${CROSSTOOL_DIR} --with-mpfr=${CROSSTOOL_DIR}"
+		MACOSX_DEPLOYMENT_TARGET=10.9
+		ARCHS="-arch x86_64"
+		case `$GCC --print-target-triple 2>/dev/null` in
+		arm64* | aarch64*)
+			BUILD_ARM64=yes
+			;;
+		esac
+		if test `uname -r | cut -d . -f 1` -ge 20; then
+			BUILD_ARM64=yes
+		fi
+		if test "$BUILD_ARM64" = yes; then
+			ARCHS="${ARCHS} -arch arm64"
+			MACOSX_DEPLOYMENT_TARGET=11
+		fi
+		export MACOSX_DEPLOYMENT_TARGET
+		CFLAGS_FOR_BUILD="-pipe -O2 ${ARCHS}"
+		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ ${ARCHS}"
+		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names ${ARCHS}"
+		mpfr_config="--with-mpc=${CROSSTOOL_DIR}"
+		# zstd gives link errors on github runners
+		without_zstd=--without-zstd
 		;;
 esac
 
 export CC="${GCC}"
 export CXX="${GXX}"
+GNATMAKE="gnatmake${adahostsuffix}"
+GNATBIND="gnatbind${adahostsuffix}"
+GNATLINK="gnatlink${adahostsuffix}"
 
-../$srcdir/configure \
+
+fail()
+{
+	component="$1"
+	echo "configuring $component failed"
+	exit 1
+}
+
+
+#
+# Now, for darwin, build gmp etc.
+#
+. ${scriptdir}/gmp-for-gcc.sh
+
+cd "$MINT_BUILD_DIR"
+
+$srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
 	--prefix="${PREFIX}" \
 	--libdir="$BUILD_LIBDIR" \
@@ -274,6 +400,9 @@ export CXX="${GXX}"
 	CXXFLAGS_FOR_TARGET="$CXXFLAGS_FOR_TARGET" \
 	LDFLAGS_FOR_BUILD="$LDFLAGS_FOR_BUILD" \
 	LDFLAGS="$LDFLAGS_FOR_BUILD" \
+	GNATMAKE_FOR_HOST="${GNATMAKE}" \
+	GNATBIND_FOR_HOST="${GNATBIND}" \
+	GNATLINK_FOR_HOST="${GNATLINK}" \
 	--with-pkgversion="$REVISION" \
 	--disable-libvtv \
 	--disable-libmpx \
@@ -288,6 +417,7 @@ export CXX="${GXX}"
 	--disable-libstdcxx-pch \
 	--disable-threads \
 	$enable_lto \
+	$enable_libphobos \
 	--enable-ssp \
 	--enable-libssp \
 	$enable_plugin \
@@ -297,14 +427,15 @@ export CXX="${GXX}"
 	--with-libintl-prefix="${PREFIX}" \
 	$mpfr_config \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
-	--enable-languages="$languages"
+	--enable-languages="$languages" || fail "gcc"
+
 
 case $host in
 	linux32)
 		# make sure to pick up the just-compiled 32bit version of ld, not
 		# some previous 64bit version
 		# symptom of using a wrong linker is an error message "error loading plugin: wrong ELF class: ELFCLASS32" in the config.log
-		sed -i "s|S\[\"build_tooldir\"\]=.*|S[\"build_tooldir\"]=\"${PKG_DIR}${PREFIX}/${TARGET}\"|" config.status
+		sed $SED_INPLACE "s|S\[\"build_tooldir\"\]=.*|S[\"build_tooldir\"]=\"${PKG_DIR}${PREFIX}/${TARGET}\"|" config.status
 		./config.status
 		;;
 esac
@@ -349,11 +480,9 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	fi
 	if test -x ${TARGET}-gcc && test ! -h ${TARGET}-gcc; then
 		rm -f ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}
+		rm -f ${TARGET}-gcc-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_major_version}
 		mv ${TARGET}-gcc${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc${BUILD_EXEEXT}
-	fi
-	if test ${BASE_VER} != ${gcc_major_version} && test -x ${TARGET}-gcc-${gcc_major_version} && test ! -h ${TARGET}-gcc-${gcc_major_version}; then
-		rm -f ${TARGET}-gcc-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_major_version}
 		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_major_version}${BUILD_EXEEXT}
 	fi
 	if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
@@ -388,7 +517,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 #
 	pushd ${INSTALL_DIR}${PREFIX}/${TARGET}/lib || exit 1
 	libs=`find . -name "lib*.a" ! -path "*/gcc/*"`
-	tar -c $libs | tar -x -C ${INSTALL_DIR}${gccsubdir}
+	$TAR -c $libs | $TAR -x -C ${INSTALL_DIR}${gccsubdir}
 	rm -f $libs
 	for i in libgfortran.spec libgomp.spec libitm.spec libsanitizer.spec libmpx.spec libgphobos.spec; do
 		test -f $i && mv $i ${INSTALL_DIR}${gccsubdir}
@@ -456,13 +585,12 @@ rm -rf ${PREFIX#/}/share/gcc*/python
 # create a separate archive for the fortran backend
 #
 if $with_fortran; then
-fortran=${gccsubdir#/}/finclude
-fortran="$fortran "${gccsubdir#/}/*/finclude
-fortran="$fortran "${gccsubdir#/}/f951
-fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
-fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
-${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
-rm -rf $fortran
+	fortran=`find ${gccsubdir#/} -name finclude`
+	fortran="$fortran "${gccsubdir#/}/f951
+	fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
+	fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
+	rm -rf $fortran
 fi
 
 #
@@ -475,5 +603,5 @@ if test "$KEEP_PKGDIR" != yes; then
 	rm -rf "${THISPKG_DIR}"
 fi
 
-${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES}
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}.tar.xz ${PATCHES} ${OTHER_PATCHES}
 cp -p "$me" ${DIST_DIR}/${PACKAGENAME}${VERSION}${VERSIONPATCH}-build.sh

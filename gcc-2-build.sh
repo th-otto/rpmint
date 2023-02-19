@@ -6,6 +6,12 @@
 
 me="$0"
 
+unset CDPATH
+unset LANG LANGUAGE LC_ALL LC_CTYPE LC_TIME LC_NUMERIC LC_COLLATE LC_MONETARY LC_MESSAGES
+
+scriptdir=${0%/*}
+scriptdir=`cd "${scriptdir}"; pwd`
+
 PACKAGENAME=gcc
 VERSION=-2.95.3
 VERSIONPATCH=-20200907
@@ -24,9 +30,6 @@ sys_root=/usr/${TARGET}/sys-root
 #
 GCC=${GCC-gcc}
 GXX=${GXX-g++}
-
-unset CDPATH
-unset LANG LANGUAGE LC_ALL LC_CTYPE LC_TIME LC_NUMERIC LC_COLLATE LC_MONETARY LC_MESSAGES
 
 #
 # The prefix where the executables should

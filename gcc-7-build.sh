@@ -5,6 +5,10 @@
 # but it should run fine on other GNU environments.
 
 me="$0"
+
+unset CDPATH
+unset LANG LANGUAGE LC_ALL LC_CTYPE LC_TIME LC_NUMERIC LC_COLLATE LC_MONETARY LC_MESSAGES
+
 scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
