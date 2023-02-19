@@ -2225,6 +2225,13 @@ gcc 10.2.0:
 	macos:   32min
 	linux:   6min23sec
 
+gcc 11.3.0:
+	mingw32: 73min
+	cygwin32: 126min
+	cygwin64: 116min
+	macos:   52min
+	linux:   7min28sec
+
 gcc 12.2.0:
 	mingw32: 76min
 	cygwin32: 129min

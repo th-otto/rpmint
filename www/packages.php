@@ -151,6 +151,39 @@ using this format (although theoretically it should be possible to mix them).<br
 use fdlibm instead of the ancient pml math library.
 '
 	),
+	'gcc1130' => array(
+		'name' => 'gcc',
+		'title' => 'GCC',
+		'upstream' => 'http://gcc.gnu.org/',
+		'version' => '11.3.0',
+		'date' => '20230214',
+		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
+		'branch' => 'mint/gcc-12',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
+		'patch' => 1,
+		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
+		'script' => 1,
+		'crossscript' => 1,
+		'doc' => 1,
+		'elf' => 1,
+		'fortran' => 1,
+		'D' => 1,
+		'ada' => 0,
+		'cygwin32' => 1,
+		'cygwin64' => 1,
+		'mingw32' => 1,
+		'mingw64' => 0,
+		'linux32' => 0,
+		'linux64' => 1,
+		'macos32' => 0,
+		'macos64' => 1,
+		'atari' => 0,
+		'comment' => '
+Slightly older version of GCC. </br>
+<span style="color:red">Warning:</span>
+This compiler was not able to compile itself for m68k, so it might be broken.
+'
+	),
 	'gcc1040' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
