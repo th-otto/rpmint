@@ -604,7 +604,7 @@ class Hint {
 				/* validate all categories are in the category list (case-insensitively) */
 				if ($key === 'category')
 				{
-					foreach (explode(' ', $value) as $c)
+					foreach (preg_split('/[\s]/', $value, 0, PREG_SPLIT_NO_EMPTY) as $c)
 					{
 						$c = strtolower(trim($c));
 						if (!isset(self::$categories[$c]))
@@ -637,7 +637,7 @@ class Hint {
 				/* if sdesc contains '	', warn and fix it */
 				if ($key === 'sdesc')
 				{
-					if (strpos($value, '  '))
+					if (strpos($value, '  ') !== false)
 					{
 						$warnings[] = "$key contains '	'";
 						$value = str_replace('	', ' ', $value);
@@ -663,10 +663,10 @@ class Hint {
 				/* store the key:value */
 				if ($valtype === 'multi')
 				{
-					if (strpos($value, ','))
+					if (strpos($value, ',') !== false)
 						$a = explode(',', $value);
 					else
-						$a = explode(' ', $value);
+						$a = preg_split('/[\s]/', $value, 0, PREG_SPLIT_NO_EMPTY);
 					foreach ($a as $c)
 					{
 						$c = trim($c);
@@ -716,7 +716,7 @@ class Hint {
 		/* sort these hints, as differences in ordering are uninteresting */
 		if (isset($hints['build-depends']))
 			$hints['build-depends'] = self::split_trim_sort_join($hints['build-depends'], ', ');
-
+		
 		if (isset($hints['obsoletes']))
 			$hints['obsoletes'] = self::split_trim_sort_join($hints['obsoletes'], ', ');
 
@@ -734,12 +734,12 @@ class Hint {
 
 	private static function split_trim_sort_join(string $s, string $join): string
 	{
-		if (strpos($s, ','))
+		if (strpos($s, ',') !== false)
 			$a = explode(',', $s);
 		else
-			$a = explode(' ', $s);
+			$a = preg_split('/[\s]/', $s, 0, PREG_SPLIT_NO_EMPTY);
 		$b = [];
-		foreach ($a as $k => $v)
+		foreach ($a as $v)
 		{
 			$v = trim($v);
 			if ($v !== '')
@@ -769,7 +769,7 @@ class Hint {
 		$msg = [];
 		foreach (self::$words as list($wrong, $right))
 		{
-			if (strpos($value, $wrong))
+			if (strpos($value, $wrong) !== false)
 			{
 				$value = str_replace($wrong, $right, $value);
 				$msg[] = trim($wrong) . " -> " . trim($right);
@@ -990,10 +990,14 @@ class packages {
 				if (str_starts_with($r, '('))
 				{
 					if ($item === null)
+					{
 						mksetup::error_log("constraint '$r' before any package");
-					else if (strpos($deplist[$item], '(') !== false)
-						mksetup::error_log("multiple constraints after package $item");
-					$deplist[$item] = $item . ' ' . $r;
+					} else
+					{
+						if (strpos($deplist[$item], '(') !== false)
+							mksetup::error_log("multiple constraints after package $item");
+						$deplist[$item] = $item . ' ' . $r;
+					}
 				} else
 				{
 					$item = $r;
@@ -1544,7 +1548,7 @@ class packages {
 			$valid_requires[$pn] = true;
 			foreach ($p->version_hints as $hints)
 				if (isset($hints['provides']))
-					foreach (explode(' ', $hints['provides']) as $pr)
+					foreach (preg_split('/[\s]/', $hints['provides'], 0, PREG_SPLIT_NO_EMPTY) as $pr)
 						if ($pr !== '')
 							$valid_requires[$pr] = true;
 
@@ -1818,7 +1822,7 @@ class packages {
 
 			if ($p->override_hints !== null && isset($p->override_hints['replace-versions']))
 			{
-				foreach (explode(' ', $p->override_hints['replace-versions']) as $rv)
+				foreach (preg_split('/[\s]/', $p->override_hints['replace-versions'], 0, PREG_SPLIT_NO_EMPTY) as $rv)
 				{
 					$rv = trim($rv);
 					if ($rv === '')
@@ -2211,7 +2215,7 @@ class packages {
 				$category .= ' unmaintained';
 
 			/* for historical reasons, category names must start with a capital letter */
-			$category = join(' ', array_map("upper_first_character", explode(' ', $category)));
+			$category = join(' ', array_map("upper_first_character", preg_split('/[\s]/', $category, 0, PREG_SPLIT_NO_EMPTY)));
 			fputs($f, "category: $category\n");
 
 			if (isset($po->version_hints[$bv]['message']))
