@@ -69,6 +69,8 @@ class past_mistakes {
 		'perl-File-Slurp-Unicode-src' => ['0.7.1-2'],  /* obsoleted by perl-File-Slurp */
 		'perl-Carp-src' => [ '1.38-2' ],               /* not really empty but too small */
 		'python3-src' => [ '3.9.10-1', '3.8.6-1' ],    /* not really empty but too small */
+		'vala-dconf' => [ '*' ],                       /* not really empty but too small */
+		'vala-pkcs11' => [ '*' ],                      /* not really empty but too small */
 	];
 
 	/* these are packages which only contain data, symlinks or scripts and thus
@@ -873,7 +875,7 @@ class Tar {
 	/*
 	 * utility to determine if a tar file is empty
 	 */
-	public function tarfile_is_empty(): bool
+	public function tarfile_is_empty(string $pn): bool
 	{
 		/*
 		 * report invalid files (smaller than the smallest possible compressed file
@@ -900,7 +902,10 @@ class Tar {
 			$this->is_empty = false;
 		} else
 		{
-			$this->is_empty = true;
+			if (isset(past_mistakes::$empty_source[$pn]))
+				$this->is_empty = false;
+			else
+				$this->is_empty = true;
 		}
 		return $this->is_empty;
 	}
@@ -1143,7 +1148,7 @@ class packages {
 				{
 					$t->size = $stat['size'];
 					$t->mtime = $stat['mtime'];
-					$t->tarfile_is_empty();
+					$t->tarfile_is_empty($pn);
 					$t->sha512 = $this->sha512_file($filename);
 				}
 				$tars[$vr] = $t;
@@ -1583,7 +1588,7 @@ class packages {
 					if (isset($hints['obsoletes']))
 						$obsoletes = $hints['obsoletes'];
 
-					$this->add_needed_obsoletes($mo, $pn, $v, $obsoletes);
+					$this->add_needed_obsoletes($val, $pn, $v, $obsoletes);
 				}
 			}
 
@@ -1976,7 +1981,7 @@ class packages {
 
 	private function add_needed_obsoletes(array $needed, string $pn, string $v, array &$obsoletes)
 	{
-		foreach ($needed as $n => $val)
+		foreach ($needed as $n)
 		{
 			if (!isset($obsoletes[$n]))
 			{
@@ -2185,9 +2190,10 @@ class packages {
 			$sibling_src = $pn . '-src';
 			if (isset($this->packages[$sibling_src]))
 				array_update($versions, $this->packages[$sibling_src]->versions());
+			$sorted_sibling_versions = $versions;
+			uasort($sorted_sibling_versions, "Tar::reverse_compare");
 
-
-			foreach ($sorted_versions as $version => $tar)
+			foreach ($sorted_sibling_versions as $version => $tar)
 			{
 				/* skip over versions which have a special place in the ordering: */
 				/* 'curr' has already been done, 'prev' and 'test' will be done */
@@ -2234,7 +2240,9 @@ class packages {
 					$is_empty = $po->tar($version)->is_empty;
 				}
 
-				$hints = $po->version_hints[$version];
+				$hints = [];
+				if (isset($po->version_hints[$version]))
+					$hints = $po->version_hints[$version];
 
 				/* follow external-source */
 				$s = $po->srcpackage($version);
