@@ -399,10 +399,10 @@ class Hint {
 			'notes' => 'val',	 /* tool notes; not significant to calm itself */
 			'message' => 'multilineval',
 			'external-source' => 'val',
-			'requires' => 'optval',
-			'obsoletes' => 'optval',
-			'provides' => 'val',
-			'conflicts' => 'val',
+			'requires' => 'multi',
+			'obsoletes' => 'multi',
+			'provides' => 'multi',
+			'conflicts' => 'multi',
 		],
 
 		1 /* HintType::spvr->value */ => [
@@ -415,7 +415,7 @@ class Hint {
 			'notes' => 'val',	 /* tool notes; not significant to calm itself */
 			'skip' => 'noval',	 /* in all spvr hints, but ignored */
 			'homepage' => 'val',
-			'build-depends' => 'optval',
+			'build-depends' => 'multi',
 			'license' => 'val',
 		],
 
@@ -426,7 +426,7 @@ class Hint {
 			'keep-days' => 'val',
 			'keep-superseded-test' => 'noval',
 			'disable-check' => 'multi',
-			'replace-versions' => 'val',
+			'replace-versions' => 'multi',
 			'noretain' => 'val',
 		],
 	];
@@ -590,7 +590,7 @@ class Hint {
 						$errors[] = "duplicate key $key at line $i";
 
 					/* check the value meets any key-specific constraints */
-					if (($valtype === 'val' || $valtype === 'multi') && $value === '')
+					if ($valtype === 'val' && $value === '')
 						$errors[] = "$key has empty value";
 
 					if ($valtype === 'noval' && $value !== '')
@@ -663,14 +663,18 @@ class Hint {
 				/* store the key:value */
 				if ($valtype === 'multi')
 				{
-					if (strpos($value, ',') !== false)
-						$a = explode(',', $value);
-					else
-						$a = preg_split('/[\s]/', $value, 0, PREG_SPLIT_NO_EMPTY);
-					foreach ($a as $c)
+					/* strip off any version relation enclosed in '()' following the package name */
+					if (preg_match_all('/([^\s,(]+),?[\s]*(\([^)]*\))?/', $value, $match, PREG_SET_ORDER) !== false)
 					{
-						$c = trim($c);
-						$hints[$key][$c] = $c;
+						foreach ($match as $m)
+						{
+							/* remove any extraneous whitespace */
+							$c = trim($m[0]);
+							$hints[$key][$m[1]] = $c;
+						}
+					} else
+					{
+						$errors[] = "$key: invalid value $value";
 					}
 				} else
 				{
@@ -715,13 +719,13 @@ class Hint {
 
 		/* sort these hints, as differences in ordering are uninteresting */
 		if (isset($hints['build-depends']))
-			$hints['build-depends'] = self::split_trim_sort_join($hints['build-depends'], ', ');
+			ksort($hints['build-depends'], SORT_STRING);
 		
 		if (isset($hints['obsoletes']))
-			$hints['obsoletes'] = self::split_trim_sort_join($hints['obsoletes'], ', ');
+			ksort($hints['obsoletes'], SORT_STRING);
 
 		if (isset($hints['replace-versions']))
-			$hints['replace-versions'] = self::split_trim_sort_join($hints['replace-versions'], ' ');
+			ksort($hints['replace-versions'], SORT_STRING);
 
 		if (!empty($errors))
 			$hints['parse-errors'] = $errors;
@@ -730,23 +734,6 @@ class Hint {
 			$hints['parse-warnings'] = $warnings;
 
 		return $hints;
-	}
-
-	private static function split_trim_sort_join(string $s, string $join): string
-	{
-		if (strpos($s, ',') !== false)
-			$a = explode(',', $s);
-		else
-			$a = preg_split('/[\s]/', $s, 0, PREG_SPLIT_NO_EMPTY);
-		$b = [];
-		foreach ($a as $v)
-		{
-			$v = trim($v);
-			if ($v !== '')
-				$b[] = $v;
-		}
-		sort($b, SORT_STRING);
-		return join($join, $b);
 	}
 
 	/*
@@ -957,60 +944,6 @@ class packages {
 		$this->arch = $arch;
 	}
 
-	private function process_package_constraint_list(string $pcl): array
-	{
-		/* split, keeping optional version-relation, trim and sort */
-		$deplist = [];
-
-		if (strpos($pcl, ',') !== false)
-		{
-			/* already comma separated is simple */
-			foreach (explode(',', $pcl) as $r)
-			{
-				$r = trim($r);
-				if ($r !== '')
-				{
-					$item = preg_replace('/(.*)\s+\(.*?\)/', '\1', $r);
-					$deplist[$item] = $r;
-				}
-			}
-		} else
-		{
-			/*
-			 * otherwise, split into a sequence of package names, version-relation
-			 * constraints and white-space, and group package name with any following
-			 * constraint
-			 */
-			$item = null;
-			foreach (preg_split('/(\(.*?\)|\s+)/', $pcl, 0, PREG_SPLIT_DELIM_CAPTURE) as $r)
-			{
-				$r = trim($r);
-				if ($r === '')
-					continue;
-				if (str_starts_with($r, '('))
-				{
-					if ($item === null)
-					{
-						mksetup::error_log("constraint '$r' before any package");
-					} else
-					{
-						if (strpos($deplist[$item], '(') !== false)
-							mksetup::error_log("multiple constraints after package $item");
-						$deplist[$item] = $item . ' ' . $r;
-					}
-				} else
-				{
-					$item = $r;
-					$deplist[$item] = $item;
-				}
-			}
-		}
-		/* return a sorted list of package names with an optional version constraint. */
-		$deplist = array_values($deplist);
-		sort($deplist, SORT_STRING);
-		return $deplist;
-	}
-
 	private function read_hints(string $pn, string $vr, string $filename, HintType $kind, bool $strict = false): ?array
 	{
 		$hints = hint::file_parse($pn, $this->releasearea . DIR_SEP . $filename, $kind, $strict);
@@ -1025,14 +958,14 @@ class packages {
 			foreach ($hints['parse-warnings'] as $l)
 				mksetup::error_log("package '$pn' version $vr: $l");
 		}
+
 		/*
 		 * generate depends: from requires:
-		 * XXX: store this as a list, rather than splitting it into one everywhere we
-		 * use it
 		 */
 		if (isset($hints['requires']))
 		{
-			$hints['depends'] = join(', ', $this->process_package_constraint_list($hints['requires']));
+			$hints['depends'] = $hints['requires'];
+			ksort($hints['depends'], SORT_STRING);
 			/* erase requires:, to ensure there is nothing using it */
 			unset($hints['requires']);
 		}
@@ -1548,9 +1481,8 @@ class packages {
 			$valid_requires[$pn] = true;
 			foreach ($p->version_hints as $hints)
 				if (isset($hints['provides']))
-					foreach (preg_split('/[\s]/', $hints['provides'], 0, PREG_SPLIT_NO_EMPTY) as $pr)
-						if ($pr !== '')
-							$valid_requires[$pr] = true;
+					foreach ($hints['provides'] as $pr)
+						$valid_requires[$pr] = true;
 
 			/* reset computed package state */
 			$p->has_requires = false;
@@ -1577,18 +1509,11 @@ class packages {
 					['obsoletes', 'missing-obsoleted-package', $valid_obsoletes]
 				] as list($c, $okmissing, $valid))
 				{
-					/* if c is in hints, and not the empty string */
-					if (isset($hints[$c]) && $hints[$c] !== '')
+					/* if c is in hints, and not empty */
+					if (isset($hints[$c]) && !empty($hints[$c]))
 					{
-						foreach (explode(',', $hints[$c]) as $r)
+						foreach ($hints[$c] as $r => $constraint)
 						{
-							/* remove any extraneous whitespace */
-							$r = trim($r);
-							if ($r === '')
-								continue;
-							/* strip off any version relation enclosed in '()' following the package name */
-							$r = preg_replace('/(.*) +\(.*\)/', '\1', $r);
-
 							if ($c === 'depends')
 								/* don't count cygwin-debuginfo for the purpose of */
 								/* checking if this package has any requires, as */
@@ -1656,14 +1581,7 @@ class packages {
 				{
 					$obsoletes = [];
 					if (isset($hints['obsoletes']))
-					{
-						foreach (explode(',', $hints['obsoletes']) as $o)
-						{
-							$o = trim($o);
-							if ($o !== '')
-								$obsoletes[$o] = true;
-						}
-					}
+						$obsoletes = $hints['obsoletes'];
 
 					$this->add_needed_obsoletes($mo, $pn, $v, $obsoletes);
 				}
@@ -1684,12 +1602,8 @@ class packages {
 			{
 				if (isset($hints['obsoletes']))
 				{
-					foreach (explode(',', $hints['obsoletes']) as $o)
+					foreach ($hints['obsoletes'] as $o => $constraint)
 					{
-						$o = trim($o);
-						if ($o === '')
-							continue;
-						$o = preg_replace('/(.*) +\(.*\)/', '\1', $o);
 						if (isset($this->packages[$o]))
 						{
 							$this->packages[$o]->obsolete = true;
@@ -1697,18 +1611,16 @@ class packages {
 							{
 								if (isset($ohints['depends']))
 								{
-									$depends = explode(',', $ohints['depends']);
-									if (($d = array_search($pn, $depends)) !== false)
+									if (isset($ohints['depends'][$pn]))
 									{
-										unset($depends[$d]);
-										$this->packages[$o]->version_hints[$ov]['depends'] = join(',', $depends);
-										mksetup::debug("removed obsoleting '$pn' from the depends: of package '$o'");
+										unset($this->packages[$o]->version_hints[$ov]['depends'][$pn]);
+										mksetup::debug("removed '$pn' from the depends: of obsolete package '$o' '$ov'");
 									}
 								}
 							}
 						} else
 						{
-							mksetup::debug("can't ensure package '$o' doesn't depends: on obsoleting '$pn'");
+							mksetup::debug("can't ensure obsolete package '$o' doesn't depends: on '$pn'");
 						}
 					}
 				}
@@ -1822,11 +1734,8 @@ class packages {
 
 			if ($p->override_hints !== null && isset($p->override_hints['replace-versions']))
 			{
-				foreach (preg_split('/[\s]/', $p->override_hints['replace-versions'], 0, PREG_SPLIT_NO_EMPTY) as $rv)
+				foreach ($p->override_hints['replace-versions'] as $rv)
 				{
-					$rv = trim($rv);
-					if ($rv === '')
-						continue;
 					/* warn if replace-versions lists a version which is less than */
 					/* the current version (which is pointless as the current version */
 					/* will replace it anyhow) */
@@ -1883,12 +1792,8 @@ class packages {
 				{
 					if (isset($hints[$k]))
 					{
-						foreach (explode(',', $hints[$k]) as $dp)
+						foreach ($hints[$k] as $dp => $constraint)
 						{
-							$dp = trim($dp);
-							if ($dp === '')
-								continue;
-							$dp = preg_replace('/(.*)\s+\(.*\)/', '\1', $dp);
 							if (isset($this->packages[$dp]))
 								$this->packages[$dp]->$a[$pn] = $p;
 						}
@@ -2076,16 +1981,16 @@ class packages {
 			if (!isset($obsoletes[$n]))
 			{
 				$obsoletes[$n] = true;
-				$this->packages[$pn]->version_hints[$v]['obsoletes'] = join(', ', array_keys($obsoletes));
+				$this->packages[$pn]->version_hints[$v]['obsoletes'][$n] = $n;
 				mksetup::verbose("added 'obsoletes: $n' to package '$pn' version '$v'");
 			}
 
-			/* recurse so we don't drop transitive missing obsoletes */
-			if (isset($mo[$n]))
-			{
-				mksetup::debug("recursing to examine obsoletions of '$n' for adding to '$pn'");
-				$this->add_needed_obsoletes($mo, $pn, $v, $obsoletes);
-			}
+			# /* recurse so we don't drop transitive missing obsoletes */
+			# if (isset($needed[$n]))
+			# {
+			#	mksetup::debug("recursing to examine obsoletions of '$n' for adding to '$pn'");
+			#	$this->add_needed_obsoletes($needed, $pn, $v, $obsoletes);
+			# }
 		}
 	}
 
@@ -2222,7 +2127,7 @@ class packages {
 				fputs($f, "message: {$po->version_hints[$bv]['message']}\n");
 
 			if (isset($po->override_hints['replace-versions']))
-				fputs($f, "replace-versions: {$po->override_hints['replace-versions']}\n");
+				fputs($f, "replace-versions: " . join(' ', $po->override_hints['replace-versions']) . "\n");
 
 			/*
 			 * make a list of version sections
@@ -2351,17 +2256,17 @@ class packages {
 				/* also itself emitted. */
 				if (isset($sorted_versions[$version]))
 				{
-					if (isset($hints['depends']) && $hints['depends'] !== '')
-						fputs($f, "depends2: {$hints['depends']}\n");
+					if (isset($hints['depends']) && !empty($hints['depends']))
+						fputs($f, "depends2: " . join(', ', $hints['depends']) . "\n");
 
-					if (isset($hints['obsoletes']) && $hints['obsoletes'] !== '')
-						fputs($f, "obsoletes: {$hints['obsoletes']}\n");
+					if (isset($hints['obsoletes']) && !empty($hints['obsoletes']))
+						fputs($f, "obsoletes: " . join(', ', $hints['obsoletes']) . "\n");
 
-					if (isset($hints['provides']) && $hints['provides'] !== '')
-						fputs($f, "provides: {$hints['provides']}\n");
+					if (isset($hints['provides']) && !empty($hints['provides']))
+						fputs($f, "provides: " . join(', ', $hints['provides']) . "\n");
 
-					if (isset($hints['conflicts']) && $hints['conflicts'] !== '')
-						fputs($f, "conflicts: {$hints['conflicts']}\n");
+					if (isset($hints['conflicts']) && !empty($hints['conflicts']))
+						fputs($f, "conflicts: " . join(', ', $hints['conflicts']) . "\n");
 				}
 
 				if ($s !== null)
@@ -2377,12 +2282,9 @@ class packages {
 						/* all out. */
 						$bd = $src_hints['build-depends'];
 						$bds = [];
-						foreach (explode(',', $bd) as $atom)
+						foreach ($bd as $atom => $constraint)
 						{
-							$atom = trim($atom);
-							if ($atom === '')
-								continue;
-							if (strpos($atom, '(') === false)
+							if (strpos($constraint, '(') === false)
 								$bds[] = $atom;
 						}
 						if (!empty($bds))
