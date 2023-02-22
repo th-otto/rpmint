@@ -54,15 +54,15 @@ function modestring($typeflag, $mode)
 		case 'D': $str = 'D'; break; /* GNU dump dir */
 		default: $str = '?'; break;
 	}
-	$str .= ($mode & 0400) ? 'r' : '-';
-	$str .= ($mode & 0200) ? 'w' : '-';
-	$str .= ($mode & 0100) ? 'x' : '-';
-	$str .= ($mode & 0040) ? 'r' : '-';
-	$str .= ($mode & 0020) ? 'w' : '-';
-	$str .= ($mode & 0010) ? 'x' : '-';
-	$str .= ($mode & 0004) ? 'r' : '-';
-	$str .= ($mode & 0002) ? 'w' : '-';
-	$str .= ($mode & 0001) ? 'x' : '-';
+	$str .= ($mode & 0x100) ? 'r' : '-';
+	$str .= ($mode & 0x080) ? 'w' : '-';
+	$str .= ($mode & 0x800) ? (($mode & 0x040) ? 's' : 'S') : (($mode & 0x040) ? 'x' : '-');
+	$str .= ($mode & 0x020) ? 'r' : '-';
+	$str .= ($mode & 0x010) ? 'w' : '-';
+	$str .= ($mode & 0x400) ? (($mode & 0x008) ? 's' : 'S') : (($mode & 0x008) ? 'x' : '-');
+	$str .= ($mode & 0x004) ? 'r' : '-';
+	$str .= ($mode & 0x002) ? 'w' : '-';
+	$str .= ($mode & 0x200) ? (($mode & 0x001) ? 't' : 'T') : (($mode & 0x001) ? 'x' : '-');
 	return $str;
 }
 

@@ -71,6 +71,25 @@ class past_mistakes {
 		'python3-src' => [ '3.9.10-1', '3.8.6-1' ],    /* not really empty but too small */
 		'vala-dconf' => [ '*' ],                       /* not really empty but too small */
 		'vala-pkcs11' => [ '*' ],                      /* not really empty but too small */
+		'mined-src' => [ '2015.25-0' ],                /* not really empty but too small */
+		'perl-Data-Alias' => [ '1.20-2' ],             /* not really empty but too small */
+		'perl-Win32-src' => [ '0.52-2' ],              /* not really empty but too small */
+		'perl-XSLoader-src' => [ '0.24-2' ],           /* not really empty but too small */
+		'perl-CPAN-Meta-Requirements-src' => [ '2.140-2' ], /* not really empty but too small */
+		'perl-Config-Perl-V-src' => [ '0.27-2' ],      /* not really empty but too small */
+		'perl-Pod-Simple-src' => [ '3.35-2' ],         /* not really empty but too small */
+		'texlive-collection-htmlxml-src' => [ '20170520-1' ], /* not really empty but too small */
+		'perl-Module-Load-Conditional-src' => [ '0.68-2' ], /* not really empty but too small */
+		'perl-CPAN-Meta-src' => [ '2.150010-2' ],      /* not really empty but too small */
+		'vala-dbusmenu-gtk' => [ '16.04.0-1' ],        /* not really empty but too small */
+		'vala-dbusmenu-gtk3' => [ '16.04.0-1' ],       /* not really empty but too small */
+		'cygutils-x11' => [ '*' ],                     /* not really empty but too small */
+		'R_autorebase' => [ '001001-1' ],              /* not really empty but too small */
+		'vala-gtkspell3' => [ '*' ],                   /* not really empty but too small */
+		'vala-ibus-emoji-dialog1.0' => [ '*' ],        /* not really empty but too small */
+		'vala-libgames-support1.0' => [ '*' ],         /* not really empty but too small */
+		'vala-libisocodes' => [ '*' ],                 /* not really empty but too small */
+		'vala-libproxy1.0' => [ '*' ],                 /* not really empty but too small */
 	];
 
 	/* these are packages which only contain data, symlinks or scripts and thus
@@ -212,7 +231,7 @@ class SetupVersion {
 
 	public function __construct(string $version_string)
 	{
-		$this->_version_string = $version_string;
+		$this->version_string = $version_string;
 
 		/* split release on the last '-', if any (default '') */
 		$vr = explode('-', $version_string, 2);
@@ -282,7 +301,7 @@ class SetupVersion {
 
 	public static function reverse_compare(SetupVersion $a, SetupVersion $b): int
 	{
-		return -self::compare($a, $b);
+		return -(self::compare($a, $b));
 	}
 
 	public function __toString(): string
@@ -575,7 +594,7 @@ class Hint {
 			if ($quotations !== 0 && $quotations !== 2)
 				$errors[] = "double-quote within double-quotes at line $i (hint files have no escape character)";
 
-			if (preg_match('/^([^:\s]+):\s*(.*)$/s', $item, $match)) /* PCRE_DOTALL */
+			if (preg_match('/^([^:\s ]+):[\s ]*(.*)$/s', $item, $match)) /* PCRE_DOTALL */
 			{
 				$key = $match[1];
 				$value = $match[2];
@@ -606,7 +625,7 @@ class Hint {
 				/* validate all categories are in the category list (case-insensitively) */
 				if ($key === 'category')
 				{
-					foreach (preg_split('/[\s]/', $value, 0, PREG_SPLIT_NO_EMPTY) as $c)
+					foreach (preg_split('/[\s ]/', $value, 0, PREG_SPLIT_NO_EMPTY) as $c)
 					{
 						$c = strtolower(trim($c));
 						if (!isset(self::$categories[$c]))
@@ -623,7 +642,9 @@ class Hint {
 					/* warn about and fix common typos in ldesc/sdesc */
 					list($value, $msg) = self::typofix($value);
 					if (!empty($msg))
+					{
 						$warnings[] = join(',', $msg) . " in $key";
+					}
 				}
 
 				/* if sdesc ends with a '.', warn and fix it */
@@ -636,13 +657,13 @@ class Hint {
 					}
 				}
 
-				/* if sdesc contains '	', warn and fix it */
+				/* if sdesc contains '  ', warn and fix it */
 				if ($key === 'sdesc')
 				{
 					if (strpos($value, '  ') !== false)
 					{
-						$warnings[] = "$key contains '	'";
-						$value = str_replace('	', ' ', $value);
+						$warnings[] = "$key contains '  '";
+						$value = str_replace('  ', ' ', $value);
 					}
 				}
 
@@ -660,13 +681,15 @@ class Hint {
 
 				/* warn if value starts with a quote followed by whitespace */
 				if (preg_match('/^"[ \t]+/', $value))
+				{
 					$warnings[] = "value for key $key starts with quoted whitespace";
+				}
 
 				/* store the key:value */
 				if ($valtype === 'multi')
 				{
 					/* strip off any version relation enclosed in '()' following the package name */
-					if (preg_match_all('/([^\s,(]+),?[\s]*(\([^)]*\))?/', $value, $match, PREG_SET_ORDER) !== false)
+					if (preg_match_all('/([^\s ,(]+)[\s ]*(\([^)]*\))?/', $value, $match, PREG_SET_ORDER) !== false)
 					{
 						foreach ($match as $m)
 						{
@@ -717,12 +740,14 @@ class Hint {
 		 */
 		if (isset($hints['ldesc']))
 			if (strlen($hints['sdesc']) > 2 * strlen($hints['ldesc']) && !isset(past_mistakes::$short_ldesc[$pn]))
+			{
 				$warnings[] = 'sdesc is much longer than ldesc';
+			}
 
 		/* sort these hints, as differences in ordering are uninteresting */
 		if (isset($hints['build-depends']))
 			ksort($hints['build-depends'], SORT_STRING);
-		
+
 		if (isset($hints['obsoletes']))
 			ksort($hints['obsoletes'], SORT_STRING);
 
@@ -859,9 +884,9 @@ class Tar {
 	public bool $is_empty;
 	public bool $is_used;
 	public bool $sourceless;
-	private SetupVersion $version;
+	public ?SetupVersion $version;
 
-	public function __construct(string $arch, string $path, string $filename, string $version_string)
+	public function __construct(string $arch, string $path, string $filename)
 	{
 		$this->repopath = new RepoPath($arch, $path, $filename);
 		$this->sha512 = '';
@@ -869,7 +894,7 @@ class Tar {
 		$this->mtime = 0;
 		$this->is_empty = false;
 		$this->is_used = false;
-		$this->version = new SetupVersion($version_string);
+		$this->version = null;
 	}
 
 	/*
@@ -955,13 +980,13 @@ class packages {
 		if (isset($hints['parse-errors']))
 		{
 			foreach ($hints['parse-errors'] as $l)
-				mksetup::error_log("package '$pn' version $vr: $l");
+				mksetup::error_log("$filename: package '$pn' version $vr: $l");
 			return null;
 		}
 		if (isset($hints['parse-warnings']))
 		{
 			foreach ($hints['parse-warnings'] as $l)
-				mksetup::error_log("package '$pn' version $vr: $l");
+				mksetup::error_log("$filename: package '$pn' version $vr: $l");
 		}
 
 		/*
@@ -1142,7 +1167,7 @@ class packages {
 				}
 
 				/* collect the attributes for each tar file */
-				$t = new Tar($arch, $relpath, $f, $vr);
+				$t = new Tar($arch, $relpath, $f);
 				$filename = $this->releasearea . DIR_SEP . $relpath . DIR_SEP . $f;
 				if (($stat = stat($filename)) !== false)
 				{
@@ -1184,7 +1209,7 @@ class packages {
 			/* apply a version override */
 			if (isset($pvr_hint['version']))
 			{
-				$ovr = pvr_hint['version'];
+				$ovr = $pvr_hint['version'];
 				/* also record the version before the override */
 				$pvr_hint['original-version'] = $vr;
 			} else
@@ -1201,7 +1226,10 @@ class packages {
 			$version_hints[$ovr] = $pvr_hint;
 			$hints[$ovr] = $hintobj;
 			if (isset($tars[$vr]))
+			{
 				$actual_tars[$ovr] = $tars[$vr];
+				$actual_tars[$ovr]->version = new SetupVersion($ovr);
+			}
 		}
 
 		$package = new Package();
@@ -1425,13 +1453,13 @@ class packages {
 					if ($c[$pn]->kind !== $p->kind)
 					{
 						mksetup::error_log("package '$pn' is of more than one kind");
-						return false;
+						$status = false;
 					}
 					/* package must exist at same relative path */
 					if ($c[$pn]->pkgpath !== $p->pkgpath)
 					{
 						mksetup::error_log("package '$pn' is at paths {$c[$pn]->pkgpath} and {$p->pkgpath}");
-						return false;
+						// $status = false;
 					}
 
 					foreach ($p->tarfiles as $vr => $tar)
@@ -1439,7 +1467,7 @@ class packages {
 						if (isset($c[$pn]->tarfiles[$vr]))
 						{
 							mksetup::error_log("package '$pn' has duplicate tarfile for version $vr");
-							return false;
+							$status = false;
 						}
 						$c[$pn]->tarfiles[$vr] = $tar;
 					}
@@ -1451,6 +1479,8 @@ class packages {
 					}
 
 					/* overrides from arch take precedence */
+					if ($c[$pn]->override_hints === null)
+						$c[$pn]->override_hints = [];
 					array_update($c[$pn]->override_hints, $p->override_hints);
 
 					/* merge hint file lists */
@@ -1701,7 +1731,9 @@ class packages {
 			/* error if the curr: version isn't the most recent non-test: version */
 			$mtimes = [];
 			foreach ($p->versions() as $vr => $tar)
+			{
 				$mtimes[$vr] = $tar->mtime;
+			}
 
 			$cv = null;
 			$nontest_versions = [];
@@ -2073,7 +2105,7 @@ class packages {
 			if ($k[0] === '!')
 				$k = chr(0) . $k;
 			else if ($k[0] === '_')
-				$k = chr(255) + $k;
+				$k = chr(255) . $k;
 			return $k;
 		}
 
@@ -2342,7 +2374,6 @@ class mksetup {
 
 	public static function program() : string
 	{
-		// if (substr(php_sapi_name(), 0, 3) === 'cli') return $_SERVER["argv"][0];
 		return "mksetupini";
 	}
 
