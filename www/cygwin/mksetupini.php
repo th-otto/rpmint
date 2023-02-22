@@ -359,20 +359,20 @@ class SetupVersion {
 /* a path inside a package repository (e.g relative to relarea) */
 class RepoPath {
 	public ?string $arch;
-	public ?string $pkgpath;
+	public ?string $relpath;
 	public ?string $filename;
 
 	public function __construct(?string $arch, ?string $path, ?string $filename)
 	{
 		$this->arch = $arch;
-		$this->pkgpath = $path;
+		$this->relpath = $path;
 		$this->filename = $filename;
 	}
 
 	/* convert to a path, absolute if given a base directory */
 	public function abspath(string $basedir = null): string
 	{
-		$pc = $this->pkgpath . DIR_SEP . $this->filename;
+		$pc = $this->relpath . DIR_SEP . $this->filename;
 		if ($basedir !== null)
 			$pc = $basedir . DIR_SEP . $pc;
 		return $pc;
@@ -381,7 +381,7 @@ class RepoPath {
 	/* convert to a MoveList tuple */
 	public function move(): array
 	{
-		return array($this->pkgpath, $this->filename);
+		return array($this->relpath, $this->filename);
 	}
 }
 
@@ -804,6 +804,7 @@ enum PkgKind: int {
 /* information we keep about a package */
 class Package {
 	public string $pkgpath;
+	public string $relpath;
 	public array $tarfiles; /* of Tar object */
 	public array $hints;	/* of Hint object */
 	public array $is_used_by; /* of package names */
@@ -823,7 +824,8 @@ class Package {
 
 	public function __construct()
 	{
-		$this->pkgpath = ''; /* path to package, relative to arch */
+		$this->relpath = ''; /* path to package, relative to arch */
+		$this->pkgpath = '';
 		$this->tarfiles = array();
 		$this->hints = array();
 		$this->is_used_by = array();
@@ -870,7 +872,7 @@ class Package {
 
 	public function __toString(): string
 	{
-		return sprintf("Package('%s', %s, %s, %s, %s)", $this->pkgpath, join(' ', array_keys($this->tarfiles)), join(' ', array_keys($this->version_hints)), join(' ', array_keys($this->override_hints)), $this->not_for_output);
+		return sprintf("Package('%s', %s, %s, %s, %s)", $this->relpath, join(' ', array_keys($this->tarfiles)), join(' ', array_keys($this->version_hints)), join(' ', array_keys($this->override_hints)), $this->not_for_output);
 	}
 }
 
@@ -947,7 +949,7 @@ class Tar {
 
 	public function __toString(): string
 	{
-		return sprintf("Tar('%s', '%s', '%s', %d, %s)", $this->repopath->filename, $this->repopath->pkgpath, $this->sha512, $this->size, $this->is_empty);
+		return sprintf("Tar('%s', '%s', '%s', %d, %s)", $this->repopath->filename, $this->repopath->relpath, $this->sha512, $this->size, $this->is_empty);
 	}
 }
 
@@ -1062,7 +1064,7 @@ class packages {
 			$spn .= '-src';
 		if (isset($packages[$spn]))
 		{
-			mksetup::error_log("duplicate package name $pn at paths $relpath and {$packages[$spn]->pkgpath}");
+			mksetup::error_log("duplicate package name $pn at paths $relpath and {$packages[$spn]->relpath}");
 			return false;
 		}
 
@@ -1238,7 +1240,8 @@ class packages {
 		$package->override_hints = $override_hints;
 		$package->tarfiles = $actual_tars;
 		$package->hints = $hints;
-		$package->pkgpath = $relpath;
+		$package->relpath = $relpath;
+		$package->pkgpath = $pkgpath;
 		$package->kind = $kind;
 		/*
 		 * since we are kind of inventing the source package names, and don't
@@ -1459,7 +1462,11 @@ class packages {
 					if ($c[$pn]->pkgpath !== $p->pkgpath)
 					{
 						mksetup::error_log("package '$pn' is at paths {$c[$pn]->pkgpath} and {$p->pkgpath}");
-						// $status = false;
+						$status = false;
+					}
+					if ($c[$pn]->relpath !== $p->relpath)
+					{
+						mksetup::error_log("warning: package '$pn' is at paths {$c[$pn]->relpath} and {$p->relpath}");
 					}
 
 					foreach ($p->tarfiles as $vr => $tar)
