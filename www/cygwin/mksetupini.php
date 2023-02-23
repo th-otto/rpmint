@@ -988,7 +988,7 @@ class packages {
 		if (isset($hints['parse-warnings']))
 		{
 			foreach ($hints['parse-warnings'] as $l)
-				mksetup::error_log("$filename: package '$pn' version $vr: $l");
+				mksetup::warning("$filename: package '$pn' version $vr: $l");
 		}
 
 		/*
@@ -1267,12 +1267,12 @@ class packages {
 		$sha512 = $this->sha512sum_file_read($sum_fn);
 		if ($sha512 === null)
 		{
-			mksetup::debug("no sha512.sum in $dirname");
+			mksetup::warning("no sha512.sum in $dirname");
 		} else
 		{
 			if (isset($sha512[$basename]))
 				return $sha512[$basename];
-			mksetup::debug("no line for file $basename in checksum file $sum_fn");
+			mksetup::warning("no line for file $basename in checksum file $sum_fn");
 		}
 		$sha512 = hash_file('sha512', $filename);
 		mksetup::debug("computed sha512 hash for $basename is $sha512");
@@ -1283,7 +1283,7 @@ class packages {
 	/* helper function to parse a sha512.sum file */
 	private function sha512sum_file_read(string $sum_fn): ?array
 	{
-		if (($lines = file($sum_fn)) === false)
+		if (($lines = safe_file($sum_fn)) === false)
 			return null;
 		$sha512 = array();
 		foreach ($lines as $line)
@@ -1291,7 +1291,7 @@ class packages {
 			if (preg_match('/^(\S+)\s+(?:\*|)(\S+)$/', $line, $match))
 				$sha512[$match[2]] = $match[1];
 			else
-				mksetup::error_log("warning: bad line '$line' in checksum file $sum_fn");
+				mksetup::warning("bad line '$line' in checksum file $sum_fn");
 		}
 		return $sha512;
 	}
@@ -1466,7 +1466,7 @@ class packages {
 					}
 					if ($c[$pn]->relpath !== $p->relpath)
 					{
-						mksetup::error_log("warning: package '$pn' is at paths {$c[$pn]->relpath} and {$p->relpath}");
+						mksetup::warning("package '$pn' is at paths {$c[$pn]->relpath} and {$p->relpath}");
 					}
 
 					foreach ($p->tarfiles as $vr => $tar)
@@ -1568,7 +1568,7 @@ class packages {
 							if ($r === $pn)
 							{
 								if (!isset(past_mistakes::$self_requires[$pn]))
-									mksetup::error_log("warning: package '$pn' version '$v' $c itself");
+									mksetup::warning("package '$pn' version '$v' $c itself");
 							}
 
 							/* all packages listed in a hint must exist (unless the */
@@ -1725,7 +1725,7 @@ class packages {
 					/* warn if no non-test ('curr') version exists */
 					if (!isset($p->version_hints[$p->best_version]['disable-check']['missing-curr']) &&
 						!isset($opt['disable-check']['missing-curr']))
-						mksetup::error_log("warning: package '$pn' doesn't have any non-test versions (i.e. no curr: version)");
+						mksetup::warning("package '$pn' doesn't have any non-test versions (i.e. no curr: version)");
 				} else
 				{
 					/* the package must have some versions */
@@ -1789,14 +1789,14 @@ class packages {
 						$a = new SetupVersion($rv);
 						$b = new SetupVersion($bv);
 						if (SetupVersion::compare($a, $b) <= 0)
-							mksetup::error_long("warning: package '$pn' replace-versions: useless lists version '$v', which is <= current version '$bv'");
+							mksetup::warning("package '$pn' replace-versions: useless lists version '$v', which is <= current version '$bv'");
 					}
 
 					/* warn if replace-versions lists a version which is also */
 					/* available to install (as this doesn't work as expected) */
 					if (isset($p->version_hints[$rv]) && isset($p->version_hints[$bv]))
 						if (isset($p->version_hints[$rv]['test']) === isset($p->version_hints[$bv]['test']))
-							mksetup::error_log("warning: package '$pn' replace-versions: lists version '$rv', which is also available to install");
+							mksetup::warning("package '$pn' replace-versions: lists version '$rv', which is also available to install");
 				}
 			}
 
@@ -2294,7 +2294,7 @@ class packages {
 					if (isset($this->packages[$s]) && isset($this->packages[$s]->versions()[$version]))
 						tar_line($f, $this->packages[$s], 'source', $version);
 					else if (!($is_empty || isset(past_mistakes::$self_source[$this->packages[$s]->orig_name])))
-						mksetup::error_log("warning: package '$pn' version '$version' has no source in '{$this->packages[$s]->orig_name}'");
+						mksetup::warning("package '$pn' version '$version' has no source in '{$this->packages[$s]->orig_name}'");
 				}
 
 				/* external-source should also be capable of pointing to a 'real' */
@@ -2401,6 +2401,11 @@ class mksetup {
 		error_log("$program: $msg");
 		if (!self::is_cli())
 			echo("$msg\n");
+	}
+
+	public static function warning(string $msg) : void
+	{
+		self::error_log("warning: $msg");
 	}
 
 	public static function quote(string $str) : string
