@@ -1,22 +1,30 @@
 #!/bin/sh
 
 #
-# Script to generate debian control files from rpm packages.
-# This only creates the control files in the pool,
+# Script to generate cygwin *.hint files from rpm packages.
+# This only creates the hints and archives,
 # after all packages have been added,
-# run updatedeb to generate the */Packages and */Release files
+# run mksetupini.sh to generate the */setup.ini
 #
 
 me="$0"
 scriptdir=${0%/*}
 
-. ${scriptdir}/debfuncs.sh
+. ${scriptdir}/cygfuncs.sh
 
 pkgname="$1"
 test "${pkgname}" == "" && {
 	echo "missing package name" >&2
 	exit 1
 }
+
+#
+# Do not auto-generate hint file for gcc & binutils,
+# these have been manually created
+#
+case $pkgname in
+	gcc* | binutils*) exit 0; ;;
+esac
 
 specfile="${topdir}/SPECS/${pkgname}.spec"
 if ! test -f "$specfile"; then
@@ -32,13 +40,13 @@ arch=
 if test "$arch" = ""; then
 	rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
 	if test -f "$rpmfile"; then
-		arch="all"
+		arch="noarch"
 	fi
 fi
 if test "$arch" = ""; then
 	rpmfile="$RPMS/x86_64/${fullname}-${version}-${release}.x86_64.rpm"
 	if test -f "$rpmfile"; then
-		arch="amd64"
+		arch="x86_64"
 	fi
 fi
 if test "$arch" = ""; then
@@ -47,58 +55,66 @@ if test "$arch" = ""; then
 fi
 #rpm -q --info "$rpmfile"
 
-pkgdir="${DEBIAN}/specs/${pkgname}"
-mkdir -p "${pkgdir}/DEBIAN"
+pkgdir="$arch/release/${fullname}"
+mkdir -p "${pkgdir}"
 
 maintainer=`rpm -q --queryformat '%{packager}' "$rpmfile"`
 url=`rpm -q --queryformat '%{url}' "$rpmfile"`
 summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
-description=`rpm -q --queryformat '%{description}' "$rpmfile" | sed -e 's/^$/./' -e 's/^/ /'`
+description=`rpm -q --queryformat '%{description}' "$rpmfile"`
 requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib | grep -v "lib.*\.so" | grep -v /bin/sh`
 group=`rpm -q --queryformat '%{group}' "$rpmfile"`
 provides=`rpm -q --queryformat '%{provides}' "$rpmfile"`
 
 if test "${requires}" != ""; then
-	requires="Depends: "`echo ${requires} | sed -e 's/ /,/g'`"
+	requires="requires: "`echo ${requires} | sed -e 's/ /,/g'`"
 "
 fi
 
+case $group in
+   System/Libraries) group=libs ;;
+   System*) group=system ;;
+   Development*) group=devel ;;
+   System/Shell) group=shells ;;
+   *Archiving*) group=archive ;;
+   *) group=Libs ;;
+esac
+
 if test "${group}" != ""; then
-	group="Section: ${group}
+	group="category: ${group}
 "
 fi
 
 if test "${provides}" != ""; then
-	provides="Provides: ${provides}
+	provides="provides: ${provides}
 "
 fi
 
 
 cd "${pkgdir}"
 
-cat << EOF > "DEBIAN/control"
-Package: ${fullname}
-Version: ${version}-${release}
-Maintainer: ${maintainer}
-Architecture: ${arch}
-Homepage: ${url}
-${requires}${group}${provides}Description: ${summary}
-${description}
+cat << EOF > "${fullname}-${version}-${release}.hint"
+sdesc: "${summary}"
+ldesc: "${description}"
+${requires}${group}${provides}
+EOF
 
-
+cat << EOF > "${fullname}-${version}-${release}-src.hint"
+sdesc: "${summary}"
+ldesc: "${description}"
+homepage: ${url}
+${group}
 EOF
 
 
-rm -f *.deb control.tar.xz data.tar.xz debian-binary md5sums control
 rm -rf usr etc
 
 rpm2cpio "$rpmfile" | cpio -id
-find usr -type f | xargs md5sum > DEBIAN/md5sums
-if test -d etc; then find etc -type f | xargs md5sum >> DEBIAN/md5sums; fi
+files="usr"
+if test -d etc; then files+=" etc"; fi
+
+tar cfJ ${fullname}-${version}-${release}.tar.xz $files
+# FIXME: generate proper source package
+ln -sf $HOME/packages/$pkgname-$version.tar.xz ${fullname}-${version}-${release}-src.tar.xz
 
 rm -rf usr etc
-
-dpkg --build . "$POOL/main" || exit 1
-
-debfile="${fullname}_${version}-${release}_${arch}.deb"
-

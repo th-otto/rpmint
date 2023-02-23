@@ -21,7 +21,9 @@ for ARCH in x86 x86_64 noarch; do
 			sha512sum $files > sha512.sum
 		fi
 	done
+done
 
+for ARCH in x86 x86_64 noarch; do
 	cd "$dir" || exit 1
 	
 	# our repo only contains the additional packages, so we have to disable dependency checks

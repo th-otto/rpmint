@@ -897,6 +897,7 @@ class Tar {
 		$this->is_empty = false;
 		$this->is_used = false;
 		$this->version = null;
+		$this->filename = $filename;
 	}
 
 	/*
