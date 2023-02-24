@@ -7,9 +7,15 @@
 
 me="$0"
 
+unset CDPATH
+unset LANG LANGUAGE LC_ALL LC_CTYPE LC_TIME LC_NUMERIC LC_COLLATE LC_MONETARY LC_MESSAGES
+
+scriptdir=${0%/*}
+scriptdir=`cd "${scriptdir}"; pwd`
+
 PACKAGENAME=binutils
-VERSION=-2.39
-VERSIONPATCH=-20230206
+VERSION=-2.40
+VERSIONPATCH=-20230224
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
@@ -35,7 +41,7 @@ srcdir="${PACKAGENAME}${VERSION}"
 # BINUTILS_SUPPORT_DIRS is from src-release.sh
 #
 # The mint patch can be recreated by running
-# git diff binutils-2_39-branch binutils-2_39-mint
+# git diff binutils-2_40-branch binutils-2_40-mint
 # in my fork (https://github.com/th-otto/binutils/tree/binutils-2_39-mint)
 #
 PATCHES="\
@@ -280,6 +286,9 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	rm -f ${BUILD_LIBDIR#/}/libiberty.a
 
 	rm -f ${PREFIX#/}/share/info/dir
+    rm -f ${BUILD_LIBDIR#/}/bfd-plugins/libdep.so
+    rm -f ${BUILD_LIBDIR#/}/bfd-plugins/*dep.dll
+    rmdir ${BUILD_LIBDIR#/}/bfd-plugins 2>/dev/null || :
 	for f in ${PREFIX#/}/share/man/*/* ${PREFIX#/}/share/info/*; do
 		case $f in
 		*.gz) ;;

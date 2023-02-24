@@ -15,8 +15,8 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        2.39
-Release:        20230206
+Version:        2.40
+Release:        20230224
 License:        GFDL-1.3-only AND GPL-3.0-or-later
 Group:          Development/Tools/Building
 
@@ -111,7 +111,7 @@ GCC="${GCC} -m32"
 GXX="${GXX} -m32"
 %endif
 BUILD_EXEEXT=
-PREFIX=/usr
+PREFIX=%{_rpmint_target_prefix}
 
 case `uname -s` in
 	MINGW64*) host=mingw64; MINGW_PREFIX=/mingw64; ;;
@@ -291,7 +291,7 @@ cd build-dir
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root"
 %else
 	--with-cpu=$with_cpu \
-	--with-build-sysroot="/usr/${TARGET}/sys-root"
+	--with-build-sysroot="%{_rpmint_target_prefix}/${TARGET}/sys-root"
 %endif
 
 make %{?_smp_mflags}
@@ -302,6 +302,12 @@ make %{?_smp_mflags}
 
 %rpmint_cflags
 
+%if "%{buildtype}" == "cross"
+strip="strip -p"
+%else
+strip="${TARGET}-strip -p"
+%endif
+
 cd build-dir
 
 %if "%{buildtype}" != "cross"
@@ -309,13 +315,23 @@ eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 eval multilibdir=\${CPU_LIBDIR_$CPU}
 %endif
 
-PREFIX=/usr
+BUILD_LIBDIR=%{build_libdir}
+
+PREFIX=%{_rpmint_target_prefix}
 case $host in
 	mingw*) if test "${PREFIX}" = /usr; then PREFIX=${MINGW_PREFIX}; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
 	macos*) if test "${PREFIX}" = /usr; then PREFIX=/opt/cross-mint; BUILD_LIBDIR=${PREFIX}/lib; fi ;;
 esac
 
-make DESTDIR="${RPM_BUILD_ROOT}" prefix="${PREFIX}" libdir='${exec_prefix}/lib'$multilibdir bindir="${PREFIX}/bin" install-strip
+%if "%{buildtype}" == "cross"
+	libdir="$BUILD_LIBDIR"
+	libexecdir="$BUILD_LIBDIR"
+%else
+	libdir="'${exec_prefix}/lib'$multilibdir"
+	libexecdir="${PREFIX}/lib"
+%endif
+
+make DESTDIR="${RPM_BUILD_ROOT}" prefix="${PREFIX}" libdir="$libdir" libexecdir="$libexecdir" bindir="${PREFIX}/bin" install-strip
 
 mkdir -p "${RPM_BUILD_ROOT}${PREFIX}/${TARGET}/bin"
 
@@ -348,7 +364,8 @@ ${strip} ${PREFIX#/}/bin/*
 rm -f ${BUILD_LIBDIR#/}/libiberty.a
 
 rm -f ${PREFIX#/}/share/info/dir
-rm -f ${PREFIX#/}/lib/bfd-plugins/libdep.so
+rm -f ${BUILD_LIBDIR#/}/bfd-plugins/libdep.so
+rmdir ${BUILD_LIBDIR#/}/bfd-plugins 2>/dev/null || :
 %if "%{buildtype}" == "cross"
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
@@ -386,6 +403,9 @@ done
 
 
 %changelog
+* Fri Feb 24 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to binutils 2.40
+
 * Sun Feb 12 2023 Thorsten Otto <admin@tho-otto.de>
 - Update to binutils 2.39
 

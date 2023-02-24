@@ -2,6 +2,14 @@ ver=$1
 test "$ver" = "" && exit 1
 cd $HOME/mintstd/binary7-package/usr/bin || exit 1
 for tool in g++ gcc gnat gnatbind gnatchop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep; do
-	ln -sf m68k-atari-mint-$tool-$ver m68k-atari-mint-$tool
-	ln -sf m68k-atari-mintelf-$tool-$ver m68k-atari-mintelf-$tool
+	if test -f m68k-atari-mint-$tool-$ver; then
+		ln -sf m68k-atari-mint-$tool-$ver m68k-atari-mint-$tool
+	else
+		rm -f m68k-atari-mint-$tool
+	fi
+	if test -f m68k-atari-mintelf-$tool-$ver; then
+		ln -sf m68k-atari-mintelf-$tool-$ver m68k-atari-mintelf-$tool
+	else
+		rm -f m68k-atari-mintelf-$tool
+	fi
 done
