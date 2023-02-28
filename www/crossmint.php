@@ -1294,6 +1294,8 @@ foreach ($basepackages as $key => $package)
 
 </table>
 
+<!--
+
 <h1>Complete toolchains</h1>
 
 <p>These archives are just repackaged from the packages above, and some packages below.
@@ -1398,6 +1400,8 @@ if ($package['macos64'] && ($platform == 'macos64' || $platform == 'all'))
 </tr>
 
 </table>
+
+-->
 
 
 <h1>Library packages</h1>
@@ -2060,6 +2064,8 @@ This notably applies to Perl and Python.
 <li>2023/02/24 Update binutils to 2.40</li>
 
 <li>2023/02/26 Update gcc-8 to 8.5.0</li>
+
+<li>2023/02/28 Update opkg to 0.6.1</li>
 
 </ul>
 

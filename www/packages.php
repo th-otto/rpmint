@@ -2418,7 +2418,7 @@ floppies.
 		'upstream' => 'https://git.yoctoproject.org/cgit/cgit.cgi/opkg/',
 		'branch' => '',
 		'source' => 'https://git.yoctoproject.org/cgit/cgit.cgi/%{name}/snapshot/%{name}-%{version}.tar.bz2',
-		'version' => '0.4.2',
+		'version' => '0.6.1',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

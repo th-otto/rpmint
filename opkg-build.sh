@@ -4,13 +4,13 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=opkg
-VERSION=-0.4.2
+VERSION=-0.6.1
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/opkg/opkg-mint.patch
+patches/opkg/opkg-0.6.1.patch
 "
 DISABLED_PATCHES="
 patches/opkg/opkg-mintelf-config.patch

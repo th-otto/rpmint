@@ -1,0 +1,70 @@
+diff -rup opkg-0.6.1.orig/configure.ac opkg-0.6.1/configure.ac
+--- opkg-0.6.1.orig/configure.ac	2022-12-06 14:10:18.000000000 +0100
++++ opkg-0.6.1/configure.ac	2023-02-28 11:21:57.694548520 +0100
+@@ -262,7 +262,7 @@ AC_FUNC_FORK
+ AC_TYPE_SIGNAL
+ AC_FUNC_UTIME_NULL
+ AC_FUNC_VPRINTF
+-AC_CHECK_FUNCS([memmove memset mkdir regcomp strchr strcspn strdup strerror strndup strrchr strstr strtol strtoul sysinfo utime])
++AC_CHECK_FUNCS([memmove memset mkdir regcomp strchr strcspn strdup strerror strndup strrchr strstr strtol strtoul sysinfo utime mkdtemp])
+ 
+ if ! test -z "$SOURCE_DATE_EPOCH" ; then
+     CLEAN_DATE=`LC_ALL=C date -d @$SOURCE_DATE_EPOCH +"%B %Y" | tr -d '\n'`
+diff -rup opkg-0.6.1.orig/libopkg/file_util.c opkg-0.6.1/libopkg/file_util.c
+--- opkg-0.6.1.orig/libopkg/file_util.c	2022-12-06 14:10:18.000000000 +0100
++++ opkg-0.6.1/libopkg/file_util.c	2023-02-28 11:21:57.694548520 +0100
+@@ -481,7 +481,7 @@ int rm_r(const char *path)
+         if (!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))
+             continue;
+ 
+-#ifdef _BSD_SOURCE
++#ifdef DT_DIR
+         if (dent->d_type == DT_DIR) {
+             ret = rm_r(dent->d_name);
+             if (ret == -1)
+diff -rup opkg-0.6.1.orig/libopkg/opkg_conf.c opkg-0.6.1/libopkg/opkg_conf.c
+--- opkg-0.6.1.orig/libopkg/opkg_conf.c	2022-12-06 14:10:18.000000000 +0100
++++ opkg-0.6.1/libopkg/opkg_conf.c	2023-02-28 11:21:57.694548520 +0100
+@@ -950,3 +950,16 @@ void opkg_conf_deinit(void)
+         }
+     }
+ }
++
++#ifndef HAVE_MKDTEMP
++char *mkdtemp(char *template)
++{
++	if (mktemp(template) == NULL)
++		return NULL;
++
++	if (mkdir(template, 0700) < 0)
++		return NULL;
++
++	return template;
++}
++#endif
+diff -rup opkg-0.6.1.orig/libopkg/opkg_conf.h opkg-0.6.1/libopkg/opkg_conf.h
+--- opkg-0.6.1.orig/libopkg/opkg_conf.h	2022-12-06 14:10:18.000000000 +0100
++++ opkg-0.6.1/libopkg/opkg_conf.h	2023-02-28 11:21:57.694548520 +0100
+@@ -201,6 +201,10 @@ int opkg_unlock(void);
+ 
+ char *opkg_solver_version_alloc(void);
+ 
++#ifndef HAVE_MKDTEMP
++char *mkdtemp(char *template);
++#endif
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff -rup opkg-0.6.1.orig/libopkg/pkg.c opkg-0.6.1/libopkg/pkg.c
+--- opkg-0.6.1.orig/libopkg/pkg.c	2022-12-06 14:10:18.000000000 +0100
++++ opkg-0.6.1/libopkg/pkg.c	2023-02-28 11:21:57.694548520 +0100
+@@ -675,7 +675,7 @@ static void pkg_formatted_field(FILE * f
+             }
+         } else if (strcasecmp(field, "Installed-Time") == 0) {
+             if (pkg->installed_time) {
+-                fprintf(fp, "Installed-Time: %lu\n", pkg->installed_time);
++                fprintf(fp, "Installed-Time: %lu\n", (unsigned long)pkg->installed_time);
+             }
+         } else {
+             goto UNKNOWN_FMT_FIELD;
