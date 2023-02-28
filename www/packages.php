@@ -246,12 +246,12 @@ Slightly older version of GCC.
 Slightly older version of GCC.
 '
 	),
-	'gcc841' => array(
+	'gcc850' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '8.4.1',
-		'date' => '20230210',
+		'version' => '8.5.0',
+		'date' => '20230226',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-8',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',

@@ -13,8 +13,8 @@ scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
-VERSION=-8.4.1
-VERSIONPATCH=-20230210
+VERSION=-8.5.0
+VERSIONPATCH=-20230226
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
