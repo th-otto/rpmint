@@ -1,7 +1,12 @@
 #!/bin/sh
 
 me="$0"
+
+unset CDPATH
+unset LANG LANGUAGE LC_ALL LC_CTYPE LC_TIME LC_NUMERIC LC_COLLATE LC_MONETARY LC_MESSAGES
+
 scriptdir=${0%/*}
+scriptdir=`cd "${scriptdir}"; pwd`
 
 . ${scriptdir}/debfuncs.sh
 
@@ -12,12 +17,15 @@ for dist in xenial bionic eoan focal jammy kinetic bullseye buster stretch jessi
 	mkdir -p "dists/${dist}/main/binary-amd64"
 	mkdir -p "dists/${dist}/main/binary-i386"
 	mkdir -p "dists/${dist}/main/all"
-	dpkg-scanpackages --arch amd64 pool/main > dists/${dist}/main/binary-amd64/Packages
-	dpkg-scanpackages --arch i386 pool/main > dists/${dist}/main/binary-i386/Packages
-	dpkg-scanpackages --arch all pool/main > dists/${dist}/main/all/Packages
+	${scriptdir}/dpkg-scanpackages --arch amd64 pool/main > dists/${dist}/main/binary-amd64/Packages
+	${scriptdir}/dpkg-scanpackages --arch i386 pool/main > dists/${dist}/main/binary-i386/Packages
+	${scriptdir}/dpkg-scanpackages --arch all pool/main > dists/${dist}/main/all/Packages
 done
 find dists -name Packages | xargs -n 1 gzip -f -9 -k
 find dists -name Packages | xargs -n 1 xz -f -9 -k
+${scriptdir}/dpkg-scanpackages --php --arch amd64 pool/main > amd64/Packages.php
+${scriptdir}/dpkg-scanpackages --php --arch i386 pool/main > i386/Packages.php
+${scriptdir}/dpkg-scanpackages --php --arch all pool/main > all/Packages.php
 
 
 do_hash() {
