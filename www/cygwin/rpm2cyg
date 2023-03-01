@@ -115,6 +115,11 @@ if test -d etc; then files+=" etc"; fi
 
 tar cfJ ${fullname}-${version}-${release}.tar.xz $files
 # FIXME: generate proper source package
-ln -sf $HOME/packages/$pkgname-$version.tar.xz ${fullname}-${version}-${release}-src.tar.xz
+for ext in zst xz bz2 gz; do
+	if test -f $HOME/packages/$pkgname-$version.tar.${ext}; then
+		ln -sf $HOME/packages/$pkgname-$version.tar.${ext} ${fullname}-${version}-${release}-src.tar.${ext}
+		break
+	fi
+done
 
 rm -rf usr etc

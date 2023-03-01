@@ -2071,6 +2071,8 @@ This notably applies to Perl and Python.
 
 <li>2023/03/01 Update zlib to 1.2.13</li>
 
+<li>2023/03/01 Update libiconv to 1.17</li>
+
 </ul>
 
 <p></p>

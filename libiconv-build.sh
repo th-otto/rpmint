@@ -4,12 +4,15 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=libiconv
-VERSION=-1.15
+VERSION=-1.17
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/libiconv/libiconv-mintelf-config.patch"
+PATCHES="
+patches/${PACKAGENAME}/libiconv-mintelf-config.patch
+patches/${PACKAGENAME}/libiconv-1.16-aliases.patch
+"
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
