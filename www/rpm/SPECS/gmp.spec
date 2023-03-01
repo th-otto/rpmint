@@ -11,7 +11,7 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        6.1.2
+Version:        6.2.1
 Release:        1
 License:        GPL-3.0+ and LGPL-3.0+
 Group:          System/Libraries
@@ -130,9 +130,6 @@ done
 
 %rpmint_cflags
 
-# already done in loop above
-# make install DESTDIR=%{buildroot}%{_rpmint_sysroot}
-
 %rpmint_strip_archives
 
 %if "%{buildtype}" == "cross"
@@ -154,10 +151,13 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %{_rpmint_includedir}/*
 %{_rpmint_libdir}/*.a
 %{_rpmint_libdir}/*/*.a
+%{_rpmint_cross_pkgconfigdir}
+%{_rpmint_libdir}/pkgconfig
 %else
 %{_rpmint_target_prefix}/include/*
 %{_rpmint_target_prefix}/lib/*.a
 %{_rpmint_target_prefix}/lib/*/*.a
+%{_rpmint_target_prefix}/lib/pkgconfig
 %endif
 
 %files doc
@@ -177,5 +177,8 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to version 6.2.1
+
 * Thu Aug 27 2020 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

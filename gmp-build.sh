@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=gmp
-VERSION=-6.1.2
+VERSION=-6.2.1
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -23,6 +23,9 @@ patches/${PACKAGENAME}/gmp-mintelf-config.patch
 unpack_archive
 
 cd "$srcdir"
+
+rm -f aclocal.m4 ltmain.sh
+libtoolize --force
 
 aclocal || exit 1
 autoconf || exit 1

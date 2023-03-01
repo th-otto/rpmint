@@ -801,7 +801,7 @@ for decompressing old archives.
 		'name' => 'gmp',
 		'upstream' => 'https://gmplib.org/',
 		'source' => 'https://gmplib.org/download/%{name}/%{name}-%{version}.tar.xz',
-		'version' => '6.1.2',
+		'version' => '6.2.1',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

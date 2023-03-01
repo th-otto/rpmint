@@ -28,12 +28,18 @@
 
 %_smp_mflags -j%{getncpus}
 
+# redefine __spec_install_pre
+# it usually does a rm -rf buildroot,
+# but that is also done in the %build step,
+# and we install libraries to buildroot already while building
+#
 %rpmint_header \
 %define _build_pkgcheck  %{_topdir}/rpmmintsign \
 %define _build_pkgcheck_srpm  %{_topdir}/rpmmintsign \
 %define _os mint \
  \
 Vendor:         RPMint \
+%define __spec_install_pre %{___build_pre}; %{__mkdir_p} "%{buildroot}"\
 %nil
 
 %rpmint_build_arch \

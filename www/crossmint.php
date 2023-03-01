@@ -2067,6 +2067,8 @@ This notably applies to Perl and Python.
 
 <li>2023/02/28 Update opkg to 0.6.1</li>
 
+<li>2023/03/01 Update gmp to 6.2.1</li>
+
 </ul>
 
 <p></p>
