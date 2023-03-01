@@ -27,7 +27,12 @@ Source0: https://gmplib.org/download/%{pkgname}/%{pkgname}-%{version}.tar.xz
 Patch0: gmp-coldfire.patch
 Patch1: gmp-mintelf-config.patch
 
+%rpmint_essential
+%if "%{buildtype}" == "cross"
 BuildRequires:  cross-mint-gcc-c++
+%else
+BuildRequires:  gcc-c++
+%endif
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libtool

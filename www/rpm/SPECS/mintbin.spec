@@ -145,7 +145,7 @@ done
 %{_bindir}/*
 %{_prefix}/%{_rpmint_target_platform}/bin/*
 %{_prefix}/%{_rpmint_target_platform}/include
-%{_infodir}
+%{_infodir}/*
 %else
 %{_rpmint_target_prefix}/bin/*
 %{_rpmint_target_prefix}/include
