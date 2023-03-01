@@ -4,8 +4,8 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=zlib
-VERSION=-1.2.12
-VERSIONPATCH=-20220914
+VERSION=-1.2.13
+VERSIONPATCH=-20230301
 
 . ${scriptdir}/functions.sh
 
