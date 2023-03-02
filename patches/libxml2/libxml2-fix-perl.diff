@@ -1,19 +1,7 @@
-commit 77b77b1301e052d90e6a0967534a698506afcd86
-Author: Daniel Veillard <veillard@redhat.com>
-Date:   Thu Jan 26 19:11:02 2012 +0800
-
-    Fix SAX2 builder in case of undefined element namespaces
-    
-    Work as in XML-1.0 before namespaces, and use prefix:localname
-    as the new element name (and no namespace of course)
-    Also fix 3 cases in the regression tests where the prefix: was
-    erroneously dropped in such case
-
-Index: SAX2.c
-===================================================================
---- a/SAX2.c.orig	2012-09-11 08:01:01.000000000 +0200
-+++ b/SAX2.c	2012-12-15 16:32:27.353560391 +0100
-@@ -2188,7 +2188,6 @@
+diff -rup libxml2-2.10.3.orig/SAX2.c libxml2-2.10.3/SAX2.c
+--- libxml2-2.10.3.orig/SAX2.c	2022-10-14 14:22:16.000000000 +0200
++++ libxml2-2.10.3/SAX2.c	2023-03-02 07:57:05.096496681 +0100
+@@ -2207,7 +2207,6 @@ xmlSAX2StartElementNs(void *ctx,
      xmlNodePtr parent;
      xmlNsPtr last = NULL, ns;
      const xmlChar *uri, *pref;
@@ -21,7 +9,7 @@ Index: SAX2.c
      int i, j;
  
      if (ctx == NULL) return;
-@@ -2208,20 +2207,6 @@
+@@ -2227,20 +2226,6 @@ xmlSAX2StartElementNs(void *ctx,
      }
  
      /*
@@ -42,7 +30,7 @@ Index: SAX2.c
       * allocate the node
       */
      if (ctxt->freeElems != NULL) {
-@@ -2234,10 +2219,7 @@
+@@ -2254,10 +2239,7 @@ xmlSAX2StartElementNs(void *ctx,
  	if (ctxt->dictNames)
  	    ret->name = localname;
  	else {
@@ -54,7 +42,7 @@ Index: SAX2.c
  	    if (ret->name == NULL) {
  	        xmlSAX2ErrMemory(ctxt, "xmlSAX2StartElementNs");
  		return;
-@@ -2249,11 +2231,8 @@
+@@ -2269,11 +2251,8 @@ xmlSAX2StartElementNs(void *ctx,
  	if (ctxt->dictNames)
  	    ret = xmlNewDocNodeEatName(ctxt->myDoc, NULL,
  	                               (xmlChar *) localname, NULL);
@@ -67,12 +55,12 @@ Index: SAX2.c
  	if (ret == NULL) {
  	    xmlSAX2ErrMemory(ctxt, "xmlSAX2StartElementNs");
  	    return;
-@@ -2360,31 +2339,6 @@
+@@ -2384,31 +2363,6 @@ xmlSAX2StartElementNs(void *ctx,
       */
      if (nb_attributes > 0) {
          for (j = 0,i = 0;i < nb_attributes;i++,j+=5) {
 -	    /*
--	     * Handle the rare case of an undefined atribute prefix
+-	     * Handle the rare case of an undefined attribute prefix
 -	     */
 -	    if ((attributes[j+1] != NULL) && (attributes[j+2] == NULL)) {
 -		if (ctxt->dictNames) {
@@ -99,19 +87,16 @@ Index: SAX2.c
  	    xmlSAX2AttributeNs(ctxt, attributes[j], attributes[j+1],
  			       attributes[j+3], attributes[j+4]);
  	}
-
-Index: result/namespaces/err_7.xml
-===================================================================
---- a/result/namespaces/err_7.xml.orig
-+++ b/result/namespaces/err_7.xml
+diff -rup libxml2-2.10.3.orig/result/namespaces/err_7.xml libxml2-2.10.3/result/namespaces/err_7.xml
+--- libxml2-2.10.3.orig/result/namespaces/err_7.xml	2022-08-02 15:06:29.000000000 +0200
++++ libxml2-2.10.3/result/namespaces/err_7.xml	2023-03-02 07:55:26.960656499 +0100
 @@ -1,2 +1,2 @@
  <?xml version="1.0"?>
 -<f:foo/>
 +<foo/>
-Index: result/xmlid/id_tst2.xml
-===================================================================
---- a/result/xmlid/id_tst2.xml.orig
-+++ b/result/xmlid/id_tst2.xml
+diff -rup libxml2-2.10.3.orig/result/xmlid/id_tst2.xml libxml2-2.10.3/result/xmlid/id_tst2.xml
+--- libxml2-2.10.3.orig/result/xmlid/id_tst2.xml	2022-08-02 15:06:33.000000000 +0200
++++ libxml2-2.10.3/result/xmlid/id_tst2.xml	2023-03-02 07:55:26.960656499 +0100
 @@ -1,6 +1,6 @@
  Object is a Node Set :
  Set contains 1 nodes:
@@ -120,10 +105,9 @@ Index: result/xmlid/id_tst2.xml
      ATTRIBUTE id
        TEXT
          content=bar
-Index: result/xmlid/id_tst3.xml
-===================================================================
---- a/result/xmlid/id_tst3.xml.orig
-+++ b/result/xmlid/id_tst3.xml
+diff -rup libxml2-2.10.3.orig/result/xmlid/id_tst3.xml libxml2-2.10.3/result/xmlid/id_tst3.xml
+--- libxml2-2.10.3.orig/result/xmlid/id_tst3.xml	2022-08-02 15:06:33.000000000 +0200
++++ libxml2-2.10.3/result/xmlid/id_tst3.xml	2023-03-02 07:55:26.960656499 +0100
 @@ -1,6 +1,6 @@
  Object is a Node Set :
  Set contains 1 nodes:

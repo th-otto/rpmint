@@ -11,7 +11,7 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        2.9.6
+Version:        2.10.3
 Release:        1
 License:        MIT
 Group:          System/Libraries
@@ -23,9 +23,12 @@ Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: ftp://xmlsoft.org/%{pkgname}/%{pkgname}-%{version}.tar.gz
+Source0: https://download.gnome.org/sources/%{pkgname}/2.10/%{pkgname}-%{version}.tar.xz
 Patch0: patches/%{pkgname}/libxml2-fix-perl.diff
 Patch1: patches/%{pkgname}/libxml2-mintelf-config.patch
+Patch2: patches/%{pkgname}/libxml2-python3-unicode-errors.patch
+Patch3: patches/%{pkgname}/libxml2-python3-string-null-check.patch
+Patch4: patches/%{pkgname}/libxml2-make-XPATH_MAX_NODESET_LENGTH-configurable.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -37,11 +40,13 @@ BuildRequires:  make
 %if "%{buildtype}" == "cross"
 BuildRequires:  cross-mint-zlib
 BuildRequires:  cross-mint-libiconv
+BuildRequires:  cross-mint-liblzma5
+BuildRequires:  cross-mint-readline
 %else
-BuildRequires:  zlib
-# FIXME: libiconv is part of glibc when cross-compiling
-# but will be needed when building natively
-#BuildRequires:  libiconv
+BuildRequires:  pkgconfig(zlib)
+BuildRequires:  pkgconfig(liblzma)
+BuildRequires:  readline
+BuildRequires:  libiconv
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -79,6 +84,9 @@ progress.
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
 
 %build
 
@@ -96,7 +104,7 @@ CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_
     --disable-ipv6
     --with-sax1
     --with-regexps
-    --with-threads
+    --without-threads
     --with-reader
     --with-http
 "

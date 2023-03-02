@@ -2077,6 +2077,8 @@ This notably applies to Perl and Python.
 
 <li>2023/03/02 Add mtm 1.2.1</li>
 
+<li>2023/03/02 Update libxml2 to 2.10.3</li>
+
 </ul>
 
 <p></p>

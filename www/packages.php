@@ -1071,13 +1071,13 @@ nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPAC
 		'name' => 'libxml2',
 		'upstream' => 'http://xmlsoft.org',
 		'source' => 'ftp://xmlsoft.org/%{name}/%{name}-%{version}.tar.gz',
-		'version' => '2.9.6',
+		'version' => '2.10.3',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
 		'bin' => 1,
 		'atari' => 1,
-		'amiga' => 0,
+		'amiga' => 1,
 		'comment' => '
 The XML C library was initially developed for the GNOME project. It is
 now used by many programs to load and save extensible data structures

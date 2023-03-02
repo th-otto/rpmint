@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=libxml2
-VERSION=-2.9.6
+VERSION=-2.10.3
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -12,6 +12,9 @@ VERSIONPATCH=
 PATCHES="
 patches/libxml2/libxml2-fix-perl.diff
 patches/libxml2/libxml2-mintelf-config.patch
+patches/libxml2/libxml2-python3-unicode-errors.patch
+patches/libxml2/libxml2-python3-string-null-check.patch
+patches/libxml2/libxml2-make-XPATH_MAX_NODESET_LENGTH-configurable.patch
 "
 
 BINFILES="
@@ -23,9 +26,9 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --docdir=${TARGET_PREFIX}/share/doc/${PACKAGENAME} \
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --docdir=${TARGET_PREFIX}/share/doc/${PACKAGENAME} ${CONFIGURE_FLAGS_AMIGAOS} \
 --disable-shared \
 --enable-static \
     --with-html-dir=${TARGET_PREFIX}/share/doc/libxml2/html \
@@ -35,7 +38,7 @@ CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --docdir=${TARGET_PREFIX}/s
     --disable-ipv6 \
     --with-sax1 \
     --with-regexps \
-    --with-threads \
+    --without-threads \
     --with-reader \
     --with-http
 "

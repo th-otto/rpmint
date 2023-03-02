@@ -22,8 +22,8 @@ else
 	spec=${topdir}/SPECS/${pkgname}.spec
 fi
 rpmbuild $quiet -ba ${spec}
-rpmbuild $quiet --target m68k-atari-mint --define="buildtype 000" -ba ${spec}
-rpmbuild $quiet --target m68020-atari-mint --define="buildtype 020" -bb ${spec}
-rpmbuild $quiet --target m5475-atari-mint --define="buildtype v4e" -bb ${spec}
+rpmbuild $quiet --nodeps --target m68k-atari-mint --define="buildtype 000" -ba ${spec}
+rpmbuild $quiet --nodeps --target m68020-atari-mint --define="buildtype 020" -bb ${spec}
+rpmbuild $quiet --nodeps --target m5475-atari-mint --define="buildtype v4e" -bb ${spec}
 
 rm -rf "${topdir}/BUILD/${pkgname}"*
