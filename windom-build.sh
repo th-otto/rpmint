@@ -13,6 +13,7 @@ PATCHES="
 patches/windom/windom-cross.patch
 patches/windom/windom-menuexec.patch
 patches/windom/windom-formthumb.patch
+patches/windom/windom-gemlib.patch
 "
 
 BINFILES="

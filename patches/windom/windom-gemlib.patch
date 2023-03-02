@@ -1,0 +1,35 @@
+--- windom-2.0.1/src/globals.h	2006-06-22 12:00:36.000000000 +0200
++++ globals.h	2023-03-01 18:19:47.402892378 +0100
+@@ -806,6 +806,8 @@
+ 	RSC header and support struct
+ *******************************************************************************/
+ 
++#ifndef __RSXHDR
++#define __RSXHDR
+ typedef struct {		/* fichier ressource tendu */
+   UWORD rsh_vrsn;			/* should be 3														     */
+   UWORD rsh_extvrsn;		/* not used, initialised to 'IN' for Interface */
+@@ -827,6 +829,7 @@
+   ULONG rsh_nimages;
+   ULONG rsh_rssize;			/* total bytes in resource   */
+ } RSXHDR;
++#endif
+ 
+ typedef struct {
+ 	unsigned long	rlen;
+--- windom-2.0.1/src/appl_init.c	2006-06-22 12:00:36.000000000 +0200
++++ appl_init.c	2023-03-01 18:47:03.028387285 +0100
+@@ -345,13 +345,11 @@
+ 	
+ 	app->priv = (APPprivate*)malloc(sizeof(APPprivate));
+ 	if (!app->priv) {
+-		free(app->aes_global);
+ 		free(app);
+ 		return NULL;
+ 	}
+ 
+ 	if ( mt_appl_init(app->aes_global) == -1) {
+-		free(app->aes_global);
+ 		free(app->priv);
+ 		free(app);
+ 		return NULL;
