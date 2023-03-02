@@ -349,9 +349,7 @@ EOF
 	# The libs with 16 bit wide characters are binary incompatible
 	# to the normal 8bit wide character libs.
 	#
-	# currently does not work because mintlib lacks the wcwidth function
-	#
-	if false; then
+	if true; then
 		for CPU in ${ALL_CPUS}; do
 			eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 			eval multilibdir=\${CPU_LIBDIR_$CPU}

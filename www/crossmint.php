@@ -2073,6 +2073,8 @@ This notably applies to Perl and Python.
 
 <li>2023/03/01 Update libiconv to 1.17</li>
 
+<li>2023/03/02 Recompile ncurses, enabling wide-char versions</li>
+
 </ul>
 
 <p></p>
