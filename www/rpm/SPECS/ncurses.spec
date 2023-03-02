@@ -1,66 +1,135 @@
-#!/bin/sh
+%define pkgname ncurses
 
-me="$0"
-scriptdir=${0%/*}
+%if "%{?buildtype}" == ""
+%define buildtype cross
+%endif
+%rpmint_header
 
-PACKAGENAME=ncurses
-VERSION=-6.0
-#VERSIONPATCH=-20171006
-VERSIONPATCH=
+Summary:        Terminal control library
+%if "%{buildtype}" == "cross"
+Name:           cross-mint-%{pkgname}
+%else
+Name:           %{pkgname}
+%endif
+Version:        6.0
+Release:        1
+License:        MIT
+Group:          System/Base
 
-. ${scriptdir}/functions.sh
+Packager:       Thorsten Otto <admin@tho-otto.de>
+URL:            http://invisible-island.net/ncurses/ncurses.html
 
-MINT_BUILD_DIR="$srcdir/build-target"
-HOST_BUILD_DIR="$srcdir/build-host"
+Prefix:         %{_prefix}
+Docdir:         %{_prefix}/share/doc
+BuildRoot:      %{_tmppath}/%{name}-root
 
-PATCHES="patches/ncurses/ncurses-6.0.dif
-patches/ncurses/ncurses-5.9-ibm327x.dif
-patches/ncurses/ncurses-6.0-0003-overwrite.patch
-patches/ncurses/ncurses-6.0-0005-environment.patch
-patches/ncurses/ncurses-6.0-0010-source.patch
-patches/ncurses/ncurses-6.0-0011-termcap.patch
-patches/ncurses/ncurses-6.0-0020-configure.patch
-patches/ncurses/ncurses-6.0-0021-mintelf-config.patch
-patches/ncurses/ncurses-6.0-0022-dynamic.patch
-patches/ncurses/ncurses-no-include.patch
-"
-PATCHARCHIVE=patches/ncurses/ncurses-6.0-patches.tar.bz2
+Source0: ftp://ftp.gnu.org/pub/gnu/%{pkgname}/%{pkgname}-%{version}.tar.gz
+Source1: patches/ncurses/ncurses-6.0-patches.tar.bz2
+Patch1: patches/ncurses/ncurses-6.0.dif
+Patch2: patches/ncurses/ncurses-5.9-ibm327x.dif
+Patch3: patches/ncurses/ncurses-6.0-0003-overwrite.patch
+Patch4: patches/ncurses/ncurses-6.0-0005-environment.patch
+Patch5: patches/ncurses/ncurses-6.0-0010-source.patch
+Patch6: patches/ncurses/ncurses-6.0-0011-termcap.patch
+Patch7: patches/ncurses/ncurses-6.0-0020-configure.patch
+Patch8: patches/ncurses/ncurses-6.0-0021-mintelf-config.patch
+Patch9: patches/ncurses/ncurses-6.0-0022-dynamic.patch
+Patch10: patches/ncurses/ncurses-no-include.patch
 
-BINFILES="
-${TARGET_BINDIR#/}/clear
-${TARGET_BINDIR#/}/infocmp
-${TARGET_BINDIR#/}/reset
-${TARGET_BINDIR#/}/tabs
-${TARGET_BINDIR#/}/toe
-${TARGET_BINDIR#/}/tput
-${TARGET_BINDIR#/}/tset
-${TARGET_BINDIR#/}/tic
-${TARGET_BINDIR#/}/captoinfo
-${TARGET_BINDIR#/}/infotocap
-${TARGET_MANDIR#/}/man1/*
-${TARGET_MANDIR#/}/man3/*
-${TARGET_MANDIR#/}/man5/*
-${TARGET_MANDIR#/}/man7/*
-${TARGET_PREFIX#/}/share/terminfo
-${TARGET_PREFIX#/}/share/tabset
-"
 
-unpack_archive
+%rpmint_essential
+BuildRequires:  make
+%if "%{buildtype}" == "cross"
+BuildRequires:  cross-mint-gcc-c++
+BuildRequires:  gcc-c++
+Provides:       cross-mint-terminfo-base
+Provides:       cross-mint-libncurses5
+Provides:       cross-mint-libncurses6
+%else
+BuildRequires:  gcc-c++
+Provides:       terminfo-base
+Provides:       libncurses5
+Provides:       libncurses6
+%endif
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -pipe -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+%if "%{buildtype}" == "cross"
+BuildArch:      noarch
+%else
+%define _target_platform %{_rpmint_target_platform}
+%if "%{buildtype}" == "v4e"
+%define _arch m5475
+%else
+%if "%{buildtype}" == "020"
+%define _arch m68020
+%else
+%define _arch m68k
+%endif
+%endif
+%endif
 
-export CROSS_TOOL=${TARGET}
+%description
+Ncurses is a library which allows building full-screen text mode programs,
+such as <code>vim</code>, <code>less</code>, or the GDB text UI.
+
+%prep
+%setup -q -n %{pkgname}-%{version}
+
+mkdir -p "%{pkgname}-patches"
+tar -C "%{pkgname}-patches" --strip-components=1 -xjf "%{S:1}"
+for patch in %{pkgname}-patches/%{pkgname}*.patch
+do
+    patch -f -T -p1 -s --read-only=ignore < $patch
+done
+rm -rf "%{pkgname}-patches"
+find -name '*.orig' -delete
+
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
+%patch6 -p1
+%patch7 -p1
+%patch8 -p1
+%patch9 -p1
+%patch10 -p1
+
+%define MINT_BUILD_DIR %{_builddir}/%{?buildsubdir}/build-target
+%define HOST_BUILD_DIR %{_builddir}/%{?buildsubdir}/build-host
+
+rm -fr tack
+rm -f Ada95/src/terminal_interface-curses.adb
+rm -f mkinstalldirs
+# rm -vf include/ncurses_dll.h
+rm -vf mkdirs.sh
+rm -vf tar-copy.sh
+rm -vf mk-dlls.sh
+# do not run aclocal here, ncurses uses
+# its own package of macros which are not
+# delivered in the tarball
+: aclocal || exit 2
+: autoconf || exit 2
+: autoheader || exit 2
+rm -rf autom4te.cache config.h.in.orig
+
+%build
+
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+
+%rpmint_cflags
+
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
 
 CC_FOR_BUILD=gcc
 CXX_FOR_BUILD=g++
 
-CC_FOR_TARGET="$gcc"
-CXX_FOR_TARGET="$cxx"
+CC_FOR_TARGET="%{_rpmint_target}-gcc"
+CXX_FOR_TARGET="%{_rpmint_target}-g++"
 
 ENABLE_SHARED_TARGET=no
 
-TARGET_CONFIGURE_ARGS="--prefix=${TARGET_PREFIX} --host=${TARGET}"
-BUILD_CONFIGURE_ARGS="--prefix=/usr"
+TARGET_CONFIGURE_ARGS="--prefix=%{_rpmint_target_prefix} --host=${TARGET}"
+BUILD_CONFIGURE_ARGS="--prefix=%{_prefix}"
 
 configure_ncurses_for_build()
 {
@@ -99,10 +168,10 @@ configure_ncurses_for_build()
 	esac
 	export CC CXX CFLAGS CXXFLAGS LDFLAGS TERM GZIP PATH TMPDIR
 
-	cd "$HOST_BUILD_DIR" || exit 1
+	cd "%{HOST_BUILD_DIR}" || exit 1
 	if true
 	then
-		test -f Makefile && ${MAKE} clean
+		test -f Makefile && make clean
 		echo "configure $NAME for $BUILD:"
 			${srcdir}/configure \
 			$BUILD_CONFIGURE_ARGS \
@@ -153,12 +222,13 @@ configure_ncurses_for_build()
 	fi
 }
 
+
 configure_ncurses()
 {
-	cd "$MINT_BUILD_DIR"
+	cd "%{MINT_BUILD_DIR}"
 	if true
 	then
-		test -f Makefile && ${MAKE} clean
+		test -f Makefile && make clean
 		echo "configure $NAME:"
 			${srcdir}/configure \
 			$TARGET_CONFIGURE_ARGS \
@@ -174,7 +244,7 @@ configure_ncurses()
 			--with-manpage-aliases	\
 			--enable-term-driver \
 			--enable-pc-files \
-			--with-pkg-config-libdir="${TARGET_LIBDIR}/pkgconfig" \
+			--with-pkg-config-libdir="%{_rpmint_target_prefix}/lib/pkgconfig" \
 			--disable-rpath \
 			--disable-rpath-hack \
 			--with-normal \
@@ -206,7 +276,7 @@ configure_ncurses()
 			$mixedcase \
 			"$@" \
 			|| exit $?
-		hack_lto_cflags
+		: hack_lto_cflags
 	fi
 }
 
@@ -218,7 +288,6 @@ build_ncurses()
 	local NAME
 	local CC CXX CFLAGS CXXFLAGS LDFLAGS
 	local withchtype
-	local safe_stdin
 	local screen="screen -L -D -m"
 	local PATH="$PATH"
 	local FALLBK="xterm,linux,vt100,vt102,cygwin"
@@ -229,27 +298,29 @@ build_ncurses()
 	local abi6_conf_args="--with-pthread    --enable-reentrant  --enable-ext-mouse  --enable-widec  --enable-ext-colors"
 	local BUILD_TIC BUILD_INFOCMP
 	
-	NAME=${PACKAGENAME}${VERSION}
+	srcdir=`pwd`
+
+	NAME=%{pkgname}-%{version}
 	abi=5
 
 	if true; then
 		withchtype=--with-chtype=long
 		configure_ncurses_for_build
-		${MAKE} $JOBS -C include &&
-		${MAKE} $JOBS -C ncurses fallback.c FALLBACK_LIST="" &&
-		${MAKE} $JOBS -C progs termsort.c &&
-		${MAKE} $JOBS -C progs transform.h &&
-		${MAKE} $JOBS -C progs infocmp$BUILD_EXEEXT &&
-		${MAKE} $JOBS -C progs tic$BUILD_EXEEXT \
+		make %{?_smp_mflags} -C include &&
+		make %{?_smp_mflags} -C ncurses fallback.c FALLBACK_LIST="" &&
+		make %{?_smp_mflags} -C progs termsort.c &&
+		make %{?_smp_mflags} -C progs transform.h &&
+		make %{?_smp_mflags} -C progs infocmp$BUILD_EXEEXT &&
+		make %{?_smp_mflags} -C progs tic$BUILD_EXEEXT \
 		|| exit $?
-		BUILD_TIC=$HOST_BUILD_DIR/progs/tic$BUILD_EXEEXT
-		BUILD_INFOCMP=$HOST_BUILD_DIR/progs/infocmp$BUILD_EXEEXT
-		PATH="$HOST_BUILD_DIR/progs:$PATH"
+		BUILD_TIC=%{HOST_BUILD_DIR}/progs/tic$BUILD_EXEEXT
+		BUILD_INFOCMP=%{HOST_BUILD_DIR}/progs/infocmp$BUILD_EXEEXT
+		PATH="%{HOST_BUILD_DIR}/progs:$PATH"
 	else
 		BUILD_TIC=tic
 		BUILD_INFOCMP=infocmp
 	fi
-	cd "$MINT_BUILD_DIR"
+	cd "%{MINT_BUILD_DIR}"
 	
 	CC="$CC_FOR_TARGET"
 	CXX="$CXX_FOR_TARGET"
@@ -307,7 +378,7 @@ build_ncurses()
 		without_cxx="--without-cxx --without-cxx-bindings"
 	fi
 
-	cd "$MINT_BUILD_DIR"
+	cd "%{MINT_BUILD_DIR}"
 
 	SCREENDIR=$(mktemp -d ${PWD}/screen.XXXXXX) || exit 1
 	SCREENRC=${SCREENDIR}/ncurses
@@ -328,22 +399,26 @@ EOF
 	TMPDIR=$(mktemp -d /tmp/ncurses.XXXXXXXX) || exit 1
 	export CC CXX CFLAGS CXXFLAGS LDFLAGS TERM GZIP PATH TMPDIR
 	
-#	: {safe_stdin}<&0
-#	exec 0< /dev/null
-	
 	for CPU in ${ALL_CPUS}; do
 		eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 		eval multilibdir=\${CPU_LIBDIR_$CPU}
 		configure_ncurses
 		pwd
 		ls -l
-		test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
-		${MAKE} $JOBS || exit $?
-		${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" includesubdir=/ncurses libdir=${TARGET_LIBDIR}/$multilibdir install || exit $?
-		( cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include"; $LN_S -f ncurses/{curses,ncurses,term,termcap}.h . )
+		test -z "$CXX_FOR_TARGET" || make -C c++ etip.h || exit 1
+		make %{?_smp_mflags} || exit $?
+		make DESTDIR="%{buildroot}%{_rpmint_sysroot}" includesubdir=/ncurses libdir=%{_rpmint_target_prefix}/lib/$multilibdir install || exit $?
+		( cd "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/include"; $LN_S -f ncurses/{curses,ncurses,term,termcap}.h . )
+	
 		# remove obsolete config script
-		rm -f ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/ncurses*-config
-		make_bin_archive $CPU
+		rm -f %{buildroot}%{_rpmint_bindir}/ncurses*-config
+		%if "%{buildtype}" != "cross"
+		if test "%{buildtype}" != "$CPU"; then
+			rm -f %{buildroot}%{_rpmint_bindir}/*
+		fi
+		%rpmint_make_bin_archive $CPU
+		%endif
+
 	done
 		
 	# Now use --enable-widec for UTF8/wide character support.
@@ -355,51 +430,59 @@ EOF
 			eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 			eval multilibdir=\${CPU_LIBDIR_$CPU}
 			configure_ncurses --enable-widec --without-progs
-			test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
-			${MAKE} $JOBS || exit $?
-			${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" includesubdir=/ncursesw libdir=${TARGET_LIBDIR}/$multilibdir install.libs install.includes || exit $?
+			test -z "$CXX_FOR_TARGET" || make -C c++ etip.h || exit 1
+			make %{?_smp_mflags} || exit $?
+			make DESTDIR="%{buildroot}%{_rpmint_sysroot}" includesubdir=/ncursesw libdir=%{_rpmint_target_prefix}/lib/$multilibdir install.libs install.includes || exit $?
 			# remove obsolete config script
-			rm -f ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/ncurses*-config
+			rm -f %{buildroot}%{_rpmint_bindir}/ncurses*-config
 		done
 	fi
-	
-		
-#   exec 0<&$safe_stdin
-#	: {safe_stdin}<&-
 
 }
 
 
-cd "$srcdir"
-
-rm -fr tack
-rm -f Ada95/src/terminal_interface-curses.adb
-rm -f mkinstalldirs
-# rm -vf include/ncurses_dll.h
-rm -vf mkdirs.sh
-rm -vf tar-copy.sh
-rm -vf mk-dlls.sh
-# do not run aclocal here, ncurses uses
-# its own package of macros which are not
-# delivered in the tarball
-: aclocal || exit 2
-: autoconf || exit 2
-: autoheader || exit 2
-rm -rf autom4te.cache config.h.in.orig
-
-mkdir -p "$MINT_BUILD_DIR"
-mkdir -p "$HOST_BUILD_DIR"
-cd "$MINT_BUILD_DIR"
+mkdir -p "%{MINT_BUILD_DIR}"
+mkdir -p "%{HOST_BUILD_DIR}"
 
 build_ncurses
 
-configured_prefix="${TARGET_PREFIX}"
-copy_pkg_configs "ncurses*.pc"
-copy_pkg_configs "form*.pc"
-copy_pkg_configs "menu*.pc"
-copy_pkg_configs "panel*.pc"
 
-make_archives
+%install
 
-rm -rf "${MINT_BUILD_DIR}"
-rm -rf "${HOST_BUILD_DIR}"
+%rpmint_cflags
+
+%rpmint_strip_archives
+
+%if "%{buildtype}" == "cross"
+configured_prefix="%{_rpmint_target_prefix}"
+%rpmint_copy_pkg_configs
+%else
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}%{_rpmint_sysroot}
+rmdir %{buildroot}%{_rpmint_installdir} || :
+rmdir %{buildroot}%{_prefix} 2>/dev/null || :
+%endif
+
+%clean
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+
+
+%files
+%defattr(-,root,root)
+%if "%{buildtype}" == "cross"
+%{_rpmint_bindir}
+%{_rpmint_includedir}
+%{_rpmint_libdir}
+%{_rpmint_cross_pkgconfigdir}
+%{_rpmint_datadir}
+%else
+%{_rpmint_target_prefix}/bin
+%{_rpmint_target_prefix}/include
+%{_rpmint_target_prefix}/lib
+%{_rpmint_target_prefix}/share
+%endif
+
+
+
+%changelog
+* Thu Mar 02 2023 Thorsten Otto <admin@tho-otto.de>
+- RPMint spec file

@@ -713,6 +713,7 @@ individual files may be recovered intact.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'Archiver for .arj files',
 		'comment' => '
 A portable version of the ARJ archiver, available for a growing number
 of DOS-like and UNIX-like platforms on a variety of architectures.
@@ -729,6 +730,7 @@ of DOS-like and UNIX-like platforms on a variety of architectures.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'Archiver for .lzh files',
 		'comment' => '
 LHA for UNIX - Note: This software is licensed under the ORIGINAL
 LICENSE. It is written in man/lha.n in Japanese 
@@ -786,6 +788,7 @@ This library is also available as a <a href="../sharedlibs.php#lzma">shared libr
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'File compression program',
 		'comment' => '
 Zip is a compression and file packaging utility. It is compatible with
 PKZIP(tm) 2.04g (Phil Katz ZIP) for MS-DOS systems.
@@ -802,6 +805,7 @@ PKZIP(tm) 2.04g (Phil Katz ZIP) for MS-DOS systems.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'A program to unpack compressed files',
 		'comment' => '
 UnZip is an extraction utility for archives compressed in .zip format
 (known as &quot;zip files&quot;).  Although highly compatible both with PKWARE&apos;s
@@ -821,6 +825,7 @@ functionality. This version can also extract encrypted archives.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'Pack Program',
 		'comment' => '
 Zoo is a packer based on the Lempel-Ziv algorithm. Lots of files on
 DOS/AmigaDOS and TOS systems used this packer for their archives. The
@@ -839,6 +844,7 @@ for decompressing old archives.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'The GNU MP Library',
 		'comment' => '
 A library for calculating huge numbers (integer and floating point).
 '
@@ -854,6 +860,7 @@ A library for calculating huge numbers (integer and floating point).
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'The GNU multiple-precision floating-point library',
 		'comment' => '
 The MPFR library is a C library for multiple-precision floating-point
 computations with exact rounding (also called correct rounding). It is
@@ -871,6 +878,7 @@ based on the GMP multiple-precision library.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'MPC multiple-precision complex shared library',
 		'comment' => '
 MPC is a C library for the arithmetic of complex numbers with
 arbitrarily high precision and correct rounding of the result. It is
@@ -888,6 +896,7 @@ built upon and follows the same principles as MPFR.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'GNU implementation of ((t)ape (ar)chiver)',
 		'comment' => '
 GNU Tar is an archiver program. It is used to create and manipulate files
 that are actually collections of many other files; the program provides
@@ -908,6 +917,7 @@ it is also able to access remote devices or files.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'Libiconv is a conversion library',
 		'comment' => '
 The libiconv library provides an iconv() implementation, for use on
 systems which don&apos;t have one, or whose implementation cannot convert
@@ -927,6 +937,7 @@ This library is also available as a <a href="../sharedlibs.php#libiconv">shared 
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'GNU m4',
 		'comment' => '
 GNU m4 is an implementation of the traditional Unix macro processor.
 '

@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=vttest
-VERSION=-20190710
+VERSION=-20230201
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
