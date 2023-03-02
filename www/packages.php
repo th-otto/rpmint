@@ -500,7 +500,7 @@ zlib is a general-purpose lossless data-compression library,
 implementing an API for the DEFLATE algorithm, the latter of
 which is being used by, for example, gzip and the ZIP archive
 format.
-</br>
+</br></br>
 This library is also available as a <a href="../sharedlibs.php#zlib">shared library.</a>
 '
 	),
@@ -519,7 +519,7 @@ This library is also available as a <a href="../sharedlibs.php#zlib">shared libr
 Portable Network Graphics
 <br />
 An Open, Extensible Image Format with Lossless Compression 
-</br>
+</br></br>
 This library is also available as a <a href="../sharedlibs.php#libpng">shared library.</a>
 '
 	),
@@ -541,7 +541,7 @@ compressor. It typically compresses files to within 10% to 15% of the
 best available techniques (the PPM family of statistical compressors),
 whilst being around twice as fast at compression and six times faster
 at decompression.
-</br>
+</br></br>
 This library is also available as a <a href="../sharedlibs.php#bzip2">shared library.</a>
 '
 	),
@@ -765,12 +765,13 @@ archives, install package rar.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'summary' => 'A Program for Compressing Files with the Lempel&#8211;Ziv&#8211;Markov algorithm',
 		'comment' => '
 XZ Utils is free general-purpose data compression software with a high
 compression ratio. XZ Utils were written for POSIX-like systems, but
 also work on some not-so-POSIX systems. XZ Utils are the successor to
 LZMA Utils. 
-</br>
+</br></br>
 This library is also available as a <a href="../sharedlibs.php#lzma">shared library.</a>
 '
 	),
@@ -910,7 +911,7 @@ it is also able to access remote devices or files.
 		'comment' => '
 The libiconv library provides an iconv() implementation, for use on
 systems which don&apos;t have one, or whose implementation cannot convert
-from/to Unicode.</br>
+from/to Unicode.</br></br>
 This library is also available as a <a href="../sharedlibs.php#libiconv">shared library.</a>
 '
 	),
@@ -1160,7 +1161,7 @@ without user interaction or any kind of interactivity.
 		'comment' => '
 This library features TrueType fonts for open source projects. This
 version also contains an autohinter for producing improved output.
-</br>
+</br></br>
 This library is also available as a <a href="../sharedlibs.php#freetype">shared library.</a>
 '
 	),
@@ -1195,7 +1196,7 @@ by Greg Hudson at MIT.
 		'comment' => '
 This package is a library of functions that manipulate jpeg images, along
 with simple clients for manipulating jpeg images.
-</br>
+</br></br>
 This library is also available as a <a href="../sharedlibs.php#jpeg">shared library.</a>
 '
 	),
@@ -2013,7 +2014,7 @@ have expired, giflib can again be used instead of libungif.
 		'comment' => '
 This library is used to parse EXIF information from JPEGs created by
 digital cameras.
-</br>
+</br></br>
 This library is also available as a <a href="../sharedlibs.php#exif">shared library.</a>
 '
 	),
@@ -2031,7 +2032,7 @@ This library is also available as a <a href="../sharedlibs.php#exif">shared libr
 		'comment' => '
 This package contains the library and support programs for the TIFF
 image format.
-</br>
+</br></br>
 This library is also available as a <a href="../sharedlibs.php#tiff">shared library.</a>
 '
 	),
