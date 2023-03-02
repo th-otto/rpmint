@@ -65,7 +65,7 @@ for CPU in ${ALL_CPUS}; do
 	create_config_cache
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS $LIBXML2_LIBS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
 	hack_lto_cflags
-	${MAKE} || exit 1
+	${MAKE} ${JOBS} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install >/dev/null
 	${MAKE} clean >/dev/null
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}$multilibdir/charset.alias

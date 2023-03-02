@@ -93,8 +93,8 @@ rm -f *.deb control.tar.xz data.tar.xz debian-binary md5sums control
 rm -rf usr etc
 
 rpm2cpio "$rpmfile" | cpio -id
-find usr -type f | xargs md5sum > DEBIAN/md5sums
-if test -d etc; then find etc -type f | xargs md5sum >> DEBIAN/md5sums; fi
+find usr -type f -print0 | xargs -0 md5sum > DEBIAN/md5sums
+if test -d etc; then find etc -type f -print0 | xargs -0 md5sum >> DEBIAN/md5sums; fi
 
 rm -rf usr etc
 
