@@ -1,0 +1,87 @@
+diff -rup mtm-1.2.1.orig/Makefile mtm-1.2.1/Makefile
+--- mtm-1.2.1.orig/Makefile	2021-10-08 22:38:13.000000000 +0200
++++ mtm-1.2.1/Makefile	2023-03-02 06:34:11.721145107 +0100
+@@ -6,13 +6,12 @@ LIBPATH   ?=
+ DESTDIR   ?= /usr/local
+ MANDIR    ?= $(DESTDIR)/share/man/man1
+ CURSESLIB ?= ncursesw
+-LIBS      ?= -l$(CURSESLIB) -lutil
++LIBS      ?= -l$(CURSESLIB)
+ 
+ all: mtm
+ 
+ mtm: vtparser.c mtm.c pair.c config.h
+ 	$(CC) $(CFLAGS) $(FEATURES) -o $@ $(HEADERS) vtparser.c mtm.c pair.c $(LIBPATH) $(LIBS)
+-	strip mtm
+ 
+ config.h: config.def.h
+ 	cp -i config.def.h config.h
+diff -rup mtm-1.2.1.orig/mtm.c mtm-1.2.1/mtm.c
+--- mtm-1.2.1.orig/mtm.c	2021-10-08 22:38:13.000000000 +0200
++++ mtm-1.2.1/mtm.c	2023-03-02 06:38:58.712619793 +0100
+@@ -13,6 +13,14 @@
+  * You should have received a copy of the GNU General Public License
+  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  */
++
++/*** Freemint fix */
++#ifdef __MINT__
++#define _AVOID_GPL
++#define NCURSESW_INCLUDE_H <ncursesw/curses.h>
++#define NCURSES_WIDECHAR    1
++#endif
++
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <limits.h>
+@@ -21,6 +29,7 @@
+ #include <signal.h>
+ #include <stdbool.h>
+ #include <stdlib.h>
++#include <stdio.h>
+ #include <string.h>
+ #include <sys/ioctl.h>
+ #include <sys/select.h>
+@@ -1110,6 +1119,19 @@ handlechar(int r, int k) /* Handle a sin
+     return cmd = false, true;
+ }
+ 
++/*** 20230301 - MMedour - m68k-atari-mint patch in order to allow window resizing send by toswin2 (SIGWINCH signal) */
++#ifdef __MINT__
++static void sigwinch_handler(int sig) {
++    struct winsize ws;
++    ioctl(0, TIOCGWINSZ, &ws);
++    resize_term(ws.ws_row, ws.ws_col);
++    reshape(root, 0, 0, LINES, COLS);
++    reshapechildren(root);
++    scrollbottom(root);
++    refresh();
++}
++#endif
++
+ static void
+ run(void) /* Run MTM. */
+ {
+@@ -1123,7 +1145,10 @@ run(void) /* Run MTM. */
+         while (handlechar(r, w))
+             r = wget_wch(focused->s->win, &w);
+         getinput(root, &sfds);
+-
++        /*** 20230301 - MMedour - m68k-atari-mint patch - Take care of resize signal */
++        #ifdef __MINT__
++        signal(SIGWINCH, sigwinch_handler);
++        #endif
+         draw(root);
+         doupdate();
+         fixcursor();
+diff -rup mtm-1.2.1.orig/vtparser.c mtm-1.2.1/vtparser.c
+--- mtm-1.2.1.orig/vtparser.c	2021-10-08 22:38:13.000000000 +0200
++++ mtm-1.2.1/vtparser.c	2023-03-02 06:31:29.701441671 +0100
+@@ -26,6 +26,7 @@
+  */
+ #include <stdbool.h>
+ #include <string.h>
++#include <stdint.h>
+ #include "vtparser.h"
+ 
+ /**** DATA TYPES */

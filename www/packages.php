@@ -2850,6 +2850,24 @@ encoding. For AVIF, libaom, dav1d, svt-av1, or rav1e are used as
 codecs.
 '
 	),
+	'mem' => array(
+		'name' => 'mtm',
+		'upstream' => 'https://github.com/deadpixi/mtm/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'repo' => 'https://github.com/deadpixi/mtm/',
+		'version' => '1.2.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'summary' => 'mtm is the Micro Terminal Multiplexer, a terminal multiplexer',
+		'comment' => '
+mtm is the Micro Terminal Multiplexer, a terminal multiplexer.</br>
+Original MiNT-Patch contributed by medmed.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
