@@ -37,6 +37,14 @@ GCC=${GCC-gcc}
 GXX=${GXX-g++}
 
 #
+# Where to put the executables for later use.
+# This should be the same as the one configured
+# in the binutils script
+#
+here=`pwd`
+PKG_DIR="$here/binary7-package"
+
+#
 # The prefix where the executables should
 # be installed later. If installed properly,
 # this actually does not matter much, since
@@ -54,7 +62,16 @@ case `uname -s` in
 	CYGWIN*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS=; SED_INPLACE="-i ''" ;;
 	*) host=linux64
-	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=linux32; fi
+	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then
+	      host=linux32
+	      PKG_DIR+="-32bit"
+	      export PATH=${PKG_DIR}/usr/bin:$PATH
+          #
+          # This is needed because otherwise configure scripts
+          # will pick /usr/${TARGET}/bin/$tool which will be a 64bit version
+          #
+	      build_time_tools=--with-build-time-tools=${PKG_DIR}/usr/${TARGET}/bin
+	   fi
 	   ;;
 esac
 case $host in
@@ -66,10 +83,6 @@ esac
 #
 # Where to look for the original source archives
 #
-case $host in
-	mingw* | msys*) here=`pwd` ;;
-	*) here=`pwd` ;;
-esac
 ARCHIVES_DIR="$here"
 
 #
@@ -95,13 +108,6 @@ BUILD_DIR="$here"
 # not even be a subdirectory of it
 #
 MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
-
-#
-# Where to put the executables for later use.
-# This should be the same as the one configured
-# in the binutils script
-#
-PKG_DIR="$here/binary7-package"
 
 #
 # Where to put the binary packages
@@ -499,6 +505,7 @@ $srcdir/configure \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
 	$mpfr_config \
+	$build_time_tools \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
 	--enable-languages="$languages" || fail "gcc"
 

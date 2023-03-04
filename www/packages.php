@@ -221,12 +221,12 @@ This compiler was not able to compile itself for m68k, so it might be broken.
 Slightly older version of GCC.
 '
 	),
-	'gcc931' => array(
+	'gcc950' => array(
 		'name' => 'gcc',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '9.3.1',
-		'date' => '20230210',
+		'version' => '9.5.0',
+		'date' => '20230302',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-9',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',

@@ -66,7 +66,11 @@ case `uname -s` in
 	CYGWIN*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
 	*) host=linux64
-	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=linux32; fi
+	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then
+	      host=linux32
+	      PKG_DIR+="-32bit"
+	      export PATH=$PKG_DIR/usr/bin:$PATH
+	   fi
 	   ;;
 esac
 case $host in

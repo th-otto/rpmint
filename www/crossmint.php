@@ -52,7 +52,7 @@ setcookie("platform", $platform, time() + 3600);
 
 include('packages.php');
 
-$gccver = 'gcc931';
+$gccver = 'gcc950';
 
 ?>
 

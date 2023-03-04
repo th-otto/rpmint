@@ -37,6 +37,14 @@ GCC=${GCC-gcc}
 GXX=${GXX-g++}
 
 #
+# Where to put the executables for later use.
+# This should be the same as the one configured
+# in the binutils script
+#
+here=`pwd`
+PKG_DIR="$here/binary7-package"
+
+#
 # The prefix where the executables should
 # be installed later. If installed properly,
 # this actually does not matter much, since
@@ -55,17 +63,22 @@ case `uname -s` in
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS=; SED_INPLACE="-i ''"; PREFIX=/opt/cross-mint ;;
 	*) PREFIX=/usr
 	   host=linux64
-	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=linux32; fi
+	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then
+	      host=linux32
+	      PKG_DIR+="-32bit"
+	      export PATH=${PKG_DIR}/usr/bin:$PATH
+          #
+          # This is needed because otherwise configure scripts
+          # will pick /usr/${TARGET}/bin/$tool which will be a 64bit version
+          #
+	      build_time_tools=--with-build-time-tools=${PKG_DIR}/usr/${TARGET}/bin
+	   fi
 	   ;;
 esac
 
 #
 # Where to look for the original source archives
 #
-case $host in
-	mingw* | msys*) here=`pwd` ;;
-	*) here=`pwd` ;;
-esac
 ARCHIVES_DIR="$here"
 
 #
@@ -93,13 +106,6 @@ BUILD_DIR="$here"
 MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
 
 #
-# Where to put the executables for later use.
-# This should be the same as the one configured
-# in the binutils script
-#
-PKG_DIR="$here/binary7-package"
-
-#
 # Where to put the binary packages
 #
 DIST_DIR="$here/pkgs"
@@ -117,7 +123,7 @@ fi
 #
 # whether to include the fortran backend
 #
-with_fortran=false
+with_fortran=true
 
 #
 # whether to include the D backend
@@ -132,8 +138,7 @@ with_m2=true
 #
 # whether to include the ada backend
 #
-# ADA seems to be broken in gcc-13
-with_ada=false
+with_ada=true
 case $host in
 	linux64 | linux32)
 		;;
@@ -496,6 +501,7 @@ $srcdir/configure \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
 	$mpfr_config \
+	$build_time_tools \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
 	--enable-languages="$languages" || fail "gcc"
 

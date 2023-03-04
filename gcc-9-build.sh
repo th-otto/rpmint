@@ -13,8 +13,8 @@ scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
-VERSION=-9.3.1
-VERSIONPATCH=-20230210
+VERSION=-9.5.0
+VERSIONPATCH=-20230302
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -37,6 +37,14 @@ GCC=${GCC-gcc}
 GXX=${GXX-g++}
 
 #
+# Where to put the executables for later use.
+# This should be the same as the one configured
+# in the binutils script
+#
+here=`pwd`
+PKG_DIR="$here/binary7-package"
+
+#
 # The prefix where the executables should
 # be installed later. If installed properly,
 # this actually does not matter much, since
@@ -54,7 +62,16 @@ case `uname -s` in
 	CYGWIN*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS=; SED_INPLACE="-i ''" ;;
 	*) host=linux64
-	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=linux32; fi
+	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then
+	      host=linux32
+	      PKG_DIR+="-32bit"
+	      export PATH=${PKG_DIR}/usr/bin:$PATH
+          #
+          # This is needed because otherwise configure scripts
+          # will pick /usr/${TARGET}/bin/$tool which will be a 64bit version
+          #
+	      build_time_tools=--with-build-time-tools=${PKG_DIR}/usr/${TARGET}/bin
+	   fi
 	   ;;
 esac
 case $host in
@@ -66,10 +83,6 @@ esac
 #
 # Where to look for the original source archives
 #
-case $host in
-	mingw* | msys*) here=`pwd` ;;
-	*) here=`pwd` ;;
-esac
 ARCHIVES_DIR="$here"
 
 #
@@ -95,13 +108,6 @@ BUILD_DIR="$here"
 # not even be a subdirectory of it
 #
 MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
-
-#
-# Where to put the executables for later use.
-# This should be the same as the one configured
-# in the binutils script
-#
-PKG_DIR="$here/binary7-package"
 
 #
 # Where to put the binary packages
@@ -148,7 +154,7 @@ esac
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
 # - checking out the mint/gcc-9 branch
-# - running git diff releases/gcc-9.3.1 HEAD
+# - running git diff releases/gcc-9.5.0 HEAD
 #
 # when a new GCC is released:
 #   cd <directory where m68k-atari-mint-gcc.git> has been cloned
@@ -161,7 +167,7 @@ esac
 #      git push --tags
 #   merge new release into our branch:
 #      git checkout mint/gcc-9
-#      git merge releases/gcc-9.3.1 (& commit)
+#      git merge releases/gcc-9.5.0 (& commit)
 #      git push
 #
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
@@ -499,6 +505,7 @@ $srcdir/configure \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
 	$mpfr_config \
+	$build_time_tools \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
 	--enable-languages="$languages" || fail "gcc"
 
