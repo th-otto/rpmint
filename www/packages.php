@@ -470,7 +470,7 @@ and TOS 4.04, but crash on TOS 1.62 and early versions of EmuTOS.
 		'name' => 'gemma',
 		'upstream' => 'https://github.com/freemint/libgemma',
 		'version' => 'git',
-		'date' => '20171006',
+		'date' => '20181123',
 		'repo' => 'https://github.com/freemint/libgemma',
 		'branch' => 'master',
 		'patch' => 0,
@@ -478,7 +478,7 @@ and TOS 4.04, but crash on TOS 1.62 and early versions of EmuTOS.
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 0,
-		'summary' => 'Gemma is a support library for GEM application programs',
+		'summary' => 'Support library for GEM application programs',
 		'comment' => '
 Gemma is a support library for GEM application programs.
 '

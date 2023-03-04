@@ -2079,6 +2079,8 @@ This notably applies to Perl and Python.
 
 <li>2023/03/02 Update libxml2 to 2.10.3</li>
 
+<li>2023/03/03 Update gcc-9 to 9.5.0</li>
+
 </ul>
 
 <p></p>

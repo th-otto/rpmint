@@ -1,64 +1,60 @@
-#
-# spec file for package p7zip
-#
-# Copyright (c) 2020 SUSE LLC
-#
-# All modifications and additions to the file contributed by third parties
-# remain the property of their copyright owners, unless otherwise agreed
-# upon. The license for this file, and modifications and additions to the
-# file, is the same license as for the pristine package itself (unless the
-# license for the pristine package is not an Open Source License, in which
-# case the license is the MIT License). An "Open Source License" is a
-# license that conforms to the Open Source Definition (Version 1.9)
-# published by the Open Source Initiative.
+%define pkgname p7zip
 
-# Please submit bugfixes or comments via https://bugs.opensuse.org/
-#
-
-
-%if 0%{?suse_version} >= 1320 || 0%{?is_opensuse}
-# Temporarily disable GUI build as it needs wxWidgets < 3.0 that is no longer
-# available in TW
-%bcond_with buildgui
+%if "%{?buildtype}" == ""
+%define buildtype cross
 %endif
-Name:           p7zip
+%rpmint_header
+
+Summary:        A file compression utility
+%if "%{buildtype}" == "cross"
+Name:           cross-mint-%{pkgname}
+%else
+Name:           %{pkgname}
+%endif
 Version:        16.02
-Release:        9.3
-Summary:        7-zip file compression program
+Release:        1
 License:        LGPL-2.1-or-later
 Group:          Productivity/Archiving/Compression
+
+Packager:       Thorsten Otto <admin@tho-otto.de>
 URL:            http://p7zip.sourceforge.net/
-# Update note: RAR sources need to be removed from the package because of the incompatible licence
-# Run the following commands after each package update to remove them
-# export VERSION=16.02
-# wget http://downloads.sourceforge.net/project/p7zip/p7zip/${VERSION}/p7zip_${VERSION}_src_all.tar.bz2
-# tar xjvf p7zip_${VERSION}_src_all.tar.bz2
-# rm -rf p7zip_${VERSION}/CPP/7zip/Compress/Rar*
-# rm -rf p7zip_${VERSION}/DOC/unRarLicense.txt
-# mv p7zip_${VERSION} p7zip-${VERSION}
-# tar cjvf p7zip_${VERSION}.tar.bz2 p7zip-${VERSION}
-# rm p7zip_${VERSION}_src_all.tar.bz2
-Source:         p7zip_%{version}_src_all-norar.tar.bz2
-# Debian gzip-like CLI wrapper for p7zip (the version shipped within the p7zip tarball is too old)
-Source1:        https://salsa.debian.org/debian/p7zip/raw/master/debian/scripts/p7zip
-Source2:        https://salsa.debian.org/debian/p7zip/raw/master/debian/p7zip.1
-Patch1:         CVE-2016-9296.patch
-# adjust makefile not to use CPP/7zip/Compress/Rar* files
-Patch2:         p7zip_16.02_norar.patch
-# fix heap-based buffer overflow in a shrink decoder
-Patch3:         p7zip-16.02-CVE-2017-17969.patch
-BuildRequires:  fdupes
+
+Prefix:         %{_prefix}
+Docdir:         %{_prefix}/share/doc
+BuildRoot:      %{_tmppath}/%{name}-root
+
+Source0: %{pkgname}-%{version}.tar.bz2
+Source1: patches/%{pkgname}/p7zip-p7zip
+Source2: patches/%{pkgname}/p7zip-p7zip.1
+
+Patch0: patches/%{pkgname}/p7zip-16.02-CVE-2017-17969.patch
+Patch1: patches/%{pkgname}/p7zip-CVE-2016-9296.patch
+Patch2: patches/%{pkgname}/p7zip-mint.patch
+
+%rpmint_essential
+%if "%{buildtype}" == "cross"
+BuildRequires:  cross-mint-gcc-c++
+%else
 BuildRequires:  gcc-c++
-Suggests:       p7zip-full
-%if %{with buildgui}
-BuildRequires:  cmake
-BuildRequires:  hicolor-icon-theme
-BuildRequires:  kf5-filesystem
-BuildRequires:  ninja
-BuildRequires:  wxWidgets-devel < 3.0
 %endif
+BuildRequires:  make
 %ifarch x86_64
 BuildRequires:  yasm
+%endif
+
+%if "%{buildtype}" == "cross"
+BuildArch:      noarch
+%else
+%define _target_platform %{_rpmint_target_platform}
+%if "%{buildtype}" == "v4e"
+%define _arch m5475
+%else
+%if "%{buildtype}" == "020"
+%define _arch m68020
+%else
+%define _arch m68k
+%endif
+%endif
 %endif
 
 %description
@@ -68,179 +64,121 @@ highest compression ratio. Since 4.10, p7zip (like 7-zip) supports
 little-endian and big-endian machines.
 
 This package provides:
-  * %{_bindir}/7zr - a light stand-alone executable that supports only 7z/LZMA/BCJ/BCJ2 archives
-  * %{_bindir}/p7zip - a gzip-like wrapper around 7zr
-
-%package full
-Summary:        7z and 7za archivers that handle more types of archives than 7zr
-Group:          Productivity/Archiving/Compression
-Requires:       %{name} = %{version}
-Provides:       %{name}:%{_bindir}/7z
-Provides:       %{name}:%{_bindir}/7za
-
-%description full
-p7zip is a quick port of 7z.exe and 7za.exe (command line version of
-7zip, see www.7-zip.org) for Unix. 7-Zip is a file archiver with
-highest compression ratio. Since 4.10, p7zip (like 7-zip) supports
-little-endian and big-endian machines.
-
-This package provides:
- * %{_bindir}/7z - uses plugins to handle many types of archives
- * %{_bindir}/7za - a stand-alone executable (handles less archive formats than 7z)
-
-This package allows e.g. File Roller or Ark to create/extract 7z archives.
-
-%if %{with buildgui}
-%package gui
-Summary:        GUI for 7-zip file compression program
-Group:          Productivity/Archiving/Compression
-Requires:       %{name} = %{version}
-Requires:       %{name}-full = %{version}
-Requires:       kf5-filesystem
-Requires(post): hicolor-icon-theme
-Requires(post): update-desktop-files
-Requires(postun): hicolor-icon-theme
-Requires(postun): update-desktop-files
-
-%description gui
-p7zip is a quick port of 7z.exe and 7za.exe (command line version of
-7zip, see www.7-zip.org) for Unix. 7-Zip is a file archiver with
-highest compression ratio. Since 4.10, p7zip (like 7-zip) supports
-little-endian and big-endian machines.
-%endif
-
-%package        doc
-Summary:        HTML manual for 7-zip
-Group:          Productivity/Archiving/Compression
-Provides:       %{name}:%{_defaultdocdir}/%{name}/MANUAL
-BuildArch:      noarch
-
-%description    doc
-This package contains the HTML documentation for 7-Zip.
+ * 7za - a stand-alone executable (handles less archive formats than 7z)
+ * p7zip - a gzip-like wrapper around 7zr/7za
 
 %prep
-%setup -q -n %{name}_%{version}
+%setup -q -n %{pkgname}-%{version}
+%patch0 -p1
 %patch1 -p1
 %patch2 -p1
-%patch3 -p1
-
-%ifarch x86_64
-cp makefile.linux_amd64_asm makefile.machine
-%else
-%ifarch ppc64 s390x
-cp makefile.linux_amd64 makefile.machine
-%else
-cp makefile.linux_any_cpu_gcc_4.X makefile.machine
-%endif
-%endif
 
 sed -i s,444,644,g install.sh
 sed -i s,555,755,g install.sh
-%if %{with buildgui}
-chmod 755 CPP/7zip/CMAKE/generate.sh
-rm GUI/kde4/p7zip_compress2.desktop
-%endif
 
-perl -pi -e 's/ -s / /' makefile.machine
-perl -pi -e 's/(\$\(LOCAL_FLAGS\))/'"%{optflags} -fno-strict-aliasing"' \\\n\t$1/' makefile.machine
-
-# move license files
-mv DOC/License.txt DOC/copying.txt .
 
 %build
-%if %{with buildgui}
-pushd CPP/7zip/CMAKE/
-./generate.sh
-popd
-%make_build OPTFLAGS="%{optflags} -fno-strict-aliasing -Wl,-z,now -fPIC -pie -Wno-error=narrowing" all3 7zG
+
+%rpmint_cflags
+
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
+STACKSIZE="-Wl,-stack,256k"
+
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+
+#
+# there are no libraries in this package, so we
+# have to build for the target CPU only
+#
+%if "%{buildtype}" == "cross"
+for CPU in 000
 %else
-%make_build OPTFLAGS="%{optflags} -fno-strict-aliasing -Wl,-z,now -fPIC -pie -Wno-error=narrowing" all3
+for CPU in %{buildtype}
 %endif
+do
+	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
+	eval multilibdir=\${CPU_LIBDIR_$CPU}
+	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS"
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}"
+
+cat <<EOF > makefile.machine
+OPTFLAGS=$CPU_CFLAGS $COMMON_CFLAGS
+ALLFLAGS=\${OPTFLAGS} -pipe \
+        -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE \
+        -DNDEBUG -DENV_UNIX \
+        -D_7ZIP_LARGE_PAGES \
+        -D_7ZIP_ST \
+        \$(LOCAL_FLAGS)
+
+CXX=%{_rpmint_target}-g++
+CC=%{_rpmint_target}-gcc
+CC_SHARED=
+LINK_SHARED=
+
+LOCAL_LIBS= ${STACKSIZE}
+LOCAL_LIBS_DLL= ${STACKSIZE}
+
+OBJ_CRC32=\$(OBJ_CRC32_C)
+OBJ_AES=
+
+EOF
+
+	make %{?_smp_mflags}
+
+mkdir -p "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/bin"
+mkdir -p "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/share/man/man1"
+install -m755 "%{S:1}" "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/bin/p7zip"
+install -m644 "%{S:2}" "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/share/man/man1/p7zip.1"
+./install.sh \
+    %{_rpmint_target_prefix}/bin \
+    %{_rpmint_target_prefix}/lib/%{pkgname} \
+    %{_rpmint_target_prefix}/share/man \
+    %{_rpmint_target_prefix}/share/packages/%{pkgname} \
+    "%{buildroot}%{_rpmint_sysroot}"
+
+	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
+
+	# compress manpages
+	%rpmint_gzip_docs
+
+	%if "%{buildtype}" != "cross"
+	%rpmint_make_bin_archive $CPU
+	%endif
+
+	make clean
+done
+
 
 %install
-mkdir -p %{buildroot}/%{_bindir}
-mkdir -p %{buildroot}%{_mandir}/man1
-./install.sh \
-    %{_bindir} \
-    %{_libdir}/%{name} \
-    %{_mandir} \
-    %{_defaultdocdir}/%{name} \
-    %{buildroot}
-%if %{with buildgui}
-mkdir -p %{buildroot}%{_kf5_servicesdir}/ServiceMenus
-for i in 16x16 32x32; do
-  mkdir -p %{buildroot}%{_datadir}/icons/hicolor/$i/apps
-done
-install -m644 GUI/kde4/*.desktop %{buildroot}%{_kf5_servicesdir}/ServiceMenus
-install -m644 GUI/p7zip_16.png %{buildroot}%{_datadir}/icons/hicolor/16x16/apps/p7zip.png
-install -m644 GUI/p7zip_32.png %{buildroot}%{_datadir}/icons/hicolor/32x32/apps/p7zip.png
-chmod 755 %{buildroot}%{_bindir}/p7zipForFilemanager
+
+%rpmint_cflags
+
+%if "%{buildtype}" == "cross"
+configured_prefix="%{_rpmint_target_prefix}"
+%rpmint_copy_pkg_configs
+%else
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}%{_rpmint_sysroot}
+rmdir %{buildroot}%{_rpmint_installdir} || :
+rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %endif
 
-# Install p7zip wrapper and its manpage
-install -m755 %{SOURCE1} %{buildroot}%{_bindir}/p7zip
-install -m644 %{SOURCE2} %{buildroot}%{_mandir}/man1/p7zip.1
-# Remove a mention of the p7zip-rar package that we don't have
-sed -i 's/RAR (if the non-free p7zip-rar package is installed)//g' %{buildroot}%{_mandir}/man1/p7zip.1
+%clean
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
-# remove superfluous DOC directory
-mv %{buildroot}%{_defaultdocdir}/%{name}/DOC/* %{buildroot}%{_defaultdocdir}/%{name}
-rmdir %{buildroot}%{_defaultdocdir}/%{name}/DOC/
-
-%fdupes -s %{buildroot}
-
-%check
-%if ! 0%{?qemu_user_space_build}
-%make_build test
-%make_build test_7z
-%make_build test_7zr
-%endif
-
-%if %{with buildgui}
-%post gui
-%desktop_database_post
-%icon_theme_cache_post
-
-%postun gui
-%desktop_database_postun
-%icon_theme_cache_postun
-%endif
 
 %files
-%license copying.txt License.txt
-%doc ChangeLog
-%doc %{_defaultdocdir}/%{name}
-%exclude %{_defaultdocdir}/%{name}/MANUAL
-%{_bindir}/7zr
-%{_bindir}/p7zip
-%dir %{_libdir}/%{name}
-%{_libdir}/%{name}/7zr
-%{_mandir}/man1/7zr.1%{?ext_man}
-%{_mandir}/man1/p7zip.1%{?ext_man}
-
-%files full
-%{_bindir}/7z
-%{_bindir}/7za
-%dir %{_libdir}/%{name}
-%{_libdir}/%{name}/7z
-%{_libdir}/%{name}/7za
-%{_libdir}/%{name}/7z.so
-%{_libdir}/%{name}/7zCon.sfx
-%{_mandir}/man1/7z.1%{?ext_man}
-%{_mandir}/man1/7za.1%{?ext_man}
-
-%if %{with buildgui}
-%files gui
-%{_bindir}/7zG
-%{_bindir}/p7zipForFilemanager
-%{_libdir}/%{name}/7zG
-%dir %{_libdir}/%{name}/Lang
-%{_libdir}/%{name}/Lang/*.txt
-%{_libdir}/%{name}/Lang/en.ttt
-%{_datadir}/icons/hicolor/*/apps/p7zip.png
-%dir %{_kf5_servicesdir}/ServiceMenus
-%{_kf5_servicesdir}/ServiceMenus/*.desktop
+%defattr(-,root,root)
+%if "%{buildtype}" == "cross"
+%{_rpmint_bindir}/*
+%{_rpmint_datadir}
+%else
+%{_rpmint_target_prefix}/bin/*
+%{_rpmint_target_prefix}/share
 %endif
 
-%files doc
-%doc %{_defaultdocdir}/%{name}/MANUAL
+
+
+%changelog
+* Sat Mar 04 2023 Thorsten Otto <admin@tho-otto.de>
+- RPMint spec file

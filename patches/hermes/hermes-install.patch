@@ -1,0 +1,48 @@
+diff -rup Hermes-1.3.3.orig/src/Makefile.am Hermes-1.3.3/src/Makefile.am
+--- Hermes-1.3.3.orig/src/Makefile.am	2002-04-06 16:35:30.000000000 +0200
++++ Hermes-1.3.3/src/Makefile.am	2023-03-03 15:44:05.571939908 +0100
+@@ -32,16 +32,16 @@ SUFFIXES = .S
+ 	cp $@ `echo $@ | sed -e 's/\.lo$$/.o/'`
+ 
+ install-data-local:
+-	$(INSTALL) -m 0755 -d $(includedir)/Hermes
++	$(INSTALL) -m 0755 -d $(DESTDIR)$(includedir)/Hermes
+ 	for incfile in $(publicheaders); do \
+-	  $(INSTALL) -m 0644 $$incfile $(includedir)/Hermes; \
++	  $(INSTALL) -m 0644 $$incfile $(DESTDIR)$(includedir)/Hermes; \
+ 	done
+ 
+ uninstall-local:
+ 	for incfile in $(publicheaders); do \
+-	  rm -f $(includedir)/Hermes/$$incfile; \
++	  rm -f $(DESTDIR)$(includedir)/Hermes/$$incfile; \
+ 	done
+-	rmdir $(includedir)/Hermes
++	rmdir $(DESTDIR)$(includedir)/Hermes
+ 
+ libHermes.la: $(libHermes_la_OBJECTS) $(libHermes_la_DEPENDENCIES)
+ 	$(LINK) -rpath $(libdir) $(libHermes_la_LDFLAGS) \
+diff -rup Hermes-1.3.3.orig/src/Makefile.in Hermes-1.3.3/src/Makefile.in
+--- Hermes-1.3.3.orig/src/Makefile.in	2003-07-06 17:56:57.000000000 +0200
++++ Hermes-1.3.3/src/Makefile.in	2023-03-03 15:44:03.595942636 +0100
+@@ -544,16 +544,16 @@ uninstall-am: uninstall-info-am uninstal
+ 	cp $@ `echo $@ | sed -e 's/\.lo$$/.o/'`
+ 
+ install-data-local:
+-	$(INSTALL) -m 0755 -d $(includedir)/Hermes
++	$(INSTALL) -m 0755 -d $(DESTDIR)$(includedir)/Hermes
+ 	for incfile in $(publicheaders); do \
+-	  $(INSTALL) -m 0644 $$incfile $(includedir)/Hermes; \
++	  $(INSTALL) -m 0644 $$incfile $(DESTDIR)$(includedir)/Hermes; \
+ 	done
+ 
+ uninstall-local:
+ 	for incfile in $(publicheaders); do \
+-	  rm -f $(includedir)/Hermes/$$incfile; \
++	  rm -f $(DESTDIR)$(includedir)/Hermes/$$incfile; \
+ 	done
+-	rmdir $(includedir)/Hermes
++	rmdir $(DESTDIR)$(includedir)/Hermes
+ 
+ libHermes.la: $(libHermes_la_OBJECTS) $(libHermes_la_DEPENDENCIES)
+ 	$(LINK) -rpath $(libdir) $(libHermes_la_LDFLAGS) \

@@ -18,65 +18,72 @@ test "${pkgname}" == "" && {
 	exit 1
 }
 
-specfile="${topdir}/SPECS/${pkgname}.spec"
-if ! test -f "$specfile"; then
-	echo "package ${pkgname} not found" >&2
-	exit 1
+if test "${pkgname}" = "--all"; then
+	pkgnames=`php ../rpm/SPECS/listpkgs.php --names`
+else
+	pkgnames="$pkgname";
 fi
-
-fullname=`sed -n 's/Name:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
-echo "pkgname: ${fullname}"
-version=`sed -n 's/^Version:[ \t]*\(.*\)/\1/p' "$specfile"`
-release=`sed -n 's/^Release:[ \t]*\(.*\)/\1/p' "$specfile"`
-arch=
-if test "$arch" = ""; then
-	rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
-	if test -f "$rpmfile"; then
-		arch="all"
+for pkgname in $pkgnames; do
+	specname=`echo $pkgname | tr '[[:upper:]]' '[[:lower:]]'`
+	specfile="${topdir}/SPECS/${specname}.spec"
+	if ! test -f "$specfile"; then
+		$ECHO_E "package ${red}${pkgname}${coff} not found" >&2
+		continue
 	fi
-fi
-if test "$arch" = ""; then
-	rpmfile="$RPMS/x86_64/${fullname}-${version}-${release}.x86_64.rpm"
-	if test -f "$rpmfile"; then
-		arch="amd64"
+	
+	fullname=`sed -n 's/Name:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
+	echo "pkgname: ${fullname}"
+	version=`sed -n 's/^Version:[ \t]*\(.*\)/\1/p' "$specfile"`
+	release=`sed -n 's/^Release:[ \t]*\(.*\)/\1/p' "$specfile"`
+	arch=
+	if test "$arch" = ""; then
+		rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
+		if test -f "$rpmfile"; then
+			arch="all"
+		fi
 	fi
-fi
-if test "$arch" = ""; then
-	echo "no rpmfile found" >&2
-	exit 1
-fi
-#rpm -q --info "$rpmfile"
-
-pkgdir="${DEBIAN}/specs/${pkgname}"
-mkdir -p "${pkgdir}/DEBIAN"
-
-maintainer=`rpm -q --queryformat '%{packager}' "$rpmfile"`
-url=`rpm -q --queryformat '%{url}' "$rpmfile"`
-summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
-description=`rpm -q --queryformat '%{description}' "$rpmfile" | sed -e 's/^$/./' -e 's/^/ /'`
-requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib | grep -v "lib.*\.so" | grep -v /bin/sh`
-group=`rpm -q --queryformat '%{group}' "$rpmfile"`
-provides=`rpm -q --queryformat '%{provides}' "$rpmfile"`
-
-if test "${requires}" != ""; then
-	requires="Depends: "`echo ${requires} | sed -e 's/ /,/g'`"
+	if test "$arch" = ""; then
+		rpmfile="$RPMS/x86_64/${fullname}-${version}-${release}.x86_64.rpm"
+		if test -f "$rpmfile"; then
+			arch="amd64"
+		fi
+	fi
+	if test "$arch" = ""; then
+		echo "$pkgname: no rpmfile found" >&2
+		exit 1
+	fi
+	#rpm -q --info "$rpmfile"
+	
+	pkgdir="${DEBIAN}/specs/${pkgname}"
+	mkdir -p "${pkgdir}/DEBIAN"
+	
+	maintainer=`rpm -q --queryformat '%{packager}' "$rpmfile"`
+	url=`rpm -q --queryformat '%{url}' "$rpmfile"`
+	summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
+	description=`rpm -q --queryformat '%{description}' "$rpmfile" | sed -e 's/^$/./' -e 's/^/ /'`
+	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib | grep -v "lib.*\.so" | grep -v /bin/sh`
+	group=`rpm -q --queryformat '%{group}' "$rpmfile"`
+	provides=`rpm -q --queryformat '%{provides}' "$rpmfile"`
+	
+	if test "${requires}" != ""; then
+		requires="Depends: "`echo ${requires} | sed -e 's/ /,/g'`"
 "
-fi
-
-if test "${group}" != ""; then
-	group="Section: ${group}
+	fi
+	
+	if test "${group}" != ""; then
+		group="Section: ${group}
 "
-fi
-
-if test "${provides}" != ""; then
-	provides="Provides: ${provides}
+	fi
+	
+	if test "${provides}" != ""; then
+		provides="Provides: ${provides}
 "
-fi
-
-
-cd "${pkgdir}"
-
-cat << EOF > "DEBIAN/control"
+	fi
+	
+	
+	cd "${pkgdir}"
+	
+	cat << EOF > "DEBIAN/control"
 Package: ${fullname}
 Version: ${version}-${release}
 Maintainer: ${maintainer}
@@ -87,18 +94,19 @@ ${description}
 
 
 EOF
-
-
-rm -f *.deb control.tar.xz data.tar.xz debian-binary md5sums control
-rm -rf usr etc
-
-rpm2cpio "$rpmfile" | cpio -id
-find usr -type f -print0 | xargs -0 md5sum > DEBIAN/md5sums
-if test -d etc; then find etc -type f -print0 | xargs -0 md5sum >> DEBIAN/md5sums; fi
-
-rm -rf usr etc
-
-dpkg --build . "$POOL/main" || exit 1
-
-debfile="${fullname}_${version}-${release}_${arch}.deb"
-
+	
+	
+	rm -f *.deb control.tar.xz data.tar.xz debian-binary md5sums control
+	rm -rf usr etc
+	
+	rpm2cpio "$rpmfile" | cpio --quiet -id
+	find usr -type f -print0 | xargs -0 md5sum > DEBIAN/md5sums
+	if test -d etc; then find etc -type f -print0 | xargs -0 md5sum >> DEBIAN/md5sums; fi
+	
+	rm -rf usr etc
+	
+	dpkg --build . "$POOL/main" || exit 1
+	
+	debfile="${fullname}_${version}-${release}_${arch}.deb"
+	
+done

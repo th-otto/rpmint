@@ -11,6 +11,7 @@ me="$0"
 scriptdir=${0%/*}
 
 . ${scriptdir}/cygfuncs.sh
+here=`pwd`
 
 pkgname="$1"
 test "${pkgname}" == "" && {
@@ -18,108 +19,122 @@ test "${pkgname}" == "" && {
 	exit 1
 }
 
-#
-# Do not auto-generate hint file for gcc & binutils,
-# these have been manually created
-#
-case $pkgname in
-	gcc* | binutils*) exit 0; ;;
-esac
-
-specfile="${topdir}/SPECS/${pkgname}.spec"
-if ! test -f "$specfile"; then
-	echo "package ${pkgname} not found" >&2
-	exit 1
+if test "${pkgname}" = "--all"; then
+	pkgnames=`php ../rpm/SPECS/listpkgs.php --names`
+else
+	pkgnames="$pkgname";
 fi
+for pkgname in $pkgnames; do
+	specname=`echo $pkgname | tr '[[:upper:]]' '[[:lower:]]'`
+	#
+	# Do not auto-generate hint file for gcc & binutils,
+	# these have been manually created
+	#
+	case $pkgname in
+		gcc* | binutils* | mintbin*) continue; ;;
+	esac
 
-fullname=`sed -n 's/Name:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
-echo "pkgname: ${fullname}"
-version=`sed -n 's/^Version:[ \t]*\(.*\)/\1/p' "$specfile"`
-release=`sed -n 's/^Release:[ \t]*\(.*\)/\1/p' "$specfile"`
-arch=
-if test "$arch" = ""; then
-	rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
-	if test -f "$rpmfile"; then
-		arch="noarch"
+	specfile="${topdir}/SPECS/${specname}.spec"
+	if ! test -f "$specfile"; then
+		$ECHO_E "package ${red}${pkgname}${coff} not found" >&2
+		continue
 	fi
-fi
-if test "$arch" = ""; then
-	rpmfile="$RPMS/x86_64/${fullname}-${version}-${release}.x86_64.rpm"
-	if test -f "$rpmfile"; then
-		arch="x86_64"
+	
+	fullname=`sed -n 's/Name:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
+	echo "pkgname: ${fullname}"
+	version=`sed -n 's/^Version:[ \t]*\(.*\)/\1/p' "$specfile"`
+	release=`sed -n 's/^Release:[ \t]*\(.*\)/\1/p' "$specfile"`
+	arch=
+	if test "$arch" = ""; then
+		rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
+		if test -f "$rpmfile"; then
+			arch="noarch"
+		fi
 	fi
-fi
-if test "$arch" = ""; then
-	echo "no rpmfile found" >&2
-	exit 1
-fi
-#rpm -q --info "$rpmfile"
-
-pkgdir="$arch/release/${fullname}"
-mkdir -p "${pkgdir}"
-
-maintainer=`rpm -q --queryformat '%{packager}' "$rpmfile"`
-url=`rpm -q --queryformat '%{url}' "$rpmfile"`
-summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
-description=`rpm -q --queryformat '%{description}' "$rpmfile"`
-requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib | grep -v "lib.*\.so" | grep -v /bin/sh`
-group=`rpm -q --queryformat '%{group}' "$rpmfile"`
-provides=`rpm -q --queryformat '%{provides}' "$rpmfile"`
-
-if test "${requires}" != ""; then
-	requires="requires: "`echo ${requires} | sed -e 's/ /,/g'`"
+	if test "$arch" = ""; then
+		rpmfile="$RPMS/x86_64/${fullname}-${version}-${release}.x86_64.rpm"
+		if test -f "$rpmfile"; then
+			arch="x86_64"
+		fi
+	fi
+	if test "$arch" = ""; then
+		echo "$pkgname: no rpmfile found" >&2
+		exit 1
+	fi
+	#rpm -q --info "$rpmfile"
+	
+	pkgdir="$arch/release/${fullname}"
+	mkdir -p "${pkgdir}"
+	
+	maintainer=`rpm -q --queryformat '%{packager}' "$rpmfile"`
+	url=`rpm -q --queryformat '%{url}' "$rpmfile"`
+	summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
+	description=`rpm -q --queryformat '%{description}' "$rpmfile"`
+	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib | grep -v "lib.*\.so" | grep -v /bin/sh`
+	group=`rpm -q --queryformat '%{group}' "$rpmfile"`
+	provides=`rpm -q --queryformat '%{provides}' "$rpmfile"`
+	
+	if test "${requires}" != ""; then
+		requires="requires: "`echo ${requires} | sed -e 's/ /,/g'`"
+	"
+	fi
+	
+	case $group in
+	   System/Libraries) group=libs ;;
+	   System*) group=system ;;
+	   Development*) group=devel ;;
+	   System/Shell) group=shells ;;
+	   *Archiving*) group=archive ;;
+	   *) group=Libs ;;
+	esac
+	
+	if test "${group}" != ""; then
+		group="category: ${group}
 "
-fi
-
-case $group in
-   System/Libraries) group=libs ;;
-   System*) group=system ;;
-   Development*) group=devel ;;
-   System/Shell) group=shells ;;
-   *Archiving*) group=archive ;;
-   *) group=Libs ;;
-esac
-
-if test "${group}" != ""; then
-	group="category: ${group}
+	fi
+	
+	if test "${provides}" != ""; then
+		provides="provides: ${provides}
 "
-fi
-
-if test "${provides}" != ""; then
-	provides="provides: ${provides}
-"
-fi
-
-
-cd "${pkgdir}"
-
-cat << EOF > "${fullname}-${version}-${release}.hint"
+	fi
+	
+	
+	cd "${pkgdir}"
+	
+	cat << EOF > "${fullname}-${version}-${release}.hint"
 sdesc: "${summary}"
 ldesc: "${description}"
 ${requires}${group}${provides}
 EOF
-
-cat << EOF > "${fullname}-${version}-${release}-src.hint"
+	
+	cat << EOF > "${fullname}-${version}-${release}-src.hint"
 sdesc: "${summary}"
 ldesc: "${description}"
 homepage: ${url}
 ${group}
 EOF
+	
+	
+	rm -rf usr etc
+	
+	rpm2cpio "$rpmfile" | cpio --quiet -id
+	files="usr"
+	if test -d etc; then files+=" etc"; fi
+	
+	tar cfJ ${fullname}-${version}-${release}.tar.xz $files
+	# FIXME: generate proper source package
+	case $pkgname in
+		gemma) srcname=gemma-git ;;
+		*) srcname=$pkgname-$version ;;
+	esac
+	for ext in zst xz lz lzma bz2 gz; do
+		if test -f $HOME/packages/$srcname.tar.${ext}; then
+			ln -sf $HOME/packages/$srcname.tar.${ext} ${fullname}-${version}-${release}-src.tar.${ext}
+			break
+		fi
+	done
+	
+	rm -rf usr etc
 
-
-rm -rf usr etc
-
-rpm2cpio "$rpmfile" | cpio -id
-files="usr"
-if test -d etc; then files+=" etc"; fi
-
-tar cfJ ${fullname}-${version}-${release}.tar.xz $files
-# FIXME: generate proper source package
-for ext in zst xz bz2 gz; do
-	if test -f $HOME/packages/$pkgname-$version.tar.${ext}; then
-		ln -sf $HOME/packages/$pkgname-$version.tar.${ext} ${fullname}-${version}-${release}-src.tar.${ext}
-		break
-	fi
+	cd "$here"
 done
-
-rm -rf usr etc

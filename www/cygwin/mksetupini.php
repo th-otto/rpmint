@@ -1101,7 +1101,7 @@ class packages {
 			 * P must match the package name, V can contain anything, R must
 			 * start with a number and can't include a hyphen
 			 */
-			if (!preg_match('/^' . preg_quote($pn) . '-(.+)-(\d[0-9a-zA-Z._+]*)(-src|)\.(tar\.(bz2|gz|lzma|xz|zst)|hint)$/', $f, $match))
+			if (!preg_match('/^' . preg_quote($pn) . '-(.+)-(\d[0-9a-zA-Z._+]*)(-src|)\.(tar\.(bz2|gz|lzma|xz|lz|zst)|hint)$/', $f, $match))
 			{
 				mksetup::error_log("file '$f' in package '$pn' doesn't follow naming convention");
 				return false;
@@ -1352,7 +1352,7 @@ class packages {
 								else
 									$fl[PkgKind::binary->value][$file] = $file;
 								$hints_found = true;
-							} else if (str_starts_with($file, $p) && preg_match('/\.tar\.(bz2|gz|lzma|xz|zst)$/', $file))
+							} else if (str_starts_with($file, $p) && preg_match('/\.tar\.(bz2|gz|lzma|xz|lz|zst)$/', $file))
 							{
 								if (strpos($file, '-src.tar') !== false)
 									$fl[PkgKind::source->value][$file] = $file;

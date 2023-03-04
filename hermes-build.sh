@@ -18,6 +18,7 @@ patches/hermes/hermes-1.3.3-debian.patch
 patches/hermes/hermes-ns-recipe.patch
 patches/hermes/hermes-warnings.patch
 patches/hermes/hermes-mintelf-config.patch
+patches/hermes/hermes-install.patch
 "
 
 unpack_archive
@@ -52,10 +53,7 @@ for CPU in ${ALL_CPUS}; do
 	hack_lto_cflags
 
 	${MAKE} || exit 1
-	# warning: this will try to install headers to /usr/include (no $DESTDIR used there)
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
-	# now install headers
-	(cd src; ${MAKE} includedir="${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include" install-data-local)
 	mkdir -p ${THISPKG_DIR}${sysroot}${prefix}/bin
 	${MAKE} clean >/dev/null
 	cd ${THISPKG_DIR}${sysroot}

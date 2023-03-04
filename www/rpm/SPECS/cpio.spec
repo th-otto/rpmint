@@ -5,6 +5,7 @@
 %endif
 %rpmint_header
 
+Summary:        A Backup and Archiving Utility
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
@@ -12,11 +13,16 @@ Name:           %{pkgname}
 %endif
 Version:        2.13
 Release:        1
-Summary:        A Backup and Archiving Utility
 License:        GPL-3.0-only
 Group:          Productivity/Archiving/Backup
+
 URL:            https://www.gnu.org/software/cpio/cpio.html
 Packager:       Thorsten Otto <admin@tho-otto.de>
+
+Prefix:         %{_prefix}
+Docdir:         %{_prefix}/share/doc
+BuildRoot:      %{_tmppath}/%{name}-root
+
 Source:         https://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.bz2
 Patch0:         cpio-2.3-lstat.patch
 Patch1:         cpio-2.4.2-glibc.patch
@@ -47,10 +53,9 @@ Patch28:        cpio-2.12-CVE-2019-14866.patch
 Patch29:        cpio-no-mtiocget.patch
 Patch30:        cpio-filemode.patch
 
+%rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  automake
-Requires(post): %{install_info_prereq}
-Requires(preun): %{install_info_prereq}
 Recommends:     rmt
 
 %if "%{buildtype}" == "cross"
@@ -76,14 +81,14 @@ time stamps, and access permissions. The archive can be another file on
 the disk, a magnetic tape, or a pipe.
 
 %prep
-%setup -q
+%setup -q -n %{pkgname}-%{version}
 # patches 0-5 not applied
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
 %patch15 -p1
 %patch17 -p1
-%patch18 -p1
+#%patch18 -p1
 %patch20 -p1
 %patch21 -p1
 %patch23 -p1
@@ -96,23 +101,42 @@ the disk, a magnetic tape, or a pipe.
 %patch30 -p1
 
 %build
-rm -f aclocal.m4 ltmain.sh
-aclocal || exit 1
-autoconf || exit 1
-autoheader || exit 1
-automake --force --copy --add-missing || exit 1
+
+create_config_cache()
+{
+cat <<EOF >config.cache
+EOF
+	%rpmint_append_gnulib_cache
+}
+
 
 %rpmint_cflags
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
+	--disable-shared
+	--libexecdir=%{_rpmint_target_prefix}/lib \
+	--disable-nls \
+	--with-rmt=/usr/bin/rmt \
+	--sbindir=/sbin
+"
 STACKSIZE="-Wl,-stack,256k"
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
-for CPU in ${ALL_CPUS}; do
+#
+# there are no libraries in this package, so we
+# have to build for the target CPU only
+#
+%if "%{buildtype}" == "cross"
+for CPU in 000
+%else
+for CPU in %{buildtype}
+%endif
+do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
+	create_config_cache
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -s ${STACKSIZE}" \
 	"./configure" ${CONFIGURE_FLAGS} \
@@ -125,22 +149,28 @@ for CPU in ${ALL_CPUS}; do
 	%rpmint_gzip_docs
 	# remove obsolete pkg config files
 	%rpmint_remove_pkg_configs
+	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
 
+	# according to FHS 3.0, cpio must be in /bin
 	%if "%{buildtype}" != "cross"
-	if test "%{buildtype}" != "$CPU"; then
-		rm -f %{buildroot}%{_rpmint_bindir}/*
-	fi
-#UsrMerge
-	mkdir -p %{buildroot}/bin
-	ln -sf %{_rpmint_bindir}/cpio %{buildroot}/bin
-#EndUsrMerge
 	%rpmint_make_bin_archive $CPU
+	mkdir -p %{buildroot}/bin
+	rm -f %{buildroot}/bin/cpio
+	ln %{buildroot}%{_rpmint_target_prefix}/bin/cpio %{buildroot}/bin
+	%else
+	mkdir -p %{buildroot}%{_rpmint_sysroot}/bin
+	rm -f %{buildroot}%{_rpmint_sysroot}/bin/cpio
+	ln %{buildroot}%{_rpmint_bindir}/cpio %{buildroot}%{_rpmint_sysroot}/bin
 	%endif
 
 	make distclean
 done
 
 %install
+
+%if "%{buildtype}" != "cross"
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}%{_rpmint_sysroot}
+%endif
 
 %clean
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
@@ -152,16 +182,25 @@ done
 %rpmint_uninstall_info %{pkgname}
 
 %files
+%defattr(-,root,root)
 %license COPYING
 %doc NEWS ChangeLog
-#UsrMerge
+%if "%{buildtype}" == "cross"
+%{_rpmint_sysroot}/bin/cpio
+%{_rpmint_bindir}/cpio
+%{_rpmint_datadir}
+%else
 /bin/cpio
-/usr/bin/mt
-/usr/info/cpio.*
-/usr/man/man1/cpio.1.gz
+%{_rpmint_target_prefix}/bin
+%{_rpmint_target_prefix}/share
+%endif
+
 
 %changelog
-* Wed Sep 22 2020 Thorsten Otto <admin@tho-otto.de>
+* Fri Mar 03 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to version 2.13
+
+* Tue Sep 22 2020 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
 - Update to version 2.12
 
