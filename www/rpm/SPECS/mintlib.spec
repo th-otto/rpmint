@@ -12,7 +12,7 @@ Name:           cross-mint-%{pkgname}
 Name:           %{pkgname}
 %endif
 Version:        0.60.1
-Release:        2
+Release:        3
 License:        LGPL-2.1-or-later AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND GPL-2.0-or-later
 Group:          System/Libraries
 
@@ -105,6 +105,10 @@ rm -rf ${RPM_BUILD_ROOT}${prefix}/share/man
 %rpmint_gzip_docs
 %endif
 
+#
+# The Makefile in the include directory
+# installs these files to /usr/include, but they don't belonge there
+#
 pushd ${RPM_BUILD_ROOT}
 find . \( -name 00README \
 	-o -name COPYING \
@@ -122,19 +126,16 @@ popd
 %defattr(-,root,root)
 %if "%{buildtype}" == "cross"
 %{_rpmint_includedir}/*
-%{_rpmint_libdir}/*.a
-%{_rpmint_libdir}/*.o
-%{_rpmint_libdir}/*/*
+%{_rpmint_libdir}
 %else
 %{_rpmint_target_prefix}/include/*
 %{_rpmint_target_prefix}/share/man
-%{_rpmint_target_prefix}/lib/*.a
-%{_rpmint_target_prefix}/lib/*.o
-%{_rpmint_target_prefix}/lib/*/*
+%{_rpmint_target_prefix}/lib
 %endif
 
 %if "%{buildtype}" != "cross"
 %files -n timezone
+# %config(missingok,noreplace) /etc/localtime
 %{_rpmint_target_prefix}/share/zoneinfo
 %{_rpmint_target_prefix}/sbin/*
 %endif
@@ -142,3 +143,11 @@ popd
 %clean
 [ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
+%changelog
+* Sun Mar 5 2023 Thorsten Otto <admin@tho-otto.de>
+- timezone update 2022g
+- Install leapseconds data to %%{_datadir}/zoneinfo/; this is now
+  required by some scientific applications.
+
+* Mon Aug 31 2020 Thorsten Otto <admin@tho-otto.de>
+- RPMint spec file
