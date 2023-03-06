@@ -13,7 +13,7 @@ Name:           %{pkgname}-headers
 %endif
 Version:        20230210
 Release:        1
-License:        Public domain
+License:        Public Domain
 Group:          System/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>

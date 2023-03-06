@@ -11,7 +11,9 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/nghttp2-remove-python-build.patch
-patches/${PACKAGENAME}/nghttp2-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES=""
@@ -31,7 +33,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/nghttp2-mintelf-config.patch"
+cp patches/automake/mintelf-config.sub config.sub
 
 cd "$MINT_BUILD_DIR"
 
@@ -51,7 +53,7 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
 	hack_lto_cflags
-	${MAKE} || exit 1
+	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
 	${MAKE} clean >/dev/null
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}$multilibdir/charset.alias

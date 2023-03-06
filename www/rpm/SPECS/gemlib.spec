@@ -13,7 +13,7 @@ Name:           %{pkgname}
 %endif
 Version:        0.44.0
 Release:        20230212
-License:        Public domain
+License:        Public Domain
 Group:          System/Libraries
 
 Packager:       %{packager}

@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=mksh
-VERSION=-R57
+VERSION=-57
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh

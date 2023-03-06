@@ -48,6 +48,7 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
+	echo '#undef HAVE_PTHREAD_H' >> config.h
 
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install

@@ -63,7 +63,7 @@ for pkgname in $pkgnames; do
 	description=`rpm -q --queryformat '%{description}' "$rpmfile" | sed -e 's/^$/./' -e 's/^/ /'`
 	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib | grep -v "lib.*\.so" | grep -v /bin/sh`
 	group=`rpm -q --queryformat '%{group}' "$rpmfile"`
-	provides=`rpm -q --queryformat '%{provides}' "$rpmfile"`
+	provides=`rpm -q --queryformat '[%{provides}\n]' "$rpmfile" | grep -v /bin/ | grep -v '(x86-64)'`
 	
 	if test "${requires}" != ""; then
 		requires="Depends: "`echo ${requires} | sed -e 's/ /,/g'`"
@@ -76,7 +76,7 @@ for pkgname in $pkgnames; do
 	fi
 	
 	if test "${provides}" != ""; then
-		provides="Provides: ${provides}
+		provides="Provides: "`echo ${provides} | sed -e 's/ /,/g'`"
 "
 	fi
 	

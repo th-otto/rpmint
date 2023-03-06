@@ -13,7 +13,7 @@ Name:           %{pkgname}
 %endif
 Version:        6.2.1
 Release:        1
-License:        GPL-3.0+ and LGPL-3.0+
+License:        GPL-3.0-or-later and LGPL-3.0-or-later
 Group:          System/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>

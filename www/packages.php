@@ -26,6 +26,10 @@ $basepackages = array(
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 1,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Languages/C and C++',
+		'license' => 'GFDL-1.3-only AND GPL-3.0-or-later',
+		'category' => 'Development/Tools/Building',
 		'summary' => 'GNU Binutils',
 		'comment' => '
 The binutils are a collection of low-level language tools.<br />
@@ -61,6 +65,8 @@ This is a version where that support has been added back in.
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 0,
+		'license' => 'GFDL-1.3-only AND GPL-3.0-or-later',
+		'category' => 'Development/Tools/Building',
 		'summary' => 'GNU Binutils',
 		'comment' => '
 The binutils are a collection of low-level language tools.<br />
@@ -97,6 +103,8 @@ This is the last official version with support for it.
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The system GNU C Compiler',
 		'comment' => '
 <code>m68k-atari-mint-gcc</code> is the C compiler.<br />
@@ -142,6 +150,8 @@ GCC contains everything to compile C programs, except a standard library and a m
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 1,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The system GNU C Compiler',
 		'comment' => '
 This is the currently most recent official version of GCC. It comes in two
@@ -182,6 +192,8 @@ use fdlibm instead of the ancient pml math library.
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The system GNU C Compiler',
 		'comment' => '
 Slightly older version of GCC. </br>
@@ -216,6 +228,8 @@ This compiler was not able to compile itself for m68k, so it might be broken.
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 1,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The system GNU C Compiler',
 		'comment' => '
 Slightly older version of GCC.
@@ -248,6 +262,8 @@ Slightly older version of GCC.
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 1,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The system GNU C Compiler',
 		'comment' => '
 Slightly older version of GCC.
@@ -280,6 +296,8 @@ Slightly older version of GCC.
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 1,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The system GNU C Compiler',
 		'comment' => '
 Slightly older version of GCC.
@@ -312,6 +330,8 @@ Slightly older version of GCC.
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 1,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The system GNU C Compiler',
 		'comment' => '
 Slightly older version of GCC.
@@ -342,6 +362,8 @@ Slightly older version of GCC.
 		'macos32' => 0,
 		'macos64' => 1,
 		'atari' => 1,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Development/Tools/Building',
 		'summary' => 'Supplementary tools to the GNU binutils for MiNT',
 		'comment' => '
 MiNTBin has been written by Guido Flohr. It is a set of tools for manipulating
@@ -365,6 +387,8 @@ $libpackages = array(
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'System/Libraries',
 		'summary' => 'Standard C Libraries for MiNT',
 		'comment' => '
 MiNTLib is a standard C library. It allows you to build software which runs on MiNT and TOS
@@ -385,6 +409,8 @@ instead of the latest official release.
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'Public Domain',
+		'category' => 'System/Libraries',
 		'summary' => 'Portable Math Library',
 		'comment' => '
 PML stands for Portable Math Library.<br />
@@ -406,6 +432,8 @@ For a comparison to fdlibm, see <a href="math.php">Math libraries for Atari</a>
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'Public Domain',
+		'category' => 'System/Libraries',
 		'summary' => 'Freely Distributable C math library',
 		'comment' => '
 fdlibm is a portable math library that was originally <br />
@@ -429,6 +457,8 @@ For a comparison to PML, see <a href="math.php">Math libraries for Atari</a>
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'Public Domain',
+		'category' => 'System/Libraries',
 		'summary' => 'GEM libraries and header files',
 		'comment' => '
 GEMlib allows you to write graphical programs using GEM.<br />
@@ -451,6 +481,8 @@ on the <a href="https://github.com/freemint/gemlib">FreeMiNT&apos;s GitHub repos
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'System/Libraries',
 		'summary' => 'CFLIB is Christian Felsch&apos;s GEM utility library',
 		'comment' => '
 CFLIB is Christian Felsch&apos;s GEM utility library. It provide advanced controls,
@@ -478,6 +510,8 @@ and TOS 4.04, but crash on TOS 1.62 and early versions of EmuTOS.
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'System/Libraries',
 		'summary' => 'Support library for GEM application programs',
 		'comment' => '
 Gemma is a support library for GEM application programs.
@@ -494,6 +528,8 @@ Gemma is a support library for GEM application programs.
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'Zlib',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Library implementing the DEFLATE compression algorithm',
 		'comment' => '
 zlib is a general-purpose lossless data-compression library,
@@ -514,6 +550,8 @@ This library is also available as a <a href="../sharedlibs.php#zlib">shared libr
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'Zlib',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Library for the Portable Network Graphics Format (PNG)',
 		'comment' => '
 Portable Network Graphics
@@ -534,6 +572,8 @@ This library is also available as a <a href="../sharedlibs.php#libpng">shared li
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => 'A file compression utility',
 		'comment' => '
 bzip2 is a freely available, patent free (see below), high-quality data
@@ -555,6 +595,8 @@ This library is also available as a <a href="../sharedlibs.php#bzip2">shared lib
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'GEM Dynamic Libraries',
 		'comment' => '
 LDG stands for GEM Dynamic Libraries (actually Librairies Dynamiques
@@ -576,6 +618,8 @@ install the auto folder programs from <a href="http://ldg.sourceforge.net/#downl
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'A high level GEM library for TOS system',
 		'comment' => '
 Windom is a C library to make GEM programming very easy. With the help
@@ -598,6 +642,8 @@ remove your source directory.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'A high level GEM library for TOS system',
 		'comment' => '
 This is the 1.x release of windom.
@@ -612,6 +658,8 @@ This is the 1.x release of windom.
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/X11',
 		'summary' => 'Simple DirectMedia Layer Library',
 		'comment' => '
 SDL is the Simple DirectMedia Layer library. It is a low-level and cross-platform
@@ -639,6 +687,8 @@ In some cases, you have to add -I/usr/m68k-atari-mint/sys-root/usr/include/SDL i
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'System/Base',
 		'summary' => 'Terminal control library',
 		'comment' => '
 Ncurses is a library which allows building full-screen text mode programs,
@@ -655,6 +705,8 @@ such as <code>vim</code>, <code>less</code>, or the GDB text UI.
 		'dev' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'The Readline Library',
 		'comment' => '
 The GNU Readline library provides a set of functions for use by
@@ -677,6 +729,8 @@ csh-like history expansion on previous commands.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'OpenSSL',
+		'category' => 'Productivity/Networking/Security',
 		'summary' => 'Secure Sockets and Transport Layer Security',
 		'comment' => '
 OpenSSL is a robust, commercial-grade, and full-featured toolkit for
@@ -695,6 +749,8 @@ protocols. It is also a general-purpose cryptography library.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => 'Archiving tool for arc achives',
 		'comment' => '
 ARC is used to create and maintain file archives. An archive is a group
@@ -713,6 +769,8 @@ individual files may be recovered intact.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => 'Archiver for .arj files',
 		'comment' => '
 A portable version of the ARJ archiver, available for a growing number
@@ -730,6 +788,8 @@ of DOS-like and UNIX-like platforms on a variety of architectures.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'ISC',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => 'Archiver for .lzh files',
 		'comment' => '
 LHA for UNIX - Note: This software is licensed under the ORIGINAL
@@ -749,6 +809,9 @@ LICENSE. It is written in man/lha.n in Japanese
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'NonFree',
+		'category' => 'Productivity/Archiving/Compression',
+		'summmary' => 'A program to extract, test, and view RAR archives',
 		'comment' => '
 Unarchiver for .rar files (non-free version)
 Unrar can extract files from .rar archives. If you want to create .rar
@@ -767,6 +830,8 @@ archives, install package rar.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later AND GPL-2.0-or-later',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => 'A Program for Compressing Files with the Lempel&#8211;Ziv&#8211;Markov algorithm',
 		'comment' => '
 XZ Utils is free general-purpose data compression software with a high
@@ -788,6 +853,8 @@ This library is also available as a <a href="../sharedlibs.php#lzma">shared libr
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => 'File compression program',
 		'comment' => '
 Zip is a compression and file packaging utility. It is compatible with
@@ -805,6 +872,8 @@ PKZIP(tm) 2.04g (Phil Katz ZIP) for MS-DOS systems.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => 'A program to unpack compressed files',
 		'comment' => '
 UnZip is an extraction utility for archives compressed in .zip format
@@ -825,6 +894,8 @@ functionality. This version can also extract encrypted archives.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'Public Domain',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => 'Pack Program',
 		'comment' => '
 Zoo is a packer based on the Lempel-Ziv algorithm. Lots of files on
@@ -844,6 +915,8 @@ for decompressing old archives.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later and LGPL-3.0-or-later',
+		'category' => 'System/Libraries',
 		'summary' => 'The GNU MP Library',
 		'comment' => '
 A library for calculating huge numbers (integer and floating point).
@@ -860,6 +933,8 @@ A library for calculating huge numbers (integer and floating point).
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-3.0-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'The GNU multiple-precision floating-point library',
 		'comment' => '
 The MPFR library is a C library for multiple-precision floating-point
@@ -878,6 +953,8 @@ based on the GMP multiple-precision library.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-3.0-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'MPC multiple-precision complex shared library',
 		'comment' => '
 MPC is a C library for the arithmetic of complex numbers with
@@ -896,6 +973,8 @@ built upon and follows the same principles as MPFR.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Productivity/Archiving/Backup',
 		'summary' => 'GNU implementation of ((t)ape (ar)chiver)',
 		'comment' => '
 GNU Tar is an archiver program. It is used to create and manipulate files
@@ -917,6 +996,8 @@ it is also able to access remote devices or files.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later AND GPL-3.0-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Libiconv is a conversion library',
 		'comment' => '
 The libiconv library provides an iconv() implementation, for use on
@@ -937,6 +1018,8 @@ This library is also available as a <a href="../sharedlibs.php#libiconv">shared 
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Languages/Other',
 		'summary' => 'GNU m4',
 		'comment' => '
 GNU m4 is an implementation of the traditional Unix macro processor.
@@ -953,6 +1036,8 @@ GNU m4 is an implementation of the traditional Unix macro processor.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'Fast Lexical Analyzer Generator',
 		'comment' => '
 FLEX is a tool for generating scanners: programs that recognize lexical
@@ -970,6 +1055,8 @@ patterns in text.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The GNU Parser Generator',
 		'comment' => '
 Bison is a general-purpose parser generator that converts an annotated
@@ -992,6 +1079,8 @@ complex programming languages.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'XML Parser Toolkit',
 		'comment' => '
 Expat is an XML parser library written in C. It is a stream-oriented
@@ -1010,6 +1099,8 @@ parser might find in the XML document (like start tags).
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Support for Internationalized Domain Names (IDN) based on IDNA2008',
 		'comment' => '
 Libidn2 is an implementation of the IDNA2008 + TR46 specifications (RFC
@@ -1031,6 +1122,8 @@ extensively used as the original Libidn library.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Productivity/Networking/Security',
 		'summary' => 'MIT Kerberos5 implementation',
 		'comment' => '
 Kerberos V5 is a trusted-third-party network authentication system,
@@ -1050,6 +1143,8 @@ practice of clear text passwords.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'A library implementing the SSH2 protocol',
 		'comment' => '
 libssh2 is a library implementing the SSH2 protocol as defined by
@@ -1069,6 +1164,8 @@ SECSH-PUBLICKEY.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Implementation of Hypertext Transfer Protocol version 2 in C',
 		'comment' => '
 nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPACK in C.
@@ -1085,6 +1182,8 @@ nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPAC
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'MIT',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'A Library to Manipulate XML Files',
 		'comment' => '
 The XML C library was initially developed for the GNOME project. It is
@@ -1103,6 +1202,8 @@ or manipulate any kind of XML files.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'System/Libraries',
 		'summary' => 'Metalink Library',
 		'comment' => '
 Libmetalink is a Metalink library written in C language. It is intended to
@@ -1121,6 +1222,8 @@ Metalink XML files.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-3.0-or-later OR GPL-2.0-only',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'GNU Unicode string library',
 		'comment' => '
 This portable C library implements Unicode string types in three flavours:
@@ -1141,6 +1244,8 @@ case folding and regular expressions).
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT AND MPL-2.0 AND BSD-3-Clause',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'C library for the Publix Suffix List',
 		'comment' => '
 libpsl is a C library to handle the Public Suffix List. A "public suffix" is a
@@ -1162,6 +1267,8 @@ and sorting domain lists by site.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'curl',
+		'category' => 'Productivity/Networking/Web/Utilities',
 		'summary' => 'A Tool for Transferring Data from URLs',
 		'comment' => '
 Curl is a client to get documents and files from or send documents to a
@@ -1181,6 +1288,8 @@ without user interaction or any kind of interactivity.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'System/Libraries',
 		'summary' => 'A TrueType Font Library',
 		'comment' => '
 This library features TrueType fonts for open source projects. This
@@ -1200,6 +1309,8 @@ This library is also available as a <a href="../sharedlibs.php#freetype">shared 
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Library for asynchronous name resolves',
 		'comment' => '
 c-ares is a C library that performs DNS requests and name resolves 
@@ -1218,6 +1329,8 @@ by Greg Hudson at MIT.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'A library for manipulating JPEG image files',
 		'comment' => '
 This package is a library of functions that manipulate jpeg images, along
@@ -1237,6 +1350,8 @@ This library is also available as a <a href="../sharedlibs.php#jpeg">shared libr
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'A library to convert pixel formats',
 		'comment' => '
 HERMES is a library designed to convert a source buffer with a specified pixel
@@ -1264,6 +1379,8 @@ support.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => 'GNU Zip Compression Utilities',
 		'comment' => '
 Gzip reduces the size of the named files using Lempel-Ziv coding LZ77.
@@ -1283,6 +1400,8 @@ times.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Productivity/Text/Utilities',
 		'summary' => 'Print lines matching a pattern',
 		'comment' => '
 The grep command searches one or more input files for lines containing a
@@ -1300,6 +1419,8 @@ match to a specified pattern.  By default, grep prints the matching lines.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Amusements/Games/Action/Arcade',
 		'summary' => 'ctris is a curses based Tetris game',
 		'comment' => '
 ctris is a curses based Tetris game.
@@ -1317,6 +1438,8 @@ ctris is a curses based Tetris game.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Productivity/Networking/Boot/Servers',
 		'summary' => 'Common Files Used by ISC DHCP Software',
 		'comment' => '
 The Dynamic Host Configuration Protocol (DHCP) is a network protocol
@@ -1338,6 +1461,8 @@ a collection of software that implements all aspects of the DHCP
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Productivity/Text/Utilities',
 		'summary' => 'GNU awk',
 		'comment' => '
 The gawk packages contains the GNU version of awk, a text processing
@@ -1359,6 +1484,8 @@ awk.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-2-Clause',
+		'category' => 'Productivity/File utilities',
 		'summary' => 'A Tool to Determine File Types',
 		'comment' => '
 With the file command, you can obtain information on the file type of a
@@ -1378,6 +1505,8 @@ used by apsfilter to permit automatic printing of different file types.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GFDL-1.2 and GPL-3.0-or-later',
+		'category' => 'Productivity/Text/Utilities',
 		'summary' => 'GNU diff Utilities',
 		'comment' => '
 The GNU diff utilities find differences between files. diff is used to
@@ -1395,6 +1524,8 @@ make source code patches, for instance.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Productivity/File utilities',
 		'summary' => 'The GNU versions of find utilities (find and xargs)',
 		'comment' => '
 The findutils package contains programs which will help you locate
@@ -1416,6 +1547,8 @@ names generated by the find command).
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'System/Base',
 		'summary' => 'GNU Core Utilities',
 		'comment' => '
 These are the GNU core utilities.  This package is the union of
@@ -1450,6 +1583,8 @@ provide any useful information beyond what is availble by just running
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'System/Shells',
 		'summary' => 'The GNU Bourne-Again Shell',
 		'comment' => '
 Bash is an sh-compatible command interpreter that executes commands
@@ -1473,6 +1608,8 @@ with minimal configuration (ie. no line editing features)
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Development/Tools/Building',
 		'summary' => 'GNU make',
 		'comment' => '
 The GNU make command with extensive documentation.
@@ -1489,6 +1626,8 @@ The GNU make command with extensive documentation.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Productivity/Text/Utilities',
 		'summary' => 'GNU patch',
 		'comment' => '
 The GNU patch program is used to apply diffs between original and
@@ -1506,6 +1645,8 @@ changed files (generated by the diff command) to the original files.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Productivity/Publishing/Troff',
 		'summary' => 'GNU troff Document Formatting System',
 		'comment' => '
 Groff is used to "compile" man pages stored in groff or nroff format
@@ -1526,6 +1667,8 @@ programs store their man pages in either <code>/usr/share/man/</code> or
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-only',
+		'category' => 'Development/Tools/Version Control',
 		'summary' => 'Fast, scalable, distributed revision control system',
 		'comment' => '
 Git is a fast, scalable, distributed revision control system with an
@@ -1546,6 +1689,8 @@ full access to internals.
 		'atari' => 0,
 		'amiga' => 0,
 		'noarch' => 1,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Productivity/Networking/Security',
 		'summary' => 'Utilities for system wide CA certificate installation',
 		'comment' => '
 Update-ca-certificates is intended to keep the certificate stores of
@@ -1553,6 +1698,28 @@ SSL libraries like OpenSSL or GnuTLS in sync with the system&apos;s CA
 certificate store that is managed by p11-kit.
 '
 	),
+	/*
+	'ca-certificates-mozilla' => array(
+		'name' => 'ca-certificates-mozilla',
+		'upstream' => 'http://www.mozilla.org',
+		'source' => http://hg.mozilla.org/projects/nss/raw-file/default/lib/ckfw/builtins/certdata.txt',
+		'version' => '2.22',
+		'patch' => 0,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 0,
+		'atari' => 0,
+		'amiga' => 0,
+		'noarch' => 1,
+		'license' => 'MPL-2.0',
+		'category' => 'Productivity/Networking/Security',
+		'summary' => 'CA certificates for OpenSSL',
+		'comment' => '
+This package contains some CA root certificates for OpenSSL extracted
+from MozillaFirefox
+'
+	),
+	*/
 	'gdbm' => array(
 		'name' => 'gdbm',
 		'upstream' => 'https://www.gnu.org.ua/software/gdbm/',
@@ -1564,6 +1731,8 @@ certificate store that is managed by p11-kit.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'System/Libraries',
 		'summary' => 'GNU dbm key/data database',
 		'comment' => '
 GNU dbm is a library of database functions that use extensible
@@ -1594,6 +1763,8 @@ package also provides traditional dbm and ndbm interfaces.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'System/Libraries',
 		'summary' => 'Berkeley DB Database Library',
 		'comment' => '
 The Berkeley DB Database is a programmatic toolkit that provides
@@ -1611,6 +1782,8 @@ database support for applications.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'Artistic-1.0 or GPL-2.0-or-later',
+		'category' => 'Development/Languages/Perl',
 		'summary' => 'The Perl interpreter',
 		'comment' => '
 perl - Practical Extraction and Report Language<br />
@@ -1637,6 +1810,8 @@ series.
 		'atari' => 0,
 		'amiga' => 0,
 		'noarch' => 1,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Tools/Building',
 		'summary' => 'A GNU Tool for Automatically Configuring Source Code',
 		'comment' => '
 GNU Autoconf is a tool for configuring source code and makefiles. Using
@@ -1664,10 +1839,12 @@ only required for the generation of the scripts, not their use.
 		'atari' => 0,
 		'amiga' => 0,
 		'noarch' => 1,
+		'license' => 'GPL-3.0-or-later WITH Autoconf-exception-3.0',
+		'category' => 'Development/Tools/Building',
 		'summary' => 'A Collection of macros for GNU autoconf',
 		'comment' => '
 The GNU Autoconf Archive is a collection of more than 450 macros for `GNU
-Autoconf <http://www.gnu.org/software/autoconf>`_ that have been contributed as
+Autoconf &lt;http://www.gnu.org/software/autoconf&gt;` that have been contributed as
 free software by friendly supporters of the cause from all over the Internet.
 Every single one of those macros can be re-used without imposing any
 restrictions whatsoever on the licensing of the generated `configure` script. In
@@ -1694,6 +1871,8 @@ some authors may choose to use it, too, for proprietary software.
 		'atari' => 0,
 		'amiga' => 0,
 		'noarch' => 1,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Development/Tools/Building',
 		'summary' => 'A Program for Automatically Generating GNU-Style Makefile.in Files',
 		'comment' => '
 Automake is a tool for automatically generating "Makefile.in" files
@@ -1713,6 +1892,8 @@ definitions (with rules occasionally thrown in).  The generated
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'An open source cryptography library',
 		'comment' => '
 BeeCrypt is an ongoing project to provide a strong and fast
@@ -1732,6 +1913,8 @@ multiprecision integer routines, and public key primitives.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Development/Languages/Other',
 		'summary' => 'Small Embeddable Language with Procedural Syntax',
 		'comment' => '
 Lua is a programming language originally designed for extending
@@ -1757,6 +1940,8 @@ of C functions, written in ANSI C.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'A C library for parsing command line parameters',
 		'comment' => '
 Popt is a C library for parsing command line parameters.  Popt was
@@ -1779,6 +1964,8 @@ parsing arbitrary strings into argv[] arrays using shell-like rules.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'System/Packages',
 		'summary' => 'The RPM Package Manager',
 		'comment' => '
 The RPM Package Manager (RPM) is a powerful package management system capable of<br />
@@ -1800,6 +1987,8 @@ The RPM Package Manager (RPM) is a powerful package management system capable of
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Productivity/File utilities',
 		'summary' => 'Recursive Hasher',
 		'comment' => '
 RHash (Recursive Hasher) is a console utility for computing and
@@ -1822,6 +2011,8 @@ transferring.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-2-Clause',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => 'Creates and reads several different streaming archive formats',
 		'comment' => '
 Libarchive is a programming library that can create and read several
@@ -1844,6 +2035,8 @@ and 6.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0', /*  WITH OSI-exception */
+		'category' => 'Development/Tools/Building',
 		'summary' => 'Higher-level library to access ELF files',
 		'comment' => '
 elfutils is a collection of utilities and libraries to read, create
@@ -1862,6 +2055,8 @@ symbols, thread state and stacktraces for processes and core files.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Asychronous I/O support library',
 		'comment' => '
 libuv is a support library with a focus on asynchronous I/O. It was
@@ -1880,6 +2075,8 @@ Mozilla&apos;s Rust language, Luvit, Julia, pyuv, and others.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Tools/Building',
 		'summary' => 'Cross-platform, open-source make system',
 		'comment' => '
 CMake is a cross-platform, open-source build system
@@ -1896,6 +2093,8 @@ CMake is a cross-platform, open-source build system
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Package dependency solver using a satisfiability algorithm',
 		'comment' => '
 libsolv is a library for solving packages and reading repositories.
@@ -1913,6 +2112,8 @@ The solver uses a satisfiability algorithm.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'Python-2.0',
+		'category' => 'Development/Languages/Python',
 		'summary' => 'Python Interpreter',
 		'comment' => '
 Python is an interpreted, object-oriented programming language, and is
@@ -1932,6 +2133,8 @@ of Python in the documentation and tutorials included in the python-doc
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'Python-2.0',
+		'category' => 'Development/Languages/Python',
 		'summary' => 'Python 3 Interpreter',
 		'comment' => '
 Python 3 is modern interpreted, object-oriented programming language,
@@ -1951,6 +2154,8 @@ package.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'Foreign Function Interface Library',
 		'comment' => '
 The libffi library provides a portable, high level programming
@@ -1970,6 +2175,8 @@ time.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later and LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Library That Defines Common Error Values for All GnuPG Components',
 		'comment' => '
 This is a library that defines common error values for all GnuPG
@@ -1988,6 +2195,8 @@ pinentry, SmartCard Daemon, and possibly more in the future.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later and LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'IPC library used by GnuPG version 2',
 		'comment' => '
 Libassuan is the IPC library used by gpg2 (GnuPG version 2)
@@ -2004,6 +2213,8 @@ Libassuan is the IPC library used by gpg2 (GnuPG version 2)
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later and LGPL-2.0-or-later',
+		'category' => 'Development/Tools/Other',
 		'summary' => 'Tools for Native Language Support (NLS)',
 		'comment' => '
 This package contains the intl library as well as tools that ease the
@@ -2025,6 +2236,8 @@ binary catalogs.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => '(LGPL-3.0-or-later or GPL-2.0-or-later) and GPL-3.0-or-later and MIT',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'A X.509 Library',
 		'comment' => '
 KSBA is a library to simplify the task of working with X.509
@@ -2042,6 +2255,8 @@ certificates, CMS data, and related data.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later AND LGPL-2.1-or-later AND GPL-3.0-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'The GNU Crypto Library',
 		'comment' => '
 Libgcrypt is a general purpose library of cryptographic building
@@ -2061,6 +2276,8 @@ understanding of applied cryptography is required to use Libgcrypt.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'A Library for Working with GIF Images',
 		'comment' => '
 This Library allows manipulating GIF Image files. Since the LZW patents
@@ -2078,6 +2295,8 @@ have expired, giflib can again be used instead of libungif.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'An EXIF Tag Parsing Library for Digital Cameras',
 		'comment' => '
 This library is used to parse EXIF information from JPEGs created by
@@ -2097,6 +2316,8 @@ This library is also available as a <a href="../sharedlibs.php#exif">shared libr
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'HPND',
+		'category' => 'Productivity/Graphics/Convertors',
 		'summary' => 'Tools for Converting from and to the Tagged Image File Format',
 		'comment' => '
 This package contains the library and support programs for the TIFF
@@ -2116,6 +2337,8 @@ This library is also available as a <a href="../sharedlibs.php#tiff">shared libr
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'Integer Set Library',
 		'comment' => '
 ISL is a library for manipulating sets and relations of integer points
@@ -2134,6 +2357,8 @@ It is used by Cloog and the GCC Graphite optimization framework.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'MikMod Sound Library',
 		'comment' => '
 Libmikmod is a portable sound library, capable of playing samples as
@@ -2154,6 +2379,8 @@ mtm, xm, and it.
 		'bin' => 0,
 		'amiga' => 1,
 		'atari' => 1,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Languages/C and C++',
 		'summary' => 'Ogg Bitstream Library',
 		'comment' => '
 Libogg is a library for manipulating Ogg bitstreams.  It handles both
@@ -2174,6 +2401,8 @@ codec) and libtheora (Theora video codec).
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'BSD-3-Clause and GPL-2.0-or-later and GFDL-1.2',
+		'category' => 'Productivity/Multimedia/Sound/Utilities',
 		'summary' => 'Free Lossless Audio Codec',
 		'comment' => '
 FLAC is an audio coding format for lossless compression of digital
@@ -2195,6 +2424,8 @@ original audio data.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'The Vorbis General Audio Compression Codec',
 		'comment' => '
 Vorbis is a fully open, nonproprietary, patent-and-royalty-free, and
@@ -2216,6 +2447,8 @@ libmatroska (matroska) can also be used.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0',
+		'category' => 'Productivity/Multimedia/Sound/Utilities',
 		'summary' => 'Ogg Vorbis Tools',
 		'comment' => '
 This package contains some tools for Ogg Vorbis:
@@ -2237,6 +2470,8 @@ vcut (which allows you to cut up Vorbis files).
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'Zlib',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'SDL sound mixer library',
 		'comment' => '
 A multichannel audio mixer. It supports four channels of 16-bit stereo
@@ -2264,6 +2499,8 @@ See also other hints about SDL.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/X11',
 		'summary' => 'SDL image loading library',
 		'comment' => '
 This is a simple library to load images of various formats as SDL
@@ -2291,6 +2528,8 @@ See also other hints about SDL.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/X11',
 		'summary' => 'SDL TrueType library',
 		'comment' => '
 This is a sample library that allows you to use TrueType fonts in your
@@ -2313,6 +2552,8 @@ See also other hints about SDL.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'SDL networking library',
 		'comment' => '
 This is a small cross-platform networking library for use with SDL.
@@ -2330,6 +2571,8 @@ This is a small cross-platform networking library for use with SDL.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'AGPL-3.0 and CC-BY-SA-3.0',
+		'category' => 'Productivity/Graphics/Visualization/Raytracers',
 		'summary' => 'Ray Tracer',
 		'comment' => '
 The Persistence of Vision Ray tracer creates three-dimensional,
@@ -2357,6 +2600,8 @@ version was compiled with the pml math library.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'AGPL-3.0 and CC-BY-SA-3.0',
+		'category' => 'Productivity/Graphics/Visualization/Raytracers',
 		'summary' => 'Ray Tracer',
 		'comment' => '
 The Persistence of Vision Ray tracer creates three-dimensional,
@@ -2383,6 +2628,8 @@ version was compiled with the fdlibm math library.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Software MPEG decoder',
 		'comment' => '
 SMPEG is based on UC Berkeley&apos;s mpeg_play software MPEG decoder
@@ -2402,6 +2649,8 @@ create a general purpose MPEG video/audio player.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 1,
+		'license' => 'LGPL-2.1-only',
+		'category' => 'Productivity/Multimedia/Sound/Players',
 		'summary' => 'Console MPEG audio player and decoder library',
 		'comment' => '
 The mpg123 distribution contains an MPEG 1.0/2.0/2.5 audio player/decoder for
@@ -2420,6 +2669,8 @@ and output libraries.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Theora video compression codec',
 		'comment' => '
 Theora is a free and open video compression format from the Xiph.org Foundation. Like all our 
@@ -2438,6 +2689,8 @@ the licensing and royalty fees or vendor lock-in associated with other formats.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'System/Base',
 		'summary' => 'The ping command',
 		'comment' => '
 The ping command. </br>
@@ -2455,6 +2708,8 @@ Ported from BSD sources.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Productivity/Multimedia/Other',
 		'summary' => 'An MPEG audio decoder library',
 		'comment' => '
 MAD is a MPEG audio decoder. It currently supports MPEG-1 and the
@@ -2478,6 +2733,8 @@ unit.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later AND LGPL-3.0-or-later',
+		'category' => 'Development/Languages/Other',
 		'summary' => 'COBOL compiler',
 		'comment' => '
 GnuCOBOL (formerly OpenCOBOL) is a COBOL compiler.
@@ -2499,6 +2756,8 @@ a cross-development environment.</span>
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause and GPL-2.0',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => 'Zstandard compression tools',
 		'comment' => '
 Zstd, short for Zstandard, is a lossless compression algorithm. Speed
@@ -2526,6 +2785,8 @@ compression for the same ratio, or ~1-4% size reduction for same time.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'System/Filesystems',
 		'summary' => 'Utilities for Making and Checking FAT File Systems',
 		'comment' => '
 The dosfstools package includes the mkdosfs and dosfsck utilities, which
@@ -2545,6 +2806,8 @@ floppies.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'System/Packages',
 		'summary' => 'Opkg lightweight package management system',
 		'comment' => '
 Opkg lightweight package management system
@@ -2562,6 +2825,8 @@ Opkg lightweight package management system
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Productivity/File utilities',
 		'summary' => 'File listing as a tree',
 		'comment' => '
 Tree is a recursive directory listing command that produces a depth
@@ -2581,6 +2846,8 @@ LS_COLORS environment variable is set and output is to tty.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Module Player library for MOD, S3M, IT and others',
 		'comment' => '
 Libxmp is a library that renders module files to PCM data. It supports
@@ -2603,7 +2870,9 @@ and Amiga file packers including gzip, bzip2, SQSH, Powerpack, etc.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
-		'summary' => 'player of Atari 8-bit chiptunes',
+		'license' => 'GPL-2.0',
+		'category' => 'Productivity/Multimedia/Sound/Players',
+		'summary' => 'Player of Atari 8-bit chiptunes',
 		'comment' => '
 ASAP is a player of Atari 8-bit chiptunes for modern computers and
 mobile devices. It emulates the POKEY sound chip and the 6502
@@ -2624,6 +2893,8 @@ core.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Productivity/Archiving/Compression',
 		'summary' => '7-zip file compression program',
 		'comment' => '
 p7zip is a quick port of 7z.exe and 7za.exe (command line version of
@@ -2649,6 +2920,8 @@ This package provides: </br>
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause AND GPL-2.0-or-later AND IJG AND MIT',
+		'category' => 'Productivity/Graphics/Convertors',
 		'summary' => 'A Graphics Conversion Package',
 		'comment' => '
 These are the Portable Bitmap Plus Utilities. </br>
@@ -2668,13 +2941,15 @@ included for all tools.
 		'upstream' => 'http://www.mirbsd.org/mksh.htm',
 		'branch' => '',
 		'source' => $download_dir . '%{name}-%{version}.tar.xz',
-		'version' => 'R57',
+		'version' => '57',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 0,
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MirOS and ISC',
+		'category' => 'System/Shells',
 		'summary' => 'MirBSD Korn Shell',
 		'comment' => '
 The MirBSD Korn Shell is an actively developed free implementation of the Korn
@@ -2694,6 +2969,8 @@ Shell programming language and a successor to the Public Domain Korn Shell
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0',
+		'category' => 'Productivity/Archiving/Backup',
 		'summary' => 'A Backup and Archiving Utility',
 		'comment' => '
 GNU cpio is a program to manage archives of files. Cpio copies files
@@ -2714,6 +2991,8 @@ the disk, a magnetic tape, or a pipe.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Library and tools for the WebP graphics format',
 		'comment' => '
 WebP codec is a library to encode and decode images in WebP format.
@@ -2735,6 +3014,8 @@ Original MiNT-Patch by medmed.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'GNU Pth threads library',
 		'comment' => 'Pth is a very portable POSIX/ANSI-C
 based library for Unix platforms which provides non-preemptive
@@ -2767,6 +3048,8 @@ Original MiNT-Patch by Patrice Mandin & medmed.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Open source project that includes YUV scaling and conversion functionality',
 		'comment' => '
 libyuv is an open source project that includes YUV scaling and conversion functionality.
@@ -2785,6 +3068,8 @@ You need to use g++ to link against this library.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'BSD-2-Clause',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Library which supports H.264 encoding and decoding',
 		'comment' => '
 OpenH264 is a codec library which supports H.264 encoding and decoding.
@@ -2808,6 +3093,8 @@ A simple GEM example can be found in <a href="https://www.atari-forum.com/viewto
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'FDK-AAC',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'A standalone library of the Fraunhofer FDK AAC code',
 		'comment' => '
 A standalone library of the Fraunhofer FDK AAC code from Android.
@@ -2824,6 +3111,8 @@ A standalone library of the Fraunhofer FDK AAC code from Android.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MPL-1.1',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'A C/C++ library to create, modify and read MP4 files',
 		'comment' => '
 The MP4v2 library provides an API to create and modify MP4 files as
@@ -2845,6 +3134,8 @@ practically any type of media.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'C library for reading and writing sound files',
 		'comment' => '
 libsndfile is a C library for reading and writing files containing sampled audio data.
@@ -2861,6 +3152,8 @@ libsndfile is a C library for reading and writing files containing sampled audio
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-only',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'C++ library for resampling audio signals',
 		'comment' => '
 Libzita-resampler is a C++ library for resampling audio signals. It is
@@ -2897,6 +3190,8 @@ can be seen <a href="https://kokkinizita.linuxaudio.org/linuxaudio/dithering.htm
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Productivity/Networking/Security',
 		'summary' => 'Embedded TLS Library',
 		'comment' => '
 The wolfSSL embedded TLS library is a lightweight, portable,
@@ -2921,6 +3216,8 @@ robust wolfCrypt cryptography library, and much more.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Open h.265 codec implementation',
 		'comment' => '
 libde265 is an open source implementation of the h.265 video codec. It
@@ -2945,6 +3242,8 @@ Original MiNT-Patch contributed by medmed.</br>
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'LGPL-3.0-or-later',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'HEIF and AVIF (AV1 Image File Format) file format decoder and encoder',
 		'comment' => '
 libheif is an ISO/IEC 23008-12:2017 HEIF and AVIF (AV1 Image File
@@ -2971,6 +3270,8 @@ codecs.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'System/Console',
 		'summary' => 'mtm is the Micro Terminal Multiplexer, a terminal multiplexer',
 		'comment' => '
 mtm is the Micro Terminal Multiplexer, a terminal multiplexer.</br>

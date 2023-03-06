@@ -4,6 +4,7 @@ $document_root = $_SERVER['DOCUMENT_ROOT'];
 if ($document_root != '')
 	$document_root .= '/';
 include($document_root . 'functions.php');
+include($document_root . 'licenses.php');
 
 require_once('RPM.php');
 
@@ -147,7 +148,7 @@ tagrow("Build Date", usertime($rpm->get_tag(RPMTAG_BUILDTIME), 'ddd MMM DD YYYY 
 tagrow("Relocations", $rpm->get_tag_as_string(RPMTAG_PREFIXES));
 tagrow("URL", $rpm->get_tag_as_string(RPMTAG_URL));
 tagrow("BUGURL", $rpm->get_tag_as_string(RPMTAG_BUGURL));
-tagrow("Licence", $rpm->get_tag_as_string(RPMTAG_LICENSE));
+tagrow("Licence", License::href($rpm->get_tag_as_string(RPMTAG_LICENSE)), false, false);
 tagrow("Signature", $rpm->get_signature(), false, false);
 tagrow("Download size", $rpm->filesize_string(filesize($filename)));
 tagrow("Installed size", $rpm->filesize_string($rpm->get_tag(RPMTAG_SIZE)));
