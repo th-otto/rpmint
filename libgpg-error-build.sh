@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=libgpg-error
-VERSION=-1.28
+VERSION=-1.46
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -15,9 +15,10 @@ ${TARGET_BINDIR#/}
 "
 
 PATCHES="
-patches/libgpg-error/libgpg-error-fix_aarch64.patch
 patches/libgpg-error/libgpg-error-mint.patch
-patches/libgpg-error/libgpg-error-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
@@ -26,9 +27,11 @@ cd "$MINT_BUILD_DIR"
 
 ./autogen.sh
 
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub
+
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared --disable-threads"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -42,6 +45,12 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
 	hack_lto_cflags
+	echo '#undef HAVE_PTHREAD_H' >> config.h
+	echo "#undef HAVE_PTHREAD_API" >> config.h
+	echo "#undef HAVE_PTHREAD_MUTEX_RECURSIVE" >> config.h
+	echo "#undef HAVE_PTHREAD_RWLOCK" >> config.h
+	echo "#undef SIZEOF_PTHREAD_MUTEX_T" >> config.h
+	echo "#undef USE_POSIX_THREADS" >> config.h
 
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
@@ -52,7 +61,7 @@ for CPU in ${ALL_CPUS}; do
 	rm -f ${TARGET_BINDIR#/}/gpg-error-config
 	rm -f ${TARGET_BINDIR#/}/gpgrt-config
 	# remove useless manpage for gpg-error-config
-	rm -rf ${TARGET_PREFIX#/}/share/man
+	rm -rf ${TARGET_PREFIX#/}/share/man/*/gpg-error-config*
 	make_bin_archive $CPU
 done
 

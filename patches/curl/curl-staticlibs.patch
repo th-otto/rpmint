@@ -10,3 +10,19 @@ diff -rupN curl-7.56.0.orig/libcurl.pc.in curl-7.56.0/libcurl.pc.in
 +Libs: -L${libdir} -lcurl @LIBCURL_LIBS@
 +Libs.private:
  Cflags: -I${includedir} @CPPFLAG_CURL_STATICLIB@
+--- a/configure.ac.orig	2023-03-07 07:02:00.799284557 +0100
++++ b/configure.ac	2023-03-07 07:42:30.591324477 +0100
+@@ -2523,10 +2523,12 @@
+   AC_SEARCH_LIBS(psl_builtin, psl,
+     [curl_psl_msg="yes";
+      AC_DEFINE([USE_LIBPSL], [1], [PSL support enabled])
++     LIBS="$LIBS -lidn2 -lunistring -liconv"
+      ],
+     [curl_psl_msg="no      (libpsl not found)";
+      AC_MSG_WARN([libpsl was not found])
+-     ]
++     ],
++     [-lidn2 -lunistring -liconv]
+   )
+ fi
+ AM_CONDITIONAL([USE_LIBPSL], [test "$curl_psl_msg" = "yes"])

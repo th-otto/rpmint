@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=libassuan
-VERSION=-2.5.1
+VERSION=-2.5.5
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -13,7 +13,11 @@ VERSIONPATCH=
 BINFILES=""
 
 PATCHES="
-patches/libassuan/libassuan-mintelf-config.patch
+patches/${PACKAGENAME}/libassuan-time-include.patch
+"
+
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
@@ -21,6 +25,7 @@ unpack_archive
 cd "$MINT_BUILD_DIR"
 
 ./autogen.sh
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub || exit 1
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
@@ -38,7 +43,8 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
 	hack_lto_cflags
-
+	echo '#undef HAVE_PTHREAD_H' >> config.h
+	
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
 	mkdir -p ${THISPKG_DIR}${sysroot}${prefix}/bin

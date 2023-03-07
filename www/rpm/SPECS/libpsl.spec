@@ -11,7 +11,7 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        0.18.0
+Version:        0.21.2
 Release:        1
 License:        MIT AND MPL-2.0 AND BSD-3-Clause
 Group:          Development/Libraries/C and C++
@@ -23,9 +23,10 @@ Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://github.com/rockdaboot/libpsl/releases/download/%{pkgname}-%{version}/libpsl-%{version}.tar.gz
+Source0: https://github.com/rockdaboot/libpsl/releases/download/%{pkgname}-%{version}/libpsl-%{version}.tar.lz
 Source1: patches/automake/mintelf-config.sub
 Patch0: patches/%{pkgname}/libpsl-mint-no-langinfo.patch
+Patch1: patches/%{pkgname}/libpsl-staticlibs.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -68,6 +69,7 @@ and sorting domain lists by site.
 %prep
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
+%patch1 -p1
 
 # autoreconf may have overwritten config.sub
 cp %{S:1} config.sub

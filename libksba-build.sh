@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=libksba
-VERSION=-1.3.5
+VERSION=-1.6.3
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -13,8 +13,8 @@ VERSIONPATCH=
 BINFILES="
 "
 
-PATCHES="
-patches/libksba/libksab-mintelf-config.patch
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
@@ -22,6 +22,8 @@ unpack_archive
 cd "$MINT_BUILD_DIR"
 
 ./autogen.sh
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub || exit 1
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 

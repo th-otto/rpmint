@@ -10,7 +10,10 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/gettext/gettext-mintelf-config.patch
+patches/${PACKAGENAME}/gettext-gnulib.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -26,7 +29,14 @@ unpack_archive
 
 cd "$srcdir"
 
+(
+ cd m4
+ rm -f init.m4 amversion.m4 ar-lib.m4 cond.m4 depend.m4 depout.m4 auxdir.m4 install-sh.m4 lispdir.m4 make.m4 missing.m4 options.m4 prog-cc-c-o.m4 runlog.m4 sanity.m4 silent.m4 strip.m4 substnot.m4 tar.m4
+)
+
 ./autogen.sh || exit 1
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub || exit 1
 
 cd "$MINT_BUILD_DIR"
 

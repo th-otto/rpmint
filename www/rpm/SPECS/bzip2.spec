@@ -69,6 +69,9 @@ Install bzip2 if you need a compression utility.
 Summary:        Header files and libraries for developing apps which will use bzip2.
 Group:          Development/Libraries/C and C++
 Requires:       bzip2 = %{version}
+%if "%{buildtype}" != "cross"
+Provides:       libbz2-devel = %{version}
+%endif
 
 %description devel
 Header files and a static library of bzip2 functions, for developing apps

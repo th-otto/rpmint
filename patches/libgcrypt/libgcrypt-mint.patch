@@ -1,7 +1,7 @@
-diff -rup libgcrypt-1.8.2.orig/m4/gpg-error.m4 libgcrypt-1.8.2/m4/gpg-error.m4
---- libgcrypt-1.8.2.orig/m4/gpg-error.m4	2017-11-23 19:16:58.000000000 +0100
-+++ libgcrypt-1.8.2/m4/gpg-error.m4	2018-04-02 13:29:53.378746898 +0200
-@@ -26,92 +26,20 @@ dnl is added to the gpg_config_script_wa
+diff -rupN libgcrypt-1.10.1.orig/m4/gpg-error.m4 libgcrypt-1.10.1/m4/gpg-error.m4
+--- libgcrypt-1.10.1.orig/m4/gpg-error.m4	2022-03-14 11:35:04.000000000 +0100
++++ libgcrypt-1.10.1/m4/gpg-error.m4	2023-03-07 13:36:20.048834400 +0100
+@@ -27,178 +27,22 @@ dnl is added to the gpg_config_script_wa
  dnl
  AC_DEFUN([AM_PATH_GPG_ERROR],
  [ AC_REQUIRE([AC_CANONICAL_HOST])
@@ -10,7 +10,7 @@ diff -rup libgcrypt-1.8.2.orig/m4/gpg-error.m4 libgcrypt-1.8.2/m4/gpg-error.m4
 -  dnl since that is consistent with how our three siblings use the directory/
 -  dnl package name in --with-$dir_name-prefix=PFX.
 -  AC_ARG_WITH(libgpg-error-prefix,
--              AC_HELP_STRING([--with-libgpg-error-prefix=PFX],
+-              AS_HELP_STRING([--with-libgpg-error-prefix=PFX],
 -                             [prefix where GPG Error is installed (optional)]),
 -              [gpg_error_config_prefix="$withval"])
 -
@@ -41,16 +41,90 @@ diff -rup libgcrypt-1.8.2.orig/m4/gpg-error.m4 libgcrypt-1.8.2/m4/gpg-error.m4
 -
 -  AC_PATH_PROG(GPG_ERROR_CONFIG, gpg-error-config, no)
 +  AC_REQUIRE([PKG_CHECK_EXISTS])
-   min_gpg_error_version=ifelse([$1], ,0.0,$1)
--  AC_MSG_CHECKING(for GPG Error - version >= $min_gpg_error_version)
+   min_gpg_error_version=ifelse([$1], ,1.33,$1)
    ok=no
--  if test "$GPG_ERROR_CONFIG" != "no" \
--     && test -f "$GPG_ERROR_CONFIG" ; then
+ 
+-  AC_PATH_PROG(GPGRT_CONFIG, gpgrt-config, no, [$prefix/bin:$PATH])
+-  if test "$GPGRT_CONFIG" != "no"; then
+-    # Determine gpgrt_libdir
+-    #
+-    # Get the prefix of gpgrt-config assuming it's something like:
+-    #   <PREFIX>/bin/gpgrt-config
+-    gpgrt_prefix=${GPGRT_CONFIG%/*/*}
+-    possible_libdir1=${gpgrt_prefix}/lib
+-    # Determine by using system libdir-format with CC, it's like:
+-    #   Normal style: /usr/lib
+-    #   GNU cross style: /usr/<triplet>/lib
+-    #   Debian style: /usr/lib/<multiarch-name>
+-    #   Fedora/openSUSE style: /usr/lib, /usr/lib32 or /usr/lib64
+-    # It is assumed that CC is specified to the one of host on cross build.
+-    if libdir_candidates=$(${CC:-cc} -print-search-dirs | \
+-          sed -n -e "/^libraries/{s/libraries: =//;s/:/\\
+-/g;p;}"); then
+-      # From the output of -print-search-dirs, select valid pkgconfig dirs.
+-      libdir_candidates=$(for dir in $libdir_candidates; do
+-        if p=$(cd $dir 2>/dev/null && pwd); then
+-          test -d "$p/pkgconfig" && echo $p;
+-        fi
+-      done)
+-
+-      for possible_libdir0 in $libdir_candidates; do
+-        # possible_libdir0:
+-        #   Fallback candidate, the one of system-installed (by $CC)
+-        #   (/usr/<triplet>/lib, /usr/lib/<multiarch-name> or /usr/lib32)
+-        # possible_libdir1:
+-        #   Another candidate, user-locally-installed
+-        #   (<gpgrt_prefix>/lib)
+-        # possible_libdir2
+-        #   Most preferred
+-        #   (<gpgrt_prefix>/<triplet>/lib,
+-        #    <gpgrt_prefix>/lib/<multiarch-name> or <gpgrt_prefix>/lib32)
+-        if test "${possible_libdir0##*/}" = "lib"; then
+-          possible_prefix0=${possible_libdir0%/lib}
+-          possible_prefix0_triplet=${possible_prefix0##*/}
+-          if test -z "$possible_prefix0_triplet"; then
+-            continue
+-          fi
+-          possible_libdir2=${gpgrt_prefix}/$possible_prefix0_triplet/lib
+-        else
+-          possible_prefix0=${possible_libdir0%%/lib*}
+-          possible_libdir2=${gpgrt_prefix}${possible_libdir0#$possible_prefix0}
+-        fi
+-        if test -f ${possible_libdir2}/pkgconfig/gpg-error.pc; then
+-          gpgrt_libdir=${possible_libdir2}
+-        elif test -f ${possible_libdir1}/pkgconfig/gpg-error.pc; then
+-          gpgrt_libdir=${possible_libdir1}
+-        elif test -f ${possible_libdir0}/pkgconfig/gpg-error.pc; then
+-          gpgrt_libdir=${possible_libdir0}
+-        fi
+-        if test -n "$gpgrt_libdir"; then break; fi
+-      done
+-    else
+-      # When we cannot determine system libdir-format, use this:
+-      gpgrt_libdir=${possible_libdir1}
+-    fi
+-  else
+-    unset GPGRT_CONFIG
+-  fi
+-
+-  if test -n "$gpgrt_libdir"; then
+-    GPGRT_CONFIG="$GPGRT_CONFIG --libdir=$gpgrt_libdir"
+-    if $GPGRT_CONFIG gpg-error >/dev/null 2>&1; then
+-      GPG_ERROR_CONFIG="$GPGRT_CONFIG gpg-error"
+-      AC_MSG_NOTICE([Use gpgrt-config with $gpgrt_libdir as gpg-error-config])
+-      gpg_error_config_version=`$GPG_ERROR_CONFIG --modversion`
+-    else
+-      unset GPGRT_CONFIG
+-    fi
+-  elif test "$GPG_ERROR_CONFIG" != "no"; then
+-    gpg_error_config_version=`$GPG_ERROR_CONFIG --version`
+-    unset GPGRT_CONFIG
+-  fi
+-  if test "$GPG_ERROR_CONFIG" != "no"; then
 -    req_major=`echo $min_gpg_error_version | \
 -               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
 -    req_minor=`echo $min_gpg_error_version | \
 -               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
--    gpg_error_config_version=`$GPG_ERROR_CONFIG $gpg_error_config_args --version`
 -    major=`echo $gpg_error_config_version | \
 -               sed 's/\([[0-9]]*\)\.\([[0-9]]*\).*/\1/'`
 -    minor=`echo $gpg_error_config_version | \
@@ -66,25 +140,37 @@ diff -rup libgcrypt-1.8.2.orig/m4/gpg-error.m4 libgcrypt-1.8.2/m4/gpg-error.m4
 -    fi
 -  fi
 +  PKG_CHECK_MODULES(GPG_ERROR, [libgpg-error >= $min_gpg_error_version], [ok=yes])
+   AC_MSG_CHECKING(for GPG Error - version >= $min_gpg_error_version)
    if test $ok = yes; then
--    GPG_ERROR_CFLAGS=`$GPG_ERROR_CONFIG $gpg_error_config_args --cflags`
--    GPG_ERROR_LIBS=`$GPG_ERROR_CONFIG $gpg_error_config_args --libs`
--    GPG_ERROR_MT_CFLAGS=`$GPG_ERROR_CONFIG $gpg_error_config_args --mt --cflags 2>/dev/null`
--    GPG_ERROR_MT_LIBS=`$GPG_ERROR_CONFIG $gpg_error_config_args --mt --libs 2>/dev/null`
+-    GPG_ERROR_CFLAGS=`$GPG_ERROR_CONFIG --cflags`
+-    GPG_ERROR_LIBS=`$GPG_ERROR_CONFIG --libs`
+-    if test -z "$GPGRT_CONFIG"; then
+-      GPG_ERROR_MT_CFLAGS=`$GPG_ERROR_CONFIG --mt --cflags 2>/dev/null`
+-      GPG_ERROR_MT_LIBS=`$GPG_ERROR_CONFIG --mt --libs 2>/dev/null`
+-    else
+-      GPG_ERROR_MT_CFLAGS=`$GPG_ERROR_CONFIG --variable=mtcflags 2>/dev/null`
+-      GPG_ERROR_MT_CFLAGS="$GPG_ERROR_CFLAGS${GPG_ERROR_CFLAGS:+ }$GPG_ERROR_MT_CFLAGS"
+-      GPG_ERROR_MT_LIBS=`$GPG_ERROR_CONFIG --variable=mtlibs 2>/dev/null`
+-      GPG_ERROR_MT_LIBS="$GPG_ERROR_LIBS${GPG_ERROR_LIBS:+ }$GPG_ERROR_MT_LIBS"
+-    fi
 -    AC_MSG_RESULT([yes ($gpg_error_config_version)])
 +    GPG_ERROR_MT_CFLAGS="$GPG_ERROR_CFLAGS"
 +    GPG_ERROR_MT_LIBS="$GPG_ERROR_LIBS"
 +    AC_CHECK_LIB(pthread, pthread_create, GPG_ERROR_MT_LIBS="$GPG_MT_ERROR_LIBS -lpthread")
      ifelse([$2], , :, [$2])
--    gpg_error_config_host=`$GPG_ERROR_CONFIG $gpg_error_config_args --host 2>/dev/null || echo none`
+-    if test -z "$GPGRT_CONFIG"; then
+-      gpg_error_config_host=`$GPG_ERROR_CONFIG --host 2>/dev/null || echo none`
+-    else
+-      gpg_error_config_host=`$GPG_ERROR_CONFIG --variable=host 2>/dev/null || echo none`
+-    fi
 -    if test x"$gpg_error_config_host" != xnone ; then
 -      if test x"$gpg_error_config_host" != x"$host" ; then
 -  AC_MSG_WARN([[
 -***
--*** The config script $GPG_ERROR_CONFIG was
+-*** The config script "$GPG_ERROR_CONFIG" was
 -*** built for $gpg_error_config_host and thus may not match the
 -*** used host $host.
--*** You may want to use the configure option --with-gpg-error-prefix
+-*** You may want to use the configure option --with-libgpg-error-prefix
 -*** to specify a matching config script or use \$SYSROOT.
 -***]])
 -        gpg_config_script_warn="$gpg_config_script_warn libgpg-error"
@@ -99,10 +185,10 @@ diff -rup libgcrypt-1.8.2.orig/m4/gpg-error.m4 libgcrypt-1.8.2/m4/gpg-error.m4
      ifelse([$3], , :, [$3])
    fi
    AC_SUBST(GPG_ERROR_CFLAGS)
-diff -rup libgcrypt-1.8.2.orig/random/random-drbg.c libgcrypt-1.8.2/random/random-drbg.c
---- libgcrypt-1.8.2.orig/random/random-drbg.c	2017-11-23 19:16:58.000000000 +0100
-+++ libgcrypt-1.8.2/random/random-drbg.c	2018-04-02 13:33:42.406741914 +0200
-@@ -1971,7 +1971,7 @@ _gcry_rngdrbg_randomize (void *buffer, s
+diff -rup libgcrypt-1.10.1.orig/random/random-drbg.c libgcrypt-1.10.1/random/random-drbg.c
+--- libgcrypt-1.10.1.orig/random/random-drbg.c	2022-01-25 22:55:44.000000000 +0100
++++ libgcrypt-1.10.1/random/random-drbg.c	2023-03-07 13:29:15.037463526 +0100
+@@ -1985,7 +1985,7 @@ _gcry_rngdrbg_randomize (void *buffer, s
   * Test vectors from
   * http://csrc.nist.gov/groups/STM/cavp/documents/drbg/drbgtestvectors.zip
   */
@@ -111,7 +197,7 @@ diff -rup libgcrypt-1.8.2.orig/random/random-drbg.c libgcrypt-1.8.2/random/rando
    {
      /* .flags = */ "sha256 pr" /* DRBG_PR_HASHSHA256 */,
      /* .entropy = */ (unsigned char *)
-@@ -2100,7 +2100,7 @@ struct gcry_drbg_test_vector drbg_test_p
+@@ -2114,7 +2114,7 @@ struct gcry_drbg_test_vector drbg_test_p
     }
  };
  
@@ -120,68 +206,20 @@ diff -rup libgcrypt-1.8.2.orig/random/random-drbg.c libgcrypt-1.8.2/random/rando
    {
      /* .flags = */ "sha256" /* DRBG_NOPR_HASHSHA256 */,
      /* .entropy = */ (unsigned char *)
-diff -rup libgcrypt-1.8.2.orig/src/fips.c libgcrypt-1.8.2/src/fips.c
---- libgcrypt-1.8.2.orig/src/fips.c	2018-04-02 13:14:57.966766383 +0200
-+++ libgcrypt-1.8.2/src/fips.c	2018-04-02 13:24:11.150754345 +0200
-@@ -592,6 +592,7 @@ run_random_selftests (void)
-   return !!err;
- }
- 
-+#ifdef ENABLE_HMAC_BINARY_CHECK
- static int
- get_library_path(const char *libname, const char *symbolname, char *path, size_t pathlen)
- {
-@@ -616,6 +617,7 @@ get_library_path(const char *libname, co
-     
-     return rv;
- }
-+#endif
- 
- /* Run an integrity check on the binary.  Returns 0 on success.  */
- static int
-diff -rup libgcrypt-1.8.2.orig/tests/drbg_test.c libgcrypt-1.8.2/tests/drbg_test.c
---- libgcrypt-1.8.2.orig/tests/drbg_test.c	2018-04-02 13:14:57.978766382 +0200
-+++ libgcrypt-1.8.2/tests/drbg_test.c	2018-04-02 13:33:42.406741914 +0200
-@@ -15,7 +15,6 @@
- #include <stdint.h>
- #include <stdio.h>
- #include <stdlib.h>
--#include <asm/types.h>
- #include <types.h>
- #include <unistd.h>
- #include "gcrypt.h"
-@@ -201,7 +200,7 @@ struct gcry_drbg_test_vector
- 	size_t expectedlen;	/* length of expected random value */
- };
- 
--struct gcry_drbg_test_vector drbg_test_pr[] = {
-+static struct gcry_drbg_test_vector drbg_test_pr[] = {
- 	{
- 		.flags = (DRBG_PR_HASHSHA256),
- 		.entropy = (unsigned char *)
-@@ -630,7 +629,7 @@ struct gcry_drbg_test_vector drbg_test_p
- 	},
- };
- 
--struct gcry_drbg_test_vector drbg_test_nopr[] = {
-+static struct gcry_drbg_test_vector drbg_test_nopr[] = {
- 	{
- 		.flags = DRBG_NOPR_HASHSHA256,
- 		.entropy = (unsigned char *)
-diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
---- libgcrypt-1.8.2.orig/tests/t-lock.c	2017-11-23 19:16:58.000000000 +0100
-+++ libgcrypt-1.8.2/tests/t-lock.c	2018-04-02 13:26:09.262751775 +0200
-@@ -27,6 +27,9 @@
- #include <assert.h>
+diff -rup libgcrypt-1.10.1.orig/tests/t-lock.c libgcrypt-1.10.1/tests/t-lock.c
+--- libgcrypt-1.10.1.orig/tests/t-lock.c	2021-02-12 12:23:24.000000000 +0100
++++ libgcrypt-1.10.1/tests/t-lock.c	2023-03-07 13:30:36.945342281 +0100
+@@ -28,6 +28,9 @@
  #include <errno.h>
  #include <unistd.h>
+ #include <time.h>
 +
 +#if defined(HAVE_PTHREAD) || defined(_WIN32)
 +
  #if HAVE_PTHREAD
  # include <pthread.h>
  #endif
-@@ -456,3 +459,12 @@ main (int argc, char **argv)
+@@ -463,3 +466,12 @@ main (int argc, char **argv)
  
    return error_count ? 1 : 0;
  }
@@ -194,9 +232,10 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
 +}
 +
 +#endif
---- libgcrypt-1.8.2.orig/mpi/m68k/mpih-add1.S	2017-11-23 19:16:58.000000000 +0100
-+++ libgcrypt-1.8.2/mpi/m68k/mpih-add1.S	2018-04-02 13:47:47.942723515 +0200
-@@ -57,7 +57,11 @@
+diff -rupN libgcrypt-1.10.1.orig/mpi/m68k/mpih-add1.S libgcrypt-1.10.1/mpi/m68k/mpih-add1.S
+--- libgcrypt-1.10.1.orig/mpi/m68k/mpih-add1.S	2013-03-15 20:25:38.000000000 +0100
++++ libgcrypt-1.10.1/mpi/m68k/mpih-add1.S	2023-03-07 13:29:21.753453584 +0100
+@@ -57,7 +57,11 @@ PROLOG(_gcry_mpih_add_n)
  	movel	MEM_DISP(sp,20),R(a1)
  	movel	MEM_DISP(sp,24),R(d2)
  
@@ -208,7 +247,7 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  	lsrl	#1,R(d2)
  	bcc	L(L1)
  	subql	#1,R(d2)	/* clears cy as side effect */
-@@ -72,12 +76,21 @@
+@@ -72,12 +76,21 @@ L(L1:)	movel	MEM_POSTINC(a0),R(d0)
  	addxl	R(d1),R(d0)
  	movel	R(d0),MEM_POSTINC(a2)
  
@@ -230,9 +269,10 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  
  L(L2:)
  	negl	R(d0)
---- libgcrypt-1.8.2.orig/mpi/m68k/mpih-sub1.S	2017-11-23 19:16:58.000000000 +0100
-+++ libgcrypt-1.8.2/mpi/m68k/mpih-sub1.S	2018-04-02 13:53:02.646716666 +0200
-@@ -56,7 +56,11 @@
+diff -rupN libgcrypt-1.10.1.orig/mpi/m68k/mpih-sub1.S libgcrypt-1.10.1/mpi/m68k/mpih-sub1.S
+--- libgcrypt-1.10.1.orig/mpi/m68k/mpih-sub1.S	2013-03-15 20:25:38.000000000 +0100
++++ libgcrypt-1.10.1/mpi/m68k/mpih-sub1.S	2023-03-07 13:29:21.753453584 +0100
+@@ -56,7 +56,11 @@ PROLOG(_gcry_mpih_sub_n)
  	movel	MEM_DISP(sp,20),R(a1)
  	movel	MEM_DISP(sp,24),R(d2)
  
@@ -244,7 +284,7 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  	lsrl	#1,R(d2)
  	bcc	L(L1)
  	subql	#1,R(d2)	/* clears cy as side effect */
-@@ -71,12 +75,21 @@
+@@ -71,12 +75,21 @@ L(L1:)	movel	MEM_POSTINC(a0),R(d0)
  	subxl	R(d1),R(d0)
  	movel	R(d0),MEM_POSTINC(a2)
  
@@ -266,9 +306,10 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  
  L(L2:)
  	negl	R(d0)
---- libgcrypt-1.8.2.orig/mpi/m68k/mpih-lshift.S	2017-11-23 19:16:58.000000000 +0100
-+++ libgcrypt-1.8.2/mpi/m68k/mpih-lshift.S	2018-04-02 14:07:43.458231337 +0200
-@@ -51,7 +51,12 @@
+diff -rupN libgcrypt-1.10.1.orig/mpi/m68k/mpih-lshift.S libgcrypt-1.10.1/mpi/m68k/mpih-lshift.S
+--- libgcrypt-1.10.1.orig/mpi/m68k/mpih-lshift.S	2013-03-15 20:25:38.000000000 +0100
++++ libgcrypt-1.10.1/mpi/m68k/mpih-lshift.S	2023-03-07 13:29:21.753453584 +0100
+@@ -51,7 +51,12 @@ C_SYMBOL_NAME(_gcry_mpih_lshift:)
  PROLOG(_gcry_mpih_lshift)
  
  	/* Save used registers on the stack.  */
@@ -281,7 +322,7 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  
  	/* Copy the arguments to registers.  */
  	movel	MEM_DISP(sp,28),R(res_ptr)
-@@ -114,15 +119,25 @@
+@@ -114,15 +119,25 @@ L(L1:)
  	movel	R(d2),MEM_PREDEC(res_ptr)
  	lsll	R(cnt),R(d1)
  
@@ -307,7 +348,7 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  	rts
  
  /* We loop from least significant end of the arrays, which is only
-@@ -131,7 +146,11 @@
+@@ -131,7 +146,11 @@ L(Lend:)
  
  L(Lspecial:)
  	clrl	R(d0)			/* initialize carry */
@@ -319,7 +360,7 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  	lsrl	#1,R(s_size)
  	bcc	L(LL1)
  	subql	#1,R(s_size)
-@@ -145,16 +164,29 @@
+@@ -145,16 +164,29 @@ L(LL1:)
  	addxl	R(d2),R(d2)
  	movel	R(d2),MEM_POSTINC(res_ptr)
  
@@ -349,8 +390,9 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  	rts
  EPILOG(_gcry_mpih_lshift)
  
---- libgcrypt-1.8.2.orig/mpi/m68k/mpih-rshift.S	2017-11-23 19:16:58.000000000 +0100
-+++ libgcrypt-1.8.2/mpi/m68k/mpih-rshift.S	2018-04-02 14:18:38.074217093 +0200
+diff -rupN libgcrypt-1.10.1.orig/mpi/m68k/mpih-rshift.S libgcrypt-1.10.1/mpi/m68k/mpih-rshift.S
+--- libgcrypt-1.10.1.orig/mpi/m68k/mpih-rshift.S	2013-03-15 20:25:38.000000000 +0100
++++ libgcrypt-1.10.1/mpi/m68k/mpih-rshift.S	2023-03-07 13:29:21.757453578 +0100
 @@ -50,7 +50,12 @@
  C_SYMBOL_NAME(_gcry_mpih_rshift:)
  PROLOG(_gcry_mpih_rshift)
@@ -364,7 +406,7 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  
  	/* Copy the arguments to registers.  */
  	movel	MEM_DISP(sp,28),R(res_ptr)
-@@ -103,15 +108,25 @@
+@@ -103,15 +108,25 @@ L(R1:)
  	movel	R(d2),MEM_POSTINC(res_ptr)
  	lsrl	R(cnt),R(d1)
  
@@ -390,7 +432,7 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  	rts
  
  /* We loop from most significant end of the arrays, which is only
-@@ -130,30 +145,54 @@
+@@ -130,30 +145,54 @@ L(Rspecial:)
  #endif
  
  	clrl	R(d0)			/* initialize carry */
@@ -445,8 +487,9 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  	rts
  EPILOG(_gcry_mpih_rshift)
  
---- libgcrypt-1.8.2.orig/mpi/m68k/syntax.h	2017-11-23 19:16:58.000000000 +0100
-+++ libgcrypt-1.8.2/mpi/m68k/syntax.h	2018-04-02 14:43:33.098184560 +0200
+diff -rupN libgcrypt-1.10.1.orig/mpi/m68k/syntax.h libgcrypt-1.10.1/mpi/m68k/syntax.h
+--- libgcrypt-1.10.1.orig/mpi/m68k/syntax.h	2013-03-15 20:25:38.000000000 +0100
++++ libgcrypt-1.10.1/mpi/m68k/syntax.h	2023-03-07 13:29:21.757453578 +0100
 @@ -32,13 +32,20 @@
  #ifdef MIT_SYNTAX
  #define PROLOG(name)
@@ -474,9 +517,10 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  #define L(label) label
  #define TEXT .text
  #define ALIGN .even
---- libgcrypt-1.8.2.orig/mpi/config.links	2018-04-02 13:14:57.958766383 +0200
-+++ libgcrypt-1.8.2/mpi/config.links	2018-04-02 14:59:36.618163593 +0200
-@@ -274,7 +274,7 @@
+diff -rup libgcrypt-1.10.1.orig/mpi/config.links libgcrypt-1.10.1/mpi/config.links
+--- libgcrypt-1.10.1.orig/mpi/config.links	2022-01-25 22:55:44.000000000 +0100
++++ libgcrypt-1.10.1/mpi/config.links	2023-03-07 13:29:21.757453578 +0100
+@@ -245,7 +245,7 @@ case "${host}" in
  	path="m68k"
          mpi_cpu_arch="m68k"
  	;;
@@ -485,3 +529,24 @@ diff -rup libgcrypt-1.8.2.orig/tests/t-lock.c libgcrypt-1.8.2/tests/t-lock.c
  	echo '#define MIT_SYNTAX'           >>./mpi/asm-syntax.h
  	cat  $srcdir/mpi/m68k/syntax.h	    >>./mpi/asm-syntax.h
  	path="m68k"
+--- a/acinclude.m4.orig	2023-03-07 14:45:51.422594993 +0100
++++ b/acinclude.m4	2023-03-07 14:55:34.809727367 +0100
+@@ -111,9 +111,7 @@
+         ac_cv_sys_symbol_underscore=yes
+         ;;
+     *)
+-      if test "$cross_compiling" != yes; then
+          tmp_do_check="yes"
+-      fi
+       ;;
+ esac
+ if test "$tmp_do_check" = "yes"; then
+@@ -123,7 +121,7 @@
+   [ac_cv_sys_symbol_underscore=no
+    cat > conftest.$ac_ext <<EOF
+       void nm_test_func(){}
+-      int main(){nm_test_func;return 0;}
++      int main(){nm_test_func();return 0;}
+ EOF
+   if AC_TRY_EVAL(ac_compile); then
+     # Now try to grab the symbols.

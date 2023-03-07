@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=libgcrypt
-VERSION=-1.8.2
+VERSION=-1.10.1
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -17,22 +17,18 @@ ${TARGET_PREFIX#/}/share/info/*
 "
 
 PATCHES="
-patches/libgcrypt/libgcrypt-ppc64.patch
-patches/libgcrypt/libgcrypt-strict-aliasing.patch
-patches/libgcrypt/libgcrypt-1.4.1-rijndael_no_strict_aliasing.patch
-patches/libgcrypt/libgcrypt-sparcv9.diff
-patches/libgcrypt/libgcrypt-unresolved-dladdr.patch
-patches/libgcrypt/libgcrypt-1.5.0-LIBGCRYPT_FORCE_FIPS_MODE-env.diff
-patches/libgcrypt/libgcrypt-1.6.1-use-fipscheck.patch
-patches/libgcrypt/libgcrypt-1.6.1-fips-cavs.patch
-patches/libgcrypt/libgcrypt-1.6.1-fips-cfgrandom.patch
-patches/libgcrypt/libgcrypt-fix-rng.patch
-patches/libgcrypt/libgcrypt-init-at-elf-load-fips.patch
-patches/libgcrypt/libgcrypt-drbg_test.patch
-patches/libgcrypt/libgcrypt-fips_run_selftest_at_constructor.patch
-patches/libgcrypt/libgcrypt-1.6.3-aliasing.patch
+patches/libgcrypt/libgcrypt-1.10.0-allow_FSM_same_state.patch
+patches/libgcrypt/libgcrypt-FIPS-SLI-pk.patch
+patches/libgcrypt/libgcrypt-FIPS-SLI-hash-mac.patch
+patches/libgcrypt/libgcrypt-FIPS-SLI-kdf-leylength.patch
+patches/libgcrypt/libgcrypt-1.10.0-out-of-core-handler.patch
+patches/libgcrypt/libgcrypt-jitterentropy-3.4.0.patch
+patches/libgcrypt/libgcrypt-FIPS-rndjent_poll.patch
+patches/libgcrypt/libgcrypt-1.10.0-use-fipscheck.patch
 patches/libgcrypt/libgcrypt-mint.patch
-patches/libgcrypt/libgcrypt-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
@@ -40,6 +36,8 @@ unpack_archive
 cd "$MINT_BUILD_DIR"
 
 ./autogen.sh
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub || exit 1
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
@@ -59,6 +57,7 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
 	hack_lto_cflags
+	echo "#undef HAVE_PTHREAD" >> config.h
 
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install

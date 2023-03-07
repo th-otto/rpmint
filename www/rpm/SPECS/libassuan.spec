@@ -1,31 +1,31 @@
-%define pkgname libpng
+%define pkgname libassuan
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Library for the Portable Network Graphics Format (PNG)
+Summary:        IPC library used by GnuPG version 2
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.6.39
+Version:        2.5.5
 Release:        1
-License:        Zlib
+License:        GPL-3.0-or-later and LGPL-2.1-or-later
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://www.libpng.org/pub/png/libpng.html
+URL:            http://www.gnupg.org/related_software/libassuan/index.en.html
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://ftp-osl.osuosl.org/pub/%{pkgname}/src/libpng16/%{pkgname}-%{version}.tar.xz
+Source0: ftp://ftp.gnupg.org/gcrypt/libassuan/%{pkgname}-%{version}.tar.bz2
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/libpng-1.6.34-0001-config.patch
+Patch0:  patches/%{pkgname}/libassuan-time-include.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -35,11 +35,9 @@ BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
+BuildRequires:  cross-mint-libgpg-error
 %else
-BuildRequires:  pkgconfig(zlib)
-Provides:       libpng = %{version}
-Provides:       libpng-devel = %{version}
+BuildRequires:  libgpg-error-devel
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -58,16 +56,15 @@ BuildArch:      noarch
 %endif
 
 %description
-libpng is the official reference library for the Portable Network
-Graphics format (PNG).
+Libassuan is the IPC library used by gpg2 (GnuPG version 2)
 
 %prep
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 
-cp %{S:1} config.sub
+./autogen.sh
 
-sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
+cp %{S:1} build-aux/config.sub
 
 %build
 
@@ -75,17 +72,8 @@ sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
     --disable-shared
-    --config-cache
-    --without-binconfigs
 "
-
-create_config_cache()
-{
-cat <<EOF >config.cache
-EOF
-}
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -94,22 +82,22 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
-	create_config_cache
-
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
+	echo '#undef HAVE_PTHREAD_H' >> config.h
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
 	# compress manpages
 	%rpmint_gzip_docs
+	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
+	rm -f %{buildroot}%{_rpmint_bindir}/libassuan-config
+	rmdir %{buildroot}%{_rpmint_bindir} || :
 	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
-	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
-	rm -f %{buildroot}%{_rpmint_bindir}/libpng*-config
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -144,13 +132,11 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %files
 %defattr(-,root,root)
 %if "%{buildtype}" == "cross"
-%{_rpmint_bindir}
 %{_rpmint_includedir}
 %{_rpmint_libdir}
 %{_rpmint_cross_pkgconfigdir}
 %{_rpmint_datadir}
 %else
-%{_rpmint_target_prefix}/bin
 %{_rpmint_target_prefix}/include
 %{_rpmint_target_prefix}/lib
 %{_rpmint_target_prefix}/share
@@ -159,5 +145,5 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
+* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

@@ -1,31 +1,31 @@
-%define pkgname libpng
+%define pkgname libgpg-error
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Library for the Portable Network Graphics Format (PNG)
+Summary:        Library That Defines Common Error Values for All GnuPG Components
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.6.39
+Version:        1.46
 Release:        1
-License:        Zlib
+License:        GPL-2.0-or-later and LGPL-2.1-or-later
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://www.libpng.org/pub/png/libpng.html
+URL:            http://www.gnupg.org/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://ftp-osl.osuosl.org/pub/%{pkgname}/src/libpng16/%{pkgname}-%{version}.tar.xz
+Source0: ftp://ftp.gnupg.org/gcrypt/libgpg-error/%{pkgname}-%{version}.tar.bz2
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/libpng-1.6.34-0001-config.patch
+Patch0:  patches/%{pkgname}/libgpg-error-mint.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -34,13 +34,6 @@ BuildRequires:  libtool
 BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
-%if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
-%else
-BuildRequires:  pkgconfig(zlib)
-Provides:       libpng = %{version}
-Provides:       libpng-devel = %{version}
-%endif
 
 %if "%{buildtype}" == "cross"
 BuildArch:      noarch
@@ -58,16 +51,17 @@ BuildArch:      noarch
 %endif
 
 %description
-libpng is the official reference library for the Portable Network
-Graphics format (PNG).
+This is a library that defines common error values for all GnuPG
+components.  Among these are GPG, GPGSM, GPGME, GPG-Agent, libgcrypt,
+pinentry, SmartCard Daemon, and possibly more in the future.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 
-cp %{S:1} config.sub
+./autogen.sh
 
-sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
+cp %{S:1} build-aux/config.sub
 
 %build
 
@@ -75,17 +69,9 @@ sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
     --disable-shared
-    --config-cache
-    --without-binconfigs
+    --disable-threads
 "
-
-create_config_cache()
-{
-cat <<EOF >config.cache
-EOF
-}
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -94,22 +80,46 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
-	create_config_cache
-
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
+	echo '#undef HAVE_PTHREAD_H' >> config.h
+	echo "#undef HAVE_PTHREAD_API" >> config.h
+	echo "#undef HAVE_PTHREAD_MUTEX_RECURSIVE" >> config.h
+	echo "#undef HAVE_PTHREAD_RWLOCK" >> config.h
+	echo "#undef SIZEOF_PTHREAD_MUTEX_T" >> config.h
+	echo "#undef USE_POSIX_THREADS" >> config.h
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
+	# remove useless manpage for gpg-error-config
+	rm -rf %{buildroot}%{_rpmint_target_prefix}/share/man/*/gpg-error-config*
+
 	# compress manpages
 	%rpmint_gzip_docs
-	# remove obsolete pkg config files for multilibs
-	%rpmint_remove_pkg_configs
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
-	rm -f %{buildroot}%{_rpmint_bindir}/libpng*-config
+	rm -f %{buildroot}%{_rpmint_bindir}/gpg-error-config
+	rm -f %{buildroot}%{_rpmint_bindir}/gpgrt-config
+	rmdir %{buildroot}%{_rpmint_bindir} || :
+
+# create pkg-config file
+mkdir -p %{buildroot}%{_rpmint_libdir}/pkgconfig
+cat > %{buildroot}%{_rpmint_libdir}/pkgconfig/%{pkgname}.pc <<-EOF
+prefix=%{_rpmint_target_prefix}
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: %{pkgname}
+Description: Libgpg-error is a small library that originally defined common error values for all GnuPG components
+Version: %{version}
+URL: http://www.gnupg.org/
+
+Libs: -lgpg-error
+Cflags:
+EOF
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -159,5 +169,5 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
+* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

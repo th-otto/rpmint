@@ -1,31 +1,30 @@
-%define pkgname libpng
+%define pkgname libksba
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Library for the Portable Network Graphics Format (PNG)
+Summary:        A X.509 Library
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.6.39
+Version:        1.6.3
 Release:        1
-License:        Zlib
+License:        (LGPL-3.0-or-later or GPL-2.0-or-later) and GPL-3.0-or-later and MIT
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://www.libpng.org/pub/png/libpng.html
+URL:            http://www.gnupg.org/aegypten/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://ftp-osl.osuosl.org/pub/%{pkgname}/src/libpng16/%{pkgname}-%{version}.tar.xz
+Source0: ftp://ftp.gnupg.org/gcrypt/libksba/%{pkgname}-%{version}.tar.bz2
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/libpng-1.6.34-0001-config.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -35,11 +34,9 @@ BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
+BuildRequires:  cross-mint-libgpg-error
 %else
-BuildRequires:  pkgconfig(zlib)
-Provides:       libpng = %{version}
-Provides:       libpng-devel = %{version}
+BuildRequires:  libgpg-error-devel
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -58,16 +55,15 @@ BuildArch:      noarch
 %endif
 
 %description
-libpng is the official reference library for the Portable Network
-Graphics format (PNG).
+KSBA is a library to simplify the task of working with X.509
+certificates, CMS data, and related data.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-%patch0 -p1
 
-cp %{S:1} config.sub
+./autogen.sh
 
-sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
+cp %{S:1} build-aux/config.sub
 
 %build
 
@@ -75,17 +71,8 @@ sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
     --disable-shared
-    --config-cache
-    --without-binconfigs
 "
-
-create_config_cache()
-{
-cat <<EOF >config.cache
-EOF
-}
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -94,10 +81,8 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
-	create_config_cache
-
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
 
@@ -106,10 +91,29 @@ for CPU in ${ALL_CPUS}; do
 
 	# compress manpages
 	%rpmint_gzip_docs
+	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
+	rm -f %{buildroot}%{_rpmint_bindir}/ksba-config
+	rmdir %{buildroot}%{_rpmint_bindir} || :
+
+# create pkg-config file
+mkdir -p %{buildroot}%{_rpmint_libdir}/pkgconfig
+cat > %{buildroot}%{_rpmint_libdir}/pkgconfig/%{pkgname}.pc <<-EOF
+prefix=%{_rpmint_target_prefix}
+exec_prefix=\${prefix}
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: %{pkgname}
+Description: A X.509 Library
+Version: %{version}
+URL: http://www.gnupg.org/aegypten/
+
+Libs: -lksba
+Cflags:
+EOF
+
 	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
-	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
-	rm -f %{buildroot}%{_rpmint_bindir}/libpng*-config
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -144,13 +148,11 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %files
 %defattr(-,root,root)
 %if "%{buildtype}" == "cross"
-%{_rpmint_bindir}
 %{_rpmint_includedir}
 %{_rpmint_libdir}
 %{_rpmint_cross_pkgconfigdir}
 %{_rpmint_datadir}
 %else
-%{_rpmint_target_prefix}/bin
 %{_rpmint_target_prefix}/include
 %{_rpmint_target_prefix}/lib
 %{_rpmint_target_prefix}/share
@@ -159,5 +161,5 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
+* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

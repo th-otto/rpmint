@@ -11,7 +11,9 @@ VERSIONPATCH=
 
 PATCHES="
 patches/libarchive/libarchive-fix-CVE-2017-14166.patch
-patches/libarchive/libarchive-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -25,7 +27,7 @@ cd "$MINT_BUILD_DIR"
 
 autoreconf -fi
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/libarchive/libarchive-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build/autoconf/config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 

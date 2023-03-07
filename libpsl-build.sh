@@ -4,13 +4,14 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=libpsl
-VERSION=-0.18.0
+VERSION=-0.21.2
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
 patches/libpsl/libpsl-mint-no-langinfo.patch
+patches/libpsl/libpsl-staticlibs.patch
 "
 DISABLE_PATCHES="
 patches/automake/mintelf-config.sub

@@ -1,31 +1,31 @@
-%define pkgname libpng
+%define pkgname gettext
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Library for the Portable Network Graphics Format (PNG)
+Summary:        Tools for Native Language Support (NLS)
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.6.39
+Version:        0.19.8.1
 Release:        1
-License:        Zlib
-Group:          Development/Libraries/C and C++
+License:        GPL-3.0-or-later and LGPL-2.0-or-later
+Group:          Development/Tools/Other
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://www.libpng.org/pub/png/libpng.html
+URL:            http://www.gnu.org/software/gettext/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://ftp-osl.osuosl.org/pub/%{pkgname}/src/libpng16/%{pkgname}-%{version}.tar.xz
+Source0: https://ftp.gnu.org/pub/gnu/gettext/%{pkgname}-%{version}.tar.xz
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/libpng-1.6.34-0001-config.patch
+Patch0:  patches/%{pkgname}/gettext-gnulib.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -34,12 +34,10 @@ BuildRequires:  libtool
 BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
-%if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
-%else
-BuildRequires:  pkgconfig(zlib)
-Provides:       libpng = %{version}
-Provides:       libpng-devel = %{version}
+%if "%{buildtype}" != "cross"
+Provides:       gettext-runtime = %{version}
+Provides:       gettext-tools = %{version}
+Provides:       gettext-devel = %{version}
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -58,36 +56,56 @@ BuildArch:      noarch
 %endif
 
 %description
-libpng is the official reference library for the Portable Network
-Graphics format (PNG).
+This package contains the intl library as well as tools that ease the
+creation and maintenance of message catalogs. It allows you to extract
+strings from source code. The supplied Emacs mode (po-mode.el) helps
+editing these catalogs (called PO files, for portable object) and
+adding translations. A special compiler turns these PO files into
+binary catalogs.
 
 %prep
-%setup -q -n %{pkgname}-%{version}
+%setup -q -n %{pkgname}-%{version}-1
 %patch0 -p1
 
-cp %{S:1} config.sub
+(
+ cd m4
+ rm -f init.m4 amversion.m4 ar-lib.m4 cond.m4 depend.m4 depout.m4 auxdir.m4 install-sh.m4 lispdir.m4 make.m4 missing.m4 options.m4 prog-cc-c-o.m4 runlog.m4 sanity.m4 silent.m4 strip.m4 substnot.m4 tar.m4
+)
 
-sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
+./autogen.sh
+
+cp %{S:1} build-aux/config.sub
 
 %build
 
 %rpmint_cflags
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+
+WHOLE_LIBINTL=
+if test "$LTO_CFLAGS" != ""; then
+	WHOLE_LIBINTL=--enable-whole-libintl
+fi
+
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
-    --disable-shared
-    --config-cache
-    --without-binconfigs
+	--docdir=%{_rpmint_target_prefix}/share/doc/packages/%{pkgname} \
+	--disable-shared
+	--enable-silent-rules
+	--disable-curses
+	--enable-relocatable
+	--with-included-gettext
+	$WHOLE_LIBINTL
+	--config-cache
 "
+
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 create_config_cache()
 {
 cat <<EOF >config.cache
 EOF
+	%rpmint_append_gnulib_cache
 }
-
-[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
@@ -98,6 +116,7 @@ for CPU in ${ALL_CPUS}; do
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	RANLIB="$ranlib" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
 
@@ -106,10 +125,9 @@ for CPU in ${ALL_CPUS}; do
 
 	# compress manpages
 	%rpmint_gzip_docs
+	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
 	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
-	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
-	rm -f %{buildroot}%{_rpmint_bindir}/libpng*-config
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -147,17 +165,18 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %{_rpmint_bindir}
 %{_rpmint_includedir}
 %{_rpmint_libdir}
-%{_rpmint_cross_pkgconfigdir}
 %{_rpmint_datadir}
+%{_rpmint_prefix}/libexec/%{pkgname}
 %else
 %{_rpmint_target_prefix}/bin
 %{_rpmint_target_prefix}/include
 %{_rpmint_target_prefix}/lib
 %{_rpmint_target_prefix}/share
+%{_rpmint_target_prefix}/libexec/%{pkgname}
 %endif
 
 
 
 %changelog
-* Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
+* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

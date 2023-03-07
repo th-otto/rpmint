@@ -1,31 +1,31 @@
-%define pkgname libpng
+%define pkgname libarchive
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Library for the Portable Network Graphics Format (PNG)
+Summary:        Creates and reads several different streaming archive formats
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.6.39
+Version:        3.3.2
 Release:        1
-License:        Zlib
-Group:          Development/Libraries/C and C++
+License:        BSD-2-Clause
+Group:          Productivity/Archiving/Compression
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://www.libpng.org/pub/png/libpng.html
+URL:            http://rhash.anz.ru/?l=en
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://ftp-osl.osuosl.org/pub/%{pkgname}/src/libpng16/%{pkgname}-%{version}.tar.xz
+Source0: http://downloads.sourceforge.net/%{pkgname}/%{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/libpng-1.6.34-0001-config.patch
+Patch0: patches/%{pkgname}/libarchive-fix-CVE-2017-14166.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -35,11 +35,9 @@ BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
+BuildRequires:  cross-mint-bzip2-devel
 %else
-BuildRequires:  pkgconfig(zlib)
-Provides:       libpng = %{version}
-Provides:       libpng-devel = %{version}
+BuildRequires:  libbz2-devel
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -58,16 +56,19 @@ BuildArch:      noarch
 %endif
 
 %description
-libpng is the official reference library for the Portable Network
-Graphics format (PNG).
+Libarchive is a programming library that can create and read several
+different streaming archive formats, including most popular tar
+variants and several cpio formats. It can also write shar archives and
+read ISO9660 CDROM images. The bsdtar program is an implementation of
+tar(1) that is built on top of libarchive. It started as a test
+harness, but has grown and is now the standard system tar for FreeBSD 5
+and 6.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 
-cp %{S:1} config.sub
-
-sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
+cp %{S:1} build/autoconf/config.sub
 
 %build
 
@@ -77,15 +78,9 @@ COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
     --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
     --disable-shared
-    --config-cache
-    --without-binconfigs
+    --enable-static
+    --enable-bsdcpio
 "
-
-create_config_cache()
-{
-cat <<EOF >config.cache
-EOF
-}
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -94,22 +89,20 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
-	create_config_cache
-
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
+	echo '#undef HAVE_PTHREAD_H' >> config.h
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
 	# compress manpages
 	%rpmint_gzip_docs
+	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
 	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
-	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
-	rm -f %{buildroot}%{_rpmint_bindir}/libpng*-config
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -159,5 +152,5 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
+* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

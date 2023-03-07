@@ -1,0 +1,24 @@
+--- libassuan-2.5.5/src/assuan-socket.c.orig	2023-03-07 10:09:07.834431503 +0100
++++ libassuan-2.5.5/src/assuan-socket.c	2023-03-07 10:13:56.882078940 +0100
+@@ -25,6 +25,8 @@
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <time.h>
++#include <sys/time.h>
+ #ifdef HAVE_W32_SYSTEM
+ # define WIN32_LEAN_AND_MEAN
+ # include <windows.h>
+@@ -712,8 +714,10 @@
+   size_t buflen, hostnamelen;
+   int method;
+   fd_set fds;
+-  struct timeval tv = { TIMEOUT_NOT_WAITING_SOCKS5_FOREVER, 0 };
+-
++  struct timeval tv;
++  
++  tv.tv_sec = TIMEOUT_NOT_WAITING_SOCKS5_FOREVER;
++  tv.tv_usec = 0;
+   addru.addr = addr;
+ 
+   FD_ZERO (&fds);
