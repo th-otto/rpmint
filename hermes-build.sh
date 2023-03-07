@@ -17,8 +17,10 @@ patches/hermes/hermes-1.3.3-64bit.patch
 patches/hermes/hermes-1.3.3-debian.patch
 patches/hermes/hermes-ns-recipe.patch
 patches/hermes/hermes-warnings.patch
-patches/hermes/hermes-mintelf-config.patch
 patches/hermes/hermes-install.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
@@ -26,6 +28,8 @@ unpack_archive
 cd "$srcdir"
 
 rm -rf autom4te.cache
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 # mark asm files as NOT needing execstack
 for i in src/*.S; do

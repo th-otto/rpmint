@@ -18,7 +18,7 @@ patches/${PACKAGENAME}/bzip2-1.0.7-patch-0007-Fix-printfs-of-file-sizes.patch
 patches/${PACKAGENAME}/bzip2-amigaos.patch
 "
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/bzip2-mintelf-config.patch
+patches/automake/mintelf-config.sub
 patches/${PACKAGENAME}/bzip2-1.0.6-patch-0003-debian-bzgrep.patch
 patches/${PACKAGENAME}/bzip2-1.0.6-patch-0004-unsafe-strcpy.patch
 "
@@ -60,7 +60,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/bzip2-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub config.sub"
 
 cd "$MINT_BUILD_DIR"
 

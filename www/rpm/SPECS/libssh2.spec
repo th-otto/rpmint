@@ -1,43 +1,39 @@
-%define pkgname xz
+%define pkgname libssh2
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        A Program for Compressing Files with the Lempel–Ziv–Markov algorithm
+Summary:        A library implementing the SSH2 protocol
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        5.2.4
+Version:        1.8.0
 Release:        1
-License:        LGPL-2.1+ AND GPL-2.0+
-Group:          Productivity/Archiving/Compression
+License:        BSD-3-Clause
+Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://tukaani.org/xz/
+URL:            http://www.libssh2.org/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: http://tukaani.org/xz/%{pkgname}-%{version}.tar.xz
+Source0: https://www.libssh2.org/download/%{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch1: patches/%{pkgname}/xz-mintelf-config.patch
+Patch0: patches/%{pkgname}/libssh2-zlib-static.patch
 
 %rpmint_essential
-BuildRequires:  autoconf
-BuildRequires:  automake
-BuildRequires:  libtool
 BuildRequires:  pkgconfig
-BuildRequires:  m4
-BuildRequires:  make
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-liblzma5 = %{version}
+BuildRequires:  cross-mint-openssl
 %else
-Provides:       liblzma5 = %{version}
+BuildRequires:  pkgconfig(openssl)
+Provides:       pkgconfig(libssh2) = %{version}
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -56,49 +52,58 @@ BuildArch:      noarch
 %endif
 
 %description
-The xz command is a program for compressing files.
-* Average compression ratio of LZMA is about 30%% better than that of
-  gzip, and 15%% better than that of bzip2.
-* Decompression speed is only little slower than that of gzip, being
-  two to five times faster than bzip2.
-* In fast mode, compresses faster than bzip2 with a comparable
-  compression ratio.
-* Achieving the best compression ratios takes four to even twelve
-  times longer than with bzip2. However, this does not affect
-  decompressing speed.
-* Very similar command line interface to what gzip and bzip2 have.
+libssh2 is a library implementing the SSH2 protocol as defined by
+Internet Drafts: SECSH-TRANS, SECSH-USERAUTH, SECSH-CONNECTION,
+SECSH-ARCH, SECSH-FILEXFER, SECSH-DHGEX, SECSH-NUMBERS, and
+SECSH-PUBLICKEY.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-cp %{S:1} build-aux/config.sub
+%patch0 -p1
+
+sed -i -e 's@AM_CONFIG_HEADER@AC_CONFIG_HEADERS@g' configure.ac
+rm -v m4/libtool.m4 m4/lt*
+rm -f aclocal.m4 ltmain.sh
+libtoolize --force || exit 1
+aclocal -I m4 || exit 1
+autoconf || exit 1
+autoheader || exit 1
+automake --force --copy --add-missing || exit 1
+rm -rf autom4te.cache config.h.in.orig
+
+cp %{S:1} config.sub
 
 %build
 
 %rpmint_cflags
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
-    --disable-threads
+CONFIGURE_FLAGS="--host=%{_rpmint_target} --prefix=%{_rpmint_target_prefix} --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname} ${CONFIGURE_FLAGS_AMIGAOS}
+	--disable-rpath
+	--disable-examples-build
+	--disable-shared
+	--enable-static
 "
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 for CPU in ${ALL_CPUS}; do
+
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
-	"./configure" ${CONFIGURE_FLAGS} \
-	--libdir='${exec_prefix}/lib'$multilibdir
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
+	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
+
 	# compress manpages
 	%rpmint_gzip_docs
+	# remove obsolete pkg config files
+	%rpmint_remove_pkg_configs
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -107,7 +112,7 @@ for CPU in ${ALL_CPUS}; do
 	%rpmint_make_bin_archive $CPU
 	%endif
 
-	make clean
+	make distclean
 done
 
 
@@ -133,13 +138,11 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %files
 %defattr(-,root,root)
 %if "%{buildtype}" == "cross"
-%{_rpmint_bindir}
 %{_rpmint_includedir}
 %{_rpmint_libdir}
-%{_rpmint_cross_pkgconfigdir}
+%{_rpmint_cross_pkgconfigdir}/*.pc
 %{_rpmint_datadir}
 %else
-%{_rpmint_target_prefix}/bin
 %{_rpmint_target_prefix}/include
 %{_rpmint_target_prefix}/lib
 %{_rpmint_target_prefix}/share
@@ -147,6 +150,7 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 
+
 %changelog
-* Thu Mar 02 2023 Thorsten Otto <admin@tho-otto.de>
+* Sun Mar 5 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

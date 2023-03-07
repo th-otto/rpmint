@@ -11,10 +11,12 @@ VERSIONPATCH=
 
 PATCHES="
 patches/libxml2/libxml2-fix-perl.diff
-patches/libxml2/libxml2-mintelf-config.patch
 patches/libxml2/libxml2-python3-unicode-errors.patch
 patches/libxml2/libxml2-python3-string-null-check.patch
 patches/libxml2/libxml2-make-XPATH_MAX_NODESET_LENGTH-configurable.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -23,6 +25,10 @@ ${TARGET_MANDIR#/}/man1/*
 "
 
 unpack_archive
+
+cd "$srcdir"
+
+cp ${BUILD_DIR}/patches/automake/mintelf-config.sub config.sub
 
 cd "$MINT_BUILD_DIR"
 

@@ -33,7 +33,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-cp patches/automake/mintelf-config.sub config.sub
+cp $BUILD_DIR/patches/automake/mintelf-config.sub config.sub
 
 cd "$MINT_BUILD_DIR"
 

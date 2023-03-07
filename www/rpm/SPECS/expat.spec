@@ -24,7 +24,7 @@ Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: http://downloads.sourceforge.net/project/%{pkgname}/%{pkgname}/2.2.4/expat-%{version}.tar.bz2
-Patch0: patches/%{pkgname}/expat-mintelf-config.patch
+Source1: patches/automake/mintelf-config.sub
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -60,7 +60,7 @@ parser might find in the XML document (like start tags).
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-%patch0 -p1
+cp %{S:1} conftools/config.sub
 
 %build
 

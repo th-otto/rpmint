@@ -24,7 +24,7 @@ Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: http://ftp.gnu.org/pub/gnu/%{pkgname}/%{pkgname}-%{version}.tar.gz
-Patch0: libiconv-mintelf-config.patch
+Source1: patches/automake/mintelf-config.sub
 Patch1: libiconv-1.16-aliases.patch
 
 %rpmint_essential
@@ -55,8 +55,9 @@ from/to Unicode.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-%patch0 -p1
 %patch1 -p1
+
+cp %{S:1} build-aux/config.sub
 
 %build
 

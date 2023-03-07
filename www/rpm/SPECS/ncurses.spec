@@ -25,6 +25,7 @@ BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: ftp://ftp.gnu.org/pub/gnu/%{pkgname}/%{pkgname}-%{version}.tar.gz
 Source1: patches/ncurses/ncurses-6.0-patches.tar.bz2
+Source2: patches/automake/mintelf-config.sub
 Patch1: patches/ncurses/ncurses-6.0.dif
 Patch2: patches/ncurses/ncurses-5.9-ibm327x.dif
 Patch3: patches/ncurses/ncurses-6.0-0003-overwrite.patch
@@ -32,7 +33,6 @@ Patch4: patches/ncurses/ncurses-6.0-0005-environment.patch
 Patch5: patches/ncurses/ncurses-6.0-0010-source.patch
 Patch6: patches/ncurses/ncurses-6.0-0011-termcap.patch
 Patch7: patches/ncurses/ncurses-6.0-0020-configure.patch
-Patch8: patches/ncurses/ncurses-6.0-0021-mintelf-config.patch
 Patch9: patches/ncurses/ncurses-6.0-0022-dynamic.patch
 Patch10: patches/ncurses/ncurses-no-include.patch
 
@@ -90,9 +90,10 @@ find -name '*.orig' -delete
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
-%patch8 -p1
 %patch9 -p1
 %patch10 -p1
+
+cp %{S:2} config.sub
 
 %define MINT_BUILD_DIR %{_builddir}/%{?buildsubdir}/build-target
 %define HOST_BUILD_DIR %{_builddir}/%{?buildsubdir}/build-host

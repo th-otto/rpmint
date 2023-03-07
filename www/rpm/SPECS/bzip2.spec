@@ -11,7 +11,7 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.0.6
+Version:        1.0.8
 Release:        1
 License:        BSD
 Group:          Productivity/Archiving/Compression
@@ -24,14 +24,15 @@ Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: http://www.bzip.org/%{version}/bzip2-%{version}.tar.gz
-Patch0: bzip2-1.0.6-patch-0001-configure.patch
-Patch1: bzip2-1.0.6-patch-0002-cygming.patch
-Patch2: bzip2-1.0.6-patch-0003-debian-bzgrep.patch
-Patch3: bzip2-1.0.6-patch-0004-unsafe-strcpy.patch
-Patch4: bzip2-1.0.6-patch-0005-progress.patch
-Patch5: bzip2-1.0.6-patch-0006-mint.patch
-Patch6: bzip2-1.0.6-patch-0007-Fix-printfs-of-file-sizes.patch
-Patch7: bzip2-amigaos.patch
+Source1: patches/automake/mintelf-config.sub
+Patch0: patches/%{pkgname}/bzip2-1.0.6-patch-0001-configure.patch
+Patch1: patches/%{pkgname}/bzip2-1.0.8-patch-0002-cygming.patch
+Patch2: patches/%{pkgname}/bzip2-1.0.6-patch-0003-debian-bzgrep.patch
+Patch3: patches/%{pkgname}/bzip2-1.0.6-patch-0004-unsafe-strcpy.patch
+Patch4: patches/%{pkgname}/bzip2-1.0.8-patch-0005-progress.patch
+Patch5: patches/%{pkgname}/bzip2-1.0.6-patch-0006-mint.patch
+Patch6: patches/%{pkgname}/bzip2-1.0.7-patch-0007-Fix-printfs-of-file-sizes.patch
+Patch7: patches/%{pkgname}/bzip2-amigaos.patch
 
 BuildRequires:  autoconf
 BuildRequires:  automake
@@ -85,8 +86,6 @@ Documentation for bzip2
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 %patch1 -p1
-%patch2 -p1
-%patch3 -p1
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
@@ -101,6 +100,7 @@ autoconf || exit 1
 autoheader || exit 1
 automake --force --copy --add-missing || exit 1
 
+cp %{S:1} config.sub
 %rpmint_cflags
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
@@ -204,6 +204,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to version 1.0.8
+
 * Thu Aug 27 2020 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
 

@@ -20,9 +20,11 @@ patches/ncurses/ncurses-6.0-0005-environment.patch
 patches/ncurses/ncurses-6.0-0010-source.patch
 patches/ncurses/ncurses-6.0-0011-termcap.patch
 patches/ncurses/ncurses-6.0-0020-configure.patch
-patches/ncurses/ncurses-6.0-0021-mintelf-config.patch
 patches/ncurses/ncurses-6.0-0022-dynamic.patch
 patches/ncurses/ncurses-no-include.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 PATCHARCHIVE=patches/ncurses/ncurses-6.0-patches.tar.bz2
 
@@ -386,6 +388,8 @@ rm -vf mk-dlls.sh
 : autoconf || exit 2
 : autoheader || exit 2
 rm -rf autom4te.cache config.h.in.orig
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 mkdir -p "$MINT_BUILD_DIR"
 mkdir -p "$HOST_BUILD_DIR"

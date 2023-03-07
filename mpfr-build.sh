@@ -13,11 +13,13 @@ VERSIONPATCH=
 ranlib=${TARGET}-ranlib
 LTO_CFLAGS=
 
-PATCHES="patches/mpfr/mpfr-${VERSION#-}-mintelf-config.patch"
+DISABLED_PATCHES="patches/automake/mintelf-config.sub"
 
 unpack_archive
 
 cd "$srcdir"
+
+cp patches/automake/mintelf-config.sub config.sub
 
 cd "$MINT_BUILD_DIR"
 

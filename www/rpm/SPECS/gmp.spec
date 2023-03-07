@@ -24,8 +24,8 @@ Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: https://gmplib.org/download/%{pkgname}/%{pkgname}-%{version}.tar.xz
+Source1: patches/automake/mintelf-config.sub
 Patch0: gmp-coldfire.patch
-Patch1: gmp-mintelf-config.patch
 
 %rpmint_essential
 %if "%{buildtype}" == "cross"
@@ -85,7 +85,7 @@ aclocal
 autoconf
 autoheader
 automake --force --copy --add-missing
-%patch1 -p1
+cp %{S:1} config.sub
 
 %build
 

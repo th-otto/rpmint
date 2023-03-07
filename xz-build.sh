@@ -9,7 +9,7 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/xz/xz-mintelf-config.patch"
+DISABLED_PATCHES="patches/automake/mintelf-config.sub"
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
@@ -18,6 +18,10 @@ ${TARGET_PREFIX#/}/share/doc/${PACKAGENAME}
 "
 
 unpack_archive
+
+cd "$srcdir"
+
+cp ${BUILD_DIR}/patches/automake/mintelf-config.sub build-aux/config.sub
 
 cd "$MINT_BUILD_DIR"
 

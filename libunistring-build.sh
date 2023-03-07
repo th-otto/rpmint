@@ -9,13 +9,17 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/libunistring/libunistring-mintelf-config.patch"
+PATCHES=""
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
+"
 
 BINFILES=""
 
 unpack_archive
 
 cd "$MINT_BUILD_DIR"
+cp $BUILD_DIR/patches/automake/mintelf-config.sub build-aux/config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 

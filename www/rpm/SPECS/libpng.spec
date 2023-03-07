@@ -1,31 +1,31 @@
-%define pkgname xz
+%define pkgname libpng
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        A Program for Compressing Files with the Lempel–Ziv–Markov algorithm
+Summary:        Library for the Portable Network Graphics Format (PNG)
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        5.2.4
+Version:        1.6.37
 Release:        1
-License:        LGPL-2.1+ AND GPL-2.0+
-Group:          Productivity/Archiving/Compression
+License:        Zlib
+Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://tukaani.org/xz/
+URL:            http://www.libpng.org/pub/png/libpng.html
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: http://tukaani.org/xz/%{pkgname}-%{version}.tar.xz
+Source0: https://ftp-osl.osuosl.org/pub/%{pkgname}/src/libpng16/%{pkgname}-%{version}.tar.xz
 Source1: patches/automake/mintelf-config.sub
-Patch1: patches/%{pkgname}/xz-mintelf-config.patch
+Patch0: patches/%{pkgname}/libpng-1.6.34-0001-config.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -35,9 +35,11 @@ BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-liblzma5 = %{version}
+BuildRequires:  cross-mint-zlib
 %else
-Provides:       liblzma5 = %{version}
+BuildRequires:  pkgconfig(zlib)
+Provides:       libpng = %{version}
+Provides:       libpng-devel = %{version}
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -56,21 +58,16 @@ BuildArch:      noarch
 %endif
 
 %description
-The xz command is a program for compressing files.
-* Average compression ratio of LZMA is about 30%% better than that of
-  gzip, and 15%% better than that of bzip2.
-* Decompression speed is only little slower than that of gzip, being
-  two to five times faster than bzip2.
-* In fast mode, compresses faster than bzip2 with a comparable
-  compression ratio.
-* Achieving the best compression ratios takes four to even twelve
-  times longer than with bzip2. However, this does not affect
-  decompressing speed.
-* Very similar command line interface to what gzip and bzip2 have.
+libpng is the official reference library for the Portable Network
+Graphics format (PNG).
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-cp %{S:1} build-aux/config.sub
+%patch0 -p1
+
+cp %{S:1} config.sub
+
+sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
 
 %build
 
@@ -79,8 +76,16 @@ cp %{S:1} build-aux/config.sub
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
     --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
-    --disable-threads
+    --disable-shared
+    --config-cache
+    --without-binconfigs
 "
+
+create_config_cache()
+{
+cat <<EOF >config.cache
+EOF
+}
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -89,8 +94,10 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
+	create_config_cache
+
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
 
@@ -99,6 +106,10 @@ for CPU in ${ALL_CPUS}; do
 
 	# compress manpages
 	%rpmint_gzip_docs
+	# remove obsolete pkg config files for multilibs
+	%rpmint_remove_pkg_configs
+	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
+	rm -f %{buildroot}%{_rpmint_bindir}/libpng*-config
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -148,5 +159,5 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Thu Mar 02 2023 Thorsten Otto <admin@tho-otto.de>
+* Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

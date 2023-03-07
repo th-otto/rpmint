@@ -9,7 +9,7 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/libidn2/libidn2-mintelf-config.patch"
+DISABLED_PATCHES="patches/automake/mintelf-config.sub"
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
@@ -18,6 +18,7 @@ ${TARGET_BINDIR#/}/*
 unpack_archive
 
 cd "$MINT_BUILD_DIR"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build-aux/config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 

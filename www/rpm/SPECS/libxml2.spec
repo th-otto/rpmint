@@ -24,8 +24,8 @@ Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: https://download.gnome.org/sources/%{pkgname}/2.10/%{pkgname}-%{version}.tar.xz
+Source1: patches/automake/mintelf-config.sub
 Patch0: patches/%{pkgname}/libxml2-fix-perl.diff
-Patch1: patches/%{pkgname}/libxml2-mintelf-config.patch
 Patch2: patches/%{pkgname}/libxml2-python3-unicode-errors.patch
 Patch3: patches/%{pkgname}/libxml2-python3-string-null-check.patch
 Patch4: patches/%{pkgname}/libxml2-make-XPATH_MAX_NODESET_LENGTH-configurable.patch
@@ -83,10 +83,11 @@ progress.
 %prep
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
-%patch1 -p1
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
+
+cp %{S:1} config.sub
 
 %build
 
@@ -131,6 +132,8 @@ for CPU in ${ALL_CPUS}; do
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
 	find %{buildroot}%{_rpmint_libdir} -type f -name "xml2Conf.sh" -delete -printf "rm %p\n"
 	rm -rf %{buildroot}%{_rpmint_libdir}/*/cmake
+	# remove obsolete pkg config files
+	%rpmint_remove_pkg_configs
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then

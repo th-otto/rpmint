@@ -4,14 +4,16 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=libpng
-VERSION=-1.6.34
+VERSION=-1.6.39
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/libpng/libpng-mintelf-config.patch
 patches/libpng/libpng-1.6.34-0001-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
@@ -20,7 +22,7 @@ cd "$srcdir"
 
 autoreconf -fiv
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libpng-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 
@@ -28,7 +30,7 @@ COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
 sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared --config-cache --without-binconfigs --disable-shared ${CONFIGURE_FLAGS_AMIGAOS}"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared --config-cache --without-binconfigs ${CONFIGURE_FLAGS_AMIGAOS}"
 
 create_config_cache()
 {
@@ -43,10 +45,11 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	create_config_cache
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 	${MAKE} distclean
+	rm -f ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/libpng*-config
 	make_bin_archive $CPU
 done
 

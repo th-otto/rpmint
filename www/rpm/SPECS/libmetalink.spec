@@ -24,9 +24,9 @@ Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: https://github.com/metalink-dev/%{pkgname}/releases/download/release-%{version}/libmetalink-%{version}.tar.xz
+Source1: patches/automake/mintelf-config.sub
 Patch0: libmetalink-autotools.patch
 Patch1: libmetalink-skip-libxml2-script-crap.patch
-Patch2: libmetalink-mintelf-config.patch
 
 BuildRequires:  cross-mint-gcc
 BuildRequires:  autoconf
@@ -38,9 +38,11 @@ BuildRequires:  m4
 BuildRequires:  cross-mint-zlib
 BuildRequires:  cross-mint-libiconv
 BuildRequires:  cross-mint-libxml2
+BuildRequires:  cross-mint-liblzma5
 %else
 BuildRequires:  pkgconfig(zlib)
 BuildRequires:  pkgconfig(libxml-2.0)
+BuildRequires:  pkgconfig(liblzma)
 BuildRequires:  libiconv
 %endif
 
@@ -68,7 +70,9 @@ Metalink XML files.
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 %patch1 -p1
-%patch2 -p1
+
+cp %{S:1} config.sub
+
 
 sed -i -e 's@AM_CONFIG_HEADER@AC_CONFIG_HEADERS@g' configure.ac
 rm -f m4/libtool.m4 m4/lt*
@@ -86,7 +90,7 @@ automake --force --copy --add-missing
 %rpmint_cflags
 
 export LIBXML2_CFLAGS=-I%{_rpmint_includedir}/libxml2
-export LIBXML2_LIBS="-lxml2 -lz -liconv -lm"
+export LIBXML2_LIBS="-lxml2 -lz -llzma -liconv -lm"
 
 COMMON_CFLAGS="-O3 -fomit-frame-pointer $LIBXML2_CFLAGS"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}

@@ -11,7 +11,9 @@ VERSIONPATCH=
 
 PATCHES="
 patches/libpsl/libpsl-mint-no-langinfo.patch
-patches/libpsl/libpsl-mintelf-config.patch
+"
+DISABLE_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -22,6 +24,7 @@ ${TARGET_MANDIR#/}/man1/*
 unpack_archive
 
 cd "$MINT_BUILD_DIR"
+cp $BUILD_DIR/patches/automake/mintelf-config.sub config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 

@@ -9,8 +9,8 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="
-patches/expat/expat-mintelf-config.patch
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 # patches/expat/expat-1.95.2-mint.patch
 
@@ -21,6 +21,10 @@ ${TARGET_PREFIX#/}/share/doc/${PACKAGENAME}
 "
 
 unpack_archive
+
+cd "$srcdir"
+
+cp ${BUILD_DIR}/patches/automake/mintelf-config.sub conftools/config.sub
 
 cd "$MINT_BUILD_DIR"
 

@@ -17,7 +17,7 @@ PATCHES="
 patches/${PACKAGENAME}/gmp-coldfire.patch
 "
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/gmp-mintelf-config.patch
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
@@ -32,7 +32,7 @@ autoconf || exit 1
 autoheader || exit 1
 automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/gmp-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 

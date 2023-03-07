@@ -1,31 +1,31 @@
-%define pkgname xz
+%define pkgname libpsl
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        A Program for Compressing Files with the Lempel–Ziv–Markov algorithm
+Summary:        Implementation of Hypertext Transfer Protocol version 2 in C
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        5.2.4
+Version:        0.18.0
 Release:        1
-License:        LGPL-2.1+ AND GPL-2.0+
-Group:          Productivity/Archiving/Compression
+License:        MIT AND MPL-2.0 AND BSD-3-Clause
+Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://tukaani.org/xz/
+URL:            https://rockdaboot.github.io/libpsl
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: http://tukaani.org/xz/%{pkgname}-%{version}.tar.xz
+Source0: https://github.com/rockdaboot/libpsl/releases/download/%{pkgname}-%{version}/libpsl-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch1: patches/%{pkgname}/xz-mintelf-config.patch
+Patch0: patches/%{pkgname}/libpsl-mint-no-langinfo.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -35,9 +35,11 @@ BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-liblzma5 = %{version}
+BuildRequires:  cross-mint-libidn2
+BuildRequires:  cross-mint-libunistring
 %else
-Provides:       liblzma5 = %{version}
+BuildRequires:  pkgconfig(libidn2)
+BuildRequires:  libunistring-devel
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -56,21 +58,19 @@ BuildArch:      noarch
 %endif
 
 %description
-The xz command is a program for compressing files.
-* Average compression ratio of LZMA is about 30%% better than that of
-  gzip, and 15%% better than that of bzip2.
-* Decompression speed is only little slower than that of gzip, being
-  two to five times faster than bzip2.
-* In fast mode, compresses faster than bzip2 with a comparable
-  compression ratio.
-* Achieving the best compression ratios takes four to even twelve
-  times longer than with bzip2. However, this does not affect
-  decompressing speed.
-* Very similar command line interface to what gzip and bzip2 have.
+libpsl is a C library to handle the Public Suffix List. A "public suffix" is a
+domain name under which Internet users can directly register own names.
+
+HTTP user agents can use it to avoid privacy-leaking "supercookies" and "super
+domain" certificates. It is also use do highlight domain parts in a user interface
+and sorting domain lists by site.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-cp %{S:1} build-aux/config.sub
+%patch0 -p1
+
+# autoreconf may have overwritten config.sub
+cp %{S:1} config.sub
 
 %build
 
@@ -79,7 +79,10 @@ cp %{S:1} build-aux/config.sub
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
     --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
-    --disable-threads
+    --enable-static
+    --disable-gtk-doc \
+    --with-psl-file=%{_rpmint_target_prefix}/share/publicsuffix/public_suffix_list.dat
+    --with-psl-distfile=%{_rpmint_target_prefix}/share/publicsuffix/public_suffix_list.dafsa
 "
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
@@ -90,7 +93,7 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -liconv" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
 
@@ -99,6 +102,8 @@ for CPU in ${ALL_CPUS}; do
 
 	# compress manpages
 	%rpmint_gzip_docs
+
+	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -148,5 +153,5 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Thu Mar 02 2023 Thorsten Otto <admin@tho-otto.de>
+* Mon Mar 6 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

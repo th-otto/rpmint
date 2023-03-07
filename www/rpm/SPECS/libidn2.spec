@@ -24,7 +24,7 @@ Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: ftp://ftp.gnu.org/gnu/libidn/%{pkgname}-%{version}.tar.lz
-Patch1: patches/%{pkgname}/libidn2-mintelf-config.patch
+Source1: patches/automake/mintelf-config.sub
 
 %rpmint_essential
 BuildRequires:  pkgconfig
@@ -59,7 +59,7 @@ extensively used as the original Libidn library.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-%patch1 -p1
+cp %{S:1} build-aux/config.sub
 
 %build
 

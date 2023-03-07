@@ -24,7 +24,7 @@ Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0:        http://www.mpfr.org/%{pkgname}-%{version}/%{pkgname}-%{version}.tar.xz
-Patch1:         mpfr-%{version}-mintelf-config.patch
+Source1:        patches/automake/mintelf-config.sub
 
 BuildRequires:  cross-mint-gcc-c++
 BuildRequires:  cross-mint-gmp
@@ -64,7 +64,7 @@ Documentation for multiple-precision floating-point library.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-%patch1 -p1
+cp %{S:1} config.sub
 
 %build
 

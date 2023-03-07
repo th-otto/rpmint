@@ -1,31 +1,36 @@
-%define pkgname xz
+%define pkgname curl
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        A Program for Compressing Files with the Lempel–Ziv–Markov algorithm
+%bcond_without openssl
+
+Summary:        A Tool for Transferring Data from URLs
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        5.2.4
+Version:        7.56.0
 Release:        1
-License:        LGPL-2.1+ AND GPL-2.0+
-Group:          Productivity/Archiving/Compression
+License:        curl
+Group:          Productivity/Networking/Web/Utilities
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://tukaani.org/xz/
+URL:            https://curl.haxx.se/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: http://tukaani.org/xz/%{pkgname}-%{version}.tar.xz
+Source0: https://curl.haxx.se/download/%{pkgname}-%{version}.tar.xz
 Source1: patches/automake/mintelf-config.sub
-Patch1: patches/%{pkgname}/xz-mintelf-config.patch
+Patch0: patches/%{pkgname}/curl-dont-mess-with-rpmoptflags.diff
+Patch1: patches/%{pkgname}/curl-mint-build.patch
+Patch2: patches/%{pkgname}/curl-secure-getenv.patch
+Patch3: patches/%{pkgname}/curl-staticlibs.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -34,10 +39,31 @@ BuildRequires:  libtool
 BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
+BuildRequires:  groff
+BuildRequires:  perl
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-liblzma5 = %{version}
+BuildRequires:  cross-mint-zlib
+BuildRequires:  cross-mint-libiconv
+%if %{with openssl}
+BuildRequires:  cross-mint-openssl
+%endif
+BuildRequires:  cross-mint-libxml2
+BuildRequires:  cross-mint-libidn2
+BuildRequires:  cross-mint-libmetalink
+BuildRequires:  cross-mint-nghttp2
+BuildRequires:  cross-mint-libssh2
+BuildRequires:  cross-mint-libpsl
 %else
-Provides:       liblzma5 = %{version}
+BuildRequires:  pkgconfig(libnghttp2)
+BuildRequires:  pkgconfig(zlib)
+BuildRequires:  pkgconfig(libssl)
+BuildRequires:  pkgconfig(libxml-2.0)
+BuildRequires:  pkgconfig(libssh2)
+BuildRequires:  pkgconfig(libpsl)
+%if %{with openssl}
+BuildRequires:  pkgconfig(libssl)
+%endif
+BuildRequires:  libiconv
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -56,21 +82,28 @@ BuildArch:      noarch
 %endif
 
 %description
-The xz command is a program for compressing files.
-* Average compression ratio of LZMA is about 30%% better than that of
-  gzip, and 15%% better than that of bzip2.
-* Decompression speed is only little slower than that of gzip, being
-  two to five times faster than bzip2.
-* In fast mode, compresses faster than bzip2 with a comparable
-  compression ratio.
-* Achieving the best compression ratios takes four to even twelve
-  times longer than with bzip2. However, this does not affect
-  decompressing speed.
-* Very similar command line interface to what gzip and bzip2 have.
+Curl is a client to get documents and files from or send documents to a
+server using any of the supported protocols (HTTP, HTTPS, FTP, FTPS,
+TFTP, DICT, TELNET, LDAP, or FILE). The command is designed to work
+without user interaction or any kind of interactivity.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-cp %{S:1} build-aux/config.sub
+%patch0 -p1
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
+
+rm -f aclocal.m4 ltmain.sh
+libtoolize --force || exit 1
+aclocal -I m4 || exit 1
+autoconf || exit 1
+autoheader || exit 1
+automake --force --copy --add-missing || exit 1
+rm -rf autom4te.cache config.h.in.orig
+
+# autoreconf may have overwritten config.sub
+cp %{S:1} config.sub
 
 %build
 
@@ -79,8 +112,25 @@ cp %{S:1} build-aux/config.sub
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
     --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
-    --disable-threads
+	--disable-ipv6
+	--with-gssapi=%{_rpmint_target_prefix}/lib/mit
+	--with-libidn2
+	--with-libssh2
+	--with-libmetalink
+	--disable-shared
+	--enable-static
+	--disable-threaded-resolver
 "
+
+%if %{with openssl}
+	CONFIGURE_FLAGS+="
+	--with-ssl
+	--with-ca-fallback
+	--without-ca-path
+	--without-ca-bundle"
+%else
+	CONFIGURE_FLAGS+=" --without-ssl"
+%endif
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -99,6 +149,9 @@ for CPU in ${ALL_CPUS}; do
 
 	# compress manpages
 	%rpmint_gzip_docs
+
+	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
+	rm -f %{buildroot}%{_rpmint_bindir}/curl-config
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -148,5 +201,5 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Thu Mar 02 2023 Thorsten Otto <admin@tho-otto.de>
+* Mon Mar 6 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

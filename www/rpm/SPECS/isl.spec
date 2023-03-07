@@ -24,7 +24,7 @@ Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0:        http://isl.gforge.inria.fr/%{pkgname}-%{version}.tar.xz
-Patch1:         %{pkgname}-mintelf-config.patch
+Source1:        patches/automake/mintelf-config.sub
 
 BuildRequires:  cross-mint-gcc-c++
 BuildRequires:  cross-mint-gmp
@@ -64,7 +64,7 @@ Documentation for ISL.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-%patch1 -p1
+cp %{S:1} config.sub
 
 %build
 

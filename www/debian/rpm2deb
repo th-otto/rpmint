@@ -2,8 +2,8 @@
 
 #
 # Script to generate debian control files from rpm packages.
-# This only creates the control files in the pool,
-# after all packages have been added,
+# This only creates the control files in the pool.
+# After all packages have been added,
 # run updatedeb to generate the */Packages and */Release files
 #
 
@@ -61,9 +61,9 @@ for pkgname in $pkgnames; do
 	url=`rpm -q --queryformat '%{url}' "$rpmfile"`
 	summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
 	description=`rpm -q --queryformat '%{description}' "$rpmfile" | sed -e 's/^$/./' -e 's/^/ /'`
-	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib | grep -v "lib.*\.so" | grep -v /bin/sh`
+	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib | grep -v "lib.*\.so" | grep -v /bin/ | grep -v /sbin/ | sed -e 's/pkgconfig(\(.*\))/\1/g' | sort -u`
 	group=`rpm -q --queryformat '%{group}' "$rpmfile"`
-	provides=`rpm -q --queryformat '[%{provides}\n]' "$rpmfile" | grep -v /bin/ | grep -v '(x86-64)'`
+	provides=`rpm -q --queryformat '[%{provides}\n]' "$rpmfile" | grep -v /bin/ | grep -v /sbin/ | grep -v '(x86-64)' | sed -e 's/pkgconfig(\(.*\))/\1/g' | sort -u`
 	
 	if test "${requires}" != ""; then
 		requires="Depends: "`echo ${requires} | sed -e 's/ /,/g'`"
@@ -81,7 +81,7 @@ for pkgname in $pkgnames; do
 	fi
 	
 	
-	cd "${pkgdir}"
+	cd "${pkgdir}" || exit 1
 	
 	cat << EOF > "DEBIAN/control"
 Package: ${fullname}

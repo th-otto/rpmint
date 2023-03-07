@@ -24,7 +24,7 @@ Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: ftp://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.gz
-Patch1: patches/%{pkgname}/readline-mintelf-config.patch
+Source1: patches/automake/mintelf-config.sub
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -64,7 +64,7 @@ csh-like history expansion on previous commands.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-%patch1 -p1
+cp %{S:1} support/config.sub
 
 %build
 

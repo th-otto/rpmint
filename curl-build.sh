@@ -14,7 +14,9 @@ patches/${PACKAGENAME}/curl-dont-mess-with-rpmoptflags.diff
 patches/${PACKAGENAME}/curl-mint-build.patch
 patches/${PACKAGENAME}/curl-secure-getenv.patch
 patches/${PACKAGENAME}/curl-staticlibs.patch
-patches/${PACKAGENAME}/curl-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 # patches/curl/curl-libcurl-ocloexec.patch
 # patches/curl/curl-man3.patch
@@ -41,7 +43,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/curl-mintelf-config.patch"
+cp $BUILD_DIR/patches/automake/mintelf-config.sub config.sub
 
 cd "$MINT_BUILD_DIR"
 
@@ -60,13 +62,13 @@ CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --docdir=${TARGET_PREFIX}/s
 --disable-threaded-resolver"
 
 if $with_openssl; then
-	CONFIGURE_FLAGS="${CONFIGURE_FLAGS} \
-	--with-ssl \
-	--with-ca-fallback \
-	--without-ca-path \
+	CONFIGURE_FLAGS+="
+	--with-ssl
+	--with-ca-fallback
+	--without-ca-path
 	--without-ca-bundle"
 else
-	CONFIGURE_FLAGS="${CONFIGURE_FLAGS} --without-ssl"
+	CONFIGURE_FLAGS+=" --without-ssl"
 fi
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"

@@ -24,11 +24,11 @@ Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: %{pkgname}-%{version}.tar.bz2
+Source1: patches/automake/mintelf-config.sub
 Patch0: patches/%{pkgname}/hermes-1.3.3-64bit.patch
 Patch1: patches/%{pkgname}/hermes-1.3.3-debian.patch
 Patch2: patches/%{pkgname}/hermes-ns-recipe.patch
 Patch3: patches/%{pkgname}/hermes-warnings.patch
-Patch4: patches/%{pkgname}/hermes-mintelf-config.patch
 Patch5: patches/%{pkgname}/hermes-install.patch
 
 %rpmint_essential
@@ -96,8 +96,9 @@ progress.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
-%patch4 -p1
 %patch5 -p1
+
+cp %{S:1} config.sub
 
 # mark asm files as NOT needing execstack
 for i in src/*.S; do

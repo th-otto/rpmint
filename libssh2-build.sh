@@ -11,7 +11,9 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/libssh2-zlib-static.patch
-patches/${PACKAGENAME}/libssh2-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 # libssh2-ocloexec.patch
 
@@ -32,7 +34,8 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libssh2-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
+
 
 cd "$MINT_BUILD_DIR"
 

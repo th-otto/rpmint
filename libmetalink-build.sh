@@ -12,7 +12,9 @@ VERSIONPATCH=
 PATCHES="
 patches/${PACKAGENAME}/libmetalink-autotools.patch
 patches/${PACKAGENAME}/libmetalink-skip-libxml2-script-crap.patch
-patches/${PACKAGENAME}/libmetalink-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES=""
@@ -32,12 +34,12 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libmetalink-mintelf-config.patch"
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 
 export LIBXML2_CFLAGS=-I${sysroot}${TARGET_PREFIX}/include/libxml2
-export LIBXML2_LIBS="-lxml2 -lz -liconv -lm"
+export LIBXML2_LIBS="-lxml2 -lz -llzma -liconv -lm"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer $LIBXML2_CFLAGS"
 

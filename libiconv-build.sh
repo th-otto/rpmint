@@ -10,8 +10,10 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/libiconv-mintelf-config.patch
 patches/${PACKAGENAME}/libiconv-1.16-aliases.patch
+"
+DISABLE_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -21,6 +23,10 @@ ${TARGET_PREFIX#/}/share/doc/${PACKAGENAME}
 "
 
 unpack_archive
+
+cd "$srcdir"
+
+cp patches/automake/mintelf-config.sub build-aux/config.sub
 
 cd "$MINT_BUILD_DIR"
 

@@ -9,9 +9,13 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/readline/readline-mintelf-config.patch"
+DISABLED_PATCHES="patches/automake/mintelf-config.sub"
 
 unpack_archive
+
+cd "$srcdir"
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" support/config.sub
 
 cd "$MINT_BUILD_DIR"
 
