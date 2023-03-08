@@ -1,50 +1,44 @@
-%define pkgname nghttp2
+%define pkgname libbeecrypt
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Implementation of Hypertext Transfer Protocol version 2 in C
+Summary:        An open source cryptography library
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.26.0
+Version:        4.1.2
 Release:        1
-License:        MIT
+License:        LGPL-2.1-or-later
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            https://nghttp2.org/
+URL:            http://sourceforge.net/projects/beecrypt
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://github.com/nghttp2/nghttp2/releases/download/v%{version}/%{pkgname}-%{version}.tar.xz
+Source0: beecrypt-%{version}.tar.bz2
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/nghttp2-remove-python-build.patch
+Patch0:  patches/libbeecrypt6/beecrypt-4.1.2.patch
+Patch1:  patches/libbeecrypt6/beecrypt-4.1.2-build.patch
+Patch2:  patches/libbeecrypt6/beecrypt-4.1.2-fix_headers.patch
+Patch3:  patches/libbeecrypt6/beecrypt-libdir.patch
+Patch4:  patches/libbeecrypt6/beecrypt-no-asm-m68k.patch
+Patch5:  patches/libbeecrypt6/beecrypt-enable-cplusplus.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
-BuildRequires:  automake
+BuildRequires:  automake >= 1.14
 BuildRequires:  libtool
 BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
-%if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
-BuildRequires:  cross-mint-libiconv
-BuildRequires:  cross-mint-openssl
-BuildRequires:  cross-mint-libxml2
-%else
-BuildRequires:  pkgconfig(zlib)
-BuildRequires:  pkgconfig(openssl)
-BuildRequires:  pkgconfig(libxml-2.0)
-BuildRequires:  libiconv
-%endif
 
 %if "%{buildtype}" == "cross"
 BuildArch:      noarch
@@ -62,34 +56,41 @@ BuildArch:      noarch
 %endif
 
 %description
-nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPACK in C.
+BeeCrypt is an ongoing project to provide a strong and fast
+cryptography toolkit. Includes entropy sources, random generators,
+block ciphers, hash functions, message authentication codes,
+multiprecision integer routines, and public key primitives.
 
 %prep
-%setup -q -n %{pkgname}-%{version}
+%setup -q -n beecrypt-%{version}
 %patch0 -p1
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
 
-sed -i -e 's@AM_CONFIG_HEADER@AC_CONFIG_HEADERS@g' configure.ac
-rm -v m4/libtool.m4 m4/lt*
 rm -f aclocal.m4 ltmain.sh
 libtoolize --force || exit 1
-aclocal -I m4 || exit 1
+aclocal || exit 1
 autoconf || exit 1
 autoheader || exit 1
-automake --force --copy --add-missing || exit 1
+automake --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
-# autoreconf may have overwritten config.sub
 cp %{S:1} config.sub
 
 %build
 
 %rpmint_cflags
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing"
+STACKSIZE="-Wl,-stack,256k"
+
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
-    --disable-shared
-    --enable-static
+	--without-java
+	--without-python
+	--disable-threads
 "
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
@@ -100,6 +101,7 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
@@ -109,10 +111,6 @@ for CPU in ${ALL_CPUS}; do
 
 	# compress manpages
 	%rpmint_gzip_docs
-
-	# remove obsolete pkg config files for multilibs
-	%rpmint_remove_pkg_configs
-
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
 
 	%if "%{buildtype}" != "cross"
@@ -122,7 +120,7 @@ for CPU in ${ALL_CPUS}; do
 	%rpmint_make_bin_archive $CPU
 	%endif
 
-	make clean
+	make distclean
 done
 
 
@@ -150,16 +148,13 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %if "%{buildtype}" == "cross"
 %{_rpmint_includedir}
 %{_rpmint_libdir}
-%{_rpmint_cross_pkgconfigdir}
-%{_rpmint_datadir}
 %else
 %{_rpmint_target_prefix}/include
 %{_rpmint_target_prefix}/lib
-%{_rpmint_target_prefix}/share
 %endif
 
 
 
 %changelog
-* Mon Mar 6 2023 Thorsten Otto <admin@tho-otto.de>
+* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

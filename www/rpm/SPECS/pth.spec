@@ -1,49 +1,39 @@
-%define pkgname nghttp2
+%define pkgname pth
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Implementation of Hypertext Transfer Protocol version 2 in C
+Summary:        GNU Pth threads library
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.26.0
+Version:        2.0.7
 Release:        1
-License:        MIT
+License:        LGPL-2.1-or-later
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            https://nghttp2.org/
+URL:            https://www.gnu.org/software/pth/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://github.com/nghttp2/nghttp2/releases/download/v%{version}/%{pkgname}-%{version}.tar.xz
+Source0: https://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/nghttp2-remove-python-build.patch
+Patch0:  patches/%{pkgname}/pth-2.0.7-m68k-atari-mint.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
-BuildRequires:  automake
-BuildRequires:  libtool
-BuildRequires:  pkgconfig
-BuildRequires:  m4
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
-BuildRequires:  cross-mint-libiconv
-BuildRequires:  cross-mint-openssl
-BuildRequires:  cross-mint-libxml2
+Provides:       cross-mint-pthread-devel
 %else
-BuildRequires:  pkgconfig(zlib)
-BuildRequires:  pkgconfig(openssl)
-BuildRequires:  pkgconfig(libxml-2.0)
-BuildRequires:  libiconv
+Provides:       pthread-devel
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -62,58 +52,83 @@ BuildArch:      noarch
 %endif
 
 %description
-nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPACK in C.
+based library for Unix platforms which provides non-preemptive
+priority-based scheduling for multiple threads of execution (aka
+``multithreading'') inside event-driven applications. All threads run
+in the same address space of the server application, but each thread
+has it&apos;s own individual program-counter, run-time stack, signal mask
+and errno variable.
+
+The thread scheduling itself is done in a cooperative way, i.e., the
+threads are managed by a priority- and event-based non-preemptive
+scheduler. The intention is that this way one can achieve better
+portability and run-time performance than with preemptive scheduling.
+The event facility allows threads to wait until various types of events
+occur, including pending I/O on filedescriptors, asynchronous signals,
+elapsed timers, pending I/O on message ports, thread and process
+termination, and even customized callback functions. 
+
+Original MiNT-Patch by Patrice Mandin & medmed.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 
-sed -i -e 's@AM_CONFIG_HEADER@AC_CONFIG_HEADERS@g' configure.ac
-rm -v m4/libtool.m4 m4/lt*
-rm -f aclocal.m4 ltmain.sh
-libtoolize --force || exit 1
-aclocal -I m4 || exit 1
-autoconf || exit 1
-autoheader || exit 1
-automake --force --copy --add-missing || exit 1
-rm -rf autom4te.cache config.h.in.orig
+autoconf
 
-# autoreconf may have overwritten config.sub
 cp %{S:1} config.sub
 
 %build
 
 %rpmint_cflags
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
-    --disable-shared
-    --enable-static
+    --enable-pthread
+    --config-cache
 "
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+
+create_config_cache()
+{
+cat <<EOF >config.cache
+ac_cv_check_stackgrowth=down
+ac_cv_check_sjlj=sjljmint
+ac_cv_check_mcsc=no
+ac_cv_func_sigstack=no
+ac_cv_func_sigaltstack=no
+ac_cv_func_makecontext=no
+EOF
+}
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
+	create_config_cache
 
+	CC="%{_rpmint_target}-gcc" \
+	AR="${ar}" \
+	RANLIB=${ranlib} \
+	NM=%{_rpmint_target}-nm \
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
+	rm -f %{buildroot}%{_rpmint_mandir}/man1/pth-config*
+	rm -f %{buildroot}%{_rpmint_mandir}/man1/pthread-config*
+	rmdir %{buildroot}%{_rpmint_mandir}/man1 || :
+
 	# compress manpages
 	%rpmint_gzip_docs
-
-	# remove obsolete pkg config files for multilibs
-	%rpmint_remove_pkg_configs
-
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
+	rm -f %{buildroot}%{_rpmint_bindir}/pthread-config
+	rm -f %{buildroot}%{_rpmint_bindir}/pth-config
+	rmdir %{buildroot}%{_rpmint_bindir} || :
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -150,7 +165,6 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %if "%{buildtype}" == "cross"
 %{_rpmint_includedir}
 %{_rpmint_libdir}
-%{_rpmint_cross_pkgconfigdir}
 %{_rpmint_datadir}
 %else
 %{_rpmint_target_prefix}/include
@@ -161,5 +175,5 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Mon Mar 6 2023 Thorsten Otto <admin@tho-otto.de>
+* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

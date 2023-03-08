@@ -11,7 +11,9 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/pth-2.0.7-m68k-atari-mint.patch
-patches/${PACKAGENAME}/mintelf-config.patch
+"
+DISABLE_PATCHES="
+patches/automake/mintelf-config.sub
 "
 BINFILES="
 "
@@ -23,7 +25,7 @@ cd "$srcdir"
 autoconf
 # autoreconf -fiv
 # autoreconf may have overwritten config.sub
-# patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 

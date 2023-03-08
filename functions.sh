@@ -421,8 +421,8 @@ move_pkgconfig_libs_private()
 	local privlib
 	local modified
 	# If a *.pc has a Libs.private entry,
-	libs=" "`sed -n 's/Libs: *\(.*\)$/\1/p' "$file"`" "
-	libs_priv=" "`sed -n 's/Libs\.private: *\(.*\)$/\1/p' "$file"`" "
+	libs=" "`sed -n 's,Libs: *\(.*\)$,\1,p' "$file"`" "
+	libs_priv=" "`sed -n 's,Libs\.private: *\(.*\)$,\1,p' "$file"`" "
 	modified=false;
 	for lib in $libs_priv; do
 		case $libs in
@@ -431,7 +431,7 @@ move_pkgconfig_libs_private()
 		esac
 	done
 	if $modified; then
-		sed -e 's/Libs: .*$/'"Libs: $libs"'/' "$file" > "$file.tmp"
+		sed -e 's,Libs: .*$,'"Libs: $libs"',' "$file" > "$file.tmp"
 		mv "$file.tmp" "$file"
 	fi
 }
@@ -484,6 +484,7 @@ copy_pkg_configs()
 			             s,=[ ]*'$prefix',=${prefix},
 			             s,-L'$TARGET_LIBDIR',-L${libdir},g
 			             s,-L${sharedlibdir} ,,g
+			             s,-L${exec_prefix}/lib,-L${libdir},g
 			             s,-L${libdir} ,,g
 			             s,-L${libdir}$,,
 			             s,-L'${TARGET_BINDIR}'[ ]*,,g
@@ -491,7 +492,8 @@ copy_pkg_configs()
 			             s,-I'${sysroot}${TARGET_PREFIX}/include',-I${includedir},g' $dst
 				includedir=`sed -n 's/^[ ]*includedir[ ]*=[ ]*\([^ ]*\)/\1/p' $dst`
 				if test "$includedir" = '/usr/include' -o "$includedir" = '${prefix}/include' -o "$includedir" = '${prefix}/sys-include'; then
-					sed -i 's,-I${includedir} ,,g
+					sed -i 's,-I${prefix}/include,-I${includedir},g
+					     s,-I${includedir} ,,g
 					     s,-I${includedir}$,,' $dst
 				fi
 			fi
@@ -503,6 +505,7 @@ copy_pkg_configs()
 			         s,[ ]*=[ ]*'$prefix',=${prefix},
 			         s,-L'$TARGET_LIBDIR',-L${libdir},g
 		             s,-L${sharedlibdir} ,,g
+		             s,-L${exec_prefix}/lib,-L${libdir},g
 			         s,-L${libdir} ,,g
 			         s,-L${libdir}$,,
 		             s,-L'${TARGET_BINDIR}'[ ]*,,g
@@ -510,7 +513,8 @@ copy_pkg_configs()
 		             s,-I'${sysroot}${TARGET_PREFIX}/include',-I${includedir},g' $i > $i.tmp
 			includedir=`sed -n 's/^[ ]*includedir[ ]*=[ ]*\([^ ]*\)/\1/p' $i.tmp`
 			if test "$includedir" = '/usr/include' -o "$includedir" = '${prefix}/include' -o "$includedir" = '${prefix}/sys-include'; then
-				sed -i 's,-I${includedir} ,,g
+				sed -i 's,-I${prefix}/include,-I${includedir},g
+				     s,-I${includedir} ,,g
 				     s,-I${includedir}$,,' $i.tmp
 			fi
 			move_pkgconfig_libs_private "$i.tmp"

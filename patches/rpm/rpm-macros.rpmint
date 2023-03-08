@@ -89,8 +89,8 @@ BuildRequires:  mint-devel-essential \
 	# pkg-config --libs, and would fail otherwise \
 	_file="%1" \
 	# If a *.pc has a Libs.private entry, \
-	_libs=" "`sed -n 's/Libs: *\\\(.*\\\)$/\\\1/p' "$_file"`" " \
-	_libs_priv=" "`sed -n 's/Libs\\\.private: *\\\(.*\\\)$/\\\1/p' "$_file"`" " \
+	_libs=" "`sed -n 's,Libs: *\\\(.*\\\)$,\\\1,p' "$_file"`" " \
+	_libs_priv=" "`sed -n 's,Libs\\\.private: *\\\(.*\\\)$,\\\1,p' "$_file"`" " \
 	_modified=false; \
 	for _lib in $_libs_priv; do \
 		case $_libs in \
@@ -99,7 +99,7 @@ BuildRequires:  mint-devel-essential \
 		esac \
 	done \
 	if $_modified; then \
-		sed -e 's/Libs: .*$/'"Libs: $_libs"'/' "$_file" > "$_file.tmp" \
+		sed -e 's,Libs: .*$,'"Libs: $_libs"',' "$_file" > "$_file.tmp" \
 		mv "$_file.tmp" "$_file" \
 	fi \
 %nil
@@ -163,6 +163,7 @@ BuildRequires:  mint-devel-essential \
 			             s,=[ ]*'%{prefix}',=${prefix}, \
 			             s,-L'%{_rpmint_target_prefix}/lib',-L${libdir},g \
 			             s,-L${sharedlibdir} ,,g \
+			             s,-L${exec_prefix}/lib,-L${libdir},g \
 			             s,-L${libdir} ,,g \
 			             s,-L${libdir}$,, \
 			             s,-L'%{_rpmint_target_prefix}/bin'[ ]*,,g \
@@ -170,7 +171,8 @@ BuildRequires:  mint-devel-essential \
 			             s,-I'%{_rpmint_includedir}',-I${includedir},g' $dst \
 				includedir=`sed -n 's/^[ ]*includedir[ ]*=[ ]*\\\([^ ]*\\\)/\\\1/p' $dst` \
 				if test "$includedir" = '/usr/include' -o "$includedir" = '${prefix}/include' -o "$includedir" = '${prefix}/sys-include'; then \
-					sed -i 's,-I${includedir} ,,g \
+					sed -i 's,-I${prefix}/include,-I${includedir},g \
+                                             s,-I${includedir} ,,g \
 					     s,-I${includedir}$,,' $dst \
 				fi \
 			fi \
@@ -182,14 +184,16 @@ BuildRequires:  mint-devel-essential \
 			         s,[ ]*=[ ]*'%{prefix}',=${prefix}, \
 			         s,-L'%{_rpmint_target_prefix}/lib',-L${libdir},g \
 		             s,-L${sharedlibdir} ,,g \
-			         s,-L${libdir} ,,g \
-			         s,-L${libdir}$,, \
+		             s,-L${exec_prefix}/lib,-L${libdir},g \
+			     s,-L${libdir} ,,g \
+			     s,-L${libdir}$,, \
 		             s,-L'%{_rpmint_target_prefix}/bin'[ ]*,,g \
  		             s,-I/usr/include,-I${includedir},g \
 		             s,-I'%{_rpmint_includedir}',-I${includedir},g' $i > $i.tmp \
 			includedir=`sed -n 's/^[ ]*includedir[ ]*=[ ]*\\\([^ ]*\\\)/\\\1/p' $i.tmp` \
 			if test "$includedir" = '/usr/include' -o "$includedir" = '${prefix}/include' -o "$includedir" = '${prefix}/sys-include'; then \
-				sed -i 's,-I${includedir} ,,g \
+				sed -i 's,-I${prefix}/include,-I${includedir},g \
+                                     s,-I${includedir} ,,g \
 				     s,-I${includedir}$,,' $i.tmp \
 			fi \
 			%rpmint_move_pkgconfig_libs_private $i.tmp \

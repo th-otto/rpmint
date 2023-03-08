@@ -1,49 +1,42 @@
-%define pkgname nghttp2
+%define pkgname openh264
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Implementation of Hypertext Transfer Protocol version 2 in C
+Summary:        Library which supports H.264 encoding and decoding
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.26.0
+Version:        2.3.0
 Release:        1
-License:        MIT
+License:        BSD-2-Clause
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            https://nghttp2.org/
+URL:            http://libexif.sourceforge.net
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://github.com/nghttp2/nghttp2/releases/download/v%{version}/%{pkgname}-%{version}.tar.xz
-Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/nghttp2-remove-python-build.patch
+# https://github.com/cisco/openh264/archive/refs/tags/v2.3.0.tar.gz
+Source0: %{pkgname}-%{version}.tar.gz
+Patch0:  patches/%{pkgname}/%{pkgname}-%{version}-mint.patch
 
 %rpmint_essential
-BuildRequires:  autoconf
-BuildRequires:  automake
-BuildRequires:  libtool
-BuildRequires:  pkgconfig
-BuildRequires:  m4
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
-BuildRequires:  cross-mint-libiconv
-BuildRequires:  cross-mint-openssl
-BuildRequires:  cross-mint-libxml2
+BuildRequires:  cross-mint-gcc-c++
+BuildRequires:  cross-mint-pthread-devel
+Provides:       cross-mint-openh264-devel
 %else
-BuildRequires:  pkgconfig(zlib)
-BuildRequires:  pkgconfig(openssl)
-BuildRequires:  pkgconfig(libxml-2.0)
-BuildRequires:  libiconv
+BuildRequires:  gcc-c++
+BuildRequires:  pthread-devel
+Provides:       openh264-devel
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -62,35 +55,25 @@ BuildArch:      noarch
 %endif
 
 %description
-nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPACK in C.
+OpenH264 is a codec library which supports H.264 encoding and decoding.
+It is suitable for use in real time applications such as WebRTC. See
+<a href="http://www.openh264.org/">http://www.openh264.org/</a> for more details.
+
+Needs the pth library from above.
+You need to use g++ to link against this library.
+Original MiNT-Patch by medmed.
+
+A simple GEM example can be found in <a href="https://www.atari-forum.com/viewtopic.php?p=436559#p436559">this thread</a>
 
 %prep
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 
-sed -i -e 's@AM_CONFIG_HEADER@AC_CONFIG_HEADERS@g' configure.ac
-rm -v m4/libtool.m4 m4/lt*
-rm -f aclocal.m4 ltmain.sh
-libtoolize --force || exit 1
-aclocal -I m4 || exit 1
-autoconf || exit 1
-autoheader || exit 1
-automake --force --copy --add-missing || exit 1
-rm -rf autom4te.cache config.h.in.orig
-
-# autoreconf may have overwritten config.sub
-cp %{S:1} config.sub
-
 %build
 
 %rpmint_cflags
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
-    --disable-shared
-    --enable-static
-"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -99,20 +82,27 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
+	OS=freemint \
+	ARCH=m68k \
+	CC="${TARGET}-gcc" \
+	CXX="${TARGET}-g++" \
+	AR="${ar}" \
+	ARFLAGS=rcs \
+	RANLIB=${ranlib} \
+	NM=${TARGET}-nm \
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
-	"./configure" ${CONFIGURE_FLAGS} \
-	--libdir='${exec_prefix}/lib'$multilibdir
+	make %{?_smp_mflags} V=Yes || exit 1
 
-	make %{?_smp_mflags}
-	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
+	OS=freemint \
+	ARCH=m68k \
+	make PREFIX="%{buildroot}%{_rpmint_sysroot}/%{_rpmint_target_prefix}" LIBDIR_NAME='lib'$multilibdir install
+
+	mkdir -p "%{buildroot}%{_rpmint_bindir}"
+	cp h264dec h264enc "%{buildroot}%{_rpmint_bindir}"
+	%{_rpmint_target}-strip "%{buildroot}%{_rpmint_bindir}"/*
 
 	# compress manpages
 	%rpmint_gzip_docs
-
-	# remove obsolete pkg config files for multilibs
-	%rpmint_remove_pkg_configs
-
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
 
 	%if "%{buildtype}" != "cross"
@@ -122,6 +112,8 @@ for CPU in ${ALL_CPUS}; do
 	%rpmint_make_bin_archive $CPU
 	%endif
 
+	OS=freemint \
+	ARCH=m68k \
 	make clean
 done
 
@@ -148,18 +140,17 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %files
 %defattr(-,root,root)
 %if "%{buildtype}" == "cross"
+%{_rpmint_bindir}
 %{_rpmint_includedir}
 %{_rpmint_libdir}
-%{_rpmint_cross_pkgconfigdir}
-%{_rpmint_datadir}
 %else
+%{_rpmint_target_prefix}/bin
 %{_rpmint_target_prefix}/include
 %{_rpmint_target_prefix}/lib
-%{_rpmint_target_prefix}/share
 %endif
 
 
 
 %changelog
-* Mon Mar 6 2023 Thorsten Otto <admin@tho-otto.de>
+* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

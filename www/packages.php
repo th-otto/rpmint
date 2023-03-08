@@ -1183,7 +1183,7 @@ nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPAC
 		'atari' => 1,
 		'amiga' => 1,
 		'license' => 'MIT',
-		'category' => 'Development/Libraries/C and C++',
+		'category' => 'Development/Libraries',
 		'summary' => 'A Library to Manipulate XML Files',
 		'comment' => '
 The XML C library was initially developed for the GNOME project. It is

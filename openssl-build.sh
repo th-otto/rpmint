@@ -12,6 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/openssl/openssl-1.1.1p-mint.patch
 patches/openssl/openssl-zlib-static.patch
+patches/openssl/openssl-bn_div-asm.patch
 "
 
 unpack_archive

@@ -27,6 +27,7 @@ BuildRoot:      %{_tmppath}/%{name}-root
 Source0: https://www.openssl.org/source/%{pkgname}-%{version}.tar.gz
 Patch0: patches/openssl/openssl-1.1.1p-mint.patch
 Patch1: patches/openssl/openssl-zlib-static.patch
+Patch1: patches/openssl/openssl-bn_div-asm.patch
 
 %rpmint_essential
 BuildRequires:  pkgconfig
@@ -70,6 +71,7 @@ documentation.
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 
 %build
@@ -97,7 +99,7 @@ for CPU in ${ALL_CPUS}; do
 
 	# compress manpages
 	%rpmint_gzip_docs
-	# remove obsolete pkg config files
+	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
 
 	%if "%{buildtype}" != "cross"
@@ -154,4 +156,49 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %changelog
 * Sun Mar 5 2023 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+- Upgraded to 1.1.1p
+
+* Thu Dec 09 2010 Keith Scroggins <kws@radix.net>
+- Upgraded to 1.0.0c
+
+* Mon Dec 06 2010 Keith Scroggins <kws@radix.net>
+- Upgraded to 1.0.0b
+
+* Wed Jun 09 2010 Keith Scroggins <kws@radix.net>
+- Upgraded to 1.0.0a and added the ability to Cross Compile the RPM
+
+* Sun May 23 2010 Keith Scroggins <kws@radix.net>
+- Upgraded to 1.0.0 and incorporated assembly code from Howard Chu for 68020+
+- target.
+
+* Tue Jan 19 2010 Keith Scroggins <kws@radix.net>
+- Modified to build libraries for 68000 / 68020-60 / 5475
+
+* Sat Jan 16 2010 Keith Scroggins <kws@radix.net>
+- Updated to the latest version of OpenSSL.
+
+* Wed May 6 2009 Keith Scroggins <kws@radix.net>
+- Updated to the latest version of OpenSSL.
+
+* Sun Mar 1 2009 Keith Scroggins <kws@radix.net>
+- Updated to the latest version of OpenSSL.
+
+* Fri Mar 19 2004 Keith Scroggins <kws@radix.net>
+- Updated package to the latest security fixed version
+
+* Mon Feb 9 2004 Keith Scroggins <kws@radix.net>
+- Updated packaged to the latest version (had a security fix) and compiled
+- against the newest MiNTLib release.
+
+* Tue Oct 14 2003 Keith Scroggins <kws@radix.net>
+- Updated package to the latest secure version of OpenSSL and fixed the patches
+- to apply to this version.  Otherwise, patches are the same as the original
+- packagers.
+
+* Thu Dec 05 2000 Thomas Binder <gryf@hrzpub.tu-darmstadt.de>
+- recompiled with correct gcc optimizations
+
+* Sun Nov 26 2000 Thomas Binder <gryf@hrzpub.tu-darmstadt.de>
+- initial release for Sparemint, based on original .spec-file found
+  in openssl-0.9.6.tar.gz

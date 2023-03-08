@@ -10,8 +10,10 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/libheif/mintelf-config.patch
-patches/libheif/mint.patch
+patches/libheif/libheif-mint.patch
+"
+DISABLE_PATCHES="
+patches/automake/mintelf-config.sub
 "
 BINFILES="
 ${TARGET_BINDIR#/}/*
@@ -30,11 +32,17 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libmikmod-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub || exit 1
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-threads --disable-shared ${CONFIGURE_FLAGS_AMIGAOS} --disable-visibility --without-pic --disable-multithreading"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
+	--disable-threads
+	--disable-shared
+	--disable-visibility
+	--without-pic
+	--disable-multithreading
+"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"

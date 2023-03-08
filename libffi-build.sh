@@ -14,16 +14,19 @@ VERSIONPATCH=
 
 BINFILES=""
 
-PATCHES="
-patches/libffi/libffi-mintelf-config.patch
+DISABLE_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
+
+cd "$srcdir"
 
 cd "$MINT_BUILD_DIR"
 
 ./autogen.sh
 
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub || exit 1
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
@@ -44,7 +47,6 @@ for CPU in ${ALL_CPUS}; do
 
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
-	mkdir -p ${THISPKG_DIR}${sysroot}${prefix}/bin
 	${MAKE} clean >/dev/null
 	cd ${THISPKG_DIR}${sysroot}
 	rm -f ${TARGET_LIBDIR#/}$multilibdir/charset.alias

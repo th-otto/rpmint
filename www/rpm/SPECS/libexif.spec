@@ -1,50 +1,36 @@
-%define pkgname nghttp2
+%define pkgname libexif
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Implementation of Hypertext Transfer Protocol version 2 in C
+Summary:        An EXIF Tag Parsing Library for Digital Cameras
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.26.0
+Version:        0.6.22
 Release:        1
-License:        MIT
+License:        LGPL-2.1-or-later
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            https://nghttp2.org/
+URL:            http://libexif.sourceforge.net
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://github.com/nghttp2/nghttp2/releases/download/v%{version}/%{pkgname}-%{version}.tar.xz
+Source0: https://downloads.sourceforge.net/project/libexif/%{pkgname}/%{version}/%{pkgname}-%{version}.tar.bz2
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/nghttp2-remove-python-build.patch
+Patch0:  patches/libexif/libexif-build-date.patch
+Patch1:  patches/libexif/libexif-CVE-2017-7544.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
-BuildRequires:  automake
-BuildRequires:  libtool
-BuildRequires:  pkgconfig
-BuildRequires:  m4
 BuildRequires:  make
-%if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
-BuildRequires:  cross-mint-libiconv
-BuildRequires:  cross-mint-openssl
-BuildRequires:  cross-mint-libxml2
-%else
-BuildRequires:  pkgconfig(zlib)
-BuildRequires:  pkgconfig(openssl)
-BuildRequires:  pkgconfig(libxml-2.0)
-BuildRequires:  libiconv
-%endif
 
 %if "%{buildtype}" == "cross"
 BuildArch:      noarch
@@ -62,35 +48,29 @@ BuildArch:      noarch
 %endif
 
 %description
-nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPACK in C.
+This library is used to parse EXIF information from JPEGs created by
+digital cameras.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 
-sed -i -e 's@AM_CONFIG_HEADER@AC_CONFIG_HEADERS@g' configure.ac
-rm -v m4/libtool.m4 m4/lt*
-rm -f aclocal.m4 ltmain.sh
-libtoolize --force || exit 1
-aclocal -I m4 || exit 1
-autoconf || exit 1
-autoheader || exit 1
-automake --force --copy --add-missing || exit 1
-rm -rf autom4te.cache config.h.in.orig
-
-# autoreconf may have overwritten config.sub
 cp %{S:1} config.sub
 
 %build
 
+export LANG=POSIX
+export LC_ALL=POSIX
+
 %rpmint_cflags
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
-    --disable-shared
-    --enable-static
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} --with-doc-dir=%{_rpmint_target_prefix}/share/doc/%{pkgname} ${CONFIGURE_FLAGS_AMIGAOS}
+	--disable-nls
+	--disable-shared
 "
+
+STACKSIZE="-Wl,-stack,128k"
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -107,12 +87,11 @@ for CPU in ${ALL_CPUS}; do
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
-	# compress manpages
-	%rpmint_gzip_docs
-
 	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
 
+	# compress manpages
+	%rpmint_gzip_docs
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
 
 	%if "%{buildtype}" != "cross"
@@ -161,5 +140,5 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Mon Mar 6 2023 Thorsten Otto <admin@tho-otto.de>
+* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

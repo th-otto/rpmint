@@ -17,8 +17,10 @@ patches/libbeecrypt6/beecrypt-4.1.2-build.patch
 patches/libbeecrypt6/beecrypt-4.1.2-fix_headers.patch
 patches/libbeecrypt6/beecrypt-libdir.patch
 patches/libbeecrypt6/beecrypt-no-asm-m68k.patch
-patches/libbeecrypt6/beecrypt-mintelf-config.patch
 patches/libbeecrypt6/beecrypt-enable-cplusplus.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES=""
@@ -37,15 +39,18 @@ autoheader || exit 1
 automake --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
+
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing"
 STACKSIZE="-Wl,-stack,256k"
 
-CONFIGURE_FLAGS="--host=${TARGET} \
-	--prefix=${prefix} \
-	--without-java \
-	--without-python \
+CONFIGURE_FLAGS="--host=${TARGET}
+	--prefix=${prefix}
+	--without-java
+	--without-python
+	--disable-threads
 "
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"

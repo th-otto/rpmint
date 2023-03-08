@@ -1,49 +1,47 @@
-%define pkgname nghttp2
+%define pkgname libheif
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Implementation of Hypertext Transfer Protocol version 2 in C
+Summary:        HEIF and AVIF (AV1 Image File Format) file format decoder and encoder
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.26.0
+Version:        1.14.2
 Release:        1
-License:        MIT
+License:        LGPL-3.0-or-later
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            https://nghttp2.org/
+URL:            https://github.com/strukturag/libheif/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://github.com/nghttp2/nghttp2/releases/download/v%{version}/%{pkgname}-%{version}.tar.xz
+Source0: packages/%{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/nghttp2-remove-python-build.patch
+Patch0:  patches/libheif/libheif-mint.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libtool
-BuildRequires:  pkgconfig
-BuildRequires:  m4
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
-BuildRequires:  cross-mint-libiconv
-BuildRequires:  cross-mint-openssl
-BuildRequires:  cross-mint-libxml2
+BuildRequires:  cross-mint-gcc-c++
+BuildRequires:  cross-mint-libde265-devel
+Requires:       cross-mint-libde265
+Provides:       cross-mint-libheif-devel
 %else
-BuildRequires:  pkgconfig(zlib)
-BuildRequires:  pkgconfig(openssl)
-BuildRequires:  pkgconfig(libxml-2.0)
-BuildRequires:  libiconv
+BuildRequires:  gcc-c++
+BuildRequires:  libde265-devel
+Requires:       libde265
+Provides:       libheif-devel
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -62,14 +60,21 @@ BuildArch:      noarch
 %endif
 
 %description
-nghttp2 is an implementation of HTTP/2 and its header compression algorithm HPACK in C.
+libheif is an ISO/IEC 23008-12:2017 HEIF and AVIF (AV1 Image File
+Format) file format decoder and encoder.
+
+HEIF and AVIF are new image file formats employing HEVC (h.265) or AV1
+image coding, respectively, for the best compression ratios currently
+possible.
+
+libheif makes use of libde265 for HEIF image decoding and x265 for
+encoding. For AVIF, libaom, dav1d, svt-av1, or rav1e are used as
+codecs.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 
-sed -i -e 's@AM_CONFIG_HEADER@AC_CONFIG_HEADERS@g' configure.ac
-rm -v m4/libtool.m4 m4/lt*
 rm -f aclocal.m4 ltmain.sh
 libtoolize --force || exit 1
 aclocal -I m4 || exit 1
@@ -78,19 +83,25 @@ autoheader || exit 1
 automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
-# autoreconf may have overwritten config.sub
 cp %{S:1} config.sub
 
 %build
 
+export LANG=POSIX
+export LC_ALL=POSIX
+
 %rpmint_cflags
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
-    --disable-shared
-    --enable-static
+	--disable-threads
+	--disable-shared
+	--disable-visibility
+	--without-pic
+	--disable-multithreading
 "
+
+STACKSIZE="-Wl,-stack,128k"
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -100,19 +111,19 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
-	# compress manpages
-	%rpmint_gzip_docs
-
 	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
 
+	# compress manpages
+	%rpmint_gzip_docs
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
 
 	%if "%{buildtype}" != "cross"
@@ -148,11 +159,13 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %files
 %defattr(-,root,root)
 %if "%{buildtype}" == "cross"
+%{_rpmint_bindir}
 %{_rpmint_includedir}
 %{_rpmint_libdir}
 %{_rpmint_cross_pkgconfigdir}
 %{_rpmint_datadir}
 %else
+%{_rpmint_target_prefix}/bin
 %{_rpmint_target_prefix}/include
 %{_rpmint_target_prefix}/lib
 %{_rpmint_target_prefix}/share
@@ -161,5 +174,5 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Mon Mar 6 2023 Thorsten Otto <admin@tho-otto.de>
+* Wed Mar 8 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
