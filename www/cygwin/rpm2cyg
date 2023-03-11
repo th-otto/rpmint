@@ -42,8 +42,8 @@ for pkgname in $pkgnames; do
 	
 	fullname=`sed -n 's/Name:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
 	echo "pkgname: ${fullname}"
-	version=`sed -n 's/^Version:[ \t]*\(.*\)/\1/p' "$specfile"`
-	release=`sed -n 's/^Release:[ \t]*\(.*\)/\1/p' "$specfile"`
+	version=`sed -n 's/^Version:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
+	release=`sed -n 's/^Release:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
 	arch=
 	if test "$arch" = ""; then
 		rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
@@ -70,9 +70,9 @@ for pkgname in $pkgnames; do
 	url=`rpm -q --queryformat '%{url}' "$rpmfile"`
 	summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
 	description=`rpm -q --queryformat '%{description}' "$rpmfile"`
-	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v rpmlib | grep -v "lib.*\.so" | grep -v /bin/sh`
+	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v 'rpmlib(' | grep -v 'mono(' | grep -v "lib.*\.so" | grep -v /bin/ | grep -v /sbin/`
 	group=`rpm -q --queryformat '%{group}' "$rpmfile"`
-	provides=`rpm -q --queryformat '%{provides}' "$rpmfile"`
+	provides=`rpm -q --queryformat '%{provides}' "$rpmfile" | grep -v /bin/ | grep -v /sbin/`
 	
 	if test "${requires}" != ""; then
 		requires="requires: "`echo ${requires} | sed -e 's/ /,/g'`"

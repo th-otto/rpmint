@@ -1,49 +1,41 @@
-%define pkgname libxml
+%define pkgname libmikmod
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        An XML library
-Summary(de):    Eine XML-Bibliothek
+Summary:        MikMod Sound Library
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.8.9
+Version:        3.3.7
 Release:        1
 License:        LGPL-2.1-or-later
-Group:          Development/Libraries
+Group:          Development/Libraries/C and C++
 
-Packager:       Edgar Aichinger <eaiching@t0.or.at>
-URL:            http://xmlsoft.org/
+Packager:       Thorsten Otto <admin@tho-otto.de>
+URL:            http://mikmod.raphnet.net/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://download.gnome.org/sources/libxml/1.8/%{pkgname}-%{version}.tar.gz
+Source0: http://sourceforge.net/projects/mikmod/files/%{pkgname}/%{version}/%{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/libxml-mint.patch
+Patch0:  patches/libmikmod/libmikmod-cflags.patch
+Patch1:  patches/libmikmod/libmikmod-config.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
-BuildRequires:  automake
 BuildRequires:  libtool
-BuildRequires:  pkgconfig
-BuildRequires:  m4
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
-BuildRequires:  cross-mint-libiconv
-Provides:       cross-mint-libxml-devel
+Provides:       cross-mint-libmikmod-devel
 %else
-BuildRequires:  pkgconfig(zlib)
-BuildRequires:  readline
-BuildRequires:  libiconv
-Provides:       libxml-devel
+Provides:       libmikmod-devel
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -62,34 +54,35 @@ BuildArch:      noarch
 %endif
 
 %description
-The libxml package contains an XML library, which allows you to
-manipulate XML files. XML (eXtensible Markup Language) is a data
-format for structured document interchange via the Web.
-
-%description -l de
-Das Paket libxml enthält eine XML-Bibliothek, die Ihnen ermöglicht,
-XML-Dateien zu manipulieren. XML (eXtensible Markup Language) ist
-ein Datenformat für den Austausch strukturierter Dokumente über das Web.
+Libmikmod is a portable sound library, capable of playing samples as
+well as module files. It was originally written by Jean-Paul Mikkers
+(MikMak) for DOS. It supports OSS /dev/dsp, ALSA, and Esound and can
+also write wav files. Supported file formats include mod, stm, s3m,
+mtm, xm, and it.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
+%patch1 -p1
+
+rm -f aclocal.m4 ltmain.sh
+libtoolize --force || exit 1
+aclocal -I m4 || exit 1
+autoconf || exit 1
+autoheader || exit 1
+automake --force --copy --add-missing || exit 1
+rm -rf autom4te.cache config.h.in.orig
 
 cp %{S:1} config.sub
 
 %build
 
-autoreconf -fiv
-
 %rpmint_cflags
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
-STACKSIZE="-Wl,-stack,128k"
-
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --sysconfdir="/etc" \
-    --disable-shared
-    --enable-static
+	--disable-threads
+	--disable-shared
 "
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
@@ -100,22 +93,21 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
+	# remove obsolete pkg config files for multilibs
+	%rpmint_remove_pkg_configs
+
 	# compress manpages
 	%rpmint_gzip_docs
-	# remove obsolete config script
-	rm -f %{buildroot}%{_rpmint_bindir}/xml-config
+	rm -f %{buildroot}%{_rpmint_bindir}/libmikmod-config
 	rmdir %{buildroot}%{_rpmint_bindir} || :
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
-	find %{buildroot}%{_rpmint_libdir} -type f -name "xmlConf.sh" -delete -printf "rm %p\n"
-	# remove obsolete pkg config files
-	%rpmint_remove_pkg_configs
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -152,9 +144,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %if "%{buildtype}" == "cross"
 %{_rpmint_includedir}
 %{_rpmint_libdir}
+%{_rpmint_cross_pkgconfigdir}
 %{_rpmint_datadir}
 %else
-#doc AUTHORS ChangeLog NEWS README COPYING COPYING.LIB TODO
 %{_rpmint_target_prefix}/include
 %{_rpmint_target_prefix}/lib
 %{_rpmint_target_prefix}/share
@@ -163,14 +155,18 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Wed Mar 08 2023 Thorsten Otto <admin@tho-otto.de>
+* Wed Mar 8 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
+- Update to version 3.3.7
 
-* Thu Apr 26 2001 Frank Naumann <fnaumann@freemint.de>
-- updated to 1.8.9
+* Mon Apr 07 2008 Marc-Anton Kehr <makehr@ndh.net>
+- new version
 
-* Sat Apr 01 2000 Frank Naumann <fnaumann@freemint.de>
+* Mon Mar 27 2000 Frank Naumann <fnaumann@freemint.de>
 - rebuild against new MiNTLib 0.55
 
-* Sun Nov 07 1999 Edgar Aichinger <eaiching@t0.or.at>
-- first release for SpareMiNT 
+* Wed Aug 25 1999 Frank Naumann <fnaumann@freemint.de>
+- compressed manpages
+- correct Packager and Vendor
+- added %description de and Summary(de)
+

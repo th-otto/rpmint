@@ -17,9 +17,9 @@ patches/${PACKAGENAME}/libmad-Provide-Thumb-2-alternative-code-for-MAD_F_MLN.dif
 patches/${PACKAGENAME}/libmad-thumb.diff
 patches/${PACKAGENAME}/libmad-0.15.1b-ppc.patch
 patches/${PACKAGENAME}/libmad-frame_length.diff
-patches/${PACKAGENAME}/libmad-mintelf-config.patch
 "
 DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -38,7 +38,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libmad-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 

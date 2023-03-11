@@ -12,7 +12,9 @@ VERSIONPATCH=
 PATCHES="
 patches/libmikmod/libmikmod-cflags.patch
 patches/libmikmod/libmikmod-config.patch
-patches/libmikmod/libmikmod-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
@@ -28,7 +30,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libmikmod-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" autotools/config.sub || exit 1
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
@@ -50,6 +52,8 @@ for CPU in ${ALL_CPUS}; do
 	
 	${MAKE} clean >/dev/null
 
+	rm -f ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/libmikmod-config
+	rmdir ${THISPKG_DIR}${sysroot}${TARGET_BINDIR} || :
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/charset.alias
 	make_bin_archive $CPU
 done
