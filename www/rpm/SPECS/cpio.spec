@@ -23,7 +23,9 @@ Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source:         https://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.bz2
+Source0:        https://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.bz2
+Source1:        patches/automake/mintelf-config.sub
+
 Patch0:         cpio-2.3-lstat.patch
 Patch1:         cpio-2.4.2-glibc.patch
 Patch2:         cpio-2.4.2-mtime.patch
@@ -52,6 +54,10 @@ Patch27:        cpio-2.12-CVE-2016-2037-out_of_bounds_write.patch
 Patch28:        cpio-2.12-CVE-2019-14866.patch
 Patch29:        cpio-no-mtiocget.patch
 Patch30:        cpio-filemode.patch
+Patch40:        patches/cpio/cpio-revert-CVE-2015-1197-fix.patch
+Patch41:        patches/cpio/cpio-fix-CVE-2021-38185.patch
+Patch42:        patches/cpio/cpio-fix-CVE-2021-38185_2.patch
+Patch43:        patches/cpio/cpio-fix-CVE-2021-38185_3.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -99,6 +105,12 @@ the disk, a magnetic tape, or a pipe.
 # patch28 -p1 already applied in 2.13
 %patch29 -p1
 %patch30 -p1
+%patch40 -p1
+%patch41 -p1
+%patch42 -p1
+%patch43 -p1
+
+cp %{S:1} build-aux/config.sub
 
 %build
 

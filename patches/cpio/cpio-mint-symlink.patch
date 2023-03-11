@@ -1,0 +1,83 @@
+--- a/src/global.c	2023-03-08 20:19:20.918934912 +0100
++++ b/src/global.c	2023-03-08 20:19:49.938895644 +0100
+@@ -185,7 +185,7 @@
+ bool to_stdout_option = false;
+ 
+ /* The name this program was run with.  */
+-char *program_name;
++extern char *program_name;
+ 
+ /* Extract files over symbolic links */
+ bool extract_over_symlinks;
+--- a/src/util.c.orig	2023-03-08 20:23:03.606633586 +0100
++++ b/src/util.c	2023-03-08 20:23:10.418624370 +0100
+@@ -802,7 +802,6 @@
+       hdr->c_dev_maj = major (st->st_dev);
+       hdr->c_dev_min = minor (st->st_dev);
+     }
+-  return 0;
+ }
+ 
+ 
+@@ -1228,7 +1228,8 @@ cpio_to_stat (struct stat *st, struct cp
+     st->st_mode |= S_IFIFO;
+ #endif
+ #ifdef S_IFLNK
+-  else if ((hdr->c_mode & CP_IFMT) == CP_IFLNK)
++  /* bug from some old versions of atari cpio: writing the internal filemode */
++  else if ((hdr->c_mode & CP_IFMT) == CP_IFLNK || (hdr->c_mode & CP_IFMT) == CP_IFLNK2)
+     st->st_mode |= S_IFLNK;
+ #endif
+ #ifdef S_IFSOCK
+--- a/src/filetypes.h	2023-03-08 20:51:40.544279619 +0100
++++ b/src/filetypes.h	2023-03-08 20:53:04.688162990 +0100
+@@ -71,6 +71,7 @@
+ #endif
+ #if defined(S_ISLNK)
+ # define CP_IFLNK 0120000
++# define CP_IFLNK2 0160000
+ #endif
+ #if defined(S_ISSOCK)
+ # define CP_IFSOCK 0140000
+--- a/src/copyin.c	2023-03-08 20:50:10.464404477 +0100
++++ b/src/copyin.c	2023-03-08 20:52:24.904218132 +0100
+@@ -132,7 +132,9 @@ list_file (struct cpio_file_stat* file_h
+   if (verbose_flag)
+     {
+ #ifdef CP_IFLNK
+-      if ((file_hdr->c_mode & CP_IFMT) == CP_IFLNK)
++      /* bug from some old versions of atari cpio: writing the internal filemode */
++      if ((file_hdr->c_mode & CP_IFMT) == CP_IFLNK ||
++         (file_hdr->c_mode & CP_IFMT) == CP_IFLNK2)
+ 	{
+ 	  if (archive_format != arf_tar && archive_format != arf_ustar)
+ 	    {
+@@ -164,7 +166,8 @@ list_file (struct cpio_file_stat* file_h
+   if (only_verify_crc_flag)
+     {
+ #ifdef CP_IFLNK
+-      if ((file_hdr->c_mode & CP_IFMT) == CP_IFLNK)
++      if ((file_hdr->c_mode & CP_IFMT) == CP_IFLNK ||
++          (file_hdr->c_mode & CP_IFMT) == CP_IFLNK2)
+ 	{
+ 	  return;   /* links don't have a checksum */
+ 	}
+@@ -750,6 +753,7 @@ copyin_file (struct cpio_file_stat *file
+ 
+ #ifdef CP_IFLNK
+     case CP_IFLNK:
++    case CP_IFLNK2:
+       copyin_link (file_hdr, in_file_des);
+       break;
+ #endif
+--- a/src/tar.c	2023-03-08 20:48:18.192560094 +0100
++++ b/src/tar.c	2023-03-08 20:53:23.112137453 +0100
+@@ -195,6 +195,8 @@ write_out_tar_header (struct cpio_file_s
+ #endif /* CP_IFIFO */
+ #ifdef CP_IFLNK
+     case CP_IFLNK:
++    /* bug from some old versions of atari cpio: writing the internal filemode */
++    case CP_IFLNK2:
+       tar_hdr->typeflag = SYMTYPE;
+       /* process_copy_out makes sure that c_tar_linkname is shorter
+ 	 than TARLINKNAMESIZE.  */

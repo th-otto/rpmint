@@ -23,6 +23,11 @@ patches/cpio/cpio-use_new_ascii_format.patch
 patches/cpio/cpio-use_sbin_rmt.patch
 patches/cpio/cpio-no-mtiocget.patch
 patches/cpio/cpio-filemode.patch
+patches/cpio/cpio-revert-CVE-2015-1197-fix.patch
+patches/cpio/cpio-fix-CVE-2021-38185.patch
+patches/cpio/cpio-fix-CVE-2021-38185_2.patch
+patches/cpio/cpio-fix-CVE-2021-38185_3.patch
+patches/cpio/cpio-mint-symlink.patch
 "
 DISABLED_PATCHES="
 patches/cpio/cpio-2.3-lstat.patch
@@ -34,6 +39,7 @@ patches/cpio/cpio-2.4.2-mtime.patch
 patches/cpio/cpio-default_tape_dev.patch
 patches/cpio/cpio-2.12-CVE-2019-14866.patch
 patches/cpio/cpio-2.12-CVE-2016-2037-out_of_bounds_write.patch
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -44,6 +50,10 @@ ${TARGET_PREFIX#/}/share/info/*
 "
 
 unpack_archive
+
+cd "$srcdir"
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub || exit 1
 
 cd "$MINT_BUILD_DIR"
 
