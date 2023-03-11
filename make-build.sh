@@ -11,11 +11,12 @@ VERSIONPATCH=
 
 PATCHES="
 patches/make/make-testcases_timeout.diff
-patches/make/make-mintelf-config.patch
+patches/make/make-clockskew.patch
 "
 
 DISABLED_PATCHES="
 patches/make/make-library-search-path.diff
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -25,6 +26,10 @@ ${TARGET_PREFIX#/}/share/info/*
 "
 
 unpack_archive
+
+cd "$srcdir"
+
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config/config.sub
 
 cd "$MINT_BUILD_DIR"
 

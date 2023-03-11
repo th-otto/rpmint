@@ -1,0 +1,11 @@
+--- make-4.2.1/remake.c.orig	2023-03-11 08:23:50.986188618 +0100
++++ make-4.2.1/remake.c	2023-03-11 08:26:03.637991878 +0100
+@@ -1397,7 +1397,7 @@
+ 
+       FILE_TIMESTAMP adjusted_mtime = mtime;
+ 
+-#if defined(WINDOWS32) || defined(__MSDOS__)
++#if defined(WINDOWS32) || defined(__MSDOS__) || defined(__MINT__)
+       /* Experimentation has shown that FAT filesystems can set file times
+          up to 3 seconds into the future!  Play it safe.  */
+ 
