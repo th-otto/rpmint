@@ -154,8 +154,8 @@ esac
 #
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
-# - checking out the mint/gcc-12 branch
-# - running git diff releases/gcc-12.2.0 HEAD
+# - checking out the mint/gcc-13 branch
+# - running git diff releases/gcc-13.1.0 HEAD
 #
 # when a new GCC is released:
 #   cd <directory where m68k-atari-mint-gcc.git> has been cloned
@@ -167,8 +167,8 @@ esac
 #      git fetch --all
 #      git push --tags
 #   merge new release into our branch:
-#      git checkout mint/gcc-12
-#      git merge releases/gcc-12.2.0 (& commit)
+#      git checkout mint/gcc-13
+#      git merge releases/gcc-13.2.0 (& commit)
 #      git push
 #
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
@@ -399,7 +399,7 @@ esac
 #
 # Note: for ADA, you have to use the same major of gcc as the one we are compiling here.
 # If your hosts compiler is a newer one, set
-# GCC=gcc-12 GXX=g++-12 before running this script
+# GCC=gcc-13 GXX=g++-13 before running this script
 #
 case $GCC in
 	*-[0-9]*)
@@ -533,10 +533,10 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
-	for i in c++ cpp g++ gcc gcov gfortran gdc; do
+	for tool in c++ cpp g++ gcc gcov gfortran gdc; do
 		if test -x ../../bin/${TARGET}-$i; then
-			rm -f ${i} ${i}${BUILD_EXEEXT}
-			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
+			rm -f ${tool} ${tool}${BUILD_EXEEXT}
+			$LN_S ../../bin/${TARGET}-${tool}${BUILD_EXEEXT} ${tool}
 		fi
 	done
 	
@@ -687,6 +687,8 @@ rm -rf ${PREFIX#/}/share/gcc*/python
 #
 if $with_fortran; then
 	fortran=`find ${gccsubdir#/} -name finclude`
+	fortran="$fortran "${PREFIX#/bin/*gfortran*
+	fortran="$fortran "${PREFIX#/${TARGET}/*gfortran*
 	fortran="$fortran "${gccsubdir#/}/f951
 	fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
 	fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`

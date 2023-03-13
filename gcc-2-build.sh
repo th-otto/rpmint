@@ -14,7 +14,7 @@ scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
 VERSION=-2.95.3
-VERSIONPATCH=-20200907
+VERSIONPATCH=-20230311
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -22,7 +22,7 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 # should be either m68k-atari-mint or m68k-atari-mintelf
 #
 TARGET=m68k-atari-mint
-PREFIX=/opt/gcc2
+PREFIX=/usr
 sys_root=/usr/${TARGET}/sys-root
 
 #
@@ -99,7 +99,9 @@ case `uname -s` in
 		;;
 esac
 
-export PATH="${PREFIX}/bin:$PATH"
+if test "${PREFIX}" != "/usr"; then
+	export PATH="${PREFIX}/bin:$PATH"
+fi
 case $host in
 macos*)
 	CC=clang
@@ -160,12 +162,7 @@ fi
 #
 # whether to include the fortran backend
 #
-with_fortran=false
-
-#
-# whether to include the D backend
-#
-with_D=false
+with_fortran=true
 
 #
 # this patch can be recreated by
@@ -216,8 +213,8 @@ if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
 	exit 1
 fi
-if test ! -f "${sys_root}/usr/include/compiler.h"; then
-	echo "mintlib headers must be installed in ${sys_root}/usr/include" >&2
+if test ! -f "${PREFIX}/${TARGET}/sys-include/compiler.h"; then
+	echo "mintlib for gcc-2 must be installed in ${PREFIX}/${TARGET}/sys-include/" >&2
 	exit 1
 fi
 
@@ -240,8 +237,10 @@ if ! grep -q 'version_string.*2\.95\.3' "$srcdir/gcc/version.c"; then
 	echo "version mismatch: this script is for gcc ${VERSION#-}, but gcc source is version "`grep version_string $srcdir/gcc/version.c` >&2
 	exit 1
 fi
-gcc_dir_version=$BASE_VER
-gccsubdir=${BUILD_LIBDIR}/gcc-lib/${TARGET}/${gcc_dir_version}
+gcc_dir_version=${BASE_VER}
+gccsubdir=${BUILD_LIBDIR#/}/gcc-lib/${TARGET}/${gcc_dir_version}
+gccsubdir=${gccsubdir#/}
+gxxinclude=/usr/include/c++/${gcc_dir_version}
 
 rm -rf "$MINT_BUILD_DIR"
 mkdir -p "$MINT_BUILD_DIR"
@@ -251,13 +250,13 @@ cd "$MINT_BUILD_DIR"
 CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer"
 CFLAGS_FOR_TARGET="-O2 -fomit-frame-pointer"
 LDFLAGS_FOR_BUILD=""
-CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
-CXXFLAGS_FOR_TARGET="$CFLAGS_FOR_TARGET"
+# C++ with simple optimization, C++ Optimizer seems to be buggy
+CXXFLAGS_FOR_BUILD="-O -fomit-frame-pointer"
+CXXFLAGS_FOR_TARGET="-O -fomit-frame-pointer"
 LDFLAGS_FOR_TARGET=
 
 languages=c,c++
 $with_fortran && languages="$languages,fortran"
-$with_D && languages="$languages,d"
 ranlib=ranlib
 STRIP=${STRIP-strip}
 
@@ -270,16 +269,12 @@ case $host in
 	mingw* | msys*) LN_S="cp -p" ;;
 esac
 
-try="${PREFIX}/bin/${TARGET}-${ranlib}"
-if test -x "$try"; then
-	ranlib="$try"
-	strip="${PREFIX}/bin/${TARGET}-strip"
-	as="${PREFIX}/bin/${TARGET}-as"
-else
-	ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
-	strip=`which "${TARGET}-strip" 2>/dev/null`
-	as=`which "${TARGET}-as" 2>/dev/null`
-fi
+ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
+strip=`which "${TARGET}-strip" 2>/dev/null`
+as=`which "${TARGET}-as" 2>/dev/null`
+ld=`which "${TARGET}-ld" 2>/dev/null`
+nm=`which "${TARGET}-nm" 2>/dev/null`
+ar=`which "${TARGET}-ar" 2>/dev/null`
 if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 	echo "cross-binutil tools for ${TARGET} not found" >&2
 	exit 1
@@ -308,6 +303,7 @@ esac
 # On 64-bit architecture GNU Assembler crashes writing out an object, due to
 # (probably) miscalculated structure sizes.  There could be some other bugs
 # lurking there in 64-bit mode, but I have little incentive chasing them.
+# Also, the build system of gcc-2 does not recognize any 64bit host architecture at all.
 # Just compile everything in 32-bit mode and forget about the issues.
 case `uname -m` in
   x86_64)
@@ -319,7 +315,29 @@ esac
 CC="$CC$ARCH"
 CXX="$CXX$ARCH"
 
-rm -f ${PREFIX}/${TARGET}/sys-include ${PREFIX}/${TARGET}/sys-root
+#
+# create symlinks to mintlib headers,
+# otherwise gcc configure script will copy them.
+# (yuks, this really works on the absolute path)
+#
+#rm -f ${PREFIX}/${TARGET}/sys-include
+#ln -s sys-root/usr/include ${PREFIX}/${TARGET}/sys-include
+#if test "${PREFIX}" != /usr; then
+#	ln -sf ${sys_root} ${PREFIX}/${TARGET}/sys-root
+#	rm -f ${PREFIX}/${TARGET}/lib
+#fi
+
+#
+# Setting AR_FOR_TARGET already here does not work,
+# it is overwritten in the Makefiles.
+# Provide symlinks instead
+mkdir -p binutils
+ln -sf "$ar" binutils/ar
+ln -sf "$nm" binutils/nm
+ln -sf "$nm" binutils/nm-new
+ln -sf "$ld" binutils/ld
+ln -sf "$ranlib" binutils/ranlib
+
 
 	CC="$CC" \
 	CXX="$CXX" \
@@ -335,130 +353,166 @@ rm -f ${PREFIX}/${TARGET}/sys-include ${PREFIX}/${TARGET}/sys-root
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" --host=$BUILD \
 	--prefix="${PREFIX}" \
-	--libdir="$BUILD_LIBDIR" \
-	--bindir="${PREFIX}/bin" \
+	--libdir='${prefix}/lib' \
+	--bindir='${prefix}/bin' \
 	--libexecdir='${libdir}' \
-	--infodir=${PREFIX}/share/info \
-	--mandir=${PREFIX}/share/man \
+	--infodir='${prefix}/share/info' \
+	--mandir='${prefix}/share/man' \
 	--with-gcc --with-gnu-as --with-gnu-ld \
+	--with-gxx-include-dir="${sys_root}${gxxinclude}" \
 	--disable-threads \
 	--disable-nls \
+	--program-suffix=${VERSION} \
+	--without-newlib \
 	$mpfr_config \
-	--with-headers="${sys_root}/usr/include" \
-	--enable-languages="$languages" \
 	|| exit 1
 
-ln -sf ${sys_root} ${PREFIX}/${TARGET}/sys-root
+# --enable-languages="$languages"
 
-${MAKE} all-gcc || exit 1
-${MAKE} install-gcc || exit 1
 
-rm -rf ${PREFIX}/${TARGET}/sys-include
-rm -rf ${PREFIX}/${TARGET}/lib
-ln -s sys-root/usr/include ${PREFIX}/${TARGET}/sys-include
+${MAKE} ${JOBS} || :
+# seems we have to run it again to produce the target libraries
+${MAKE} ${JOBS} || :
+${MAKE} || exit 1
 
-${MAKE}
+THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
+rm -rf "${THISPKG_DIR}"
 
-${MAKE} install
+# gxx_include_dir is evaled and does not contain '$(prefix)' anymore in Makefiles :(
+${MAKE} prefix="${THISPKG_DIR}${PREFIX}" gxx_include_dir="${THISPKG_DIR}${sys_root}${gxxinclude}" install
 
-rm -f ${PREFIX}/share/info/dir
-for f in ${PREFIX}/share/man/*/* ${PREFIX}/share/info/*; do
+cd "${THISPKG_DIR}" || exit 1
+
+#
+# Remove info pages. They are same as man pages, and we would have to rename them,
+# but that also requires fixing the links in them
+#
+# rm -rf ${PREFIX#/}/share/info
+
+rm -f ${PREFIX#/}/share/info/dir
+test -f ${PREFIX#/}/share/man/man1/${TARGET}-cccp.1 && mv ${PREFIX#/}/share/man/man1/${TARGET}-cccp.1 ${PREFIX#/}/share/man/man1/${TARGET}-cpp.1 
+for i in ${PREFIX#/}/share/man/man1/*.1; do
+	b=${i##*/}
+	b=${b%*.1}
+	case $b in 
+	${TARGET}-*) ;;
+	*) b=${TARGET}-${b} ;;
+	esac
+	mv $i ${PREFIX#/}/share/man/man1/${b}${VERSION}.1
+done
+for i in ${PREFIX#/}/share/info/*.info*; do
+	b=${i##*/}
+	e=${b#*.info*}
+	b=${b%*.info*}
+	case $b in
+	${TARGET}-*) ;;
+	*) b=${TARGET}-${b} ;;
+	esac
+	mv $i ${PREFIX#/}/share/info/${b}${VERSION}${e}
+done
+for f in ${PREFIX#/}/share/man/*/* ${PREFIX#/}/share/info/*; do
 	case $f in
 	*.gz) ;;
 	*) rm -f ${f}.gz; gzip -9 $f ;;
 	esac
 done
 	
-for i in c++ cpp g++ gcc gcov gfortran gdc; do
-	if test -x ../../bin/${TARGET}-$i; then
-		rm -f ${i} ${i}${BUILD_EXEEXT}
-		$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
+cd "${PREFIX#/}/bin"
+${STRIP} *
+
+for i in cpp gcjh gcov jcf-dump jv-scan c++ c++filt chill g++ g77 gcc gcj protoize unprotoize; do
+	test -f $i && mv $i ${TARGET}-$i-${BASE_VER}
+	test -f ${TARGET}-$i && mv ${TARGET}-$i ${TARGET}-$i-${BASE_VER}
+done
+if test -f ${TARGET}-g77-${BASE_VER}; then
+	$LN_S ${TARGET}-g77-${BASE_VER} ${TARGET}-g77
+	$LN_S ${TARGET}-g77 ${TARGET}-f77
+fi
+
+gcc_major_version=$(echo ${BASE_VER} | cut -d '.' -f 1)
+
+rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
+$LN_S ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-c++${BUILD_EXEEXT}
+
+# only links to major version here; gcc-2 is not the default compiler anymore
+for tool in gcc g++ cpp; do
+	if test ${BASE_VER} != ${gcc_major_version}; then
+		rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
+		$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
 	fi
 done
-	
-cd "${PREFIX}/bin"
-${STRIP} *
-	
-gcc_major_version=$(echo $BASE_VER | cut -d '.' -f 1)
 
-if test -x ${TARGET}-g++ && test ! -h ${TARGET}-g++; then
-	rm -f ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}
-	rm -f ${TARGET}-g++-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_major_version}
-	mv ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT}
-	$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++${BUILD_EXEEXT}
-	$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_major_version}${BUILD_EXEEXT}
-fi
-if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
-	rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
-	$LN_S ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-c++${BUILD_EXEEXT}
-fi
-for tool in gcc gfortran gdc gccgo go gofmt; do
-	if test -x ${TARGET}-${tool} && test ! -h ${TARGET}-${tool}; then
-		rm -f ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}
-		rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
-		mv ${TARGET}-${tool}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT}
-		$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}${BUILD_EXEEXT}
+# java & chill are not supported in later version, and are therefoe still default
+for tool in gcj gcjh jcf-dump jv-scan chill; do
+	if test -x ${TARGET}-${tool}-${BASE_VER}; then
+		rm -f ${TARGET}-${tool}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
+		$LN_S ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}${BUILD_EXEEXT}
 		if test ${BASE_VER} != ${gcc_major_version}; then
 			rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
-			rm -f ${tool}-${gcc_major_version}${BUILD_EXEEXT} ${tool}-${gcc_major_version}${BUILD_EXEEXT}
 			$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
 		fi
 	fi
 done
-if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
-	rm -f ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}
-	mv ${TARGET}-cpp${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT}
-	$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp${BUILD_EXEEXT}
-fi
 
-find ${PREFIX}/${TARGET}/lib -name libiberty.a -delete -printf "rm %p\n"
-find ${PREFIX}/lib -name libiberty.a -delete -printf "rm %p\n"
-find ${PREFIX}/ -type f -name "*.la" -delete -printf "rm %p\n"
+cd ../..
+
+mkdir -p "${PREFIX#/}/${TARGET}/bin"
+cd "${PREFIX#/}/${TARGET}/bin"
+for tool in gcc g++ g77 gcov cpp; do
+		if test -x ../../bin/${TARGET}-${tool}-${BASE_VER}; then
+			rm -f ${tool} ${tool}${BUILD_EXEEXT}
+			$LN_S ../../bin/${TARGET}-${tool}${BUILD_EXEEXT} ${tool}
+		fi
+done
+cd ../../..
+
+# libiberty is only used by gcc itself, no need to install it
+find ${PREFIX#/} -name libiberty.a -delete -printf "rm %p\n"
+find ${PREFIX#/} -type f -name "*.la" -delete -printf "rm %p\n"
 # seems to be duplicate to m5475
-find ${PREFIX}/${TARGET} -type d -name m5200 -exec rm -rf '{}' \;
+find ${PREFIX#/}/${TARGET} -type d -name m5200 -exec rm -rf '{}' \;
 find ${gccsubdir} -type d -name m5200 -exec rm -rf '{}' \;
 
 #
 # move compiler dependant libraries to the gcc subdirectory
 #
-libs=`find ${PREFIX}/${TARGET}/lib -name "libstdc*" ! -path "*/gcc-lib/*" | sed -e "s@^${PREFIX}/${TARGET}/lib/@@"`
+libs=`find ${PREFIX#/}/${TARGET}/lib -name "libstdc*" ! -path "*/gcc-lib/*" | sed -e "s@^${PREFIX#/}/${TARGET}/lib/@@"`
 for i in $libs; do
     d=${gccsubdir}/${i%%.*}.a
     rm -f $d
-	mv ${PREFIX}/${TARGET}/lib/$i $d || exit 1
+    mv ${PREFIX#/}/${TARGET}/lib/$i $d || exit 1
 done
-#
-# replace target library directory by symlink to sys_root
-#
-find ${PREFIX}/${TARGET}/lib -depth -type d -exec rmdir '{}' \;
-ln -s sys-root/usr/lib ${PREFIX}/${TARGET}/lib || exit 1
+find ${PREFIX#/}/${TARGET}/lib -depth -type d | xargs rmdir || :
+mv ${PREFIX#/}/${TARGET}/include/_G_config.h ${gccsubdir}/include/_G_config.h
+rmdir ${PREFIX#/}/${TARGET}/include || :
 
 
-for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f77,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,g++-mapper-server}${BUILD_EXEEXT} \
+for f in ${gccsubdir}/{cc1,cc1plus,cc1obj,cc1objplus,cc1chill,cpp0,f771,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,jc1,jvgenmain,g++-mapper-server}${BUILD_EXEEXT} \
 	${gccsubdir#/}/${LTO_PLUGIN} \
 	${gccsubdir#/}/plugin/gengtype${BUILD_EXEEXT} \
 	${gccsubdir#/}/install-tools/fixincl${BUILD_EXEEXT}; do
-	test -f "${PREFIX}/$f" && ${STRIP} "$f"
+	test -f "$f" && ${STRIP} "$f"
 done
 
-rmdir ${PREFIX}/include
-
-find ${PREFIX}/${TARGET} -name "*.a" -exec "${strip}" -S -x '{}' \;
-find ${PREFIX}/${TARGET} -name "*.a" -exec "${ranlib}" '{}' \;
+find ${PREFIX#/}/${TARGET} -name "*.a" -exec "${strip}" -S -x '{}' \;
+find ${PREFIX#/}/${TARGET} -name "*.a" -exec "${ranlib}" '{}' \;
 find ${gccsubdir} -name "*.a" -exec "${strip}" -S -x '{}' \;
 find ${gccsubdir} -name "*.a" -exec "${ranlib}" '{}' \;
 
 
-THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
-rm -rf "${THISPKG_DIR}"
-mkdir -p "${THISPKG_DIR}/${PREFIX}"
-cp -pr ${PREFIX}/. "${THISPKG_DIR}/${PREFIX}"
-for tool in ar as ld ld.bdf nm objcopy objdump ranlib size strings strip; do
-	rm -f ${THISPKG_DIR}/${PREFIX}/bin/${TARGET}-${tool}
-	ln -s /usr/bin/${TARGET}-${tool} ${THISPKG_DIR}/${PREFIX}/bin/${TARGET}-${tool}
-	rm -f ${THISPKG_DIR}/${PREFIX}/${TARGET}/bin/${tool}
-	ln -s /usr/bin/${TARGET}-${tool} ${THISPKG_DIR}/${PREFIX}/${TARGET}/bin/${tool}
-done
+#
+# if this old version is installed somewhere else,
+# use the default installation of binutils in /usr
+#
+if test ${PREFIX} != /usr; then
+	mkdir -p ${PREFIX#/}/${TARGET}/bin
+	for tool in ar as ld ld.bdf nm objcopy objdump ranlib size strings strip; do
+		rm -f ${PREFIX#/}/bin/${TARGET}-${tool}
+		ln -s /usr/bin/${TARGET}-${tool} ${PREFIX#/}/bin/${TARGET}-${tool}
+		rm -f ${PREFIX#/}/${TARGET}/bin/${tool}
+		ln -s /usr/bin/${TARGET}-${tool} ${PREFIX#/}/${TARGET}/bin/${tool}
+	done
+fi
 
 cd "${THISPKG_DIR}" || exit 1
 
@@ -473,14 +527,69 @@ rm -rf ${PREFIX#/}/share/gcc*/python
 #
 # create a separate archive for the fortran backend
 #
-if $with_fortran; then
-fortran=${gccsubdir#/}/finclude
-fortran="$fortran "${gccsubdir#/}/*/finclude
-fortran="$fortran "${gccsubdir#/}/f951
-fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
-fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
-${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
-rm -rf $fortran
+if test -f ${gccsubdir#/}/f771; then
+	files=`find ${gccsubdir#/} -name finclude`
+	files="$files "${PREFIX#/}/bin/*g77*
+	files="$files "${PREFIX#/}/bin/*f77*
+	files="$files "${PREFIX#/}/${TARGET}/bin/g77
+	files="$files "${gccsubdir#/}/f771
+	files="$files "`find ${gccsubdir#/} -name libg2c.a`
+	files="$files "`find ${gccsubdir#/} -name g2c.h`
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $files || exit 1
+	rm -rf $files
+fi
+
+#
+# create a separate archive for the c++ backend
+#
+if test -f ${gccsubdir#/}/cc1plus; then
+	files="${gccsubdir#/}/cc1plus"
+	files="$files "${PREFIX#/}/bin/*g++*
+	files="$files "${PREFIX#/}/bin/*c++*
+	files="$files "${PREFIX#/}/${TARGET}/bin/g++
+	files="$files ${gccsubdir#/}/include/exception"
+	files="$files ${gccsubdir#/}/include/new"
+	files="$files ${gccsubdir#/}/include/new.h"
+	files="$files ${gccsubdir#/}/include/typeinfo"
+	files="$files ${gccsubdir#/}/include/_G_config.h"
+	files="$files ${sys_root#/}${gxxinclude}"
+	files="$files "`find ${gccsubdir#/} -name libstdc++.a*`
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-c++-${host}.tar.xz $files || exit 1
+	rm -rf $files
+fi
+
+#
+# create a separate archive for the objc backend
+#
+if test -f ${gccsubdir#/}/cc1obj; then
+	files="${gccsubdir#/}/cc1obj"
+	files="$files ${gccsubdir#/}/include/objc"
+	files="$files "`find ${gccsubdir#/} -name libobjc.a`
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-objc-${host}.tar.xz $files || exit 1
+	rm -rf $files
+fi
+
+#
+# create a separate archive for the java backend
+#
+if test -f ${gccsubdir#/}/jc1; then
+	files="${gccsubdir#/}/jc1 ${gccsubdir#/}/jvgenmain"
+	files="$files "${PREFIX#/}/bin/*gcj*
+	files="$files "${PREFIX#/}/bin/*jcf-dump*
+	files="$files "${PREFIX#/}/bin/*jv-scan*
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-java-${host}.tar.xz $files || exit 1
+	rm -rf $files
+fi
+
+#
+# create a separate archive for the chill backend
+#
+if test -f ${gccsubdir#/}/cc1chill; then
+	files="${gccsubdir#/}/cc1chill"
+	files="$files "`find ${gccsubdir#/} -name "chill*.o"`
+	files="$files "`find ${gccsubdir#/} -name libchill.a`
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-chill-${host}.tar.xz $files || exit 1
+	rm -rf $files
 fi
 
 #

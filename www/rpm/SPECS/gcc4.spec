@@ -241,13 +241,13 @@ Requires:       %{name} = %{version}-%{release}
 Requires:       %{name}-fortran = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libgfortran = %{version}-%{release}
-Provides:       cross-mint-gcc-fortan = %{version}-%{release}
+Provides:       cross-mint-gcc-fortran = %{version}-%{release}
 %else
 %if %{build_fortran}
 BuildRequires:  cross-mint-%{pkgname}-fortran = %{version}
 %endif
 Provides:       libgfortran = %{version}-%{release}
-Provides:       gcc-fortan = %{version}-%{release}
+Provides:       gcc-fortran = %{version}-%{release}
 %endif
 
 %description fortran

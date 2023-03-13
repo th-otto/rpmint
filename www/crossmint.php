@@ -2195,6 +2195,9 @@ binutils:
 	macos:   3min (ld does not have support for the native platform)
 	linux:   39sec
 
+gcc 2.95.3:
+	linux:   1min15sec
+
 gcc 4.6.4:
 	mingw32: 15min
 	cygwin:  19min

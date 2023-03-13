@@ -241,13 +241,13 @@ Requires:       %{name} = %{version}-%{release}
 Requires:       %{name}-fortran = %{version}-%{release}
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-libgfortran = %{version}-%{release}
-Provides:       cross-mint-gcc-fortan = %{version}-%{release}
+Provides:       cross-mint-gcc-fortran = %{version}-%{release}
 %else
 %if %{build_fortran}
 BuildRequires:  cross-mint-%{pkgname}-fortran = %{version}
 %endif
 Provides:       libgfortran = %{version}-%{release}
-Provides:       gcc-fortan = %{version}-%{release}
+Provides:       gcc-fortran = %{version}-%{release}
 %endif
 
 %description fortran
@@ -770,8 +770,8 @@ esac
 	libdir="$BUILD_LIBDIR"
 	libexecdir="$BUILD_LIBDIR"
 %else
-	libdir="'${exec_prefix}/lib'$multilibdir"
-	libexecdir="${PREFIX}/lib"
+	libdir="${PREFIX}/lib$multilibdir"
+	libexecdir="${PREFIX}/lib$multilibdir"
 %endif
 
 make DESTDIR="${RPM_BUILD_ROOT}" prefix="${PREFIX}" libdir="$libdir" libexecdir="$libexecdir" bindir="${PREFIX}/bin" install
@@ -779,11 +779,14 @@ make DESTDIR="${RPM_BUILD_ROOT}" prefix="${PREFIX}" libdir="$libdir" libexecdir=
 mkdir -p "${RPM_BUILD_ROOT}${PREFIX}/${TARGET}/bin"
 
 # ranlib is always used for target libraries
-ranlib=%{_rpmint_target}-ranlib
+ranlib_for_target=%{_rpmint_target}-ranlib
 # strip is sometimes used for host executables,
 # sometimes for target libraries
 strip_for_host="strip -p"
 strip_for_target="%{_rpmint_target}-strip -p"
+%if "%{buildtype}" != "cross"
+strip_for_host="${strip_for_target}"
+%endif
 
 tools="c++ cpp g++ gcc gcov gfortran gdc"
 %if "%{buildtype}" == "cross"
@@ -913,7 +916,7 @@ rmdir ${PREFIX#/}/share || :
 
 	# remove fixincl; it is not needed for cross-compiler and may introduce unneeded dependencies
 	rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl
-	for f in ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${BUILD_EXEEXT} \
+	for f in ${BUILD_LIBDIR#/}/gcc/${TARGET}/*/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,g++-mapper-server}${BUILD_EXEEXT} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/${LTO_PLUGIN} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/plugin/gengtype${BUILD_EXEEXT} \
 		${BUILD_LIBDIR#/}/gcc/${TARGET}/*/install-tools/fixincl${BUILD_EXEEXT}; do
@@ -930,7 +933,7 @@ rmdir ${PREFIX#/}/share || :
 	fi
 	
 	find ${PREFIX#/} -name "*.a" -exec ${strip_for_target} -S -x '{}' \;
-	find ${PREFIX#/} -name "*.a" -exec ${ranlib} '{}' \;
+	find ${PREFIX#/} -name "*.a" -exec ${ranlib_for_target} '{}' \;
 	
 	cd ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/include-fixed && {
 		for i in `find . -type f`; do
@@ -954,9 +957,9 @@ rmdir ${PREFIX#/}/share || :
 
 %files
 %defattr(-,root,root)
-%{_rpmint_target_prefix}/bin/%{_rpmint_target_platform}-gcc*
-%{_rpmint_target_prefix}/bin/%{_rpmint_target_platform}-cpp*
-%{_rpmint_target_prefix}/bin/%{_rpmint_target_platform}-gcov*
+%{_rpmint_target_prefix}/bin/%{_rpmint_target}-gcc*
+%{_rpmint_target_prefix}/bin/%{_rpmint_target}-cpp*
+%{_rpmint_target_prefix}/bin/%{_rpmint_target}-gcov*
 %{_rpmint_target_prefix}/%{_rpmint_target}/bin/gcc*
 %{_rpmint_target_prefix}/%{_rpmint_target}/bin/gcov*
 %{_rpmint_target_prefix}/%{_rpmint_target}/bin/cpp*
@@ -1029,8 +1032,8 @@ rmdir ${PREFIX#/}/share || :
 %if %{build_cp}
 %files c++
 %defattr(-,root,root)
-%{_rpmint_target_prefix}/bin/%{_rpmint_target_platform}-c++*
-%{_rpmint_target_prefix}/bin/%{_rpmint_target_platform}-g++*
+%{_rpmint_target_prefix}/bin/%{_rpmint_target}-c++*
+%{_rpmint_target_prefix}/bin/%{_rpmint_target}-g++*
 %{_rpmint_target_prefix}/%{_rpmint_target}/bin/c++*
 %{_rpmint_target_prefix}/%{_rpmint_target}/bin/g++*
 %if "%{buildtype}" == "cross"
@@ -1045,6 +1048,9 @@ rmdir ${PREFIX#/}/share || :
 %{gccsubdir}/*/libstdc++*
 %{gccsubdir}/libsupc++*
 %{gccsubdir}/*/libsupc++*
+%if %{gcc_major_ver} >= 12
+%{gccsubdir}/g++-mapper-server
+%endif
 %endif
 
 %if %{build_objc}
@@ -1069,7 +1075,7 @@ rmdir ${PREFIX#/}/share || :
 %if %{build_fortran}
 %files fortran
 %defattr(-,root,root)
-%{_rpmint_target_prefix}/bin/%{_rpmint_target_platform}-gfortran*
+%{_rpmint_target_prefix}/bin/%{_rpmint_target}-gfortran*
 %{_rpmint_target_prefix}/%{_rpmint_target}/bin/gfortran*
 %if "%{buildtype}" != "cross"
 %{_rpmint_target_prefix}/bin/gfortran*
@@ -1088,23 +1094,26 @@ rmdir ${PREFIX#/}/share || :
 %if %{build_ada}
 %files ada
 %defattr(-,root,root)
-%{_rpmint_target_prefix}/bin/%{_rpmint_target_platform}-gnat*
+%{_rpmint_target_prefix}/bin/%{_rpmint_target}-gnat*
 %if "%{buildtype}" != "cross"
 %{_rpmint_target_prefix}/bin/gnat*
 %endif
 %{gccsubdir}/gnat1
 %{gccsubdir}/adalib
+%{gccsubdir}/*/adalib
 %{gccsubdir}/adainclude
+%{gccsubdir}/*/adainclude
 %if %{gcc_major_ver} >= 10
 %{gccsubdir}/ada_target_properties
+%{gccsubdir}/*/ada_target_properties
 %endif
 %endif
 
 %if %{build_go}
 %files go
 %defattr(-,root,root)
-%{_rpmint_target_prefix}/bin/%{_rpmint_target_platform}-go*
-%{_rpmint_target_prefix}/bin/%{_rpmint_target_platform}-gccgo*
+%{_rpmint_target_prefix}/bin/%{_rpmint_target}-go*
+%{_rpmint_target_prefix}/bin/%{_rpmint_target}-gccgo*
 %{_rpmint_target_prefix}/%{_rpmint_target}/bin/go*
 %{_rpmint_target_prefix}/%{_rpmint_target}/bin/gccgo*
 %if "%{buildtype}" != "cross"
@@ -1121,7 +1130,7 @@ rmdir ${PREFIX#/}/share || :
 %if %{build_d}
 %files d
 %defattr(-,root,root)
-%{_rpmint_target_prefix}/bin/%{_rpmint_target_platform}-gdc*
+%{_rpmint_target_prefix}/bin/%{_rpmint_target}-gdc*
 %{_rpmint_target_prefix}/%{_rpmint_target}/bin/gdc*
 %if "%{buildtype}" != "cross"
 %{_rpmint_target_prefix}/bin/gdc*
