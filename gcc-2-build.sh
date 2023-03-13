@@ -218,6 +218,16 @@ if test ! -f "${PREFIX}/${TARGET}/sys-include/compiler.h"; then
 	exit 1
 fi
 
+# when checked out from git, we cannot be sure
+# about the timestamps of the configure scripts.
+# Make sure autoconf won't run, since newer versions
+# of autoconf will produce broken scripts
+# from those ancient configure.in scripts
+find $srcdir -name configure | xargs touch
+
+# Dito for some other generated files
+touch "$srcdir/gcc/c-gperf.h"
+
 BUILD_LIBDIR=${PREFIX}/lib
 
 JOBS=`rpm --eval '%{?jobs:%jobs}' 2>/dev/null`

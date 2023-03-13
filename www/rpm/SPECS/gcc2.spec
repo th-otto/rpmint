@@ -260,6 +260,10 @@ BUILD=%{BUILD}
 # from those ancient configure.in scripts
 find $srcdir -name configure | xargs touch
 
+# Dito for some other generated files
+touch "$srcdir/gcc/c-gperf.h"
+
+
 %if "%{buildtype}" != "cross"
 export AS_FOR_TARGET=%{_rpmint_target}-as
 export RANLIB_FOR_TARGET=%{_rpmint_target}-ranlib

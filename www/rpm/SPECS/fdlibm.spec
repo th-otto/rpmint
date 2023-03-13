@@ -27,8 +27,10 @@ Source:         %{pkgname}-%{version}.tar.xz
 
 %if "%{buildtype}" == "cross"
 Provides:       cross-mint-%{pkgname}-headers = %{version}
+Conflicts:      cross-mint-pml
 %else
 Provides:       %{pkgname}-headers = %{version}
+Conflicts:      pml
 %endif
 
 # cannot use rpmint_essential() here, because fdlibm is part of the essential package

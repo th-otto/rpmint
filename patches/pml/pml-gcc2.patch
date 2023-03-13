@@ -1,0 +1,60 @@
+diff -rup pml-2.03.orig/CONFIGVARS pml-2.03/CONFIGVARS
+--- pml-2.03.orig/CONFIGVARS	2019-06-17 16:54:41.000000000 +0200
++++ pml-2.03/CONFIGVARS	2023-03-13 16:36:33.762364307 +0100
+@@ -27,7 +27,7 @@ WITH_020_LIB = yes
+ WITH_V4E_LIB = yes
+ 
+ ifeq ($(CROSS),yes)
+-PREFIX=$(shell $(CROSSPREFIX)gcc -print-sysroot)/usr
++PREFIX=/usr
+ ifeq ($(PREFIX),)
+   PREFIX=/usr/$(CROSS_TOOL)
+ endif
+diff -rup pml-2.03.orig/pmlsrc/Makefile.objs pml-2.03/pmlsrc/Makefile.objs
+--- pml-2.03.orig/pmlsrc/Makefile.objs	2019-06-17 16:54:41.000000000 +0200
++++ pml-2.03/pmlsrc/Makefile.objs	2023-03-13 16:42:24.905906040 +0100
+@@ -42,11 +42,11 @@ CFLAGS += -m68020-60 -mshort
+ endif
+ 
+ ifeq ($(TARGET),v4e)
+-CFLAGS += -mcpu=5475
++CFLAGS += -m5200
+ endif
+ 
+ ifeq ($(TARGET),v4e16)
+-CFLAGS += -mcpu=5475 -mshort
++CFLAGS += -m5200 -mshort
+ endif
+ 
+ CFLAGS += -I$(srcdir)
+diff -rup pml-2.03.orig/pmlsrc/floor.c pml-2.03/pmlsrc/floor.c
+--- pml-2.03.orig/pmlsrc/floor.c	2019-06-17 16:54:41.000000000 +0200
++++ pml-2.03/pmlsrc/floor.c	2023-03-13 16:39:05.610166135 +0100
+@@ -32,7 +32,8 @@ double x;
+ }
+ #endif
+ 
+-#ifdef __M68881__
++/* gcc2 uses older version of math-68881.h */
++#if defined(__M68881__) && __GNUC__ >= 3
+ 
+ double ceil (double x)
+ {
+diff -rup pml-2.03.orig/pmlsrc/pow.c pml-2.03/pmlsrc/pow.c
+--- pml-2.03.orig/pmlsrc/pow.c	2019-06-17 16:54:41.000000000 +0200
++++ pml-2.03/pmlsrc/pow.c	2023-03-13 16:40:41.138041464 +0100
+@@ -6,6 +6,9 @@
+ #include	<errno.h>
+ #include	<math.h>
+ 
++/* gcc2 uses older version of math-68881.h */
++#if !defined(__M68881__) || __GNUC__ >= 3
++
+ double 
+ pow(x,y)
+ double x, y;
+@@ -39,3 +42,4 @@ domain:
+ 	errno = EDOM;
+ 	return(HUGE_VAL);
+ }
++#endif /* __M68881__ */
