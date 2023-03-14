@@ -19,7 +19,7 @@ Name:           cross-mint-%{pkgname}
 Name:           %{pkgname}
 %endif
 Version       : 2.95.3
-release       : 7
+Release       : 7
 %define releasedate 20230312
 License       : GPL-2.0-or-later
 Group         : Development/Languages

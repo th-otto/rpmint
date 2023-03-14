@@ -31,10 +31,10 @@ for pkgname in $pkgnames; do
 		continue
 	fi
 	
-	fullname=`sed -n 's/Name:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
+	fullname=`sed -n 's/Name[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
 	echo "pkgname: ${fullname}"
-	version=`sed -n 's/^Version:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
-	release=`sed -n 's/^Release:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
+	version=`sed -n 's/^Version[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
+	release=`sed -n 's/^[Rr]elease[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
 	arch=
 	if test "$arch" = ""; then
 		rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
@@ -46,6 +46,12 @@ for pkgname in $pkgnames; do
 		rpmfile="$RPMS/x86_64/${fullname}-${version}-${release}.x86_64.rpm"
 		if test -f "$rpmfile"; then
 			arch="amd64"
+		fi
+	fi
+	if test "$arch" = ""; then
+		rpmfile="$RPMS/i686/${fullname}-${version}-${release}.i686.rpm"
+		if test -f "$rpmfile"; then
+			arch="i386"
 		fi
 	fi
 	if test "$arch" = ""; then
