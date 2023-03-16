@@ -1,13 +1,25 @@
 ver=$1
 test "$ver" = "" && exit 1
 cd $HOME/mintstd/binary7-package/usr/bin || exit 1
+if ! test -f m68k-atari-mint-gcc-$ver; then
+	echo "m68k-atari-mint-gcc-$ver: not found" >&2
+	exit 1
+fi
 for tool in g++ gcc gnat gnatbind gnatchop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep; do
 	if test -f m68k-atari-mint-$tool-$ver; then
+		if test -f m68k-atari-mint-$tool && ! test -h m68k-atari-mint-$tool; then
+			echo "m68k-atari-mint-$tool is not a symlink" >&2
+			exit 1
+		fi
 		ln -sf m68k-atari-mint-$tool-$ver m68k-atari-mint-$tool
 	else
 		rm -f m68k-atari-mint-$tool
 	fi
 	if test -f m68k-atari-mintelf-$tool-$ver; then
+		if test -f m68k-atari-mintelf-$tool && ! test -h m68k-atari-mintelf-$tool; then
+			echo "m68k-atari-mintelf-$tool is not a symlink" >&2
+			exit 1
+		fi
 		ln -sf m68k-atari-mintelf-$tool-$ver m68k-atari-mintelf-$tool
 	else
 		rm -f m68k-atari-mintelf-$tool

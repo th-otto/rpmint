@@ -35,8 +35,18 @@ BuildRequires:  automake
 BuildRequires:  bison
 BuildRequires:  flex
 
+#
+# directory layout of gcc-2 clashes
+# with later versions,
+# we must install it to a different path
+# (both for cross- and native compilers)
+#
+%define gcc2_target_prefix /opt/gcc2
+%define host_prefix %{gcc2_target_prefix}
+
+
 Prefix        : %{_prefix}
-Docdir        : %{_prefix}/share/doc
+Docdir        : %{gcc2_target_prefix}/share/doc
 BuildRoot     : %{_tmppath}/%{name}-root
 
 Source0: ftp://ftp.gnu.org/pub/gnu/gcc/gcc-%{version}.tar.gz
@@ -68,14 +78,9 @@ BuildRequires:  cross-mint-pml-gcc2 >= 2.03
 
 %define TARGET %{_rpmint_target}
 %define gcc_dir_version %version
-%define gccsubdir %{_prefix}/lib/gcc-lib/%{TARGET}/%{version}
-%if "%{buildtype}" == "cross"
-# for consistency with newer gcc
-%define gxxinclude %{_rpmint_target_prefix}/include/c++/%{gcc_dir_version}
-%else
+%define gccsubdir %{host_prefix}/lib/gcc-lib/%{TARGET}/%{version}
 # traditionally, this were installed in a different place than later gcc versions
-%define gxxinclude %{_rpmint_target_prefix}/include/g++-3
-%endif
+%define gxxinclude %{gcc2_target_prefix}/include/g++-3
 
 
 %description
@@ -288,7 +293,7 @@ export CC=${CC-gcc}
 export CXX=${CXX-g++}
 BUILD_EXEEXT=
 TARGET_EXEEXT=
-PREFIX=%{_prefix}
+PREFIX=%{host_prefix}
 
 case `uname -s` in
 	Linux*)
@@ -373,7 +378,7 @@ export CXXFLAGS="-O -fomit-frame-pointer"
 %if "%{buildtype}" == "cross"
 %define build_libdir %{_prefix/lib}
 %else
-%define build_libdir %{_rpmint_target_prefix}/lib
+%define build_libdir %{gcc2_target_prefix}/lib
 %endif
 BUILD_LIBDIR=%{build_libdir}
 
@@ -440,11 +445,7 @@ LDFLAGS="$LDFLAGS_FOR_BUILD" \
 	--libexecdir='${libdir}' \
 	--infodir='${prefix}/share/info' \
 	--mandir='${prefix}/share/man' \
-%if "%{buildtype}" == "cross"
-	--with-gxx-include-dir=%{_rpmint_sysroot}%{gxxinclude} \
-%else
 	--with-gxx-include-dir=%{gxxinclude} \
-%endif
 	--with-gcc \
 	--with-gnu-ld \
 	--with-gnu-as \
@@ -477,7 +478,7 @@ make || exit 1
 [ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
 %rpmint_cflags
-PREFIX=%{_prefix}
+PREFIX=%{host_prefix}
 
 gcc_major_version=%{gcc_major_ver}
 gcc_dir_version=%{gcc_dir_version}
@@ -487,11 +488,7 @@ BUILD_LIBDIR=%{build_libdir}
 cd build-dir
 
 # gxx_include_dir is evaled and does not contain '$(prefix)' anymore in Makefiles :(
-%if "%{buildtype}" == "cross"
-gxx_include_dir="${RPM_BUILD_ROOT}%{_rpmint_sysroot}%{gxxinclude}"
-%else
 gxx_include_dir="${RPM_BUILD_ROOT}%{gxxinclude}"
-%endif
 make prefix="${RPM_BUILD_ROOT}${PREFIX}" gxx_include_dir="${gxx_include_dir}" install
 
 # ranlib is always used for target libraries
@@ -550,7 +547,7 @@ gcc_major_version=$(echo %{version} | cut -d '.' -f 1)
 # when cross-compiling, some executables are installed without the target prefix.
 # All of them are installed without the program suffix. Fix it.
 #
-cd "${PREFIX#/}/bin"
+cd "${RPM_BUILD_ROOT}${PREFIX}/bin"
 ${strip_for_host} * || :
 for i in cpp gcjh gcov jcf-dump jv-scan c++ c++filt chill g++ g77 gcc gcj protoize unprotoize; do
 	if test -f $i; then
@@ -566,11 +563,14 @@ done
 LN_S="ln -s"
 
 # only links to major version here; gcc-2 is not the default compiler anymore
-for tool in gcc g++ cpp; do
+for tool in gcc g++ cpp gcov; do
 	if test ${BASE_VER} != ${gcc_major_version}; then
 		rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
 		$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
 	fi
+%if "%{gcc2_target_prefix}" != "/usr"
+	$LN_S ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}
+%endif
 done
 
 
@@ -597,17 +597,15 @@ $LN_S gcc cc
 $LN_S g77 f77
 %endif
 
-cd ../..
-
-mkdir -p "${PREFIX#/}/${TARGET}/bin"
-cd "${PREFIX#/}/${TARGET}/bin"
+mkdir -p "${RPM_BUILD_ROOT}${PREFIX}/${TARGET}/bin"
+cd "${RPM_BUILD_ROOT}${PREFIX}/${TARGET}/bin"
 for tool in gcc g++ g77 gcov cpp; do
 		if test -x ../../bin/${TARGET}-${tool}-%{version}; then
 			rm -f ${tool} ${tool}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-${tool}${BUILD_EXEEXT} ${tool}
 		fi
 done
-cd ../../..
+cd "${RPM_BUILD_ROOT}"
 
 # libiberty is only used by gcc itself, no need to install it
 find ${PREFIX#/} -name libiberty.a -delete -printf "rm %p\n"
@@ -650,6 +648,19 @@ done
 find ${PREFIX#/} -name "*.a" -exec ${strip_for_target} -S -x '{}' \;
 find ${PREFIX#/} -name "*.a" -exec ${ranlib_for_target} '{}' \;
 
+#
+# if this old version is installed somewhere else,
+# use the default installation of binutils in /usr
+#
+%if "%{gcc2_target_prefix}" != "/usr"
+mkdir -p ${PREFIX#/}/${TARGET}/bin
+for tool in ar as ld ld.bfd nm objcopy objdump ranlib size strings strip; do
+	rm -f ${PREFIX#/}/bin/${TARGET}-${tool}
+	ln -s /usr/bin/${TARGET}-${tool} ${PREFIX#/}/bin/${TARGET}-${tool}
+	rm -f ${PREFIX#/}/${TARGET}/bin/${tool}
+	ln -s /usr/bin/${TARGET}-${tool} ${PREFIX#/}/${TARGET}/bin/${tool}
+done
+%endif
 
 # ##################################
 # C L E A N
@@ -664,19 +675,43 @@ find ${PREFIX#/} -name "*.a" -exec ${ranlib_for_target} '{}' \;
 %files
 %defattr(-,root,root)
 %doc gcc/README* gcc/*ChangeLog* gcc/PROBLEMS gcc/NEWS gcc/SERVICE gcc/BUGS gcc/LANGUAGES
-%{_rpmint_target_prefix}/bin/%{TARGET}-gcc*
-%{_rpmint_target_prefix}/bin/%{TARGET}-cpp*
-%{_rpmint_target_prefix}/bin/%{TARGET}-gcov*
-%{_rpmint_target_prefix}/bin/%{TARGET}-protoize*
-%{_rpmint_target_prefix}/bin/%{TARGET}-unprotoize*
-%{_rpmint_target_prefix}/%{TARGET}/bin/gcc
-%{_rpmint_target_prefix}/%{TARGET}/bin/gcov
-%{_rpmint_target_prefix}/%{TARGET}/bin/cpp
+%{gcc2_target_prefix}/bin/%{TARGET}-gcc*
+%{gcc2_target_prefix}/bin/%{TARGET}-cpp*
+%{gcc2_target_prefix}/bin/%{TARGET}-gcov*
+%{gcc2_target_prefix}/bin/%{TARGET}-protoize*
+%{gcc2_target_prefix}/bin/%{TARGET}-unprotoize*
+%{gcc2_target_prefix}/%{TARGET}/bin/gcc
+%{gcc2_target_prefix}/%{TARGET}/bin/gcov
+%{gcc2_target_prefix}/%{TARGET}/bin/cpp
+%if "%{gcc2_target_prefix}" != "/usr"
+%{gcc2_target_prefix}/bin/%{TARGET}-ar
+%{gcc2_target_prefix}/bin/%{TARGET}-as
+%{gcc2_target_prefix}/bin/%{TARGET}-ld
+%{gcc2_target_prefix}/bin/%{TARGET}-ld.bfd
+%{gcc2_target_prefix}/bin/%{TARGET}-nm
+%{gcc2_target_prefix}/bin/%{TARGET}-objcopy
+%{gcc2_target_prefix}/bin/%{TARGET}-objdump
+%{gcc2_target_prefix}/bin/%{TARGET}-ranlib
+%{gcc2_target_prefix}/bin/%{TARGET}-size
+%{gcc2_target_prefix}/bin/%{TARGET}-strings
+%{gcc2_target_prefix}/bin/%{TARGET}-strip
+%{gcc2_target_prefix}/%{TARGET}/bin/ar
+%{gcc2_target_prefix}/%{TARGET}/bin/as
+%{gcc2_target_prefix}/%{TARGET}/bin/ld
+%{gcc2_target_prefix}/%{TARGET}/bin/ld.bfd
+%{gcc2_target_prefix}/%{TARGET}/bin/nm
+%{gcc2_target_prefix}/%{TARGET}/bin/objcopy
+%{gcc2_target_prefix}/%{TARGET}/bin/objdump
+%{gcc2_target_prefix}/%{TARGET}/bin/ranlib
+%{gcc2_target_prefix}/%{TARGET}/bin/size
+%{gcc2_target_prefix}/%{TARGET}/bin/strings
+%{gcc2_target_prefix}/%{TARGET}/bin/strip
+%endif
 %if "%{buildtype}" != "cross"
-%{_rpmint_target_prefix}/bin/gcc*
-%{_rpmint_target_prefix}/bin/cpp*
-%{_rpmint_target_prefix}/bin/gcov*
-%{_rpmint_target_prefix}/bin/cc
+%{gcc2_target_prefix}/bin/gcc*
+%{gcc2_target_prefix}/bin/cpp*
+%{gcc2_target_prefix}/bin/gcov*
+%{gcc2_target_prefix}/bin/cc
 %endif
 %dir %{gccsubdir}
 %dir %{gccsubdir}/include
@@ -708,16 +743,14 @@ find ${PREFIX#/} -name "*.a" -exec ${ranlib_for_target} '{}' \;
 %files c++
 %defattr(-,root,root)
 %doc gcc/cp/NEWS gcc/cp/ChangeLog*
-%{_rpmint_target_prefix}/bin/%{TARGET}-g++*
-%{_rpmint_target_prefix}/bin/%{TARGET}-c++*
-%{_rpmint_target_prefix}/%{TARGET}/bin/g++
+%{gcc2_target_prefix}/bin/%{TARGET}-g++*
+%{gcc2_target_prefix}/bin/%{TARGET}-c++*
+%{gcc2_target_prefix}/%{TARGET}/bin/g++
 %if "%{buildtype}" != "cross"
-%{_rpmint_target_prefix}/bin/g++*
-%{_rpmint_target_prefix}/bin/c++*
-%{gxxinclude}
-%else
-%{_rpmint_sysroot}%{gxxinclude}
+%{gcc2_target_prefix}/bin/g++*
+%{gcc2_target_prefix}/bin/c++*
 %endif
+%{gxxinclude}
 %{gccsubdir}/cc1plus
 %{gccsubdir}/include/exception
 %{gccsubdir}/include/new
@@ -738,10 +771,10 @@ find ${PREFIX#/} -name "*.a" -exec ${ranlib_for_target} '{}' \;
 %files fortran
 %defattr(-,root,root)
 %doc gcc/f/README gcc/ChangeLog*
-%{_rpmint_target_prefix}/bin/%{TARGET}-g77*
-%{_rpmint_target_prefix}/%{TARGET}/bin/g77
+%{gcc2_target_prefix}/bin/%{TARGET}-g77*
+%{gcc2_target_prefix}/%{TARGET}/bin/g77
 %if "%{buildtype}" != "cross"
-%{_rpmint_target_prefix}/bin/f77
+%{gcc2_target_prefix}/bin/f77
 %endif
 %{gccsubdir}/f771
 %{gccsubdir}/libg2c.a
@@ -752,9 +785,9 @@ find ${PREFIX#/} -name "*.a" -exec ${ranlib_for_target} '{}' \;
 %files chill
 %defattr(-,root,root)
 %doc gcc/ch/README gcc/ch/chill.brochure gcc/ChangeLog*
-%{_rpmint_target_prefix}/bin/%{TARGET}-chill*
+%{gcc2_target_prefix}/bin/%{TARGET}-chill*
 %if "%{buildtype}" != "cross"
-%{_rpmint_target_prefix}/bin/chill
+%{gcc2_target_prefix}/bin/chill
 %endif
 %{gccsubdir}/cc1chill
 %{gccsubdir}/chill*.o
@@ -767,14 +800,14 @@ find ${PREFIX#/} -name "*.a" -exec ${ranlib_for_target} '{}' \;
 %files java
 %defattr(-,root,root)
 %doc gcc/java/ChangeLog*
-%{_rpmint_target_prefix}/bin/%{TARGET}-gcj*
-%{_rpmint_target_prefix}/bin/%{TARGET}-jcf-dump*
-%{_rpmint_target_prefix}/bin/%{TARGET}-jv-scan*
+%{gcc2_target_prefix}/bin/%{TARGET}-gcj*
+%{gcc2_target_prefix}/bin/%{TARGET}-jcf-dump*
+%{gcc2_target_prefix}/bin/%{TARGET}-jv-scan*
 %if "%{buildtype}" != "cross"
-%{_rpmint_target_prefix}/bin/gcj
-%{_rpmint_target_prefix}/bin/gcjh
-%{_rpmint_target_prefix}/bin/jcf-dump
-%{_rpmint_target_prefix}/bin/jv-scan
+%{gcc2_target_prefix}/bin/gcj
+%{gcc2_target_prefix}/bin/gcjh
+%{gcc2_target_prefix}/bin/jcf-dump
+%{gcc2_target_prefix}/bin/jv-scan
 %endif
 %{gccsubdir}/jc1
 %{gccsubdir}/jvgenmain
@@ -782,8 +815,8 @@ find ${PREFIX#/} -name "*.a" -exec ${ranlib_for_target} '{}' \;
 
 %files doc
 %defattr(-,root,root)
-%{_rpmint_target_prefix}/share/man/*/*
-%{_rpmint_target_prefix}/share/info/*
+%{gcc2_target_prefix}/share/man/*/*
+%{gcc2_target_prefix}/share/info/*
 
 
 %changelog

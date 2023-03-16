@@ -22,8 +22,7 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 # should be either m68k-atari-mint or m68k-atari-mintelf
 #
 TARGET=m68k-atari-mint
-PREFIX=/usr
-sys_root=/usr/${TARGET}/sys-root
+PREFIX=/opt/gcc2
 
 #
 # the hosts compiler
@@ -250,7 +249,7 @@ fi
 gcc_dir_version=${BASE_VER}
 gccsubdir=${BUILD_LIBDIR#/}/gcc-lib/${TARGET}/${gcc_dir_version}
 gccsubdir=${gccsubdir#/}
-gxxinclude=/usr/include/c++/${gcc_dir_version}
+gxxinclude=${PREFIX}/include/g++-3
 
 rm -rf "$MINT_BUILD_DIR"
 mkdir -p "$MINT_BUILD_DIR"
@@ -369,7 +368,7 @@ $srcdir/configure \
 	--infodir='${prefix}/share/info' \
 	--mandir='${prefix}/share/man' \
 	--with-gcc --with-gnu-as --with-gnu-ld \
-	--with-gxx-include-dir="${sys_root}${gxxinclude}" \
+	--with-gxx-include-dir="${gxxinclude}" \
 	--disable-threads \
 	--disable-nls \
 	--program-suffix=${VERSION} \
@@ -389,7 +388,7 @@ THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
 
 # gxx_include_dir is evaled and does not contain '$(prefix)' anymore in Makefiles :(
-${MAKE} prefix="${THISPKG_DIR}${PREFIX}" gxx_include_dir="${THISPKG_DIR}${sys_root}${gxxinclude}" install
+${MAKE} prefix="${THISPKG_DIR}${PREFIX}" gxx_include_dir="${THISPKG_DIR}${gxxinclude}" install
 
 cd "${THISPKG_DIR}" || exit 1
 
@@ -427,7 +426,7 @@ for f in ${PREFIX#/}/share/man/*/* ${PREFIX#/}/share/info/*; do
 	esac
 done
 	
-cd "${PREFIX#/}/bin"
+cd "${THISPKG_DIR}/${PREFIX}/bin"
 ${STRIP} *
 
 for i in cpp gcjh gcov jcf-dump jv-scan c++ c++filt chill g++ g77 gcc gcj protoize unprotoize; do
@@ -445,12 +444,22 @@ rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
 $LN_S ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-c++${BUILD_EXEEXT}
 
 # only links to major version here; gcc-2 is not the default compiler anymore
-for tool in gcc g++ cpp; do
+for tool in gcc g++ g77 cpp gcov; do
 	if test ${BASE_VER} != ${gcc_major_version}; then
 		rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
 		$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
 	fi
 done
+if test "${PREFIX}" != /usr; then
+	rm -f ${TARGET}-c++
+	$LN_S ${TARGET}-g++ ${TARGET}-c++
+	rm -f ${TARGET}-g++
+	$LN_S ${TARGET}-g++-${gcc_major_version} ${TARGET}-g++
+	rm -f ${TARGET}-gcc
+	$LN_S ${TARGET}-gcc-${gcc_major_version} ${TARGET}-gcc
+	rm -f ${TARGET}-gcov
+	$LN_S ${TARGET}-gcc-${gcc_major_version} ${TARGET}-gcc
+fi
 
 # java & chill are not supported in later version, and are therefoe still default
 for tool in gcj gcjh jcf-dump jv-scan chill; do
@@ -464,17 +473,24 @@ for tool in gcj gcjh jcf-dump jv-scan chill; do
 	fi
 done
 
-cd ../..
-
-mkdir -p "${PREFIX#/}/${TARGET}/bin"
-cd "${PREFIX#/}/${TARGET}/bin"
+mkdir -p "${THISPKG_DIR}/${PREFIX}/${TARGET}/bin"
+cd "${THISPKG_DIR}/${PREFIX}/${TARGET}/bin"
 for tool in gcc g++ g77 gcov cpp; do
 		if test -x ../../bin/${TARGET}-${tool}-${BASE_VER}; then
 			rm -f ${tool} ${tool}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-${tool}${BUILD_EXEEXT} ${tool}
 		fi
 done
-cd ../../..
+
+if test "${PREFIX}" != /usr; then
+	cd "${THISPKG_DIR}/${PREFIX}/${TARGET}"
+	rm -f lib
+	$LN_S ../lib lib
+	rm -f sys-include
+	$LN_S ../include sys-include
+fi
+
+cd "${THISPKG_DIR}"
 
 # libiberty is only used by gcc itself, no need to install it
 find ${PREFIX#/} -name libiberty.a -delete -printf "rm %p\n"
@@ -516,7 +532,7 @@ find ${gccsubdir} -name "*.a" -exec "${ranlib}" '{}' \;
 #
 if test ${PREFIX} != /usr; then
 	mkdir -p ${PREFIX#/}/${TARGET}/bin
-	for tool in ar as ld ld.bdf nm objcopy objdump ranlib size strings strip; do
+	for tool in ar as ld ld.bfd nm objcopy objdump ranlib size strings strip; do
 		rm -f ${PREFIX#/}/bin/${TARGET}-${tool}
 		ln -s /usr/bin/${TARGET}-${tool} ${PREFIX#/}/bin/${TARGET}-${tool}
 		rm -f ${PREFIX#/}/${TARGET}/bin/${tool}
@@ -562,7 +578,7 @@ if test -f ${gccsubdir#/}/cc1plus; then
 	files="$files ${gccsubdir#/}/include/new.h"
 	files="$files ${gccsubdir#/}/include/typeinfo"
 	files="$files ${gccsubdir#/}/include/_G_config.h"
-	files="$files ${sys_root#/}${gxxinclude}"
+	files="$files ${gxxinclude#/}"
 	files="$files "`find ${gccsubdir#/} -name libstdc++.a*`
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-c++-${host}.tar.xz $files || exit 1
 	rm -rf $files
