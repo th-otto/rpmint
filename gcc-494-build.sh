@@ -586,6 +586,8 @@ rm -rf ${PREFIX#/}/share/gcc*/python
 #
 if $with_fortran; then
 	fortran=`find ${gccsubdir#/} -name finclude`
+	fortran="$fortran "${PREFIX#/bin/*gfortran*
+	fortran="$fortran "${PREFIX#/${TARGET}/*gfortran*
 	fortran="$fortran "${gccsubdir#/}/f951
 	fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
 	fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`

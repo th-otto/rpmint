@@ -685,14 +685,15 @@ ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/gcc*/python
+exit 1
 
 #
 # create a separate archive for the fortran backend
 #
 if $with_fortran; then
 	fortran=`find ${gccsubdir#/} -name finclude`
-	fortran="$fortran "${PREFIX#/bin/*gfortran*
-	fortran="$fortran "${PREFIX#/${TARGET}/*gfortran*
+	fortran="$fortran "${PREFIX#/}/bin/*gfortran*
+	fortran="$fortran "${PREFIX#/}/${TARGET}/bin/*gfortran*
 	fortran="$fortran "${gccsubdir#/}/f951
 	fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
 	fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
