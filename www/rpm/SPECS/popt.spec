@@ -1,47 +1,41 @@
-%define pkgname gettext
+%define pkgname popt
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Tools for Native Language Support (NLS)
+Summary:        A C library for parsing command line parameters.
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        0.19.8.1
-Release:        1
-License:        GPL-3.0-or-later and LGPL-2.0-or-later
-Group:          Development/Tools/Other
+Version:        1.16
+Release:        2
+License:        LPGL
+Group:          System Environment/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://www.gnu.org/software/gettext/
+URL:            https://github.com/strukturag/libde265/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://ftp.gnu.org/pub/gnu/gettext/%{pkgname}-%{version}.tar.xz
+Source0: ftp://ftp.redhat.com/pub/redhat/code/popt/popt-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0:  patches/%{pkgname}/gettext-gnulib.patch
+Patch0:  patches/%{pkgname}/popt-libc-updates.patch
+Patch1:  patches/%{pkgname}/popt-alignment-checks.patch
+Patch2:  patches/%{pkgname}/popt-glibc-clashes.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
-BuildRequires:  automake
-BuildRequires:  libtool
-BuildRequires:  pkgconfig
-BuildRequires:  m4
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-gettext-runtime = %{version}
-Provides:       cross-mint-gettext-tools = %{version}
-Provides:       cross-mint-gettext-devel = %{version}
+Provides:       cross-mint-popt-devel
 %else
-Provides:       gettext-runtime = %{version}
-Provides:       gettext-tools = %{version}
-Provides:       gettext-devel = %{version}
+Provides:       popt-devel
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -60,78 +54,63 @@ BuildArch:      noarch
 %endif
 
 %description
-This package contains the intl library as well as tools that ease the
-creation and maintenance of message catalogs. It allows you to extract
-strings from source code. The supplied Emacs mode (po-mode.el) helps
-editing these catalogs (called PO files, for portable object) and
-adding translations. A special compiler turns these PO files into
-binary catalogs.
+Popt is a C library for parsing command line parameters.  Popt
+was heavily influenced by the getopt() and getopt_long() functions,
+but it improves on them by allowing more powerful argument expansion.
+Popt can parse arbitrary argv[] style arrays and automatically set
+variables based on command line arguments.  Popt allows command
+line arguments to be aliased via configuration files and includes
+utility functions for parsing arbitrary strings into argv[] arrays
+using shell-like rules.
+
+Install popt if you're a C programmer and you'd like to use its
+capabilities.
 
 %prep
-%setup -q -n %{pkgname}-%{version}-1
+%setup -q -n %{pkgname}-%{version}
 %patch0 -p1
+%patch1 -p1
+%patch2 -p1
 
-(
- cd m4
- rm -f init.m4 amversion.m4 ar-lib.m4 cond.m4 depend.m4 depout.m4 auxdir.m4 install-sh.m4 lispdir.m4 make.m4 missing.m4 options.m4 prog-cc-c-o.m4 runlog.m4 sanity.m4 silent.m4 strip.m4 substnot.m4 tar.m4
-)
+#autoconf || exit 1
+#autoheader || exit 1
+#rm -rf autom4te.cache config.h.in.orig
 
-./autogen.sh
+autoreconf -fi
 
-cp %{S:1} build-aux/config.sub
+cp %{S:1} config.sub
 
 %build
 
 %rpmint_cflags
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
-
-WHOLE_LIBINTL=
-if test "$LTO_CFLAGS" != ""; then
-	WHOLE_LIBINTL=--enable-whole-libintl
-fi
-
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-	--docdir=%{_rpmint_target_prefix}/share/doc/packages/%{pkgname} \
 	--disable-shared
-	--enable-silent-rules
-	--disable-curses
-	--enable-relocatable
-	--with-included-gettext
-	$WHOLE_LIBINTL
-	--config-cache
 "
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
-
-create_config_cache()
-{
-cat <<EOF >config.cache
-EOF
-	%rpmint_append_gnulib_cache
-}
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
-	create_config_cache
-
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	RANLIB="$ranlib" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
+	# remove obsolete pkg config files for multilibs
+	%rpmint_remove_pkg_configs
+
 	# compress manpages
 	%rpmint_gzip_docs
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
-	# remove obsolete pkg config files for multilibs
-	%rpmint_remove_pkg_configs
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -141,6 +120,7 @@ for CPU in ${ALL_CPUS}; do
 	%endif
 
 	make clean
+	rm -rf config.cache
 done
 
 
@@ -166,21 +146,25 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %files
 %defattr(-,root,root)
 %if "%{buildtype}" == "cross"
-%{_rpmint_bindir}
 %{_rpmint_includedir}
 %{_rpmint_libdir}
+%{_rpmint_cross_pkgconfigdir}
 %{_rpmint_datadir}
-%{_rpmint_prefix}/libexec/%{pkgname}
 %else
-%{_rpmint_target_prefix}/bin
 %{_rpmint_target_prefix}/include
 %{_rpmint_target_prefix}/lib
 %{_rpmint_target_prefix}/share
-%{_rpmint_target_prefix}/libexec/%{pkgname}
 %endif
 
 
 
 %changelog
-* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+* Sun Mar 19 2023 Thorsten Otto <admin@tho-otto.de>
+- Rewritten as RPMint spec file
+- Update to version 1.16
+
+* Mon Mar 27 2000 Frank Naumann <fnaumann@freemint.de>
+- rebuild against new MiNTLib 0.55
+
+* Tue Sep 14 1999 Guido Flohr <guido@freemint.de>
+- Initial Sparemint version
