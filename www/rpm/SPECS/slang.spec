@@ -1,38 +1,38 @@
-%define pkgname zlib
+%define pkgname slang
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Library implementing the DEFLATE compression algorithm
+Summary:        The library and header files for the S-Lang extension language
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.2.13
-Release:        1
-License:        Zlib
-Group:          System/Libraries
+Version:        1.4.9
+Release:        2
+License:        PGL
+Group:          System Environment/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://www.zlib.net/
+URL:            http://www.s-lang.org/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: http://www.zlib.net/%{pkgname}-%{version}.tar.xz
-Patch0: zlib-pkgconfig.patch
-Patch1: zlib-1.2.12-0012-format.patch
-Patch2: zlib-1.2.12-0013-segfault.patch
+Source0: %{pkgname}-%{version}.tar.gz
+Source1: patches/automake/mintelf-config.sub
 
 %rpmint_essential
+BuildRequires:  autoconf
+BuildRequires:  make
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-zlib-devel
+Provides:       cross-mint-slang-devel
 %else
-Provides:       zlib-devel
+Provides:       slang-devel
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -51,26 +51,28 @@ BuildArch:      noarch
 %endif
 
 %description
-zlib is a general-purpose lossless data-compression library,
-implementing an API for the DEFLATE algorithm, the latter of
-which is being used by, for example, gzip and the ZIP archive
-format.
+S-Lang is an interpreted language and a programming library. The S-Lang
+language was designed so that it can be easily embedded into a program to
+provide the program with a powerful extension language. The S-Lang library,
+provided in this package, provides the S-Lang extension language.  S-Lang's
+syntax resembles C, which makes it easy to recode S-Lang procedures in C if
+you need to.
 
 %prep
 %setup -q -n %{pkgname}-%{version}
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
+
+
+cp %{S:1} autoconf/config.sub
 
 %build
 
 %rpmint_cflags
 
-export CHOST=$TARGET
-
-COMMON_CFLAGS="-O3 -fomit-frame-pointer"
-CONFIGURE_FLAGS="--prefix=%{_rpmint_target_prefix}
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 "
+
+export CC="%{_rpmint_target}-gcc"
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -80,16 +82,24 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	"./configure" ${CONFIGURE_FLAGS} \
-	--libdir='${exec_prefix}/lib'$multilibdir
+	--libdir='${exec_prefix}/lib'$multilibdir \
+	--includedir='${prefix}/include/slang'
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
+	# remove obsolete pkg config files for multilibs
+	%rpmint_remove_pkg_configs
+
+	# Remove documentation files.
+	rm -rf %{buildroot}%{_rpmint_sysroot}/usr/doc
+
 	# compress manpages
 	%rpmint_gzip_docs
-	# remove obsolete pkg config files
-	%rpmint_remove_pkg_configs
+	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -105,9 +115,6 @@ done
 %install
 
 %rpmint_cflags
-
-# already done in loop above
-# make install DESTDIR=%{buildroot}%{_rpmint_sysroot}
 
 %rpmint_strip_archives
 
@@ -129,16 +136,16 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %if "%{buildtype}" == "cross"
 %{_rpmint_includedir}
 %{_rpmint_libdir}
-%{_rpmint_cross_pkgconfigdir}
-%{_rpmint_mandir}
 %else
 %{_rpmint_target_prefix}/include
 %{_rpmint_target_prefix}/lib
-%{_rpmint_target_prefix}/share/man
 %endif
 
 
 
 %changelog
-* Wed Mar 1 2023 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+* Sun Mar 19 2023 Thorsten Otto <admin@tho-otto.de>
+- Rewritten as RPMint spec file
+
+* Tue Nov 04 2003 Keith Scroggins <kws@radix.net>
+- Initial build of Slang for FreeMiNT

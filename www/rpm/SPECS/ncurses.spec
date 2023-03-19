@@ -45,11 +45,13 @@ BuildRequires:  gcc-c++
 Provides:       cross-mint-terminfo-base
 Provides:       cross-mint-libncurses5
 Provides:       cross-mint-libncurses6
+Provides:       cross-mint-ncurses-devel
 %else
 BuildRequires:  gcc-c++
 Provides:       terminfo-base
 Provides:       libncurses5
 Provides:       libncurses6
+Provides:       ncurses-devel
 %endif
 
 %if "%{buildtype}" == "cross"
