@@ -97,18 +97,11 @@ do
 
 	# compress manpages
 	%rpmint_gzip_docs
-
-	%if "%{buildtype}" != "cross"
-	mkdir -p %{buildroot}/etc
-	%endif
 done
 
 %install
 
 make instroot=%{buildroot}%{_isysroot} MANDIR=/usr/share/man install
-
-%if "%{buildtype}" != "cross"
-%endif
 
 mkdir -p %{buildroot}%{_isysroot}/etc/rc.d/init.d
 for n in 0 1 2 3 4 5 6; do
