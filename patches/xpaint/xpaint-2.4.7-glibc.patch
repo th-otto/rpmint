@@ -1,0 +1,111 @@
+--- a/misc.h.ewt	Mon Aug 19 14:52:43 1996
++++ b/misc.h	Mon Aug 19 14:52:51 1996
+@@ -14,11 +14,13 @@
+  */
+ #define USE_DRAND
+ 
++#if 0
+ #if defined(SVR4) || defined(__osf__)
+ #define SHORT_RANGE
+ #else
+ #ifndef random
+ long random(void);
++#endif
+ #endif
+ 
+ #ifndef linux
+diff -rup a/rw/rwTable.c b/rw/rwTable.c
+--- a/rw/rwTable.c	2023-03-21 06:58:47.336656110 +0100
++++ b/rw/rwTable.c	2023-03-21 07:05:34.108103197 +0100
+@@ -122,7 +122,6 @@ static char *usedMagicReader = NULL;
+ static Image *
+ readMagic(char *file)
+ {
+-    extern int errno;
+     int i;
+ 
+     errno = 0;
+@@ -231,21 +230,10 @@ RWtableGetWriterList()
+ char *
+ RWGetMsg()
+ {
+-#if defined(BSD4_4)
+-    __const extern char *__const sys_errlist[];
+-#else
+-    extern char *sys_errlist[];
+-#endif
+-    extern int errno;
+-
+     if (RWtableMsg[0] == '\0') {
+ 	if (errno == 0)
+ 	    return "";
+-#if defined(__STDC__) && !defined(MISSING_STRERROR)
+ 	return strerror(errno);
+-#else
+-	return sys_errlist[errno];
+-#endif
+     }
+     return RWtableMsg;
+ }
+diff -rup a/rw/libpnmrw.c b/rw/libpnmrw.c
+--- a/rw/libpnmrw.c	2023-03-21 06:58:47.340656105 +0100
++++ b/rw/libpnmrw.c	2023-03-21 07:04:34.524184188 +0100
+@@ -12,6 +12,10 @@
+ 
+ /* $Id: libpnmrw.c,v 1.5 1996/06/03 05:35:25 torsten Exp $ */
+ 
++#include <stdlib.h>
++#include <errno.h>
++#include <string.h>
++
+ #if defined(HAVE_PARAM_H)
+ #include <sys/param.h>
+ #endif
+@@ -44,10 +48,6 @@
+ #include <strings.h>
+ #endif				/*SYSV */
+ 
+-void *malloc(int);
+-void free(void *);
+-
+-
+ /* Definitions. */
+ 
+ #define pbm_allocarray( cols, rows ) \
+@@ -128,15 +128,9 @@ pm_freearray(char **its, int rows)
+ static void
+ pm_perror(char *reason)
+ {
+-#if defined(BSD4_4)
+-    __const extern char *__const sys_errlist[];
+-#else
+-    extern char *sys_errlist[];
+-#endif
+-    extern int errno;
+-    char *e;
++    const char *e;
+ 
+-    e = sys_errlist[errno];
++    e = strerror(errno);
+ 
+     if (reason != 0 && reason[0] != '\0')
+ 	fprintf(stderr, "%s: %s - %s\n", progname, reason, e);
+diff -rup a/rw/writeGIF.c b/rw/writeGIF.c
+--- a/rw/writeGIF.c	1996-09-06 08:59:49.000000000 +0200
++++ b/rw/writeGIF.c	2023-03-21 07:05:10.892134755 +0100
+@@ -34,6 +34,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <errno.h>
+ #include "image.h"
+ #include "rwTable.h"
+ 
+@@ -77,7 +78,6 @@ static Image *image;
+ int
+ WriteGIF(char *file, Image * outImage)
+ {
+-    extern int errno;
+     int r[MAXCOLORS], g[MAXCOLORS], b[MAXCOLORS];
+     int i, bpp;
+     FILE *fp;

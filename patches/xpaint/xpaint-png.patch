@@ -1,0 +1,724 @@
+diff -rup a/brushOp.c b/brushOp.c
+--- a/brushOp.c	1997-05-31 10:16:48.000000000 +0200
++++ b/brushOp.c	2023-03-21 05:45:36.934871562 +0100
+@@ -23,7 +23,7 @@
+ #include <X11/Xaw/Command.h>
+ #include <X11/Xaw/Toggle.h>
+ #include <stdlib.h>
+-#include <xpm.h>
++#include <X11/xpm.h>
+ 
+ #include "xpaint.h"
+ #include "misc.h"
+diff -rup a/image.h b/image.h
+--- a/image.h	1996-06-25 10:50:41.000000000 +0200
++++ b/image.h	2023-03-21 05:44:31.934977014 +0100
+@@ -18,6 +18,8 @@
+ 
+ /* $Id: image.h,v 1.7 1996/05/28 09:17:00 torsten Exp $ */
+ 
++#include <X11/Xlib.h>
++
+ typedef struct {
+     int refCount;		/* reference count */
+ 
+@@ -63,7 +65,6 @@ typedef struct {
+     unsigned long sourceMask;
+ } Image;
+ 
+-#ifdef _XLIB_H_
+ /* Used to transfer information to routines in iprocess.c */
+ struct imageprocessinfo {
+     int oilArea;
+@@ -85,7 +86,6 @@ struct imageprocessinfo {
+     XColor *background;
+ };
+ 
+-#endif
+ 
+ #define ImagePixel(image, x, y)						\
+ 	(((image)->cmapSize == 0)					\
+diff -rup a/main.c b/main.c
+--- a/main.c	1997-01-26 21:45:07.000000000 +0100
++++ b/main.c	2023-03-21 05:45:13.030910342 +0100
+@@ -26,7 +26,7 @@
+ #include <unistd.h>
+ #endif
+ 
+-#include <xpm.h>
++#include <X11/xpm.h>
+ 
+ #define DEFINE_GLOBAL
+ #include "xpaint.h"
+diff -rup a/operation.c b/operation.c
+--- a/operation.c	1996-11-01 10:37:46.000000000 +0100
++++ b/operation.c	2023-03-21 05:45:28.742884852 +0100
+@@ -23,7 +23,7 @@
+ #include <X11/Xaw/Toggle.h>
+ #include <X11/Xaw/Viewport.h>
+ #include <X11/cursorfont.h>
+-#include <xpm.h>
++#include <X11/xpm.h>
+ #include <stdio.h>
+ #ifndef NOSTDHDRS
+ #include <stdlib.h>
+diff -rup a/protocol.c b/protocol.c
+--- a/protocol.c	1996-06-25 10:50:39.000000000 +0200
++++ b/protocol.c	2023-03-21 07:09:52.075752550 +0100
+@@ -21,6 +21,7 @@
+ #include <X11/cursorfont.h>
+ #include <sys/time.h>
+ #include <stdio.h>
++#include <stdlib.h>
+ 
+ #include "xpaint.h"
+ #include "misc.h"
+diff -rup a/rw/readGIF.c b/rw/readGIF.c
+--- a/rw/readGIF.c	1996-06-25 10:50:41.000000000 +0200
++++ b/rw/readGIF.c	2023-03-21 05:46:12.430817962 +0100
+@@ -43,7 +43,7 @@ struct {
+     unsigned int ColorResolution;
+     unsigned int Background;
+     unsigned int AspectRatio;
+-    int GrayScale;
++    int grayscale;
+ } GifScreen;
+ 
+ static struct {
+@@ -93,7 +93,7 @@ ReadGIF(char *file)
+     unsigned char buf[16];
+     unsigned char c;
+     unsigned char localColorMap[3][MAXCOLORMAPSIZE];
+-    int grayScale;
++    int grayscale;
+     int useGlobalColormap;
+     int bitPixel;
+     int imageCount = 0;
+@@ -137,7 +137,7 @@ ReadGIF(char *file)
+ 
+     if (BitSet(buf[4], LOCALCOLORMAP)) {	/* Global Colormap */
+ 	if (ReadColorMap(fd, GifScreen.BitPixel, GifScreen.ColorMap,
+-			 &GifScreen.GrayScale)) {
++			 &GifScreen.grayscale)) {
+ 	    RWSetMsg("error reading global colormap");
+ 	    fclose(fd);
+ 	    return image;
+@@ -180,20 +180,20 @@ ReadGIF(char *file)
+ 	bitPixel = 1 << ((buf[8] & 0x07) + 1);
+ 
+ 	if (!useGlobalColormap) {
+-	    if (ReadColorMap(fd, bitPixel, localColorMap, &grayScale)) {
++	    if (ReadColorMap(fd, bitPixel, localColorMap, &grayscale)) {
+ 		RWSetMsg("error reading local colormap");
+ 		return NULL;
+ 	    }
+ 	    image = ReadImage(fd, LM_to_uint(buf[4], buf[5]),
+ 			      LM_to_uint(buf[6], buf[7]),
+-			      bitPixel, localColorMap, grayScale,
++			      bitPixel, localColorMap, grayscale,
+ 			      BitSet(buf[8], INTERLACE),
+ 			      imageCount != imageNumber);
+ 	} else {
+ 	    image = ReadImage(fd, LM_to_uint(buf[4], buf[5]),
+ 			      LM_to_uint(buf[6], buf[7]),
+ 			      GifScreen.BitPixel, GifScreen.ColorMap,
+-			      GifScreen.GrayScale, BitSet(buf[8], INTERLACE),
++			      GifScreen.grayscale, BitSet(buf[8], INTERLACE),
+ 			      imageCount != imageNumber);
+ 	}
+     }
+diff -rup a/rw/readPNG.c b/rw/readPNG.c
+--- a/rw/readPNG.c	1996-08-29 07:24:48.000000000 +0200
++++ b/rw/readPNG.c	2023-03-21 06:25:18.443441420 +0100
+@@ -7,7 +7,8 @@
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+-#include "png.h"
++#include <png.h>
++#include <setjmp.h>
+ #include "image.h"
+ #include "rwTable.h"
+ 
+@@ -24,11 +25,15 @@
+ #  endif
+ #endif
+ 
++struct rpng_info {
++	jmp_buf jmpbuf;
++};
++
+ 
+ int
+ TestPNG(char *file)  /* gets called a LOT on the first image:  brushes? */
+ {
+-    char header[8];
++    png_byte header[8];
+     FILE *fp = fopen(file, "rb");   /* libpng requires ANSI; so do we */
+ 
+     if (!fp)
+@@ -41,6 +46,29 @@ TestPNG(char *file)  /* gets called a LO
+ }
+ 
+ 
++static void png_error_handler(png_structp png_ptr, png_const_charp msg)
++{
++	struct rpng_info *info;
++
++	(void) msg;
++	
++	info = (struct rpng_info *)png_get_error_ptr(png_ptr);
++	if (info == NULL)
++	{									/* we are completely hosed now */
++		fputs("ReadPNG severe error:  jmpbuf not recoverable; terminating.\n", stderr);
++		fflush(stderr);
++		exit(99);
++	}
++	longjmp(info->jmpbuf, 1);
++}
++
++
++static void png_warning_handler(png_structp png_ptr, png_const_charp msg)
++{
++	(void) png_ptr;
++	(void) msg;
++}
++
+ 
+ Image *
+ ReadPNG(char *file)
+@@ -49,63 +77,66 @@ ReadPNG(char *file)
+     png_structp   png_ptr;
+     png_infop     info_ptr;
+     int           i, hasAlpha=FALSE;
+-    int           width, height, level, bit_depth, npasses;
++    png_uint_32 width, height;
++    int bit_depth, color_type, interlace_method, compression_method, filter_method;
++    int           level;
+     Image         *image = NULL;
+-
+-
++	struct rpng_info *info;
++    png_colorp palette;
++    int num_palette;
++    
+     Trace((stderr, "\nGRR ReadPNG:  reading file %s\n", file));
+     if ((fp = fopen(file, "rb")) == (FILE *)NULL) {
+         RWSetMsg("Error opening input file");
+         return NULL;
+     }
+ 
+-    png_ptr = (png_structp)malloc(sizeof(png_struct));
+-    if (!png_ptr) {
++	info = (struct rpng_info *)malloc(sizeof(*info));
++    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, info, png_error_handler, png_warning_handler);
++    if (!info || !png_ptr) {
+         RWSetMsg("Error allocating PNG png_ptr memory");
+         fclose(fp);
+         return NULL;
+     }
+ 
+-    info_ptr = (png_infop)malloc(sizeof(png_info));
++    info_ptr = png_create_info_struct(png_ptr);
+     if (!info_ptr) {
+         RWSetMsg("Error allocating PNG info_ptr memory");
+-        free(png_ptr);
++        png_destroy_read_struct(&png_ptr, NULL, NULL);
++        free(info);
+         fclose(fp);
+         return NULL;
+     }
+ 
+-    if (setjmp(png_ptr->jmpbuf)) {
++    if (setjmp(info->jmpbuf)) {
+         RWSetMsg("Error setting longjmp error handler");
+-        png_read_destroy(png_ptr, info_ptr, (png_info *)0);
+-        free(png_ptr);
+-        free(info_ptr);
++        png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
++        free(info);
+         fclose(fp);
+         return NULL;
+     }
+ 
+-    png_info_init(info_ptr);
+-    png_read_init(png_ptr);
+     png_init_io(png_ptr, fp);
+     png_read_info(png_ptr, info_ptr);
+ 
+-    width = info_ptr->width;
+-    height = info_ptr->height;
++    png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type, &interlace_method, &compression_method, &filter_method);
+ 
+     Trace((stderr, "GRR ReadPNG:  width = %d, height = %d\n", width, height));
+-    switch (info_ptr->color_type) {
++    switch (color_type) {
+ 
+         case PNG_COLOR_TYPE_PALETTE:
+             Trace((stderr, "GRR ReadPNG:  PNG_COLOR_TYPE_PALETTE\n"));
+-            image = ImageNewCmap(width, height, info_ptr->num_palette);
+-            for (i = 0;  i < info_ptr->num_palette;  ++i)
+-                ImageSetCmap(image, i, info_ptr->palette[i].red,
+-                  info_ptr->palette[i].green, info_ptr->palette[i].blue);
++            png_get_PLTE(png_ptr, info_ptr, &palette, &num_palette);
++            image = ImageNewCmap(width, height, num_palette);
++            for (i = 0;  i < num_palette;  ++i)
++                ImageSetCmap(image, i, palette[i].red,
++                  palette[i].green, palette[i].blue);
+             /* GRR:  still need to get image data into `image' */
+             break;
+ 
+         case PNG_COLOR_TYPE_RGB:
+             Trace((stderr, "GRR ReadPNG:  PNG_COLOR_TYPE_RGB\n"));
+-            if (info_ptr->bit_depth == 16) {
++            if (bit_depth == 16) {
+                 RWSetMsg("Stripping 48-bit RGB image to 24 bits");
+                 fprintf(stderr,
+                   "ReadPNG:  stripping 48-bit RGB image to 24 bits\n");
+@@ -117,8 +148,7 @@ ReadPNG(char *file)
+ 
+         case PNG_COLOR_TYPE_GRAY:   /* treat grayscale as special colormap */
+             Trace((stderr, "GRR ReadPNG:  PNG_COLOR_TYPE_GRAY\n"));
+-            bit_depth = info_ptr->bit_depth;
+-            if (info_ptr->bit_depth == 16) {
++            if (bit_depth == 16) {
+                 RWSetMsg("Stripping 16-bit grayscale image to 8 bits");
+                 fprintf(stderr,
+                   "ReadPNG:  stripping 16-bit grayscale image to 8 bits\n");
+@@ -157,7 +187,7 @@ ReadPNG(char *file)
+ 
+         case PNG_COLOR_TYPE_RGB_ALPHA:
+             Trace((stderr, "GRR ReadPNG:  PNG_COLOR_TYPE_RGB_ALPHA\n"));
+-            if (info_ptr->bit_depth == 16) {
++            if (bit_depth == 16) {
+                 RWSetMsg("Stripping 64-bit RGBA image to 32 bits");
+                 png_set_strip_16(png_ptr);
+             }
+@@ -169,7 +199,7 @@ ReadPNG(char *file)
+ 
+         case PNG_COLOR_TYPE_GRAY_ALPHA:
+             Trace((stderr, "GRR ReadPNG:  PNG_COLOR_TYPE_GRAY_ALPHA\n"));
+-            if (info_ptr->bit_depth == 16) {
++            if (bit_depth == 16) {
+                 RWSetMsg("Stripping 32-bit gray+alpha image to 16 bits");
+                 png_set_strip_16(png_ptr);
+             }
+@@ -180,21 +210,20 @@ ReadPNG(char *file)
+ 
+         default:
+             fprintf(stderr, "ReadPNG:  unknown image type (%d)\n",
+-              info_ptr->color_type);
++              color_type);
+             fflush(stderr);
+             RWSetMsg("Unknown PNG image type");
+-            png_read_destroy(png_ptr, info_ptr, (png_infop)NULL);
+-            free(png_ptr);
+-            free(info_ptr);
++            png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
++            free(info);
+             fclose(fp);
+             return image;  /* NULL */
+     }
+ 
+-    if (info_ptr->bit_depth < 8)
++    if (bit_depth < 8)
+         png_set_packing(png_ptr);
+ 
+-    if (info_ptr->interlace_type)
+-        npasses = png_set_interlace_handling(png_ptr);
++    if (interlace_method != PNG_INTERLACE_NONE)
++        png_set_interlace_handling(png_ptr);
+ 
+     png_read_update_info(png_ptr, info_ptr);
+ 
+@@ -211,26 +240,25 @@ ReadPNG(char *file)
+          * no easy way around it:  libpng returns the image and alpha channel
+          * interspersed, and interlaced alpha images just make matters worse
+          */
+-        png_data = (png_bytep)malloc(height*info_ptr->rowbytes);
++        png_data = (png_bytep)malloc(height*png_get_rowbytes(png_ptr, info_ptr));
+         if (!png_data) {
+             RWSetMsg("Unable to allocate temporary storage for alpha image");
+             fprintf(stderr, "ReadPNG error:  unable to malloc png_data\n");
+             fflush(stderr);
+             ImageDelete(image);
+-            png_read_destroy(png_ptr, info_ptr, (png_infop)NULL);
+-            free(png_ptr);
+-            free(info_ptr);
++            png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
++            free(info);
+             fclose(fp);
+             return NULL;
+         }
+ 
+         /* only bit depths of 8 and 16 support alpha channels */
+         for (i = 0;  i < height;  ++i)
+-            row_pointers[i] = (png_bytep)png_data + i*info_ptr->rowbytes;
++            row_pointers[i] = (png_bytep)png_data + i*png_get_rowbytes(png_ptr, info_ptr);
+ 
+         png_read_image(png_ptr, row_pointers);
+ 
+-        if (info_ptr->color_type == PNG_COLOR_TYPE_RGB_ALPHA) {
++        if (color_type == PNG_COLOR_TYPE_RGB_ALPHA) {
+             png_bytep png=png_data, rgb=image->data, alpha=image->maskData;
+ 
+             for (i = 0;  i < height*width;  ++i) {
+@@ -258,7 +286,7 @@ ReadPNG(char *file)
+ 	    return NULL;
+ 	}
+         for (i = 0;  i < height;  ++i)
+-            row_pointers[i] = (png_bytep)image->data + i*info_ptr->rowbytes;
++            row_pointers[i] = (png_bytep)image->data + i*png_get_rowbytes(png_ptr, info_ptr);
+ 
+         png_read_image(png_ptr, row_pointers);
+ 
+@@ -271,9 +299,8 @@ ReadPNG(char *file)
+      */
+ 
+     png_read_end(png_ptr, info_ptr);
+-    png_read_destroy(png_ptr, info_ptr, (png_infop)NULL);
+-    free(png_ptr);
+-    free(info_ptr);
++    png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
++    free(info);
+     fclose(fp);
+ 
+     return image;
+diff -rup a/rw/readWriteXBM.c b/rw/readWriteXBM.c
+--- a/rw/readWriteXBM.c	1996-06-25 10:50:41.000000000 +0200
++++ b/rw/readWriteXBM.c	2023-03-21 07:09:16.179801342 +0100
+@@ -15,10 +15,10 @@
+ /* $Id: readWriteXBM.c,v 1.3 1996/04/19 09:31:03 torsten Exp $ */
+ 
+ #include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
+ #include "image.h"
+ 
+-int strncmp(char *, char *, int);
+-
+ #define TRUE 1
+ #define FALSE 0
+ 
+@@ -56,8 +56,6 @@ int strncmp(char *, char *, int);
+ #include <stdio.h>
+ #include <ctype.h>
+ 
+-extern char *strrchr(char *, char);
+-
+ 
+ #define MAX_SIZE 255
+ #define True 1
+diff -rup a/rw/readWriteXPM.c b/rw/readWriteXPM.c
+--- a/rw/readWriteXPM.c	1996-11-01 10:38:47.000000000 +0100
++++ b/rw/readWriteXPM.c	2023-03-21 05:46:50.342761901 +0100
+@@ -16,7 +16,7 @@
+ 
+ #include <stdio.h>
+ #include <X11/Intrinsic.h>
+-#include <xpm.h>
++#include <X11/xpm.h>
+ #include "xpaint.h"
+ #include "image.h"
+ #include "rwTable.h"
+diff -rup a/rw/writePNG.c b/rw/writePNG.c
+--- a/rw/writePNG.c	1996-08-29 07:24:57.000000000 +0200
++++ b/rw/writePNG.c	2023-03-21 06:57:42.740743914 +0100
+@@ -7,7 +7,9 @@
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+-#include "png.h"
++#include <png.h>
++#include <setjmp.h>
++#include <string.h>
+ #include "image.h"
+ #include "rwTable.h"
+ 
+@@ -19,9 +21,37 @@
+ #  endif
+ #endif
+ 
++struct wpng_info {
++	jmp_buf jmpbuf;
++};
++
+ extern void compressColormap(Image *image);
+ 
+ 
++static void png_error_handler(png_structp png_ptr, png_const_charp msg)
++{
++	struct wpng_info *info;
++
++	(void) msg;
++	
++	info = (struct wpng_info *)png_get_error_ptr(png_ptr);
++	if (info == NULL)
++	{									/* we are completely hosed now */
++		fputs("ReadPNG severe error:  jmpbuf not recoverable; terminating.\n", stderr);
++		fflush(stderr);
++		exit(99);
++	}
++	longjmp(info->jmpbuf, 1);
++}
++
++
++static void png_warning_handler(png_structp png_ptr, png_const_charp msg)
++{
++	(void) png_ptr;
++	(void) msg;
++}
++
++
+ static int
+ WritePNG(char *file, Image *image, int interlace_type)
+ {
+@@ -31,54 +61,54 @@ WritePNG(char *file, Image *image, int i
+     png_structp  png_ptr;
+     png_infop  info_ptr;
+     png_textp  software;
+-
+-
++	struct wpng_info *info;
++	int color_type;
++	int bit_depth;
++	png_time mod_time;
++	
+     Trace((stderr, "\nGRR WritePNG:  %d x %d, scale = %d\n",
+       image->width, image->height, image->scale));
+-    if (!fp)
+-        return 1;
++	if (!fp)
++		return 1;
+ 
+-    png_ptr = (png_structp)malloc(sizeof (png_struct));
+-    if (!png_ptr)
++	info = (struct wpng_info *)malloc(sizeof(*info));
++    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, info, png_error_handler, png_warning_handler);
++    if (!info || !png_ptr)
+         return 1;
+ 
+-    info_ptr = (png_infop)malloc(sizeof (png_info));
++    info_ptr = png_create_info_struct(png_ptr);
+     if (!info_ptr) {
+-        free(png_ptr);
++        png_destroy_write_struct(&png_ptr, NULL);
++        free(info);
++        fclose(fp);
+         return 1;
+     }
+ 
+-    if (setjmp(png_ptr->jmpbuf)) {    
+-        png_write_destroy(png_ptr);
+-        free(info_ptr);
+-        free(png_ptr);
++    if (setjmp(info->jmpbuf)) {    
++        png_destroy_write_struct(&png_ptr, &info_ptr);
++        free(info);
+         fclose(fp);
+         return 1;
+     }
+ 
+-    png_info_init(info_ptr);
+-    png_write_init(png_ptr);
+     png_init_io(png_ptr, fp);
+ 
+-    info_ptr->width = image->width;
+-    info_ptr->height = image->height;
+-
+     if (image->isBW) {
+         if (image->maskData) {
+-            info_ptr->color_type = PNG_COLOR_TYPE_GRAY_ALPHA;
+-            info_ptr->bit_depth = 8;   /* promote to full grayscale */
++            color_type = PNG_COLOR_TYPE_GRAY_ALPHA;
++            bit_depth = 8;   /* promote to full grayscale */
+         } else {
+-            info_ptr->color_type = PNG_COLOR_TYPE_GRAY;
+-            info_ptr->bit_depth = 1;
++            color_type = PNG_COLOR_TYPE_GRAY;
++            bit_depth = 1;
+         }
+         Trace((stderr, "GRR WritePNG:  B/W, bit_depth = %d\n",
+-          info_ptr->bit_depth));
++          bit_depth));
+ 
+     } else if (image->isGrey) {
+-        info_ptr->color_type = image->maskData? PNG_COLOR_TYPE_GRAY_ALPHA :
++        color_type = image->maskData? PNG_COLOR_TYPE_GRAY_ALPHA :
+                                                 PNG_COLOR_TYPE_GRAY;
+         if (image->cmapPacked)
+-            info_ptr->bit_depth = 8;
++            bit_depth = 8;
+         else {
+             Trace((stderr,
+               "GRR WritePNG:  isGrey: cmapSize = %d (before compressing), ",
+@@ -86,15 +116,15 @@ WritePNG(char *file, Image *image, int i
+             compressColormap(image);
+             Trace((stderr, "%d (after)\n", image->cmapSize));
+             if (image->cmapSize > 16)
+-                info_ptr->bit_depth = 8;
++                bit_depth = 8;
+             else if (image->cmapSize > 4)
+-                info_ptr->bit_depth = 4;
++                bit_depth = 4;
+             else if (image->cmapSize > 2)
+-                info_ptr->bit_depth = 2;
++                bit_depth = 2;
+             else
+-                info_ptr->bit_depth = 1;
++                bit_depth = 1;
+             Trace((stderr, "GRR WritePNG:  isGrey: picked bit_depth = %d\n",
+-              info_ptr->bit_depth));
++              bit_depth));
+         }
+ 
+     } else if (image->scale == 3) {
+@@ -107,13 +137,14 @@ WritePNG(char *file, Image *image, int i
+         if (cmapImage) {
+             image = cmapImage;  /* original was deleted in ImageCompress() */
+         } else {
+-            info_ptr->color_type = image->maskData? PNG_COLOR_TYPE_RGB_ALPHA :
++            color_type = image->maskData? PNG_COLOR_TYPE_RGB_ALPHA :
+                                                     PNG_COLOR_TYPE_RGB;
+-            info_ptr->bit_depth = 8;
++            bit_depth = 8;
+             Trace((stderr, "GRR WritePNG:  RGB, bit_depth = 8\n"));
+         }
+     }
+ 
++	png_set_IHDR(png_ptr, info_ptr, image->width, image->height, bit_depth, color_type, interlace_type, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+ /*
+ 	GRR ReadPNG:  reading file /home1/xpaint-images/cdrom.png
+ 	GRR ReadPNG:  width = 34, height = 33
+@@ -129,7 +160,7 @@ WritePNG(char *file, Image *image, int i
+      * ImageCompress() worked
+      */
+     if (image->scale == 1) {
+-        info_ptr->color_type = PNG_COLOR_TYPE_PALETTE;
++        color_type = PNG_COLOR_TYPE_PALETTE;
+         if (image->maskData) {
+             fprintf(stderr,
+               "WritePNG:  can't use alpha mask with colormapped image\n");
+@@ -139,18 +170,17 @@ WritePNG(char *file, Image *image, int i
+         if (!image->cmapPacked)
+             compressColormap(image);
+         if (image->cmapSize > 16)
+-            info_ptr->bit_depth = 8;
++            bit_depth = 8;
+         else if (image->cmapSize > 4)
+-            info_ptr->bit_depth = 4;
++            bit_depth = 4;
+         else if (image->cmapSize > 2)
+-            info_ptr->bit_depth = 2;
++            bit_depth = 2;
+         else
+-            info_ptr->bit_depth = 1;
+-        info_ptr->valid |= PNG_INFO_PLTE;
+-        info_ptr->num_palette = image->cmapSize;
+-        info_ptr->palette = (png_colorp)image->cmapData;  /* seems to work... */
+-        Trace((stderr, "%d, num_palette = %d\n", info_ptr->bit_depth,
+-          info_ptr->num_palette));
++            bit_depth = 1;
++        png_set_IHDR(png_ptr, info_ptr, image->width, image->height, bit_depth, color_type, interlace_type, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
++        png_set_PLTE(png_ptr, info_ptr, (png_colorp)image->cmapData, image->cmapSize);  /* seems to work... */
++        Trace((stderr, "%d, num_palette = %d\n", bit_depth,
++          image->cmapSize));
+ #if 0
+         for (i = 0;  i < image->cmapSize;  ++i) {
+             info_ptr->palette[i].red = 
+@@ -160,14 +190,11 @@ WritePNG(char *file, Image *image, int i
+ #endif
+     }
+ 
+-    info_ptr->interlace_type = interlace_type;
+-
+     /* set the file gamma */
+-    info_ptr->valid |= PNG_INFO_gAMA;
+ #ifdef DISPLAY_GAMMA
+-    info_ptr->gamma = 1.0 / DISPLAY_GAMMA;
++    png_set_gAMA(png_ptr, info_ptr, 1.0 / DISPLAY_GAMMA);
+ #else
+-    info_ptr->gamma = 0.45;   /* default: assume PC-like system */
++    png_set_gAMA(png_ptr, info_ptr, 0.45);   /* default: assume PC-like system */
+ #endif
+ 
+     /* info_ptr->valid |= PNG_INFO_tEXt;               DOES NOT EXIST */
+@@ -180,16 +207,13 @@ WritePNG(char *file, Image *image, int i
+         software->key = "Software";
+         software->text = software_text;
+         software->text_length = strlen(software->text);
+-        info_ptr->num_text = 1;
+-        info_ptr->text = software;
++        png_set_text(png_ptr, info_ptr, software, 1);
+     } else {
+         /* couldn't malloc:  oh well */
+-        info_ptr->num_text = 0;
+-        info_ptr->text = NULL;
+     }
+ 
+-    info_ptr->valid |= PNG_INFO_tIME;
+-    png_convert_from_time_t(&info_ptr->mod_time, time(NULL));
++    png_convert_from_time_t(&mod_time, time(NULL));
++	png_set_tIME(png_ptr, info_ptr, &mod_time);
+ 
+     png_write_flush(png_ptr);
+     png_write_info(png_ptr, info_ptr);
+@@ -200,9 +224,8 @@ WritePNG(char *file, Image *image, int i
+         /* alpha channel version */
+         fprintf(stderr, "WritePNG:  sorry, can't write alpha images yet\n");
+         fflush(stderr);
+-        png_write_destroy(png_ptr);
+-        free(info_ptr);
+-        free(png_ptr);
++        png_destroy_write_struct(&png_ptr, &info_ptr);
++        free(info);
+         fclose(fp);
+         return 1;
+     } else {
+@@ -222,13 +245,12 @@ WritePNG(char *file, Image *image, int i
+     }
+ 
+     png_write_end(png_ptr, NULL);
+-    png_write_destroy(png_ptr);
+ 
+     if (software)
+         free(software);   /* we LOVE free software!! */
+ 
+-    free(info_ptr);
+-    free(png_ptr);   /* necessary?? */
++    png_destroy_write_struct(&png_ptr, &info_ptr);
++    free(info);
+     fclose(fp);
+ 
+     return 0;
+@@ -239,7 +261,7 @@ WritePNG(char *file, Image *image, int i
+ int
+ WritePNGn(char *file, Image *image)
+ {
+-    return WritePNG(file, image, 0);
++    return WritePNG(file, image, PNG_INTERLACE_NONE);
+ }
+ 
+ 
+@@ -247,5 +269,5 @@ WritePNGn(char *file, Image *image)
+ int
+ WritePNGi(char *file, Image *image)
+ {
+-    return WritePNG(file, image, 1);
++    return WritePNG(file, image, PNG_INTERLACE_ADAM7);
+ }
+diff -rup a/rw/writePS.c b/rw/writePS.c
+--- a/rw/writePS.c	1996-06-25 10:50:41.000000000 +0200
++++ b/rw/writePS.c	2023-03-21 07:06:41.356011790 +0100
+@@ -16,11 +16,8 @@
+ 
+ #include <stdio.h>
+ #include "image.h"
+-#ifdef sco
+ #include <time.h>
+-#else
+ #include <sys/time.h>
+-#endif
+ #include <string.h>
+ 
+ #ifndef TRUE

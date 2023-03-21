@@ -484,6 +484,10 @@ ln -sf ../X11R6/include/DPS	%{buildroot}%{_isysroot}%{_rpmint_target_prefix}/inc
 ln -sf ../X11R6/include/X11	%{buildroot}%{_isysroot}%{_rpmint_target_prefix}/include/X11
 ln -sf ../X11R6/lib/X11		%{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/X11
 ln -sf ../X11R6/man		%{buildroot}%{_isysroot}%{_rpmint_target_prefix}/man/X11
+ln -sf ../../../../etc/X11/app-defaults %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/X11/app-defaults
+ln -sf ../../../../etc/X11/lbxproxy %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/X11/lbxproxy
+ln -sf ../../../../etc/X11/proxymngr %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/X11/proxymngr
+ln -sf ../../../../etc/X11/xsm %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/X11/xsm
 
 # no need to be SUID
 chmod 755 %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xload
