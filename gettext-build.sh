@@ -49,6 +49,7 @@ fi
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
 	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME} \
 	--disable-shared \
+	--disable-threads \
 	--enable-silent-rules \
 	--disable-curses \
 	--enable-relocatable \

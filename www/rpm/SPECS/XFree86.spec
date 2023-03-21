@@ -315,7 +315,7 @@ touch xc/programs/xterm/XTerm-col.ad
 %if "%{buildtype}" == "cross"
 %define _isysroot %{_rpmint_sysroot}
 %else
-%define _isysroot 
+%define _isysroot %{nil}
 %endif
 %define _isysconfdir /etc
 

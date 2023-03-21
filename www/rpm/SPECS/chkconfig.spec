@@ -1,29 +1,57 @@
-Summary: A system tool for maintaining the /etc/rc.d hierarchy.
-Name: chkconfig
-%define version 1.0.7
-Version: %{version}
-Release: 2
-Copyright: GPL
-Group: System Environment/Base
-Source: ftp://ftp.redhat.com/pub/redhat/code/chkconfig/chkconfig-%{version}.tar.gz
-Patch0: chkconfig-nommap.patch
-Patch1: chkconfig-mint.patch
-BuildRoot: /var/tmp/chkconfig.root
-Packager: Guido Flohr <guido@atari.org>
-Vendor: Sparemint
-Summary(de): Ein System-Werkzeug zur Pflege der /etc/rc.d-Hierarchie.
+%define pkgname chkconfig
+
+%if "%{?buildtype}" == ""
+%define buildtype cross
+%endif
+%rpmint_header
+
+%if "%{buildtype}" == "cross"
+Name:           cross-mint-%{pkgname}
+%else
+Name:           %{pkgname}
+%endif
+Version:        1.0.7
+Release:        3
+Summary:        A system tool for maintaining the /etc/rc.d hierarchy.
+License:        GPL
+Group:          System/Base
+Source:         ftp://ftp.redhat.com/pub/redhat/code/chkconfig/chkconfig-%{version}.tar.gz
+Patch0:         patches/%{pkgname}/chkconfig-nommap.patch
+Patch1:         patches/%{pkgname}/chkconfig-mint.patch
+
+BuildRequires:  gettext-runtime
+%if "%{buildtype}" == "cross"
+BuildRequires:  cross-mint-gettext-devel
+BuildRequires:  cross-mint-newt-devel
+BuildRequires:  cross-mint-popt-devel
+%else
+BuildRequires:  gettext-devel
+BuildRequires:  newt-devel
+BuildRequires:  popt-devel
+%endif
+
+BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+
+%if "%{buildtype}" == "cross"
+BuildArch:      noarch
+%else
+%define _target_platform %{_rpmint_target_platform}
+%if "%{buildtype}" == "v4e"
+%define _arch m5475
+%else
+%if "%{buildtype}" == "020"
+%define _arch m68020
+%else
+%define _arch m68k
+%endif
+%endif
+%endif
 
 %description
 Chkconfig is a basic system utility.  It updates and queries runlevel
 information for system services.  Chkconfig manipulates the numerous
 symbolic links in /etc/rc.d, so system administrators don't have to
 manually edit the symbolic links as often.
-
-%description -l de
-Chkconfig ist ein Basis-System-Werkzeug. Es aktualisiert und überprüft
-die Runlevel-Informationen für die System-Dienste. Chkconfig manipuliert
-die diversen Links in /etc/rc.d, so dass SysAdmins diese Links nicht
-ständig von Hand anlegen und löschen müssen.
 
 %package -n ntsysv
 Summary: A system tool for maintaining the /etc/rc.d hierarchy.
@@ -34,53 +62,107 @@ ntsysv updates and queries runlevel information for system
 services.  ntsysv relieves system administrators of having to
 directly manipulate the numerous symbolic links in /etc/rc.d.
 
-%description -n ntsysv -l de
-Ntsysv aktualisiert und ermittelt Runlevel-Informationen für 
-System-Services. Ntsysv nimmt System-Administratoren die Mühe ab, 
-die zahlreichen symbolischen Links in /etc/rc.d direkt zu manipulieren.
-
 %prep
-%setup -q
-%patch0 -p1 -b .nommap
-%patch1 -p1 -b .mint
+%setup -q -n %{pkgname}-%{version}
+%patch0 -p1
+%patch1 -p1
+
 %build
 
-%ifarch sparc
-LIBMHACK=-lm
-%endif
-%ifarch m68kmint
-LIBS=-lintl
+%rpmint_cflags
+
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+
+%if "%{buildtype}" == "cross"
+%define _isysroot %{_rpmint_sysroot}
+%else
+%define _isysroot %{nil}
 %endif
 
-make RPM_OPT_FLAGS="$RPM_OPT_FLAGS" LIBS="$LIBS" LIBMHACK="$LIBMHACK"
+#
+# there are no libraries in this package, so we
+# have to build for the target CPU only
+#
+%if "%{buildtype}" == "cross"
+for CPU in 000
+%else
+for CPU in %{buildtype}
+%endif
+do
+	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
+	eval multilibdir=\${CPU_LIBDIR_$CPU}
+	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
+
+	make CC="%{_rpmint_target}-gcc $CPU_CFLAGS" CFLAGS="-O2 -fomit-frame-pointer"
+
+	# compress manpages
+	%rpmint_gzip_docs
+
+	%if "%{buildtype}" != "cross"
+	mkdir -p %{buildroot}/etc
+	%endif
+done
 
 %install
-rm -rf $RPM_BUILD_ROOT
-make instroot=$RPM_BUILD_ROOT MANDIR=/usr/share/man install
 
-mkdir -p $RPM_BUILD_ROOT/etc/rc.d/init.d
+make instroot=%{buildroot}%{_isysroot} MANDIR=/usr/share/man install
+
+%if "%{buildtype}" != "cross"
+%endif
+
+mkdir -p %{buildroot}%{_isysroot}/etc/rc.d/init.d
 for n in 0 1 2 3 4 5 6; do
-    mkdir -p $RPM_BUILD_ROOT/etc/rc.d/rc${n}.d
+    mkdir -p %{buildroot}%{_isysroot}/etc/rc.d/rc${n}.d
 done
-gzip -9nf $RPM_BUILD_ROOT/usr/share/man/man8/*.8
+gzip -9nf %{buildroot}%{_isysroot}/usr/share/man/man8/*.8
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+
+%if "%{buildtype}" != "cross"
+%post
+%{_sbindir}/update-alternatives \
+  --install /bin/ksh ksh %{_bindir}/lksh 15 \
+  --slave %{_rpmint_target_prefix}/bin/ksh usr-bin-ksh %{_rpmint_target_prefix}/bin/lksh \
+  --slave %{_rpmint_target_prefix}/share/man/man1/ksh.1%{?ext_man} ksh.1%{?ext_man} %{_rpmint_target_prefix}/share/man/man1/lksh.1%{?ext_man}
+
+%preun
+if test $1 -eq 0 ; then
+    %{_sbindir}/update-alternatives --remove ksh /bin/lksh
+fi
+
+%postun
+test -x %{_bindir}/mksh && awk '
+($1 != "/bin/mksh") && ($1 != "%{_bindir}/mksh") {
+    line[n++] = $0
+}
+END {
+    for (i = 0; i < n; i++) {
+        print line[i] >"%{_sysconfdir}/shells"
+    }
+}' '%{_sysconfdir}/shells' || true
+%endif
 
 %files
 %defattr(-,root,root)
-/sbin/chkconfig
-/usr/share/man/man8/chkconfig.8.gz
-%dir /etc/rc.d
-%dir /etc/rc.d/*
-/usr/share/locale/*/LC_MESSAGES/chkconfig.mo
-
-%files -n ntsysv
-%defattr(-,root,root)
-/usr/sbin/ntsysv
-/usr/share/man/man8/ntsysv.8.gz
+%if "%{buildtype}" == "cross"
+%{_rpmint_sysroot}/sbin
+%{_rpmint_sysroot}%{_rpmint_target_prefix}/sbin
+%{_rpmint_datadir}
+%else
+/etc/rc.d/*
+/sbin
+%{_rpmint_target_prefix}/sbin
+%{_rpmint_target_prefix}/share
+%ghost /etc/alternatives/ksh
+%ghost /etc/alternatives/usr-bin-ksh
+%ghost /etc/alternatives/ksh.1%{?ext_man}
+%endif
 
 %changelog
+* Sun Mar 19 2023 Thorsten Otto <admin@tho-otto.de>
+- Rewritten as RPMint spec file
+
 * Sun Dec 26 1999 Guido Flohr <guido@atari.org>
 - Built against fixed libnewt to support monochrome terminals.
 

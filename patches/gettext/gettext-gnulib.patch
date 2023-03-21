@@ -8,3 +8,26 @@
  
  ## end   gnulib module arg-nonnull
  
+--- a/gettext-runtime/gnulib-lib/stddef.in.h	2023-03-21 10:39:36.555264518 +0100
++++ b/gettext-runtime/gnulib-lib/stddef.in.h	2023-03-21 10:39:54.435241696 +0100
+@@ -104,6 +104,7 @@
+   long double __ld _GL_STDDEF_ALIGNAS (long double);
+   long int __i _GL_STDDEF_ALIGNAS (long int);
+ } max_align_t;
++#define _GCC_MAX_ALIGN_T
+ #endif
+ 
+ #  endif /* _@GUARD_PREFIX@_STDDEF_H */
+--- a/gettext-runtime/intl/lock.h	2023-03-21 11:01:44.877569195 +0100
++++ b/gettext-runtime/intl/lock.h	2023-03-21 11:02:53.325481859 +0100
+@@ -85,6 +85,10 @@
+ 
+ #if defined(USE_POSIX_THREADS)
+ 
++#ifndef LIBINTL_DLL_EXPORTED
++# define LIBINTL_DLL_EXPORTED
++#endif
++
+ /* Use the POSIX threads library.  */
+ 
+ # include <pthread.h>

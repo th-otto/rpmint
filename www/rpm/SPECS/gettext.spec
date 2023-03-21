@@ -94,6 +94,7 @@ fi
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--docdir=%{_rpmint_target_prefix}/share/doc/packages/%{pkgname} \
 	--disable-shared
+	--disable-threads
 	--enable-silent-rules
 	--disable-curses
 	--enable-relocatable
