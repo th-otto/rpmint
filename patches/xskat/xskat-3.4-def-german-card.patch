@@ -1,0 +1,24 @@
+--- xskat-3.3/skat.c.orig	Thu Mar 23 20:39:16 2000
++++ xskat-3.3/skat.c	Fri Dec 22 14:26:00 2000
+@@ -2802,6 +2802,9 @@
+ int argc;
+ char *argv[];
+ {
++  blatt[0]=2;
++  blattset[0]=1;
++
+   setrnd(&seed[0],savseed=time((time_t *)0));
+   xinit(theargc=argc,theargv=argv);
+   play();
+--- a/Imakefile	2023-03-22 08:16:51.784643079 +0100
++++ b/Imakefile	2023-03-22 08:27:09.631884226 +0100
+@@ -30,6 +30,9 @@
+ 
+ LOCAL_LIBRARIES=$(XLIBONLY)
+ 
++MANSUFFIX = 6
++MANDIR = $(MANSOURCEPATH)6
++
+ OBJS=skat.o ramsch.o null.o bitmaps.o xio.o xdial.o irc.o text.o
+ SRCS=skat.c ramsch.c null.c bitmaps.c xio.c xdial.c irc.c text.c
+ 

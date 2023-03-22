@@ -1,4 +1,4 @@
-%define pkgname xswarm
+%define pkgname xskat
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
@@ -12,16 +12,19 @@
 %define _isysroot %{nil}
 %endif
 
-Summary       : A nice X11 demo or screensaver.
+Summary       : Skat, a card game
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version       : 2.3
+Version       : 4.0
 Release       : 2
-License       : MIT
-Group         : Amusements/Graphics
+License       : Free
+Group         : X11/Games
+
+Packager:       Thorsten Otto <admin@tho-otto.de>
+URL           : http://www.xskat.de/
 
 %if "%{buildtype}" == "cross"
 BuildRequires : cross-mint-XFree86-devel
@@ -31,14 +34,12 @@ BuildRequires : XFree86-devel
 Requires      : XFree86
 %endif
 
-Packager:       Thorsten Otto <admin@tho-otto.de>
-
 Prefix        : %{_rpmint_target_prefix}
 Docdir        : %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot     : %{_tmppath}/%{name}-root
 
-Source: %{pkgname}-%{version}.tar.gz
-Patch0: patches/%{pkgname}/xswarm.patch
+Source: http://www.xskat.de/xskat-%{version}.tar.gz
+Patch0: xskat-3.4-def-german-card.patch
 
 %if "%{buildtype}" == "cross"
 BuildArch:      noarch
@@ -57,12 +58,15 @@ BuildArch:      noarch
 
 
 %description
-The well known xswarm screensaver or X11 demo program. Similiar
-to ATARI's lines.app that was shipped with MultiTOS.
+Skat is a popular game in Germany.  A card game for the X Window
+System, with full featured network support.  Also via IRC. -
+It follows the "Deutsche Skat-Ordnung" or with popular addition
+strategies. 
+Now with "Ramsch", "Schieberamsch", "Revolution" and more...
 
-Author:
+Authors:
 --------
-    Jeff Butterworth <butterwo@cs.unc.edu>
+    Gunter Gerhardt <gerhardt@draeger.com>
 
 
 %prep
@@ -93,23 +97,25 @@ do
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
 	%{_rpmint_target}-xmkmf -DCpuOption="${CPU_CFLAGS}" -a
-	make
+	make DEFINES='-DDEFAULT_LANGUAGE=\"german\" -DDEFAULT_IRC_SERVER=\"irc.freenet.de\"'
 done
 
 
 %install
-make DESTDIR=%{buildroot} install install.man
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
-%if "%{buildtype}" != "cross"
-cp -pr %{buildroot}%{_rpmint_sysroot}/. %{buildroot}
-rm -rf %{buildroot}%{_rpmint_sysroot}
-%endif
+install -m755 -d %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin
+install -m755 -d %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/bitmaps
+install -m755 -d %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man6
+install -m755 xskat %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xskat
+install -m644 icon.xbm %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/bitmaps/xskat.xbm
+install -m644 xskat.man %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man6/xskat.6
 
 %{_rpmint_target}-strip %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/* ||:
-%{_rpmint_target}-stack --fix=64k %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/* ||:
+%{_rpmint_target}-stack --fix=256k %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/* ||:
 
 # compress manpages
-gzip -9nf %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/*/*
+gzip -9nf %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man6/xskat.6
 
 
 %clean
@@ -117,15 +123,18 @@ gzip -9nf %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/*/*
 
 
 %files
-%defattr(-,root,root)
-%doc README
-%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xswarm
-%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/xswarm.1x*
+%doc CHANGES README
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xskat
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/bitmaps/xskat.xbm
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man6/xskat.6.gz
 
 
-%changelog
+%changelog -n xskat
 * Wed Mar 22 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
+
+* Fri May 28 2004 Frank Naumann <fnaumann@freemint.de>
+- updated to version 4.0
 
 * Fri Dec 22 2000 Frank Naumann <fnaumann@freemint.de>
 - first release for Sparemint

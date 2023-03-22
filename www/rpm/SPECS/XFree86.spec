@@ -573,7 +573,7 @@ cp makedepend %{buildroot}%{_prefix}/bin/%{_rpmint_target}-makedepend
 
 for tool in imake makedepend xmkmf gccmakedep; do
 	ln -s $tool %{buildroot}/%{_rpmint_target_prefix}/X11R6/bin/%{_rpmint_target}-$tool
-fi
+done
 
 %endif
 
@@ -769,7 +769,7 @@ fi
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/cxpm.1*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/editres.1*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/iceauth.1*
-%{_isysroot}%%{_rpmint_target_prefix}/X11R6/man/man1/lbxproxy.1*
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/lbxproxy.1*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/lndir.1*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/makedepend.1*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/makepsres.1*
