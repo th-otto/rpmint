@@ -5,6 +5,12 @@
 %endif
 %rpmint_header
 
+%if "%{buildtype}" == "cross"
+%define _isysroot %{_rpmint_sysroot}
+%else
+%define _isysroot %{nil}
+%endif
+
 Summary       : Geometric puzzles and toys for the X Window System.
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
@@ -26,8 +32,10 @@ BuildRequires : XFree86-devel
 Requires      : XFree86
 %endif
 
-Prefix        : %{_prefix}
-Docdir        : %{_prefix}/share/doc
+Packager:       Thorsten Otto <admin@tho-otto.de>
+
+Prefix        : %{_rpmint_target_prefix}
+Docdir        : %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot     : %{_tmppath}/%{name}-root
 
 Source: ftp://sunsite.unc.edu/pub/Linux/games/strategy/%{pkgname}-%{version}.tar.gz
@@ -68,12 +76,6 @@ cube style puzzles.
 %rpmint_cflags
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
-
-%if "%{buildtype}" == "cross"
-%define _isysroot %{_rpmint_sysroot}
-%else
-%define _isysroot %{nil}
-%endif
 
 # That package does not have an Imakefile in the top directory :(
 #
