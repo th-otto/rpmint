@@ -1,0 +1,184 @@
+diff -rup xpuzzles-5.5.2.orig/xcubes/Cubes.c xpuzzles-5.5.2/xcubes/Cubes.c
+--- xpuzzles-5.5.2.orig/xcubes/Cubes.c	2023-03-20 17:50:26.315271184 +0100
++++ xpuzzles-5.5.2/xcubes/Cubes.c	2023-03-20 17:53:04.355056788 +0100
+@@ -234,7 +234,7 @@ WidgetClass cubesWidgetClass = (WidgetCl
+ #endif /* defined(SYSV) || defined(SVR4) */
+ 
+ static int
+-usleep(unsigned int usec)
++my_usleep(unsigned int usec)
+ {
+ #if (defined (SYSV) || defined(SVR4)) && !defined(__hpux)
+ #if defined(HAVE_NANOSLEEP)
+@@ -275,12 +275,14 @@ usleep(unsigned int usec)
+ #endif
+ 	return 0;
+ }
++#else
++# define my_usleep usleep
+ #endif
+ 
+ static void
+ Sleep(unsigned int cMilliseconds)
+ {
+-	(void) usleep(cMilliseconds * 1000);
++	(void) my_usleep(cMilliseconds * 1000);
+ }
+ 
+ static void
+diff -rup xpuzzles-5.5.2.orig/xhexagons/Hexagons.c xpuzzles-5.5.2/xhexagons/Hexagons.c
+--- xpuzzles-5.5.2.orig/xhexagons/Hexagons.c	2023-03-20 17:50:26.315271184 +0100
++++ xpuzzles-5.5.2/xhexagons/Hexagons.c	2023-03-20 17:53:29.203023078 +0100
+@@ -282,7 +282,7 @@ static XPoint hexagonList[MAXORIENT][7];
+ #endif /* defined(SYSV) || defined(SVR4) */
+ 
+ static int
+-usleep(unsigned int usec)
++my_usleep(unsigned int usec)
+ {
+ #if (defined (SYSV) || defined(SVR4)) && !defined(__hpux)
+ #if defined(HAVE_NANOSLEEP)
+@@ -323,12 +323,14 @@ usleep(unsigned int usec)
+ #endif
+ 	return 0;
+ }
++#else
++# define my_usleep usleep
+ #endif
+ 
+ static void
+ Sleep(unsigned int cMilliseconds)
+ {
+-	(void) usleep(cMilliseconds * 1000);
++	(void) my_usleep(cMilliseconds * 1000);
+ }
+ 
+ static void
+diff -rup xpuzzles-5.5.2.orig/xpanex/Panex.c xpuzzles-5.5.2/xpanex/Panex.c
+--- xpuzzles-5.5.2.orig/xpanex/Panex.c	2023-03-20 17:50:26.315271184 +0100
++++ xpuzzles-5.5.2/xpanex/Panex.c	2023-03-20 17:53:50.442994263 +0100
+@@ -228,7 +228,7 @@ static XPoint trapazoidUnit[5] =
+ #endif /* defined(SYSV) || defined(SVR4) */
+ 
+ static int
+-usleep(unsigned int usec)
++my_usleep(unsigned int usec)
+ {
+ #if (defined (SYSV) || defined(SVR4)) && !defined(__hpux)
+ #if defined(HAVE_NANOSLEEP)
+@@ -269,12 +269,14 @@ usleep(unsigned int usec)
+ #endif
+ 	return 0;
+ }
++#else
++# define my_usleep usleep
+ #endif
+ 
+ static void
+ Sleep(unsigned int cMilliseconds)
+ {
+-	(void) usleep(cMilliseconds * 1000);
++	(void) my_usleep(cMilliseconds * 1000);
+ }
+ 
+ static void
+diff -rup xpuzzles-5.5.2.orig/xskewb/Skewb.c xpuzzles-5.5.2/xskewb/Skewb.c
+--- xpuzzles-5.5.2.orig/xskewb/Skewb.c	2023-03-20 17:50:26.315271184 +0100
++++ xpuzzles-5.5.2/xskewb/Skewb.c	2023-03-20 17:52:30.827102270 +0100
+@@ -441,7 +441,7 @@ static SkewbLocPos orthToDiag[MAXFACES][
+ #endif /* defined(SYSV) || defined(SVR4) */
+ 
+ static int
+-usleep(unsigned int usec)
++my_usleep(unsigned int usec)
+ {
+ #if (defined (SYSV) || defined(SVR4)) && !defined(__hpux)
+ #if defined(HAVE_NANOSLEEP)
+@@ -482,12 +482,14 @@ usleep(unsigned int usec)
+ #endif
+ 	return 0;
+ }
++#else
++# define my_usleep usleep
+ #endif
+ 
+ static void
+ Sleep(unsigned int cMilliseconds)
+ {
+-	(void) usleep(cMilliseconds * 1000);
++	(void) my_usleep(cMilliseconds * 1000);
+ }
+ 
+ static void
+diff -rup xpuzzles-5.5.2.orig/xtriangles/Triangles.c xpuzzles-5.5.2/xtriangles/Triangles.c
+--- xpuzzles-5.5.2.orig/xtriangles/Triangles.c	2023-03-20 17:50:26.315271184 +0100
++++ xpuzzles-5.5.2/xtriangles/Triangles.c	2023-03-20 17:52:13.915125214 +0100
+@@ -251,7 +251,7 @@ static XPoint triangleList[MAXORIENT][RO
+ #endif /* defined(SYSV) || defined(SVR4) */
+ 
+ static int
+-usleep(unsigned int usec)
++my_usleep(unsigned int usec)
+ {
+ #if (defined (SYSV) || defined(SVR4)) && !defined(__hpux)
+ #if defined(HAVE_NANOSLEEP)
+@@ -292,12 +292,14 @@ usleep(unsigned int usec)
+ #endif
+ 	return 0;
+ }
++#else
++# define my_usleep usleep
+ #endif
+ 
+ static void
+ Sleep(unsigned int cMilliseconds)
+ {
+-	(void) usleep(cMilliseconds * 1000);
++	(void) my_usleep(cMilliseconds * 1000);
+ }
+ 
+ static void
+diff -rup xpuzzles-5.5.2.orig/xcubes/Imakefile xpuzzles-5.5.2/xcubes/Imakefile
+--- xpuzzles-5.5.2.orig/xcubes/Imakefile	1999-07-31 04:58:46.000000000 +0200
++++ xpuzzles-5.5.2/xcubes/Imakefile	2023-03-21 15:27:42.431889374 +0100
+@@ -130,6 +130,7 @@ EXTRA_LIBRARIES = -lnsl -lposix4
+ #ifdef LinuxArchitecture
+        SLEEPDEF = -DHAVE_USLEEP=1
+ #endif
++       SLEEPDEF = -DHAVE_USLEEP=1
+ XCOMM If AIX 3.1 or less
+ #if OSMajorVersion < 3 || (OSMajorVersion == 3 && OSMinorVersion < 2)
+       SYSTEMDEF = -DLESS_THAN_AIX3_2
+diff -rup xpuzzles-5.5.2.orig/xhexagons/Imakefile xpuzzles-5.5.2/xhexagons/Imakefile
+--- xpuzzles-5.5.2.orig/xhexagons/Imakefile	1999-07-31 04:59:23.000000000 +0200
++++ xpuzzles-5.5.2/xhexagons/Imakefile	2023-03-21 15:27:42.431889374 +0100
+@@ -130,6 +130,7 @@ EXTRA_LIBRARIES = -lnsl -lposix4
+ #ifdef LinuxArchitecture
+        SLEEPDEF = -DHAVE_USLEEP=1
+ #endif
++       SLEEPDEF = -DHAVE_USLEEP=1
+ XCOMM If AIX 3.1 or less
+ #if OSMajorVersion < 3 || (OSMajorVersion == 3 && OSMinorVersion < 2)
+       SYSTEMDEF = -DLESS_THAN_AIX3_2
+diff -rup xpuzzles-5.5.2.orig/xskewb/Imakefile xpuzzles-5.5.2/xskewb/Imakefile
+--- xpuzzles-5.5.2.orig/xskewb/Imakefile	1999-07-31 04:57:47.000000000 +0200
++++ xpuzzles-5.5.2/xskewb/Imakefile	2023-03-21 15:27:42.431889374 +0100
+@@ -132,6 +132,7 @@ EXTRA_LIBRARIES = -lnsl -lposix4
+ #ifdef LinuxArchitecture
+        SLEEPDEF = -DHAVE_USLEEP=1
+ #endif
++       SLEEPDEF = -DHAVE_USLEEP=1
+ XCOMM If AIX 3.1 or less
+ #if OSMajorVersion < 3 || (OSMajorVersion == 3 && OSMinorVersion < 2)
+       SYSTEMDEF = -DLESS_THAN_AIX3_2
+diff -rup xpuzzles-5.5.2.orig/xtriangles/Imakefile xpuzzles-5.5.2/xtriangles/Imakefile
+--- xpuzzles-5.5.2.orig/xtriangles/Imakefile	1999-07-31 05:00:20.000000000 +0200
++++ xpuzzles-5.5.2/xtriangles/Imakefile	2023-03-21 15:27:42.431889374 +0100
+@@ -130,6 +130,7 @@ EXTRA_LIBRARIES = -lnsl -lposix4
+ #ifdef LinuxArchitecture
+        SLEEPDEF = -DHAVE_USLEEP=1
+ #endif
++       SLEEPDEF = -DHAVE_USLEEP=1
+ XCOMM If AIX 3.1 or less
+ #if OSMajorVersion < 3 || (OSMajorVersion == 3 && OSMinorVersion < 2)
+       SYSTEMDEF = -DLESS_THAN_AIX3_2

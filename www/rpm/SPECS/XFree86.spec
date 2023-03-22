@@ -1,4 +1,4 @@
-%define pkgname Xfree86
+%define pkgname XFree86
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
@@ -341,17 +341,6 @@ cp config/util/lndir host-tools
 cp config/imake/imake host-tools
 if test -f programs/rgb/rgb; then cp programs/rgb/rgb host-tools; fi
 
-install=`which install`
-cat << EOF > host-tools/install
-#!/bin/sh
-STRIP=
-case \$* in *" -s "*)
-  STRIP=--strip-program=%{_rpmint_target}-strip ;;
-esac
-exec $install \$STRIP "\$@"
-EOF
-chmod 755 host-tools/install
-
 # cleanup from build. "make clean" does not work very well when switching configurations
 find . -name "*.o" | xargs rm
 
@@ -395,7 +384,7 @@ for CPU in ${ALL_CPUS}; do
 	rm -f config/cf/host.def
 	echo "" > config/cf/host.def
 
-	make DESTDIR=%{buildroot}%{_isysroot} INSTALL=${build_dir}/host-tools/install install install.man
+	make DESTDIR=%{buildroot}%{_isysroot} install install.man
 
 	#
 	# install symlinks in <prefix>/lib
@@ -484,10 +473,12 @@ ln -sf ../X11R6/include/DPS	%{buildroot}%{_isysroot}%{_rpmint_target_prefix}/inc
 ln -sf ../X11R6/include/X11	%{buildroot}%{_isysroot}%{_rpmint_target_prefix}/include/X11
 ln -sf ../X11R6/lib/X11		%{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/X11
 ln -sf ../X11R6/man		%{buildroot}%{_isysroot}%{_rpmint_target_prefix}/man/X11
-ln -sf ../../../../etc/X11/app-defaults %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/X11/app-defaults
-ln -sf ../../../../etc/X11/lbxproxy %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/X11/lbxproxy
-ln -sf ../../../../etc/X11/proxymngr %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/X11/proxymngr
-ln -sf ../../../../etc/X11/xsm %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/X11/xsm
+cd %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/
+for i in app-defaults lbxproxy proxymngr rstart xsm; do
+	rm -f $i
+	ln -s ../../../../etc/X11/$i $i
+done
+cd "$build_dir"
 
 # no need to be SUID
 chmod 755 %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xload
@@ -551,8 +542,8 @@ gzip -9nf %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/*/* ||:
 #
 %if "%{buildtype}" == "cross"
 mkdir -p %{buildroot}%{_prefix}/bin
-# imake.
 
+# imake.
 cd config/imake
 gcc -m32 -O2 -fomit-frame-pointer \
 	-I../.. -I../../exports/include -I../../include -I../../exports/include/X11 \
@@ -563,7 +554,7 @@ gcc -m32 -O2 -fomit-frame-pointer \
 	-s -o imake imake.c
 cp imake %{buildroot}%{_prefix}/bin/%{_rpmint_target}-imake
 
-# xmkmf & gccmakedep ar scripts
+# xmkmf & gccmakedep are scripts
 cd ../util
 cpp -undef -traditional -DCONFIGDIRSPEC='"-I%{_rpmint_sysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/config"' -Dimake=%{_rpmint_target}-imake ./xmkmf.cpp | sed -e /^\#/d | sed -e s/XCOMM/\#/ > xmkmf
 chmod 755 xmkmf
