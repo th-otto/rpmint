@@ -1,46 +1,42 @@
-%define pkgname libpng
+%define pkgname gdbm
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        Library for the Portable Network Graphics Format (PNG)
+Summary:        GNU dbm key/data database
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.6.39
+Version:        1.12
 Release:        1
-License:        Zlib
-Group:          Development/Libraries/C and C++
+License:        GPL-3.0-or-later
+Group:          System/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://www.libpng.org/pub/png/libpng.html
+URL:            https://www.gnu.org.ua/software/gdbm/
 
 Prefix:         %{_prefix}
 Docdir:         %{_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://ftp-osl.osuosl.org/pub/%{pkgname}/src/libpng16/%{pkgname}-%{version}.tar.xz
+Source0: https://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/libpng-1.6.34-0001-config.patch
+Patch0: patches/%{pkgname}/gdbm-no-build-date.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libtool
-BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-zlib
-Provides:       cross-mint-libpng-devel = %{version}
+Provides:       cross-mint-gdbm-devel = %{version}
 %else
-BuildRequires:  pkgconfig(zlib)
-Provides:       libpng = %{version}
-Provides:       libpng-devel = %{version}
+Provides:       gdbm-devel = %{version}
 %endif
 
 %if "%{buildtype}" == "cross"
@@ -59,16 +55,37 @@ BuildArch:      noarch
 %endif
 
 %description
-libpng is the official reference library for the Portable Network
-Graphics format (PNG).
+GNU dbm is a library of database functions that use extensible
+hashing and work similar to the standard UNIX dbm. These routines are
+provided to a programmer needing to create and manipulate a hashed
+database.
+
+The basic use of GDBM is to store key/data pairs in a data file. Each
+key must be unique and each key is paired with only one data item.
+
+The library provides primitives for storing key/data pairs, searching
+and retrieving the data by its key and deleting a key along with its
+data. It also supports sequential iteration over all key/data pairs in
+a database.
+
+For compatibility with programs using old UNIX dbm functions, the
+package also provides traditional dbm and ndbm interfaces.
 
 %prep
+
 %setup -q -n %{pkgname}-%{version}
+
 %patch0 -p1
 
-cp %{S:1} config.sub
+rm -f aclocal.m4 ltmain.sh
+libtoolize --force || exit 1
+aclocal || exit 1
+autoconf || exit 1
+autoheader || exit 1
+automake --add-missing || exit 1
+rm -rf autom4te.cache config.h.in.orig
 
-sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
+cp %{S:1} build-aux/config.sub
 
 %build
 
@@ -76,17 +93,8 @@ sed -i 's/^option CONSOLE_IO.*/\0 disabled/' scripts/pnglibconf.dfa
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-    --docdir=%{_rpmint_target_prefix}/share/doc/%{pkgname}
-    --disable-shared
-    --config-cache
-    --without-binconfigs
+	--enable-libgdbm-compat
 "
-
-create_config_cache()
-{
-cat <<EOF >config.cache
-EOF
-}
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -94,8 +102,6 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
-
-	create_config_cache
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
@@ -110,7 +116,6 @@ for CPU in ${ALL_CPUS}; do
 	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
-	rm -f %{buildroot}%{_rpmint_bindir}/libpng*-config
 
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -119,7 +124,7 @@ for CPU in ${ALL_CPUS}; do
 	%rpmint_make_bin_archive $CPU
 	%endif
 
-	make clean
+	make distclean
 done
 
 
@@ -148,7 +153,6 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %{_rpmint_bindir}
 %{_rpmint_includedir}
 %{_rpmint_libdir}
-%{_rpmint_cross_pkgconfigdir}
 %{_rpmint_datadir}
 %else
 %{_rpmint_target_prefix}/bin
@@ -161,4 +165,17 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %changelog
 * Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+
+* Thu Dec 26 2000 Frank Naumann <fnaumann@freemint.de>
+- removed ndbm.h header file
+
+* Mon Dec 18 2000 Frank Naumann <fnaumann@freemint.de>
+- updated to 1.8.0
+
+* Mon Mar 27 2000 Frank Naumann <fnaumann@freemint.de>
+- rebuild against new MiNTLib 0.55
+
+* Wed Aug 11 1999 Guido Flohr <guido@freemint.de>
+- Changed vendor to Sparemint
+- Renamed spec file

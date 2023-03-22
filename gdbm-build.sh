@@ -11,7 +11,9 @@ VERSIONPATCH=
 
 PATCHES="
 patches/gdbm/gdbm-no-build-date.patch
-patches/gdbm/gdbm-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -31,6 +33,8 @@ autoconf || exit 1
 autoheader || exit 1
 automake --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
+
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build-aux/config.sub
 
 cd "$MINT_BUILD_DIR"
 
