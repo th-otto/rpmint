@@ -462,10 +462,14 @@ done
 cd "$build_dir"
 
 # no need to be SUID
-chmod 755 %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xload
+if test -f %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xload; then
+	chmod 755 %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xload
+fi
 # need to be SUID
-chmod 755 %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xterm
-chmod u+s %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xterm
+if test -f %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xterm; then
+	chmod 755 %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xterm
+	chmod u+s %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xterm
+fi
 
 bdftopcf=${build_dir}/host-tools/bdftopcf
 mkfontdir=${build_dir}/host-tools/mkfontdir

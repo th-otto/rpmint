@@ -16,13 +16,19 @@ ${TARGET_MANDIR#/}/man1/*
 "
 
 PATCHES="
-patches/jpeg/jpeg-mintelf-config.patch
 patches/jpeg/jpeg-8d-0007-mintslb.patch 
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 srcarchive=${PACKAGENAME}src.v${VERSION#-}
 
 unpack_archive
+
+cd "$srcdir"
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 
@@ -42,7 +48,7 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
-	hack_lto_cflags
+	: hack_lto_cflags
 
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
