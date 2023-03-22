@@ -43,18 +43,20 @@ Vendor:         RPMint \
 %define __spec_install_pre %{___build_pre}; %{__mkdir_p} "%{buildroot}"\
 %nil
 
+%_isysroot %{expr:"%{buildtype}" == "cross" ? "%{_rpmint_sysroot}" : ""}
+
 %rpmint_build_arch \
-%if "%{_rpmint_buildtype}" == "cross" \
+%if "%{buildtype}" == "cross" \
 BuildArch:      noarch \
 %else \
 %define _target_platform %{_rpmint_target_platform} \
-%if "%{_rpmint_buildtype}" == "v4e" \
-%define _arch m5475 \
+%if "%{buildtype}" == "v4e" \
+%global _arch m5475 \
 %else \
-%if "%{_rpmint_buildtype}" == "020" \
-%define _arch m68020 \
+%if "%{buildtype}" == "020" \
+%global _arch m68020 \
 %else \
-%define _arch m68k \
+%global _arch m68k \
 %endif \
 %endif \
 %endif \

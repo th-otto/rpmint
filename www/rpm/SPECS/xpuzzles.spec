@@ -5,12 +5,6 @@
 %endif
 %rpmint_header
 
-%if "%{buildtype}" == "cross"
-%define _isysroot %{_rpmint_sysroot}
-%else
-%define _isysroot %{nil}
-%endif
-
 Summary       : Geometric puzzles and toys for the X Window System.
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
@@ -42,21 +36,7 @@ Source: ftp://sunsite.unc.edu/pub/Linux/games/strategy/%{pkgname}-%{version}.tar
 Patch0: patches/%{pkgname}/xpuzzles-5.4.1-install.patch
 Patch2: patches/%{pkgname}/xpuzzles-5.5.2-usleep.patch
 
-%if "%{buildtype}" == "cross"
-BuildArch:      noarch
-%else
-%define _target_platform %{_rpmint_target_platform}
-%if "%{buildtype}" == "v4e"
-%define _arch m5475
-%else
-%if "%{buildtype}" == "020"
-%define _arch m68020
-%else
-%define _arch m68k
-%endif
-%endif
-%endif
-
+%rpmint_build_arch
 
 %description
 A set of geometric puzzles and toys for the X Window System.  Xpuzzles

@@ -53,21 +53,7 @@ Source4: xfree86-eurofonts-X11.tar.gz
 Source5: xfree86-xfs.config
 Source6: xfree86-xfs.init
 
-%if "%{buildtype}" == "cross"
-BuildArch:      noarch
-%else
-%define _target_platform %{_rpmint_target_platform}
-%if "%{buildtype}" == "v4e"
-%define _arch m5475
-%else
-%if "%{buildtype}" == "020"
-%define _arch m68020
-%else
-%define _arch m68k
-%endif
-%endif
-%endif
-
+%rpmint_build_arch
 
 
 %package tools
@@ -312,11 +298,6 @@ touch xc/programs/xterm/XTerm-col.ad
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
-%if "%{buildtype}" == "cross"
-%define _isysroot %{_rpmint_sysroot}
-%else
-%define _isysroot %{nil}
-%endif
 %define _isysconfdir /etc
 
 cd xc

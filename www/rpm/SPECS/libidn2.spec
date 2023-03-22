@@ -35,20 +35,7 @@ BuildRequires:  cross-mint-libiconv
 BuildRequires:  libiconv
 %endif
 
-%if "%{buildtype}" == "cross"
-BuildArch:      noarch
-%else
-%define _target_platform %{_rpmint_target_platform}
-%if "%{buildtype}" == "v4e"
-%define _arch m5475
-%else
-%if "%{buildtype}" == "020"
-%define _arch m68020
-%else
-%define _arch m68k
-%endif
-%endif
-%endif
+%rpmint_build_arch
 
 %description
 Libidn2 is an implementation of the IDNA2008 + TR46 specifications (RFC

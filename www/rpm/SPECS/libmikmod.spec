@@ -38,20 +38,7 @@ Provides:       cross-mint-libmikmod-devel
 Provides:       libmikmod-devel
 %endif
 
-%if "%{buildtype}" == "cross"
-BuildArch:      noarch
-%else
-%define _target_platform %{_rpmint_target_platform}
-%if "%{buildtype}" == "v4e"
-%define _arch m5475
-%else
-%if "%{buildtype}" == "020"
-%define _arch m68020
-%else
-%define _arch m68k
-%endif
-%endif
-%endif
+%rpmint_build_arch
 
 %description
 Libmikmod is a portable sound library, capable of playing samples as

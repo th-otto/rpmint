@@ -40,21 +40,7 @@ Patch0: patches/%{pkgname}/xpaint-2.4.7-config.patch
 Patch1: patches/%{pkgname}/xpaint-2.4.7-glibc.patch
 Patch2: patches/%{pkgname}/xpaint-png.patch
 
-%if "%{buildtype}" == "cross"
-BuildArch:      noarch
-%else
-%define _target_platform %{_rpmint_target_platform}
-%if "%{buildtype}" == "v4e"
-%define _arch m5475
-%else
-%if "%{buildtype}" == "020"
-%define _arch m68020
-%else
-%define _arch m68k
-%endif
-%endif
-%endif
-
+%rpmint_build_arch
 
 %description
 XPaint is an X Window System color image editing program which
@@ -79,12 +65,6 @@ Install the xpaint package if you need a paint program for X.
 %rpmint_cflags
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
-
-%if "%{buildtype}" == "cross"
-%define _isysroot %{_rpmint_sysroot}
-%else
-%define _isysroot %{nil}
-%endif
 
 #
 # there are no libraries in this package, so we

@@ -48,20 +48,7 @@ BuildRequires:  cross-mint-libgpg-error >= 1.27
 BuildRequires:  libgpg-error-devel >= 1.27
 %endif
 
-%if "%{buildtype}" == "cross"
-BuildArch:      noarch
-%else
-%define _target_platform %{_rpmint_target_platform}
-%if "%{buildtype}" == "v4e"
-%define _arch m5475
-%else
-%if "%{buildtype}" == "020"
-%define _arch m68020
-%else
-%define _arch m68k
-%endif
-%endif
-%endif
+%rpmint_build_arch
 
 %description
 Libgcrypt is a general purpose library of cryptographic building

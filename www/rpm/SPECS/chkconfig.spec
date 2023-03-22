@@ -32,20 +32,7 @@ BuildRequires:  popt-devel
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
-%if "%{buildtype}" == "cross"
-BuildArch:      noarch
-%else
-%define _target_platform %{_rpmint_target_platform}
-%if "%{buildtype}" == "v4e"
-%define _arch m5475
-%else
-%if "%{buildtype}" == "020"
-%define _arch m68020
-%else
-%define _arch m68k
-%endif
-%endif
-%endif
+%rpmint_build_arch
 
 %description
 Chkconfig is a basic system utility.  It updates and queries runlevel
@@ -72,12 +59,6 @@ directly manipulate the numerous symbolic links in /etc/rc.d.
 %rpmint_cflags
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
-
-%if "%{buildtype}" == "cross"
-%define _isysroot %{_rpmint_sysroot}
-%else
-%define _isysroot %{nil}
-%endif
 
 #
 # there are no libraries in this package, so we
