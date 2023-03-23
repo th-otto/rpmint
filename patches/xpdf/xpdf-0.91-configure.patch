@@ -1,0 +1,475 @@
+--- a/T1-1.0.1/configure.in.orig	1999-11-23 17:24:37.000000000 +0100
++++ b/T1-1.0.1/configure.in	2023-03-23 09:37:32.631393578 +0100
+@@ -7,10 +7,13 @@ dnl Date:           06/25/1997
+ dnl Last Modified:  1999-12-14
+ dnl 
+ 
++AC_PREREQ([2.59])
+ AC_REVISION([configure.in 1.00])
+-AC_INIT(lib/t1lib/t1base.c)
+-AC_CONFIG_HEADER(lib/t1lib/sysconf.h:lib/t1lib/sysconf.h.in)
++AC_INIT
++AC_CONFIG_SRCDIR([lib/t1lib/t1base.c])
++AC_CONFIG_HEADERS([lib/t1lib/sysconf.h:lib/t1lib/sysconf.h.in])
+ AC_CONFIG_AUX_DIR(ac-tools)
++AC_CONFIG_MACRO_DIRS([m4])
+ 
+ dnl The following variables specify version information of the 
+ dnl library. Starting with V. 1.0.0 the libtool scheme is used 
+@@ -98,7 +98,7 @@
+ AC_PROG_CPP
+ AC_PATH_XTRA
+ ICE_FIND_ATHENA
+-AM_PROG_LIBTOOL
++LT_INIT
+ AC_PROG_INSTALL
+ 
+ dnl **** Check for some compiler/system characteristics
+@@ -118,17 +121,14 @@ then
+ dnl We don'use
+   CFLAGS="$CFLAGS"
+   AC_CACHE_CHECK( "for gcc strength-reduce bug", ac_cv_c_gcc_strength_bug,
+-                  AC_TRY_RUN([
++                  AC_RUN_IFELSE([AC_LANG_SOURCE([[
+ int main(void) {
+   static int Array[[3]];
+   unsigned int B = 3;
+   int i;
+   for(i=0; i<B; i++) Array[[i]] = i - 3;
+   exit( Array[[1]] != -2 );
+-}],
+-    ac_cv_c_gcc_strength_bug="no",
+-    ac_cv_c_gcc_strength_bug="yes",
+-    ac_cv_c_gcc_strength_bug="yes") )
++}]])],[ac_cv_c_gcc_strength_bug="no"],[ac_cv_c_gcc_strength_bug="yes"],[ac_cv_c_gcc_strength_bug="no"]) )
+   if test "$ac_cv_c_gcc_strength_bug" = "yes"
+   then
+     CFLAGS="$CFLAGS -fno-strength-reduce"
+@@ -146,8 +146,7 @@ cat > conftest_asm.s <<EOF
+ _ac_test:
+ 	.long 0
+ EOF
+-AC_TRY_LINK([extern int ac_test;],[if (ac_test) return 1],
+-            ac_cv_c_extern_prefix="yes",ac_cv_c_extern_prefix="no")
++AC_LINK_IFELSE([AC_LANG_PROGRAM([[extern int ac_test;]], [[if (ac_test) return 1]])],[ac_cv_c_extern_prefix="yes"],[ac_cv_c_extern_prefix="no"])
+ LIBS=$saved_libs])
+ if test "$ac_cv_c_extern_prefix" = "yes"
+ then
+@@ -156,8 +155,8 @@ fi
+ 
+ dnl **** Check which ANSI integer type is 16 bit 
+ 
+-AC_CACHE_CHECK( "which ANSI integer type is 16 bit", ac_16bit_type,
+-		AC_TRY_RUN([
++AC_CACHE_CHECK( "which ANSI integer type is 16 bit", ac_cv_16bit_type,
++		AC_RUN_IFELSE([AC_LANG_SOURCE([[
+ int main(void) {
+   if (sizeof(short)==2)
+     return(0);
+@@ -165,8 +164,8 @@ int main(void) {
+     return(1);
+   else
+     return(2);
+-}], ac_16bit_type="short", ac_16bit_type="int", ac_16bit_type=))
+-if test "$ac_16bit_type" = "short"
++}]])],[ac_cv_16bit_type="short"],[ac_cv_16bit_type="int"],[ac_cv_16bit_type=short]))
++if test "$ac_cv_16bit_type" = "short"
+ then
+   T1_AA_TYPE16="-DT1_AA_TYPE16=short"
+ else
+@@ -176,8 +175,8 @@ fi
+ 
+ dnl **** Check which ANSI integer type is 32 bit 
+ 
+-AC_CACHE_CHECK( "which ANSI integer type is 32 bit", ac_32bit_type,
+-		AC_TRY_RUN([
++AC_CACHE_CHECK( "which ANSI integer type is 32 bit", ac_cv_32bit_type,
++		AC_RUN_IFELSE([AC_LANG_SOURCE([[
+ int main(void) {
+   if (sizeof(int)==4)
+     return(0);
+@@ -185,8 +184,8 @@ int main(void) {
+     return(1);
+   else
+     return(2);
+-}], ac_32bit_type="int", ac_32bit_type="long", ac_32bit_type=))
+-if test "$ac_32bit_type" = "int"
++}]])],[ac_cv_32bit_type="int"],[ac_cv_32bit_type="long"],[ac_cv_32bit_type=int]))
++if test "$ac_cv_32bit_type" = "int"
+ then
+   T1_AA_TYPE32="-DT1_AA_TYPE32=int"
+ else
+@@ -196,17 +195,22 @@ fi
+ 
+ dnl **** Check which ANSI integer type is 64 bit 
+ 
+-AC_CACHE_CHECK( "which ANSI integer type is 64 bit", ac_64bit_type,
+-		AC_TRY_RUN([
++AC_CACHE_CHECK( "which ANSI integer type is 64 bit", ac_cv_64bit_type,
++		AC_RUN_IFELSE([AC_LANG_SOURCE([[
+ int main(void) {
+   if (sizeof(long)==8)
+     return(0);
+-  else
++  else if (sizeof(long long)==8)
+     return(1);
+-}], ac_64bit_type="long", ac_64bit_type="<none>"))
+-if test "$ac_64bit_type" = "long"
++  else
++    return(2);
++}]])],[ac_cv_64bit_type="long"],[ac_cv_64bit_type="long long"],[ac_cv_64bit_type="<none>"]))
++if test "$ac_cv_64bit_type" = "long"
+ then
+   T1_AA_TYPE64="-DT1_AA_TYPE64=long"
++elif test "$ac_cv_64bit_type" = "long long"
++then
++  T1_AA_TYPE64="-DT1_AA_TYPE64=long long"
+ else
+   T1_AA_TYPE64=
+ fi
+@@ -268,9 +272,10 @@ MAKEFILES="Makefile \
+ fi
+ 
+ 
+-AC_OUTPUT([
++AC_CONFIG_FILES([
+ $MAKEFILES
+ ])
++AC_OUTPUT
+ 
+ 
+ 
+--- a/T1-1.0.1/ac-tools/ice_find_athena.m4.orig	2023-03-23 09:10:42.193118309 +0100
++++ b/T1-1.0.1/ac-tools/ice_find_athena.m4	2023-03-23 09:33:52.815585283 +0100
+@@ -20,7 +20,7 @@ dnl put Athena library directory in athe
+ dnl and add appropriate flags to X_CFLAGS and X_LIBS.
+ dnl
+ dnl
+-AC_DEFUN(ICE_FIND_ATHENA,
++AC_DEFUN([ICE_FIND_ATHENA],
+ [
+ AC_REQUIRE([AC_PATH_XTRA])
+ athena_includes=
+@@ -58,10 +58,10 @@ CFLAGS="$X_CFLAGS $CFLAGS"
+ CPPFLAGS="$X_CFLAGS $CPPFLAGS"
+ LDFLAGS="$X_LIBS $LDFLAGS"
+ #
+-AC_TRY_COMPILE([
++AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+ #include <X11/Intrinsic.h>
+ #include <X11/Xaw/Text.h>
+-],[int a;],
++]],[[int a;]])],
+ [
+ # X11/Xaw/Text.h is in the standard search path.
+ ice_cv_athena_includes=
+@@ -113,10 +113,10 @@ CFLAGS="$X_CFLAGS $CFLAGS"
+ CPPFLAGS="$X_CFLAGS $CPPFLAGS"
+ LDFLAGS="$X_LIBS $LDFLAGS"
+ #
+-AC_TRY_LINK([
++AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+ #include <X11/Intrinsic.h>
+ #include <X11/Xaw/Text.h>
+-],[XtToolkitInitialize();],
++]],[[XtToolkitInitialize();]])],
+ [
+ # libXaw.a is in the standard search path.
+ ice_cv_athena_libraries=
+--- a/T1-1.0.1/Makefile.in.orig	2023-03-23 10:00:58.177985854 +0100
++++ b/T1-1.0.1/Makefile.in	2023-03-23 10:01:45.541934075 +0100
+@@ -48,6 +48,7 @@ prefix          = @prefix@
+ exec_prefix     = @exec_prefix@
+ includedir      = @includedir@
+ bindir          = @bindir@
++datarootdir     = @datarootdir@
+ datadir         = @datadir@
+ libdir          = @libdir@
+ mandir          = @mandir@/man1
+--- a/T1-1.0.1/lib/Makefile.in.orig	2023-03-23 10:02:23.329892764 +0100
++++ b/T1-1.0.1/lib/Makefile.in	2023-03-23 10:04:05.325781261 +0100
+@@ -44,6 +44,7 @@ prefix          = @prefix@
+ exec_prefix     = @exec_prefix@
+ includedir      = @includedir@
+ bindir          = @bindir@
++datarootdir     = @datarootdir@
+ datadir         = @datadir@
+ libdir          = @libdir@
+ mandir          = @mandir@/man1
+--- a/T1-1.0.1/lib/type1/Makefile.in.orig	2023-03-23 10:03:50.089797917 +0100
++++ b/T1-1.0.1/lib/type1/Makefile.in	2023-03-23 10:04:01.429785520 +0100
+@@ -45,6 +45,7 @@ prefix          = @prefix@
+ exec_prefix     = @exec_prefix@
+ includedir      = @includedir@
+ bindir          = @bindir@
++datarootdir     = @datarootdir@
+ datadir         = @datadir@
+ libdir          = @libdir@
+ mandir          = @mandir@/man1
+--- a/T1-1.0.1/lib/t1lib/Makefile.in.orig	2023-03-23 10:04:15.073770604 +0100
++++ b/T1-1.0.1/lib/t1lib/Makefile.in	2023-03-23 10:04:29.693754589 +0100
+@@ -43,6 +43,7 @@ prefix          = @prefix@
+ exec_prefix     = @exec_prefix@
+ includedir      = @includedir@
+ bindir          = @bindir@
++datarootdir     = @datarootdir@
+ datadir         = @datadir@
+ libdir          = @libdir@
+ mandir          = @mandir@/man1
+--- a/T1-1.0.1/type1afm/Makefile.in.orig	2023-03-23 10:05:09.197711278 +0100
++++ b/T1-1.0.1/type1afm/Makefile.in	2023-03-23 10:05:17.729701923 +0100
+@@ -46,6 +46,7 @@ prefix          = @prefix@
+ exec_prefix     = @exec_prefix@
+ includedir      = @includedir@
+ bindir          = @bindir@
++datarootdir     = @datarootdir@
+ datadir         = @datadir@
+ libdir          = @libdir@
+ mandir          = @mandir@/man1
+--- a/T1-1.0.1/doc/Makefile.in.orig	2023-03-23 10:05:43.909673217 +0100
++++ b/T1-1.0.1/doc/Makefile.in	2023-03-23 10:05:53.089663151 +0100
+@@ -44,6 +44,7 @@ prefix          = @prefix@
+ exec_prefix     = @exec_prefix@
+ includedir      = @includedir@
+ bindir          = @bindir@
++datarootdir     = @datarootdir@
+ datadir         = @datadir@
+ libdir          = @libdir@
+ mandir          = @mandir@/man1
+--- a/T1-1.0.1/xglyph/Makefile.in.orig	2023-03-23 10:04:44.409738455 +0100
++++ b/T1-1.0.1/xglyph/Makefile.in	2023-03-23 10:04:59.569721835 +0100
+@@ -46,6 +46,7 @@ prefix          = @prefix@
+ exec_prefix     = @exec_prefix@
+ includedir      = @includedir@
+ bindir          = @bindir@
++datarootdir     = @datarootdir@
+ datadir         = @datadir@
+ libdir          = @libdir@
+ mandir          = @mandir@/man1
+--- a/T1-1.0.1/xglyph/xglyph.c.orig	2023-03-23 10:07:32.861553751 +0100
++++ b/T1-1.0.1/xglyph/xglyph.c	2023-03-23 10:08:23.185498572 +0100
+@@ -144,8 +144,10 @@ int CheckTransform( void);
+ #define  GRAY3   gray3.pixel
+ #define  GRAY4   BlackPixel(display, screen_number)
+ 
+-#define  min(a,b) (a < b ? a : b)
+-#define  max(a,b) (a > b ? a : b)
++#undef min
++#undef max
++#define  min(a,b) ((a) < (b) ? (a) : (b))
++#define  max(a,b) ((a) > (b) ? (a) : (b))
+ 
+ 
+ #define DEFAULT_SIZE "100.0"
+--- a/T1-1.0.1/examples/Makefile.in.orig	2023-03-23 10:05:28.437690182 +0100
++++ b/T1-1.0.1/examples/Makefile.in	2023-03-23 10:05:37.841679870 +0100
+@@ -44,6 +44,7 @@ prefix          = @prefix@
+ exec_prefix     = @exec_prefix@
+ includedir      = @includedir@
+ bindir          = @bindir@
++datarootdir     = @datarootdir@
+ datadir         = @datadir@
+ libdir          = @libdir@
+ mandir          = @mandir@/man1
+--- a/configure.in.orig	2000-08-15 07:01:31.000000000 +0200
++++ b/configure.in	2023-03-23 10:17:06.344924927 +0100
+@@ -1,5 +1,6 @@
+ dnl Process this file with autoconf to produce a configure script.
+-AC_INIT(xpdf/xpdf.cc)
++AC_INIT
++AC_CONFIG_SRCDIR([xpdf/xpdf.cc])
+ 
+ dnl ##### Optional features.
+ OPTIONS=""
+@@ -26,7 +27,7 @@ AC_SUBST(OPTIONS)
+ 
+ dnl ##### Checks for programs.
+ AC_PROG_CC
+-AC_ISC_POSIX
++AC_SEARCH_LIBS([strerror],[cposix])
+ AM_PROG_CC_STDC
+ #if test -z "$CXX" -a "$CC" = "gcc"; then
+ #  CXX="gcc"
+@@ -44,9 +45,7 @@ UP_DIR=""
+ dnl ##### Check for OS/2.
+ AC_CACHE_CHECK([for OS/2 (with EMX)],
+ xpdf_cv_sys_os2,
+-[AC_TRY_COMPILE([],
+-[__EMX__],
+-xpdf_cv_sys_os2=yes, xpdf_cv_sys_os2=no)])
++[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[__EMX__]])],[xpdf_cv_sys_os2=yes],[xpdf_cv_sys_os2=no])])
+ if test "$xpdf_cv_sys_os2" = yes; then
+   EXE=".exe"
+   LIBPREFIX=""
+@@ -56,9 +55,7 @@ fi
+ dnl ##### Check for DOS (with DJGPP).
+ AC_CACHE_CHECK([for DOS (with DJGPP)],
+ xpdf_cv_sys_dos,
+-[AC_TRY_COMPILE([],
+-[__DJGPP__],
+-xpdf_cv_sys_dos=yes, xpdf_cv_sys_dos=no)])
++[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[__DJGPP__]])],[xpdf_cv_sys_dos=yes],[xpdf_cv_sys_dos=no])])
+ if test "$xpdf_cv_sys_dos" = yes; then
+   EXE=".exe"
+   LIBPREFIX="lib"
+@@ -79,7 +76,7 @@ AC_HEADER_DIRENT
+ dnl ##### Switch over to C++.  This will make the checks below a little
+ dnl ##### bit stricter (requiring function prototypes in include files).
+ dnl ##### (99% of xpdf is written in C++.)
+-AC_LANG_CPLUSPLUS
++AC_LANG([C++])
+ 
+ dnl ##### Check for extra libraries needed by X.  (LynxOS needs this.)
+ AC_CHECK_FUNC(gethostbyname)
+@@ -89,33 +86,30 @@ fi
+ 
+ dnl ##### Look for header that defines select() and fd_set.
+ AC_MSG_CHECKING([select() and fd_set in sys/select.h and sys/bsdtypes.h])
+-AC_TRY_COMPILE([#include <stdlib.h>
++AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
+ #include <stddef.h>
+ #include <unistd.h>
+-#include <sys/types.h>],
+-  [fd_set fds;
+-select(0, NULL, NULL, NULL, NULL);], xpdf_ok=yes, xpdf_ok=no)
++#include <sys/types.h>]], [[fd_set fds;
++select(0, NULL, NULL, NULL, NULL);]])],[xpdf_ok=yes],[xpdf_ok=no])
+ if test $xpdf_ok = yes; then
+   AC_MSG_RESULT([not needed])
+ else
+-  AC_TRY_COMPILE([#include <stdlib.h>
++  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
+ #include <stddef.h>
+ #include <unistd.h>
+ #include <sys/types.h>
+-#include <sys/select.h>],
+-    [fd_set fds;
+-select(0, NULL, NULL, NULL, NULL);], xpdf_ok=yes, xpdf_ok=no)
++#include <sys/select.h>]], [[fd_set fds;
++select(0, NULL, NULL, NULL, NULL);]])],[xpdf_ok=yes],[xpdf_ok=no])
+   if test $xpdf_ok = yes; then
+     AC_DEFINE(HAVE_SYS_SELECT_H)
+     AC_MSG_RESULT([need sys/select.h])
+   else
+-    AC_TRY_COMPILE([#include <stdlib.h>
++    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>
+ #include <stddef.h>
+ #include <unistd.h>
+ #include <sys/types.h>
+-#include <sys/bsdtypes.h>],
+-      [fd_set fds;
+-select(0, NULL, NULL, NULL, NULL);], xpdf_ok=yes, xpdf_ok=no)
++#include <sys/bsdtypes.h>]], [[fd_set fds;
++select(0, NULL, NULL, NULL, NULL);]])],[xpdf_ok=yes],[xpdf_ok=no])
+     if test $xpdf_ok = yes; then
+       AC_DEFINE(HAVE_SYS_BSDTYPES_H)
+       AC_MSG_RESULT([need sys/bsdtypes.h])
+@@ -127,30 +121,27 @@ fi
+ 
+ dnl ##### Look for header that defines FD_ZERO.
+ AC_MSG_CHECKING([FD_ZERO and strings.h or bstring.h])
+-AC_TRY_COMPILE([#include <sys/types.h>
++AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+ #ifdef HAVE_SYS_SELECT_H
+ #include <sys/select.h>
+-#endif],
+-[fd_set fds; FD_ZERO(&fds);], xpdf_ok=yes, xpdf_ok=no)
++#endif]], [[fd_set fds; FD_ZERO(&fds);]])],[xpdf_ok=yes],[xpdf_ok=no])
+ if test $xpdf_ok = yes; then
+   AC_MSG_RESULT([not needed])
+ else
+-  AC_TRY_COMPILE([#include <sys/types.h>
++  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+ #include <strings.h>
+ #ifdef HAVE_SYS_SELECT_H
+ #include <sys/select.h>
+-#endif],
+-    [fd_set fds; FD_ZERO(&fds);], xpdf_ok=yes, xpdf_ok=no)
++#endif]], [[fd_set fds; FD_ZERO(&fds);]])],[xpdf_ok=yes],[xpdf_ok=no])
+   if test $xpdf_ok = yes; then
+     AC_DEFINE(HAVE_STRINGS_H)
+     AC_MSG_RESULT([need strings.h])
+   else
+-    AC_TRY_COMPILE([#include <sys/types.h>
++    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+ #include <bstring.h>
+ #ifdef HAVE_SYS_SELECT_H
+ #include <sys/select.h>
+-#endif],
+-      [fd_set fds; FD_ZERO(&fds);], xpdf_ok=yes, xpdf_ok=no)
++#endif]], [[fd_set fds; FD_ZERO(&fds);]])],[xpdf_ok=yes],[xpdf_ok=no])
+     if test $xpdf_ok = yes; then
+       AC_DEFINE(HAVE_BSTRING_H)
+       AC_MSG_RESULT([need bstring.h])
+@@ -173,9 +164,7 @@ dnl # the mkstemp exists in the library
+ dnl # include file (e.g., in cygwin 1.1.2).
+ AC_CACHE_CHECK([for mkstemp],
+ xpdf_cv_func_mkstemp,
+-[AC_TRY_COMPILE([#include <stdlib.h>],
+-[mkstemp("foo");],
+-xpdf_cv_func_mkstemp=yes, xpdf_cv_func_mkstemp=no)])
++[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>]], [[mkstemp("foo");]])],[xpdf_cv_func_mkstemp=yes],[xpdf_cv_func_mkstemp=no])])
+ if test "$xpdf_cv_func_mkstemp" = yes; then
+   AC_DEFINE(HAVE_MKSTEMP)
+ fi
+@@ -184,21 +173,19 @@ dnl ##### Check select argument type: on
+ dnl ##### takes (int *) instead of (fd_set *).
+ AC_CACHE_CHECK([whether select takes fd_set arguments],
+ xpdf_cv_func_select_arg,
+-[AC_TRY_COMPILE([#include <sys/types.h>
++[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
+ #include <sys/time.h>
+ #include <unistd.h>
+ #ifdef HAVE_SYS_SELECT_H
+ #include <sys/select.h>
+-#endif],
+-[fd_set fds;
+-select(1, &fds, &fds, &fds, 0);],
+-xpdf_cv_func_select_arg=yes, xpdf_cv_func_select_arg=no)])
++#endif]], [[fd_set fds;
++select(1, &fds, &fds, &fds, 0);]])],[xpdf_cv_func_select_arg=yes],[xpdf_cv_func_select_arg=no])])
+ if test "$xpdf_cv_func_select_arg" != yes; then
+   AC_DEFINE(SELECT_TAKES_INT)
+ fi
+ 
+ dnl ##### Back to C for the library tests.
+-AC_LANG_C
++AC_LANG([C])
+ 
+ dnl ##### Check for libXpm.
+ if test -z "$no_x"; then
+@@ -239,7 +226,8 @@ AC_SUBST(X)
+ AC_SUBST(XPDF_TARGET)
+ 
+ dnl ##### Write the makefiles.
+-AC_OUTPUT(Makefile xpdf/Makefile ltk/Makefile goo/Makefile)
++AC_CONFIG_FILES([Makefile xpdf/Makefile ltk/Makefile goo/Makefile])
++AC_OUTPUT
+ 
+ dnl ##### Warn user if X is missing.
+ if test -n "$no_x"; then
+--- a/aclocal.m4.orig	2023-03-23 10:18:02.540863311 +0100
++++ b/aclocal.m4	2023-03-23 10:20:50.368679288 +0100
+@@ -243,8 +243,8 @@ ac_save_CC="$CC"
+ for ac_arg in "" -qlanglvl=ansi -std1 "-Aa -D_HPUX_SOURCE" "-Xc -D__EXTENSIONS__"
+ do
+   CC="$ac_save_CC $ac_arg"
+-  AC_TRY_COMPILE(
+-[#include <stdarg.h>
++  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
++#include <stdarg.h>
+ #include <stdio.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+@@ -272,9 +272,9 @@ struct s2 {int (*f) (double a);};
+ int pairnames (int, char **, FILE *(*)(struct buf *, struct stat *, int), int, int);
+ int argc;
+ char **argv;
+-], [
++]], [[
+ return f (e, argv, 0) != argv[0]  ||  f (e, argv, 1) != argv[1];
+-],
++]])],
+ [am_cv_prog_cc_stdc="$ac_arg"; break])
+ done
+ CC="$ac_save_CC"
