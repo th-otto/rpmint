@@ -1,0 +1,29 @@
+--- freetype-2.0.1/ttmkfdir2/Makefile.fixpath	Sun Oct 29 18:00:59 2000
++++ freetype-2.0.1/ttmkfdir2/Makefile	Fri Jan 19 19:07:32 2001
+@@ -1,19 +1,22 @@
+-FREETYPE_BASE=/usr/include/freetype
++FREETYPE_BASE=../lib
+ FREETYPE_INCL=-I$(FREETYPE_BASE)/.
+-FREETYPE_LIB=-lttf
++FREETYPE_LIB=$(FREETYPE_BASE)/.libs/libttf.a
+ 
+ DEBUG=-ggdb
+ CXX=g++
+ CXXFLAGS=-Wall -pedantic $(FREETYPE_INCL) $(DEBUG)
+ 
+-LDFALGS=$(FREETYPE_LIB) $(DEBUG)
++LDFLAGS=$(FREETYPE_LIB) $(DEBUG)
+ 
+ .PHONY: clean
+ 
+ all: ttmkfdir
+ 
++.cpp.o:
++	$(CXX) $(CXXFLAGS) -o $@ -c $^
++
+ ttmkfdir: ttmkfdir.o directory.o commandline.o ttf.o encoding.o parser.o builtin.o
+-	  $(CXX) $(LDFALGS) -o $@ $^ $(FREETYPE_LIB)
++	$(CXX) -o $@ $^ $(LDFLAGS)
+ 
+ parser.cpp: encoding.l
+ 	    flex -i -8 -o$@ $<

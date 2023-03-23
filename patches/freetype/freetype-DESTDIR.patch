@@ -1,0 +1,43 @@
+diff -Nur freetype-2.0.2-test/builds/unix/install.mk freetype-2.0.2-test.new/builds/unix/install.mk
+--- freetype-2.0.2-test/builds/unix/install.mk	Wed Dec 20 23:09:41 2000
++++ freetype-2.0.2-test.new/builds/unix/install.mk	Sun Mar 18 23:49:58 2001
+@@ -17,27 +17,27 @@
+ 
+ # Unix installation and deinstallation targets.
+ install: $(PROJECT_LIBRARY)
+-	$(MKINSTALLDIRS) $(libdir)                                 \
+-                         $(includedir)/freetype2/freetype/config   \
+-                         $(includedir)/freetype2/freetype/internal \
+-                         $(includedir)/freetype2/freetype/cache    \
+-                         $(bindir)
+-	$(LIBTOOL) --mode=install $(INSTALL) $(PROJECT_LIBRARY) $(libdir)
++	$(MKINSTALLDIRS) $(DESTDIR)$(libdir)                                 \
++                         $(DESTDIR)$(includedir)/freetype2/freetype/config   \
++                         $(DESTDIR)$(includedir)/freetype2/freetype/internal \
++                         $(DESTDIR)$(includedir)/freetype2/freetype/cache    \
++                         $(DESTDIR)$(bindir)
++	$(LIBTOOL) --mode=install $(INSTALL) $(PROJECT_LIBRARY) $(DESTDIR)$(libdir)
+ 	-for P in $(PUBLIC_H) ; do                               \
+-          $(INSTALL_DATA) $$P $(includedir)/freetype2/freetype ; \
++          $(INSTALL_DATA) $$P $(DESTDIR)$(includedir)/freetype2/freetype ; \
+         done
+ 	-for P in $(BASE_H) ; do                                          \
+-          $(INSTALL_DATA) $$P $(includedir)/freetype2/freetype/internal ; \
++          $(INSTALL_DATA) $$P $(DESTDIR)$(includedir)/freetype2/freetype/internal ; \
+         done
+ 	-for P in $(CONFIG_H) ; do                                      \
+-          $(INSTALL_DATA) $$P $(includedir)/freetype2/freetype/config ; \
++          $(INSTALL_DATA) $$P $(DESTDIR)$(includedir)/freetype2/freetype/config ; \
+         done
+ 	-for P in $(CACHE_H) ; do                                      \
+-          $(INSTALL_DATA) $$P $(includedir)/freetype2/freetype/cache ; \
++          $(INSTALL_DATA) $$P $(DESTDIR)$(includedir)/freetype2/freetype/cache ; \
+         done
+-	$(INSTALL_DATA) $(BUILD)/ft2unix.h $(includedir)/ft2build.h
++	$(INSTALL_DATA) $(BUILD)/ft2unix.h $(DESTDIR)$(includedir)/ft2build.h
+ 	$(INSTALL_SCRIPT) -m 755 $(BUILD)/freetype-config \
+-          $(bindir)/freetype-config
++          $(DESTDIR)$(bindir)/freetype-config
+ 
+ 
+ uninstall:

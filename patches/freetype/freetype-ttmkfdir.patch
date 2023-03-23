@@ -1,0 +1,96 @@
+--- ./ttmkfdir2/commandline.h.orig	2023-03-23 15:21:58.585421901 +0100
++++ ./ttmkfdir2/commandline.h	2023-03-23 15:22:35.665380865 +0100
+@@ -8,8 +8,8 @@
+ #include "util.h"
+ 
+ class Commandline {
+-    friend ostream &operator<< (ostream &, const Commandline &);
+-    friend ostream &operator<< (ostream &, const Commandline *);
++    friend std::ostream &operator<< (std::ostream &, const Commandline &);
++    friend std::ostream &operator<< (std::ostream &, const Commandline *);
+ public:
+     class Option {
+ 	friend class Commandline;
+--- ./ttmkfdir2/ttf.cpp.orig	2023-03-23 15:24:55.705225892 +0100
++++ ./ttmkfdir2/ttf.cpp	2023-03-23 15:25:48.913167009 +0100
+@@ -427,7 +427,7 @@ Face::FoundryName (void) const
+ const char *
+ Face::PanoseWeight (void) const
+ {
+-    static char *panose_weight_latin[] = {
++    static const char *const panose_weight_latin[] = {
+ 	"any",
+ 	"no fit",
+ 	"very light",
+@@ -492,7 +492,7 @@ Face::Weight (void) const
+ const char *
+ Face::PanoseWidth (void) const
+ {
+-    static char *panose_spacing_latin_text [] = {
++    static const char *const panose_spacing_latin_text [] = {
+ 	"any",
+ 	"no fit",
+ 	"old style",
+@@ -505,7 +505,7 @@ Face::PanoseWidth (void) const
+ 	"monospaced",
+     };
+     
+-    static char *panose_spacing_latin_decorative [] = {
++    static const char *const panose_spacing_latin_decorative [] = {
+ 	"any",
+ 	"no fit",
+ 	"super condensed",
+@@ -576,7 +576,7 @@ Face::~Face (void)
+ }
+ 
+ const std::string
+-Face::xlfd (const string &encodingname) const
++Face::xlfd (const std::string &encodingname) const
+ {
+     std::string xlfdname;
+     
+--- ./ttmkfdir2/ttmkfdir.cpp.orig	2023-03-23 15:23:49.585299062 +0100
++++ ./ttmkfdir2/ttmkfdir.cpp	2023-03-23 15:24:06.649280179 +0100
+@@ -69,7 +69,7 @@ main (int argc, char *argv[])
+ 	return 1;
+     }
+ 
+-    fprintf (output, "%d\n", fontdir.size ());
++    fprintf (output, "%ld\n", (long)fontdir.size ());
+ 
+     for (vector<string>::const_iterator i = fontdir.begin (); i != fontdir.end (); i++) {
+ 	fprintf (output, "%s\n", i->c_str ());
+--- ./ttmkfdir2/directory.cpp.orig	2023-03-23 15:24:18.557267001 +0100
++++ ./ttmkfdir2/directory.cpp	2023-03-23 15:24:38.697244714 +0100
+@@ -2,6 +2,7 @@
+ #include <dirent.h>
+ #include <sys/stat.h>
+ #include <unistd.h>
++#include <string.h>
+ 
+ #include "directory.h"
+ 
+--- ./ttmkfdir2/ttf.h.orig	2023-03-23 15:23:00.793353058 +0100
++++ ./ttmkfdir2/ttf.h	2023-03-23 15:23:24.265327082 +0100
+@@ -31,7 +31,7 @@ namespace ttf {
+ 	const char         *Width (void) const;
+ 	xlfdcontainer       xlfdnames;
+     protected:
+-	const std::string   xlfd (const string &encodingname) const;
++	const std::string   xlfd (const std::string &encodingname) const;
+ 	bool                MappingPresent (int cmapidx, NumericMapping *m);
+ 	const char         *OS2Weight (void) const;
+ 	const char         *PanoseWeight (void) const;
+--- ./ttmkfdir2/encoding.cpp.orig	2023-03-23 15:26:17.181135726 +0100
++++ ./ttmkfdir2/encoding.cpp	2023-03-23 15:27:05.017082789 +0100
+@@ -9,6 +9,10 @@
+ 
+ using namespace std;
+ 
++#ifndef PATH_MAX
++#define PATH_MAX 1024
++#endif
++
+ namespace {
+     const char *
+     EncodingBase (void)

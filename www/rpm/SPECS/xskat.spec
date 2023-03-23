@@ -61,7 +61,6 @@ Authors:
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
-# That package does not have an Imakefile in the top directory :(
 #
 # there are no libraries in this package, so we
 # have to build for the target CPU only

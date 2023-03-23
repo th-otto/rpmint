@@ -1,0 +1,71 @@
+--- freetype-2.0.4/src/type1/t1load.c.orig	Tue Jun 19 10:28:23 2001
++++ freetype-2.0.4/src/type1/t1load.c	Sat Jun 30 00:00:25 2001
+@@ -73,7 +73,7 @@
+ 
+ #include <string.h>     /* for strncmp(), strcmp() */
+ #include <ctype.h>      /* for isalnum()           */
+-
++#include <stdlib.h>
+ 
+   /*************************************************************************/
+   /*                                                                       */
+@@ -1116,7 +1116,7 @@
+     for ( n = 0; n < loader->num_subrs; n++ )
+     {
+       FT_Int    index, size;
+-      FT_Byte*  base;
++      FT_Byte*  base, *temp;
+ 
+ 
+       /* If the next token isn't `dup', we are also done.  This */
+@@ -1150,12 +1149,18 @@
+       /*                                                         */
+       if ( face->type1.private_dict.lenIV >= 0 )
+       {
+-        psaux->t1_decrypt( base, size, 4330 );
++	/* decrypt writes to base - make temporary copy */
++        if ( (temp=malloc( size )) == NULL )
++	  return;
++        MEM_Copy( temp, base, size );
++        psaux->t1_decrypt( temp, size, 4330 );
+         size -= face->type1.private_dict.lenIV;
+         base += face->type1.private_dict.lenIV;
++        error = T1_Add_Table( table, index, temp+4, size );
++        free( temp );
+       }
+-
++      else
+       error = T1_Add_Table( table, index, base, size );
+       if ( error )
+         goto Fail;
+     }
+@@ -1179,7 +1183,7 @@
+ 
+     PSAux_Interface*  psaux = (PSAux_Interface*)face->psaux;
+ 
+-    FT_Byte*    cur;
++    FT_Byte*    cur, *temp;
+     FT_Byte*    limit = parser->root.limit;
+     FT_Int      n;
+     FT_UInt     notdef_index = 0;
+@@ -1282,12 +1286,18 @@
+ 
+         if ( face->type1.private_dict.lenIV >= 0 )
+         {
+-          psaux->t1_decrypt( base, size, 4330 );
++	  /* decrypt writes to base - make temporary copy */
++          if ( (temp = malloc( size )) == NULL )
++	    return;
++          MEM_Copy( temp, base, size );
++          psaux->t1_decrypt( temp, size, 4330 );
+           size -= face->type1.private_dict.lenIV;
+           base += face->type1.private_dict.lenIV;
++          error = T1_Add_Table( code_table, n, temp+4, size );
++          free( temp );
+         }
+-
++	else
+         error = T1_Add_Table( code_table, n, base, size );
+         if ( error )
+           goto Fail;
+ 

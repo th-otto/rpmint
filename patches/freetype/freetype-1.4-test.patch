@@ -1,0 +1,39 @@
+--- freetype-2.0.1/freetype-pre1.4/test/arch/unix/Makefile.in.orig	Fri Apr 14 16:02:12 2000
++++ freetype-2.0.1/freetype-pre1.4/test/arch/unix/Makefile.in	Thu Mar 15 21:19:38 2001
+@@ -80,15 +80,15 @@
+ 
+ ftzoom: ftzoom.o $(DISPOBJS) $(LIBTTF)
+ 	$(PROCESS) -o ftzoom ftzoom.o $(DISPOBJS) \
+-          $(EFENCE) $(LIBTTF) $(FT_LIBS) -lX11
++          $(EFENCE) $(LIBTTF) $(FT_LIBS) -lX11 -lsocket
+ 
+ fttimer: fttimer.o $(DISPOBJS) $(LIBTTF)
+ 	$(PROCESS) -o fttimer fttimer.o $(DISPOBJS) \
+-          $(EFENCE) $(LIBTTF) $(FT_LIBS) -lX11
++          $(EFENCE) $(LIBTTF) $(FT_LIBS) -lX11 -lsocket
+ 
+ ftview: ftview.o $(DISPOBJS) $(LIBTTF)
+ 	$(PROCESS) -o ftview ftview.o $(DISPOBJS) \
+-          $(EFENCE) $(LIBTTF) $(FT_LIBS) -lX11
++          $(EFENCE) $(LIBTTF) $(FT_LIBS) -lX11 -lsocket
+ 
+ ftlint: ftlint.o common.o $(LIBTTF)
+ 	$(PROCESS) -o ftlint ftlint.o common.o \
+@@ -108,7 +108,7 @@
+ 
+ ftstring: ftstring.o $(DISPOBJS) $(LIBTTF)
+ 	$(PROCESS) -o ftstring ftstring.o $(DISPOBJS) \
+-          $(EFENCE) $(LIBTTF) $(FT_LIBS) -lX11
++          $(EFENCE) $(LIBTTF) $(FT_LIBS) -lX11 -lsocket
+ 
+ ftstrpnm: ftstrpnm.o common.o $(LIBTTF)
+ 	$(PROCESS) -o ftstrpnm ftstrpnm.o common.o \
+@@ -120,7 +120,7 @@
+ 
+ ftstrtto: ftstrtto.o $(DISPOBJS) arabic.o $(LIBTTF)
+ 	$(PROCESS) -o ftstrtto ftstrtto.o $(DISPOBJS) arabic.o \
+-          $(EFENCE) $(LIBTTF) $(FT_LIBS) -lX11
++          $(EFENCE) $(LIBTTF) $(FT_LIBS) -lX11 -lsocket
+ 
+ 
+ install: $(PROGRAMS)

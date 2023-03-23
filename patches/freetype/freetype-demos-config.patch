@@ -1,0 +1,29 @@
+--- freetype-2.0.4/ft2demos-2.0.4/src/common.c.orig	Sat Jul  8 02:59:58 2000
++++ freetype-2.0.4/ft2demos-2.0.4/src/common.c	Tue Jul 10 17:51:14 2001
+@@ -24,6 +24,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
++#if 0
+   /*
+    *  Externals visible to programs.
+    */
+@@ -171,6 +172,7 @@
+      */
+     return opt;
+   }
++#endif
+ 
+ 
+ /****************************************************************************/
+--- freetype-2.0.4/ft2demos-2.0.4/graph/x11/rules.mk.orig	Wed Apr  4 13:46:44 2001
++++ freetype-2.0.4/ft2demos-2.0.4/graph/x11/rules.mk	Tue Jul 10 18:08:50 2001
+@@ -57,7 +57,7 @@
+   # the GRAPH_LINK variable is expanded each time an executable is linked
+   # against the graphics library.
+   #
+-  GRAPH_LINK     += $(X11_LIB:%=-L%) -lX11
++  GRAPH_LINK     += $(X11_LIB:%=-L%) -lX11 -lsocket
+ 
+   # Solaris needs a -lsocket in GRAPH_LINK ..
+   #
