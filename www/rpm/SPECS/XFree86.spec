@@ -321,6 +321,7 @@ cp config/pswrap/pswrap host-tools
 cp config/util/lndir host-tools
 cp config/imake/imake host-tools
 if test -f programs/rgb/rgb; then cp programs/rgb/rgb host-tools; fi
+if test -f fonts/PEX/to_wfont; then cp fonts/PEX/to_wfont host-tools; fi
 
 # cleanup from build. "make clean" does not work very well when switching configurations
 find . -name "*.o" | xargs rm
@@ -386,17 +387,26 @@ for CPU in ${ALL_CPUS}; do
 	  done
 	cd "$build_dir"
 	
+	rm -f %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/xkb/xkbcomp
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
 		rm -f %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/*
-		rm -f %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/xkb/xkbcomp
+	else
+		mkdir %{buildroot}/xbin
+		mv %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/* %{buildroot}/xbin
 	fi
 	%endif
 
 	# cleanup from build. "make clean" does not work very well when switching configurations
 	find . -name "*.o" | xargs rm
 done
-	
+
+%if "%{buildtype}" != "cross"
+mv %{buildroot}/xbin/* %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin
+rmdir %{buildroot}/xbin
+%endif
+ln %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xkbcomp %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/xkb/xkbcomp
+
 echo PACKAGING DOCUMENTATION
 # rezip these - they are in the old compress format
 find doc/hardcopy -name \*.PS.Z | xargs gzip -df
