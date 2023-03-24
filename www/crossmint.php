@@ -2081,6 +2081,8 @@ This notably applies to Perl and Python.
 
 <li>2023/03/03 Update gcc-9 to 9.5.0</li>
 
+<li>2023/03/23 Update zstd to 1.5.4</li>
+
 </ul>
 
 <p></p>

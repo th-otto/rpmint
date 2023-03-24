@@ -1,72 +1,130 @@
-diff -rupN zstd-1.4.3.orig/lib/common/fse_decompress.c zstd-1.4.3/lib/common/fse_decompress.c
---- zstd-1.4.3.orig/lib/common/fse_decompress.c	2019-08-19 22:48:01.000000000 +0200
-+++ zstd-1.4.3/lib/common/fse_decompress.c	2019-09-23 07:13:55.670694142 +0200
-@@ -39,7 +39,7 @@
- #include <stdlib.h>     /* malloc, free, qsort */
- #include <string.h>     /* memcpy, memset */
+diff -rupN zstd-1.5.4.orig/lib/common/bitstream.h zstd-1.5.4/lib/common/bitstream.h
+--- zstd-1.5.4.orig/lib/common/bitstream.h	2023-02-10 01:41:50.000000000 +0100
++++ zstd-1.5.4/lib/common/bitstream.h	2023-03-24 13:12:07.657167140 +0100
+@@ -27,7 +27,7 @@ extern "C" {
+ *  Dependencies
+ ******************************************/
+ #include "mem.h"            /* unaligned access routines */
+-#include "compiler.h"       /* UNLIKELY() */
++#include "zcompiler.h"      /* UNLIKELY() */
+ #include "debug.h"          /* assert(), DEBUGLOG(), RAWLOG() */
+ #include "error_private.h"  /* error codes and messages */
+ #include "bits.h"           /* ZSTD_highbit32 */
+diff -rupN zstd-1.5.4.orig/lib/common/error_private.h zstd-1.5.4/lib/common/error_private.h
+--- zstd-1.5.4.orig/lib/common/error_private.h	2023-02-10 01:41:50.000000000 +0100
++++ zstd-1.5.4/lib/common/error_private.h	2023-03-24 13:12:07.657167140 +0100
+@@ -22,7 +22,7 @@ extern "C" {
+ *  Dependencies
+ ******************************************/
+ #include "../zstd_errors.h"  /* enum list */
+-#include "compiler.h"
++#include "zcompiler.h"
+ #include "debug.h"
+ #include "zstd_deps.h"       /* size_t */
+ 
+diff -rupN zstd-1.5.4.orig/lib/common/fse_decompress.c zstd-1.5.4/lib/common/fse_decompress.c
+--- zstd-1.5.4.orig/lib/common/fse_decompress.c	2023-02-10 01:41:50.000000000 +0100
++++ zstd-1.5.4/lib/common/fse_decompress.c	2023-03-24 13:12:07.657167140 +0100
+@@ -18,7 +18,7 @@
+ ****************************************************************/
+ #include "debug.h"      /* assert */
  #include "bitstream.h"
 -#include "compiler.h"
 +#include "zcompiler.h"
  #define FSE_STATIC_LINKING_ONLY
  #include "fse.h"
  #include "error_private.h"
-diff -rupN zstd-1.4.3.orig/lib/common/zstd_internal.h zstd-1.4.3/lib/common/zstd_internal.h
---- zstd-1.4.3.orig/lib/common/zstd_internal.h	2019-08-19 22:48:01.000000000 +0200
-+++ zstd-1.4.3/lib/common/zstd_internal.h	2019-09-23 07:13:55.670694142 +0200
+diff -rupN zstd-1.5.4.orig/lib/common/mem.h zstd-1.5.4/lib/common/mem.h
+--- zstd-1.5.4.orig/lib/common/mem.h	2023-02-10 01:41:50.000000000 +0100
++++ zstd-1.5.4/lib/common/mem.h	2023-03-24 13:12:07.657167140 +0100
+@@ -19,7 +19,7 @@ extern "C" {
+ *  Dependencies
+ ******************************************/
+ #include <stddef.h>  /* size_t, ptrdiff_t */
+-#include "compiler.h"  /* __has_builtin */
++#include "zcompiler.h"  /* __has_builtin */
+ #include "debug.h"  /* DEBUG_STATIC_ASSERT */
+ #include "zstd_deps.h"  /* ZSTD_memcpy */
+ 
+diff -rupN zstd-1.5.4.orig/lib/common/zstd_internal.h zstd-1.5.4/lib/common/zstd_internal.h
+--- zstd-1.5.4.orig/lib/common/zstd_internal.h	2023-02-10 01:41:50.000000000 +0100
++++ zstd-1.5.4/lib/common/zstd_internal.h	2023-03-24 13:12:07.661167135 +0100
 @@ -19,7 +19,7 @@
  /*-*************************************
  *  Dependencies
  ***************************************/
 -#include "compiler.h"
 +#include "zcompiler.h"
+ #include "cpu.h"
  #include "mem.h"
  #include "debug.h"                 /* assert, DEBUGLOG, RAWLOG, g_debuglevel */
- #include "error_private.h"
-diff -rupN zstd-1.4.3.orig/lib/compress/fse_compress.c zstd-1.4.3/lib/compress/fse_compress.c
---- zstd-1.4.3.orig/lib/compress/fse_compress.c	2019-08-19 22:48:01.000000000 +0200
-+++ zstd-1.4.3/lib/compress/fse_compress.c	2019-09-23 07:13:55.666694142 +0200
-@@ -37,7 +37,7 @@
+diff -rupN zstd-1.5.4.orig/lib/compress/fse_compress.c zstd-1.5.4/lib/compress/fse_compress.c
+--- zstd-1.5.4.orig/lib/compress/fse_compress.c	2023-02-10 01:41:50.000000000 +0100
++++ zstd-1.5.4/lib/compress/fse_compress.c	2023-03-24 13:12:07.657167140 +0100
+@@ -15,7 +15,7 @@
+ /* **************************************************************
+ *  Includes
  ****************************************************************/
- #include <stdlib.h>     /* malloc, free, qsort */
- #include <string.h>     /* memcpy, memset */
--#include "compiler.h"
-+#include "zcompiler.h"
- #include "mem.h"        /* U32, U16, etc. */
- #include "debug.h"      /* assert, DEBUGLOG */
+-#include "../common/compiler.h"
++#include "../common/zcompiler.h"
+ #include "../common/mem.h"        /* U32, U16, etc. */
+ #include "../common/debug.h"      /* assert, DEBUGLOG */
  #include "hist.h"       /* HIST_count_wksp */
-diff -rupN zstd-1.4.3.orig/lib/compress/huf_compress.c zstd-1.4.3/lib/compress/huf_compress.c
---- zstd-1.4.3.orig/lib/compress/huf_compress.c	2019-08-19 22:48:01.000000000 +0200
-+++ zstd-1.4.3/lib/compress/huf_compress.c	2019-09-23 07:13:55.670694142 +0200
-@@ -45,7 +45,7 @@
+diff -rupN zstd-1.5.4.orig/lib/compress/huf_compress.c zstd-1.5.4/lib/compress/huf_compress.c
+--- zstd-1.5.4.orig/lib/compress/huf_compress.c	2023-02-10 01:41:50.000000000 +0100
++++ zstd-1.5.4/lib/compress/huf_compress.c	2023-03-24 13:12:07.657167140 +0100
+@@ -24,7 +24,7 @@
+ *  Includes
  ****************************************************************/
- #include <string.h>     /* memcpy, memset */
- #include <stdio.h>      /* printf (debug) */
--#include "compiler.h"
-+#include "zcompiler.h"
- #include "bitstream.h"
+ #include "../common/zstd_deps.h"     /* ZSTD_memcpy, ZSTD_memset */
+-#include "../common/compiler.h"
++#include "../common/zcompiler.h"
+ #include "../common/bitstream.h"
  #include "hist.h"
  #define FSE_STATIC_LINKING_ONLY   /* FSE_optimalTableLog_internal */
-diff -rupN zstd-1.4.3.orig/lib/decompress/huf_decompress.c zstd-1.4.3/lib/decompress/huf_decompress.c
---- zstd-1.4.3.orig/lib/decompress/huf_decompress.c	2019-08-19 22:48:01.000000000 +0200
-+++ zstd-1.4.3/lib/decompress/huf_decompress.c	2019-09-23 07:13:55.670694142 +0200
-@@ -36,7 +36,7 @@
+diff -rupN zstd-1.5.4.orig/lib/compress/zstd_ldm_geartab.h zstd-1.5.4/lib/compress/zstd_ldm_geartab.h
+--- zstd-1.5.4.orig/lib/compress/zstd_ldm_geartab.h	2023-02-10 01:41:50.000000000 +0100
++++ zstd-1.5.4/lib/compress/zstd_ldm_geartab.h	2023-03-24 13:12:07.661167135 +0100
+@@ -11,7 +11,7 @@
+ #ifndef ZSTD_LDM_GEARTAB_H
+ #define ZSTD_LDM_GEARTAB_H
+ 
+-#include "../common/compiler.h" /* UNUSED_ATTR */
++#include "../common/zcompiler.h" /* UNUSED_ATTR */
+ #include "../common/mem.h"      /* U64 */
+ 
+ static UNUSED_ATTR const U64 ZSTD_ldm_gearTab[256] = {
+diff -rupN zstd-1.5.4.orig/lib/decompress/huf_decompress.c zstd-1.5.4/lib/decompress/huf_decompress.c
+--- zstd-1.5.4.orig/lib/decompress/huf_decompress.c	2023-02-10 01:41:50.000000000 +0100
++++ zstd-1.5.4/lib/decompress/huf_decompress.c	2023-03-24 13:12:07.657167140 +0100
+@@ -16,7 +16,7 @@
  *  Dependencies
  ****************************************************************/
- #include <string.h>     /* memcpy, memset */
--#include "compiler.h"
-+#include "zcompiler.h"
- #include "bitstream.h"  /* BIT_* */
- #include "fse.h"        /* to compress headers */
- #define HUF_STATIC_LINKING_ONLY
-diff -rupN zstd-1.4.3.orig/lib/decompress/zstd_decompress_block.c zstd-1.4.3/lib/decompress/zstd_decompress_block.c
---- zstd-1.4.3.orig/lib/decompress/zstd_decompress_block.c	2019-08-19 22:48:01.000000000 +0200
-+++ zstd-1.4.3/lib/decompress/zstd_decompress_block.c	2019-09-23 07:13:55.670694142 +0200
+ #include "../common/zstd_deps.h"  /* ZSTD_memcpy, ZSTD_memset */
+-#include "../common/compiler.h"
++#include "../common/zcompiler.h"
+ #include "../common/bitstream.h"  /* BIT_* */
+ #include "../common/fse.h"        /* to compress headers */
+ #include "../common/huf.h"
+diff -rupN zstd-1.5.4.orig/lib/decompress/zstd_decompress_block.c zstd-1.5.4/lib/decompress/zstd_decompress_block.c
+--- zstd-1.5.4.orig/lib/decompress/zstd_decompress_block.c	2023-02-10 01:41:50.000000000 +0100
++++ zstd-1.5.4/lib/decompress/zstd_decompress_block.c	2023-03-24 13:12:07.661167135 +0100
 @@ -15,7 +15,7 @@
  *  Dependencies
  *********************************************************/
- #include <string.h>      /* memcpy, memmove, memset */
--#include "compiler.h"    /* prefetch */
-+#include "zcompiler.h"    /* prefetch */
- #include "cpu.h"         /* bmi2 */
- #include "mem.h"         /* low level memory routines */
+ #include "../common/zstd_deps.h"   /* ZSTD_memcpy, ZSTD_memmove, ZSTD_memset */
+-#include "../common/compiler.h"    /* prefetch */
++#include "../common/zcompiler.h"   /* prefetch */
+ #include "../common/cpu.h"         /* bmi2 */
+ #include "../common/mem.h"         /* low level memory routines */
  #define FSE_STATIC_LINKING_ONLY
+--- a/programs/util.h.orig	2023-03-24 13:13:55.541046304 +0100
++++ b/programs/util.h	2023-03-24 13:14:27.245010794 +0100
+@@ -20,6 +20,7 @@
+ *  Dependencies
+ ******************************************/
+ #include "platform.h"     /* PLATFORM_POSIX_VERSION, ZSTD_NANOSLEEP_SUPPORT, ZSTD_SETPRIORITY_SUPPORT */
++#include <stdio.h>
+ #include <stddef.h>       /* size_t, ptrdiff_t */
+ #include <sys/types.h>    /* stat, utime */
+ #include <sys/stat.h>     /* stat, chmod */

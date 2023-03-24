@@ -2749,7 +2749,7 @@ a cross-development environment.</span>
 		'upstream' => 'http://www.zstd.net/',
 		'repo' => 'https://github.com/facebook/zstd/releases',
 		'source' => $download_dir . '%{name}-%{version}.tar.gz',
-		'version' => '1.4.4',
+		'version' => '1.5.4',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
