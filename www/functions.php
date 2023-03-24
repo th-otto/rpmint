@@ -47,12 +47,13 @@ function last_changetime($filename)
 function gen_link($filename, $text, $must_exist = true)
 {
 	global $download_dir;
+	global $rpm_dir;
 	global $linkcount;
 	global $linkstats;
 	
 	$stat = 0;
 	$exists = 0;
-	if ($download_dir === '' || substr($filename, 0, strlen($download_dir)) == $download_dir)
+	if ($download_dir !== '' && substr($filename, 0, strlen($download_dir)) == $download_dir)
 	{
 		$reporting = error_reporting(E_ALL & ~E_WARNING);
 		$stat = stat($filename);
@@ -61,7 +62,18 @@ function gen_link($filename, $text, $must_exist = true)
 			$exists = 1;
 		}
 		error_reporting($reporting);
-	} else
+	}
+	if (!$exists && $rpm_dir !== '' && substr($filename, 0, strlen($rpm_dir)) == $rpm_dir)
+	{
+		$reporting = error_reporting(E_ALL & ~E_WARNING);
+		$stat = stat($filename);
+		if ($stat)
+		{
+			$exists = 1;
+		}
+		error_reporting($reporting);
+	}
+	if (!$exists)
 	{
 		$scheme = parse_url($filename, PHP_URL_SCHEME);
 		if ($scheme == 'http' || $scheme == 'https' || $scheme == 'ftp' || $scheme == 'ftps')
@@ -124,6 +136,7 @@ function gen_linktitles($timeformat='YYYY/MM/DD HH:mm:ss')
 	foreach ($linkstats as $stat)
 	{
 		echo '<!-- ' . $stat['filename'] . ': ' . $stat['size'] . " --!>\n";
+		/* FIXME: do not report size > 0 but < 1K as zero */
 		echo "document.getElementById('" . $stat['id'] . "').setAttribute('title',
 			'size: " . intdiv($stat['size'], 1024) . "K\\n" .
 			"date: ' + usertime('" . date('Y-m-d\TH:i:s\.0\Z', $stat['mtime']) . "', '" . $timeformat . "') + '" .

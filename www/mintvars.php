@@ -5,5 +5,6 @@ ini_set("display_errors", 1);
 date_default_timezone_set('UTC');
 
 $download_dir = 'download/mint/';
+$rpm_dir = 'download/rpm/RPMS/noarch/';
 
 ?>
