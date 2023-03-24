@@ -14,7 +14,7 @@ Name          : %{pkgname}
 %endif
 Version       : 0.91
 Release       : 1
-License       : GPL
+License       : GPL-2.0-or-later
 Group         : Applications/Publishing
 
 Packager      : Thorsten Otto <admin@tho-otto.de>

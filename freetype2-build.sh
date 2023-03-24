@@ -15,11 +15,17 @@ MINT_BUILD_DIR="$srcdir"
 
 PATCHES="
 patches/freetype2/freetype2-bugzilla-308961-cmex-workaround.patch
-patches/freetype2/freetype2-mintelf-config.patch
 patches/freetype2/freetype2-static-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
+
+cd "$srcdir"
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" builds/unix/config.sub
 
 cd "$MINT_BUILD_DIR"
 
@@ -51,15 +57,16 @@ for CPU in ${ALL_CPUS}; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	create_config_cache
+	
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
 	${MAKE} clean >/dev/null
 	cd ${THISPKG_DIR}${sysroot}
 	rm -f ${TARGET_LIBDIR#/}$multilibdir/charset.alias
 	rm -f ${TARGET_BINDIR#/}/freetype-config
+	rm -f ${TARGET_PREFIX#/}/share/man/man1/freetype-config.1
 	rmdir ${TARGET_BINDIR#/}
 	make_bin_archive $CPU
 done

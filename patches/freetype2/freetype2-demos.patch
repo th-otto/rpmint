@@ -1,0 +1,50 @@
+--- a/graph/grfill.c.orig	2023-03-24 09:41:34.050774699 +0100
++++ b/graph/grfill.c	2023-03-24 09:41:40.414767377 +0100
+@@ -1,6 +1,6 @@
+ #include "graph.h"
+ #include <stdlib.h>
+-#include <memory.h>
++#include <string.h>
+ 
+ static void
+ gr_fill_hline_mono( unsigned char*   line,
+--- a/graph/grswizzle.c.orig	2023-03-24 09:40:42.850833604 +0100
++++ b/graph/grswizzle.c	2023-03-24 09:40:59.702814215 +0100
+@@ -5,7 +5,7 @@
+  *  this filtering code is explicitly placed in the public domain !!
+  */
+ #include <stdlib.h>
+-#include <memory.h>
++#include <string.h>
+ 
+ #include "grswizzle.h"
+ 
+--- a/graph/x11/rules.mk.orig	2023-03-24 10:10:11.156931371 +0100
++++ b/graph/x11/rules.mk	2023-03-24 10:12:58.024766142 +0100
+@@ -68,8 +68,8 @@ endif
+ #
+ ifneq ($(X11_PATH),)
+ 
+-  X11_INCLUDE := $(subst /,$(COMPILER_SEP),$(X11_PATH:%=%/include))
+-  X11_LIB     := $(subst /,$(COMPILER_SEP),$(X11_PATH:%=%/lib64) \
++  # X11_INCLUDE := $(subst /,$(COMPILER_SEP),$(X11_PATH:%=%/include))
++  # X11_LIB     := $(subst /,$(COMPILER_SEP),$(X11_PATH:%=%/lib64) \
+                                            $(X11_PATH:%=%/lib))
+ 
+   # The GRAPH_LINK variable is expanded each time an executable is linked
+--- a/graph/rules.mk.orig	2023-03-24 10:08:11.253051897 +0100
++++ b/graph/rules.mk	2023-03-24 10:16:08.224585587 +0100
+@@ -51,11 +51,12 @@ GRAPH_OBJS := $(OBJ_DIR_2)/gblblit.$(O)
+ # Default value for COMPILE_GRAPH_LIB;
+ # this value can be modified by the system-specific graphics drivers.
+ #
++LIBTOOL =
+ ifneq ($(LIBTOOL),)
+   COMPILE_GRAPH_LIB = $(LIBTOOL) --mode=link $(CCraw) -static \
+                                  -o $(subst /,$(COMPILER_SEP),$@ $(GRAPH_OBJS))
+ else
+-  COMPILE_GRAPH_LIB = ar -r $(subst /,$(COMPILER_SEP),$@ $(GRAPH_OBJS))
++  COMPILE_GRAPH_LIB = $(AR) rcs $(subst /,$(COMPILER_SEP),$@ $(GRAPH_OBJS))
+ endif
+ 
+ 

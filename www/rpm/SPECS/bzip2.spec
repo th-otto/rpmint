@@ -56,7 +56,9 @@ Install bzip2 if you need a compression utility.
 Summary:        Header files and libraries for developing apps which will use bzip2.
 Group:          Development/Libraries/C and C++
 Requires:       bzip2 = %{version}
-%if "%{buildtype}" != "cross"
+%if "%{buildtype}" == "cross"
+Provides:       cross-mint-libbz2-devel = %{version}
+%else
 Provides:       libbz2-devel = %{version}
 %endif
 
@@ -83,6 +85,10 @@ Documentation for bzip2
 
 
 %build
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+
+%rpmint_cflags
+
 rm -f aclocal.m4 ltmain.sh
 libtoolize --force || exit 1
 aclocal || exit 1
@@ -91,7 +97,6 @@ autoheader || exit 1
 automake --force --copy --add-missing || exit 1
 
 cp %{S:1} config.sub
-%rpmint_cflags
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
 STACKSIZE="-Wl,-stack,256k"

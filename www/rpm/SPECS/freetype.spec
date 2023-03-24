@@ -14,13 +14,13 @@ Name:           %{pkgname}
 %endif
 Version       : 1.4
 Release       : 2
-License       : GPL or FTL
+License       : GPL-2.0-or-later
 Group         : System Environment/Libraries
 
 %if "%{buildtype}" == "cross"
-Provides      : cross-mint-freetype-devel
+Provides      : cross-mint-freetype-devel = %{version}
 %else
-Provides      : freetype-devel
+Provides      : freetype-devel = %{version}
 %endif
 
 Packager      : Thorsten Otto <admin@tho-otto.de>
@@ -28,10 +28,9 @@ URL           : http://www.freetype.org/
 
 Prefix        : %{_rpmint_target_prefix}
 Docdir        : %{_isysroot}%{_rpmint_target_prefix}/share/doc
-Docdir        : %{_prefix}/doc
 BuildRoot     : %{_tmppath}/%{name}-root
 
-Source0: freetype-1.4.tar.gz
+Source0: freetype-%{version}.tar.gz
 Source1: freetype-ttmkfdir2.tar.gz
 Source2: patches/automake/mintelf-config.sub
 Patch3:  patches/{%pkgname}/freetype-ttmkfdir-libtool.patch
