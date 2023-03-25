@@ -103,13 +103,17 @@ EOF
 	
 	
 	rm -f *.deb control.tar.xz data.tar.xz debian-binary md5sums control
-	rm -rf usr etc
+	dirs="usr etc sbin var"
+	rm -rf $dirs
 	
 	rpm2cpio "$rpmfile" | cpio --quiet -id
-	find usr -type f -print0 | xargs -0 md5sum > DEBIAN/md5sums
-	if test -d etc; then find etc -type f -print0 | xargs -0 md5sum >> DEBIAN/md5sums; fi
 	
-	rm -rf usr etc
+	>DEBIAN/md5sums
+	for dir in $dirs; do
+		if test -d $dir; then find $dir -type f -print0 | xargs -0 md5sum >> DEBIAN/md5sums; fi
+	done
+
+	rm -rf $dirs
 	
 	dpkg --build . "$POOL/main" || exit 1
 	
