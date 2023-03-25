@@ -1,0 +1,135 @@
+--- glib-1.2.8.orig/testglib.c	1999-07-17 11:48:46.000000000 +0200
++++ glib-1.2.8/testglib.c	2023-03-25 14:09:57.806562266 +0100
+@@ -38,7 +38,7 @@ if (failed) \
+   { if (!m) \
+       g_print ("\n(%s:%d) failed for: %s\n", __FILE__, __LINE__, ( # cond )); \
+     else \
+-      g_print ("\n(%s:%d) failed for: %s: (%s)\n", __FILE__, __LINE__, ( # cond ), (gchar*)m); \
++      g_print ("\n(%s:%d) failed for: %s: (%s)\n", __FILE__, __LINE__, ( # cond ), (const gchar*)(m ? m : "")); \
+   } \
+ else \
+   g_print ("."); fflush (stdout); \
+--- glib-1.2.8.orig/glib.h	2000-03-24 03:34:01.000000000 +0100
++++ glib-1.2.8/glib.h	2023-03-25 14:24:41.921535632 +0100
+@@ -204,7 +204,7 @@ extern "C" {
+ #ifndef G_INLINE_FUNC
+ #  ifdef __GNUC__
+ #    ifdef __OPTIMIZE__
+-#      define G_INLINE_FUNC extern inline
++#      define G_INLINE_FUNC static inline
+ #    else
+ #      undef G_CAN_INLINE
+ #      define G_INLINE_FUNC extern
+--- glib-1.2.8.orig/tests/node-test.c	1999-07-17 11:48:51.000000000 +0200
++++ glib-1.2.8/tests/node-test.c	2023-03-25 14:25:41.305466714 +0100
+@@ -48,7 +48,7 @@ if (failed) \
+   { if (!m) \
+       g_print ("\n(%s:%d) failed for: %s\n", __FILE__, __LINE__, ( # cond )); \
+     else \
+-      g_print ("\n(%s:%d) failed for: %s: (%s)\n", __FILE__, __LINE__, ( # cond ), (gchar*)m); \
++      g_print ("\n(%s:%d) failed for: %s: (%s)\n", __FILE__, __LINE__, ( # cond ), (const gchar*)(m ? m : "")); \
+       exit(1); \
+   } \
+ } G_STMT_END
+--- glib-1.2.8.orig/gdate.c	1999-07-17 11:47:55.000000000 +0200
++++ glib-1.2.8/gdate.c	2023-03-25 14:27:22.745348989 +0100
+@@ -460,7 +460,7 @@ g_date_fill_parse_tokens (const gchar *s
+    */
+   num[0][0] = num[1][0] = num[2][0] = num[3][0] = '\0';
+   
+-  s = str;
++  s = (const guchar *)str;
+   pt->num_ints = 0;
+   while (*s && pt->num_ints < 4) 
+     {
+--- glib-1.2.8.orig/gstrfuncs.c	2000-04-17 17:05:16.000000000 +0200
++++ glib-1.2.8/gstrfuncs.c	2023-03-25 14:29:12.161222008 +0100
+@@ -935,7 +935,7 @@ g_strdown (gchar *string)
+ 
+   g_return_if_fail (string != NULL);
+ 
+-  s = string;
++  s = (guchar *)string;
+ 
+   while (*s)
+     {
+@@ -951,7 +951,7 @@ g_strup (gchar *string)
+ 
+   g_return_if_fail (string != NULL);
+ 
+-  s = string;
++  s = (guchar *)string;
+ 
+   while (*s)
+     {
+@@ -1109,10 +1109,10 @@ g_strchug (gchar *string)
+ 
+   g_return_val_if_fail (string != NULL, NULL);
+ 
+-  for (start = string; *start && isspace (*start); start++)
++  for (start = (guchar *)string; *start && isspace (*start); start++)
+     ;
+ 
+-  g_memmove(string, start, strlen(start) + 1);
++  g_memmove(string, start, strlen((char *)start) + 1);
+ 
+   return string;
+ }
+--- glib-1.2.8.orig/gstring.c	2000-05-19 11:41:07.000000000 +0200
++++ glib-1.2.8/gstring.c	2023-03-25 14:29:59.409167175 +0100
+@@ -443,7 +443,7 @@ g_string_down (GString *fstring)
+ 
+   g_return_val_if_fail (string != NULL, NULL);
+ 
+-  s = string->str;
++  s = (guchar *)string->str;
+ 
+   while (*s)
+     {
+@@ -462,7 +462,7 @@ g_string_up (GString *fstring)
+ 
+   g_return_val_if_fail (string != NULL, NULL);
+ 
+-  s = string->str;
++  s = (guchar *)string->str;
+ 
+   while (*s)
+     {
+--- glib-1.2.8.orig/gtree.c	2000-05-19 08:41:28.000000000 +0200
++++ glib-1.2.8/gtree.c	2023-03-25 14:31:52.889035478 +0100
+@@ -87,7 +87,9 @@ static gpointer   g_tree_node_search
+ static gint       g_tree_node_height                (GTreeNode      *node);
+ static GTreeNode* g_tree_node_rotate_left           (GTreeNode      *node);
+ static GTreeNode* g_tree_node_rotate_right          (GTreeNode      *node);
++#if 0
+ static void       g_tree_node_check                 (GTreeNode      *node);
++#endif
+ 
+ 
+ G_LOCK_DEFINE_STATIC (g_tree_global);
+@@ -644,12 +646,10 @@ g_tree_node_height (GTreeNode *node)
+ static GTreeNode*
+ g_tree_node_rotate_left (GTreeNode *node)
+ {
+-  GTreeNode *left;
+   GTreeNode *right;
+   gint a_bal;
+   gint b_bal;
+ 
+-  left = node->left;
+   right = node->right;
+ 
+   node->right = right->left;
+@@ -713,6 +713,7 @@ g_tree_node_rotate_right (GTreeNode *nod
+   return left;
+ }
+ 
++#if 0
+ static void
+ g_tree_node_check (GTreeNode *node)
+ {
+@@ -742,3 +743,4 @@ g_tree_node_check (GTreeNode *node)
+ 	g_tree_node_check (node->right);
+     }
+ }
++#endif
