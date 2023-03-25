@@ -66,7 +66,7 @@ with it is extremely easy, as demo-ed by the test programs.
 %package devel
 Summary       : A free and portable TrueType font rendering engine.
 Group         : System Environment/Libraries
-Requires      : freetype = %{version}
+Requires      : %{name} = %{version}
 
 %description devel
 The FreeType engine is a free and portable TrueType font rendering
@@ -146,6 +146,8 @@ for CPU in ${ALL_CPUS}; do
 		rm -f %{buildroot}%{_rpmint_bindir}/*
 	fi
 	%rpmint_make_bin_archive $CPU
+	%else
+	%{_rpmint_target_strip} %{buildroot}%{_rpmint_bindir}/* || :
 	%endif
 	
 	make -C ft2demos-%{version} TOP_DIR=.. clean

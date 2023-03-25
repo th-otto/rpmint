@@ -42,7 +42,7 @@ BuildRoot     : %{_tmppath}/%{name}-root
 
 #
 # Patches are already applied in the source archive.
-# For a history, look at https://github.com/th-otto/xfree86
+# For a history, look at https://github.com/th-otto/GEM-xfree86
 #
 # Source0: ftp://ftp.xfree86.org/%%{version}/source/X%%{baseversion}src-1.tgz
 # Source1: ftp://ftp.xfree86.org/%%{version}/source/X%%{baseversion}src-2.tgz

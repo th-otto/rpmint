@@ -60,7 +60,7 @@ Provides      : cross-mint-lib%{pkgname}-devel = %{version}
 %else
 Provides      : lib%{pkgname}-devel = %{version}
 %endif
-Requires      : %{pkgname} = %{version}
+Requires      : %{name} = %{version}
 
 %description devel
 This package contains the header files and static libraries for
@@ -84,7 +84,6 @@ cp %{S:1} config/config.sub
 
 %rpmint_cflags
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--sysconfdir=/etc
 	--datadir=%{_rpmint_target_prefix}/share
@@ -119,6 +118,8 @@ for CPU in ${ALL_CPUS}; do
 		rm -f %{buildroot}%{_rpmint_bindir}/*
 	fi
 	%rpmint_make_bin_archive $CPU
+	%else
+	%{_rpmint_target_strip} %{buildroot}%{_rpmint_bindir}/* || :
 	%endif
 
 	make clean
@@ -130,6 +131,7 @@ done
 %rpmint_cflags
 
 %rpmint_strip_archives
+%{_rpmint_target_strip} %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/bin/* || :
 
 %if "%{buildtype}" == "cross"
 configured_prefix="%{_rpmint_target_prefix}"

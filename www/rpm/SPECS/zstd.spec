@@ -113,6 +113,8 @@ for CPU in ${ALL_CPUS}; do
 		rm -f %{buildroot}%{_rpmint_bindir}/*
 	fi
 	%rpmint_make_bin_archive $CPU
+	%else
+	%{_rpmint_target_strip} %{buildroot}%{_rpmint_bindir}/* || :
 	%endif
 	
 	make clean

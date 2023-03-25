@@ -48,3 +48,71 @@
  endif
  
  
+--- a/graph/x11/grx11.c.orig	2023-03-24 16:59:43.526511522 +0100
++++ b/graph/x11/grx11.c	2023-03-24 17:02:44.034338322 +0100
+@@ -683,6 +683,12 @@
+     gr_x11_convert_rgb_to_rgb8880,
+     gr_x11_convert_gray_to_rgb8880
+   };
++  static const grX11Format  gr_x11_format_rgb888X =
++  {
++    24, 32, 0xFF000000UL, 0x00FF0000L, 0x0000FF00U,
++    gr_x11_convert_rgb_to_rgb8880,
++    gr_x11_convert_gray_to_rgb8880
++  };
+ 
+ 
+   /************************************************************************/
+@@ -763,6 +769,12 @@
+     gr_x11_convert_rgb_to_rgb0888,
+     gr_x11_convert_gray_to_rgb0888
+   };
++  static const grX11Format  gr_x11_format_rgbX888 =
++  {
++    32, 32, 0x00FF0000L, 0x0000FF00U, 0x000000FF,
++    gr_x11_convert_rgb_to_rgb0888,
++    gr_x11_convert_gray_to_rgb0888
++  };
+ 
+ 
+   /************************************************************************/
+@@ -812,6 +824,12 @@
+     gr_x11_convert_rgb_to_bgr8880,
+     gr_x11_convert_gray_to_rgb8880  /* the same for bgr8880 */
+   };
++  static const grX11Format  gr_x11_format_bgr888X =
++  {
++    32, 32, 0x0000FF00U, 0x00FF0000L, 0xFF000000UL,
++    gr_x11_convert_rgb_to_bgr8880,
++    gr_x11_convert_gray_to_rgb8880  /* the same for bgr8880 */
++  };
+ 
+ 
+   /************************************************************************/
+@@ -861,6 +879,12 @@
+     gr_x11_convert_rgb_to_bgr0888,
+     gr_x11_convert_gray_to_rgb0888  /* the same for bgr0888 */
+   };
++  static const grX11Format  gr_x11_format_bgrX888 =
++  {
++    32, 32, 0x000000FF, 0x0000FF00U, 0x00FF0000L,
++    gr_x11_convert_rgb_to_bgr0888,
++    gr_x11_convert_gray_to_rgb0888  /* the same for bgr0888 */
++  };
+ 
+ 
+   /************************************************************************/
+@@ -880,9 +904,13 @@
+     &gr_x11_format_rgb888,
+     &gr_x11_format_bgr888,
+     &gr_x11_format_rgb0888,
++    &gr_x11_format_rgbX888,
+     &gr_x11_format_bgr0888,
++    &gr_x11_format_bgrX888,
+     &gr_x11_format_rgb8880,
++    &gr_x11_format_rgb888X,
+     &gr_x11_format_bgr8880,
++    &gr_x11_format_bgr888X,
+     NULL
+   };
+ 
