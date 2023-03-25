@@ -53,7 +53,7 @@ function gen_link($filename, $text, $must_exist = true)
 	
 	$stat = 0;
 	$exists = 0;
-	if ($download_dir !== '' && substr($filename, 0, strlen($download_dir)) == $download_dir)
+	if ($download_dir == '' || substr($filename, 0, strlen($download_dir)) == $download_dir)
 	{
 		$reporting = error_reporting(E_ALL & ~E_WARNING);
 		$stat = stat($filename);
@@ -63,7 +63,7 @@ function gen_link($filename, $text, $must_exist = true)
 		}
 		error_reporting($reporting);
 	}
-	if (!$exists && $rpm_dir !== '' && substr($filename, 0, strlen($rpm_dir)) == $rpm_dir)
+	if (!$exists && $rpm_dir !== null && $rpm_dir !== '' && substr($filename, 0, strlen($rpm_dir)) == $rpm_dir)
 	{
 		$reporting = error_reporting(E_ALL & ~E_WARNING);
 		$stat = stat($filename);
@@ -78,6 +78,7 @@ function gen_link($filename, $text, $must_exist = true)
 		$scheme = parse_url($filename, PHP_URL_SCHEME);
 		if ($scheme == 'http' || $scheme == 'https' || $scheme == 'ftp' || $scheme == 'ftps')
 		{
+			/* assume it exists, but avoid stat() on a slow network url */
 			$exists = 1;
 		}
 	}
@@ -111,6 +112,13 @@ function gen_link($filename, $text, $must_exist = true)
 		if ($ext_ok)
 		{
 			echo '&nbsp;<a class="listtar" href="listtar.php?filename=' . urlencode($filename) . '&local=' . ($stat ? "1" : "0") . '">&lt;file&nbsp;list&gt;</a>';
+		} else if ($stat && !is_null($rpm_dir) && fnmatch('*.rpm', $filename))
+		{
+			/* Note: $rpm_dir is only set in download area, not in the rpmdetails page,
+			   so this is used to check that we don't generate recursive links */
+			$rpm_base = implode('/', explode('/', $rpm_dir, -3));
+			// echo '&nbsp;<a class="listtar" href="' . $rpm_base . '/rpmdetails.php?file=/' . $filename . '">&lt;details&gt;</a>';
+			echo '&nbsp;<a class="listtar" href="' . $rpm_base . '/rpmdetails.php?file=' . urlencode(substr($filename, strlen($rpm_base) + 1)) . '">&lt;details&gt;</a>';
 		}
 	}
 	if (!$exists && $must_exist)
