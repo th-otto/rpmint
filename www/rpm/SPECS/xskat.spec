@@ -14,7 +14,7 @@ Name:           %{pkgname}
 %endif
 Version       : 4.0
 Release       : 2
-License       : Free
+License       : Public Domain
 Group         : X11/Games
 
 Packager:       Thorsten Otto <admin@tho-otto.de>

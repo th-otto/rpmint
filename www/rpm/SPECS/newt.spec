@@ -13,7 +13,7 @@ Name:           %{pkgname}
 %endif
 Version:        0.50
 Release:        5
-License:        LPGL
+License:        LGPL-2.0-or-later
 Group:          Applications/System
 
 Packager:       Thorsten Otto <admin@tho-otto.de>

@@ -13,7 +13,7 @@ Name:           mint-devel-%{pkgname}
 %endif
 Version:        1.0
 Release:        1
-License:        GPL
+License:        GFDL-1.3-only AND GPL-3.0-or-later AND GPL-3.0+
 Packager:       Thorsten Otto <admin@tho-otto.de>
 
 BuildRequires:  cross-mint-binutils

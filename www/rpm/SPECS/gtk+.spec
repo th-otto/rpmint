@@ -14,7 +14,7 @@ Name:           %{pkgname}
 %endif
 Version       : 1.2.8
 Release       : 2
-License       : LGPL
+License       : LGPL-2.1-or-later
 Group         : Development/Libraries
 
 Packager      : Thorsten Otto <admin@tho-otto.de>

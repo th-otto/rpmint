@@ -13,7 +13,7 @@ Name:           %{pkgname}
 %endif
 Version:        1.16
 Release:        2
-License:        LPGL
+License:        MIT
 Group:          System Environment/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>

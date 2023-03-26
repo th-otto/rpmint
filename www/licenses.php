@@ -512,6 +512,7 @@ class License {
 	
 		/* deprecated identifiers */
 		'Public Domain' => [ 'id' => 'Public Domain', 'fullname' => 'Public Domain', 'href' => 'PD.html', 'free' => false, 'osi' => false ],
+		'Shareware' => [ 'id' => 'Shareware', 'fullname' => 'Shareware', 'href' => 'Shareware.html', 'free' => false, 'osi' => false ],
 		'AGPL-1.0' => [ 'id' => 'AGPL-1.0', 'fullname' => 'Affero General Public License v1.0', 'href' => 'AGPL-1.0.html', 'free' => false, 'osi' => false ],
 		'AGPL-3.0' => [ 'id' => 'AGPL-3.0', 'fullname' => 'GNU Affero General Public License v3.0', 'href' => 'AGPL-3.0.html', 'free' => true, 'osi' => true ],
 		'BSD-2-Clause-FreeBSD' => [ 'id' => 'BSD-2-Clause-FreeBSD', 'fullname' => 'BSD 2-Clause FreeBSD License', 'href' => 'BSD-2-Clause-FreeBSD.html', 'free' => true, 'osi' => true ],
@@ -601,32 +602,59 @@ class License {
 	{
 		if ($license !== '')
 		{
-			$exception = '';
-			if (preg_match('/(.*) WITH (.*)/', $license, $match, PREG_OFFSET_CAPTURE))
-			{
-				$license = $match[1][0];
-				$exception = $match[2][0];
-				if (array_key_exists($exception, self::$license_exceptions))
-				{
-					$exception = substr($exception, 0, $match[2][0]) . '<a href="' . self::$spdx_org . self::$license_exceptions[$exception]['href'] . '">' . $exception . '</a>';
-				}
-			}
 			$orig_license = $license;
 			foreach (array_reverse(preg_split('/( OR | AND | or | and )/', $orig_license, 0, PREG_SPLIT_OFFSET_CAPTURE)) as $l)
 			{
 				$k = str_replace('(', '', $l[0]);
 				$k = str_replace(')', '', $k);
+				$exception = '';
+				if (preg_match('/(.*) WITH (.*)/', $k, $match, PREG_OFFSET_CAPTURE))
+				{
+					$k = $match[1][0];
+					$exception = $match[2][0];
+					if (array_key_exists($exception, self::$license_exceptions))
+					{
+						$exception = '<a href="' . self::$spdx_org . self::$license_exceptions[$exception]['href'] . '">' . $exception . '</a>';
+					}
+					$exception = ' WITH ' . $exception;
+				}
 				if (array_key_exists($k, self::$licenses))
 				{
-					$license = substr($license, 0, $l[1]) . '<a href="' . self::$spdx_org . self::$licenses[$k]['href'] . '">' . htmlspecialchars($l[0]) . '</a>' . substr($license, $l[1] + strlen($l[0]));
+					$license = substr($license, 0, $l[1]) . '<a href="' . self::$spdx_org . self::$licenses[$k]['href'] . '">' . htmlspecialchars($k) . '</a>' . $exception . substr($license, $l[1] + strlen($l[0]));
 				}
 			}
-			if ($exception !== '')
-				$license .= ' WITH ' . $exception;
 		}
 		return $license;
+	}
+
+
+	static function check(string $filename, string $license) : bool
+	{
+		if ($license !== '')
+		{
+			$orig_license = $license;
+			foreach (array_reverse(preg_split('/( OR | AND | or | and )/', $orig_license, 0, PREG_SPLIT_OFFSET_CAPTURE)) as $l)
+			{
+				$k = str_replace('(', '', $l[0]);
+				$k = str_replace(')', '', $k);
+				$exception = '';
+				if (preg_match('/(.*) WITH (.*)/', $k, $match, PREG_OFFSET_CAPTURE))
+				{
+					$k = $match[1][0];
+					$exception = $match[2][0];
+					if (!array_key_exists($exception, self::$license_exceptions))
+					{
+						fprintf(STDERR, "%s: unknown license exception %s\n", $filename, $exception);
+					}
+				}
+				if (!array_key_exists($k, self::$licenses))
+				{
+					fprintf(STDERR, "%s: unknown SPDX license identifer %s\n", $filename, $k);
+				}
+			}
+		}
+		return true;
 	}
 }
 
 ?>
-

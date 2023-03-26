@@ -14,7 +14,8 @@ Name:           %{pkgname}
 %endif
 Version       : 2.0
 Release       : 3
-License       : GPL, URW holds copyright
+License       : GPL-2.0-or-later
+# URW holds copyright
 Group         : User Interface/X
 
 Packager      : Thorsten Otto <admin@tho-otto.de>

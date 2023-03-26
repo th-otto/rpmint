@@ -13,7 +13,7 @@ Name:           %{pkgname}
 %endif
 Version:        1.0.8
 Release:        1
-License:        BSD
+License:        BSD-3-Clause
 Group:          Productivity/Archiving/Compression
 
 Packager:       Thorsten Otto <admin@tho-otto.de>

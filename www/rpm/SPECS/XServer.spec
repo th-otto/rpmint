@@ -13,7 +13,7 @@ Name:           %{pkgname}
 %endif
 Version       : 0.14
 Release       : 1
-License       : GPL
+License       : GPL-2.0-or-later
 Group         : User Interface/X
 
 Packager      : Ralph Lowinski <AltF4@freemint.de>

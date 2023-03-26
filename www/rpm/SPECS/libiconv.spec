@@ -13,7 +13,7 @@ Name:           %{pkgname}
 %endif
 Version:        1.17
 Release:        1
-License:        LGPL
+License:        LGPL-2.1-or-later AND GPL-3.0-or-later
 Group:          System/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
@@ -113,19 +113,12 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files
 %defattr(-,root,root)
-%if "%{buildtype}" == "cross"
-%{_rpmint_includedir}
-%{_rpmint_libdir}
-%{_rpmint_bindir}/*
-%{_rpmint_mandir}
-%{_rpmint_docdir}
-%else
-%{_rpmint_target_prefix}/include
-%{_rpmint_target_prefix}/lib
-%{_rpmint_target_prefix}/bin/*
-%{_rpmint_target_prefix}/share/man
-%{_rpmint_target_prefix}/share/doc
-%endif
+%{_isysroot}%{_rpmint_target_prefix}/include
+%{_isysroot}%{_rpmint_target_prefix}/lib
+%{_isysroot}%{_rpmint_target_prefix}/bin/*
+%{_isysroot}%{_rpmint_target_prefix}/share/man
+%{_isysroot}%{_rpmint_target_prefix}/share/doc
+%{_isysroot}%{_rpmint_target_prefix}/share/locale
 
 
 

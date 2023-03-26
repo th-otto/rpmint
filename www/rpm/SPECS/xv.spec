@@ -19,6 +19,7 @@ Group         : Applications/Graphics
 
 Packager      : Thorsten Otto <admin@tho-otto.de>
 URL           : http://www.trilon.com/xv/xv.html
+# http://www.gregroelofs.com/greg_xv.html
 
 %if "%{buildtype}" == "cross"
 BuildRequires : cross-mint-XFree86-devel

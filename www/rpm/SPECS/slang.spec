@@ -13,7 +13,7 @@ Name:           %{pkgname}
 %endif
 Version:        1.4.9
 Release:        2
-License:        PGL
+License:        GPL-3.0-or-later OR Artistic-1.0
 Group:          System Environment/Libraries
 
 Packager:       Thorsten Otto <admin@tho-otto.de>

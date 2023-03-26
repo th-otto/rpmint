@@ -16,7 +16,7 @@ Name:           %{pkgname}
 %endif
 Version: 1.2.8
 Release: 2
-License: LGPL
+License: LGPL-2.1-or-later
 Group: Libraries
 Source0: https://download.gnome.org/sources/%{pkgname}/1.2/%{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub

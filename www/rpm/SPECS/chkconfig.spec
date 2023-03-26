@@ -13,7 +13,7 @@ Name:           %{pkgname}
 Version:        1.0.7
 Release:        3
 Summary:        A system tool for maintaining the /etc/rc.d hierarchy.
-License:        GPL
+License:        GPL-2.0-or-later
 Group:          System/Base
 Source:         ftp://ftp.redhat.com/pub/redhat/code/chkconfig/chkconfig-%{version}.tar.gz
 Patch0:         patches/%{pkgname}/chkconfig-nommap.patch

@@ -13,7 +13,7 @@ Name:           %{pkgname}
 %endif
 Version       : 1.7
 Release       : 3
-License       : GPL
+License       : GPL-2.0-or-later
 Group         : System Environment/Base
 
 Requires      : XFree86-xfs
