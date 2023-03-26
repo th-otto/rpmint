@@ -70,6 +70,7 @@ aclocal || exit 1
 autoconf || exit 1
 autoheader || exit 1
 automake --force --copy --add-missing || exit 1
+rm -rf autom4te.cache
 rm -f config.sub
 cp %{S:1} config.sub
 

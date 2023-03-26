@@ -1620,7 +1620,7 @@ foreach ($libpackages as $package)
 			echo '<table><tr><td>';
 			echo '<img class="smallicon" src="images/rpm.png" width="16" height="16" alt="RPM"></img>' . "\n";
 			echo '</td><td>';
-			$filename = $rpm_dir . 'cross-mint-' . $package['name'] . '-devel-' . $package['version'] . '-' . $package['rpm'] . '.noarch.rpm';
+			$filename = $rpm_dir . 'cross-mint-' . $package['name'] . (!isset($package['bin']) || !$package['bin'] ? '-devel' : '') . '-' . $package['version'] . '-' . $package['rpm'] . '.noarch.rpm';
 			$text = $package['name'] . '-' . $package['version'] . '.rpm';
 			gen_link($filename, $text);
 			echo '</td></tr></table>';
@@ -1670,6 +1670,20 @@ foreach ($libpackages as $package)
 		gen_link($filename, $text);
 		echo '</td>' . "\n";
 		echo '<td class="sourcelink">';
+		if (isset($package['rpm']) && $package['rpm'] !== '')
+		{
+			echo '<tr><td></td>';
+			echo '<td class="sourcelink">';
+			echo '<table><tr><td>';
+			echo '<img class="smallicon" src="images/rpm.png" width="16" height="16" alt="RPM"></img>' . "\n";
+			echo '</td><td>';
+			$filename = $rpm_dir . 'cross-mint-' . $package['name'] . '-' . $package['version'] . '-' . $package['rpm'] . '.noarch.rpm';
+			$text = $package['name'] . '-' . $package['version'] . '.rpm';
+			gen_link($filename, $text);
+			echo '</td></tr></table>';
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+		}
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
 	}
