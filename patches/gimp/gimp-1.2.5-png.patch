@@ -1,0 +1,490 @@
+--- gimp-1.2.5.orig/plug-ins/common/png.c	2003-05-08 23:34:37.000000000 +0200
++++ gimp-1.2.5/plug-ins/common/png.c	2023-03-27 06:00:44.541158987 +0200
+@@ -44,6 +44,7 @@
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <string.h>
+ #include <time.h>
+ 
+ #include <gtk/gtk.h>
+@@ -52,6 +53,7 @@
+ #include <libgimp/gimpui.h>
+ 
+ #include <png.h>                /* PNG library definitions */
++#include <setjmp.h>
+ 
+ #include "libgimp/stdplugins-intl.h"
+ 
+@@ -132,6 +134,23 @@
+ };
+ 
+ static gboolean runme = FALSE;
++static jmp_buf ejmpbuf;
++
++static void png_gimp_error(png_struct *png_ptr, const char *message)
++{
++  (void)png_ptr;
++  (void)message;
++  longjmp(ejmpbuf, 1);
++}
++
++
++static void png_gimp_warning(png_struct *png_ptr, const char *message)
++{
++  (void)message;
++  if (!png_ptr)
++    return;
++}
++
+ 
+ /*
+  * 'main()' - Main entry - just call gimp_main()...
+@@ -379,7 +398,7 @@
+               if (pngvals.compression_level < 0 ||
+                   pngvals.compression_level > 9)
+                 status = GIMP_PDB_CALLING_ERROR;
+-            };
++            }
+           break;
+ 
+         case GIMP_RUN_WITH_LAST_VALS:
+@@ -391,7 +410,7 @@
+ 
+         default:
+           break;
+-        };
++        }
+ 
+       if (status == GIMP_PDB_SUCCESS)
+         {
+@@ -449,23 +468,19 @@
+   gchar         *progress;      /* Title for progress display... */
+   guchar        alpha[256],     /* Index -> Alpha */
+                 *alpha_ptr;     /* Temporary pointer */
++  png_uint_32 width, height;
++  int bit_depth, color_type, interlace_method, compression_method, filter_method;
++  int channels;
+ 
+  /*
+   * PNG 0.89 and newer have a sane, forwards compatible constructor.
+   * Some SGI IRIX users will not have a new enough version though
+   */
+ 
+-#if PNG_LIBPNG_VER > 88
+-  pp   = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
++  pp   = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, png_gimp_error, png_gimp_warning);
+   info = png_create_info_struct(pp);
+-#else
+-  pp = (png_structp)calloc(sizeof(png_struct), 1);
+-  png_read_init(pp);
+ 
+-  info = (png_infop)calloc(sizeof(png_info), 1);
+-#endif /* PNG_LIBPNG_VER > 88 */
+-
+-  if (setjmp (pp->jmpbuf))
++  if (setjmp (ejmpbuf))
+   {
+     g_message (_("%s\nPNG error. File corrupted?"), filename);
+     return image;
+@@ -502,20 +517,21 @@
+   */
+ 
+   png_read_info(pp, info);
++  png_get_IHDR(pp, info, &width, &height, &bit_depth, &color_type, &interlace_method, &compression_method, &filter_method);
+ 
+  /*
+   * Latest attempt, this should be my best yet :)
+   */
+ 
+-  if (info->bit_depth == 16) {
++  if (bit_depth == 16) {
+     png_set_strip_16(pp);
+   }
+ 
+-  if (info->color_type == PNG_COLOR_TYPE_GRAY && info->bit_depth < 8) {
++  if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) {
+     png_set_expand(pp);
+   }
+ 
+-  if (info->color_type == PNG_COLOR_TYPE_PALETTE && info->bit_depth < 8) {
++  if (color_type == PNG_COLOR_TYPE_PALETTE && bit_depth < 8) {
+     png_set_packing(pp);
+   }
+ 
+@@ -523,8 +539,8 @@
+   * Expand G+tRNS to GA, RGB+tRNS to RGBA
+   */
+ 
+-  if (info->color_type != PNG_COLOR_TYPE_PALETTE &&
+-                       (info->valid & PNG_INFO_tRNS)) {
++  if (color_type != PNG_COLOR_TYPE_PALETTE &&
++                       png_get_valid(pp, info, PNG_INFO_tRNS)) {
+     png_set_expand(pp);
+   }
+ 
+@@ -539,9 +555,8 @@
+   * Special handling for INDEXED + tRNS (transparency palette)
+   */
+ 
+-#if PNG_LIBPNG_VER > 99
+   if (png_get_valid(pp, info, PNG_INFO_tRNS) &&
+-      info->color_type == PNG_COLOR_TYPE_PALETTE)
++      color_type == PNG_COLOR_TYPE_PALETTE)
+   {
+     png_get_tRNS(pp, info, &alpha_ptr, &num, NULL);
+     /* Copy the existing alpha values from the tRNS chunk */
+@@ -554,9 +569,6 @@
+   } else {
+     trns= 0;
+   }
+-#else
+-    trns= 0;
+-#endif /* PNG_LIBPNG_VER > 99 */
+ 
+  /*
+   * Update the info structures after the transformations take effect
+@@ -564,7 +576,7 @@
+ 
+   png_read_update_info(pp, info);
+   
+-  switch (info->color_type)
++  switch (color_type)
+   {
+     case PNG_COLOR_TYPE_RGB :           /* RGB */
+         bpp        = 3;
+@@ -598,20 +610,20 @@
+     default:                            /* Aie! Unknown type */
+         g_message (_("%s\nPNG unknown color model"), filename);
+         return -1;
+-  };
++  }
+ 
+-  image = gimp_image_new(info->width, info->height, image_type);
++  image = gimp_image_new(width, height, image_type);
+   if (image == -1)
+   {
+     g_message("Can't allocate new image\n%s", filename);
+     gimp_quit();
+-  };
++  }
+ 
+  /*
+   * Create the "background" layer to hold the image...
+   */
+ 
+-  layer = gimp_layer_new(image, _("Background"), info->width, info->height,
++  layer = gimp_layer_new(image, _("Background"), width, height,
+                          layer_type, 100, GIMP_NORMAL_MODE);
+   gimp_image_add_layer(image, layer, 0);
+ 
+@@ -621,7 +633,6 @@
+    * due to a bug in libpng-1.0.6, see png-implement for details
+    */
+ 
+-#if PNG_LIBPNG_VER > 99
+   if (png_get_valid(pp, info, PNG_INFO_gAMA)) {
+     /* I sure would like to handle this, but there's no mechanism to
+        do so in Gimp :( */
+@@ -635,7 +646,6 @@
+          ((double) png_get_x_pixels_per_meter(pp, info)) * 0.0254,
+          ((double) png_get_y_pixels_per_meter(pp, info)) * 0.0254);
+   }
+-#endif /* PNG_LIBPNG_VER > 99 */
+ 
+   gimp_image_set_filename(image, filename);
+ 
+@@ -645,21 +655,20 @@
+ 
+   empty= 0; /* by default assume no full transparent palette entries */
+ 
+-  if (info->color_type & PNG_COLOR_MASK_PALETTE) {
+-
+-#if PNG_LIBPNG_VER > 99
++  if (color_type & PNG_COLOR_MASK_PALETTE) {
++    png_colorp palette;
++    int num_palette;
++    
++    png_get_PLTE(pp, info, &palette, &num_palette);
+     if (png_get_valid(pp, info, PNG_INFO_tRNS)) {
+       for (empty= 0; empty < 256 && alpha[empty] == 0; ++empty);
+         /* Calculates number of fully transparent "empty" entries */
+ 
+-      gimp_image_set_cmap(image, (guchar *) (info->palette + empty),
+-                          info->num_palette - empty);
++      gimp_image_set_cmap(image, (guchar *) (palette + empty),
++                          num_palette - empty);
+     } else {
+-      gimp_image_set_cmap(image, (guchar *)info->palette, info->num_palette);
++      gimp_image_set_cmap(image, (guchar *)palette, num_palette);
+     }
+-#else
+-    gimp_image_set_cmap(image, (guchar *)info->palette, info->num_palette);
+-#endif /* PNG_LIBPNG_VER > 99 */
+ 
+   }
+ 
+@@ -677,11 +686,12 @@
+   */
+ 
+   tile_height = gimp_tile_height ();
+-  pixel       = g_new(guchar, tile_height * info->width * bpp);
++  pixel       = g_new(guchar, tile_height * width * bpp);
+   pixels      = g_new(guchar *, tile_height);
+ 
++  channels = png_get_channels(pp, info);
+   for (i = 0; i < tile_height; i ++)
+-    pixels[i] = pixel + info->width * info->channels * i;
++    pixels[i] = pixel + width * channels * i;
+ 
+   for (pass = 0; pass < num_passes; pass ++)
+   {
+@@ -690,11 +700,11 @@
+     */
+ 
+     for (begin = 0, end = tile_height;
+-         begin < info->height;
++         begin < height;
+          begin += tile_height, end += tile_height)
+     {
+-      if (end > info->height)
+-        end = info->height;
++      if (end > height)
++        end = height;
+ 
+       num = end - begin;
+         
+@@ -707,24 +717,20 @@
+       gimp_pixel_rgn_set_rect(&pixel_rgn, pixel, 0, begin,
+                               drawable->width, num);
+ 
+-      gimp_progress_update(((double)pass + (double)end / (double)info->height) /
++      gimp_progress_update(((double)pass + (double)end / (double)height) /
+                            (double)num_passes);
+-    };
+-  };
++    }
++  }
+ 
+  /*
+   * Done with the file...
+   */
+ 
+   png_read_end(pp, info);
+-#if PNG_LIBPNG_VER < 10200      /* ?? Anyway, this function isn't in 1.2.0*/
+-  png_read_destroy(pp, info, NULL);
+-#endif
++  png_destroy_read_struct(&pp, &info, NULL);
+ 
+   g_free(pixel);
+   g_free(pixels);
+-  free(pp);
+-  free(info);
+ 
+   fclose(fp);
+ 
+@@ -808,23 +814,21 @@
+   struct tm     *gmt;           /* GMT broken down */
+ 
+   guchar remap [256];    /* Re-mapping for the palette */
++  int color_type;
++  int bit_depth;
++  int interlace_type;
++  png_colorp palette = 0;
++  int num_palette = 0;
+ 
+  /*
+   * PNG 0.89 and newer have a sane, forwards compatible constructor.
+   * Some SGI IRIX users will not have a new enough version though
+   */
+ 
+-#if PNG_LIBPNG_VER > 88
+-  pp   = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
++  pp   = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, png_gimp_error, png_gimp_warning);
+   info = png_create_info_struct(pp);
+-#else
+-  pp = (png_structp)calloc(sizeof(png_struct), 1);
+-  png_write_init(pp);
+ 
+-  info = (png_infop)calloc(sizeof(png_info), 1);
+-#endif /* PNG_LIBPNG_VER > 88 */
+-
+-  if (setjmp (pp->jmpbuf))
++  if (setjmp (ejmpbuf))
+   {
+     g_message (_("%s\nPNG error. Couldn't save image"), filename);
+     return 0;
+@@ -863,10 +867,8 @@
+ 
+   png_set_compression_level (pp, pngvals.compression_level);
+ 
+-  info->width          = drawable->width;
+-  info->height         = drawable->height;
+-  info->bit_depth      = 8;
+-  info->interlace_type = pngvals.interlaced;
++  bit_depth      = 8;
++  interlace_type = pngvals.interlaced;
+ 
+  /* 
+   * Initialise remap[]
+@@ -883,56 +885,57 @@
+   switch (type)
+   {
+     case GIMP_RGB_IMAGE :
+-        info->color_type = PNG_COLOR_TYPE_RGB;
++        color_type = PNG_COLOR_TYPE_RGB;
+         bpp              = 3;
+         break;
+     case GIMP_RGBA_IMAGE :
+-        info->color_type = PNG_COLOR_TYPE_RGB_ALPHA;
++        color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+         bpp              = 4;
+         break;
+     case GIMP_GRAY_IMAGE :
+-        info->color_type = PNG_COLOR_TYPE_GRAY;
++        color_type = PNG_COLOR_TYPE_GRAY;
+         bpp              = 1;
+         break;
+     case GIMP_GRAYA_IMAGE :
+-        info->color_type = PNG_COLOR_TYPE_GRAY_ALPHA;
++        color_type = PNG_COLOR_TYPE_GRAY_ALPHA;
+         bpp              = 2;
+         break;
+     case GIMP_INDEXED_IMAGE :
+         bpp              = 1;
+-        info->color_type = PNG_COLOR_TYPE_PALETTE;
+-        info->valid      |= PNG_INFO_PLTE;
+-        info->palette= (png_colorp) gimp_image_get_cmap(image_ID, &num_colors);
+-        info->num_palette= num_colors;
++        color_type = PNG_COLOR_TYPE_PALETTE;
++        palette= (png_colorp) gimp_image_get_cmap(image_ID, &num_colors);
++        num_palette= num_colors;
++        png_set_PLTE(pp, info, palette, num_palette);
+         break;
+     case GIMP_INDEXEDA_IMAGE :
+         bpp              = 2;
+-        info->color_type = PNG_COLOR_TYPE_PALETTE;
++        color_type = PNG_COLOR_TYPE_PALETTE;
+         respin_cmap (pp, info, remap, image_ID, drawable); /* fix up transparency */
+         break;
+     default:
+         g_message ("%s\nImage type can't be saved as PNG", filename);
+         return 0;
+-  };
++  }
+ 
+  /*
+   * Fix bit depths for (possibly) smaller colormap images
+   */
+   
+-  if (info->valid & PNG_INFO_PLTE) {
+-    if (info->num_palette <= 2)
+-      info->bit_depth= 1;
+-    else if (info->num_palette <= 4)
+-      info->bit_depth= 2;
+-    else if (info->num_palette <= 16)
+-      info->bit_depth= 4;
++  if (png_get_valid(pp, info, PNG_INFO_PLTE)) {
++    if (num_palette <= 2)
++      bit_depth= 1;
++    else if (num_palette <= 4)
++      bit_depth= 2;
++    else if (num_palette <= 16)
++      bit_depth= 4;
+     /* otherwise the default is fine */
+   }
+ 
++  png_set_IHDR(pp, info, drawable->width, drawable->height, bit_depth, color_type, interlace_type, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
++
+   /* All this stuff is optional extras, if the user is aiming for smallest
+      possible file size she can turn them all off */
+ 
+-#if PNG_LIBPNG_VER > 99
+   if (pngvals.bkgd) {
+     gimp_palette_get_background(&red, &green, &blue);
+       
+@@ -974,8 +977,6 @@
+     png_set_tIME(pp, info, &mod_time);
+   }
+ 
+-#endif /* PNG_LIBPNG_VER > 99 */
+-
+   png_write_info (pp, info);
+ 
+  /*
+@@ -991,7 +992,7 @@
+   * Convert unpacked pixels to packed if necessary
+   */
+ 
+-  if (info->color_type == PNG_COLOR_TYPE_PALETTE && info->bit_depth < 8)
++  if (color_type == PNG_COLOR_TYPE_PALETTE && bit_depth < 8)
+     png_set_packing(pp);
+ 
+  /*
+@@ -1021,7 +1022,7 @@
+         num = end - begin;
+         
+         gimp_pixel_rgn_get_rect (&pixel_rgn, pixel, 0, begin, drawable->width, num);
+-        if (info->valid & PNG_INFO_tRNS) 
++        if (png_get_valid(pp, info, PNG_INFO_tRNS))
+           {
+             for (i = 0; i < num; ++i) 
+               {
+@@ -1036,7 +1037,7 @@
+               }
+             /* Forgot this case before, what if there are too many colors? */
+           } 
+-        else if (info->valid & PNG_INFO_PLTE && bpp == 2) 
++        else if (png_get_valid(pp, info, PNG_INFO_PLTE) && bpp == 2) 
+           {
+             for (i = 0; i < num; ++i) 
+               {
+@@ -1051,14 +1052,12 @@
+         png_write_rows (pp, pixels, num);
+         
+         gimp_progress_update (((double)pass + (double)end /
+-                    (double)info->height) / (double)num_passes);
+-      };
+-  };
++                    (double)drawable->height) / (double)num_passes);
++      }
++  }
+ 
+   png_write_end (pp, info);
+-#if PNG_LIBPNG_VER < 10200      /* ?? Anyway, this function isn't in 1.2.0*/
+-  png_write_destroy (pp);
+-#endif
++  png_destroy_write_struct (&pp, &info);
+ 
+   g_free (pixel);
+   g_free (pixels);
+@@ -1067,9 +1066,6 @@
+   * Done with the file...
+   */
+ 
+-  free (pp);
+-  free (info);
+-
+   fclose (fp);
+ 
+   return (1);
+@@ -1120,7 +1116,6 @@
+                                       drawable->width * drawable->height,
+                                       &colors);
+   
+-#if PNG_LIBPNG_VER > 99
+   if (transparent != -1)  /* we have a winner for a transparent 
+                            * index - do like gif2png and swap 
+                            * index 0 and index transparent */
+@@ -1159,11 +1154,6 @@
+       g_message ( _("Couldn't losslessly save transparency, saving opacity instead.\n"));
+       png_set_PLTE (pp, info, (png_colorp) before, colors);
+     }
+-#else
+-  info->valid     |= PNG_INFO_PLTE;
+-  info->palette=     (png_colorp) before;
+-  info->num_palette= colors;
+-#endif /* PNG_LIBPNG_VER > 99 */
+  
+   g_free (pixels);
+ 

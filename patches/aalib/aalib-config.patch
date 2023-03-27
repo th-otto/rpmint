@@ -1,0 +1,22 @@
+diff -rup aalib-1.4.0.orig/configure.in aalib-1.4.0/configure.in
+--- aalib-1.4.0.orig/configure.in	2001-04-26 16:37:53.000000000 +0200
++++ aalib-1.4.0/configure.in	2023-03-26 17:21:04.715036061 +0200
+@@ -37,13 +37,14 @@ AC_PROG_CC
+ AM_PROG_LIBTOOL
+ AC_PROG_MAKE_SET
+ AC_PROG_INSTALL
++AC_CANONICAL_TARGET
++
++case $target in
++    *-*-linux*) system=Linux ;;
++esac
+ 
+ dnl detect OS
+ 
+-AC_CHECK_PROG(system,uname,`uname`,unknown)
+-if test "x$system" = xLinux; then
+-AC_CHECK_PROG(machine,uname,`uname --machine`,unknown)
+-fi
+ AC_HEADER_STDC
+ AC_CHECK_LIB(m, pow)
+ 

@@ -1,0 +1,2849 @@
+diff -rupN gimp-1.2.5.orig/acinclude.m4 gimp-1.2.5/acinclude.m4
+--- gimp-1.2.5.orig/acinclude.m4	2002-02-02 23:39:20.000000000 +0100
++++ gimp-1.2.5/acinclude.m4	2023-03-26 19:00:59.841193092 +0200
+@@ -6,7 +6,7 @@
+ dnl PKG_CHECK_MODULES(GSTUFF, gtk+-2.0 >= 1.3 glib = 1.3.4, action-if, action-not)
+ dnl defines GSTUFF_LIBS, GSTUFF_CFLAGS, see pkg-config man page
+ dnl also defines GSTUFF_PKG_ERRORS on error
+-AC_DEFUN(PKG_CHECK_MODULES, [
++AC_DEFUN([PKG_CHECK_MODULES], [
+   succeeded=no
+ 
+   if test -z "$PKG_CONFIG"; then
+@@ -77,9 +77,7 @@ AC_DEFUN(PKG_CHECK_MODULES, [
+ # once we've installed glib-gettext.m4 ]
+ #
+ 
+-# serial 5
+-
+-AC_DEFUN(AM_GLIB_WITH_NLS,
++AC_DEFUN([AM_GLIB_WITH_NLS],
+   dnl NLS is obligatory
+   [USE_NLS=yes
+     AC_SUBST(USE_NLS)
+@@ -99,7 +97,7 @@ AC_DEFUN(AM_GLIB_WITH_NLS,
+ 
+       AC_CHECK_HEADER(libintl.h,
+         [AC_CACHE_CHECK([for dgettext in libc], gt_cv_func_dgettext_libc,
+-	  [AC_TRY_LINK([#include <libintl.h>], [return (int) dgettext ("","")],
++	  [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <libintl.h>]], [[return (int) dgettext ("","")]])],
+ 	    gt_cv_func_dgettext_libc=yes, gt_cv_func_dgettext_libc=no)])
+ 
+ 	  if test "$gt_cv_func_dgettext_libc" != "yes"; then
+@@ -108,12 +106,14 @@ AC_DEFUN(AM_GLIB_WITH_NLS,
+ 	        gt_cv_func_dgettext_libintl,
+ 	        [AC_CHECK_LIB(intl, dgettext,
+ 		  gt_cv_func_dgettext_libintl=yes,
+-		  gt_cv_func_dgettext_libintl=no)],
+-	        gt_cv_func_dgettext_libintl=no)])
++		  gt_cv_func_dgettext_libintl=no),
++		  -liconv],
++	        gt_cv_func_dgettext_libintl=no)],
++	        [:],-liconv)
+ 	  fi
+ 
+           if test "$gt_cv_func_dgettext_libintl" = "yes"; then
+-	    LIBS="$LIBS -lintl";
++	    LIBS="$LIBS -lintl -iconv";
+           fi
+ 
+ 	  if test "$gt_cv_func_dgettext_libc" = "yes" \
+@@ -126,8 +126,8 @@ AC_DEFUN(AM_GLIB_WITH_NLS,
+ 	      AC_PATH_PROG(GMSGFMT, gmsgfmt, $MSGFMT)
+ 	      AM_PATH_PROG_WITH_TEST(XGETTEXT, xgettext,
+ 	        [test -z "`$ac_dir/$ac_word -h 2>&1 | grep '(HELP)'`"], :)
+-	      AC_TRY_LINK(, [extern int _nl_msg_cat_cntr;
+-		 	     return _nl_msg_cat_cntr],
++	      AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[extern int _nl_msg_cat_cntr;
++		 	     return _nl_msg_cat_cntr]])],
+ 	        [CATOBJEXT=.gmo
+ 	         DATADIRNAME=share],
+ 	        [CATOBJEXT=.mo
+@@ -140,7 +140,7 @@ AC_DEFUN(AM_GLIB_WITH_NLS,
+ 	  if test "$gt_cv_func_dgettext_libc" != "yes" \
+ 	    && test "$gt_cv_func_dgettext_libintl" = "yes"; then
+ 	    INTLLIBS=-lintl
+-	    LIBS=`echo $LIBS | sed -e 's/-lintl//'`
++	    LIBS=`echo $LIBS | sed -e 's/-lintl//' | sed -e 's/-liconv//'`
+ 	  fi
+       ])
+ 
+@@ -174,10 +174,10 @@ AC_DEFUN(AM_GLIB_WITH_NLS,
+     # We need to process the po/ directory.
+     POSUB=po
+ 
+-    AC_OUTPUT_COMMANDS(
+-      [case "$CONFIG_FILES" in *po/Makefile.in*)
++    AC_CONFIG_COMMANDS([nls],
++      [[case "$CONFIG_FILES" in *po/Makefile.in*)
+         sed -e "/POTFILES =/r po/POTFILES" po/Makefile.in > po/Makefile
+-      esac])
++      esac]])
+ 
+     dnl These rules are solely for the distribution goal.  While doing this
+     dnl we only have to keep exactly one list of the available catalogs
+@@ -200,11 +200,10 @@ AC_DEFUN(AM_GLIB_WITH_NLS,
+     AC_SUBST(POSUB)
+   ])
+ 
+-AC_DEFUN(AM_GLIB_GNU_GETTEXT,
++AC_DEFUN([AM_GLIB_GNU_GETTEXT],
+   [AC_REQUIRE([AC_PROG_MAKE_SET])dnl
+    AC_REQUIRE([AC_PROG_CC])dnl
+    AC_REQUIRE([AC_PROG_RANLIB])dnl
+-   AC_REQUIRE([AC_HEADER_STDC])dnl
+    AC_REQUIRE([AC_C_CONST])dnl
+    AC_REQUIRE([AC_C_INLINE])dnl
+    AC_REQUIRE([AC_TYPE_OFF_T])dnl
+@@ -282,3 +281,626 @@ strdup __argz_count __argz_stringify __a
+ 	< $srcdir/po/POTFILES.in > po/POTFILES
+   ])
+ 
++# Configure paths for GTK+
++# Owen Taylor     97-11-3
++
++dnl AM_PATH_GTK([MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND [, MODULES]]]])
++dnl Test for GTK, and define GTK_CFLAGS and GTK_LIBS
++dnl
++AC_DEFUN([AM_PATH_GTK],
++[dnl 
++dnl Get the cflags and libraries from the gtk-config script
++dnl
++AC_ARG_WITH(gtk-prefix,[  --with-gtk-prefix=PFX   Prefix where GTK is installed (optional)],
++            gtk_config_prefix="$withval", gtk_config_prefix="")
++AC_ARG_WITH(gtk-exec-prefix,[  --with-gtk-exec-prefix=PFX Exec prefix where GTK is installed (optional)],
++            gtk_config_exec_prefix="$withval", gtk_config_exec_prefix="")
++AC_ARG_ENABLE(gtktest, [  --disable-gtktest       Do not try to compile and run a test GTK program],
++		    , enable_gtktest=yes)
++
++  for module in gtk+ gmodule $4
++  do
++      case "$module" in
++         gtk+|glib|gthread|gmodule)
++             gtk_config_args="$gtk_config_args $module"
++         ;;
++      esac
++  done
++
++  if test x$gtk_config_exec_prefix != x ; then
++     gtk_config_args="$gtk_config_args --exec-prefix=$gtk_config_exec_prefix"
++  fi
++  if test x$gtk_config_prefix != x ; then
++     gtk_config_args="$gtk_config_args --prefix=$gtk_config_prefix"
++  fi
++
++  min_gtk_version=ifelse([$1], ,0.99.7,$1)
++  AC_MSG_CHECKING(for GTK - version >= $min_gtk_version)
++  no_gtk=""
++  if test "" = "no" ; then
++    no_gtk=yes
++  else
++    GTK_CFLAGS=`pkg-config --cflags $gtk_config_args`
++    GTK_LIBS=`pkg-config --libs $gtk_config_args`
++    gtk_config_major_version=`pkg-config --modversion gtk+ | \
++           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\1/'`
++    gtk_config_minor_version=`pkg-config --modversion gtk+ | \
++           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\2/'`
++    gtk_config_micro_version=`pkg-config --modversion gtk+ | \
++           sed 's/\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\)/\3/'`
++    if test "x$enable_gtktest" = "xyes" ; then
++      ac_save_CFLAGS="$CFLAGS"
++      ac_save_LIBS="$LIBS"
++      CFLAGS="$CFLAGS $GTK_CFLAGS"
++      LIBS="$GTK_LIBS $LIBS"
++dnl
++dnl Now check if the installed GTK is sufficiently new. (Also sanity
++dnl checks the results of gtk-config to some extent
++dnl
++      rm -f conf.gtktest
++      AC_RUN_IFELSE([AC_LANG_SOURCE([[
++#include <gtk/gtk.h>
++#include <stdio.h>
++#include <stdlib.h>
++
++int 
++main ()
++{
++  int major, minor, micro;
++  char *tmp_version;
++
++  system ("touch conf.gtktest");
++
++  /* HP/UX 9 (%@#!) writes to sscanf strings */
++  tmp_version = g_strdup("$min_gtk_version");
++  if (sscanf(tmp_version, "%d.%d.%d", &major, &minor, &micro) != 3) {
++     printf("%s, bad version string\n", "$min_gtk_version");
++     exit(1);
++   }
++
++  if ((gtk_major_version != $gtk_config_major_version) ||
++      (gtk_minor_version != $gtk_config_minor_version) ||
++      (gtk_micro_version != $gtk_config_micro_version))
++    {
++      printf("\n*** 'gtk-config --version' returned %d.%d.%d, but GTK+ (%d.%d.%d)\n", 
++             $gtk_config_major_version, $gtk_config_minor_version, $gtk_config_micro_version,
++             gtk_major_version, gtk_minor_version, gtk_micro_version);
++      printf ("*** was found! If gtk-config was correct, then it is best\n");
++      printf ("*** to remove the old version of GTK+. You may also be able to fix the error\n");
++      printf("*** by modifying your LD_LIBRARY_PATH enviroment variable, or by editing\n");
++      printf("*** /etc/ld.so.conf. Make sure you have run ldconfig if that is\n");
++      printf("*** required on your system.\n");
++      printf("*** If gtk-config was wrong, set the environment variable GTK_CONFIG\n");
++      printf("*** to point to the correct copy of gtk-config, and remove the file config.cache\n");
++      printf("*** before re-running configure\n");
++    } 
++#if defined (GTK_MAJOR_VERSION) && defined (GTK_MINOR_VERSION) && defined (GTK_MICRO_VERSION)
++  else if ((gtk_major_version != GTK_MAJOR_VERSION) ||
++	   (gtk_minor_version != GTK_MINOR_VERSION) ||
++           (gtk_micro_version != GTK_MICRO_VERSION))
++    {
++      printf("*** GTK+ header files (version %d.%d.%d) do not match\n",
++	     GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
++      printf("*** library (version %d.%d.%d)\n",
++	     gtk_major_version, gtk_minor_version, gtk_micro_version);
++    }
++#endif /* defined (GTK_MAJOR_VERSION) ... */
++  else
++    {
++      if ((gtk_major_version > major) ||
++        ((gtk_major_version == major) && (gtk_minor_version > minor)) ||
++        ((gtk_major_version == major) && (gtk_minor_version == minor) && (gtk_micro_version >= micro)))
++      {
++        return 0;
++       }
++     else
++      {
++        printf("\n*** An old version of GTK+ (%d.%d.%d) was found.\n",
++               gtk_major_version, gtk_minor_version, gtk_micro_version);
++        printf("*** You need a version of GTK+ newer than %d.%d.%d. The latest version of\n",
++	       major, minor, micro);
++        printf("*** GTK+ is always available from ftp://ftp.gtk.org.\n");
++        printf("***\n");
++        printf("*** If you have already installed a sufficiently new version, this error\n");
++        printf("*** probably means that the wrong copy of the gtk-config shell script is\n");
++        printf("*** being found. The easiest way to fix this is to remove the old version\n");
++        printf("*** of GTK+, but you can also set the GTK_CONFIG environment to point to the\n");
++        printf("*** correct copy of gtk-config. (In this case, you will have to\n");
++        printf("*** modify your LD_LIBRARY_PATH enviroment variable, or edit /etc/ld.so.conf\n");
++        printf("*** so that the correct libraries are found at run-time))\n");
++      }
++    }
++  return 1;
++}
++]])],, no_gtk=yes,[echo $ac_n "cross compiling; assumed OK... $ac_c"])
++       CFLAGS="$ac_save_CFLAGS"
++       LIBS="$ac_save_LIBS"
++     fi
++  fi
++  if test "x$no_gtk" = x ; then
++     AC_MSG_RESULT(yes)
++     ifelse([$2], , :, [$2])     
++  else
++     AC_MSG_RESULT(no)
++     if test "$GTK_CONFIG" = "no" ; then
++       echo "*** The gtk-config script installed by GTK could not be found"
++       echo "*** If GTK was installed in PREFIX, make sure PREFIX/bin is in"
++       echo "*** your path, or set the GTK_CONFIG environment variable to the"
++       echo "*** full path to gtk-config."
++     else
++       if test -f conf.gtktest ; then
++        :
++       else
++          echo "*** Could not run GTK test program, checking why..."
++          CFLAGS="$CFLAGS $GTK_CFLAGS"
++          LIBS="$LIBS $GTK_LIBS"
++          AC_LINK_IFELSE([AC_LANG_PROGRAM([[
++#include <gtk/gtk.h>
++#include <stdio.h>
++]],     [[ return ((gtk_major_version) || (gtk_minor_version) || (gtk_micro_version)); ]])],
++        [ echo "*** The test program compiled, but did not run. This usually means"
++          echo "*** that the run-time linker is not finding GTK or finding the wrong"
++          echo "*** version of GTK. If it is not finding GTK, you'll need to set your"
++          echo "*** LD_LIBRARY_PATH environment variable, or edit /etc/ld.so.conf to point"
++          echo "*** to the installed location  Also, make sure you have run ldconfig if that"
++          echo "*** is required on your system"
++	  echo "***"
++          echo "*** If you have an old version installed, it is best to remove it, although"
++          echo "*** you may also be able to get things to work by modifying LD_LIBRARY_PATH"
++          echo "***"
++          echo "*** If you have a RedHat 5.0 system, you should remove the GTK package that"
++          echo "*** came with the system with the command"
++          echo "***"
++          echo "***    rpm --erase --nodeps gtk gtk-devel" ],
++        [ echo "*** The test program failed to compile or link. See the file config.log for the"
++          echo "*** exact error that occured. This usually means GTK was incorrectly installed"
++          echo "*** or that you have moved GTK since it was installed. In the latter case, you"
++          echo "*** may want to edit the gtk-config script: $GTK_CONFIG" ])
++          CFLAGS="$ac_save_CFLAGS"
++          LIBS="$ac_save_LIBS"
++       fi
++     fi
++     GTK_CFLAGS=""
++     GTK_LIBS=""
++     ifelse([$3], , :, [$3])
++  fi
++  AC_SUBST(GTK_CFLAGS)
++  AC_SUBST(GTK_LIBS)
++  rm -f conf.gtktest
++])
++
++# Macro to add for using GNU gettext.
++# Ulrich Drepper <drepper@cygnus.com>, 1995.
++#
++# This file can be copied and used freely without restrictions.  It can
++# be used in projects which are not available under the GNU General Public
++# License or the GNU Library General Public License but which still want
++# to provide support for the GNU gettext functionality.
++# Please note that the actual code of the GNU gettext library is covered
++# by the GNU Library General Public License, and the rest of the GNU
++# gettext package package is covered by the GNU General Public License.
++# They are *not* in the public domain.
++
++dnl Usage: AM_WITH_NLS([TOOLSYMBOL], [NEEDSYMBOL], [LIBDIR]).
++dnl If TOOLSYMBOL is specified and is 'use-libtool', then a libtool library
++dnl    $(top_builddir)/intl/libintl.la will be created (shared and/or static,
++dnl    depending on --{enable,disable}-{shared,static} and on the presence of
++dnl    AM-DISABLE-SHARED). Otherwise, a static library
++dnl    $(top_builddir)/intl/libintl.a will be created.
++dnl If NEEDSYMBOL is specified and is 'need-ngettext', then GNU gettext
++dnl    implementations (in libc or libintl) without the ngettext() function
++dnl    will be ignored.
++dnl LIBDIR is used to find the intl libraries.  If empty,
++dnl    the value `$(top_builddir)/intl/' is used.
++dnl
++dnl The result of the configuration is one of three cases:
++dnl 1) GNU gettext, as included in the intl subdirectory, will be compiled
++dnl    and used.
++dnl    Catalog format: GNU --> install in $(datadir)
++dnl    Catalog extension: .mo after installation, .gmo in source tree
++dnl 2) GNU gettext has been found in the system's C library.
++dnl    Catalog format: GNU --> install in $(datadir)
++dnl    Catalog extension: .mo after installation, .gmo in source tree
++dnl 3) No internationalization, always use English msgid.
++dnl    Catalog format: none
++dnl    Catalog extension: none
++dnl The use of .gmo is historical (it was needed to avoid overwriting the
++dnl GNU format catalogs when building on a platform with an X/Open gettext),
++dnl but we keep it in order not to force irrelevant filename changes on the
++dnl maintainers.
++dnl
++AC_DEFUN([AM_WITH_NLS],
++  [AC_MSG_CHECKING([whether NLS is requested])
++    dnl Default is enabled NLS
++    AC_ARG_ENABLE(nls,
++      [  --disable-nls           do not use Native Language Support],
++      USE_NLS=$enableval, USE_NLS=yes)
++    AC_MSG_RESULT($USE_NLS)
++    AC_SUBST(USE_NLS)
++
++    BUILD_INCLUDED_LIBINTL=no
++    USE_INCLUDED_LIBINTL=no
++    INTLLIBS=
++
++    dnl If we use NLS figure out what method
++    if test "$USE_NLS" = "yes"; then
++      AC_DEFINE(ENABLE_NLS, 1,
++        [Define to 1 if translation of program messages to the user's native language
++   is requested.])
++      AC_MSG_CHECKING([whether included gettext is requested])
++      AC_ARG_WITH(included-gettext,
++        [  --with-included-gettext use the GNU gettext library included here],
++        nls_cv_force_use_gnu_gettext=$withval,
++        nls_cv_force_use_gnu_gettext=no)
++      AC_MSG_RESULT($nls_cv_force_use_gnu_gettext)
++
++      nls_cv_use_gnu_gettext="$nls_cv_force_use_gnu_gettext"
++      if test "$nls_cv_force_use_gnu_gettext" != "yes"; then
++        dnl User does not insist on using GNU NLS library.  Figure out what
++        dnl to use.  If GNU gettext is available we use this.  Else we have
++        dnl to fall back to GNU NLS library.
++	CATOBJEXT=NONE
++
++        dnl Add a version number to the cache macros.
++        define(gt_cv_func_gnugettext_libc, [gt_cv_func_gnugettext]ifelse([$2], need-ngettext, 2, 1)[_libc])
++        define(gt_cv_func_gnugettext_libintl, [gt_cv_func_gnugettext]ifelse([$2], need-ngettext, 2, 1)[_libintl])
++
++	AC_CHECK_HEADER(libintl.h,
++	  [AC_CACHE_CHECK([for GNU gettext in libc], gt_cv_func_gnugettext_libc,
++	    [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <libintl.h>
++extern int _nl_msg_cat_cntr;]],
++	       [[bindtextdomain ("", "");
++return (int) gettext ("")]ifelse([$2], need-ngettext, [ + (int) ngettext ("", "", 0)], [])[ + _nl_msg_cat_cntr]])],
++	       gt_cv_func_gnugettext_libc=yes,
++	       gt_cv_func_gnugettext_libc=no)])
++
++	   if test "$gt_cv_func_gnugettext_libc" != "yes"; then
++	     AC_CACHE_CHECK([for GNU gettext in libintl],
++	       gt_cv_func_gnugettext_libintl,
++	       [gt_save_LIBS="$LIBS"
++		LIBS="$LIBS -lintl $LIBICONV"
++		AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <libintl.h>
++extern int _nl_msg_cat_cntr;]],
++		  [[bindtextdomain ("", "");
++return (int) gettext ("")]ifelse([$2], need-ngettext, [ + (int) ngettext ("", "", 0)], [])[ + _nl_msg_cat_cntr]])],
++		  gt_cv_func_gnugettext_libintl=yes,
++		  gt_cv_func_gnugettext_libintl=no)
++		LIBS="$gt_save_LIBS"])
++	   fi
++
++	   dnl If an already present or preinstalled GNU gettext() is found,
++	   dnl use it.  But if this macro is used in GNU gettext, and GNU
++	   dnl gettext is already preinstalled in libintl, we update this
++	   dnl libintl.  (Cf. the install rule in intl/Makefile.in.)
++	   if test "$gt_cv_func_gnugettext_libc" = "yes" \
++	      || { test "$gt_cv_func_gnugettext_libintl" = "yes" \
++		   && test "$PACKAGE" != gettext; }; then
++	     AC_DEFINE(HAVE_GETTEXT, 1,
++               [Define if the GNU gettext() function is already present or preinstalled.])
++
++	     if test "$gt_cv_func_gnugettext_libintl" = "yes"; then
++	       dnl If iconv() is in a separate libiconv library, then anyone
++	       dnl linking with libintl{.a,.so} also needs to link with
++	       dnl libiconv.
++	       INTLLIBS="-lintl $LIBICONV"
++	     fi
++
++	     gt_save_LIBS="$LIBS"
++	     LIBS="$LIBS $INTLLIBS"
++	     AC_CHECK_FUNCS(dcgettext)
++	     LIBS="$gt_save_LIBS"
++
++	     dnl Search for GNU msgfmt in the PATH.
++	     AM_PATH_PROG_WITH_TEST(MSGFMT, msgfmt,
++	       [$ac_dir/$ac_word --statistics /dev/null >/dev/null 2>&1], :)
++	     AC_PATH_PROG(GMSGFMT, gmsgfmt, $MSGFMT)
++
++	     dnl Search for GNU xgettext in the PATH.
++	     AM_PATH_PROG_WITH_TEST(XGETTEXT, xgettext,
++	       [$ac_dir/$ac_word --omit-header /dev/null >/dev/null 2>&1], :)
++
++	     CATOBJEXT=.gmo
++	   fi
++	])
++
++        if test "$CATOBJEXT" = "NONE"; then
++	  dnl GNU gettext is not found in the C library.
++	  dnl Fall back on GNU gettext library.
++	  nls_cv_use_gnu_gettext=yes
++        fi
++      fi
++
++      if test "$nls_cv_use_gnu_gettext" = "yes"; then
++        dnl Mark actions used to generate GNU NLS library.
++        INTLOBJS="\$(GETTOBJS)"
++        AM_PATH_PROG_WITH_TEST(MSGFMT, msgfmt,
++	  [$ac_dir/$ac_word --statistics /dev/null >/dev/null 2>&1], :)
++        AC_PATH_PROG(GMSGFMT, gmsgfmt, $MSGFMT)
++        AM_PATH_PROG_WITH_TEST(XGETTEXT, xgettext,
++	  [$ac_dir/$ac_word --omit-header /dev/null >/dev/null 2>&1], :)
++        AC_SUBST(MSGFMT)
++	BUILD_INCLUDED_LIBINTL=yes
++	USE_INCLUDED_LIBINTL=yes
++        CATOBJEXT=.gmo
++	INTLLIBS="ifelse([$3],[],\$(top_builddir)/intl,[$3])/libintl.ifelse([$1], use-libtool, [l], [])a $LIBICONV"
++	LIBS=`echo " $LIBS " | sed -e 's/ -lintl / /' -e 's/^ //' -e 's/ $//'`
++      fi
++
++      dnl This could go away some day; the PATH_PROG_WITH_TEST already does it.
++      dnl Test whether we really found GNU msgfmt.
++      if test "$GMSGFMT" != ":"; then
++	dnl If it is no GNU msgfmt we define it as : so that the
++	dnl Makefiles still can work.
++	if $GMSGFMT --statistics /dev/null >/dev/null 2>&1; then
++	  : ;
++	else
++	  AC_MSG_RESULT(
++	    [found msgfmt program is not GNU msgfmt; ignore it])
++	  GMSGFMT=":"
++	fi
++      fi
++
++      dnl This could go away some day; the PATH_PROG_WITH_TEST already does it.
++      dnl Test whether we really found GNU xgettext.
++      if test "$XGETTEXT" != ":"; then
++	dnl If it is no GNU xgettext we define it as : so that the
++	dnl Makefiles still can work.
++	if $XGETTEXT --omit-header /dev/null >/dev/null 2>&1; then
++	  : ;
++	else
++	  AC_MSG_RESULT(
++	    [found xgettext program is not GNU xgettext; ignore it])
++	  XGETTEXT=":"
++	fi
++      fi
++
++      dnl We need to process the po/ directory.
++      POSUB=po
++    fi
++    AC_CONFIG_COMMANDS([po],
++     [[for ac_file in $CONFIG_FILES; do
++        # Support "outfile[:infile[:infile...]]"
++        case "$ac_file" in
++          *:*) ac_file=`echo "$ac_file"|sed 's%:.*%%'` ;;
++        esac
++        # PO directories have a Makefile.in generated from Makefile.in.in.
++        case "$ac_file" in */Makefile.in)
++          # Adjust a relative srcdir.
++          ac_dir=`echo "$ac_file"|sed 's%/[^/][^/]*$%%'`
++          ac_dir_suffix="/`echo "$ac_dir"|sed 's%^\./%%'`"
++          ac_dots=`echo "$ac_dir_suffix"|sed 's%/[^/]*%../%g'`
++          # In autoconf-2.13 it is called $ac_given_srcdir.
++          # In autoconf-2.50 it is called $srcdir.
++          test -n "$ac_given_srcdir" || ac_given_srcdir="$srcdir"
++          case "$ac_given_srcdir" in
++            .)  top_srcdir=`echo $ac_dots|sed 's%/$%%'` ;;
++            /*) top_srcdir="$ac_given_srcdir" ;;
++            *)  top_srcdir="$ac_dots$ac_given_srcdir" ;;
++          esac
++          if test -f "$ac_given_srcdir/$ac_dir/POTFILES.in"; then
++            rm -f "$ac_dir/POTFILES"
++            test -n "$as_me" && echo "$as_me: creating $ac_dir/POTFILES" || echo "creating $ac_dir/POTFILES"
++            sed -e "/^#/d" -e "/^[ 	]*\$/d" -e "s,.*,     $top_srcdir/& \\\\," -e "\$s/\(.*\) \\\\/\1/" < "$ac_given_srcdir/$ac_dir/POTFILES.in" > "$ac_dir/POTFILES"
++            test -n "$as_me" && echo "$as_me: creating $ac_dir/Makefile" || echo "creating $ac_dir/Makefile"
++            sed -e "/POTFILES =/r $ac_dir/POTFILES" "$ac_dir/Makefile.in" > "$ac_dir/Makefile"
++          fi
++          ;;
++        esac
++      done]])
++
++
++    dnl If this is used in GNU gettext we have to set BUILD_INCLUDED_LIBINTL
++    dnl to 'yes' because some of the testsuite requires it.
++    if test "$PACKAGE" = gettext; then
++      BUILD_INCLUDED_LIBINTL=yes
++    fi
++
++    dnl intl/plural.c is generated from intl/plural.y. It requires bison,
++    dnl because plural.y uses bison specific features. It requires at least
++    dnl bison-1.26 because earlier versions generate a plural.c that doesn't
++    dnl compile.
++    dnl bison is only needed for the maintainer (who touches plural.y). But in
++    dnl order to avoid separate Makefiles or --enable-maintainer-mode, we put
++    dnl the rule in general Makefile. Now, some people carelessly touch the
++    dnl files or have a broken "make" program, hence the plural.c rule will
++    dnl sometimes fire. To avoid an error, defines BISON to ":" if it is not
++    dnl present or too old.
++    AC_CHECK_PROGS([INTLBISON], [bison])
++    if test -z "$INTLBISON"; then
++      ac_verc_fail=yes
++    else
++      dnl Found it, now check the version.
++      AC_MSG_CHECKING([version of bison])
++changequote(<<,>>)dnl
++      ac_prog_version=`$INTLBISON --version 2>&1 | sed -n 's/^.*GNU Bison.* \([0-9]*\.[0-9.]*\).*$/\1/p'`
++      case $ac_prog_version in
++        '') ac_prog_version="v. ?.??, bad"; ac_verc_fail=yes;;
++        1.2[6-9]* | 1.[3-9][0-9]* | [2-9].*)
++changequote([,])dnl
++           ac_prog_version="$ac_prog_version, ok"; ac_verc_fail=no;;
++        *) ac_prog_version="$ac_prog_version, bad"; ac_verc_fail=yes;;
++      esac
++      AC_MSG_RESULT([$ac_prog_version])
++    fi
++    if test $ac_verc_fail = yes; then
++      INTLBISON=:
++    fi
++
++    dnl These rules are solely for the distribution goal.  While doing this
++    dnl we only have to keep exactly one list of the available catalogs
++    dnl in configure.in.
++    for lang in $ALL_LINGUAS; do
++      GMOFILES="$GMOFILES $lang.gmo"
++      POFILES="$POFILES $lang.po"
++    done
++
++    dnl Make all variables we use known to autoconf.
++    AC_SUBST(BUILD_INCLUDED_LIBINTL)
++    AC_SUBST(USE_INCLUDED_LIBINTL)
++    AC_SUBST(CATALOGS)
++    AC_SUBST(CATOBJEXT)
++    AC_SUBST(GMOFILES)
++    AC_SUBST(INTLLIBS)
++    AC_SUBST(INTLOBJS)
++    AC_SUBST(POFILES)
++    AC_SUBST(POSUB)
++
++    dnl For backward compatibility. Some configure.ins may be using this.
++    nls_cv_header_intl=
++    nls_cv_header_libgt=
++
++    dnl For backward compatibility. Some Makefiles may be using this.
++    DATADIRNAME=share
++    AC_SUBST(DATADIRNAME)
++
++    dnl For backward compatibility. Some Makefiles may be using this.
++    INSTOBJEXT=.mo
++    AC_SUBST(INSTOBJEXT)
++
++    dnl For backward compatibility. Some Makefiles may be using this.
++    GENCAT=gencat
++    AC_SUBST(GENCAT)
++  ])
++
++dnl Usage: Just like AM_WITH_NLS, which see.
++AC_DEFUN([AM_GNU_GETTEXT],
++  [AC_REQUIRE([AC_PROG_MAKE_SET])dnl
++   AC_REQUIRE([AC_PROG_CC])dnl
++   AC_REQUIRE([AC_CANONICAL_HOST])dnl
++   AC_REQUIRE([AC_PROG_RANLIB])dnl
++   AC_REQUIRE([AC_C_CONST])dnl
++   AC_REQUIRE([AC_C_INLINE])dnl
++   AC_REQUIRE([AC_TYPE_OFF_T])dnl
++   AC_REQUIRE([AC_TYPE_SIZE_T])dnl
++   AC_REQUIRE([AC_FUNC_ALLOCA])dnl
++   AC_REQUIRE([AC_FUNC_MMAP])dnl
++   AC_REQUIRE([jm_GLIBC21])dnl
++
++   AC_CHECK_HEADERS([argz.h limits.h locale.h nl_types.h malloc.h stddef.h \
++stdlib.h string.h unistd.h sys/param.h])
++   AC_CHECK_FUNCS([feof_unlocked fgets_unlocked getcwd getegid geteuid \
++getgid getuid mempcpy munmap putenv setenv setlocale stpcpy strchr strcasecmp \
++strdup strtoul tsearch __argz_count __argz_stringify __argz_next])
++
++   AM_ICONV
++   AM_LANGINFO_CODESET
++   AM_LC_MESSAGES
++   AM_WITH_NLS([$1],[$2],[$3])
++
++   if test "x$CATOBJEXT" != "x"; then
++     if test "x$ALL_LINGUAS" = "x"; then
++       LINGUAS=
++     else
++       AC_MSG_CHECKING(for catalogs to be installed)
++       NEW_LINGUAS=
++       for presentlang in $ALL_LINGUAS; do
++         useit=no
++         for desiredlang in ${LINGUAS-$ALL_LINGUAS}; do
++           # Use the presentlang catalog if desiredlang is
++           #   a. equal to presentlang, or
++           #   b. a variant of presentlang (because in this case,
++           #      presentlang can be used as a fallback for messages
++           #      which are not translated in the desiredlang catalog).
++           case "$desiredlang" in
++             "$presentlang"*) useit=yes;;
++           esac
++         done
++         if test $useit = yes; then
++           NEW_LINGUAS="$NEW_LINGUAS $presentlang"
++         fi
++       done
++       LINGUAS=$NEW_LINGUAS
++       AC_MSG_RESULT($LINGUAS)
++     fi
++
++     dnl Construct list of names of catalog files to be constructed.
++     if test -n "$LINGUAS"; then
++       for lang in $LINGUAS; do CATALOGS="$CATALOGS $lang$CATOBJEXT"; done
++     fi
++   fi
++
++   dnl If the AC_CONFIG_AUX_DIR macro for autoconf is used we possibly
++   dnl find the mkinstalldirs script in another subdir but $(top_srcdir).
++   dnl Try to locate is.
++   MKINSTALLDIRS=
++   if test -n "$ac_aux_dir"; then
++     MKINSTALLDIRS="$ac_aux_dir/mkinstalldirs"
++   fi
++   if test -z "$MKINSTALLDIRS"; then
++     MKINSTALLDIRS="\$(top_srcdir)/mkinstalldirs"
++   fi
++   AC_SUBST(MKINSTALLDIRS)
++
++   dnl Enable libtool support if the surrounding package wishes it.
++   INTL_LIBTOOL_SUFFIX_PREFIX=ifelse([$1], use-libtool, [l], [])
++   AC_SUBST(INTL_LIBTOOL_SUFFIX_PREFIX)
++  ])
++
++# Check whether LC_MESSAGES is available in <locale.h>.
++# Ulrich Drepper <drepper@cygnus.com>, 1995.
++#
++# This file can be copied and used freely without restrictions.  It can
++# be used in projects which are not available under the GNU General Public
++# License or the GNU Library General Public License but which still want
++# to provide support for the GNU gettext functionality.
++# Please note that the actual code of the GNU gettext library is covered
++# by the GNU Library General Public License, and the rest of the GNU
++# gettext package package is covered by the GNU General Public License.
++# They are *not* in the public domain.
++
++AC_DEFUN([AM_LC_MESSAGES],
++  [if test $ac_cv_header_locale_h = yes; then
++    AC_CACHE_CHECK([for LC_MESSAGES], am_cv_val_LC_MESSAGES,
++      [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <locale.h>]], [[return LC_MESSAGES]])],
++       am_cv_val_LC_MESSAGES=yes, am_cv_val_LC_MESSAGES=no)])
++    if test $am_cv_val_LC_MESSAGES = yes; then
++      AC_DEFINE(HAVE_LC_MESSAGES, 1,
++        [Define if your <locale.h> file defines LC_MESSAGES.])
++    fi
++  fi])
++
++# Do all the work for Automake.  This macro actually does too much --
++# some checks are only needed if your package does certain things.
++# But this isn't really a big deal.
++
++dnl From Bruno Haible.
++
++AC_DEFUN([AM_LANGINFO_CODESET],
++[
++  AC_CACHE_CHECK([for nl_langinfo and CODESET], am_cv_langinfo_codeset,
++    [AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <langinfo.h>]],
++      [[char* cs = nl_langinfo(CODESET);]])],
++      am_cv_langinfo_codeset=yes,
++      am_cv_langinfo_codeset=no)
++    ])
++  if test $am_cv_langinfo_codeset = yes; then
++    AC_DEFINE(HAVE_LANGINFO_CODESET, 1,
++      [Define if you have <langinfo.h> and nl_langinfo(CODESET).])
++  fi
++])
++
++# Test for the GNU C Library, version 2.1 or newer.
++# From Bruno Haible.
++
++AC_DEFUN([jm_GLIBC21],
++  [
++    AC_CACHE_CHECK(whether we are using the GNU C Library 2.1 or newer,
++      ac_cv_gnu_library_2_1,
++      [AC_EGREP_CPP([Lucky GNU user],
++	[
++#include <features.h>
++#ifdef __GNU_LIBRARY__
++ #if (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2)
++  Lucky GNU user
++ #endif
++#endif
++	],
++	ac_cv_gnu_library_2_1=yes,
++	ac_cv_gnu_library_2_1=no)
++      ]
++    )
++    AC_SUBST(GLIBC21)
++    GLIBC21="$ac_cv_gnu_library_2_1"
++  ]
++)
++
+diff -rupN gimp-1.2.5.orig/app/Makefile.am gimp-1.2.5/app/Makefile.am
+--- gimp-1.2.5.orig/app/Makefile.am	2003-02-14 00:13:11.000000000 +0100
++++ gimp-1.2.5/app/Makefile.am	2023-03-26 19:27:33.819458288 +0200
+@@ -460,11 +460,10 @@ AM_CPPFLAGS = \
+ 	@GIMP_THREAD_FLAGS@ 		\
+ 	@GIMP_MP_FLAGS@
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ gimp_1_2_LDADD = \
+ 	$(gimp_exp)				\
+diff -rupN gimp-1.2.5.orig/config.rpath gimp-1.2.5/config.rpath
+--- gimp-1.2.5.orig/config.rpath	1970-01-01 01:00:00.000000000 +0100
++++ gimp-1.2.5/config.rpath	2022-10-27 14:24:24.000000000 +0200
+@@ -0,0 +1,686 @@
++#! /bin/sh
++# Output a system dependent set of variables, describing how to set the
++# run time search path of shared libraries in an executable.
++#
++#   Copyright 1996-2022 Free Software Foundation, Inc.
++#   Taken from GNU libtool, 2001
++#   Originally by Gordon Matzigkeit <gord@gnu.ai.mit.edu>, 1996
++#
++#   This file is free software; the Free Software Foundation gives
++#   unlimited permission to copy and/or distribute it, with or without
++#   modifications, as long as this notice is preserved.
++#
++# The first argument passed to this file is the canonical host specification,
++#    CPU_TYPE-MANUFACTURER-OPERATING_SYSTEM
++# or
++#    CPU_TYPE-MANUFACTURER-KERNEL-OPERATING_SYSTEM
++# The environment variables CC, GCC, LDFLAGS, LD, with_gnu_ld
++# should be set by the caller.
++#
++# The set of defined variables is at the end of this script.
++
++# Known limitations:
++# - On IRIX 6.5 with CC="cc", the run time search patch must not be longer
++#   than 256 bytes, otherwise the compiler driver will dump core. The only
++#   known workaround is to choose shorter directory names for the build
++#   directory and/or the installation directory.
++
++# All known linkers require a '.a' archive for static linking (except MSVC,
++# which needs '.lib').
++libext=a
++shrext=.so
++
++host="$1"
++host_cpu=`echo "$host" | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
++host_vendor=`echo "$host" | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\2/'`
++host_os=`echo "$host" | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
++
++# Code taken from libtool.m4's _LT_CC_BASENAME.
++
++for cc_temp in $CC""; do
++  case $cc_temp in
++    compile | *[\\/]compile | ccache | *[\\/]ccache ) ;;
++    distcc | *[\\/]distcc | purify | *[\\/]purify ) ;;
++    \-*) ;;
++    *) break;;
++  esac
++done
++cc_basename=`echo "$cc_temp" | sed -e 's%^.*/%%'`
++
++# Code taken from libtool.m4's _LT_COMPILER_PIC.
++
++wl=
++if test "$GCC" = yes; then
++  wl='-Wl,'
++else
++  case "$host_os" in
++    aix*)
++      wl='-Wl,'
++      ;;
++    mingw* | cygwin* | pw32* | os2* | cegcc*)
++      ;;
++    hpux9* | hpux10* | hpux11*)
++      wl='-Wl,'
++      ;;
++    irix5* | irix6* | nonstopux*)
++      wl='-Wl,'
++      ;;
++    linux* | k*bsd*-gnu | kopensolaris*-gnu)
++      case $cc_basename in
++        ecc*)
++          wl='-Wl,'
++          ;;
++        icc* | ifort*)
++          wl='-Wl,'
++          ;;
++        lf95*)
++          wl='-Wl,'
++          ;;
++        nagfor*)
++          wl='-Wl,-Wl,,'
++          ;;
++        pgcc* | pgf77* | pgf90* | pgf95* | pgfortran*)
++          wl='-Wl,'
++          ;;
++        ccc*)
++          wl='-Wl,'
++          ;;
++        xl* | bgxl* | bgf* | mpixl*)
++          wl='-Wl,'
++          ;;
++        como)
++          wl='-lopt='
++          ;;
++        *)
++          case `$CC -V 2>&1 | sed 5q` in
++            *Sun\ F* | *Sun*Fortran*)
++              wl=
++              ;;
++            *Sun\ C*)
++              wl='-Wl,'
++              ;;
++          esac
++          ;;
++      esac
++      ;;
++    newsos6)
++      ;;
++    *nto* | *qnx*)
++      ;;
++    osf3* | osf4* | osf5*)
++      wl='-Wl,'
++      ;;
++    rdos*)
++      ;;
++    solaris*)
++      case $cc_basename in
++        f77* | f90* | f95* | sunf77* | sunf90* | sunf95*)
++          wl='-Qoption ld '
++          ;;
++        *)
++          wl='-Wl,'
++          ;;
++      esac
++      ;;
++    sunos4*)
++      wl='-Qoption ld '
++      ;;
++    sysv4 | sysv4.2uw2* | sysv4.3*)
++      wl='-Wl,'
++      ;;
++    sysv4*MP*)
++      ;;
++    sysv5* | unixware* | sco3.2v5* | sco5v6* | OpenUNIX*)
++      wl='-Wl,'
++      ;;
++    unicos*)
++      wl='-Wl,'
++      ;;
++    uts4*)
++      ;;
++  esac
++fi
++
++# Code taken from libtool.m4's _LT_LINKER_SHLIBS.
++
++hardcode_libdir_flag_spec=
++hardcode_libdir_separator=
++hardcode_direct=no
++hardcode_minus_L=no
++
++case "$host_os" in
++  cygwin* | mingw* | pw32* | cegcc*)
++    # FIXME: the MSVC++ port hasn't been tested in a loooong time
++    # When not using gcc, we currently assume that we are using
++    # Microsoft Visual C++.
++    if test "$GCC" != yes; then
++      with_gnu_ld=no
++    fi
++    ;;
++  interix*)
++    # we just hope/assume this is gcc and not c89 (= MSVC++)
++    with_gnu_ld=yes
++    ;;
++  openbsd*)
++    with_gnu_ld=no
++    ;;
++esac
++
++ld_shlibs=yes
++if test "$with_gnu_ld" = yes; then
++  # Set some defaults for GNU ld with shared library support. These
++  # are reset later if shared libraries are not supported. Putting them
++  # here allows them to be overridden if necessary.
++  # Unlike libtool, we use -rpath here, not --rpath, since the documented
++  # option of GNU ld is called -rpath, not --rpath.
++  hardcode_libdir_flag_spec='${wl}-rpath ${wl}$libdir'
++  case "$host_os" in
++    aix[3-9]*)
++      # On AIX/PPC, the GNU linker is very broken
++      if test "$host_cpu" != ia64; then
++        ld_shlibs=no
++      fi
++      ;;
++    amigaos*)
++      case "$host_cpu" in
++        powerpc)
++          ;;
++        m68k)
++          hardcode_libdir_flag_spec='-L$libdir'
++          hardcode_minus_L=yes
++          ;;
++      esac
++      ;;
++    beos*)
++      if $LD --help 2>&1 | grep ': supported targets:.* elf' > /dev/null; then
++        :
++      else
++        ld_shlibs=no
++      fi
++      ;;
++    cygwin* | mingw* | pw32* | cegcc*)
++      # hardcode_libdir_flag_spec is actually meaningless, as there is
++      # no search path for DLLs.
++      hardcode_libdir_flag_spec='-L$libdir'
++      if $LD --help 2>&1 | grep 'auto-import' > /dev/null; then
++        :
++      else
++        ld_shlibs=no
++      fi
++      ;;
++    haiku*)
++      ;;
++    interix[3-9]*)
++      hardcode_direct=no
++      hardcode_libdir_flag_spec='${wl}-rpath,$libdir'
++      ;;
++    gnu* | linux* | tpf* | k*bsd*-gnu | kopensolaris*-gnu)
++      if $LD --help 2>&1 | grep ': supported targets:.* elf' > /dev/null; then
++        if [[ $libdir = '/usr/lib' ]] || [[ $libdir = '/usr/lib64' ]] ; then
++		     hardcode_libdir_flag_spec=""
++	     fi
++      else
++        ld_shlibs=no
++      fi
++      ;;
++    netbsd*)
++      ;;
++    solaris*)
++      if $LD -v 2>&1 | grep 'BFD 2\.8' > /dev/null; then
++        ld_shlibs=no
++      elif $LD --help 2>&1 | grep ': supported targets:.* elf' > /dev/null; then
++        :
++      else
++        ld_shlibs=no
++      fi
++      ;;
++    sysv5* | sco3.2v5* | sco5v6* | unixware* | OpenUNIX*)
++      case `$LD -v 2>&1` in
++        *\ [01].* | *\ 2.[0-9].* | *\ 2.1[0-5].*)
++          ld_shlibs=no
++          ;;
++        *)
++          if $LD --help 2>&1 | grep ': supported targets:.* elf' > /dev/null; then
++            hardcode_libdir_flag_spec='`test -z "$SCOABSPATH" && echo ${wl}-rpath,$libdir`'
++          else
++            ld_shlibs=no
++          fi
++          ;;
++      esac
++      ;;
++    sunos4*)
++      hardcode_direct=yes
++      ;;
++    *)
++      if $LD --help 2>&1 | grep ': supported targets:.* elf' > /dev/null; then
++        :
++      else
++        ld_shlibs=no
++      fi
++      ;;
++  esac
++  if test "$ld_shlibs" = no; then
++    hardcode_libdir_flag_spec=
++  fi
++else
++  case "$host_os" in
++    aix3*)
++      # Note: this linker hardcodes the directories in LIBPATH if there
++      # are no directories specified by -L.
++      hardcode_minus_L=yes
++      if test "$GCC" = yes; then
++        # Neither direct hardcoding nor static linking is supported with a
++        # broken collect2.
++        hardcode_direct=unsupported
++      fi
++      ;;
++    aix[4-9]*)
++      if test "$host_cpu" = ia64; then
++        # On IA64, the linker does run time linking by default, so we don't
++        # have to do anything special.
++        aix_use_runtimelinking=no
++      else
++        aix_use_runtimelinking=no
++        # Test if we are trying to use run time linking or normal
++        # AIX style linking. If -brtl is somewhere in LDFLAGS, we
++        # need to do runtime linking.
++        case $host_os in aix4.[23]|aix4.[23].*|aix[5-9]*)
++          for ld_flag in $LDFLAGS; do
++            if (test $ld_flag = "-brtl" || test $ld_flag = "-Wl,-brtl"); then
++              aix_use_runtimelinking=yes
++              break
++            fi
++          done
++          ;;
++        esac
++      fi
++      hardcode_direct=yes
++      hardcode_libdir_separator=':'
++      if test "$GCC" = yes; then
++        case $host_os in aix4.[012]|aix4.[012].*)
++          collect2name=`${CC} -print-prog-name=collect2`
++          if test -f "$collect2name" && \
++            strings "$collect2name" | grep resolve_lib_name >/dev/null
++          then
++            # We have reworked collect2
++            :
++          else
++            # We have old collect2
++            hardcode_direct=unsupported
++            hardcode_minus_L=yes
++            hardcode_libdir_flag_spec='-L$libdir'
++            hardcode_libdir_separator=
++          fi
++          ;;
++        esac
++      fi
++      # Begin _LT_AC_SYS_LIBPATH_AIX.
++      echo 'int main () { return 0; }' > conftest.c
++      ${CC} ${LDFLAGS} conftest.c -o conftest
++      aix_libpath=`dump -H conftest 2>/dev/null | sed -n -e '/Import File Strings/,/^$/ { /^0/ { s/^0  *\(.*\)$/\1/; p; }
++}'`
++      if test -z "$aix_libpath"; then
++        aix_libpath=`dump -HX64 conftest 2>/dev/null | sed -n -e '/Import File Strings/,/^$/ { /^0/ { s/^0  *\(.*\)$/\1/; p; }
++}'`
++      fi
++      if test -z "$aix_libpath"; then
++        aix_libpath="/usr/lib:/lib"
++      fi
++      rm -f conftest.c conftest
++      # End _LT_AC_SYS_LIBPATH_AIX.
++      if test "$aix_use_runtimelinking" = yes; then
++        hardcode_libdir_flag_spec='${wl}-blibpath:$libdir:'"$aix_libpath"
++      else
++        if test "$host_cpu" = ia64; then
++          hardcode_libdir_flag_spec='${wl}-R $libdir:/usr/lib:/lib'
++        else
++          hardcode_libdir_flag_spec='${wl}-blibpath:$libdir:'"$aix_libpath"
++        fi
++      fi
++      ;;
++    amigaos*)
++      case "$host_cpu" in
++        powerpc)
++          ;;
++        m68k)
++          hardcode_libdir_flag_spec='-L$libdir'
++          hardcode_minus_L=yes
++          ;;
++      esac
++      ;;
++    bsdi[45]*)
++      ;;
++    cygwin* | mingw* | pw32* | cegcc*)
++      # When not using gcc, we currently assume that we are using
++      # Microsoft Visual C++.
++      # hardcode_libdir_flag_spec is actually meaningless, as there is
++      # no search path for DLLs.
++      hardcode_libdir_flag_spec=' '
++      libext=lib
++      ;;
++    darwin* | rhapsody*)
++      hardcode_direct=no
++      if { case $cc_basename in ifort*) true;; *) test "$GCC" = yes;; esac; }; then
++        :
++      else
++        ld_shlibs=no
++      fi
++      ;;
++    dgux*)
++      hardcode_libdir_flag_spec='-L$libdir'
++      ;;
++    freebsd2.[01]*)
++      hardcode_direct=yes
++      hardcode_minus_L=yes
++      ;;
++    freebsd* | dragonfly* | midnightbsd*)
++      hardcode_libdir_flag_spec='-R$libdir'
++      hardcode_direct=yes
++      ;;
++    hpux9*)
++      hardcode_libdir_flag_spec='${wl}+b ${wl}$libdir'
++      hardcode_libdir_separator=:
++      hardcode_direct=yes
++      # hardcode_minus_L: Not really in the search PATH,
++      # but as the default location of the library.
++      hardcode_minus_L=yes
++      ;;
++    hpux10*)
++      if test "$with_gnu_ld" = no; then
++        hardcode_libdir_flag_spec='${wl}+b ${wl}$libdir'
++        hardcode_libdir_separator=:
++        hardcode_direct=yes
++        # hardcode_minus_L: Not really in the search PATH,
++        # but as the default location of the library.
++        hardcode_minus_L=yes
++      fi
++      ;;
++    hpux11*)
++      if test "$with_gnu_ld" = no; then
++        hardcode_libdir_flag_spec='${wl}+b ${wl}$libdir'
++        hardcode_libdir_separator=:
++        case $host_cpu in
++          hppa*64*|ia64*)
++            hardcode_direct=no
++            ;;
++          *)
++            hardcode_direct=yes
++            # hardcode_minus_L: Not really in the search PATH,
++            # but as the default location of the library.
++            hardcode_minus_L=yes
++            ;;
++        esac
++      fi
++      ;;
++    irix5* | irix6* | nonstopux*)
++      hardcode_libdir_flag_spec='${wl}-rpath ${wl}$libdir'
++      hardcode_libdir_separator=:
++      ;;
++    netbsd*)
++      hardcode_libdir_flag_spec='-R$libdir'
++      hardcode_direct=yes
++      ;;
++    newsos6)
++      hardcode_direct=yes
++      hardcode_libdir_flag_spec='${wl}-rpath ${wl}$libdir'
++      hardcode_libdir_separator=:
++      ;;
++    *nto* | *qnx*)
++      ;;
++    openbsd*)
++      if test -f /usr/libexec/ld.so; then
++        hardcode_direct=yes
++        if test -z "`echo __ELF__ | $CC -E - | grep __ELF__`" || test "$host_os-$host_cpu" = "openbsd2.8-powerpc"; then
++          hardcode_libdir_flag_spec='${wl}-rpath,$libdir'
++        else
++          case "$host_os" in
++            openbsd[01].* | openbsd2.[0-7] | openbsd2.[0-7].*)
++              hardcode_libdir_flag_spec='-R$libdir'
++              ;;
++            *)
++              hardcode_libdir_flag_spec='${wl}-rpath,$libdir'
++              ;;
++          esac
++        fi
++      else
++        ld_shlibs=no
++      fi
++      ;;
++    os2*)
++      hardcode_libdir_flag_spec='-L$libdir'
++      hardcode_minus_L=yes
++      ;;
++    osf3*)
++      hardcode_libdir_flag_spec='${wl}-rpath ${wl}$libdir'
++      hardcode_libdir_separator=:
++      ;;
++    osf4* | osf5*)
++      if test "$GCC" = yes; then
++        hardcode_libdir_flag_spec='${wl}-rpath ${wl}$libdir'
++      else
++        # Both cc and cxx compiler support -rpath directly
++        hardcode_libdir_flag_spec='-rpath $libdir'
++      fi
++      hardcode_libdir_separator=:
++      ;;
++    solaris*)
++      hardcode_libdir_flag_spec='-R$libdir'
++      ;;
++    sunos4*)
++      hardcode_libdir_flag_spec='-L$libdir'
++      hardcode_direct=yes
++      hardcode_minus_L=yes
++      ;;
++    sysv4)
++      case $host_vendor in
++        sni)
++          hardcode_direct=yes # is this really true???
++          ;;
++        siemens)
++          hardcode_direct=no
++          ;;
++        motorola)
++          hardcode_direct=no #Motorola manual says yes, but my tests say they lie
++          ;;
++      esac
++      ;;
++    sysv4.3*)
++      ;;
++    sysv4*MP*)
++      if test -d /usr/nec; then
++        ld_shlibs=yes
++      fi
++      ;;
++    sysv4*uw2* | sysv5OpenUNIX* | sysv5UnixWare7.[01].[10]* | unixware7* | sco3.2v5.0.[024]*)
++      ;;
++    sysv5* | sco3.2v5* | sco5v6*)
++      hardcode_libdir_flag_spec='`test -z "$SCOABSPATH" && echo ${wl}-R,$libdir`'
++      hardcode_libdir_separator=':'
++      ;;
++    uts4*)
++      hardcode_libdir_flag_spec='-L$libdir'
++      ;;
++    *)
++      ld_shlibs=no
++      ;;
++  esac
++fi
++
++# Check dynamic linker characteristics
++# Code taken from libtool.m4's _LT_SYS_DYNAMIC_LINKER.
++# Unlike libtool.m4, here we don't care about _all_ names of the library, but
++# only about the one the linker finds when passed -lNAME. This is the last
++# element of library_names_spec in libtool.m4, or possibly two of them if the
++# linker has special search rules.
++library_names_spec=      # the last element of library_names_spec in libtool.m4
++libname_spec='lib$name'
++case "$host_os" in
++  aix3*)
++    library_names_spec='$libname.a'
++    ;;
++  aix[4-9]*)
++    library_names_spec='$libname$shrext'
++    ;;
++  amigaos*)
++    case "$host_cpu" in
++      powerpc*)
++        library_names_spec='$libname$shrext' ;;
++      m68k)
++        library_names_spec='$libname.a' ;;
++    esac
++    ;;
++  beos*)
++    library_names_spec='$libname$shrext'
++    ;;
++  bsdi[45]*)
++    library_names_spec='$libname$shrext'
++    ;;
++  cygwin* | mingw* | pw32* | cegcc*)
++    shrext=.dll
++    library_names_spec='$libname.dll.a $libname.lib'
++    ;;
++  darwin* | rhapsody*)
++    shrext=.dylib
++    library_names_spec='$libname$shrext'
++    ;;
++  dgux*)
++    library_names_spec='$libname$shrext'
++    ;;
++  freebsd[23].*)
++    library_names_spec='$libname$shrext$versuffix'
++    ;;
++  freebsd* | dragonfly* | midnightbsd*)
++    library_names_spec='$libname$shrext'
++    ;;
++  gnu*)
++    library_names_spec='$libname$shrext'
++    ;;
++  haiku*)
++    library_names_spec='$libname$shrext'
++    ;;
++  hpux9* | hpux10* | hpux11*)
++    case $host_cpu in
++      ia64*)
++        shrext=.so
++        ;;
++      hppa*64*)
++        shrext=.sl
++        ;;
++      *)
++        shrext=.sl
++        ;;
++    esac
++    library_names_spec='$libname$shrext'
++    ;;
++  interix[3-9]*)
++    library_names_spec='$libname$shrext'
++    ;;
++  irix5* | irix6* | nonstopux*)
++    library_names_spec='$libname$shrext'
++    case "$host_os" in
++      irix5* | nonstopux*)
++        libsuff= shlibsuff=
++        ;;
++      *)
++        case $LD in
++          *-32|*"-32 "|*-melf32bsmip|*"-melf32bsmip ") libsuff= shlibsuff= ;;
++          *-n32|*"-n32 "|*-melf32bmipn32|*"-melf32bmipn32 ") libsuff=32 shlibsuff=N32 ;;
++          *-64|*"-64 "|*-melf64bmip|*"-melf64bmip ") libsuff=64 shlibsuff=64 ;;
++          *) libsuff= shlibsuff= ;;
++        esac
++        ;;
++    esac
++    ;;
++  linux*oldld* | linux*aout* | linux*coff*)
++    ;;
++  linux* | k*bsd*-gnu | kopensolaris*-gnu)
++    library_names_spec='$libname$shrext'
++    ;;
++  knetbsd*-gnu)
++    library_names_spec='$libname$shrext'
++    ;;
++  netbsd*)
++    library_names_spec='$libname$shrext'
++    ;;
++  newsos6)
++    library_names_spec='$libname$shrext'
++    ;;
++  *nto* | *qnx*)
++    library_names_spec='$libname$shrext'
++    ;;
++  openbsd*)
++    library_names_spec='$libname$shrext$versuffix'
++    ;;
++  os2*)
++    libname_spec='$name'
++    shrext=.dll
++    library_names_spec='$libname.a'
++    ;;
++  osf3* | osf4* | osf5*)
++    library_names_spec='$libname$shrext'
++    ;;
++  rdos*)
++    ;;
++  solaris*)
++    library_names_spec='$libname$shrext'
++    ;;
++  sunos4*)
++    library_names_spec='$libname$shrext$versuffix'
++    ;;
++  sysv4 | sysv4.3*)
++    library_names_spec='$libname$shrext'
++    ;;
++  sysv4*MP*)
++    library_names_spec='$libname$shrext'
++    ;;
++  sysv5* | sco3.2v5* | sco5v6* | unixware* | OpenUNIX* | sysv4*uw2*)
++    library_names_spec='$libname$shrext'
++    ;;
++  tpf*)
++    library_names_spec='$libname$shrext'
++    ;;
++  uts4*)
++    library_names_spec='$libname$shrext'
++    ;;
++esac
++
++sed_quote_subst='s/\(["`$\\]\)/\\\1/g'
++escaped_wl=`echo "X$wl" | sed -e 's/^X//' -e "$sed_quote_subst"`
++shlibext=`echo "$shrext" | sed -e 's,^\.,,'`
++escaped_libname_spec=`echo "X$libname_spec" | sed -e 's/^X//' -e "$sed_quote_subst"`
++escaped_library_names_spec=`echo "X$library_names_spec" | sed -e 's/^X//' -e "$sed_quote_subst"`
++escaped_hardcode_libdir_flag_spec=`echo "X$hardcode_libdir_flag_spec" | sed -e 's/^X//' -e "$sed_quote_subst"`
++
++LC_ALL=C sed -e 's/^\([a-zA-Z0-9_]*\)=/acl_cv_\1=/' <<EOF
++
++# How to pass a linker flag through the compiler.
++wl="$escaped_wl"
++
++# Static library suffix (normally "a").
++libext="$libext"
++
++# Shared library suffix (normally "so").
++shlibext="$shlibext"
++
++# Format of library name prefix.
++libname_spec="$escaped_libname_spec"
++
++# Library names that the linker finds when passed -lNAME.
++library_names_spec="$escaped_library_names_spec"
++
++# Flag to hardcode \$libdir into a binary during linking.
++# This must work even if \$libdir does not exist.
++hardcode_libdir_flag_spec="$escaped_hardcode_libdir_flag_spec"
++
++# Whether we need a single -rpath flag with a separated argument.
++hardcode_libdir_separator="$hardcode_libdir_separator"
++
++# Set to yes if using DIR/libNAME.so during linking hardcodes DIR into the
++# resulting binary.
++hardcode_direct="$hardcode_direct"
++
++# Set to yes if using the -LDIR flag during linking hardcodes DIR into the
++# resulting binary.
++hardcode_minus_L="$hardcode_minus_L"
++
++EOF
+diff -rupN gimp-1.2.5.orig/configure.in gimp-1.2.5/configure.in
+--- gimp-1.2.5.orig/configure.in	2003-06-02 05:54:58.000000000 +0200
++++ gimp-1.2.5/configure.in	2023-03-26 19:32:51.331113020 +0200
+@@ -1,5 +1,7 @@
++AC_PREREQ(2.59)
+ dnl Process this file with autoconf to produce a configure script.
+-AC_INIT(gimprc.in)
++AC_INIT(gimp, 1.2.5)
++AC_CONFIG_SRCDIR([gimprc.in])
+ 
+ #
+ # Making releases:
+@@ -27,14 +29,15 @@ LT_CURRENT_MINUS_AGE=`expr $LT_CURRENT -
+ VERSION=$GIMP_VERSION
+ PACKAGE=gimp
+ 
+-AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
++AM_INIT_AUTOMAKE(no-define)
+ 
+-AM_CONFIG_HEADER(config.h)
++AC_CONFIG_HEADERS([config.h])
+ 
+ dnl Initialize libtool
+ AC_PROG_CC
+-AC_LIBTOOL_WIN32_DLL
+-AM_PROG_LIBTOOL
++AC_CANONICAL_HOST
++
++LT_INIT(win32-dll)
+ 
+ dnl Initialize maintainer mode
+ AM_MAINTAINER_MODE
+@@ -74,8 +77,7 @@ fi
+ AM_CONDITIONAL(MS_LIB_AVAILABLE, test x$ms_librarian = xyes)
+ 
+ dnl Checks for programs.
+-AC_ISC_POSIX
+-AM_PROG_CC_STDC
++AC_SEARCH_LIBS([strerror],[cposix])
+ AC_PROG_INSTALL
+ AC_PROG_LN_S
+ AC_PROG_MAKE_SET
+@@ -250,13 +252,13 @@ dnl DU4 native cc currently needs -std1
+ AC_MSG_CHECKING([for extra flags to get ANSI library prototypes])
+ gimp_save_LIBS=$LIBS
+ LIBS="$LIBS -lm"
+-AC_TRY_RUN([#include <math.h>
+-             int main (void) { return (log(1) != log(1.)); }],
++AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <math.h>
++             int main (void) { return (log(1) != log(1.)); }]])],
+   AC_MSG_RESULT(none needed),
+   gimp_save_CFLAGS=$CFLAGS
+   CFLAGS="$CFLAGS -std1"
+-  AC_TRY_RUN([#include <math.h>
+-               int main (void) { return (log(1) != log(1.)); }],
++  AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <math.h>
++               int main (void) { return (log(1) != log(1.)); }]])],
+     AC_MSG_RESULT(-std1),
+     AC_MSG_RESULT()
+     CFLAGS=$gimp_save_CFLAGS
+@@ -267,12 +269,12 @@ AC_TRY_RUN([#include <math.h>
+ dnl Check for finite or isfinite
+ AC_CHECK_FUNCS(finite, , [
+   AC_MSG_CHECKING(for finite in <math.h>)
+-  AC_TRY_LINK([#include <math.h>], [double f = 0.0; finite (f)], [
++  AC_LINK_IFELSE([AC_LANG_SOURCE([[#include <math.h>]], [[double f = 0.0; finite (f)]])], [
+     AC_DEFINE(HAVE_FINITE)
+     AC_MSG_RESULT(yes)], [
+     AC_MSG_RESULT(no)
+     AC_MSG_CHECKING(for isfinite in <math.h>)
+-    AC_TRY_LINK([#include <math.h>], [float f = 0.0; isfinite(f)], [
++    AC_LINK_IFELSE([AC_LANG_SOURCE([[#include <math.h>]], [[float f = 0.0; isfinite(f)]])], [
+       AC_DEFINE(HAVE_ISFINITE)
+       AC_MSG_RESULT(yes)], AC_MSG_RESULT(no))])])
+ 
+@@ -280,11 +282,11 @@ LIBS=$gimp_save_LIBS
+ 
+ dnl NeXTStep cc seems to need this
+ AC_MSG_CHECKING([for extra flags for POSIX compliance])
+-AC_TRY_COMPILE([#include <dirent.h>], [DIR *dir;],
++AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#include <dirent.h>]], [[DIR *dir;]])],
+   AC_MSG_RESULT(none needed),
+   gimp_save_CFLAGS=$CFLAGS
+   CFLAGS="$CFLAGS -posix"
+-  AC_TRY_COMPILE([#include <dirent.h>], [DIR *dir;],
++  AC_LINK_IFELSE([AC_LANG_SOURCE([[#include <dirent.h>]], [[DIR *dir;]])],
+     AC_MSG_RESULT(-posix),
+     AC_MSG_RESULT()
+     CFLAGS=$gimp_save_CFLAGS
+@@ -298,17 +300,18 @@ CPPFLAGS="$CPPFLAGS $GTK_CFLAGS"
+ LDFLAGS="$LDFLAGS `echo $GTK_LIBS | sed 's/\(.*\)\(-lgtk.*\)/\1/'`"
+ LIBS="$LIBS $GTK_LIBS"
+ 
++X_LIBS="-lX11"
+ dnl Test for Xmu
+   if test -z "$LIBXMU"; then
+     AC_CHECK_LIB(Xmu, XmuClientWindow,
+-      [AC_CHECK_HEADER(X11/Xmu/WinUtil.h,
+-	WEBBROWSER="webbrowser"; GIMP_REMOTE="gimp-remote-1.2"; LIBXMU='-lXmu -lXt -lSM -lICE',
++      [AC_CHECK_HEADER(X11/Xmu/Xmu.h,
++	WEBBROWSER="webbrowser"; GIMP_REMOTE="gimp-remote-1.2"; LIBXMU="-lXmu -lXt -lSM -lICE $X_LIBS",
+ 	[AC_MSG_WARN(*** webbrowser plug-in and gimp-remote will not be built (XMU header file not found) ***)])],
+ 	[AC_CHECK_LIB(Xmu, XmuUpdateMapHints,
+-	  [AC_CHECK_HEADER(X11/Xmu/WinUtil.h,
+-	    WEBBROWSER="webbrowser"; GIMP_REMOTE="gimp-remote-1.2"; LIBXMU='-lXmu -lXt',
++	  [AC_CHECK_HEADER(X11/Xmu/Xmu.h,
++	    WEBBROWSER="webbrowser"; GIMP_REMOTE="gimp-remote-1.2"; LIBXMU="-lXmu -lXt $X_LIBS",
+ 	    [AC_MSG_WARN(*** webbrowser plug-in and gimp-remote will not be built (XMU header file not found) ***)])],
+-	[AC_MSG_WARN(*** webbrowser plug-in and gimp-remote will not be built (XMU library not found) ***)], -lXt)], -lXt -lSM -lICE)
++	[AC_MSG_WARN(*** webbrowser plug-in and gimp-remote will not be built (XMU library not found) ***)], -lXt $X_LIBS)], -lXt -lSM -lICE $X_LIBS)
+   fi
+ 
+ dnl set WEBBROWSER on Win32
+@@ -330,17 +333,17 @@ AC_ARG_WITH(libtiff,  [  --without-libti
+   if test x$with_libtiff != xno && test -z "$LIBTIFF"; then
+     AC_CHECK_LIB(tiff, TIFFReadScanline,
+       [AC_CHECK_HEADER(tiffio.h,
+-	TIFF='tiff'$EXEEXT; LIBTIFF='-ltiff',
++	TIFF='tiff'$EXEEXT; LIBTIFF='-ltiff -ljpeg -llzma -lzstd -lz',
+ 	[AC_MSG_WARN(*** TIFF plug-in will not be built (TIFF header files not found) ***)])],
+       [AC_CHECK_LIB(tiff, TIFFWriteScanline,
+ 	[AC_CHECK_HEADER(tiffio.h,
+-          TIFF='tiff'; LIBTIFF='-ltiff -ljpeg -lz',
++          TIFF='tiff'; LIBTIFF='-ltiff -ljpeg -llzma -lzstd -lz',
+ 	  [AC_MSG_WARN(*** TIFF plug-in will not be built (TIFF header files not found) ***)])],
+ 	[AC_CHECK_LIB(tiff34, TIFFFlushData,
+ 	  [AC_CHECK_HEADER(tiffio.h,
+-            TIFF='tiff'; LIBTIFF='-ltiff34 -ljpeg -lz',
++            TIFF='tiff'; LIBTIFF='-ltiff34 -ljpeg -llzma -lzstd -lz',
+ 	    [AC_MSG_WARN(*** TIFF plug-in will not be built (TIFF header files not found) ***)])],
+-        [AC_MSG_WARN(*** TIFF plug-in will not be built (TIFF library not found) ***)], -ljpeg -lz -lm)], -ljpeg -lz -lm)], -lm)
++        [AC_MSG_WARN(*** TIFF plug-in will not be built (TIFF library not found) ***)], -ljpeg -llzma -lzstd -lz -lm)], -ljpeg -llzma -lzstd -lz -lm)], -ljpeg -llzma -lzstd -lz -lm)
+   fi
+ 
+ if test x$with_libtiff != xno && test -z "$LIBTIFF"; then
+@@ -359,15 +362,12 @@ AC_ARG_WITH(libjpeg, [  --without-libjpe
+       [AC_MSG_WARN(*** XJT plug-in will not be built (JPEG library not found) ***)])
+     if test "$jpeg_ok" = yes; then
+       AC_MSG_CHECKING([for jpeglib.h])
+-      AC_TRY_CPP(
+-[#include <stdio.h>
++      AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <stdio.h>
+ #undef HAVE_STDDEF_H
+ #undef HAVE_STDLIB_H
+ #undef PACKAGE
+ #undef VERSION
+-#include <jpeglib.h>],
+-	jpeg_ok=yes,
+-	jpeg_ok=no)
++#include <jpeglib.h>]])],[jpeg_ok=yes],[jpeg_ok=no])
+       AC_MSG_RESULT($jpeg_ok)
+       if test "$jpeg_ok" = yes; then
+ 	JPEG='jpeg'$EXEEXT; LIBJPEG='-ljpeg'
+@@ -410,10 +410,7 @@ AC_ARG_WITH(png, [  --without-libpng
+       [AC_MSG_WARN(*** PNG plug-in will not be built (PNG library not found) ***)], -lz -lm)
+     if test "$png_ok" = yes; then
+       AC_MSG_CHECKING([for png_structp in png.h])
+-      AC_TRY_COMPILE([#include <png.h>],
+-        [png_structp pp; png_infop info; png_colorp cmap; png_create_read_struct;],
+-        png_ok=yes,
+-        png_ok=no)
++      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <png.h>]], [[png_structp pp; png_infop info; png_colorp cmap; png_create_read_struct;]])],[png_ok=yes],[png_ok=no])
+       AC_MSG_RESULT($png_ok)
+       if test "$png_ok" = yes; then
+         PNG='png'$EXEEXT; LIBPNG="-lpng $LIBZ"
+@@ -476,7 +473,7 @@ if test "x$shmtype" = "xsysv"; then
+   AC_CHECK_HEADER(sys/shm.h, AC_DEFINE(HAVE_SHM_H), no_sys_shm=yes)
+   if test "$ac_cv_header_sys_shm_h" = "yes"; then
+     AC_MSG_CHECKING(whether shmctl IPC_RMID allowes subsequent attaches)
+-    AC_TRY_RUN([
++    AC_RUN_IFELSE([AC_LANG_SOURCE([[
+ 	#include <sys/types.h>
+ 	#include <sys/ipc.h>
+ 	#include <sys/shm.h>
+@@ -498,18 +495,17 @@ if test "x$shmtype" = "xsysv"; then
+ 	  shmdt (shmaddr);
+ 	  exit (0);
+ 	}
+-      ],
+-      AC_DEFINE(IPC_RMID_DEFERRED_RELEASE)
+-        AC_MSG_RESULT(yes),
+-      AC_MSG_RESULT(no),
+-      AC_MSG_RESULT(assuming no))
++      ]])],[AC_DEFINE(IPC_RMID_DEFERRED_RELEASE)
++        AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)],[AC_MSG_RESULT(assuming no)])
+   fi
+ fi
+ 
+ AC_HEADER_DIRENT
+-AC_HEADER_STDC
++AC_CHECK_INCLUDES_DEFAULT
++AC_PROG_EGREP
++
+ AC_HEADER_SYS_WAIT
+-AC_HEADER_TIME
++AC_CHECK_HEADERS_ONCE([sys/time.h])
+ 
+ AC_CHECK_HEADER(sys/param.h, AC_DEFINE(HAVE_SYS_PARAM_H))
+ AC_CHECK_HEADER(sys/time.h, AC_DEFINE(HAVE_SYS_TIME_H))
+@@ -519,7 +515,6 @@ AC_CHECK_HEADER(unistd.h, AC_DEFINE(HAVE
+ AC_CHECK_HEADER(winsock.h, AC_DEFINE(HAVE_WINSOCK_H))
+ 
+ AC_TYPE_PID_T
+-AC_TYPE_SIGNAL
+ AC_FUNC_VPRINTF
+ 
+ AC_FUNC_ALLOCA
+@@ -527,10 +522,9 @@ AC_FUNC_ALLOCA
+ dnl Check for sys/select.h
+ 
+ AC_MSG_CHECKING([fd_set and sys/select])
+-AC_TRY_COMPILE([#include <sys/types.h>],
+-        [fd_set readMask, writeMask;], gimp_ok=yes, gimp_ok=no)
++AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>]], [[fd_set readMask, writeMask;]])],[gimp_ok=yes],[gimp_ok=no])
+ if test $gimp_ok = no; then
+-    AC_HEADER_EGREP(fd_mask, sys/select.h, gimp_ok=yes)
++    AC_EGREP_HEADER([fd_mask],[sys/select.h],[gimp_ok=yes])
+     if test $gimp_ok = yes; then
+         AC_DEFINE(HAVE_SYS_SELECT_H)
+     fi
+@@ -616,8 +610,7 @@ if test -n "$HELPBROWSER"; then
+   LIBS="$LIBS $GTKXMHTML_LIBS"
+ 
+   AC_MSG_CHECKING([to see if we can build with GtkXMHTML])
+-  AC_TRY_LINK([#include <gtk-xmhtml/gtk-xmhtml.h>], [return 0;],
+-    gtkxmhtml_ok=yes, gtkxmhtml_ok=no)
++  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <gtk-xmhtml/gtk-xmhtml.h>]], [[return 0;]])],[gtkxmhtml_ok=yes],[gtkxmhtml_ok=no])
+   AC_MSG_RESULT($gtkxmhtml_ok)
+ 
+   if test "$gtkxmhtml_ok" = no; then
+@@ -660,7 +653,7 @@ if test "x$with_mp" = "xyes"; then
+       GIMP_MP_FLAGS="-D_REENTRANT -D_THREAD_SAFE"]))
+ fi
+ 
+-gimpdatadir=$datadir/$PACKAGE/$GIMP_MAJOR_VERSION.$GIMP_MINOR_VERSION
++gimpdatadir=$datarootdir/$PACKAGE/$GIMP_MAJOR_VERSION.$GIMP_MINOR_VERSION
+ gimpplugindir=$libdir/$PACKAGE/$GIMP_MAJOR_VERSION.$GIMP_MINOR_VERSION
+ gimpsysconfdir=$sysconfdir/$PACKAGE/$GIMP_MAJOR_VERSION.$GIMP_MINOR_VERSION
+ 
+@@ -933,7 +926,7 @@ AC_SUBST(GIMP_MODULES)
+ 
+ dnl Output the Makefiles
+ 
+-AC_OUTPUT([
++AC_CONFIG_FILES([
+ gimp-1.2.1
+ gimprc
+ gimprc_user
+@@ -1051,8 +1044,8 @@ help/C/save/Makefile
+ help/C/stylesheet-images/Makefile
+ help/C/toolbox/Makefile
+ help/C/toolbox/help/Makefile
+-help/C/tools/Makefile],
+-[
++help/C/tools/Makefile])
++AC_CONFIG_COMMANDS([default],[
+    chmod +x gimptool-1.2
+    sed -e "s/^     ..\/..\/..\//     ..\//" plug-ins/perl/po/Makefile > plug-ins/perl/po/Makefile.eek && mv plug-ins/perl/po/Makefile.eek plug-ins/perl/po/Makefile
+    case "$CONFIG_FILES" in
+@@ -1062,5 +1055,6 @@ help/C/tools/Makefile],
+       fi
+       ;;
+    esac
+-]
+-)
++
++],[])
++AC_OUTPUT
+diff -rupN gimp-1.2.5.orig/gimprc.in gimp-1.2.5/gimprc.in
+--- gimp-1.2.5.orig/gimprc.in	2001-11-09 01:32:50.000000000 +0100
++++ gimp-1.2.5/gimprc.in	2023-03-26 16:40:46.213052919 +0200
+@@ -15,6 +15,7 @@
+ 
+ (prefix "@prefix@")
+ (exec_prefix "@exec_prefix@")
++(datarootdir "@datarootdir@")
+ (gimp_data_dir "@gimpdatadir@")
+ (gimp_plugin_dir "@gimpplugindir@")
+ 
+diff -rupN gimp-1.2.5.orig/gimprc_user.in gimp-1.2.5/gimprc_user.in
+--- gimp-1.2.5.orig/gimprc_user.in	2001-11-09 01:32:50.000000000 +0100
++++ gimp-1.2.5/gimprc_user.in	2023-03-26 16:41:30.085008020 +0200
+@@ -13,6 +13,7 @@
+ # have edited this file.
+ 
+ (show-tips yes)
++(datarootdir "@datarootdir@")
+ 
+ # Install a GIMP colormap by default -- only for 8-bit displays
+ # (install-colormap)
+diff -rupN gimp-1.2.5.orig/gimptool-1.2.in gimp-1.2.5/gimptool-1.2.in
+--- gimp-1.2.5.orig/gimptool-1.2.in	2003-05-19 02:34:44.000000000 +0200
++++ gimp-1.2.5/gimptool-1.2.in	2023-03-26 16:48:11.260597448 +0200
+@@ -7,6 +7,7 @@ exec_prefix_set=no
+ bindir=@bindir@
+ sbindir=@sbindir@
+ libexecdir=@libexecdir@
++datarootdir=@datarootdir@
+ datadir=@datadir@
+ sysconfdir=@sysconfdir@
+ sharedstatedir=@sharedstatedir@
+diff -rupN gimp-1.2.5.orig/gimptool-win32.c.in gimp-1.2.5/gimptool-win32.c.in
+--- gimp-1.2.5.orig/gimptool-win32.c.in	2003-06-02 05:54:58.000000000 +0200
++++ gimp-1.2.5/gimptool-win32.c.in	2023-03-26 16:38:00.813222612 +0200
+@@ -81,6 +81,7 @@ static struct {
+   { "bindir", "@bindir@" },
+   { "sbindir", "@sbindir@" },
+   { "libexecdir", "@libexecdir@" },
++  { "datarootdir", "@datarootdir@" },
+   { "datadir", "@datadir@" },
+   { "sysconfdir", "@sysconfdir@" },
+   { "sharedstatedir", "@sharedstatedir@" },
+diff -rupN gimp-1.2.5.orig/libgimp/Makefile.am gimp-1.2.5/libgimp/Makefile.am
+--- gimp-1.2.5.orig/libgimp/Makefile.am	2003-02-14 00:13:50.000000000 +0100
++++ gimp-1.2.5/libgimp/Makefile.am	2023-03-26 19:30:03.179296489 +0200
+@@ -64,12 +64,11 @@ AM_CPPFLAGS = \
+ 	-DG_LOG_DOMAIN=\"LibGimp\"	\
+ 	@GIMP_THREAD_FLAGS@
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)		\
+ 	-I$(top_srcdir)/intl	\
+ 	-I../intl		\
+-	$(GTK_CFLAGS)		\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ EXTRA_DIST = \
+ 	gimpfeatures.h.in	\
+@@ -151,53 +150,30 @@ PDB_WRAPPERS_H = \
+ 	gimpundo_pdb.h			\
+ 	gimpunit_pdb.h
+ 
+-libgimpi_a_SOURCES = \
+-	gimpenv.c		\
+-	gimpenv.h		\
+-	gimpchainbutton.c	\
+-	gimpchainbutton.h	\
+-	gimpcolorbutton.c	\
+-	gimpcolorspace.c	\
+-	gimpcolorspace.h	\
+-	gimpdialog.c		\
+-	gimpdialog.h		\
+-	gimpfileselection.c	\
+-	gimpfileselection.h	\
+-	gimphelpui.c		\
+-	gimphelpui.h		\
+-	gimpmatrix.c		\
+-	gimpmatrix.h		\
+-	gimppatheditor.c	\
+-	gimppatheditor.h	\
+-	gimppixmap.c		\
+-	gimppixmap.h		\
+-	gimpprotocol.c		\
+-	gimpprotocol.h		\
+-	gimpquerybox.c		\
+-	gimpquerybox.h		\
+-	gimpsignal.c            \
+-	gimpsignal.h            \
+-	gimpsizeentry.c		\
+-	gimpsizeentry.h		\
+-	gimpunitmenu.c		\
+-	gimpunitmenu.h		\
+-	gimputils.c		\
+-	gimputils.h		\
+-	gimpvector.c		\
+-	gimpvector.h		\
+-	gimpwidgets.c		\
+-	gimpwidgets.h		\
+-	gimpwire.c		\
+-	gimpwire.h		\
+-	gimpparasite.c		\
+-	gimpparasite.h		\
+-	gimpparasiteio.c	\
+-	gimpparasiteio.h
+-
+-if STATICLIBS
+-## Evil hack to insure all deps are satisfied on first-run make
+-libgimpi_a_DEPENDENCIES = libgimp.la
+-endif
++libgimpi.a: \
++	gimpenv.o		\
++	gimpchainbutton.o	\
++	gimpcolorbutton.o	\
++	gimpcolorspace.o	\
++	gimpdialog.o		\
++	gimpfileselection.o	\
++	gimphelpui.o		\
++	gimpmatrix.o		\
++	gimppatheditor.o	\
++	gimppixmap.o		\
++	gimpprotocol.o		\
++	gimpquerybox.o		\
++	gimpsignal.o            \
++	gimpsizeentry.o		\
++	gimpunitmenu.o		\
++	gimputils.o		\
++	gimpvector.o		\
++	gimpwidgets.o		\
++	gimpwire.o		\
++	gimpparasite.o		\
++	gimpparasiteio.o
++	rm -f $@
++	$(AR) rcs $@ $^
+ 
+ # help `make' along by giving another name for the file, which it knows
+ # how to build
+diff -rupN gimp-1.2.5.orig/libgimp/gimpsignal.h gimp-1.2.5/libgimp/gimpsignal.h
+--- gimp-1.2.5.orig/libgimp/gimpsignal.h	2000-05-31 01:38:46.000000000 +0200
++++ gimp-1.2.5/libgimp/gimpsignal.h	2023-03-26 19:15:51.248219371 +0200
+@@ -39,6 +39,9 @@ extern "C" {
+ /* hope this is right for OS/2 */
+ #define SA_RESTART SA_SYSV
+ #endif
++#ifndef SA_RESTART
++#define SA_RESTART 0
++#endif
+ 
+ /* GimpSignalHandlerFunc is a reference to a (signal handler) function 
+  * that takes a signal ID and returns void. 
+diff -rupN gimp-1.2.5.orig/modules/Makefile.am gimp-1.2.5/modules/Makefile.am
+--- gimp-1.2.5.orig/modules/Makefile.am	2002-10-09 19:49:29.000000000 +0200
++++ gimp-1.2.5/modules/Makefile.am	2023-03-26 18:37:46.142658550 +0200
+@@ -5,16 +5,15 @@ no_undefined = -no-undefined
+ gimp_exe_export_lib = -L../app -lgimpapp
+ endif
+ 
+-libexecdir = $(gimpplugindir)/modules
++libdir = $(gimpplugindir)/modules
+ 
+ AM_CPPFLAGS = \
+ 	-DMODULE_COMPILATION
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+         -I$(top_srcdir)		\
+         -I$(top_srcdir)/intl	\
+-        $(GTK_CFLAGS)		\
+-        -I$(includedir)
++        $(GTK_CFLAGS)
+ 
+ EXTRA_DIST = \
+ 	makefile.mingw		\
+@@ -24,7 +23,7 @@ EXTRA_DIST = \
+ 	gimpmodregister.c	\
+ 	gimpmodregister.h
+ 
+-libexec_LTLIBRARIES = \
++lib_LTLIBRARIES = \
+ 	libcolorsel_gtk.la		\
+ 	libcolorsel_triangle.la		\
+ 	libcolorsel_water.la
+diff -rupN gimp-1.2.5.orig/plug-ins/FractalExplorer/Makefile.am gimp-1.2.5/plug-ins/FractalExplorer/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/FractalExplorer/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/FractalExplorer/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ SUBDIRS = fractalexplorer-examples
+ 
+@@ -26,11 +26,10 @@ FractalExplorer_SOURCES = \
+ AM_CPPFLAGS = \
+         -DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/Lighting/Makefile.am gimp-1.2.5/plug-ins/Lighting/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/Lighting/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/Lighting/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -34,14 +34,13 @@ Lighting_SOURCES = \
+ 	specref1.xpm		\
+ 	specref2.xpm
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+ 	-I$(top_srcdir)/plug-ins/libgck	\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+ LDADD = \
+diff -rupN gimp-1.2.5.orig/plug-ins/MapObject/Makefile.am gimp-1.2.5/plug-ins/MapObject/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/MapObject/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/MapObject/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -36,12 +36,11 @@ MapObject_SOURCES = \
+ 	specref1.xpm		\
+ 	specref2.xpm
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+ 	-I$(top_srcdir)/plug-ins/libgck	\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la		\
+@@ -50,7 +49,7 @@ LDADD = \
+ 	$(GTK_LIBS)					\
+ 	$(INTLLIBS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+ .PHONY: files
+diff -rupN gimp-1.2.5.orig/plug-ins/bmp/Makefile.am gimp-1.2.5/plug-ins/bmp/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/bmp/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/bmp/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -16,13 +16,12 @@ bmp_SOURCES = \
+ 	bmpread.c	\
+ 	bmpwrite.c   
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+         -DLOCALEDIR=\""$(localedir)"\"
+ 
+ LDADD = \
+diff -rupN gimp-1.2.5.orig/plug-ins/common/Makefile.am gimp-1.2.5/plug-ins/common/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/common/Makefile.am	2003-02-14 00:13:57.000000000 +0100
++++ gimp-1.2.5/plug-ins/common/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -14,7 +14,7 @@ SCREENSHOT = screenshot
+ URL = url
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -27,11 +27,10 @@ EXTRA_DIST = \
+ AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)		\
+ 	-I$(top_srcdir)/intl	\
+-	$(GTK_CFLAGS)		\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ libexec_PROGRAMS = \
+ 	AlienMap \
+diff -rupN gimp-1.2.5.orig/plug-ins/dbbrowser/Makefile.am gimp-1.2.5/plug-ins/dbbrowser/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/dbbrowser/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/dbbrowser/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -20,11 +20,10 @@ dbbrowser_SOURCES = \
+ AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/faxg3/Makefile.am gimp-1.2.5/plug-ins/faxg3/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/faxg3/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/faxg3/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -19,11 +19,10 @@ faxg3_SOURCES = \
+ AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GLIB_CFLAGS)			\
+-	-I$(includedir)
++	$(GLIB_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimp.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/fits/Makefile.am gimp-1.2.5/plug-ins/fits/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/fits/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/fits/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -15,11 +15,10 @@ fits_SOURCES = \
+ 	fitsrw.c	\
+ 	fitsrw.h
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+@@ -27,7 +26,7 @@ LDADD = \
+ 	$(GTK_LIBS)				\
+ 	$(INTLLIBS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+ .PHONY: files
+diff -rupN gimp-1.2.5.orig/plug-ins/flame/Makefile.am gimp-1.2.5/plug-ins/flame/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/flame/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/flame/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -22,12 +22,11 @@ flame_SOURCES = \
+ 	rect.c		\
+ 	rect.h
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\" \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/fp/Makefile.am gimp-1.2.5/plug-ins/fp/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/fp/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/fp/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -20,11 +20,10 @@ fp_SOURCES = \
+ AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/gap/Makefile.am gimp-1.2.5/plug-ins/gap/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/gap/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/gap/Makefile.am	2023-03-26 18:37:46.142658550 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ if OS_WIN32
+ else
+@@ -215,11 +215,10 @@ gap_navigator_dialog_SOURCES = \
+ AM_CPPFLAGS = \
+         -DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/gdyntext/Makefile.am gimp-1.2.5/plug-ins/gdyntext/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/gdyntext/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/gdyntext/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ EXTRA_DIST = \
+ 	graphics/align_center.xpm		\
+@@ -52,11 +52,10 @@ gdyntext_SOURCES = \
+ 	message_window.c	\
+ 	message_window.h
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+@@ -64,7 +63,7 @@ LDADD = \
+ 	$(GTK_LIBS)				\
+ 	$(INTLLIBS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+ .PHONY: files
+diff -rupN gimp-1.2.5.orig/plug-ins/gfig/Makefile.am gimp-1.2.5/plug-ins/gfig/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/gfig/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/gfig/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+@@ -21,11 +21,10 @@ gfig_SOURCES = \
+ 	gfig.c		\
+ 	pix_data.h
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/gflare/Makefile.am gimp-1.2.5/plug-ins/gflare/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/gflare/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/gflare/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+@@ -22,11 +22,10 @@ gflare_SOURCES = \
+ 	gtkmultioptionmenu.c	\
+ 	gflare.c
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/gfli/Makefile.am gimp-1.2.5/plug-ins/gfli/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/gfli/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/gfli/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -15,11 +15,10 @@ gfli_SOURCES = \
+ 	fli.c		\
+ 	gfli.c
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+@@ -27,7 +26,7 @@ LDADD = \
+ 	$(GTK_LIBS)				\
+ 	$(INTLLIBS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+ .PHONY: files
+diff -rupN gimp-1.2.5.orig/plug-ins/gimpressionist/Makefile.am gimp-1.2.5/plug-ins/gimpressionist/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/gimpressionist/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/gimpressionist/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -40,11 +40,10 @@ AM_CPPFLAGS = \
+         -DLOCALEDIR=\""$(localedir)"\"
+ 
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/helpbrowser/Makefile.am gimp-1.2.5/plug-ins/helpbrowser/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/helpbrowser/Makefile.am	2001-07-02 02:55:03.000000000 +0200
++++ gimp-1.2.5/plug-ins/helpbrowser/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -11,12 +11,11 @@ helpbrowser_SOURCES = \
+ 	queue.c			\
+ 	queue.h
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)		\
+ 	-I$(top_srcdir)/intl	\
+ 	$(GTK_CFLAGS)		\
+-	$(GTKXMHTML_CFLAGS)	\
+-	-I$(includedir)
++	$(GTKXMHTML_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+@@ -25,7 +24,7 @@ LDADD = \
+ 	$(GTKXMHTML_LIBS)			\
+ 	$(INTLLIBS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+ .PHONY: files
+diff -rupN gimp-1.2.5.orig/plug-ins/ifscompose/Makefile.am gimp-1.2.5/plug-ins/ifscompose/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/ifscompose/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/ifscompose/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -18,11 +18,10 @@ ifscompose_SOURCES = \
+ 	ifscompose_utils.c      \
+ 	ifscompose_storage.c
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+@@ -30,7 +29,7 @@ LDADD = \
+ 	$(GTK_LIBS)				\
+ 	$(INTLLIBS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+ .PHONY: files
+diff -rupN gimp-1.2.5.orig/plug-ins/imagemap/Makefile.am gimp-1.2.5/plug-ins/imagemap/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/imagemap/Makefile.am	2003-06-02 05:56:58.000000000 +0200
++++ gimp-1.2.5/plug-ins/imagemap/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -175,11 +175,10 @@ imagemap_SOURCES = \
+ 	imap_tools.h
+ 
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+@@ -187,7 +186,7 @@ LDADD = \
+ 	$(GTK_LIBS)				\
+ 	$(INTLLIBS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+ .PHONY: files
+diff -rupN gimp-1.2.5.orig/plug-ins/libgck/gck/Makefile.am gimp-1.2.5/plug-ins/libgck/gck/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/libgck/gck/Makefile.am	2001-11-09 01:38:54.000000000 +0100
++++ gimp-1.2.5/plug-ins/libgck/gck/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -17,12 +17,11 @@ gckinclude_HEADERS = \
+ libgck_la_LDFLAGS = \
+ 	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) $(no_undefined)
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I..			\
+ 	-I$(srcdir)/..		\
+ 	-I$(top_srcdir)		\
+-	$(GTK_CFLAGS)		\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ libgck_la_LIBADD = \
+ 	$(GTK_LIBS)
+diff -rupN gimp-1.2.5.orig/plug-ins/maze/Makefile.am gimp-1.2.5/plug-ins/maze/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/maze/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/maze/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -20,11 +20,10 @@ maze_SOURCES = \
+ AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/mosaic/Makefile.am gimp-1.2.5/plug-ins/mosaic/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/mosaic/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/mosaic/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -17,11 +17,10 @@ mosaic_SOURCES = \
+ AM_CPPFLAGS = \
+         -DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/pagecurl/Makefile.am gimp-1.2.5/plug-ins/pagecurl/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/pagecurl/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/pagecurl/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -24,11 +24,10 @@ pagecurl_SOURCES = \
+ AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/perl/config.pl.in gimp-1.2.5/plug-ins/perl/config.pl.in
+--- gimp-1.2.5.orig/plug-ins/perl/config.pl.in	2002-05-14 02:50:29.000000000 +0200
++++ gimp-1.2.5/plug-ins/perl/config.pl.in	2023-03-26 16:37:05.445279630 +0200
+@@ -17,6 +17,7 @@ $^W=0;
+    exec_prefix		=> q[@exec_prefix@],
+    libdir		=> q[@libdir@],
+    bindir		=> q[@bindir@],
++   datarootdir		=> q[@datarootdir@],
+    datadir		=> q[@datadir@],
+ 
+    _PERL		=> q[@PERL@],
+diff -rupN gimp-1.2.5.orig/plug-ins/print/Makefile.am gimp-1.2.5/plug-ins/print/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/print/Makefile.am	2002-05-08 22:53:36.000000000 +0200
++++ gimp-1.2.5/plug-ins/print/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -11,14 +11,13 @@ print_SOURCES = \
+         gimp_main_window.c	\
+         print_gimp.h
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)		\
+ 	-I$(top_srcdir)/intl	\
+ 	$(GTK_CFLAGS)		\
+-	$(PRINT_CFLAGS)		\
+-	-I$(includedir)
++	$(PRINT_CFLAGS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+         -DLOCALEDIR=\""$(localedir)"\"
+ 
+ LDADD = \
+diff -rupN gimp-1.2.5.orig/plug-ins/rcm/Makefile.am gimp-1.2.5/plug-ins/rcm/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/rcm/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/rcm/Makefile.am	2023-03-26 18:37:46.142658550 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -31,11 +31,10 @@ EXTRA_DIST = \
+ AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/script-fu/Makefile.am gimp-1.2.5/plug-ins/script-fu/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/script-fu/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/script-fu/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ SUBDIRS = scripts
+ 
+@@ -39,11 +39,10 @@ EXTRA_DIST = \
+ 	script-fu.ico		\
+ 	script-fu.rc
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/plug-ins/dbbrowser/dbbrowser_utils.o	\
+@@ -52,7 +51,7 @@ LDADD = \
+ 	$(GTK_LIBS)						\
+ 	$(INTLLIBS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+ 	-DREGEX_MALLOC			\
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+diff -rupN gimp-1.2.5.orig/plug-ins/sel2path/Makefile.am gimp-1.2.5/plug-ins/sel2path/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/sel2path/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/sel2path/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -35,13 +35,12 @@ sel2path_SOURCES = \
+ 	vector.c	\
+ 	vector.h
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+ LDADD = \
+diff -rupN gimp-1.2.5.orig/plug-ins/sgi/Makefile.am gimp-1.2.5/plug-ins/sgi/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/sgi/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/sgi/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -18,11 +18,10 @@ sgi_SOURCES = \
+ AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/twain/Makefile.am gimp-1.2.5/plug-ins/twain/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/twain/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/twain/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -1,6 +1,6 @@
+ ## Process this file with automake to produce Makefile.in
+ 
+-LDFLAGS = -mwindows
++AM_LDFLAGS = -mwindows
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -20,13 +20,12 @@ EXTRA_DIST = \
+ 	tw_dump.h	\
+ 	tw_sess.c
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+         -DLOCALEDIR=\""$(localedir)"\"
+ 
+ LDADD = \
+diff -rupN gimp-1.2.5.orig/plug-ins/webbrowser/Makefile.am gimp-1.2.5/plug-ins/webbrowser/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/webbrowser/Makefile.am	2003-01-15 02:17:22.000000000 +0100
++++ gimp-1.2.5/plug-ins/webbrowser/Makefile.am	2023-03-26 18:37:46.142658550 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ scriptdatadir = $(gimpdatadir)/scripts
+ 
+@@ -20,11 +20,10 @@ webbrowser_SOURCES = \
+ AM_CPPFLAGS = \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+-INCLUDES = \
++AM_CPPFLAGS += \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+diff -rupN gimp-1.2.5.orig/plug-ins/winsnap/Makefile.am gimp-1.2.5/plug-ins/winsnap/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/winsnap/Makefile.am	2003-01-15 02:15:28.000000000 +0100
++++ gimp-1.2.5/plug-ins/winsnap/Makefile.am	2023-03-26 18:37:46.146658548 +0200
+@@ -1,6 +1,6 @@
+ ## Process this file with automake to produce Makefile.in
+ 
+-LDFLAGS = -mwindows
++AM_LDFLAGS = -mwindows
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -17,13 +17,12 @@ EXTRA_DIST = \
+ 	winsnap.ico	\
+ 	winsnap.rc
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+         -DLOCALEDIR=\""$(localedir)"\"
+ 
+ LDADD = \
+diff -rupN gimp-1.2.5.orig/plug-ins/xjt/Makefile.am gimp-1.2.5/plug-ins/xjt/Makefile.am
+--- gimp-1.2.5.orig/plug-ins/xjt/Makefile.am	2003-01-15 02:17:31.000000000 +0100
++++ gimp-1.2.5/plug-ins/xjt/Makefile.am	2023-03-26 18:37:46.150658543 +0200
+@@ -4,7 +4,7 @@ if OS_WIN32
+ mwindows = -mwindows
+ endif
+ 
+-LDFLAGS = @LDFLAGS@ $(mwindows)
++AM_LDFLAGS = @LDFLAGS@ $(mwindows)
+ 
+ libexecdir = $(gimpplugindir)/plug-ins
+ 
+@@ -19,11 +19,10 @@ xjt_SOURCES = \
+ 	xpdb_calls.c	\
+ 	xpdb_calls.h
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)			\
+ 	-I$(top_srcdir)/intl		\
+-	$(GTK_CFLAGS)			\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ LDADD = \
+ 	$(top_builddir)/libgimp/libgimpui.la	\
+@@ -32,7 +31,7 @@ LDADD = \
+ 	$(LIBJPEG)				\
+ 	$(INTLLIBS)
+ 
+-AM_CPPFLAGS = \
++AM_CPPFLAGS += \
+ 	-DLOCALEDIR=\""$(localedir)"\"
+ 
+ .PHONY: files
+diff -rupN gimp-1.2.5.orig/po/Makefile.in.in gimp-1.2.5/po/Makefile.in.in
+--- gimp-1.2.5.orig/po/Makefile.in.in	2003-05-20 01:59:20.000000000 +0200
++++ gimp-1.2.5/po/Makefile.in.in	2023-03-26 16:47:15.500654514 +0200
+@@ -22,6 +22,7 @@ VPATH = @srcdir@
+ 
+ prefix = @prefix@
+ exec_prefix = @exec_prefix@
++datarootdir = @datarootdir@
+ datadir = @datadir@
+ localedir = $(datadir)/locale
+ gettextsrcdir = $(datadir)/gettext/po
+diff -rupN gimp-1.2.5.orig/tools/Makefile.am gimp-1.2.5/tools/Makefile.am
+--- gimp-1.2.5.orig/tools/Makefile.am	2002-02-03 08:45:10.000000000 +0100
++++ gimp-1.2.5/tools/Makefile.am	2023-03-26 18:35:08.182821735 +0200
+@@ -24,10 +24,9 @@ gimp_remote_1_2_LDADD = \
+ 
+ kernelgen_SOURCES = kernelgen.c
+ 
+-INCLUDES = \
++AM_CPPFLAGS = \
+ 	-I$(top_srcdir)	\
+-	$(GTK_CFLAGS)	\
+-	-I$(includedir)
++	$(GTK_CFLAGS)
+ 
+ #if WITH_GCG
+ #D_gcg=gcg
+--- gimp-1.2.5.orig/help/C/image/image/transforms/Makefile.am	2001-11-29 22:41:30.000000000 +0100
++++ gimp-1.2.5/help/C/image/image/transforms/Makefile.am	2023-03-27 08:43:33.281258082 +0200
+@@ -14,5 +14,6 @@
+ 	done
+ 
+ install-data-hook:
++	mkdir -p $(DESTDIR)$(helpdatadir)
+ 	rm -f $(DESTDIR)$(helpdatadir)/dialogs
+ 	$(LN_S) ../../../dialogs $(DESTDIR)$(helpdatadir)/dialogs
+--- gimp-1.2.5.orig/intl/Makefile.in	2003-05-20 01:59:17.000000000 +0200
++++ gimp-1.2.5/intl/Makefile.in	2023-03-26 16:47:24.820644976 +0200
+@@ -31,6 +31,7 @@
+ transform = @program_transform_name@
+ libdir = @libdir@
+ includedir = @includedir@
++datarootdir = @datarootdir@
+ datadir = @datadir@
+ localedir = $(datadir)/locale
+ gettextsrcdir = $(datadir)/gettext/intl

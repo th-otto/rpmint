@@ -608,12 +608,12 @@ diff -rup gtk+-1.2.8.orig/gtk.m4 gtk+-1.2.8/gtk.m4
  		    , enable_gtktest=yes)
  
 -  for module in . $4
-+  for module in glib $4
++  for module in gtk+ gmodule $4
    do
        case "$module" in
 -         gthread) 
 -             gtk_config_args="$gtk_config_args gthread"
-+         glib|gthread) 
++         gtk+|glib|gthread|gmodule)
 +             gtk_config_args="$gtk_config_args $module"
           ;;
        esac

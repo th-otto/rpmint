@@ -31,11 +31,7 @@ BuildRequires : autoconf
 BuildRequires : automake
 BuildRequires : libtool
 BuildRequires : make
-%if "%{buildtype}" == "cross"
-Provides      : cross-mint-glib-devel = %{version}
-%else
-Provides      : glib-devel = %{version}
-%endif
+Provides      : %{name}-devel = %{version}
 
 Prefix        : %{_rpmint_target_prefix}
 Docdir        : %{_isysroot}%{_rpmint_target_prefix}/share/doc
@@ -63,7 +59,7 @@ files.
 %patch0 -p1
 %patch1 -p1
 
-rm -f aclocal.m4 acinclude.m4 ltmain.sh ltconfig
+rm -f aclocal.m4 acinclude.m4 ltmain.sh ltconfig config.cache
 rm -rf autom4te.cache
 libtoolize --force || exit 1
 aclocal || exit 1
@@ -80,6 +76,8 @@ cp %{S:1} config.sub
 %rpmint_cflags
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
+	--sysconfdir=/etc
+	--enable-debug=no
 	--with-threads=none
 "
 

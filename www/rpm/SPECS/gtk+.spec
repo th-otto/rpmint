@@ -159,7 +159,7 @@ Name: GDK
 Description: GIMP Drawing Kit
 Version: %{version}
 Requires: glib
-Libs: -lgdk -lXext -lX11 -lm
+Libs: -lgdk -lintl -liconv -lXi -lXext -lX11 -lm
 Cflags: -I\${includedir}/gtk-1.2
 EOF
 
