@@ -1759,7 +1759,7 @@ diff -rupN gimp-1.2.5.orig/libgimp/Makefile.am gimp-1.2.5/libgimp/Makefile.am
  
  EXTRA_DIST = \
  	gimpfeatures.h.in	\
-@@ -151,53 +150,30 @@ PDB_WRAPPERS_H = \
+@@ -151,53 +150,32 @@ PDB_WRAPPERS_H = \
  	gimpundo_pdb.h			\
  	gimpunit_pdb.h
  
@@ -1810,7 +1810,7 @@ diff -rupN gimp-1.2.5.orig/libgimp/Makefile.am gimp-1.2.5/libgimp/Makefile.am
 -## Evil hack to insure all deps are satisfied on first-run make
 -libgimpi_a_DEPENDENCIES = libgimp.la
 -endif
-+libgimpi.a: \
++gimpi_objects = \
 +	gimpenv.o		\
 +	gimpchainbutton.o	\
 +	gimpcolorbutton.o	\
@@ -1832,8 +1832,10 @@ diff -rupN gimp-1.2.5.orig/libgimp/Makefile.am gimp-1.2.5/libgimp/Makefile.am
 +	gimpwire.o		\
 +	gimpparasite.o		\
 +	gimpparasiteio.o
++
++libgimpi.a: libgimp.la libgimpui.la
 +	rm -f $@
-+	$(AR) rcs $@ $^
++	$(AR) rcs $@ $(gimpi_objects)
  
  # help `make' along by giving another name for the file, which it knows
  # how to build

@@ -23,6 +23,7 @@ Source0: http://download.gimp.org/pub/%{pkgname}/v%{subver}/v%{version}/%{pkgnam
 Source1: patches/automake/mintelf-config.sub
 Patch0:  patches/gimp/gimp-1.2.5-config.patch
 Patch1:  patches/gimp/gimp-1.2.5-png.patch
+Patch2:  patches/gimp/gimp-version.patch
 
 Packager: Thorsten Otto <admin@tho-otto.de>
 URL: http://www.gimp.org
@@ -122,6 +123,7 @@ The gimp-perl package contains all the perl extensions and perl plugins.
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 rm -f aclocal.m4 ltmain.sh ltconfig
 rm -rf autom4te.cache
@@ -148,6 +150,7 @@ CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_
 	--disable-print
 	%{expr: %{with_perl} ? "--enable-perl" : "--disable-perl"}
 "
+STACKSIZE="-Wl,-stack,512k"
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
@@ -265,13 +268,13 @@ find %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/perl5 -type f -print |
 #
 # Plugins and modules change often (grab the executeable ones)
 #
-echo "%%defattr (0555, bin, bin)" > gimp-plugin-files
+echo "%%defattr (0755, bin, bin)" > gimp-plugin-files
 find %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/gimp/%{subver} -type f -exec file {} \; | grep -v perl | cut -d':' -f 1 | sed "s@^%{buildroot}@@g"  >>gimp-plugin-files
 
 #
 # Now pull the perl ones out.
 #
-echo "%%defattr (0555, bin, bin)" > gimp-perl-plugin-files
+echo "%%defattr (0755, bin, bin)" > gimp-perl-plugin-files
 echo "%%dir %{_isysroot}%{_rpmint_target_prefix}/lib/gimp/%{subver}/plug-ins" >> gimp-perl-plugin-files
 find %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/gimp/%{subver} -type f -exec file {} \; | grep perl | cut -d':' -f 1 | sed "s@^%{buildroot}@@g" >>gimp-perl-plugin-files
 
@@ -284,13 +287,13 @@ if [ -f /usr/lib/rpm/find-lang.sh ] ; then
  /usr/lib/rpm/find-lang.sh %{buildroot} gimp-std-plugins
  /usr/lib/rpm/find-lang.sh %{buildroot} gimp-script-fu
  cat %{pkgname}.lang gimp-std-plugins.lang gimp-script-fu.lang \
-    | sed "s:(644, root, root, 755):(444, bin, bin, 555):" > gimp-all.lang
+    | sed "s:(644, root, root, 755):(644, bin, bin, 755):" > gimp-all.lang
 fi
 
 #
 # Tips
 #
-echo "%%defattr (444, bin, bin, 555)" >gimp-tips-files
+echo "%%defattr (644, bin, bin, 755)" >gimp-tips-files
 echo "%{_isysroot}%{_rpmint_target_prefix}/share/gimp/%{subver}/tips/gimp_tips.txt" >> gimp-tips-files
 for I in `ls %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/share/gimp/%{subver}/tips/gimp*.[a-z]*.txt | sed "s@^%{buildroot}@@g"`; do
    tip_lang=`basename $I | cut -d'.' -f2`
@@ -343,7 +346,7 @@ cat gimp-perl gimp-perl-plugin-files > gimp-perl-files
 %{_isysroot}%{_rpmint_target_prefix}/share/gimp/%{subver}/gimp_logo.ppm
 %{_isysroot}%{_rpmint_target_prefix}/share/gimp/%{subver}/gimp_splash.ppm
 
-%defattr (0555, bin, bin)
+%defattr (0755, bin, bin)
 %{_isysroot}%{_rpmint_target_prefix}/share/gimp/%{subver}/user_install
 
 #%%{_isysroot}%%{_rpmint_target_prefix}/lib/libgimp-%%{subver}.so.%%{microver}.0.0
@@ -366,7 +369,7 @@ cat gimp-perl gimp-perl-plugin-files > gimp-perl-files
 %{_isysroot}%{_rpmint_target_prefix}/bin/xcftopnm
 %endif
 
-%defattr (0444, bin, man)
+%defattr (0644, bin, man)
 %{_isysroot}%{_rpmint_target_prefix}/share/man/man1/gimp-%{subver}.1.gz
 %{_isysroot}%{_rpmint_target_prefix}/share/man/man1/gimp.1.gz
 %{_isysroot}%{_rpmint_target_prefix}/share/man/man1/gimp-remote-%{subver}.1.gz
