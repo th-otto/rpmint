@@ -1,0 +1,193 @@
+diff -rup glib-1.2.10.orig/gdate.c glib-1.2.10/gdate.c
+--- glib-1.2.10.orig/gdate.c	2023-03-27 14:30:17.644250533 +0200
++++ glib-1.2.10/gdate.c	2023-03-27 14:30:51.428212320 +0200
+@@ -460,7 +460,7 @@ g_date_fill_parse_tokens (const gchar *s
+    */
+   num[0][0] = num[1][0] = num[2][0] = num[3][0] = '\0';
+   
+-  s = str;
++  s = (const guchar *)str;
+   pt->num_ints = 0;
+   while (*s && pt->num_ints < 4) 
+     {
+diff -rup glib-1.2.10.orig/glib.h glib-1.2.10/glib.h
+--- glib-1.2.10.orig/glib.h	2023-03-27 14:30:17.644250533 +0200
++++ glib-1.2.10/glib.h	2023-03-27 14:30:51.428212320 +0200
+@@ -204,7 +204,7 @@ extern "C" {
+ #ifndef G_INLINE_FUNC
+ #  ifdef __GNUC__
+ #    ifdef __OPTIMIZE__
+-#      define G_INLINE_FUNC extern inline
++#      define G_INLINE_FUNC static inline
+ #    else
+ #      undef G_CAN_INLINE
+ #      define G_INLINE_FUNC extern
+diff -rup glib-1.2.10.orig/gstrfuncs.c glib-1.2.10/gstrfuncs.c
+--- glib-1.2.10.orig/gstrfuncs.c	2023-03-27 14:30:17.644250533 +0200
++++ glib-1.2.10/gstrfuncs.c	2023-03-27 14:32:33.948096362 +0200
+@@ -867,8 +867,7 @@
+                   /* beware of positional parameters
+                    */
+                 case '$':
+-                  g_warning (G_GNUC_PRETTY_FUNCTION
+-                             "(): unable to handle positional parameters (%%n$)");
++                  g_warning ("%s(): unable to handle positional parameters (%%n$)", G_GNUC_PRETTY_FUNCTION);
+                   len += 1024; /* try adding some safety padding */
+                   break;
+ 
+@@ -1034,12 +1033,13 @@
+                   /*          n   .   dddddddddddddddddddddddd   E   +-  eeee */
+                   conv_len += 1 + 1 + MAX (24, spec.precision) + 1 + 1 + 4;
+                   if (spec.mod_extra_long)
+-                    g_warning (G_GNUC_PRETTY_FUNCTION
+-                               "(): unable to handle long double, collecting double only");
+-#ifdef HAVE_LONG_DOUBLE
+-#error need to implement special handling for long double
+-#endif
+-                  u_double.v_double = va_arg (args, double);
++                  {
++                    g_warning ("%s(): unable to handle long double, collecting double only", G_GNUC_PRETTY_FUNCTION);
++                    u_double.v_double = va_arg (args, long double);
++                  } else
++                  {
++                    u_double.v_double = va_arg (args, double);
++                  }
+                   /* %f can expand up to all significant digits before '.' (308) */
+                   if (c == 'f' &&
+                       u_double.mpn.biased_exponent > 0 && u_double.mpn.biased_exponent < 2047)
+@@ -1077,8 +1077,7 @@
+                   conv_done = TRUE;
+                   if (spec.mod_long)
+                     {
+-                      g_warning (G_GNUC_PRETTY_FUNCTION
+-                                 "(): unable to handle wide char strings");
++                      g_warning ("%s(): unable to handle wide char strings", G_GNUC_PRETTY_FUNCTION);
+                       len += 1024; /* try adding some safety padding */
+                     }
+                   break;
+@@ -1108,9 +1107,7 @@
+                   conv_len += format - spec_start;
+                   break;
+                 default:
+-                  g_warning (G_GNUC_PRETTY_FUNCTION
+-                             "(): unable to handle `%c' while parsing format",
+-                             c);
++                  g_warning ("%s(): unable to handle `%c' while parsing format", G_GNUC_PRETTY_FUNCTION, c);
+                   break;
+                 }
+               conv_done |= conv_len > 0;
+@@ -1136,7 +1133,7 @@
+ 
+   g_return_if_fail (string != NULL);
+ 
+-  s = string;
++  s = (guchar *)string;
+ 
+   while (*s)
+     {
+@@ -1152,7 +1149,7 @@
+ 
+   g_return_if_fail (string != NULL);
+ 
+-  s = string;
++  s = (guchar *)string;
+ 
+   while (*s)
+     {
+@@ -1311,10 +1308,10 @@
+ 
+   g_return_val_if_fail (string != NULL, NULL);
+ 
+-  for (start = string; *start && isspace (*start); start++)
++  for (start = (guchar *)string; *start && isspace (*start); start++)
+     ;
+ 
+-  g_memmove(string, start, strlen(start) + 1);
++  g_memmove(string, start, strlen((char *)start) + 1);
+ 
+   return string;
+ }
+diff -rup glib-1.2.10.orig/gstring.c glib-1.2.10/gstring.c
+--- glib-1.2.10.orig/gstring.c	2023-03-27 14:30:17.644250533 +0200
++++ glib-1.2.10/gstring.c	2023-03-27 14:30:51.428212320 +0200
+@@ -443,7 +443,7 @@ g_string_down (GString *fstring)
+ 
+   g_return_val_if_fail (string != NULL, NULL);
+ 
+-  s = string->str;
++  s = (guchar *)string->str;
+ 
+   while (*s)
+     {
+@@ -462,7 +462,7 @@ g_string_up (GString *fstring)
+ 
+   g_return_val_if_fail (string != NULL, NULL);
+ 
+-  s = string->str;
++  s = (guchar *)string->str;
+ 
+   while (*s)
+     {
+diff -rup glib-1.2.10.orig/gtree.c glib-1.2.10/gtree.c
+--- glib-1.2.10.orig/gtree.c	2023-03-27 14:30:17.644250533 +0200
++++ glib-1.2.10/gtree.c	2023-03-27 14:30:51.428212320 +0200
+@@ -87,7 +87,9 @@ static gpointer   g_tree_node_search
+ static gint       g_tree_node_height                (GTreeNode      *node);
+ static GTreeNode* g_tree_node_rotate_left           (GTreeNode      *node);
+ static GTreeNode* g_tree_node_rotate_right          (GTreeNode      *node);
++#if 0
+ static void       g_tree_node_check                 (GTreeNode      *node);
++#endif
+ 
+ 
+ G_LOCK_DEFINE_STATIC (g_tree_global);
+@@ -644,12 +646,10 @@ g_tree_node_height (GTreeNode *node)
+ static GTreeNode*
+ g_tree_node_rotate_left (GTreeNode *node)
+ {
+-  GTreeNode *left;
+   GTreeNode *right;
+   gint a_bal;
+   gint b_bal;
+ 
+-  left = node->left;
+   right = node->right;
+ 
+   node->right = right->left;
+@@ -713,6 +713,7 @@ g_tree_node_rotate_right (GTreeNode *nod
+   return left;
+ }
+ 
++#if 0
+ static void
+ g_tree_node_check (GTreeNode *node)
+ {
+@@ -742,3 +743,4 @@ g_tree_node_check (GTreeNode *node)
+ 	g_tree_node_check (node->right);
+     }
+ }
++#endif
+diff -rup glib-1.2.10.orig/testglib.c glib-1.2.10/testglib.c
+--- glib-1.2.10.orig/testglib.c	2023-03-27 14:30:17.644250533 +0200
++++ glib-1.2.10/testglib.c	2023-03-27 14:30:51.428212320 +0200
+@@ -38,7 +38,7 @@ if (failed) \
+   { if (!m) \
+       g_print ("\n(%s:%d) failed for: %s\n", __FILE__, __LINE__, ( # cond )); \
+     else \
+-      g_print ("\n(%s:%d) failed for: %s: (%s)\n", __FILE__, __LINE__, ( # cond ), (gchar*)m); \
++      g_print ("\n(%s:%d) failed for: %s: (%s)\n", __FILE__, __LINE__, ( # cond ), (const gchar*)(m ? m : "")); \
+   } \
+ else \
+   g_print ("."); fflush (stdout); \
+diff -rup glib-1.2.10.orig/tests/node-test.c glib-1.2.10/tests/node-test.c
+--- glib-1.2.10.orig/tests/node-test.c	2023-03-27 14:30:17.644250533 +0200
++++ glib-1.2.10/tests/node-test.c	2023-03-27 14:30:51.428212320 +0200
+@@ -48,7 +48,7 @@ if (failed) \
+   { if (!m) \
+       g_print ("\n(%s:%d) failed for: %s\n", __FILE__, __LINE__, ( # cond )); \
+     else \
+-      g_print ("\n(%s:%d) failed for: %s: (%s)\n", __FILE__, __LINE__, ( # cond ), (gchar*)m); \
++      g_print ("\n(%s:%d) failed for: %s: (%s)\n", __FILE__, __LINE__, ( # cond ), (const gchar*)(m ? m : "")); \
+       exit(1); \
+   } \
+ } G_STMT_END

@@ -14,14 +14,14 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version: 1.2.8
-Release: 2
+Version: 1.2.10
+Release: 1
 License: LGPL-2.1-or-later
 Group: Libraries
 Source0: https://download.gnome.org/sources/%{pkgname}/1.2/%{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0:  patches/glib/glib-1.2.8-configure.patch
-Patch1:  patches/glib/glib-1.2.8-inline.patch
+Patch0:  patches/glib/glib-1.2.10-configure.patch
+Patch1:  patches/glib/glib-1.2.10-inline.patch
 
 Packager: Thorsten Otto <admin@tho-otto.de>
 URL: http://www.gtk.org
@@ -90,6 +90,8 @@ for CPU in ${ALL_CPUS}; do
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir || exit 1
 
+	sed -i 's/-Wl,-E //' gmodule.pc
+
 	make # %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 	rm -f %{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/bin/glib-config
@@ -129,47 +131,6 @@ mv %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/glib/include/glibconfig.
 rmdir %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/glib/include || :
 rmdir %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/glib || :
 
-cat << EOF > %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/glib.pc
-prefix=%{_rpmint_target_prefix}
-exec_prefix=\${prefix}
-libdir=\${exec_prefix}/lib
-includedir=\${prefix}/include
-
-Name: GLib
-Description: C Utility Library
-Version: %{version}
-Libs: -lglib
-Cflags: -I\${includedir}/glib-1.2
-EOF
-
-cat << EOF > %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/gmodule.pc
-prefix=%{_rpmint_target_prefix}
-exec_prefix=\${prefix}
-libdir=\${exec_prefix}/lib
-includedir=\${prefix}/include
-
-Name: GModule
-Description: Dynamic module loader for GLib
-Requires: glib
-Version: %{version}
-Libs: -lgmodule
-Cflags:
-EOF
-
-cat << EOF > %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/gthread.pc
-prefix=%{_rpmint_target_prefix}
-exec_prefix=\${prefix}
-libdir=\${exec_prefix}/lib
-includedir=\${prefix}/include
-
-Name: GThread
-Description: Thread support for GLib
-Requires: glib
-Version: %{version}
-Libs: -lgthread
-Cflags:
-EOF
-
 %if "%{buildtype}" == "cross"
 configured_prefix="%{_rpmint_target_prefix}"
 %rpmint_copy_pkg_configs
@@ -206,6 +167,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %endif
 
 %changelog
+* Mon Mar 27 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to version 1.2.10
+
 * Sat Mar 25 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
 

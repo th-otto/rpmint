@@ -12,8 +12,8 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version       : 1.2.8
-Release       : 2
+Version       : 1.2.10
+Release       : 1
 License       : LGPL-2.1-or-later
 Group         : Development/Libraries
 
@@ -48,9 +48,9 @@ Source0: ftp://ftp.gimp.org/pub/gtk/v1.2/%{pkgname}-%{version}.tar.gz
 Source1: gtkrc-default
 Source2: patches/automake/mintelf-config.sub
 Source3: patches/gtk/gtk-acinclude.m4
-Patch0:  patches/gtk/gtk+-1.2.8-mint-x11.patch
-Patch1:  patches/gtk/gtk+-1.2.8-configure.patch
-Patch2:  patches/gtk/gtk+-1.2.8-fontsel.patch
+Patch0:  patches/gtk/gtk+-1.2.10-mint-x11.patch
+Patch1:  patches/gtk/gtk+-1.2.10-configure.patch
+Patch2:  patches/gtk/gtk+-1.2.10-fontsel.patch
 
 %rpmint_build_arch
 
@@ -135,34 +135,6 @@ done
 
 mkdir -p %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig
 
-cat << EOF > %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/gtk+.pc
-prefix=%{_rpmint_target_prefix}
-exec_prefix=\${prefix}
-libdir=\${exec_prefix}/lib
-includedir=\${prefix}/include
-
-Name: GTK+
-Description: GIMP Tool Kit
-Version: %{version}
-Requires: gdk
-Libs: -lgtk
-Cflags: 
-EOF
-
-cat << EOF > %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/gdk.pc
-prefix=%{_rpmint_target_prefix}
-exec_prefix=\${prefix}
-libdir=\${exec_prefix}/lib
-includedir=\${prefix}/include
-
-Name: GDK
-Description: GIMP Drawing Kit
-Version: %{version}
-Requires: glib
-Libs: -lgdk -lintl -liconv -lXi -lXext -lX11 -lm
-Cflags: -I\${includedir}/gtk-1.2
-EOF
-
 install -m 444 %{SOURCE1} %{buildroot}%{_isysroot}/etc/gtk/gtkrc
 
 # i18n garbage with this one.
@@ -222,6 +194,9 @@ fi
 
 
 %changelog
+* Mon Mar 27 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to version 1.2.10
+
 * Sat Mar 25 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
 
