@@ -48,9 +48,9 @@ Source0: ftp://ftp.gimp.org/pub/gtk/v1.2/%{pkgname}-%{version}.tar.gz
 Source1: gtkrc-default
 Source2: patches/automake/mintelf-config.sub
 Source3: patches/gtk/gtk-acinclude.m4
-Patch0:  patches/gtk/gtk+-1.2.10-mint-x11.patch
-Patch1:  patches/gtk/gtk+-1.2.10-configure.patch
-Patch2:  patches/gtk/gtk+-1.2.10-fontsel.patch
+Patch0:  patches/gtk/gtk+-%{version}-mint-x11.patch
+Patch1:  patches/gtk/gtk+-%{version}-configure.patch
+Patch2:  patches/gtk/gtk+-%{version}-fontsel.patch
 
 %rpmint_build_arch
 
@@ -91,6 +91,7 @@ cp %{S:2} config.sub
 
 %rpmint_cflags
 
+COMMON_CFLAGS+=" -fno-strict-aliasing"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--sysconfdir=/etc
 	--with-xinput=xfree
@@ -134,6 +135,39 @@ done
 %rpmint_strip_archives
 
 mkdir -p %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig
+
+# compare two versions, returns -1, 0, 1, ~~~
+%define rpm_vercmp() %{lua:print(rpm.expand('%1') == '~~~' and '~~~' or rpm.vercmp(rpm.expand('%1'), rpm.expand('%2')))}
+
+%if %{rpm_vercmp %{version} 1.2.10} < 0
+cat << EOF > %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/gtk+.pc
+prefix=%{_rpmint_target_prefix}
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: GTK+
+Description: GIMP Tool Kit
+Version: %{version}
+Requires: gdk
+Libs: -lgtk
+Cflags: 
+EOF
+
+cat << EOF > %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/gdk.pc
+prefix=%{_rpmint_target_prefix}
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: GDK
+Description: GIMP Drawing Kit
+Version: %{version}
+Requires: glib
+Libs: -lgdk -lintl -liconv -lXi -lXext -lX11 -lm
+Cflags: -I\${includedir}/gtk-1.2
+EOF
+%endif
 
 install -m 444 %{SOURCE1} %{buildroot}%{_isysroot}/etc/gtk/gtkrc
 

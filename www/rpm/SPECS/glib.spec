@@ -20,8 +20,8 @@ License: LGPL-2.1-or-later
 Group: Libraries
 Source0: https://download.gnome.org/sources/%{pkgname}/1.2/%{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0:  patches/glib/glib-1.2.10-configure.patch
-Patch1:  patches/glib/glib-1.2.10-inline.patch
+Patch0:  patches/glib/glib-%{version}-configure.patch
+Patch1:  patches/glib/glib-%{version}-inline.patch
 
 Packager: Thorsten Otto <admin@tho-otto.de>
 URL: http://www.gtk.org
@@ -75,6 +75,7 @@ cp %{S:1} config.sub
 
 %rpmint_cflags
 
+COMMON_CFLAGS+=" -fno-strict-aliasing"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--sysconfdir=/etc
 	--enable-debug=no
@@ -126,10 +127,56 @@ done
 
 mkdir -p %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig
 
+# compare two versions, returns -1, 0, 1, ~~~
+%define rpm_vercmp() %{lua:print(rpm.expand('%1') == '~~~' and '~~~' or rpm.vercmp(rpm.expand('%1'), rpm.expand('%2')))}
+
 # move glibconfig.h
 mv %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/glib/include/glibconfig.h %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/include/glib-1.2
 rmdir %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/glib/include || :
 rmdir %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/glib || :
+
+%if %{rpm_vercmp %{version} 1.2.10} < 0
+cat << EOF > %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/glib.pc
+prefix=%{_rpmint_target_prefix}
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: GLib
+Description: C Utility Library
+Version: %{version}
+Libs: -lglib
+Cflags: -I\${includedir}/glib-1.2
+EOF
+
+cat << EOF > %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/gmodule.pc
+prefix=%{_rpmint_target_prefix}
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: GModule
+Description: Dynamic module loader for GLib
+Requires: glib
+Version: %{version}
+Libs: -lgmodule
+Cflags:
+EOF
+
+cat << EOF > %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/gthread.pc
+prefix=%{_rpmint_target_prefix}
+exec_prefix=\${prefix}
+libdir=\${exec_prefix}/lib
+includedir=\${prefix}/include
+
+Name: GThread
+Description: Thread support for GLib
+Requires: glib
+Version: %{version}
+Libs: -lgthread
+Cflags:
+EOF
+%endif
 
 %if "%{buildtype}" == "cross"
 configured_prefix="%{_rpmint_target_prefix}"

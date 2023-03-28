@@ -340,11 +340,13 @@ diff -rup gtk+-1.2.8.orig/gdk/Makefile.am gtk+-1.2.8/gdk/Makefile.am
  
  #
  # libraries to compile and install
-@@ -17,21 +16,20 @@ lib_LTLIBRARIES = libgdk.la
+@@ -16,22 +15,21 @@ INCLUDES = @STRIP_BEGIN@ \
+ lib_LTLIBRARIES = libgdk.la
  
  # libtool stuff: set version and export symbols for resolving
- libgdkincludedir = $(includedir)/gdk
+-libgdkincludedir = $(includedir)/gdk
 -libgdk_la_LDFLAGS = @STRIP_BEGIN@ \
++libgdkincludedir = $(includedir)/gtk-1.2/gdk
 +libgdk_la_LDFLAGS = \
  	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
  	-release $(LT_RELEASE) \
@@ -437,11 +439,13 @@ diff -rup gtk+-1.2.8.orig/gtk/Makefile.am gtk+-1.2.8/gtk/Makefile.am
  
  
  #
-@@ -23,15 +22,14 @@ lib_LTLIBRARIES = libgtk.la
+@@ -22,16 +21,15 @@ INCLUDES = @STRIP_BEGIN@ \
+ lib_LTLIBRARIES = libgtk.la
  
  # libtool stuff: set version and export symbols for resolving
- libgtkincludedir = $(includedir)/gtk
+-libgtkincludedir = $(includedir)/gtk
 -libgtk_la_LDFLAGS = @STRIP_BEGIN@ \
++libgtkincludedir = $(includedir)/gtk-1.2/gtk
 +libgtk_la_LDFLAGS = \
  	-version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)	\
  	-release $(LT_RELEASE) 					\
