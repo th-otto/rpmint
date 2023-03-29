@@ -1,0 +1,62 @@
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in glib-1.2.10.orig/glib.h glib-1.2.10/glib.h
+--- glib-1.2.10.orig/glib.h	2023-03-28 12:42:45.604476573 +0200
++++ glib-1.2.10/glib.h	2023-03-29 11:30:22.751340408 +0200
+@@ -1535,7 +1535,7 @@ void	g_set_prgname		(const gchar *prgnam
+ /* Miscellaneous utility functions
+  */
+ guint	g_parse_debug_string	(const gchar *string,
+-				 GDebugKey   *keys,
++				 const GDebugKey   *keys,
+ 				 guint	      nkeys);
+ gint	g_snprintf		(gchar	     *string,
+ 				 gulong	      n,
+@@ -1879,6 +1879,7 @@ typedef enum
+   G_TOKEN_LEFT_BRACE		= '[',
+   G_TOKEN_RIGHT_BRACE		= ']',
+   G_TOKEN_EQUAL_SIGN		= '=',
++  G_TOKEN_MINUS			= '-',
+   G_TOKEN_COMMA			= ',',
+   
+   G_TOKEN_NONE			= 256,
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in glib-1.2.10.orig/gutils.c glib-1.2.10/gutils.c
+--- glib-1.2.10.orig/gutils.c	2000-08-09 20:12:31.000000000 +0200
++++ glib-1.2.10/gutils.c	2023-03-29 11:30:22.751340408 +0200
+@@ -213,7 +213,7 @@ g_vsnprintf (gchar	 *str,
+ 
+ guint	     
+ g_parse_debug_string  (const gchar *string, 
+-		       GDebugKey   *keys, 
++		       const GDebugKey   *keys, 
+ 		       guint	    nkeys)
+ {
+   guint i;
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in glib-1.2.10.orig/tests/hash-test.c glib-1.2.10/tests/hash-test.c
+--- glib-1.2.10.orig/tests/hash-test.c	1999-02-24 07:14:19.000000000 +0100
++++ glib-1.2.10/tests/hash-test.c	2023-03-29 10:09:32.025733693 +0200
+@@ -175,6 +175,7 @@ static guint one_hash(gconstpointer key)
+ }
+ 
+ 
++#if 0
+ static void not_even_foreach (gpointer       key,
+ 				 gpointer       value,
+ 				 gpointer	user_data)
+@@ -198,8 +199,10 @@ static void not_even_foreach (gpointer
+   g_assert ((i % 2) != 0);
+   g_assert (i != 3);
+ }
++#endif
+ 
+ 
++#if 0
+ static gboolean remove_even_foreach (gpointer       key,
+ 				 gpointer       value,
+ 				 gpointer	user_data)
+@@ -222,6 +225,7 @@ static gboolean remove_even_foreach (gpo
+ 
+   return ((i % 2) == 0) ? TRUE : FALSE;
+ }
++#endif
+ 
+ 
+ 

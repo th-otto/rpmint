@@ -22,6 +22,7 @@ Source0: https://download.gnome.org/sources/%{pkgname}/1.2/%{pkgname}-%{version}
 Source1: patches/automake/mintelf-config.sub
 Patch0:  patches/glib/glib-%{version}-configure.patch
 Patch1:  patches/glib/glib-%{version}-inline.patch
+Patch2:  patches/glib/glib-%{version}-warnings.patch
 
 Packager: Thorsten Otto <admin@tho-otto.de>
 URL: http://www.gtk.org
@@ -58,6 +59,7 @@ files.
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 rm -f aclocal.m4 acinclude.m4 ltmain.sh ltconfig config.cache
 rm -rf autom4te.cache

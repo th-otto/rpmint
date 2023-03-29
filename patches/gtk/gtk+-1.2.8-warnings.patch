@@ -1,0 +1,2082 @@
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gdk/gdkcc.c gtk+-1.2.8/gdk/gdkcc.c
+--- gtk+-1.2.8.orig/gdk/gdkcc.c	1999-09-19 04:19:26.000000000 +0200
++++ gtk+-1.2.8/gdk/gdkcc.c	2023-03-28 19:13:58.977855551 +0200
+@@ -147,11 +147,12 @@ query_colors (GdkColorContext *cc)
+ }
+ 
+ static void
+-init_bw (GdkColorContext *cc)
++init_bw (GdkColorContext *cc, const char *where)
+ {
+   GdkColor color;
+   
+-  g_warning ("init_bw: failed to allocate colors, falling back to black and white");
++  if (where)
++    g_warning ("%s: failed to allocate colors, falling back to black and white", where);
+   
+   cc->mode = GDK_CC_MODE_BW;
+   
+@@ -207,7 +208,7 @@ init_gray (GdkColorContext *cc)
+ 	    {
+ 	      g_free (cc->clut);
+ 	      cc->clut = NULL;
+-	      init_bw (cc);
++	      init_bw (cc, "init_gray");
+ 	      g_free (cstart);
+ 	      return;
+ 	    }
+@@ -431,7 +432,7 @@ init_direct_color (GdkColorContext *cc)
+ 	    {
+ 	      g_free (cc->clut);
+ 	      cc->clut = NULL;
+-	      init_bw (cc);
++	      init_bw (cc, "init_direct_color");
+ 	      break;
+ 	    }
+ 	}
+@@ -567,7 +568,7 @@ gdk_color_context_new (GdkVisual   *visu
+ 			       "GDK_VISUAL_GRAYSCALE"));
+ 	  
+ 	  if (GDK_VISUAL_XVISUAL (cc->visual)->map_entries == 2)
+-	    init_bw (cc);
++	    init_bw (cc, NULL);
+ 	  else
+ 	    init_gray (cc);
+ 	  
+@@ -642,7 +643,7 @@ gdk_color_context_new_mono (GdkVisual
+   cc->mode = GDK_CC_MODE_UNDEFINED;
+   cc->need_to_free_colormap = FALSE;
+   
+-  init_bw (cc);
++  init_bw (cc, NULL);
+   
+   return (GdkColorContext *) cc;
+ }
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gdk/gdkvisual.c gtk+-1.2.8/gdk/gdkvisual.c
+--- gtk+-1.2.8.orig/gdk/gdkvisual.c	1999-06-24 12:26:10.000000000 +0200
++++ gtk+-1.2.8/gdk/gdkvisual.c	2023-03-28 19:14:42.793803930 +0200
+@@ -219,8 +219,8 @@ gdk_visual_init (void)
+ #ifdef G_ENABLE_DEBUG 
+   if (gdk_debug_flags & GDK_DEBUG_MISC)
+     for (i = 0; i < nvisuals; i++)
+-      g_message ("visual: %s: %d",
+-		 visual_names[visuals[i].visual.type],
++      g_message ("visual[%d]: %s: %d",
++		 i, visual_names[visuals[i].visual.type],
+ 		 visuals[i].visual.depth);
+ #endif /* G_ENABLE_DEBUG */
+ 
+@@ -253,8 +253,21 @@ gdk_visual_init (void)
+ 	}
+     }
+ 
++#ifdef G_ENABLE_DEBUG 
++  if (gdk_debug_flags & GDK_DEBUG_MISC)
++  {
++  	g_message ("navailable_depths: %d", navailable_depths);
++    for (i = 0; i < navailable_depths; i++)
++      g_message ("  depth[%d]: %d", i, available_depths[i]);
++  	g_message ("navailable_types: %d", navailable_types);
++    for (i = 0; i < navailable_types; i++)
++      g_message ("  type[%d]: %d %s", i, available_types[i], visual_names[available_types[i]]);
++    g_message("system_visual: %s", system_visual ? visual_names[system_visual->visual.type] : "none");
++  }
++#endif /* G_ENABLE_DEBUG */
++
+   for (i = 0; i < nvisuals; i++)
+-    gdk_visual_add ((GdkVisual*) &visuals[i]);
++    gdk_visual_add (&visuals[i].visual);
+ 
+   if (npossible_types == 0)
+     g_error ("unable to find a usable visual type");
+@@ -287,13 +300,13 @@ gdk_visual_get_best_type (void)
+ GdkVisual*
+ gdk_visual_get_system (void)
+ {
+-  return ((GdkVisual*) system_visual);
++  return &system_visual->visual;
+ }
+ 
+ GdkVisual*
+ gdk_visual_get_best (void)
+ {
+-  return ((GdkVisual*) &(visuals[0]));
++  return &visuals[0].visual;
+ }
+ 
+ GdkVisual*
+@@ -306,7 +319,7 @@ gdk_visual_get_best_with_depth (gint dep
+   for (i = 0; i < nvisuals; i++)
+     if (depth == visuals[i].visual.depth)
+       {
+-	return_val = (GdkVisual*) &(visuals[i]);
++	return_val = &visuals[i].visual;
+ 	break;
+       }
+ 
+@@ -323,7 +336,7 @@ gdk_visual_get_best_with_type (GdkVisual
+   for (i = 0; i < nvisuals; i++)
+     if (visual_type == visuals[i].visual.type)
+       {
+-	return_val = (GdkVisual*) &(visuals[i]);
++	return_val = &visuals[i].visual;
+ 	break;
+       }
+ 
+@@ -342,7 +355,7 @@ gdk_visual_get_best_with_both (gint
+     if ((depth == visuals[i].visual.depth) &&
+ 	(visual_type == visuals[i].visual.type))
+       {
+-	return_val = (GdkVisual*) &(visuals[i]);
++	return_val = &visuals[i].visual;
+ 	break;
+       }
+ 
+@@ -398,7 +411,7 @@ gdkx_visual_get (VisualID xvisualid)
+ 
+   for (i = 0; i < nvisuals; i++)
+     if (xvisualid == visuals[i].xvisual->visualid)
+-      return (GdkVisual*) &visuals[i];
++      return &visuals[i].visual;
+ 
+   return NULL;
+ }
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gdk/gdk.c gtk+-1.2.8/gdk/gdk.c
+--- gtk+-1.2.8.orig/gdk/gdk.c	2000-01-31 23:25:57.000000000 +0100
++++ gtk+-1.2.8/gdk/gdk.c	2023-03-29 10:17:52.829097421 +0200
+@@ -934,7 +934,7 @@ gdk_set_sm_client_id (const gchar* sm_cl
+       XChangeProperty (gdk_display, gdk_leader_window,
+ 	   	       gdk_atom_intern ("SM_CLIENT_ID", FALSE),
+ 		       XA_STRING, 8, PropModeReplace,
+-		       sm_client_id, strlen(sm_client_id));
++		       (const unsigned char *)sm_client_id, strlen(sm_client_id));
+     }
+   else
+      XDeleteProperty (gdk_display, gdk_leader_window,
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gdk/gdkgc.c gtk+-1.2.8/gdk/gdkgc.c
+--- gtk+-1.2.8.orig/gdk/gdkgc.c	2000-01-31 23:25:57.000000000 +0100
++++ gtk+-1.2.8/gdk/gdkgc.c	2023-03-29 10:18:37.853040218 +0200
+@@ -832,7 +832,7 @@ gdk_gc_set_dashes (GdkGC      *gc,
+ 
+   private = (GdkGCPrivate*) gc;
+ 
+-  XSetDashes (private->xdisplay, private->xgc, dash_offset, dash_list, n);
++  XSetDashes (private->xdisplay, private->xgc, dash_offset, (const char *)dash_list, n);
+ }
+ 
+ void
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gdk/gdkim.c gtk+-1.2.8/gdk/gdkim.c
+--- gtk+-1.2.8.orig/gdk/gdkim.c	2000-01-31 23:26:02.000000000 +0100
++++ gtk+-1.2.8/gdk/gdkim.c	2023-03-29 10:27:06.088387302 +0200
+@@ -1524,7 +1524,7 @@ gdk_wcstombs (const GdkWChar *src)
+        * We must copy the string into an area allocated by glib, because
+        * the string 'tpr.value' must be freed by XFree().
+        */
+-      mbstr = g_strdup(tpr.value);
++      mbstr = g_strdup((char *)tpr.value);
+       XFree (tpr.value);
+     }
+   else
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gdk/gdkimage.c gtk+-1.2.8/gdk/gdkimage.c
+--- gtk+-1.2.8.orig/gdk/gdkimage.c	1999-09-23 21:43:39.000000000 +0200
++++ gtk+-1.2.8/gdk/gdkimage.c	2023-03-29 10:28:57.456239937 +0200
+@@ -66,6 +66,7 @@ static void gdk_image_put_normal (GdkDra
+ 				  gint         ydest,
+ 				  gint         width,
+ 				  gint         height);
++#ifdef USE_SHM
+ static void gdk_image_put_shared (GdkDrawable *drawable,
+ 				  GdkGC       *gc,
+ 				  GdkImage    *image,
+@@ -75,6 +76,7 @@ static void gdk_image_put_shared (GdkDra
+ 				  gint         ydest,
+ 				  gint         width,
+ 				  gint         height);
++#endif
+ 
+ 
+ static GList *image_list = NULL;
+@@ -468,6 +470,7 @@ gdk_image_put_normal (GdkDrawable *drawa
+ 	     xsrc, ysrc, xdest, ydest, width, height);
+ }
+ 
++#ifdef USE_SHM
+ static void
+ gdk_image_put_shared (GdkDrawable *drawable,
+ 		      GdkGC       *gc,
+@@ -479,7 +482,6 @@ gdk_image_put_shared (GdkDrawable *drawa
+ 		      gint         width,
+ 		      gint         height)
+ {
+-#ifdef USE_SHM
+   GdkWindowPrivate *drawable_private;
+   GdkImagePrivate *image_private;
+   GdkGCPrivate *gc_private;
+@@ -499,7 +501,5 @@ gdk_image_put_shared (GdkDrawable *drawa
+   XShmPutImage (drawable_private->xdisplay, drawable_private->xwindow,
+ 		gc_private->xgc, image_private->ximage,
+ 		xsrc, ysrc, xdest, ydest, width, height, False);
+-#else /* USE_SHM */
+-  g_error ("trying to draw shared memory image when gdk was compiled without shared memory support");
+-#endif /* USE_SHM */
+ }
++#endif /* USE_SHM */
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gdk/gdkinput.c gtk+-1.2.8/gdk/gdkinput.c
+--- gtk+-1.2.8.orig/gdk/gdkinput.c	2000-01-31 23:26:03.000000000 +0100
++++ gtk+-1.2.8/gdk/gdkinput.c	2023-03-29 12:09:50.660417959 +0200
+@@ -46,12 +46,12 @@ static GdkDevicePrivate *gdk_input_find_
+ 
+ /* Incorporate the specific routines depending on compilation options */
+ 
+-static const GdkAxisUse gdk_input_core_axes[] = { GDK_AXIS_X, GDK_AXIS_Y };
++static GdkAxisUse gdk_input_core_axes[] = { GDK_AXIS_X, GDK_AXIS_Y };
+ 
+ static const GdkDeviceInfo gdk_input_core_info =
+ {
+   GDK_CORE_POINTER,
+-  "Core Pointer",
++  (gchar *)"Core Pointer",
+   GDK_SOURCE_MOUSE,
+   GDK_MODE_SCREEN,
+   TRUE,
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gdk/gdkinputcommon.h gtk+-1.2.8/gdk/gdkinputcommon.h
+--- gtk+-1.2.8.orig/gdk/gdkinputcommon.h	1999-11-27 09:51:24.000000000 +0100
++++ gtk+-1.2.8/gdk/gdkinputcommon.h	2023-03-29 10:31:37.016028803 +0200
+@@ -26,6 +26,8 @@
+ 
+ #if defined(XINPUT_GXI) || defined(XINPUT_XFREE)
+ 
++#include <string.h>
++
+ /* Forward declarations */
+ static void gdk_input_get_root_relative_geometry (Display *dpy, Window w, 
+ 						  int *x_ret, int *y_ret,
+@@ -463,7 +465,7 @@ gdk_input_common_init(gint include_core)
+       XFreeDeviceList(devices);
+     }
+ 
+-  gdk_input_devices = g_list_append (gdk_input_devices, &gdk_input_core_info);
++  gdk_input_devices = g_list_append (gdk_input_devices, (void *)&gdk_input_core_info);
+ 
+   return TRUE;
+ }
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gdk/gdkpixmap.c gtk+-1.2.8/gdk/gdkpixmap.c
+--- gtk+-1.2.8.orig/gdk/gdkpixmap.c	2000-01-24 03:54:30.000000000 +0100
++++ gtk+-1.2.8/gdk/gdkpixmap.c	2023-03-29 10:34:47.239777093 +0200
+@@ -445,12 +445,11 @@ _gdk_pixmap_create_from_xpm (GdkWindow
+   GdkVisual *visual;
+   GdkGC *gc = NULL;
+   GdkColor tmp_color;
+-  gint width, height, num_cols, cpp, n, ns, cnt, xcnt, ycnt, wbytes;
++  gint width, height, num_cols, cpp, n, cnt, xcnt, ycnt, wbytes;
+   gchar *buffer, pixel_str[32];
+   gchar *name_buf;
+   _GdkPixmapColor *color = NULL, *fallbackcolor = NULL;
+   _GdkPixmapColor *colors = NULL;
+-  gulong index;
+   GHashTable *color_hash = NULL;
+   _GdkPixmapInfo *color_info = NULL;
+   
+@@ -541,7 +540,6 @@ _gdk_pixmap_create_from_xpm (GdkWindow
+ 	fallbackcolor = color;
+     }
+   
+-  index = 0;
+   image = gdk_image_new (GDK_IMAGE_FASTEST, visual, width, height);
+   
+   if (mask)
+@@ -579,7 +577,6 @@ _gdk_pixmap_create_from_xpm (GdkWindow
+ 	{
+ 	  strncpy (pixel_str, &buffer[n], cpp);
+ 	  pixel_str[cpp] = 0;
+-	  ns = 0;
+ 	  
+ 	  color = g_hash_table_lookup (color_hash, pixel_str);
+ 	  
+@@ -766,7 +763,8 @@ gdk_pixmap_foreign_new (guint32 anid)
+   GdkWindowPrivate *private;
+   Pixmap xpixmap;
+   Window root_return;
+-  unsigned int x_ret, y_ret, w_ret, h_ret, bw_ret, depth_ret;
++  int x_ret, y_ret;
++  unsigned int w_ret, h_ret, bw_ret, depth_ret;
+ 
+   /* check to make sure we were passed something at
+      least a little sane */
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gdk/gdkrgb.c gtk+-1.2.8/gdk/gdkrgb.c
+--- gtk+-1.2.8.orig/gdk/gdkrgb.c	2000-05-19 07:18:08.000000000 +0200
++++ gtk+-1.2.8/gdk/gdkrgb.c	2023-03-29 10:36:01.863678349 +0200
+@@ -516,7 +516,9 @@ gdk_rgb_set_gray_cmap (GdkColormap *cmap
+ {
+   gint i;
+   GdkColor color;
++#ifdef VERBOSE
+   gint status;
++#endif
+   gulong pixels[256];
+   gint r, g, b, gray;
+ 
+@@ -526,7 +528,10 @@ gdk_rgb_set_gray_cmap (GdkColormap *cmap
+       color.red = i * 257;
+       color.green = i * 257;
+       color.blue = i * 257;
+-      status = gdk_color_alloc (cmap, &color);
++#ifdef VERBOSE
++      status =
++#endif
++      gdk_color_alloc (cmap, &color);
+       pixels[i] = color.pixel;
+ #ifdef VERBOSE
+       g_print ("allocating pixel %d, %x %x %x, result %d\n",
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gdk/gdkwindow.c gtk+-1.2.8/gdk/gdkwindow.c
+--- gtk+-1.2.8.orig/gdk/gdkwindow.c	2000-01-31 23:26:03.000000000 +0100
++++ gtk+-1.2.8/gdk/gdkwindow.c	2023-03-29 10:38:02.335518938 +0200
+@@ -1201,7 +1201,7 @@ gdk_window_set_role (GdkWindow   *window
+   if (role)
+     XChangeProperty (private->xdisplay, private->xwindow,
+ 		     gdk_atom_intern ("WM_WINDOW_ROLE", FALSE), XA_STRING,
+-		     8, PropModeReplace, role, strlen (role));
++		     8, PropModeReplace, (const unsigned char *)role, strlen (role));
+   else
+     XDeleteProperty (private->xdisplay, private->xwindow,
+ 		     gdk_atom_intern ("WM_WINDOW_ROLE", FALSE));
+@@ -2078,7 +2078,7 @@ gdk_window_set_icon_name (GdkWindow   *w
+   if (window_private->destroyed)
+     return;
+   res = XmbTextListToTextProperty (window_private->xdisplay,
+-				   &name, 1, XStdICCTextStyle,
++				   (char **)&name, 1, XStdICCTextStyle,
+                                	   &property);
+   if (res < 0)
+     {
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkaccellabel.c gtk+-1.2.8/gtk/gtkaccellabel.c
+--- gtk+-1.2.8.orig/gtk/gtkaccellabel.c	1999-02-24 08:33:28.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkaccellabel.c	2023-03-29 10:41:34.159238648 +0200
+@@ -89,14 +89,10 @@ gtk_accel_label_class_init (GtkAccelLabe
+ {
+   GtkObjectClass *object_class;
+   GtkWidgetClass *widget_class;
+-  GtkMiscClass *misc_class;
+-  GtkLabelClass *label_class;
+   
+   accel_label_class = class;
+   object_class = (GtkObjectClass*) class;
+   widget_class = (GtkWidgetClass*) class;
+-  misc_class = (GtkMiscClass*) class;
+-  label_class = (GtkLabelClass*) class;
+   
+   parent_class = gtk_type_class (gtk_label_get_type ());
+   
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkalignment.c gtk+-1.2.8/gtk/gtkalignment.c
+--- gtk+-1.2.8.orig/gtk/gtkalignment.c	1999-02-24 08:33:32.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkalignment.c	2023-03-29 10:42:07.767194176 +0200
+@@ -234,14 +234,12 @@ static void
+ gtk_alignment_size_request (GtkWidget      *widget,
+ 			    GtkRequisition *requisition)
+ {
+-  GtkAlignment *alignment;
+   GtkBin *bin;
+ 
+   g_return_if_fail (widget != NULL);
+   g_return_if_fail (GTK_IS_ALIGNMENT (widget));
+   g_return_if_fail (requisition != NULL);
+ 
+-  alignment = GTK_ALIGNMENT (widget);
+   bin = GTK_BIN (widget);
+ 
+   requisition->width = GTK_CONTAINER (widget)->border_width * 2;
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkbbox.c gtk+-1.2.8/gtk/gtkbbox.c
+--- gtk+-1.2.8.orig/gtk/gtkbbox.c	1999-02-24 08:33:41.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkbbox.c	2023-03-29 10:52:42.206351314 +0200
+@@ -65,9 +65,7 @@ gtk_button_box_get_type (void)
+ static void
+ gtk_button_box_class_init (GtkButtonBoxClass *class)
+ {
+-  GtkWidgetClass *widget_class;
+-
+-  widget_class = (GtkWidgetClass*) class;
++  (void)class;
+ }
+ 
+ static void
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkbin.c gtk+-1.2.8/gtk/gtkbin.c
+--- gtk+-1.2.8.orig/gtk/gtkbin.c	1999-05-02 13:39:57.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkbin.c	2023-03-29 10:42:29.727165026 +0200
+@@ -77,11 +77,9 @@ gtk_bin_get_type (void)
+ static void
+ gtk_bin_class_init (GtkBinClass *class)
+ {
+-  GtkObjectClass *object_class;
+   GtkWidgetClass *widget_class;
+   GtkContainerClass *container_class;
+ 
+-  object_class = (GtkObjectClass*) class;
+   widget_class = (GtkWidgetClass*) class;
+   container_class = (GtkContainerClass*) class;
+ 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkbindings.c gtk+-1.2.8/gtk/gtkbindings.c
+--- gtk+-1.2.8.orig/gtk/gtkbindings.c	1999-04-30 00:53:07.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkbindings.c	2023-03-29 12:06:17.316665352 +0200
+@@ -1296,7 +1296,7 @@ gtk_binding_parse_signal (GScanner
+ 	  else
+ 	    done = TRUE;
+ 	  break;
+-	case '-':
++	case G_TOKEN_MINUS:
+ 	  if (!need_arg)
+ 	    done = TRUE;
+ 	  else if (negate)
+@@ -1307,14 +1307,14 @@ gtk_binding_parse_signal (GScanner
+ 	  else
+ 	    negate = TRUE;
+ 	  break;
+-	case ',':
++	case G_TOKEN_COMMA:
+ 	  seen_comma = TRUE;
+ 	  if (need_arg)
+ 	    done = TRUE;
+ 	  else
+ 	    need_arg = TRUE;
+ 	  break;
+-	case ')':
++	case G_TOKEN_RIGHT_PAREN:
+ 	  if (!(need_arg && seen_comma) && !negate)
+ 	    {
+ 	      args = g_slist_reverse (args);
+@@ -1360,7 +1360,7 @@ gtk_binding_parse_bind (GScanner       *
+   g_return_val_if_fail (scanner != NULL, G_TOKEN_ERROR);
+   
+   g_scanner_get_next_token (scanner);
+-  if (scanner->token != GTK_RC_TOKEN_BIND)
++  if (scanner->token != (GTokenType)GTK_RC_TOKEN_BIND)
+     return GTK_RC_TOKEN_BIND;
+   g_scanner_get_next_token (scanner);
+   if (scanner->token != G_TOKEN_STRING)
+@@ -1411,7 +1411,7 @@ gtk_binding_parse_binding (GScanner
+   g_return_val_if_fail (scanner != NULL, G_TOKEN_ERROR);
+ 
+   g_scanner_get_next_token (scanner);
+-  if (scanner->token != GTK_RC_TOKEN_BINDING)
++  if (scanner->token != (GTokenType)GTK_RC_TOKEN_BINDING)
+     return GTK_RC_TOKEN_BINDING;
+   g_scanner_get_next_token (scanner);
+   if (scanner->token != G_TOKEN_STRING)
+@@ -1433,7 +1433,7 @@ gtk_binding_parse_binding (GScanner
+   g_scanner_peek_next_token (scanner);
+   while (scanner->next_token != '}')
+     {
+-      switch (scanner->next_token)
++      switch ((int)scanner->next_token)
+ 	{
+ 	  guint expected_token;
+ 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkcalendar.c gtk+-1.2.8/gtk/gtkcalendar.c
+--- gtk+-1.2.8.orig/gtk/gtkcalendar.c	2000-02-26 04:40:29.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkcalendar.c	2023-03-29 11:01:51.177620199 +0200
+@@ -210,7 +210,7 @@ enum {
+   LAST_SIGNAL
+ };
+ 
+-static gint gtk_calendar_signals[LAST_SIGNAL] = { 0 };
++static guint gtk_calendar_signals[LAST_SIGNAL] = { 0 };
+ 
+ static GtkWidgetClass *parent_class = NULL;
+ 
+@@ -237,8 +237,8 @@ struct _GtkCalendarPrivateData
+ 
+   guint min_day_width;
+   guint max_day_char_width;
+-  guint max_day_char_ascent;
+-  guint max_day_char_descent;
++  gint max_day_char_ascent;
++  gint max_day_char_descent;
+   guint max_label_char_ascent;
+   guint max_label_char_descent;
+   guint max_week_char_width;
+@@ -745,13 +745,10 @@ static void
+ gtk_calendar_set_year_next (GtkCalendar *calendar)
+ {
+   gint month_len;
+-  GtkWidget *widget;
+   
+   g_return_if_fail (calendar != NULL);
+   g_return_if_fail (GTK_IS_WIDGET (calendar));
+   
+-  widget = GTK_WIDGET (calendar);
+-  
+   gtk_calendar_freeze (calendar);
+   
+   calendar->year++;
+@@ -1099,14 +1096,12 @@ gtk_calendar_realize (GtkWidget *widget)
+ static void
+ gtk_calendar_unrealize (GtkWidget *widget)
+ {
+-  GtkCalendar *calendar;
+   GtkCalendarPrivateData *private_data;
+   gint i;
+   
+   g_return_if_fail (widget != NULL);
+   g_return_if_fail (GTK_IS_CALENDAR (widget));
+   
+-  calendar = GTK_CALENDAR (widget);
+   private_data = GTK_CALENDAR_PRIVATE_DATA (widget);
+   
+   if (private_data->header_win)
+@@ -1412,17 +1407,12 @@ gtk_calendar_size_allocate (GtkWidget
+ static void
+ gtk_calendar_draw_focus (GtkWidget *widget)
+ {
+-  GtkCalendar *calendar;
+-  GtkCalendarPrivateData *private_data;
+   gint width, height;
+   gint x, y;
+   
+   g_return_if_fail (widget != NULL);
+   g_return_if_fail (GTK_IS_CALENDAR (widget));
+ 
+-  calendar = GTK_CALENDAR (widget);
+-  private_data = GTK_CALENDAR_PRIVATE_DATA (widget);
+-  
+   if (GTK_WIDGET_DRAWABLE (widget))
+     {
+       x = 0;
+@@ -1445,14 +1435,12 @@ static gint
+ gtk_calendar_expose (GtkWidget	    *widget,
+ 		     GdkEventExpose *event)
+ {
+-  GtkCalendar *calendar;
+   GtkCalendarPrivateData *private_data;
+ 
+   g_return_val_if_fail (widget != NULL, FALSE);
+   g_return_val_if_fail (GTK_IS_CALENDAR (widget), FALSE);
+   g_return_val_if_fail (event != NULL, FALSE);
+   
+-  calendar = GTK_CALENDAR (widget);
+   private_data = GTK_CALENDAR_PRIVATE_DATA (widget);
+   
+   if (GTK_WIDGET_DRAWABLE (widget))
+@@ -1492,14 +1480,12 @@ static void
+ gtk_calendar_paint (GtkWidget	 *widget,
+ 		    GdkRectangle *area)
+ {
+-  GtkCalendar *calendar;
+   GtkCalendarPrivateData *private_data;
+ 
+   g_return_if_fail (widget != NULL);
+   g_return_if_fail (widget->window != NULL);
+   g_return_if_fail (GTK_IS_CALENDAR (widget));
+   
+-  calendar = GTK_CALENDAR (widget);
+   private_data = GTK_CALENDAR_PRIVATE_DATA (widget);
+   
+   if (private_data->main_win != NULL)
+@@ -1523,8 +1509,8 @@ gtk_calendar_paint_header (GtkWidget *wi
+   GtkCalendar *calendar;
+   GdkGC *gc;
+   char buffer[255];
+-  int y, y_arrow;
+-  gint header_width, cal_height;
++  int y;
++  gint header_width;
+   gint str_width;
+   gint max_month_width;
+   gint max_year_width;
+@@ -1545,7 +1531,6 @@ gtk_calendar_paint_header (GtkWidget *wi
+   gdk_window_clear (private_data->header_win);
+   
+   header_width = widget->allocation.width - 4;
+-  cal_height = widget->allocation.height;
+   
+   max_month_width = private_data->max_month_width;
+   max_year_width = private_data->max_year_width;
+@@ -1560,7 +1545,6 @@ gtk_calendar_paint_header (GtkWidget *wi
+   y = private_data->header_h - (private_data->header_h 
+ 				- HEADER_FONT (widget)->ascent
+ 				+ HEADER_FONT (widget)->descent) / 2;
+-  y_arrow = (private_data->header_h - 9) / 2;
+   
+   /* Draw year and its arrows */
+   sprintf (buffer, "%d", calendar->year);
+@@ -1608,7 +1592,6 @@ gtk_calendar_paint_day_names (GtkWidget
+   char buffer[255];
+   int day,i;
+   int day_width, cal_width;
+-  gint cal_height;
+   int day_wid_sep;
+   int str_width;
+   GtkCalendarPrivateData *private_data;
+@@ -1638,7 +1621,6 @@ gtk_calendar_paint_day_names (GtkWidget
+   
+   day_width = private_data->day_width;
+   cal_width = widget->allocation.width;
+-  cal_height = widget->allocation.height;
+   day_wid_sep = day_width + DAY_XSEP;
+   
+   /*
+@@ -1685,7 +1667,9 @@ gtk_calendar_paint_week_numbers (GtkWidg
+ {
+   GtkCalendar *calendar;
+   GdkGC *gc;
+-  gint row, week = 0, year;
++  gint row;
++  N_int year;
++  N_int week = 0;
+   gint x_loc;
+   char buffer[3];
+   gint y_baseline, day_height;
+@@ -1811,7 +1795,6 @@ gtk_calendar_paint_day (GtkWidget *widge
+   gint x_loc;
+   gint y_top;
+   gint y_baseline;
+-  gint day_xspace;
+   GtkCalendarPrivateData *private_data;
+   
+   g_return_if_fail (widget != NULL);
+@@ -1833,8 +1816,6 @@ gtk_calendar_paint_day (GtkWidget *widge
+   
+   day_height = row_height (calendar);
+   
+-  day_xspace = private_data->day_width - private_data->max_day_char_width*2;
+-  
+   day = calendar->day[row][col];
+   
+   x_left = left_x_for_column (calendar, col);
+@@ -1911,7 +1892,6 @@ gtk_calendar_paint_day (GtkWidget *widge
+ static void
+ gtk_calendar_paint_main (GtkWidget *widget)
+ {
+-  GtkCalendar *calendar;
+   GtkCalendarPrivateData *private_data;
+   gint row, col;
+   
+@@ -1919,7 +1899,6 @@ gtk_calendar_paint_main (GtkWidget *widg
+   g_return_if_fail (widget->window != NULL);
+   g_return_if_fail (GTK_IS_CALENDAR (widget));
+   
+-  calendar = GTK_CALENDAR (widget);
+   private_data = GTK_CALENDAR_PRIVATE_DATA (widget);
+ 
+   if (private_data->freeze_count)
+@@ -2294,7 +2273,6 @@ gtk_calendar_button_press (GtkWidget	  *
+ {
+   GtkCalendar *calendar;
+   GtkCalendarPrivateData *private_data;
+-  gint x, y;
+   
+   g_return_val_if_fail (widget != NULL, FALSE);
+   g_return_val_if_fail (GTK_IS_CALENDAR (widget), FALSE);
+@@ -2303,9 +2281,6 @@ gtk_calendar_button_press (GtkWidget	  *
+   calendar = GTK_CALENDAR (widget);
+   private_data = GTK_CALENDAR_PRIVATE_DATA (widget);
+   
+-  x = (gint) (event->x);
+-  y = (gint) (event->y);
+-  
+   if (event->window == private_data->main_win)
+     gtk_calendar_main_button (widget, event);
+   
+@@ -2373,13 +2348,11 @@ static gint
+ gtk_calendar_enter_notify (GtkWidget	    *widget,
+ 			   GdkEventCrossing *event)
+ {
+-  GtkCalendar *calendar;
+   GtkCalendarPrivateData *private_data;
+   
+   g_return_val_if_fail (widget != NULL, FALSE);
+   g_return_val_if_fail (event != NULL, FALSE);
+   
+-  calendar = GTK_CALENDAR (widget);
+   private_data = GTK_CALENDAR_PRIVATE_DATA (widget);
+   
+   if (event->window == private_data->arrow_win[ARROW_MONTH_LEFT])
+@@ -2548,14 +2521,12 @@ gtk_calendar_thaw (GtkCalendar *calendar
+ static void
+ gtk_calendar_set_background (GtkWidget *widget)
+ {
+-  GtkCalendar *calendar;
+   GtkCalendarPrivateData *private_data;
+   gint i;
+   
+   g_return_if_fail (widget != NULL);
+   g_return_if_fail (GTK_IS_CALENDAR (widget));
+   
+-  calendar = GTK_CALENDAR (widget);
+   private_data = GTK_CALENDAR_PRIVATE_DATA (widget);
+ 
+   if (GTK_WIDGET_REALIZED (widget))
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkcheckbutton.c gtk+-1.2.8/gtk/gtkcheckbutton.c
+--- gtk+-1.2.8.orig/gtk/gtkcheckbutton.c	1999-02-24 08:33:54.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkcheckbutton.c	2023-03-29 11:02:53.777536307 +0200
+@@ -165,7 +165,6 @@ static void
+ gtk_check_button_draw (GtkWidget    *widget,
+ 		       GdkRectangle *area)
+ {
+-  GtkCheckButton *check_button;
+   GtkToggleButton *toggle_button;
+   GtkBin *bin;
+   GdkRectangle child_area;
+@@ -174,7 +173,6 @@ gtk_check_button_draw (GtkWidget    *wid
+   g_return_if_fail (GTK_IS_CHECK_BUTTON (widget));
+   g_return_if_fail (area != NULL);
+   
+-  check_button = GTK_CHECK_BUTTON (widget);
+   toggle_button = GTK_TOGGLE_BUTTON (widget);
+   bin = GTK_BIN (widget);
+   
+@@ -242,7 +240,6 @@ static void
+ gtk_check_button_size_allocate (GtkWidget     *widget,
+ 				GtkAllocation *allocation)
+ {
+-  GtkCheckButton *check_button;
+   GtkToggleButton *toggle_button;
+   GtkButton *button;
+   GtkAllocation child_allocation;
+@@ -251,7 +248,6 @@ gtk_check_button_size_allocate (GtkWidge
+   g_return_if_fail (GTK_IS_CHECK_BUTTON (widget));
+   g_return_if_fail (allocation != NULL);
+   
+-  check_button = GTK_CHECK_BUTTON (widget);
+   toggle_button = GTK_TOGGLE_BUTTON (widget);
+ 
+   if (toggle_button->draw_indicator)
+@@ -293,7 +289,6 @@ static gint
+ gtk_check_button_expose (GtkWidget      *widget,
+ 			 GdkEventExpose *event)
+ {
+-  GtkCheckButton *check_button;
+   GtkToggleButton *toggle_button;
+   GtkBin *bin;
+   GdkEventExpose child_event;
+@@ -302,7 +297,6 @@ gtk_check_button_expose (GtkWidget
+   g_return_val_if_fail (GTK_IS_CHECK_BUTTON (widget), FALSE);
+   g_return_val_if_fail (event != NULL, FALSE);
+   
+-  check_button = GTK_CHECK_BUTTON (widget);
+   toggle_button = GTK_TOGGLE_BUTTON (widget);
+   bin = GTK_BIN (widget);
+   
+@@ -348,7 +342,6 @@ gtk_real_check_button_draw_indicator (Gt
+ 				      GdkRectangle   *area)
+ {
+   GtkWidget *widget;
+-  GtkToggleButton *toggle_button;
+   GtkStateType state_type;
+   GtkShadowType shadow_type;
+   GdkRectangle restrict_area;
+@@ -361,7 +354,6 @@ gtk_real_check_button_draw_indicator (Gt
+   g_return_if_fail (GTK_IS_CHECK_BUTTON (check_button));
+   
+   widget = GTK_WIDGET (check_button);
+-  toggle_button = GTK_TOGGLE_BUTTON (check_button);
+   
+   if (GTK_WIDGET_DRAWABLE (check_button))
+     {
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkclist.c gtk+-1.2.8/gtk/gtkclist.c
+--- gtk+-1.2.8.orig/gtk/gtkclist.c	2000-03-01 06:00:35.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkclist.c	2023-03-29 12:06:45.876628224 +0200
+@@ -1894,7 +1894,7 @@ abort_column_resize (GtkCList *clist)
+   if (GTK_CLIST_ADD_MODE(clist))
+     {
+       gdk_gc_set_line_attributes (clist->xor_gc, 1, GDK_LINE_ON_OFF_DASH, 0,0);
+-      gdk_gc_set_dashes (clist->xor_gc, 0, "\4\4", 2);
++      gdk_gc_set_dashes (clist->xor_gc, 0, (gint8 *)"\4\4", 2);
+     }
+ }
+ 
+@@ -2721,7 +2721,7 @@ static void
+ real_remove_row (GtkCList *clist,
+ 		 gint      row)
+ {
+-  gint was_visible, was_selected;
++  gint was_visible;
+   GList *list;
+   GtkCListRow *clist_row;
+ 
+@@ -2733,7 +2733,6 @@ real_remove_row (GtkCList *clist,
+     return;
+ 
+   was_visible = (gtk_clist_row_is_visible (clist, row) != GTK_VISIBILITY_NONE);
+-  was_selected = 0;
+ 
+   /* get the row we're going to delete */
+   list = ROW_ELEMENT (clist, row);
+@@ -3615,7 +3614,7 @@ toggle_add_mode (GtkCList *clist)
+       GTK_CLIST_SET_FLAG (clist, CLIST_ADD_MODE);
+       gdk_gc_set_line_attributes (clist->xor_gc, 1,
+ 				  GDK_LINE_ON_OFF_DASH, 0, 0);
+-      gdk_gc_set_dashes (clist->xor_gc, 0, "\4\4", 2);
++      gdk_gc_set_dashes (clist->xor_gc, 0, (gint8 *)"\4\4", 2);
+     }
+   else
+     {
+@@ -5155,7 +5154,7 @@ gtk_clist_button_release (GtkWidget
+ 	{
+ 	  gdk_gc_set_line_attributes (clist->xor_gc, 1,
+ 				      GDK_LINE_ON_OFF_DASH, 0, 0);
+-	  gdk_gc_set_dashes (clist->xor_gc, 0, "\4\4", 2);
++	  gdk_gc_set_dashes (clist->xor_gc, 0, (gint8 *)"\4\4", 2);
+ 	}
+ 
+       width = new_column_width (clist, i, &x);
+@@ -6122,6 +6121,7 @@ vadjustment_changed (GtkAdjustment *adju
+   g_return_if_fail (data != NULL);
+ 
+   clist = GTK_CLIST (data);
++  (void)clist;
+ }
+ 
+ static void
+@@ -6134,6 +6134,7 @@ hadjustment_changed (GtkAdjustment *adju
+   g_return_if_fail (data != NULL);
+ 
+   clist = GTK_CLIST (data);
++  (void)clist;
+ }
+ 
+ static void
+@@ -6536,7 +6537,6 @@ gtk_clist_focus (GtkContainer     *conta
+ {
+   GtkCList *clist;
+   GtkWidget *focus_child;
+-  gint old_row;
+ 
+   g_return_val_if_fail (container != NULL, FALSE);
+   g_return_val_if_fail (GTK_IS_CLIST (container), FALSE);
+@@ -6546,7 +6546,6 @@ gtk_clist_focus (GtkContainer     *conta
+   
+   clist = GTK_CLIST (container);
+   focus_child = container->focus_child;
+-  old_row = clist->focus_row;
+ 
+   switch (direction)
+     {
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkcolorsel.c gtk+-1.2.8/gtk/gtkcolorsel.c
+--- gtk+-1.2.8.orig/gtk/gtkcolorsel.c	1999-08-18 07:23:48.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkcolorsel.c	2023-03-29 11:07:58.537127888 +0200
+@@ -257,11 +257,9 @@ gtk_color_selection_class_init (GtkColor
+ {
+   GtkObjectClass *object_class;
+   GtkWidgetClass *widget_class;
+-  GtkContainerClass *container_class;
+ 
+   object_class = (GtkObjectClass*) klass;
+   widget_class = (GtkWidgetClass*) klass;
+-  container_class = (GtkContainerClass*) klass;
+ 
+   color_selection_parent_class = gtk_type_class (GTK_TYPE_VBOX);
+   
+@@ -1083,14 +1081,13 @@ gtk_color_selection_update_wheel (GtkCol
+                                   gint               y)
+ {
+   gdouble wid, heig;
+-  gint res;
+ 
+   gtk_color_selection_draw_wheel_marker (colorsel);
+ 
+   wid = (gdouble) (colorsel->wheel_area->allocation.width) / 2.0;
+   heig = (gdouble) (colorsel->wheel_area->allocation.height) / 2.0;
+ 
+-  res = gtk_color_selection_eval_wheel (x, y, wid, heig, &colorsel->values[HUE],
++  gtk_color_selection_eval_wheel (x, y, wid, heig, &colorsel->values[HUE],
+                                         &colorsel->values[SATURATION]);
+ 
+   HSV_TO_RGB ();
+@@ -1686,10 +1683,6 @@ gtk_color_selection_dialog_get_type (voi
+ static void
+ gtk_color_selection_dialog_class_init (GtkColorSelectionDialogClass *klass)
+ {
+-  GtkObjectClass *object_class;
+-
+-  object_class = (GtkObjectClass*) klass;
+-
+   color_selection_dialog_parent_class = gtk_type_class (GTK_TYPE_WINDOW);
+ }
+ 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkctree.c gtk+-1.2.8/gtk/gtkctree.c
+--- gtk+-1.2.8.orig/gtk/gtkctree.c	2000-03-01 06:00:35.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkctree.c	2023-03-29 11:11:04.800878269 +0200
+@@ -709,7 +709,7 @@ gtk_ctree_realize (GtkWidget *widget)
+     {
+       gdk_gc_set_line_attributes (ctree->lines_gc, 1, 
+ 				  GDK_LINE_ON_OFF_DASH, None, None);
+-      gdk_gc_set_dashes (ctree->lines_gc, 0, "\1\1", 2);
++      gdk_gc_set_dashes (ctree->lines_gc, 0, (gint8 *)"\1\1", 2);
+     }
+ }
+ 
+@@ -1585,7 +1585,6 @@ draw_row (GtkCList     *clist,
+ {
+   GtkWidget *widget;
+   GtkCTree  *ctree;
+-  GdkRectangle *rect;
+   GdkRectangle *crect;
+   GdkRectangle row_rectangle;
+   GdkRectangle cell_rectangle; 
+@@ -1647,7 +1646,6 @@ draw_row (GtkCList     *clist,
+   /* draw the cell borders */
+   if (area)
+     {
+-      rect = &intersect_rectangle;
+       crect = &intersect_rectangle;
+ 
+       if (gdk_rectangle_intersect (area, &cell_rectangle, crect))
+@@ -1657,7 +1655,6 @@ draw_row (GtkCList     *clist,
+     }
+   else
+     {
+-      rect = &clip_rectangle;
+       crect = &cell_rectangle;
+ 
+       gdk_draw_rectangle (clist->clist_window,
+@@ -2489,7 +2486,6 @@ real_tree_expand (GtkCTree     *ctree,
+   GtkCTreeNode *work;
+   GtkRequisition requisition;
+   gboolean visible;
+-  gint level;
+ 
+   g_return_if_fail (ctree != NULL);
+   g_return_if_fail (GTK_IS_CTREE (ctree));
+@@ -2502,7 +2498,6 @@ real_tree_expand (GtkCTree     *ctree,
+   GTK_CLIST_CLASS_FW (clist)->resync_selection (clist, NULL);
+ 
+   GTK_CTREE_ROW (node)->expanded = TRUE;
+-  level = GTK_CTREE_ROW (node)->level;
+ 
+   visible = gtk_ctree_is_viewable (ctree, node);
+   /* get cell width if tree_column is auto resized */
+@@ -3495,7 +3490,6 @@ ctree_is_hot_spot (GtkCTree     *ctree,
+ {
+   GtkCTreeRow *tree_row;
+   GtkCList *clist;
+-  GtkCellPixText *cell;
+   gint xl;
+   gint yu;
+   
+@@ -3511,8 +3505,6 @@ ctree_is_hot_spot (GtkCTree     *ctree,
+ 
+   tree_row = GTK_CTREE_ROW (node);
+ 
+-  cell = GTK_CELL_PIXTEXT(tree_row->row.cell[ctree->tree_column]);
+-
+   yu = (ROW_TOP_YPIXEL (clist, row) + (clist->row_height - PM_SIZE) / 2 -
+ 	(clist->row_height - 1) % 2);
+ 
+@@ -3848,9 +3840,6 @@ gtk_ctree_remove_node (GtkCTree     *ctr
+ 
+   if (node)
+     {
+-      gboolean visible;
+-
+-      visible = gtk_ctree_is_viewable (ctree, node);
+       gtk_ctree_unlink (ctree, node, TRUE);
+       gtk_ctree_post_recursive (ctree, node, GTK_CTREE_FUNC (tree_delete),
+ 				NULL);
+@@ -5371,7 +5360,7 @@ gtk_ctree_set_line_style (GtkCTree
+ 	  if (GTK_WIDGET_REALIZED (ctree))
+ 	    gdk_gc_set_line_attributes (ctree->lines_gc, 1, 
+ 					GDK_LINE_ON_OFF_DASH, None, None);
+-	  gdk_gc_set_dashes (ctree->lines_gc, 0, "\1\1", 2);
++	  gdk_gc_set_dashes (ctree->lines_gc, 0, (gint8 *)"\1\1", 2);
+ 	  break;
+ 	case GTK_CTREE_LINES_TABBED:
+ 	  if (GTK_WIDGET_REALIZED (ctree))
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkcurve.c gtk+-1.2.8/gtk/gtkcurve.c
+--- gtk+-1.2.8.orig/gtk/gtkcurve.c	1999-06-09 11:57:21.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkcurve.c	2023-03-29 11:11:44.848824600 +0200
+@@ -378,7 +378,6 @@ gtk_curve_graph_events (GtkWidget *widge
+ {
+   GdkCursorType new_type = c->cursor_type;
+   gint i, src, dst, leftbound, rightbound;
+-  GdkEventButton *bevent;
+   GdkEventMotion *mevent;
+   GtkWidget *w;
+   gint tx, ty;
+@@ -431,7 +430,6 @@ gtk_curve_graph_events (GtkWidget *widge
+     case GDK_BUTTON_PRESS:
+       gtk_grab_add (widget);
+ 
+-      bevent = (GdkEventButton *) event;
+       new_type = GDK_TCROSS;
+ 
+       switch (c->curve_type)
+@@ -735,7 +733,7 @@ gtk_curve_reset (GtkCurve *c)
+ void
+ gtk_curve_set_gamma (GtkCurve *c, gfloat gamma)
+ {
+-  gfloat x, one_over_gamma, height, one_over_width;
++  gfloat x, one_over_gamma, height;
+   GtkCurveType old_type;
+   gint i;
+ 
+@@ -749,7 +747,6 @@ gtk_curve_set_gamma (GtkCurve *c, gfloat
+     one_over_gamma = 1.0;
+   else
+     one_over_gamma = 1.0 / gamma;
+-  one_over_width = 1.0 / (c->num_points - 1);
+   height = c->height;
+   for (i = 0; i < c->num_points; ++i)
+     {
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkdnd.c gtk+-1.2.8/gtk/gtkdnd.c
+--- gtk+-1.2.8.orig/gtk/gtkdnd.c	2000-01-28 10:16:30.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkdnd.c	2023-03-29 11:13:08.520712469 +0200
+@@ -26,6 +26,7 @@
+ 
+ #include "gdk/gdkx.h"
+ #include "gdk/gdkkeysyms.h"
++#include <stdlib.h>
+ 
+ #include "gtkdnd.h"
+ #include "gtkinvisible.h"
+@@ -250,70 +251,70 @@ static gint gtk_drag_abort_timeout
+ 
+ #define action_ask_width 16
+ #define action_ask_height 16
+-static const guchar action_ask_bits[] = {
++static const char action_ask_bits[] = {
+   0x00, 0x00, 0xfe, 0x7f, 0xfe, 0x1f, 0x06, 0xc0, 0x76, 0xf8, 0xb6, 0xf7, 
+   0xd6, 0xec, 0x66, 0xdb, 0x66, 0xdb, 0x96, 0xec, 0x76, 0xf7, 0x76, 0xfb, 
+   0xf6, 0xfc, 0x72, 0xfb, 0x7a, 0xfb, 0xf8, 0xfc, };
+ 
+ #define action_ask_mask_width 16
+ #define action_ask_mask_height 16
+-static const guchar action_ask_mask_bits[] = {
++static const char action_ask_mask_bits[] = {
+   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f, 0x8f, 0x07, 0xcf, 0x0f, 
+   0xef, 0x1f, 0xff, 0x3c, 0xff, 0x3c, 0x6f, 0x1f, 0x8f, 0x0f, 0x8f, 0x07, 
+   0x0f, 0x03, 0x8f, 0x07, 0x87, 0x07, 0x07, 0x03, };
+ 
+ #define action_copy_width 16
+ #define action_copy_height 16
+-static const guchar action_copy_bits[] = {
++static const char action_copy_bits[] = {
+   0x00, 0x00, 0xfe, 0x7f, 0xfe, 0x1f, 0x06, 0xc0, 0x76, 0xfb, 0x76, 0xfb, 
+   0x76, 0xfb, 0x06, 0x83, 0xf6, 0xbf, 0xf6, 0xbf, 0x06, 0x83, 0x76, 0xfb, 
+   0x76, 0xfb, 0x72, 0xfb, 0x7a, 0xf8, 0xf8, 0xff, };
+ 
+ #define action_copy_mask_width 16
+ #define action_copy_mask_height 16
+-static const guchar action_copy_mask_bits[] = {
++static const char action_copy_mask_bits[] = {
+   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f, 0x8f, 0x07, 0x8f, 0x07, 
+   0x8f, 0x07, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0xff, 0x7f, 0x8f, 0x07, 
+   0x8f, 0x07, 0x8f, 0x07, 0x87, 0x07, 0x07, 0x00, };
+ 
+ #define action_move_width 16
+ #define action_move_height 16
+-static const guchar action_move_bits[] = {
++static const char action_move_bits[] = {
+   0x00, 0x00, 0xfe, 0x7f, 0xfe, 0x1f, 0x06, 0xc0, 0x96, 0xff, 0x26, 0xff, 
+   0xc6, 0xf8, 0xd6, 0xe3, 0x96, 0x8f, 0xb6, 0xbf, 0x36, 0xc3, 0x76, 0xfb, 
+   0x76, 0xfa, 0xf2, 0xfa, 0xfa, 0xf8, 0xf8, 0xff, };
+ 
+ #define action_move_mask_width 16
+ #define action_move_mask_height 16
+-static const guchar action_move_mask_bits[] = {
++static const char action_move_mask_bits[] = {
+   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f, 0x6f, 0x00, 0xff, 0x00, 
+   0xff, 0x07, 0xef, 0x1f, 0xef, 0x7f, 0xcf, 0x7f, 0xcf, 0x3f, 0x8f, 0x07, 
+   0x8f, 0x07, 0x0f, 0x07, 0x07, 0x07, 0x07, 0x00, };
+ 
+ #define action_link_width 16
+ #define action_link_height 16
+-static const guchar action_link_bits[] = {
++static const char action_link_bits[] = {
+   0x00, 0x00, 0xfe, 0x7f, 0xfe, 0x1f, 0x06, 0xc0, 0x36, 0xf8, 0xd6, 0xf7, 
+   0x66, 0xec, 0xa6, 0xe8, 0x26, 0xdf, 0xe6, 0xbd, 0xd6, 0xa7, 0xb6, 0xa8, 
+   0xb6, 0xb1, 0x72, 0xdf, 0xfa, 0xe0, 0xf8, 0xff, };
+ 
+ #define action_link_mask_width 16
+ #define action_link_mask_height 16
+-static const guchar action_link_mask_bits[] = {
++static const char action_link_mask_bits[] = {
+   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f, 0xcf, 0x07, 0xef, 0x0f, 
+   0xff, 0x1f, 0x7f, 0x1f, 0xff, 0x3f, 0xff, 0x7f, 0xef, 0x7f, 0xcf, 0x77, 
+   0xcf, 0x7f, 0x8f, 0x3f, 0x07, 0x1f, 0x07, 0x00, };
+ 
+ #define action_none_width 16
+ #define action_none_height 16
+-static const guchar action_none_bits[] = {
++static const char action_none_bits[] = {
+   0x00, 0x00, 0xfe, 0x7f, 0xfe, 0x1f, 0x06, 0xc0, 0xf6, 0xff, 0xf6, 0xff, 
+   0xf6, 0xff, 0xf6, 0xff, 0xf6, 0xff, 0xf6, 0xff, 0xf6, 0xff, 0xf6, 0xff, 
+   0xf6, 0xff, 0xf2, 0xff, 0xfa, 0xff, 0xf8, 0xff, };
+ 
+ #define action_none_mask_width 16
+ #define action_none_mask_height 16
+-static const guchar action_none_mask_bits[] = {
++static const char action_none_mask_bits[] = {
+   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f, 0x0f, 0x00, 0x0f, 0x00, 
+   0x0f, 0x00, 0x0f, 0x00, 0x0f, 0x00, 0x0f, 0x00, 0x0f, 0x00, 0x0f, 0x00, 
+   0x0f, 0x00, 0x0f, 0x00, 0x07, 0x00, 0x07, 0x00, };
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkeditable.c gtk+-1.2.8/gtk/gtkeditable.c
+--- gtk+-1.2.8.orig/gtk/gtkeditable.c	1999-04-08 20:12:23.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkeditable.c	2023-03-29 11:14:21.048615271 +0200
+@@ -426,6 +426,7 @@ gtk_editable_insert_text (GtkEditable *e
+   gtk_widget_ref (GTK_WIDGET (editable));
+ 
+   klass = GTK_EDITABLE_CLASS (GTK_OBJECT (editable)->klass);
++  (void)klass;
+ 
+   if (new_text_length <= 64)
+     text = buf;
+@@ -456,7 +457,8 @@ gtk_editable_delete_text (GtkEditable *e
+   gtk_widget_ref (GTK_WIDGET (editable));
+ 
+   klass = GTK_EDITABLE_CLASS (GTK_OBJECT (editable)->klass);
+-
++  (void)klass;
++  
+   gtk_signal_emit (GTK_OBJECT (editable), editable_signals[DELETE_TEXT], start_pos, end_pos);
+   gtk_signal_emit (GTK_OBJECT (editable), editable_signals[CHANGED]);
+ 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkentry.c gtk+-1.2.8/gtk/gtkentry.c
+--- gtk+-1.2.8.orig/gtk/gtkentry.c	2000-01-27 15:39:54.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkentry.c	2023-03-29 11:19:16.496222005 +0200
+@@ -1682,7 +1682,7 @@ gtk_entry_insert_text (GtkEditable *edit
+ 
+   if (new_text_length < 0)
+     {
+-      new_text_nt = (gchar *)new_text;
++      new_text_nt = (guchar *)new_text;
+       new_text_length = strlen (new_text);
+       if (new_text_length <= 0) return;
+     }
+@@ -1693,7 +1693,7 @@ gtk_entry_insert_text (GtkEditable *edit
+   else
+     {
+       /* make a null-terminated copy of new_text */
+-      new_text_nt = g_new (gchar, new_text_length + 1);
++      new_text_nt = g_new (guchar, new_text_length + 1);
+       memcpy (new_text_nt, new_text, new_text_length);
+       new_text_nt[new_text_length] = 0;
+     }
+@@ -1711,7 +1711,7 @@ gtk_entry_insert_text (GtkEditable *edit
+   /* Convert to wide characters */
+   insertion_text = g_new (GdkWChar, new_text_length);
+   if (entry->use_wchar)
+-    insertion_length = gdk_mbstowcs (insertion_text, new_text_nt,
++    insertion_length = gdk_mbstowcs (insertion_text, (gchar *)new_text_nt,
+ 				     new_text_length);
+   else
+     for (insertion_length=0; new_text_nt[insertion_length]; insertion_length++)
+@@ -1904,14 +1904,14 @@ gtk_entry_get_chars      (GtkEditable
+ 	    gtk_entry_grow_text(entry);
+ 	  ch = entry->text[end_pos];
+ 	  entry->text[end_pos] = 0;
+-	  mbstr = gdk_wcstombs (entry->text + start_pos);
++	  mbstr = (guchar *)gdk_wcstombs (entry->text + start_pos);
+ 	  entry->text[end_pos] = ch;
+ 	  return (gchar *)mbstr;
+ 	}
+       else
+ 	{
+ 	  gint i;
+-	  mbstr = g_new (gchar, end_pos - start_pos + 1);
++	  mbstr = g_new (guchar, end_pos - start_pos + 1);
+ 	  for (i=0; i<end_pos-start_pos; i++)
+ 	    mbstr[i] = entry->text[start_pos + i];
+ 	  mbstr[i] = 0;
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkfilesel.c gtk+-1.2.8/gtk/gtkfilesel.c
+--- gtk+-1.2.8.orig/gtk/gtkfilesel.c	2000-01-27 15:39:54.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkfilesel.c	2023-03-29 12:10:29.652379729 +0200
+@@ -1299,7 +1299,6 @@ gtk_file_selection_populate (GtkFileSele
+   CompletionState *cmpl_state;
+   PossibleCompletion* poss;
+   gchar* filename;
+-  gint row;
+   gchar* rem_path = rel_path;
+   gchar* sel_text;
+   gchar* text[2];
+@@ -1332,10 +1331,10 @@ gtk_file_selection_populate (GtkFileSele
+   /* Set the dir_list to include ./ and ../ */
+   text[1] = NULL;
+   text[0] = "./";
+-  row = gtk_clist_append (GTK_CLIST (fs->dir_list), text);
++  gtk_clist_append (GTK_CLIST (fs->dir_list), text);
+ 
+   text[0] = "../";
+-  row = gtk_clist_append (GTK_CLIST (fs->dir_list), text);
++  gtk_clist_append (GTK_CLIST (fs->dir_list), text);
+ 
+   /*reset the max widths of the lists*/
+   dir_list_width = gdk_string_width(fs->dir_list->style->font,"../");
+@@ -1360,7 +1359,7 @@ gtk_file_selection_populate (GtkFileSele
+ 		{
+ 		  int width = gdk_string_width(fs->dir_list->style->font,
+ 					       filename);
+-		  row = gtk_clist_append (GTK_CLIST (fs->dir_list), text);
++		  gtk_clist_append (GTK_CLIST (fs->dir_list), text);
+ 		  if(width > dir_list_width)
+ 		    {
+ 		      dir_list_width = width;
+@@ -1373,7 +1372,7 @@ gtk_file_selection_populate (GtkFileSele
+ 	    {
+ 	      int width = gdk_string_width(fs->file_list->style->font,
+ 				           filename);
+-	      row = gtk_clist_append (GTK_CLIST (fs->file_list), text);
++	      gtk_clist_append (GTK_CLIST (fs->file_list), text);
+ 	      if(width > file_list_width)
+ 	        {
+ 	          file_list_width = width;
+@@ -2328,12 +2327,11 @@ static PossibleCompletion*
+ attempt_homedir_completion(gchar* text_to_complete,
+ 			   CompletionState *cmpl_state)
+ {
+-  gint index, length;
++  gint index;
+ 
+   if (!cmpl_state->user_dir_name_buffer &&
+       !get_pwdb(cmpl_state))
+     return NULL;
+-  length = strlen(text_to_complete) - 1;
+ 
+   cmpl_state->user_completion_index += 1;
+ 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkfixed.c gtk+-1.2.8/gtk/gtkfixed.c
+--- gtk+-1.2.8.orig/gtk/gtkfixed.c	1999-05-02 13:39:58.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkfixed.c	2023-03-29 11:21:24.648052433 +0200
+@@ -83,11 +83,9 @@ gtk_fixed_get_type (void)
+ static void
+ gtk_fixed_class_init (GtkFixedClass *class)
+ {
+-  GtkObjectClass *object_class;
+   GtkWidgetClass *widget_class;
+   GtkContainerClass *container_class;
+ 
+-  object_class = (GtkObjectClass*) class;
+   widget_class = (GtkWidgetClass*) class;
+   container_class = (GtkContainerClass*) class;
+ 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkfontsel.c gtk+-1.2.8/gtk/gtkfontsel.c
+--- gtk+-1.2.8.orig/gtk/gtkfontsel.c	2023-03-27 19:15:00.764565453 +0200
++++ gtk+-1.2.8/gtk/gtkfontsel.c	2023-03-29 11:22:14.799986072 +0200
+@@ -955,7 +955,6 @@ gtk_font_selection_expose_list (GtkWidge
+ 				gpointer		 data)
+ {
+   GtkFontSelection *fontsel;
+-  FontInfo *font_info;
+   GList *selection;
+   gint index;
+   
+@@ -964,8 +963,6 @@ gtk_font_selection_expose_list (GtkWidge
+ #endif
+   fontsel = GTK_FONT_SELECTION(data);
+   
+-  font_info = fontsel_info->font_info;
+-      
+   /* Try to scroll the font family clist to the selected item */
+   selection = GTK_CLIST(fontsel->font_clist)->selection;
+   if (selection)
+@@ -3425,10 +3422,6 @@ gtk_font_selection_dialog_get_type (void
+ static void
+ gtk_font_selection_dialog_class_init (GtkFontSelectionDialogClass *klass)
+ {
+-  GtkObjectClass *object_class;
+-  
+-  object_class = (GtkObjectClass*) klass;
+-  
+   font_selection_dialog_parent_class = gtk_type_class (GTK_TYPE_WINDOW);
+ }
+ 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkhandlebox.c gtk+-1.2.8/gtk/gtkhandlebox.c
+--- gtk+-1.2.8.orig/gtk/gtkhandlebox.c	1999-06-09 12:12:10.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkhandlebox.c	2023-03-29 11:23:15.887905240 +0200
+@@ -296,6 +296,7 @@ gtk_handle_box_destroy (GtkObject *objec
+   g_return_if_fail (GTK_IS_HANDLE_BOX (object));
+ 
+   hb = GTK_HANDLE_BOX (object);
++  (void)hb;
+ 
+   if (GTK_OBJECT_CLASS (parent_class)->destroy)
+     (* GTK_OBJECT_CLASS (parent_class)->destroy) (object);
+@@ -574,11 +575,9 @@ gtk_handle_box_size_allocate (GtkWidget
+ 
+   if (bin->child && GTK_WIDGET_VISIBLE (bin->child))
+     {
+-      GtkWidget *child;
+       GtkAllocation child_allocation;
+       guint border_width;
+ 
+-      child = bin->child;
+       border_width = GTK_CONTAINER (widget)->border_width;
+ 
+       child_allocation.x = border_width;
+@@ -746,8 +745,8 @@ gtk_handle_box_paint (GtkWidget      *wi
+ {
+   GtkBin *bin;
+   GtkHandleBox *hb;
+-  guint width;
+-  guint height;
++  gint width;
++  gint height;
+   GdkRectangle rect;
+   GdkRectangle dest;
+ 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkhbbox.c gtk+-1.2.8/gtk/gtkhbbox.c
+--- gtk+-1.2.8.orig/gtk/gtkhbbox.c	1999-02-24 08:34:45.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkhbbox.c	2023-03-29 11:24:59.179768563 +0200
+@@ -212,6 +212,7 @@ gtk_hbutton_box_size_allocate (GtkWidget
+ 
+   box = GTK_BUTTON_BOX (widget);
+   hbox = GTK_HBUTTON_BOX (widget);
++  (void)hbox;
+   spacing = box->spacing != GTK_BUTTONBOX_DEFAULT
+ 	  ? box->spacing : default_spacing;
+   layout = box->layout_style != GTK_BUTTONBOX_DEFAULT_STYLE
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkhruler.c gtk+-1.2.8/gtk/gtkhruler.c
+--- gtk+-1.2.8.orig/gtk/gtkhruler.c	1999-02-24 08:34:51.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkhruler.c	2023-03-29 11:25:33.371723318 +0200
+@@ -134,7 +134,7 @@ static void
+ gtk_hruler_draw_ticks (GtkRuler *ruler)
+ {
+   GtkWidget *widget;
+-  GdkGC *gc, *bg_gc;
++  GdkGC *gc;
+   GdkFont *font;
+   gint i;
+   gint width, height;
+@@ -160,7 +160,6 @@ gtk_hruler_draw_ticks (GtkRuler *ruler)
+   widget = GTK_WIDGET (ruler);
+ 
+   gc = widget->style->fg_gc[GTK_STATE_NORMAL];
+-  bg_gc = widget->style->bg_gc[GTK_STATE_NORMAL];
+   font = widget->style->font;
+ 
+   xthickness = widget->style->klass->xthickness;
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkhscale.c gtk+-1.2.8/gtk/gtkhscale.c
+--- gtk+-1.2.8.orig/gtk/gtkhscale.c	1999-12-30 05:12:24.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkhscale.c	2023-03-29 11:26:53.007617943 +0200
+@@ -302,6 +302,7 @@ gtk_hscale_clear_background (GtkRange
+   g_return_if_fail (range != NULL);
+   
+   widget = GTK_WIDGET (range);
++  (void)widget;
+   
+   gtk_hscale_pos_background (GTK_HSCALE (range), &x, &y, &width, &height);
+   
+@@ -353,7 +354,6 @@ gtk_hscale_size_allocate (GtkWidget
+                           GtkAllocation *allocation)
+ {
+   GtkRange *range;
+-  GtkScale *scale;
+   gint width, height;
+   gint x, y;
+   
+@@ -365,8 +365,7 @@ gtk_hscale_size_allocate (GtkWidget
+   if (GTK_WIDGET_REALIZED (widget))
+     {
+       range = GTK_RANGE (widget);
+-      scale = GTK_SCALE (widget);
+-      
++
+       gtk_hscale_pos_trough (GTK_HSCALE (widget), &x, &y, &width, &height);
+       
+       gdk_window_move_resize (range->trough, 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkitemfactory.c gtk+-1.2.8/gtk/gtkitemfactory.c
+--- gtk+-1.2.8.orig/gtk/gtkitemfactory.c	1999-11-27 09:51:24.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkitemfactory.c	2023-03-29 11:27:45.695548226 +0200
+@@ -219,6 +219,7 @@ gtk_item_factory_init (GtkItemFactory
+   GtkObject *object;
+ 
+   object = GTK_OBJECT (ifactory);
++  (void)object;
+ 
+   ifactory->path = NULL;
+   ifactory->accel_group = NULL;
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtklabel.c gtk+-1.2.8/gtk/gtklabel.c
+--- gtk+-1.2.8.orig/gtk/gtklabel.c	1999-06-09 13:40:13.000000000 +0200
++++ gtk+-1.2.8/gtk/gtklabel.c	2023-03-29 11:29:10.671435785 +0200
+@@ -714,13 +714,10 @@ gtk_label_finalize_lines_wrap (GtkLabel
+ 			       gint            max_line_width)
+ {
+   GtkLabelWord *word, *line, *next_line;
+-  GtkWidget *widget;
+-  gchar *ptrn;
+   gint x, y, space, extra_width, add_space, baseline_skip;
+   
+   g_return_if_fail (label->wrap);
+   
+-  ptrn = label->pattern;
+   y = 0;
+   baseline_skip = (GTK_WIDGET (label)->style->font->ascent +
+ 		   GTK_WIDGET (label)->style->font->descent + 1);
+@@ -766,7 +763,6 @@ gtk_label_finalize_lines_wrap (GtkLabel
+     }
+   
+   label->max_width = max_line_width;
+-  widget = GTK_WIDGET (label);
+   requisition->width = max_line_width + 2 * label->misc.xpad;
+   requisition->height = y + 2 * label->misc.ypad + 1;
+ }
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtklayout.c gtk+-1.2.8/gtk/gtklayout.c
+--- gtk+-1.2.8.orig/gtk/gtklayout.c	1999-10-10 20:46:18.000000000 +0200
++++ gtk+-1.2.8/gtk/gtklayout.c	2023-03-29 12:07:49.556545442 +0200
+@@ -1178,7 +1178,7 @@ gtk_layout_filter (GdkXEvent *gdk_xevent
+   
+   return GDK_FILTER_CONTINUE;
+ }
+-#endif 0
++#endif
+ 
+ /* Although GDK does have a GDK_VISIBILITY_NOTIFY event,
+  * there is no corresponding event in GTK, so we have
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkmenu.c gtk+-1.2.8/gtk/gtkmenu.c
+--- gtk+-1.2.8.orig/gtk/gtkmenu.c	1999-09-04 01:50:37.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkmenu.c	2023-03-29 11:33:30.667091755 +0200
+@@ -107,14 +107,12 @@ gtk_menu_class_init (GtkMenuClass *class
+ {
+   GtkObjectClass *object_class;
+   GtkWidgetClass *widget_class;
+-  GtkContainerClass *container_class;
+   GtkMenuShellClass *menu_shell_class;
+ 
+   GtkBindingSet *binding_set;
+   
+   object_class = (GtkObjectClass*) class;
+   widget_class = (GtkWidgetClass*) class;
+-  container_class = (GtkContainerClass*) class;
+   menu_shell_class = (GtkMenuShellClass*) class;
+   parent_class = gtk_type_class (gtk_menu_shell_get_type ());
+   
+@@ -407,7 +405,6 @@ gtk_menu_popup (GtkMenu		    *menu,
+ 		guint		     button,
+ 		guint32		     activate_time)
+ {
+-  GtkWidget *widget;
+   GtkWidget *xgrab_shell;
+   GtkWidget *parent;
+   GdkEvent *current_event;
+@@ -416,7 +413,6 @@ gtk_menu_popup (GtkMenu		    *menu,
+   g_return_if_fail (menu != NULL);
+   g_return_if_fail (GTK_IS_MENU (menu));
+   
+-  widget = GTK_WIDGET (menu);
+   menu_shell = GTK_MENU_SHELL (menu);
+   
+   menu_shell->parent_menu_shell = parent_menu_shell;
+@@ -984,14 +980,12 @@ gtk_menu_expose (GtkWidget	*widget,
+   GtkWidget *child;
+   GdkEventExpose child_event;
+   GList *children;
+-  GtkMenu *menu;
+   
+   g_return_val_if_fail (widget != NULL, FALSE);
+   g_return_val_if_fail (GTK_IS_MENU (widget), FALSE);
+   g_return_val_if_fail (event != NULL, FALSE);
+ 
+   menu_shell = GTK_MENU_SHELL (widget);
+-  menu = GTK_MENU (widget);
+   
+   if (GTK_WIDGET_DRAWABLE (widget))
+     {
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkmisc.c gtk+-1.2.8/gtk/gtkmisc.c
+--- gtk+-1.2.8.orig/gtk/gtkmisc.c	1999-02-24 08:35:32.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkmisc.c	2023-03-29 11:34:01.195052803 +0200
+@@ -237,6 +237,7 @@ gtk_misc_realize (GtkWidget *widget)
+ 
+   GTK_WIDGET_SET_FLAGS (widget, GTK_REALIZED);
+   misc = GTK_MISC (widget);
++  (void)misc;
+ 
+   if (GTK_WIDGET_NO_WINDOW (widget))
+     {
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtknotebook.c gtk+-1.2.8/gtk/gtknotebook.c
+--- gtk+-1.2.8.orig/gtk/gtknotebook.c	2000-01-31 23:26:04.000000000 +0100
++++ gtk+-1.2.8/gtk/gtknotebook.c	2023-03-29 11:34:26.231023442 +0200
+@@ -2601,7 +2601,6 @@ static void
+ gtk_notebook_pages_allocate (GtkNotebook   *notebook,
+ 			     GtkAllocation *allocation)
+ {
+-  GtkWidget    *widget;
+   GtkContainer *container;
+   GtkNotebookPage *page = NULL;
+   GtkAllocation child_allocation;
+@@ -2620,7 +2619,6 @@ gtk_notebook_pages_allocate (GtkNotebook
+   if (!notebook->show_tabs || !notebook->children || !notebook->cur_page)
+     return;
+ 
+-  widget = GTK_WIDGET (notebook);
+   container = GTK_CONTAINER (notebook);
+ 
+   child_allocation.x = container->border_width;
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkoptionmenu.c gtk+-1.2.8/gtk/gtkoptionmenu.c
+--- gtk+-1.2.8.orig/gtk/gtkoptionmenu.c	2000-01-27 15:39:55.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkoptionmenu.c	2023-03-29 11:35:20.158960198 +0200
+@@ -105,12 +105,10 @@ gtk_option_menu_class_init (GtkOptionMen
+ {
+   GtkObjectClass *object_class;
+   GtkWidgetClass *widget_class;
+-  GtkButtonClass *button_class;
+   GtkContainerClass *container_class;
+ 
+   object_class = (GtkObjectClass*) class;
+   widget_class = (GtkWidgetClass*) class;
+-  button_class = (GtkButtonClass*) class;
+   container_class = (GtkContainerClass*) class;
+ 
+   parent_class = gtk_type_class (gtk_button_get_type ());
+@@ -401,7 +399,6 @@ gtk_option_menu_expose (GtkWidget      *
+ {
+   GtkWidget *child;
+   GdkEventExpose child_event;
+-  gint remove_child;
+ 
+   g_return_val_if_fail (widget != NULL, FALSE);
+   g_return_val_if_fail (GTK_IS_OPTION_MENU (widget), FALSE);
+@@ -446,7 +443,7 @@ gtk_option_menu_expose (GtkWidget      *
+       if (remove_child)
+ 	gtk_option_menu_remove_contents (GTK_OPTION_MENU (widget));
+ #else
+-      remove_child = FALSE;
++      /* remove_child = FALSE; */
+       child = GTK_BIN (widget)->child;
+       child_event = *event;
+       if (child && GTK_WIDGET_NO_WINDOW (child) &&
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkpacker.c gtk+-1.2.8/gtk/gtkpacker.c
+--- gtk+-1.2.8.orig/gtk/gtkpacker.c	1999-05-02 13:48:51.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkpacker.c	2023-03-29 11:35:54.242920225 +0200
+@@ -967,8 +967,6 @@ gtk_packer_size_request (GtkWidget
+   GtkContainer *container;
+   GtkPackerChild *child;
+   GList *children;
+-  gint nvis_vert_children;
+-  gint nvis_horz_children;
+   gint width, height;
+   gint maxWidth, maxHeight;
+   
+@@ -981,8 +979,6 @@ gtk_packer_size_request (GtkWidget
+ 
+   requisition->width = 0;
+   requisition->height = 0;
+-  nvis_vert_children = 0;
+-  nvis_horz_children = 0;
+   
+   width = height = maxWidth = maxHeight = 0;
+   
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkpreview.c gtk+-1.2.8/gtk/gtkpreview.c
+--- gtk+-1.2.8.orig/gtk/gtkpreview.c	1999-08-27 11:26:16.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkpreview.c	2023-03-29 11:43:46.810366016 +0200
+@@ -247,7 +247,8 @@ gtk_preview_put (GtkPreview   *preview,
+     return;
+ 
+   widget = GTK_WIDGET (preview);
+-
++  (void)widget;
++  
+   r1.x = 0;
+   r1.y = 0;
+   r1.width = preview->buffer_width;
+@@ -446,7 +447,7 @@ gtk_preview_finalize (GtkObject *object)
+   preview = GTK_PREVIEW (object);
+   if (preview->buffer)
+     g_free (preview->buffer);
+-  preview->type = (GtkPreviewType) -1;
++  preview->type = GTK_PREVIEW_GRAYSCALE;
+ 
+   (* GTK_OBJECT_CLASS (parent_class)->finalize) (object);
+ }
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkprogressbar.c gtk+-1.2.8/gtk/gtkprogressbar.c
+--- gtk+-1.2.8.orig/gtk/gtkprogressbar.c	1999-02-24 08:35:55.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkprogressbar.c	2023-03-29 11:44:27.226318617 +0200
+@@ -417,7 +417,6 @@ gtk_progress_bar_act_mode_enter (GtkProg
+ {
+   GtkProgressBar *pbar;
+   GtkWidget *widget;
+-  gint size;
+ 
+   pbar = GTK_PROGRESS_BAR (progress);
+   widget = GTK_WIDGET (progress);
+@@ -427,8 +426,6 @@ gtk_progress_bar_act_mode_enter (GtkProg
+   if (pbar->orientation == GTK_PROGRESS_LEFT_TO_RIGHT ||
+       pbar->orientation == GTK_PROGRESS_RIGHT_TO_LEFT)
+     {
+-      size = MAX (2, widget->allocation.width / pbar->activity_blocks);
+-
+       if (pbar->orientation == GTK_PROGRESS_LEFT_TO_RIGHT)
+ 	{
+ 	  pbar->activity_pos = widget->style->klass->xthickness;
+@@ -444,8 +441,6 @@ gtk_progress_bar_act_mode_enter (GtkProg
+     }
+   else
+     {
+-      size = MAX (2, widget->allocation.height / pbar->activity_blocks);
+-
+       if (pbar->orientation == GTK_PROGRESS_TOP_TO_BOTTOM)
+ 	{
+ 	  pbar->activity_pos = widget->style->klass->ythickness;
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkradiobutton.c gtk+-1.2.8/gtk/gtkradiobutton.c
+--- gtk+-1.2.8.orig/gtk/gtkradiobutton.c	1999-02-24 08:35:57.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkradiobutton.c	2023-03-29 11:45:25.658250090 +0200
+@@ -149,6 +149,7 @@ gtk_radio_button_get_arg (GtkObject
+   GtkRadioButton *radio_button;
+ 
+   radio_button = GTK_RADIO_BUTTON (object);
++  (void)radio_button;
+ 
+   switch (arg_id)
+     {
+@@ -371,7 +372,6 @@ gtk_radio_button_draw_indicator (GtkChec
+ 				 GdkRectangle   *area)
+ {
+   GtkWidget *widget;
+-  GtkButton *button;
+   GtkToggleButton *toggle_button;
+   GtkStateType state_type;
+   GtkShadowType shadow_type;
+@@ -386,8 +386,8 @@ gtk_radio_button_draw_indicator (GtkChec
+   if (GTK_WIDGET_VISIBLE (check_button) && GTK_WIDGET_MAPPED (check_button))
+     {
+       widget = GTK_WIDGET (check_button);
+-      button = GTK_BUTTON (check_button);
+       toggle_button = GTK_TOGGLE_BUTTON (check_button);
++      (void)toggle_button;
+ 
+       state_type = GTK_WIDGET_STATE (widget);
+       if ((state_type != GTK_STATE_NORMAL) &&
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkrc.c gtk+-1.2.8/gtk/gtkrc.c
+--- gtk+-1.2.8.orig/gtk/gtkrc.c	1999-10-20 16:41:16.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkrc.c	2023-03-29 11:46:15.690191414 +0200
+@@ -1056,8 +1056,8 @@ gtk_rc_parse_any (const gchar  *input_na
+ 		      if (msg)
+ 			msg = g_strconcat ("e.g. `", msg, "'", NULL);
+ 		    }
+-		  if (scanner->token > GTK_RC_TOKEN_INVALID &&
+-		      scanner->token < GTK_RC_TOKEN_LAST)
++		  if (scanner->token > (GTokenType)GTK_RC_TOKEN_INVALID &&
++		      scanner->token < (GTokenType)GTK_RC_TOKEN_LAST)
+ 		    {
+ 		      symbol_name = "???";
+ 		      for (i = 0; i < n_symbols; i++)
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkselection.c gtk+-1.2.8/gtk/gtkselection.c
+--- gtk+-1.2.8.orig/gtk/gtkselection.c	1999-10-27 00:20:16.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkselection.c	2023-03-29 11:47:02.506136512 +0200
+@@ -707,7 +707,7 @@ gtk_selection_data_set (GtkSelectionData
+       if (length < 0)
+ 	selection_data->data = NULL;
+       else
+-	selection_data->data = g_strdup("");
++	selection_data->data = (unsigned char *)g_strdup("");
+     }
+   
+   selection_data->length = length;
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtksignal.c gtk+-1.2.8/gtk/gtksignal.c
+--- gtk+-1.2.8.orig/gtk/gtksignal.c	2000-03-26 03:21:27.000000000 +0200
++++ gtk+-1.2.8/gtk/gtksignal.c	2023-03-29 11:47:33.074100662 +0200
+@@ -1730,6 +1730,7 @@ gtk_signal_connect_by_type (GtkObject
+   g_return_val_if_fail (object->klass != NULL, 0);
+   
+   signal = LOOKUP_SIGNAL_ID (signal_id);
++  (void)signal;
+ 
+   /* Search through the signals for this object and make
+    *  sure the one we are adding is valid. We need to perform
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtksocket.c gtk+-1.2.8/gtk/gtksocket.c
+--- gtk+-1.2.8.orig/gtk/gtksocket.c	2000-02-13 08:02:36.000000000 +0100
++++ gtk+-1.2.8/gtk/gtksocket.c	2023-03-29 11:47:57.658071831 +0200
+@@ -88,11 +88,9 @@ gtk_socket_get_type ()
+ static void
+ gtk_socket_class_init (GtkSocketClass *class)
+ {
+-  GtkObjectClass *object_class;
+   GtkWidgetClass *widget_class;
+   GtkContainerClass *container_class;
+ 
+-  object_class = (GtkObjectClass*) class;
+   widget_class = (GtkWidgetClass*) class;
+   container_class = (GtkContainerClass*) class;
+ 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkstatusbar.c gtk+-1.2.8/gtk/gtkstatusbar.c
+--- gtk+-1.2.8.orig/gtk/gtkstatusbar.c	2000-02-13 08:01:02.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkstatusbar.c	2023-03-29 12:08:10.884517717 +0200
+@@ -78,12 +78,8 @@ static void
+ gtk_statusbar_class_init (GtkStatusbarClass *class)
+ {
+   GtkObjectClass *object_class;
+-  GtkWidgetClass *widget_class;
+-  GtkContainerClass *container_class;
+ 
+   object_class = (GtkObjectClass *) class;
+-  widget_class = (GtkWidgetClass *) class;
+-  container_class = (GtkContainerClass *) class;
+ 
+   parent_class = gtk_type_class (gtk_hbox_get_type ());
+ 
+@@ -351,6 +347,7 @@ gtk_statusbar_finalize (GtkObject *objec
+   g_return_if_fail (GTK_IS_STATUSBAR (object));
+ 
+   statusbar = GTK_STATUSBAR (object);
++  (void)statusbar;
+ 
+   GTK_OBJECT_CLASS (parent_class)->finalize (object);
+ }
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkstyle.c gtk+-1.2.8/gtk/gtkstyle.c
+--- gtk+-1.2.8.orig/gtk/gtkstyle.c	2000-03-13 01:23:26.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkstyle.c	2023-03-29 11:48:39.186023130 +0200
+@@ -25,6 +25,7 @@
+  */
+ 
+ #include <math.h>
++#include <string.h>
+ #include "gtkgc.h"
+ #include "gtkrc.h"
+ #include "gtkstyle.h"
+@@ -3025,7 +3026,7 @@ gtk_default_draw_focus (GtkStyle      *s
+   if (detail && !strcmp (detail, "add-mode"))
+     {
+       gdk_gc_set_line_attributes (style->black_gc, 1, GDK_LINE_ON_OFF_DASH, 0, 0);
+-      gdk_gc_set_dashes (style->black_gc, 0, "\4\4", 2);
++      gdk_gc_set_dashes (style->black_gc, 0, (gint8 *)"\4\4", 2);
+       
+       gdk_draw_rectangle (window,
+                           style->black_gc, FALSE,
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtktearoffmenuitem.c gtk+-1.2.8/gtk/gtktearoffmenuitem.c
+--- gtk+-1.2.8.orig/gtk/gtktearoffmenuitem.c	1999-02-24 08:36:31.000000000 +0100
++++ gtk+-1.2.8/gtk/gtktearoffmenuitem.c	2023-03-29 11:49:39.361952556 +0200
+@@ -78,11 +78,9 @@ gtk_tearoff_menu_item_new (void)
+ static void
+ gtk_tearoff_menu_item_class_init (GtkTearoffMenuItemClass *klass)
+ {
+-  GtkObjectClass *object_class;
+   GtkWidgetClass *widget_class;
+   GtkMenuItemClass *menu_item_class;
+ 
+-  object_class = (GtkObjectClass*) klass;
+   widget_class = (GtkWidgetClass*) klass;
+   menu_item_class = (GtkMenuItemClass*) klass;
+ 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtktext.c gtk+-1.2.8/gtk/gtktext.c
+--- gtk+-1.2.8.orig/gtk/gtktext.c	2000-02-08 03:01:25.000000000 +0100
++++ gtk+-1.2.8/gtk/gtktext.c	2023-03-29 11:53:16.501680391 +0200
+@@ -1070,7 +1070,7 @@ gint
+ gtk_text_forward_delete (GtkText *text,
+ 			 guint    nchars)
+ {
+-  guint old_lines, old_height;
++  guint old_lines = 0, old_height = 0;
+   GtkEditable *editable = GTK_EDITABLE (text);
+   gboolean frozen = FALSE;
+   
+@@ -1191,7 +1191,7 @@ gtk_text_get_chars (GtkEditable   *edita
+       guchar ch;
+       ch = text->text.ch[end_pos];
+       text->text.ch[end_pos] = 0;
+-      retval = g_strdup (text->text.ch + start_pos);
++      retval = g_strdup ((gchar *)(text->text.ch + start_pos));
+       text->text.ch[end_pos] = ch;
+     }
+ 
+@@ -5029,14 +5029,14 @@ draw_line (GtkText* text,
+ 						 buffer.wc, len);
+ 	      else
+ 	      pixel_width = gdk_text_width (gc_values.font,
+-					      buffer.ch, len);
++					      (gchar *)buffer.ch, len);
+ 	    }
+ 	  else
+ 	    {
+ 	      if (text->use_wchar)
+ 		pixel_width = gdk_text_width_wc (font, buffer.wc, len);
+ 	      else
+-		pixel_width = gdk_text_width (font, buffer.ch, len);
++		pixel_width = gdk_text_width (font, (gchar *)buffer.ch, len);
+ 	    }
+ 	  
+ 	  draw_bg_rect (text, &mark, running_offset, pixel_start_height,
+@@ -5068,7 +5068,7 @@ draw_line (GtkText* text,
+ 			   fg_gc,
+ 			   running_offset,
+ 			   pixel_height,
+-			   buffer.ch,
++			   (gchar *)buffer.ch,
+ 			   len);
+ 	  
+ 	  running_offset += pixel_width;
+@@ -5225,6 +5225,7 @@ drawn_cursor_max (GtkText* text)
+   g_assert(text->cursor_mark.property);
+   
+   font = MARK_CURRENT_FONT(text, &text->cursor_mark);
++  (void)font;
+   
+   return text->cursor_pos_y - text->cursor_char_offset;
+ }
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtktogglebutton.c gtk+-1.2.8/gtk/gtktogglebutton.c
+--- gtk+-1.2.8.orig/gtk/gtktogglebutton.c	1999-02-24 08:36:40.000000000 +0100
++++ gtk+-1.2.8/gtk/gtktogglebutton.c	2023-03-29 11:53:37.805652695 +0200
+@@ -106,12 +106,10 @@ gtk_toggle_button_class_init (GtkToggleB
+ {
+   GtkObjectClass *object_class;
+   GtkWidgetClass *widget_class;
+-  GtkContainerClass *container_class;
+   GtkButtonClass *button_class;
+ 
+   object_class = (GtkObjectClass*) class;
+   widget_class = (GtkWidgetClass*) class;
+-  container_class = (GtkContainerClass*) class;
+   button_class = (GtkButtonClass*) class;
+ 
+   parent_class = gtk_type_class (GTK_TYPE_BUTTON);
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtktree.c gtk+-1.2.8/gtk/gtktree.c
+--- gtk+-1.2.8.orig/gtk/gtktree.c	1999-05-02 14:16:57.000000000 +0200
++++ gtk+-1.2.8/gtk/gtktree.c	2023-03-29 11:54:00.877622703 +0200
+@@ -329,7 +329,9 @@ gtk_tree_button_release (GtkWidget
+   
+   tree = GTK_TREE (widget);
+   item = gtk_get_event_widget ((GdkEvent*) event);
+-  
++  (void)tree;
++  (void)item;
++    
+   return TRUE;
+ }
+ 
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtktreeitem.c gtk+-1.2.8/gtk/gtktreeitem.c
+--- gtk+-1.2.8.orig/gtk/gtktreeitem.c	2000-01-24 03:54:30.000000000 +0100
++++ gtk+-1.2.8/gtk/gtktreeitem.c	2023-03-29 11:55:10.845531746 +0200
+@@ -640,7 +640,6 @@ static void
+ gtk_tree_item_paint (GtkWidget    *widget,
+ 		     GdkRectangle *area)
+ {
+-  GtkBin *bin;
+   GdkRectangle child_area, item_area;
+   GtkTreeItem* tree_item;
+ 
+@@ -656,7 +655,6 @@ gtk_tree_item_paint (GtkWidget    *widge
+    */
+   if (GTK_WIDGET_DRAWABLE (widget))
+     {
+-      bin = GTK_BIN (widget);
+       tree_item = GTK_TREE_ITEM(widget);
+ 
+       if (widget->state == GTK_STATE_NORMAL)
+@@ -823,6 +821,7 @@ gtk_real_tree_item_select (GtkItem *item
+   g_return_if_fail (GTK_IS_TREE_ITEM (item));
+ 
+   tree_item = GTK_TREE_ITEM (item);
++  (void)tree_item;
+   widget = GTK_WIDGET (item);
+ 
+   gtk_widget_set_state (GTK_WIDGET (item), GTK_STATE_SELECTED);
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkvbbox.c gtk+-1.2.8/gtk/gtkvbbox.c
+--- gtk+-1.2.8.orig/gtk/gtkvbbox.c	2000-02-13 08:01:03.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkvbbox.c	2023-03-29 11:55:45.573486601 +0200
+@@ -215,6 +215,7 @@ gtk_vbutton_box_size_allocate (GtkWidget
+ 
+   box = GTK_BUTTON_BOX (widget);
+   hbox = GTK_VBUTTON_BOX (widget);
++  (void)hbox;
+   spacing = box->spacing != GTK_BUTTONBOX_DEFAULT
+ 	  ? box->spacing : default_spacing;
+   layout = box->layout_style != GTK_BUTTONBOX_DEFAULT_STYLE
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkviewport.c gtk+-1.2.8/gtk/gtkviewport.c
+--- gtk+-1.2.8.orig/gtk/gtkviewport.c	2000-01-24 03:54:31.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkviewport.c	2023-03-29 11:56:20.821440779 +0200
+@@ -652,6 +652,7 @@ gtk_viewport_size_request (GtkWidget
+   g_return_if_fail (requisition != NULL);
+ 
+   viewport = GTK_VIEWPORT (widget);
++  (void)viewport;
+   bin = GTK_BIN (widget);
+ 
+   requisition->width = (GTK_CONTAINER (widget)->border_width +
+@@ -791,6 +792,7 @@ gtk_viewport_adjustment_changed (GtkAdju
+   g_return_if_fail (GTK_IS_VIEWPORT (data));
+ 
+   viewport = GTK_VIEWPORT (data);
++  (void)viewport;
+ }
+ 
+ static void
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkvruler.c gtk+-1.2.8/gtk/gtkvruler.c
+--- gtk+-1.2.8.orig/gtk/gtkvruler.c	2000-02-13 08:01:03.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkvruler.c	2023-03-29 11:56:47.621405940 +0200
+@@ -134,7 +134,7 @@ static void
+ gtk_vruler_draw_ticks (GtkRuler *ruler)
+ {
+   GtkWidget *widget;
+-  GdkGC *gc, *bg_gc;
++  GdkGC *gc;
+   GdkFont *font;
+   gint i, j;
+   gint width, height;
+@@ -161,7 +161,6 @@ gtk_vruler_draw_ticks (GtkRuler *ruler)
+   widget = GTK_WIDGET (ruler);
+ 
+   gc = widget->style->fg_gc[GTK_STATE_NORMAL];
+-  bg_gc = widget->style->bg_gc[GTK_STATE_NORMAL];
+   font = widget->style->font;
+   xthickness = widget->style->klass->xthickness;
+   ythickness = widget->style->klass->ythickness;
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkvscale.c gtk+-1.2.8/gtk/gtkvscale.c
+--- gtk+-1.2.8.orig/gtk/gtkvscale.c	1999-12-30 05:12:20.000000000 +0100
++++ gtk+-1.2.8/gtk/gtkvscale.c	2023-03-29 11:57:30.021350822 +0200
+@@ -297,14 +297,12 @@ static void
+ gtk_vscale_clear_background (GtkRange    *range)
+ {
+   GtkWidget *widget;
+-  GtkScale *scale;
+   gint x, y, width, height;
+   
+   g_return_if_fail (range != NULL);
+   g_return_if_fail (GTK_IS_SCALE (range));
+   
+   widget = GTK_WIDGET (range);
+-  scale = GTK_SCALE (range);
+   
+   gtk_vscale_pos_background (GTK_VSCALE (widget), &x, &y, &width, &height);
+   
+@@ -356,7 +354,6 @@ gtk_vscale_size_allocate (GtkWidget
+                           GtkAllocation *allocation)
+ {
+   GtkRange *range;
+-  GtkScale *scale;
+   gint width, height;
+   gint x, y;
+   
+@@ -368,7 +365,6 @@ gtk_vscale_size_allocate (GtkWidget
+   if (GTK_WIDGET_REALIZED (widget))
+     {
+       range = GTK_RANGE (widget);
+-      scale = GTK_SCALE (widget);
+       
+       gtk_vscale_pos_trough (GTK_VSCALE (widget), &x, &y, &width, &height);
+       
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/gtkwindow.c gtk+-1.2.8/gtk/gtkwindow.c
+--- gtk+-1.2.8.orig/gtk/gtkwindow.c	1999-10-23 02:52:30.000000000 +0200
++++ gtk+-1.2.8/gtk/gtkwindow.c	2023-03-29 12:00:44.573097910 +0200
+@@ -869,7 +869,8 @@ gtk_window_show (GtkWidget *widget)
+       GtkWindowGeometryInfo *info = gtk_window_get_geometry_info (window, TRUE);
+       GtkAllocation allocation = { 0, 0 };
+       GdkGeometry new_geometry;
+-      guint width, height, new_flags;
++      guint width, height;
++      guint new_flags;
+ 
+       /* determine default size to initially show the window with */
+       gtk_widget_size_request (widget, NULL);
+@@ -884,7 +885,7 @@ gtk_window_show (GtkWidget *widget)
+       gtk_window_constrain_size (window,
+ 				 &new_geometry, new_flags,
+ 				 width, height,
+-				 &width, &height);
++				 (gint *)&width, (gint *)&height);
+ 
+       /* and allocate the window */
+       allocation.width  = width;
+@@ -1536,7 +1537,7 @@ gtk_window_move_resize (GtkWindow *windo
+   saved_last_info = info->last;
+ 
+   gtk_widget_size_request (widget, NULL);
+-  gtk_window_compute_default_size (window, &new_width, &new_height);
++  gtk_window_compute_default_size (window, (guint *)&new_width, (guint *)&new_height);
+   
+   if (info->last.width < 0 ||
+       info->last.width != new_width ||
+@@ -1931,7 +1932,6 @@ gtk_window_compute_hints (GtkWindow   *w
+ {
+   GtkWidget *widget;
+   GtkWidgetAuxInfo *aux_info;
+-  gint ux, uy;
+   gint extra_width = 0;
+   gint extra_height = 0;
+   GtkWindowGeometryInfo *geometry_info;
+@@ -1955,14 +1955,9 @@ gtk_window_compute_hints (GtkWindow   *w
+       extra_height = widget->requisition.height - geometry_info->widget->requisition.height;
+     }
+   
+-  ux = 0;
+-  uy = 0;
+-  
+   aux_info = gtk_object_get_data (GTK_OBJECT (widget), "gtk-aux-info");
+   if (aux_info && (aux_info->x != -1) && (aux_info->y != -1))
+     {
+-      ux = aux_info->x;
+-      uy = aux_info->y;
+       *new_flags |= GDK_HINT_POS;
+     }
+   
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/simple.c gtk+-1.2.8/gtk/simple.c
+--- gtk+-1.2.8.orig/gtk/simple.c	1998-05-04 00:41:06.000000000 +0200
++++ gtk+-1.2.8/gtk/simple.c	2023-03-29 12:02:03.668995087 +0200
+@@ -31,6 +31,7 @@ main (int argc, char *argv[])
+ 			   "GtkWidget::parent", window,
+ 			   "GtkWidget::visible", TRUE,
+ 			   NULL);
++  (void)button;			   
+   gtk_widget_show (window);
+ 
+   gtk_main ();
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/testdnd.c gtk+-1.2.8/gtk/testdnd.c
+--- gtk+-1.2.8.orig/gtk/testdnd.c	1999-04-07 03:15:35.000000000 +0200
++++ gtk+-1.2.8/gtk/testdnd.c	2023-03-29 12:01:25.269045006 +0200
+@@ -395,11 +395,11 @@ source_drag_data_get  (GtkWidget
+   else if (info == TARGET_URL)
+     gtk_selection_data_set (selection_data,
+ 			    selection_data->target,
+-			    8, "file:///home/otaylor/images/weave.png", 37);
++			    8, (const guchar *)"file:///home/otaylor/images/weave.png", 37);
+   else
+     gtk_selection_data_set (selection_data,
+ 			    selection_data->target,
+-			    8, "I'm Data!", 9);
++			    8, (const guchar *)"I'm Data!", 9);
+ }
+   
+ /* The following is a rather elaborate example demonstrating/testing
+diff -rup -x '*.o' -x '*.lo' -x Makefile -x Makefile.in gtk+-1.2.8.orig/gtk/testgtk.c gtk+-1.2.8/gtk/testgtk.c
+--- gtk+-1.2.8.orig/gtk/testgtk.c	2000-03-01 06:00:35.000000000 +0100
++++ gtk+-1.2.8/gtk/testgtk.c	2023-03-29 10:40:39.115311482 +0200
+@@ -3107,7 +3107,6 @@ cursor_expose_event (GtkWidget *widget,
+ 		     GdkEvent  *event,
+ 		     gpointer   user_data)
+ {
+-  GtkDrawingArea *darea;
+   GdkDrawable *drawable;
+   GdkGC *black_gc;
+   GdkGC *gray_gc;
+@@ -3118,7 +3117,6 @@ cursor_expose_event (GtkWidget *widget,
+   g_return_val_if_fail (widget != NULL, TRUE);
+   g_return_val_if_fail (GTK_IS_DRAWING_AREA (widget), TRUE);
+ 
+-  darea = GTK_DRAWING_AREA (widget);
+   drawable = widget->window;
+   white_gc = widget->style->white_gc;
+   gray_gc = widget->style->bg_gc[GTK_STATE_NORMAL];
+@@ -6550,13 +6548,11 @@ shape_create_icon (char     *xpm_file,
+   GtkWidget *pixmap;
+   GtkWidget *fixed;
+   CursorOffset* icon_pos;
+-  GdkGC* gc;
+   GdkBitmap *gdk_pixmap_mask;
+   GdkPixmap *gdk_pixmap;
+   GtkStyle *style;
+ 
+   style = gtk_widget_get_default_style ();
+-  gc = style->black_gc;	
+ 
+   /*
+    * GDK_WINDOW_TOPLEVEL works also, giving you a title border
+@@ -6680,7 +6676,7 @@ create_wmhints (void)
+       gtk_widget_realize (window);
+       
+       circles = gdk_bitmap_create_from_data (window->window,
+-					     circles_bits,
++					     (const char *)circles_bits,
+ 					     circles_width,
+ 					     circles_height);
+       gdk_window_set_icon (window->window, NULL,
+@@ -7532,7 +7528,6 @@ scroll_test_adjustment_changed (GtkAdjus
+   gint source_min = (int)adj->value - scroll_test_pos;
+   gint source_max = source_min + widget->allocation.height;
+   gint dest_min = 0;
+-  gint dest_max = widget->allocation.height;
+   GdkRectangle rect;
+   GdkEvent *event;
+ 
+@@ -7563,7 +7558,6 @@ scroll_test_adjustment_changed (GtkAdjus
+       rect.height = widget->allocation.height - rect.y;
+ 
+       source_max = widget->allocation.height;
+-      dest_max = rect.y;
+     }
+ 
+   if (source_min != source_max)

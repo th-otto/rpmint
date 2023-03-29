@@ -51,6 +51,7 @@ Source3: patches/gtk/gtk-acinclude.m4
 Patch0:  patches/gtk/gtk+-%{version}-mint-x11.patch
 Patch1:  patches/gtk/gtk+-%{version}-configure.patch
 Patch2:  patches/gtk/gtk+-%{version}-fontsel.patch
+Patch3:  patches/gtk/gtk+-%{version}-warnings.patch
 
 %rpmint_build_arch
 
@@ -72,6 +73,7 @@ need to install the gtk+ package.
 #%%patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 rm -f aclocal.m4 acinclude.m4 ltmain.sh ltconfig
 cp %{S:3} acinclude.m4
