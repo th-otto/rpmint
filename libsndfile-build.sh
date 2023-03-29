@@ -13,7 +13,7 @@ PATCHES="
 patches/${PACKAGENAME}/libsndfile-mint.patch
 "
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/automake/mintelf-config.sub
 "
 BINFILES="
 ${TARGET_BINDIR#/}/*
@@ -25,7 +25,7 @@ cd "$srcdir"
 
 autoreconf -fiv --add-missing
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build-aux/config.sub
 
 cd "$MINT_BUILD_DIR"
 

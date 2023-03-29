@@ -172,3 +172,16 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %changelog
 * Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
+- Update to version 0.19.8.1
+
+* Tue Feb 24 2004 Mark Duckworth <mduckworth@atari-source.com>
+- Original packager, guido flohr but because of the changes and upgrades
+- bug reports should surely go to me.
+- Upgraded to version 0.12.1 compiled against mintlib cvs
+- Removed stuff about xgemtext, it doesn't seem to be part of this pkg?
+
+* Mon Mar 27 2000 Frank Naumann <fnaumann@freemint.de>
+- rebuild against new MiNTLib 0.55
+
+* Wed Aug 11 1999 Guido Flohr <guido@freemint.de>
+- Changed vendor to Sparemint.
