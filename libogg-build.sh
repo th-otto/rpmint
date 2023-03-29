@@ -13,7 +13,9 @@ PATCHES="
 patches/libogg/libogg-m4.diff
 patches/libogg/libogg-lib64.dif
 patches/libogg/libogg-config.patch
-patches/libogg/libogg-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
@@ -29,11 +31,14 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libogg-mintelf-config.patch"
+cp "${BUILD_DIR}patches/automake/mintelf-config.sub" config.sub
+
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared ${CONFIGURE_FLAGS_AMIGAOS}"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
+	 --disable-shared
+"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
@@ -44,7 +49,7 @@ for CPU in ${ALL_CPUS}; do
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install

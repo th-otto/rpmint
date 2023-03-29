@@ -1,56 +1,59 @@
-%define pkgname libmikmod
+%define pkgname libogg
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary:        MikMod Sound Library
+Summary:        Ogg Bitstream Library
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        3.3.7
+Version:        1.3.3
 Release:        1
-License:        LGPL-2.1-or-later
+License:        BSD-3-Clause
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://mikmod.raphnet.net/
+URL:            http://www.vorbis.com/
 
 Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: http://sourceforge.net/projects/mikmod/files/%{pkgname}/%{version}/%{pkgname}-%{version}.tar.gz
+Source0: http://downloads.xiph.org/releases/ogg/%{pkgname}-%{version}.tar.xz
 Source1: patches/automake/mintelf-config.sub
-Patch0:  patches/libmikmod/libmikmod-cflags.patch
-Patch1:  patches/libmikmod/libmikmod-config.patch
+Patch0:  patches/libogg/libogg-m4.diff
+Patch1:  patches/libogg/libogg-lib64.dif
+Patch2:  patches/libogg/libogg-config.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  libtool
 BuildRequires:  make
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-libmikmod-devel
+Provides:       cross-mint-libogg-devel
 %else
-Provides:       libmikmod-devel
+Provides:       libogg-devel
 %endif
 
 %rpmint_build_arch
 
 %description
-Libmikmod is a portable sound library, capable of playing samples as
-well as module files. It was originally written by Jean-Paul Mikkers
-(MikMak) for DOS. It supports OSS /dev/dsp, ALSA, and Esound and can
-also write wav files. Supported file formats include mod, stm, s3m,
-mtm, xm, and it.
+Libogg is a library for manipulating Ogg bitstreams.  It handles both
+making Ogg bitstreams and getting packets from Ogg bitstreams.
+
+Ogg is the native bitstream format of libvorbis (Ogg Vorbis audio
+codec) and libtheora (Theora video codec).
 
 %prep
+[ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 rm -f aclocal.m4 ltmain.sh
 libtoolize --force || exit 1
@@ -65,6 +68,8 @@ cp %{S:1} config.sub
 %build
 
 %rpmint_cflags
+
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
@@ -92,8 +97,6 @@ for CPU in ${ALL_CPUS}; do
 
 	# compress manpages
 	%rpmint_gzip_docs
-	rm -f %{buildroot}%{_rpmint_bindir}/libmikmod-config
-	rmdir %{buildroot}%{_rpmint_bindir} || :
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias
 
 	%if "%{buildtype}" != "cross"
@@ -128,32 +131,37 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files
 %defattr(-,root,root)
+%{_isysroot}%{_rpmint_target_prefix}/include
+%{_isysroot}%{_rpmint_target_prefix}/lib
+%{_isysroot}%{_rpmint_target_prefix}/share
 %if "%{buildtype}" == "cross"
-%{_rpmint_includedir}
-%{_rpmint_libdir}
 %{_rpmint_cross_pkgconfigdir}
-%{_rpmint_datadir}
-%else
-%{_rpmint_target_prefix}/include
-%{_rpmint_target_prefix}/lib
-%{_rpmint_target_prefix}/share
 %endif
 
 
 
 %changelog
-* Wed Mar 8 2023 Thorsten Otto <admin@tho-otto.de>
+* Wed Mar 29 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
-- Update to version 3.3.7
+- Update to version 1.3.3
 
-* Mon Apr 07 2008 Marc-Anton Kehr <makehr@ndh.net>
-- new version
+* Mon Aug 23 2010 Keith Scroggins <kws@radix.net>
+- Added 68020-60 and 5475 libs and updated to 1.2.0
 
-* Mon Mar 27 2000 Frank Naumann <fnaumann@freemint.de>
-- rebuild against new MiNTLib 0.55
+* Sun Sep 28 2003 Adam Klobukowski <atari@gabo.pl>
+- adapted for FreeMiNT and SpareMiNT
 
-* Wed Aug 25 1999 Frank Naumann <fnaumann@freemint.de>
-- compressed manpages
-- correct Packager and Vendor
-- added %description de and Summary(de)
+* Sun Jul 14 2002 Thomas Vander Stichele <thomas@apestaart.org>
+- update for 1.0 release
+- conform Group to Red Hat's idea of it
+- take out case where configure doesn't exist; a tarball should have it
+
+* Tue Dec 18 2001 Jack Moffitt <jack@xiph.org>
+- Update for RC3 release
+
+* Sun Oct 07 2001 Jack Moffitt <jack@xiph.org>
+- add support for configurable prefixes
+
+* Sat Sep 02 2000 Jack Moffitt <jack@icecast.org>
+- initial spec file created
 
