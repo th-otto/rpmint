@@ -10,6 +10,7 @@ Source0:        rpm-macros.rpmint
 
 Prefix:         %{_prefix}
 BuildArch:      noarch
+%global _arch noarch
 
 %description
 RPM macros for cross-compiling MiNT stuff.

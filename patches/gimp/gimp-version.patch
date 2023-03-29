@@ -1,13 +1,13 @@
 --- gimp-1.2.5.orig/app/main.c	2002-12-17 22:24:38.000000000 +0100
-+++ gimp-1.2.5/app/main.c	2023-03-27 19:05:50.049220842 +0200
-@@ -308,7 +308,11 @@ main (int    argc,
++++ gimp-1.2.5/app/main.c	2023-03-28 12:01:16.747432812 +0200
+@@ -308,7 +308,11 @@
  #endif
  
    if (show_version)
 +  {
      g_print ( "%s %s\n", _("GIMP version"), GIMP_VERSION);
-+    g_print ( _("using GTK+ version %d.%d.%d\n"), GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION);
-+    g_print ( _("using GLib version %d.%d.%d\n"), GLIB_MAJOR_VERSION, GLIB_MINOR_VERSION, GLIB_MICRO_VERSION);
++    g_print ( _("GTK+ version: compiled %d.%d.%d, using %d.%d.%d\n"), GTK_MAJOR_VERSION, GTK_MINOR_VERSION, GTK_MICRO_VERSION, gtk_major_version, gtk_minor_version, gtk_micro_version);
++    g_print ( _("GLib version: compiled %d.%d.%d, using %d.%d.%d\n"), GLIB_MAJOR_VERSION, GLIB_MINOR_VERSION, GLIB_MICRO_VERSION, glib_major_version, glib_minor_version, glib_micro_version);
 +  }
  
    if (show_help)

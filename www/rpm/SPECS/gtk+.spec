@@ -136,9 +136,6 @@ done
 
 mkdir -p %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig
 
-# compare two versions, returns -1, 0, 1, ~~~
-%define rpm_vercmp() %{lua:print(rpm.expand('%1') == '~~~' and '~~~' or rpm.vercmp(rpm.expand('%1'), rpm.expand('%2')))}
-
 %if %{rpm_vercmp %{version} 1.2.10} < 0
 cat << EOF > %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/gtk+.pc
 prefix=%{_rpmint_target_prefix}

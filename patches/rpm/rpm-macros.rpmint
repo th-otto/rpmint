@@ -84,6 +84,9 @@ BuildRequires:  cross-mint-essential \
 BuildRequires:  mint-devel-essential \
 %endif
 
+# compare two versions, returns -1, 0, 1, ~~~
+%rpm_vercmp() %{lua:print(rpm.expand('%1') == '~~~' and '~~~' or rpm.vercmp(rpm.expand('%1'), rpm.expand('%2')))}
+
 %rpmint_move_pkgconfig_libs_private() \
 	# If a *.pc has a Libs.private entry, \
 	# move the flags to the Libs entry, since we only \
