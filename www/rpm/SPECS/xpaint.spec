@@ -22,12 +22,16 @@ BuildRequires : cross-mint-XFree86-devel
 BuildRequires : cross-mint-libpng-devel
 BuildRequires : cross-mint-libtiff-devel
 BuildRequires : cross-mint-libjpeg-devel
+BuildRequires : cross-mint-libzstd-devel
+BuildRequires : cross-mint-liblzma5
 Requires      : cross-mint-XFree86
 %else
 BuildRequires : XFree86-devel
 BuildRequires : libpng-devel
 BuildRequires : libtiff-devel
 BuildRequires : libjpeg-devel
+BuildRequires : libzstd-devel
+BuildRequires : liblzma5
 Requires      : XFree86
 %endif
 
