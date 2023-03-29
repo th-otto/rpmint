@@ -1,0 +1,686 @@
+diff -rup minicom-2.00.0.orig/Makefile.am minicom-2.00.0/Makefile.am
+--- minicom-2.00.0.orig/Makefile.am	1999-12-20 22:45:09.000000000 +0100
++++ minicom-2.00.0/Makefile.am	2023-03-29 16:50:33.981714984 +0200
+@@ -2,9 +2,9 @@
+ EXTRA_DIST = ABOUT-NLS AUTHORS COPYING ChangeLog FILE_ID.DIZ \
+ 	     INSTALL NEWS README aux minicom.spec
+ 
+-SUBDIRS = doc extras man intl po lib src
++SUBDIRS = doc extras man po lib src
+ 
+-AUTOMAKE_OPTIONS = dist-tarZ no-dependencies 1.0
++AUTOMAKE_OPTIONS = no-dependencies 1.0
+ 
+ ## make rpms
+ rpm:	Makefile
+diff -rup minicom-2.00.0.orig/acinclude.m4 minicom-2.00.0/acinclude.m4
+--- minicom-2.00.0.orig/acinclude.m4	1999-12-20 22:45:16.000000000 +0100
++++ minicom-2.00.0/acinclude.m4	2023-03-29 16:42:22.042357229 +0200
+@@ -7,7 +7,7 @@ dnl variable, expanding ${prefix} and su
+ dnl example: AC_DEFINE_DIR(DATADIR, datadir)
+ dnl by Alexandre Oliva <oliva@dcc.unicamp.br>
+ 
+-AC_DEFUN(AC_DEFINE_DIR, [
++AC_DEFUN([AC_DEFINE_DIR], [
+         ac_expanded=`(
+             test "x$prefix" = xNONE && prefix="$ac_default_prefix"
+             test "x$exec_prefix" = xNONE && exec_prefix="${prefix}"
+@@ -16,3 +16,67 @@ AC_DEFUN(AC_DEFINE_DIR, [
+         AC_DEFINE_UNQUOTED($1, "$ac_expanded")
+ ])
+ 
++dnl From Jim Meyering.
++
++AC_DEFUN([AM_SYS_POSIX_TERMIOS],
++[AC_CACHE_CHECK([POSIX termios], am_cv_sys_posix_termios,
++  [AC_TRY_LINK([#include <sys/types.h>
++#include <unistd.h>
++#include <termios.h>],
++  [/* SunOS 4.0.3 has termios.h but not the library calls.  */
++   tcgetattr(0, 0);],
++  am_cv_sys_posix_termios=yes,
++  am_cv_sys_posix_termios=no)])
++])
++
++dnl From Jim Meyering.
++
++AC_DEFUN([AM_HEADER_TIOCGWINSZ_NEEDS_SYS_IOCTL],
++[AC_REQUIRE([AM_SYS_POSIX_TERMIOS])
++ AC_CACHE_CHECK([whether use of TIOCGWINSZ requires sys/ioctl.h],
++	        am_cv_sys_tiocgwinsz_needs_sys_ioctl_h,
++  [am_cv_sys_tiocgwinsz_needs_sys_ioctl_h=no
++
++  gwinsz_in_termios_h=no
++  if test $am_cv_sys_posix_termios = yes; then
++    AC_EGREP_CPP([yes],
++    [#include <sys/types.h>
++#     include <termios.h>
++#     ifdef TIOCGWINSZ
++        yes
++#     endif
++    ], gwinsz_in_termios_h=yes)
++  fi
++
++  if test $gwinsz_in_termios_h = no; then
++    AC_EGREP_CPP([yes],
++    [#include <sys/types.h>
++#     include <sys/ioctl.h>
++#     ifdef TIOCGWINSZ
++        yes
++#     endif
++    ], am_cv_sys_tiocgwinsz_needs_sys_ioctl_h=yes)
++  fi
++  ])
++  if test $am_cv_sys_tiocgwinsz_needs_sys_ioctl_h = yes; then
++    AC_DEFINE(GWINSZ_IN_SYS_IOCTL,1,
++              [Define if TIOCGWINSZ requires sys/ioctl.h])
++  fi
++])
++
++
++dnl From Jim Meyering.  Use this if you use the GNU error.[ch].
++dnl FIXME: Migrate into libit
++
++AC_DEFUN([AM_FUNC_ERROR_AT_LINE],
++[AC_CACHE_CHECK([for error_at_line], am_cv_lib_error_at_line,
++ [AC_TRY_LINK([],[error_at_line(0, 0, "", 0, "");],
++              am_cv_lib_error_at_line=yes,
++	      am_cv_lib_error_at_line=no)])
++ if test $am_cv_lib_error_at_line = no; then
++   LIBOBJS="$LIBOBJS error.o"
++ fi
++ AC_SUBST(LIBOBJS)dnl
++])
++
++
+diff -rup minicom-2.00.0.orig/configure.in minicom-2.00.0/configure.in
+--- minicom-2.00.0.orig/configure.in	2001-09-30 15:10:33.000000000 +0200
++++ minicom-2.00.0/configure.in	2023-03-29 16:55:44.261304826 +0200
+@@ -4,8 +4,8 @@ dnl for minicom
+ dnl
+ 
+ AC_INIT(src/minicom.c)
+-AC_CONFIG_AUX_DIR(aux)
+-AC_PREREQ(2.12)
++AC_CONFIG_AUX_DIR(build-aux)
++AC_PREREQ(2.59)
+ AM_CONFIG_HEADER(config.h)
+ 
+ dnl Don't use '-' in version ! RPM doesn't like this.
+@@ -167,7 +167,7 @@ dnl Set of available languages.
+ ALL_LINGUAS="cs_CZ es fr fi_FI ja ja_JP.SJIS pl pt_BR ru"
+ 
+ dnl Checks for programs.
+-AM_GNU_GETTEXT
++AM_GNU_GETTEXT([external])
+ test "x$USE_INCLUDED_LIBINTL" = xyes && CFLAGS="$CFLAGS -I\$(top_srcdir)/intl"
+ 
+ if test "x$enable_kermit" != xno && test "x$PATH_KERMIT" = x
+@@ -231,7 +231,6 @@ AC_CHECK_HEADERS(stdarg.h varargs.h term
+ 
+ dnl Checks for typedefs, structures, and compiler characteristics.
+ AC_C_CONST
+-AM_C_PROTOTYPES
+ AC_TYPE_UID_T
+ AC_TYPE_MODE_T
+ AC_TYPE_PID_T
+diff -rup minicom-2.00.0.orig/doc/Makefile.am minicom-2.00.0/doc/Makefile.am
+--- minicom-2.00.0.orig/doc/Makefile.am	2000-02-09 16:55:38.000000000 +0100
++++ minicom-2.00.0/doc/Makefile.am	2023-03-29 16:49:13.793821005 +0200
+@@ -9,4 +9,4 @@ EXTRA_DIST = Announce-1.78 Announce-1.82
+ 	     modemu.README pl-translation.txt portugues-brasil \
+ 	     suomeksi ChangeLog.old
+ 
+-AUTOMAKE_OPTIONS = dist-tarZ no-dependencies 1.0
++AUTOMAKE_OPTIONS = no-dependencies 1.0
+diff -rup minicom-2.00.0.orig/extras/Makefile.am minicom-2.00.0/extras/Makefile.am
+--- minicom-2.00.0.orig/extras/Makefile.am	1999-12-20 22:45:18.000000000 +0100
++++ minicom-2.00.0/extras/Makefile.am	2023-03-29 16:49:31.945797010 +0200
+@@ -2,5 +2,5 @@ SUBDIRS = linux tables termcap terminfo
+ 
+ EXTRA_DIST = htsalogin saralogin scriptdemo unixlogin
+ 
+-AUTOMAKE_OPTIONS = dist-tarZ no-dependencies 1.0
++AUTOMAKE_OPTIONS = no-dependencies 1.0
+ 
+diff -rup minicom-2.00.0.orig/extras/linux/Makefile.am minicom-2.00.0/extras/linux/Makefile.am
+--- minicom-2.00.0.orig/extras/linux/Makefile.am	1999-12-20 13:21:34.000000000 +0100
++++ minicom-2.00.0/extras/linux/Makefile.am	2023-03-29 16:47:06.833988833 +0200
+@@ -1,4 +1,4 @@
+ 
+ EXTRA_DIST = INSTALL README-FIRST mtelnet
+ 
+-AUTOMAKE_OPTIONS = dist-tarZ no-dependencies 1.0
++AUTOMAKE_OPTIONS = no-dependencies 1.0
+diff -rup minicom-2.00.0.orig/extras/tables/Makefile.am minicom-2.00.0/extras/tables/Makefile.am
+--- minicom-2.00.0.orig/extras/tables/Makefile.am	1999-12-20 13:21:35.000000000 +0100
++++ minicom-2.00.0/extras/tables/Makefile.am	2023-03-29 16:47:18.457973469 +0200
+@@ -1,4 +1,4 @@
+ 
+ EXTRA_DIST = mc.iso mc.noconv mc.pc8 mc.sf7
+ 
+-AUTOMAKE_OPTIONS = dist-tarZ no-dependencies 1.0
++AUTOMAKE_OPTIONS = no-dependencies 1.0
+diff -rup minicom-2.00.0.orig/extras/termcap/Makefile.am minicom-2.00.0/extras/termcap/Makefile.am
+--- minicom-2.00.0.orig/extras/termcap/Makefile.am	1999-12-20 13:21:36.000000000 +0100
++++ minicom-2.00.0/extras/termcap/Makefile.am	2023-03-29 16:47:28.049960787 +0200
+@@ -1,4 +1,4 @@
+ 
+ EXTRA_DIST = README termcap.long termcap.short
+ 
+-AUTOMAKE_OPTIONS = dist-tarZ no-dependencies 1.0
++AUTOMAKE_OPTIONS = no-dependencies 1.0
+diff -rup minicom-2.00.0.orig/extras/terminfo/Makefile.am minicom-2.00.0/extras/terminfo/Makefile.am
+--- minicom-2.00.0.orig/extras/terminfo/Makefile.am	1999-12-20 13:21:37.000000000 +0100
++++ minicom-2.00.0/extras/terminfo/Makefile.am	2023-03-29 16:47:39.041946257 +0200
+@@ -1,4 +1,4 @@
+ 
+ EXTRA_DIST = README minicom
+ 
+-AUTOMAKE_OPTIONS = dist-tarZ no-dependencies 1.0
++AUTOMAKE_OPTIONS = no-dependencies 1.0
+diff -rup minicom-2.00.0.orig/lib/Makefile.am minicom-2.00.0/lib/Makefile.am
+--- minicom-2.00.0.orig/lib/Makefile.am	2000-02-10 16:13:47.000000000 +0100
++++ minicom-2.00.0/lib/Makefile.am	2023-03-29 16:49:49.505773793 +0200
+@@ -5,5 +5,5 @@ libport_a_SOURCES =
+ 
+ libport_a_LIBADD = @LIBOBJS@
+ 
+-AUTOMAKE_OPTIONS = dist-tarZ no-dependencies 1.0
++AUTOMAKE_OPTIONS = no-dependencies 1.0
+ 
+diff -rup minicom-2.00.0.orig/man/Makefile.am minicom-2.00.0/man/Makefile.am
+--- minicom-2.00.0.orig/man/Makefile.am	2001-02-06 16:36:49.000000000 +0100
++++ minicom-2.00.0/man/Makefile.am	2023-03-29 16:48:37.433869070 +0200
+@@ -1,4 +1,4 @@
+-AUTOMAKE_OPTIONS = dist-tarZ no-dependencies 1.0
++AUTOMAKE_OPTIONS = no-dependencies 1.0
+ 
+ man_MANS = ascii-xfr.1 minicom.1 runscript.1
+ 
+diff -rup minicom-2.00.0.orig/src/Makefile.am minicom-2.00.0/src/Makefile.am
+--- minicom-2.00.0.orig/src/Makefile.am	2001-10-01 16:19:51.000000000 +0200
++++ minicom-2.00.0/src/Makefile.am	2023-03-29 16:48:58.161841669 +0200
+@@ -20,14 +20,14 @@ ascii_xfr_SOURCES = ascii-xfr.c
+ 
+ minicom_keyserv_SOURCES = keyserv.c wkeys.c sysdep2.c
+ 
+-AUTOMAKE_OPTIONS = dist-tarZ no-dependencies 1.0
++AUTOMAKE_OPTIONS = no-dependencies 1.0
+ 
+ minicom_LDADD = @INTLLIBS@
+ 
+ runscript_LDADD = @INTLLIBS@
+ 
+ LDADD = $(top_builddir)/lib/libport.a
+-CPPFLAGS = @CPPFLAGS@  -I$(top_srcdir)/lib
++AM_CPPFLAGS = @CPPFLAGS@  -I$(top_srcdir)/lib
+ 
+ EXTRA_DIST = functions.c xminicom
+ 
+diff -rup minicom-2.00.0.orig/src/ascii-xfr.c minicom-2.00.0/src/ascii-xfr.c
+--- minicom-2.00.0.orig/src/ascii-xfr.c	2000-11-17 16:20:27.000000000 +0100
++++ minicom-2.00.0/src/ascii-xfr.c	2023-03-29 17:10:26.028181693 +0200
+@@ -20,6 +20,7 @@ RCSID("$Id: ascii-xfr.c,v 1.4 2000/11/17
+ #include <time.h>
+ #include <sys/time.h>
+ #include <sys/types.h>
++#include <termios.h>
+ 
+ /*
+  *	Externals.
+diff -rup minicom-2.00.0.orig/src/getsdir.c minicom-2.00.0/src/getsdir.c
+--- minicom-2.00.0.orig/src/getsdir.c	2000-03-16 18:59:38.000000000 +0100
++++ minicom-2.00.0/src/getsdir.c	2023-03-29 16:58:07.037116091 +0200
+@@ -84,7 +84,7 @@ _PROTO(static void free_up, (void));		/*
+  *
+  *			    The data will be in the form:
+  *				typedef struct dirEntry {
+- *				    char fname[MAXNAMLEN + 1];
++ *				    char fname[NAME_MAX + 1];
+  *				    time_t time;
+  *				    mode_t mode;
+  *				} GETSDIR_ENTRY;
+@@ -209,7 +209,7 @@ int *len;
+ 		    /* copy the filename */
+ 		    strncpy(datb_cur->data[datb_cur->cnt].fname,
+ 			    dp->d_name,
+-			    MAXNAMLEN);
++			    NAME_MAX);
+ 
+ 	            /* get information about the directory entry */
+ 	            snprintf(fpath, sizeof(fpath), "%s/%s", dirpath, dp->d_name);
+diff -rup minicom-2.00.0.orig/src/getsdir.h minicom-2.00.0/src/getsdir.h
+--- minicom-2.00.0.orig/src/getsdir.h	1999-12-18 12:18:56.000000000 +0100
++++ minicom-2.00.0/src/getsdir.h	2023-03-29 16:57:06.933195542 +0200
+@@ -21,7 +21,7 @@
+ #include <dirent.h>
+ 
+ typedef struct dirEntry {		/* structure of data item */
+-   char fname[MAXNAMLEN + 1];		/* filename + terminating null */
++   char fname[NAME_MAX + 1];		/* filename + terminating null */
+    time_t time;				/* last modification date */
+    mode_t mode;				/* file mode (dir? etc.) */
+    ushort cflags;			/* caller field for convenience */
+diff -rup minicom-2.00.0.orig/src/minicom.c minicom-2.00.0/src/minicom.c
+--- minicom-2.00.0.orig/src/minicom.c	2001-07-04 18:27:47.000000000 +0200
++++ minicom-2.00.0/src/minicom.c	2023-03-29 17:07:34.348393829 +0200
+@@ -151,7 +151,7 @@ int dummy;
+ 
+ #if _HISTORY
+ /* Get a line from either window or scroll back buffer. */
+-static ELM *getline(w, no)
++static ELM *mgetline(w, no)
+ WIN *w;
+ int no;
+ {
+@@ -192,7 +192,7 @@ int r;
+ 
+   w->direct = 0;
+   for(f = 0; f < w->ys; f++)
+-	wdrawelm(w, f, getline(w, y++));
++	wdrawelm(w, f, mgetline(w, y++));
+   if (r) wredraw(w, 1);
+   w->direct = 1;
+ }
+@@ -220,7 +220,7 @@ int	case_matters;
+   w->direct = 0;
+   for (f = 0; f < w->ys; f++)
+   {
+-	tmp_e = getline(w, y++);
++	tmp_e = mgetline(w, y++);
+ 
+   	/* First we "accumulate" the line into a variable */
+ 	wdrawelm_var(w, f, tmp_e, tmp_line);
+@@ -320,7 +320,7 @@ int	case_matters;	/* guess... */
+   for (next_line = hit_line; next_line <= all_lines; next_line++)
+   {
+ 	/* we do 'something' here... :-) */
+-	tmp_e = getline(w_hist, next_line);
++	tmp_e = mgetline(w_hist, next_line);
+ 
+   	/*
+ 	 * First we "accumulate" the line into a variable.
+@@ -389,9 +389,9 @@ int start;
+ int end;
+ {
+   if (y+citey >= start && y+citey <= end) 
+-	wdrawelm_inverse(w, y, getline(w, y+citey));
++	wdrawelm_inverse(w, y, mgetline(w, y+citey));
+   else
+-	wdrawelm(w, y, getline(w, y+citey));
++	wdrawelm(w, y, mgetline(w, y+citey));
+ }
+ 
+ static void drawcite_whole(w, y, start, end)
+@@ -415,7 +415,7 @@ int start,end;
+   for (y=start; y<=end; y++) {
+ 	vt_send('>');
+ 	vt_send(' ');
+-	tmp_e = getline(w, y);
++	tmp_e = mgetline(w, y);
+ 	wdrawelm_var(w, 0 /* dummy? */, tmp_e, tmp_line);
+ 	tmp_line[w->xs]=0;
+ 	for (x=w->xs-1; x>=0; x--){
+@@ -598,7 +598,7 @@ static void scrollback()
+ 			inverse =
+ 			  (y+cite_y >= cite_ystart && y+cite_y <= cite_yend);
+ 		} else {
+-        		tmp_e = getline(b_us, y);
++        		tmp_e = mgetline(b_us, y);
+ 			if (strlen(look_for) > 1)
+ 			{
+ 			  /* quick scan for pattern match */
+@@ -617,8 +617,8 @@ static void scrollback()
+ 			inverse = 0;
+ 		}
+ #endif /*_SEARCH_HISTORY*/
+-		if (inverse) wdrawelm_inverse(b_us, 0, getline(b_us, y));
+-		else wdrawelm(b_us, 0, getline(b_us, y));
++		if (inverse) wdrawelm_inverse(b_us, 0, mgetline(b_us, y));
++		else wdrawelm(b_us, 0, mgetline(b_us, y));
+ 		if (citemode) wlocate(b_us, 0, cite_y);
+ 		wflush();
+ 		break;
+@@ -651,7 +651,7 @@ static void scrollback()
+ 			inverse =
+ 			  (y+cite_y >= cite_ystart && y+cite_y <= cite_yend);
+ 		} else {
+-        		tmp_e = getline(b_us, y + b_us->ys - 1);
++        		tmp_e = mgetline(b_us, y + b_us->ys - 1);
+ 			if (strlen(look_for) > 1)
+ 			{
+ 				/* quick scan for pattern match */
+@@ -672,10 +672,10 @@ static void scrollback()
+ #endif /*_SEARCH_HISTORY*/
+ 		if (inverse)
+ 			wdrawelm_inverse(b_us, b_us->ys - 1, 
+-			  getline(b_us, y + b_us->ys - 1));
++			  mgetline(b_us, y + b_us->ys - 1));
+ 		else
+ 			wdrawelm(b_us, b_us->ys - 1, 
+-			  getline(b_us, y + b_us->ys - 1));
++			  mgetline(b_us, y + b_us->ys - 1));
+ 		if (citemode) wlocate(b_us, 0, cite_y);
+ 		wflush();
+ 		break;
+@@ -759,7 +759,7 @@ static void scrollback()
+ 		wlocate(b_st, 0, 0);
+ 		wprintf(b_st, hline);
+ 		wredraw(b_st, 1);
+-		wdrawelm_inverse(b_us, cite_y, getline(b_us, cite_ystart));
++		wdrawelm_inverse(b_us, cite_y, mgetline(b_us, cite_ystart));
+ 		wlocate(b_us, 0, cite_y);
+ 		break;
+ 	  case K_ESC:
+@@ -1118,6 +1118,8 @@ char **argv;
+ 			use_status = 1;
+ 			break;
+ 		case 'C': /* Capturing */
++ 			setegid(real_gid);
++ 			seteuid(real_uid);
+ 			capfp = sfopen(optarg, "a");
+ 			if (capfp == NULL) {
+ 				werror(_("Cannot open capture file"));
+@@ -1125,6 +1127,8 @@ char **argv;
+ 			}
+ 			docap = 1;
+ 			vt_set(addlf, -1, capfp, docap, -1, -1, -1, -1);
++ 			setegid(eff_uid);
++ 			setegid(eff_gid);
+ 			break;
+ 		case 'S': /* start Script */
+ 			strncpy(scr_name, optarg, 33);
+diff -rup minicom-2.00.0.orig/src/port.h minicom-2.00.0/src/port.h
+--- minicom-2.00.0.orig/src/port.h	2001-02-21 22:30:52.000000000 +0100
++++ minicom-2.00.0/src/port.h	2023-03-29 16:56:50.677217031 +0200
+@@ -35,7 +35,7 @@
+ #endif
+ #ifdef _UWIN2P0
+ # include <time.h>
+-# define MAXNAMLEN 80
++# define NAME_MAX 80
+ #endif
+ #include <signal.h>
+ #include <fcntl.h>
+diff -rup minicom-2.00.0.orig/src/sysdep1.c minicom-2.00.0/src/sysdep1.c
+--- minicom-2.00.0.orig/src/sysdep1.c	2000-06-24 18:01:29.000000000 +0200
++++ minicom-2.00.0/src/sysdep1.c	2023-03-29 17:00:09.068954777 +0200
+@@ -71,7 +71,7 @@ int fd, on;
+ void m_setrts(fd)
+ int fd;
+ {
+-#if defined(TIOCM_RTS) && defined(TIOCMODG)
++#if defined(TIOCM_RTS) && defined(TIOCMODG) && defined(TIOCMODS)
+   int mcs=0;
+ 
+   ioctl(fd, TIOCMODG, &mcs);
+diff -rup minicom-2.00.0.orig/src/window.c minicom-2.00.0/src/window.c
+--- minicom-2.00.0.orig/src/window.c	2000-01-31 21:12:08.000000000 +0100
++++ minicom-2.00.0/src/window.c	2023-03-29 17:09:23.324259173 +0200
+@@ -62,7 +62,7 @@ static char *CE, *Al, *Dl, *AL, *DL;
+ static char *CS, *SF, *SR, *VB, *BL;
+ static char *VE, *VI, *KS, *KE;
+ static char *CD, *CL, *IC, *DC;
+-static char *BC, *CR, *NL;
++static char *TCBC, *CR, *NL;
+ #if ST_LINE
+ static char *TS, *FS, *DS;
+ #endif
+@@ -322,8 +322,8 @@ int x, y;
+   else if (NL != CNULL && x == 0 && x == curx && y == cury + 1)
+ 	outstr(NL);
+ #endif
+-  else if (BC != CNULL && y == cury && x == curx - 1)
+-  	outstr(BC);
++  else if (TCBC != CNULL && y == cury && x == curx - 1)
++  	outstr(TCBC);
+   else	
+   	outstr(tgoto(CM, x, y));
+   curx = x;
+@@ -337,7 +337,7 @@ int x, y;
+  *                 0: only write to memory, not to screen
+  *                 1: write to both screen and memory
+  */
+-static void _write(c, doit, x, y,attr, color)
++static void _stdwrite(c, doit, x, y,attr, color)
+ int c, doit;
+ int x, y;
+ char attr, color;
+@@ -556,27 +556,27 @@ int doclr;
+ 
+   /* And draw the window */
+   if (border) {
+-	_write(border == BSINGLE ? S_UL : D_UL, w->direct, x1, y1,
++	_stdwrite(border == BSINGLE ? S_UL : D_UL, w->direct, x1, y1,
+ 					xattr, color);
+ 	for(x = x1 + 1; x < x2; x++)
+-		_write(border == BSINGLE ? S_HOR : D_HOR, w->direct, x, y1,
++		_stdwrite(border == BSINGLE ? S_HOR : D_HOR, w->direct, x, y1,
+ 					xattr, color);
+-	_write(border == BSINGLE ? S_UR : D_UR, w->direct, x2, y1,
++	_stdwrite(border == BSINGLE ? S_UR : D_UR, w->direct, x2, y1,
+ 					xattr, color);
+ 	for(y = y1 + 1; y < y2; y++) {
+-		_write(border == BSINGLE ? S_VER : D_VER, w->direct, x1, y,
++		_stdwrite(border == BSINGLE ? S_VER : D_VER, w->direct, x1, y,
+ 					xattr, color);
+ 		for(x = x1 + 1; x < x2; x++)
+-			_write(' ', w->direct, x, y, attr, color);
+-		_write(border == BSINGLE ? S_VER : D_VER, w->direct, x2, y,
++			_stdwrite(' ', w->direct, x, y, attr, color);
++		_stdwrite(border == BSINGLE ? S_VER : D_VER, w->direct, x2, y,
+ 					xattr, color);
+ 	}
+-	_write(border == BSINGLE ? S_LL : D_LL, w->direct, x1, y2,
++	_stdwrite(border == BSINGLE ? S_LL : D_LL, w->direct, x1, y2,
+ 					xattr, color);
+ 	for(x = x1 + 1; x < x2; x++)
+-		_write(border == BSINGLE ? S_HOR : D_HOR, w->direct,
++		_stdwrite(border == BSINGLE ? S_HOR : D_HOR, w->direct,
+ 					x, y2, xattr, color);
+-	_write(border == BSINGLE ? S_LR : D_LR, w->direct, x2, y2,
++	_stdwrite(border == BSINGLE ? S_LR : D_LR, w->direct, x2, y2,
+ 					xattr, color);
+ 	if (w->direct) _gotoxy(x1 + 1, y1 + 1);
+   } else
+@@ -621,12 +621,12 @@ int replace;
+ 		ELM *g;
+ 		g = gmap + (y * stdwin->xs);
+ 		for(x = 0 ; x < win->x1; x++) {
+-			_write(g->value, 1, x, y, g->attr, g->color);
++			_stdwrite(g->value, 1, x, y, g->attr, g->color);
+ 			g++;
+ 		}
+ 		/* to here */
+   		for(x = win->x1; x <= win->x2; x++) {
+-  			_write(e->value, 1, x, y, e->attr, e->color);
++  			_stdwrite(e->value, 1, x, y, e->attr, e->color);
+   			e++;
+   		}
+  	}
+@@ -693,7 +693,7 @@ void wreturn()
+   e = gmap;
+   for(y = 0; y <LINES; y++) {
+   	for(x = 0; x < COLS; x++) {
+-  		_write(e->value, -1, x, y, e->attr, e->color);
++  		_stdwrite(e->value, -1, x, y, e->attr, e->color);
+   		e++;
+   	}
+   }
+@@ -733,7 +733,7 @@ int newdirect;
+ 
+   for(y = miny; y <= maxy; y++) {
+   	for(x = minx; x <= maxx; x++) {
+-  		_write(e->value, -1, x, y, e->attr, e->color);
++  		_stdwrite(e->value, -1, x, y, e->attr, e->color);
+   		e++;
+   	}
+   	e += addcnt;
+@@ -766,7 +766,7 @@ WIN *w;
+   	doit = 0;
+   }
+   for(x = w->curx + w->x1; x <= w->x2; x++) {
+-  	_write(' ', (w->direct && doit) ? 1 : 0, x, y, w->attr, w->color);
++  	_stdwrite(' ', (w->direct && doit) ? 1 : 0, x, y, w->attr, w->color);
+   }
+   return(doit);	
+ }
+@@ -859,7 +859,7 @@ int dir;
+    */
+   if (sflag && win->sy2 == (LINES - 1) && win->sy1 != win->sy2) {
+   	if (dir == S_UP) {
+-  		_write(oldc.value, 1, COLS - 1, LINES - 2,
++  		_stdwrite(oldc.value, 1, COLS - 1, LINES - 2,
+   			oldc.attr, oldc.color);
+   	}
+   	sflag = 0;
+@@ -920,7 +920,7 @@ int dir;
+   		for(y = win->sy1 + 1; y <= win->sy2; y++) {
+   			e = gmap + y * COLS + win->x1;
+   			for(x = win->x1; x <= win->x2; x++) {
+-  			   _write(e->value, win->direct && doit,
++  			   _stdwrite(e->value, win->direct && doit,
+   			   		x, y - 1, e->attr, e->color);
+   			   e++;
+  	 		}
+@@ -932,7 +932,7 @@ int dir;
+   		for(y = win->sy2 - 1; y >= win->sy1; y--) {
+   			e = gmap + y * COLS + win->x1;
+   			for(x = win->x1; x <= win->x2; x++) {
+-  			   _write(e->value, win->direct && doit,
++  			   _stdwrite(e->value, win->direct && doit,
+   			   		x, y + 1, e->attr, e->color);
+   			   e++;
+   			}
+@@ -946,7 +946,7 @@ int dir;
+   win->curx = ocurx;
+ 
+   if (!doit) for(x = win->x1; x <= win->x2; x++)
+-		_write(' ', 0, x, win->y1 + win->cury, win->attr, win->color);
++		_stdwrite(' ', 0, x, win->y1 + win->cury, win->attr, win->color);
+   if (!_intern && win->direct)
+   	_gotoxy(win->x1 + win->curx, win->y1 + win->cury);
+   if (dirflush && !_intern && win->direct) wflush();
+@@ -1021,7 +1021,7 @@ int c;
+ 		}
+ 		/* Now write the character. */
+ 		if (c != '\n') {
+-			_write(c, win->direct, win->curx + win->x1,
++			_stdwrite(c, win->direct, win->curx + win->x1,
+ 				win->cury + win->y1, win->attr, win->color);
+   			if (++win->curx >= win->xs && !win->wrap) {
+ 				win->curx--;	
+@@ -1048,7 +1048,7 @@ ELM *e;
+   /* MARK updated 02/17/94 - Fixes bug, to do all 80 cols, not 79 cols */
+   for(x = w->x1; x <= w->x2; x++)
+   {
+-	_write(e->value, w->direct, x, y + w->y1, e->attr, e->color);
++	_stdwrite(e->value, w->direct, x, y + w->y1, e->attr, e->color);
+ 		/*y + w->y1, XA_NORMAL, e->color);*/
+ 	e++;
+   }
+@@ -1093,20 +1093,20 @@ ELM *e;
+   /* filipg 8/19/97: this will BOLD-up the line */
+   /* first position */
+   x = w->x1;
+-  _write(e->value, w->direct, x, y + w->y1, XA_NORMAL, e->color);
++  _stdwrite(e->value, w->direct, x, y + w->y1, XA_NORMAL, e->color);
+ 
+   e++;
+ 
+   /* everything in the middle will be BLINK */
+   for(x = (w->x1+1); x <= (w->x2-1); x++)
+   {
+-	_write(e->value, w->direct, x, y + w->y1, XA_BOLD, WHITE);
++	_stdwrite(e->value, w->direct, x, y + w->y1, XA_BOLD, WHITE);
+ 	e++;
+   }
+ 
+   /* last position */
+   x = w->x2;
+-  _write(e->value, w->direct, x, y + w->y1, XA_NORMAL, e->color);
++  _stdwrite(e->value, w->direct, x, y + w->y1, XA_NORMAL, e->color);
+ }
+ 
+ /*
+@@ -1192,10 +1192,10 @@ char *s;
+   if (pos == TMID) x = w->x1 + (w->xs - strlen(s)) / 2 - 1;
+   if (x < w->x1) x = w->x1;
+ 
+-  if (x < w->x2) _write('[', w->direct, x++, w->y1 - 1, w->attr, w->color);
+-  while(*s && x <= w->x2) _write(*s++, w->direct, x++, w->y1 - 1,
++  if (x < w->x2) _stdwrite('[', w->direct, x++, w->y1 - 1, w->attr, w->color);
++  while(*s && x <= w->x2) _stdwrite(*s++, w->direct, x++, w->y1 - 1,
+   		w->attr, w->color);
+-  if (x <= w->x2) _write(']', w->direct, x++, w->y1 - 1, w->attr, w->color);
++  if (x <= w->x2) _stdwrite(']', w->direct, x++, w->y1 - 1, w->attr, w->color);
+ 
+   if (w->direct) {
+   	_gotoxy(w->x1 + w->curx, w->y1 + w->cury);
+@@ -1233,10 +1233,10 @@ int attr;
+   		x = '>';
+   	else
+   		x = ' ';
+-  	_write(x, w->direct, w->x1, y, attr, e->color);
++  	_stdwrite(x, w->direct, w->x1, y, attr, e->color);
+   } else {
+ 	for(x = w->x1; x <= w->x2; x++) {
+-  		_write(e->value, w->direct, x, y, attr, e->color);
++  		_stdwrite(e->value, w->direct, x, y, attr, e->color);
+   		e++;
+ 	}
+   }
+@@ -1376,7 +1376,7 @@ WIN *w;
+   
+   n = w->x1 + w->curx;
+   if( n > w->x2) n = w->x2;
+-  for(x = w->x1; x <= n; x++) _write(' ', w->direct, x, y,
++  for(x = w->x1; x <= n; x++) _stdwrite(' ', w->direct, x, y,
+   		w->attr, w->color);
+   if (w->direct) {
+   	_gotoxy(n, y);
+@@ -1591,7 +1591,7 @@ int move;
+   /* Write buffer to screen */
+   e = buf;
+   for(++x; x <= w->x2; x++) {
+-  	_write(e->value, doit && w->direct, x, y, e->attr, e->color);
++  	_stdwrite(e->value, doit && w->direct, x, y, e->attr, e->color);
+   	e++;
+   }
+   w->direct = odir;
+@@ -1631,10 +1631,10 @@ WIN *w;
+   e = gmap + y * COLS + x + 1;
+   
+   for(; x < w->x2; x++) {
+-  	_write(e->value, doit && w->direct, x, y, e->attr, e->color);
++  	_stdwrite(e->value, doit && w->direct, x, y, e->attr, e->color);
+   	e++;
+   }
+-  _write(' ', doit && w->direct, x, y, w->attr, w->color);
++  _stdwrite(' ', doit && w->direct, x, y, w->attr, w->color);
+   wlocate(w, w->curx, w->cury);
+ }
+ 
+@@ -1917,7 +1917,7 @@ int attr;
+   CL = tgetstr("cl", &_tptr);
+   IC = tgetstr("ic", &_tptr);
+   DC = tgetstr("dc", &_tptr);
+-  BC = tgetstr("bc", &_tptr);
++  TCBC = tgetstr("bc", &_tptr);
+   CR = tgetstr("cr", &_tptr);
+   NL = tgetstr("nl", &_tptr);
+   AC = tgetstr("ac", &_tptr);
+@@ -1966,10 +1966,10 @@ int attr;
+   _has_am = tgetflag("am");
+   _mv_standout = tgetflag("ms");
+   if (tgetflag("bs")) {
+-    if (BC == CNULL) BC = "\b";
++    if (TCBC == CNULL) TCBC = "\b";
+   } 
+   else
+-    BC = CNULL;	
++    TCBC = CNULL;	
+ 
+   /* Special IBM box-drawing characters */
+   D_UL  = 201;
