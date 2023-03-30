@@ -13,7 +13,7 @@ PATCHES="
 patches/libuv/libuv-mint.patch
 "
 DISABLED_PATCHES="
-patches/libuv/libuv-mintelf-config.patch
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -23,17 +23,19 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -UHAVE_PTHREAD_H"
 STACKSIZE="-Wl,-stack,256k"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
+	--disable-shared
+"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
 ./autogen.sh
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/libuv-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
@@ -43,7 +45,7 @@ for CPU in ${ALL_CPUS}; do
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
