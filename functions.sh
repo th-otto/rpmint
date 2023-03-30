@@ -340,7 +340,7 @@ gzip_docs()
 	cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" || exit 1
 	rm -f share/info/dir
 	if test -d share/man; then
-		find share/man -type f | while read f; do
+		find share/man \( -type f -o -type l \) | while read f; do
 			case $f in
 			*.gz) ;;
 			*)
