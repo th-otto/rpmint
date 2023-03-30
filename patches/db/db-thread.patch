@@ -1,0 +1,11 @@
+--- db-4.8.30.orig/dist/aclocal/mutex.m4	2010-04-12 22:25:22.000000000 +0200
++++ db-4.8.30/dist/aclocal/mutex.m4	2023-03-30 17:38:13.976372718 +0200
+@@ -734,6 +734,8 @@
+ 	thread_h_decl="#include <thread.h>"
+ 	db_threadid_t_decl="typedef thread_t db_threadid_t;"
+ 	AC_HAVE_LIBRARY(thread, LIBSO_LIBS="$LIBSO_LIBS -lthread");;
++disabled|no)
++	;;
+ *)
+ 	AC_CHECK_HEADER(pthread.h, [ac_cv_header_pthread_h=yes])
+ 	if test "$ac_cv_header_pthread_h" = "yes" ; then

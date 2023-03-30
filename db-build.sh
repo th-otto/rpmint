@@ -11,10 +11,13 @@ VERSIONPATCH=
 
 PATCHES="
 patches/db/db${VERSION}.patch
-patches/db/db-mintelf-config.patch
 patches/db/db-rpm-no-fsync.patch
 patches/db/db-malloc-align.patch
 patches/db/db-lockstub.patch
+patches/db/db-thread.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -26,15 +29,22 @@ MINT_BUILD_DIR="$srcdir/build_unix"
 
 unpack_archive
 
+cd "$srcdir"
+
 cd "$MINT_BUILD_DIR/../dist"
 ./s_config
+rm -f config.sub
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing $LTO_CFLAGS"
 STACKSIZE="-Wl,-stack,256k"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
-	 --enable-compat185 --disable-dump185 --disable-mutexsupport"
+	--enable-compat185
+	--disable-dump185
+	--disable-mutexsupport
+"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -43,13 +53,14 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
+
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"$srcdir/dist/configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
 
-	hack_lto_cflags
+	: hack_lto_cflags
 
 	${MAKE} $JOBS || exit 1
 	buildroot="${THISPKG_DIR}${sysroot}"
@@ -70,13 +81,18 @@ for CPU in ${ALL_CPUS}; do
 	rm -f examples_cxx/tags
 	rm -f examples_c/tags
 	# Move documentation to the right directory
-	mkdir -p ${buildroot}${TARGET_PREFIX}/share/doc/${PACKAGENAME}
-	mv -f ${buildroot}${TARGET_PREFIX}/docs/* ${buildroot}/${TARGET_PREFIX}/share/doc/${PACKAGENAME}
-	cp -a examples_cxx examples_c ${buildroot}/${TARGET_PREFIX}/share/doc/${PACKAGENAME}
-	cp -a LICENSE README ${buildroot}/${TARGET_PREFIX}/share/doc/${PACKAGENAME}
+	if test ! -d ${buildroot}${TARGET_PREFIX}/share/doc/${PACKAGENAME}; then
+		mkdir -p ${buildroot}${TARGET_PREFIX}/share/doc/${PACKAGENAME}
+		mv ${buildroot}${TARGET_PREFIX}/docs/* ${buildroot}${TARGET_PREFIX}/share/doc/${PACKAGENAME}
+		cp -a examples_cxx examples_c ${buildroot}${TARGET_PREFIX}/share/doc/${PACKAGENAME}
+		cp -a LICENSE README ${buildroot}${TARGET_PREFIX}/share/doc/${PACKAGENAME}
+	fi
+	rm -rf ${buildroot}${TARGET_PREFIX}/docs
 
 	cd "$MINT_BUILD_DIR"
 	${MAKE} distclean
+
+	chmod 755 ${buildroot}${TARGET_PREFIX}/bin/*
 	make_bin_archive $CPU
 done
 
