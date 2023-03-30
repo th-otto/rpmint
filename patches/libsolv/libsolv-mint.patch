@@ -1,15 +1,33 @@
 diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/CMakeLists.txt libsolv-0.6.33/CMakeLists.txt
 --- libsolv-0.6.33.orig/CMakeLists.txt	2018-01-29 17:09:07.000000000 +0100
 +++ libsolv-0.6.33/CMakeLists.txt	2018-03-22 09:54:46.222257180 +0100
-@@ -42,6 +42,7 @@ OPTION (WITH_LIBXML2  "Build with libxml
+@@ -1,6 +1,14 @@
++CMAKE_POLICY (SET CMP0066 NEW)
++CMAKE_POLICY (SET CMP0056 NEW)
++CMAKE_POLICY (SET CMP0082 NEW)
++CMAKE_POLICY (SET CMP0066 NEW)
++CMAKE_POLICY (SET CMP0102 NEW)
++CMAKE_POLICY (SET CMP0126 NEW)
+ PROJECT (libsolv)
+ 
+-CMAKE_MINIMUM_REQUIRED (VERSION 2.4)
++set(CMAKE_C_COMPILE_OPTIONS_PIC )
++
++CMAKE_MINIMUM_REQUIRED (VERSION 2.4...4.0)
+ 
+ OPTION (ENABLE_STATIC "Build a static version of the libraries?" OFF)
+ OPTION (DISABLE_SHARED "Do not build a shared version of the libraries?" OFF)
+@@ -41,7 +49,8 @@ OPTION (WITH_LIBXML2  "Build with libxml
+ 
  IF (COMMAND cmake_policy)
    # escape preprocessor, see -DVERSION below
-   CMAKE_POLICY (SET CMP0005 OLD)
+-  CMAKE_POLICY (SET CMP0005 OLD)
++  CMAKE_POLICY (SET CMP0005 NEW)
 +  CMAKE_POLICY (SET CMP0003 NEW)
  ENDIF (COMMAND cmake_policy)
  
  # Library
-@@ -78,8 +79,8 @@ ENDIF (NOT PKGCONFIG_INSTALL_DIR)
+@@ -78,8 +87,8 @@ ENDIF (NOT PKGCONFIG_INSTALL_DIR)
  ####################################################################
  
  # where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked
@@ -20,7 +38,7 @@ diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/CMake
  
  INCLUDE (${CMAKE_SOURCE_DIR}/VERSION.cmake)
  
-@@ -162,26 +163,38 @@ IF (ENABLE_ARCHREPO OR ENABLE_DEBIAN)
+@@ -162,26 +171,38 @@ IF (ENABLE_ARCHREPO OR ENABLE_DEBIAN)
  SET (ENABLE_LZMA_COMPRESSION ON)
  ENDIF (ENABLE_ARCHREPO OR ENABLE_DEBIAN)
  
@@ -36,7 +54,7 @@ diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/CMake
 +link_libraries(${LIBXML2_LDFLAGS})
  ELSE(WITH_LIBXML2 )
 -FIND_PACKAGE (EXPAT REQUIRED)
-+pkg_check_modoules (EXPAT REQUIRED expat)
++pkg_check_modules (EXPAT REQUIRED expat)
  INCLUDE_DIRECTORIES (${EXPAT_INCLUDE_DIRS})
 +add_definitions(${EXPAT_CFLAGS})
 +link_libraries(${EXPAT_LDFLAGS})
@@ -65,7 +83,7 @@ diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/CMake
  ENDIF (ENABLE_BZIP2_COMPRESSION)
  
  IF (RPM5)
-@@ -191,7 +204,8 @@ SET (ENABLE_RPMDB ON)
+@@ -191,7 +212,8 @@ SET (ENABLE_RPMDB ON)
  SET (ENABLE_RPMMD ON)
  FIND_PACKAGE (PkgConfig REQUIRED)
  PKG_CHECK_MODULES (RPM REQUIRED rpm)
@@ -75,7 +93,7 @@ diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/CMake
  ENDIF (RPM5)
  
  IF (MULTI_SEMANTICS)
-@@ -204,37 +218,9 @@ ENDIF (ENABLE_RPMDB)
+@@ -204,37 +226,9 @@ ENDIF (ENABLE_RPMDB)
  
  INCLUDE (CheckIncludeFile)
  IF (ENABLE_RPMDB OR ENABLE_RPMPKG_LIBRPM)
@@ -116,7 +134,7 @@ diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/CMake
    INCLUDE (CheckLibraryExists)
    CHECK_LIBRARY_EXISTS(rpmio pgpDigGetParams "" HAVE_PGPDIGGETPARAMS)
  ENDIF (ENABLE_RPMDB OR ENABLE_RPMPKG_LIBRPM)
-@@ -249,6 +235,8 @@ INCLUDE (TestBigEndian)
+@@ -249,6 +243,8 @@ INCLUDE (TestBigEndian)
  CHECK_FUNCTION_EXISTS (strchrnul HAVE_STRCHRNUL)
  CHECK_FUNCTION_EXISTS (fopencookie HAVE_FOPENCOOKIE)
  CHECK_FUNCTION_EXISTS (funopen HAVE_FUNOPEN)
@@ -125,7 +143,7 @@ diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/CMake
  TEST_BIG_ENDIAN (WORDS_BIGENDIAN)
  
  IF (${CMAKE_MAJOR_VERSION} GREATER 2)
-@@ -269,7 +257,7 @@ ENDIF (${CMAKE_MAJOR_VERSION} GREATER 2)
+@@ -269,7 +265,7 @@ ENDIF (${CMAKE_MAJOR_VERSION} GREATER 2)
  
  # should create config.h with #cmakedefine instead...
  FOREACH (VAR HAVE_STRCHRNUL HAVE_FOPENCOOKIE HAVE_FUNOPEN WORDS_BIGENDIAN
@@ -134,6 +152,15 @@ diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/CMake
    IF(${VAR})
      ADD_DEFINITIONS (-D${VAR}=1)
      SET (SWIG_FLAGS ${SWIG_FLAGS} -D${VAR})
+@@ -305,7 +301,7 @@ SET (PACKAGE "libsolv")
+ SET (VERSION "${LIBSOLV_MAJOR}.${LIBSOLV_MINOR}.${LIBSOLV_PATCH}")
+ 
+ ADD_DEFINITIONS (-D_FILE_OFFSET_BITS=64)
+-ADD_DEFINITIONS (-DVERSION=\\\"${VERSION}\\\")
++ADD_DEFINITIONS (-DVERSION="${VERSION}")
+ CONFIGURE_FILE (src/solvversion.h.in src/solvversion.h)
+ 
+ SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Package dependency solver library")
 diff -rupN -x CMakeCache.txt -x CMakeFiles -x Makefile libsolv-0.6.33.orig/examples/solv/checksig.c libsolv-0.6.33/examples/solv/checksig.c
 --- libsolv-0.6.33.orig/examples/solv/checksig.c	2017-10-10 12:39:51.000000000 +0200
 +++ libsolv-0.6.33/examples/solv/checksig.c	2018-03-22 09:58:55.622251753 +0100

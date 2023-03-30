@@ -43,11 +43,6 @@ CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --docdir=${TARGET_PREFIX}/s
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
-mkdir cmake/modules/Platform
-sed -e 's,CMAKE_C_COMPILER [^)]*),CMAKE_C_COMPILER '"$gcc"'),' \
-    -e 's,CMAKE_CXX_COMPILER [^)]*),CMAKE_CXX_COMPILER '"$gxx"'),' \
-	${prefix}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake > cmake/modules/Platform/${CMAKE_SYSTEM_NAME}.cmake
-
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
@@ -74,12 +69,15 @@ for CPU in ${ALL_CPUS}; do
 		-DENABLE_STATIC=1 \
 		-DDISABLE_SHARED=1 \
 		-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME} \
-		-DCMAKE_C_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS $LTO_CFLAGS" \
-		-DCMAKE_CXX_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS $LTO_CFLAGS" \
-		-DCMAKE_EXE_LINKER_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS $LTO_CFLAGS $STACKSIZE" \
+		-DCMAKE_TOOLCHAIN_FILE="${prefix}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake" \
+		-DCMAKE_C_COMPILER="$gcc" \
+		-DCMAKE_CXX_COMPILER="$gxx" \
+		-DCMAKE_C_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+		-DCMAKE_CXX_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+		-DCMAKE_EXE_LINKER_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS $STACKSIZE" \
 		.
 	
-	${MAKE} ${JOBS} || exit 1
+	${MAKE} VERBOSE=yes ${JOBS} || exit 1
 
 	buildroot="${THISPKG_DIR}${sysroot}"
 	${MAKE} DESTDIR="${buildroot}" install
