@@ -21,11 +21,12 @@ patches/cmake/cmake-0001-Cannot-use-C-reference-in-C-code.patch
 patches/cmake/cmake-0001-No-SA_SIGINFO.patch
 patches/cmake/cmake-mint-c++-math.patch
 patches/cmake/cmake-no-isystem.patch
-patches/cmake/replace-find_package-with-pkgconfig.patch
+patches/cmake/cmake-replace-find_package-with-pkgconfig.patch
 "
 POST_INSTALL_SCRIPTS="
 patches/cmake/cmake.macros
 patches/cmake/cmake.attr
+patches/cmake/cmake.prov
 patches/cmake/cmake-mint.cmake
 patches/cmake/cmake-mint-cross.cmake
 patches/cmake/cmake-mintelf.cmake
@@ -50,6 +51,8 @@ COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 STACKSIZE="-Wl,--stack,512k"
 
 CMAKE_SYSTEM_NAME="${TARGET##*-}"
+
+$LN_S -f ${CMAKE_SYSTEM_NAME}.cmake "$MINT_BUILD_DIR/Modules/Platform/${TARGET#-}.cmake"
 
 gcc=`which ${TARGET}-gcc`
 gxx=`which ${TARGET}-g++`
@@ -86,9 +89,9 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	./configure ${CONFIGURE_FLAGS} \
-		-DCMAKE_C_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS $LTO_CFLAGS" \
-		-DCMAKE_CXX_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS $CXX_EXCEPTIONS $LTO_CFLAGS" \
-		-DCMAKE_EXE_LINKER_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS $CXX_EXCEPTIONS $LTO_CFLAGS $STACKSIZE"
+		-DCMAKE_C_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+		-DCMAKE_CXX_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS $CXX_EXCEPTIONS" \
+		-DCMAKE_EXE_LINKER_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS $CXX_EXCEPTIONS $STACKSIZE"
 
 	${MAKE} ${JOBS} || exit 1
 	
@@ -102,13 +105,13 @@ for CPU in ${ALL_CPUS}; do
 	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake.prov -D ${buildroot}${TARGET_PREFIX}/lib/rpm/cmake.prov
 	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake-${CMAKE_SYSTEM_NAME}.cmake -D ${buildroot}${TARGET_PREFIX}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake
 	if test "${CMAKE_SYSTEM_NAME}" = mint; then
-		ln -s ${CMAKE_SYSTEM_NAME}.cmake "${buildroot}${TARGET_PREFIX}/share/cmake/Modules/Platform/FreeMiNT.cmake"
+		ln -sf ${CMAKE_SYSTEM_NAME}.cmake "${buildroot}${TARGET_PREFIX}/share/cmake/Modules/Platform/FreeMiNT.cmake"
 	fi
 	
 	# install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake-${CMAKE_SYSTEM_NAME}-cross.cmake -D "${THISPKG_DIR}${prefix}/${TARGET}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
 	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake-${CMAKE_SYSTEM_NAME}-cross.cmake -D "${THISPKG_DIR}${prefix}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
 	if test "${CMAKE_SYSTEM_NAME}" = mint; then
-		ln -s ${CMAKE_SYSTEM_NAME}.cmake "${THISPKG_DIR}${prefix}/share/cmake/Modules/Platform/FreeMiNT.cmake"
+		ln -sf ${CMAKE_SYSTEM_NAME}.cmake "${THISPKG_DIR}${prefix}/share/cmake/Modules/Platform/FreeMiNT.cmake"
 	fi
 	
 	# no shared libs -> no plugins

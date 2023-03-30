@@ -27,7 +27,7 @@ BuildRoot:      %{_tmppath}/%{name}-root
 Source0: https://www.openssl.org/source/%{pkgname}-%{version}.tar.gz
 Patch0: patches/openssl/openssl-1.1.1p-mint.patch
 Patch1: patches/openssl/openssl-zlib-static.patch
-Patch1: patches/openssl/openssl-bn_div-asm.patch
+Patch2: patches/openssl/openssl-bn_div-asm.patch
 
 %rpmint_essential
 BuildRequires:  pkgconfig
@@ -183,7 +183,7 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 - to apply to this version.  Otherwise, patches are the same as the original
 - packagers.
 
-* Thu Dec 05 2000 Thomas Binder <gryf@hrzpub.tu-darmstadt.de>
+* Tue Dec 05 2000 Thomas Binder <gryf@hrzpub.tu-darmstadt.de>
 - recompiled with correct gcc optimizations
 
 * Sun Nov 26 2000 Thomas Binder <gryf@hrzpub.tu-darmstadt.de>
