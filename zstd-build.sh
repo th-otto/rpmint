@@ -51,7 +51,8 @@ for CPU in ${ALL_CPUS}; do
 	export LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}"
 	export libdir="${prefix}/lib$multilibdir"
 
-	${MAKE} $JOBS -C lib libzstd.a || exit 1
+	${MAKE} $JOBS -C lib libzstd.a libzstd.pc || exit 1
+	sed -i 's/-pthread//' lib/libzstd.pc
 	${MAKE} $JOBS -C programs || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" -C lib install-static install-pc install-includes || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" -C programs install || exit 1

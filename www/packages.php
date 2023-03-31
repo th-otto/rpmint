@@ -1960,7 +1960,7 @@ parsing arbitrary strings into argv[] arrays using shell-like rules.
 		'name' => 'rpm',
 		'upstream' => 'http://www.rpm.org/',
 		'source' => 'http://ftp.rpm.org/releases/rpm-4.15.x/rpm-%{version}.tar.bz2',
-		'version' => '4.15.1',
+		'version' => '4.15.1.1',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

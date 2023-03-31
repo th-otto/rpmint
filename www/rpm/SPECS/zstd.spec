@@ -97,7 +97,8 @@ for CPU in ${ALL_CPUS}; do
 	export LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}"
 	export libdir="${prefix}/lib$multilibdir"
 
-	make %{?_smp_mflags} -C lib libzstd.a
+	make %{?_smp_mflags} -C lib libzstd.a libzstd.pc
+	sed -i 's/-pthread//' lib/libzstd.pc
 	make %{?_smp_mflags} -C programs
 
 	make DESTDIR="%{buildroot}%{_rpmint_sysroot}" -C lib install-static install-pc install-includes

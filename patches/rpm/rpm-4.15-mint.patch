@@ -1,0 +1,6113 @@
+diff --git a/Makefile.am b/Makefile.am
+index d0ad833bb..482de031b 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -110,6 +110,8 @@ bin_PROGRAMS =		rpm rpm2cpio rpmbuild rpmdb rpmkeys rpmsign rpmspec
+ if WITH_ARCHIVE
+ bin_PROGRAMS += 	rpm2archive 
+ endif
++bin_PROGRAMS += 	rpmlead rpmdump rpmheader rpmsignature
++#bin_PROGRAMS += 	rpmarchive
+ 
+ rpmlibexec_PROGRAMS =
+ rpmconfig_SCRIPTS =	mkinstalldirs \
+@@ -165,9 +167,19 @@ rpm2archive_SOURCES =	rpm2archive.c debug.h system.h
+ rpm2archive_LDADD =	lib/librpm.la rpmio/librpmio.la
+ rpm2archive_LDADD +=	@WITH_POPT_LIB@ @WITH_ARCHIVE_LIB@
+ 
++rpmlead_SOURCES =	rpmlead.c
++rpmlead_LDADD =         lib/librpm.la rpmio/librpmio.la
++
++rpmdump_SOURCES =	rpmdump.c
++rpmdump_LDADD =         lib/librpm.la rpmio/librpmio.la
++
++rpmheader_SOURCES =	rpmheader.c
++rpmheader_LDADD =       lib/librpm.la rpmio/librpmio.la
++
++rpmsignature_SOURCES =	rpmsignature.c
++rpmsignature_LDADD =    lib/librpm.la rpmio/librpmio.la
+ 
+ if LIBELF
+-if LIBDWARF
+ if LIBDW
+ rpmconfig_SCRIPTS += scripts/find-debuginfo.sh
+ 
+@@ -181,15 +193,16 @@ else
+ debugedit_LDADD +=	@WITH_LIBDW_LIB@ -lebl
+ endif # HAVE_LIBDW_STRTAB
+ endif # LIBDW
+-endif # LIBDWARF
+ rpmlibexec_PROGRAMS +=	elfdeps
+ elfdeps_SOURCES =	tools/elfdeps.c
+ elfdeps_LDADD =		rpmio/librpmio.la
+ elfdeps_LDADD +=	@WITH_LIBELF_LIB@ @WITH_POPT_LIB@
+ 
++if HAVE_MMAP
+ rpmlibexec_PROGRAMS +=	sepdebugcrcfix
+ sepdebugcrcfix_SOURCES = tools/sepdebugcrcfix.c
+ sepdebugcrcfix_LDADD =	@WITH_LIBELF_LIB@
++endif
+ endif #LIBELF
+ 
+ rpmlibexec_PROGRAMS +=	rpmdeps
+@@ -202,6 +215,10 @@ rpmgraph_LDADD =	lib/librpm.la rpmio/librpmio.la @WITH_POPT_LIB@
+ 
+ dist_bin_SCRIPTS =	scripts/gendiff
+ 
++bin_PROGRAMS +=		rpmqpack
++rpmqpack_SOURCES =      rpmqpack.c
++rpmqpack_LDADD =        lib/librpm.la
++
+ rpmconfig_DATA = rpmrc
+ rpmrc: $(top_srcdir)/rpmrc.in
+ 	@$(SED) \
+diff --git a/build/files.c b/build/files.c
+index 9ef13c6e8..74c9cbb7f 100644
+--- a/build/files.c
++++ b/build/files.c
+@@ -1157,7 +1157,7 @@ static void genCpioListAndHeader(FileList fl, Package pkg, int isSrc)
+ 	    headerPutUint32(h, RPMTAG_FILEMTIMES, &rtime, 1);
+ 	}
+ 
+-	{   rpm_mode_t rmode = (rpm_mode_t) flp->fl_mode;
++	{   rpm_mode_t rmode = rpmfilesUnixToRpmMode(flp->fl_mode);
+ 	    headerPutUint16(h, RPMTAG_FILEMODES, &rmode, 1);
+ 	}
+ 
+diff --git a/build/pack.c b/build/pack.c
+index e6cec1816..5d49c524d 100644
+--- a/build/pack.c
++++ b/build/pack.c
+@@ -743,11 +743,77 @@ static rpmRC packageBinary(rpmSpec spec, Package pkg, const char *cookie, int ch
+     return rc;
+ }
+ 
++static void trimChangelog(Header h)
++{
++    static int oneshot;
++    static int cuttime, minnum, maxnum;
++    rpm_count_t i, keep;
++    struct rpmtd_s timestd, namestd, textstd;
++    rpm_count_t count;
++
++    if (!oneshot) {
++	char *binarychangelogtrim = rpmExpand("%{?_binarychangelogtrim}", NULL);
++	oneshot = 1;
++	if (binarychangelogtrim && *binarychangelogtrim) {
++	    maxnum = atoi(binarychangelogtrim);
++	    binarychangelogtrim = strchr(binarychangelogtrim, ',');
++	    if (binarychangelogtrim)
++	      binarychangelogtrim++;
++	}
++	if (binarychangelogtrim && *binarychangelogtrim) {
++	    cuttime = atoi(binarychangelogtrim);
++	    binarychangelogtrim = strchr(binarychangelogtrim, ',');
++	    if (binarychangelogtrim)
++	      binarychangelogtrim++;
++	}
++	if (binarychangelogtrim && *binarychangelogtrim) {
++	    minnum = atoi(binarychangelogtrim);
++	    binarychangelogtrim = strchr(binarychangelogtrim, ',');
++	}
++    }
++    if (!cuttime && !minnum && !maxnum) {
++	return;
++    }
++
++    if (!headerGet(h, RPMTAG_CHANGELOGTIME, &timestd, HEADERGET_MINMEM))
++	return;
++    count = rpmtdCount(&timestd);
++    if ((!cuttime || count <= minnum) && (!maxnum || count <= maxnum)) {
++	rpmtdFreeData(&timestd);
++	return;
++    }
++    keep = count;
++    if (maxnum && keep > maxnum)
++	keep = maxnum;
++    if (cuttime) {
++	for (i = 0; i < keep; i++) {
++	    uint32_t *tp = rpmtdNextUint32(&timestd);
++	    if (i >= minnum && tp && *tp < cuttime)
++		break;
++	}
++	keep = i;
++    }
++    if (keep >= count) {
++	rpmtdFreeData(&timestd);
++	return;
++    }
++    headerGet(h, RPMTAG_CHANGELOGNAME, &namestd, HEADERGET_MINMEM);
++    headerGet(h, RPMTAG_CHANGELOGTEXT, &textstd, HEADERGET_MINMEM);
++    timestd.count = namestd.count = textstd.count = keep;
++    headerMod(h, &timestd);
++    headerMod(h, &namestd);
++    headerMod(h, &textstd);
++    rpmtdFreeData(&textstd);
++    rpmtdFreeData(&namestd);
++    rpmtdFreeData(&timestd);
++}
++
+ rpmRC packageBinaries(rpmSpec spec, const char *cookie, int cheating)
+ {
+     rpmRC rc = RPMRC_OK;
+     Package pkg;
+ 
++    trimChangelog(spec->packages->header);
+     /* Run binary creation in parallel */
+     #pragma omp parallel
+     #pragma omp single
+diff --git a/build/parseChangelog.c b/build/parseChangelog.c
+index ad6d834a1..121ff991b 100644
+--- a/build/parseChangelog.c
++++ b/build/parseChangelog.c
+@@ -253,6 +253,11 @@ static rpmRC addChangelog(Header h, ARGV_const_t sb)
+ 	    goto exit;
+ 	}
+ 
++        /* workaround old suse oddity */
++        if (*s == '-' && s[1] == ' ') {
++            s += 2;
++        }
++
+ 	/* name */
+ 	name = s;
+ 	while (*s != '\0') s++;
+diff --git a/build/parsePreamble.c b/build/parsePreamble.c
+index c4799e9e5..722c38edd 100644
+--- a/build/parsePreamble.c
++++ b/build/parsePreamble.c
+@@ -371,6 +371,7 @@ static struct tokenBits_s const installScriptBits[] = {
+     { "verify",		RPMSENSE_SCRIPT_VERIFY },
+     { "pretrans",	RPMSENSE_PRETRANS },
+     { "posttrans",	RPMSENSE_POSTTRANS },
++    { "hint",		RPMSENSE_MISSINGOK },
+     { NULL, 0 }
+ };
+ 
+@@ -1033,7 +1034,7 @@ static struct PreambleRec_s const preambleList[] = {
+     {RPMTAG_SUGGESTNAME,	0, 0, 0, LEN_AND_STR("suggests")},
+     {RPMTAG_SUPPLEMENTNAME,	0, 0, 0, LEN_AND_STR("supplements")},
+     {RPMTAG_ENHANCENAME,	0, 0, 0, LEN_AND_STR("enhances")},
+-    {RPMTAG_PREREQ,		2, 1, 0, LEN_AND_STR("prereq")},
++    {RPMTAG_PREREQ,		2, 0, 0, LEN_AND_STR("prereq")},
+     {RPMTAG_CONFLICTNAME,	0, 0, 0, LEN_AND_STR("conflicts")},
+     {RPMTAG_OBSOLETENAME,	0, 0, 0, LEN_AND_STR("obsoletes")},
+     {RPMTAG_PREFIXES,		0, 0, 1, LEN_AND_STR("prefixes")},
+@@ -1042,7 +1043,7 @@ static struct PreambleRec_s const preambleList[] = {
+     {RPMTAG_BUILDARCHS,		0, 0, 0, LEN_AND_STR("buildarchitectures")},
+     {RPMTAG_BUILDARCHS,		0, 0, 0, LEN_AND_STR("buildarch")},
+     {RPMTAG_BUILDCONFLICTS,	0, 0, 0, LEN_AND_STR("buildconflicts")},
+-    {RPMTAG_BUILDPREREQ,	0, 1, 0, LEN_AND_STR("buildprereq")},
++    {RPMTAG_BUILDPREREQ,	0, 0, 0, LEN_AND_STR("buildprereq")},
+     {RPMTAG_BUILDREQUIRES,	0, 0, 0, LEN_AND_STR("buildrequires")},
+     {RPMTAG_AUTOREQPROV,	0, 0, 0, LEN_AND_STR("autoreqprov")},
+     {RPMTAG_AUTOREQ,		0, 0, 0, LEN_AND_STR("autoreq")},
+diff --git a/build/parseReqs.c b/build/parseReqs.c
+index 9b081a5ff..431a6f21f 100644
+--- a/build/parseReqs.c
++++ b/build/parseReqs.c
+@@ -42,7 +42,7 @@ static rpmRC checkEpoch(const char *s, char **emsg)
+     return RPMRC_OK;
+ }
+ 
+-static rpmRC checkDep(rpmSpec spec, char *N, char *EVR, char **emsg)
++static rpmRC checkDep(rpmSpec spec, rpmsenseFlags tagflags, char *N, char *EVR, char **emsg)
+ {
+     /* 
+      * Tokens must begin with alphanumeric, _, or /, but we don't know
+@@ -65,6 +65,11 @@ static rpmRC checkDep(rpmSpec spec, char *N, char *EVR, char **emsg)
+ 
+ 	    if (rpmExpandNumeric("%{?_wrong_version_format_terminate_build}"))
+ 		return RPMRC_FAIL;
++	    if (tagflags & (RPMSENSE_FIND_REQUIRES|RPMSENSE_FIND_PROVIDES))
++		rpmlog(RPMLOG_WARNING, "%s\n", *emsg);
++	    else
++		rpmlog(RPMLOG_WARNING, _("line %d: %s: %s\n"), spec->lineNum, *emsg, spec->line);
++	    *emsg = _free(*emsg);
+ 	}
+     }
+     return RPMRC_OK;
+@@ -72,6 +77,7 @@ static rpmRC checkDep(rpmSpec spec, char *N, char *EVR, char **emsg)
+ 
+ struct parseRCPOTRichData {
+     rpmSpec spec;
++    rpmsenseFlags tagflags;
+     StringBuf sb;
+ };
+ 
+@@ -109,7 +115,7 @@ static rpmRC parseRCPOTRichCB(void *cbdata, rpmrichParseType type,
+ 	    appendStringBuf(sb, rel);
+ 	    appendStringBuf(sb, EVR);
+ 	}
+-	rc = checkDep(data->spec, N, EVR, emsg);
++	rc = checkDep(data->spec, data->tagflags, N, EVR, emsg);
+ 	_free(N);
+ 	_free(EVR);
+     } else if (type == RPMRICH_PARSE_OP) {
+@@ -223,6 +229,7 @@ rpmRC parseRCPOT(rpmSpec spec, Package pkg, const char *field, rpmTagVal tagN,
+ 		goto exit;
+ 	    }
+ 	    data.spec = spec;
++	    data.tagflags = tagflags;
+ 	    data.sb = newStringBuf();
+ 	    if (rpmrichParseForTag(&r, &emsg, parseRCPOTRichCB, &data, nametag) != RPMRC_OK) {
+ 		freeStringBuf(data.sb);
+@@ -274,7 +281,7 @@ rpmRC parseRCPOT(rpmSpec spec, Package pkg, const char *field, rpmTagVal tagN,
+ 	}
+ 
+ 	/* check that dependency is well-formed */
+-	if (checkDep(spec, N, EVR, &emsg))
++	if (checkDep(spec, tagflags, N, EVR, &emsg))
+ 	    goto exit;
+ 
+ 	if (nametag == RPMTAG_OBSOLETENAME) {
+diff --git a/build/parseSpec.c b/build/parseSpec.c
+index df0069268..4d146531c 100644
+--- a/build/parseSpec.c
++++ b/build/parseSpec.c
+@@ -882,6 +882,7 @@ static rpmSpec parseSpec(const char *specFile, rpmSpecFlags flags,
+     spec = newSpec();
+ 
+     spec->specFile = rpmGetPath(specFile, NULL);
++    addMacro(spec->macros, "_specfile", NULL, spec->specFile, RMIL_SPEC);
+     pushOFI(spec, spec->specFile);
+     /* If buildRoot not specified, use default %{buildroot} */
+     if (buildRoot) {
+diff --git a/build/rpmfc.c b/build/rpmfc.c
+index 53c6ecce0..3601ca119 100644
+--- a/build/rpmfc.c
++++ b/build/rpmfc.c
+@@ -1072,7 +1072,7 @@ static int initAttrs(rpmfc fc)
+ 
+ rpmRC rpmfcClassify(rpmfc fc, ARGV_t argv, rpm_mode_t * fmode)
+ {
+-    int msflags = MAGIC_CHECK | MAGIC_COMPRESS | MAGIC_NO_CHECK_TOKENS;
++    int msflags = MAGIC_COMPRESS | MAGIC_NO_CHECK_TOKENS;
+     int nerrors = 0;
+     rpmRC rc = RPMRC_FAIL;
+ 
+@@ -1490,7 +1490,8 @@ rpmRC rpmfcGenerateDepends(const rpmSpec spec, Package pkg)
+     /* XXX Make sure only primary (i.e. Elf32/Elf64) colors are added. */
+     for (int i = 0; i < fc->nfiles; i++)
+ 	fc->fcolor[i] &= 0x0f;
+-    headerPutUint32(pkg->header, RPMTAG_FILECOLORS, fc->fcolor, fc->nfiles);
++    if (rpmExpandNumeric("%{?_transaction_color}") != 0)
++	headerPutUint32(pkg->header, RPMTAG_FILECOLORS, fc->fcolor, fc->nfiles);
+     
+     /* Add classes(#classes) */
+     for (rpmsid id = 1; id <= rpmstrPoolNumStr(fc->cdict); id++) {
+diff --git a/configure.ac b/configure.ac
+index 41b3f581f..b7f41e405 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -37,7 +37,7 @@ fi
+ AS=${AS-as}
+ AC_SUBST(AS)
+ if test "$GCC" = yes; then
+-    cflags_to_try="-fno-strict-aliasing -fstack-protector -fno-strict-overflow -fno-delete-null-pointer-checks -Wempty-body"
++    cflags_to_try="-fno-strict-aliasing -fno-strict-overflow -fno-delete-null-pointer-checks -Wempty-body"
+     AC_MSG_CHECKING([supported compiler flags])
+     old_cflags=$CFLAGS
+     echo
+@@ -188,6 +188,7 @@ AC_SUBST(WITH_BZ2_LIB)
+ 
+ AC_CHECK_HEADERS([lzma.h],[
+   AC_CHECK_LIB(lzma, lzma_easy_encoder, [WITH_LZMA_LIB=-llzma])
++  AC_CHECK_LIB(lzma, lzma_stream_encoder_mt, [AC_DEFINE([HAVE_LZMA_MT], 1, [Define as 1 if your lzma lib has multi-threaded encoder()])])
+ ])
+ AC_SUBST(WITH_LZMA_LIB)
+ 
+@@ -222,7 +223,9 @@ AS_IF([test "x$enable_zstd" != "xno"], [
+ if test "x$have_zstd" = "xyes"; then
+   AC_DEFINE([HAVE_ZSTD], [1], [Define if libzstd is available])
+   ZSTD_REQUIRES=libzstd
++  WITH_ZSTD_LIB=-lzstd
+   AC_SUBST(ZSTD_REQUIRES)
++  AC_SUBST(WITH_ZSTD_LIB)
+ fi
+ AM_CONDITIONAL([HAVE_ZSTD], [test "x$have_zstd" = "xyes"])
+ 
+@@ -240,12 +243,13 @@ AC_CHECK_FUNC(gethostname, [], [
+ 
+ AC_CHECK_HEADERS(pthread.h)
+ 
+-AC_CHECK_LIB(pthread, pthread_mutex_trylock, [], [
++AC_CHECK_LIB(pthread, pthread_mutex_trylock, [PTHREAD_LIBS=-lpthread], [
+   dnl OSF 5.0 has the the symbols prefixed with __ in libpthread.
+-  AC_CHECK_LIB(pthread, __pthread_mutex_trylock, [], [
+-    AC_CHECK_LIB(thread, mutex_lock)
++  AC_CHECK_LIB(pthread, __pthread_mutex_trylock, [PTHREAD_LIBS=-lpthread], [
++    AC_CHECK_LIB(thread, mutex_lock, [PTHREAD_LIBS=-lthread])
+   ])
+ ])
++AC_SUBST([PTHREAD_LIBS])
+ 
+ AC_SEARCH_LIBS(dlopen, [dl])
+ 
+@@ -256,7 +260,7 @@ AC_CHECK_HEADER([libelf.h])
+ AC_CHECK_HEADERS([gelf.h], [
+ 	AC_CHECK_LIB(elf, gelf_getvernaux, [
+ 	    AC_DEFINE(HAVE_LIBELF, 1, [Define to 1 if you have the 'elf' library (-lelf).])
+-	    WITH_LIBELF_LIB="-lelf"
++	    WITH_LIBELF_LIB="-lelf -lz"
+ 	    WITH_LIBELF=yes
+ 	])
+ ])
+@@ -451,7 +455,7 @@ AC_CHECK_HEADER([magic.h], [
+       WITH_MAGIC_LIB="-lmagic"
+     ],[
+       AC_MSG_ERROR([missing required library 'libmagic']) 
+-    ])
++    ], [$WITH_ZLIB_LIB])
+ ],[
+       AC_MSG_ERROR([missing required header magic.h]) 
+ ])
+@@ -478,6 +482,10 @@ AC_CHECK_HEADER([popt.h], [
+ AC_SUBST(WITH_POPT_INCLUDE)
+ AC_SUBST(WITH_POPT_LIB)
+ 
++#=================
++# Check for siginfo_t.
++AC_CHECK_TYPES(siginfo_t, [], [], [#include <signal.h>])
++
+ #=================
+ # Check for libarchive library.
+ AC_ARG_WITH([archive], [AS_HELP_STRING([--with-archive], [build rpm2archive - requires libarchive])],
+@@ -650,25 +658,25 @@ dnl
+ found_struct_statfs=no
+ 
+ if test X$found_struct_statfs = Xno ; then
+-dnl Solaris 2.6+ wants to use statvfs
++dnl first try including sys/vfs.h
+ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+ #ifdef HAVE_SYS_TYPES_H
+ #include <sys/types.h>
+ #endif
+-#include <sys/statvfs.h> ]], [[struct statvfs sfs;]])],[AC_MSG_RESULT(in sys/statvfs.h)
+-	AC_DEFINE(STATFS_IN_SYS_STATVFS, 1,
+-		[statfs in <sys/statvfs.h> (for solaris 2.6+ systems)])
++#include <sys/vfs.h> ]], [[struct statfs sfs;]])],[AC_MSG_RESULT(in sys/vfs.h)
++	AC_DEFINE(STATFS_IN_SYS_VFS, 1, [statfs in <sys/vfs.h> (for linux systems)])
+ 	found_struct_statfs=yes],[])
+ fi
+ 
+ if test X$found_struct_statfs = Xno ; then
+-dnl first try including sys/vfs.h
++dnl Solaris 2.6+ wants to use statvfs
+ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+ #ifdef HAVE_SYS_TYPES_H
+ #include <sys/types.h>
+ #endif
+-#include <sys/vfs.h> ]], [[struct statfs sfs;]])],[AC_MSG_RESULT(in sys/vfs.h)
+-	AC_DEFINE(STATFS_IN_SYS_VFS, 1, [statfs in <sys/vfs.h> (for linux systems)])
++#include <sys/statvfs.h> ]], [[struct statvfs sfs;]])],[AC_MSG_RESULT(in sys/statvfs.h)
++	AC_DEFINE(STATFS_IN_SYS_STATVFS, 1,
++		[statfs in <sys/statvfs.h> (for solaris 2.6+ systems)])
+ 	found_struct_statfs=yes],[])
+ fi
+ 
+@@ -773,13 +781,20 @@ AC_CHECK_FUNCS(lutimes)
+ AC_CHECK_FUNCS(mergesort)
+ AC_CHECK_FUNCS(getauxval)
+ AC_CHECK_FUNCS(setprogname, [], [], [#include <stdlib.h>])
++AC_CHECK_FUNCS(nanosleep)
++AC_CHECK_FUNCS(mkdtemp)
+ AC_CHECK_FUNCS(syncfs)
+ AC_CHECK_FUNCS(sched_getaffinity, [], [], [#include <sched.h>])
+ AC_CHECK_FUNCS(unshare, [], [], [#include <sched.h>])
+ 
++have_mmap=yes
++AC_CHECK_FUNCS(mmap,,have_mmap=no)
++AC_CHECK_HEADERS(sys/mman.h,,have_mmap=no)
++AM_CONDITIONAL(HAVE_MMAP, test $have_mmap = yes)
++
+ AC_MSG_CHECKING([whether __progname is defined])
+ AC_LINK_IFELSE([AC_LANG_PROGRAM([extern const char *__progname;],
+-	   [if (*__progname == 0) return 0;])],
++	   [__progname = "hello";])],
+ 	   AC_DEFINE([HAVE___PROGNAME], [1], [Define if __progname is defined])
+ 	   AC_MSG_RESULT([yes]),
+ 	   AC_MSG_RESULT([no]))
+diff --git a/db3/configure b/db3/configure
+index 160b8e801..01f0456a1 100755
+--- a/db3/configure
++++ b/db3/configure
+@@ -10,9 +10,9 @@ rm -f config.cache
+ # XXX edit CFLAGS= ... out of invocation args ???
+ ARGS="`echo $* | sed -e 's% [^ ]*CFLAGS=[^ ]*%%' -e 's% -[^-][^ ]*%%g' -e 's% --param=[^ ]*%%g' -e 's%--cache-file=.*$%%'`"
+ 
+-CC="$CC" CFLAGS="$CFLAGS" $db_dist/configure $ARGS \
++CC="$CC" CFLAGS="$CFLAGS" $db_dist/configure \
+ 	--enable-shared --enable-static \
+-	--with-uniquename=_rpmdb --srcdir=$db_dist
++	--with-uniquename=_rpmdb --srcdir=$db_dist --with-pic $ARGS
+ 
+ mv Makefile Makefile.orig
+ cat Makefile.orig | sed -e '/^install[:-]/c\
+diff --git a/doc/Makefile.am b/doc/Makefile.am
+index d2f520d64..bfeb5138a 100644
+--- a/doc/Makefile.am
++++ b/doc/Makefile.am
+@@ -8,7 +8,7 @@ EXTRA_DIST += $(man_man1_DATA)
+ 
+ man_man8dir = $(mandir)/man8
+ man_man8_DATA = rpm.8 rpm-misc.8 rpmbuild.8 rpmdeps.8 rpmgraph.8 rpm2cpio.8
+-man_man8_DATA += rpmdb.8 rpmkeys.8 rpmsign.8 rpmspec.8
++man_man8_DATA += rpmdb.8 rpmkeys.8 rpmsign.8 rpmspec.8 rpmqpack.8
+ man_man8_DATA += rpm-plugin-systemd-inhibit.8
+ EXTRA_DIST += $(man_man8_DATA)
+ 
+diff --git a/doc/rpm.8 b/doc/rpm.8
+index af495d9ed..63599142d 100644
+--- a/doc/rpm.8
++++ b/doc/rpm.8
+@@ -642,6 +642,11 @@ Query all packages that provide the \fICAPABILITY\fR capability.
+ .TP
+ \fB--whatrequires \fICAPABILITY\fB\fR
+ Query all packages that require \fICAPABILITY\fR for proper functioning.
++.br
++Note that this does not return what requires a given package.
++A package usually provides multiple capabilities and file-names on which
++other packages may depend. To see the complete dependencies
++for a package, use \fB-e --test \fIPACKAGE_NAME\fB\fR
+ .TP
+ \fB--whatconflicts \fICAPABILITY\fB\fR
+ Query all packages that conflict with \fICAPABILITY\fR.
+diff --git a/doc/rpmqpack.8 b/doc/rpmqpack.8
+new file mode 100644
+index 000000000..81e2bc4c8
+--- /dev/null
++++ b/doc/rpmqpack.8
+@@ -0,0 +1,25 @@
++.TH RPMQPACK 8 "Mar 2002"
++.SH NAME
++rpmqpack \- check for installed rpm packages
++
++.SH SYNOPSIS
++.B rpmqpack
++.RI [ pack1 "] [" pack2 ]...
++
++.SH DESCRIPTION
++rpmqpack checks if packages given as arguments are installed in
++the system. It prints each installed package to stdout.
++If no arguments are given all installed packages are printed.
++
++.SH EXIT STATUS
++rpmqpack returns 0 if all given packages are installed, otherwise
++1.
++
++.SH SEE ALSO
++.BR rpm (1)
++
++.SH COPYRIGHT
++2002 SUSE Linux AG Nuernberg, Germany.
++
++.SH AUTHOR
++Michael Schroeder <mls@suse.de>
+diff --git a/fileattrs/Makefile.am b/fileattrs/Makefile.am
+index e0ca5b6bc..6b4dfd765 100644
+--- a/fileattrs/Makefile.am
++++ b/fileattrs/Makefile.am
+@@ -8,6 +8,7 @@ fattrsdir = $(rpmconfigdir)/fileattrs
+ fattrs_DATA = \
+ 	debuginfo.attr desktop.attr elf.attr font.attr libtool.attr metainfo.attr \
+ 	perl.attr perllib.attr pkgconfig.attr python.attr pythondist.attr ocaml.attr \
++	elflib.attr firmware.attr kernel.attr kmp.attr sysvinit.attr \
+ 	script.attr
+ 
+ EXTRA_DIST = $(fattrs_DATA)
+diff --git a/fileattrs/elf.attr b/fileattrs/elf.attr
+index 5805dd0ee..78fc73ab5 100644
+--- a/fileattrs/elf.attr
++++ b/fileattrs/elf.attr
+@@ -1,4 +1,5 @@
+ %__elf_provides		%{_rpmconfigdir}/elfdeps --provides %{?__filter_GLIBC_PRIVATE:--filter-private}
+ %__elf_requires		%{_rpmconfigdir}/elfdeps --requires %{?__filter_GLIBC_PRIVATE:--filter-private}
+-%__elf_magic		^(setuid,? )?(setgid,? )?(sticky )?ELF (32|64)-bit.*$
++%__elf_magic		^(setuid,? )?(setgid,? )?(sticky )?ELF (32|64)-bit.*executable
+ %__elf_flags		exeonly
++%__elf_exclude_path	^/usr/lib/debug/
+diff --git a/fileattrs/elflib.attr b/fileattrs/elflib.attr
+new file mode 100644
+index 000000000..a8aafa6f1
+--- /dev/null
++++ b/fileattrs/elflib.attr
+@@ -0,0 +1,4 @@
++%__elflib_provides	%{_rpmconfigdir}/elfdeps --assume-exec --provides %{?__filter_GLIBC_PRIVATE:--filter-private}
++%__elflib_requires	%{_rpmconfigdir}/elfdeps --assume-exec --requires %{?__filter_GLIBC_PRIVATE:--filter-private}
++%__elflib_magic		^(setuid )?(setgid )?(sticky )?ELF (32|64)-bit.*shared object
++%__elflib_exclude_path	^/usr/lib/debug/
+diff --git a/fileattrs/firmware.attr b/fileattrs/firmware.attr
+new file mode 100644
+index 000000000..2d577aa44
+--- /dev/null
++++ b/fileattrs/firmware.attr
+@@ -0,0 +1,2 @@
++%__firmware_provides	%{_rpmconfigdir}/firmware.prov
++%__firmware_path	/lib/firmware/
+diff --git a/fileattrs/kernel.attr b/fileattrs/kernel.attr
+new file mode 100644
+index 000000000..a79fde56a
+--- /dev/null
++++ b/fileattrs/kernel.attr
+@@ -0,0 +1,2 @@
++%__kernel_provides	%{_rpmconfigdir}/find-provides.ksyms --opensuse 0%{?is_opensuse}
++%__kernel_path		^(/lib/modules/[^/]*/kernel/.*\.ko(\.gz)?|/boot/vmlinu[xz].*)$
+diff --git a/fileattrs/kmp.attr b/fileattrs/kmp.attr
+new file mode 100644
+index 000000000..772ea3021
+--- /dev/null
++++ b/fileattrs/kmp.attr
+@@ -0,0 +1,4 @@
++%__kmp_provides		%{_rpmconfigdir}/find-provides.ksyms --opensuse 0%{?is_opensuse}
++%__kmp_requires		%{_rpmconfigdir}/find-requires.ksyms --opensuse 0%{?is_opensuse}
++%__kmp_supplements	%{_rpmconfigdir}/find-supplements.ksyms
++%__kmp_path		^/lib/modules/[^/]*/(updates|extra)/.*\.ko(\.gz)?
+diff --git a/fileattrs/perl.attr b/fileattrs/perl.attr
+index 0daef58d5..89383c213 100644
+--- a/fileattrs/perl.attr
++++ b/fileattrs/perl.attr
+@@ -1,3 +1,4 @@
+-%__perl_requires	%{_rpmconfigdir}/perl.req
++# disabled for now
++#%__perl_requires	%{_rpmconfigdir}/perl.req
+ %__perl_magic		^.*[Pp]erl .*$
+ %__perl_flags		exeonly
+diff --git a/fileattrs/perllib.attr b/fileattrs/perllib.attr
+index fcad48099..77463c841 100644
+--- a/fileattrs/perllib.attr
++++ b/fileattrs/perllib.attr
+@@ -1,5 +1,6 @@
+ %__perllib_provides	%{_rpmconfigdir}/perl.prov
+-%__perllib_requires	%{_rpmconfigdir}/perl.req
++#disabled for now
++#%__perllib_requires	%{_rpmconfigdir}/perl.req
+ %__perllib_magic	^Perl[[:digit:]] module source.*
+ %__perllib_path		\\.pm$
+ %__perllib_flags	magic_and_path
+diff --git a/fileattrs/sysvinit.attr b/fileattrs/sysvinit.attr
+new file mode 100644
+index 000000000..81810e54b
+--- /dev/null
++++ b/fileattrs/sysvinit.attr
+@@ -0,0 +1,2 @@
++%__sysvinit_provides	%{_rpmconfigdir}/sysvinitdeps.sh --provides
++%__sysvinit_path	^/etc/init\.d/
+diff --git a/firmware.prov b/firmware.prov
+new file mode 100644
+index 000000000..12f8336eb
+--- /dev/null
++++ b/firmware.prov
+@@ -0,0 +1,8 @@
++#!/bin/sh
++# Add firmware files in /lib/firmware into RPM provides
++
++while read instfile ; do
++  case $instfile in
++    */lib/firmware/*) test -f "$instfile" && echo "firmware(${instfile##*/lib/firmware/})" ;;
++  esac
++done
+diff --git a/installplatform b/installplatform
+index 12339fcfe..0e0d8c2a0 100755
+--- a/installplatform
++++ b/installplatform
+@@ -197,6 +197,11 @@ for ARCH in noarch `grep ^arch_canon $RPMRC | cut -d: -f2`; do
+   PPD="${DESTDIR}/${platformdir}/${ARCH}-${OS}"
+   [ -d $PPD ] || mkdir -p $PPD
+ 
++  if [ "$VENDOR" = suse ] ; then
++	# suse doesn't do colors
++	CANONCOLOR=0
++  fi
++
+   cat $PLATFORM \
+   | sed -e "s,@RPMRC_OPTFLAGS@,$RPMRC_OPTFLAGS," \
+ 	-e "s,@RPMCANONARCH@,$CANONARCH,g" \
+diff --git a/lib/backend/db3.c b/lib/backend/db3.c
+index da50dfda4..9615f0a63 100644
+--- a/lib/backend/db3.c
++++ b/lib/backend/db3.c
+@@ -11,6 +11,7 @@ static int _debug = 1;	/* XXX if < 0 debugging, > 0 unusual error returns */
+ #include <popt.h>
+ #include <db.h>
+ #include <signal.h>
++#include <time.h>
+ 
+ #include <rpm/rpmtypes.h>
+ #include <rpm/rpmmacro.h>
+@@ -34,6 +35,8 @@ struct dbiCursor_s {
+ static struct dbiConfig_s staticdbicfg;
+ static struct dbConfig_s staticcfg;
+ 
++static int _lockdbfd = 0;
++
+ /** \ingroup dbi
+  */
+ static const struct poptOption rdbOptions[] = {
+@@ -74,8 +77,10 @@ static const struct poptOption rdbOptions[] = {
+  { "mp_size",	0,POPT_ARG_INT,		&staticcfg.db_cachesize, 0,
+ 	NULL, NULL },
+ 
++#if 0
+  { "nofsync",	0,POPT_ARG_NONE,	&staticcfg.db_no_fsync, 0,
+ 	NULL, NULL },
++#endif
+ 
+  /* Per-dbi options */
+  { "nommap",	0,POPT_BIT_SET,		&staticdbicfg.dbi_oflags, DB_NOMMAP,
+@@ -85,6 +90,10 @@ static const struct poptOption rdbOptions[] = {
+ 	NULL, NULL },
+  { "lockdbfd",	0,POPT_ARG_NONE,	&staticdbicfg.dbi_lockdbfd, 0,
+ 	NULL, NULL },
++#ifdef DB_NOFSYNC
++ { "nofsync",	0,POPT_BIT_SET,		&staticdbicfg.dbi_oflags, DB_NOFSYNC,
++	NULL, NULL },
++#endif
+ 
+     POPT_TABLEEND
+ };
+@@ -410,7 +419,7 @@ static int db_init(rpmdb rdb, const char * dbhome)
+     int rdonly = ((rdb->db_mode & O_ACCMODE) == O_RDONLY);
+     struct dbConfig_s * cfg = &rdb->cfg;
+     /* This is our setup, thou shall not have other setups before us */
+-    uint32_t eflags = (DB_CREATE|DB_INIT_MPOOL|DB_INIT_CDB);
++    uint32_t eflags = (DB_CREATE|DB_INIT_MPOOL|DB_INIT_CDB|DB_PRIVATE);
+ 
+     if (rdb->db_dbenv != NULL) {
+ 	rdb->db_opens++;
+@@ -546,6 +555,46 @@ static void db3_dbSetFSync(rpmdb rdb, int enable)
+ 
+ static int db3_Ctrl(rpmdb rdb, dbCtrlOp ctrl)
+ {
++    struct flock l;
++    int tries;
++    int fdno = -1;
++    dbiIndex dbi;
++    DB * db;
++
++    switch (ctrl) {
++    case DB_CTRL_SUSPEND_DBLOCK:
++    case DB_CTRL_RESUME_DBLOCK:
++	dbi = rdb->db_pkgs;	/* packages db only */
++	if (!dbi)
++	    return 1;
++	if (!dbi->cfg.dbi_lockdbfd || (dbi->dbi_flags & DBI_VERIFYONLY) != 0)
++	    return 0;
++	if (!(dbi->dbi_rpmdb->db_mode & (O_RDWR|O_WRONLY)))
++	    return 0;
++	if (_lockdbfd == 0)
++	    return 0;
++        db = dbi->dbi_db;
++	if (!(db->fd(db, &fdno) == 0 && fdno >= 0))
++	    return 1;
++	for (tries = 0; tries < 2; tries++) {
++	    memset(&l, 0, sizeof(l));
++	    l.l_whence = 0;
++	    l.l_start = 0;
++	    l.l_len = 0;
++	    l.l_type = ctrl == DB_CTRL_SUSPEND_DBLOCK ? F_RDLCK : F_WRLCK;
++	    if (!fcntl(fdno, tries ? F_SETLKW : F_SETLK, (void *)&l))
++		return 0;
++	    if (ctrl == DB_CTRL_SUSPEND_DBLOCK) {
++		rpmlog(RPMLOG_WARNING, _("could not suspend database lock\n"));
++		return 1;
++	    }
++	    if (tries == 0)
++		rpmlog(RPMLOG_WARNING, _("waiting to reestablish exclusive database lock\n"));
++	}
++	return 1;
++    default:
++        break;
++    }
+     return 0;
+ }
+ 
+@@ -751,6 +800,8 @@ static int db3_dbiClose(dbiIndex dbi, unsigned int flags)
+ 
+ 	rpmlog(RPMLOG_DEBUG, "closed   db index       %s/%s\n",
+ 		dbhome, dbi->dbi_file);
++	if (dbi->cfg.dbi_lockdbfd && !(dbi->dbi_flags & DBI_VERIFYONLY) && _lockdbfd)
++	    _lockdbfd--;
+     }
+ 
+     db_fini(rdb, dbhome ? dbhome : "");
+@@ -790,6 +841,7 @@ static int dbiFlock(dbiIndex dbi, int mode)
+ 	rc = 1;
+     } else {
+ 	const char *dbhome = rpmdbHome(dbi->dbi_rpmdb);
++	int tries;
+ 	struct flock l;
+ 	memset(&l, 0, sizeof(l));
+ 	l.l_whence = 0;
+@@ -799,20 +851,42 @@ static int dbiFlock(dbiIndex dbi, int mode)
+ 		    ? F_RDLCK : F_WRLCK;
+ 	l.l_pid = 0;
+ 
+-	rc = fcntl(fdno, F_SETLK, (void *) &l);
+-	if (rc) {
+-	    uint32_t eflags = db_envflags(db);
+-	    /* Warning iff using non-private CDB locking. */
+-	    rc = (((eflags & DB_INIT_CDB) && !(eflags & DB_PRIVATE)) ? 0 : 1);
+-	    rpmlog( (rc ? RPMLOG_ERR : RPMLOG_WARNING),
+-		    _("cannot get %s lock on %s/%s\n"),
+-		    ((mode & O_ACCMODE) == O_RDONLY)
+-			    ? _("shared") : _("exclusive"),
+-		    dbhome, dbi->dbi_file);
+-	} else {
+-	    rpmlog(RPMLOG_DEBUG,
+-		    "locked   db index       %s/%s\n",
+-		    dbhome, dbi->dbi_file);
++	for (tries = 0; ; tries++) {
++	    rc = fcntl(fdno, F_SETLK, (void *) &l);
++	    if (rc) {
++		uint32_t eflags = db_envflags(db);
++		/* Warning iff using non-private CDB locking. */
++		rc = (((eflags & DB_INIT_CDB) && !(eflags & DB_PRIVATE)) ? 0 : 1);
++		if (errno == EAGAIN && rc) {
++		    if (tries == 0)
++			rpmlog(RPMLOG_WARNING,
++				_("waiting for %s lock on %s/%s\n"),
++				((mode & O_ACCMODE) == O_RDONLY)
++					? _("shared") : _("exclusive"),
++				dbhome, dbi->dbi_file);
++		    if (tries < 10*60*3) {	/* 3 minutes */
++#ifdef HAVE_NANOSLEEP
++		    struct timespec ts;
++		    ts.tv_sec = (time_t)0;
++		    ts.tv_nsec = 100000000;	/* .1 seconds */
++			nanosleep(&ts, (struct timespec *)0);
++#else
++			usleep(100);
++#endif
++			continue;
++		    }
++		}
++		rpmlog( (rc ? RPMLOG_ERR : RPMLOG_WARNING),
++			_("cannot get %s lock on %s/%s\n"),
++			((mode & O_ACCMODE) == O_RDONLY)
++				? _("shared") : _("exclusive"),
++			dbhome, dbi->dbi_file);
++	    } else {
++		rpmlog(RPMLOG_DEBUG,
++			"locked   db index       %s/%s\n",
++			dbhome, dbi->dbi_file);
++	    }
++	    break;
+ 	}
+     }
+     return rc;
+@@ -829,7 +903,6 @@ static int db3_dbiOpen(rpmdb rdb, rpmDbiTagVal rpmtag, dbiIndex * dbip, int flag
+     DB * db = NULL;
+     DBTYPE dbtype = DB_UNKNOWN;
+     uint32_t oflags;
+-    static int _lockdbfd = 0;
+ 
+     if (dbip)
+ 	*dbip = NULL;
+@@ -909,6 +982,8 @@ static int db3_dbiOpen(rpmdb rdb, rpmDbiTagVal rpmtag, dbiIndex * dbip, int flag
+ 	dbi->dbi_flags |= DBI_CREATED;
+     if (oflags & DB_RDONLY)
+ 	dbi->dbi_flags |= DBI_RDONLY;
++    if (verifyonly)
++	dbi->dbi_flags |= DBI_VERIFYONLY;
+ 
+     if (!verifyonly && rc == 0 && dbi->cfg.dbi_lockdbfd && _lockdbfd++ == 0) {
+ 	rc = dbiFlock(dbi, rdb->db_mode);
+@@ -959,6 +1034,9 @@ static int dbt2set(dbiIndex dbi, DBT * data, dbiIndexSet * setp)
+ 	    _DBSWAP(hdrNum);
+ 	    _DBSWAP(tagNum);
+ 	}
++	/* remove tagged directory info */
++	if (tagNum.ui & 0x80000000)
++	    tagNum.ui &= 0x0000ffff;
+ 	set->recs[i].hdrNum = hdrNum.ui;
+ 	set->recs[i].tagNum = tagNum.ui;
+     }
+diff --git a/lib/backend/dbi.h b/lib/backend/dbi.h
+index 83330494b..48982a483 100644
+--- a/lib/backend/dbi.h
++++ b/lib/backend/dbi.h
+@@ -17,7 +17,9 @@ typedef enum dbCtrlOp_e {
+     DB_CTRL_UNLOCK_RO		= 2,
+     DB_CTRL_LOCK_RW		= 3,
+     DB_CTRL_UNLOCK_RW		= 4,
+-    DB_CTRL_INDEXSYNC		= 5
++    DB_CTRL_INDEXSYNC		= 5,
++    DB_CTRL_SUSPEND_DBLOCK      = 100,
++    DB_CTRL_RESUME_DBLOCK       = 101
+ } dbCtrlOp;
+ 
+ typedef struct dbiIndex_s * dbiIndex;
+@@ -48,7 +50,7 @@ struct rpmdb_s {
+     char	* db_fullpath;	/*!< full db path including prefix */
+     int		db_flags;
+     int		db_mode;	/*!< open mode */
+-    int		db_perms;	/*!< open permissions */
++    mode_t	db_perms;	/*!< open permissions */
+     char	* db_descr;	/*!< db backend description (for error msgs) */
+     struct dbChk_s * db_checked;/*!< headerCheck()'ed package instances */
+     rpmdb	db_next;
+@@ -83,6 +85,7 @@ enum dbiFlags_e {
+     DBI_NONE		= 0,
+     DBI_CREATED		= (1 << 0),
+     DBI_RDONLY		= (1 << 1),
++    DBI_VERIFYONLY	= (1 << 2),
+ };
+ 
+ enum dbcFlags_e {
+diff --git a/lib/cpio.c b/lib/cpio.c
+index 57c959258..46a72d88b 100644
+--- a/lib/cpio.c
++++ b/lib/cpio.c
+@@ -216,6 +216,7 @@ int rpmcpioHeaderWrite(rpmcpio_t cpio, char * path, struct stat * st)
+     size_t len, written;
+     dev_t dev;
+     int rc = 0;
++	mode_t mode;
+ 
+     if ((cpio->mode & O_ACCMODE) != O_WRONLY) {
+         return RPMERR_WRITE_FAILED;
+@@ -234,8 +235,23 @@ int rpmcpioHeaderWrite(rpmcpio_t cpio, char * path, struct stat * st)
+         return rc;
+     }
+ 
++	/*
++	 * cpio always uses POSIX filetypes,
++	 * regardless of host
++	 */
++	mode = st->st_mode & ~S_IFMT;
++	switch (st->st_mode & S_IFMT)
++	{
++		case S_IFDIR: mode |= 0040000; break;
++		case S_IFCHR: mode |= 0020000; break;
++		case S_IFBLK: mode |= 0060000; break;
++		case S_IFREG: mode |= 0100000; break;
++		case S_IFIFO: mode |= 0010000; break;
++		case S_IFLNK: mode |= 0120000; break;
++		case S_IFSOCK: mode |= 0140000; break;
++	}
+     SET_NUM_FIELD(hdr->inode, st->st_ino, field);
+-    SET_NUM_FIELD(hdr->mode, st->st_mode, field);
++    SET_NUM_FIELD(hdr->mode, mode, field);
+     SET_NUM_FIELD(hdr->uid, st->st_uid, field);
+     SET_NUM_FIELD(hdr->gid, st->st_gid, field);
+     SET_NUM_FIELD(hdr->nlink, st->st_nlink, field);
+diff --git a/lib/depends.c b/lib/depends.c
+index 672a562c3..4a8f7f696 100644
+--- a/lib/depends.c
++++ b/lib/depends.c
+@@ -165,6 +165,26 @@ static int skipColor(rpm_color_t tscolor, rpm_color_t color, rpm_color_t ocolor)
+     return tscolor && color && ocolor && !(color & ocolor);
+ }
+ 
++#if 0
++static int rpmNameVersionCompare(Header first, Header second)
++{
++    const char * one, * two;
++    int rc;
++
++    one = headerGetString(first, RPMTAG_NAME);
++    two = headerGetString(second, RPMTAG_NAME);
++    rc = strcmp(one, two);
++    if (rc)
++	return rc;
++    one = headerGetString(first, RPMTAG_ARCH);
++    two = headerGetString(second, RPMTAG_ARCH);
++    rc = strcmp(one, two);
++    if (rc)
++	return rc;
++    return rpmVersionCompare(first, second);
++}
++#endif
++
+ /* Add erase elements for older packages of same color (if any). */
+ static int addSelfErasures(rpmts ts, rpm_color_t tscolor, int op,
+ 				rpmte p, rpm_color_t hcolor, Header h)
+diff --git a/lib/fsm.c b/lib/fsm.c
+index 432bcbd90..ed536eca2 100644
+--- a/lib/fsm.c
++++ b/lib/fsm.c
+@@ -115,7 +115,7 @@ static DNLI_t dnlInitIterator(rpmfiles fi, rpmfs fs, int reverse)
+ 	    int dil;
+ 	    size_t dnlen, bnlen;
+ 
+-	    if (!S_ISDIR(rpmfilesFMode(fi, i)))
++	    if (rpmfiWhatis(rpmfilesFMode(fi, i)) != XDIR)
+ 		continue;
+ 
+ 	    dil = rpmfilesDI(fi, i);
+@@ -662,13 +662,13 @@ static int fsmVerify(const char *path, rpmfi fi)
+     int rc;
+     int saveerrno = errno;
+     struct stat dsb;
+-    mode_t mode = rpmfiFMode(fi);
++    rpm_mode_t mode = rpmfiFMode(fi);
+ 
+     rc = fsmStat(path, 1, &dsb);
+     if (rc)
+ 	return rc;
+ 
+-    if (S_ISREG(mode)) {
++    if (rpmfiWhatis(mode) == REG) {
+ 	/* HP-UX (and other os'es) don't permit unlink on busy files. */
+ 	char *rmpath = rstrscat(NULL, path, "-RPMDELETE", NULL);
+ 	rc = fsmRename(path, rmpath);
+@@ -679,7 +679,7 @@ static int fsmVerify(const char *path, rpmfi fi)
+ 	    rc = RPMERR_UNLINK_FAILED;
+ 	free(rmpath);
+         return (rc ? rc : RPMERR_ENOENT);	/* XXX HACK */
+-    } else if (S_ISDIR(mode)) {
++    } else if (rpmfiWhatis(mode) == XDIR) {
+         if (S_ISDIR(dsb.st_mode)) return 0;
+         if (S_ISLNK(dsb.st_mode)) {
+ 	    uid_t luid = dsb.st_uid;
+@@ -691,7 +691,7 @@ static int fsmVerify(const char *path, rpmfi fi)
+             if (S_ISDIR(dsb.st_mode) && (luid == 0 || luid == dsb.st_uid))
+ 		    return 0;
+         }
+-    } else if (S_ISLNK(mode)) {
++    } else if (rpmfiWhatis(mode) == LINK) {
+         if (S_ISLNK(dsb.st_mode)) {
+             char buf[8 * BUFSIZ];
+             size_t len;
+@@ -700,12 +700,12 @@ static int fsmVerify(const char *path, rpmfi fi)
+             if (rc) return rc;
+             if (rstreq(rpmfiFLink(fi), buf)) return 0;
+         }
+-    } else if (S_ISFIFO(mode)) {
++    } else if (rpmfiWhatis(mode) == PIPE) {
+         if (S_ISFIFO(dsb.st_mode)) return 0;
+-    } else if (S_ISCHR(mode) || S_ISBLK(mode)) {
++    } else if (rpmfiWhatis(mode) == CDEV || rpmfiWhatis(mode) == BDEV) {
+         if ((S_ISCHR(dsb.st_mode) || S_ISBLK(dsb.st_mode)) &&
+             (dsb.st_rdev == rpmfiFRdev(fi))) return 0;
+-    } else if (S_ISSOCK(mode)) {
++    } else if (rpmfiWhatis(mode) == SOCK) {
+         if (S_ISSOCK(dsb.st_mode)) return 0;
+     }
+     /* XXX shouldn't do this with commit/undo. */
+@@ -787,7 +787,7 @@ static int fsmCommit(char **path, rpmfi fi, rpmFileAction action, const char *su
+     int rc = 0;
+ 
+     /* XXX Special case /dev/log, which shouldn't be packaged anyways */
+-    if (!(S_ISSOCK(rpmfiFMode(fi)) && IS_DEV_LOG(*path))) {
++    if (!(rpmfiWhatis(rpmfiFMode(fi)) == SOCK && IS_DEV_LOG(*path))) {
+ 	const char *nsuffix = (action == FA_ALTNAME) ? SUFFIX_RPMNEW : NULL;
+ 	char *dest = *path;
+ 	/* Construct final destination path (nsuffix is usually NULL) */
+@@ -899,7 +899,7 @@ int rpmPackageFilesInstall(rpmts ts, rpmte te, rpmfiles files,
+ 	action = rpmfsGetAction(fs, rpmfiFX(fi));
+ 	skip = XFA_SKIPPING(action);
+ 	if (action != FA_TOUCH) {
+-	    suffix = S_ISDIR(rpmfiFMode(fi)) ? NULL : tid;
++	    suffix = rpmfiWhatis(rpmfiFMode(fi)) == XDIR ? NULL : tid;
+ 	} else {
+ 	    suffix = NULL;
+ 	}
+diff --git a/lib/gentagtbl.sh b/lib/gentagtbl.sh
+index 0558d09f3..0e8a3db24 100755
+--- a/lib/gentagtbl.sh
++++ b/lib/gentagtbl.sh
+@@ -4,7 +4,7 @@ cat << EOF
+ static const struct headerTagTableEntry_s rpmTagTable[] = {
+ EOF
+ 
+-${AWK} '/[\t ](RPMTAG_[A-Z0-9]*)[ \t]+([0-9]*)/ && !/internal/ && !/unimplemented/ {
++${AWK:-awk} '/[\t ](RPMTAG_[A-Z0-9]*)[ \t]+([0-9]*)/ && !/internal/ && !/unimplemented/ && !/alias/ {
+ 	tt = "NULL"
+ 	ta = "ANY"
+ 	ext = "0"
+diff --git a/lib/header.c b/lib/header.c
+index d1a3d7e08..c9438680d 100644
+--- a/lib/header.c
++++ b/lib/header.c
+@@ -973,7 +973,8 @@ rpmRC hdrblobImport(hdrblob blob, int fast, Header *hdrp, char **emsg)
+ 
+ 	rdlen += REGION_TAG_COUNT;
+ 
+-	if (rdlen != blob->dl)
++	/* should be equality test, but can be off if entries are not perfectly aligned */
++	if (rdlen > blob->dl)
+ 	    goto errxit;
+     }
+ 
+diff --git a/lib/manifest.c b/lib/manifest.c
+index eba108885..a77b72ff0 100644
+--- a/lib/manifest.c
++++ b/lib/manifest.c
+@@ -9,31 +9,43 @@
+ #include <rpm/argv.h>
+ 
+ #include "lib/manifest.h"
++#include "lib/rpmfiles.h"
++#include "lib/rpmfi.h"
+ 
+ #include "debug.h"
+ 
+ 
+-char * rpmPermsString(int mode)
++char * rpmPermsString(rpm_mode_t mode)
+ {
+     char *perms = xstrdup("----------");
+    
+-    if (S_ISREG(mode)) 
+-	perms[0] = '-';
+-    else if (S_ISDIR(mode)) 
+-	perms[0] = 'd';
+-    else if (S_ISLNK(mode))
+-	perms[0] = 'l';
+-    else if (S_ISFIFO(mode)) 
+-	perms[0] = 'p';
+-    else if (S_ISSOCK(mode)) 
+-	perms[0] = 's';
+-    else if (S_ISCHR(mode))
+-	perms[0] = 'c';
+-    else if (S_ISBLK(mode))
+-	perms[0] = 'b';
+-    else
+-	perms[0] = '?';
+-
++    switch (rpmfiWhatis(mode))
++    {
++    case REG:
++		perms[0] = '-';
++		break;
++    case XDIR:
++		perms[0] = 'd';
++		break;
++	case LINK:
++		perms[0] = 'l';
++		break;
++    case PIPE:
++		perms[0] = 'p';
++		break;
++    case SOCK:
++		perms[0] = 's';
++		break;
++	case CDEV:
++		perms[0] = 'c';
++		break;
++    case BDEV:
++		perms[0] = 'b';
++		break;
++    default:
++		perms[0] = '?';
++		break;
++	}
+     if (mode & S_IRUSR) perms[1] = 'r';
+     if (mode & S_IWUSR) perms[2] = 'w';
+     if (mode & S_IXUSR) perms[3] = 'x';
+diff --git a/lib/manifest.h b/lib/manifest.h
+index 227ca0089..d55ef8ee4 100644
+--- a/lib/manifest.h
++++ b/lib/manifest.h
+@@ -15,7 +15,7 @@ extern "C" {
+  * @param mode		file mode
+  * @return		(malloc'd) formatted mode string
+  */
+-char * rpmPermsString(int mode)	
++char * rpmPermsString(rpm_mode_t mode)	
+ ;
+ 
+ /**
+diff --git a/lib/package.c b/lib/package.c
+index 21b4a0da3..5fcc8dcd2 100644
+--- a/lib/package.c
++++ b/lib/package.c
+@@ -5,7 +5,9 @@
+ #include "system.h"
+ 
+ #include <netinet/in.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ 
+ #include <rpm/rpmlib.h>			/* XXX RPMSIGTAG, other sig stuff */
+ #include <rpm/rpmts.h>
+@@ -108,7 +110,9 @@ exit:
+  */
+ static int stashKeyid(unsigned int keyid)
+ {
++#ifdef HAVE_PTHREAD_H
+     static pthread_mutex_t keyid_lock = PTHREAD_MUTEX_INITIALIZER;
++#endif
+     static const unsigned int nkeyids_max = 256;
+     static unsigned int nkeyids = 0;
+     static unsigned int nextkeyid  = 0;
+@@ -120,9 +124,11 @@ static int stashKeyid(unsigned int keyid)
+     if (keyid == 0)
+ 	return 0;
+ 
++#ifdef HAVE_PTHREAD_H
+     /* Just pretend we didn't see the keyid if we fail to lock */
+     if (pthread_mutex_lock(&keyid_lock))
+ 	return 0;
++#endif
+ 
+     if (keyids != NULL)
+     for (i = 0; i < nkeyids; i++) {
+@@ -142,7 +148,9 @@ static int stashKeyid(unsigned int keyid)
+     nextkeyid %= nkeyids_max;
+ 
+ exit:
++#ifdef HAVE_PTHREAD_H
+     pthread_mutex_unlock(&keyid_lock);
++#endif
+     return seen;
+ }
+ 
+diff --git a/lib/psm.c b/lib/psm.c
+index cde5dc6c4..90bafc2db 100644
+--- a/lib/psm.c
++++ b/lib/psm.c
+@@ -516,13 +516,14 @@ void rpmpsmNotify(rpmpsm psm, int what, rpm_loff_t amount)
+  */
+ static void markReplacedInstance(rpmts ts, rpmte te)
+ {
++    /* this must match rpmNameVersionCompare in depends.c */
+     rpmdbMatchIterator mi = rpmtsPrunedIterator(ts, RPMDBI_NAME, rpmteN(te), 1);
+     rpmdbSetIteratorRE(mi, RPMTAG_EPOCH, RPMMIRE_STRCMP, rpmteE(te));
+     rpmdbSetIteratorRE(mi, RPMTAG_VERSION, RPMMIRE_STRCMP, rpmteV(te));
+     rpmdbSetIteratorRE(mi, RPMTAG_RELEASE, RPMMIRE_STRCMP, rpmteR(te));
++    rpmdbSetIteratorRE(mi, RPMTAG_ARCH, RPMMIRE_STRCMP, rpmteA(te));
+     /* XXX shouldn't we also do this on colorless transactions? */
+     if (rpmtsColor(ts)) {
+-	rpmdbSetIteratorRE(mi, RPMTAG_ARCH, RPMMIRE_STRCMP, rpmteA(te));
+ 	rpmdbSetIteratorRE(mi, RPMTAG_OS, RPMMIRE_STRCMP, rpmteO(te));
+     }
+ 
+diff --git a/lib/query.c b/lib/query.c
+index 99dad9c5f..a9e81056e 100644
+--- a/lib/query.c
++++ b/lib/query.c
+@@ -27,7 +27,7 @@
+ /**
+  */
+ static void printFileInfo(const char * name,
+-			  rpm_loff_t size, unsigned short mode,
++			  rpm_loff_t size, rpm_mode_t mode,
+ 			  unsigned int mtime,
+ 			  unsigned short rdev, unsigned int nlink,
+ 			  const char * owner, const char * group,
+@@ -49,13 +49,13 @@ static void printFileInfo(const char * name,
+ 
+     /* this knows too much about dev_t */
+ 
+-    if (S_ISLNK(mode)) {
++    if (rpmfiWhatis(mode) == LINK) {
+ 	rasprintf(&link, "%s -> %s", name, linkto);
+-    } else if (S_ISCHR(mode)) {
++    } else if (rpmfiWhatis(mode) == CDEV) {
+ 	perms[0] = 'c';
+ 	snprintf(sizefield, sizeof(sizefield), "%3u, %3u", ((unsigned)(rdev >> 8) & 0xff),
+ 			((unsigned)rdev & 0xff));
+-    } else if (S_ISBLK(mode)) {
++    } else if (rpmfiWhatis(mode) == BDEV) {
+ 	perms[0] = 'b';
+ 	snprintf(sizefield, sizeof(sizefield), "%3u, %3u", ((unsigned)(rdev >> 8) & 0xff),
+ 			((unsigned)rdev & 0xff));
+diff --git a/lib/rpmchroot.c b/lib/rpmchroot.c
+index efaa74fd0..59387e625 100644
+--- a/lib/rpmchroot.c
++++ b/lib/rpmchroot.c
+@@ -5,6 +5,7 @@
+ #include <rpm/rpmlog.h>
+ #include "lib/rpmchroot.h"
+ #include "debug.h"
++#include "rpmug.h"
+ 
+ int _rpm_nouserns = 0;
+ 
+@@ -127,6 +128,7 @@ int rpmChrootIn(void)
+ 	rpmlog(RPMLOG_DEBUG, "entering chroot %s\n", rootState.rootDir);
+ 	if (chdir("/") == 0 && chroot(rootState.rootDir) == 0) {
+ 	    rootState.chrootDone = 1;
++	    rpmugChroot(1);
+ 	} else {
+ 	    rpmlog(RPMLOG_ERR, _("Unable to change root directory: %m\n"));
+ 	    rc = -1;
+@@ -153,6 +155,7 @@ int rpmChrootOut(void)
+ 	rpmlog(RPMLOG_DEBUG, "exiting chroot %s\n", rootState.rootDir);
+ 	if (chroot(".") == 0 && fchdir(rootState.cwd) == 0) {
+ 	    rootState.chrootDone = 0;
++	    rpmugChroot(0);
+ 	} else {
+ 	    rpmlog(RPMLOG_ERR, _("Unable to restore root directory: %m\n"));
+ 	    rc = -1;
+diff --git a/lib/rpmdb.c b/lib/rpmdb.c
+index 29f2bf8f3..1642b90f8 100644
+--- a/lib/rpmdb.c
++++ b/lib/rpmdb.c
+@@ -387,9 +387,11 @@ int rpmdbClose(rpmdb db)
+ {
+     rpmdb * prev, next;
+     int rc = 0;
++    int dbmode;
+ 
+     if (db == NULL)
+ 	goto exit;
++    dbmode = db->db_mode;
+ 
+     prev = &rpmdbRock;
+     while ((next = *prev) != NULL && next != db)
+@@ -424,7 +426,7 @@ int rpmdbClose(rpmdb db)
+ 
+     db = _free(db);
+ 
+-    if (rpmdbRock == NULL) {
++    if (rpmdbRock == NULL && (dbmode & (O_RDWR|O_WRONLY)) != 0) {
+ 	rpmsqActivate(0);
+     }
+ exit:
+@@ -432,7 +434,7 @@ exit:
+ }
+ 
+ static rpmdb newRpmdb(const char * root, const char * home,
+-		      int mode, int perms, int flags)
++		      int mode, mode_t perms, int flags)
+ {
+     rpmdb db = NULL;
+     char * db_home = rpmGetPath((home && *home) ? home : "%{_dbpath}", NULL);
+@@ -468,7 +470,7 @@ static rpmdb newRpmdb(const char * root, const char * home,
+ 
+     if (!(perms & 0600)) perms = 0644;	/* XXX sanity */
+ 
+-    db->db_mode = (mode >= 0) ? mode : 0;
++    db->db_mode = (mode >= 0) ? mode : O_RDONLY;
+     db->db_perms = (perms >= 0) ? perms : 0644;
+     db->db_flags = (flags >= 0) ? flags : 0;
+ 
+@@ -487,7 +489,7 @@ static rpmdb newRpmdb(const char * root, const char * home,
+ 
+ static int openDatabase(const char * prefix,
+ 		const char * dbpath, rpmdb *dbp,
+-		int mode, int perms, int flags)
++		int mode, mode_t perms, int flags)
+ {
+     rpmdb db;
+     int rc;
+@@ -545,7 +547,7 @@ int rpmdbOpen (const char * prefix, rpmdb *dbp, int mode, int perms)
+     return openDatabase(prefix, NULL, dbp, mode, perms, 0);
+ }
+ 
+-int rpmdbInit (const char * prefix, int perms)
++int rpmdbInit (const char * prefix, mode_t perms)
+ {
+     rpmdb db = NULL;
+     int rc;
+@@ -2642,6 +2644,12 @@ int rpmdbCtrl(rpmdb db, rpmdbCtrlOp ctrl)
+     case RPMDB_CTRL_INDEXSYNC:
+ 	dbctrl = DB_CTRL_INDEXSYNC;
+ 	break;
++    case RPMDB_CTRL_SUSPEND_DBLOCK:
++	dbctrl = DB_CTRL_SUSPEND_DBLOCK;
++	break;
++    case RPMDB_CTRL_RESUME_DBLOCK:
++	dbctrl = DB_CTRL_RESUME_DBLOCK;
++	break;
+     }
+     return dbctrl ? dbCtrl(db, dbctrl) : 1;
+ }
+diff --git a/lib/rpmdb.h b/lib/rpmdb.h
+index 1ac712ef6..951d53cc5 100644
+--- a/lib/rpmdb.h
++++ b/lib/rpmdb.h
+@@ -35,7 +35,9 @@ typedef enum rpmdbCtrlOp_e {
+     RPMDB_CTRL_UNLOCK_RO       = 2,
+     RPMDB_CTRL_LOCK_RW         = 3,
+     RPMDB_CTRL_UNLOCK_RW       = 4,
+-    RPMDB_CTRL_INDEXSYNC       = 5
++    RPMDB_CTRL_INDEXSYNC       = 5,
++    RPMDB_CTRL_SUSPEND_DBLOCK  = 100,
++    RPMDB_CTRL_RESUME_DBLOCK   = 101
+ } rpmdbCtrlOp;
+ 
+ /** \ingroup rpmdb
+diff --git a/lib/rpmdb_internal.h b/lib/rpmdb_internal.h
+index 5ad844c71..2961a1f0c 100644
+--- a/lib/rpmdb_internal.h
++++ b/lib/rpmdb_internal.h
+@@ -48,7 +48,7 @@ int rpmdbOpen (const char * prefix, rpmdb * dbp, int mode, int perms);
+  * @return		0 on success
+  */
+ RPM_GNUC_INTERNAL
+-int rpmdbInit(const char * prefix, int perms);
++int rpmdbInit(const char * prefix, mode_t perms);
+ 
+ /** \ingroup rpmdb
+  * Close all database indices and free rpmdb.
+diff --git a/lib/rpmfi.c b/lib/rpmfi.c
+index a503ad976..1b82fa013 100644
+--- a/lib/rpmfi.c
++++ b/lib/rpmfi.c
+@@ -525,6 +525,48 @@ rpm_mode_t rpmfilesFMode(rpmfiles fi, int ix)
+     return fmode;
+ }
+ 
++rpm_mode_t rpmfilesRpmToUnixMode(rpm_mode_t mode)
++{
++    switch (rpmfiWhatis(mode))
++    {
++    	case PIPE: mode = (mode & ~S_IFMT) | S_IFIFO; break;
++    	case CDEV: mode = (mode & ~S_IFMT) | S_IFCHR; break;
++    	case XDIR: mode = (mode & ~S_IFMT) | S_IFDIR; break;
++    	case BDEV: mode = (mode & ~S_IFMT) | S_IFBLK; break;
++    	case REG: mode = (mode & ~S_IFMT) | S_IFREG; break;
++    	case LINK: mode = (mode & ~S_IFMT) | S_IFLNK; break;
++    	case SOCK: mode = (mode & ~S_IFMT) | S_IFSOCK; break;
++    }
++    return mode;
++}
++
++rpm_mode_t rpmfilesUnixToRpmMode(mode_t mode)
++{
++	if (S_ISDIR(mode))
++	{
++		mode = (mode & ~S_IFMT) | (XDIR << 12);
++	} else if (S_ISCHR(mode))
++	{
++		mode = (mode & ~S_IFMT) | (CDEV << 12);
++	} else if (S_ISBLK(mode))
++	{
++		mode = (mode & ~S_IFMT) | (BDEV << 12);
++	} else if (S_ISLNK(mode))
++	{
++		mode = (mode & ~S_IFMT) | (LINK << 12);
++	} else if (S_ISSOCK(mode))
++	{
++		mode = (mode & ~S_IFMT) | (SOCK << 12);
++	} else if (S_ISFIFO(mode))
++	{
++		mode = (mode & ~S_IFMT) | (PIPE << 12);
++	} else
++	{
++		mode = (mode & ~S_IFMT) | (REG << 12);
++	}
++	return mode;
++}
++
+ rpmfileState rpmfilesFState(rpmfiles fi, int ix)
+ {
+     rpmfileState fstate = RPMFILE_STATE_MISSING;
+@@ -786,7 +828,7 @@ int rpmfilesStat(rpmfiles fi, int ix, int flags, struct stat *sb)
+ 	sb->st_nlink = rpmfilesFLinks(fi, ix, NULL);
+ 	sb->st_ino = rpmfilesFInode(fi, ix);
+ 	sb->st_rdev = rpmfilesFRdev(fi, ix);
+-	sb->st_mode = rpmfilesFMode(fi, ix);
++	sb->st_mode = rpmfilesRpmToUnixMode(rpmfilesFMode(fi, ix));
+ 	sb->st_mtime = rpmfilesFMtime(fi, ix);
+ 
+ 	/* Only regular files and symlinks have a size */
+@@ -898,19 +940,22 @@ rpmfi rpmfiInitD(rpmfi fi, int dx)
+ 
+ rpmFileTypes rpmfiWhatis(rpm_mode_t mode)
+ {
+-    if (S_ISDIR(mode))	return XDIR;
+-    if (S_ISCHR(mode))	return CDEV;
+-    if (S_ISBLK(mode))	return BDEV;
+-    if (S_ISLNK(mode))	return LINK;
+-    if (S_ISSOCK(mode))	return SOCK;
+-    if (S_ISFIFO(mode))	return PIPE;
+-    return REG;
++	switch (mode & 0170000) /* S_IFMT */
++	{
++		case XDIR << 12: return XDIR;
++		case CDEV << 12: return CDEV;
++		case BDEV << 12: return BDEV;
++		case LINK << 12: return LINK;
++		case SOCK << 12: return SOCK;
++		case PIPE << 12: return PIPE;
++	}
++	return REG;
+ }
+ 
+ int rpmfilesCompare(rpmfiles afi, int aix, rpmfiles bfi, int bix)
+ {
+-    mode_t amode = rpmfilesFMode(afi, aix);
+-    mode_t bmode = rpmfilesFMode(bfi, bix);
++    rpm_mode_t amode = rpmfilesFMode(afi, aix);
++    rpm_mode_t bmode = rpmfilesFMode(bfi, bix);
+     rpmFileTypes awhat = rpmfiWhatis(amode);
+ 
+     if ((rpmfilesFFlags(afi, aix) & RPMFILE_GHOST) ||
+@@ -972,7 +1017,7 @@ int rpmfileContentsEqual(rpmfiles ofi, int oix, rpmfiles nfi, int nix)
+ 	goto exit;
+     }
+ 
+-    diskWhat = rpmfiWhatis((rpm_mode_t)sb.st_mode);
++    diskWhat = rpmfiWhatis(rpmfilesUnixToRpmMode(sb.st_mode));
+     newWhat = rpmfiWhatis(rpmfilesFMode(nfi, nix));
+     oldWhat = rpmfiWhatis(rpmfilesFMode(ofi, oix));
+     if ((diskWhat != newWhat) || (diskWhat != oldWhat)) {
+@@ -1059,7 +1104,7 @@ rpmFileAction rpmfilesDecideFate(rpmfiles ofi, int oix,
+ 	}
+     }
+ 
+-    diskWhat = rpmfiWhatis((rpm_mode_t)sb.st_mode);
++    diskWhat = rpmfiWhatis(rpmfilesUnixToRpmMode(sb.st_mode));
+     dbWhat = rpmfiWhatis(rpmfilesFMode(ofi, oix));
+     newWhat = rpmfiWhatis(rpmfilesFMode(nfi, nix));
+ 
+@@ -1199,7 +1244,7 @@ int rpmfilesConfigConflict(rpmfiles fi, int ix)
+     }
+ 
+     /* Files of different types obviously are not identical */
+-    diskWhat = rpmfiWhatis((rpm_mode_t)sb.st_mode);
++    diskWhat = rpmfiWhatis(rpmfilesUnixToRpmMode(sb.st_mode));
+     if (diskWhat != newWhat) {
+ 	rc = 1;
+ 	goto exit;
+@@ -1442,7 +1487,7 @@ static void rpmfilesBuildNLink(rpmfiles fi, Header h)
+ 
+     files = fileidHashCreate(totalfc, fidHashFunc, fidCmp, NULL, NULL);
+     for (int i=0; i < totalfc; i++) {
+-	if (!S_ISREG(rpmfilesFMode(fi, i)) ||
++	if (rpmfiWhatis(rpmfilesFMode(fi, i)) != REG ||
+ 		(rpmfilesFFlags(fi, i) & RPMFILE_GHOST) ||
+ 		fi->finodes[i] <= 0) {
+ 	    continue;
+@@ -1459,7 +1504,7 @@ static void rpmfilesBuildNLink(rpmfiles fi, Header h)
+ 	for (int i=0; i < totalfc; i++) {
+ 	    int fcnt;
+ 	    int * data;
+-	    if (!S_ISREG(rpmfilesFMode(fi, i)) ||
++	    if (rpmfiWhatis(rpmfilesFMode(fi, i)) != REG ||
+ 		    (rpmfilesFFlags(fi, i) & RPMFILE_GHOST)) {
+ 		continue;
+ 	    }
+@@ -2058,14 +2103,14 @@ static int iterWriteArchiveNext(rpmfi fi)
+     /* loop over the files we can handle ourself */
+     do {
+ 	fx = iterWriteArchiveNextFile(fi);
+-	if (S_ISLNK(rpmfiFMode(fi))) {
++	if (rpmfiWhatis(rpmfiFMode(fi)) == LINK) {
+ 	    /* write symlink target */
+ 	    const char *lnk = rpmfiFLink(fi);
+ 	    size_t len = strlen(lnk);
+ 	    if (rpmfiArchiveWrite(fi, lnk, len) != len) {
+ 		return RPMERR_WRITE_FAILED;
+ 	    }
+-	} else if (S_ISREG(rpmfiFMode(fi)) && rpmfiFSize(fi)) {
++	} else if (rpmfiWhatis(rpmfiFMode(fi)) == REG && rpmfiFSize(fi)) {
+ 	    /* this file actually needs some content */
+ 	    return fx;
+ 	}
+@@ -2160,12 +2205,12 @@ static int iterReadArchiveNext(rpmfi fi)
+ 	if (rpmfilesFFlags(fi->files, fx) & RPMFILE_GHOST)
+ 	    return RPMERR_ITER_SKIP;
+ 
+-	if (S_ISREG(mode)) {
++	if (rpmfiWhatis(mode) == REG) {
+ 	    const int * links;
+ 	    uint32_t numlinks = rpmfilesFLinks(fi->files, fx, &links);
+ 	    if (!(numlinks > 1 && links[numlinks-1] != fx))
+ 		fsize = rpmfilesFSize(fi->files, fx);
+-	} else if (S_ISLNK(mode)) {
++	} else if (rpmfiWhatis(mode) == LINK) {
+ 	    /* Skip over symlink target data in payload */
+ 	    rpm_loff_t lsize = rpmfilesFSize(fi->files, fx);
+ 	    char *buf = xmalloc(lsize + 1);
+@@ -2243,7 +2288,7 @@ static int iterReadArchiveNextContentFirst(rpmfi fi)
+ int rpmfiArchiveHasContent(rpmfi fi)
+ {
+     int res = 0;
+-    if (fi && S_ISREG(rpmfiFMode(fi))) {
++    if (fi && rpmfiWhatis(rpmfiFMode(fi)) == REG) {
+ 	const int * links;
+ 	int nlink = rpmfiFLinks(fi, &links);
+ 	if (nlink > 1) {
+diff --git a/lib/rpmfiles.h b/lib/rpmfiles.h
+index 797b77bc8..294506033 100644
+--- a/lib/rpmfiles.h
++++ b/lib/rpmfiles.h
+@@ -20,13 +20,13 @@
+  * but are identical to the linux stat(2) file types.
+  */
+ typedef enum rpmFileTypes_e {
+-    PIPE	=  1,	/*!< pipe/fifo */
++    PIPE	=  1,	/*!< pipe/fifo */ /* MiNT: 10 */
+     CDEV	=  2,	/*!< character device */
+     XDIR	=  4,	/*!< directory */
+     BDEV	=  6,	/*!< block device */
+     REG		=  8,	/*!< regular file */
+-    LINK	= 10,	/*!< hard link */
+-    SOCK	= 12	/*!< socket */
++    LINK	= 10,	/*!< symlink */ /* MiNT: 14 */
++    SOCK	= 12	/*!< socket */ /* MiNT: 1 */
+ } rpmFileTypes;
+ 
+ /**
+@@ -453,6 +453,8 @@ rpmfileAttrs rpmfilesFFlags(rpmfiles fi, int ix);
+  * @return		file mode, 0 on invalid
+  */
+ rpm_mode_t rpmfilesFMode(rpmfiles fi, int ix);
++rpm_mode_t rpmfilesRpmToUnixMode(rpm_mode_t mode);
++rpm_mode_t rpmfilesUnixToRpmMode(mode_t mode);
+ 
+ /** \ingroup rpmfiles
+  * Return file (binary) digest of file info set.
+diff --git a/lib/rpmplugins.c b/lib/rpmplugins.c
+index 65e684e84..be7fa9603 100644
+--- a/lib/rpmplugins.c
++++ b/lib/rpmplugins.c
+@@ -55,6 +55,7 @@ rpmPlugins rpmpluginsNew(rpmts ts)
+ static rpmPlugin rpmPluginNew(const char *name, const char *path,
+ 			      const char *opts)
+ {
++#ifdef HAVE_DLFCN_H
+     rpmPlugin plugin = NULL;
+     rpmPluginHooks hooks = NULL;
+     char *error;
+@@ -84,6 +85,13 @@ static rpmPlugin rpmPluginNew(const char *name, const char *path,
+     free(hooks_name);
+ 
+     return plugin;
++#else
++	(void) name;
++	(void) path;
++	(void) opts;
++	rpmlog(RPMLOG_ERR, _("dlopen not supported on this platform\n"));
++    return NULL;
++#endif
+ }
+ 
+ static rpmPlugin rpmPluginFree(rpmPlugin plugin)
+@@ -92,7 +100,9 @@ static rpmPlugin rpmPluginFree(rpmPlugin plugin)
+ 	rpmPluginHooks hooks = plugin->hooks;
+ 	if (hooks->cleanup)
+ 	    hooks->cleanup(plugin);
++#ifdef HAVE_DLFCN_H
+ 	dlclose(plugin->handle);
++#endif
+ 	free(plugin->name);
+ 	free(plugin->opts);
+ 	free(plugin);
+diff --git a/lib/rpmrc.c b/lib/rpmrc.c
+index 0806e1b07..011ee2247 100644
+--- a/lib/rpmrc.c
++++ b/lib/rpmrc.c
+@@ -1,7 +1,9 @@
+ #include "system.h"
+ 
+ #include <stdarg.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ 
+ #if defined(__linux__)
+ #include <elf.h>
+@@ -79,11 +81,13 @@ struct rpmOption {
+     int localize;
+ };
+ 
++#if defined(__linux__) && (defined(__powerpc__) || defined(__sparc__) || (defined(__arm__) && defined(__ARM_PCS_VFP)))
+ static struct rpmat_s {
+     const char *platform;
+     uint64_t hwcap;
+     uint64_t hwcap2;
+ } rpmat;
++#endif
+ 
+ typedef struct defaultEntry_s {
+     char * name;
+@@ -145,7 +149,9 @@ struct rpmrcCtx_s {
+     struct tableType_s tables[RPM_MACHTABLE_COUNT];
+     int machDefaults;
+     int pathDefaults;
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_t lock;
++#endif
+ };
+ 
+ /* prototypes */
+@@ -162,7 +168,9 @@ static void rpmRebuildTargetVars(rpmrcCtx ctx, const char **target, const char *
+ static rpmrcCtx rpmrcCtxAcquire(int write)
+ {
+     static struct rpmrcCtx_s _globalCtx = {
++#ifdef HAVE_PTHREAD_H
+ 	.lock = PTHREAD_RWLOCK_INITIALIZER,
++#endif
+ 	.currTables = { RPM_MACHTABLE_INSTOS, RPM_MACHTABLE_INSTARCH },
+ 	.tables = {
+ 	    { "arch", 1, 0 },
+@@ -173,11 +181,13 @@ static rpmrcCtx rpmrcCtxAcquire(int write)
+     };
+     rpmrcCtx ctx = &_globalCtx;
+ 
++#ifdef HAVE_PTHREAD_H
+     /* XXX: errors should be handled */
+     if (write)
+ 	pthread_rwlock_wrlock(&ctx->lock);
+     else
+ 	pthread_rwlock_rdlock(&ctx->lock);
++#endif
+ 
+     return ctx;
+ }
+@@ -185,7 +195,9 @@ static rpmrcCtx rpmrcCtxAcquire(int write)
+ /* Release context (lock) */
+ static rpmrcCtx rpmrcCtxRelease(rpmrcCtx ctx)
+ {
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_unlock(&ctx->lock);
++#endif
+     return NULL;
+ }
+ 
+@@ -490,6 +502,7 @@ static rpmRC doReadRC(rpmrcCtx ctx, const char * urlfn)
+     rpmRC rc = RPMRC_FAIL;
+ 
+     fn = rpmGetPath(urlfn, NULL);
++    rpmlog(RPMLOG_DEBUG, "reading rc file: %s\n", fn);
+     if (rpmioSlurp(fn, (uint8_t **) &buf, NULL) || buf == NULL) {
+ 	goto exit;
+     }
+@@ -950,7 +963,7 @@ static int is_geode(void)
+ #endif
+ 
+ 
+-#if defined(__linux__)
++#if defined(__linux__) && (defined(__powerpc__) || defined(__sparc__) || (defined(__arm__) && defined(__ARM_PCS_VFP)))
+ #ifndef AT_HWCAP2 /* glibc < 2.18 */
+ #define AT_HWCAP2 26
+ #endif
+@@ -1013,7 +1026,7 @@ static void defaultMachine(rpmrcCtx ctx, const char ** arch, const char ** os)
+     canonEntry canon;
+     int rc;
+ 
+-#if defined(__linux__)
++#if defined(__linux__) && (defined(__powerpc__) || defined(__sparc__) || (defined(__arm__) && defined(__ARM_PCS_VFP)))
+     /* Populate rpmat struct with hw info */
+     read_auxv();
+ #endif
+@@ -1038,8 +1051,10 @@ static void defaultMachine(rpmrcCtx ctx, const char ** arch, const char ** os)
+ 
+ #if !defined(__linux__)
+ 	if (rstreq(un.sysname, "AIX")) {
++		char buf[sizeof(un.version) + sizeof(un.release) + 5];
+ 	    strcpy(un.machine, __power_pc() ? "ppc" : "rs6000");
+-	    sprintf(un.sysname,"aix%s.%s", un.version, un.release);
++	    sprintf(buf, "aix%s.%s", un.version, un.release);
++	    strncpy(un.sysname, buf, sizeof(un.sysname));
+ 	}
+ 	else if (rstreq(un.sysname, "Darwin")) { 
+ #if defined(__ppc__)
+@@ -1048,10 +1063,31 @@ static void defaultMachine(rpmrcCtx ctx, const char ** arch, const char ** os)
+ 	    strcpy(un.machine, "i386");
+ #elif defined(__x86_64__)
+ 	    strcpy(un.machine, "x86_64");
++#elif defined(__m68k__)
++	    strcpy(un.machine, "m68k");
+ #else
+ 	    #warning "No architecture defined! Automatic detection may not work!"
+ #endif 
+ 	}
++#ifdef __MINT__
++	else if (rstreq(un.sysname, "FreeMiNT") || rstreq(un.sysname, "MiNT")) {
++#if defined(__mcoldfire__)
++	    strcpy(un.machine, "coldfire");
++#elif defined(__m68020__)
++	    strcpy(un.machine, "m68020");
++#elif defined(__m68k__)
++	    strcpy(un.machine, "m68k");
++#else
++	    #warning "No architecture defined! Automatic detection may not work!"
++#endif
++		/*
++		 * seems to be broken currently in the interface between
++		 * aranym, mintlib, and mint kernel
++		 */
++		if (strcmp(un.machine, "aranym") == 0)
++			strcpy(un.machine, "m68020");
++	}
++#endif
+ 	else if (rstreq(un.sysname, "SunOS")) {
+ 	    /* Solaris 2.x: n.x.x becomes n-3.x.x */
+ 	    sprintf(un.sysname, "solaris%1d%s", atoi(un.release)-3,
+@@ -1645,11 +1681,20 @@ static void register_atexit(void)
+ 
+ int rpmReadConfigFiles(const char * file, const char * target)
+ {
+-    static pthread_once_t atexit_registered = PTHREAD_ONCE_INIT;
+     int rc = -1; /* assume failure */
+     rpmrcCtx ctx = rpmrcCtxAcquire(1);
++#ifdef HAVE_PTHREAD_H
++    static pthread_once_t atexit_registered = PTHREAD_ONCE_INIT;
+ 
+     pthread_once(&atexit_registered, register_atexit);
++#else
++	static int atexit_registered;
++	if (!atexit_registered)
++	{
++		register_atexit();
++		atexit_registered = 1;
++	}
++#endif
+ 
+     /* Force preloading of dlopen()'ed libraries in case we go chrooting */
+     if (rpmugInit())
+diff --git a/lib/rpmscript.c b/lib/rpmscript.c
+index 8d5b531f6..db400eab6 100644
+--- a/lib/rpmscript.c
++++ b/lib/rpmscript.c
+@@ -3,6 +3,8 @@
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ #include <errno.h>
++#include <unistd.h>
++#include <signal.h>
+ 
+ #include <rpm/rpmfileutil.h>
+ #include <rpm/rpmmacro.h>
+diff --git a/lib/rpmtag.h b/lib/rpmtag.h
+index b9623ef24..3ac8dfc0b 100644
+--- a/lib/rpmtag.h
++++ b/lib/rpmtag.h
+@@ -69,13 +69,13 @@ typedef enum rpmTag_e {
+     /* RPMTAG_SIG_BASE+19 reserved for RPMSIGTAG_FILESIGNATURELENGTH */
+ 
+     RPMTAG_NAME  		= 1000,	/* s */
+-#define	RPMTAG_N	RPMTAG_NAME	/* s */
++#define	RPMTAG_N	RPMTAG_NAME	/* s alias */
+     RPMTAG_VERSION		= 1001,	/* s */
+-#define	RPMTAG_V	RPMTAG_VERSION	/* s */
++#define	RPMTAG_V	RPMTAG_VERSION	/* s alias */
+     RPMTAG_RELEASE		= 1002,	/* s */
+-#define	RPMTAG_R	RPMTAG_RELEASE	/* s */
++#define	RPMTAG_R	RPMTAG_RELEASE	/* s alias */
+     RPMTAG_EPOCH   		= 1003,	/* i */
+-#define	RPMTAG_E	RPMTAG_EPOCH	/* i */
++#define	RPMTAG_E	RPMTAG_EPOCH	/* i alias */
+     RPMTAG_SUMMARY		= 1004,	/* s{} */
+     RPMTAG_DESCRIPTION		= 1005,	/* s{} */
+     RPMTAG_BUILDTIME		= 1006,	/* i */
+@@ -122,7 +122,7 @@ typedef enum rpmTag_e {
+     RPMTAG_ARCHIVESIZE		= 1046,	/* i */
+     RPMTAG_PROVIDENAME		= 1047,	/* s[] */
+ #define	RPMTAG_PROVIDES RPMTAG_PROVIDENAME	/* s[] */
+-#define	RPMTAG_P	RPMTAG_PROVIDENAME	/* s[] */
++#define	RPMTAG_P	RPMTAG_PROVIDENAME	/* s[] alias */
+     RPMTAG_REQUIREFLAGS		= 1048,	/* i[] */
+     RPMTAG_REQUIRENAME		= 1049,	/* s[] */
+ #define	RPMTAG_REQUIRES RPMTAG_REQUIRENAME	/* s[] */
+@@ -132,7 +132,7 @@ typedef enum rpmTag_e {
+     RPMTAG_CONFLICTFLAGS	= 1053, /* i[] */
+     RPMTAG_CONFLICTNAME		= 1054,	/* s[] */
+ #define	RPMTAG_CONFLICTS RPMTAG_CONFLICTNAME	/* s[] */
+-#define	RPMTAG_C	RPMTAG_CONFLICTNAME	/* s[] */
++#define	RPMTAG_C	RPMTAG_CONFLICTNAME	/* s[] alias */
+     RPMTAG_CONFLICTVERSION	= 1055,	/* s[] */
+     RPMTAG_DEFAULTPREFIX	= 1056, /* s internal - deprecated */
+     RPMTAG_BUILDROOT		= 1057, /* s internal - obsolete */
+@@ -161,7 +161,7 @@ typedef enum rpmTag_e {
+     RPMTAG_BUILDARCHS		= 1089, /* s[] */
+     RPMTAG_OBSOLETENAME		= 1090,	/* s[] */
+ #define	RPMTAG_OBSOLETES RPMTAG_OBSOLETENAME	/* s[] */
+-#define	RPMTAG_O	RPMTAG_OBSOLETENAME	/* s[] */
++#define	RPMTAG_O	RPMTAG_OBSOLETENAME	/* s[] alias */
+     RPMTAG_VERIFYSCRIPTPROG	= 1091,	/* s[] */
+     RPMTAG_TRIGGERSCRIPTPROG	= 1092,	/* s[] */
+     RPMTAG_DOCDIR		= 1093, /* internal */
+diff --git a/lib/rpmts.c b/lib/rpmts.c
+index 22c14d02c..c4fbdc67d 100644
+--- a/lib/rpmts.c
++++ b/lib/rpmts.c
+@@ -103,12 +103,12 @@ int rpmtsOpenDB(rpmts ts, int dbmode)
+     return rc;
+ }
+ 
+-int rpmtsInitDB(rpmts ts, int dbmode)
++int rpmtsInitDB(rpmts ts, mode_t perms)
+ {
+     rpmtxn txn = rpmtxnBegin(ts, RPMTXN_WRITE);
+     int rc = -1;
+     if (txn)
+-	    rc = rpmdbInit(ts->rootDir, dbmode);
++	    rc = rpmdbInit(ts->rootDir, perms);
+     rpmtxnEnd(txn);
+     return rc;
+ }
+@@ -162,6 +162,24 @@ int rpmtsVerifyDB(rpmts ts)
+     return rc;
+ }
+ 
++int rpmtsHeaderAddDB(rpmts ts, Header h)
++{
++    if (rpmtsOpenDB(ts, (O_RDWR|O_CREAT)))
++	return RPMRC_FAIL;
++    if (rpmdbAdd(rpmtsGetRdb(ts), h) != 0)
++	return RPMRC_FAIL;
++    return RPMRC_OK;
++}
++
++int rpmtsHeaderRemoveDB(rpmts ts, unsigned int hdrNum)
++{
++    if (rpmtsOpenDB(ts, (O_RDWR|O_CREAT)))
++	return RPMRC_FAIL;
++    if (rpmdbRemove(rpmtsGetRdb(ts), hdrNum) != 0)
++	return RPMRC_FAIL;
++    return RPMRC_OK;
++}
++
+ /* keyp might no be defined. */
+ rpmdbMatchIterator rpmtsInitIterator(const rpmts ts, rpmDbiTagVal rpmtag,
+ 			const void * keyp, size_t keylen)
+diff --git a/lib/rpmts.h b/lib/rpmts.h
+index c13ffadb2..e2493d274 100644
+--- a/lib/rpmts.h
++++ b/lib/rpmts.h
+@@ -256,7 +256,7 @@ int rpmtsOpenDB(rpmts ts, int dbmode);
+  * @param dbmode	O_RDONLY or O_RDWR
+  * @return		0 on success
+  */
+-int rpmtsInitDB(rpmts ts, int dbmode);
++int rpmtsInitDB(rpmts ts, mode_t perms);
+ 
+ /** \ingroup rpmts
+  * Return the transaction database mode
+@@ -288,6 +288,22 @@ int rpmtsRebuildDB(rpmts ts);
+  */
+ int rpmtsVerifyDB(rpmts ts);
+ 
++/** \ingroup rpmts
++ * Add a header to the database used by the transaction.
++ * @param ts            transaction set 
++ * @param h             header to add
++ * @return              0 on success
++ */
++int rpmtsHeaderAddDB(rpmts ts, Header h);
++
++/** \ingroup rpmts
++ * Remove a header from the database used by the transaction.
++ * @param ts            transaction set 
++ * @param hdrNum        index of header to remove
++ * @return              0 on success
++ */
++int rpmtsHeaderRemoveDB(rpmts ts, unsigned int hdrNum);
++
+ /** \ingroup rpmts
+  * Return transaction database iterator.
+  * @param ts		transaction set
+diff --git a/lib/rpmug.c b/lib/rpmug.c
+index 119d8e585..7b5fa9aa3 100644
+--- a/lib/rpmug.c
++++ b/lib/rpmug.c
+@@ -1,6 +1,8 @@
+ #include "system.h"
+ 
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ #include <pwd.h>
+ #include <grp.h>
+ #include <netdb.h>
+@@ -11,6 +13,47 @@
+ #include "lib/rpmug.h"
+ #include "debug.h"
+ 
++#if defined(__GLIBC__)
++
++static int inchroot;
++
++/*
++ * Unfortunatelly glibc caches nss/nscd data and there is no
++ * good way to flush those caches when we did a chroot(). Thus
++ * we need to parse /etc/passwd and /etc/group ourselfs.
++ */
++static int safe_lookup(const char * file, const char * name)
++{
++    FILE *fp;
++    int l;
++    char buf[4096], *p;
++
++    if (!name || !*name)
++	return -1;
++    l = strlen(name);
++    if ((fp = fopen(file, "r")) == 0)
++	return -1;
++    while ((p = fgets(buf, sizeof(buf), fp)) != 0) {
++	if (*p == '#')
++	    continue;
++	while (*p && (*p == ' ' || *p == '\t'))
++	    p++;
++	if (strncmp(p, name, l) != 0 || p[l] != ':')
++	    continue;
++	p = strchr(p + l + 1, ':');
++	if (!p)
++	    continue;
++	fclose(fp);
++	p++;
++	while (*p && (*p == ' ' || *p == '\t'))
++	    p++;
++	return atoi(p);
++    }
++    fclose(fp);
++    return -1;
++}
++#endif
++
+ /* 
+  * These really ought to use hash tables. I just made the
+  * guess that most files would be owned by root or the same person/group
+@@ -44,17 +87,28 @@ int rpmugUid(const char * thisUname, uid_t * uid)
+ 	    lastUnameAlloced = thisUnameLen + 10;
+ 	    lastUname = xrealloc(lastUname, lastUnameAlloced);	/* XXX memory leak */
+ 	}
+-	strcpy(lastUname, thisUname);
+ 
+-	pwent = getpwnam(thisUname);
+-	if (pwent == NULL) {
+-	    /* FIX: shrug */
+-	    endpwent();
++#if defined(__GLIBC__)
++	if (inchroot) {
++	    int uid =  safe_lookup("/etc/passwd", thisUname);
++	    if (uid < 0)
++		return -1;
++	    lastUid = uid;
++	} else
++#endif
++	{
+ 	    pwent = getpwnam(thisUname);
+-	    if (pwent == NULL) return -1;
++	    if (pwent == NULL) {
++		/* FIX: shrug */
++		endpwent();
++		pwent = getpwnam(thisUname);
++		if (pwent == NULL) return -1;
++	    }
++	    lastUid = pwent->pw_uid;
+ 	}
+ 
+-	lastUid = pwent->pw_uid;
++	strcpy(lastUname, thisUname);
++	lastUnameLen = thisUnameLen;
+     }
+ 
+     *uid = lastUid;
+@@ -87,18 +141,29 @@ int rpmugGid(const char * thisGname, gid_t * gid)
+ 	    lastGnameAlloced = thisGnameLen + 10;
+ 	    lastGname = xrealloc(lastGname, lastGnameAlloced);	/* XXX memory leak */
+ 	}
+-	strcpy(lastGname, thisGname);
+ 
+-	grent = getgrnam(thisGname);
+-	if (grent == NULL) {
+-	    /* FIX: shrug */
+-	    endgrent();
++#if defined(__GLIBC__)
++	if (inchroot) {
++	    int gid =  safe_lookup("/etc/group", thisGname);
++	    if (gid < 0)
++		return -1;
++	    lastGid = gid;
++	} else
++#endif
++	{
+ 	    grent = getgrnam(thisGname);
+ 	    if (grent == NULL) {
+-		return -1;
++		/* FIX: shrug */
++		endgrent();
++		grent = getgrnam(thisGname);
++		if (grent == NULL) {
++		    return -1;
++		}
+ 	    }
++	    lastGid = grent->gr_gid;
+ 	}
+-	lastGid = grent->gr_gid;
++	strcpy(lastGname, thisGname);
++	lastGnameLen = thisGnameLen;
+     }
+ 
+     *gid = lastGid;
+@@ -110,7 +175,7 @@ const char * rpmugUname(uid_t uid)
+ {
+     static uid_t lastUid = (uid_t) -1;
+     static char * lastUname = NULL;
+-    static size_t lastUnameLen = 0;
++    static size_t lastUnameAlloced = 0;
+ 
+     if (uid == (uid_t) -1) {
+ 	lastUid = (uid_t) -1;
+@@ -127,9 +192,9 @@ const char * rpmugUname(uid_t uid)
+ 
+ 	lastUid = uid;
+ 	len = strlen(pwent->pw_name);
+-	if (lastUnameLen < len + 1) {
+-	    lastUnameLen = len + 20;
+-	    lastUname = xrealloc(lastUname, lastUnameLen);
++	if (lastUnameAlloced < len + 1) {
++	    lastUnameAlloced = len + 20;
++	    lastUname = xrealloc(lastUname, lastUnameAlloced);
+ 	}
+ 	strcpy(lastUname, pwent->pw_name);
+ 
+@@ -141,7 +206,7 @@ const char * rpmugGname(gid_t gid)
+ {
+     static gid_t lastGid = (gid_t) -1;
+     static char * lastGname = NULL;
+-    static size_t lastGnameLen = 0;
++    static size_t lastGnameAlloced = 0;
+ 
+     if (gid == (gid_t) -1) {
+ 	lastGid = (gid_t) -1;
+@@ -158,9 +223,9 @@ const char * rpmugGname(gid_t gid)
+ 
+ 	lastGid = gid;
+ 	len = strlen(grent->gr_name);
+-	if (lastGnameLen < len + 1) {
+-	    lastGnameLen = len + 20;
+-	    lastGname = xrealloc(lastGname, lastGnameLen);
++	if (lastGnameAlloced < len + 1) {
++	    lastGnameAlloced = len + 20;
++	    lastGname = xrealloc(lastGname, lastGnameAlloced);
+ 	}
+ 	strcpy(lastGname, grent->gr_name);
+ 
+@@ -179,9 +244,18 @@ static void loadLibs(void)
+ 
+ int rpmugInit(void)
+ {
++#ifdef HAVE_PTHREAD_H
+     static pthread_once_t libsLoaded = PTHREAD_ONCE_INIT;
+ 
+     pthread_once(&libsLoaded, loadLibs);
++#else
++	static int libsLoaded;
++	if (!libsLoaded)
++	{
++		loadLibs();
++		libsLoaded = 1;
++	}
++#endif
+     return 0;
+ }
+ 
+@@ -192,3 +266,16 @@ void rpmugFree(void)
+     rpmugUname(-1);
+     rpmugGname(-1);
+ }
++
++void rpmugChroot(int in)
++{
++    /* tell libc to drop caches / file descriptors */
++    endpwent();
++    endgrent();
++    /* drop our own caches */
++    rpmugUid(NULL, NULL);
++    rpmugGid(NULL, NULL);
++#if defined(__GLIBC__)
++    inchroot = in;
++#endif
++}
+diff --git a/lib/rpmug.h b/lib/rpmug.h
+index 22d64eb88..e57291685 100644
+--- a/lib/rpmug.h
++++ b/lib/rpmug.h
+@@ -15,4 +15,6 @@ int rpmugInit(void);
+ 
+ void rpmugFree(void);
+ 
++void rpmugChroot(int in);
++
+ #endif /* _RPMUG_H */
+diff --git a/lib/rpmvs.c b/lib/rpmvs.c
+index 0d475af86..1408508d1 100644
+--- a/lib/rpmvs.c
++++ b/lib/rpmvs.c
+@@ -1,6 +1,8 @@
+ #include "system.h"
+ 
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ #include <rpm/rpmkeyring.h>
+ #include <rpm/rpmmacro.h>
+ #include <rpm/rpmlog.h>
+diff --git a/lib/tagexts.c b/lib/tagexts.c
+index f72ff60f1..d0f332410 100644
+--- a/lib/tagexts.c
++++ b/lib/tagexts.c
+@@ -3,6 +3,7 @@
+  */
+ 
+ #include "system.h"
++#include <wchar.h>
+ 
+ #include <rpm/rpmtypes.h>
+ #include <rpm/rpmlib.h>
+@@ -197,6 +198,114 @@ typedef enum tMode_e {
+     TRANSFILETRIGGER  = 2,
+ } tMode;
+ 
++static char * strtolocale(char *str)
++{
++    wchar_t *wstr, *wp;
++    const unsigned char *cp;
++    char *cc;
++    int state = 0;
++    int c;
++    int ccl, cca, mb_cur_max;
++    size_t l;
++    mbstate_t ps;
++    int strisutf8 = 1;
++    int locisutf8 = 1;
++
++    if (!str)
++	return 0;
++    if (!*str)
++	return str;
++    wstr = (wchar_t *)xmalloc((strlen(str) + 1) * sizeof(*wstr));
++    wp = wstr;
++    cp = (const unsigned char *)str;
++    while ((c = *cp++) != 0) {
++	if (state) {
++	    if ((c & 0xc0) != 0x80) {
++		/* encoding error */
++		break;
++	    }
++	    c = (c & 0x3f) | (state << 6);
++	    if (!(state & 0x40000000)) {
++	      /* check for overlong sequences */
++	        if ((c & 0x820823e0) == 0x80000000)
++		    c = 0xfdffffff;
++	        else if ((c & 0x020821f0) == 0x02000000)
++		    c = 0xfff7ffff;
++	        else if ((c & 0x000820f8) == 0x00080000)
++		    c = 0xffffd000;
++	        else if ((c & 0x0000207c) == 0x00002000)
++		    c = 0xffffff70;
++	    }
++	} else {
++	    /* new sequence */
++	    if (c >= 0xfe)
++		c = 0xfffd;
++	    else if (c >= 0xfc)
++		c = (c & 0x01) | 0xbffffffc;    /* 5 bytes to follow */
++	    else if (c >= 0xf8)
++		c = (c & 0x03) | 0xbfffff00;    /* 4 */
++	    else if (c >= 0xf0)
++		c = (c & 0x07) | 0xbfffc000;    /* 3 */
++	    else if (c >= 0xe0)
++		c = (c & 0x0f) | 0xbff00000;    /* 2 */
++	    else if (c >= 0xc2)
++		c = (c & 0x1f) | 0xfc000000;    /* 1 */
++	    else if (c >= 0xc0)
++		c = 0xfdffffff;         /* overlong */
++	    else if (c >= 0x80)
++		c = 0xfffd;
++        }
++	state = (c & 0x80000000) ? c : 0;
++	if (state)
++	    continue;
++	*wp++ = (wchar_t)c;
++    }
++    if (state) {
++	/* encoding error, assume latin1 */
++        strisutf8 = 0;
++	cp = (const unsigned char *)str;
++	wp = wstr;
++	while ((c = *cp++) != 0) {
++	    *wp++ = (wchar_t)c;
++	}
++    }
++    *wp = 0;
++    mb_cur_max = MB_CUR_MAX;
++    memset(&ps, 0, sizeof(ps));
++    cc = xmalloc(mb_cur_max);
++    /* test locale encoding */
++    if (wcrtomb(cc, 0x20ac, &ps) != 3 || memcmp(cc, "\342\202\254", 3))
++	locisutf8 = 0;
++    if (locisutf8 == strisutf8) {
++	wstr = _free(wstr);
++	return str;
++    }
++    str = _free((char *)str);
++    memset(&ps, 0, sizeof(ps));
++    ccl = cca = 0;
++    for (wp = wstr; ; wp++) {
++	l = wcrtomb(cc + ccl, *wp, &ps);
++	if (*wp == 0)
++	    break;
++	if (l == (size_t)-1) {
++	    if (*wp < (wchar_t)256 && mbsinit(&ps)) {
++		cc[ccl] = *wp;
++		l = 1;
++	    } else
++	        l = wcrtomb(cc + ccl, (wchar_t)'?', &ps);
++	}
++        if (l == 0 || l == (size_t)-1)
++	    continue;
++        ccl += l;
++        if (ccl > cca) {
++	    cca = ccl + 16;
++	    cc = xrealloc(cc, cca + mb_cur_max);
++	}
++    }
++    wstr = _free(wstr);
++    return (char *)cc;
++}
++
+ /**
+  * Retrieve trigger info.
+  * @param mode		type of trigger (see tMode_e)
+@@ -539,10 +648,10 @@ static int filerequireTag(Header h, rpmtd td, headerGetFlags hgflags)
+ 
+ #if defined(ENABLE_NLS)
+ extern int _nl_msg_cat_cntr;	/* XXX GNU gettext voodoo */
+-#endif
+ static const char * const language = "LANGUAGE";
+ 
+ static const char * const _macro_i18ndomains = "%{?_i18ndomains}";
++#endif
+ 
+ /**
+  * Retrieve i18n text.
+@@ -607,9 +716,40 @@ static int i18nTag(Header h, rpmTag tag, rpmtd td, headerGetFlags hgflags)
+ #endif
+ 
+     rc = headerGet(h, tag, td, HEADERGET_ALLOC);
++    if (rc && td->data) {
++	td->data = strtolocale(td->data);
++    }
+     return rc;
+ }
+ 
++/**
++ * Retrieve text and convert to locale.
++ */
++static int localeTag(Header h, rpmTag tag, rpmtd td)
++{
++    int rc;
++    rc = headerGet(h, tag, td, HEADERGET_ALLOC);
++    if (!rc)
++	return 0;
++    if (td->type == RPM_STRING_TYPE) {
++	td->data = strtolocale(td->data);
++	td->count = 1;
++    } else if (td->type == RPM_STRING_ARRAY_TYPE) {
++	char **arr;
++	int i;
++	arr = xmalloc(td->count * sizeof(*arr));
++	for (i = 0; i < td->count; i++) {
++	    arr[i] = xstrdup(((char **)td->data)[i]);
++	    arr[i] = strtolocale(arr[i]);
++	}
++	_free(td->data);
++	td->data = arr;
++	td->flags = RPMTD_ALLOCED | RPMTD_PTR_ALLOCED;
++    }
++    return rc; 
++}
++
++
+ /**
+  * Retrieve summary text.
+  * @param h		header
+@@ -634,6 +774,18 @@ static int descriptionTag(Header h, rpmtd td, headerGetFlags hgflags)
+     return i18nTag(h, RPMTAG_DESCRIPTION, td, hgflags);
+ }
+ 
++static int changelognameTag(Header h, rpmtd td, headerGetFlags hgflags)
++{
++    (void)hgflags;
++    return localeTag(h, RPMTAG_CHANGELOGNAME, td);
++}
++
++static int changelogtextTag(Header h, rpmtd td, headerGetFlags hgflags)
++{
++    (void)hgflags;
++    return localeTag(h, RPMTAG_CHANGELOGTEXT, td);
++}
++
+ /**
+  * Retrieve group text.
+  * @param h		header
+@@ -971,6 +1123,8 @@ static const struct headerTagFunc_s rpmHeaderTagExtensions[] = {
+     { RPMTAG_LONGARCHIVESIZE,	longarchivesizeTag },
+     { RPMTAG_LONGSIZE,		longsizeTag },
+     { RPMTAG_LONGSIGSIZE,	longsigsizeTag },
++    { RPMTAG_CHANGELOGNAME,     changelognameTag },
++    { RPMTAG_CHANGELOGTEXT,     changelogtextTag },
+     { RPMTAG_DBINSTANCE,	dbinstanceTag },
+     { RPMTAG_EVR,		evrTag },
+     { RPMTAG_NVR,		nvrTag },
+diff --git a/lib/tagname.c b/lib/tagname.c
+index 68b252991..c02073ff4 100644
+--- a/lib/tagname.c
++++ b/lib/tagname.c
+@@ -4,7 +4,9 @@
+ 
+ #include "system.h"
+ 
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ 
+ #include <rpm/header.h>
+ #include <rpm/rpmstring.h>
+@@ -61,11 +63,20 @@ static int tagCmpValue(const void * avp, const void * bvp)
+     return ret;
+ }
+ 
++#ifdef HAVE_PTHREAD_H
+ static pthread_once_t tagsLoaded = PTHREAD_ONCE_INIT;
++#else
++static int tagsLoaded;
++#endif
+ 
+ /* Initialize tag by-value and by-name lookup tables */
+ static void loadTags(void)
+ {
++#ifndef HAVE_PTHREAD_H
++	if (tagsLoaded)
++		return;
++	tagsLoaded = 1;
++#endif
+     for (int i = 0; i < rpmTagTableSize; i++) {
+ 	tagsByValue[i] = &rpmTagTable[i];
+ 	tagsByName[i] = &rpmTagTable[i];
+@@ -130,7 +141,11 @@ const char * rpmTagGetName(rpmTagVal tag)
+     const char *name = "(unknown)";
+     const struct headerTagTableEntry_s *t;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&tagsLoaded, loadTags);
++#else
++	loadTags();
++#endif
+ 
+     switch (tag) {
+     case RPMDBI_PACKAGES:
+@@ -158,7 +173,11 @@ rpmTagType rpmTagGetType(rpmTagVal tag)
+     const struct headerTagTableEntry_s *t;
+     rpmTagType tagtype = RPM_NULL_TYPE;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&tagsLoaded, loadTags);
++#else
++	loadTags();
++#endif
+ 
+     t = entryByTag(tag);
+     if (t) {
+@@ -173,7 +192,11 @@ rpmTagVal rpmTagGetValue(const char * tagstr)
+     const struct headerTagTableEntry_s *t;
+     rpmTagType tagval = RPMTAG_NOT_FOUND;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&tagsLoaded, loadTags);
++#else
++	loadTags();
++#endif
+ 
+     if (!rstrcasecmp(tagstr, "Packages"))
+ 	return RPMDBI_PACKAGES;
+@@ -232,7 +255,11 @@ int rpmTagGetNames(rpmtd tagnames, int fullname)
+     const char **names;
+     const char *name;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&tagsLoaded, loadTags);
++#else
++	loadTags();
++#endif
+ 
+     if (tagnames == NULL || tagsByName == NULL)
+ 	return 0;
+diff --git a/lib/transaction.c b/lib/transaction.c
+index e51cff25a..0244937b5 100644
+--- a/lib/transaction.c
++++ b/lib/transaction.c
+@@ -161,7 +161,11 @@ static rpmDiskSpaceInfo rpmtsCreateDSI(const rpmts ts, dev_t dev,
+     dsi->bneeded = 0;
+     dsi->ineeded = 0;
+ #ifdef STATFS_HAS_F_BAVAIL
++# ifdef ST_RDONLY
+     dsi->bavail = (sfb.f_flag & ST_RDONLY) ? 0 : sfb.f_bavail;
++# else
++    dsi->bavail = sfb.f_bavail;
++# endif
+ #else
+ /* FIXME: the statfs struct doesn't have a member to tell how many blocks are
+  * available for non-superusers.  f_blocks - f_bfree is probably too big, but
+@@ -1601,7 +1605,10 @@ rpmRC runScript(rpmts ts, rpmte te, Header h, ARGV_const_t prefixes,
+     rpmTagVal stag = rpmScriptTag(script);
+     FD_t sfd = NULL;
+     int warn_only = !(rpmScriptFlags(script) & RPMSCRIPT_FLAG_CRITICAL);
++    rpmdb rdb = rpmtsGetRdb(ts);
+ 
++    if (stag == RPMTAG_POSTIN && rpmExpandNumeric("%{_fail_on_postinstall_errors}"))
++        warn_only = 0;
+     /* Create a temporary transaction element for triggers from rpmdb */
+     if (te == NULL) {
+ 	te = rpmteNew(ts, h, TR_RPMDB, NULL, NULL, 0);
+@@ -1612,10 +1619,12 @@ rpmRC runScript(rpmts ts, rpmte te, Header h, ARGV_const_t prefixes,
+     if (sfd == NULL)
+ 	sfd = rpmtsScriptFd(ts);
+ 
++    rpmdbCtrl(rdb, RPMDB_CTRL_SUSPEND_DBLOCK);
+     rpmswEnter(rpmtsOp(ts, RPMTS_OP_SCRIPTLETS), 0);
+     rc = rpmScriptRun(script, arg1, arg2, sfd,
+ 		      prefixes, rpmtsPlugins(ts));
+     rpmswExit(rpmtsOp(ts, RPMTS_OP_SCRIPTLETS), 0);
++    rpmdbCtrl(rdb, RPMDB_CTRL_RESUME_DBLOCK);
+ 
+     /* Map warn-only errors to "notfound" for script stop callback */
+     stoprc = (rc != RPMRC_OK && warn_only) ? RPMRC_NOTFOUND : rc;
+diff --git a/luaext/Makefile.am b/luaext/Makefile.am
+index 19ce1b8b7..101b7ad35 100644
+--- a/luaext/Makefile.am
++++ b/luaext/Makefile.am
+@@ -3,9 +3,8 @@ noinst_LTLIBRARIES = libluaext.la
+ EXTRA_DIST = \
+ 	modemuncher.c
+ 
+-AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir) -I$(top_builddir)/include -I.
++AM_CPPFLAGS = -I$(top_builddir) -I$(top_srcdir) -I$(top_builddir)/include -I. -DWITH_POSIX @LUA_CFLAGS@
+ 
+-libluaext_la_CPPFLAGS = $(AM_CPPFLAGS) -DWITH_POSIX @LUA_CFLAGS@
+ libluaext_la_LIBADD = @LUA_LIBS@
+ libluaext_la_SOURCES = \
+ 		lposix.h \
+diff --git a/luaext/lposix.c b/luaext/lposix.c
+index a3f4852cf..325032256 100644
+--- a/luaext/lposix.c
++++ b/luaext/lposix.c
+@@ -41,6 +41,65 @@
+ #define MYBUFSIZ 512
+ #endif
+ 
++#ifndef _PC_LINK_MAX
++#define _PC_LINK_MAX -1
++#endif
++#ifndef _PC_MAX_CANON
++#define _PC_MAX_CANON -1
++#endif
++#ifndef _PC_MAX_INPUT
++#define _PC_MAX_INPUT -1
++#endif
++#ifndef _PC_NAME_MAX
++#define _PC_NAME_MAX -1
++#endif
++#ifndef _PC_PATH_MAX
++#define _PC_PATH_MAX -1
++#endif
++#ifndef _PC_PIPE_BUF
++#define _PC_PIPE_BUF -1
++#endif
++#ifndef _PC_NO_TRUNC
++#define _PC_NO_TRUNC -1
++#endif
++#ifndef _PC_CHOWN_RESTRICTED
++#define _PC_CHOWN_RESTRICTED -1
++#endif
++#ifndef _PC_VDISABLE
++#define _PC_VDISABLE -1
++#endif
++
++#ifndef _SC_ARG_MAX
++#define _SC_ARG_MAX -1
++#endif
++#ifndef _SC_CHILD_MAX
++#define _SC_CHILD_MAX -1
++#endif
++#ifndef _SC_CLK_TCK
++#define _SC_CLK_TCK -1
++#endif
++#ifndef _SC_NGROUPS_MAX
++#define _SC_NGROUPS_MAX -1
++#endif
++#ifndef _SC_STREAM_MAX
++#define _SC_STREAM_MAX -1
++#endif
++#ifndef _SC_TZNAME_MAX
++#define _SC_TZNAME_MAX -1
++#endif
++#ifndef _SC_OPEN_MAX
++#define _SC_OPEN_MAX -1
++#endif
++#ifndef _SC_JOB_CONTROL
++#define _SC_JOB_CONTROL -1
++#endif
++#ifndef _SC_SAVED_IDS
++#define _SC_SAVED_IDS -1
++#endif
++#ifndef _SC_VERSION
++#define _SC_VERSION -1
++#endif
++
+ #include "modemuncher.c"
+ 
+ extern int _rpmlua_have_forked;
+@@ -870,7 +929,11 @@ static const luaL_Reg R[] =
+ 
+ LUALIB_API int luaopen_posix (lua_State *L)
+ {
++#if (LUA_VERSION_NUM <= 501) || defined(LUA_COMPAT_MODULE)
++	luaL_openlib(L, MYNAME, R, 0);
++#else
+ 	luaL_newlib(L, R);
++#endif
+ 	lua_pushliteral(L,"version");		/** version */
+ 	lua_pushliteral(L,MYVERSION);
+ 	lua_settable(L,-3);
+diff --git a/luaext/lrexlib.c b/luaext/lrexlib.c
+index 09c5a6454..d32d7718e 100644
+--- a/luaext/lrexlib.c
++++ b/luaext/lrexlib.c
+@@ -327,14 +327,24 @@ LUALIB_API int luaopen_rex(lua_State *L)
+ {
+ #ifdef WITH_POSIX
+   createmeta(L, "regex_t");
++#if (LUA_VERSION_NUM <= 501) || defined(LUA_COMPAT_MODULE)
++  luaL_openlib(L, NULL, rexmeta, 0);
++#else
+   luaL_setfuncs(L, rexmeta, 0);
++#endif
+   lua_pop(L, 1);
+ #endif
+ #ifdef WITH_PCRE
+   createmeta(L, "pcre");
++#if (LUA_VERSION_NUM <= 501) || defined(LUA_COMPAT_MODULE)
++  luaL_openlib(L, NULL, pcremeta, 0);
++#else
+   luaL_setfuncs(L, pcremeta, 0);
++#endif
+   lua_pop(L, 1);
+ #endif
++#if !((LUA_VERSION_NUM <= 501) || defined(LUA_COMPAT_MODULE))
+   luaL_newlib(L, rexlib);
++#endif
+   return 1;
+ }
+diff --git a/macros.in b/macros.in
+index fe9803aad..1a03bd0f0 100644
+--- a/macros.in
++++ b/macros.in
+@@ -153,7 +153,7 @@
+ %_bzip2bin		%{__bzip2}
+ 
+ #	The location of the rpm database file(s).
+-%_dbpath		%{_var}/lib/rpm
++%_dbpath		%{_usr}/lib/sysimage/rpm
+ 
+ #	The location of the rpm database file(s) after "rpm --rebuilddb".
+ %_dbpath_rebuild	%{_dbpath}
+@@ -217,7 +217,8 @@ package or when debugging this package.\
+ %endif\
+ %{nil}
+ 
+-%_defaultdocdir		%{_datadir}/doc
++%_defaultdocdir		%{_datadir}/doc/packages
++%_docdir_fmt		%%{NAME}
+ %_defaultlicensedir	%{_datadir}/licenses
+ 
+ # Following macros for filtering auto deps must not be used in spec files.
+@@ -276,7 +277,8 @@ package or when debugging this package.\
+ %_tmppath		%{_var}/tmp
+ 
+ #	Path to top of build area.
+-%_topdir		%{getenv:HOME}/rpmbuild
++%_topdir		%{expand:%%global _topdir %{lua:if posix.access(rpm.expand("%{_usrsrc}/packages"), "w") then print "%{_usrsrc}/packages" else print "%{getenv:HOME}/rpmbuild" end} \
++}%_topdir
+ 
+ #	The path to the unzip executable (legacy, use %{__unzip} instead).
+ %_unzipbin		%{__unzip}
+@@ -319,6 +321,16 @@ package or when debugging this package.\
+ #
+ #%bugurl
+ 
++#	Configurable distribution tag, same as Disttag: tag in a specfile.
++#	The tag will be used to supply reliable information to tools like
++#	rpmfind.
++#
++# Note: You should not configure with disturl (or build packages with
++# the Disttag: tag) unless you are willing to supply content in a
++# yet-to-be-determined format at the tag specified.
++#
++#%disttag
++
+ #	Boolean (i.e. 1 == "yes", 0 == "no") that controls whether files
+ #	marked as %doc should be installed.
+ #%_excludedocs
+@@ -388,7 +400,7 @@ package or when debugging this package.\
+ #		"w.ufdio"	uncompressed
+ #
+ #%_source_payload	w9.gzdio
+-#%_binary_payload	w9.gzdio
++%_binary_payload	w5.xzdio
+ 
+ #	Algorithm to use for generating file checksum digests on build.
+ #	If not specified or 0, MD5 is used.
+@@ -440,7 +452,7 @@ package or when debugging this package.\
+ # Should empty %files manifest file terminate a build?
+ #
+ # Note: The default value should be 0 for legacy compatibility.
+-%_empty_manifest_terminate_build	1
++%_empty_manifest_terminate_build	0
+ 
+ #
+ # Should binaries in noarch packages terminate a build?
+@@ -450,7 +462,7 @@ package or when debugging this package.\
+ %_invalid_encoding_terminates_build 1
+ 
+ # Should invalid version format in requires, provides, ... terminate a build?
+-%_wrong_version_format_terminate_build 1
++%_wrong_version_format_terminate_build 0
+ 
+ #
+ # Should rpm try to download missing sources at build-time?
+@@ -495,6 +507,19 @@ package or when debugging this package.\
+ #
+ #%_include_minidebuginfo	1
+ 
++# Number of debugging information entries (DIEs) above which
++# dwz will stop considering file for multifile optimizations
++# and enter a low memory mode, in which it will optimize
++# in about half the memory needed otherwise.
++%_dwz_low_mem_die_limit          10000000
++# Number of DIEs above which dwz will stop processing
++# a file altogether.
++%_dwz_max_die_limit              50000000
++
++%_find_debuginfo_dwz_opts --run-dwz\\\
++   --dwz-low-mem-die-limit %{_dwz_low_mem_die_limit}\\\
++   --dwz-max-die-limit %{_dwz_max_die_limit}
++
+ #
+ # Include a .gdb_index section in the .debug files.
+ # Requires _enable_debug_packages and gdb-add-index installed.
+@@ -527,7 +552,7 @@ package or when debugging this package.\
+ #   Same as for "separate" but if the __debug_package global is set then
+ #   the -debuginfo package will have a compatibility link for the main
+ #   ELF /usr/lib/debug/.build-id/xx/yyy -> /usr/lib/.build-id/xx/yyy
+-%_build_id_links compat
++%_build_id_links alldebug
+ 
+ # Whether build-ids should be made unique between package version/releases
+ # when generating debuginfo packages. If set to 1 this will pass
+@@ -556,10 +581,10 @@ package or when debugging this package.\
+ %_unique_debug_srcs	1
+ 
+ # Whether rpm should put debug source files into its own subpackage
+-#%_debugsource_packages	1
++%_debugsource_packages	1
+ 
+ # Whether rpm should create extra debuginfo packages for each subpackage
+-#%_debuginfo_subpackages 1
++%_debuginfo_subpackages 1
+ 
+ #
+ # Use internal dependency generator rather than external helpers?
+@@ -572,16 +597,22 @@ package or when debugging this package.\
+ # Directories whose contents should be considered as documentation.
+ %__docdir_path %{_datadir}/doc:%{_datadir}/man:%{_datadir}/info:%{_datadir}/gtk-doc/html:%{?_docdir}:%{?_mandir}:%{?_infodir}:%{?_javadocdir}:/usr/doc:/usr/man:/usr/info:/usr/X11R6/man
+ 
++# maxnum,cuttime,minnum
++# 2009/03/01 (SLES11 GA)
++%_binarychangelogtrim 0,1235862000,10
++
+ #
+ # Path to scripts to autogenerate package dependencies,
+ #
+ # Note: Used iff _use_internal_dependency_generator is zero.
+ #%__find_provides	%{_rpmconfigdir}/rpmdeps --provides
+ #%__find_requires	%{_rpmconfigdir}/rpmdeps --requires
+-%__find_provides	%{_rpmconfigdir}/find-provides
+-%__find_requires	%{_rpmconfigdir}/find-requires
++%__find_provides	%{_rpmconfigdir}/find-provides %name
++%__find_requires	%{_rpmconfigdir}/find-requires %name
+ #%__find_conflicts	???
+ #%__find_obsoletes	???
++%__find_supplements	%{_rpmconfigdir}/find-supplements %name
++#%__find_enhances	???
+ 
+ # 
+ # Path to file attribute classifications for automatic dependency 
+@@ -660,10 +691,10 @@ package or when debugging this package.\
+ # Misc BDB tuning options
+ %__dbi_other			mp_mmapsize=128Mb mp_size=1Mb
+ 
+-%_dbi_config			%{?__dbi_other}
++%_dbi_config			%{?__dbi_other} nofsync
+ 
+ # "Packages" should have shared/exclusive fcntl(2) lock using "lockdbfd".
+-%_dbi_config_Packages		%{?_dbi_config} lockdbfd
++%_dbi_config_Packages		%{?__dbi_other} lockdbfd
+ 
+ #==============================================================================
+ # ---- GPG/PGP/PGP5 signature macros.
+@@ -983,7 +1014,7 @@ package or when debugging this package.\
+ %_datadir		%{_prefix}/share
+ %_sysconfdir		/etc
+ %_sharedstatedir	%{_prefix}/com
+-%_localstatedir		%{_prefix}/var
++%_localstatedir		/var
+ %_lib			lib
+ %_libdir		%{_exec_prefix}/%{_lib}
+ %_includedir		%{_prefix}/include
+@@ -1000,7 +1031,7 @@ package or when debugging this package.\
+ %_build_vendor		%{_host_vendor}
+ %_build_os		%{_host_os}
+ %_host			@host@
+-%_host_alias		@host_alias@%{nil}
++%_host_alias		@host@%{nil}
+ %_host_cpu		@host_cpu@
+ %_host_vendor		@host_vendor@
+ %_host_os		@host_os@
+@@ -1065,7 +1096,8 @@ package or when debugging this package.\
+ 	--localstatedir=%{_localstatedir} \\\
+ 	--sharedstatedir=%{_sharedstatedir} \\\
+ 	--mandir=%{_mandir} \\\
+-	--infodir=%{_infodir}
++	--infodir=%{_infodir} \\\
++	--disable-dependency-tracking
+ 
+ #------------------------------------------------------------------------------
+ # Tested features of make
+@@ -1119,7 +1151,9 @@ package or when debugging this package.\
+ 
+ #------------------------------------------------------------------------------
+ # arch macro for all supported ARM processors
+-%arm	armv3l armv4b armv4l armv4tl armv5tl armv5tel armv5tejl armv6l armv6hl armv7l armv7hl armv7hnl armv8l armv8hl armv8hnl armv8hcnl
++%arm    armv3l armv4b armv4l armv4tl armv5b armv5l armv5teb armv5tel armv5tejl armv6l armv6hl armv7l armv7hl armv7hnl
++%arml   armv3l armv4l armv5l armv5tel armv6l armv6hl armv7l armv7hl armv7hnl
++%armb   armv4b armv5b armv5teb
+ 
+ #------------------------------------------------------------------------------
+ # arch macro for 32-bit MIPS processors
+@@ -1149,6 +1183,183 @@ package or when debugging this package.\
+ # arch macro for all supported Alpha processors
+ %alpha	alpha alphaev56 alphaev6 alphaev67
+ 
++# More useful perl macros (from Raul Dias <rsd@swi.com.br>)
++#
++%perl_version		%(perl -V:version | sed "s!.*='!!;s!'.*!!")
++%perl_man1ext		%(perl -V:man1ext | sed "s!.*='!!;s!'.*!!")
++%perl_man3ext		%(perl -V:man3ext | sed "s!.*='!!;s!'.*!!")
++%perl_man1dir		%(perl -V:man1dir | sed "s!.*='!!;s!'.*!!")
++%perl_man3dir		%(perl -V:man3dir | sed "s!.*='!!;s!'.*!!")
++%perl_installman1dir	%(perl -V:installman1dir | sed "s!.*='!!;s!'.*!!")
++%perl_installman3dir	%(perl -V:installman3dir | sed "s!.*='!!;s!'.*!!")
++%perl_installarchlib	%(perl -V:installarchlib | sed "s!.*='!!;s!'.*!!")
++%perl_prefix		%{buildroot}
++
++#------------------------------------------------------------------------------
++# Python specific macro definitions (originally from PLD).
++#
++%py_ver			%(python -c "import sys; v=sys.version_info[:2]; print '%%d.%%d'%%v" 2>/dev/null || echo PYTHON-NOT-FOUND)
++%py_prefix		%(python -c "import sys; print sys.prefix" 2>/dev/null || echo PYTHON-NOT-FOUND)
++%py_libdir		%{py_prefix}/%{_lib}/python%{py_ver}
++%py_incdir		%{py_prefix}/include/python%{py_ver}
++%py_sitedir		%{py_libdir}/site-packages
++%py_compile(O)	\
++find %1 -name '*.pyc' -exec rm -f {} \\; \
++python -c "import sys, os, compileall; br='%{buildroot}'; compileall.compile_dir(sys.argv[1], ddir=br and (sys.argv[1][len(os.path.abspath(br)):]+'/') or None)" %1 \
++%{-O: \
++find %1 -name '*.pyo' -exec rm -f {} \\; \
++python -O -c "import sys, os, compileall; br='%{buildroot}'; compileall.compile_dir(sys.argv[1], ddir=br and (sys.argv[1][len(os.path.abspath(br)):]+'/') or None)" %1 \
++}
++%py_requires(d) \
++%define minver %py_ver \
++%define maxver %(python -c "import sys; a,b=sys.version_info[:2]; print '%%d.%%d'%%(a,b+1)" 2>/dev/null || echo PYTHON-NOT-FOUND) \
++BuildRequires: python %{-d:python-devel} \
++PreReq: python >= %minver, python < %maxver
++
++#------------------------------------------------------------------------------
++#
++# RPM macros for Java applications.
++#
++# JPackage Project  <http://www.jpackage.org/>
++#   David Walluck   <david@anti-microsoft.org>
++#   Ville Skyttä    <ville.skytta@iki.fi>
++#   Nicolas Mailhot <Nicolas.Mailhot@laPoste.net>
++#
++# $Id: macros.jpackage,v 1.1.2.5 2003/08/30 13:24:58 scop Exp $
++#
++
++# ---- default Java directories
++
++#
++# Root directory where all Java VMs/SDK/JREs are installed.
++#
++%_jvmdir	%{_libdir}/jvm
++
++#
++# Root directory where all Java VMs/SDK/JREs expose their jars
++#
++%_jvmjardir	%{_libdir}/jvm-exports
++
++#
++# Root directory for all Java VM/SDK/JRE's private things.
++#
++%_jvmprivdir	%{_libdir}/jvm-private
++
++#
++# Directory where arch and version independent jars are installed.
++# This has already been integrated in RH macros following our request.
++#
++# By extension:
++# %{_javadir}-ext:
++#   - version dependent jars
++# %{_javadir}-x.y.z:
++#   - jars for Java standard x.y.z (usually symlinks to  %{_javadir}-ext)
++# %{_javadir}-utils:
++#   - Java-related scripts
++#
++# To simplify things only %{_javadir} is defined.
++#
++%_javadir        %{_datadir}/java
++
++#
++# Directory where arch-specific (JNI) version-independent jars are installed.
++#
++# By extension:
++# %{_jnidir}-ext:
++#   - version dependent jars
++# %{_jnidir}-x.y.z:
++#   - jars for Java standard x.y.z (usually symlinks to  %{_jnidir}-ext)
++# To simplify things only %{_jnidir} is defined.
++#
++%_jnidir        %{_libdir}/java
++
++#
++# Root directory where all javadoc is installed. Also already in RH macros.
++#
++%_javadocdir     %{_datadir}/javadoc
++
++#
++# Current default JVM home.
++#
++%java_home      %(. %{_javadir}-utils/java-functions; set_jvm; echo $JAVA_HOME)
++
++# ---- default Java commands
++
++%ant            JAVA_HOME=%{java_home} ant
++%jar            %{java_home}/bin/jar
++%java           %(. %{_javadir}-utils/java-functions; set_javacmd; echo $JAVACMD)
++%javac          %{java_home}/bin/javac
++%javadoc        %{java_home}/bin/javadoc
++
++# ---- Java extension handling macros
++
++#
++# add_jvm_extension should be used in %install by extension packages to declare
++# what extension jars they provide.
++#
++# For example a package that provides foo.jar which is the bar extension
++# under java 1.2 and 1.3 should do a:
++#
++#   %install
++#   ... # create foo.jar in %{javadir}-ext
++#   %add_jvm_extension  foo bar 1.2 1.3
++#
++#   %files
++#   %{javadir}-ext/foo.jar
++#   %{javadir}-*/bar.jar
++#
++%add_jvm_extension JAVA_LIBDIR=%{buildroot}/%{_javadir}	%{_bindir}/jvmjar -l
++
++#
++# Standard JPackage script
++#
++# This is kind of tasteless and should be moved to an external template
++#
++# %1	main class
++# %2	flags
++# %3	options
++# %4	jars (separated by ':')
++# %5    the name of script you wish to create
++# %6    whether to prefer a jre over a sdk when finding a jvm
++#
++%jpackage_script() \
++install -d -m 755 $RPM_BUILD_ROOT%{_bindir}\
++cat > $RPM_BUILD_ROOT%{_bindir}/%5 << EOF \
++#!/bin/sh\
++#\
++# %{name} script\
++# JPackage Project <http://www.jpackage.org/>\
++\
++# Source functions library\
++_prefer_jre="%{?6}"\
++. %{_javadir}-utils/java-functions\
++\
++# Source system prefs\
++if [ -f %{_sysconfdir}/java/%{name}.conf ] ; then\
++  . %{_sysconfdir}/java/%{name}.conf\
++fi\
++\
++# Source user prefs\
++if [ -f \\$HOME/.%{name}rc ] ; then\
++  . \\$HOME/.%{name}rc\
++fi\
++\
++# Configuration\
++MAIN_CLASS=%1\
++BASE_FLAGS=%2\
++BASE_OPTIONS=%3\
++BASE_JARS="%(echo %4 | sed -e 's,:, ,g')"\
++\
++# Set parameters\
++set_jvm\
++set_classpath \\$BASE_JARS\
++set_flags \\$BASE_FLAGS\
++set_options \\$BASE_OPTIONS\
++\
++# Let's start\
++run "\\$@"\
++EOF
++
+ #------------------------------------------------------------------------------
+ # arch macro for all supported PowerPC 64 processors
+ %power64	ppc64 ppc64p7 ppc64le
+@@ -1163,6 +1374,7 @@ package or when debugging this package.\
+ # %files -f %{name}.lang
+ #
+ %find_lang	%{_rpmconfigdir}/find-lang.sh %{buildroot}
++%no_lang_C	--without-C
+ 
+ # Commands + opts to use for retrieving remote files
+ # Proxy opts can be set through --httpproxy/--httpport popt aliases,
+@@ -1290,5 +1502,31 @@ end}
+ %{expand:%__scm_setup_%{__scm} %{!-v:-q}}\
+ %{!-N:%autopatch %{-v} %{-p:-p%{-p*}}}
+ 
++# Should errors in %post scriptlet be propagated as errors? 
++#
++# Note: set to 1 for legacy compatibility.
++%_fail_on_postinstall_errors  0
++
+ # \endverbatim
+ #*/
++
++
++#------------------------------------------------------------------------
++# standard build service macros
++#
++%ext_info .gz
++%ext_man .gz
++
++%info_add() test -x /sbin/install-info -a -f %{?2}%{?!2:%{_infodir}}/%{1}%ext_info && /sbin/install-info --info-dir=%{?2}%{?!2:%{_infodir}} %{?2}%{?!2:%{_infodir}}/%{1}%ext_info \
++%{nil}
++
++%info_del() test -x /sbin/install-info -a ! -f %{?2}%{?!2:%{_infodir}}/%{1}%ext_info && /sbin/install-info --quiet --delete --info-dir=%{?2}%{?!2:%{_infodir}} %{?2}%{?!2:%{_infodir}}/%{1}%ext_info \
++%{nil}
++
++%service_add() %{fillup_and_insserv %{1}}
++
++%user_group_add() \
++/usr/sbin/groupadd -r %{1} 2>/dev/null || :\
++/usr/sbin/useradd -r -g %{1} -d %{2} -s %{3} -c %{4} %{1} 2>/dev/null || :\
++%{nil}
++
+diff --git a/misc/fnmatch.c b/misc/fnmatch.c
+index 8de22c8b0..621713696 100644
+--- a/misc/fnmatch.c
++++ b/misc/fnmatch.c
+@@ -56,7 +56,7 @@ __strchrnul (const char *s, int c)
+   switch (sizeof (longword))
+     {
+     case 4: magic_bits = 0x7efefeffL; break;
+-    case 8: magic_bits = ((0x7efefefeL << 16) << 16) | 0xfefefeffL; break;
++    case 8: magic_bits = (unsigned long)(((0x7efefefeLL << 16) << 16) | 0xfefefeffL); break;
+     default:
+       abort ();
+     }
+diff --git a/misc/fts.c b/misc/fts.c
+index 5c6f53d40..67ad21dc2 100644
+--- a/misc/fts.c
++++ b/misc/fts.c
+@@ -32,7 +32,7 @@ static char sccsid[] = "@(#)fts.c	8.6 (Berkeley) 8/14/94";
+ #endif /* LIBC_SCCS and not lint */
+ 
+ /* Conditional to set up proper fstat64 implementation */
+-#if defined(hpux) || defined(sun)
++#if defined(hpux) || defined(sun) || defined(__MINT__)
+ #   define FTS_FSTAT64(_fd, _sbp)   fstat((_fd), (_sbp))
+ #else
+ #   define FTS_FSTAT64(_fd, _sbp)   fstat64((_fd), (_sbp))
+@@ -53,16 +53,14 @@ static char sccsid[] = "@(#)fts.c	8.6 (Berkeley) 8/14/94";
+ /* Conditionals for working around non-GNU environments */
+ #if defined(hpux)
+ #   define        _INCLUDE_POSIX_SOURCE
+-#   define __errno_location() 	(&errno)
+ #   define dirfd(dirp)		-1
+ #   define stat64		stat
+ #endif
+ #if defined(sun)
+-#   define __errno_location()	(&errno)
+ #   define dirfd(dirp)		-1
+ #endif
+-#if defined(__APPLE__)
+-#   define __errno_location()	(__error())
++#if defined(__MINT__)
++#   define stat64		stat
+ #endif
+ 
+ #include "system.h"
+@@ -70,11 +68,12 @@ static char sccsid[] = "@(#)fts.c	8.6 (Berkeley) 8/14/94";
+ #include <string.h>
+ #include <errno.h>
+ #include "misc/rpmfts.h"
+-#   define __set_errno(val) (*__errno_location ()) = (val)
+ #   define __open	open
+ #   define __close	close
+ #   define __fchdir	fchdir
+ #endif
++#undef __set_errno
++#define __set_errno(val) ((errno) = (val))
+ 
+ 
+ /* Largest alignment size needed, minus one.
+diff --git a/misc/rpmfts.h b/misc/rpmfts.h
+index 30ad0ee8e..90fdd0fda 100644
+--- a/misc/rpmfts.h
++++ b/misc/rpmfts.h
+@@ -38,7 +38,9 @@
+ #include <features.h>
+ #else
+ 
++#ifndef __THROW
+ #   define __THROW
++#endif
+ 
+ #if !defined(_LARGEFILE64_SOURCE)
+ # define	_LARGEFILE64_SOURCE
+diff --git a/platform.in b/platform.in
+index 61f5e18a0..ca00a7fab 100644
+--- a/platform.in
++++ b/platform.in
+@@ -41,7 +41,7 @@
+ %_oldincludedir		@oldincludedir@
+ %_infodir		@infodir@
+ %_mandir		@mandir@
+-%_initddir		%{_sysconfdir}/rc.d/init.d
++%_initddir		%{_sysconfdir}/init.d
+ # Deprecated misspelling, present for backwards compatibility.
+ %_initrddir		%{_initddir}
+ %_rundir		@RUNDIR@
+@@ -103,3 +103,21 @@
+ @apple@#
+ @apple@%_use_internal_dependency_generator     0
+ @apple@%__so	dylib
++@suse@#---------------------------------------------------------------------
++@suse@#        Expanded at end of %prep
++@suse@#
++@suse@%__id_u          %{__id} -u
++@suse@%__chown_Rhf     %{__chown} -Rhf
++@suse@%__chgrp_Rhf     %{__chgrp} -Rhf
++@suse@%_fixowner       [ `%{__id_u}` = '0' ] && %{__chown_Rhf} root
++@suse@%_fixgroup       [ `%{__id_u}` = '0' ] && %{__chgrp_Rhf} root
++@suse@%_fixperms       %{__chmod} -Rf @FIXPERMS@
++@suse@
++@suse@#---------------------------------------------------------------------
++@suse@#        Expanded at start of %build
++@suse@#
++@suse@%__spec_build_pre %{___build_pre}\
++@suse@%{?buildroot:  %__rm -rf "$RPM_BUILD_ROOT"\
++@suse@  %__mkdir_p `dirname "$RPM_BUILD_ROOT"`\
++@suse@  %__mkdir "$RPM_BUILD_ROOT"\
++@suse@}
+diff --git a/python/rpmsystem-py.h b/python/rpmsystem-py.h
+index e6fdbfe24..2a971b01d 100644
+--- a/python/rpmsystem-py.h
++++ b/python/rpmsystem-py.h
+@@ -1,6 +1,10 @@
+ #ifndef H_SYSTEM_PYTHON
+ #define	H_SYSTEM_PYTHON
+ 
++#ifdef HAVE_CONFIG_H
++#include "../config.h"
++#endif
++
+ #if defined(__APPLE__)
+ #include <sys/types.h>
+ #endif
+diff --git a/python/rpmts-py.c b/python/rpmts-py.c
+index b5910cca4..f42186b0b 100644
+--- a/python/rpmts-py.c
++++ b/python/rpmts-py.c
+@@ -346,7 +346,7 @@ rpmts_InitDB(rpmtsObject * s)
+ {
+     int rc;
+ 
+-    rc = rpmtsInitDB(s->ts, O_RDONLY);
++    rc = rpmtsInitDB(s->ts, 0644);
+     if (rc == 0)
+ 	rc = rpmtsCloseDB(s->ts);
+ 
+diff --git a/rpm.pc.in b/rpm.pc.in
+index d942e5165..ecc399a62 100644
+--- a/rpm.pc.in
++++ b/rpm.pc.in
+@@ -10,6 +10,6 @@ Version: @VERSION@
+ URL: http://rpm.org
+ Requires.private: @ZSTD_REQUIRES@ @LMDB_REQUIRES@
+ # Conflicts:
+-Cflags: -I${includedir}
+-Libs: -L${libdir} -lrpm -lrpmio
+-Libs.private: -lpopt -lrt -lpthread @WITH_LZMA_LIB@ @WITH_DB_LIB@ @WITH_BZ2_LIB@ @WITH_ZLIB_LIB@ @WITH_BEECRYPT_LIB@ @WITH_NSS_LIB@ @LUA_LIBS@
++Cflags: 
++Libs: -lrpm -lrpmio -lpopt @WITH_LZMA_LIB@ @WITH_DB_LIB@ @WITH_LIBELF_LIB@ @WITH_BZ2_LIB@ @WITH_ZSTD_LIB@ @WITH_ZLIB_LIB@ @WITH_BEECRYPT_LIB@ @WITH_NSS_LIB@ @LUA_LIBS@
++Libs.private: -lpopt @WITH_LZMA_LIB@ @WITH_DB_LIB@ @WITH_LIBELF_LIB@ @WITH_BZ2_LIB@ @WITH_ZSTD_LIB@ @WITH_ZLIB_LIB@ @WITH_BEECRYPT_LIB@ @WITH_NSS_LIB@ @LUA_LIBS@
+diff --git a/rpm2archive.c b/rpm2archive.c
+index 8f97e7020..03528f740 100644
+--- a/rpm2archive.c
++++ b/rpm2archive.c
+@@ -38,7 +38,7 @@ static void fill_archive_entry(struct archive * a, struct archive_entry * entry,
+     archive_entry_set_rdev(entry, rpmfiFRdev(fi));
+     archive_entry_set_mtime(entry, rpmfiFMtime(fi), 0);
+ 
+-    if (S_ISLNK(mode))
++    if (rpmfiWhatis(mode) == LINK)
+ 	archive_entry_set_symlink(entry, rpmfiFLink(fi));
+ }
+ 
+@@ -163,7 +163,7 @@ static int process_package(rpmts ts, char * filename)
+ 
+ 	archive_write_header(a, entry);
+ 
+-	if (S_ISREG(mode) && (nlink == 1 || rpmfiArchiveHasContent(fi))) {
++	if (rpmfiWhat(mode) == REG && (nlink == 1 || rpmfiArchiveHasContent(fi))) {
+ 	    write_file_content(a, buf, fi);
+ 	}
+     }
+diff --git a/rpmarchive.c b/rpmarchive.c
+new file mode 100644
+index 000000000..08f91fbb5
+--- /dev/null
++++ b/rpmarchive.c
+@@ -0,0 +1,43 @@
++/* rpmarchive: spit out the main archive portion of a package */
++
++#include "system.h"
++
++#include "rpmlead.h"
++#include "signature.h"
++#include "header.h"
++
++int main(int argc, char **argv)
++{
++	FD_t fdi,
++	 fdo;
++	char buffer[1024];
++	struct rpmlead lead;
++	Header hd;
++	int ct;
++
++	setprogname(argv[0]);				/* Retrofit glibc __progname */
++	if (argc == 1)
++	{
++		fdi = Fopen("-", "r.ufdio");
++	} else
++	{
++		fdi = Fopen(argv[1], "r.ufdio");
++	}
++	if (fdi == NULL || Ferror(fdi))
++	{
++		perror("input");
++		exit(EXIT_FAILURE);
++	}
++
++	readLead(fdi, &lead);
++	rpmReadSignature(fdi, NULL, lead.signature_type);
++	hd = headerRead(fdi, (lead.major >= 3) ? HEADER_MAGIC_YES : HEADER_MAGIC_NO);
++
++	fdo = Fopen("-", "w.ufdio");
++	while ((ct = Fread(buffer, sizeof(buffer), 1, fdi)))
++	{
++		Fwrite(buffer, ct, 1, fdo);
++	}
++
++	return 0;
++}
+diff --git a/rpmdump.c b/rpmdump.c
+new file mode 100644
+index 000000000..1550442ca
+--- /dev/null
++++ b/rpmdump.c
+@@ -0,0 +1,223 @@
++#include "system.h"
++
++#include <rpmlib.h>
++#include <errno.h>
++#include <stdint.h>
++#include <ctype.h>
++#include "header.h"
++#include "header_internal.h"
++
++#define HEADER_DUMP_INLINE   1
++
++typedef struct indexEntry_s * indexEntry;
++struct indexEntry_s {
++    struct entryInfo_s info;	/*!< Description of tag data. */
++    rpm_data_t data; 		/*!< Location of tag data. */
++    int length;			/*!< No. bytes of data. */
++    int rdlen;			/*!< No. bytes of data in region. */
++};
++
++typedef rpmFlags headerFlags;
++
++struct headerToken_s {
++    void * blob;		/*!< Header region blob. */
++    indexEntry index;		/*!< Array of tags. */
++    int indexUsed;		/*!< Current size of tag array. */
++    int indexAlloced;		/*!< Allocated size of tag array. */
++    unsigned int instance;	/*!< Rpmdb instance (offset) */
++    headerFlags flags;
++    int sorted;			/*!< Current sort method */
++    int nrefs;			/*!< Reference count. */
++};
++
++typedef const struct headerTagTableEntry_s * headerTagTableEntry;
++struct headerTagTableEntry_s {
++    const char * name;		/*!< Tag name. */
++    const char * shortname;	/*!< "Human readable" short name. */
++    rpmTagVal val;		/*!< Tag numeric value. */
++    rpmTagType type;		/*!< Tag type. */
++    rpmTagReturnType retype;	/*!< Tag return type. */
++    int extension;		/*!< Extension or "real" tag */
++};
++#include "lib/tagtbl.C"
++
++
++static void headerDump(Header h, FILE *f, int flags, const struct headerTagTableEntry_s *tags)
++{
++	int i;
++	indexEntry p;
++	const struct headerTagTableEntry_s *tage;
++	const char *tag;
++	char *type;
++
++	/* First write out the length of the index (count of index entries) */
++	fprintf(f, "Entry count: %d\n", h->indexUsed);
++
++	/* Now write the index */
++	p = h->index;
++	fprintf(f, "\n             CT  TAG                      TYPE               OFFSET     COUNT\n");
++	             /* "Entry      : %.3d %-14s %-18s 0x%.8x %.8d\n", */
++	for (i = 0; i < h->indexUsed; i++)
++	{
++		switch (p->info.type)
++		{
++		case RPM_NULL_TYPE:
++			type = "NULL_TYPE";
++			break;
++		case RPM_CHAR_TYPE:
++			type = "CHAR_TYPE";
++			break;
++		case RPM_BIN_TYPE:
++			type = "BIN_TYPE";
++			break;
++		case RPM_INT8_TYPE:
++			type = "INT8_TYPE";
++			break;
++		case RPM_INT16_TYPE:
++			type = "INT16_TYPE";
++			break;
++		case RPM_INT32_TYPE:
++			type = "INT32_TYPE";
++			break;
++		case RPM_INT64_TYPE:
++			type = "INT64_TYPE";
++			break;
++		case RPM_STRING_TYPE:
++			type = "STRING_TYPE";
++			break;
++		case RPM_STRING_ARRAY_TYPE:
++			type = "STRING_ARRAY_TYPE";
++			break;
++		case RPM_I18NSTRING_TYPE:
++			type = "I18N_STRING_TYPE";
++			break;
++		default:
++			type = "(unknown)";
++			break;
++		}
++
++		tage = tags;
++		while (tage->name && tage->val != p->info.tag)
++			tage++;
++
++		if (!tage->name)
++			tag = "(unknown)";
++		else
++			tag = tage->name;
++
++		fprintf(f, "Entry      : %.3d %-24s %-18s 0x%.8x %.8d\n", i,
++				tag, type, p->info.offset, p->info.count);
++
++		if (flags & HEADER_DUMP_INLINE)
++		{
++			char *dp = p->data;
++			int c = p->info.count;
++			int ct = 0;
++
++			/* Print the data inline */
++			switch (p->info.type)
++			{
++			case RPM_INT32_TYPE:
++				while (c--)
++				{
++					fprintf(f, "       Data: %.3d 0x%08x (%d)\n", ct++,
++							(unsigned) *((uint32_t *) dp), (int) *((uint32_t *) dp));
++					dp += sizeof(uint32_t);
++				}
++				break;
++
++			case RPM_INT16_TYPE:
++				while (c--)
++				{
++					fprintf(f, "       Data: %.3d 0x%04x (%d)\n", ct++,
++							(unsigned) (*((uint16_t *) dp) & 0xffff), (int) *((uint16_t *) dp));
++					dp += sizeof(uint16_t);
++				}
++				break;
++			case RPM_INT8_TYPE:
++				while (c--)
++				{
++					fprintf(f, "       Data: %.3d 0x%02x (%d)\n", ct++,
++							(unsigned) (*((uint8_t *) dp) & 0xff), (int) *((uint8_t *) dp));
++					dp += sizeof(uint8_t);
++				}
++				break;
++			case RPM_BIN_TYPE:
++				while (c > 0)
++				{
++					fprintf(f, "       Data: %.3d ", ct);
++					while (c--)
++					{
++						fprintf(f, "%02x ", (unsigned) (*(unsigned char *) dp & 0xff));
++						ct++;
++						dp += sizeof(unsigned char);
++						if (!(ct % 8))
++						{
++							break;
++						}
++					}
++					fprintf(f, "\n");
++				}
++				break;
++			case RPM_CHAR_TYPE:
++				while (c--)
++				{
++					char ch = (char) *((char *) dp);
++
++					fprintf(f, "       Data: %.3d 0x%2x %c (%d)\n", ct++,
++							(unsigned) (ch & 0xff), (isprint(ch) ? ch : ' '), (int) *((char *) dp));
++					dp += sizeof(char);
++				}
++				break;
++			case RPM_STRING_TYPE:
++			case RPM_STRING_ARRAY_TYPE:
++			case RPM_I18NSTRING_TYPE:
++				while (c--)
++				{
++					fprintf(f, "       Data: %.3d %s\n", ct++, (char *) dp);
++					dp = strchr(dp, 0);
++					dp++;
++				}
++				break;
++			default:
++				fprintf(stderr, _("Data type %d not supported\n"), (int) p->info.type);
++				exit(EXIT_FAILURE);
++				break;
++			}
++		}
++		p++;
++	}
++}
++
++int main(int argc, char **argv)
++{
++	Header h;
++	FD_t fdi;
++
++	if (argc == 1)
++	{
++		fdi = Fopen("-", "r.ufdio");
++	} else
++	{
++		fdi = Fopen(argv[1], "r.ufdio");
++	}
++
++	if (fdi == NULL || Ferror(fdi))
++	{
++		fprintf(stderr, _("cannot open %s: %s\n"), argv[1], strerror(errno));
++		exit(EXIT_FAILURE);
++	}
++
++	h = headerRead(fdi, HEADER_MAGIC_YES);
++	if (!h)
++	{
++		fprintf(stderr, _("headerRead error: %s\n"), strerror(errno));
++		exit(EXIT_FAILURE);
++	}
++	Fclose(fdi);
++
++	headerDump(h, stdout, HEADER_DUMP_INLINE, rpmTagTable);
++	headerFree(h);
++
++	return 0;
++}
+diff --git a/rpmheader.c b/rpmheader.c
+new file mode 100644
+index 000000000..e07b278ab
+--- /dev/null
++++ b/rpmheader.c
+@@ -0,0 +1,49 @@
++/* rpmheader: spit out the header portion of a package */
++
++#include "system.h"
++#include <errno.h>
++#include <netinet/in.h>
++
++#include <rpmlib.h>
++#include "rpmlead.h"
++#include "signature.h"
++#include "header.h"
++
++int main(int argc, char **argv)
++{
++	FD_t fdi, fdo;
++	Header hd;
++	char *emsg;
++	int rc;
++    Header sigh = NULL;
++
++	if (argc == 1)
++	{
++		fdi = Fopen("-", "r.ufdio");
++	} else
++	{
++		fdi = Fopen(argv[1], "r.ufdio");
++	}
++
++	if (fdi == NULL || Ferror(fdi))
++	{
++		perror("input");
++		return EXIT_FAILURE;
++	}
++
++	if ((rc = rpmLeadRead(fdi, &emsg)) != RPMRC_OK)
++	{
++		fprintf(stderr, "%s\n", emsg);
++		return EXIT_FAILURE;
++	}
++	if ((rc = rpmReadSignature(fdi, &sigh, &emsg)) != RPMRC_OK)
++	{
++		fprintf(stderr, "%s\n", emsg);
++		return EXIT_FAILURE;
++	}
++	hd = headerRead(fdi, HEADER_MAGIC_YES);
++	fdo = Fopen("-", "w.ufdio");
++	rc = headerWrite(fdo, hd, HEADER_MAGIC_YES);
++
++	return rc;
++}
+diff --git a/rpmio/Makefile.am b/rpmio/Makefile.am
+index 63de85d89..827d738c6 100644
+--- a/rpmio/Makefile.am
++++ b/rpmio/Makefile.am
+@@ -26,14 +26,18 @@ librpmio_la_SOURCES = \
+ 
+ if WITH_BEECRYPT
+ librpmio_la_SOURCES += digest_beecrypt.c
++AM_CPPFLAGS += -DDIGEST_VERSION='" (BeeCrypt)"'
+ else
+ if WITH_OPENSSL
+ librpmio_la_SOURCES += digest_openssl.c
++AM_CPPFLAGS += -DDIGEST_VERSION='" (OpenSSL)"'
+ else
+ if WITH_LIBGCRYPT
+ librpmio_la_SOURCES += digest_libgcrypt.c
++AM_CPPFLAGS += -DDIGEST_VERSION='" (Libgcrypt)"'
+ else
+ librpmio_la_SOURCES += digest_nss.c
++AM_CPPFLAGS += -DDIGEST_VERSION='" (NSS-3)"'
+ endif
+ endif
+ endif
+@@ -51,7 +55,7 @@ librpmio_la_LIBADD = \
+ 	@WITH_POPT_LIB@ \
+ 	@WITH_LZMA_LIB@ \
+ 	$(ZSTD_LIBS) \
+-	-lpthread
++	$(PTHREAD_LIBS)
+ 
+ if WITH_INTERNAL_BEECRYPT
+ librpmio_la_LIBADD += $(libbeecrypt_la)
+diff --git a/rpmio/argv.c b/rpmio/argv.c
+index 2cb01ea9f..f0f46f528 100644
+--- a/rpmio/argv.c
++++ b/rpmio/argv.c
+@@ -10,6 +10,11 @@
+ 
+ #include "debug.h"
+ 
++#if !defined(HAVE_SETPROGNAME) && !defined(HAVE___PROGNAME)
++const char *__progname = "foo";
++#endif
++
++
+ void argvPrint(const char * msg, ARGV_const_t argv, FILE * fp)
+ {
+     ARGV_const_t av;
+diff --git a/rpmio/macro.c b/rpmio/macro.c
+index 0b9f813be..200738666 100644
+--- a/rpmio/macro.c
++++ b/rpmio/macro.c
+@@ -4,7 +4,9 @@
+ 
+ #include "system.h"
+ #include <stdarg.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ #include <errno.h>
+ #ifdef HAVE_GETOPT_H
+ #include <getopt.h>
+@@ -62,8 +64,10 @@ struct rpmMacroContext_s {
+     int n;      /*!< No. of macros. */
+     int depth;		 /*!< Depth tracking when recursing from Lua  */
+     int level;		 /*!< Scope level tracking when recursing from Lua  */
++#ifdef HAVE_PTHREAD_H
+     pthread_mutex_t lock;
+     pthread_mutexattr_t lockattr;
++#endif
+ };
+ 
+ 
+@@ -82,6 +86,7 @@ rpmMacroContext rpmCLIMacroContext = &rpmCLIMacroContext_s;
+  * mutexes so we need to have a separate PTHREAD_ONCE initializer just
+  * to initialize the otherwise static macro context mutexes. Pooh.
+  */
++#ifdef HAVE_PTHREAD_H
+ static pthread_once_t locksInitialized = PTHREAD_ONCE_INIT;
+ 
+ static void initLocks(void)
+@@ -95,6 +100,9 @@ static void initLocks(void)
+ 	pthread_mutex_init(&mc->lock, &mc->lockattr);
+     }
+ }
++#else
++#define initLocks()
++#endif
+ 
+ /**
+  * Macro expansion state.
+@@ -153,14 +161,18 @@ static rpmMacroContext rpmmctxAcquire(rpmMacroContext mc)
+ {
+     if (mc == NULL)
+ 	mc = rpmGlobalMacroContext;
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&locksInitialized, initLocks);
+     pthread_mutex_lock(&mc->lock);
++#endif
+     return mc;
+ }
+ 
+ static rpmMacroContext rpmmctxRelease(rpmMacroContext mc)
+ {
++#ifdef HAVE_PTHREAD_H
+     pthread_mutex_unlock(&mc->lock);
++#endif
+     return NULL;
+ }
+ 
+@@ -502,15 +514,17 @@ exit:
+ 
+ static unsigned int getncpus(void)
+ {
+-    unsigned int ncpus = 0;
++    int ncpus = 0;
+ #if HAVE_SCHED_GETAFFINITY
+     cpu_set_t set;
+     if (sched_getaffinity (0, sizeof(set), &set) == 0)
+ 	ncpus = CPU_COUNT(&set);
+ #endif
+     /* Fallback to sysconf() if the above isn't supported or didn't work */
++#ifdef _SC_NPROCESSORS_ONLN
+     if (ncpus < 1)
+ 	ncpus = sysconf(_SC_NPROCESSORS_ONLN);
++#endif
+     /* If all else fails, there's always the one we're running on... */
+     if (ncpus < 1)
+ 	ncpus = 1;
+@@ -1635,6 +1649,7 @@ static int loadMacroFile(rpmMacroContext mc, const char * fn)
+     if (fd == NULL)
+ 	goto exit;
+ 
++    rpmlog(RPMLOG_DEBUG, "read macro file: %s\n", fn);
+     pushMacro(mc, "__file_name", NULL, fn, RMIL_MACROFILES, ME_NONE);
+ 
+     buf[0] = '\0';
+diff --git a/rpmio/rpmfileutil.c b/rpmio/rpmfileutil.c
+index bda97adf1..a48f0d38e 100644
+--- a/rpmio/rpmfileutil.c
++++ b/rpmio/rpmfileutil.c
+@@ -6,7 +6,9 @@
+ #include <errno.h>
+ #include <popt.h>
+ #include <ctype.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ 
+ #include <rpm/rpmfileutil.h>
+ #include <rpm/rpmurl.h>
+@@ -19,7 +21,9 @@
+ #include "debug.h"
+ 
+ static const char *rpm_config_dir = NULL;
++#ifdef HAVE_PTHREAD_H
+ static pthread_once_t configDirSet = PTHREAD_ONCE_INIT;
++#endif
+ 
+ int rpmDoDigest(int algo, const char * fn,int asAscii, unsigned char * digest)
+ {
+@@ -463,6 +467,15 @@ static void setConfigDir(void)
+ 
+ const char *rpmConfigDir(void)
+ {
++#ifdef HAVE_PTHREAD_H
+     pthread_once(&configDirSet, setConfigDir);
++#else
++	static int configDirSet;
++	if (!configDirSet)
++	{
++		configDirSet = 1;
++		setConfigDir();
++	}
++#endif
+     return rpm_config_dir;
+ }
+diff --git a/rpmio/rpmio.c b/rpmio/rpmio.c
+index 0e1b5a10f..d8c32c2fa 100644
+--- a/rpmio/rpmio.c
++++ b/rpmio/rpmio.c
+@@ -724,10 +724,8 @@ static const FDIO_t bzdio = &bzdio_s ;
+ #include <sys/types.h>
+ #include <inttypes.h>
+ #include <lzma.h>
+-/* Multithreading support in stable API since xz 5.2.0 */
+-#if LZMA_VERSION >= 50020002
+-#define HAVE_LZMA_MT
+-#endif
++/* Multithreading support in stable API since xz 5.2.0; detected by autoconf */
++/* #define HAVE_LZMA_MT */
+ 
+ #define kBufferSize (1 << 15)
+ 
+@@ -1776,8 +1774,15 @@ void rpmSetCloseOnExec(void)
+ {
+     const int min_fd = STDERR_FILENO; /* don't touch stdin/out/err */
+     int fd;
+-
+-    DIR *dir = opendir("/proc/self/fd");
++    DIR *dir;
++#if defined(__MINT__) && 0
++    /* disabled, because it would be even slower than the loop below */
++    char self[80];
++    sprintf(self, "/kern/%d/fd", (int)getpid());
++    dir = opendir(self);
++#else
++    dir = opendir("/proc/self/fd");
++#endif
+     if (dir == NULL) { /* /proc not available */
+ 	/* iterate over all possible fds, might be slow */
+ 	struct rlimit rl;
+diff --git a/rpmio/rpmio.h b/rpmio/rpmio.h
+index 4239ef474..db41896e4 100644
+--- a/rpmio/rpmio.h
++++ b/rpmio/rpmio.h
+@@ -20,6 +20,33 @@
+ extern "C" {
+ #endif
+ 
++#undef Fstrerror
++#undef Fread
++#undef Fwrite
++#undef Fseek
++#undef Ftell
++#undef Fclose
++#undef Fdopen
++#undef Fopen
++#undef Fflush
++#undef Ferror
++#undef Fileno
++#undef Fcntl
++#undef Fdescr
++#define Fstrerror rpmioFstrerror
++#define Fread rpmioFread
++#define Fwrite rpmioFwrite
++#define Fseek rpmioFseek
++#define Ftell rpmioFtell
++#define Fclose rpmioFclose
++#define Fdopen rpmioFdopen
++#define Fopen rpmioFopen
++#define Fflush rpmioFflush
++#define Ferror rpmioFerror
++#define Fileno rpmioFileno
++#define Fcntl rpmioFcntl
++#define Fdescr rpmioFdescr
++
+ /** \ingroup rpmio
+  */
+ typedef const struct FDIO_s * FDIO_t;
+diff --git a/rpmio/rpmkeyring.c b/rpmio/rpmkeyring.c
+index 4fb01ecae..19a71d82c 100644
+--- a/rpmio/rpmkeyring.c
++++ b/rpmio/rpmkeyring.c
+@@ -1,6 +1,8 @@
+ #include "system.h"
+ 
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ 
+ #include <rpm/rpmstring.h>
+ #include <rpm/rpmpgp.h>
+@@ -21,14 +23,18 @@ struct rpmPubkey_s {
+     pgpKeyID_t keyid;
+     pgpDigParams pgpkey;
+     int nrefs;
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_t lock;
++#endif
+ };
+ 
+ struct rpmKeyring_s {
+     struct rpmPubkey_s **keys;
+     size_t numkeys;
+     int nrefs;
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_t lock;
++#endif
+ };
+ 
+ static int keyidcmp(const void *k1, const void *k2)
+@@ -45,7 +51,9 @@ rpmKeyring rpmKeyringNew(void)
+     keyring->keys = NULL;
+     keyring->numkeys = 0;
+     keyring->nrefs = 1;
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_init(&keyring->lock, NULL);
++#endif
+     return keyring;
+ }
+ 
+@@ -54,7 +62,9 @@ rpmKeyring rpmKeyringFree(rpmKeyring keyring)
+     if (keyring == NULL)
+ 	return NULL;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_wrlock(&keyring->lock);
++#endif
+     if (--keyring->nrefs == 0) {
+ 	if (keyring->keys) {
+ 	    for (int i = 0; i < keyring->numkeys; i++) {
+@@ -62,11 +72,15 @@ rpmKeyring rpmKeyringFree(rpmKeyring keyring)
+ 	    }
+ 	    free(keyring->keys);
+ 	}
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&keyring->lock);
+ 	pthread_rwlock_destroy(&keyring->lock);
++#endif
+ 	free(keyring);
+     } else {
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&keyring->lock);
++#endif
+     }
+     return NULL;
+ }
+@@ -88,7 +102,9 @@ int rpmKeyringAddKey(rpmKeyring keyring, rpmPubkey key)
+ 	return -1;
+ 
+     /* check if we already have this key, but always wrlock for simplicity */
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_wrlock(&keyring->lock);
++#endif
+     if (!rpmKeyringFindKeyid(keyring, key)) {
+ 	keyring->keys = xrealloc(keyring->keys,
+ 				 (keyring->numkeys + 1) * sizeof(rpmPubkey));
+@@ -98,7 +114,9 @@ int rpmKeyringAddKey(rpmKeyring keyring, rpmPubkey key)
+ 		keyidcmp);
+ 	rc = 0;
+     }
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_unlock(&keyring->lock);
++#endif
+ 
+     return rc;
+ }
+@@ -106,9 +124,13 @@ int rpmKeyringAddKey(rpmKeyring keyring, rpmPubkey key)
+ rpmKeyring rpmKeyringLink(rpmKeyring keyring)
+ {
+     if (keyring) {
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_wrlock(&keyring->lock);
++#endif
+ 	keyring->nrefs++;
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&keyring->lock);
++#endif
+     }
+     return keyring;
+ }
+@@ -151,7 +173,9 @@ rpmPubkey rpmPubkeyNew(const uint8_t *pkt, size_t pktlen)
+     key->nrefs = 1;
+     memcpy(key->pkt, pkt, pktlen);
+     memcpy(key->keyid, keyid, sizeof(keyid));
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_init(&key->lock, NULL);
++#endif
+ 
+ exit:
+     return key;
+@@ -180,7 +204,9 @@ rpmPubkey *rpmGetSubkeys(rpmPubkey mainkey, int *count)
+ 	    subkey->pgpkey = pgpsubkeys[i];
+ 	    memcpy(subkey->keyid, pgpsubkeys[i]->signid, sizeof(subkey->keyid));
+ 	    subkey->nrefs = 1;
++#ifdef HAVE_PTHREAD_H
+ 	    pthread_rwlock_init(&subkey->lock, NULL);
++#endif
+ 	}
+ 	free(pgpsubkeys);
+     }
+@@ -194,15 +220,21 @@ rpmPubkey rpmPubkeyFree(rpmPubkey key)
+     if (key == NULL)
+ 	return NULL;
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_wrlock(&key->lock);
++#endif
+     if (--key->nrefs == 0) {
+ 	pgpDigParamsFree(key->pgpkey);
+ 	free(key->pkt);
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&key->lock);
+ 	pthread_rwlock_destroy(&key->lock);
++#endif
+ 	free(key);
+     } else {
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&key->lock);
++#endif
+     }
+     return NULL;
+ }
+@@ -210,9 +242,13 @@ rpmPubkey rpmPubkeyFree(rpmPubkey key)
+ rpmPubkey rpmPubkeyLink(rpmPubkey key)
+ {
+     if (key) {
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_wrlock(&key->lock);
++#endif
+ 	key->nrefs++;
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&key->lock);
++#endif
+     }
+     return key;
+ }
+@@ -228,9 +264,13 @@ pgpDig rpmPubkeyDig(rpmPubkey key)
+ 
+     dig = pgpNewDig();
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_rdlock(&key->lock);
++#endif
+     rc = pgpPrtPkts(key->pkt, key->pktlen, dig, _print_pkts);
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_unlock(&key->lock);
++#endif
+ 
+     if (rc == 0) {
+ 	pgpDigParams pubp = pgpDigGetParams(dig, PGPTAG_PUBLIC_KEY);
+@@ -251,9 +291,13 @@ char * rpmPubkeyBase64(rpmPubkey key)
+     char *enc = NULL;
+ 
+     if (key) {
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_rdlock(&key->lock);
++#endif
+ 	enc = rpmBase64Encode(key->pkt, key->pktlen, -1);
++#ifdef HAVE_PTHREAD_H
+ 	pthread_rwlock_unlock(&key->lock);
++#endif
+     }
+     return enc;
+ }
+@@ -292,7 +336,9 @@ static rpmPubkey findbySig(rpmKeyring keyring, pgpDigParams sig)
+ 
+ rpmRC rpmKeyringLookup(rpmKeyring keyring, pgpDig sig)
+ {
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_rdlock(&keyring->lock);
++#endif
+ 
+     rpmRC res = RPMRC_NOKEY;
+     pgpDigParams sigp = pgpDigGetParams(sig, PGPTAG_SIGNATURE);
+@@ -308,7 +354,9 @@ rpmRC rpmKeyringLookup(rpmKeyring keyring, pgpDig sig)
+ 	res = RPMRC_OK;
+     }
+ 
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_unlock(&keyring->lock);
++#endif
+     return res;
+ }
+ 
+@@ -316,8 +364,10 @@ rpmRC rpmKeyringVerifySig(rpmKeyring keyring, pgpDigParams sig, DIGEST_CTX ctx)
+ {
+     rpmRC rc = RPMRC_FAIL;
+ 
++#ifdef HAVE_PTHREAD_H
+     if (keyring)
+ 	pthread_rwlock_rdlock(&keyring->lock);
++#endif
+ 
+     if (sig && ctx) {
+ 	pgpDigParams pgpkey = NULL;
+@@ -330,8 +380,10 @@ rpmRC rpmKeyringVerifySig(rpmKeyring keyring, pgpDigParams sig, DIGEST_CTX ctx)
+ 	rc = pgpVerifySignature(pgpkey, sig, ctx);
+     }
+ 
++#ifdef HAVE_PTHREAD_H
+     if (keyring)
+ 	pthread_rwlock_unlock(&keyring->lock);
++#endif
+ 
+     return rc;
+ }
+diff --git a/rpmio/rpmlog.c b/rpmio/rpmlog.c
+index d52b897fc..389c1bcfa 100644
+--- a/rpmio/rpmlog.c
++++ b/rpmio/rpmlog.c
+@@ -5,7 +5,9 @@
+ #include "system.h"
+ #include <stdarg.h>
+ #include <stdlib.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ #include <errno.h>
+ #include <rpm/rpmlog.h>
+ #include <rpm/rpmmacro.h>
+@@ -13,7 +15,9 @@
+ 
+ typedef struct rpmlogCtx_s * rpmlogCtx;
+ struct rpmlogCtx_s {
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_t lock;
++#endif
+     unsigned mask;
+     int nrecs;
+     rpmlogRec recs;
+@@ -31,17 +35,24 @@ struct rpmlogRec_s {
+ /* Force log context acquisition through a function */
+ static rpmlogCtx rpmlogCtxAcquire(int write)
+ {
+-    static struct rpmlogCtx_s _globalCtx = { PTHREAD_RWLOCK_INITIALIZER,
++    static struct rpmlogCtx_s _globalCtx = {
++#ifdef HAVE_PTHREAD_H
++    	PTHREAD_RWLOCK_INITIALIZER,
++#endif
+ 					     RPMLOG_UPTO(RPMLOG_NOTICE),
+ 					     0, NULL, NULL, NULL, NULL };
+     rpmlogCtx ctx = &_globalCtx;
+     int xx;
+ 
+     /* XXX Silently failing is bad, but we can't very well use log here... */
++#ifdef HAVE_PTHREAD_H
+     if (write)
+ 	xx = pthread_rwlock_wrlock(&ctx->lock);
+     else
+ 	xx = pthread_rwlock_rdlock(&ctx->lock);
++#else
++	xx = 0;
++#endif
+ 
+     return (xx == 0) ? ctx : NULL;
+ }
+@@ -49,8 +60,10 @@ static rpmlogCtx rpmlogCtxAcquire(int write)
+ /* Release log context */
+ static rpmlogCtx rpmlogCtxRelease(rpmlogCtx ctx)
+ {
++#ifdef HAVE_PTHREAD_H
+     if (ctx)
+ 	pthread_rwlock_unlock(&ctx->lock);
++#endif
+     return NULL;
+ }
+ 
+@@ -357,7 +370,9 @@ static int rpmlogDefault(FILE *stdlog, rpmlogRec rec)
+ /* FIX: rpmlogMsgPrefix[] may be NULL */
+ static void dolog(struct rpmlogRec_s *rec, int saverec)
+ {
++#ifdef HAVE_PTHREAD_H
+     static pthread_mutex_t serialize = PTHREAD_MUTEX_INITIALIZER;
++#endif
+ 
+     int cbrc = RPMLOG_DEFAULT;
+     int needexit = 0;
+@@ -387,7 +402,10 @@ static void dolog(struct rpmlogRec_s *rec, int saverec)
+     ctx = rpmlogCtxRelease(ctx);
+ 
+     /* Always serialize callback and output to avoid interleaved messages. */
+-    if (pthread_mutex_lock(&serialize) == 0) {
++#ifdef HAVE_PTHREAD_H
++    if (pthread_mutex_lock(&serialize) == 0)
++#endif
++    {
+ 	if (cbfunc) {
+ 	    cbrc = cbfunc(rec, cbdata);
+ 	    needexit += cbrc & RPMLOG_EXIT;
+@@ -397,7 +415,9 @@ static void dolog(struct rpmlogRec_s *rec, int saverec)
+ 	    cbrc = rpmlogDefault(clog, rec);
+ 	    needexit += cbrc & RPMLOG_EXIT;
+ 	}
++#ifdef HAVE_PTHREAD_H
+ 	pthread_mutex_unlock(&serialize);
++#endif
+     }
+     
+     if (needexit)
+diff --git a/rpmio/rpmlua.c b/rpmio/rpmlua.c
+index c698ff098..f64d69d46 100644
+--- a/rpmio/rpmlua.c
++++ b/rpmio/rpmlua.c
+@@ -13,7 +13,9 @@
+ 
+ #include <unistd.h>
+ #include <assert.h>
++#ifndef __MINT__
+ #include <spawn.h>
++#endif
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ #include <stdarg.h>
+@@ -32,6 +34,10 @@
+ 
+ #include "debug.h"
+ 
++#ifndef lua_pushglobaltable
++#define lua_pushglobaltable(L) lua_pushvalue(L, LUA_GLOBALSINDEX)
++#endif
++
+ int _rpmlua_have_forked = 0;
+ 
+ typedef struct rpmluapb_s * rpmluapb;
+@@ -79,8 +85,6 @@ static void *nextFileFuncParam = NULL;
+ 
+ static int luaopen_rpm(lua_State *L);
+ static int rpm_print(lua_State *L);
+-static int rpm_exit(lua_State *L);
+-static int rpm_redirect2null(lua_State *L);
+ 
+ static int pusherror(lua_State *L, int code, const char *info)
+ {
+@@ -109,6 +113,34 @@ rpmlua rpmluaGetGlobalState(void)
+     return lua;
+ }
+ 
++static int rpm_redirect2null(lua_State *L)
++{
++    int target_fd, fd, r, e;
++
++    if (!_rpmlua_have_forked)
++	return luaL_error(L, "redirect2null not permitted in this context");
++
++    target_fd = luaL_checkinteger(L, 1);
++
++    r = fd = open("/dev/null", O_WRONLY);
++    if (fd >= 0 && fd != target_fd) {
++	r = dup2(fd, target_fd);
++	e = errno;
++	(void) close(fd);
++	errno = e;
++    }
++    return pushresult(L, r, NULL);
++}
++
++#if (LUA_VERSION_NUM >= 503)
++static int rpm_exit(lua_State *L)
++{
++    if (!_rpmlua_have_forked)
++	return luaL_error(L, "exit not permitted in this context");
++
++    exit(luaL_optinteger(L, 1, EXIT_SUCCESS));
++}
++
+ static const luaL_Reg os_overrides[] =
+ {
+     {"exit",    rpm_exit},
+@@ -120,6 +152,7 @@ static const luaL_Reg posix_overrides[] =
+     {"redirect2null",	rpm_redirect2null},
+     {NULL,      NULL}
+ };
++#endif
+ 
+ rpmlua rpmluaNew()
+ {
+@@ -144,15 +177,24 @@ rpmlua rpmluaNew()
+     lua->L = L;
+ 
+     for (lib = extlibs; lib->name; lib++) {
++#if LUA_VERSION_NUM >= 503
+ 	luaL_requiref(L, lib->name, lib->func, 1);
++#else
++	lua_pushcfunction(L, lib->func);
++	lua_pushstring(L, lib->name);
++	lua_call(L, 1, 0);
++	lua_settop(L, 0);
++#endif
+     }
+     lua_pushcfunction(L, rpm_print);
+     lua_setglobal(L, "print");
+ 
++#if (LUA_VERSION_NUM >= 503)
+     lua_getglobal(L, "os");
+     luaL_setfuncs(L, os_overrides, 0);
+     lua_getglobal(L, "posix");
+     luaL_setfuncs(L, posix_overrides, 0);
++#endif
+ 
+     lua_getglobal(L, "package");
+     lua_pushfstring(L, "%s/%s", rpmConfigDir(), "/lua/?.lua");
+@@ -182,10 +224,14 @@ rpmlua rpmluaFree(rpmlua lua)
+ void rpmluaRegister(rpmlua lua, const void *regfuncs, const char *lib)
+ {
+     const luaL_Reg *funcs = regfuncs;
++#if (LUA_VERSION_NUM <= 501) || defined(LUA_COMPAT_MODULE)
++    luaL_openlib(lua->L, lib, funcs, 0);
++#else
+     lua_getfield(lua->L, LUA_REGISTRYINDEX, LUA_LOADED_TABLE);
+     lua_getfield(lua->L, -1, lib);
+     luaL_setfuncs(lua->L, funcs, 0);
+     lua_pop(lua->L, 2);
++#endif
+ }
+ 
+ void rpmluaSetData(rpmlua _lua, const char *key, const void *data)
+@@ -281,7 +327,11 @@ void rpmluaSetVar(rpmlua _lua, rpmluav var)
+     if (var->listmode && lua->pushsize > 0) {
+ 	if (var->keyType != RPMLUAV_NUMBER || var->key.num == (double)0) {
+ 	    var->keyType = RPMLUAV_NUMBER;
++#if LUA_VERSION_NUM >= 503
+ 	    var->key.num = (double)lua_rawlen(L, -1);
++#else
++	    var->key.num = (double)luaL_getn(L, -1);
++#endif
+ 	}
+ 	var->key.num++;
+     }
+@@ -949,33 +999,7 @@ static int rpm_print (lua_State *L)
+     return 0;
+ }
+ 
+-static int rpm_redirect2null(lua_State *L)
+-{
+-    int target_fd, fd, r, e;
+-
+-    if (!_rpmlua_have_forked)
+-	return luaL_error(L, "redirect2null not permitted in this context");
+-
+-    target_fd = luaL_checkinteger(L, 1);
+-
+-    r = fd = open("/dev/null", O_WRONLY);
+-    if (fd >= 0 && fd != target_fd) {
+-	r = dup2(fd, target_fd);
+-	e = errno;
+-	(void) close(fd);
+-	errno = e;
+-    }
+-    return pushresult(L, r, NULL);
+-}
+-
+-static int rpm_exit(lua_State *L)
+-{
+-    if (!_rpmlua_have_forked)
+-	return luaL_error(L, "exit not permitted in this context");
+-
+-    exit(luaL_optinteger(L, 1, EXIT_SUCCESS));
+-}
+-
++#ifndef __MINT__
+ static int rpm_execute(lua_State *L)
+ {
+     const char *file = luaL_checkstring(L, 1);
+@@ -1000,6 +1024,7 @@ static int rpm_execute(lua_State *L)
+     else
+ 	return pushresult(L, status, NULL);
+ }
++#endif
+ 
+ static const luaL_Reg rpmlib[] = {
+     {"b64encode", rpm_b64encode},
+@@ -1013,13 +1038,19 @@ static const luaL_Reg rpmlib[] = {
+     {"call", rpm_call},
+     {"interactive", rpm_interactive},
+     {"next_file", rpm_next_file},
++#ifndef __MINT__
+     {"execute", rpm_execute},
++#endif
+     {"redirect2null", rpm_redirect2null},
+     {NULL, NULL}
+ };
+ 
+ static int luaopen_rpm(lua_State *L)
+ {
++#if (LUA_VERSION_NUM <= 501) || defined(LUA_COMPAT_MODULE)
++    luaL_openlib(L, "rpm", rpmlib, 0);
++#else
+     luaL_newlib(L, rpmlib);
++#endif
+     return 1;
+ }
+diff --git a/rpmio/rpmmalloc.c b/rpmio/rpmmalloc.c
+index c38ab96ac..ecb50d7ed 100644
+--- a/rpmio/rpmmalloc.c
++++ b/rpmio/rpmmalloc.c
+@@ -22,7 +22,7 @@ static void *vmefail(size_t size)
+ {
+     void *val = failfunc ? (*failfunc)(size, failfunc_data) : NULL;
+     if (val == NULL) {
+-	fprintf(stderr, _("memory alloc (%u bytes) returned NULL.\n"),
++	fprintf(stderr, "memory alloc (%u bytes) returned NULL.\n",
+ 		(unsigned)size);
+ 	exit(EXIT_FAILURE);
+     }
+diff --git a/rpmio/rpmpgp.c b/rpmio/rpmpgp.c
+index 46cd0f31a..34fb13691 100644
+--- a/rpmio/rpmpgp.c
++++ b/rpmio/rpmpgp.c
+@@ -1386,7 +1386,7 @@ char * pgpArmorWrap(int atype, const unsigned char * s, size_t ns)
+     free(crc);
+     free(enc);
+ 
+-    rasprintf(&val, "-----BEGIN PGP %s-----\nVersion: rpm-" VERSION " (NSS-3)\n\n"
++    rasprintf(&val, "-----BEGIN PGP %s-----\nVersion: rpm-" VERSION DIGEST_VERSION "\n\n"
+ 		    "%s\n-----END PGP %s-----\n",
+ 		    valstr, buf != NULL ? buf : "", valstr);
+ 
+diff --git a/rpmio/rpmsq.c b/rpmio/rpmsq.c
+index 249a204b3..ea0df3100 100644
+--- a/rpmio/rpmsq.c
++++ b/rpmio/rpmsq.c
+@@ -20,6 +20,10 @@ static int disableInterruptSafety;
+ static sigset_t rpmsqCaught;
+ static sigset_t rpmsqActive;
+ 
++#ifndef HAVE_PTHREAD_H
++#define pthread_sigmask sigprocmask
++#endif
++
+ typedef struct rpmsig_s * rpmsig;
+ 
+ static void rpmsqIgn(int signum, siginfo_t *info, void *context)
+@@ -28,13 +32,18 @@ static void rpmsqIgn(int signum, siginfo_t *info, void *context)
+ 
+ static void rpmsqTerm(int signum, siginfo_t *info, void *context)
+ {
+-    if (info->si_pid == 0) {
++#ifdef HAVE_SIGINFO_T
++	int pid = info->si_pid;
++#else
++	int pid = 0;
++#endif
++    if (pid == 0) {
+ 	rpmlog(RPMLOG_DEBUG,
+ 		"exiting on signal %d (killed by death, eh?)\n", signum);
+     } else {
+ 	int lvl = (signum == SIGPIPE) ? RPMLOG_DEBUG : RPMLOG_WARNING;
+ 	rpmlog(lvl,
+-		_("exiting on signal %d from pid %d\n"), signum, info->si_pid);
++		_("exiting on signal %d from pid %d\n"), signum, pid);
+     }
+     /* exit 128 + signum for compatibility with bash(1) */
+     exit(128 + signum);
+@@ -44,7 +53,9 @@ static struct rpmsig_s {
+     int signum;
+     rpmsqAction_t defhandler;
+     rpmsqAction_t handler;
++#ifdef HAVE_SIGINFO_T
+     siginfo_t siginfo;
++#endif
+     struct sigaction oact;
+ } rpmsigTbl[] = {
+     { SIGINT,	rpmsqTerm,	NULL },
+@@ -80,7 +91,9 @@ static void rpmsqHandler(int signum, siginfo_t * info, void * context)
+ 	    rpmsig sig = NULL;
+ 	    if (rpmsigGet(signum, &sig)) {
+ 		(void) sigaddset(&rpmsqCaught, signum);
++#ifdef HAVE_SIGINFO_T
+ 		memcpy(&sig->siginfo, info, sizeof(*info));
++#endif
+ 	    }
+ 	}
+     }
+@@ -114,7 +127,9 @@ int rpmsqActivate(int state)
+ 	struct sigaction sa;
+ 	for (rpmsig tbl = rpmsigTbl; tbl->signum >= 0; tbl++) {
+ 	    sigdelset(&rpmsqCaught, tbl->signum);
++#ifdef HAVE_SIGINFO_T
+ 	    memset(&tbl->siginfo, 0, sizeof(tbl->siginfo));
++#endif
+ 
+ 	    /* XXX Don't set a signal handler if already SIG_IGN */
+ 	    sigaction(tbl->signum, NULL, &tbl->oact);
+@@ -122,8 +137,13 @@ int rpmsqActivate(int state)
+ 		continue;
+ 
+ 	    sigemptyset (&sa.sa_mask);
++#ifdef SA_SIGINFO
+ 	    sa.sa_flags = SA_SIGINFO;
+ 	    sa.sa_sigaction = rpmsqHandler;
++#else
++	    sa.sa_flags = 0;
++	    sa.sa_handler = (sighandler_t) rpmsqHandler;
++#endif
+ 	    if (sigaction(tbl->signum, &sa, &tbl->oact) == 0)
+ 		sigaddset(&rpmsqActive, tbl->signum);
+ 	}
+@@ -134,7 +154,9 @@ int rpmsqActivate(int state)
+ 	    if (sigaction(tbl->signum, &tbl->oact, NULL) == 0) {
+ 		sigdelset(&rpmsqActive, tbl->signum);
+ 		sigdelset(&rpmsqCaught, tbl->signum);
++#ifdef HAVE_SIGINFO_T
+ 		memset(&tbl->siginfo, 0, sizeof(tbl->siginfo));
++#endif
+ 	    }
+ 	}
+     }
+@@ -160,8 +182,12 @@ int rpmsqPoll(void)
+ 							     tbl->defhandler;
+ 	    /* delete signal before running handler to prevent recursing */
+ 	    sigdelset(&rpmsqCaught, tbl->signum);
++#ifdef HAVE_SIGINFO_T
+ 	    handler(tbl->signum, &tbl->siginfo, NULL);
+ 	    memset(&tbl->siginfo, 0, sizeof(tbl->siginfo));
++#else
++	    handler(tbl->signum, NULL, NULL);
++#endif
+ 	    n++;
+ 	}
+     }
+diff --git a/rpmio/rpmsq.h b/rpmio/rpmsq.h
+index 23206457c..7404c9767 100644
+--- a/rpmio/rpmsq.h
++++ b/rpmio/rpmsq.h
+@@ -19,6 +19,9 @@ extern "C" {
+  * @param info		(siginfo_t) signal info
+  * @param context	signal context
+  */
++#ifndef HAVE_SIGINFO_T
++typedef struct _siginfo_t siginfo_t;
++#endif
+ typedef void (*rpmsqAction_t) (int signum, siginfo_t * info, void * context);
+ 
+ /** \ingroup rpmsq
+diff --git a/rpmio/rpmstrpool.c b/rpmio/rpmstrpool.c
+index 776ca6dea..3d9443b97 100644
+--- a/rpmio/rpmstrpool.c
++++ b/rpmio/rpmstrpool.c
+@@ -1,7 +1,9 @@
+ #include "system.h"
+ #include <stdio.h>
+ #include <stdlib.h>
++#ifdef HAVE_PTHREAD_H
+ #include <pthread.h>
++#endif
+ #include <rpm/rpmstring.h>
+ #include <rpm/rpmstrpool.h>
+ #include "debug.h"
+@@ -41,22 +43,28 @@ struct rpmstrPool_s {
+     poolHash hash;		/* string -> sid hash table */
+     int frozen;			/* are new id additions allowed? */
+     int nrefs;			/* refcount */
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_t lock;
++#endif
+ };
+ 
+ static inline const char *id2str(rpmstrPool pool, rpmsid sid);
+ 
+ static inline void poolLock(rpmstrPool pool, int write)
+ {
++#ifdef HAVE_PTHREAD_H
+     if (write)
+ 	pthread_rwlock_wrlock(&pool->lock);
+     else
+ 	pthread_rwlock_rdlock(&pool->lock);
++#endif
+ }
+ 
+ static inline void poolUnlock(rpmstrPool pool)
+ {
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_unlock(&pool->lock);
++#endif
+ }
+ 
+ /* calculate hash and string length on at once */
+@@ -257,7 +265,9 @@ rpmstrPool rpmstrPoolCreate(void)
+ 
+     rpmstrPoolRehash(pool);
+     pool->nrefs = 1;
++#ifdef HAVE_PTHREAD_H
+     pthread_rwlock_init(&pool->lock, NULL);
++#endif
+     return pool;
+ }
+ 
+@@ -278,7 +288,9 @@ rpmstrPool rpmstrPoolFree(rpmstrPool pool)
+ 	    }
+ 	    free(pool->chunks);
+ 	    poolUnlock(pool);
++#ifdef HAVE_PTHREAD_H
+ 	    pthread_rwlock_destroy(&pool->lock);
++#endif
+ 	    free(pool);
+ 	}
+     }
+diff --git a/rpmio/rpmutil.h b/rpmio/rpmutil.h
+index 9e8a25d0f..7c00fc3b5 100644
+--- a/rpmio/rpmutil.h
++++ b/rpmio/rpmutil.h
+@@ -97,7 +97,7 @@
+ #define RPM_GNUC_WARN_UNUSED_RESULT
+ #endif /* __GNUC__ */
+ 
+-#if    __GNUC__ >= 4 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)
++#if    (__GNUC__ >= 4 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)) && !defined(__MINT__)
+ #  define RPM_GNUC_INTERNAL __attribute__((visibility("hidden")))
+ #else
+ #  define RPM_GNUC_INTERNAL
+diff --git a/rpmlead.c b/rpmlead.c
+new file mode 100644
+index 000000000..28371d694
+--- /dev/null
++++ b/rpmlead.c
+@@ -0,0 +1,99 @@
++/* rpmlead: spit out the lead portion of a package */
++
++#include "system.h"
++#include <string.h>
++#include <errno.h>
++#include <netinet/in.h>
++
++#include "rpmio.h"
++#include "rpmlead.h"
++#include "lib/header_internal.h"	/* Freadall() */
++
++struct rpmlead_s {
++    unsigned char magic[4];
++    unsigned char major;
++    unsigned char minor;
++    short type;
++    short archnum;
++    char name[66];
++    short osnum;
++    short signature_type;       /*!< Signature header type (RPMSIG_HEADERSIG) */
++    char reserved[16];      /*!< Pad to 96 bytes -- 8 byte aligned! */
++};
++
++static unsigned char const lead_magic[] = {
++    RPMLEAD_MAGIC0, RPMLEAD_MAGIC1, RPMLEAD_MAGIC2, RPMLEAD_MAGIC3
++};
++#define RPMSIGTYPE_HEADERSIG 5
++
++static void leadCheck(struct rpmlead_s *lead)
++{
++    if (memcmp(lead->magic, lead_magic, sizeof(lead_magic)))
++    {
++		fprintf(stderr, _("not an rpm package"));
++		exit(EXIT_FAILURE);
++    }
++    if (lead->signature_type != htons(RPMSIGTYPE_HEADERSIG))
++    {
++		fprintf(stderr, _("illegal signature type"));
++		exit(EXIT_FAILURE);
++    }
++    if (lead->major < 3 || lead->major > 4)
++    {
++		fprintf(stderr, _("unsupported RPM package version"));
++		exit(EXIT_FAILURE);
++    }
++}
++
++static void readLead(FD_t fd, struct rpmlead_s *l)
++{
++    memset(l, 0, sizeof(*l));
++    if (Fread(l, 1, sizeof(*l), fd) != sizeof(*l))
++    {
++		if (Ferror(fd))
++		{
++		    fprintf(stderr, _("read failed: %s (%d)\n"), Fstrerror(fd), errno);
++			exit(EXIT_FAILURE);
++		} else
++		{
++		    fprintf(stderr, _("not an rpm package\n"));
++			exit(EXIT_FAILURE);
++		}
++    } else
++    {
++		leadCheck(l);
++    }
++}
++
++static void writeLead(FD_t fd, struct rpmlead_s *l)
++{
++	if (Fwrite(l, 1, sizeof(*l), fd) == sizeof(*l))
++	{
++    }
++}
++
++
++int main(int argc, char **argv)
++{
++	FD_t fdi, fdo;
++	struct rpmlead_s lead;
++
++	if (argc == 1)
++	{
++		fdi = Fopen("-", "r.ufdio");
++	} else
++	{
++		fdi = Fopen(argv[1], "r.ufdio");
++	}
++	if (fdi == NULL || Ferror(fdi))
++	{
++		perror(argv[1]);
++		return EXIT_FAILURE;
++	}
++
++	readLead(fdi, &lead);
++	fdo = Fopen("-", "w.ufdio");
++	writeLead(fdo, &lead);
++
++	return EXIT_SUCCESS;
++}
+diff --git a/rpmpopt.in b/rpmpopt.in
+index 8e4ef0275..8f5ec3a3d 100644
+--- a/rpmpopt.in
++++ b/rpmpopt.in
+@@ -123,7 +123,8 @@ Build Host  : %{BUILDHOST}\n\
+ %|URL?{URL         : %{URL}\n}|\
+ %|BUGURL?{Bug URL     : %{BUGURL}\n}|\
+ Summary     : %{SUMMARY}\n\
+-Description :\n%{DESCRIPTION}\n' \
++Description :\n%{DESCRIPTION}\n\
++Distribution: %{DISTRIBUTION}\n' \
+ 	--POPTdesc=$"list descriptive information from package(s)"
+ 
+ rpm	alias --changelog --qf '[* %{CHANGELOGTIME:day} %{CHANGELOGNAME}\n%{CHANGELOGTEXT}\n\n]' \
+diff --git a/rpmqpack.c b/rpmqpack.c
+new file mode 100644
+index 000000000..731e35a44
+--- /dev/null
++++ b/rpmqpack.c
+@@ -0,0 +1,59 @@
++#include <sys/types.h>
++#include <limits.h>
++#include <fcntl.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <db.h>
++
++DBT key;
++DBT data;
++
++int
++main(int argc, char **argv)
++{
++  DB *db = 0;
++  DBC *dbc = 0;
++  int ret = 0;
++
++  if (db_create(&db, 0, 0))
++    {
++      perror("db_create");
++      exit(1);
++    }
++  if (db->open(db, 0, "/var/lib/rpm/Name", 0, DB_UNKNOWN, DB_RDONLY, 0664))
++    {
++      perror("db->open");
++      exit(1);
++    }
++  if (argc == 1)
++    {
++      if (db->cursor(db, NULL, &dbc, 0))
++	{
++	  perror("db->cursor");
++	  exit(1);
++	}
++      while (dbc->c_get(dbc, &key, &data, DB_NEXT) == 0)
++	printf("%*.*s\n", (int)key.size, (int)key.size, (char *)key.data);
++      dbc->c_close(dbc);
++    }
++  else
++    {
++      argc--;
++      while (argc--)
++	{
++	  argv++;
++	  key.data = (void *)*argv;
++	  key.size = strlen(*argv);
++	  data.data = NULL;
++	  data.size = 0;
++	  if (db->get(db, 0, &key, &data, 0) == 0)
++	    printf("%s\n", *argv);
++	  else
++	    ret = 1;
++	}
++    }
++  db->close(db, 0);
++  return ret;
++}
+diff --git a/rpmrc.in b/rpmrc.in
+index 5bd9ba3e5..f0a9a1119 100644
+--- a/rpmrc.in
++++ b/rpmrc.in
+@@ -12,16 +12,16 @@
+ # "fat" binary with both archs, for Darwin
+ optflags: fat -O2 -g -arch i386 -arch ppc
+ 
+-optflags: i386 -O2 -g -march=i386 -mtune=i686
+-optflags: i486 -O2 -g -march=i486
+-optflags: i586 -O2 -g -march=i586
+-optflags: i686 -O2 -g -march=i686
+-optflags: pentium3 -O2 -g -march=pentium3
+-optflags: pentium4 -O2 -g -march=pentium4
+-optflags: athlon -O2 -g -march=athlon
++optflags: i386 -O2 -g -m32 -march=i486 -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
++optflags: i486 -O2 -g -m32 -march=i486 -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
++optflags: i586 -O2 -g -m32 -march=i586 -mtune=i686 -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
++optflags: i686 -O2 -g -m32 -march=i686 -mtune=i686 -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
++optflags: pentium3 -O2 -g -m32 -march=pentium3
++optflags: pentium4 -O2 -g -m32 -march=pentium4
++optflags: athlon -O2 -g -m32 -march=athlon
+ optflags: geode -Os -g -m32 -march=geode
+-optflags: ia64 -O2 -g
+-optflags: x86_64 -O2 -g
++optflags: ia64 -O2 -g -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
++optflags: x86_64 -O2 -g -m64 -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
+ optflags: amd64 -O2 -g
+ optflags: ia32e -O2 -g
+ 
+@@ -41,17 +41,18 @@ optflags: sparc64v -O2 -g -m64 -mtune=niagara
+ 
+ optflags: m68k -O2 -g -fomit-frame-pointer
+ 
+-optflags: ppc -O2 -g
+-optflags: ppc8260 -O2 -g
+-optflags: ppc8560 -O2 -g
+-optflags: ppc32dy4 -O2 -g
+-optflags: ppciseries -O2 -g
+-optflags: ppcpseries -O2 -g
+-optflags: ppc64 -O2 -g
+-optflags: ppc64le -O2 -g
+-optflags: ppc64p7 -O3 -mtune=power7 -mcpu=power7 -g
++optflags: ppc -O2 -g -m32 -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
++optflags: ppc8260 -O2 -g -m32
++optflags: ppc8560 -O2 -g -m32
++optflags: ppc32dy4 -O2 -g -m32
++optflags: ppciseries -O2 -g -m32
++optflags: ppcpseries -O2 -g -m32
++optflags: ppc64 -O2 -g -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
++optflags: ppc64le -O2 -g -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
++optflags: ppc64p7 -O3 -mtune=power7 -mcpu=power7 -g -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
+ 
+ optflags: parisc -O2 -g -mpa-risc-1-0
++optflags: hppa -O2 -g -mpa-risc-1-0
+ optflags: hppa1.0 -O2 -g -mpa-risc-1-0
+ optflags: hppa1.1 -O2 -g -mpa-risc-1-0
+ optflags: hppa1.2 -O2 -g -mpa-risc-1-0
+@@ -75,15 +76,17 @@ optflags: armv5tl -O2 -g -march=armv5t
+ optflags: armv5tel -O2 -g -march=armv5te
+ optflags: armv5tejl -O2 -g -march=armv5te
+ optflags: armv6l -O2 -g -march=armv6
+-optflags: armv6hl -O2 -g -march=armv6 -mfloat-abi=hard -mfpu=vfp
++optflags: armv6hl -O2 -g -march=armv6 -mfloat-abi=hard -mabi=aapcs-linux
+ 
+ optflags: armv7l -O2 -g -march=armv7
+-optflags: armv7hl -O2 -g -march=armv7-a -mfloat-abi=hard -mfpu=vfpv3-d16
++optflags: armv7hl -O2 -g -march=armv7-a -mfloat-abi=hard -mthumb -mabi=aapcs-linux
+ optflags: armv7hnl -O2 -g -march=armv7-a -mfloat-abi=hard -mfpu=neon
+ optflags: armv8l -O2 -g -march=armv8-a
+ optflags: armv8hl -O2 -g -march=armv8-a -mfloat-abi=hard -mfpu=vfpv4
+ 
+ optflags: m68k -O2 -g -fomit-frame-pointer
++optflags: m68020 -O2 -g -fomit-frame-pointer
++optflags: coldfire -O2 -g -fomit-frame-pointer
+ 
+ optflags: atarist -O2 -g -fomit-frame-pointer
+ optflags: atariste -O2 -g -fomit-frame-pointer
+@@ -93,8 +96,8 @@ optflags: atariclone -O2 -g -fomit-frame-pointer
+ optflags: milan -O2 -g -fomit-frame-pointer
+ optflags: hades -O2 -g -fomit-frame-pointer
+ 
+-optflags: s390 -O2 -g
+-optflags: s390x -O2 -g
++optflags: s390 -O2 -g -m31 -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
++optflags: s390x -O2 -g -m64 -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
+ 
+ optflags: sh3 -O2 -g
+ optflags: sh4 -O2 -g -mieee
+@@ -138,6 +141,8 @@ archcolor: mips64r6 2
+ archcolor: mips64r6el 2
+ 
+ archcolor: m68k 1
++archcolor: m68020 2
++archcolor: coldfire 3
+ 
+ archcolor: m68kmint 1
+ 
+@@ -224,13 +229,6 @@ arch_canon:	armv8l: armv8l	12
+ arch_canon:	armv8hl: armv8hl	12
+ 
+ arch_canon:	m68kmint: m68kmint	13
+-arch_canon:	atarist: m68kmint	13
+-arch_canon:	atariste: m68kmint	13
+-arch_canon:	ataritt: m68kmint	13
+-arch_canon:	falcon: m68kmint	13
+-arch_canon:	atariclone: m68kmint	13
+-arch_canon:	milan: m68kmint		13
+-arch_canon:	hades: m68kmint		13
+ 
+ arch_canon:	s390: s390	14
+ arch_canon:	i370: i370	14
+@@ -293,17 +291,17 @@ os_canon:       MacOSX: macosx	21
+ #############################################################
+ # For a given uname().machine, the default build arch
+ 
+-buildarchtranslate: osfmach3_i686: i386
+-buildarchtranslate: osfmach3_i586: i386
++buildarchtranslate: osfmach3_i686: i586
++buildarchtranslate: osfmach3_i586: i586
+ buildarchtranslate: osfmach3_i486: i386
+ buildarchtranslate: osfmach3_i386: i386
+ 
+-buildarchtranslate: athlon: i386
+-buildarchtranslate: geode: i386
+-buildarchtranslate: pentium4: i386
+-buildarchtranslate: pentium3: i386
+-buildarchtranslate: i686: i386
+-buildarchtranslate: i586: i386
++buildarchtranslate: athlon: i586
++buildarchtranslate: geode: i586
++buildarchtranslate: pentium4: i586
++buildarchtranslate: pentium3: i586
++buildarchtranslate: i686: i586
++buildarchtranslate: i586: i586
+ buildarchtranslate: i486: i386
+ buildarchtranslate: i386: i386
+ 
+@@ -325,6 +323,7 @@ buildarchtranslate: sparc64v: sparc64
+ buildarchtranslate: osfmach3_ppc: ppc
+ buildarchtranslate: powerpc: ppc
+ buildarchtranslate: powerppc: ppc
++buildarchtranslate: powerpc64: ppc64
+ buildarchtranslate: ppc8260: ppc
+ buildarchtranslate: ppc8560: ppc
+ buildarchtranslate: ppc32dy4: ppc
+@@ -362,13 +361,14 @@ buildarchtranslate: mips64r6el: mips64r6el
+ 
+ buildarchtranslate: m68k: m68k
+ 
+-buildarchtranslate: atarist: m68kmint
+-buildarchtranslate: atariste: m68kmint
+-buildarchtranslate: ataritt: m68kmint
+-buildarchtranslate: falcon: m68kmint
+-buildarchtranslate: atariclone:	m68kmint
+-buildarchtranslate: milan: m68kmint
+-buildarchtranslate: hades: m68kmint	
++buildarchtranslate: atarist: m68k
++buildarchtranslate: atariste: m68k
++buildarchtranslate: ataritt: m68k
++buildarchtranslate: falcon: m68k
++buildarchtranslate: atariclone:	m68k
++buildarchtranslate: milan: m68k
++buildarchtranslate: hades: m68k
++buildarchtranslate: coldfire: m68k
+ 
+ buildarchtranslate: s390: s390
+ buildarchtranslate: s390x: s390x
+@@ -388,6 +388,15 @@ buildarchtranslate: aarch64: aarch64
+ buildarchtranslate: riscv: riscv64
+ buildarchtranslate: riscv64: riscv64
+ 
++buildarchtranslate: parisc: hppa
++buildarchtranslate: hppa2.0: hppa
++buildarchtranslate: hppa64: hppa
++
++buildarchtranslate: armv5l: armv4l
++buildarchtranslate: armv5tel: armv4l
++buildarchtranslate: armv5b: armv4b
++buildarchtranslate: armv5teb: armv4b
++
+ #############################################################
+ # Architecture compatibility
+ 
+@@ -452,16 +461,22 @@ arch_compat: mips64r6el: mipsr6el
+ arch_compat: hppa2.0: hppa1.2
+ arch_compat: hppa1.2: hppa1.1
+ arch_compat: hppa1.1: hppa1.0
+-arch_compat: hppa1.0: parisc
++arch_compat: hppa1.0: hppa
++arch_compat: hppa: parisc
+ arch_compat: parisc: noarch
+ 
++arch_compat: armv5teb: armv5b
++arch_compat: armv5b: armv4b
+ arch_compat: armv4b: noarch
+ arch_compat: armv8l: armv7l
++arch_compat: armv7hl: armv7l
+ arch_compat: armv7l: armv6l
++arch_compat: armv6hl: armv6l
+ arch_compat: armv6l: armv5tejl
+ arch_compat: armv5tejl: armv5tel
+ arch_compat: armv5tel: armv5tl
+-arch_compat: armv5tl: armv4tl
++arch_compat: armv5tl: armv5l
++arch_compat: armv5l: armv4tl
+ arch_compat: armv4tl: armv4l
+ arch_compat: armv4l: armv3l
+ arch_compat: armv3l: noarch
+@@ -470,21 +485,23 @@ arch_compat: armv7hnl: armv7hl
+ arch_compat: armv7hl: armv6hl
+ arch_compat: armv6hl: noarch
+ 
++arch_compat: m68020: m68k
+ arch_compat: m68k: noarch
++arch_compat: coldfire: noarch
+ 
+-arch_compat: atarist: m68kmint noarch
+-arch_compat: atariste: m68kmint noarch
+-arch_compat: ataritt: m68kmint noarch
+-arch_compat: falcon: m68kmint noarch
+-arch_compat: atariclone: m68kmint noarch
+-arch_compat: milan: m68kmint noarch
+-arch_compat: hades: m68kmint noarch
++arch_compat: atarist: m68k noarch
++arch_compat: atariste: m68k noarch
++arch_compat: ataritt: m68k noarch
++arch_compat: falcon: m68k noarch
++arch_compat: atariclone: m68k noarch
++arch_compat: milan: m68k noarch
++arch_compat: hades: m68k noarch
+ 
+ arch_compat: i370: noarch
+ arch_compat: s390: noarch
+ arch_compat: s390x: s390 noarch
+ 
+-arch_compat: ia64: noarch
++arch_compat: ia64: i686 noarch
+ 
+ arch_compat: x86_64: amd64 em64t athlon noarch
+ arch_compat: amd64: x86_64 em64t athlon noarch
+@@ -562,7 +579,9 @@ buildarch_compat: alphaev56: alphaev5
+ buildarch_compat: alphaev5: alpha
+ buildarch_compat: alpha: noarch
+ 
++buildarch_compat: m68020: noarch
+ buildarch_compat: m68k: noarch
++buildarch_compat: coldfire: noarch
+ 
+ buildarch_compat: ppc8260: noarch
+ buildarch_compat: ppc8560: noarch
+@@ -588,7 +607,9 @@ buildarch_compat: mips64r6el: noarch
+ 
+ buildarch_compat: armv4b: noarch
+ buildarch_compat: armv8l: armv7l
++buildarch_compat: armv7hl: armv7l
+ buildarch_compat: armv7l: armv6l
++buildarch_compat: armv6hl: armv6l
+ buildarch_compat: armv6l: armv5tejl
+ buildarch_compat: armv5tejl: armv5tel armv5tl
+ buildarch_compat: armv5tel: armv4tl armv5tl
+@@ -608,16 +629,17 @@ buildarch_compat: armv6hl: noarch
+ buildarch_compat: hppa2.0: hppa1.2
+ buildarch_compat: hppa1.2: hppa1.1
+ buildarch_compat: hppa1.1: hppa1.0
+-buildarch_compat: hppa1.0: parisc
++buildarch_compat: hppa1.0: hppa
++buildarch_compat: hppa: parisc
+ buildarch_compat: parisc: noarch
+ 
+-buildarch_compat: atarist: m68kmint noarch
+-buildarch_compat: atariste: m68kmint noarch
+-buildarch_compat: ataritt: m68kmint noarch
+-buildarch_compat: falcon: m68kmint noarch
+-buildarch_compat: atariclone: m68kmint noarch
+-buildarch_compat: milan: m68kmint noarch
+-buildarch_compat: hades: m68kmint noarch
++buildarch_compat: atarist: m68k noarch
++buildarch_compat: atariste: m68k noarch
++buildarch_compat: ataritt: m68k noarch
++buildarch_compat: falcon: m68k noarch
++buildarch_compat: atariclone: m68k noarch
++buildarch_compat: milan: m68k noarch
++buildarch_compat: hades: m68k noarch
+ 
+ buildarch_compat: s390: noarch
+ buildarch_compat: s390x: noarch
+diff --git a/rpmsignature.c b/rpmsignature.c
+new file mode 100644
+index 000000000..976112b7e
+--- /dev/null
++++ b/rpmsignature.c
+@@ -0,0 +1,43 @@
++/* rpmsignature: spit out the signature portion of a package */
++
++#include "system.h"
++
++#include <rpmlib.h>
++#include "rpmlead.h"
++#include "signature.h"
++
++int main(int argc, char **argv)
++{
++	FD_t fdi, fdo;
++	Header sig;
++	char *emsg;
++	int rc;
++
++	if (argc == 1)
++	{
++		fdi = Fopen("-", "r.ufdio");
++	} else
++	{
++		fdi = Fopen(argv[1], "r.ufdio");
++	}
++	if (Ferror(fdi))
++	{
++		perror("input");
++		exit(1);
++	}
++
++	if ((rc = rpmLeadRead(fdi, &emsg)) != RPMRC_OK)
++	{
++		fprintf(stderr, "%s\n", emsg);
++		return EXIT_FAILURE;
++	}
++	if ((rc = rpmReadSignature(fdi, &sig, &emsg)) != RPMRC_OK)
++	{
++		fprintf(stderr, "%s\n", emsg);
++		return EXIT_FAILURE;
++	}
++	fdo = Fopen("-", "w.ufdio");
++	rpmWriteSignature(fdo, sig);
++
++	return 0;
++}
+diff --git a/scripts/Makefile.am b/scripts/Makefile.am
+index ed75b3063..05e0fb2b5 100644
+--- a/scripts/Makefile.am
++++ b/scripts/Makefile.am
+@@ -18,23 +18,28 @@ EXTRA_DIST = \
+ 	tgpg vpkg-provides.sh \
+ 	find-requires find-provides \
+ 	find-requires.php find-provides.php \
++	find-requires.ksyms find-provides.ksyms \
+ 	ocaml-find-requires.sh ocaml-find-provides.sh \
++	sysvinitdeps.sh \
+ 	pkgconfigdeps.sh libtooldeps.sh metainfo.prov \
+ 	fontconfig.prov desktop-file.prov script.req 
+ 
+ rpmconfig_SCRIPTS = \
+ 	brp-compress brp-python-bytecompile brp-java-gcjcompile \
+ 	brp-strip brp-strip-comment-note brp-python-hardlink \
++	brp-mint \
+ 	brp-strip-shared brp-strip-static-archive \
+ 	check-files check-prereqs \
+ 	check-buildroot check-rpaths check-rpaths-worker \
+ 	debuginfo.prov \
+ 	find-lang.sh find-requires find-provides \
+ 	perl.prov perl.req pythondeps.sh pythondistdeps.py \
++	find-requires.ksyms find-provides.ksyms \
+ 	metainfo.prov \
+ 	pkgconfigdeps.sh libtooldeps.sh \
+ 	ocaml-find-requires.sh ocaml-find-provides.sh \
+ 	fontconfig.prov desktop-file.prov script.req \
++	sysvinitdeps.sh \
+ 	rpmdb_loadcvt rpm2cpio.sh tgpg 
+ 
+ rpmconfig_DATA = \
+diff --git a/scripts/brp-compress b/scripts/brp-compress
+index 1a5692ff8..090c442f1 100755
+--- a/scripts/brp-compress
++++ b/scripts/brp-compress
+@@ -7,12 +7,39 @@ fi
+ 
+ PREFIX=${1:-/usr}
+ 
++LC_ALL=
++LANG=
++LC_TIME=POSIX
++
+ cd "$RPM_BUILD_ROOT"
+ 
+ # Compress man pages
+ COMPRESS=${COMPRESS:-gzip -9 -n}
+ COMPRESS_EXT=${COMPRESS_EXT:-.gz}
+ 
++check_for_hard_link()
++{
++    dir=$1
++    b=$2
++
++    inode=`ls -i $b | awk '{ print $1 }'`
++    others=`find $dir -type f -inum $inode`
++    for afile in $others ; do
++	[ "$afile" != "$b" ] && rm -f "$afile"
++    done
++
++    case $b in
++	*.Z|*.gz)     gunzip  $b ;;
++	*.bz2)        bunzip2 $b ;;
++	*.xz|*.lzma)  unxz    $b ;;
++    esac
++
++    type=${b##*.}
++    for afile in $others ; do
++	[ "${afile%.$type}" != "${b%.$type}" ] && ln ${b%.$type} ${afile%.$type}
++    done
++}
++
+ for d in .${PREFIX}/man/man* .${PREFIX}/man/*/man* .${PREFIX}/info \
+ 	.${PREFIX}/share/man/man* .${PREFIX}/share/man/*/man* \
+ 	.${PREFIX}/share/info .${PREFIX}/kerberos/man \
+@@ -21,39 +48,40 @@ for d in .${PREFIX}/man/man* .${PREFIX}/man/*/man* .${PREFIX}/info \
+ 	.${PREFIX}/share/fish/man/man*
+ do
+     [ -d $d ] || continue
+-    for f in `find $d -type f ! -name dir`
++    find $d -type f ! -name dir | while read f
+     do
+         [ -f "$f" ] || continue
++	case $(file "$f") in *"image data"*) continue;; esac
+ 
+ 	case "$f" in
+-	 *.gz|*.Z)    gunzip  -f $f; b=`echo $f | sed -e 's/\.\(gz\|Z\)$//'`;;
+-	 *.bz2)       bunzip2 -f $f; b=`echo $f | sed -e 's/\.bz2$//'`;;
+-	 *.xz|*.lzma) unxz    -f $f; b=`echo $f | sed -e 's/\.\(xz\|lzma\)$//'`;;
+-	 *) b=$f;;
++	 *.gz|*.Z)    gunzip  "$f" || check_for_hard_link $d "$f"; b=`echo $f | sed -e 's/\.\(gz\|Z\)$//'`;;
++	 *.bz2)       bunzip2 "$f" || check_for_hard_link $d "$f"; b=`echo $f | sed -e 's/\.bz2$//'`;;
++	 *.xz|*.lzma) unxz    "$f" || check_for_hard_link $d "$f"; b=`echo $f | sed -e 's/\.\(xz\|lzma\)$//'`;;
++	 *) b="$f";;
+ 	esac
+ 
+-	$COMPRESS $b </dev/null 2>/dev/null || {
++	$COMPRESS "$b" </dev/null 2>/dev/null || {
+ 	    inode=`ls -i $b | awk '{ print $1 }'`
+ 	    others=`find $d -type f -inum $inode`
+ 	    if [ -n "$others" ]; then
+ 		for afile in $others ; do
+-		    [ "$afile" != "$b" ] && rm -f $afile
++		    [ "$afile" != "$b" ] && rm -f "$afile"
+ 		done
+ 		$COMPRESS -f $b
+ 		for afile in $others ; do
+-		    [ "$afile" != "$b" ] && ln $b$COMPRESS_EXT $afile$COMPRESS_EXT
++		    [ "$afile" != "$b" ] && ln "$b$COMPRESS_EXT" "$afile$COMPRESS_EXT"
+ 		done
+ 	    else
+-		$COMPRESS -f $b
++		$COMPRESS -f "$b"
+ 	    fi
+ 	}
+     done
+ 
+-    for f in `find $d -type l`
++    find $d -type l | while read f
+     do
+-	l=`ls -l $f | sed -e 's/.* -> //' -e 's/\.\(gz\|Z\|bz2\|xz\|lzma\)$//'`
+-	rm -f $f
+-	b=`echo $f | sed -e 's/\.\(gz\|Z\|bz2\|xz\|lzma\)$//'`
+-	ln -sf $l$COMPRESS_EXT $b$COMPRESS_EXT
++	l="`ls -l "$f" | sed -e 's/.* -> //' -e 's/\.\(gz\|Z\|bz2\|xz\|lzma\)$//'`"
++	rm -f "$f"
++	b="`echo "$f" | sed -e 's/\.\(gz\|Z\|bz2\|xz\|lzma\)$//'`"
++	ln -sf "$l$COMPRESS_EXT" "$b$COMPRESS_EXT"
+     done
+ done
+diff --git a/scripts/brp-mint b/scripts/brp-mint
+new file mode 100644
+index 000000000..0009fca65
+--- /dev/null
++++ b/scripts/brp-mint
+@@ -0,0 +1,13 @@
++#! /bin/sh
++
++# If using normal root, avoid changing anything:
++if [ -z "$RPM_BUILD_ROOT" -o "$RPM_BUILD_ROOT" = "/" ]; then
++       exit 0
++fi
++
++for script in /usr/lib/rpm/brp-mint.d/brp*; do
++  if test -x "$script"; then
++    echo "calling $script"
++    $script || exit 1
++  fi
++done
+diff --git a/scripts/brp-strip b/scripts/brp-strip
+index a9d04d315..89dbb4a6e 100755
+--- a/scripts/brp-strip
++++ b/scripts/brp-strip
+@@ -15,6 +15,7 @@ esac
+ for f in `find "$RPM_BUILD_ROOT" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
+         grep -v "^${RPM_BUILD_ROOT}/\?usr/lib/debug"  | \
+ 	grep -v ' shared object,' | \
++	grep -v '/lib/modules/' | \
+ 	sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped.*/\1/p'`; do
+ 	$STRIP -g "$f" || :
+ done
+diff --git a/scripts/brp-strip-comment-note b/scripts/brp-strip-comment-note
+index a90be7109..8ae20e0f7 100755
+--- a/scripts/brp-strip-comment-note
++++ b/scripts/brp-strip-comment-note
+@@ -16,6 +16,8 @@ esac
+ # for already stripped elf files in the build root
+ for f in `find "$RPM_BUILD_ROOT" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
+         grep -v "^${RPM_BUILD_ROOT}/\?usr/lib/debug"  | \
++	grep -v ' shared object,' | \
++	grep -v '/lib/modules/' | \
+ 	sed -n -e 's/^\(.*\):[ 	]*ELF.*, stripped.*/\1/p'`; do
+ 	note="-R .note"
+ 	if $OBJDUMP -h $f | grep '^[ 	]*[0-9]*[ 	]*.note[ 	]' -A 1 | \
+diff --git a/scripts/check-files b/scripts/check-files
+index ec4cf5c16..451ba46dc 100755
+--- a/scripts/check-files
++++ b/scripts/check-files
+@@ -28,5 +28,5 @@ trap "rm -f \"${FILES_DISK}\"" 0 2 3 5 10 13 15
+ # Find non-directory files in the build root and compare to the manifest.
+ # TODO: regex chars in last sed(1) expression should be escaped
+ find "${RPM_BUILD_ROOT}" -type f -o -type l | LC_ALL=C sort > "${FILES_DISK}"
+-LC_ALL=C sort | diff -d "${FILES_DISK}" - | sed -n 's|^< '"${RPM_BUILD_ROOT}"'\(.*\)$|   \1|gp'
++LC_ALL=C sort | diff -d "${FILES_DISK}" - | sed -n -e 's|^< '"${RPM_BUILD_ROOT}"'/usr/share/info/dir$||' -e 's|^< '"${RPM_BUILD_ROOT}"'\(.*\)$|   \1|gp'
+ 
+diff --git a/scripts/check-rpaths b/scripts/check-rpaths
+index c3d860050..089e43c00 100755
+--- a/scripts/check-rpaths
++++ b/scripts/check-rpaths
+@@ -17,7 +17,7 @@
+ 
+ 
+ test -z "$QA_SKIP_RPATHS" || {
+-    echo $"WARNING: '\$QA_SKIP_RPATHS' is obsoleted by 'QA_RPATHS=[0-7]'" >&2
++    echo "WARNING: '\$QA_SKIP_RPATHS' is obsoleted by 'QA_RPATHS=[0-7]'" >&2
+     exit 0
+ }
+ 
+diff --git a/scripts/find-debuginfo.sh b/scripts/find-debuginfo.sh
+index 212f12791..666cb1b9e 100755
+--- a/scripts/find-debuginfo.sh
++++ b/scripts/find-debuginfo.sh
+@@ -327,13 +327,23 @@ debug_link()
+   local l="/usr/lib/debug$2"
+   local t="$1"
+   echo >> "$LINKSFILE" "$l $t"
+-  link_relative "$t" "$l" "$RPM_BUILD_ROOT"
++
++  # this should correspond to what brp-symlink is doing
++  case $t in
++      /usr*)
++	  link_relative "$t" "$l" "$RPM_BUILD_ROOT"
++	  ;;
++      *)
++	  mkdir -p "$(dirname "$RPM_BUILD_ROOT$l")" && \
++	      ln -snf "$t" "$RPM_BUILD_ROOT$l"
++	  ;;
++  esac
+ }
+ 
+ get_debugfn()
+ {
+   dn=$(dirname "${1#$RPM_BUILD_ROOT}")
+-  bn=$(basename "$1" .debug)${unique_debug_suffix}.debug
++  bn=$(basename "$1")${unique_debug_suffix}.debug
+   debugdn=${debugdir}${dn}
+   debugfn=${debugdn}/${bn}
+ }
+@@ -348,12 +358,28 @@ trap 'rm -rf "$temp"' EXIT
+ 
+ # Build a list of unstripped ELF files and their hardlinks
+ touch "$temp/primary"
+-find "$RPM_BUILD_ROOT" ! -path "${debugdir}/*.debug" -type f \
+-     		     \( -perm -0100 -or -perm -0010 -or -perm -0001 \) \
+-		     -print | LC_ALL=C sort |
+-file -N -f - | sed -n -e 's/^\(.*\):[ 	]*.*ELF.*, not stripped.*/\1/p' |
+-xargs --no-run-if-empty stat -c '%h %D_%i %n' |
++find "$RPM_BUILD_ROOT" ! -path "${debugdir}/*.debug" -type f \( -perm /111 -or -name "*.so*" -or -name "*.ko" \) ! -name "*.a" -print0 | LC_ALL=C sort -z |
++xargs --no-run-if-empty -0 stat -c '%h %D_%i %n' |
+ while read nlinks inum f; do
++  case $(objdump -h $f 2>/dev/null | egrep -o '(debug[\.a-z_]*|gnu.version)') in
++    *debuglink*) continue ;;
++    *debug*) ;;
++    *gnu.version*)
++      echo "WARNING: "`echo $f | sed -e "s,^$RPM_BUILD_ROOT/*,/,"`" is already stripped!"
++      continue
++      ;;
++    *) continue ;;
++  esac
++  # double check that we really have an ELF file,
++  # to handle monodevelop-debugger-gdb and monodevelop-debugger-mdb
++  ftype=`/usr/bin/file $f | cut -d: -f2-`
++  case $ftype in
++    *ELF*) ;;
++    *)
++       echo "$f is not an ELF file, skipping"
++       continue
++       ;;
++  esac
+   if [ $nlinks -gt 1 ]; then
+     var=seen_$inum
+     if test -n "${!var}"; then
+@@ -386,6 +412,8 @@ do_file()
+   if [ "$no_recompute_build_id" = "true" ]; then
+     no_recompute="-n"
+   fi
++  mode=$(stat -c %a "$f")
++  chmod +w "$f"
+   id=$(${lib_rpm_dir}/debugedit -b "$debug_base_name" -d "$debug_dest_name" \
+ 			      $no_recompute -i \
+ 			      ${build_id_seed:+--build-id-seed="$build_id_seed"} \
+@@ -413,17 +441,30 @@ do_file()
+   # just has its file names collected and adjusted.
+   case "$dn" in
+   /usr/lib/debug/*)
++    chmod $mode "$f"
+     return ;;
+   esac
+ 
+   mkdir -p "${debugdn}"
+-  if test -w "$f"; then
+-    strip_to_debug "${debugfn}" "$f"
+-  else
+-    chmod u+w "$f"
+-    strip_to_debug "${debugfn}" "$f"
+-    chmod u-w "$f"
+-  fi
++  objcopy --only-keep-debug "$f" "$debugfn" || :
++  (
++    shopt -s extglob
++    strip_option="--strip-all"
++    case "$f" in
++      *.ko)
++	strip_option="--strip-debug" ;;
++      *$STRIP_KEEP_SYMTAB*)
++	if test -n "$STRIP_KEEP_SYMTAB"; then
++	  strip_option="--strip-debug"
++        fi
++        ;;
++    esac
++    if test "$NO_DEBUGINFO_STRIP_DEBUG" = true ; then
++      strip_option=
++    fi
++    objcopy --add-gnu-debuglink="$debugfn" -R .comment -R .GCC.command.line $strip_option "$f"
++    chmod $mode "$f"
++  ) || :
+ 
+   # strip -g implies we have full symtab, don't add mini symtab in that case.
+   # It only makes sense to add a minisymtab for executables and shared
+@@ -547,19 +588,25 @@ if $run_dwz \
+   fi
+ fi
+ 
+-# For each symlink whose target has a .debug file,
+-# make a .debug symlink to that file.
+-find "$RPM_BUILD_ROOT" ! -path "${debugdir}/*" -type l -print |
+-while read f
+-do
+-  t=$(readlink -m "$f").debug
+-  f=${f#$RPM_BUILD_ROOT}
+-  t=${t#$RPM_BUILD_ROOT}
+-  if [ -f "$debugdir$t" ]; then
+-    echo "symlinked /usr/lib/debug$t to /usr/lib/debug${f}.debug"
+-    debug_link "/usr/lib/debug$t" "${f}.debug"
+-  fi
+-done
++# We used to make a .debug symlink for each symlink whose target
++# has a .debug file to that file.  This is not necessary because
++# the debuglink section contains only the destination of those links.
++# Creating those links anyway results in debuginfo packages for
++# devel packages just because of the .so symlinks in them.
++
++## For each symlink whose target has a .debug file,
++## make a .debug symlink to that file.
++#find "$RPM_BUILD_ROOT" ! -path "${debugdir}/*" -type l -print |
++#while read f
++#do
++#  t=$(readlink -m "$f").debug
++#  f=${f#$RPM_BUILD_ROOT}
++#  t=${t#$RPM_BUILD_ROOT}
++#  if [ -f "$debugdir$t" ]; then
++#    echo "symlinked /usr/lib/debug$t to /usr/lib/debug${f}.debug"
++#    debug_link "/usr/lib/debug$t" "${f}.debug"
++#  fi
++#done
+ 
+ if [ -s "$SOURCEFILE" ]; then
+   # See also debugedit invocation. Directories must match up.
+@@ -581,12 +628,14 @@ if [ -s "$SOURCEFILE" ]; then
+   # and non-standard modes may be inherented from original directories, fixup
+   find "${RPM_BUILD_ROOT}${debug_dest_name}" -type d -print0 |
+   xargs --no-run-if-empty -0 chmod 0755
++  find "${RPM_BUILD_ROOT}${debug_dest_name}" -type f -print0 |
++  xargs --no-run-if-empty -0 chmod a+r
+ fi
+ 
+ if [ -d "${RPM_BUILD_ROOT}/usr/lib" ] || [ -d "${RPM_BUILD_ROOT}/usr/src" ]; then
+   ((nout > 0)) ||
+   test ! -d "${RPM_BUILD_ROOT}/usr/lib" ||
+-  (cd "${RPM_BUILD_ROOT}/usr/lib"; find debug -type d) |
++  (cd "${RPM_BUILD_ROOT}/usr/lib"; test ! -d debug || find debug -type d) |
+   sed 's,^,%dir /usr/lib/,' >> "$LISTFILE"
+ 
+   (cd "${RPM_BUILD_ROOT}/usr"
+diff --git a/scripts/find-lang.sh b/scripts/find-lang.sh
+index 1542a43fb..aae7e6e51 100755
+--- a/scripts/find-lang.sh
++++ b/scripts/find-lang.sh
+@@ -22,16 +22,17 @@ the top of the tree containing the files to be processed--should be
+ PACKAGE_NAME is the %{name} of the package. This should also be
+ the basename of the .mo files.  the output is written to
+ PACKAGE_NAME.lang unless \$3 is given in which case output is written
+-to \$3.
++to \$3 (note that \$3 is appended to if given).
+ Additional options:
+-  --with-gnome		find GNOME help files
++  --without-gnome	do not find GNOME help files
+   --with-mate		find MATE help files
+-  --with-kde		find KDE help files
++  --without-kde		do not find KDE help files
+   --with-qt		find Qt translation files
+   --with-html		find HTML files
+   --with-man		find localized man pages
+   --all-name		match all package/domain names
+   --without-mo		do not find locale files
++  --metainfo            create a metainfo.xml file for AppStream
+ EOF
+ exit 1
+ }
+@@ -50,9 +51,9 @@ else NAMES[0]=$1
+ fi
+ shift
+ 
+-GNOME=#
++GNOME=
+ MATE=#
+-KDE=#
++KDE=
+ QT=#
+ MAN=#
+ HTML=#
+@@ -60,6 +61,9 @@ MO=
+ MO_NAME=${NAMES[0]}.lang
+ ALL_NAME=#
+ NO_ALL_NAME=
++ONLY_C=#
++NO_C=#
++METAINFO=#
+ while test $# -gt 0 ; do
+     case "${1}" in
+ 	--with-gnome )
+@@ -74,6 +78,14 @@ while test $# -gt 0 ; do
+ 		KDE=
+ 		shift
+ 		;;
++	--without-gnome )
++  		GNOME=#
++		shift
++		;;
++	--without-kde )
++		KDE=#
++		shift
++		;;
+ 	--with-qt )
+ 		QT=
+ 		shift
+@@ -95,6 +107,19 @@ while test $# -gt 0 ; do
+ 		NO_ALL_NAME=#
+ 		shift
+ 		;;
++	--with-only-C )
++		ONLY_C=
++		shift
++		;;
++	--without-C )
++		NO_C=
++		shift
++		;;
++	--metainfo )
++		METAINFO=
++		METADESKID=${2}
++		shift 2
++		;;
+ 	* )
+ 		if [ $MO_NAME != ${NAMES[$#]}.lang ]; then
+ 		    NAMES[${#NAMES[@]}]=$MO_NAME
+@@ -103,11 +128,30 @@ while test $# -gt 0 ; do
+ 		shift
+ 		;;
+     esac
+-done    
++done
+ 
+-if [ -f $MO_NAME ]; then
+-    rm $MO_NAME
++if ! test -s $MO_NAME ; then
++	echo "%defattr (644, root, root, 755)" > $MO_NAME
+ fi
++MO_NAME_NEW=$MO_NAME.tmp.$$
++rm -f $MO_NAME_NEW
++
++# remove languages we do not yet support - but give out statistics
++test -d "$TOP_DIR/usr/share/locale/" && find "$TOP_DIR/usr/share/locale/" -maxdepth 1 -type d | sed 's:'"$TOP_DIR"/usr/share/locale/'::; /^$/d' | while read dir; do
++  if ! rpm -ql filesystem | egrep -q "/usr/share/locale/$dir"$; then
++    find $TOP_DIR/usr/share/locale/$dir -name *.mo | sed 's:'"$TOP_DIR"'::' | while read file; do
++      echo -n "removing translation $file: "
++      msgunfmt "$TOP_DIR/$file" | msgfmt --statistics -o /dev/null -
++    done
++    rm -rf $TOP_DIR/usr/share/locale/$dir
++  fi
++done
++test -d "$TOP_DIR/usr/share/help/" && find $TOP_DIR/usr/share/help/ -maxdepth 1 -type d | sed 's:'"$TOP_DIR"/usr/share/help/'::; /^$/d' | while read dir; do
++  if ! rpm -ql filesystem | egrep -q "/usr/share/help/$dir"$; then
++    echo "removing help translation /usr/share/help/$dir"
++    rm -rf $TOP_DIR/usr/share/help/$dir
++  fi
++done
+ 
+ for NAME in ${NAMES[@]}; do
+ 
+@@ -116,44 +160,52 @@ s:'"$TOP_DIR"'::
+ '"$ALL_NAME$MO"'s:\(.*/locale/\)\([^/_]\+\)\(.*\.mo$\):%lang(\2) \1\2\3:
+ '"$NO_ALL_NAME$MO"'s:\(.*/locale/\)\([^/_]\+\)\(.*/'"$NAME"'\.mo$\):%lang(\2) \1\2\3:
+ s:^\([^%].*\)::
++'"$ONLY_C"'/%lang(C)/!d
++'"$NO_C"'/%lang(C)/d
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ find "$TOP_DIR" -type d|sed '
+ s:'"$TOP_DIR"'::
+ '"$NO_ALL_NAME$GNOME"'s:\(.*/share/help/\)\([^/_]\+\)\([^/]*\)\(/'"$NAME"'\)$:%lang(\2) %doc \1\2\3\4/:
+ '"$ALL_NAME$GNOME"'s:\(.*/share/help/\)\([^/_]\+\)\([^/]*\)\(/[a-zA-Z0-9.\_\-]\+\)$:%lang(\2) %doc \1\2\3\4/:
+ s:^\([^%].*\)::
++'"$ONLY_C"'/%lang(C)/!d
++'"$NO_C"'/%lang(C)/d
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ find "$TOP_DIR" -type d|sed '
+ s:'"$TOP_DIR"'::
+-'"$NO_ALL_NAME$GNOME"'s:\(.*/gnome/help/'"$NAME"'$\):%dir \1:
++'"$NO_ALL_NAME$GNOME"'s:\(.*/gnome/help/'"$NAME"'$\):%lang(C) %dir %doc \1:
+ '"$NO_ALL_NAME$GNOME"'s:\(.*/gnome/help/'"$NAME"'/[a-zA-Z0-9.\_\-]/.\+\)::
+-'"$NO_ALL_NAME$GNOME"'s:\(.*/gnome/help/'"$NAME"'\/\)\([^/_]\+\):%lang(\2) \1\2:
+-'"$ALL_NAME$GNOME"'s:\(.*/gnome/help/[a-zA-Z0-9.\_\-]\+$\):%dir \1:
++'"$NO_ALL_NAME$GNOME"'s:\(.*/gnome/help/'"$NAME"'\/\)\([^/_]\+\):%lang(\2) %doc \1\2:
++'"$ALL_NAME$GNOME"'s:\(.*/gnome/help/[a-zA-Z0-9.\_\-]\+$\):%lang(C) %dir %doc \1:
+ '"$ALL_NAME$GNOME"'s:\(.*/gnome/help/[a-zA-Z0-9.\_\-]\+/[a-zA-Z0-9.\_\-]/.\+\)::
+-'"$ALL_NAME$GNOME"'s:\(.*/gnome/help/[a-zA-Z0-9.\_\-]\+\/\)\([^/_]\+\):%lang(\2) \1\2:
++'"$ALL_NAME$GNOME"'s:\(.*/gnome/help/[a-zA-Z0-9.\_\-]\+\/\)\([^/_]\+\):%lang(\2) %doc \1\2:
+ s:%lang(.*) .*/gnome/help/[a-zA-Z0-9.\_\-]\+/[a-zA-Z0-9.\_\-]\+/.*::
+ s:^\([^%].*\)::
++'"$ONLY_C"'/%lang(C)/!d
++'"$NO_C"'/%lang(C)/d
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ find "$TOP_DIR" -type d|sed '
+ s:'"$TOP_DIR"'::
+ '"$NO_ALL_NAME$GNOME"'s:\(.*/omf/'"$NAME"'$\):%dir \1:
+ '"$ALL_NAME$GNOME"'s:\(.*/omf/[a-zA-Z0-9.\_\-]\+$\):%dir \1:
+ s:^\([^%].*\)::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ find "$TOP_DIR" -type f|sed '
+ s:'"$TOP_DIR"'::
+ '"$NO_ALL_NAME$GNOME"'s:\(.*/omf/'"$NAME"'/'"$NAME"'-\([^/.]\+\)\.omf\):%lang(\2) \1:
+ '"$ALL_NAME$GNOME"'s:\(.*/omf/[a-zA-Z0-9.\_\-]\+/[a-zA-Z0-9.\_\-]\+-\([^/.]\+\)\.omf\):%lang(\2) \1:
+ s:^[^%].*::
++'"$ONLY_C"'/%lang(C)/!d
++'"$NO_C"'/%lang(C)/d
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ find $TOP_DIR -type d|sed '
+ s:'"$TOP_DIR"'::
+@@ -166,14 +218,14 @@ s:'"$TOP_DIR"'::
+ s:%lang(.*) .*/mate/help/[a-zA-Z0-9.\_\-]\+/[a-zA-Z0-9.\_\-]\+/.*::
+ s:^\([^%].*\)::
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ find "$TOP_DIR" -type d|sed '
+ s:'"$TOP_DIR"'::
+ '"$NO_ALL_NAME$MATE"'s:\(.*/omf/'"$NAME"'$\):%dir \1:
+ '"$ALL_NAME$MATE"'s:\(.*/omf/[a-zA-Z0-9.\_\-]\+$\):%dir \1:
+ s:^\([^%].*\)::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ find "$TOP_DIR" -type f|sed '
+ s:'"$TOP_DIR"'::
+@@ -181,7 +233,7 @@ s:'"$TOP_DIR"'::
+ '"$ALL_NAME$MATE"'s:\(.*/omf/[a-zA-Z0-9.\_\-]\+/[a-zA-Z0-9.\_\-]\+-\([^/.]\+\)\.omf\):%lang(\2) \1:
+ s:^[^%].*::
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ KDE3_HTML=`kde-config --expandvars --install html 2>/dev/null`
+ if [ x"$KDE3_HTML" != x ] && [ -d "$TOP_DIR$KDE3_HTML" ]; then
+@@ -192,8 +244,10 @@ s:'"$TOP_DIR"'::
+ '"$ALL_NAME$KDE"'s:\(.*/HTML/\)\([^/_]\+\)\(.*/[a-zA-Z0-9.\_\-]\+/\)::
+ '"$ALL_NAME$KDE"'s:\(.*/HTML/\)\([^/_]\+\)\(.*/[a-zA-Z0-9.\_\-]\+$\):%lang(\2) \1\2\3:
+ s:^\([^%].*\)::
++'"$ONLY_C"'/%lang(C)/!d
++'"$NO_C"'/%lang(C)/d
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ fi
+ 
+ KDE4_HTML=`kde4-config --expandvars --install html 2>/dev/null`
+@@ -205,8 +259,10 @@ s:'"$TOP_DIR"'::
+ '"$ALL_NAME$KDE"'s:\(.*/HTML/\)\([^/_]\+\)\(.*/[a-zA-Z0-9.\_\-]\+/\)::
+ '"$ALL_NAME$KDE"'s:\(.*/HTML/\)\([^/_]\+\)\(.*/[a-zA-Z0-9.\_\-]\+$\):%lang(\2) \1\2\3:
+ s:^\([^%].*\)::
++'"$ONLY_C"'/%lang(C)/!d
++'"$NO_C"'/%lang(C)/d
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ fi
+ 
+ KF5_HTML=`kf5-config --expandvars --install html 2>/dev/null`
+@@ -219,7 +275,7 @@ s:'"$TOP_DIR"'::
+ '"$ALL_NAME$KDE"'s:\(.*/HTML/\)\([^/_]\+\)\(.*/[a-zA-Z0-9.\_\-]\+$\):%lang(\2) \1\2\3:
+ s:^\([^%].*\)::
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ fi
+ 
+ find "$TOP_DIR" -type d|sed '
+@@ -230,11 +286,13 @@ s:'"$TOP_DIR"'::
+ '"$ALL_NAME$HTML"'s:\(.*/doc/HTML/\)\([^/_]\+\)\(.*/[a-zA-Z0-9.\_\-]\+$\):%lang(\2) \1\2\3:
+ s:^\([^%].*\)::
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ find "$TOP_DIR" -type f -o -type l|sed '
+ s:'"$TOP_DIR"'::
+-'"$NO_ALL_NAME$QT"'s:\(.*/'"$NAME"'_\([a-zA-Z]\{2\}\([_@].*\)\?\)\.qm$\):%lang(\2) \1:
++'"$ALL_NAME$QT"'s:\(.*/locale/\)\([^/]\+\)\(/.\+/\)\([^/]\+_qt\.qm$\):%lang(\2) \1\2\3\4:
++'"$NO_ALL_NAME$QT"'s:\(.*/locale/\)\([^/]\+\)\(/.\+/\)\('"$NAME"'_qt\.qm$\):%lang(\2) \1\2\3\4:
++'"$NO_ALL_NAME$QT"'s:^\([^%].*/'"$NAME"'_\([a-zA-Z]\{2\}\([_@].*\)\?\)\.qm$\):%lang(\2) \1:
+ '"$ALL_NAME$QT"'s:^\([^%].*/\([a-zA-Z]\{2\}[_@].*\)\.qm$\):%lang(\2) \1:
+ '"$ALL_NAME$QT"'s:^\([^%].*/\([a-zA-Z]\{2\}\)\.qm$\):%lang(\2) \1:
+ '"$ALL_NAME$QT"'s:^\([^%].*/[^/_]\+_\([a-zA-Z]\{2\}[_@].*\)\.qm$\):%lang(\2) \1:
+@@ -242,28 +300,57 @@ s:'"$TOP_DIR"'::
+ '"$ALL_NAME$QT"'s:^\([^%].*/[^/]\+_\([a-zA-Z]\{2\}[_@].*\)\.qm$\):%lang(\2) \1:
+ '"$ALL_NAME$QT"'s:^\([^%].*/[^/]\+_\([a-zA-Z]\{2\}\)\.qm$\):%lang(\2) \1:
+ s:^[^%].*::
++'"$ONLY_C"'/%lang(C)/!d
++'"$NO_C"'/%lang(C)/d
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ find "$TOP_DIR" -type d|sed '
+ s:'"$TOP_DIR"'::
+ '"$ALL_NAME$MAN"'s:\(.*/man/\([^/_]\+\).*/man[a-z0-9]\+/\)::
+ '"$ALL_NAME$MAN"'s:\(.*/man/\([^/_]\+\).*/man[a-z0-9]\+$\):%lang(\2) \1*:
+ s:^\([^%].*\)::
++'"$ONLY_C"'/%lang(C)/!d
++'"$NO_C"'/%lang(C)/d
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ find "$TOP_DIR" -type f -o -type l|sed -r 's/\.(bz2|gz|xz|lzma|Z)$//g' | sed '
+ s:'"$TOP_DIR"'::
+ '"$NO_ALL_NAME$MAN"'s:\(.*/man/\([^/_]\+\).*/man[a-z0-9]\+/'"$NAME"'\.[a-z0-9].*\):%lang(\2) \1*:
+ s:^\([^%].*\)::
++'"$ONLY_C"'/%lang(C)/!d
++'"$NO_C"'/%lang(C)/d
+ s:%lang(C) ::
+-/^$/d' >> $MO_NAME
++/^$/d' >> $MO_NAME_NEW
+ 
+ done # for NAME in ${NAMES[@]}
+ 
+-if ! grep -q / $MO_NAME; then
+-	echo "No translations found for ${NAME} in ${TOP_DIR}"
++if ! grep -q / $MO_NAME_NEW; then
++	echo "No translations found for ${NAMES[*]} in ${TOP_DIR}"
++	rm -f $MO_NAME_NEW
+ 	exit 1
+ fi
++
++if [ -z "${METAINFO}" ] ; then
++    # create a metainfo.xml file for METADESKID
++    mkdir -p ${TOP_DIR}/usr/share/appdata
++    cat > ${TOP_DIR}/usr/share/appdata/${METADESKID}-lang.metainfo.xml <<EOF
++<?xml version="1.0" encoding="UTF-8"?>
++<!-- Copyright 2016 RPMint - file is auto-generated -->
++<component type="addon">
++  <id>${METADESKID}-lang</id>
++  <extends>${METADESKID}.desktop</extends>
++  <name>Translations</name>
++  <summary>Translate the user interface</summary>
++  <metadata_license>CC0-1.0</metadata_license>
++  <updatecontact>https://rpmint.com</updatecontact>
++</component>
++EOF
++  echo /usr/share/appdata/${METADESKID}-lang.metainfo.xml >> $MO_NAME_NEW
++fi
++
++sort -u $MO_NAME_NEW >> $MO_NAME
++rm -f $MO_NAME_NEW
++
+ exit 0
+diff --git a/scripts/find-provides.ksyms b/scripts/find-provides.ksyms
+new file mode 100644
+index 000000000..e485c3bf5
+--- /dev/null
++++ b/scripts/find-provides.ksyms
+@@ -0,0 +1,81 @@
++#! /bin/bash
++
++IFS=$'\n'
++
++is_opensuse=false
++
++if test "$1" = "--opensuse"; then
++    if test "$2" -gt 0; then
++        is_opensuse=true
++    fi
++    shift 2
++fi
++
++if ! $is_opensuse; then
++    trap 'rm -f "$tmp"' EXIT
++    tmp=$(mktemp)
++fi
++
++
++while read f; do
++    test -e "$f" || continue
++    is_module=""
++    case "$f" in
++    *.debug)
++        continue
++        ;;
++    */boot/vmlinu[xz]-*)
++        flavor=${f##*/vmlinu[xz]-}
++        flavor=${flavor%.gz}
++        echo "kernel-uname-r = $flavor"
++        version=${flavor}
++        flavor=${flavor##*-}
++        ;;
++    */lib/modules/*/*.ko | */lib/modules/*/*.ko.gz | */boot/vmlinu[xz]*)
++        is_module="1"
++        ;;
++    *)
++        continue
++    esac
++    if $is_opensuse; then
++        continue
++    fi
++    unzip=false
++    case "$f" in
++    *.gz | */boot/vmlinuz*)
++        unzip=true
++    esac
++    if $unzip && gzip -cd "$f" >"$tmp"; then
++        f=$tmp
++    fi
++    if test -z "$flavor" -a -n "$is_module" ; then
++        flavor=$(/sbin/modinfo -F vermagic "$f")
++        flavor=${flavor%% *}
++        version=${flavor}
++        flavor=${flavor##*-}
++    fi
++    if test -z "$flavor"; then
++        echo "warning: cannot determine kernel flavor from $(/sbin/modinfo -F vermagic "$f" 2>&1)" >&2
++        continue
++    fi
++    objdir=$(readlink /lib/modules/$version/build)
++    objdir_build=$RPM_BUILD_ROOT$(readlink $RPM_BUILD_ROOT/lib/modules/$version/build)
++    for i in $objdir_build $objdir ; do
++            ksym_provides=$i/scripts/mod/ksym-provides
++            [ -x $ksym_provides ] && break
++    done
++    if [ -x $ksym_provides ] ; then
++            $ksym_provides $flavor $f
++    else
++            major=${version%%.*}
++            sub=${version#*.}
++            sub=${sub%%.*}
++            if [ "$major" -ge 4 -a "$sub" -ge 10 ] ; then
++                    echo "error: cannot determine ksym provides of $f - missing ksym-povides tool." >&2
++            else
++                    nm "$f" \
++                            | sed -r -ne "s/^0*([0-9a-f]+) A __crc_(.+)/ksym($flavor:\\2) = \\1/p"
++            fi
++    fi
++done \
++| sort -u
+diff --git a/scripts/find-requires.ksyms b/scripts/find-requires.ksyms
+new file mode 100644
+index 000000000..bc5c9b3fe
+--- /dev/null
++++ b/scripts/find-requires.ksyms
+@@ -0,0 +1,29 @@
++#! /bin/bash
++
++IFS=$'\n'
++
++is_opensuse=false
++
++if test "$1" = "--opensuse"; then
++    if test "$2" -gt 0; then
++        is_opensuse=true
++    fi
++    shift 2
++fi
++
++if ! $is_opensuse && ! test -e /sbin/modprobe; then
++    cat > /dev/null
++    exit 0
++fi
++
++for f in $(grep -E '/lib/modules/.+\.ko$' | grep -v '/lib/modules/[^/]*/kernel/'); do
++    flavor=${f#*/lib/modules/}
++    flavor=${flavor%%/*}
++    if $is_opensuse; then
++        echo "kernel-uname-r = $flavor"
++        continue
++    fi
++    flavor=${flavor##*-}
++    /sbin/modprobe --dump-modversions "$f" \
++	    | sed -r -ne "s/^0x0*([0-9a-f]+)[[:blank:]]+(.+)/ksym($flavor:\\2) = \\1/p"
++done | sort -u
+diff --git a/scripts/find-supplements b/scripts/find-supplements
+new file mode 100644
+index 000000000..fe03e3a56
+--- /dev/null
++++ b/scripts/find-supplements
+@@ -0,0 +1,14 @@
++#!/bin/bash
++
++# This script reads filenames from STDIN and outputs any relevant provides
++# information that needs to be included in the package.
++IFS=$'\n'
++filelist=($(cat))
++
++#
++# --- Kernel module hardware identifiers
++# (e.g., modalias(pci:v0000109Ed00000878sv00000070sd0000FF01bc*sc*i*)
++[ -x /usr/lib/rpm/find-supplements.ksyms ] &&
++    printf "%s\n" "${filelist[@]}" | /usr/lib/rpm/find-supplements.ksyms "$@"
++
++exit 0
+diff --git a/scripts/find-supplements.ksyms b/scripts/find-supplements.ksyms
+new file mode 100644
+index 000000000..6d8fb7e06
+--- /dev/null
++++ b/scripts/find-supplements.ksyms
+@@ -0,0 +1,61 @@
++#!/bin/bash
++
++IFS=$'\n'
++
++print_modaliases() {
++    declare class=$1 variants=$2 pos=$3
++    if [ -n "$variants" ]; then
++	echo "${class:0:pos}[$variants]${class:pos+1}"
++    else
++	[ -z "$class" ] || echo "$class"
++    fi
++}
++
++combine_modaliases() {
++    declare tag class variants pos n
++    read class
++    while read tag; do
++	for ((n=0; n<${#class}; n++)); do
++	    if [ "*" != "${class:n:1}" -a \
++		 "${class:0:n}" = "${tag:0:n}" -a \
++		 "${class:n+1}" = "${tag:n+1}" ] &&
++	       ( [ -z "$pos" ] || [ $n = $pos ] ); then
++		variants="${variants:-${class:n:1}}${tag:n:1}"
++		pos=$n
++		break
++	    fi
++	done
++	if [ $n -eq ${#class} ]; then
++	    print_modaliases "$class" "$variants" "$pos"
++	    variants=
++	    pos=
++	    class=$tag
++	fi
++    done
++    print_modaliases "$class" "$variants" "$pos"
++}
++
++# Encode all characters other than [*:a-zA-Z0-9] in stdin as %XX.
++# (This includes the % character itself, which becomes %25.)
++hexenc() {
++    local line hex
++
++    while read line; do
++            set -- "" "$line"
++            while [[ "$2" =~ ([*:a-zA-Z0-9]*)([^*:a-zA-Z0-9])(.*) ]]; do
++                hex=$(echo -n "${BASH_REMATCH[2]}" | hexdump -e '"%X"')
++                set -- "$1${BASH_REMATCH[1]}%$hex" "${BASH_REMATCH[3]}"
++            done
++            echo "$1$2"
++    done
++}
++
++for module in $(grep -E '/lib/modules/.+\.ko$' | grep -v '/lib/modules/[^/]*/kernel/'); do
++    vermagic=$(/sbin/modinfo -F vermagic "$module")
++    krel=${vermagic%% *}
++    /sbin/modinfo -F alias "$module" \
++    | hexenc \
++    | sed -nre "s,(.+:.+),modalias(kernel-${krel##*-}:\\1),p"
++done \
++| sort -u \
++| combine_modaliases
+diff --git a/scripts/sysvinitdeps.sh b/scripts/sysvinitdeps.sh
+new file mode 100644
+index 000000000..ea9138389
+--- /dev/null
++++ b/scripts/sysvinitdeps.sh
+@@ -0,0 +1,17 @@
++#!/bin/sh
++
++[ "$1" = '-P' -o "$1" = '--provides' ] || {
++    cat > /dev/null
++    exit 0
++}
++
++while read file; do
++	case $file in
++          */etc/init.d/*)
++		provs=`grep '^# *Provides:' $file | sed 's,^.*:,,'`
++		for p in $provs; do
++			echo "sysvinit($p)"
++		done
++	  ;;
++        esac
++done
+diff --git a/sign/rpmgensig.c b/sign/rpmgensig.c
+index fdc0be822..f20be1d89 100644
+--- a/sign/rpmgensig.c
++++ b/sign/rpmgensig.c
+@@ -49,7 +49,13 @@ static char *mkTempFifo(void)
+ 
+     tmpdir = rpmGetPath(tmppath, "/rpm-tmp.XXXXXX", NULL);
+     mode = umask(0077);
++#ifdef HAVE_MKDTEMP
+     tmpdir = mkdtemp(tmpdir);
++#else
++    tmpdir = mktemp(tmpdir);
++    if (tmpdir && mkdir(tmpdir, 0700) != 0)
++       tmpdir = _free(tmpdir);
++#endif
+     umask(mode);
+     if (tmpdir == NULL) {
+ 	rpmlog(RPMLOG_ERR, _("error creating temp directory %s: %m\n"),
+@@ -66,7 +72,7 @@ static char *mkTempFifo(void)
+ 
+ exit:
+     if (fifofn == NULL && tmpdir != NULL)
+-	unlink(tmpdir);
++	rmdir(tmpdir);
+ 
+     free(tmppath);
+     free(tmpdir);
+diff --git a/system.h b/system.h
+index 570cef13a..7b5f9565c 100644
+--- a/system.h
++++ b/system.h
+@@ -84,6 +84,10 @@ char * stpncpy(char * dest, const char * src, size_t n);
+ extern int fdatasync(int fildes);
+ #endif
+ 
++#ifndef HAVE_PTHREAD_H
++#define __thread
++#endif
++
+ #include "rpmio/rpmutil.h"
+ /* compatibility macros to avoid a mass-renaming all over the codebase */
+ #define xmalloc(_size) rmalloc((_size))
+@@ -107,7 +111,9 @@ extern int fdatasync(int fildes);
+   extern const char *__progname;
+ # define xgetprogname(pn) __progname
+ #else
+-# error "Did not find any sutable implementation of xsetprogname/xgetprogname"
++  extern const char *__progname;
++# define xsetprogname(pn) __progname = pn
++# define xgetprogname(pn) __progname
+ #endif
+ 
+ /* Take care of NLS matters.  */
+@@ -125,6 +131,8 @@ extern int fdatasync(int fildes);
+ 
+ #include "misc/fnmatch.h"
+ 
++#ifdef HAVE_DLFCN_H
+ #include <dlfcn.h>
++#endif
+ 
+ #endif	/* H_SYSTEM */
+diff --git a/tools/debugedit.c b/tools/debugedit.c
+index 9f8dcd0fb..202123948 100644
+--- a/tools/debugedit.c
++++ b/tools/debugedit.c
+@@ -39,9 +39,90 @@
+ #include <popt.h>
+ 
+ #include <gelf.h>
+-#include <dwarf.h>
+ 
+ 
++/* some defines taken from the dwarf standard */
++
++#define DW_TAG_compile_unit	0x11
++
++#define DW_AT_name		0x03
++#define DW_AT_stmt_list		0x10
++#define DW_AT_comp_dir		0x1b
++
++#define DW_FORM_addr		0x01
++#define DW_FORM_block2		0x03
++#define DW_FORM_block4		0x04
++#define DW_FORM_data2		0x05
++#define DW_FORM_data4		0x06
++#define DW_FORM_data8		0x07
++#define DW_FORM_string		0x08
++#define DW_FORM_block		0x09
++#define DW_FORM_block1		0x0a
++#define DW_FORM_data1		0x0b
++#define DW_FORM_flag		0x0c
++#define DW_FORM_sdata		0x0d
++#define DW_FORM_strp		0x0e
++#define DW_FORM_udata		0x0f
++#define DW_FORM_ref_addr	0x10
++#define DW_FORM_ref1		0x11
++#define DW_FORM_ref2		0x12
++#define DW_FORM_ref4		0x13
++#define DW_FORM_ref8		0x14
++#define DW_FORM_ref_udata	0x15
++#define DW_FORM_indirect	0x16
++#define DW_FORM_sec_offset  0x17
++#define DW_FORM_exprloc     0x18
++#define DW_FORM_flag_present 0x19
++#define DW_FORM_strx        0x1a
++#define DW_FORM_addrx       0x1b
++#define DW_FORM_ref_sup4    0x1c
++#define DW_FORM_strp_sup    0x1d
++#define DW_FORM_data16      0x1e
++#define DW_FORM_line_strp   0x1f
++#define DW_FORM_ref_sig8    0x20
++#define DW_FORM_implicit_const 0x21
++#define DW_FORM_loclistx    0x22
++#define DW_FORM_rnglistx    0x23
++#define DW_FORM_ref_sup8    0x24
++#define DW_FORM_strx1       0x25
++#define DW_FORM_strx2       0x26
++#define DW_FORM_strx3       0x27
++#define DW_FORM_strx4       0x28
++#define DW_FORM_addrx1      0x29
++#define DW_FORM_addrx2      0x2a
++#define DW_FORM_addrx3      0x2b
++#define DW_FORM_addrx4      0x2c
++#define DW_FORM_GNU_addr_index 0x1f01
++#define DW_FORM_GNU_str_index 0x1f02
++
++#define DW_FORM_GNU_ref_alt 0x1f20
++#define DW_FORM_GNU_strp_alt 0x1f21
++
++#define DW_MACRO_define      0x01
++#define DW_MACRO_undef       0x02
++#define DW_MACRO_start_file  0x03
++#define DW_MACRO_end_file    0x04
++#define DW_MACRO_define_strp 0x05
++#define DW_MACRO_undef_strp  0x06
++#define DW_MACRO_import      0x07
++#define DW_MACRO_define_sup  0x08
++#define DW_MACRO_undef_sup   0x09
++#define DW_MACRO_import_sup  0x0a
++#define DW_MACRO_define_strx 0x0b
++#define DW_MACRO_undef_strx  0x0c
++#define DW_MACRO_lo_user     0xe0
++#define DW_MACRO_hi_user     0xff
++
++#define DW_MACRO_GNU_define		 DW_MACRO_define
++#define DW_MACRO_GNU_undef		 DW_MACRO_undef
++#define DW_MACRO_GNU_start_file		 DW_MACRO_start_file
++#define DW_MACRO_GNU_end_file		 DW_MACRO_end_file
++#define DW_MACRO_GNU_define_indirect	 DW_MACRO_define_strp
++#define DW_MACRO_GNU_undef_indirect	 DW_MACRO_undef_strp
++#define DW_MACRO_GNU_transparent_include DW_MACRO_import
++#define DW_MACRO_GNU_lo_user		 DW_MACRO_lo_user
++#define DW_MACRO_GNU_hi_user		 DW_MACRO_hi_user
++
+ /* Unfortunately strtab manipulation functions were only officially added
+    to elfutils libdw in 0.167.  Before that there were internal unsupported
+    ebl variants.  While libebl.h isn't supported we'll try to use it anyway
+diff --git a/tools/elfdeps.c b/tools/elfdeps.c
+index 6d9094874..c62e23330 100644
+--- a/tools/elfdeps.c
++++ b/tools/elfdeps.c
+@@ -18,6 +18,7 @@ int soname_only = 0;
+ int fake_soname = 1;
+ int filter_soname = 1;
+ int require_interp = 0;
++int assume_exec = 0;
+ 
+ typedef struct elfInfo_s {
+     Elf *elf;
+@@ -300,7 +301,7 @@ static int processFile(const char *fn, int dtype)
+     if (ehdr->e_type == ET_DYN || ehdr->e_type == ET_EXEC) {
+ 	ei->marker = mkmarker(ehdr);
+     	ei->isDSO = (ehdr->e_type == ET_DYN);
+-	ei->isExec = (st.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH));
++	ei->isExec = assume_exec || (st.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH));
+ 
+ 	processProgHeaders(ei, ehdr);
+ 	processSections(ei);
+@@ -366,6 +367,7 @@ int main(int argc, char *argv[])
+ 	{ "no-fake-soname", 0, POPT_ARG_VAL, &fake_soname, 0, NULL, NULL },
+ 	{ "no-filter-soname", 0, POPT_ARG_VAL, &filter_soname, 0, NULL, NULL },
+ 	{ "require-interp", 0, POPT_ARG_VAL, &require_interp, -1, NULL, NULL },
++	{ "assume-exec", 0, POPT_ARG_VAL, &assume_exec, -1, NULL, NULL },
+ 	POPT_AUTOHELP 
+ 	POPT_TABLEEND
+     };
