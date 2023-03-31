@@ -16,11 +16,17 @@ patches/libvorbis/libvorbis-CVE-2017-14160.patch
 patches/libvorbis/libvorbis-CVE-2018-10393.patch
 patches/libvorbis/libvorbis-CVE-2018-10392.patch
 patches/libvorbis/libvorbis-staticlibs.patch
-patches/libvorbis/libvorbis-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
-
 unpack_archive
+
+cd "$srcdir"
+
+rm -f config.sub
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
@@ -35,7 +41,7 @@ for CPU in ${ALL_CPUS}; do
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
