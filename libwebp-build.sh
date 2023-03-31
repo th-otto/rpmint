@@ -10,11 +10,11 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/png.patch
+patches/${PACKAGENAME}/libwebp-png.patch
 patches/${PACKAGENAME}/libwebp-v1.2.3-m68k-atari-mint.patch
 "
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -28,26 +28,30 @@ cd "$srcdir"
 
 autoreconf -fiv
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+rm -f config.sub
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --config-cache --disable-sdl ${CONFIGURE_FLAGS_AMIGAOS}"
-
-create_config_cache()
-{
-cat <<EOF >config.cache
-EOF
-}
+#
+# SDL is only needed for the example
+#
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
+	--disable-sdl
+	--disable-threading
+	--enable-libwebpmux
+	--enable-libwebpdemux
+	--enable-libwebpdecoder
+	--enable-libwebpextras
+"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	create_config_cache
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
 
