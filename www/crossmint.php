@@ -2113,6 +2113,10 @@ This notably applies to Perl and Python.
 
 <li>2023/03/23 Update tiff to 4.5.0</li>
 
+<li>2023/04/01 Update groff to 1.22.4</li>
+
+<li>2023/04/01 Update tar to 1.34</li>
+
 </ul>
 
 <p></p>

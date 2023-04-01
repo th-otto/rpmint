@@ -19,8 +19,8 @@ Group:          Productivity/Archiving/Backup
 URL:            https://www.gnu.org/software/cpio/cpio.html
 Packager:       Thorsten Otto <admin@tho-otto.de>
 
-Prefix:         %{_prefix}
-Docdir:         %{_prefix}/share/doc
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0:        https://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.bz2
