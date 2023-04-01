@@ -1,0 +1,22 @@
+--- a/src/devices/xditview/xditview.am	2018-10-10 23:44:56.000000000 +0200
++++ b/src/devices/xditview/xditview.am	2023-04-01 10:48:48.972344040 +0200
+@@ -43,7 +43,7 @@
+ bin_PROGRAMS += gxditview
+ gxditview_CPPFLAGS = $(AM_CPPFLAGS) $(X_CFLAGS) -Dlint \
+   -I$(top_builddir)/src/devices/xditview
+-gxditview_LDADD = $(X_LIBS) $(X_PRE_LIBS) -lXaw -lXmu -lXt -lX11 \
++gxditview_LDADD = $(X_LIBS) $(X_PRE_LIBS) -lXaw -lXmu -lXt -lSM -lICE -lXext -lXpm -lX11 \
+   $(X_EXTRA_LIBS) $(LIBM) libxutil.a lib/libgnu.a
+ XDITVIEW_GENHDRS = src/devices/xditview/GXditview-ad.h
+ gxditview_SOURCES = $(GXDITVIEWSOURCES)
+--- a/src/utils/xtotroff/xtotroff.am	2018-10-10 23:44:56.000000000 +0200
++++ b/src/utils/xtotroff/xtotroff.am	2023-04-01 10:48:47.196346263 +0200
+@@ -23,7 +23,7 @@
+ xtotroff_SOURCES = src/utils/xtotroff/xtotroff.c
+ XLIBS=$(LIBXUTIL) $(LIBGROFF)
+ xtotroff_LDADD = libxutil.a libgroff.a $(X_LIBS) $(X_PRE_LIBS) \
+-  -lXaw -lXt -lX11 $(X_EXTRA_LIBS) $(LIBM) lib/libgnu.a
++  -lXaw -lXt -lSM -lICE -lXext -lX11 $(X_EXTRA_LIBS) $(LIBM) lib/libgnu.a
+ xtotroff_CPPFLAGS = $(AM_CPPFLAGS) $(X_CFLAGS)
+ endif
+ EXTRA_DIST += src/utils/xtotroff/xtotroff.1.man

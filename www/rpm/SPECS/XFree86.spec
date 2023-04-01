@@ -34,8 +34,8 @@ BuildRequires : zlib-devel
 BuildRequires : ncurses-devel
 %endif
 
-Prefix        : %{_prefix}
-Docdir        : %{_prefix}/share/doc
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot     : %{_tmppath}/%{name}-root
 
 %define baseversion 400
@@ -469,6 +469,14 @@ for i in app-defaults lbxproxy proxymngr rstart xsm; do
 	rm -f $i
 	ln -s ../../../../etc/X11/$i $i
 done
+
+# some X.org symlinks
+mkdir -p %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/share/X11
+cd %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/share/X11
+ln -s ../../../etc/X11/app-defaults app-defaults
+ln -s ../../X11R6/lib/X11/config config
+ln -s ../../X11R6/lib/X11/xkb xkb
+ln -s ../../X11R6/lib/X11/locale locale
 cd "$build_dir"
 
 # no need to be SUID

@@ -1,0 +1,51 @@
+From f2739609ee9db7e095761472c2b89518866f7cfb Mon Sep 17 00:00:00 2001
+From: "G. Branden Robinson" <g.branden.robinson@gmail.com>
+Date: Sat, 4 Mar 2023 19:20:45 -0600
+Subject: tmac/{man.local,troffrc}: Add groff 1.23 fw compat
+
+Patch-Name: add-groff-1.23-forward-compatibility.patch
+---
+ tmac/man.local | 12 ++++++++++++
+ tmac/troffrc   |  9 +++++++++
+ 2 files changed, 21 insertions(+)
+
+diff --git a/tmac/man.local b/tmac/man.local
+index 3030a84a..563d9a71 100644
+--- a/tmac/man.local
++++ b/tmac/man.local
+@@ -2,3 +2,15 @@
+ .\"
+ .\" This file is loaded after an-old.tmac.
+ .\" Put any local modifications to an-old.tmac here.
++.\"
++.\" for forward compatibility with a groff 1.23 feature
++.if !d MR \{\
++.  \" Provide a simple implementation of the new `MR` macro to avoid
++.  \" loss of formatted text.
++.  de MR
++.    ie \\n(.$=1 \
++.      I \%\\$1
++.    el \
++.      IR \%\\$1 (\\$2)\\$3
++.  .
++.\}
+diff --git a/tmac/troffrc b/tmac/troffrc
+index 6dca1dbd..845352b2 100644
+--- a/tmac/troffrc
++++ b/tmac/troffrc
+@@ -3,6 +3,15 @@
+ .\" This is tested by pic.
+ .nr 0p 0
+ .
++.\" for forward compatibility with a groff 1.23 feature
++.if !r .cp \{\
++.  \" Construct an equivalent of groff 1.23's .cp register.  Any
++.  \" unlikely two-character register name will do.
++.  nr }{ \n(.C
++.  do nr .cp \n(}{
++.  rr }{
++.\}
++.
+ .\" Load composite mappings.
+ .do mso composite.tmac
+ .
