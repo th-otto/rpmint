@@ -9,7 +9,7 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/m4/m4-mintelf-config.patch"
+DISABLED_PATCHES="patches/automake/mintelf-config.sub"
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
@@ -18,6 +18,11 @@ ${TARGET_PREFIX#/}/share/info/*
 "
 
 unpack_archive
+
+cd "$srcdir"
+
+rm -f build-aux/config.sub
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub
 
 cd "$MINT_BUILD_DIR"
 
@@ -28,6 +33,7 @@ CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
 	gl_cv_func_isnanl_works=yes \
 	gl_cv_func_printf_directive_n=yes \
 	gl_cv_func_printf_infinite_long_double=yes"
+STACKSIZE="-Wl,-stack,256k"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -37,7 +43,9 @@ for CPU in ${ALL_CPUS}; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
