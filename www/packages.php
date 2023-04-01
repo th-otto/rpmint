@@ -1884,8 +1884,8 @@ definitions (with rules occasionally thrown in).  The generated
 "Makefile.in" files are compatible with the GNU Makefile standards.
 '
 	),
-	'libbeecrypt6' => array(
-		'name' => 'libbeecrypt6',
+	'libbeecrypt' => array(
+		'name' => 'libbeecrypt',
 		'upstream' => 'http://sourceforge.net/projects/beecrypt',
 		'source' => $download_dir . 'beecrypt-%{version}.tar.bz2',
 		'version' => '4.1.2',

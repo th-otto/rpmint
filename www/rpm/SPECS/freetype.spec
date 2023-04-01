@@ -6,7 +6,7 @@
 
 %rpmint_header
 
-Summary       : A free and portable TrueType font rendering engine.
+Summary       : A free and portable TrueType font rendering engine
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else

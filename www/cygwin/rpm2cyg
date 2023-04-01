@@ -40,10 +40,10 @@ for pkgname in $pkgnames; do
 		continue
 	fi
 	
-	fullname=`sed -n 's/Name:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
+	fullname=`sed -n 's/Name[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
 	echo "pkgname: ${fullname}"
-	version=`sed -n 's/^Version:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
-	release=`sed -n 's/^Release:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
+	version=`sed -n 's/^Version[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
+	release=`sed -n 's/^[Rr]elease[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
 	arch=
 	if test "$arch" = ""; then
 		rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
@@ -69,7 +69,7 @@ for pkgname in $pkgnames; do
 	maintainer=`rpm -q --queryformat '%{packager}' "$rpmfile"`
 	url=`rpm -q --queryformat '%{url}' "$rpmfile"`
 	summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
-	description=`rpm -q --queryformat '%{description}' "$rpmfile"`
+	description=`rpm -q --queryformat '%{description}' "$rpmfile" | sed -e 's/"/'"'"'/g'`
 	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v 'rpmlib(' | grep -v 'mono(' | grep -v "lib.*\.so" | grep -v /bin/ | grep -v /sbin/`
 	group=`rpm -q --queryformat '%{group}' "$rpmfile"`
 	provides=`rpm -q --queryformat '%{provides}' "$rpmfile" | grep -v /bin/ | grep -v /sbin/`
@@ -106,14 +106,13 @@ sdesc: "${summary}"
 ldesc: "${description}"
 ${requires}${group}${provides}
 EOF
-	
+
 	cat << EOF > "${fullname}-${version}-${release}-src.hint"
 sdesc: "${summary}"
 ldesc: "${description}"
 homepage: ${url}
 ${group}
 EOF
-	
 	
 	rm -rf usr etc
 	
