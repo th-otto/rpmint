@@ -11,12 +11,16 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/libxmp-xmp_atari.patch
-patches/${PACKAGENAME}/libxmp-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
 
 cd "$srcdir"
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
@@ -31,7 +35,7 @@ for CPU in ${ALL_CPUS}; do
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
