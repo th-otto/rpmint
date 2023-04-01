@@ -14,7 +14,7 @@ Name:           %{pkgname}
 Version:        1.4.18
 Release:        1
 License:        GPL-3.0-or-later
-Group:          Productivity/Archiving/Backup
+Group:          Development/Languages/Other
 
 URL:            https://www.gnu.org/software/m4/m4.html
 Packager:       Thorsten Otto <admin@tho-otto.de>
