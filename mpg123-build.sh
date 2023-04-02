@@ -13,7 +13,9 @@ VERSIONPATCH=
 PATCHES="
 patches/${PACKAGENAME}/mpg123-math.patch
 patches/${PACKAGENAME}/mpg123-amigaos.patch
-patches/${PACKAGENAME}/mpg123-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -33,7 +35,7 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mpg123-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build/config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -DNO_CATCHSIGNAL ${CFLAGS_AMIGAOS}"
 
@@ -56,7 +58,7 @@ for CPU in ${ALL_CPUS}; do
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS $LDFLAGS" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} $JOBS || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
