@@ -13,10 +13,15 @@ PATCHES="
 patches/opkg/opkg-0.6.1.patch
 "
 DISABLED_PATCHES="
-patches/opkg/opkg-mintelf-config.patch
+patches/automake/mintelf-config.sub
 "
 
 POST_INSTALL_SCRIPTS="
+patches/opkg/opkg-20_migrate-feeds
+patches/opkg/opkg-customfeeds.conf
+patches/opkg/opkg-key
+patches/opkg/opkg-smime.conf
+patches/opkg/opkg.conf
 "
 
 BINFILES="
@@ -37,24 +42,26 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/opkg/opkg-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" conf/config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
 CONFIGURE_FLAGS="--host=${TARGET} \
-	--prefix=${prefix} \
-	--mandir=${prefix}/share/man \
-	--infodir=${prefix}/share/info \
-	--libdir=${prefix}/lib \
-	--sysconfdir=${TARGET_SYSCONFDIR} \
-	--localstatedir=/var \
-	--sharedstatedir=/var/lib \
-	--with-rundir=/var/run \
-	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME} \
-	--disable-shared \
-	--disable-python \
-	--disable-plugins \
-	--disable-gpg  \
+	--prefix=${prefix}
+	--mandir=${prefix}/share/man
+	--infodir=${prefix}/share/info
+	--libdir=${prefix}/lib
+	--sysconfdir=${TARGET_SYSCONFDIR}
+	--localstatedir=/var
+	--sharedstatedir=/var/lib
+	--with-rundir=/var/run
+	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}
+	--enable-libopkg-api
+	--enable-sha256
+	--disable-shared
+	--disable-python
+	--disable-plugins
+	--disable-gpg
 "
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
@@ -70,7 +77,7 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	./configure ${CONFIGURE_FLAGS} \
 		--libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 
 	rm -rf autom4te.cache config.h.in.orig
 

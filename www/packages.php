@@ -2814,7 +2814,8 @@ floppies.
 		'category' => 'System/Packages',
 		'summary' => 'Opkg lightweight package management system',
 		'comment' => '
-Opkg lightweight package management system
+Opkg is a lightweight distribution package manager, optimized for embedded applications and static image generation.
+
 '
 	),
 	'tree' => array(
