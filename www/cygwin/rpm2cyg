@@ -124,15 +124,24 @@ EOF
 	# FIXME: generate proper source package
 	case $pkgname in
 		gemma) srcname=gemma-git ;;
+		freetype2) srcname=freetype-$version ;;
+		lua53) srcname=lua-$version ;;
+		jpeg) srcname=jpegsrc.v$version ;;
+		mksh) srcname=$pkgname-R$version ;;
+		libbeecrypt) srcname=beecrypt-$version ;;
 		*) srcname=$pkgname-$version ;;
 	esac
+	found=false
 	for ext in zst xz lz lzma bz2 gz; do
 		if test -f $HOME/packages/$srcname.tar.${ext}; then
 			ln -sf $HOME/packages/$srcname.tar.${ext} ${fullname}-${version}-${release}-src.tar.${ext}
+			found=true
 			break
 		fi
 	done
-	
+	if ! $found; then
+		echo "src archive for $pkgname-$version not found" >&2
+	fi
 	rm -rf usr etc
 
 	cd "$here"
