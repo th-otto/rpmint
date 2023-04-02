@@ -11,6 +11,7 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/pth-2.0.7-m68k-atari-mint.patch
+patches/${PACKAGENAME}/pth-link-warning.patch
 "
 DISABLE_PATCHES="
 patches/automake/mintelf-config.sub
@@ -24,6 +25,8 @@ cd "$srcdir"
 
 autoconf
 # autoreconf -fiv
+rm -rf autom4te.cache
+
 # autoreconf may have overwritten config.sub
 cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
@@ -57,7 +60,8 @@ for CPU in ${ALL_CPUS}; do
 	RANLIB=${ranlib} \
 	NM=${TARGET}-nm \
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	"$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
+	"$srcdir/configure" ${CONFIGURE_FLAGS} \
+	--libdir='${exec_prefix}/lib'$multilibdir || exit 1
 
 	# hack_lto_cflags
 	${MAKE} V=1 $JOBS || exit 1

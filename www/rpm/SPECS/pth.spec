@@ -26,6 +26,7 @@ BuildRoot:      %{_tmppath}/%{name}-root
 Source0: https://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
 Patch0:  patches/%{pkgname}/pth-2.0.7-m68k-atari-mint.patch
+Patch1:  patches/%{pkgname}/pth-link-warning.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -62,6 +63,7 @@ Original MiNT-Patch by Patrice Mandin & medmed.
 %patch0 -p1
 
 autoconf
+rm -rf autom4te.cache
 
 cp %{S:1} config.sub
 
@@ -149,18 +151,15 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files
 %defattr(-,root,root)
-%if "%{buildtype}" == "cross"
-%{_rpmint_includedir}
-%{_rpmint_libdir}
-%{_rpmint_datadir}
-%else
-%{_rpmint_target_prefix}/include
-%{_rpmint_target_prefix}/lib
-%{_rpmint_target_prefix}/share
-%endif
+%{_isysroot}%{_rpmint_target_prefix}/include
+%{_isysroot}%{_rpmint_target_prefix}/lib
+%{_isysroot}%{_rpmint_target_prefix}/share
 
 
 
 %changelog
-* Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
+* Sun Apr 02 2023 Thorsten Otto <admin@tho-otto.de>
+- Add link warnings
+
+* Tue Mar 07 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

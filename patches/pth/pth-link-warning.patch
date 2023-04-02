@@ -1,0 +1,961 @@
+diff -rupN pth-2.0.7.orig/Makefile.in pth-2.0.7/Makefile.in
+--- pth-2.0.7.orig/Makefile.in	2023-04-02 14:59:53.727134853 +0200
++++ pth-2.0.7/Makefile.in	2023-04-02 16:21:50.137680480 +0200
+@@ -97,6 +97,11 @@ LOBJS = pth_debug.lo pth_ring.lo pth_pqu
+         pth_data.lo pth_clean.lo pth_cancel.lo pth_msg.lo pth_sync.lo pth_fork.lo \
+         pth_util.lo pth_high.lo pth_syscall.lo pth_ext.lo pth_compat.lo pth_string.lo
+ 
++PLOBJS = pthread.lo \
++	pthread_init.lo \
++	pthread_sleep.lo \
++	$(empty)
++
+ #   source files for header generation
+ #   (order is important and has to follow dependencies in pth_p.h)
+ HSRCS = $(S)pth_compat.c $(S)pth_debug.c $(S)pth_syscall.c $(S)pth_errno.c $(S)pth_ring.c $(S)pth_mctx.c \
+@@ -170,8 +175,8 @@ pth_p.h: $(S)pth_p.h.in
+ libpth.la: $(LOBJS)
+ 	$(LIBTOOL) --mode=link --quiet $(CC) -o libpth.la $(LOBJS) \
+ 	-rpath $(libdir) -version-info `$(SHTOOL) version -lc -dlibtool $(_VERSION_FILE)`
+-libpthread.la: pthread.lo $(LOBJS)
+-	$(LIBTOOL) --mode=link --quiet $(CC) -o libpthread.la pthread.lo $(LOBJS) \
++libpthread.la: $(PLOBJS) $(LOBJS)
++	$(LIBTOOL) --mode=link --quiet $(CC) -o libpthread.la $(PLOBJS) $(LOBJS) \
+ 	-rpath $(libdir) -version-info `$(SHTOOL) version -lc -dlibtool $(_VERSION_FILE)`
+ 
+ #   build the manual pages
+diff -rupN pth-2.0.7.orig/pth_p.h.in pth-2.0.7/pth_p.h.in
+--- pth-2.0.7.orig/pth_p.h.in	2006-06-08 19:54:03.000000000 +0200
++++ pth-2.0.7/pth_p.h.in	2023-04-02 16:26:25.241367353 +0200
+@@ -122,6 +122,24 @@ struct timespec {
+ #define COMPILER_HAPPYNESS(name) \
+     int __##name##_unit = 0;
+ 
++#ifdef __MINT__
++#  define link_warning(symbol, msg) \
++  __asm__(".stabs \"" #symbol ": " msg "\",30,0,0,0\n\t" \
++      ".stabs \"" __STRINGIFY(__USER_LABEL_PREFIX__) #symbol "\",1,0,0,0");
++#else
++#  define link_warning(symbol, msg)
++#endif
++
++/* general success return value */
++#ifdef OK
++#undef OK
++#endif
++#define OK 0
++
++#ifdef _PTHREAD_PRIVATE
++void pthread_initialize(void);
++#endif
++
+ /* generated contents */
+ BEGIN_DECLARATION
+ ==#==
+diff -rupN pth-2.0.7.orig/pthread.c pth-2.0.7/pthread.c
+--- pth-2.0.7.orig/pthread.c	2023-04-02 14:59:53.727134853 +0200
++++ pth-2.0.7/pthread.c	2023-04-02 16:21:50.137680480 +0200
+@@ -43,33 +43,6 @@
+ #include "pth_p.h"
+ #undef _PTHREAD_PRIVATE
+ 
+-/* general success return value */
+-#ifdef OK
+-#undef OK
+-#endif
+-#define OK 0
+-
+-/*
+-**  GLOBAL STUFF
+-*/
+-
+-static void pthread_shutdown(void)
+-{
+-    pth_kill();
+-    return;
+-}
+-
+-static int pthread_initialized = FALSE;
+-
+-#define pthread_initialize() \
+-    do { \
+-        if (pthread_initialized == FALSE) { \
+-            pthread_initialized = TRUE; \
+-            pth_init(); \
+-            atexit(pthread_shutdown); \
+-        } \
+-    } while (0)
+-
+ /*
+ **  THREAD ATTRIBUTE ROUTINES
+ */
+@@ -86,6 +59,7 @@ int pthread_attr_init(pthread_attr_t *at
+     (*attr) = (pthread_attr_t)na;
+     return OK;
+ }
++link_warning(pthread_attr_init, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_destroy(pthread_attr_t *attr)
+ {
+@@ -98,6 +72,7 @@ int pthread_attr_destroy(pthread_attr_t
+     *attr = NULL;
+     return OK;
+ }
++link_warning(pthread_attr_destroy, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched)
+ {
+@@ -106,6 +81,7 @@ int pthread_attr_setinheritsched(pthread
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_attr_setinteritsched, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_getinheritsched(const pthread_attr_t *attr, int *inheritsched)
+ {
+@@ -114,6 +90,7 @@ int pthread_attr_getinheritsched(const p
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_attr_getinheritsched, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_setschedparam(pthread_attr_t *attr, const struct sched_param *schedparam)
+ {
+@@ -122,6 +99,7 @@ int pthread_attr_setschedparam(pthread_a
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_attr_setschedparam, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_getschedparam(const pthread_attr_t *attr, struct sched_param *schedparam)
+ {
+@@ -130,6 +108,7 @@ int pthread_attr_getschedparam(const pth
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_attr_getschedparam, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_setschedpolicy(pthread_attr_t *attr, int schedpolicy)
+ {
+@@ -138,6 +117,7 @@ int pthread_attr_setschedpolicy(pthread_
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_attr_setschedpolicy, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *schedpolicy)
+ {
+@@ -146,6 +126,7 @@ int pthread_attr_getschedpolicy(const pt
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_attr_getschedpolicy, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_setscope(pthread_attr_t *attr, int scope)
+ {
+@@ -154,6 +135,7 @@ int pthread_attr_setscope(pthread_attr_t
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_attr_setscope, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_getscope(const pthread_attr_t *attr, int *scope)
+ {
+@@ -162,6 +144,7 @@ int pthread_attr_getscope(const pthread_
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_attr_getscope, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize)
+ {
+@@ -171,6 +154,7 @@ int pthread_attr_setstacksize(pthread_at
+         return errno;
+     return OK;
+ }
++link_warning(pthread_attr_setstacksize, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize)
+ {
+@@ -180,6 +164,7 @@ int pthread_attr_getstacksize(const pthr
+         return errno;
+     return OK;
+ }
++link_warning(pthread_attr_getstacksize, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_setstackaddr(pthread_attr_t *attr, void *stackaddr)
+ {
+@@ -189,6 +174,7 @@ int pthread_attr_setstackaddr(pthread_at
+         return errno;
+     return OK;
+ }
++link_warning(pthread_attr_setstackaddr, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_getstackaddr(const pthread_attr_t *attr, void **stackaddr)
+ {
+@@ -198,6 +184,7 @@ int pthread_attr_getstackaddr(const pthr
+         return errno;
+     return OK;
+ }
++link_warning(pthread_attr_getstackaddr, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
+ {
+@@ -215,6 +202,7 @@ int pthread_attr_setdetachstate(pthread_
+         return errno;
+     return OK;
+ }
++link_warning(pthread_attr_setdetachstate, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
+ {
+@@ -230,6 +218,7 @@ int pthread_attr_getdetachstate(const pt
+         *detachstate = PTHREAD_CREATE_DETACHED;
+     return OK;
+ }
++link_warning(pthread_attr_getdetachstate, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_setguardsize(pthread_attr_t *attr, int stacksize)
+ {
+@@ -238,6 +227,7 @@ int pthread_attr_setguardsize(pthread_at
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_attr_setguardsize, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_getguardsize(const pthread_attr_t *attr, int *stacksize)
+ {
+@@ -246,6 +236,7 @@ int pthread_attr_getguardsize(const pthr
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_attr_getguardsize, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_setname_np(pthread_attr_t *attr, char *name)
+ {
+@@ -255,6 +246,7 @@ int pthread_attr_setname_np(pthread_attr
+         return errno;
+     return OK;
+ }
++link_warning(pthread_attr_setname_np, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_getname_np(const pthread_attr_t *attr, char **name)
+ {
+@@ -264,6 +256,7 @@ int pthread_attr_getname_np(const pthrea
+         return errno;
+     return OK;
+ }
++link_warning(pthread_attr_getname_np, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_setprio_np(pthread_attr_t *attr, int prio)
+ {
+@@ -273,6 +266,7 @@ int pthread_attr_setprio_np(pthread_attr
+         return errno;
+     return OK;
+ }
++link_warning(pthread_attr_setprio_np, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_attr_getprio_np(const pthread_attr_t *attr, int *prio)
+ {
+@@ -282,6 +276,7 @@ int pthread_attr_getprio_np(const pthrea
+         return errno;
+     return OK;
+ }
++link_warning(pthread_attr_getprio_np, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  THREAD ROUTINES
+@@ -307,6 +302,7 @@ int pthread_create(
+         return pth_error(EAGAIN, EAGAIN);
+     return OK;
+ }
++link_warning(pthread_create, "you are using the non-preemptive pth implementation")
+ 
+ int __pthread_detach(pthread_t thread)
+ {
+@@ -321,17 +317,20 @@ int __pthread_detach(pthread_t thread)
+     pth_attr_destroy(na);
+     return OK;
+ }
++link_warning(__pthread_detach, "you are using the non-preemptive pth implementation")
+ 
+ pthread_t pthread_self(void)
+ {
+     pthread_initialize();
+     return (pthread_t)pth_self();
+ }
++link_warning(pthread_self, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_equal(pthread_t t1, pthread_t t2)
+ {
+     return (t1 == t2);
+ }
++link_warning(pthread_equal, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_yield_np(void)
+ {
+@@ -339,6 +338,7 @@ int pthread_yield_np(void)
+     pth_yield(NULL);
+     return OK;
+ }
++link_warning(pthread_yield_np, "you are using the non-preemptive pth implementation")
+ 
+ void pthread_exit(void *value_ptr)
+ {
+@@ -346,6 +346,7 @@ void pthread_exit(void *value_ptr)
+     pth_exit(value_ptr);
+     return;
+ }
++link_warning(pthread_exit, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_join(pthread_t thread, void **value_ptr)
+ {
+@@ -357,6 +358,7 @@ int pthread_join(pthread_t thread, void
+             *value_ptr = PTHREAD_CANCELED;
+     return OK;
+ }
++link_warning(pthread_join, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_once(
+     pthread_once_t *once_control, void (*init_routine)(void))
+@@ -369,12 +371,14 @@ int pthread_once(
+     *once_control = 1;
+     return OK;
+ }
++link_warning(pthread_once, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_sigmask(int how, const sigset_t *set, sigset_t *oset)
+ {
+     pthread_initialize();
+     return pth_sigmask(how, set, oset);
+ }
++link_warning(pthread_sigmask, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_kill(pthread_t thread, int sig)
+ {
+@@ -382,6 +386,7 @@ int pthread_kill(pthread_t thread, int s
+         return errno;
+     return OK;
+ }
++link_warning(pthread_kill, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  CONCURRENCY ROUTINES
+@@ -399,6 +404,7 @@ int pthread_getconcurrency(void)
+ {
+     return pthread_concurrency;
+ }
++link_warning(pthread_getconcurrency, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_setconcurrency(int new_level)
+ {
+@@ -407,6 +413,7 @@ int pthread_setconcurrency(int new_level
+     pthread_concurrency = new_level;
+     return OK;
+ }
++link_warning(pthread_setconcurrency, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  CONTEXT ROUTINES
+@@ -419,6 +426,7 @@ int pthread_key_create(pthread_key_t *ke
+         return errno;
+     return OK;
+ }
++link_warning(pthread_key_create, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_key_delete(pthread_key_t key)
+ {
+@@ -426,6 +434,7 @@ int pthread_key_delete(pthread_key_t key
+         return errno;
+     return OK;
+ }
++link_warning(pthread_key_delete, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_setspecific(pthread_key_t key, const void *value)
+ {
+@@ -433,11 +442,13 @@ int pthread_setspecific(pthread_key_t ke
+         return errno;
+     return OK;
+ }
++link_warning(pthread_setspecific, "you are using the non-preemptive pth implementation")
+ 
+ void *pthread_getspecific(pthread_key_t key)
+ {
+     return pth_key_getdata((pth_key_t)key);
+ }
++link_warning(pthread_getspecific, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  CANCEL ROUTINES
+@@ -449,12 +460,14 @@ int pthread_cancel(pthread_t thread)
+         return errno;
+     return OK;
+ }
++link_warning(pthread_cancel, "you are using the non-preemptive pth implementation")
+ 
+ void pthread_testcancel(void)
+ {
+     pth_cancel_point();
+     return;
+ }
++link_warning(pthread_testcancel, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_setcancelstate(int state, int *oldstate)
+ {
+@@ -481,6 +494,7 @@ int pthread_setcancelstate(int state, in
+     }
+     return OK;
+ }
++link_warning(pthread_setcancelstate, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_setcanceltype(int type, int *oldtype)
+ {
+@@ -507,6 +521,7 @@ int pthread_setcanceltype(int type, int
+     }
+     return OK;
+ }
++link_warning(pthread_setcanceltype, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  SCHEDULER ROUTINES
+@@ -517,12 +532,14 @@ int pthread_setschedparam(pthread_t pthr
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_setschedparam, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *param)
+ {
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_getschedparam, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  CLEANUP ROUTINES
+@@ -534,12 +551,14 @@ void pthread_cleanup_push(void (*routine
+     pth_cleanup_push(routine, arg);
+     return;
+ }
++link_warning(pthread_cleanup_push, "you are using the non-preemptive pth implementation")
+ 
+ void pthread_cleanup_pop(int execute)
+ {
+     pth_cleanup_pop(execute);
+     return;
+ }
++link_warning(pthread_cleanup_pop, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  AT-FORK SUPPORT
+@@ -588,6 +607,7 @@ int pthread_atfork(void (*prepare)(void)
+         return errno;
+     return OK;
+ }
++link_warning(pthread_atfork, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  MUTEX ATTRIBUTE ROUTINES
+@@ -601,6 +621,7 @@ int pthread_mutexattr_init(pthread_mutex
+     /* nothing to do for us */
+     return OK;
+ }
++link_warning(pthread_mutexattr_init, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
+ {
+@@ -609,6 +630,7 @@ int pthread_mutexattr_destroy(pthread_mu
+     /* nothing to do for us */
+     return OK;
+ }
++link_warning(pthread_mutexattr_destroy, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr, int prioceiling)
+ {
+@@ -617,6 +639,7 @@ int pthread_mutexattr_setprioceiling(pth
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_mutexattr_setprioceiling, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutexattr_getprioceiling(pthread_mutexattr_t *attr, int *prioceiling)
+ {
+@@ -625,6 +648,7 @@ int pthread_mutexattr_getprioceiling(pth
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_mutexattr_getprioceiling, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol)
+ {
+@@ -633,6 +657,7 @@ int pthread_mutexattr_setprotocol(pthrea
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_mutexattr_setprotocol, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutexattr_getprotocol(pthread_mutexattr_t *attr, int *protocol)
+ {
+@@ -641,6 +666,7 @@ int pthread_mutexattr_getprotocol(pthrea
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_mutexattr_getprotocol, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutexattr_setpshared(pthread_mutexattr_t *attr, int pshared)
+ {
+@@ -649,6 +675,7 @@ int pthread_mutexattr_setpshared(pthread
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_mutexattr_setpshared, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutexattr_getpshared(pthread_mutexattr_t *attr, int *pshared)
+ {
+@@ -657,6 +684,7 @@ int pthread_mutexattr_getpshared(pthread
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_mutexattr_getpshared, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
+ {
+@@ -665,6 +693,7 @@ int pthread_mutexattr_settype(pthread_mu
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_mutexattr_settype, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutexattr_gettype(pthread_mutexattr_t *attr, int *type)
+ {
+@@ -673,6 +702,7 @@ int pthread_mutexattr_gettype(pthread_mu
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_mutexattr_gettype, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  MUTEX ROUTINES
+@@ -692,6 +722,7 @@ int pthread_mutex_init(pthread_mutex_t *
+     (*mutex) = (pthread_mutex_t)m;
+     return OK;
+ }
++link_warning(pthread_mutex_init, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutex_destroy(pthread_mutex_t *mutex)
+ {
+@@ -701,6 +732,7 @@ int pthread_mutex_destroy(pthread_mutex_
+     *mutex = NULL;
+     return OK;
+ }
++link_warning(pthread_mutex_destroy, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutex_setprioceiling(pthread_mutex_t *mutex, int prioceiling, int *old_ceiling)
+ {
+@@ -712,6 +744,7 @@ int pthread_mutex_setprioceiling(pthread
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_mutex_setprioceiling, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutex_getprioceiling(pthread_mutex_t *mutex, int *prioceiling)
+ {
+@@ -723,6 +756,7 @@ int pthread_mutex_getprioceiling(pthread
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_mutex_getprioceiling, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutex_lock(pthread_mutex_t *mutex)
+ {
+@@ -735,6 +769,7 @@ int pthread_mutex_lock(pthread_mutex_t *
+         return errno;
+     return OK;
+ }
++link_warning(pthread_mutex_lock, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutex_trylock(pthread_mutex_t *mutex)
+ {
+@@ -747,6 +782,7 @@ int pthread_mutex_trylock(pthread_mutex_
+         return errno;
+     return OK;
+ }
++link_warning(pthread_mutex_trylock, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_mutex_unlock(pthread_mutex_t *mutex)
+ {
+@@ -759,6 +795,7 @@ int pthread_mutex_unlock(pthread_mutex_t
+         return errno;
+     return OK;
+ }
++link_warning(pthread_mutex_unlock, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  LOCK ATTRIBUTE ROUTINES
+@@ -772,6 +809,7 @@ int pthread_rwlockattr_init(pthread_rwlo
+     /* nothing to do for us */
+     return OK;
+ }
++link_warning(pthread_rwlockattr_init, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr)
+ {
+@@ -780,6 +818,7 @@ int pthread_rwlockattr_destroy(pthread_r
+     /* nothing to do for us */
+     return OK;
+ }
++link_warning(pthread_rwlockattr_destroy, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared)
+ {
+@@ -788,6 +827,7 @@ int pthread_rwlockattr_setpshared(pthrea
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_rwlockattr_setpshared, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *attr, int *pshared)
+ {
+@@ -796,6 +836,7 @@ int pthread_rwlockattr_getpshared(const
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_rwlockattr_getpshared, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  LOCK ROUTINES
+@@ -815,6 +856,7 @@ int pthread_rwlock_init(pthread_rwlock_t
+     (*rwlock) = (pthread_rwlock_t)rw;
+     return OK;
+ }
++link_warning(pthread_rwlock_init, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_rwlock_destroy(pthread_rwlock_t *rwlock)
+ {
+@@ -824,6 +866,7 @@ int pthread_rwlock_destroy(pthread_rwloc
+     *rwlock = NULL;
+     return OK;
+ }
++link_warning(pthread_rwlock_destroy, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
+ {
+@@ -836,6 +879,7 @@ int pthread_rwlock_rdlock(pthread_rwlock
+         return errno;
+     return OK;
+ }
++link_warning(pthread_rwlock_rdlock, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock)
+ {
+@@ -848,6 +892,7 @@ int pthread_rwlock_tryrdlock(pthread_rwl
+         return errno;
+     return OK;
+ }
++link_warning(pthread_rwlock_tryrdlock, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
+ {
+@@ -860,6 +905,7 @@ int pthread_rwlock_wrlock(pthread_rwlock
+         return errno;
+     return OK;
+ }
++link_warning(pthread_rwlock_wrlock, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock)
+ {
+@@ -872,6 +918,7 @@ int pthread_rwlock_trywrlock(pthread_rwl
+         return errno;
+     return OK;
+ }
++link_warning(pthread_rwlock_trywrlock, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
+ {
+@@ -884,6 +931,7 @@ int pthread_rwlock_unlock(pthread_rwlock
+         return errno;
+     return OK;
+ }
++link_warning(pthread_rwlock_unlock, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  CONDITION ATTRIBUTE ROUTINES
+@@ -897,6 +945,7 @@ int pthread_condattr_init(pthread_condat
+     /* nothing to do for us */
+     return OK;
+ }
++link_warning(pthread_condattr_init, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_condattr_destroy(pthread_condattr_t *attr)
+ {
+@@ -905,6 +954,7 @@ int pthread_condattr_destroy(pthread_con
+     /* nothing to do for us */
+     return OK;
+ }
++link_warning(pthread_condattr_destroy, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_condattr_setpshared(pthread_condattr_t *attr, int pshared)
+ {
+@@ -913,6 +963,7 @@ int pthread_condattr_setpshared(pthread_
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_condattr_setpshared, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_condattr_getpshared(pthread_condattr_t *attr, int *pshared)
+ {
+@@ -921,6 +972,7 @@ int pthread_condattr_getpshared(pthread_
+     /* not supported */
+     return pth_error(ENOSYS, ENOSYS);
+ }
++link_warning(pthread_condattr_getpshared, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  CONDITION ROUTINES
+@@ -940,6 +992,7 @@ int pthread_cond_init(pthread_cond_t *co
+     (*cond) = (pthread_cond_t)cn;
+     return OK;
+ }
++link_warning(pthread_cond_init, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_cond_destroy(pthread_cond_t *cond)
+ {
+@@ -949,6 +1002,7 @@ int pthread_cond_destroy(pthread_cond_t
+     *cond = NULL;
+     return OK;
+ }
++link_warning(pthread_cond_destroy, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_cond_broadcast(pthread_cond_t *cond)
+ {
+@@ -961,6 +1015,7 @@ int pthread_cond_broadcast(pthread_cond_
+         return errno;
+     return OK;
+ }
++link_warning(pthread_cond_broadcast, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_cond_signal(pthread_cond_t *cond)
+ {
+@@ -973,6 +1028,7 @@ int pthread_cond_signal(pthread_cond_t *
+         return errno;
+     return OK;
+ }
++link_warning(pthread_cond_signal, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
+ {
+@@ -988,6 +1044,7 @@ int pthread_cond_wait(pthread_cond_t *co
+         return errno;
+     return OK;
+ }
++link_warning(pthread_cond_wait, "you are using the non-preemptive pth implementation")
+ 
+ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
+                            const struct timespec *abstime)
+@@ -1022,6 +1079,7 @@ int pthread_cond_timedwait(pthread_cond_
+         return ETIMEDOUT;
+     return OK;
+ }
++link_warning(pthread_cond_timedwait, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  POSIX 1003.1j
+@@ -1033,6 +1091,7 @@ int pthread_abort(pthread_t thread)
+         return errno;
+     return OK;
+ }
++link_warning(pthread_abort, "you are using the non-preemptive pth implementation")
+ 
+ /*
+ **  THREAD-SAFE REPLACEMENT FUNCTIONS
+@@ -1043,54 +1102,56 @@ pid_t __pthread_fork(void)
+     pthread_initialize();
+     return pth_fork();
+ }
+-
+-unsigned int __pthread_sleep(unsigned int sec)
+-{
+-    pthread_initialize();
+-    return pth_sleep(sec);
+-}
++link_warning(__pthread_fork, "you are using the non-preemptive pth implementation")
+ 
+ int __pthread_system(const char *cmd)
+ {
+     pthread_initialize();
+     return pth_system(cmd);
+ }
++link_warning(__pthread_system, "you are using the non-preemptive pth implementation")
+ 
+ int __pthread_nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
+ {
+     pthread_initialize();
+     return pth_nanosleep(rqtp, rmtp);
+ }
++link_warning(__pthread_nanosleep, "you are using the non-preemptive pth implementation")
+ 
+ int __pthread_usleep(unsigned int sec)
+ {
+     pthread_initialize();
+     return pth_usleep(sec);
+ }
++link_warning(__pthread_usleep, "you are using the non-preemptive pth implementation")
+ 
+ int __pthread_sigwait(const sigset_t *set, int *sig)
+ {
+     pthread_initialize();
+     return pth_sigwait(set, sig);
+ }
++link_warning(__pthread_sigwait, "you are using the non-preemptive pth implementation")
+ 
+ pid_t __pthread_waitpid(pid_t pid, int *status, int options)
+ {
+     pthread_initialize();
+     return pth_waitpid(pid, status, options);
+ }
++link_warning(__pthread_waitpid, "you are using the non-preemptive pth implementation")
+ 
+ int __pthread_connect(int s, const struct sockaddr *addr, socklen_t addrlen)
+ {
+     pthread_initialize();
+     return pth_connect(s, addr, addrlen);
+ }
++link_warning(__pthread_connect, "you are using the non-preemptive pth implementation")
+ 
+ int __pthread_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
+ {
+     pthread_initialize();
+     return pth_accept(s, addr, addrlen);
+ }
++link_warning(__pthread_accept, "you are using the non-preemptive pth implementation")
+ 
+ int __pthread_select(int nfds, fd_set *readfds, fd_set *writefds,
+                     fd_set *exceptfds, struct timeval *timeout)
+@@ -1098,70 +1159,82 @@ int __pthread_select(int nfds, fd_set *r
+     pthread_initialize();
+     return pth_select(nfds, readfds, writefds, exceptfds, timeout);
+ }
++link_warning(__pthread_select, "you are using the non-preemptive pth implementation")
+ 
+ int __pthread_poll(struct pollfd *pfd, nfds_t nfd, int timeout)
+ {
+     pthread_initialize();
+     return pth_poll(pfd, nfd, timeout);
+ }
++link_warning(__pthread_poll, "you are using the non-preemptive pth implementation")
+ 
+ ssize_t __pthread_read(int fd, void *buf, size_t nbytes)
+ {
+     pthread_initialize();
+     return pth_read(fd, buf, nbytes);
+ }
++link_warning(__pthread_read, "you are using the non-preemptive pth implementation")
+ 
+ ssize_t __pthread_write(int fd, const void *buf, size_t nbytes)
+ {
+     pthread_initialize();
+     return pth_write(fd, buf, nbytes);
+ }
++link_warning(__pthread_write, "you are using the non-preemptive pth implementation")
+ 
+ ssize_t __pthread_readv(int fd, const struct iovec *piovec, int iocnt)
+ {
+     pthread_initialize();
+     return pth_readv(fd, piovec, iocnt);
+ }
++link_warning(__pthread_readv, "you are using the non-preemptive pth implementation")
+ 
+ ssize_t __pthread_writev(int fd, const struct iovec *piovec, int iocnt)
+ {
+     pthread_initialize();
+     return pth_writev(fd, piovec, iocnt);
+ }
++link_warning(__pthread_writev, "you are using the non-preemptive pth implementation")
+ 
+ ssize_t __pthread_recv(int fd, void *buf, size_t nbytes, int flags)
+ {
+     pthread_initialize();
+     return pth_recv(fd, buf, nbytes, flags);
+ }
++link_warning(__pthread_recv, "you are using the non-preemptive pth implementation")
+ 
+ ssize_t __pthread_send(int fd, const void *buf, size_t nbytes, int flags)
+ {
+     pthread_initialize();
+     return pth_send(fd, buf, nbytes, flags);
+ }
++link_warning(__pthread_send, "you are using the non-preemptive pth implementation")
+ 
+ ssize_t __pthread_recvfrom(int fd, void *buf, size_t nbytes, int flags, struct sockaddr *from, socklen_t *fromlen)
+ {
+     pthread_initialize();
+     return pth_recvfrom(fd, buf, nbytes, flags, from, fromlen);
+ }
++link_warning(__pthread_recvfrom, "you are using the non-preemptive pth implementation")
+ 
+ ssize_t __pthread_sendto(int fd, const void *buf, size_t nbytes, int flags, const struct sockaddr *to, socklen_t tolen)
+ {
+     pthread_initialize();
+     return pth_sendto(fd, buf, nbytes, flags, to, tolen);
+ }
++link_warning(__pthread_sendto, "you are using the non-preemptive pth implementation")
+ 
+ ssize_t __pthread_pread(int fd, void *buf, size_t nbytes, off_t offset)
+ {
+     pthread_initialize();
+     return pth_pread(fd, buf, nbytes, offset);
+ }
++link_warning(__pthread_pread, "you are using the non-preemptive pth implementation")
+ 
+ ssize_t __pthread_pwrite(int fd, const void *buf, size_t nbytes, off_t offset)
+ {
+     pthread_initialize();
+     return pth_pwrite(fd, buf, nbytes, offset);
+ }
++link_warning(__pthread_pwrite, "you are using the non-preemptive pth implementation")
+ 
+diff -rupN pth-2.0.7.orig/pthread_init.c pth-2.0.7/pthread_init.c
+--- pth-2.0.7.orig/pthread_init.c	1970-01-01 01:00:00.000000000 +0100
++++ pth-2.0.7/pthread_init.c	2023-04-02 16:19:27.317839007 +0200
+@@ -0,0 +1,26 @@
++#define _PTHREAD_PRIVATE
++#include "pthread.h"
++#include "pth_p.h"
++#undef _PTHREAD_PRIVATE
++
++static int pthread_initialized = FALSE;
++
++/*
++**  GLOBAL STUFF
++*/
++
++static void pthread_shutdown(void)
++{
++    pth_kill();
++    return;
++}
++
++void pthread_initialize(void)
++{
++	if (pthread_initialized == FALSE)
++	{
++        pthread_initialized = TRUE;
++        pth_init();
++        atexit(pthread_shutdown);
++    }
++}
+diff -rupN pth-2.0.7.orig/pthread_sleep.c pth-2.0.7/pthread_sleep.c
+--- pth-2.0.7.orig/pthread_sleep.c	1970-01-01 01:00:00.000000000 +0100
++++ pth-2.0.7/pthread_sleep.c	2023-04-02 16:21:50.137680480 +0200
+@@ -0,0 +1,11 @@
++#define _PTHREAD_PRIVATE
++#include "pthread.h"
++#include "pth_p.h"
++#undef _PTHREAD_PRIVATE
++
++unsigned int __pthread_sleep(unsigned int sec)
++{
++    pthread_initialize();
++    return pth_sleep(sec);
++}
++link_warning(__pthread_sleep, "you are using the non-preemptive pth implementation")
