@@ -35,8 +35,8 @@ BuildRequires : liblzma5
 Requires      : XFree86
 %endif
 
-Prefix        : %{_prefix}
-Docdir        : %{_prefix}/share/doc
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot     : %{_tmppath}/%{name}-root
 
 Source: ftp://sunsite.unc.edu/pub/Linux/apps/graphics/draw/%{pkgname}-%{version}.tar.gz
@@ -58,7 +58,7 @@ Install the xpaint package if you need a paint program for X.
 
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
-%setup -q -n xpaint
+%setup -q -n %{pkgname}
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1

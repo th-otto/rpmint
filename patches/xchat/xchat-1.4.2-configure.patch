@@ -1,0 +1,97 @@
+diff -rup xchat-1.4.2/Makefile.am xchat-1.4.2.new/Makefile.am
+--- xchat-1.4.2/Makefile.am	2000-01-29 06:40:14.000000000 +0100
++++ xchat-1.4.2.new/Makefile.am	2023-04-02 18:07:20.918422569 +0200
+@@ -1,6 +1,6 @@
+ ## Process this file with automake to produce Makefile.in
+ 
+-SUBDIRS = po intl src
++SUBDIRS = po src
+ 
+ if USE_GNOME
+ 
+diff -rup xchat-1.4.2/configure.in xchat-1.4.2.new/configure.in
+--- xchat-1.4.2/configure.in	2000-04-06 09:28:11.000000000 +0200
++++ xchat-1.4.2.new/configure.in	2023-04-02 18:11:46.434116660 +0200
+@@ -6,7 +6,7 @@ AM_INIT_AUTOMAKE(xchat, 1.4.2)
+ AC_PROG_CC
+ 
+ ALL_LINGUAS="cs da de el es fr hu it ja ko nl pt_BR sl sr_YU"
+-AM_GNU_GETTEXT
++AM_GNU_GETTEXT([external])
+ 
+ AC_PATH_PROG(sedpath, sed)
+ 
+@@ -27,6 +27,7 @@ else
+ fi
+ 
+ AC_PATH_PROG(gmakepath, gmake)
++AC_PROG_RANLIB
+ 
+ 
+ dnl *********************************************************************
+@@ -89,11 +90,8 @@ dnl ************************************
+ 
+ glibreplace=no
+ 
+-AC_PATH_PROG(glibpath, glib12-config)
+-if test "_$glibpath" = _ ; then
+-  AC_PATH_PROG(glibpath, glib-config)
+-fi
+-if test "_$glibpath" = _ ; then
++glib_version=`pkg-config --modversion glib`
++if test "$glib_version" = "" ; then
+   glibreplace=yes
+   if test "$gtkfe" = yes; then
+     gtkfe=no
+@@ -103,17 +101,11 @@ if test "_$glibpath" = _ ; then
+   fi
+ else
+   AC_MSG_CHECKING(for Glib compile flags)
+-  GLIB_CFLAGS=`$glibpath --cflags`
+-  GLIB_LIBS=`$glibpath gmodule --libs`
++  GLIB_CFLAGS=`pkg-config --cflags glib`
++  GLIB_LIBS=`pkg-config --libs glib gmodule`
+   CFLAGS="$CFLAGS $GLIB_CFLAGS"
+   LIBS="$LIBS $GLIB_LIBS"
+   AC_MSG_RESULT(ok)
+-  if test "$prefix" = "NONE"; then
+-    AC_MSG_CHECKING(glib-config for prefix)
+-    prefix=`$glibpath --prefix`
+-    AC_MSG_RESULT($prefix)
+-  fi
+-  AC_DEFINE_UNQUOTED(PREFIX, "$prefix")
+ fi
+ 
+ if test "$glibreplace" = yes; then
+@@ -416,7 +408,6 @@ src/Makefile
+ src/common/Makefile
+ src/fe-text/Makefile
+ src/fe-gtk/Makefile
+-intl/Makefile
+ po/Makefile.in
+ ])
+ 
+diff -rup xchat-1.4.2/src/common/Makefile.am xchat-1.4.2.new/src/common/Makefile.am
+--- xchat-1.4.2/src/common/Makefile.am	2000-01-08 04:57:22.000000000 +0100
++++ xchat-1.4.2.new/src/common/Makefile.am	2023-04-02 18:15:22.985867164 +0200
+@@ -10,9 +10,6 @@ endif
+ 
+ noinst_LIBRARIES = libxchatmain.a
+ 
+-INCLUDES = \
+-	-I$(includedir)
+-
+ libxchatmain_a_SOURCES = cfgfiles.c ctcp.c dcc.c \
+       history.c ignore.c \
+ 		inbound.c notify.c outbound.c \
+diff -rup xchat-1.4.2/src/fe-gtk/Makefile.am xchat-1.4.2.new/src/fe-gtk/Makefile.am
+--- xchat-1.4.2/src/fe-gtk/Makefile.am	2000-01-08 04:57:48.000000000 +0100
++++ xchat-1.4.2.new/src/fe-gtk/Makefile.am	2023-04-02 18:16:15.609806536 +0200
+@@ -9,7 +9,6 @@ LIBS = $(GUI_LIBS)
+ 
+ INCLUDES = \
+         -DLOCALEDIR=\"$(datadir)/locale\" \
+-        -I$(includedir) \
+         $(GNOME_INCLUDEDIR)
+ 
+ xchat_LDADD = ../common/libxchatmain.a

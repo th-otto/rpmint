@@ -19,7 +19,8 @@ Group:          System/Libraries
 Packager:       %{packager}
 URL:            https://github.com/freemint/cflib
 
-Prefix:         %{_prefix}
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source:         %{pkgname}-%{version}.tar.xz
