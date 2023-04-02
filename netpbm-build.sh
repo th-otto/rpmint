@@ -20,6 +20,7 @@ patches/netpbm/netpbm-0008-signed-char.patch
 patches/netpbm/netpbm-0009-big-endian.patch
 patches/netpbm/netpbm-0010-disable-jasper.patch
 patches/netpbm/netpbm-0012-mint.patch
+patches/netpbm/netpbm-namespace.patch
 "
 DISABLED_PATCHES="
 patches/netpbm/netpbm-0001-asan.patch
@@ -54,7 +55,7 @@ for CPU in ${ALL_CPUS}; do
 	cp config.mk.in config.mk # recomended by upstream, see doc/INSTALL
 	sed -i 's:NETPBMLIBTYPE = unixshared:NETPBMLIBTYPE = unixstatic:' config.mk
 	sed -i 's:NETPBMLIBSUFFIX = so:NETPBMLIBSUFFIX = a:' config.mk
-	sed -i 's:TIFFLIB = -ltiff:TIFFLIB = -ltiff -llzma:' config.mk
+	sed -i 's:TIFFLIB = -ltiff:TIFFLIB = -ltiff -llzma -lzstd:' config.mk
 	sed -i 's:PNGLIB = NONE:PNGLIB = -lpng -lz:' config.mk
 	sed -i 's:STRIPFLAG = -s:STRIPFLAG =:' config.mk
 
@@ -68,7 +69,7 @@ for CPU in ${ALL_CPUS}; do
 	sed -i 's:CFLAGS_FOR_BUILD = \$(CFLAGS_CONFIG):CFLAGS_FOR_BUILD = :' config.mk
 	sed -i 's:LDFLAGS_FOR_BUILD = \$(LDFLAGS):LDFLAGS_FOR_BUILD = :' config.mk
 
-	${MAKE} || exit 1
+	${MAKE} ${JOBS} || exit 1
 
 	mkdir -p ${THISPKG_DIR}${sysroot}${prefix}/bin
 	mkdir -p ${THISPKG_DIR}${sysroot}${prefix}/lib$multilibdir
@@ -96,6 +97,5 @@ done
 move_prefix
 configured_prefix="${prefix}"
 copy_pkg_configs
-rm -f ${THISPKG_DIR}${sysroot}${prefix}/bin/*
 
 make_archives

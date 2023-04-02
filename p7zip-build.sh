@@ -83,7 +83,7 @@ install -m644 "$BUILD_DIR/patches/${PACKAGENAME}/p7zip-p7zip.1" "${THISPKG_DIR}$
     ${prefix}/bin \
     ${prefix}/lib/${PACKAGENAME} \
     ${prefix}/share/man \
-    ${prefix}/share/packages/${PACKAGENAME} \
+    ${prefix}/share/doc/packages/${PACKAGENAME} \
     "${THISPKG_DIR}${sysroot}"
 
 	${MAKE} clean

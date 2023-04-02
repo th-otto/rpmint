@@ -19,8 +19,8 @@ Group:          Productivity/Archiving/Compression
 Packager:       Thorsten Otto <admin@tho-otto.de>
 URL:            http://p7zip.sourceforge.net/
 
-Prefix:         %{_prefix}
-Docdir:         %{_prefix}/share/doc
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: %{pkgname}-%{version}.tar.bz2
@@ -121,7 +121,7 @@ install -m644 "%{S:2}" "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/s
     %{_rpmint_target_prefix}/bin \
     %{_rpmint_target_prefix}/lib/%{pkgname} \
     %{_rpmint_target_prefix}/share/man \
-    %{_rpmint_target_prefix}/share/packages/%{pkgname} \
+    %{_rpmint_target_prefix}/share/doc/packages/%{pkgname} \
     "%{buildroot}%{_rpmint_sysroot}"
 
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
@@ -156,13 +156,8 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files
 %defattr(-,root,root)
-%if "%{buildtype}" == "cross"
-%{_rpmint_bindir}/*
-%{_rpmint_datadir}
-%else
-%{_rpmint_target_prefix}/bin/*
-%{_rpmint_target_prefix}/share
-%endif
+%{_isysroot}%{_rpmint_target_prefix}/bin/*
+%{_isysroot}%{_rpmint_target_prefix}/share
 
 
 

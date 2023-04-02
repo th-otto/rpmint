@@ -2920,7 +2920,6 @@ This package provides: </br>
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
-		'noelf' => 1,
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,

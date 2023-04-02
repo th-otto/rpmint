@@ -29,10 +29,17 @@
 
 %_smp_mflags -j%{getncpus}
 
-# redefine __spec_install_pre
-# it usually does a rm -rf buildroot,
-# but that is also done in the %build step,
-# and we install libraries to buildroot already while building
+#
+# Required header for cross-compiling:
+# - define the target os
+# - define the command that signs the RPMS
+# - define _docdir_fmt so it uses the %pkgname for the directory, not the %name
+# - redefine __spec_install_pre
+#   it usually does a rm -rf buildroot,
+#   but that is also done in the %build step,
+#   and we install libraries to buildroot already while building
+# - nil out __gobjectintrospection_provides and __gobjectintrospection_requires
+#   since we don't need them and they take a long time
 #
 %rpmint_header \
 %define _build_pkgcheck  %{_topdir}/rpmmintsign \
@@ -43,6 +50,8 @@ Vendor:         RPMint \
 %define __spec_install_pre %{___build_pre}; %{__mkdir_p} "%{buildroot}"\
 %global _docdir_fmt %%{?pkgname}%%{?!pkgname:%%name}\
 %global _licensedir %{_isysroot}%{_rpmint_target_prefix}/share/licenses\
+%global __gobjectintrospection_provides %{nil}\
+%global __gobjectintrospection_requires %{nil}\
 %nil
 
 %_isysroot %{expr:"%{buildtype}" == "cross" ? "%{_rpmint_sysroot}" : ""}

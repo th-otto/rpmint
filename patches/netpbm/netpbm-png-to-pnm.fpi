@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# takes png from stdin, writes pnm to stdout
+#
+TMPFILE=`mktemp /tmp/printtmp.XXXXXX` || exit 1
+cat > $TMPFILE
+pngtopnm $TMPFILE
+rm -f $TMPFILE 
+
+exit 0
