@@ -1,0 +1,237 @@
+diff -rup libwmf-0.2.8.4.orig/configure.ac libwmf-0.2.8.4/configure.ac
+--- libwmf-0.2.8.4.orig/configure.ac	2005-07-27 22:48:39.000000000 +0200
++++ libwmf-0.2.8.4/configure.ac	2023-04-02 20:24:48.804966961 +0200
+@@ -141,6 +141,7 @@ AC_PROG_CPP
+ AC_PROG_INSTALL
+ AC_PROG_LN_S
+ AC_PROG_MAKE_SET
++AC_PROG_RANLIB
+ 
+ # Configure libtool
+ AC_LIBTOOL_WIN32_DLL
+@@ -279,7 +280,6 @@ AM_CONDITIONAL(LIBWMF_OPT_X,[ test "x$no
+ 
+ dnl (2) expat/libxml2 {-lexpat/-lxml2}
+ 
+-WMF_XML_DIR=""
+ WMF_XML_CFLAGS=""
+ WMF_XML_LDFLAGS=""
+ 
+@@ -292,7 +292,6 @@ AC_ARG_WITH(expat,[  --with-expat=DIR
+ 		libwmf_xml=expat
+ 	else
+ 		libwmf_xml=expat
+-		WMF_XML_DIR="$withval"
+ 	fi
+ ])
+ 
+@@ -314,7 +313,6 @@ AC_ARG_WITH(libxml2,[  --with-libxml2=DI
+ 			AC_MSG_ERROR([* * * Can't specify both expat and libxml2! * * *])
+ 		else
+ 			libwmf_xml=libxml2
+-			WMF_XML_DIR="$withval"
+ 		fi
+ 	fi
+ ])
+@@ -324,17 +322,8 @@ if test $LIBWMF_BUILDSTYLE = lite; then
+ fi # $LIBWMF_BUILDSTYLE = lite
+ 
+ if test $libwmf_xml = expat -o $libwmf_xml = unknown; then
+-	if test "x$WMF_XML_DIR" != "x"; then
+-		_cppflags=$CPPFLAGS
+-		_ldflags=$LDFLAGS
+-		CPPFLAGS="$CPPFLAGS -I$WMF_XML_DIR/include"
+-		LDFLAGS="$LDFLAGS -L$WMF_XML_DIR/lib"
+-		WMF_XML_CFLAGS="-I$WMF_XML_DIR/include"
+-		WMF_XML_LDFLAGS="-L$WMF_XML_DIR/lib -lexpat"
+-	else
+-		WMF_XML_CFLAGS=""
+-		WMF_XML_LDFLAGS="-lexpat"
+-	fi
++	WMF_XML_CFLAGS=""
++	WMF_XML_LDFLAGS="-lexpat"
+ 	AC_CHECK_HEADER(expat.h,[
+ 		AC_CHECK_LIB(expat,XML_ParserFree,[
+ 			libwmf_xml=expat
+@@ -346,26 +335,12 @@ if test $libwmf_xml = expat -o $libwmf_x
+ 			AC_MSG_ERROR([* * * unable to find expat * * *])
+ 		fi
+ 	])
+-	if test "x$WMF_XML_DIR" != "x"; then
+-		CPPFLAGS=$_cppflags
+-		LDFLAGS=$_ldflags
+-	fi
+ fi
+ 
+ if test $libwmf_xml = libxml2 -o $libwmf_xml = unknown; then
+-	if [ test -n "$WMF_XML_DIR" ]; then
+-		AC_PATH_PROG(XML2_CONFIG,xml2-config,,$WMF_XML_DIR/bin $PATH)
+-	else
+-		AC_PATH_PROG(XML2_CONFIG,xml2-config)
+-	fi
+-
+-	if test "x$XML2_CONFIG" != "x"; then
+-		WMF_XML_CFLAGS=`$XML2_CONFIG --cflags`
+-		WMF_XML_LDFLAGS=`$XML2_CONFIG --libs`
+-		libwmf_xml=libxml2
+-	elif test $libwmf_xml = libxml2; then
+-		AC_MSG_ERROR([* * * unable to find xml2-config; see ftp://xmlsoft.org/ * * *])
+-	fi
++	WMF_XML_CFLAGS=`pkg-config --cflags libxml-2.0`
++	WMF_XML_LDFLAGS=`pkg-config --libs libxml-2.0`
++	libwmf_xml=libxml2
+ fi
+ 
+ if test $libwmf_xml = expat; then
+@@ -389,46 +364,16 @@ _ldflags=$LDFLAGS
+ 
+ have_freetype=no
+ 
+-AC_ARG_WITH(freetype,[  --with-freetype=DIR     use freetype2 in DIR],[
+-	if [ test "x$withval" != "xno" ]; then
+-		if [ test "x$withval" != "xyes" ]; then
+-			FREETYPE_DIR=$withval
+-		fi
+-	else
+-		AC_MSG_ERROR(* * * libwmf requires freetype2 * * *)
+-	fi
+-])
+-
+-if [ test -n "$FREETYPE_DIR" ]; then
+-	AC_PATH_PROG(FREETYPE_CONFIG,freetype-config, ,[$FREETYPE_DIR/bin:$PATH])
+-else
+-	AC_PATH_PROG(FREETYPE_CONFIG,freetype-config)
+-fi
+-
+-if [ test -n "$FREETYPE_CONFIG" ]; then
+-	if [ test -n "$FREETYPE_DIR" ]; then
+-		freetype_cflags="`$FREETYPE_CONFIG --cflags` -I$FREETYPE_DIR/include"
+-		freetype_libs=`$FREETYPE_CONFIG --libs`
+-	else
+-		freetype_cflags=`$FREETYPE_CONFIG --cflags`
+-		freetype_libs=`$FREETYPE_CONFIG --libs`
+-	fi
+-else
+-	if [ test -n "$FREETYPE_DIR" ]; then
+-		freetype_cflags="-I$FREETYPE_DIR/include/freetype2 -I$FREETYPE_DIR/include"
+-		freetype_libs="-L$FREETYPE_DIR/lib -lfreetype"
+-	else
+-		freetype_cflags=""
+-		freetype_libs="-lfreetype"
+-	fi
+-fi
++freetype_cflags=`pkg-config --cflags freetype2`
++freetype_libs=`pkg-config --libs freetype2`
+ 
+ CPPFLAGS="$freetype_cflags $CPPFLAGS"
+ LDFLAGS="$LDFLAGS $freetype_libs"
++LIBS="$LIBS $freetype_libs"
+ 
+ AC_CHECK_LIB(freetype,FT_Init_FreeType,[
+ 	WMF_FT_LDFLAGS="$freetype_libs"
+-],[	AC_MSG_ERROR([* * * freetype(2) is required * * *])
++],[	AC_MSG_ERROR([* * * freetype(2) is required * * *]),
+ ])
+ AC_CHECK_HEADER(ft2build.h,[
+ 	WMF_FT_CFLAGS="$freetype_cflags"
+@@ -450,39 +395,15 @@ WMF_Z_LDFLAGS=""
+ _cppflags=$CPPFLAGS
+ _ldflags=$LDFLAGS
+ 
+-AC_ARG_WITH(zlib,[  --with-zlib=DIR         use libz in DIR],[
+-	if [ test "x$withval" != "xno" ]; then
+-		if [ test "x$withval" != "xyes" ]; then
+-			ZLIB_DIR=$withval
+-			CPPFLAGS="$CPPFLAGS -I$withval/include"
+-			LDFLAGS="$LDFLAGS -L$withval/lib"
+-		fi
+-	else
+-		AC_MSG_ERROR(* * * libwmf requires zlib * * *)
+-	fi
+-])
+-
+ if test $LIBWMF_BUILDSTYLE = heavy; then
+ 
+ dnl WMF_Z_CFLAGS are required later on when testing for png, etc.
+ 
+ AC_CHECK_HEADER(zlib.h,[
+ 	AC_CHECK_LIB(z,gzputs,[
+-		if [ test "x$ZLIB_DIR" != "x" ]; then
+-			WMF_Z_CONFIG_CFLAGS="-I$ZLIB_DIR/include"
+-			WMF_Z_CFLAGS="-I$ZLIB_DIR/include"
+-			WMF_Z_LDFLAGS="-L$ZLIB_DIR/lib -lz"
+-		else
+-			WMF_Z_LDFLAGS="-lz"
+-		fi
++		WMF_Z_LDFLAGS="-lz"
+ 	],[	AC_CHECK_LIB(gz,gzputs,[
+-			if [ test "x$ZLIB_DIR" != "x" ]; then
+-				WMF_Z_CONFIG_CFLAGS="-I$ZLIB_DIR/include"
+-				WMF_Z_CFLAGS="-I$ZLIB_DIR/include"
+-				WMF_Z_LDFLAGS="-L$ZLIB_DIR/lib -lgz"
+-			else
+-				WMF_Z_LDFLAGS="-lgz"
+-			fi
++			WMF_Z_LDFLAGS="-lgz"
+ 		],[	AC_MSG_ERROR(* * * unable to find libz which is required by libwmf * * *)
+ 		])
+ 	])
+@@ -502,18 +423,6 @@ WMF_PNG_LDFLAGS=""
+ _cppflags=$CPPFLAGS
+ _ldflags=$LDFLAGS
+ 
+-AC_ARG_WITH(png,[  --with-png=DIR          use libpng in DIR],[
+-	if [ test "x$withval" != "xno" ]; then
+-		if [ test "x$withval" != "xyes" ]; then
+-			PNG_DIR=$withval
+-			CPPFLAGS="$CPPFLAGS -I$withval/include"
+-			LDFLAGS="$LDFLAGS -L$withval/lib"
+-		fi
+-	else
+-		AC_MSG_ERROR(* * * libwmf requires libpng * * *)
+-	fi
+-])
+-
+ if test $LIBWMF_BUILDSTYLE = heavy; then
+ 
+ dnl "png.h" includes "zlib.h"
+@@ -521,12 +430,7 @@ CPPFLAGS="$CPPFLAGS $WMF_Z_CFLAGS"
+ 
+ AC_CHECK_HEADER(png.h,[
+ 	AC_CHECK_LIB(png,png_write_image,[
+-		if [ test "x$PNG_DIR" != "x" ]; then
+-			WMF_PNG_CFLAGS="-I$PNG_DIR/include"
+-			WMF_PNG_LDFLAGS="-L$PNG_DIR/lib -lpng"
+-		else
+-			WMF_PNG_LDFLAGS="-lpng"
+-		fi
++		WMF_PNG_LDFLAGS="-lpng"
+ 	],[	AC_MSG_ERROR(* * * unable to find libpng which is required by libwmf * * *)
+ 	],-lz -lm)
+ ],[	AC_MSG_ERROR(* * * unable to find "png.h" which is required by libwmf * * *)
+@@ -550,11 +454,6 @@ _ldflags=$LDFLAGS
+ 
+ AC_ARG_WITH(jpeg,[  --with-jpeg=DIR         use libjpeg in DIR],[
+ 	if [ test "x$withval" != "xno" ]; then
+-		if [ test "x$withval" != "xyes" ]; then
+-			JPEG_DIR=$withval
+-			CPPFLAGS="$CPPFLAGS -I$withval/include"
+-			LDFLAGS="$LDFLAGS -L$withval/lib"
+-		fi
+ 		search_for_jpeg=yes
+ 	else
+ 		search_for_jpeg=no
+@@ -569,12 +468,7 @@ fi # $LIBWMF_BUILDSTYLE = lite
+ if [ test "$search_for_jpeg" != "no" ]; then
+ 	AC_CHECK_HEADER(jpeglib.h,[
+ 		AC_CHECK_LIB(jpeg,jpeg_CreateCompress,[
+-			if [ test "x$JPEG_DIR" != "x" ]; then
+-				WMF_JPEG_CFLAGS="-I$JPEG_DIR/include"
+-				WMF_JPEG_LDFLAGS="-L$JPEG_DIR/lib -ljpeg"
+-			else
+-				WMF_JPEG_LDFLAGS="-ljpeg"
+-			fi
++			WMF_JPEG_LDFLAGS="-ljpeg"
+ 			AC_DEFINE(HAVE_LIBJPEG,1,[define if you have libjpeg])
+ 			GD_DEFS="$GD_DEFS -DHAVE_LIBJPEG"
+ 			libwmf_gd_jpeg=yes

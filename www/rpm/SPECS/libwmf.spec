@@ -1,72 +1,68 @@
-%define pkgname xchat
+%define pkgname libwmf
 
 %if "%{?buildtype}" == ""
 %define buildtype cross
 %endif
 %rpmint_header
 
-Summary       : A GTK+ IRC (chat) client.
+Summary       : library and utilities for displaying and converting metafile images
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version       : 1.4.2
-Release       : 2
-License       : GPL-2.0-or-later
-Group         : Applications/Internet
+Version       : 0.2.8.4
+Release       : 1
+License       : LGPL-2.0-or-later
+Group         : Development/Libraries
 
-Packager:       %{packager}
-URL           : http://xchat.org
+Packager      : %{packager}
+URL           : https://wvware.sourceforge.net/libwmf.html
 
 %rpmint_essential
+BuildRequires:  autoconf
+BuildRequires:  libtool
+BuildRequires:  make
+BuildRequires : libpng
 %if "%{buildtype}" == "cross"
-BuildRequires : cross-mint-XFree86-devel
-BuildRequires : cross-mint-gtk+-devel
-Requires      : cross-mint-XFree86
+BuildRequires : cross-mint-zlib-devel
+BuildRequires : cross-mint-freetype-devel >= 2.0.4
+BuildRequires : cross-mint-libxml2-devel
+BuildRequires : cross-mint-libpng-devel
 %else
-BuildRequires : XFree86-devel
-BuildRequires : gtk+-devel
-Requires      : XFree86
+BuildRequires : zlib-devel
+BuildRequires : freetype-devel >= 2.0.4
+BuildRequires : libxml2-devel
+BuildRequires : libpng-devel
 %endif
 
 Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot     : %{_tmppath}/%{name}-root
 
-Source0: http://xchat.org/files/source/1.4/%{pkgname}-%{version}.tar.gz
-Patch0: xchat-1.4.2-fixed.patch
-Patch1: xchat-1.4.2-perlinclude.patch
-Patch2: xchat-1.4.2-plugininclude.patch
-Patch3: xchat-1.4.2-time_t.patch
-Patch4: xchat-1.4.2-configure.patch
+Source0: https://nav.dl.sourceforge.net/project/wvware/%{pkgname}/%{version}/%{pkgname}-%{version}.tar.gz
+Source1: patches/automake/mintelf-config.sub
+Patch0: patches/libwmf/libwmf-config.patch
 
 %rpmint_build_arch
 
-%description
-X-Chat is yet another IRC client for the X Window System and
-GTK+. X-Chat is fairly easy to use, compared to other GTK+ IRC
-clients, and the interface is quite nicely designed.
 
-Install xchat if you need an IRC client for X.
+%description
+This is a library for interpreting metafile images and either displaying them
+using X or converting them to standard formats such as PNG, JPEG, PS, EPS,...
 
 
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
 
-touch NEWS
-touch ABOUT-NLS
-touch config.rpath
-chmod 755 config.rpath
-
+# configure.ac & configure.in are both present.....
+rm -f configure.in
 autoreconf -fiv
-rm -rf autom4te.cache config.h.in.orig
+rm -rf autom4te.cache
+
+cp %{S:1} config.sub
 
 
 %build
@@ -76,24 +72,13 @@ rm -rf autom4te.cache config.h.in.orig
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-	--bindir=%{_rpmint_target_prefix}/X11R6/bin
-	--disable-nls
-	--disable-textfe
-	--disable-panel
-	--disable-perl
-	--disable-python
+	--without-expat
+	--with-plot
+	--with-layers
 "
 STACKSIZE="-Wl,-stack,128k"
 
-#
-# there are no libraries in this package, so we
-# have to build for the target CPU only
-#
-%if "%{buildtype}" == "cross"
-for CPU in 020
-%else
-for CPU in %{buildtype}
-%endif
+for CPU in ${ALL_CPUS}
 do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
@@ -108,9 +93,7 @@ do
 
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
 
-	mkdir -p %{buildroot}%{_rpmint_sysroot}/etc/X11/applnk/Internet
-	install -m 644 xchat.desktop %{buildroot}%{_rpmint_sysroot}/etc/X11/applnk/Internet/xchat.desktop
-
+	rm -f %{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/bin/libwmf-config
 	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
 
@@ -128,8 +111,9 @@ do
 	make clean
 done
 
-%install
 
+
+%install
 %rpmint_cflags
 
 %rpmint_strip_archives
@@ -143,7 +127,6 @@ rmdir %{buildroot}%{_rpmint_installdir} || :
 rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %endif
 
-
 %clean
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
@@ -151,15 +134,28 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %files
 %defattr(-,root,root)
 %license COPYING
-%doc README ChangeLog AUTHORS doc/*
-%{_isysroot}/etc/X11/applnk/Internet/xchat.desktop
-%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xchat
-#%%{_isysroot}%%{_rpmint_target_prefix}/share/locale/*/*/*
+%doc README ChangeLog
+%doc %{_isysroot}%{_rpmint_target_prefix}/share/doc/libwmf/
+
+%{_isysroot}%{_rpmint_target_prefix}/bin/libwmf-fontmap
+%{_isysroot}%{_rpmint_target_prefix}/bin/wmf2*
+%{_isysroot}%{_rpmint_target_prefix}/share/libwmf
+
+%{_isysroot}%{_rpmint_target_prefix}/include/libwmf
+%{_isysroot}%{_rpmint_target_prefix}/lib/*.a
+%{_isysroot}%{_rpmint_target_prefix}/lib/*/*.a
 
 
 %changelog
 * Sun Apr 02 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
+- updated to 0.2.8.4
+
+* Tue Nov 06 2001 Frank Naumann <fnaumann@freemint.de>
+- updated to 0.2.2
+
+* Tue Jul 10 2001 Frank Naumann <fnaumann@freemint.de>
+- updated to 0.2.0
 
 * Sat Dec 23 2000 Frank Naumann <fnaumann@freemint.de>
 - first release for Sparemint
