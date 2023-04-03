@@ -10,7 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/smpeg-mintelf-config.patch
+patches/automake}/mintelf-config.sub
 "
 
 BINFILES="
@@ -28,7 +28,8 @@ libtoolize --force || exit 1
 aclocal -I acinclude || exit 1
 autoconf || exit 1
 automake --copy --add-missing
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/smpeg-mintelf-config.patch"
+rm -rf autom4te.cache config.h.in.orig
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
@@ -46,7 +47,7 @@ for CPU in ${ALL_CPUS}; do
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} $JOBS || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
