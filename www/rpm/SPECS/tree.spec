@@ -90,12 +90,6 @@ done
 %clean
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
-%post
-%rpmint_install_info %{pkgname}
-
-%preun
-%rpmint_uninstall_info %{pkgname}
-
 %files
 %defattr(-,root,root)
 %license LICENSE
