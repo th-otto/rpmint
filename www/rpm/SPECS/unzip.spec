@@ -17,7 +17,6 @@ Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0:        ftp://ftp.info-zip.org/pub/infozip/src/unzip60.tgz
-Source1:        patches/automake/mintelf-config.sub
 
 Patch0: patches/%{pkgname}/unzip-config.dif
 Patch1: patches/%{pkgname}/unzip-iso8859_2.patch
