@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        The GNU MP Library
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        6.1.2
 Release:        1
 License:        GPL-3.0+ and LGPL-3.0+
@@ -36,7 +32,6 @@ A library for calculating huge numbers (integer and floating point).
 %prep
 echo buildtype=%{buildtype}
 echo crossmint=%{crossmint}
-exit 1
 
 %build
 

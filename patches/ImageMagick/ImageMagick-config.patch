@@ -1,0 +1,319 @@
+diff -rup ImageMagick-5.3.6.orig/Magick++/bin/Makefile.am ImageMagick-5.3.6/Magick++/bin/Makefile.am
+--- ImageMagick-5.3.6.orig/Magick++/bin/Makefile.am	2000-11-05 00:40:40.000000000 +0100
++++ ImageMagick-5.3.6/Magick++/bin/Makefile.am	2023-04-03 11:51:59.081477489 +0200
+@@ -5,7 +5,7 @@
+ #
+ AUTOMAKE_OPTIONS = 1.4
+ 
+-INCLUDES = -I../.. -I$(top_srcdir)
++AM_CPPFLAGS = -I../.. -I$(top_srcdir)
+ 
+ includedir = ${prefix}/include
+ pkgdatadir = $(datadir)/Magick++
+diff -rup ImageMagick-5.3.6.orig/Magick++/demo/Makefile.am ImageMagick-5.3.6/Magick++/demo/Makefile.am
+--- ImageMagick-5.3.6.orig/Magick++/demo/Makefile.am	2000-12-17 17:25:01.000000000 +0100
++++ ImageMagick-5.3.6/Magick++/demo/Makefile.am	2023-04-03 11:52:11.281464929 +0200
+@@ -5,7 +5,7 @@
+ #
+ AUTOMAKE_OPTIONS = 1.4
+ 
+-INCLUDES = -I$(srcdir)/../lib -I../.. -I$(top_srcdir)
++AM_CPPFLAGS = -I$(srcdir)/../lib -I../.. -I$(top_srcdir)
+ 
+ check_PROGRAMS = button demo detrans flip gravity piddle shapes
+ 
+diff -rup ImageMagick-5.3.6.orig/Magick++/lib/Drawable.cpp ImageMagick-5.3.6/Magick++/lib/Drawable.cpp
+--- ImageMagick-5.3.6.orig/Magick++/lib/Drawable.cpp	2001-01-09 04:27:00.000000000 +0100
++++ ImageMagick-5.3.6/Magick++/lib/Drawable.cpp	2023-04-03 15:52:12.316151224 +0200
+@@ -8,7 +8,9 @@
+ #define MAGICK_IMPLEMENTATION
+ 
+ #include <math.h>
++#include <stdlib.h>
+ #include <string>
++#include <string.h>
+ #include <iostream>
+ #include <strstream>
+ 
+diff -rup ImageMagick-5.3.6.orig/Magick++/lib/Geometry.cpp ImageMagick-5.3.6/Magick++/lib/Geometry.cpp
+--- ImageMagick-5.3.6.orig/Magick++/lib/Geometry.cpp	2001-06-13 20:38:15.000000000 +0200
++++ ImageMagick-5.3.6/Magick++/lib/Geometry.cpp	2023-04-03 15:52:27.604132949 +0200
+@@ -8,6 +8,7 @@
+ #define MAGICK_IMPLEMENTATION
+ 
+ #include <string>
++#include <string.h>
+ #include <iostream>
+ #include <iomanip>
+ #include <strstream>
+diff -rup ImageMagick-5.3.6.orig/Magick++/lib/Makefile.am ImageMagick-5.3.6/Magick++/lib/Makefile.am
+--- ImageMagick-5.3.6.orig/Magick++/lib/Makefile.am	2000-11-07 15:38:55.000000000 +0100
++++ ImageMagick-5.3.6/Magick++/lib/Makefile.am	2023-04-03 11:53:15.481398837 +0200
+@@ -7,7 +7,7 @@ AUTOMAKE_OPTIONS = 1.4
+ 
+ SUBDIRS = Magick++
+ 
+-INCLUDES = -I../.. -I$(top_srcdir)
++AM_CPPFLAGS = -I../.. -I$(top_srcdir)
+ 
+ includedir = ${prefix}/include
+ pkgdatadir = $(datadir)/Magick++
+@@ -30,4 +30,4 @@ include_HEADERS = Magick++.h
+ 
+ EXTRA_DIST =
+ 
+-LDFLAGS = @LDFLAGS@ $(LIBSTDC_LDFLAGS)
++AM_LDFLAGS = @LDFLAGS@ $(LIBSTDC_LDFLAGS)
+diff -rup ImageMagick-5.3.6.orig/Magick++/lib/Options.cpp ImageMagick-5.3.6/Magick++/lib/Options.cpp
+--- ImageMagick-5.3.6.orig/Magick++/lib/Options.cpp	2001-05-18 04:10:35.000000000 +0200
++++ ImageMagick-5.3.6/Magick++/lib/Options.cpp	2023-04-03 15:53:07.436085337 +0200
+@@ -10,6 +10,7 @@
+ #define MAGICK_IMPLEMENTATION
+ 
+ #include <string>
++#include <string.h>
+ #include <stdlib.h>
+ #include <iostream>
+ #include <math.h>
+@@ -231,7 +232,7 @@ void Magick::Options::magick ( const std
+   FormatString( _imageInfo->filename, "%.1024s:", magick_.c_str() );
+   GetExceptionInfo(&exception);
+   SetImageInfo( _imageInfo, 1, &exception);
+-  if ( _imageInfo->magick == '\0' )
++  if ( _imageInfo->magick == 0 )
+     throwExceptionExplicit( OptionWarning,
+ 			    "Unrecognized image format",
+ 			    magick_.c_str() );
+diff -rup ImageMagick-5.3.6.orig/Magick++/tests/Makefile.am ImageMagick-5.3.6/Magick++/tests/Makefile.am
+--- ImageMagick-5.3.6.orig/Magick++/tests/Makefile.am	2000-09-07 05:56:33.000000000 +0200
++++ ImageMagick-5.3.6/Magick++/tests/Makefile.am	2023-04-03 11:53:49.457363859 +0200
+@@ -5,7 +5,7 @@
+ #
+ AUTOMAKE_OPTIONS = 1.4
+ 
+-INCLUDES = -I$(srcdir)/../lib -I../.. -I$(top_srcdir)
++AM_CPPFLAGS = -I$(srcdir)/../lib -I../.. -I$(top_srcdir)
+ 
+ #
+ # Execute 'make check' to compile and run a test program
+diff -rup ImageMagick-5.3.6.orig/Makefile.am ImageMagick-5.3.6/Makefile.am
+--- ImageMagick-5.3.6.orig/Makefile.am	2023-04-03 11:38:58.402096592 +0200
++++ ImageMagick-5.3.6/Makefile.am	2023-04-03 12:19:00.031712768 +0200
+@@ -40,10 +40,10 @@ MAGICK_PLUS_PLUS=Magick++
+ endif # WITH_MAGICK_PLUS_PLUS
+ 
+ # Directories to include in distribution
+-DIST_SUBDIRS=ltdl coders magick utilities tests Magick++
++DIST_SUBDIRS=coders magick utilities tests Magick++
+ 
+ if WITH_MODULES
+-SUBDIRS = ltdl magick coders utilities tests $(MAGICK_PLUS_PLUS)
++SUBDIRS = magick coders utilities tests $(MAGICK_PLUS_PLUS)
+ else
+ SUBDIRS = coders magick utilities tests $(MAGICK_PLUS_PLUS)
+ endif # WITH_MODULES
+diff -rup ImageMagick-5.3.6.orig/coders/Makefile.am ImageMagick-5.3.6/coders/Makefile.am
+--- ImageMagick-5.3.6.orig/coders/Makefile.am	2001-06-26 16:13:14.000000000 +0200
++++ ImageMagick-5.3.6/coders/Makefile.am	2023-04-03 12:03:56.088729345 +0200
+@@ -30,7 +30,7 @@
+ # Don't require all the GNU mandated files
+ AUTOMAKE_OPTIONS = 1.4 foreign
+ 
+-INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/magick
++AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/magick
+ 
+ MAGICK_CODER_SRCS = art.c avi.c avs.c 8bim.c bmp.c cmyk.c cut.c dcm.c dps.c \
+   dpx.c ept.c fax.c fits.c fpx.c gif.c gradient.c gray.c hdf.c histogram.c  \
+@@ -57,7 +57,6 @@ EXTRA_DIST = modules.mgk delegates.mgk.i
+ # Headers which are not installed but which are distributed
+ noinst_HEADERS = 
+ 
+-if WITH_MODULES
+ # Where modules are installed
+ pkgdir = $(libdir)/ImageMagick/modules/coders
+ 
+@@ -68,6 +67,7 @@ pkg_DATA = modules.mgk
+ pkgdata_DATA = 
+ 
+ # Modules which are to be built
++if WITH_MODULES
+ pkg_LTLIBRARIES   = 8bim.la art.la avi.la avs.la bmp.la cmyk.la cut.la \
+   dcm.la dps.la dpx.la ept.la fax.la fpx.la fits.la gif.la gray.la gradient.la \
+   hdf.la histogram.la html.la icm.la icon.la iptc.la jbig.la jpeg.la \
+@@ -78,7 +78,7 @@ pkg_LTLIBRARIES   = 8bim.la art.la avi.l
+   tile.la tim.la ttf.la txt.la uil.la url.la uyvy.la vicar.la vid.la viff.la \
+   wbmp.la wmf.la wpg.la x.la xbm.la xc.la xpm.la xwd.la yuv.la
+ else
+-pkg_LTLIBRARIES   =
++pkg_LTLIBRARIES     =
+ endif # WITH_MODULES
+ 
+ # ART module
+diff -rup ImageMagick-5.3.6.orig/configure.in ImageMagick-5.3.6/configure.in
+--- ImageMagick-5.3.6.orig/configure.in	2001-06-26 16:51:05.000000000 +0200
++++ ImageMagick-5.3.6/configure.in	2023-04-03 15:47:25.284494331 +0200
+@@ -67,15 +67,9 @@ fi
+ #
+ AC_ENABLE_SHARED(no)
+ AC_ENABLE_STATIC(yes)
+-AC_LIBLTDL_CONVENIENCE
+-# Substitute INCLTDL and LIBLTDL in the Makefiles
+-AC_SUBST(INCLTDL)
+-AC_SUBST(LIBLTDL)
+ # Check for dlopen support
+-AC_LIBTOOL_DLOPEN
+-AC_LIBTOOL_SETUP
+ # Configure libtool
+-AC_PROG_LIBTOOL
++LT_INIT
+ 
+ #if test "$with_magick_plus_plus" = 'yes'
+ #then
+@@ -108,8 +102,6 @@ then
+   with_modules='no'
+ fi
+ AM_CONDITIONAL(WITH_MODULES, test "$with_modules" != 'no')
+-# Configure libltdl
+-AC_CONFIG_SUBDIRS(ltdl)
+ if test "$with_modules" != 'no'
+ then
+   AC_DEFINE(HasLTDL,,Define if using libltdl to create dynamically loadable modules)
+@@ -800,7 +792,8 @@ exit(1);
+ >>,
+ changequote([, ])dnl
+ ac_cv_jpeg_version_ok='yes',
+-ac_cv_jpeg_version_ok='no')])
++ac_cv_jpeg_version_ok='no',
++ac_cv_jpeg_version_ok='yes')])
+ if test "$ac_cv_jpeg_version_ok" = 'yes' ; then
+  AC_MSG_RESULT(yes)
+  passed=`expr $passed + 1`
+@@ -884,19 +877,19 @@ then
+     then
+        :
+     else
+-       freetype_config=''
+-       AC_CHECK_PROGS(freetype_config,freetype-config,)dnl
+-       if test -n "$freetype_config"
++       freetype_version=`pkg-config --modversion freetype2`
++       if test -n "$freetype_version"
+        then
+-          LDFLAGS=-L`freetype-config --prefix`/lib" $LDFLAGS" 2> /dev/null
+-          CPPFLAGS=`freetype-config --cflags`" $CPPFLAGS" 2> /dev/null
++	  LIB_TTF=`pkg-config --libs freetype2`
++          LIBS="$LIB_TTF $LIBS" 2> /dev/null
++          CPPFLAGS=`pkg-config --cflags freetype2`" $CPPFLAGS" 2> /dev/null
+        fi
+     fi
+ 
+ dnl First see if there is a library
+     if test "$LIB_TTF" = ''
+     then
+-      AC_CHECK_LIB(freetype,FT_Init_FreeType,LIB_TTF='-lfreetype',,)
++      AC_CHECK_LIB(freetype,FT_Init_FreeType,,,)
+       if test "$LIB_TTF" != ''
+       then
+         passed=`expr $passed + 1`
+@@ -906,15 +899,9 @@ dnl First see if there is a library
+       fi
+     fi
+ 
+-dnl Next see what magic is required for the headers
+-    if test "$LIB_TTF" != ''
+-    then
+-      CPPFLAGS=`freetype-config --cflags`" $CPPFLAGS" 2> /dev/null
+-    fi
+-
+ dnl Now test for the headers
+-    AC_CHECK_HEADERS(freetype/freetype.h)
+-    if test "$ac_cv_header_freetype_freetype_h" = 'yes'
++    AC_CHECK_HEADERS(ft2build.h)
++    if test "$ac_cv_header_ft2build_h" = 'yes'
+     then
+ 	passed=`expr $passed + 1`
+     else
+@@ -956,7 +943,7 @@ then
+     passed=0;
+     AC_CHECK_HEADER(tiff.h,passed=`expr $passed + 1`,failed=`expr $failed + 1`)
+     AC_CHECK_HEADER(tiffio.h,passed=`expr $passed + 1`,failed=`expr $failed + 1`)
+-    AC_CHECK_LIB(tiff,TIFFOpen,passed=`expr $passed + 1`,failed=`expr $failed + 1`,)
++    AC_CHECK_LIB(tiff,TIFFOpen,passed=`expr $passed + 1`,failed=`expr $failed + 1`,-llzma -lzstd)
+     AC_MSG_CHECKING(if TIFF package is complete)
+     if test $passed -gt 0
+     then
+@@ -965,7 +952,7 @@ then
+ 	AC_MSG_RESULT(no -- some components failed test)
+ 	have_tiff='no (failed tests)'
+     else
+-	LIB_TIFF='-ltiff'
++	LIB_TIFF='-ltiff -llzma -lzstd'
+ 	LIBS="$LIB_TIFF $LIBS"
+ 	AC_DEFINE(HasTIFF,,Define if you have TIFF library)
+ 	AC_MSG_RESULT(yes)
+@@ -1098,9 +1085,8 @@ then
+     AC_MSG_RESULT()
+     failed=0;
+     passed=0;
+-    AC_CHECK_HEADER(wmfapi.h,passed=`expr $passed + 1`,failed=`expr $failed + 1`)
++    AC_CHECK_HEADER(libwmf/ipa.h,passed=`expr $passed + 1`,failed=`expr $failed + 1`)
+     AC_CHECK_LIB(Xpm,XpmReadFileToBuffer,LIBS="-lXpm $LIBS"; passed=`expr $passed + 1`,failed=`expr $failed + 1`,)
+-    AC_CHECK_LIB(dib,save_DIBasXpm,LIBS="-ldib $LIBS"; passed=`expr $passed + 1`,failed=`expr $failed + 1`,)
+     AC_CHECK_LIB(wmf,PlayMetaFile,LIBS="-lwmf $LIBS"; passed=`expr $passed + 1`,failed=`expr $failed + 1`,)
+     AC_MSG_CHECKING(if WMF package is complete)
+     if test $passed -gt 0
+@@ -1111,7 +1097,7 @@ then
+         have_wmf='no (failed tests)'
+         LIBS="$OLIBS"
+     else
+-	LIB_WMF='-lwmf -ldib -lXpm'
++	LIB_WMF='-lwmf -lXpm'
+ 	AC_DEFINE(HasWMF,,Define if you have WMF library)
+ 	AC_MSG_RESULT(yes)
+         have_wmf='yes'
+diff -rup ImageMagick-5.3.6.orig/magick/Makefile.am ImageMagick-5.3.6/magick/Makefile.am
+--- ImageMagick-5.3.6.orig/magick/Makefile.am	2001-06-21 00:46:15.000000000 +0200
++++ ImageMagick-5.3.6/magick/Makefile.am	2023-04-03 11:59:57.384985085 +0200
+@@ -39,7 +39,7 @@ MICRO_VERSION=@MICRO_VERSION@
+ 
+ BUILT_SOURCES = config.h
+ 
+-INCLUDES = -I$(top_srcdir)
++AM_CPPFLAGS = -I$(top_srcdir)
+ 
+ ALLMANPAGES = Magick-config.1
+ 
+diff -rup ImageMagick-5.3.6.orig/magick/annotate.c ImageMagick-5.3.6/magick/annotate.c
+--- ImageMagick-5.3.6.orig/magick/annotate.c	2001-06-19 22:33:35.000000000 +0200
++++ ImageMagick-5.3.6/magick/annotate.c	2023-04-03 15:45:40.260619735 +0200
+@@ -61,6 +61,7 @@
+ #include "xwindows.h"
+ #endif
+ #if defined(HasTTF)
++#include <ft2build.h>
+ #include "freetype/freetype.h"
+ #include "freetype/ftglyph.h"
+ #include "freetype/ftoutln.h"
+diff -rup ImageMagick-5.3.6.orig/tests/Makefile.am ImageMagick-5.3.6/tests/Makefile.am
+--- ImageMagick-5.3.6.orig/tests/Makefile.am	2001-05-28 01:20:15.000000000 +0200
++++ ImageMagick-5.3.6/tests/Makefile.am	2023-04-03 12:00:10.328971759 +0200
+@@ -30,7 +30,7 @@
+ 
+ AUTOMAKE_OPTIONS = 1.4 foreign
+ 
+-INCLUDES = -I../ -I$(top_srcdir) -I../magick
++AM_CPPFLAGS = -I../ -I$(top_srcdir) -I../magick
+ # ../magick/config.h is needed.
+ 
+ #
+diff -rup ImageMagick-5.3.6.orig/utilities/Makefile.am ImageMagick-5.3.6/utilities/Makefile.am
+--- ImageMagick-5.3.6.orig/utilities/Makefile.am	2001-04-18 17:30:38.000000000 +0200
++++ ImageMagick-5.3.6/utilities/Makefile.am	2023-04-03 12:00:23.408958294 +0200
+@@ -35,7 +35,7 @@
+ AUTOMAKE_OPTIONS = 1.4 foreign
+ 
+ MAGICK_LIB	= ../magick/libMagick.la # libtool library name
+-INCLUDES	= -I../ -I$(top_srcdir) $(INCLTDL) $(X_CFLAGS)
++AM_CPPFLAGS	= -I../ -I$(top_srcdir) $(INCLTDL) $(X_CFLAGS)
+ 
+ STDMANPAGES = ImageMagick.1  composite.1 convert.1  identify.1 \
+    miff.4 mogrify.1 montage.1 quantize.5

@@ -13,21 +13,15 @@ Packager      : %{packager}
 URL           : https://wvware.sourceforge.net/libwmf.html
 
 %rpmint_essential
-BuildRequires:  autoconf
-BuildRequires:  libtool
-BuildRequires:  make
-BuildRequires : libpng
-%if "%{buildtype}" == "cross"
-BuildRequires : cross-mint-zlib-devel
-BuildRequires : cross-mint-freetype-devel >= 2.0.4
-BuildRequires : cross-mint-libxml2-devel
-BuildRequires : cross-mint-libpng-devel
-%else
-BuildRequires : zlib-devel
-BuildRequires : freetype-devel >= 2.0.4
-BuildRequires : libxml2-devel
-BuildRequires : libpng-devel
-%endif
+BuildRequires: autoconf
+BuildRequires: libtool
+BuildRequires: make
+BuildRequires: libpng
+BuildRequires: %{crossmint}zlib-devel
+BuildRequires: %{crossmint}freetype-devel >= 2.0.4
+BuildRequires: %{crossmint}libxml2-devel
+BuildRequires: %{crossmint}libpng-devel
+Provides     : %{crossmint}libwmf-devel
 
 Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
