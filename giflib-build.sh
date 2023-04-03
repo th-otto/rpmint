@@ -13,8 +13,10 @@ PATCHES="
 patches/giflib/giflib-visibility.patch
 patches/giflib/giflib-automake-1_13.patch
 patches/giflib/giflib-CVE-2016-3977.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 patches/giflib/giflib-fix-autoconf11.patch
-patches/giflib/giflib-mintelf-config.patch
 "
 
 BINFILES="
@@ -26,22 +28,25 @@ unpack_archive
 
 cd "$srcdir"
 
-export LANG=POSIX
-export LC_ALL=POSIX
-autoreconf -fiv
+rm -f aclocal.m4 ltmain.sh m4/*.m4
+libtoolize --force --automake || exit 1
+aclocal -I m4 || exit 1
+autoconf || exit 1
+autoheader || exit 1
+automake --force --copy --add-missing || exit 1
+rm -rf autom4te.cache config.h.in.orig
 # patch it again in case it was replaced by autoreconf
-patch -p1 -i ${BUILD_DIR}/patches/giflib/giflib-mintelf-config.patch || :
+cp ${BUILD_DIR}/patches/automake/mintelf-config.sub config.sub
 
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--host=${TARGET} \
-	--prefix=${prefix} \
-	--sysconfdir=/etc \
-	--datadir=${prefix}/share \
-	--disable-nls \
-	--disable-shared"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
+	--sysconfdir=/etc
+	--disable-nls
+	--disable-shared
+"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
