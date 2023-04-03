@@ -1,9 +1,5 @@
 %define pkgname gtk+
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 Summary       : The GIMP ToolKit (GTK+), a library for creating GUIs for X.

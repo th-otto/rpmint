@@ -1,8 +1,5 @@
 %define pkgname test
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        The GNU MP Library
@@ -37,6 +34,9 @@ BuildRequires:  xz
 A library for calculating huge numbers (integer and floating point).
 
 %prep
+echo buildtype=%{buildtype}
+echo crossmint=%{crossmint}
+exit 1
 
 %build
 

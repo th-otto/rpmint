@@ -1,9 +1,5 @@
 %define pkgname rpm
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 Summary       : The Red Hat package management system.

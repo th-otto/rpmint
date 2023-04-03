@@ -1,9 +1,5 @@
 %define pkgname gimp
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 %define subver   1.2

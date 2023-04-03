@@ -1,16 +1,9 @@
 %define pkgname giflib
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A Library for Working with GIF Images
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        5.1.4
 Release:        1
 License:        MIT
@@ -33,10 +26,8 @@ Patch2:  patches/giflib/giflib-CVE-2016-3977.patch
 BuildRequires:  autoconf
 BuildRequires:  libtool
 BuildRequires:  make
-%if "%{buildtype}" == "cross"
-Provides:       cross-mint-libgif-devel
-%else
-Provides:       libgif-devel
+Provides:       %{crossmint}libgif-devel
+%if "%{buildtype}" != "cross"
 Obsoletes:      libungif < 5.0.0
 Obsoletes:      libungif-devel < 5.0.0
 Obsoletes:      libungif-progs < 5.0.0

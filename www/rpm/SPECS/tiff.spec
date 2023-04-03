@@ -1,8 +1,5 @@
 %define pkgname tiff
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Library for the Portable Network Graphics Format (PNG)

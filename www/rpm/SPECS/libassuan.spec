@@ -1,8 +1,5 @@
 %define pkgname libassuan
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        IPC library used by GnuPG version 2

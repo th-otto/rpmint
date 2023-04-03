@@ -1,8 +1,5 @@
 %define pkgname mintlib
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Standard C Libraries for MiNT

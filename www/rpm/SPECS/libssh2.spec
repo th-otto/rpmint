@@ -1,8 +1,5 @@
 %define pkgname libssh2
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A library implementing the SSH2 protocol

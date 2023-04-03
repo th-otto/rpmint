@@ -1,8 +1,5 @@
 %define pkgname libarchive
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Creates and reads several different streaming archive formats

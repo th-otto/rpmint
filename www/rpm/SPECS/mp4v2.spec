@@ -1,8 +1,5 @@
 %define pkgname mp4v2
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A C/C++ library to create, modify and read MP4 files

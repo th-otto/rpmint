@@ -1,8 +1,5 @@
 %define pkgname m4
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        GNU m4

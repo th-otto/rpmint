@@ -1,10 +1,6 @@
 %define pkgname zstd
 %define libname libzstd1
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 Summary       : Zstandard compression tools

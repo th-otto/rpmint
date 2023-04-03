@@ -1,9 +1,5 @@
 %define pkgname xswarm
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 Summary       : A nice X11 demo or screensaver.

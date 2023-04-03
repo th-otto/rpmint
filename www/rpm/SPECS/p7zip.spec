@@ -1,8 +1,5 @@
 %define pkgname p7zip
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A file compression utility

@@ -1,8 +1,5 @@
 %define pkgname libffi
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Foreign Function Interface Library

@@ -1,8 +1,5 @@
 %define pkgname essential
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Atari MiNT cross-compiler tools

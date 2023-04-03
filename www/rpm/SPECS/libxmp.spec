@@ -1,8 +1,5 @@
 %define pkgname libxmp
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Module Player library for MOD, S3M, IT and others

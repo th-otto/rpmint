@@ -1,8 +1,5 @@
 %define pkgname mpfr
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        The GNU multiple-precision floating-point library

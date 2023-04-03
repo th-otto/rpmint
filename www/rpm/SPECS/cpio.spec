@@ -1,8 +1,5 @@
 %define pkgname cpio
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A Backup and Archiving Utility

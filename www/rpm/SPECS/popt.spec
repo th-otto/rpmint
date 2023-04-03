@@ -1,8 +1,5 @@
 %define pkgname popt
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A C library for parsing command line parameters.

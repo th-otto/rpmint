@@ -1,8 +1,5 @@
 %define pkgname jpeg
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A library for manipulating JPEG image files

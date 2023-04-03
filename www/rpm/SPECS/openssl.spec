@@ -1,8 +1,5 @@
 %define pkgname openssl
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 %define _sonum  1_1

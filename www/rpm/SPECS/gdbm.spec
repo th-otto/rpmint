@@ -1,8 +1,5 @@
 %define pkgname gdbm
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        GNU dbm key/data database

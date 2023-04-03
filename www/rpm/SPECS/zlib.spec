@@ -1,8 +1,5 @@
 %define pkgname zlib
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Library implementing the DEFLATE compression algorithm

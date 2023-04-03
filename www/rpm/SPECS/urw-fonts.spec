@@ -1,9 +1,5 @@
 %define pkgname urw-fonts
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 Summary       : Free versions of the 35 standard PostScript fonts.

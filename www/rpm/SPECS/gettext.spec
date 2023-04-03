@@ -1,8 +1,5 @@
 %define pkgname gettext
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Tools for Native Language Support (NLS)

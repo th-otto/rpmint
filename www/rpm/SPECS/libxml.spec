@@ -1,8 +1,5 @@
 %define pkgname libxml
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        An XML library

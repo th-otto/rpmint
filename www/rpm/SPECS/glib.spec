@@ -1,9 +1,5 @@
 %define pkgname glib
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 # Note that this is NOT a relocatable package

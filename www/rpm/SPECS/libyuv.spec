@@ -1,8 +1,5 @@
 %define pkgname libyuv
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Open source project that includes YUV scaling and conversion functionality

@@ -1,8 +1,5 @@
 %define pkgname readline
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        The Readline Library

@@ -1,8 +1,5 @@
 %define pkgname curl
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 %bcond_without openssl

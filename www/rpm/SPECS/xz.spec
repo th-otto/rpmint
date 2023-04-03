@@ -1,8 +1,5 @@
 %define pkgname xz
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A Program for Compressing Files with the Lempel–Ziv–Markov algorithm

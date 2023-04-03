@@ -1,8 +1,5 @@
 %define pkgname XServer
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary       : The FreeMiNT X11 server for GEM

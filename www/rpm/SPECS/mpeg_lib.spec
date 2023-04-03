@@ -1,9 +1,5 @@
 %define pkgname mpeg_lib
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 Summary: 	Interface for MPEG-1 Streams.

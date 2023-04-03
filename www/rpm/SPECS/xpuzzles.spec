@@ -1,8 +1,5 @@
 %define pkgname xpuzzles
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary       : Geometric puzzles and toys for the X Window System.

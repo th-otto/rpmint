@@ -1,8 +1,5 @@
 %define pkgname binutils
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 %if "%{?build_32bit}" == ""

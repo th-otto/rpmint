@@ -1,9 +1,5 @@
 %define pkgname xv
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 Summary       : An X based image file viewer and manipulator.

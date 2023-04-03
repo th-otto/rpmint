@@ -1,8 +1,5 @@
 %define pkgname chkfontpath
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary       : Simple interface for editing the font path for the X font server.

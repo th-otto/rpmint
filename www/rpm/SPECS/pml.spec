@@ -1,6 +1,3 @@
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 %define gcc_version %(%{_rpmint_target}-gcc -dumpversion)

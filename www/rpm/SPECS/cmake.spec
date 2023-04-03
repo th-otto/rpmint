@@ -1,8 +1,5 @@
 %define pkgname cmake
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Cross-platform, open-source make system

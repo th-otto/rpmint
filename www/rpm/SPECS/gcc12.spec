@@ -1,9 +1,6 @@
 %define gcc_major_ver 12
 %define pkgname gcc%{gcc_major_ver}
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 %define build_fastcall 0

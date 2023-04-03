@@ -1,8 +1,5 @@
 %define pkgname libmikmod
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        MikMod Sound Library

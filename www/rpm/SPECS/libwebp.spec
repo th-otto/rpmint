@@ -1,8 +1,5 @@
 %define pkgname libwebp
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Library and tools for the WebP graphics format

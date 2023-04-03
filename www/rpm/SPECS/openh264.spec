@@ -1,8 +1,5 @@
 %define pkgname openh264
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Library which supports H.264 encoding and decoding

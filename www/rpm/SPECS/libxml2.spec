@@ -1,8 +1,5 @@
 %define pkgname libxml2
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A Library to Manipulate XML Files

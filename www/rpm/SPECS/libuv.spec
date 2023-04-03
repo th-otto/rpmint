@@ -1,8 +1,5 @@
 %define pkgname libuv
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Asychronous I/O support library

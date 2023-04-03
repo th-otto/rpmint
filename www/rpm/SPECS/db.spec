@@ -1,8 +1,5 @@
 %define pkgname db
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Berkeley DB Database Library

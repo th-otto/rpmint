@@ -1,8 +1,5 @@
 %define pkgname rhash
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Recursive Hasher

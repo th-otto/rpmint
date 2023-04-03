@@ -1,8 +1,5 @@
 %define pkgname libde265
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Open h.265 codec implementation

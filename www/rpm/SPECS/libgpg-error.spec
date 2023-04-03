@@ -1,8 +1,5 @@
 %define pkgname libgpg-error
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Library That Defines Common Error Values for All GnuPG Components

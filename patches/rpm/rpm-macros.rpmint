@@ -54,7 +54,9 @@ Vendor:         RPMint \
 %global __gobjectintrospection_requires %{nil}\
 %nil
 
+%buildtype cross
 %_isysroot %{expr:"%{buildtype}" == "cross" ? "%{_rpmint_sysroot}" : ""}
+%crossmint %{expr:"%{buildtype}" == "cross" ? ("%{_rpmint_target}" == "m68k-atari-mintelf" ? "cross-mintelf-" : "cross-mint-") : ""}
 
 %rpmint_build_arch \
 %if "%{buildtype}" == "cross" \

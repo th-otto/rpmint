@@ -1,8 +1,5 @@
 %define pkgname libiconv
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Libiconv is a conversion library

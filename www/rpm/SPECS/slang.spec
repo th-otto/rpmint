@@ -1,8 +1,5 @@
 %define pkgname slang
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        The library and header files for the S-Lang extension language

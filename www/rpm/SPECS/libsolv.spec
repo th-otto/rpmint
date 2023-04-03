@@ -1,8 +1,5 @@
 %define pkgname libsolv
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Package dependency solver using a satisfiability algorithm

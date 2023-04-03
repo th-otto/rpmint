@@ -1,8 +1,5 @@
 %define pkgname libmetalink
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Metalink library written in C

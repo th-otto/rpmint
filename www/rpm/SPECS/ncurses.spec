@@ -1,8 +1,5 @@
 %define pkgname ncurses
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Terminal control library

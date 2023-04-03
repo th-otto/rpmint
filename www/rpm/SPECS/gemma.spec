@@ -1,8 +1,5 @@
 %define pkgname gemma
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Support library for GEM application programs

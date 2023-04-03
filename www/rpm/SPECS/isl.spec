@@ -1,8 +1,5 @@
 %define pkgname isl
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Integer Set Library

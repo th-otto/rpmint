@@ -1,8 +1,5 @@
 %define pkgname cflib
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        CFLIB is Christian Felsch's GEM utility library

@@ -1,8 +1,5 @@
 %define pkgname libtheora
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Theora video compression codec

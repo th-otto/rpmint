@@ -1,8 +1,5 @@
 %define pkgname libksba
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A X.509 Library

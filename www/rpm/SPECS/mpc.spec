@@ -1,8 +1,5 @@
 %define pkgname mpc
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        MPC multiple-precision complex shared library

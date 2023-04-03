@@ -1,16 +1,9 @@
 %define pkgname libwmf
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary       : library and utilities for displaying and converting metafile images
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name          : %{crossmint}%{pkgname}
 Version       : 0.2.8.4
 Release       : 1
 License       : LGPL-2.0-or-later

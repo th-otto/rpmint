@@ -1,9 +1,6 @@
 %define pkgname lua53
 %define major_version 5.3
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Small Embeddable Language with Procedural Syntax

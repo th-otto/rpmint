@@ -1,8 +1,5 @@
 %define pkgname libvorbis
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Vorbis General Audio Compression Codec

@@ -1,8 +1,5 @@
 %define pkgname libbeecrypt
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        An open source cryptography library

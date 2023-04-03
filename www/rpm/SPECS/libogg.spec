@@ -1,8 +1,5 @@
 %define pkgname libogg
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Ogg Bitstream Library

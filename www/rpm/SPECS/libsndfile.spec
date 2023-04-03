@@ -1,8 +1,5 @@
 %define pkgname libsndfile
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        C library for reading and writing sound files

@@ -1,8 +1,5 @@
 %define pkgname newt
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A development library for text mode user interfaces.

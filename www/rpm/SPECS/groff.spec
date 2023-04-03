@@ -1,8 +1,5 @@
 %define pkgname groff
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        GNU troff Document Formatting System

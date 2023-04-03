@@ -1,9 +1,5 @@
 %define pkgname freetype2
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 Summary       : A free and portable TrueType font rendering engine

@@ -1,8 +1,5 @@
 %define pkgname mpg123
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Console MPEG audio player and decoder library

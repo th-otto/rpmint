@@ -1,8 +1,5 @@
 %define pkgname libheif
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        HEIF and AVIF (AV1 Image File Format) file format decoder and encoder

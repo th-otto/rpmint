@@ -1,8 +1,5 @@
 %define pkgname libunistring
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        GNU Unicode string library

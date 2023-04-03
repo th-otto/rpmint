@@ -1,8 +1,5 @@
 %define pkgname xchat
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary       : A GTK+ IRC (chat) client.

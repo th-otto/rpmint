@@ -1,8 +1,5 @@
 %define pkgname tar
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        GNU implementation of ((t)ape (ar)chiver)

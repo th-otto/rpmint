@@ -1,8 +1,5 @@
 %define pkgname libexif
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        An EXIF Tag Parsing Library for Digital Cameras

@@ -1,8 +1,5 @@
 %define pkgname minicom
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary: A text-based modem control and terminal emulation program.

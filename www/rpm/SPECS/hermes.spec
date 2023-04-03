@@ -1,8 +1,5 @@
 %define pkgname Hermes
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        A library to convert pixel formats

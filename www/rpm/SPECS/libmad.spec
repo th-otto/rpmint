@@ -1,8 +1,5 @@
 %define pkgname libmad
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        An MPEG audio decoder library

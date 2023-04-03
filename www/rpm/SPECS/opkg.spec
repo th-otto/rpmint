@@ -1,8 +1,5 @@
 %define pkgname opkg
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Opkg lightweight package management system

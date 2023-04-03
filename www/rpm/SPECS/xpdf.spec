@@ -1,9 +1,5 @@
 %define pkgname xpdf
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 Summary       : A PDF file viewer for the X Window System.

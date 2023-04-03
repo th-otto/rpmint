@@ -1,8 +1,5 @@
 %define pkgname gdos-X-fonts
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Required fonts for Atari X environment

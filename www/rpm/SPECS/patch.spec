@@ -1,8 +1,5 @@
 %define pkgname patch
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        GNU patch Utilities

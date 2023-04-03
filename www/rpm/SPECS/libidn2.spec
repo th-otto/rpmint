@@ -1,8 +1,5 @@
 %define pkgname libidn2
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Support for Internationalized Domain Names (IDN) based on IDNA2008

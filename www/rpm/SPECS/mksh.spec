@@ -1,8 +1,5 @@
 %define pkgname mksh
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 %if "%{buildtype}" == "cross"

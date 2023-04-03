@@ -1,9 +1,5 @@
 %define pkgname Xaw3d
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
-
 %rpmint_header
 
 Summary       : A version of the MIT Athena widget set for X.

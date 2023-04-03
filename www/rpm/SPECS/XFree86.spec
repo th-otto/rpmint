@@ -1,8 +1,5 @@
 %define pkgname XFree86
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary       : The basic fonts, programs and docs for an X workstation.

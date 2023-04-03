@@ -1,8 +1,5 @@
 %define pkgname aalib
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary: 	An ASCII art library.

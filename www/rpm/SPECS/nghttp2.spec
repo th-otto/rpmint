@@ -1,8 +1,5 @@
 %define pkgname nghttp2
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Implementation of Hypertext Transfer Protocol version 2 in C

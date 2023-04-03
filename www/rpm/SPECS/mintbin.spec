@@ -1,8 +1,5 @@
 %define pkgname mintbin
 
-%if "%{?buildtype}" == ""
-%define buildtype cross
-%endif
 %rpmint_header
 
 Summary:        Supplementary tools to the GNU binutils for MiNT
