@@ -111,6 +111,10 @@ cp %{S:1} build-aux/config.sub
 
 %build
 
+%rpmint_cflags
+
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+
 create_config_cache()
 {
 cat <<EOF >config.cache
@@ -120,8 +124,6 @@ EOF
 	%rpmint_append_gnulib_cache
 }
 
-
-%rpmint_cflags
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--program-transform-name='s/^rmt$/gnurmt/'
@@ -135,9 +137,6 @@ STACKSIZE="-Wl,-stack,256k"
 export RSH=%{_rpmint_target_prefix}/bin/ssh
 export DEFAULT_ARCHIVE_FORMAT="POSIX"
 export DEFAULT_RMT_DIR=%{_rpmint_target_prefix}/bin
-
-
-[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 #
 # there are no libraries in this package, so we

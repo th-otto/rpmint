@@ -27,14 +27,7 @@ unpack_archive
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
-
-CONFIGURE_FLAGS="--host=${TARGET} \
-	--prefix=${prefix} \
-	--sysconfdir=/etc \
-	--disable-nls \
-	--disable-shared \
-	--localstatedir=/var/lib \
-	--config-cache"
+STACKSIZE="-Wl,-stack,128k"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -43,7 +36,6 @@ for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-	STACKSIZE="-Wl,-stack,128k"
 
 	${MAKE} CC=${TARGET}-gcc CPU_CFLAGS="${CPU_CFLAGS}" || exit 1
 
@@ -58,5 +50,4 @@ done
 
 move_prefix
 configured_prefix="${prefix}"
-
 make_archives
