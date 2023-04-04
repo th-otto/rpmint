@@ -6,6 +6,7 @@ RPMS="${topdir}/RPMS"
 
 
 red="\033[27;31m"
+green="\033[27;32m"
 coff="\033[m"
 if test "`/bin/echo -e`" = "-e"; then
 	ECHO_E=/bin/echo

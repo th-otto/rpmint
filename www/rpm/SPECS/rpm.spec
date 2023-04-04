@@ -2,7 +2,7 @@
 
 %rpmint_header
 
-Summary       : The Red Hat package management system.
+Summary       : The Red Hat package management system
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else

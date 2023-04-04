@@ -19,12 +19,16 @@ test "${pkgname}" == "" && {
 	exit 1
 }
 
+result=0
+
 if test "${pkgname}" = "--all"; then
 	pkgnames=`php ../rpm/SPECS/listpkgs.php --names`
 else
 	pkgnames="$pkgname";
 fi
 for pkgname in $pkgnames; do
+	cd "$here"
+
 	specname=`echo $pkgname | tr '[[:upper:]]' '[[:lower:]]'`
 	#
 	# Do not auto-generate hint file for gcc & binutils,
@@ -40,7 +44,7 @@ for pkgname in $pkgnames; do
 		continue
 	fi
 	
-	fullname=`sed -n 's/Name[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
+	fullname=`sed -n 's/Name[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/" | sed -e "s/%{crossmint}/cross-mint-/"`
 	echo "pkgname: ${fullname}"
 	version=`sed -n 's/^Version[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
 	release=`sed -n 's/^[Rr]elease[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
@@ -59,7 +63,8 @@ for pkgname in $pkgnames; do
 	fi
 	if test "$arch" = ""; then
 		echo "$pkgname: no rpmfile found" >&2
-		exit 1
+		result=1
+		continue
 	fi
 	#rpm -q --info "$rpmfile"
 	
@@ -70,9 +75,9 @@ for pkgname in $pkgnames; do
 	url=`rpm -q --queryformat '%{url}' "$rpmfile"`
 	summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
 	description=`rpm -q --queryformat '%{description}' "$rpmfile" | sed -e 's/"/'"'"'/g'`
-	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v 'rpmlib(' | grep -v 'mono(' | grep -v "lib.*\.so" | grep -v /bin/ | grep -v /sbin/`
+	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v 'rpmlib(' | grep -v 'cmake(' | grep -v 'config(' | grep -v 'mono(' | grep -v "lib.*\.so" | grep -v /bin/ | grep -v /sbin/`
 	group=`rpm -q --queryformat '%{group}' "$rpmfile"`
-	provides=`rpm -q --queryformat '%{provides}' "$rpmfile" | grep -v /bin/ | grep -v /sbin/`
+	provides=`rpm -q --queryformat '%{provides}' "$rpmfile" | grep -v 'cmake(' | grep -v 'config(' | grep -v 'mono(' | grep -v /bin/ | grep -v /sbin/`
 	
 	if test "${requires}" != ""; then
 		requires="requires: "`echo ${requires} | sed -e 's/ /,/g'`"
@@ -101,6 +106,11 @@ for pkgname in $pkgnames; do
 	
 	cd "${pkgdir}"
 	
+	if test -f "${fullname}-${version}-${release}.hint" -a "${fullname}-${version}-${release}.hint" -nt "$rpmfile"; then
+		$ECHO_E "package ${green}${pkgname}${coff} is up-to-date" >&2
+		continue
+	fi
+
 	cat << EOF > "${fullname}-${version}-${release}.hint"
 sdesc: "${summary}"
 ldesc: "${description}"
@@ -129,6 +139,8 @@ EOF
 		jpeg) srcname=jpegsrc.v$version ;;
 		mksh) srcname=$pkgname-R$version ;;
 		libbeecrypt) srcname=beecrypt-$version ;;
+		zip) srcname=zip30 ;;
+		unzip) srcname=unzip60 ;;
 		*) srcname=$pkgname-$version ;;
 	esac
 	found=false
@@ -140,9 +152,20 @@ EOF
 		fi
 	done
 	if ! $found; then
+		for ext in tgz; do
+			if test -f $HOME/packages/$srcname.${ext}; then
+				ln -sf $HOME/packages/$srcname.${ext} ${fullname}-${version}-${release}-src.tar.gz
+				found=true
+				break
+			fi
+		done
+	fi
+	if ! $found; then
 		echo "src archive for $pkgname-$version not found" >&2
 	fi
 	rm -rf usr etc
 
 	cd "$here"
 done
+
+exit $result

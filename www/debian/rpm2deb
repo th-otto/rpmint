@@ -18,12 +18,16 @@ test "${pkgname}" == "" && {
 	exit 1
 }
 
+result=0
+
 if test "${pkgname}" = "--all"; then
 	pkgnames=`php ../rpm/SPECS/listpkgs.php --names`
 else
 	pkgnames="$pkgname";
 fi
 for pkgname in $pkgnames; do
+	cd "$here"
+
 	specname=`echo $pkgname | tr '[[:upper:]]' '[[:lower:]]'`
 	specfile="${topdir}/SPECS/${specname}.spec"
 	if ! test -f "$specfile"; then
@@ -31,7 +35,7 @@ for pkgname in $pkgnames; do
 		continue
 	fi
 	
-	fullname=`sed -n 's/Name[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/"`
+	fullname=`sed -n 's/Name[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/" | sed -e "s/%{crossmint}/cross-mint-/"`
 	echo "pkgname: ${fullname}"
 	version=`sed -n 's/^Version[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
 	release=`sed -n 's/^[Rr]elease[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
@@ -56,7 +60,8 @@ for pkgname in $pkgnames; do
 	fi
 	if test "$arch" = ""; then
 		echo "$pkgname: no rpmfile found for ${fullname}-${version}-${release}" >&2
-		exit 1
+		result=1
+		continue
 	fi
 	#rpm -q --info "$rpmfile"
 	
@@ -67,9 +72,9 @@ for pkgname in $pkgnames; do
 	url=`rpm -q --queryformat '%{url}' "$rpmfile"`
 	summary=`rpm -q --queryformat '%{summary}' "$rpmfile"`
 	description=`rpm -q --queryformat '%{description}' "$rpmfile" | sed -e 's/^$/./' -e 's/^/ /'`
-	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v 'rpmlib(' | grep -v 'cmake(' | grep -v 'mono(' | grep -v "lib.*\.so" | grep -v /bin/ | grep -v /sbin/ | sed -e 's/pkgconfig(\(.*\))/\1/g' | sort -u`
+	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v 'rpmlib(' | grep -v 'cmake(' | grep -v 'config(' | grep -v 'mono(' | grep -v "lib.*\.so" | grep -v /bin/ | grep -v /sbin/ | sed -e 's/pkgconfig(\(.*\))/\1/g' | sort -u`
 	group=`rpm -q --queryformat '%{group}' "$rpmfile"`
-	provides=`rpm -q --queryformat '[%{provides}\n]' "$rpmfile" | grep -v /bin/ | grep -v /sbin/ | grep -v '(x86-64)' | grep -v 'cmake(' | grep -v 'mono(' | sed -e 's/pkgconfig(\(.*\))/\1/g' | sort -u`
+	provides=`rpm -q --queryformat '[%{provides}\n]' "$rpmfile" | grep -v /bin/ | grep -v /sbin/ | grep -v '(x86-64)' | grep -v 'cmake(' | grep -v 'config(' | grep -v 'mono(' | sed -e 's/pkgconfig(\(.*\))/\1/g' | sort -u`
 	
 	if test "${requires}" != ""; then
 		requires="Depends: "`echo ${requires} | sed -e 's/ /,/g'`"
@@ -120,3 +125,5 @@ EOF
 	debfile="${fullname}_${version}-${release}_${arch}.deb"
 	
 done
+
+exit $result

@@ -2,7 +2,7 @@
 
 %rpmint_header
 
-Summary:        A C library for parsing command line parameters.
+Summary:        A C library for parsing command line parameters
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
