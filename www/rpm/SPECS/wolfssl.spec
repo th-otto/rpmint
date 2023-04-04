@@ -119,9 +119,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %files
+%defattr(-,root,root)
 %license COPYING
 %doc README.md ChangeLog.md
-%defattr(-,root,root)
 %{_isysroot}%{_rpmint_target_prefix}/include/*
 %{_isysroot}%{_rpmint_target_prefix}/lib/*.a
 %{_isysroot}%{_rpmint_target_prefix}/lib/*/*.a

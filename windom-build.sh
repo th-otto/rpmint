@@ -31,7 +31,7 @@ SUBDIRS="src demo"
 mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include
 
 for CPU in ${ALL_CPUS}; do
-	eval multilibdir=${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}\${CPU_LIBDIR_$CPU}
+	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	mkdir -p "$multilibdir"
 	rm -f lib/gcc/*.a
@@ -42,6 +42,8 @@ for CPU in ${ALL_CPUS}; do
 			CROSS_PREFIX=${TARGET}- \
 			M68K_ATARI_MINT_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 			M68K_ATARI_MINT_LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
+		mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib
+		mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include
 		${MAKE} -f gcc.mak \
 			PREFIX=${THISPKG_DIR}${sysroot}${TARGET_PREFIX} \
 			CROSS_PREFIX=${TARGET}- \
@@ -49,7 +51,10 @@ for CPU in ${ALL_CPUS}; do
 			M68K_ATARI_MINT_LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" install || exit 1
 		cd ..
 	done
-	mv ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/*.a "$multilibdir"
+	if test "$multilibdir" != ""; then
+		mkdir -p "${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}$multilibdir"
+		mv ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/*.a "${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}$multilibdir"
+	fi
 	make_bin_archive $CPU
 done
 
