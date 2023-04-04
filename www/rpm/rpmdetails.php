@@ -148,6 +148,7 @@ tagrow("Build Date", usertime($rpm->get_tag(RPMTAG_BUILDTIME), 'ddd MMM DD YYYY 
 tagrow("Relocations", $rpm->get_tag_as_string(RPMTAG_PREFIXES));
 tagrow("URL", $rpm->get_tag_as_string(RPMTAG_URL));
 tagrow("BUGURL", $rpm->get_tag_as_string(RPMTAG_BUGURL));
+tagrow("Repository", $rpm->get_tag_as_string(RPMTAG_VCS));
 tagrow("Licence", License::href($rpm->get_tag_as_string(RPMTAG_LICENSE)), false, false);
 tagrow("Signature", $rpm->get_signature(), false, false);
 tagrow("Download size", $rpm->filesize_string(filesize($filename)));

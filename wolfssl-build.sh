@@ -11,10 +11,10 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/wolfssl-5.5.0-mint.patch
-patches/${PACKAGENAME}/single-thread.patch
+patches/${PACKAGENAME}/wolfssl-single-thread.patch
 "
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/automake/mintelf-config.sub
 "
 BINFILES="
 "
@@ -25,24 +25,24 @@ cd "$srcdir"
 
 ./autogen.sh
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build-aux/config.sub
 
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
-	--enable-opensslextra \
-	--enable-supportedcurves \
-	--disable-jobserver \
-	--enable-sp \
-	--enable-ed25519 \
-	--enable-des3 \
-	--enable-ripemd \
-	--enable-all-crypto \
-	--enable-singlethreaded \
-	--disable-asyncthreads \
-	${CONFIGURE_FLAGS_AMIGAOS}"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS} \
+	--enable-opensslextra
+	--enable-supportedcurves
+	--disable-jobserver
+	--enable-sp
+	--enable-ed25519
+	--enable-des3
+	--enable-ripemd
+	--enable-all-crypto
+	--enable-singlethreaded
+	--disable-asyncthreads
+"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
@@ -60,6 +60,8 @@ for CPU in ${ALL_CPUS}; do
 	# hack_lto_cflags
 	${MAKE} V=1 $JOBS || exit 1
 	${MAKE} prefix="${THISPKG_DIR}${sysroot}/usr" install || exit 1
+	rm -f ${THISPKG_DIR}${sysroot}/usr/bin/wolfssl-config
+
 	${MAKE} distclean
 	make_bin_archive $CPU
 done
