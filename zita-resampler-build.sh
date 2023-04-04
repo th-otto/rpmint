@@ -55,6 +55,7 @@ for CPU in ${ALL_CPUS}; do
 	   CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	   PREFIX=${sysroot}/usr \
 	   LIBDIR='$(PREFIX)/lib'$multilibdir \
+	   MANDIR='$(PREFIX)/share/man/man1' \
 	   DESTDIR=${THISPKG_DIR} \
 	   $JOBS install || exit 1
 	
