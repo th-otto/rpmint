@@ -888,7 +888,7 @@ functionality. This version can also extract encrypted archives.
 		'name' => 'zoo',
 		'upstream' => 'http://ftp.math.utah.edu/pub/zoo/',
 		'source' => 'http://ftp.math.utah.edu/pub/%{name}/%{name}-%{version}.tar.bz2',
-		'version' => '2-10-1',
+		'version' => '2.10.1',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 0,
