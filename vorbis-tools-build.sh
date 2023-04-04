@@ -16,7 +16,9 @@ patches/vorbis-tools/vorbis-tools-vcut-fix-segfault.diff
 patches/vorbis-tools/vorbis-tools-r19117-CVE-2014-9640.patch
 patches/vorbis-tools/vorbis-tools-oggenc-CVE-2014-9639.patch
 patches/vorbis-tools/vorbis-tools-oggenc-Fix-large-alloca-on-bad-AIFF-input.patch
-patches/vorbis-tools/vorbis-tools-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -26,6 +28,10 @@ ${TARGET_MANDIR#/}/man1/*
 
 
 unpack_archive
+
+cd "$srcdir"
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
@@ -43,7 +49,7 @@ for CPU in ${ALL_CPUS}; do
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
