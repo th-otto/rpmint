@@ -3,21 +3,17 @@
 %rpmint_header
 
 Summary:        The Readline Library
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        7.0
 Release:        1
 License:        GPL-3.0-or-later
 Group:          System/Shells
 
-Packager:       Thorsten Otto <admin@tho-otto.de>
+Packager:       %{packager}
 URL:            https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
 
-Prefix:         %{_prefix}
-Docdir:         %{_prefix}/share/doc
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: ftp://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.gz
@@ -28,13 +24,8 @@ BuildRequires:  autoconf
 BuildRequires:  m4
 BuildRequires:  make
 BuildRequires:  bison
-%if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-ncurses
-Provides:       cross-mint-libreadline7 = %{version}
-%else
-BuildRequires:  ncurses
-Provides:       libreadline7 = %{version}
-%endif
+BuildRequires:  %{crossmint}ncurses
+Provides:       %{crossmint}libreadline7 = %{version}
 
 %rpmint_build_arch
 

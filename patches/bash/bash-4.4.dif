@@ -90,7 +90,7 @@
  
 --- a/doc/bash.1
 +++ b/doc/bash.1	2017-09-25 09:08:06.214296216 +0000
-@@ -5253,8 +5253,8 @@ file (the \fIinputrc\fP file).
+@@ -5238,8 +5238,8 @@ file (the \fIinputrc\fP file).
  The name of this file is taken from the value of the
  .SM
  .B INPUTRC
@@ -101,7 +101,7 @@
  When a program which uses the readline library starts up, the
  initialization file is read, and the key bindings and variables
  are set.
-@@ -10586,6 +10586,9 @@ The individual login shell cleanup file,
+@@ -10561,6 +10561,9 @@ The individual login shell cleanup file,
  .TP
  .FN ~/.inputrc
  Individual \fIreadline\fP initialization file
@@ -140,15 +140,15 @@
  static int
 --- a/shell.c
 +++ b/shell.c	2017-09-25 09:08:06.214296216 +0000
-@@ -45,6 +45,7 @@
+@@ -44,6 +44,7 @@
+ 
  #if defined (HAVE_UNISTD_H)
- #  include <sys/types.h>
  #  include <unistd.h>
 +#  include <grp.h>
  #endif
  
  #include "bashintl.h"
-@@ -501,7 +502,7 @@ main (argc, argv, env)
+@@ -500,7 +501,7 @@ main (argc, argv, env)
    if (dump_translatable_strings)
      read_but_dont_execute = 1;
  
@@ -157,7 +157,7 @@
      disable_priv_mode ();
  
    /* Need to get the argument to a -c option processed in the
-@@ -1277,6 +1278,7 @@ disable_priv_mode ()
+@@ -1276,6 +1277,7 @@ disable_priv_mode ()
  {
    int e;
  

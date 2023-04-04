@@ -53,7 +53,6 @@ patches/bash/bash-4.3-extra-import-func.patch
 patches/bash/bash-4.4-paths.patch
 patches/bash/bash-4.4-profile.patch
 patches/bash/bash-4.4-mint.patch
-patches/bash/bash-mintelf-config.patch
 patches/bash/bash-cross-comp.patch
 "
 
@@ -69,6 +68,7 @@ patches/bash/bash-readline-6.2-endpw.dif
 patches/bash/bash-readline-6.2-xmalloc.dif
 patches/bash/bash-readline-6.3-destdir.patch
 patches/bash/bash-readline-6.3-rltrace.patch
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -88,9 +88,12 @@ cd "$srcdir"
 autoconf || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" support/config.sub
+
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -DIMPORT_FUNCTIONS_DEF=0"
+STACKSIZE="-Wl,-stack,256k"
 
 SYSMALLOC="--without-gnu-malloc --without-bash-malloc"
 READLINE="--with-installed-readline"
@@ -140,6 +143,8 @@ MINSH_CONFIGURE_FLAGS="$COMMON_CONFIGURE_FLAGS \
 	--enable-dparen-arithmetic \
 	--enable-extended-glob \
 "
+
+# set to true if /bin/sh should be a minimal shell
 minsh=true
 
 
@@ -184,7 +189,6 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 	create_config_cache
-	STACKSIZE="-Wl,-stack,256k"
 
 	if $minsh; then
 		CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
@@ -215,7 +219,6 @@ for CPU in ${ALL_CPUS}; do
 	
 	mkdir -p ${THISPKG_DIR}${sysroot}/bin
 	mv ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/bash ${THISPKG_DIR}${sysroot}/bin
-	cd ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}
 	
 	if $minsh; then
 		cd ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}
@@ -230,6 +233,9 @@ for CPU in ${ALL_CPUS}; do
 		rm -fv sh
 		$LN_S ../../bin/bash sh
 	fi
+	cd ${THISPKG_DIR}${sysroot}/bin
+	rm -fv rbash
+	$LN_S bash rbash
 	cd ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}
 	rm -fv rbash
 	$LN_S ../../bin/bash rbash
@@ -245,6 +251,7 @@ for CPU in ${ALL_CPUS}; do
 	install -m 644 ${BUILD_DIR}/patches/bash/bash-dot.profile   ${THISPKG_DIR}${sysroot}/etc/skel/.profile
     touch -t 199605181720.50 ${THISPKG_DIR}${sysroot}/etc/skel/.bash_history
     chmod 600 ${THISPKG_DIR}${sysroot}/etc/skel/.bash_history
+	chmod 755 ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/bashbug
     
 	make_bin_archive $CPU
 done

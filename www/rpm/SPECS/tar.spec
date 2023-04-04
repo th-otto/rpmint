@@ -16,8 +16,8 @@ Group:          Productivity/Archiving/Backup
 URL:            http://www.gnu.org/software/tar/
 Packager:       Thorsten Otto <admin@tho-otto.de>
 
-Prefix:         %{_prefix}
-Docdir:         %{_prefix}/share/doc
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0:        https://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.xz
@@ -87,6 +87,7 @@ it may as well access remote devices or files.
 #and similar backup utilities
 
 %prep
+[ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 %patch1 -p1

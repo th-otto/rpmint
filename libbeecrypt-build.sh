@@ -3,7 +3,7 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=libbeecrypt6
+PACKAGENAME=libbeecrypt
 VERSION=-4.1.2
 VERSIONPATCH=
 
