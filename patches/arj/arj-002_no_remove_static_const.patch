@@ -1,0 +1,20 @@
+Index: b/gnu/makefile.in
+===================================================================
+--- a/gnu/makefile.in	2004-04-17 14:28:06.000000000 +0300
++++ b/gnu/makefile.in	2008-06-16 08:25:42.000000000 +0300
+@@ -192,6 +192,15 @@ timestamp: $(TOOLS_DIR)/today$x
+ dispose:
+ 
+ #
++# XXX: Do not use -O2, it removes the static const variable with gcc 4.x
++#
++
++INTEGR_DIRS = $(ARJ_DIR) $(REARJ_DIR) $(ARJCRYPT_DIR) $(REGISTER_DIR)
++
++$(patsubst %,%/integr.o, $(INTEGR_DIRS)): $(SRC_DIR)/integr.c
++	$(CC) -Wall -g -c -o$@ $<
++
++#
+ # The tools
+ #
+ 

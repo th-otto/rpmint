@@ -1,0 +1,153 @@
+Index: b/gnu/makefile.in
+===================================================================
+--- a/gnu/makefile.in	2008-06-16 08:25:42.000000000 +0300
++++ b/gnu/makefile.in	2008-06-16 08:25:45.000000000 +0300
+@@ -160,13 +160,15 @@ $(SFXSTUB_DIR)/%.o: $(SRC_DIR)/%.c
+ # Main dependency tree
+ #
+ 
+-.PHONY: timestamp prepare cleanup package help
++.PHONY: timestamp msg-headers depends prepare clean package help
+ 
+ ifdef COMMERCIAL
+ MAKE_KEY=$(TOOLS_DIR)/make_key$x
+ endif
+ 
+ all:	prepare timestamp
++	$(MAKE) msg-headers
++	$(MAKE) depends
+ 	$(MAKE) do-all
+ 
+ do-all:	\
+@@ -175,8 +177,28 @@ do-all:	\
+ 	$(REGISTER_DIR)/$(REGISTER)$x \
+ 	$(ARJDISP_DIR)/arjdisp$x \
+ 	$(TOOLS_DIR)/packager$x \
+-        $(MAKE_KEY) \
+-	dispose
++	$(MAKE_KEY)
++
++MSG_ID := \
++	msg_crp msg_stb msg_sfv msg_sfx msg_sfj msg_arj msg_rej msg_reg msg_adi
++MSG_HEADERS := $(patsubst %,$(BASEDIR)/%.h,$(MSG_ID))
++
++msg-headers: $(MSG_HEADERS)
++
++.deps:
++	mkdir -p $@
++
++.deps/%.d: %.c .deps
++	$(CC) $(CPPFLAGS) $(COPT) $< -MM > $@
++
++SOURCES = $(wildcard *.c)
++DEPS = $(addprefix .deps/,$(SOURCES:.c=.d))
++
++ifeq ($(sort $(DEPS)),$(sort $(wildcard .deps/*.d)))
++include $(DEPS)
++endif
++
++depends: $(DEPS)
+ 
+ #
+ # Update timestamp file
+@@ -186,12 +208,6 @@ timestamp: $(TOOLS_DIR)/today$x
+ 	$(TOOLS_DIR)/today$x $(LOCALE) $(BASEDIR)
+ 
+ #
+-# Final cleanup
+-#
+-
+-dispose:
+-
+-#
+ # XXX: Do not use -O2, it removes the static const variable with gcc 4.x
+ #
+ 
+@@ -264,7 +280,7 @@ $(ARJCRYPT_DIR)/arjcrypt$d: $(ARJCRYPT_O
+ 	$(CC) $(ALL_CFLAGS) $(DLL_FLAGS) -o $@ $(ARJCRYPT_OBJS) $(ARJCRYPT_DEF) $(LIBS)
+ 	$(TOOLS_DIR)/postproc $@
+ 
+-$(BASEDIR)/nmsg_crp.c: $(TOOLS_DIR)/msgbind$x $(RESFILE)
++$(BASEDIR)/nmsg_crp.c $(BASEDIR)/msg_crp.h: $(TOOLS_DIR)/msgbind$x $(RESFILE)
+ 	$(TOOLS_DIR)/msgbind $(RESFILE) msg_crp $(OS_ID) $(PACKAGE) $(LOCALE) $(BASEDIR)
+ 
+ #
+@@ -278,7 +294,7 @@ $(SFXSTUB_DIR)/sfxstub$x: $(SFXSTUB_OBJS
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(SFXSTUB_OBJS) $(LIBS)
+ 	$(TOOLS_DIR)/postproc$x $@ -sfx
+ 
+-$(BASEDIR)/nmsg_stb.c: $(TOOLS_DIR)/msgbind$x $(RESFILE)
++$(BASEDIR)/nmsg_stb.c $(BASEDIR)/msg_stb.h: $(TOOLS_DIR)/msgbind$x $(RESFILE)
+ 	$(TOOLS_DIR)/msgbind $(RESFILE) msg_stb $(OS_ID) $(PACKAGE) $(LOCALE) $(BASEDIR)
+ 
+ #
+@@ -296,7 +312,8 @@ $(ARJSFXV_DIR)/arjsfxv$x: $(ARJSFXV_OBJS
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(ARJSFXV_OBJS) $(LIBS) $(DYN_LIBS)
+ 	$(TOOLS_DIR)/postproc$x $@ -sfx
+ 
+-$(BASEDIR)/fmsg_sfv.c $(BASEDIR)/imsg_sfv.c $(BASEDIR)/nmsg_sfv.c: $(TOOLS_DIR)/msgbind$x $(RESFILE)
++$(BASEDIR)/fmsg_sfv.c $(BASEDIR)/imsg_sfv.c $(BASEDIR)/nmsg_sfv.c \
++$(BASEDIR)/msg_sfv.h: $(TOOLS_DIR)/msgbind$x $(RESFILE)
+ 	$(TOOLS_DIR)/msgbind $(RESFILE) msg_sfv $(OS_ID) $(PACKAGE) $(LOCALE) $(BASEDIR)
+ 
+ #
+@@ -313,7 +330,8 @@ $(ARJSFX_DIR)/arjsfx$x: $(ARJSFX_OBJS) $
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(ARJSFX_OBJS) $(LIBS)
+ 	$(TOOLS_DIR)/postproc$x $@ -sfx
+ 
+-$(BASEDIR)/fmsg_sfx.c $(BASEDIR)/imsg_sfx.c $(BASEDIR)/nmsg_sfx.c: $(TOOLS_DIR)/msgbind$x $(RESFILE)
++$(BASEDIR)/fmsg_sfx.c $(BASEDIR)/imsg_sfx.c $(BASEDIR)/nmsg_sfx.c \
++$(BASEDIR)/msg_sfx.h: $(TOOLS_DIR)/msgbind$x $(RESFILE)
+ 	$(TOOLS_DIR)/msgbind $(RESFILE) msg_sfx $(OS_ID) $(PACKAGE) $(LOCALE) $(BASEDIR)
+ 
+ #
+@@ -328,7 +346,8 @@ $(ARJSFXJR_DIR)/arjsfxjr$x: $(ARJSFXJR_O
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(ARJSFXJR_OBJS) $(LIBS)
+ 	$(TOOLS_DIR)/postproc$x $@ -sfx
+ 
+-$(BASEDIR)/fmsg_sfj.c $(BASEDIR)/imsg_sfj.c $(BASEDIR)/nmsg_sfj.c: $(TOOLS_DIR)/msgbind$x $(RESFILE)
++$(BASEDIR)/fmsg_sfj.c $(BASEDIR)/imsg_sfj.c $(BASEDIR)/nmsg_sfj.c \
++$(BASEDIR)/msg_sfj.h: $(TOOLS_DIR)/msgbind$x $(RESFILE)
+ 	$(TOOLS_DIR)/msgbind $(RESFILE) msg_sfj $(OS_ID) $(PACKAGE) $(LOCALE) $(BASEDIR)
+ 
+ #
+@@ -363,7 +382,8 @@ $(ARJ_DIR)/arj$x: $(ARJ_OBJS) \
+ 	$(TOOLS_DIR)/join $(ARJ_DIR)/arj$x $(BASEDIR)/help.arj
+ 	$(TOOLS_DIR)/postproc $@
+ 
+-$(BASEDIR)/fmsg_arj.c $(BASEDIR)/imsg_arj.c $(BASEDIR)/nmsg_arj.c: $(TOOLS_DIR)/msgbind$x $(RESFILE)
++$(BASEDIR)/fmsg_arj.c $(BASEDIR)/imsg_arj.c $(BASEDIR)/nmsg_arj.c \
++$(BASEDIR)/msg_arj.h: $(TOOLS_DIR)/msgbind$x $(RESFILE)
+ 	$(TOOLS_DIR)/msgbind $(RESFILE) msg_arj $(OS_ID) $(PACKAGE) $(LOCALE) $(BASEDIR)
+ 	sed -i 's|_""|\\""|' $(BASEDIR)/fmsg_arj.c
+ #
+@@ -381,7 +401,8 @@ $(REARJ_DIR)/rearj$x: $(REARJ_OBJS) \
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(REARJ_OBJS) $(LIBS)
+ 	$(TOOLS_DIR)/postproc $@
+ 
+-$(BASEDIR)/fmsg_rej.c $(BASEDIR)/imsg_rej.c $(BASEDIR)/nmsg_rej.c: $(TOOLS_DIR)/msgbind$x $(RESFILE)
++$(BASEDIR)/fmsg_rej.c $(BASEDIR)/imsg_rej.c $(BASEDIR)/nmsg_rej.c \
++$(BASEDIR)/msg_rej.h: $(TOOLS_DIR)/msgbind$x $(RESFILE)
+ 	$(TOOLS_DIR)/msgbind $(RESFILE) msg_rej $(OS_ID) $(PACKAGE) $(LOCALE) $(BASEDIR)
+ 
+ #
+@@ -397,7 +418,8 @@ $(REGISTER_DIR)/$(REGISTER)$x: $(REGISTE
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(REGISTER_OBJS) $(LIBS)
+ 	$(TOOLS_DIR)/postproc $@ -sfx
+ 
+-$(BASEDIR)/fmsg_reg.c $(BASEDIR)/imsg_reg.c $(BASEDIR)/nmsg_reg.c: $(TOOLS_DIR)/msgbind$x $(RESFILE)
++$(BASEDIR)/fmsg_reg.c $(BASEDIR)/imsg_reg.c $(BASEDIR)/nmsg_reg.c \
++$(BASEDIR)/msg_reg.h: $(TOOLS_DIR)/msgbind$x $(RESFILE)
+ 	$(TOOLS_DIR)/msgbind $(RESFILE) msg_reg $(OS_ID) $(PACKAGE) $(LOCALE) $(BASEDIR)
+ 
+ #
+@@ -411,7 +433,8 @@ ARJDISP_OBJS = $(patsubst %,$(ARJDISP_DI
+ $(ARJDISP_DIR)/arjdisp$x: $(ARJDISP_OBJS)
+ 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(ARJDISP_OBJS) $(LIBS)
+ 
+-$(BASEDIR)/fmsg_adi.c $(BASEDIR)/imsg_adi.c $(BASEDIR)/nmsg_adi.c: $(TOOLS_DIR)/msgbind$x $(RESFILE)
++$(BASEDIR)/fmsg_adi.c $(BASEDIR)/imsg_adi.c $(BASEDIR)/nmsg_adi.c \
++$(BASEDIR)/msg_adi.h: $(TOOLS_DIR)/msgbind$x $(RESFILE)
+ 	$(TOOLS_DIR)/msgbind $(RESFILE) msg_adi $(OS_ID) $(PACKAGE) $(LOCALE) $(BASEDIR)
+ 
+ #

@@ -99,7 +99,7 @@ done
 
 %changelog
 * Mon Apr 03 2023 Thorsten Otto <admin@tho-otto.de>
-- Reqritten as RPMint spec file
+- Rewritten as RPMint spec file
 - Update to 5.21p
 
 * Mon Jun 21 2004 Jan Krupka <jkrupka@volny.cz>

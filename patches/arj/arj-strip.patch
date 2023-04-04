@@ -1,0 +1,53 @@
+diff -rup arj-3.10.22.orig/gnu/configure.in arj-3.10.22/gnu/configure.in
+--- arj-3.10.22.orig/gnu/configure.in	2005-06-21 20:27:20.000000000 +0200
++++ arj-3.10.22/gnu/configure.in	2023-04-04 18:37:59.182305384 +0200
+@@ -50,17 +50,14 @@ case $host_os in
+ linux*)
+ 	AC_DEFINE(ELF_EXECUTABLES, 1, [Define if executables use ELF format])
+         DYN_LIBS="-ldl"
+-        LD_STRIP="gnu/stripgcc.lnk"
+ 	;;
+ k*bsd*)
+ 	AC_DEFINE(ELF_EXECUTABLES)
+ 	DYN_LIBS="-ldl"
+-	LD_STRIP="gnu/stripgcc.lnk"
+ 	;;
+ *bsd*)
+ 	AC_DEFINE(ELF_EXECUTABLES)
+         DLL_FLAGS="-shared -export-dynamic"
+-        LD_STRIP="gnu/stripgcc.lnk"
+ 	;;
+ interix3*)
+ 	# not ELF
+@@ -71,14 +68,12 @@ interix3*)
+ 	AC_DEFINE(ELF_EXECUTABLES)
+         DLL_FLAGS="-shared -fPIC"
+         DLL_CFLAGS="-shared -fPIC"
+-        LD_STRIP="gnu/stripgcc.lnk"
+ 	;;
+ *solaris*)
+ 	AC_DEFINE(ELF_EXECUTABLES)
+         CFLAGS="-DSUNOS -D_UNIX"
+         DLL_FLAGS="-shared -fPIC"
+         DLL_CFLAGS="-shared -fPIC"
+-        LD_STRIP="gnu/stripgcc.lnk"
+ 	;;
+ os2*)
+ 	PROG_EXT=".exe"
+@@ -87,6 +87,7 @@
+ 	;;
+ esac
+ 
++AH_TEMPLATE([ALIGN_POINTERS], [])
+ case $host_cpu in
+ alpha*)
+ 	AC_DEFINE(ALIGN_POINTERS)
+@@ -171,7 +172,7 @@
+         [color_output=yes],
+         [color_output=no])
+ AC_MSG_RESULT($color_output)
+-test "$color_output" = "yes" && AC_DEFINE(USE_COLORS)
++test "$color_output" = "yes" && AC_DEFINE(USE_COLORS,1,[use colors])
+ 
+ AC_SUBST(HAVE_MKDTEMP)
+ AC_SUBST(HAVE_FCLOSEALL)

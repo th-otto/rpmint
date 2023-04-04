@@ -9,13 +9,26 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/arj/arj-3.10.22-mint.patch"
+PATCHES="
+patches/arj/arj-3.10.22-mint.patch
+patches/arj/arj-3.10.22-missing-protos.patch
+patches/arj/arj-3.10.22-custom-printf.patch
+patches/arj/arj-3.10.22-quotes.patch
+patches/arj/arj-3.10.22-reproducible.patch
+patches/arj/arj-3.10.22-fixstrcpy.patch
+patches/arj/arj-001_arches_align.patch
+patches/arj/arj-002_no_remove_static_const.patch
+patches/arj/arj-003_64_bit_clean.patch
+patches/arj/arj-004_parallel_build.patch
+patches/arj/arj-doc_refer_robert_k_jung.patch
+patches/arj/arj-strip.patch
+"
+DISABLED_PATCHES="patches/automake/mintelf-config.sub"
 
 BINFILES="
 ${TARGET_BINDIR#/}/arj
 ${TARGET_BINDIR#/}/rearj
 ${TARGET_BINDIR#/}/arjdisp
-${TARGET_BINDIR#/}/arj-register
 ${TARGET_MANDIR#/}/man1/*
 "
 
@@ -24,6 +37,9 @@ MINT_BUILD_DIR="$srcdir/gnu"
 unpack_archive
 
 cd "$MINT_BUILD_DIR"
+autoreconf -fiv
+rm -rf autom4te.cache
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub || exit 1
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -s -Wall $LTO_CFLAGS"
 
@@ -52,8 +68,8 @@ for CPU in ${ALL_CPUS}; do
 #
 	cd "$MINT_BUILD_DIR"
 	./configure --enable-outdir=${BASEDIR}
-
 	cd ..
+
 	${MAKE} prepare
 	ARJ_DIR=${BASEDIR}/en/rs/arj
 	export NATIVE_ARJ=${srcdir}/${ARJ_DIR}/arj
@@ -68,7 +84,10 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 
 	cd "$MINT_BUILD_DIR"
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	./configure ${CONFIGURE_FLAGS} \
+	--libdir='${exec_prefix}/lib'$multilibdir
 	cd ..
 	${MAKE} prepare
 	${MAKE} clean
@@ -82,6 +101,11 @@ for CPU in ${ALL_CPUS}; do
 	
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+
+	# remove the register remainders of arj's sharewares time
+	rm -f ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/arj-register
+	rm -f ${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1/arj-register.1*
+
 	${MAKE} clean
 	make_bin_archive $CPU
 done
