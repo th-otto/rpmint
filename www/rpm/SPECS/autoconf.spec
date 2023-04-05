@@ -117,10 +117,10 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %post
-%{_rpmint_install_info}
+%rpmint_install_info %{pkgname}
 
 %preun
-%{_rpmint_uninstall_info}
+%rpmint_uninstall_info %{pkgname}
 
 
 %files
@@ -135,7 +135,7 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Wed Mar 29 2023 Thorsten Otto <admin@tho-otto.de>
+* Wed Apr 05 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
 - Update to version 2.69
 

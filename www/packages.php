@@ -1834,7 +1834,7 @@ only required for the generation of the scripts, not their use.
 		'name' => 'autoconf-archive',
 		'upstream' => 'https://savannah.gnu.org/projects/autoconf-archive',
 		'source' => 'https://ftp.gnu.org/pub/gnu/autoconf-archive/%{name}-%{version}.tar.xz',
-		'version' => '2017.09.28',
+		'version' => '2023.02.20',
 		'patch' => 0,
 		'script' => 1,
 		'dev' => 0,

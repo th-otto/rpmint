@@ -299,21 +299,28 @@ BuildRequires:  mint-devel-essential \
 	popd \
 %nil
 
-%rpmint_install_info() \
+# for %post
+%rpmint_install_info(:-:) \
+    if test -x /sbin/install-info ; then \
 %if "%{buildtype}" == "cross" \
-%install_info --info-dir=%{_rpmint_infodir} %{_rpmint_infodir}/%{1}.info%{ext_info} \
+	/sbin/install-info --info-dir=%{_rpmint_infodir} %{_rpmint_infodir}/%{1}.info%{ext_info} || : \
 %else \
-%install_info --info-dir=%{_rpmint_target_prefix}/share/info %{_rpmint_target_prefix}/share/info/%{1}.info%{ext_info} \
+	/sbin/install-info --info-dir=%{_rpmint_target_prefix}/share/info %{_rpmint_target_prefix}/share/info/%{1}.info%{ext_info} || : \
 %endif \
-%nil
+    fi ;
 
-%rpmint_uninstall_info() \
+# for %preun
+%rpmint_uninstall_info(:-:) \
+    test -n "$FIRST_ARG" || FIRST_ARG=$1 \
+    if test -x /sbin/install-info ; then \
+	if [ "$FIRST_ARG" = 0 ]; then \
 %if "%{buildtype}" == "cross" \
-%install_info_delete --info-dir=%{_rpmint_infodir} %{_rpmint__infodir}/%{1}.info%{ext_info} \
+	    /sbin/install-info --quiet --delete --info-dir=%{_rpmint_infodir} %{_rpmint_infodir}/%{1}.info%{ext_info} || : \
 %else \
-%install_info_delete --info-dir=%{_rpmint_target_prefix} %{_rpmint_target_prefix}/share/info//%{1}.info%{ext_info} \
+	    /sbin/install-info --quiet --delete --info-dir=%{_rpmint_target_prefix}/share/info %{_rpmint_target_prefix}/share/info/%{1}.info%{ext_info} || : \
 %endif \
-%nil
+	fi ; \
+    fi ;
 
 %rpmint_append_gnulib_cache() \
 cat <<EOF >>config.cache\

@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=autoconf-archive
-VERSION=-2017.09.28
+VERSION=-2023.02.20
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -38,7 +38,7 @@ for CPU in noarch; do
 	CFLAGS="$COMMON_CFLAGS" LDFLAGS="$COMMON_CFLAGS ${STACKSIZE}" ./configure ${CONFIGURE_FLAGS}
 	${MAKE} || exit 1
 
-	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" pkgdatadir=${prefix}/share/doc/packages/${PACKAGENAME} install
+	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" pkgdatadir='${prefix}'/share/doc/packages/${PACKAGENAME} install
 	
 	${MAKE} clean >/dev/null
 	rm -fv ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}$multilibdir/charset.alias
