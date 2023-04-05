@@ -49,6 +49,10 @@ for pkgname in $pkgnames; do
 	version=`sed -n 's/^Version[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
 	release=`sed -n 's/^[Rr]elease[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
 	arch=
+	case $pkgname in
+		bash) version=4.4.23
+		;;
+	esac
 	if test "$arch" = ""; then
 		rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
 		if test -f "$rpmfile"; then
@@ -141,6 +145,7 @@ EOF
 		libbeecrypt) srcname=beecrypt-$version ;;
 		zip) srcname=zip30 ;;
 		unzip) srcname=unzip60 ;;
+		bash) srcname=$pkgname-${version%.*} ;;
 		*) srcname=$pkgname-$version ;;
 	esac
 	found=false
@@ -162,6 +167,8 @@ EOF
 	fi
 	if ! $found; then
 		echo "src archive for $pkgname-$version not found" >&2
+		rm -f ${fullname}-${version}-${release}.hint
+		result=1
 	fi
 	rm -rf usr etc
 

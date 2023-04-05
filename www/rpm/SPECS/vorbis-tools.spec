@@ -28,7 +28,7 @@ Patch1: patches/vorbis-tools/vorbis-tools-cflags.diff
 Patch2: patches/vorbis-tools/vorbis-tools-vcut-fix-segfault.diff
 Patch3: patches/vorbis-tools/vorbis-tools-r19117-CVE-2014-9640.patch
 Patch4: patches/vorbis-tools/vorbis-tools-oggenc-CVE-2014-9639.patch
-Patch5: patches/vorbis-tools/vorbis-tools-oggenc-Fix-large-alloca-on-bad-AIFF-input.patch
+Patch5: patches/vorbis-tools/vorbis-tools-oggenc-Fix-large-alloca.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
