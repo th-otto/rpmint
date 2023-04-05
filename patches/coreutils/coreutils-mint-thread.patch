@@ -5,7 +5,7 @@ diff -rup coreutils-8.32/src/ls.c coreutils-8.32.new/src/ls.c
     of remote clients.  1000 bytes should be enough for any practical
     timestamp format.  */
  
-+#if defined(__GNUC__) && __GNUC__ >= 6
++#if defined(__GNUC__) && 0
  enum { TIME_STAMP_LEN_MAXIMUM = MAX (1000, INT_STRLEN_BOUND (time_t)) };
 +#else
 +/* avoid error: braced-group within expression allowed only inside a function */
@@ -239,3 +239,37 @@ diff -rup coreutils-8.32/src/uniq.c coreutils-8.32.new/src/uniq.c
  # define MB_LEN_MAX 16
  #endif
  
+--- a/lib/pthread-mutex.c.orig	2023-04-05 19:18:45.992154302 +0200
++++ b/lib/pthread-mutex.c	2023-04-05 19:26:56.039547823 +0200
+@@ -18,6 +18,8 @@
+ 
+ #include <config.h>
+ 
++#if HAVE_PTHREAD_H
++
+ /* Specification.  */
+ #include <pthread.h>
+ 
+@@ -256,3 +258,5 @@
+ }
+ 
+ #endif
++
++#endif
+--- a/lib/pthread-thread.c.orig	2023-04-05 19:28:41.831416896 +0200
++++ b/lib/pthread-thread.c	2023-04-05 19:28:45.615412213 +0200
+@@ -18,6 +18,8 @@
+ 
+ #include <config.h>
+ 
++#if HAVE_PTHREAD_H
++
+ /* Specification.  */
+ #include <pthread.h>
+ 
+@@ -176,3 +178,5 @@
+ }
+ 
+ #endif
++
++#endif

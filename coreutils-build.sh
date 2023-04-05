@@ -31,7 +31,7 @@ patches/coreutils/coreutils-mint-procfile.patch
 patches/coreutils/coreutils-mint-thread.patch
 "
 DISABLED_PATCHES="
-patches/config.sub
+patches/automake/mintelf-config.sub
 "
 
 # patches/coreutils/coreutils-mintelf-config.patch
@@ -59,21 +59,23 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-cp "$BUILD_DIR/patches/config.sub" build-aux/
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build-aux/config.sub
 
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
 CONFIGURE_FLAGS="--host=${TARGET} \
-	--prefix=${prefix} \
-	--sysconfdir=/etc \
-	--disable-nls \
-	--enable-install-program=arch,kill \
-	--localstatedir=/var/run \
-	DEFAULT_POSIX2_VERSION=200112 \
-	alternative=199209 \
-	--config-cache"
+	--prefix=${prefix}
+	--sysconfdir=/etc
+	--disable-nls
+	--enable-install-program=arch,kill
+	--localstatedir=/var/run
+	DEFAULT_POSIX2_VERSION=200112
+	alternative=199209
+	--config-cache
+"
+STACKSIZE="-Wl,-stack,256k"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -81,6 +83,8 @@ export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 create_config_cache()
 {
 cat <<EOF >config.cache
+ac_cv_header_pthread_h=no
+gl_have_pthread_h=no
 EOF
 	append_gnulib_cache
 }
@@ -92,14 +96,13 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 	create_config_cache
-	STACKSIZE="-Wl,-stack,256k"
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"$srcdir/configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir \
 	--libexecdir='${exec_prefix}/libexec/find'$multilibexecdir
 
-	hack_lto_cflags
+	: hack_lto_cflags
 
 	${MAKE} ${JOBS} || exit 1
 

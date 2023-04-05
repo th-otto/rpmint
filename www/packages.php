@@ -1570,7 +1570,7 @@ the GNU fileutils, sh-utils, and textutils packages.
 This package does not provide man pages, since those are generated automatically
 by running the tools and parsing the --help message, which does not work when
 cross-compiling. However that also means that those man pages do not
-provide any useful information beyond what is availble by just running
+provide any useful information beyond what is available by just running
 &lt;tool&gt; --help.
 '
 	),
