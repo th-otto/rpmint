@@ -26,8 +26,6 @@ BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: http://freemint.de/X11/gdos-X-fonts-03.tgz
 
-%rpmint_essential
-
 BuildArch:      noarch
 %if "%{buildtype}" != "cross"
 Requires:       XServer
