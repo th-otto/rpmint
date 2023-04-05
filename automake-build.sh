@@ -21,7 +21,7 @@ BINFILES="
 ${TARGET_BINDIR#/}/*
 ${TARGET_MANDIR#/}/man1/*
 ${TARGET_PREFIX#/}/share/info/*
-${TARGET_PREFIX#/}/share/doc/automake
+${TARGET_PREFIX#/}/share/doc
 ${TARGET_PREFIX#/}/share/automake*
 ${TARGET_PREFIX#/}/share/aclocal*
 "
@@ -35,7 +35,9 @@ touch -r configure Makefile.am Makefile.in t/testsuite-part.am
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
 CONFIGURE_FLAGS="--host=${TARGET} \
-	--prefix=${prefix}"
+	--prefix=${prefix}
+	--docdir=${prefix}/share/doc/packages/${PACKAGENAME}
+"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"

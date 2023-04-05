@@ -25,7 +25,8 @@ COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
 CONFIGURE_FLAGS="--host=${TARGET} \
 	--prefix=${prefix} \
-	--datadir=${prefix}/share"
+	--docdir=${prefix}/share/doc/packages/${PACKAGENAME}
+"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -38,7 +39,7 @@ for CPU in noarch; do
 	CFLAGS="$COMMON_CFLAGS" LDFLAGS="$COMMON_CFLAGS ${STACKSIZE}" ./configure ${CONFIGURE_FLAGS}
 	${MAKE} || exit 1
 
-	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" pkgdatadir='${prefix}'/share/doc/packages/${PACKAGENAME} install
+	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
 	
 	${MAKE} clean >/dev/null
 	rm -fv ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}$multilibdir/charset.alias

@@ -1,37 +1,33 @@
-%define pkgname autoconf
+%define pkgname automake
 
 %rpmint_header
 
-Summary:        A GNU Tool for Automatically Configuring Source Code
+Summary:        A Program for Automatically Generating GNU-Style Makefile.in Files
 Name:           %{crossmint}%{pkgname}
-Version:        2.69
+Version:        1.16
 Release:        1
-License:        GPL-3.0-or-later
+License:        GPL-2.0-or-later
 Group:          Development/Tools/Building
 
 Packager:       %{packager}
-URL:            http://www.gnu.org/software/autoconf
+URL:            https://www.gnu.org/software/automake
 
 Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: http://ftp.gnu.org/gnu/autoconf/%{pkgname}-%{version}.tar.xz
-Patch0:  patches/autoconf/autoconf-2.69-0001-install-version.patch
-Patch1:  patches/autoconf/autoconf-2.69-0002-atomic-replace.patch
-Patch2:  patches/autoconf/autoconf-2.69-0003-ltdl.patch
-Patch3:  patches/autoconf/autoconf-2.69-0004-cache.patch
-Patch4:  patches/autoconf/autoconf-2.69-0006-man.patch
-Patch5:  patches/autoconf/autoconf-2.69-0007-define.patch
-Patch6:  patches/autoconf/autoconf-2.69-0008-crossconfig.patch
-Patch7:  patches/autoconf/autoconf-2.69-0009-perl-5.17-fixes.patch
-Patch8:  patches/autoconf/autoconf-texinfo.patch
+Source0: https://ftp.gnu.org/gnu/automake/%{pkgname}-%{version}.tar.xz
+Source1: patches/automake/mintelf-config.sub
+
+Patch0: patches/automake/automake-1.16-0001-source.patch
+Patch1: patches/automake/automake-1.16-0002-crossconfig.patch
+Patch2: patches/automake/automake-1.16-0003-subdir-objects.patch
+Patch3: patches/automake/automake-1.16-0004-fix-primary-prefix-invalid-couples-test.patch
+Patch4: patches/automake/automake-1.16-0006-correct-parameter-parsing-in-test-driver-script.patch
 
 BuildRequires:  m4 >= 1.4.6
+Requires:       %{crossmint}autoconf >= 2.69
 Requires:       %{crossmint}info
-Requires:       %{crossmint}gawk
-Requires:       %{crossmint}m4
-Requires:       %{crossmint}mktemp
 Requires:       %{crossmint}perl
 
 BuildArch:      noarch
@@ -40,17 +36,10 @@ BuildArch:      noarch
 %endif
 
 %description
-GNU Autoconf is a tool for configuring source code and makefiles. Using
-autoconf, programmers can create portable and configurable packages,
-because the person building the package is allowed to specify various
-configuration options.
-
-You should install autoconf if you are developing software and would
-like to create shell scripts to configure your source code packages.<br />
-
-Note that the autoconf package is not required for the end user who may
-be configuring software with an autoconf-generated script; autoconf is
-only required for the generation of the scripts, not their use.
+Automake is a tool for automatically generating "Makefile.in" files
+from "Makefile.am" files.  "Makefile.am" is a series of "make" macro
+definitions (with rules occasionally thrown in).  The generated
+"Makefile.in" files are compatible with the GNU Makefile standards.
 
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
@@ -60,10 +49,9 @@ only required for the generation of the scripts, not their use.
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
+
+sed -e 's@-unknown-@-${VENDOR}-@g' lib/config.guess > lib/config.guess.new && mv lib/config.guess.new lib/config.guess
+touch -r configure Makefile.am Makefile.in t/testsuite-part.am
 
 %build
 
@@ -72,6 +60,7 @@ only required for the generation of the scripts, not their use.
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
+	--docdir=%{_rpmint_target_prefix}/share/doc/packages/%{pkgname}
 "
 
 NO_STRIP=true
@@ -118,19 +107,21 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %post
 %rpmint_install_info %{pkgname}
-%rpmint_install_info standards
+%rpmint_install_info %{pkgname}-history
 
 %preun
 %rpmint_uninstall_info %{pkgname}
-%rpmint_uninstall_info standards
+%rpmint_uninstall_info %{pkgname}-history
 
 
 %files
 %defattr(-,root,root)
 %license COPYING
-%doc AUTHORS BUGS NEWS README THANKS TODO
+%doc AUTHORS ChangeLog NEWS README THANKS doc/amhello-1.0.tar.gz
 %{_isysroot}%{_rpmint_target_prefix}/bin/*
-%{_isysroot}%{_rpmint_target_prefix}/share/autoconf
+%{_isysroot}%{_rpmint_target_prefix}/share/aclocal/*
+%{_isysroot}%{_rpmint_target_prefix}/share/aclocal-%{version}/*
+%{_isysroot}%{_rpmint_target_prefix}/share/automake-%{version}/*
 %{_isysroot}%{_rpmint_target_prefix}/share/info/*
 %{_isysroot}%{_rpmint_target_prefix}/share/man/*/*
 
@@ -139,17 +130,14 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %changelog
 * Wed Apr 05 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
-- Update to version 2.69
+- Update to version 1.16
 
-* Thu Oct 21 2010 Keith Scroggins <kws@radix.net>
-- Updated to 2.68
+* Fri Nov 05 2010 Keith Scroggins <kws@radix.net>
+- Updated to 1.11.1
 
 * Mon May 05 2003 Marc-Anton Kehr <m.kehr@ndh.net>
-- updated to 2.57
+- updated to 1.7.4
 
-* Mon May 28 2001 Frank Naumann <fnaumann@freemint.de>
-- updated to 2.50
-
-* Mon Jul 19 1999 Guido Flohr <guido@freemint.de>
+* Mon Jul 19 1999 Guido Flohr <gufl0000@stud.uni-sb.de>
 - Added German translations.
-- Added patch for config.guess and config.sub.
+- Added requirement for Autoconf.

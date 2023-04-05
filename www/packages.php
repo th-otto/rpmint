@@ -1804,7 +1804,7 @@ series.
 	'autoconf' => array(
 		'name' => 'autoconf',
 		'upstream' => 'http://www.gnu.org/software/autoconf',
-		'source' => 'http://ftp.gnu.org/gnu/autoconf/autoconf-%{version}.tar.gz',
+		'source' => 'http://ftp.gnu.org/gnu/autoconf/%{name}-%{version}.tar.gz',
 		'version' => '2.69',
 		'patch' => 1,
 		'script' => 1,
@@ -1865,7 +1865,7 @@ some authors may choose to use it, too, for proprietary software.
 	'automake' => array(
 		'name' => 'automake',
 		'upstream' => 'https://www.gnu.org/software/automake',
-		'source' => 'https://ftp.gnu.org/gnu/automake/automake-%{version}.tar.xz',
+		'source' => 'https://ftp.gnu.org/gnu/automake/%{name}-%{version}.tar.xz',
 		'version' => '1.16',
 		'patch' => 1,
 		'script' => 1,
