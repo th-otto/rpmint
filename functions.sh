@@ -697,6 +697,7 @@ gl_cv_func_vsnprintf_usable=yes
 gl_cv_func_working_utimes=yes
 gl_cv_struct_dirent_d_ino=yes
 gl_cv_func_wcwidth_works=yes
+gl_cv_func_printf_directive_n=yes
 EOF
 }
 
