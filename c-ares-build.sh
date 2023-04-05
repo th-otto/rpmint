@@ -14,9 +14,13 @@ ${TARGET_BINDIR#/}/*
 ${TARGET_MANDIR#/}/man3/*
 "
 
-PATCHES="patches/c-ares/c-ares-mintelf-config.patch"
+DISABLED_PATCHES="patches/automake/mintelf-config.sub"
 
 unpack_archive
+
+cd "$srcdir"
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 
@@ -24,10 +28,11 @@ cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared \
---disable-curldebug \
---disable-debug \
---disable-symbol-hiding \
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
+	--disable-shared
+	--disable-curldebug
+	--disable-debug
+	--disable-symbol-hiding
 "
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
@@ -39,7 +44,7 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
-	hack_lto_cflags
+	: hack_lto_cflags
 
 # sed -i -e 's/#define HAVE_ARPA_INET_H 1/#undef HAVE_ARPA_INET_H/g' ./ares_config.h
 # sed -i -e 's/#define HAVE_ARPA_NAMESER_H 1/#undef HAVE_ARPA_NAMESER_H/g' ./ares_config.h
