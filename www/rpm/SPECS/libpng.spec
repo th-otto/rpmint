@@ -145,4 +145,26 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %changelog
 * Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+- Update to 1.6.39
+
+* Wed Feb 29 2012	Ole Loots <ole@monochrom.net>
+- initial release of libpng-1.5
+
+* Sun Jan 04 2004 Matthias Alles <alles@rhrk.uni-kl.de>
+- rebuild with new, faster zlib 1.2.1
+
+* Wed Nov 19 2003 Matthias Alles <alles@rhrk.uni-kl.de>
+- updated to 1.2.5
+
+* Fri Jun 01 2001 Frank Naumann <fnaumann@freemint.de>
+- updated to 1.0.11
+
+* Sat Dec 23 2000 Frank Naumann <fnaumann@freemint.de>
+- updated to 1.0.8
+
+* Mon Mar 27 2000 Frank Naumann <fnaumann@freemint.de>
+- rebuild against new MiNTLib 0.55
+
+* Sun Aug 8 1999 Guido Flohr <guido@freemint.de>
+- Replaced distribution tag with vendor tag.

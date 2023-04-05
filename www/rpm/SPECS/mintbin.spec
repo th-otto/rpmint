@@ -167,3 +167,19 @@ done
 %changelog
 * Fri Aug 28 2020 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
+
+* Mon May 31 2010 Keith Scroggins <kws@radix.net>
+- Incorporated Vincent Rivière's patch and removed ar.h which conflicts with
+- current MiNTLib
+
+* Sun Apr 06 2000 Frank Naumann <fnaumann@freemint.de>
+- rebuild against new MiNTLib 0.55
+- removed stab.h, stab.def; conflict with new MiNTLib
+
+* Thu Aug 12 1999 Guido Flohr <guido@freemint.de>
+- Changed vendor to Sparemint
+- NLS patch (caused by a bug in texinfo) for info file
+
+* Mon Jun 28 1999 Guido Flohr <guido@freemint.de>
+- Update to 0.3
+- Removed unnecessary patches

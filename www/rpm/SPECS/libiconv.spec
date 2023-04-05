@@ -122,3 +122,13 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %changelog
 * Wed Mar 1 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
+
+* Sun Oct 24 2010 Ole Loots <ole@monochrom.net>
+- updated to version 1.13
+- enabled extra-encodings
+
+* Wed Apr 02 2008 Marc-Anton Kehr <makehr@ndh.net>
+- updated to version 1.12
+
+* Wed Apr 20 2001 Frank Naumann <fnaumann@freemint.de>
+- initial Sparemint release

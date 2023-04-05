@@ -186,4 +186,7 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %changelog
 * Mon Mar 6 2023 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+
+* Sun Aug 28 2011 Adam Klobukowski <adamklobukowski@gmail.com>
+- changelog started

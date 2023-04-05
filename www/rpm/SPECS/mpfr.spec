@@ -143,3 +143,14 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %changelog
 * Thu Aug 27 2020 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
+
+* Thu May 27 2010 Keith Scroggins <kws@radix.net>
+- Initial build of MPFR RPM with the latest patch from the developers for
+- the 68000 target.
+- Currently 3 tests fail out of 148.  
+- tset_ld seems to just hang, it ran for 4 hours without returning results.
+- tcmp_ld returns ERROR for NAN (1)
+- tsprintf gets the following reasults (but the test might not be correct)
+- Error in mpfr_sprintf (s, "%'Rf", x);
+- expected: "100000000000000000.000000"
+- got:      "100,000,000,000,000,000.000000"

@@ -125,4 +125,25 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %changelog
 * Wed Mar 1 2023 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+- Update to 1.2.13
+
+* Fri May 21 2010 Keith Scroggins <kws@radix.net>
+- updated to 1.2.5 and built for 68000/68020-60/5475
+
+* Sat Jan 16 2010 Keith Scroggins <kws@radix.net>
+- updated to 1.2.3 and built for 68000/68020-60/5475
+
+* Sun Jan 04 2003 Matthias Alles <alles@rhrk.uni-kl.de>
+- updated to 1.2.1
+
+* Wed Mar 13 2002 Frank Naumann <fnaumann@freemint.de>
+- updated to 1.1.4
+
+* Mon Mar 25 2000 Frank Naumann <fnaumann@freemint.de>
+- rebuild against new MiNTLib 0.55
+
+* Wed Aug 25 1999 Frank Naumann <fnaumann@freemint.de>
+- compress manpage
+- correct Packager and Vendor
+- added %description de and Summary(de)

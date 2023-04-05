@@ -91,3 +91,14 @@ make DESTDIR=${RPM_BUILD_ROOT} install
 
 
 %changelog
+* Mon Mar 13 Thorsten Otto <admin@tho-otto.de>
+- Rewritten as RPMint spec file
+
+* Fri Jun 04 2010 Keith Scroggins <kws@radix.net>
+- Added m5475 target
+
+* Wed Sep 22 2004 Martin Tarenskeen <m.tarenskeen@zonnet.nl>
+- updated to version 5.3
+
+* Sun Jun 04 2000 John Blakeley <johnnie@ligotage.demon.co.uk>
+- first release for Sparemint.

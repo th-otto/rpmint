@@ -125,4 +125,7 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %changelog
 * Fri Mar 03 2023 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+
+* Mon Sep 24 2001 Frank Naumann <fnaumann@freemint.de>
+- first release for Sparemint
