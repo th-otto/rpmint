@@ -130,7 +130,7 @@ function print_requireflags($name, $flags, $version)
 
 <h2>Description</h2>
 <div class="alert">
-<p><b><?php echo htmlspecialchars($rpm->name()); ?> - <?php echo htmlspecialchars($rpm->get_tag_as_string(RPMTAG_SUMMARY)); ?></b></p>
+<p><b><?php echo htmlspecialchars($rpm->name()); ?> - <?php echo htmlspecialchars($rpm->get_tag_as_string(RPMTAG_SUMMARY, true)); ?></b></p>
 </div>
 
 <table class="table table-bordered table-striped">
@@ -160,7 +160,7 @@ tagrow("Category", $rpm->get_tag_as_string(RPMTAG_GROUP));
 
 <div class="alert">
 <pre>
-<?php echo htmlspecialchars($rpm->get_tag_as_string(RPMTAG_DESCRIPTION)); ?>
+<?php echo htmlspecialchars($rpm->get_tag_as_string(RPMTAG_DESCRIPTION, true)); ?>
 </pre>
 </div>
 

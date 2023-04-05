@@ -386,12 +386,15 @@ class RPM {
 		return '';
 	}
 	
-	public function get_tag_as_string(int $tagnum)
+	public function get_tag_as_string(int $tagnum, bool $first_lang = false)
 	{
 		$s = $this->get_tag($tagnum);
 		if (is_array($s))
 		{
-			$s = implode("\n", $s);
+			if ($first_lang)
+				$s = $s[0];
+			else
+				$s = implode("\n", $s);
 		}
 		return $s;
 	}
