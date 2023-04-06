@@ -34,9 +34,13 @@ patches/file/file-secure_getenv.patch
 patches/file/file-5.28-btrfs-image.dif
 patches/file/file-5.32-mint.patch
 patches/file/file-5.32.dif
-patches/file/file-mintelf-config.patch
 "
 # patches/file/file-5.16-ocloexec.patch
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
+"
+POST_INSTALL_SCRIPTS="patches/file/file-zisofs.magic"
+
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
@@ -58,23 +62,41 @@ autoreconf -fiv
 test -s src/magic.h.in || cp -p src/magic.h src/magic.h.in
 rm -fv src/magic.h
 # patch it again in case it was replaced by autoreconf
-patch -p1 -i ${BUILD_DIR}/patches/file/file-mintelf-config.patch || :
+cp ${BUILD_DIR}/patches/automake/mintelf-config.sub config.sub
+
+cat "${BUILD_DIR}/patches/file/file-zisofs.magic" >> magic/Localstuff
 
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -DHOWMANY=69632"
 
-CONFIGURE_FLAGS="--host=${TARGET} \
-	--prefix=${prefix} \
-	--sysconfdir=/etc \
-	--datadir=${prefix}/share \
-	--disable-nls \
-	--disable-shared \
-	--enable-fsect-man5 \
-	--config-cache"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
+	--sysconfdir=/etc
+	--disable-nls
+	--disable-shared
+	--enable-fsect-man5
+	--config-cache
+"
+STACKSIZE="-Wl,-stack,128k"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
+
+mkdir -p ${THISPKG_DIR}${sysroot}/etc
+cat << EOF > ${THISPKG_DIR}${sysroot}/etc/magic
+# Localstuff: file(1) magic(5) for locally observed files
+#     global magic file is ${prefix}/share/misc/magic(.mgc)
+EOF
+
+#
+# compile a version for the host first, which is needed to compile the magic file
+#
+./configure --disable-shared --disable-nls
+${MAKE} $JOBS
+mv src/file src/file.host
+mv magic/Localstuff magic/Localstuff.orig
+${MAKE} distclean
+mv magic/Localstuff.orig magic/Localstuff
 
 create_config_cache()
 {
@@ -83,22 +105,18 @@ EOF
 	append_gnulib_cache
 }
 
-mkdir -p ${THISPKG_DIR}${sysroot}/etc
-cat << EOF > ${THISPKG_DIR}${sysroot}/etc/magic
-# Localstuff: file(1) magic(5) for locally observed files
-#     global magic file is ${prefix}/share/misc/magic(.mgc)
-EOF
-
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	create_config_cache
-	STACKSIZE="-Wl,-stack,128k"
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
+
 	hack_lto_cflags
-	${MAKE} || exit 1
+	${MAKE} V=1 FILE_COMPILE='$(top_builddir)/src/file.host' $JOBS || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
 	
