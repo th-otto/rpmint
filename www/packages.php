@@ -1434,7 +1434,7 @@ ctris is a curses based Tetris game.
 		'upstream' => 'http://www.isc.org/software/dhcp',
 		'source' => 'http://ftp.isc.org/isc/dhcp/%{version}/%{name}-%{version}.tar.gz',
 		'source' => $download_dir . '%{name}-%{version}.tar.gz',
-		'version' => '3.0.3',
+		'version' => '3.1.ESV',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

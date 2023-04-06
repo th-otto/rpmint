@@ -1,9 +1,9 @@
-diff -aurN dhcp-3.0.3/Makefile.conf dhcp-3.0.3-mint-20111009/Makefile.conf
---- dhcp-3.0.3/Makefile.conf	2005-06-16 21:39:35.000000000 +0200
-+++ dhcp-3.0.3-mint-20111009/Makefile.conf	2014-08-31 15:18:21.171875000 +0200
-@@ -208,6 +208,25 @@
+diff -rNuw dhcp-3.1.ESV/Makefile.conf dhcp-3.1.ESV-freemint/Makefile.conf 
+--- dhcp-3.1.ESV/Makefile.conf  Thu Jul 23 22:43:32 2009
++++ dhcp-3.1.ESV-freemint/Makefile.conf Thu Dec  6 19:37:16 2012
+@@ -225,6 +225,25 @@
  #SCRIPT=freebsd
- ##--freebsd--
+ ##--darwin--
  
 +## FreeMiNT
 +##--freemint--
@@ -24,39 +24,13 @@ diff -aurN dhcp-3.0.3/Makefile.conf dhcp-3.0.3-mint-20111009/Makefile.conf
 +SCRIPT=freemint
 +##--freemint--
 +
- ## Rhapsody
- ##--rhapsody--
- #CF = cf/rhapsody.h
-diff -aurN dhcp-3.0.3/client/clparse.c dhcp-3.0.3-mint-20111009/client/clparse.c
---- dhcp-3.0.3/client/clparse.c	2004-11-24 18:39:14.000000000 +0100
-+++ dhcp-3.0.3-mint-20111009/client/clparse.c	2014-08-31 15:18:21.046875000 +0200
-@@ -51,6 +51,9 @@
- 	DHO_DOMAIN_NAME,
- 	DHO_DOMAIN_NAME_SERVERS,
- 	DHO_HOST_NAME,
-+	DHO_NIS_DOMAIN,
-+	DHO_NIS_SERVERS,
-+	DHO_NTP_SERVERS,
- 	0
- };
- 
-diff -aurN dhcp-3.0.3/client/dhclient.conf.5 dhcp-3.0.3-mint-20111009/client/dhclient.conf.5
---- dhcp-3.0.3/client/dhclient.conf.5	2005-06-16 21:40:13.000000000 +0200
-+++ dhcp-3.0.3-mint-20111009/client/dhclient.conf.5	2014-08-31 15:18:21.062500000 +0200
-@@ -185,7 +185,8 @@
- options.   Only the option names should be specified in the request
- statement - not option parameters.   By default, the DHCP server
- requests the subnet-mask, broadcast-address, time-offset, routers,
--domain-name, domain-name-servers and host-name options. 
-+domain-name, domain-name-servers, host-name, nis-domain, nis-servers,
-+and ntp-servers options.
- .PP
- In some cases, it may be desirable to send no parameter request list
- at all.   To do this, simply write the request statement but specify
-diff -aurN dhcp-3.0.3/client/scripts/freemint dhcp-3.0.3-mint-20111009/client/scripts/freemint
---- dhcp-3.0.3/client/scripts/freemint	1970-01-01 01:00:00.000000000 +0100
-+++ dhcp-3.0.3-mint-20111009/client/scripts/freemint	2014-08-31 15:30:41.718750000 +0200
-@@ -0,0 +1,263 @@
+ ## NetBSD
+ ##--netbsd--
+ #CF = cf/netbsd.h
+diff -rNuw dhcp-3.1.ESV/client/scripts/freemint  dhcp-3.1.ESV-freemint/client/scripts/freemint
+--- dhcp-3.1.ESV/client/scripts/freemint  Sat Dec  8 14:56:20 2012
++++ dhcp-3.1.ESV-freemint/client/scripts/freemint  Sun Dec  2 22:09:20 2012
+@@ -0,0 +1,258 @@
 +#!/bin/sh
 +
 +if [ -x /usr/bin/logger ]; then
@@ -66,16 +40,11 @@ diff -aurN dhcp-3.0.3/client/scripts/freemint dhcp-3.0.3-mint-20111009/client/sc
 +fi
 +
 +make_resolv_conf() {
-+  if [ "x$new_domain_name" != x ] || [ x"$new_domain_name_servers" != x ]; then
-+    >/etc/resolv.conf
-+    if [ "x$new_domain_name" != x ]; then
-+      echo search $new_domain_name >/etc/resolv.conf
-+    fi
-+    if [ "x$new_domain_name_servers" != x ]; then
-+      for nameserver in $new_domain_name_servers; do
-+        echo nameserver $nameserver >>/etc/resolv.conf
-+      done
-+    fi
++  if [ "x$new_domain_name" != x ] && [ x"$new_domain_name_servers" != x ]; then
++    echo search $new_domain_name >/etc/resolv.conf
++    for nameserver in $new_domain_name_servers; do
++      echo nameserver $nameserver >>/etc/resolv.conf
++    done
 +  fi
 +}
 +
@@ -320,83 +289,37 @@ diff -aurN dhcp-3.0.3/client/scripts/freemint dhcp-3.0.3-mint-20111009/client/sc
 +fi
 +
 +exit_with_hooks 0
-diff -aurN dhcp-3.0.3/client/scripts/linux dhcp-3.0.3-mint-20111009/client/scripts/linux
---- dhcp-3.0.3/client/scripts/linux	2002-11-15 02:09:09.000000000 +0100
-+++ dhcp-3.0.3-mint-20111009/client/scripts/linux	2014-08-31 15:18:21.062500000 +0200
-@@ -106,6 +106,41 @@
-   
- if [ x$reason = xBOUND ] || [ x$reason = xRENEW ] || \
-    [ x$reason = xREBIND ] || [ x$reason = xREBOOT ]; then
-+
-+  if [ -n "$new_nis_domain" ]; then
-+    domainname "$new_nis_domain"
-+
-+    rm -f /etc/yp.conf
-+    if [ -n "$new_nis_servers" ]; then
-+      for I in $new_nis_servers; do
-+        echo "domain $new_nis_domain server $I" >> /etc/yp.conf
-+      done
-+    else
-+      echo "domain $new_nis_domain broadcast" >> /etc/yp.conf
-+    fi
-+  elif [ -n "$new_nis_servers" ]; then
-+    rm -f /etc/yp.conf
-+    for I in $new_nis_servers; do
-+      echo "ypserver $I" >> /etc/yp.conf
-+    done
-+  fi
-+  
-+  if [ -n "$new_ntp_servers" ]; then
-+    cat <<EOF > /etc/ntp.conf
-+restrict default ignore
-+restrict 127.0.0.1
-+driftfile /etc/ntp/drift
-+broadcastdelay 0.008
-+authenticate yes
-+keys /etc/ntp/keys
-+EOF
-+    :> /etc/ntp/step-tickers
-+    for I in $new_ntp_servers; do
-+      echo "server $I" >> /etc/ntp.conf
-+      echo "$I" >> /etc/ntp/step-tickers
-+    done
-+  fi
-+
-   current_hostname=`hostname`
-   if [ x$current_hostname = x ] || \
-      [ x$current_hostname = x$old_host_name ]; then
-diff -aurN dhcp-3.0.3/common/discover.c dhcp-3.0.3-mint-20111009/common/discover.c
---- dhcp-3.0.3/common/discover.c	2005-03-03 17:55:22.000000000 +0100
-+++ dhcp-3.0.3-mint-20111009/common/discover.c	2014-08-31 15:18:21.156250000 +0200
-@@ -455,6 +455,25 @@
+diff -rNuw dhcp-3.1.ESV/common/discover.c   dhcp-3.1.ESV-freemint/common/discover.c
+--- dhcp-3.1.ESV/common/discover.c      Wed Mar 17 23:20:58 2010
++++ dhcp-3.1.ESV-freemint/common/discover.c     Sat Dec  8 16:51:40 2012
+@@ -455,6 +455,24 @@
+ 			continue;
  		
  		sa = *(struct sockaddr *)&ifr.ifr_hwaddr;
- 		
 +#ifdef __MINT__
-+		/** 
-+		FreeMiNT SIOCGIFHWADDR result is this:
++               /**
++               FreeMiNT SIOCGIFHWADDR result is this:
 +
-+		struct sockaddr_hw {
-+			ushort		shw_family;
-+			ushort		shw_type;
-+			ushort		shw_len;
-+			uchar		shw_addr[8];
-+		};
++               struct sockaddr_hw {
++                       ushort          shw_family;
++                       ushort          shw_type;
++                       ushort          shw_len;
++                       uchar           shw_addr[8];
++               };
 +
-+		**/
++               **/
 +
-+		/* strip the ushort shw_len; @sa_data[2] */
-+		memmove (&sa.sa_data[2], &sa.sa_data[4], 6);
-+		/* strip the leading ushort shw_family as it is always AF_LINK */
-+		memmove (&sa, sa.sa_data, 10);
++               /* strip the ushort shw_len; @sa_data[2] */
++               memmove (&sa.sa_data[2], &sa.sa_data[4], 6);
++               /* strip the leading ushort shw_family as it is always AF_LINK */
++               memmove (&sa, sa.sa_data, 10);
 +#endif
-+
- 		switch (sa.sa_family) {
+		
+		switch (sa.sa_family) {
  #ifdef HAVE_ARPHRD_TUNNEL
- 		      case ARPHRD_TUNNEL:
-diff -aurN dhcp-3.0.3/configure dhcp-3.0.3-mint-20111009/configure
---- dhcp-3.0.3/configure	2004-09-10 23:02:30.000000000 +0200
-+++ dhcp-3.0.3-mint-20111009/configure	2014-08-31 15:18:21.156250000 +0200
+diff -rNuw dhcp-3.1.ESV/configure dhcp-3.1.ESV-freemint/configure
+--- dhcp-3.1.ESV/configure      Sat Dec  8 16:21:32 2012
++++ dhcp-3.1.ESV-freemint/configure     Thu Dec  6 19:56:08 2012
 @@ -139,6 +139,8 @@
        sysname=openbsd;;
      FreeBSD)
@@ -406,48 +329,17 @@ diff -aurN dhcp-3.0.3/configure dhcp-3.0.3-mint-20111009/configure
      hpux)
        IFS=":"
        for foo in $PATH; do
-diff -aurN dhcp-3.0.3/dhcpctl/dhcpctl.3 dhcp-3.0.3-mint-20111009/dhcpctl/dhcpctl.3
---- dhcp-3.0.3/dhcpctl/dhcpctl.3	2004-09-24 23:08:38.000000000 +0200
-+++ dhcp-3.0.3-mint-20111009/dhcpctl/dhcpctl.3	2014-08-31 15:18:21.156250000 +0200
-@@ -43,7 +43,7 @@
- .\"
- .\"
- .Sh SYNOPSIS
--.Fd #include <dhcpctl/dhcpctl.h>
-+.Fd #include <dhcpctl.h>
- .Ft dhcpctl_status
- .Fo dhcpctl_initialize
- .Fa void
-@@ -425,8 +425,8 @@
- #include <stdio.h>
- #include <netinet/in.h>
- 
-+#include <dhcpctl.h>
- #include <isc/result.h>
--#include <dhcpctl/dhcpctl.h>
- 
- int main (int argc, char **argv) {
- 	dhcpctl_data_string ipaddrstring = NULL;
-diff -aurN dhcp-3.0.3/dst/Makefile.dist dhcp-3.0.3-mint-20111009/dst/Makefile.dist
---- dhcp-3.0.3/dst/Makefile.dist	2004-06-10 19:59:28.000000000 +0200
-+++ dhcp-3.0.3-mint-20111009/dst/Makefile.dist	2014-08-31 15:18:21.171875000 +0200
-@@ -30,7 +30,12 @@
- 
- all:	libdst.a
- 
--install:
-+install: all
-+	if [ ! -d $(DESTDIR)$(LIBDIR) ]; then \
-+		mkdir $(DESTDIR)$(LIBDIR); chmod 755 $(DESTDIR)$(LIBDIR); \
-+	fi
-+	$(INSTALL) libdst.a $(DESTDIR)$(LIBDIR)
-+	$(CHMOD) 644 $(DESTDIR)$(LIBDIR)/libdst.a
- 
- libdst.a:	$(OBJ)
- 	rm -f dst.a
-diff -aurN dhcp-3.0.3/includes/cf/freemint.h dhcp-3.0.3-mint-20111009/includes/cf/freemint.h
---- dhcp-3.0.3/includes/cf/freemint.h	1970-01-01 01:00:00.000000000 +0100
-+++ dhcp-3.0.3-mint-20111009/includes/cf/freemint.h	2014-08-31 15:18:21.171875000 +0200
+@@ -209,6 +211,7 @@
+     echo "   netbsd	NetBSD 1.1 or higher"
+     echo "   freebsd	FreeBSD"
+     echo "   openbsd      OpenBSD (i386/alpha)"
++    echo "   freemint   FreeMiNT"
+     echo "   hpux		HP-UX"
+     echo "   qnx		QNX 4.2 or higher"
+     echo "   NEXTSTEP     NeXTSTEP"
+diff -rNuw dhcp-3.1.ESV/includes/cf/freemint.h  dhcp-3.1.ESV-freemint/includes/cf/freemint.h 
+--- dhcp-3.1.ESV/includes/cf/freemint.h   Sat Dec  8 14:38:54 2012
++++ dhcp-3.1.ESV-freemint/includes/cf/freemint.h   Sun Dec  2 22:09:20 2012
 @@ -0,0 +1,355 @@
 +/* freemint.h
 + *
@@ -804,13 +696,13 @@ diff -aurN dhcp-3.0.3/includes/cf/freemint.h dhcp-3.0.3-mint-20111009/includes/c
 +	NULL
 +};
 +
-diff -aurN dhcp-3.0.3/includes/osdep.h dhcp-3.0.3-mint-20111009/includes/osdep.h
---- dhcp-3.0.3/includes/osdep.h	2004-09-30 22:38:31.000000000 +0200
-+++ dhcp-3.0.3-mint-20111009/includes/osdep.h	2014-08-31 15:18:21.171875000 +0200
+diff -rNuw dhcp-3.1.ESV/includes/osdep.h  dhcp-3.1.ESV-freemint/includes/osdep.h
+--- dhcp-3.1.ESV/includes/osdep.h       Thu Jul 23 22:43:34 2009
++++ dhcp-3.1.ESV-freemint/includes/osdep.h      Fri Dec  7 20:26:20 2012
 @@ -77,6 +77,10 @@
  # endif
  #endif
- 
+
 +#ifdef __MINT__
 +#  include "cf/freemint.h"
 +#endif
@@ -818,3 +710,4 @@ diff -aurN dhcp-3.0.3/includes/osdep.h dhcp-3.0.3-mint-20111009/includes/osdep.h
  #ifdef aix
  #  include "cf/aix.h"
  #endif
+
