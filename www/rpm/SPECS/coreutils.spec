@@ -236,7 +236,7 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
-* Wed Mar 29 2023 Thorsten Otto <admin@tho-otto.de>
+* Wed Apr 05 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
 - Update to version 8.32
 - replaces sh-utils, textutils and fileutils

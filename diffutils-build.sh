@@ -11,7 +11,9 @@ VERSIONPATCH=
 
 PATCHES="
 patches/diffutils/diffutils-diff-3.6-mint.patch
-patches/diffutils/diffutils-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -22,16 +24,21 @@ ${TARGET_PREFIX#/}/share/info/*
 
 unpack_archive
 
+cd "$srcdir"
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub
+
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--host=${TARGET} \
-	--prefix=${prefix} \
-	--sysconfdir=/etc \
-	--disable-nls \
-	--disable-shared \
-	--config-cache"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
+	--sysconfdir=/etc
+	--disable-nls
+	--disable-shared
+	--config-cache
+"
+STACKSIZE="-Wl,-stack,128k"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -49,8 +56,9 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	create_config_cache
-	STACKSIZE="-Wl,-stack,128k"
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 
 	hack_lto_cflags
 
