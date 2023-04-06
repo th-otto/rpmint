@@ -13,7 +13,7 @@ PATCHES="
 patches/${PACKAGENAME}/fdk-aac-mint.patch
 "
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/mintelf-config.patch
+patches/automake/mintelf-config.sub
 "
 BINFILES="
 ${TARGET_BINDIR#/}/*
@@ -25,13 +25,15 @@ cd "$srcdir"
 
 autoreconf -fiv
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/mintelf-config.patch"
+patch -p1 < "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --enable-example ${CONFIGURE_FLAGS_AMIGAOS}"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
+	--enable-example
+"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"

@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        A development library for text mode user interfaces.
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        0.50
 Release:        5
 License:        LGPL-2.0-or-later
@@ -16,8 +12,8 @@ Group:          Applications/System
 Packager:       Thorsten Otto <admin@tho-otto.de>
 URL:            https://github.com/strukturag/libde265/
 
-Prefix:         %{_prefix}
-Docdir:         %{_prefix}/share/doc
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: ftp://ftp.redhat.com/pub/redhat/code/newt/newt-%{version}.tar.gz
@@ -29,13 +25,8 @@ Patch2:  patches/%{pkgname}/newt-autoconf.patch
 %rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  make
-%if "%{buildtype}" == "cross"
-Requires:       cross-mint-slang
-Provides:       cross-mint-newt-devel
-%else
-Requires:       slang
-Provides:       newt-devel
-%endif
+Requires:       %{crossmint}slang
+Provides:       %{crossmint}newt-devel
 
 %rpmint_build_arch
 
@@ -145,15 +136,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %defattr(-,root,root)
 %doc CHANGES COPYING
 %doc tutorial.sgml
-%if "%{buildtype}" == "cross"
-%{_rpmint_bindir}
-%{_rpmint_includedir}
-%{_rpmint_libdir}
-%else
-%{_rpmint_target_prefix}/bin
-%{_rpmint_target_prefix}/include
-%{_rpmint_target_prefix}/lib
-%endif
+%{_isysroot}%{_rpmint_target_prefix}/bin
+%{_isysroot}%{_rpmint_target_prefix}/include
+%{_isysroot}%{_rpmint_target_prefix}/lib
 
 
 
