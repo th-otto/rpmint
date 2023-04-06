@@ -36,20 +36,12 @@ Patch10: patches/ncurses/ncurses-no-include.patch
 
 %rpmint_essential
 BuildRequires:  make
-%if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-gcc-c++
+BuildRequires:  %{crossmint}gcc-c++
 BuildRequires:  gcc-c++
-Provides:       cross-mint-terminfo-base
-Provides:       cross-mint-libncurses5
-Provides:       cross-mint-libncurses6
-Provides:       cross-mint-ncurses-devel
-%else
-BuildRequires:  gcc-c++
-Provides:       terminfo-base
-Provides:       libncurses5
-Provides:       libncurses6
-Provides:       ncurses-devel
-%endif
+Provides:       %{crossmint}terminfo-base
+Provides:       %{crossmint}libncurses5
+Provides:       %{crossmint}libncurses6
+Provides:       %{crossmint}ncurses-devel
 
 %rpmint_build_arch
 

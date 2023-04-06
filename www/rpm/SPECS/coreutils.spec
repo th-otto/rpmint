@@ -49,8 +49,8 @@ Obsoletes:      sh-utils < 3.0
 Obsoletes:      textutils < 3.0
 Obsoletes:      fileutils < 5.0
 Obsoletes:      mktemp < 2.0
-Provides:       mktemp = %{version}
 %endif
+Provides:       %{crossmint}mktemp = %{version}
 
 %rpmint_build_arch
 
@@ -120,7 +120,6 @@ CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_
 	alternative=199209
 	--config-cache
 "
-COMMON_CFLAGS+=" -UHAVE_PTHREAD_H"
 STACKSIZE="-Wl,-stack,256k"
 
 create_config_cache()
