@@ -30,7 +30,13 @@ cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} sbindir=/sbin --enable-compat-symlinks --enable-atari-check --without-udev"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
+	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}
+	--sbindir=/sbin
+	--enable-compat-symlinks
+	--enable-atari-check
+	--without-udev
+"
 
 export LIBICONV=-liconv
 
