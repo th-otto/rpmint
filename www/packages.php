@@ -2031,14 +2031,14 @@ and 6.
 		'name' => 'elfutils',
 		'upstream' => 'https://sourceware.org/elfutils/',
 		'source' => 'ftp://sourceware.org/pub/%{name}/%{version}/%{name}-%{version}.tar.bz2',
-		'version' => '0.170',
+		'version' => '0.189',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
-		'license' => 'GPL-2.0', /*  WITH OSI-exception */
+		'license' => 'GPL-3.0-or-later',
 		'category' => 'Development/Tools/Building',
 		'summary' => 'Higher-level library to access ELF files',
 		'comment' => '

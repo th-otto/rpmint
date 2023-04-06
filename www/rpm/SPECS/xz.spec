@@ -31,11 +31,8 @@ BuildRequires:  libtool
 BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
-%if "%{buildtype}" == "cross"
-Provides:       cross-mint-liblzma5 = %{version}
-%else
-Provides:       liblzma5 = %{version}
-%endif
+Provides:       %{crossmint}liblzma5 = %{version}
+Provides:       %{crossmint}xz-devel = %{version}
 
 %rpmint_build_arch
 

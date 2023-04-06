@@ -11,12 +11,14 @@ VERSIONPATCH=
 
 PATCHES="
 patches/elfutils/elfutils-disable-tests-with-ptrace.patch
-patches/elfutils/elfutils-0001-backends-Add-support-for-EM_PPC64-GNU_ATTRIBUTES.patch
-patches/elfutils/elfutils-ppc-machine-flags.patch
 patches/elfutils/elfutils-no-threads.patch
 patches/elfutils/elfutils-mint.patch
-patches/elfutils/elfutils-mintelf-config.patch
 patches/elfutils/elfutils-lto-warnings.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
+patches/elfutils/elfutils-0001-backends-Add-support-for-EM_PPC64-GNU_ATTRIBUTES.patch
+patches/elfutils/elfutils-ppc-machine-flags.patch
 "
 
 BINFILES="
@@ -39,16 +41,16 @@ sed --in-place "s/^MODVERSION=.*\$/MODVERSION=\"${MODVERSION}\"/" configure.ac
 
 autoreconf -fi
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/elfutils-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config/config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
-	--docdir=${TARGET_PREFIX}/share/doc/${PACKAGENAME} \
-	--disable-nls \
-	--disable-shared \
-	--program-prefix=eu- \
-	--config-cache \
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
+	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}
+	--disable-nls
+	--disable-shared
+	--program-prefix=eu-
+	--config-cache
 "
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
@@ -66,13 +68,12 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -s" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
 	
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
-	cp -a "${BUILD_DIR}/patches/${PACKAGENAME}/elf.h" "${THISPKG_DIR}${sysroot}/${prefix}/include"
 	
 	${MAKE} clean
 	make_bin_archive $CPU
