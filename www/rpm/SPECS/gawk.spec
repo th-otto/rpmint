@@ -1,40 +1,43 @@
-%define pkgname flex
+%define pkgname gawk
 
 %rpmint_header
 
-Summary:        Fast Lexical Analyzer Generator
+Summary:        GNU awk
 Name:           %{crossmint}%{pkgname}
-Version:        2.6.4
+Version:        4.1.4
 Release:        1
-License:        BSD-3-Clause
-Group:          Development/Languages/C and C++
+License:        GPL-3.0-or-later
+Group:          Productivity/Text/Utilities
 
 Prereq:         /sbin/install-info
 
 Packager:       %{packager}
-URL:            https://github.com/westes/flex
+URL:            http://www.gnu.org/software/gawk/
 
 Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://github.com/westes/%{pkgname}/releases/download/v%{version}/%{pkgname}-%{version}.tar.gz
+Source0: http://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.xz
 Source1: patches/automake/mintelf-config.sub
 
-Patch0: patches/flex/flex-use-extensions.patch
-Patch1: patches/flex/flex-help2man.patch
+Patch0: patches/gawk/gawk-ppc64le_ignore_transient_test_time_failure.patch
+Patch1: patches/gawk/gawk-4.1.4-mint.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  make
-BuildRequires:  help2man
 
 %rpmint_build_arch
 
 %description
-FLEX is a tool for generating scanners: programs that recognize lexical
-patterns in text.
+The gawk packages contains the GNU version of awk, a text processing
+utility.  Awk interprets a special-purpose programming language to do
+quick and easy text pattern matching and reformatting jobs. Gawk should
+be upwardly compatible with the Bell Labs research version of awk and
+is almost completely compliant with the 1993 POSIX 1003.2 standard for
+awk.
 
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
@@ -42,13 +45,7 @@ patterns in text.
 %patch0 -p1
 %patch1 -p1
 
-aclocal
-autoconf
-autoheader
-automake --force --copy --add-missing
-rm -rf autom4te.cache config.h.in.orig
-
-cp %{S:1} build-aux/config.sub
+cp %{S:1} config.sub
 
 %build
 
@@ -69,7 +66,15 @@ EOF
 	%rpmint_append_gnulib_cache
 }
 
-for CPU in ${ALL_CPUS}
+#
+# there are no libraries in this package, so we
+# have to build for the target CPU only
+#
+%if "%{buildtype}" == "cross"
+for CPU in 000
+%else
+for CPU in %{buildtype}
+%endif
 do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
@@ -81,10 +86,12 @@ do
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s" \
 	"./configure" ${CONFIGURE_FLAGS} \
-	--libdir='${exec_prefix}/lib'$multilibdir
+	--libdir='${exec_prefix}/lib'$multilibdir \
+	--libexecdir='${exec_prefix}/libexec'$multilibexecdir
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
+	rm -f %{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/usr/bin/gawk-%{version}
 
 	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
@@ -99,6 +106,7 @@ do
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
 		rm -f %{buildroot}%{_rpmint_bindir}/*
+		rm -f %{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/libexec$multilibexecdir/*
 	fi
 	%rpmint_make_bin_archive $CPU
 	%endif
@@ -129,13 +137,13 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %files
 %defattr(-,root,root)
 %license COPYING*
-%doc AUTHORS README.md NEWS ONEWS THANKS ChangeLog
+%doc ABOUT-NLS POSIX.STD NEWS* README_d README AUTHORS ChangeLog*
 %{_isysroot}%{_rpmint_target_prefix}/bin/*
 %{_isysroot}%{_rpmint_target_prefix}/include/*
-%{_isysroot}%{_rpmint_target_prefix}/lib/*.a
-%{_isysroot}%{_rpmint_target_prefix}/lib/*/*.a
-%{_isysroot}%{_rpmint_target_prefix}/share/info/*
+%{_isysroot}%{_rpmint_target_prefix}/libexec/*
 %{_isysroot}%{_rpmint_target_prefix}/share/man/*/*
+%{_isysroot}%{_rpmint_target_prefix}/share/info/*
+%{_isysroot}%{_rpmint_target_prefix}/share/awk
 %{_isysroot}%{_rpmint_target_prefix}/share/locale/*/*/*
 
 
@@ -149,12 +157,15 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %changelog
 * Fri Apr 07 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
-- Update to version 2.6.4
+- Update to version 4.1.4
 
-* Mon Mar 27 2000 Frank Naumann <fnaumann@freemint.de>
-- rebuild against new MiNTLib 0.55
+* Tue Mar 20 2001 Frank Naumann <fnaumann@freemint.de>
+- updated to 3.0.6
 
-* Wed Aug 25 1999 Frank Naumann <fnaumann@freemint.de>
+* Mon Sep 20 1999 Frank Naumann <fnaumann@cs.uni-magdeburg.de>
+- package provide awk now
+
+* Wed Aug 25 1999 Frank Naumann <fnaumann@cs.uni-magdeburg.de>
 - compressed manpages
 - correct Packager and Vendor
-- added %%description de and Summary(de)
+- added Summary(de)

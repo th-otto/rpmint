@@ -89,8 +89,7 @@ do
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s" \
 	"./configure" ${CONFIGURE_FLAGS} \
-	--libdir='${exec_prefix}/lib'$multilibdir \
-	--libexecdir='${exec_prefix}/libexec/find'$multilibexecdir
+	--libdir='${exec_prefix}/lib'$multilibdir
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} docdir=%{_rpmint_target_prefix}/share/doc/packages/%{pkgname} install
