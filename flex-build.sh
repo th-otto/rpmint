@@ -11,7 +11,10 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/flex-use-extensions.patch
-patches/${PACKAGENAME}/flex-mintelf-config.patch
+patches/${PACKAGENAME}/flex-help2man.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -30,13 +33,17 @@ automake --force --copy --add-missing || exit 1
 rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/flex-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build-aux/config.sub
 
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --config-cache"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
+	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}
+	--config-cache
+"
+STACKSIZE=-Wl,-stack,256k
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -54,7 +61,9 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	create_config_cache
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install

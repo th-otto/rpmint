@@ -1,0 +1,11 @@
+--- a/doc/Makefile.am	2023-04-07 09:32:49.975936180 +0200
++++ b/doc/Makefile.am	2023-04-07 09:33:47.699833005 +0200
+@@ -1,4 +1,8 @@
++if CROSS
++FLEX = $(top_builddir)/src/stage1flex
++else
+ FLEX = $(top_builddir)/src/flex$(EXEEXT)
++endif
+ 
+ info_TEXINFOS =	flex.texi
+ dist_man_MANS = flex.1
