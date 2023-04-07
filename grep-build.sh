@@ -18,6 +18,7 @@ BINFILES="
 ${TARGET_BINDIR#/}/*
 ${TARGET_MANDIR#/}/man1/*
 ${TARGET_PREFIX#/}/share/info/*
+${TARGET_PREFIX#/}/share/locale/*
 "
 
 MINT_BUILD_DIR="$srcdir"
@@ -25,6 +26,9 @@ MINT_BUILD_DIR="$srcdir"
 unpack_archive
 
 cd "$srcdir"
+
+autoreconf -fiv
+rm -rf autom4te.cache
 
 cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub
 
@@ -55,7 +59,7 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	create_config_cache
 	CFLAGS="${CPU_CFLAGS} $COMMON_CFLAGS ${STACKSIZE}" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 	${MAKE} clean

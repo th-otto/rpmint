@@ -17,8 +17,10 @@ patches/${PACKAGENAME}/gzip-zdiff.diff
 patches/${PACKAGENAME}/gzip-xz_lzma.patch
 patches/${PACKAGENAME}/gzip-manpage-no-date.patch
 patches/${PACKAGENAME}/gzip-1.9-mint.patch
-patches/${PACKAGENAME}/gzip-mintelf-config.patch
 patches/${PACKAGENAME}/gzip-gnulib-strerror_r.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 
@@ -32,11 +34,21 @@ MINT_BUILD_DIR="$srcdir"
 
 unpack_archive
 
+cd "$srcdir"
+
+autoreconf -fiv
+rm -rf autom4te.cache
+
+cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub
+
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O3 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --mandir=${prefix}/share/man --config-cache"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
+	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}
+	--config-cache
+"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -60,7 +72,6 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	create_config_cache
-	STACKSIZE="-Wl,-stack,64k"
 	CFLAGS="${CPU_CFLAGS} $COMMON_CFLAGS ${STACKSIZE}" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
 	${MAKE} $JOBS || exit 1

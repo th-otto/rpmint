@@ -1,25 +1,34 @@
-%define pkgname grep
+%define pkgname gzip
 
 %rpmint_header
 
-Summary:        Print lines matching a pattern
+Summary:        GNU Zip Compression Utilities
 Name:           %{crossmint}%{pkgname}
-Version:        3.1
+Version:        1.9
 Release:        1
 License:        GPL-3.0-or-later
-Group:          Productivity/Text/Utilities
+Group:          Productivity/Archiving/Compression
 
 Prereq:         /sbin/install-info
 
 Packager:       %{packager}
-URL:            https://www.gnu.org/software/grep/
+URL:            http://www.gnu.org/software/gzip/
 
 Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.xz
+Source0: http://ftp.gnu.org/gnu/%{pkgname}/%{pkgname}-%{version}.tar.xz
 Source1: patches/automake/mintelf-config.sub
+
+Patch0: patches/%{pkgname}/gzip-zgrep.diff
+Patch1: patches/%{pkgname}/gzip-zmore.diff
+Patch2: patches/%{pkgname}/gzip-non-exec-stack.diff
+Patch3: patches/%{pkgname}/gzip-zdiff.diff
+Patch4: patches/%{pkgname}/gzip-xz_lzma.patch
+Patch5: patches/%{pkgname}/gzip-manpage-no-date.patch
+Patch6: patches/%{pkgname}/gzip-1.9-mint.patch
+Patch7: patches/%{pkgname}/gzip-gnulib-strerror_r.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -29,15 +38,23 @@ BuildRequires:  make
 %rpmint_build_arch
 
 %description
-The grep command searches one or more input files for lines containing a
-match to a specified pattern.  By default, grep prints the matching lines.
+Gzip reduces the size of the named files using Lempel-Ziv coding LZ77.
+Whenever possible, each file is replaced by one with the extension .gz,
+while keeping the same ownership modes and access and modification
+times.
 
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
 %setup -q -n %{pkgname}-%{version}
 
-autoreconf -fiv
-rm -rf autom4te.cache
+%patch0 -p1
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
+%patch6 -p1
+%patch7 -p1
 
 cp %{S:1} build-aux/config.sub
 
@@ -59,6 +76,12 @@ create_config_cache()
 cat <<EOF >config.cache
 EOF
 	%rpmint_append_gnulib_cache
+cat <<EOF >>config.cache
+ac_cv_func_strerror_r=yes
+ac_cv_have_decl_strerror_r=yes
+gl_cv_func_working_strerror=yes
+gl_cv_func_strerror_r_works=yes
+EOF
 }
 
 #
@@ -129,11 +152,10 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %files
 %defattr(-,root,root)
 %license COPYING*
-%doc AUTHORS README* NEWS THANKS ChangeLog*
+%doc AUTHORS README* NEWS THANKS TODO ChangeLog*
 %{_isysroot}%{_rpmint_target_prefix}/bin/*
 %{_isysroot}%{_rpmint_target_prefix}/share/info/*
 %{_isysroot}%{_rpmint_target_prefix}/share/man/*/*
-%{_isysroot}%{_rpmint_target_prefix}/share/locale/*/*/*
 
 
 %post
@@ -146,10 +168,15 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %changelog
 * Fri Apr 07 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
-- Update to version 3.1
+- Update to version 1.9
 
-* Tue Mar 20 2001 Frank Naumann <fnaumann@freemint.de>
-- updated to 2.4.2
+* Fri Sep 07 2001 Frank Naumann <fnaumann@freemint.de>
+- updated to 1.3
+
+* Thu Feb 03 2000 Edgar Aichinger <eaiching@t0.or.at>
+- fixed symlink bug in specfile
+- changed location of manpages to /usr/share/man
+- added german summary/description (release 4)
 
 * Wed Aug 25 1999 Frank Naumann <fnaumann@cs.uni-magdeburg.de>
 - compressed manpages
