@@ -1,0 +1,43 @@
+--- grep-2.4.2/src/getopt.c.orig	Thu Jan 20 05:43:02 2000
++++ grep-2.4.2/src/getopt.c	Tue Mar 20 20:09:58 2001
+@@ -48,10 +48,14 @@
+    it is simpler to just do this in the source for each such file.  */
+ 
+ #define GETOPT_INTERFACE_VERSION 2
+-#if !defined _LIBC && defined __GLIBC__ && __GLIBC__ >= 2
+-# include <gnu-versions.h>
+-# if _GNU_GETOPT_INTERFACE_VERSION == GETOPT_INTERFACE_VERSION
++#if !defined _LIBC && ((defined __GLIBC__ && __GLIBC__ >= 2) || defined __MINTLIB__)
++# if defined __MINTLIB__
+ #  define ELIDE_CODE
++# else
++#  include <gnu-versions.h>
++#  if _GNU_GETOPT_INTERFACE_VERSION == GETOPT_INTERFACE_VERSION
++#   define ELIDE_CODE
++#  endif
+ # endif
+ #endif
+ 
+--- grep-2.4.2/src/getopt1.c.orig	Thu Jan 20 05:43:02 2000
++++ grep-2.4.2/src/getopt1.c	Tue Mar 20 20:10:10 2001
+@@ -43,11 +43,15 @@
+    it is simpler to just do this in the source for each such file.  */
+ 
+ #define GETOPT_INTERFACE_VERSION 2
+-#if !defined _LIBC && defined __GLIBC__ && __GLIBC__ >= 2
+-#include <gnu-versions.h>
+-#if _GNU_GETOPT_INTERFACE_VERSION == GETOPT_INTERFACE_VERSION
+-#define ELIDE_CODE
+-#endif
++#if !defined _LIBC && ((defined __GLIBC__ && __GLIBC__ >= 2) || defined __MINTLIB__)
++# if defined __MINTLIB__
++#  define ELIDE_CODE
++# else
++#  include <gnu-versions.h>
++#  if _GNU_GETOPT_INTERFACE_VERSION == GETOPT_INTERFACE_VERSION
++#   define ELIDE_CODE
++#  endif
++# endif
+ #endif
+ 
+ #ifndef ELIDE_CODE
