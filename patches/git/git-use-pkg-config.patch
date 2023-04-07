@@ -1,0 +1,74 @@
+--- a/configure.ac	2023-04-07 12:34:02.829341523 +0200
++++ b/configure.ac	2023-04-07 12:37:53.644949029 +0200
+@@ -594,18 +594,10 @@
+ 
+ if test -z "$NO_CURL"; then
+ 
+-AC_CHECK_PROG([CURL_CONFIG], [curl-config],
+-[curl-config],
+-[no])
++curl_version="`pkg-config --modversion libcurl`"
+ 
+-if test $CURL_CONFIG != no; then
+-    GIT_CONF_SUBST([CURL_CONFIG])
+-
+-    if test -z "$CURL_CONFIG_OPTS"; then
+-        CURL_CONFIG_OPTS="--libs"
+-    fi
+-
+-    CURL_LDFLAGS=$($CURL_CONFIG $CURL_CONFIG_OPTS)
++if test "$curl_version" != ""; then
++    CURL_LDFLAGS=$(pkg-config --libs libcurl)
+     AC_MSG_NOTICE([Setting CURL_LDFLAGS to '$CURL_LDFLAGS'])
+     GIT_CONF_SUBST([CURL_LDFLAGS], [$CURL_LDFLAGS])
+ fi
+--- a/Makefile	2023-04-07 12:54:27.879260465 +0200
++++ b/Makefile	2023-04-07 12:57:04.674994392 +0200
+@@ -56,12 +56,9 @@
+ # Define CURLDIR=/foo/bar if your curl header and library files are in
+ # /foo/bar/include and /foo/bar/lib directories.
+ #
+-# Define CURL_CONFIG to curl's configuration program that prints information
+-# about the library (e.g., its version number).  The default is 'curl-config'.
+-#
+ # Define CURL_LDFLAGS to specify flags that you need to link when using libcurl,
+-# if you do not want to rely on the libraries provided by CURL_CONFIG.  The
+-# default value is a result of `curl-config --libs`.  An example value for
++# if you do not want to rely on the libraries provided by pkg-config.  The
++# default value is a result of `pkg-config --libs libcurl`.  An example value for
+ # CURL_LDFLAGS is as follows:
+ #
+ #     CURL_LDFLAGS=-lcurl
+@@ -572,7 +569,6 @@
+ TCLTK_PATH = wish
+ XGETTEXT = xgettext
+ MSGFMT = msgfmt
+-CURL_CONFIG = curl-config
+ PTHREAD_LIBS = -lpthread
+ PTHREAD_CFLAGS =
+ GCOV = gcov
+@@ -1340,7 +1336,7 @@
+ ifdef CURL_LDFLAGS
+ 	CURL_LIBCURL += $(CURL_LDFLAGS)
+ else
+-	CURL_LIBCURL += $(shell $(CURL_CONFIG) --libs)
++	CURL_LIBCURL += $(shell pkg-config --libs libcurl)
+ endif
+ 
+ 	REMOTE_CURL_PRIMARY = git-remote-http$X
+@@ -1348,13 +1344,13 @@
+ 	REMOTE_CURL_NAMES = $(REMOTE_CURL_PRIMARY) $(REMOTE_CURL_ALIASES)
+ 	PROGRAM_OBJS += http-fetch.o
+ 	PROGRAMS += $(REMOTE_CURL_NAMES)
+-	curl_check := $(shell (echo 070908; $(CURL_CONFIG) --vernum | sed -e '/^70[BC]/s/^/0/') 2>/dev/null | sort -r | sed -ne 2p)
++	curl_check := $(shell (echo 070908; pkg-config --modversion libcurl | sed -e 's/\\.//g' | sed -e '/^70[BC]/s/^/0/') 2>/dev/null | sort -r | sed -ne 2p)
+ 	ifeq "$(curl_check)" "070908"
+ 		ifndef NO_EXPAT
+ 			PROGRAM_OBJS += http-push.o
+ 		endif
+ 	endif
+-	curl_check := $(shell (echo 072200; $(CURL_CONFIG) --vernum | sed -e '/^70[BC]/s/^/0/') 2>/dev/null | sort -r | sed -ne 2p)
++	curl_check := $(shell (echo 072200; pkg-config --modversion libcurl | sed -e 's/\\.//g' | sed -e '/^70[BC]/s/^/0/') 2>/dev/null | sort -r | sed -ne 2p)
+ 	ifeq "$(curl_check)" "072200"
+ 		USE_CURL_FOR_IMAP_SEND = YesPlease
+ 	endif

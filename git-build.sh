@@ -19,6 +19,7 @@ patches/git/git-0007-Support-for-the-FreeMiNT-platform.patch
 patches/git/git-0008-Do-not-include-config.mak.uname-when-cross-compiling.patch
 patches/git/git-worktree-fix-worktree-add-race.patch
 patches/git/git-setup-don-t-fail-if-commondir-reference-is-deleted.patch
+patches/git/git-use-pkg-config.patch
 "
 POST_INSTALL_SCRIPTS="
 patches/git/git-apache2-gitweb.conf
@@ -44,19 +45,26 @@ srv
 
 unpack_archive
 
+cd "$srcdir"
+
+autoconf
+rm -rf autom4te.cache
+
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -Wall"
 
-CONFIGURE_FLAGS="--host=${TARGET} \
-	--prefix=${prefix} \
-	--sysconfdir=/etc \
-	--disable-nls \
-	--disable-shared \
-	--localstatedir=/var/lib \
-	--config-cache \
-	--with-libpcre2 \
-	--with-python=${prefix}/bin/python3"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
+	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}
+	--sysconfdir=/etc
+	--disable-nls
+	--disable-shared
+	--localstatedir=/var/lib
+	--config-cache
+	--with-libpcre2
+	--with-python=${prefix}/bin/python3
+"
+STACKSIZE="-Wl,-stack,128k"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -67,6 +75,8 @@ cat <<EOF >config.cache
 ac_cv_fread_reads_directories=yes
 ac_cv_snprintf_returns_bogus=no
 ac_cv_lib_curl_curl_global_init=yes
+ac_cv_header_pthread_h=no
+gl_have_pthread_h=no
 EOF
 	append_gnulib_cache
 }
@@ -121,14 +131,13 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 	create_config_cache
-	STACKSIZE="-Wl,-stack,128k"
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"$srcdir/configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir || exit 1
 	
-	all_make_args="${make_args} gitexecdir=${prefix}/libexec/git$multilibexecdir"
+	all_make_args="$JOBS ${make_args} gitexecdir=${prefix}/libexec/git$multilibexecdir"
 	hack_lto_cflags
 
 	${MAKE} ${all_make_args} || exit 1
