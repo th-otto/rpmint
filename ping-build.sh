@@ -15,7 +15,7 @@ patches/${PACKAGENAME}/ping-20190714-mint.patch
 
 BINFILES="
 /bin/ping
-${TARGET_MANDIR}/man8/ping.8.gz
+${TARGET_MANDIR}/man8/ping.8*
 "
 
 unpack_archive
@@ -26,8 +26,6 @@ cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
-
 NO_STRIP=1
 
 for CPU in ${ALL_CPUS}; do
@@ -37,10 +35,10 @@ for CPU in ${ALL_CPUS}; do
 
 	${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s -o ping ping.c ping_hostops.c -lm || exit 1
 	
-	mkdir -p "${THISPKG_DIR}${sysroot}"/bin
-	install -m 4555 ping "${THISPKG_DIR}${sysroot}"/bin
-	mkdir -p "${THISPKG_DIR}${sysroot}"${TARGET_MANDIR}/man8
-	install -m 444 ping.8 "${THISPKG_DIR}${sysroot}"${TARGET_MANDIR}/man8
+	mkdir -p "${THISPKG_DIR}${sysroot}/bin"
+	install -m 4555 ping "${THISPKG_DIR}${sysroot}/bin"
+	mkdir -p "${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man8"
+	install -m 444 ping.8 "${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man8"
 	
 	rm -f ping
 
