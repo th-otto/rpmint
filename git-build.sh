@@ -31,6 +31,7 @@ BINFILES="
 ${TARGET_BINDIR#/}/*
 ${TARGET_PREFIX#/}/libexec/git/*
 ${TARGET_MANDIR#/}/man1/*
+${TARGET_MANDIR#/}/man3/*
 ${TARGET_MANDIR#/}/man5/*
 ${TARGET_MANDIR#/}/man7/*
 ${TARGET_PREFIX#/}/share/doc/*

@@ -12,6 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/gawk/gawk-ppc64le_ignore_transient_test_time_failure.patch
 patches/gawk/gawk-4.1.4-mint.patch
+patches/gawk/gawk-libexecdir.patch
 "
 DISABLED_PATCHES="
 patches/automake/mintelf-config.sub
@@ -23,16 +24,18 @@ ${TARGET_BINDIR#/}/*
 ${TARGET_MANDIR#/}/man1/*
 ${TARGET_PREFIX#/}/share/info/*
 ${TARGET_PREFIX#/}/share/awk
+${TARGET_PREFIX#/}/libexec/awk/*
+${TARGET_PREFIX#/}/share/locale
 "
-if test "${TARGET}" = "m68k-atari-mint"; then
-BINFILES+=" ${TARGET_PREFIX#/}/share/locale"
-fi
 
 MINT_BUILD_DIR="$srcdir"
 
 unpack_archive
 
 cd "$srcdir"
+
+autoreconf -fiv
+rm -rf autom4te.cache
 
 cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
@@ -65,8 +68,8 @@ for CPU in ${ALL_CPUS}; do
 	CFLAGS="${CPU_CFLAGS} $COMMON_CFLAGS ${STACKSIZE}" \
 		"$srcdir/configure" ${CONFIGURE_FLAGS} \
 		--libdir='${exec_prefix}/lib'$multilibdir \
-		--libexecdir='${exec_prefix}/libexec'$multilibexecdir
-	hack_lto_cflags
+		--libexecdir='${exec_prefix}/libexec/awk'$multilibexecdir
+	: hack_lto_cflags
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/gawk${VERSION}

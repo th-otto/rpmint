@@ -23,6 +23,7 @@ Source1: patches/automake/mintelf-config.sub
 
 Patch0: patches/gawk/gawk-ppc64le_ignore_transient_test_time_failure.patch
 Patch1: patches/gawk/gawk-4.1.4-mint.patch
+Patch2: patches/gawk/gawk-libexecdir.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -44,6 +45,10 @@ awk.
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
+
+autoreconf -fiv
+rm -rf autom4te.cache
 
 cp %{S:1} config.sub
 
@@ -87,7 +92,7 @@ do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir \
-	--libexecdir='${exec_prefix}/libexec'$multilibexecdir
+	--libexecdir='${exec_prefix}/libexec/awk'$multilibexecdir
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
