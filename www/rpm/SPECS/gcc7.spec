@@ -1038,7 +1038,7 @@ rmdir ${PREFIX#/}/share || :
 %{gccsubdir}/*/libstdc++*
 %{gccsubdir}/libsupc++*
 %{gccsubdir}/*/libsupc++*
-%if %{gcc_major_ver} >= 12
+%if %{gcc_major_ver} >= 11
 %{gccsubdir}/g++-mapper-server
 %endif
 %endif

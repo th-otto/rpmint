@@ -1,4 +1,4 @@
-%define gcc_major_ver 10
+%define gcc_major_ver 11
 %define pkgname gcc%{gcc_major_ver}
 
 %rpmint_header
@@ -36,9 +36,9 @@
 
 Summary:        The system GNU C Compiler
 Name:           %{crossmint}%{pkgname}
-Version:        10.4.0
+Version:        11.3.0
 Release:        2
-%define releasedate 20230210
+%define releasedate 20230214
 License:        GPL-3.0+
 Group:          Development/Languages/C and C++
 %if "%{buildtype}" != "cross"
