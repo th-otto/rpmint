@@ -13,7 +13,7 @@ Packager:       %{packager}
 URL:            http://windom.sourceforge.net/
 
 Prefix:         %{_rpmint_target_prefix}
-Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: %{pkgname}-%{version}.tar.xz
@@ -25,7 +25,8 @@ Patch3: patches/windom/windom-gemlib.patch
 
 %rpmint_essential
 BuildRequires:  make
-Provides:       %{crossmint}libwindom1-devel
+BuildRequires:  %{crossmint}libldg-devel
+Provides:       %{crossmint}libwindom-devel
 
 %rpmint_build_arch
 
