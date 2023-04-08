@@ -5,7 +5,7 @@
 Summary:        Archiver for .lzh files
 Name:           %{crossmint}%{pkgname}
 Version:        1.14i
-Release:        ac20050924p1
+Release:        1
 License:        ISC
 Group:          Productivity/Archiving/Compression
 
@@ -16,7 +16,7 @@ Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: %{pkgname}-%{version}-%{release}.tar.gz
+Source0: %{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
 
 Patch0: patches/lha/lha-1.14i-ext.patch
@@ -34,7 +34,7 @@ LICENSE. It is written in man/lha.n in Japanese
 
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
-%setup -q -n %{pkgname}-%{version}-%{release}
+%setup -q -n %{pkgname}-%{version}
 
 %patch0 -p1
 

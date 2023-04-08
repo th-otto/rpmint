@@ -4,7 +4,7 @@
 
 Summary:        Utilities for system wide CA certificate installation
 Name:           %{crossmint}%{pkgname}
-Version:        git10b2785
+Version:        10b2785
 Release:        1
 License:        GPL-2.0-or-later
 Group:          Productivity/Networking/Security

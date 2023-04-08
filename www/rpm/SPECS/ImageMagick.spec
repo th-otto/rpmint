@@ -2,7 +2,7 @@
 
 %rpmint_header
 
-Summary       : An X application for displaying and manipulating images.
+Summary       : An X application for displaying and manipulating images
 Name          : %{crossmint}%{pkgname}
 Version       : 5.3.6
 Release       : 1

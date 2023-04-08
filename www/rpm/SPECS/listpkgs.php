@@ -23,20 +23,7 @@ if (isset($_SERVER["argv"][1]) && $_SERVER["argv"][1] === "--names")
 		$summary = isset($package['summary']) ? $package['summary'] : '';
 		if ($license !== '')
 		{
-			$license_check = $license;
-			if (preg_match('/(.*) WITH (.*)/', $license, $match))
-			{
-				$license_check = $match[1];
-				if (!array_key_exists($match[2], $license_exceptions))
-					fprintf(STDERR, "$key: unknown license exception ${match[2]}\n");
-			}
-		}
-		foreach (preg_split('/( OR | AND | or | and )/', $license_check) as $l)
-		{
-			$l = str_replace('(', '', $l);
-			$l = str_replace(')', '', $l);
-			if (!array_key_exists($l, $licenses))
-				fprintf(STDERR, "$key: unknown license $l\n");
+			License::check($package['name'], $license);
 		}
 		printf("%-30s %-20s %-20s %s\n", $package['name'], $package['version'], $license, $summary);
 	}

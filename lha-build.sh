@@ -4,7 +4,8 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=lha
-VERSION=-1.14i-ac20050924p1
+VERSION=-1.14i
+#-ac20050924p1
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh

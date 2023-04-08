@@ -2,7 +2,7 @@
 
 %rpmint_header
 
-Summary:        A DHCP (Dynamic Host Configuration Protocol) server and relay agent.
+Summary:        A DHCP (Dynamic Host Configuration Protocol) server and relay agent
 Name:           %{crossmint}%{pkgname}
 Version:        3.1.ESV
 Release:        1

@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=ca-certificates
-VERSION=-git10b2785
+VERSION=-10b2785
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh

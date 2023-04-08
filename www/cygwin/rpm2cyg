@@ -29,7 +29,6 @@ fi
 for pkgname in $pkgnames; do
 	cd "$here"
 
-	specname=`echo $pkgname | tr '[[:upper:]]' '[[:lower:]]'`
 	#
 	# Do not auto-generate hint file for gcc & binutils,
 	# these have been manually created
@@ -38,10 +37,15 @@ for pkgname in $pkgnames; do
 		gcc* | binutils* | mintbin*) continue; ;;
 	esac
 
+	specname="$pkgname"
 	specfile="${topdir}/SPECS/${specname}.spec"
 	if ! test -f "$specfile"; then
-		$ECHO_E "package ${red}${pkgname}${coff} not found" >&2
-		continue
+		specname=`echo $pkgname | tr '[[:upper:]]' '[[:lower:]]'`
+		specfile="${topdir}/SPECS/${specname}.spec"
+		if ! test -f "$specfile"; then
+			$ECHO_E "package ${red}${pkgname}${coff} not found" >&2
+			continue
+		fi
 	fi
 	
 	fullname=`sed -n 's/Name[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1 | sed -e "s/%{pkgname}/${pkgname}/" | sed -e "s/%{crossmint}/cross-mint-/"`
@@ -146,6 +150,7 @@ EOF
 		zip) srcname=zip30 ;;
 		unzip) srcname=unzip60 ;;
 		bash) srcname=$pkgname-${version%.*} ;;
+		SDL) srcname=$pkgname-$version-hg ;;
 		*) srcname=$pkgname-$version ;;
 	esac
 	found=false
