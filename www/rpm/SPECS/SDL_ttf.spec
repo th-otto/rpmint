@@ -1,17 +1,17 @@
-%define pkgname SDL_net
+%define pkgname SDL_ttf
 
 %rpmint_header
 
-Summary:        SDL networking library
+Summary:        SDL TrueType library
 Name:           %{crossmint}%{pkgname}
-Version:        1.2.8
+Version:        2.0.11
 Release:        1
 License:        Zlib
 Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            http://libsdl.org/projects/SDL_net/release-1.2.html
-VCS:            https://github.com/libsdl-org/SDL_net/tree/SDL-1.2
+URL:            http://libsdl.org/projects/SDL_ttf/release-1.2.html
+VCS:            https://github.com/libsdl-org/SDL_ttf/tree/SDL-1.2
 
 Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
@@ -21,24 +21,37 @@ BuildRoot:      %{_tmppath}/%{name}-root
 Source0: %{pkgname}-%{version}.tar.bz2
 Source1: patches/automake/mintelf-config.sub
 
-Patch0: patches/sdl_net/sdl_net-config.patch
+Patch0: patches/sdl_ttf/sdl_ttf-config.patch
+Patch1: patches/sdl_ttf/sdl_ttf-amigaos.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  libtool
 BuildRequires:  make
 BuildRequires:  %{crossmint}libSDL-devel >= 1.2.15
-Provides:       %{crossmint}libSDL_net-devel = %{version}
+BuildRequires:  %{crossmint}freetype2-devel
+BuildRequires:  %{crossmint}libbz2-devel
+BuildRequires:  %{crossmint}libpng-devel
+BuildRequires:  %{crossmint}zlib-devel
+Provides:       %{crossmint}libSDL_ttf-devel = %{version}
 
 %rpmint_build_arch
 
 %description
-This is a small cross-platform networking library for use with SDL.
+This is a sample library that allows you to use TrueType fonts in your
+SDL applications.
+
+The correct link command (order is important) is:
+
+-lSDL -lSDL_ttf -lfreetype -lpng -lz -lbz2 -lgem -lm
+
+See also other hints about SDL.
 
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
+%patch1 -p1
 
 
 rm -f aclocal.m4 ltmain.sh acinclude/libtool.m4 acinclude/lt*
@@ -138,5 +151,4 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %changelog
 * Sat Apr 08 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
-- Update to version 1.2.8
-
+- Update to version 2.0.11

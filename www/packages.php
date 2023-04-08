@@ -2532,8 +2532,8 @@ See also other hints about SDL.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 1,
-		'license' => 'LGPL-2.1-or-later',
-		'category' => 'Development/Libraries/X11',
+		'license' => 'Zlib',
+		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'SDL TrueType library',
 		'comment' => '
 This is a sample library that allows you to use TrueType fonts in your
