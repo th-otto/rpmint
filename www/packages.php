@@ -2556,7 +2556,7 @@ See also other hints about SDL.
 		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
-		'license' => 'LGPL-2.1-or-later',
+		'license' => 'Zlib',
 		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'SDL networking library',
 		'comment' => '

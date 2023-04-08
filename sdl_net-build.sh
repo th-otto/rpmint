@@ -11,21 +11,24 @@ VERSIONPATCH=
 
 PATCHES="
 patches/sdl_net/sdl_net-config.patch
-patches/sdl_net/sdl_net-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
 
 cd "$srcdir"
 
-rm -f aclocal.m4 ltmain.sh
+rm -f aclocal.m4 ltmain.sh acinclude/libtool.m4 acinclude/lt*
 libtoolize --force || exit 1
 aclocal -I acinclude || exit 1
 autoconf || exit 1
-automake --add-missing || exit 1
+automake --force --copy --add-missing || exit 1
+rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/sdl_net-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
