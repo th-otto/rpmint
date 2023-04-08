@@ -37,7 +37,15 @@ if test -f ${pkgname}.spec; then
 else
 	spec=${topdir}/SPECS/${pkgname}.spec
 fi
-rpmbuild $quiet $nodeps -ba ${spec}
+
+case ${pkgname} in
+gnucobol*)
+	# gnucobol is not a cross-compiler
+	;;
+*)
+	rpmbuild $quiet $nodeps -ba ${spec}
+	;;
+esac
 rpmbuild $quiet --nodeps --target m68k-atari-mint --define="buildtype 000" -ba ${spec}
 rpmbuild $quiet --nodeps --target m68020-atari-mint --define="buildtype 020" -bb ${spec}
 rpmbuild $quiet --nodeps --target m5475-atari-mint --define="buildtype v4e" -bb ${spec}
