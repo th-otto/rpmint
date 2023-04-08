@@ -1138,3 +1138,32 @@ rmdir ${PREFIX#/}/share || :
 
 * Fri Aug 21 2020 Thorsten Otto <admin@tho-otto.de>
 - first RPMint spec file
+- Update to version 4.6.4
+
+* Mon Jan 03 2011 Keith Scroggins <kws@radix.net>
+- GCC 4.5.2 for FreeMiNT
+
+* Thu Dec 23 2010 Keith Scroggins <kws@radix.net>
+- Built with latest (2.21) Binutils
+
+* Tue Aug 03 2010 Keith Scroggins <kws@radix.net>
+- GCC 4.5.1 for FreeMiNT
+
+* Sun May 30 2010 Keith Scroggins <kws@radix.net>
+- GCC 4.5.0 for FreeMiNT
+
+* Wed Jan 23 2008 Keith Scroggins <kws@radix.net>
+- Initial native build of GCC 4.2.2 for MiNT, only the C and C++ 
+- compilers, with patches from Vincent Riviere and Miro Kropacek
+
+* Thu Feb 27 2003 Frank Naumann <fnaumann@freemint.de>
+- fixed bug in -pg option for the mint port
+
+* Sat Mar 17 2001 Frank Naumann <fnaumann@freemint.de>
+- updated to 2.95.3
+
+* Sat Mar 03 2001 Frank Naumann <fnaumann@freemint.de>
+- rebuild against MiNTLib 0.56
+
+* Sat Feb 29 2000 Frank Naumann <fnaumann@freemint.de>
+- initial Sparemint release
