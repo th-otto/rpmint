@@ -34,7 +34,7 @@ BuildRequires:  %{crossmint}zlib-devel
 BuildRequires:  %{crossmint}xz-devel
 BuildRequires:  %{crossmint}libwebp-devel
 BuildRequires:  %{crossmint}libpng-devel
-Provides:       %{crossmint}libSDL_image-devel
+Provides:       %{crossmint}libSDL_image-devel = %{version}
 
 %rpmint_build_arch
 

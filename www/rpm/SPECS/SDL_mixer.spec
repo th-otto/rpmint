@@ -1,66 +1,84 @@
-%define pkgname SDL
+%define pkgname SDL_mixer
 
 %rpmint_header
 
-Summary:        Simple DirectMedia Layer Library
+Summary:        SDL sound mixer library
 Name:           %{crossmint}%{pkgname}
-Version:        1.2.16
+Version:        1.2.13
 Release:        1
-License:        LGPL-2.1-or-later
-Group:          Development/Libraries/X11
+License:        Zlib
+Group:          Development/Libraries/C and C++
 
 Packager:       Thorsten Otto <admin@tho-otto.de>
-URL:            https://www.libsdl.org/
-VCS:            https://github.com/SDL-mirror/SDL/tree/SDL-1.2
+URL:            http://libsdl.org/projects/SDL_mixer/release-1.2.html
+VCS:            https://github.com/libsdl-org/SDL_mixer/tree/SDL-1.2
 
 Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
 
-Source0: %{pkgname}-%{version}-hg.tar.xz
+Source0: %{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0:  patches/sdl/sdl-1.2.16-asm.patch
-Patch1:  patches/sdl/sdl-gsxb.patch
+
+Patch0: patches/sdl_mixer/sdl_mixer-double-free-crash.patch
+Patch1: patches/sdl_mixer/sdl_mixer-config.patch
+patch2: patches/sdl_mixer/sdl_mixer-amigaos.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  libtool
 BuildRequires:  make
-BuildRequires:  %{crossmint}gemlib
-Provides:       %{crossmint}libSDL-devel = %{version}
-Provides:       %{crossmint}SDL-devel = %{version}
+BuildRequires:  %{crossmint}libSDL-devel >= 1.2.15
+BuildRequires:  %{crossmint}libogg-devel
+BuildRequires:  %{crossmint}libvorbis-devel
+BuildRequires:  %{crossmint}libmikmod-devel
+BuildRequires:  %{crossmint}libFLAC-devel
+BuildRequires:  %{crossmint}mpg123-devel
+Provides:       %{crossmint}libSDL_mixer-devel = %{version}
 
 %rpmint_build_arch
 
 %description
-SDL is the Simple DirectMedia Layer library. It is a low-level and cross-platform
-library for building games or similar programs.
-Thanks to Patrice Mandin, SDL is available on Atari platforms. SDL programs can
-run either in full screen or in a GEM window, depending on the SDL_VIDEODRIVER
-environment variable.
+A multichannel audio mixer. It supports four channels of 16-bit stereo
+audio, plus a single channel of music, mixed by the popular MikMod MOD,
+Timidity MIDI, and SMPEG MP3 libraries.
 
-Cross compiling hint: in many autoconf/automake based packages, the presence of SDL
-is checked for by searching for a sdl-config script. Most likely, the one found will
-be the one for your host system. This has the bad effect of adding absolute
-search paths like /usr/include/SDL and /usr/lib. If that happens, you have to
-manually edit config.status after running configure, and remove those flags.
-In some cases, you have to add -I/usr/m68k-atari-mint/sys-root/usr/include/SDL instead.
+Cross compiling hint: on modern platforms, it is sufficient to just link
+against SDL_mixer, because the other libraries are referenced there as
+shared libraries. Since for atari we have only static libraries, you
+have to link those explicitly. The correct link command (order is important) is:
+
+-lSDL_mixer -lSDL -lFLAC -lvorbisfile -lvorbis -lmikmod -logg -lmpg123 -lgem -lm
+
+See also other hints about SDL.
 
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
-%setup -q -n %{pkgname}-%{version}-hg
-%patch0 -p1
+%setup -q -n %{pkgname}-%{version}
+#%%patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
-rm -f aclocal.m4 ltmain.sh acinclude/libtool.m4 acinclude/lt*
+
+rm -f aclocal.m4 build-scripts/ltmain.sh acinclude/libtool.m4 acinclude/lt*
 libtoolize --force
 aclocal -I acinclude
 autoconf
-#automake --force --copy --add-missing
+# automake --force --copy --add-missing
 rm -rf autom4te.cache config.h.in.orig
 
 cp %{S:1} build-scripts/config.sub
+
+#
+# check that sdl.pc was installed.
+# without it, SDL.m4 uses the sdl-config script from the host
+# which does not work when cross-compiling
+#
+if test "`pkg-config --modversion sdl 2>/dev/null`" = ""; then
+	echo "SDL and/or sdl.pc is missing" >&2
+	exit 1
+fi
 
 %build
 
@@ -69,8 +87,7 @@ cp %{S:1} build-scripts/config.sub
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-	--disable-video-opengl
-	--disable-threads
+	--disable-shared
 "
 
 for CPU in ${ALL_CPUS}; do
@@ -79,13 +96,11 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s" \
+	LIBS="-lm" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
-
-	# ICONV isn't really used
-	sed -i 's/ -liconv//' config.status
-	./config.status
 
 	make %{?_smp_mflags}
 	make DESTDIR="%{buildroot}%{_rpmint_sysroot}" install
@@ -131,10 +146,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %files
 %defattr(-,root,root)
 %license COPYING
-%doc README* BUGS CREDITS TODO WhatsNew
+%doc README* CHANGES
 %{_isysroot}%{_rpmint_target_prefix}/include
 %{_isysroot}%{_rpmint_target_prefix}/lib
-%{_isysroot}%{_rpmint_target_prefix}/share
 %if "%{buildtype}" == "cross"
 %{_rpmint_cross_pkgconfigdir}
 %endif
@@ -144,5 +158,5 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %changelog
 * Sat Apr 08 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
-- Update to version 1.2.16-hg
+- Update to version 1.2.13
 

@@ -51,7 +51,12 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	LIBS="-lm" \
 	${srcdir}/configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
+
 	hack_lto_cflags
+	# ICONV isn't really used
+	sed -i 's/ -liconv//' config.status
+	./config.status
+
 	${MAKE} $JOBS || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
