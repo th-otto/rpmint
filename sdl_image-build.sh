@@ -4,14 +4,16 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=SDL_image
-VERSION=-1.2.12
+VERSION=-1.2.13
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
 patches/sdl_image/sdl_image-config.patch
-patches/sdl_image/sdl_image-mintelf-config.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive
@@ -23,9 +25,10 @@ libtoolize --force || exit 1
 aclocal -I acinclude || exit 1
 autoconf || exit 1
 automake --add-missing || exit 1
+rm -rf autom4te.cache config.h.in.orig
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/sdl_image-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 

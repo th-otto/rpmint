@@ -22,7 +22,6 @@ BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: http://tukaani.org/xz/%{pkgname}-%{version}.tar.xz
 Source1: patches/automake/mintelf-config.sub
-Patch1: patches/%{pkgname}/xz-mintelf-config.patch
 
 %rpmint_essential
 BuildRequires:  autoconf

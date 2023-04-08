@@ -2496,7 +2496,7 @@ See also other hints about SDL.
 		'name' => 'SDL_image',
 		'upstream' => 'http://libsdl.org/projects/SDL_image/release-1.2.html',
 		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
-		'version' => '1.2.12',
+		'version' => '1.2.13',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
