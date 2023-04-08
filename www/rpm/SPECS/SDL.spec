@@ -28,6 +28,7 @@ BuildRequires:  autoconf
 BuildRequires:  libtool
 BuildRequires:  make
 BuildRequires:  %{crossmint}gemlib
+BuildRequires:  %{crossmint}ldg-devel
 Provides:       %{crossmint}libSDL-devel = %{version}
 Provides:       %{crossmint}SDL-devel = %{version}
 
