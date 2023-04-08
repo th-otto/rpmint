@@ -11300,7 +11300,7 @@ index 8dba04fa8f8..65b32d57548 100644
  
    /** @namespace std::this_thread
 diff --git a/libstdc++-v3/include/std/tuple b/libstdc++-v3/include/std/tuple
-index f2d553f7035..e87bbfebb07 100644
+index f2d553f7035..628b7718db1 100644
 --- a/libstdc++-v3/include/std/tuple
 +++ b/libstdc++-v3/include/std/tuple
 @@ -220,23 +220,23 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -11470,7 +11470,7 @@ index f2d553f7035..e87bbfebb07 100644
  	{ }
  
        template<typename _Alloc>
-@@ -398,67 +398,73 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -398,67 +398,67 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  
        template<typename _Alloc>
          _Tuple_impl(allocator_arg_t __tag, const _Alloc& __a,
@@ -11489,15 +11489,11 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _Alloc, typename _UHead>
  	_Tuple_impl(allocator_arg_t __tag, const _Alloc& __a,
-+<<<<<<< HEAD
+-	            const _Tuple_impl<_Idx, _UHead>& __in)
 +	            const _Tuple_impl<_Idx, _UHead>& ___in)
-+	: _Base(__use_alloc<_Head, _Alloc, _Head>(__a),
-+		_Tuple_impl<_Idx, _UHead>::_M_head(___in)) { }
-+=======
- 	            const _Tuple_impl<_Idx, _UHead>& __in)
  	: _Base(__use_alloc<_Head, _Alloc, const _UHead&>(__a),
- 		_Tuple_impl<_Idx, _UHead>::_M_head(__in)) { }
-+>>>>>>> releases/gcc-8.5.0
+-		_Tuple_impl<_Idx, _UHead>::_M_head(__in)) { }
++		_Tuple_impl<_Idx, _UHead>::_M_head(___in)) { }
  
        template<typename _Alloc, typename _UHead>
  	_Tuple_impl(allocator_arg_t __tag, const _Alloc& __a,
@@ -11560,7 +11556,7 @@ index f2d553f7035..e87bbfebb07 100644
        }
      };
  
-@@ -675,8 +681,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -675,8 +675,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && _TNTC<_Dummy>::template
                      _NonNestedTuple<const tuple<_UElements...>&>(),
          bool>::type=true>
@@ -11571,7 +11567,7 @@ index f2d553f7035..e87bbfebb07 100644
          { }
  
        template<typename... _UElements, typename _Dummy = void, typename
-@@ -687,8 +693,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -687,8 +687,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && _TNTC<_Dummy>::template
                      _NonNestedTuple<const tuple<_UElements...>&>(),
          bool>::type=false>
@@ -11582,7 +11578,7 @@ index f2d553f7035..e87bbfebb07 100644
          { }
  
        template<typename... _UElements, typename _Dummy = void, typename
-@@ -699,8 +705,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -699,8 +699,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && _TNTC<_Dummy>::template
                      _NonNestedTuple<tuple<_UElements...>&&>(),
          bool>::type=true>
@@ -11593,7 +11589,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename... _UElements, typename _Dummy = void, typename
          enable_if<_TMCT<_UElements...>::template
-@@ -710,8 +716,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -710,8 +710,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && _TNTC<_Dummy>::template
                      _NonNestedTuple<tuple<_UElements...>&&>(),
          bool>::type=false>
@@ -11604,7 +11600,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        // Allocator-extended constructors.
  
-@@ -764,12 +770,12 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -764,12 +764,12 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
          { }
  
        template<typename _Alloc>
@@ -11621,7 +11617,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _Alloc, typename _Dummy = void,
  	       typename... _UElements, typename
-@@ -781,9 +787,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -781,9 +781,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                      _NonNestedTuple<tuple<_UElements...>&&>(),
          bool>::type=true>
  	tuple(allocator_arg_t __tag, const _Alloc& __a,
@@ -11633,7 +11629,7 @@ index f2d553f7035..e87bbfebb07 100644
  	{ }
  
        template<typename _Alloc, typename _Dummy = void,
-@@ -796,9 +802,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -796,9 +796,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                      _NonNestedTuple<tuple<_UElements...>&&>(),
          bool>::type=false>
  	explicit tuple(allocator_arg_t __tag, const _Alloc& __a,
@@ -11645,7 +11641,7 @@ index f2d553f7035..e87bbfebb07 100644
  	{ }
  
        template<typename _Alloc, typename _Dummy = void,
-@@ -811,9 +817,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -811,9 +811,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                      _NonNestedTuple<tuple<_UElements...>&&>(),
          bool>::type=true>
  	tuple(allocator_arg_t __tag, const _Alloc& __a,
@@ -11657,7 +11653,7 @@ index f2d553f7035..e87bbfebb07 100644
  	{ }
  
        template<typename _Alloc, typename _Dummy = void,
-@@ -826,23 +832,23 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -826,23 +826,23 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                      _NonNestedTuple<tuple<_UElements...>&&>(),
          bool>::type=false>
  	explicit tuple(allocator_arg_t __tag, const _Alloc& __a,
@@ -11687,7 +11683,7 @@ index f2d553f7035..e87bbfebb07 100644
  	return *this;
        }
  
-@@ -850,9 +856,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -850,9 +850,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  	typename
  	       enable_if<sizeof...(_UElements)
  			 == sizeof...(_Elements), tuple&>::type
@@ -11699,7 +11695,7 @@ index f2d553f7035..e87bbfebb07 100644
  	  return *this;
  	}
  
-@@ -860,16 +866,16 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -860,16 +860,16 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  	typename
  	       enable_if<sizeof...(_UElements)
  			 == sizeof...(_Elements), tuple&>::type
@@ -11721,7 +11717,7 @@ index f2d553f7035..e87bbfebb07 100644
      };
  
  #if __cpp_deduction_guides >= 201606
-@@ -992,8 +998,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -992,8 +992,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && _TMC::template
                      _ImplicitlyConvertibleTuple<_U1, _U2>(),
  	bool>::type = true>
@@ -11732,7 +11728,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _U1, typename _U2, typename
          enable_if<_TMC::template
-@@ -1001,8 +1007,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1001,8 +1001,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && !_TMC::template
                      _ImplicitlyConvertibleTuple<_U1, _U2>(),
  	bool>::type = false>
@@ -11743,7 +11739,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _U1, typename _U2, typename
          enable_if<_TMC::template
-@@ -1010,8 +1016,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1010,8 +1010,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && _TMC::template
                      _ImplicitlyMoveConvertibleTuple<_U1, _U2>(),
  	bool>::type = true>
@@ -11754,7 +11750,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _U1, typename _U2, typename
          enable_if<_TMC::template
-@@ -1019,8 +1025,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1019,8 +1019,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && !_TMC::template
                      _ImplicitlyMoveConvertibleTuple<_U1, _U2>(),
  	bool>::type = false>
@@ -11765,7 +11761,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _U1, typename _U2, typename
          enable_if<_TMC::template
-@@ -1028,8 +1034,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1028,8 +1028,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && _TMC::template
                      _ImplicitlyConvertibleTuple<_U1, _U2>(),
  	bool>::type = true>
@@ -11776,7 +11772,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _U1, typename _U2, typename
          enable_if<_TMC::template
-@@ -1037,8 +1043,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1037,8 +1037,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && !_TMC::template
                      _ImplicitlyConvertibleTuple<_U1, _U2>(),
  	bool>::type = false>
@@ -11787,7 +11783,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _U1, typename _U2, typename
          enable_if<_TMC::template
-@@ -1046,9 +1052,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1046,9 +1046,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && _TMC::template
                      _ImplicitlyMoveConvertibleTuple<_U1, _U2>(),
  	bool>::type = true>
@@ -11800,7 +11796,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _U1, typename _U2, typename
          enable_if<_TMC::template
-@@ -1056,9 +1062,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1056,9 +1056,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && !_TMC::template
                      _ImplicitlyMoveConvertibleTuple<_U1, _U2>(),
  	bool>::type = false>
@@ -11813,7 +11809,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        // Allocator-extended constructors.
  
-@@ -1112,12 +1118,12 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1112,12 +1112,12 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
  	             std::forward<_U2>(__a2)) { }
  
        template<typename _Alloc>
@@ -11830,7 +11826,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _Alloc, typename _U1, typename _U2, typename
          enable_if<_TMC::template
-@@ -1126,9 +1132,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1126,9 +1126,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                      _ImplicitlyConvertibleTuple<_U1, _U2>(),
  	bool>::type = true>
  	tuple(allocator_arg_t __tag, const _Alloc& __a,
@@ -11842,7 +11838,7 @@ index f2d553f7035..e87bbfebb07 100644
  	{ }
  
        template<typename _Alloc, typename _U1, typename _U2, typename
-@@ -1138,9 +1144,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1138,9 +1138,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                      _ImplicitlyConvertibleTuple<_U1, _U2>(),
  	bool>::type = false>
  	explicit tuple(allocator_arg_t __tag, const _Alloc& __a,
@@ -11854,7 +11850,7 @@ index f2d553f7035..e87bbfebb07 100644
  	{ }
  
        template<typename _Alloc, typename _U1, typename _U2, typename
-@@ -1149,8 +1155,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1149,8 +1149,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && _TMC::template
                      _ImplicitlyMoveConvertibleTuple<_U1, _U2>(),
  	bool>::type = true>
@@ -11865,7 +11861,7 @@ index f2d553f7035..e87bbfebb07 100644
  	{ }
  
        template<typename _Alloc, typename _U1, typename _U2, typename
-@@ -1160,8 +1166,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1160,8 +1160,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                      _ImplicitlyMoveConvertibleTuple<_U1, _U2>(),
  	bool>::type = false>
  	explicit tuple(allocator_arg_t __tag, const _Alloc& __a,
@@ -11876,7 +11872,7 @@ index f2d553f7035..e87bbfebb07 100644
  	{ }
  
        template<typename _Alloc, typename _U1, typename _U2, typename
-@@ -1171,8 +1177,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1171,8 +1171,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                      _ImplicitlyConvertibleTuple<_U1, _U2>(),
  	bool>::type = true>
          tuple(allocator_arg_t __tag, const _Alloc& __a,
@@ -11887,7 +11883,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _Alloc, typename _U1, typename _U2, typename
          enable_if<_TMC::template
-@@ -1181,8 +1187,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1181,8 +1181,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                      _ImplicitlyConvertibleTuple<_U1, _U2>(),
  	bool>::type = false>
          explicit tuple(allocator_arg_t __tag, const _Alloc& __a,
@@ -11898,7 +11894,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _Alloc, typename _U1, typename _U2, typename
          enable_if<_TMC::template
-@@ -1190,9 +1196,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1190,9 +1190,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                    && _TMC::template
                      _ImplicitlyMoveConvertibleTuple<_U1, _U2>(),
  	bool>::type = true>
@@ -11911,7 +11907,7 @@ index f2d553f7035..e87bbfebb07 100644
  
        template<typename _Alloc, typename _U1, typename _U2, typename
          enable_if<_TMC::template
-@@ -1201,63 +1207,63 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -1201,63 +1201,63 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
                      _ImplicitlyMoveConvertibleTuple<_U1, _U2>(),
  	bool>::type = false>
          explicit tuple(allocator_arg_t __tag, const _Alloc& __a,

@@ -34,18 +34,8 @@
 %define build_objc 1
 %endif
 
-%if "%{buildtype}" == "cross"
-%define cross_pkgname  cross-mint-%{pkgname}
-%else
-%define cross_pkgname  %{pkgname}
-%endif
-
 Summary:        The system GNU C Compiler
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        7.5.0
 Release:        2
 %define releasedate 20230210
@@ -55,9 +45,9 @@ Group:          Development/Languages/C and C++
 Provides:       c_compiler
 %endif
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-gcc = %{version}-%{release}
+Provides:       %{crossmint}gcc = %{version}-%{release}
 %if %{build_32bit}
-Provides:       cross-mint-gcc-32bit = %{version}-%{release}
+Provides:       %{crossmint}gcc-32bit = %{version}-%{release}
 %endif
 %endif
 
@@ -117,8 +107,8 @@ BuildRequires:  isl >= 0.18
 %define _host_cpu i686
 %define _arch i686
 BuildRequires:  gcc-c++-32bit
-BuildRequires:  cross-mint-binutils-32bit
-Provides:       cross-mint-%{pkgname}-32bit = %{version}-%{release}
+BuildRequires:  %{crossmint}binutils-32bit
+Provides:       %{crossmint}%{pkgname}-32bit = %{version}-%{release}
 %else
 BuildRequires:  gcc-c++
 %endif
@@ -126,6 +116,7 @@ BuildRequires:  gcc-c++
 BuildRequires:  cross-mint-%{pkgname} = %{version}
 BuildRequires:  cross-mint-mintlib
 BuildRequires:  cross-mint-fdlibm
+
 %define _target_platform %{_rpmint_target_platform}
 %if "%{buildtype}" == "v4e"
 %define _arch m5475
@@ -139,7 +130,9 @@ BuildRequires:  cross-mint-fdlibm
 %endif
 
 %description
-The system GNU C Compiler.
+The GNU Compiler Collection includes front ends for C, C++,
+Objective-C, Fortran, and Go, as well as libraries for these
+languages (libstdc++, libgcj,...).
 
 %package c++
 Summary:        The GNU C++ Compiler
@@ -148,11 +141,11 @@ Group:          Development/Languages/C and C++
 Requires:       %{name} = %{version}-%{release}
 Requires:       %{name}-c++ = %{version}-%{release}
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-libstdc++-devel = %{version}-%{release}
-Provides:       cross-mint-c++ = %{version}-%{release}
-Provides:       cross-mint-gcc-c++ = %{version}-%{release}
+Provides:       %{crossmint}libstdc++-devel = %{version}-%{release}
+Provides:       %{crossmint}c++ = %{version}-%{release}
+Provides:       %{crossmint}gcc-c++ = %{version}-%{release}
 %if %{build_32bit}
-Provides:       cross-mint-gcc-c++-32bit = %{version}-%{release}
+Provides:       %{crossmint}gcc-c++-32bit = %{version}-%{release}
 %endif
 %else
 %if %{build_cp}
@@ -173,8 +166,8 @@ Group:          Development/Languages/Other
 Requires:       %{name} = %{version}-%{release}
 Requires:       %{name}-objc = %{version}-%{release}
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-libobjc = %{version}-%{release}
-Provides:       cross-mint-gcc-objc = %{version}-%{release}
+Provides:       %{crossmint}libobjc = %{version}-%{release}
+Provides:       %{crossmint}gcc-objc = %{version}-%{release}
 %else
 %if %{build_objc}
 BuildRequires:  cross-mint-%{pkgname}-objc = %{version}
@@ -196,7 +189,7 @@ Requires:       %{name}-c++ = %{version}-%{release}
 Requires:       %{name}-obj-c++ = %{version}-%{release}
 Requires:       %{name}-objc = %{version}-%{release}
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-gcc-obj-c++ = %{version}-%{release}
+Provides:       %{crossmint}gcc-obj-c++ = %{version}-%{release}
 %else
 %if %{build_objcp}
 BuildRequires:  cross-mint-%{pkgname}-obj-c++ = %{version}
@@ -216,8 +209,8 @@ Group:          Development/Languages/Other
 Requires:       %{name} = %{version}-%{release}
 Requires:       %{name}-ada = %{version}-%{release}
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-libada = %{version}-%{release}
-Provides:       cross-mint-gcc-ada = %{version}-%{release}
+Provides:       %{crossmint}libada = %{version}-%{release}
+Provides:       %{crossmint}gcc-ada = %{version}-%{release}
 %else
 %if %{build_ada}
 BuildRequires:  cross-mint-%{pkgname}-ada = %{version}
@@ -237,8 +230,8 @@ Group:          Development/Languages/Fortran
 Requires:       %{name} = %{version}-%{release}
 Requires:       %{name}-fortran = %{version}-%{release}
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-libgfortran = %{version}-%{release}
-Provides:       cross-mint-gcc-fortran = %{version}-%{release}
+Provides:       %{crossmint}libgfortran = %{version}-%{release}
+Provides:       %{crossmint}gcc-fortran = %{version}-%{release}
 %else
 %if %{build_fortran}
 BuildRequires:  cross-mint-%{pkgname}-fortran = %{version}
@@ -257,8 +250,8 @@ Group:          Development/Languages/Other
 Requires:       %{name} = %{version}-%{release}
 Requires:       %{name}-go = %{version}-%{release}
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-libgo = %{version}-%{release}
-Provides:       cross-mint-gcc-go = %{version}-%{release}
+Provides:       %{crossmint}libgo = %{version}-%{release}
+Provides:       %{crossmint}gcc-go = %{version}-%{release}
 %else
 %if %{build_go}
 BuildRequires:  cross-mint-%{pkgname}-go = %{version}
@@ -278,9 +271,9 @@ Group:          Development/Languages/Other
 Requires:       %{name} = %{version}-%{release}
 Requires:       %{name}-d = %{version}-%{release}
 %if "%{buildtype}" == "cross"
-Provides:       cross-mint-libgdruntime = %{version}-%{release}
-Provides:       cross-mint-libgphobos = %{version}-%{release}
-Provides:       cross-mint-gcc-d = %{version}-%{release}
+Provides:       %{crossmint}libgdruntime = %{version}-%{release}
+Provides:       %{crossmint}libgphobos = %{version}-%{release}
+Provides:       %{crossmint}gcc-d = %{version}-%{release}
 %else
 %if %{build_d}
 BuildRequires:  cross-mint-%{pkgname}-d = %{version}

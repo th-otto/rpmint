@@ -1,4 +1,4 @@
-%define gcc_major_ver 12
+%define gcc_major_ver 8
 %define pkgname gcc%{gcc_major_ver}
 
 %rpmint_header
@@ -16,7 +16,7 @@
 %define build_objc 0
 %define build_objcp 0
 %define build_go 0
-%define build_ada 1
+%define build_ada 0
 %define build_d 0
 %if %{gcc_major_ver} < 7
 %define build_fortran 0
@@ -36,9 +36,9 @@
 
 Summary:        The system GNU C Compiler
 Name:           %{crossmint}%{pkgname}
-Version:        12.2.0
+Version:        8.5.0
 Release:        2
-%define releasedate 20230210
+%define releasedate 20230226
 License:        GPL-3.0+
 Group:          Development/Languages/C and C++
 %if "%{buildtype}" != "cross"
