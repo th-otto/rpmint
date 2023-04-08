@@ -10142,7 +10142,7 @@ index 1c8625dc8e8..b3a3ee4d982 100644
  
    template<typename _Bi_iter,
 diff --git a/libstdc++-v3/include/bits/stl_algo.h b/libstdc++-v3/include/bits/stl_algo.h
-index b20f4566ab5..de8122fa906 100644
+index b20f4566ab5..45ea0c1dc08 100644
 --- a/libstdc++-v3/include/bits/stl_algo.h
 +++ b/libstdc++-v3/include/bits/stl_algo.h
 @@ -5756,7 +5756,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
@@ -10184,6 +10184,15 @@ index b20f4566ab5..de8122fa906 100644
  	     _Size __n, _UniformRandomBitGenerator&& __g)
      {
        using __distrib_type = uniform_int_distribution<_Size>;
+@@ -5794,7 +5794,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
+       using __uc_type = common_type_t<typename _Gen::result_type, _USize>;
+ 
+       if (__first == __last)
+-	return __out;
++	return ___out;
+ 
+       __distrib_type __d{};
+       _Size __unsampled_sz = std::distance(__first, __last);
 @@ -5816,7 +5816,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
  	      --__unsampled_sz;
  	      if (__p.first < __n)
@@ -12798,6 +12807,19 @@ index 18e8e3068c8..b002026fa33 100644
    tanhl(long double x)
    {
      return tanh((double) x);
+diff --git a/libstdc++-v3/src/filesystem/ops-common.h b/libstdc++-v3/src/filesystem/ops-common.h
+index 5c907fbca1e..459d14563a2 100644
+--- a/libstdc++-v3/src/filesystem/ops-common.h
++++ b/libstdc++-v3/src/filesystem/ops-common.h
+@@ -193,7 +193,7 @@ namespace __gnu_posix
+   file_time(const stat_type& st, std::error_code& ec) noexcept
+   {
+     using namespace std::chrono;
+-#ifdef _GLIBCXX_USE_ST_MTIM
++#if defined(_GLIBCXX_USE_ST_MTIM) && !defined(__MINT__)
+     time_t s = st.st_mtim.tv_sec;
+     nanoseconds ns{st.st_mtim.tv_nsec};
+ #else
 diff --git a/libtool.m4 b/libtool.m4
 index 5563a32992c..4300995bb24 100644
 --- a/libtool.m4
