@@ -40,6 +40,10 @@ for pkgname in $pkgnames; do
 	version=`sed -n 's/^Version[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
 	release=`sed -n 's/^[Rr]elease[ \t]*:[ \t]*\(.*\)/\1/p' "$specfile" | head -1`
 	arch=
+	case $pkgname in
+		bash) version=4.4.23
+		;;
+	esac
 	if test "$arch" = ""; then
 		rpmfile="$RPMS/noarch/${fullname}-${version}-${release}.noarch.rpm"
 		if test -f "$rpmfile"; then
@@ -74,7 +78,7 @@ for pkgname in $pkgnames; do
 	description=`rpm -q --queryformat '%{description}' "$rpmfile" | sed -e 's/^$/./' -e 's/^/ /'`
 	requires=`rpm -q --queryformat '[%{requires}\n]' "$rpmfile" | grep -v 'rpmlib(' | grep -v 'cmake(' | grep -v 'config(' | grep -v 'mono(' | grep -v "lib.*\.so" | grep -v /bin/ | grep -v /sbin/ | sed -e 's/pkgconfig(\(.*\))/\1/g' | sort -u`
 	group=`rpm -q --queryformat '%{group}' "$rpmfile"`
-	provides=`rpm -q --queryformat '[%{provides}\n]' "$rpmfile" | grep -v /bin/ | grep -v /sbin/ | grep -v '(x86-64)' | grep -v 'cmake(' | grep -v 'config(' | grep -v 'mono(' | sed -e 's/pkgconfig(\(.*\))/\1/g' | sort -u`
+	provides=`rpm -q --queryformat '[%{provides}\n]' "$rpmfile" | grep -v /bin/ | grep -v /sbin/ | grep -v '(x86-64)' | grep -v 'cmake(' | grep -v 'perl(' | grep -v 'config(' | grep -v 'mono(' | sed -e 's/pkgconfig(\(.*\))/\1/g' | sort -u`
 	
 	if test "${requires}" != ""; then
 		requires="Depends: "`echo ${requires} | sed -e 's/ /,/g'`"
@@ -96,7 +100,7 @@ for pkgname in $pkgnames; do
 	
 	cat << EOF > "DEBIAN/control"
 Package: ${fullname}
-Version: ${version}-${release}
+Version: ${version#git}-${release}
 Maintainer: ${maintainer}
 Architecture: ${arch}
 Homepage: ${url}
@@ -120,7 +124,7 @@ EOF
 
 	rm -rf $dirs
 	
-	dpkg --build . "$POOL/main" || exit 1
+	dpkg-deb --build . "$POOL/main" || exit 1
 	
 	debfile="${fullname}_${version}-${release}_${arch}.deb"
 	

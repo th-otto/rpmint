@@ -4,14 +4,18 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=SDL
-VERSION=-1.2.15-hg
+VERSION=-1.2.16-hg
 #VERSIONPATCH=-20171006
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/sdl/sdl-1.2.15-mintelf-config.patch \
-patches/sdl/sdl-1.2.15-asm.patch
+PATCHES="
+patches/sdl/sdl-1.2.16-asm.patch
+patches/sdl/sdl-gsxb.patch
+"
+DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 patches/sdl/sdl-1.2.15-c99.patch
 "
 
@@ -19,20 +23,23 @@ unpack_archive
 
 cd "$srcdir"
 
-rm -f aclocal.m4 ltmain.sh acinclude/libtool.m4
+rm -f aclocal.m4 ltmain.sh acinclude/libtool.m4 acinclude/lt*
 libtoolize --force || exit 1
 aclocal -I acinclude || exit 1
 autoconf || exit 1
-#automake --add-missing || exit 1
+#automake --force --copy --add-missing || exit 1
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/sdl-1.2.15-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build-scripts/config.sub
 
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-video-opengl --disable-threads ${CONFIGURE_FLAGS_AMIGAOS}"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
+	--disable-video-opengl
+	--disable-threads
+"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
@@ -43,12 +50,13 @@ for CPU in ${ALL_CPUS}; do
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	LIBS="-lm" \
-	${srcdir}/configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib/m68020-60'
+	${srcdir}/configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	hack_lto_cflags
 	${MAKE} $JOBS || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
-
+	rm -f "${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/sdl-config"
+	
 	${MAKE} clean >/dev/null
 
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/charset.alias

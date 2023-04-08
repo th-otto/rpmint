@@ -2117,6 +2117,8 @@ This notably applies to Perl and Python.
 
 <li>2023/04/01 Update tar to 1.34</li>
 
+<li>2023/04/08 Fix SDL library which had only the m68020 version; update to 1.2.16</li>
+
 </ul>
 
 <p></p>

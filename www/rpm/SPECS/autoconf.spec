@@ -46,7 +46,7 @@ because the person building the package is allowed to specify various
 configuration options.
 
 You should install autoconf if you are developing software and would
-like to create shell scripts to configure your source code packages.<br />
+like to create shell scripts to configure your source code packages.
 
 Note that the autoconf package is not required for the end user who may
 be configuring software with an autoconf-generated script; autoconf is
