@@ -37,7 +37,7 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} CC="${TARGET}-gcc" CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
 	install -Dpm 0755 mtm "${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/mtm"
 	install -Dpm 0644 mtm.1 "${THISPKG_DIR}${sysroot}${TARGET_MANDIR}/man1/mtm.1"
-	tic -s -x -o"${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/share/terminfo" mtm.ti
+	tic -s -x -o "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/share/terminfo" mtm.ti
 	${MAKE} clean
 	make_bin_archive $CPU
 done
