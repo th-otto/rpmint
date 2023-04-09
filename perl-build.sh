@@ -72,13 +72,15 @@ COMMON_CFLAGS="\
 	-D_FILE_OFFSET_BITS=64"
 OPT_CFLAGS="-O2 -fomit-frame-pointer -fwrapv"
 
-CONFIGURE_FLAGS=" \
-	--target=${TARGET} \
-	--prefix=${TARGET_PREFIX} \
-	-Dvendorprefix=${TARGET_PREFIX} \
-	-Dosname=mint \
-	-Dman1dir=${TARGET_MANDIR}/man1 \
-	-Dman3dir=${TARGET_PREFIX}/lib/perl5/man/man3"
+CONFIGURE_FLAGS="
+	--target=${TARGET}
+	--prefix=${TARGET_PREFIX}
+	-Dvendorprefix=${TARGET_PREFIX}
+	-Dosname=mint
+	-Dman1dir=${TARGET_MANDIR}/man1
+	-Dman3dir=${TARGET_PREFIX}/lib/perl5/man/man3
+"
+STACKSIZE="-Wl,-stack,512k"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -102,7 +104,6 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 	eval archname=\${CPU_ARCHNAME_$CPU}
-	STACKSIZE="-Wl,-stack,512k"
 
 	case $CPU in
 		v4e) longdblsize=8; longdblkind=0 ;;
@@ -131,7 +132,7 @@ for CPU in ${ALL_CPUS}; do
 
 	${MAKE} || exit 1
 	
-	# this is sometime not build???
+	# this is sometimes not build???
 	${MAKE} pod/perlmodlib.pod
 
 	buildroot="${THISPKG_DIR}${sysroot}"
@@ -139,7 +140,18 @@ for CPU in ${ALL_CPUS}; do
 
 	install -d -m 755 ${buildroot}${TARGET_LIBDIR}/perl5/vendor_perl/${VERSION#-}/${TARGET}${archname}
 	install -d -m 755 ${buildroot}${TARGET_LIBDIR}/perl5/site_perl/${VERSION#-}/${TARGET}${archname}
-	
+	gzip -9 -f ${buildroot}${TARGET_LIBDIR}/perl5/man/man3/*.3
+
+	# change a hardlink to a symlink
+	rm -f ${buildroot}${TARGET_PREFIX}/share/man/man1/perlthanks.1
+	$LN_S perlbug.1 ${buildroot}${TARGET_PREFIX}/share/man/man1/perlthanks.1
+
+	# shit, B:: files are interpreted as drive B: :-(
+	# how to handle this?
+	# the good thing is that rm can handle this
+	# the bad thing is that only rm work correct
+	rm -vf ${buildroot}${TARGET_LIBDIR}/perl5/man/man3/B::*
+
 	# install macros.perl file
 	install -D -m 644 macros.perl ${buildroot}${TARGET_SYSCONFDIR}/rpm/macros.perl
 	

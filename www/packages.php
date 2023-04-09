@@ -2031,7 +2031,7 @@ and 6.
 		'name' => 'elfutils',
 		'upstream' => 'https://sourceware.org/elfutils/',
 		'source' => 'ftp://sourceware.org/pub/%{name}/%{version}/%{name}-%{version}.tar.bz2',
-		'version' => '0.189',
+		'version' => '0.170',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
@@ -2495,7 +2495,7 @@ See also other hints about SDL.
 	'sdl_image' => array(
 		'name' => 'SDL_image',
 		'upstream' => 'http://libsdl.org/projects/SDL_image/release-1.2.html',
-		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
 		'version' => '1.2.13',
 		'patch' => 1,
 		'script' => 1,

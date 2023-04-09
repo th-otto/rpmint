@@ -93,7 +93,7 @@ try {
     } else if ($is_local)
     {
 		echo "<pre>\n";
-    	system("tar tvf $filename");
+    	system("LC_ALL=C.utf8 tar tvf $filename");
 		echo "</pre>\n";
     }
 } catch (UnexpectedValueException $e) {

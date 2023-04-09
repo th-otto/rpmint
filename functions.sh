@@ -43,7 +43,7 @@ sysroot=${prefix}/${TARGET}/sys-root
 #
 case $TARGET in
 	m68k-amigaos*)
-		prefix=/opt/amiga/m68k-amigaos
+		prefix=/opt/amiga
 		sysroot=
 		PATH="/opt/amiga/bin:$PATH"
 		TARGET_PREFIX=${prefix}

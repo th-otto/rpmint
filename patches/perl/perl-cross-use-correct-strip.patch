@@ -2,7 +2,7 @@ diff --git a/Configure b/Configure
 index 135ba4e8b8..82ddd93d89 100755
 --- a/Configure
 +++ b/Configure
-@@ -1169,6 +1169,7 @@ hostcat=''
+@@ -1185,6 +1185,7 @@ hostcat=''
  passcat=''
  orderlib=''
  ranlib=''
@@ -10,7 +10,7 @@ index 135ba4e8b8..82ddd93d89 100755
  d_perl_otherlibdirs=''
  otherlibdirs=''
  package=''
-@@ -2954,13 +2955,14 @@ $define|true|[yY]*)
+@@ -2972,13 +2971,14 @@ $define|true|[yY]*)
  	    # leave out ld, choosing it is more complex
  	    nm=`$echo $cc|$sed 's/-g[c\+][c\+]/-nm/'`
  	    ranlib=`$echo $cc|$sed 's/-g[c\+][c\+]/-ranlib/'`
@@ -26,17 +26,7 @@ index 135ba4e8b8..82ddd93d89 100755
  		eval xxx=\$$file
  		eval $file=$xxx$_exe
  		eval _$file=$xxx
-@@ -21424,6 +21426,9 @@ else
- 	fi
- fi
- $rm -f foo* bar*
-+if [ "X$strip" = "X" ]; then
-+    strip="strip:"
-+fi
- 
- : Check the max offset that gmtime and localtime accept
- echo "Checking max offsets that gmtime () accepts"
-@@ -24669,6 +24674,7 @@ randfunc='$randfunc'
+@@ -25343,6 +25348,7 @@ randfunc='$randfunc'
  random_r_proto='$random_r_proto'
  randseedtype='$randseedtype'
  ranlib='$ranlib'
@@ -48,7 +38,7 @@ diff --git a/Cross/config.sh-arm-linux b/Cross/config.sh-arm-linux
 index 3dcce31ab4..3ab73ef610 100644
 --- a/Cross/config.sh-arm-linux
 +++ b/Cross/config.sh-arm-linux
-@@ -977,6 +977,7 @@ randfunc='Perl_drand48'
+@@ -986,6 +986,7 @@ randfunc='Perl_drand48'
  random_r_proto='0'
  randseedtype='U32'
  ranlib=':'
@@ -60,7 +50,7 @@ diff --git a/Cross/config.sh-arm-linux-n770 b/Cross/config.sh-arm-linux-n770
 index b1a565da72..c1846e6c7d 100644
 --- a/Cross/config.sh-arm-linux-n770
 +++ b/Cross/config.sh-arm-linux-n770
-@@ -975,6 +975,7 @@ randfunc='Perl_drand48'
+@@ -853,6 +853,7 @@ randfunc='Perl_drand48'
  random_r_proto='0'
  randseedtype='U32'
  ranlib=':'
@@ -72,7 +62,7 @@ diff --git a/INSTALL b/INSTALL
 index 88d2c14bbd..03d68ceaab 100644
 --- a/INSTALL
 +++ b/INSTALL
-@@ -1910,8 +1910,8 @@ through
+@@ -1921,8 +1921,8 @@ through
  
  If the name of C<cc> has the usual GNU C semantics for cross
  compilers, that is, CPU-OS-gcc, the target architecture (C<targetarch>),
@@ -87,7 +77,7 @@ diff --git a/NetWare/config.wc b/NetWare/config.wc
 index 83a4fb374d..bac069dc0d 100644
 --- a/NetWare/config.wc
 +++ b/NetWare/config.wc
-@@ -950,6 +950,7 @@ randfunc='Perl_drand48'
+@@ -959,6 +959,7 @@ randfunc='Perl_drand48'
  random_r_proto='0'
  randseedtype='U32'
  ranlib='rem'
@@ -192,7 +182,7 @@ diff --git a/plan9/config_sh.sample b/plan9/config_sh.sample
 index 55945cc38c..d2de70eec4 100644
 --- a/plan9/config_sh.sample
 +++ b/plan9/config_sh.sample
-@@ -958,6 +958,7 @@ randfunc='rand'
+@@ -967,6 +967,7 @@ randfunc='rand'
  random_r_proto='0'
  randseedtype='unsigned'
  ranlib=':'
@@ -216,7 +206,7 @@ diff --git a/symbian/config.sh b/symbian/config.sh
 index a677551d83..e18071a1f5 100644
 --- a/symbian/config.sh
 +++ b/symbian/config.sh
-@@ -817,6 +817,7 @@ randfunc='drand48'
+@@ -822,6 +822,7 @@ randfunc='drand48'
  random_r_proto='0'
  randseedtype='int'
  ranlib=':'
@@ -228,7 +218,7 @@ diff --git a/win32/config.ce b/win32/config.ce
 index 2f2d70a567..349f73787b 100644
 --- a/win32/config.ce
 +++ b/win32/config.ce
-@@ -940,6 +940,7 @@ randfunc='Perl_drand48'
+@@ -949,6 +949,7 @@ randfunc='Perl_drand48'
  random_r_proto='0'
  randseedtype='U32'
  ranlib='rem'
@@ -240,7 +230,7 @@ diff --git a/win32/config.gc b/win32/config.gc
 index 46a6a7d70e..bc3a9ddd30 100644
 --- a/win32/config.gc
 +++ b/win32/config.gc
-@@ -970,6 +970,7 @@ randfunc='Perl_drand48'
+@@ -979,6 +979,7 @@ randfunc='Perl_drand48'
  random_r_proto='0'
  randseedtype='U32'
  ranlib='rem'
@@ -252,7 +242,7 @@ diff --git a/win32/config.vc b/win32/config.vc
 index a7cea270ce..5086b2e430 100644
 --- a/win32/config.vc
 +++ b/win32/config.vc
-@@ -969,6 +969,7 @@ randfunc='Perl_drand48'
+@@ -978,6 +978,7 @@ randfunc='Perl_drand48'
  random_r_proto='0'
  randseedtype='U32'
  ranlib='rem'
