@@ -2,7 +2,7 @@ Index: Python-2.7.10/Modules/_cursesmodule.c
 ===================================================================
 --- Python-2.7.10.orig/Modules/_cursesmodule.c
 +++ Python-2.7.10/Modules/_cursesmodule.c
-@@ -807,7 +807,7 @@ PyCursesWindow_EchoChar(PyCursesWindowOb
+@@ -809,7 +809,7 @@ PyCursesWindow_EchoChar(PyCursesWindowOb
      }
  
  #ifdef WINDOW_HAS_FLAGS
@@ -11,7 +11,7 @@ Index: Python-2.7.10/Modules/_cursesmodule.c
          return PyCursesCheckERR(pechochar(self->win, ch | attr),
                                  "echochar");
      else
-@@ -1237,7 +1237,7 @@ PyCursesWindow_NoOutRefresh(PyCursesWind
+@@ -1255,7 +1255,7 @@ PyCursesWindow_NoOutRefresh(PyCursesWind
  #ifndef WINDOW_HAS_FLAGS
      if (0)
  #else
@@ -20,7 +20,7 @@ Index: Python-2.7.10/Modules/_cursesmodule.c
  #endif
          {
              switch(PyTuple_Size(args)) {
-@@ -1380,7 +1380,7 @@ PyCursesWindow_Refresh(PyCursesWindowObj
+@@ -1398,7 +1398,7 @@ PyCursesWindow_Refresh(PyCursesWindowObj
  #ifndef WINDOW_HAS_FLAGS
      if (0)
  #else
@@ -29,7 +29,7 @@ Index: Python-2.7.10/Modules/_cursesmodule.c
  #endif
          {
              switch(PyTuple_Size(args)) {
-@@ -1447,7 +1447,7 @@ PyCursesWindow_SubWin(PyCursesWindowObje
+@@ -1465,7 +1465,7 @@ PyCursesWindow_SubWin(PyCursesWindowObje
  
      /* printf("Subwin: %i %i %i %i   \n", nlines, ncols, begin_y, begin_x); */
  #ifdef WINDOW_HAS_FLAGS

@@ -31,19 +31,19 @@ patches/python2/python2-fix-shebang.patch
 patches/python2/python2-skip_random_failing_tests.patch
 patches/python2/python2-sorted_tar.patch
 patches/python2/python2-path.patch
-patches/python2/python2-mintelf-config.patch
 patches/python2/python2-mint.patch
 patches/python2/python2-mintnosharedmod.patch
 patches/python2/python2-mintsetupdist.patch
 patches/python2/python2-math.patch
 "
 DISABLED_PATCHES="
+patches/automake/mintelf-config.sub
 patches/python2/python2-remove-static-libpython.diff
 "
 POST_INSTALL_SCRIPTS="
-patches/python2/python.csh
-patches/python2/python.sh
-patches/python2/pythonstart
+patches/python2/python2-python.csh
+patches/python2/python2-python.sh
+patches/python2/python2-pythonstart
 "
 
 
@@ -67,9 +67,10 @@ cd "$MINT_BUILD_DIR"
 # drop Autoconf version requirement
 sed -i 's/^version_required/dnl version_required/' configure.ac
 
-autoreconf -f -i
+autoreconf -fiv
 # autoreconf may have overwritten config.sub
-# patch -p1 < "$BUILD_DIR/patches/python2/python2-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
+
 # prevent make from trying to rebuild asdl stuff, which requires existing
 # python installation
 touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
@@ -79,17 +80,17 @@ COMMON_CFLAGS="\
 	-DOPENSSL_LOAD_CONF"
 STACKSIZE="-Wl,-stack,512k"
 
-CONFIGURE_FLAGS=" \
-	--host=${TARGET} \
-	--build=`./config.guess` \
-	--prefix=${TARGET_PREFIX} \
-	--docdir=${TARGET_PREFIX}/share/doc/packages/python \
-    --disable-ipv6 \
-    --with-fpectl \
-    --disable-shared --enable-static \
-    --enable-unicode=ucs4 \
-    --with-system-expat \
-	--config-cache"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${TARGET_PREFIX}
+	--build=`./config.guess`
+	--docdir=${TARGET_PREFIX}/share/doc/packages/python
+	--disable-ipv6
+	--with-fpectl
+	--disable-shared --enable-static
+	--enable-unicode=ucs4
+	--with-system-expat
+	--without-thread
+	--config-cache
+"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -105,6 +106,7 @@ for CPU in ${ALL_CPUS}; do
 cat << EOF > config.cache
 ac_cv_file__dev_ptmx=no
 ac_cv_file__dev_ptc=no
+ac_cv_lib_intl_textdomain=yes
 EOF
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
@@ -130,9 +132,10 @@ EOF
 	${MAKE} clean >/dev/null
 
 
-	cd ${buildroot}
-	rm -f ${TARGET_LIBDIR#/}$multilibdir/charset.alias	
+	rm -f ${buildroot}${TARGET_LIBDIR}$multilibdir/charset.alias	
+	rm -f ${buildroot}${TARGET_BINDIR}/*-config
 
+	chmod u+w ${buildroot}${TARGET_LIBDIR}/*.a
 	if test "$multilibdir" != ""; then
 		mkdir -p ${buildroot}${TARGET_LIBDIR}$multilibdir
 		mv ${buildroot}${TARGET_LIBDIR}/*.a ${buildroot}${TARGET_LIBDIR}$multilibdir
@@ -140,8 +143,8 @@ EOF
 	
 	# remove hard links and replace them with symlinks
 	for dir in bin include lib ; do
-	    rm -f ${buildroot}/${prefix}/$dir/python
-	    ln -s python${python_version} ${buildroot}/${prefix}/$dir/python
+	    rm -f ${buildroot}${prefix}/$dir/python
+	    ln -s python${python_version} ${buildroot}${prefix}/$dir/python
 	done
 
 	########################################

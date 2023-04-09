@@ -10,7 +10,7 @@ diff -Nur Python-2.3b2.orig/Lib/cgi.py Python-2.3b2/Lib/cgi.py
 diff -Nur Python-2.3b2.orig/Misc/HISTORY Python-2.3b2/Misc/HISTORY
 --- Python-2.3b2.orig/Misc/HISTORY	Tue Sep 17 22:55:31 2002
 +++ Python-2.3b2/Misc/HISTORY	Tue Jul  8 17:17:37 2003
-@@ -5810,9 +5810,9 @@
+@@ -13236,9 +13236,9 @@
  were invoked.
  
  - It is now recommended to use ``#!/usr/bin/env python'' instead of
@@ -22,7 +22,7 @@ diff -Nur Python-2.3b2.orig/Misc/HISTORY Python-2.3b2/Misc/HISTORY
  never have to be edited when the Python interpreter lives in a
  non-standard place.  Note that this doesn't work for CGI scripts since
  the python executable often doesn't live in the HTTP server's default
-@@ -9097,7 +9097,7 @@
+@@ -16523,7 +16523,7 @@
  Python exits or receives a SIGTERM or SIGHUP signal.
  
  The interpreter is now generally assumed to live in
@@ -43,23 +43,3 @@ diff -Nur Python-2.3b2.orig/Tools/faqwiz/faqw.py Python-2.3b2/Tools/faqwiz/faqw.
  # interpreter lives, change the value for FAQDIR to where your FAQ
  # lives, and change the value for SRCDIR to where your faqwiz.py
  # module lives.  The faqconf.py and faqcust.py files live there, too.
-diff -Nur Python-2.3b2.orig/Tools/scripts/fixps.py Python-2.3b2/Tools/scripts/fixps.py
---- Python-2.3b2.orig/Tools/scripts/fixps.py	Tue May 13 20:14:24 2003
-+++ Python-2.3b2/Tools/scripts/fixps.py	Tue Jul  8 17:19:48 2003
-@@ -15,13 +15,13 @@
-             print filename, ': can\'t open :', msg
-             continue
-         line = f.readline()
--        if not re.match('^#! */usr/local/bin/python', line):
--            print filename, ': not a /usr/local/bin/python script'
-+        if not re.match('^#! */usr/bin/python', line):
-+            print filename, ': not a /usr/bin/python script'
-             f.close()
-             continue
-         rest = f.read()
-         f.close()
--        line = re.sub('/usr/local/bin/python',
-+        line = re.sub('/usr/bin/python',
-                       '/usr/bin/env python', line)
-         print filename, ':', `line`
-         f = open(filename, "w")

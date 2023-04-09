@@ -12,7 +12,7 @@ Index: Python-2.7.7/Python/sysmodule.c
      char fullpath[MAXPATHLEN];
  #elif defined(MS_WINDOWS) && !defined(MS_WINCE)
      char fullpath[MAX_PATH];
-@@ -1624,7 +1624,18 @@
+@@ -1638,7 +1639,18 @@
          char *p = NULL;
          Py_ssize_t n = 0;
          PyObject *a;
@@ -32,7 +32,7 @@ Index: Python-2.7.7/Python/sysmodule.c
          char link[MAXPATHLEN+1];
          char argv0copy[2*MAXPATHLEN+1];
          int nr = 0;
-@@ -1651,7 +1664,8 @@
+@@ -1665,7 +1678,8 @@
                  }
              }
          }
@@ -42,7 +42,7 @@ Index: Python-2.7.7/Python/sysmodule.c
  #if SEP == '\\' /* Special case for MS filename syntax */
          if (argc > 0 && argv0 != NULL && strcmp(argv0, "-c") != 0) {
              char *q;
-@@ -1680,11 +1694,6 @@
+@@ -1694,11 +1708,6 @@
          }
  #else /* All other filename syntaxes */
          if (argc > 0 && argv0 != NULL && strcmp(argv0, "-c") != 0) {
@@ -54,7 +54,7 @@ Index: Python-2.7.7/Python/sysmodule.c
              p = strrchr(argv0, SEP);
          }
          if (p != NULL) {
-@@ -1702,6 +1711,9 @@
+@@ -1716,6 +1725,9 @@
          a = PyString_FromStringAndSize(argv0, n);
          if (a == NULL)
              Py_FatalError("no mem for sys.path insertion");
@@ -82,7 +82,7 @@ Index: Python-2.7.7/configure.ac
 ===================================================================
 --- Python-2.7.7.orig/configure.ac	2014-06-20 14:33:06.694228054 +0200
 +++ Python-2.7.7/configure.ac	2014-06-20 14:33:10.961250502 +0200
-@@ -2935,7 +2935,7 @@
+@@ -3126,7 +3126,7 @@
   getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
   initgroups kill killpg lchmod lchown lstat mkfifo mknod mktime mmap \
   mremap nice pathconf pause plock poll pthread_init \
