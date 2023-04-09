@@ -2121,6 +2121,8 @@ This notably applies to Perl and Python.
 
 <li>2023/04/08 Update SDL_image to 1.2.13</li>
 
+<li>2023/04/09 Add man 1.5g</li>
+
 </ul>
 
 <p></p>

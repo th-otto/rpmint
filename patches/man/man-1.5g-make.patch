@@ -1,0 +1,98 @@
+--- man-1.5g/src/man-config.c.mike	Tue Apr  6 19:38:04 1999
++++ man-1.5g/src/man-config.c	Fri Apr  9 13:35:54 1999
+@@ -187,8 +187,8 @@
+ 
+ char *default_config_files[] = {
+      CONFIG_FILE,		/* compiled-in default */
+-     "/usr/lib/man.config", "/usr/lib/man.conf",
+-     "/etc/man.config", "/etc/man.conf",
++     "/etc/man.config", "/usr/lib/man.conf",
++     "/usr/lib/man.config", "/etc/man.conf",
+      "/usr/share/misc/man.config", "/usr/share/misc/man.conf"
+ };
+ 
+--- man-1.5g/src/man.c.mike	Wed Apr  7 08:16:04 1999
++++ man-1.5g/src/man.c	Fri Apr  9 13:35:54 1999
+@@ -502,7 +502,8 @@
+      if (expander && *expander) {
+ 	  sprintf (eos(buf), "%s %s", expander, file);
+      } else if(ll || pl) {
+-	  sprintf (eos(buf), "cat %s", file);
++	  char *cat = getval("CAT");
++	  sprintf (eos(buf),"%s %s", cat ? cat : "cat", file);
+      }
+      if (ll || pl) {
+ 	  if (pl && !strcmp(pl, VERY_LONG_PAGE))
+--- man-1.5g/man/Makefile.in.mike	Fri Apr  9 13:35:54 1999
++++ man-1.5g/man/Makefile.in	Fri Apr  9 13:36:45 1999
+@@ -1,8 +1,8 @@
+ # only executed from a subdir
+ MAN1 = man whatis apropos
+-MAN5 = man.conf
++MAN5 = man.config
+ MAN8 = makewhatis
+-ALL = man.1 whatis.1 apropos.1 man.conf.5
++ALL = man.1 whatis.1 apropos.1 man.config.5
+ MAYBE8 = makewhatis
+ 
+ .SUFFIXES: .man .1 .5 .8
+--- man-1.5g.orig/src/makemsg.c	2023-04-09 15:25:49.399014179 +0200
++++ man-1.5g/src/makemsg.c	2023-04-09 15:32:50.870383374 +0200
+@@ -19,6 +19,8 @@
+  */
+ #include <stdio.h>
+ #include <unistd.h>
++#include <stdlib.h>
++#include <string.h>
+ #ifdef __QNX__
+ #include <unix.h>
+ #endif
+--- man-1.5g.orig/Makefile.in	2023-04-09 15:25:49.399014179 +0200
++++ man-1.5g/Makefile.in	2023-04-09 15:38:50.221841085 +0200
+@@ -43,10 +43,10 @@
+ %	cd gencat; $(MAKE)
+ 
+ install: src/Makefile man/Makefile #man2html/Makefile msgs/Makefile
+-	cd src; $(MAKE) install
+-#	cd man2html; $(MAKE) install
+-	cd man; $(MAKE) installsubdirs
+-#	cd msgs; $(MAKE) install
++	cd src; $(MAKE) PREFIX=$(PREFIX) install
++#	cd man2html; $(MAKE) PREFIX=$(PREFIX) install
++	cd man; $(MAKE) PREFIX=$(PREFIX) installsubdirs
++#	cd msgs; $(MAKE) PREFIX=$(PREFIX) install
+ 	@echo; echo 'Done.'
+ 	@echo 'In case you want to browse man pages using a www browser,'
+ 	@echo '"cd man2html", read README, and perhaps "make install-scripts".'
+--- man-1.5g.orig/src/Makefile.in	2023-04-09 15:25:49.399014179 +0200
++++ man-1.5g/src/Makefile.in	2023-04-09 15:47:42.737032699 +0200
+@@ -45,6 +45,9 @@
+ msg.c gripedefs.h: ../msgs/mess.en makemsg
+ 	./makemsg ../msgs/mess.en gripedefs.h msg.c
+ 
++makemsg: makemsg.c
++	gcc -o $@ $<
++
+ # glob.c does not have prototypes
+ glob.o: glob.c ndir.h
+ 	$(CC) -c $(CWARNNP) $(CFLAGS) -I. $(DEFS) glob.c
+@@ -91,7 +94,7 @@
+ MANCONFIG=$(BINROOTDIR)@man_config_file@
+ 
+ install: all apropos whatis makewhatis
+-	$(INSTALL) -c @man_install_flags@ man $(PREFIX)@man@
++	$(INSTALL) -c -m 755 man $(PREFIX)@man@
+ 	$(INSTALL) -c -m 755 apropos $(PREFIX)@apropos@
+ 	$(INSTALL) -c -m 755 whatis $(PREFIX)@whatis@
+ 	$(INSTALL) -c -m 754 makewhatis $(PREFIX)@makewhatis@
+--- man-1.5g.orig/configure	2023-04-09 15:25:49.399014179 +0200
++++ man-1.5g/configure	2023-04-09 15:53:15.608523910 +0200
+@@ -525,7 +525,7 @@
+ prefix="/usr"
+ bindir="bin"
+ sbindir="sbin"
+-mandir="man"
++mandir="share/man"
+ confdir="lib"
+ if [ x"$fhs" = x ]; then
+   mandir="share/man"

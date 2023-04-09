@@ -78,14 +78,14 @@ This is the last official version with support for it.
 		'
 	),
 	'gcc464' => array(
-		'name' => 'gcc',
+		'name' => 'gcc4',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '4.6.4',
 		'date' => '20230210',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'gcc-4_6-mint',
-		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.bz2',
+		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.bz2',
 		'patch' => 1,
 		'patchcomment' => 'This archive also contains an (experimental) patch for -mfastcall support.',
 		'script' => 1,
@@ -124,14 +124,14 @@ GCC contains everything to compile C programs, except a standard library and a m
 '
 	),
 	'gcc1220' => array(
-		'name' => 'gcc',
+		'name' => 'gcc12',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '12.2.0',
 		'date' => '20230210',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-12',
-		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
+		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
@@ -166,14 +166,14 @@ use fdlibm instead of the ancient pml math library.
 '
 	),
 	'gcc1130' => array(
-		'name' => 'gcc',
+		'name' => 'gcc11',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '11.3.0',
 		'date' => '20230214',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-12',
-		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
+		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
@@ -202,14 +202,14 @@ This compiler was not able to compile itself for m68k, so it might be broken.
 '
 	),
 	'gcc1040' => array(
-		'name' => 'gcc',
+		'name' => 'gcc10',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '10.4.0',
 		'date' => '20230210',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-10',
-		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
+		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
@@ -236,14 +236,14 @@ Slightly older version of GCC.
 '
 	),
 	'gcc950' => array(
-		'name' => 'gcc',
+		'name' => 'gcc9',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '9.5.0',
 		'date' => '20230302',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-9',
-		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
+		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
@@ -270,14 +270,14 @@ Slightly older version of GCC.
 '
 	),
 	'gcc850' => array(
-		'name' => 'gcc',
+		'name' => 'gcc8',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '8.5.0',
 		'date' => '20230226',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-8',
-		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
+		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
@@ -304,14 +304,14 @@ Slightly older version of GCC.
 '
 	),
 	'gcc750' => array(
-		'name' => 'gcc',
+		'name' => 'gcc7',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '7.5.0',
 		'date' => '20230210',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-7',
-		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}/%{name}-%{version}.tar.xz',
+		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
 		'patch' => 1,
 		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
 		'script' => 1,
@@ -3285,6 +3285,32 @@ codecs.
 		'comment' => '
 mtm is the Micro Terminal Multiplexer, a terminal multiplexer.</br>
 Original MiNT-Patch contributed by medmed.
+'
+	),
+	'man' => array(
+		'name' => 'man',
+		'upstream' => 'https://savannah.nongnu.org/projects/man-db',
+		'source' => 'ftp://ftp.win.tue.nl/pub/linux/util/man/man-%{version}.tar.gz',
+		'version' => '1.5g',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'System/Base',
+		'summary' => 'A set of documentation tools: man, apropos and whatis',
+		'comment' => '
+The man package includes three tools for finding information and/or
+documentation about your Linux system:  man, apropos and whatis.  The man
+system formats and displays on-line manual pages about commands or
+functions on your system.  Apropos searches the whatis database
+(containing short descriptions of system commands) for a string.  Whatis
+searches its own database for a complete word.<br />
+<br />
+The man package should be installed on your system because it is the
+primary way for finding documentation.
 '
 	),
 /*

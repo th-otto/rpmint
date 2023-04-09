@@ -1,0 +1,22 @@
+Index: man-db-2.10.2/src/Makefile.am
+===================================================================
+--- man-db-2.10.2.orig/src/Makefile.am
++++ man-db-2.10.2/src/Makefile.am
+@@ -210,16 +210,7 @@ apropos$(EXEEXT): whatis$(EXEEXT)
+ all-am: apropos$(EXEEXT)
+ 
+ install-exec-hook:
+-	if [ "$(man_owner)" ] && [ "$(man_mode)" = 6755 ]; then \
+-		chown $(man_owner):$(man_owner) \
+-			$(DESTDIR)$(bindir)/$(TRANS_MAN) \
+-			$(DESTDIR)$(bindir)/$(TRANS_MANDB); \
+-	fi
+-	chmod $(man_mode) \
+-		$(DESTDIR)$(bindir)/$(TRANS_MAN) \
+-		$(DESTDIR)$(bindir)/$(TRANS_MANDB)
+-	cd $(DESTDIR)$(bindir) && rm -f $(TRANS_APROPOS)$(EXEEXT) && \
+-		$(LN_S) $(TRANS_WHATIS)$(EXEEXT) $(TRANS_APROPOS)$(EXEEXT)
++	$(LN_S) $(TRANS_WHATIS) $(DESTDIR)$(bindir)/$(TRANS_APROPOS)
+ 
+ install-data-hook:
+ 	@if test -f $(DESTDIR)$(config_file); then \

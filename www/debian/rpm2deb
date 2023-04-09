@@ -103,6 +103,8 @@ for pkgname in $pkgnames; do
 	
 	cd "${pkgdir}" || exit 1
 	
+	fullname=`echo $fullname | tr '_' '-'`
+
 	cat << EOF > "DEBIAN/control"
 Package: ${fullname}
 Version: ${version}-${release}

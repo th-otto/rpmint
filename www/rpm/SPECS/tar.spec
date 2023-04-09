@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        GNU implementation of ((t)ape (ar)chiver)
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        1.34
 Release:        1
 License:        GPL-3.0-or-later
