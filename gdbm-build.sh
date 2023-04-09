@@ -42,7 +42,9 @@ COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS"
 STACKSIZE="-Wl,-stack,256k"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
-	--enable-libgdbm-compat"
+	--enable-libgdbm-compat
+	--disable-nls
+"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"

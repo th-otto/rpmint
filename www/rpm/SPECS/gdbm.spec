@@ -78,6 +78,7 @@ cp %{S:1} build-aux/config.sub
 COMMON_CFLAGS="-O2 -fomit-frame-pointer"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--enable-libgdbm-compat
+	--disable-nls
 "
 
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
@@ -151,7 +152,7 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 * Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
 
-* Thu Dec 26 2000 Frank Naumann <fnaumann@freemint.de>
+* Tue Dec 26 2000 Frank Naumann <fnaumann@freemint.de>
 - removed ndbm.h header file
 
 * Mon Dec 18 2000 Frank Naumann <fnaumann@freemint.de>
