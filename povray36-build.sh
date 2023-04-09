@@ -13,7 +13,7 @@ PATCHES="
 patches/povray/povray36-autoconf.patch
 "
 DISABLED_PATCHES="
-patches/${PACKAGENAME}/povray36-mintelf-config.patch
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -50,7 +50,7 @@ rm -rf autom4te.cache config.h.in.orig
 ) || exit 1
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/povray36-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config/config.sub
 
 cp -a config/config.sub libraries/zlib/config.sub
 cp -a config/config.sub libraries/png/config.sub
@@ -66,7 +66,10 @@ cd "$MINT_BUILD_DIR"
 COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS"
 STACKSIZE="-Wl,-stack,256k"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --sysconfdir=/etc --disable-lib-checks"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
+	--sysconfdir=/etc
+	--disable-lib-checks
+"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -88,6 +91,15 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 	${MAKE} distclean
+
+	# --docdir cannot be passed to top level configure script,
+	# because some scripts in sub-directories bail on that
+	# Fix that here.
+	if ! test -d ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}-3.6; then
+		mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/share/doc/packages
+		mv ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/share/doc/${PACKAGENAME}-3.6 ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}-3.6
+	fi
+
 	make_bin_archive $CPU
 done
 

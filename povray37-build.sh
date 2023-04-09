@@ -17,7 +17,7 @@ patches/${PACKAGENAME}/povray-reproducible.patch
 "
 DISABLED_PATCHES="
 patches/${PACKAGENAME}/povray37-autoconf.patch
-patches/${PACKAGENAME}/povray37-mintelf-config.patch
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="
@@ -33,21 +33,26 @@ cd "$srcdir"
 # fix wrong newline encoding
 dos2unix -k unix/scripts/*.sh
 
-patch -p1 "$BUILD_DIR/patches/${PACKAGENAME}/autoconf.patch" || exit 1
+patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/povray37-autoconf.patch" || exit 1
 
 # remove inline copies of shared libraries
 rm -rf libraries
 ( cd unix && ./prebuild.sh )
 
 # autoreconf may have overwritten config.sub
-patch -p1 < "$BUILD_DIR/patches/${PACKAGENAME}/povray37-mintelf-config.patch"
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" unix/config/config.sub
 
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS"
 STACKSIZE="-Wl,-stack,256k"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --sysconfdir=/etc --with-boost=no --with-boost-thread=no"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
+	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}-3.7
+	--sysconfdir=/etc
+	--with-boost=no
+	--with-boost-thread=no
+"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"

@@ -2563,6 +2563,7 @@ See also other hints about SDL.
 This is a small cross-platform networking library for use with SDL.
 '
 	),
+	/*
 	'povray36pml' => array(
 		'name' => 'povray',
 		'upstream' => 'http://www.povray.org',
@@ -2592,6 +2593,7 @@ realistic reflections, shading, perspective, and other effects.
 version was compiled with the pml math library.
 '
 	),
+	*/
 	'povray36fdlibm' => array(
 		'name' => 'povray',
 		'upstream' => 'http://www.povray.org',
@@ -2616,10 +2618,12 @@ view point of a camera also described in the text file. Ray tracing is
 not a fast process by any means, (the generation of a complex image can
 take several hours) but it produces very high quality images with
 realistic reflections, shading, perspective, and other effects.
+'
+/*
 </br></br>
 <span style="color:red">Note:</span> for testing purposes, povray 3.6 comes in 2 flavours. This
 version was compiled with the fdlibm math library.
-'
+*/
 	),
 	'smpeg' => array(
 		'name' => 'smpeg',

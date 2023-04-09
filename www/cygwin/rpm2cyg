@@ -44,6 +44,7 @@ for pkgname in $pkgnames; do
 		specfile="${topdir}/SPECS/${specname}.spec"
 		if ! test -f "$specfile"; then
 			$ECHO_E "package ${red}${pkgname}${coff} not found" >&2
+			result=1
 			continue
 		fi
 	fi
@@ -70,7 +71,13 @@ for pkgname in $pkgnames; do
 		fi
 	fi
 	if test "$arch" = ""; then
-		echo "$pkgname: no rpmfile found" >&2
+		rpmfile="$RPMS/i686/${fullname}-${version}-${release}.i686.rpm"
+		if test -f "$rpmfile"; then
+			arch="x86"
+		fi
+	fi
+	if test "$arch" = ""; then
+		$ECHO_E "${red}$pkgname${coff}: no rpmfile found" >&2
 		result=1
 		continue
 	fi
