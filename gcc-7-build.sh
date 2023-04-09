@@ -654,6 +654,9 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 			*) echo "removing fixed include file $i"; rm -f $i ;;
 			esac
 		done
+		for i in `find . -type l`; do
+			rm -fv $i
+		done
 		for i in `find . -depth -type d`; do
 			test "$i" = "." || rmdir "$i"
 		done

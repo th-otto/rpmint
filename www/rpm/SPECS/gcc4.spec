@@ -525,9 +525,11 @@ case $host in
 		without_zstd=--without-zstd
 		;;
 	linux64)
+%if "%{buildtype}" == "cross"
 		CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD -include $srcdir/gcc/libcwrap.h"
 		CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 		export GLIBC_SO="$srcdir/gcc/glibc.so"
+%endif
 		;;
 esac
 
@@ -935,6 +937,9 @@ rmdir ${PREFIX#/}/share || :
 			./README | ./limits.h | ./syslimits.h) ;;
 			*) echo "removing fixed include file $i"; rm -f $i ;;
 			esac
+		done
+		for i in `find . -type l`; do
+			rm -fv $i
 		done
 		for i in `find . -depth -type d`; do
 			test "$i" = "." || rmdir "$i"

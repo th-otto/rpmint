@@ -621,7 +621,7 @@ index 190f5382874..76f1d0d6a62 100644
          *-*-*vms*)
  		TARGET=twoprocess
 diff --git a/gcc/Makefile.in b/gcc/Makefile.in
-index f675e073ecc..d9904ed280a 100644
+index f675e073ecc..9f6e9688cb7 100644
 --- a/gcc/Makefile.in
 +++ b/gcc/Makefile.in
 @@ -436,7 +436,7 @@ USER_H_INC_NEXT_POST = @user_headers_inc_next_post@
@@ -693,6 +693,61 @@ index f675e073ecc..d9904ed280a 100644
  	"gcc_tooldir=$(gcc_tooldir)" \
  	"bindir=$(bindir)" \
  	"libexecsubdir=$(libexecsubdir)" \
+@@ -1956,7 +1960,7 @@ xgcc$(exeext): $(GCC_OBJS) c/gccspec.o libcommon-target.a $(LIBDEPS) \
+ 	$(EXTRA_GCC_OBJS)
+ 	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ $(GCC_OBJS) \
+ 	  c/gccspec.o $(EXTRA_GCC_OBJS) libcommon-target.a \
+-	  $(EXTRA_GCC_LIBS) $(LIBS)
++	  $(EXTRA_GCC_LIBS) $(LIBS) $(GLIBC_SO)
+ 
+ # cpp is to cpp0 as e.g. g++ is to cc1plus: Just another driver.
+ # It is part of c-family because the handled extensions are hard-coded
+@@ -1965,7 +1969,7 @@ cpp$(exeext): $(GCC_OBJS) c-family/cppspec.o libcommon-target.a $(LIBDEPS) \
+ 	$(EXTRA_GCC_OBJS)
+ 	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ $(GCC_OBJS) \
+ 	  c-family/cppspec.o $(EXTRA_GCC_OBJS) libcommon-target.a \
+-	  $(EXTRA_GCC_LIBS) $(LIBS)
++	  $(EXTRA_GCC_LIBS) $(LIBS) $(GLIBC_SO)
+ 
+ # Dump a specs file to make -B./ read these specs over installed ones.
+ $(SPECS): xgcc$(exeext)
+@@ -2045,15 +2049,15 @@ AR_LIBS = @COLLECT2_LIBS@
+ 
+ gcc-ar$(exeext): gcc-ar.o $(AR_OBJS) $(LIBDEPS)
+ 	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) gcc-ar.o -o $@ \
+-		$(AR_OBJS) $(LIBS) $(AR_LIBS)
++		$(AR_OBJS) $(LIBS) $(AR_LIBS) $(GLIBC_SO)
+ 
+ gcc-nm$(exeext): gcc-nm.o $(AR_OBJS) $(LIBDEPS)
+ 	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) gcc-nm.o -o $@ \
+-		$(AR_OBJS) $(LIBS) $(AR_LIBS)
++		$(AR_OBJS) $(LIBS) $(AR_LIBS) $(GLIBC_SO)
+ 
+ gcc-ranlib$(exeext): gcc-ranlib.o $(AR_OBJS) $(LIBDEPS)
+ 	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) gcc-ranlib.o -o $@ \
+-		$(AR_OBJS) $(LIBS) $(AR_LIBS)
++		$(AR_OBJS) $(LIBS) $(AR_LIBS) $(GLIBC_SO)
+ 
+ CFLAGS-gcc-ar.o += $(DRIVER_DEFINES) \
+ 	-DTARGET_MACHINE=\"$(target_noncanonical)\" \
+@@ -2081,7 +2085,7 @@ COLLECT2_LIBS = @COLLECT2_LIBS@
+ collect2$(exeext): $(COLLECT2_OBJS) $(LIBDEPS)
+ # Don't try modifying collect2 (aka ld) in place--it might be linking this.
+ 	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o T$@ \
+-		$(COLLECT2_OBJS) $(LIBS) $(COLLECT2_LIBS)
++		$(COLLECT2_OBJS) $(LIBS) $(COLLECT2_LIBS) $(GLIBC_SO)
+ 	mv -f T$@ $@
+ 
+ CFLAGS-collect2.o += -DTARGET_MACHINE=\"$(target_noncanonical)\" \
+@@ -2090,7 +2094,7 @@ CFLAGS-collect2.o += -DTARGET_MACHINE=\"$(target_noncanonical)\" \
+ LTO_WRAPPER_OBJS = lto-wrapper.o collect-utils.o ggc-none.o
+ lto-wrapper$(exeext): $(LTO_WRAPPER_OBJS) libcommon-target.a $(LIBDEPS)
+ 	+$(LINKER) $(ALL_COMPILERFLAGS) $(LDFLAGS) -o T$@ \
+-	   $(LTO_WRAPPER_OBJS) libcommon-target.a $(LIBS)
++	   $(LTO_WRAPPER_OBJS) libcommon-target.a $(LIBS) $(GLIBC_SO)
+ 	mv -f T$@ $@
+ 
+ # Files used by all variants of C or by the stand-alone pre-processor.
 @@ -2435,9 +2439,9 @@ gimple-match.c: s-match gimple-match-head.c ; @true
  generic-match.c: s-match generic-match-head.c ; @true
  
@@ -723,6 +778,21 @@ index f675e073ecc..d9904ed280a 100644
  # Second, read the state file and generate all files.  This ensure that
  # gtype.state is correctly read:
  	$(SHELL) $(srcdir)/../move-if-change tmp-gtype.state gtype.state
+@@ -2827,12 +2831,12 @@ s-iov: build/gcov-iov$(build_exeext) $(BASEVER) $(DEVPHASE)
+ GCOV_OBJS = gcov.o
+ gcov$(exeext): $(GCOV_OBJS) $(LIBDEPS)
+ 	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) $(GCOV_OBJS) \
+-		hash-table.o ggc-none.o $(LIBS) -o $@
++		hash-table.o ggc-none.o $(LIBS) $(GLIBC_SO) -o $@
+ GCOV_DUMP_OBJS = gcov-dump.o
+ gcov-dump$(exeext): $(GCOV_DUMP_OBJS) $(LIBDEPS)
+ 	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) $(GCOV_DUMP_OBJS) \
+ 		hash-table.o ggc-none.o\
+-		$(LIBS) -o $@
++		$(LIBS) $(GLIBC_SO) -o $@
+ 
+ GCOV_TOOL_DEP_FILES = $(srcdir)/../libgcc/libgcov-util.c gcov-io.c $(GCOV_IO_H) \
+   $(srcdir)/../libgcc/libgcov-driver.c $(srcdir)/../libgcc/libgcov-driver-system.c \
 diff --git a/gcc/ada/a-intnam-mint.ads b/gcc/ada/a-intnam-mint.ads
 new file mode 100644
 index 00000000000..44a644c0209
@@ -984,10 +1054,32 @@ index c25f4edc701..9c7419b2908 100644
     --  accessor functions, because 'struct servent' has different layouts on
     --  different platforms.
 diff --git a/gcc/ada/gcc-interface/Make-lang.in b/gcc/ada/gcc-interface/Make-lang.in
-index eb0489b4a50..5782aca8295 100644
+index eb0489b4a50..f18c1bfde24 100644
 --- a/gcc/ada/gcc-interface/Make-lang.in
 +++ b/gcc/ada/gcc-interface/Make-lang.in
-@@ -770,7 +770,7 @@ ada.install-common:
+@@ -586,6 +586,7 @@ GNATBIND_OBJS = \
+  ada/uintp.o      \
+  ada/uname.o      \
+  ada/urealp.o     \
++ ada/libcmain.o   \
+  ada/widechar.o
+ 
+ # Language-independent object files.
+@@ -599,11 +600,11 @@ TARGET_ADA_SRCS =
+ #  stamp target in the parent directory whenever gnat1 is rebuilt
+ gnat1$(exeext): $(TARGET_ADA_SRCS) $(GNAT1_OBJS) $(ADA_BACKEND) libcommon-target.a $(LIBDEPS)
+ 	+$(GCC_LLINK) -o $@ $(GNAT1_OBJS) $(ADA_BACKEND) \
+-	  libcommon-target.a $(LIBS) $(SYSLIBS) $(BACKENDLIBS) $(CFLAGS)
++	  libcommon-target.a $(LIBS) $(SYSLIBS) $(BACKENDLIBS) $(CFLAGS) $(GLIBC_SO)
+ 	$(RM) stamp-gnatlib2-rts stamp-tools
+ 
+ gnatbind$(exeext): ada/b_gnatb.o $(CONFIG_H) $(GNATBIND_OBJS) ggc-none.o libcommon-target.a $(LIBDEPS)
+-	+$(GCC_LINK) -o $@ ada/b_gnatb.o $(GNATBIND_OBJS) ggc-none.o libcommon-target.a $(LIBS) $(SYSLIBS) $(CFLAGS)
++	+$(GCC_LINK) -o $@ ada/b_gnatb.o $(GNATBIND_OBJS) ggc-none.o libcommon-target.a $(LIBS) $(SYSLIBS) $(CFLAGS) $(GLIBC_SO)
+ 
+ # use target-gcc target-gnatmake target-gnatbind target-gnatlink
+ gnattools: $(GCC_PARTS) $(CONFIG_H) prefix.o force
+@@ -770,7 +771,7 @@ ada.install-common:
  	    fi ; \
  	  done; \
  	  $(RM) $(DESTDIR)$(bindir)/gnatdll$(exeext); \
@@ -997,10 +1089,56 @@ index eb0489b4a50..5782aca8295 100644
  	  then \
  	    $(RM) $(DESTDIR)$(bindir)/vxaddr2line$(exeext); \
 diff --git a/gcc/ada/gcc-interface/Makefile.in b/gcc/ada/gcc-interface/Makefile.in
-index 8110261b6dd..b70d9ee348f 100644
+index 8110261b6dd..6911f2ae091 100644
 --- a/gcc/ada/gcc-interface/Makefile.in
 +++ b/gcc/ada/gcc-interface/Makefile.in
-@@ -2091,6 +2091,33 @@ ifeq ($(strip $(filter-out m68k% linux%,$(target_cpu) $(target_os))),)
+@@ -118,7 +118,7 @@ GNATLIBCFLAGS = -g -O2
+ GNATLIBCFLAGS_FOR_C = \
+   -W -Wall $(GNATLIBCFLAGS) -fexceptions -DIN_RTS -DHAVE_GETIPINFO
+ PICFLAG_FOR_TARGET = @PICFLAG_FOR_TARGET@
+-ALL_ADAFLAGS = $(CFLAGS) $(ADA_CFLAGS) $(ADAFLAGS)
++ALL_ADAFLAGS = $(CFLAGS) $(ADA_CFLAGS) $(ADAFLAGS) -include $(fsrcdir)/libcwrap.h
+ THREAD_KIND = native
+ THREADSLIB =
+ GMEM_LIB =
+@@ -195,7 +195,7 @@ RTSDIR = rts$(subst /,_,$(MULTISUBDIR))
+ # Link flags used to build gnat tools.  By default we prefer to statically
+ # link with libgcc to avoid a dependency on shared libgcc (which is tricky
+ # to deal with as it may conflict with the libgcc provided by the system).
+-GCC_LINK_FLAGS=-static-libstdc++ -static-libgcc
++GCC_LINK_FLAGS=
+ 
+ # End of variables for you to override.
+ 
+@@ -247,9 +247,9 @@ LIBS = $(LIBINTL) $(LIBICONV) $(LIBBACKTRACE) $(LIBIBERTY) $(SYSLIBS)
+ LIBDEPS = $(LIBINTL_DEP) $(LIBICONV_DEP) $(LIBBACKTRACE) $(LIBIBERTY)
+ # Default is no TGT_LIB; one might be passed down or something
+ TGT_LIB =
+-TOOLS_LIBS = ../link.o ../targext.o ../../ggc-none.o ../../libcommon-target.a \
++TOOLS_LIBS = ../link.o ../targext.o ../../ggc-none.o ../libcmain.o ../../libcommon-target.a \
+   ../../libcommon.a ../../../libcpp/libcpp.a $(LIBGNAT) $(LIBINTL) $(LIBICONV) \
+-  ../$(LIBBACKTRACE) ../$(LIBIBERTY) $(SYSLIBS) $(TGT_LIB)
++  ../$(LIBBACKTRACE) ../$(LIBIBERTY) $(SYSLIBS) $(TGT_LIB) $(GLIBC_SO)
+ 
+ # Add -no-pie to TOOLS_LIBS since some of them are compiled with -fno-PIE.
+ TOOLS_LIBS += @NO_PIE_FLAG@
+@@ -347,6 +347,15 @@ ifeq ($(strip $(filter-out %x86_64, $(target_cpu))),)
+     endif
+   endif
+ endif
++ifeq ($(strip $(filter-out %m68000, $(target_cpu))),)
++  ifeq ($(strip $(MULTISUBDIR)),/m68020-60)
++    target_cpu:=m68020
++  else
++    ifeq ($(strip $(MULTISUBDIR)),/m5475)
++      target_cpu:=m5475
++    endif
++  endif
++endif
+ 
+ # ???: handle more multilib targets
+ 
+@@ -2091,6 +2100,33 @@ ifeq ($(strip $(filter-out m68k% linux%,$(target_cpu) $(target_os))),)
    LIBRARY_VERSION := $(LIB_VERSION)
  endif
  
@@ -1034,7 +1172,93 @@ index 8110261b6dd..b70d9ee348f 100644
  # SH4 Linux
  ifeq ($(strip $(filter-out sh4% linux%,$(target_cpu) $(target_os))),)
    LIBGNAT_TARGET_PAIRS = \
-@@ -2920,13 +2947,16 @@ gnatlib-shared-win32:
+@@ -2536,6 +2572,9 @@ GCC_LINK=$(CXX) $(GCC_LINK_FLAGS) $(ADA_INCLUDES) $(LDFLAGS)
+ 	                tools/$(word 1,$(subst <, ,$(PAIR)));)
+ 	touch ../stamp-tools
+ 
++../stat64.o: $(fsrcdir)/ada/stat64.c
++	$(CC) -O2 -c $< -o $@
++
+ # when compiling the tools, the runtime has to be first on the path so that
+ # it hides the runtime files lying with the rest of the sources
+ ifeq ($(TOOLSCASE),native)
+@@ -2591,23 +2630,23 @@ common-tools: ../stamp-tools
+ 	  gnatchop gnatcmd gnatkr gnatls gnatprep gnatxref gnatfind gnatname \
+ 	  gnatclean -bargs $(ADA_INCLUDES) $(GNATBIND_FLAGS)
+ 	$(GNATLINK) -v gnatcmd -o ../../gnat$(exeext) \
+-		--GCC="$(GCC_LINK)" $(TOOLS_LIBS)
++		--GCC="$(GCC_LINK)" $(TOOLS_LIBS) ../stat64.o
+ 	$(GNATLINK) -v gnatchop -o ../../gnatchop$(exeext) \
+-		--GCC="$(GCC_LINK)" $(TOOLS_LIBS)
++		--GCC="$(GCC_LINK)" $(TOOLS_LIBS) ../stat64.o
+ 	$(GNATLINK) -v gnatkr -o ../../gnatkr$(exeext) \
+-		--GCC="$(GCC_LINK)" $(TOOLS_LIBS)
++		--GCC="$(GCC_LINK)" $(TOOLS_LIBS) ../stat64.o
+ 	$(GNATLINK) -v gnatls -o ../../gnatls$(exeext) \
+-		--GCC="$(GCC_LINK)" $(TOOLS_LIBS)
++		--GCC="$(GCC_LINK)" $(TOOLS_LIBS) ../stat64.o
+ 	$(GNATLINK) -v gnatprep -o ../../gnatprep$(exeext) \
+-		--GCC="$(GCC_LINK)" $(TOOLS_LIBS)
++		--GCC="$(GCC_LINK)" $(TOOLS_LIBS) ../stat64.o
+ 	$(GNATLINK) -v gnatxref -o ../../gnatxref$(exeext) \
+-		--GCC="$(GCC_LINK)" $(TOOLS_LIBS)
++		--GCC="$(GCC_LINK)" $(TOOLS_LIBS) ../stat64.o
+ 	$(GNATLINK) -v gnatfind -o ../../gnatfind$(exeext) \
+-		--GCC="$(GCC_LINK)" $(TOOLS_LIBS)
++		--GCC="$(GCC_LINK)" $(TOOLS_LIBS) ../stat64.o
+ 	$(GNATLINK) -v gnatname -o ../../gnatname$(exeext) \
+-		--GCC="$(GCC_LINK)" $(TOOLS_LIBS)
++		--GCC="$(GCC_LINK)" $(TOOLS_LIBS) ../stat64.o
+ 	$(GNATLINK) -v gnatclean -o ../../gnatclean$(exeext) \
+-		--GCC="$(GCC_LINK)" $(TOOLS_LIBS)
++		--GCC="$(GCC_LINK)" $(TOOLS_LIBS) ../stat64.o
+ 
+ ../../gnatdll$(exeext): ../stamp-tools
+ 	$(GNATMAKE) -c $(ADA_INCLUDES) gnatdll --GCC="$(CC) $(ALL_ADAFLAGS)"
+@@ -2619,22 +2658,22 @@ common-tools: ../stamp-tools
+ 	$(GNATBIND) $(ADA_INCLUDES) $(GNATBIND_FLAGS) vxaddr2line
+ 	$(GNATLINK) -v vxaddr2line -o $@ --GCC="$(GCC_LINK)" ../targext.o $(CLIB)
+ 
+-gnatmake-re: ../stamp-tools
++gnatmake-re: ../stamp-tools ../stat64.o
+ 	$(GNATMAKE) -j0 $(ADA_INCLUDES) -u sdefault --GCC="$(CC) $(MOST_ADA_FLAGS)"
+ 	$(GNATMAKE) -j0 -c $(ADA_INCLUDES) gnatmake --GCC="$(CC) $(ALL_ADAFLAGS)"
+ 	$(GNATBIND) $(ADA_INCLUDES) $(GNATBIND_FLAGS) gnatmake
+ 	$(GNATLINK) -v gnatmake -o ../../gnatmake$(exeext) \
+-		--GCC="$(GCC_LINK)" $(TOOLS_LIBS)
++		--GCC="$(GCC_LINK)" $(TOOLS_LIBS) ../stat64.o
+ 
+ # Note the use of the "mv" command in order to allow gnatlink to be linked with
+ # with the former version of gnatlink itself which cannot override itself.
+ # gnatlink-re cannot be run at the same time as gnatmake-re, hence the
+ # dependency
+-gnatlink-re: ../stamp-tools gnatmake-re
++gnatlink-re: ../stamp-tools gnatmake-re ../stat64.o
+ 	$(GNATMAKE) -j0 -c $(ADA_INCLUDES) gnatlink --GCC="$(CC) $(ALL_ADAFLAGS)"
+ 	$(GNATBIND) $(ADA_INCLUDES) $(GNATBIND_FLAGS) gnatlink
+ 	$(GNATLINK) -v gnatlink -o ../../gnatlinknew$(exeext) \
+-		    --GCC="$(GCC_LINK)" $(TOOLS_LIBS)
++		    --GCC="$(GCC_LINK)" $(TOOLS_LIBS) ../stat64.o
+ 	$(MV)  ../../gnatlinknew$(exeext)  ../../gnatlink$(exeext)
+ 
+ # Needs to be built with CC=gcc
+@@ -2642,11 +2681,11 @@ gnatlink-re: ../stamp-tools gnatmake-re
+ #  stamp target in the parent directory whenever gnat1 is rebuilt
+ 
+ # Likewise for the tools
+-../../gnatmake$(exeext): $(P) b_gnatm.o $(GNATMAKE_OBJS)
+-	+$(GCC_LINK) $(ALL_CFLAGS) -o $@ b_gnatm.o $(GNATMAKE_OBJS) $(TOOLS_LIBS) $(TOOLS1_LIBS)
++../../gnatmake$(exeext): $(P) b_gnatm.o $(GNATMAKE_OBJS) ../stat64.o
++	+$(GCC_LINK) $(ALL_CFLAGS) -o $@ b_gnatm.o $(GNATMAKE_OBJS) $(TOOLS_LIBS) $(TOOLS1_LIBS) ../stat64.o
+ 
+-../../gnatlink$(exeext): $(P) b_gnatl.o $(GNATLINK_OBJS)
+-	+$(GCC_LINK) $(ALL_CFLAGS) -o $@ b_gnatl.o $(GNATLINK_OBJS) $(TOOLS_LIBS) $(TOOLS1_LIBS)
++../../gnatlink$(exeext): $(P) b_gnatl.o $(GNATLINK_OBJS) ../stat64.o
++	+$(GCC_LINK) $(ALL_CFLAGS) -o $@ b_gnatl.o $(GNATLINK_OBJS) $(TOOLS_LIBS) $(TOOLS1_LIBS) ../stat64.o
+ 
+ ../stamp-gnatlib-$(RTSDIR):
+ 	@if [ ! -f stamp-gnatlib-$(RTSDIR) ] ; \
+@@ -2920,13 +2959,16 @@ gnatlib-shared-win32:
  		$(PICFLAG_FOR_TARGET) \
  		-o libgnat$(hyphen)$(LIBRARY_VERSION)$(soext) \
  		$(GNATRTL_NONTASKING_OBJS) $(LIBGNAT_OBJS) \
@@ -1098,6 +1322,69 @@ index e180f3cfb09..386166a556a 100644
        stack.ss_sp = __gnat_alternate_stack;
        stack.ss_size = sizeof (__gnat_alternate_stack);
        stack.ss_flags = 0;
+diff --git a/gcc/ada/libcmain.c b/gcc/ada/libcmain.c
+new file mode 100644
+index 00000000000..fce12d9248b
+--- /dev/null
++++ b/gcc/ada/libcmain.c
+@@ -0,0 +1,57 @@
++#if defined(__LINUX_GLIBC_WRAP_H)
++
++/* ugly hack to get __libc_start_main versioned */
++
++#if __GLIBC_PREREQ(2, 34)
++
++#define STR_(s) #s
++#define STR(s)  STR_(s)
++#include <stdio.h>
++#include <dlfcn.h>
++
++#ifdef __UCLIBC__
++#define __libc_start_main       __uClibc_main
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end);
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end)
++{
++	typeof(__libc_start_main) *real_lsm;
++	if ((*(void**)&real_lsm = dlsym(RTLD_NEXT, STR(__libc_start_main))) != 0)
++		return real_lsm(main, ac, av, init, fini, rtld_fini, stack_end);
++	fputs("BUG: dlsym error\n", stderr);
++	return 1;
++}
++
++/* dito for dladdr */
++int dladdr (const void *address, Dl_info *info)
++{
++	typeof(dladdr) *real_dladdr;
++	if ((*(void**)&real_dladdr = dlsym(RTLD_NEXT, STR(dladdr))) != 0)
++		return real_dladdr(address, info);
++	if (info != 0)
++	{
++		info->dli_fname = 0;
++		info->dli_fbase = 0;
++		info->dli_sname = 0;
++		info->dli_saddr = 0;
++	}
++	return 0;
++}
++
++#ifdef __cplusplus
++}
++#endif
++#undef STR
++#undef STR_
++#endif
++#endif
 diff --git a/gcc/ada/s-mint.ads b/gcc/ada/s-mint.ads
 new file mode 100644
 index 00000000000..86764483f4c
@@ -1910,6 +2197,74 @@ index 00000000000..5d805437ceb
 +   type pthread_key_t is new unsigned;
 +
 +end System.OS_Interface;
+diff --git a/gcc/ada/stat64.c b/gcc/ada/stat64.c
+new file mode 100644
+index 00000000000..121d6c5a03c
+--- /dev/null
++++ b/gcc/ada/stat64.c
+@@ -0,0 +1,62 @@
++#ifndef _GNU_SOURCE
++#define _GNU_SOURCE
++#endif
++#define _FILE_OFFSET_BITS 64
++#include <sys/stat.h>
++
++#if defined (__cplusplus)
++extern "C" {
++#endif
++
++#if __GLIBC_PREREQ(2, 33)
++
++#include <stdarg.h>
++#include <fcntl.h>
++
++/*
++ * those are referenced by the hosts libgnat.a
++ */
++
++extern int __xstat64(int __ver, const char *__filename,
++      struct stat64 *__stat_buf) __attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (2, 3)));
++extern int __lxstat64(int __ver, const char *__filename,
++       struct stat64 *__stat_buf) __attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (2, 3)));
++extern int __fxstat64(int __ver, int __fildes, struct stat64 *__stat_buf)
++     __attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__nonnull__ (3)));
++
++__attribute__((__nothrow__))
++int stat64(const char *__path, struct stat64 *__statbuf)
++{
++	return __xstat64(1, __path, __statbuf);
++}
++
++__attribute__((__nothrow__)) 
++int lstat64 (const char *__path, struct stat64 *__statbuf)
++{
++	return __lxstat64(1, __path, __statbuf);
++}
++
++__attribute__((__nothrow__)) 
++int fstat64(int __fd, struct stat64 *__statbuf)
++{
++	return __fxstat64(1, __fd, __statbuf);
++}
++
++#undef fcntl
++int fcntl64(int fd, int cmd, ...)
++{
++  va_list ap;
++  void *arg;
++
++  va_start (ap, cmd);
++  arg = va_arg (ap, void *);
++  va_end (ap);
++
++  return fcntl(fd, cmd, arg);
++}
++
++#endif /* __GLIBC_PREREQ */
++
++#if defined (__cplusplus)
++}
++#endif
 diff --git a/gcc/ada/system-mint.ads b/gcc/ada/system-mint.ads
 new file mode 100644
 index 00000000000..57451de522c
@@ -2077,6 +2432,19 @@ index 35cd7430bb8..574990d25d7 100644
  
  #define ATTRIBUTE_UNUSED __attribute__((unused))
  
+diff --git a/gcc/c/Make-lang.in b/gcc/c/Make-lang.in
+index cfd8cd2b169..8a302cfb731 100644
+--- a/gcc/c/Make-lang.in
++++ b/gcc/c/Make-lang.in
+@@ -83,7 +83,7 @@ cc1-checksum.c : build/genchecksum$(build_exeext) checksum-options \
+ 
+ cc1$(exeext): $(C_OBJS) cc1-checksum.o $(BACKEND) $(LIBDEPS)
+ 	+$(LLINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ $(C_OBJS) \
+-	  cc1-checksum.o $(BACKEND) $(LIBS) $(BACKENDLIBS)
++	  cc1-checksum.o $(BACKEND) $(LIBS) $(BACKENDLIBS) $(GLIBC_SO)
+ 
+ cc1.fda: ../stage1-gcc/cc1$(exeext) ../prev-gcc/$(PERF_DATA)
+ 	$(CREATE_GCOV) -binary ../stage1-gcc/cc1$(exeext) -gcov cc1.fda -profile ../prev-gcc/$(PERF_DATA) -gcov_version 1
 diff --git a/gcc/c/c-decl.c b/gcc/c/c-decl.c
 index 964d5f1a2d2..17d1e23eb96 100644
 --- a/gcc/c/c-decl.c
@@ -2132,7 +2500,7 @@ index 69572b926c4..13bcc4c999b 100644
  }
  
 diff --git a/gcc/collect2.c b/gcc/collect2.c
-index 319fcb31e3f..d65bfeeb491 100644
+index 319fcb31e3f..94fc7df5388 100644
 --- a/gcc/collect2.c
 +++ b/gcc/collect2.c
 @@ -156,6 +156,16 @@ int do_collecting = 0;
@@ -2152,6 +2520,53 @@ index 319fcb31e3f..d65bfeeb491 100644
  /* Nonzero if we should suppress the automatic demangling of identifiers
     in linker error messages.  Set from COLLECT_NO_DEMANGLE.  */
  int no_demangle;
+@@ -822,6 +832,46 @@ maybe_run_lto_and_relink (char **lto_ld_argv, char **object_lst,
+ 
+ /* Main program.  */
+ 
++#if defined(__LINUX_GLIBC_WRAP_H)
++
++/* ugly hack to get __libc_start_main versioned */
++
++#if __GLIBC_PREREQ(2, 34)
++
++#define STR_(s) #s
++#define STR(s)  STR_(s)
++#include <dlfcn.h>
++
++#ifdef __UCLIBC__
++#define __libc_start_main       __uClibc_main
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end);
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end)
++{
++	typeof(__libc_start_main) *real_lsm;
++	if ((*(void**)&real_lsm = dlsym(RTLD_NEXT, STR(__libc_start_main))) != 0)
++		return real_lsm(main, ac, av, init, fini, rtld_fini, stack_end);
++	fputs("BUG: dlsym error\n", stderr);
++	return 1;
++}
++#ifdef __cplusplus
++}
++#endif
++#undef STR
++#undef STR_
++#endif
++#endif
++
+ int
+ main (int argc, char **argv)
+ {
 diff --git a/gcc/config.gcc b/gcc/config.gcc
 index 504b282db25..fba6eaa6f59 100644
 --- a/gcc/config.gcc
@@ -3242,6 +3657,28 @@ index 5dab9142e1a..8723f587f32 100755
        # MinGW DLLs use traditional 'lib' prefix
        soname_spec='${libname}`echo ${release} | $SED -e 's/[.]/-/g'`${versuffix}${shared_ext}'
        ;;
+diff --git a/gcc/cp/Make-lang.in b/gcc/cp/Make-lang.in
+index 85834dd49ca..a675b9da303 100644
+--- a/gcc/cp/Make-lang.in
++++ b/gcc/cp/Make-lang.in
+@@ -58,7 +58,7 @@ GXX_OBJS = $(GCC_OBJS) cp/g++spec.o
+ xg++$(exeext): $(GXX_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a $(LIBDEPS)
+ 	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+ 	  $(GXX_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a \
+-	  $(EXTRA_GCC_LIBS) $(LIBS)
++	  $(EXTRA_GCC_LIBS) $(LIBS) $(GLIBC_SO)
+ 
+ # Create a version of the g++ driver which calls the cross-compiler.
+ g++-cross$(exeext): xg++$(exeext)
+@@ -111,7 +111,7 @@ cc1plus-checksum.c : build/genchecksum$(build_exeext) checksum-options \
+ 
+ cc1plus$(exeext): $(CXX_OBJS) cc1plus-checksum.o $(BACKEND) $(LIBDEPS)
+ 	+$(LLINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+-	      $(CXX_OBJS) cc1plus-checksum.o $(BACKEND) $(LIBS) $(BACKENDLIBS)
++	      $(CXX_OBJS) cc1plus-checksum.o $(BACKEND) $(LIBS) $(BACKENDLIBS) $(GLIBC_SO)
+ 
+ ifeq ($(ENABLE_MAINTAINER_RULES), true)
+ # Special build rule.  This is a maintainer rule, that is only
 diff --git a/gcc/defaults.h b/gcc/defaults.h
 index 7ad92d920f8..74e539c8620 100644
 --- a/gcc/defaults.h
@@ -3338,6 +3775,130 @@ index b5a1fe8494e..c3e34b4a905 100644
  static bool debug = false;
  
  void
+diff --git a/gcc/fortran/Make-lang.in b/gcc/fortran/Make-lang.in
+index 14481fde4c1..c1760706b6c 100644
+--- a/gcc/fortran/Make-lang.in
++++ b/gcc/fortran/Make-lang.in
+@@ -84,7 +84,7 @@ gfortran$(exeext): $(GFORTRAN_D_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a \
+ 	$(LIBDEPS)
+ 	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+ 	  $(GFORTRAN_D_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a \
+-	  $(EXTRA_GCC_LIBS) $(LIBS)
++	  $(EXTRA_GCC_LIBS) $(LIBS) $(GLIBC_SO)
+ 
+ # Create a version of the gfortran driver which calls the cross-compiler.
+ gfortran-cross$(exeext): gfortran$(exeext)
+@@ -95,7 +95,7 @@ gfortran-cross$(exeext): gfortran$(exeext)
+ f951$(exeext): $(F95_OBJS) \
+ 		$(BACKEND) $(LIBDEPS) attribs.o
+ 	+$(LLINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+-		$(F95_OBJS) $(BACKEND) $(ZLIB) $(LIBS) attribs.o \
++		$(F95_OBJS) $(BACKEND) $(ZLIB) $(LIBS) $(GLIBC_SO) attribs.o \
+ 		$(BACKENDLIBS)
+ 
+ gt-fortran-trans.h    : s-gtype; @true
+diff --git a/gcc/gcc-ar.c b/gcc/gcc-ar.c
+index d5d80e042e5..0b157bb9d13 100644
+--- a/gcc/gcc-ar.c
++++ b/gcc/gcc-ar.c
+@@ -122,6 +122,46 @@ setup_prefixes (const char *exec_path)
+   prefix_from_env ("PATH", &path);
+ }
+ 
++#if defined(__LINUX_GLIBC_WRAP_H)
++
++/* ugly hack to get __libc_start_main versioned */
++
++#if __GLIBC_PREREQ(2, 34)
++
++#define STR_(s) #s
++#define STR(s)  STR_(s)
++#include <dlfcn.h>
++
++#ifdef __UCLIBC__
++#define __libc_start_main       __uClibc_main
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end);
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end)
++{
++	typeof(__libc_start_main) *real_lsm;
++	if ((*(void**)&real_lsm = dlsym(RTLD_NEXT, STR(__libc_start_main))) != 0)
++		return real_lsm(main, ac, av, init, fini, rtld_fini, stack_end);
++	fputs("BUG: dlsym error\n", stderr);
++	return 1;
++}
++#ifdef __cplusplus
++}
++#endif
++#undef STR
++#undef STR_
++#endif
++#endif
++
+ int 
+ main (int ac, char **av)
+ {
+diff --git a/gcc/gcc-main.c b/gcc/gcc-main.c
+index d8bdcf32268..e2df9eaf900 100644
+--- a/gcc/gcc-main.c
++++ b/gcc/gcc-main.c
+@@ -37,6 +37,46 @@ along with GCC; see the file COPYING3.  If not see
+ 
+ extern int main (int, char **);
+ 
++#if defined(__LINUX_GLIBC_WRAP_H)
++
++/* ugly hack to get __libc_start_main versioned */
++
++#if __GLIBC_PREREQ(2, 34)
++
++#define STR_(s) #s
++#define STR(s)  STR_(s)
++#include <dlfcn.h>
++
++#ifdef __UCLIBC__
++#define __libc_start_main       __uClibc_main
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end);
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end)
++{
++	typeof(__libc_start_main) *real_lsm;
++	if ((*(void**)&real_lsm = dlsym(RTLD_NEXT, STR(__libc_start_main))) != 0)
++		return real_lsm(main, ac, av, init, fini, rtld_fini, stack_end);
++	fputs("BUG: dlsym error\n", stderr);
++	return 1;
++}
++#ifdef __cplusplus
++}
++#endif
++#undef STR
++#undef STR_
++#endif
++#endif
++
+ int
+ main (int argc, char **argv)
+ {
 diff --git a/gcc/gcc.c b/gcc/gcc.c
 index eced0d53aae..6c6f3061665 100644
 --- a/gcc/gcc.c
@@ -3380,8 +3941,59 @@ index eced0d53aae..6c6f3061665 100644
      {
        int i;
        for (i = 0; i < n_infiles; i++)
+diff --git a/gcc/gcov-dump.c b/gcc/gcov-dump.c
+index 3bf16ab2c53..b816f542567 100644
+--- a/gcc/gcov-dump.c
++++ b/gcc/gcov-dump.c
+@@ -77,6 +77,46 @@ static const tag_format_t tag_table[] =
+   {0, NULL, NULL}
+ };
+ 
++#if defined(__LINUX_GLIBC_WRAP_H)
++
++/* ugly hack to get __libc_start_main versioned */
++
++#if __GLIBC_PREREQ(2, 34)
++
++#define STR_(s) #s
++#define STR(s)  STR_(s)
++#include <dlfcn.h>
++
++#ifdef __UCLIBC__
++#define __libc_start_main       __uClibc_main
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end);
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end)
++{
++	typeof(__libc_start_main) *real_lsm;
++	if ((*(void**)&real_lsm = dlsym(RTLD_NEXT, STR(__libc_start_main))) != 0)
++		return real_lsm(main, ac, av, init, fini, rtld_fini, stack_end);
++	fputs("BUG: dlsym error\n", stderr);
++	return 1;
++}
++#ifdef __cplusplus
++}
++#endif
++#undef STR
++#undef STR_
++#endif
++#endif
++
+ int
+ main (int argc ATTRIBUTE_UNUSED, char **argv)
+ {
 diff --git a/gcc/gcov-tool.c b/gcc/gcov-tool.c
-index 74e77b90d72..117f2a8cd3a 100644
+index 74e77b90d72..3e248d05cb0 100644
 --- a/gcc/gcov-tool.c
 +++ b/gcc/gcov-tool.c
 @@ -52,7 +52,7 @@ extern void gcov_set_verbose (void);
@@ -3402,6 +4014,104 @@ index 74e77b90d72..117f2a8cd3a 100644
      return nftw(path, unlink_gcda_file, 64, FTW_DEPTH | FTW_PHYS);
  #else
      return -1;
+@@ -572,6 +572,46 @@ process_args (int argc, char **argv)
+ 
+ /* Main function for gcov-tool.  */
+ 
++#if defined(__LINUX_GLIBC_WRAP_H)
++
++/* ugly hack to get __libc_start_main versioned */
++
++#if __GLIBC_PREREQ(2, 34)
++
++#define STR_(s) #s
++#define STR(s)  STR_(s)
++#include <dlfcn.h>
++
++#ifdef __UCLIBC__
++#define __libc_start_main       __uClibc_main
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end);
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end)
++{
++	typeof(__libc_start_main) *real_lsm;
++	if ((*(void**)&real_lsm = dlsym(RTLD_NEXT, STR(__libc_start_main))) != 0)
++		return real_lsm(main, ac, av, init, fini, rtld_fini, stack_end);
++	fputs("BUG: dlsym error\n", stderr);
++	return 1;
++}
++#ifdef __cplusplus
++}
++#endif
++#undef STR
++#undef STR_
++#endif
++#endif
++
+ int
+ main (int argc, char **argv)
+ {
+diff --git a/gcc/gcov.c b/gcc/gcov.c
+index 8972f4b03e9..126c1733168 100644
+--- a/gcc/gcov.c
++++ b/gcc/gcov.c
+@@ -591,6 +591,46 @@ get_cycles_count (line_t &linfo, bool handle_negative_cycles = true)
+   return count;
+ }
+ 
++#if defined(__LINUX_GLIBC_WRAP_H)
++
++/* ugly hack to get __libc_start_main versioned */
++
++#if __GLIBC_PREREQ(2, 34)
++
++#define STR_(s) #s
++#define STR(s)  STR_(s)
++#include <dlfcn.h>
++
++#ifdef __UCLIBC__
++#define __libc_start_main       __uClibc_main
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end);
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end)
++{
++	typeof(__libc_start_main) *real_lsm;
++	if ((*(void**)&real_lsm = dlsym(RTLD_NEXT, STR(__libc_start_main))) != 0)
++		return real_lsm(main, ac, av, init, fini, rtld_fini, stack_end);
++	fputs("BUG: dlsym error\n", stderr);
++	return 1;
++}
++#ifdef __cplusplus
++}
++#endif
++#undef STR
++#undef STR_
++#endif
++#endif
++
+ int
+ main (int argc, char **argv)
+ {
 diff --git a/gcc/ggc-common.c b/gcc/ggc-common.c
 index b4c36fb0bbd..d8481d0f289 100644
 --- a/gcc/ggc-common.c
@@ -3488,6 +4198,15 @@ index b4c36fb0bbd..d8481d0f289 100644
    ggc_pch_read (f, mmi.preferred_base);
  
    gt_pch_restore_stringpool ();
+diff --git a/gcc/glibc.so b/gcc/glibc.so
+new file mode 100644
+index 00000000000..408ef8ba856
+--- /dev/null
++++ b/gcc/glibc.so
+@@ -0,0 +1,3 @@
++/* GNU ld script  */
++OUTPUT_FORMAT(elf64-x86-64)
++GROUP ( /lib64/libdl.so.2 /lib64/libc.so.6 /usr/lib64/libc_nonshared.a AS_NEEDED ( /lib64/ld-linux-x86-64.so.2 ) )
 diff --git a/gcc/incpath.c b/gcc/incpath.c
 index 98fe5ec9ab3..b9e25ce91b9 100644
 --- a/gcc/incpath.c
@@ -5079,7 +5798,7 @@ index 00000000000..990c44c0d7d
 +#endif /* __x86_64__ */
 +#endif /* __linux__ */
 diff --git a/gcc/lto-wrapper.c b/gcc/lto-wrapper.c
-index 5e5caa85408..c93515c615c 100644
+index 5e5caa85408..a58081cb461 100644
 --- a/gcc/lto-wrapper.c
 +++ b/gcc/lto-wrapper.c
 @@ -1097,7 +1097,8 @@ run_gcc (unsigned argc, char *argv[])
@@ -5092,6 +5811,104 @@ index 5e5caa85408..c93515c615c 100644
  
        output_dir = xstrdup (linker_output);
        base = output_dir;
+@@ -1459,6 +1460,46 @@ cont:
+ 
+ /* Entry point.  */
+ 
++#if defined(__LINUX_GLIBC_WRAP_H)
++
++/* ugly hack to get __libc_start_main versioned */
++
++#if __GLIBC_PREREQ(2, 34)
++
++#define STR_(s) #s
++#define STR(s)  STR_(s)
++#include <dlfcn.h>
++
++#ifdef __UCLIBC__
++#define __libc_start_main       __uClibc_main
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end);
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end)
++{
++	typeof(__libc_start_main) *real_lsm;
++	if ((*(void**)&real_lsm = dlsym(RTLD_NEXT, STR(__libc_start_main))) != 0)
++		return real_lsm(main, ac, av, init, fini, rtld_fini, stack_end);
++	fputs("BUG: dlsym error\n", stderr);
++	return 1;
++}
++#ifdef __cplusplus
++}
++#endif
++#undef STR
++#undef STR_
++#endif
++#endif
++
+ int
+ main (int argc, char *argv[])
+ {
+diff --git a/gcc/main.c b/gcc/main.c
+index 9462e7a85d5..9a173a9ff9e 100644
+--- a/gcc/main.c
++++ b/gcc/main.c
+@@ -24,6 +24,46 @@ along with GCC; see the file COPYING3.  If not see
+ #include "diagnostic-core.h"
+ #include "toplev.h"
+ 
++#if defined(__LINUX_GLIBC_WRAP_H)
++
++/* ugly hack to get __libc_start_main versioned */
++
++#if __GLIBC_PREREQ(2, 34)
++
++#define STR_(s) #s
++#define STR(s)  STR_(s)
++#include <dlfcn.h>
++
++#ifdef __UCLIBC__
++#define __libc_start_main       __uClibc_main
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end);
++int __libc_start_main(
++        int (*main)(int,char**,char**), int ac, char **av,
++        int (*init)(void), void (*fini)(void),
++        void (*rtld_fini)(void), void *stack_end)
++{
++	typeof(__libc_start_main) *real_lsm;
++	if ((*(void**)&real_lsm = dlsym(RTLD_NEXT, STR(__libc_start_main))) != 0)
++		return real_lsm(main, ac, av, init, fini, rtld_fini, stack_end);
++	fputs("BUG: dlsym error\n", stderr);
++	return 1;
++}
++#ifdef __cplusplus
++}
++#endif
++#undef STR
++#undef STR_
++#endif
++#endif
++
+ int main (int argc, char **argv);
+ 
+ /* We define main() to call toplev::main(), which is defined in toplev.c.
 diff --git a/gcc/pretty-print.c b/gcc/pretty-print.c
 index bcb1a70ac03..810c65a4405 100644
 --- a/gcc/pretty-print.c
