@@ -2127,6 +2127,8 @@ This notably applies to Perl and Python.
 
 <li>2023/04/10 Add sed 4.9</li>
 
+<li>2023/04/10 Add traceroute 1.4a5</li>
+
 </ul>
 
 <p></p>

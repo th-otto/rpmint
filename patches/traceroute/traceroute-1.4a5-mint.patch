@@ -1,0 +1,78 @@
+--- traceroute-1.4a5/traceroute.c.orig	Tue Sep 25 12:15:48 2001
++++ traceroute-1.4a5/traceroute.c	Tue Sep 25 13:16:24 2001
+@@ -290,10 +290,10 @@
+ #endif
+ int maxpacket = IP_MAXPACKET;	/* max ip packet size */
+ 
+-char *prog;
+-char *source;
+-char *hostname;
+-char *device;
++char *prog = NULL;
++char *source = NULL;
++char *hostname = NULL;
++char *device = NULL;
+ 
+ int nprobes = 3;
+ int max_ttl = 30;
+@@ -335,9 +335,8 @@
+ __dead	void usage(void);
+ int	wait_for_reply(int, struct sockaddr_in *, struct timeval *);
+ 
+-#ifdef linux
+ struct sockaddr_in *to = (struct sockaddr_in *)&whereto;
+-#endif
++
+ #ifndef LAUGHTER
+ u_short uh_sport;
+ #endif
+@@ -355,9 +354,6 @@
+ 	register u_char *outp;
+ 	register u_int32_t *ap;
+ 	register struct sockaddr_in *from = &wherefrom;
+-#ifndef	linux
+-	register struct sockaddr_in *to = (struct sockaddr_in *)&whereto;
+-#endif
+ 	register struct hostinfo *hi;
+ 	register struct protoent *pe;
+ 	int on = 1;
+@@ -627,10 +623,12 @@
+ 				exit(1);
+ 			}
+ 			memset(&s, 0, sizeof(s));
++#ifndef __MINT__
+ 			if (bind(lock_fd, (struct sockaddr*)&s, sizeof(s)) == -1) {
+ 				perror("bind");
+ 				exit(1);
+ 			}
++#endif
+ 			if (getsockname(lock_fd, (struct sockaddr*)&s, &alen) == -1) {
+ 				perror("getsockname");
+ 				exit(1);
+@@ -726,12 +724,16 @@
+ 			exit(1);
+ 		}
+ 		if (device) {
++#ifndef __MINT__
+ 			struct ifreq ifr;
+ 			strncpy(ifr.ifr_name, device, IFNAMSIZ-1);
+ 			if (setsockopt(probe_fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) == -1) {
+ 				close(probe_fd);
+ 				break;
+ 			}
++#else
++			break;
++#endif
+ 		}
+ 		sport = to->sin_port;
+ 		to->sin_port = htons(1025);
+--- traceroute-1.4a5/ifaddrlist.c.orig	Tue Sep 25 12:15:48 2001
++++ traceroute-1.4a5/ifaddrlist.c	Tue Sep 25 13:13:34 2001
+@@ -152,6 +152,7 @@
+ 
+ 		(void)strncpy(device, ifr.ifr_name, sizeof(ifr.ifr_name));
+ 		device[sizeof(device) - 1] = '\0';
++		ifr.ifr_dstaddr.sa_family = AF_INET;
+ 		if (ioctl(fd, SIOCGIFADDR, (char *)&ifr) < 0) {
+ 			(void)sprintf(errbuf, "SIOCGIFADDR: %s: %s",
+ 			    device, strerror(errno));

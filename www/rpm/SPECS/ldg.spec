@@ -116,5 +116,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 - Rewritten as RPMint spec file
 - Update to version 2.35
 
+* Tue Aug 17 2010 Keith Scroggins <kws@radix.net>
+- Added 68020-60 library and support for Coldfire, but some assembly needs to
+- be patched for the Coldfire build.
+
 * Wed Nov 02 2005 Arnaud Bercegeay <arnaud.bercegeay@free.fr>
 - Initial version of the ldg-dev package

@@ -159,4 +159,11 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %changelog
 * Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+- Update to version 4.5.0
+
+* Sat Dec 23 2000 Frank Naumann <fnaumann@freemint.de>
+- updated to 3.5.5
+
+* Mon Mar 27 2000 Frank Naumann <fnaumann@freemint.de>
+- rebuild against new MiNTLib 0.55

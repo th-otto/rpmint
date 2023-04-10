@@ -15,21 +15,8 @@ Prefix        : %{_prefix}
 Docdir        : %{_prefix}/doc
 BuildRoot     : %{_tmppath}/%{name}-root
 
-Source: ftp://ftp.ee.lbl.gov/traceroute-1.4a5.tar.Z
-Patch0: traceroute-1.4a5-fix.patch
-Patch1: traceroute-1.4a5-secfix.patch
-Patch2: traceroute-1.4a5-alpha.patch
-Patch3: traceroute-1.4a5-autoroute.patch
-Patch4: traceroute-1.4a5-autoroute2.patch
-Patch5: traceroute-1.4a5-unaligned.patch
-Patch6: traceroute-1.4a5-llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch.patch
-Patch7: traceroute-1.4a5-fhs.patch
-Patch8: traceroute-1.4a5-sourceroute.patch
-Patch9: traceroute-1.4a5-aliases.patch
-Patch10: traceroute-1.4a5-droproot.patch
-Patch11: traceroute-1.4a5-bigpacklen.patch
-Patch12: traceroute-1.4a5-lsrr.patch
-Patch13: traceroute-1.4a5-mint.patch
+Source: ftp://ftp.ee.lbl.gov/traceroute-1.4a5.tar.xz
+Patch13: traceroute-mint.patch
 
 
 %description
@@ -100,5 +87,3 @@ gzip -9nf ${RPM_BUILD_ROOT}%{_prefix}/share/man/man*/* ||:
 
 
 %changelog
-* Tue Sep 25 2001 Frank Naumann <fnaumann@freemint.de>
-- initial Sparemint release

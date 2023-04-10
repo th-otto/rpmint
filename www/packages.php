@@ -3358,6 +3358,32 @@ of a file using pattern matching or  for substituting multiple
 occurrences of a string within a file.
 '
 	),
+	'traceroute' => array(
+		'name' => 'traceroute',
+		'upstream' => 'ftp://ftp.ee.lbl.gov/',
+		'source' => 'ftp://ftp.ee.lbl.gov/traceroute-1.4a5.tar.xz',
+		'version' => '1.4a5',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Applications/Internet',
+		'summary' => 'Traces the route taken by packets over a TCP/IP network',
+		'comment' => '
+The traceroute utility displays the route used by IP packets on their
+way to a specified network (or Internet) host.  Traceroute displays
+the IP number and host name (if possible) of the machines along the
+route taken by the packets.  Traceroute is used as a network debugging
+tool.  If you&apos;re having network connectivity problems, traceroute will
+show you where the trouble is coming from along the route.<br />
+<br />
+Install traceroute if you need a tool for diagnosing network connectivity
+problems.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

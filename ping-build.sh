@@ -14,8 +14,8 @@ patches/${PACKAGENAME}/ping-20190714-mint.patch
 "
 
 BINFILES="
-/bin/ping
-${TARGET_MANDIR}/man8/ping.8*
+bin/ping
+${TARGET_MANDIR#/}/man8/*
 "
 
 unpack_archive

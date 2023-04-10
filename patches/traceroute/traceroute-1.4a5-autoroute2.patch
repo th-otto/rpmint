@@ -1,0 +1,30 @@
+--- traceroute-1.4a5/traceroute.c.autoroute2	Fri May 14 11:01:11 1999
++++ traceroute-1.4a5/traceroute.c	Fri May 14 11:06:12 1999
+@@ -348,7 +348,7 @@
+ 	int tos = 0, settos = 0;
+ 	register int lsrr = 0;
+ 	register u_short off = 0;
+-	struct ifaddrlist *al;
++	struct ifaddrlist *al, *allist;
+ 	char errbuf[132];
+ 
+ 	if ((cp = strrchr(argv[0], '/')) != NULL)
+@@ -669,7 +669,8 @@
+ 		    sizeof(on));
+ 
+ 	/* Get the interface address list */
+-	n = ifaddrlist(&al, errbuf);
++	n = ifaddrlist(&allist, errbuf);
++	al = allist;
+ 	if (n < 0) {
+ 		Fprintf(stderr, "%s: ifaddrlist: %s\n", prog, errbuf);
+ 		exit(1);
+@@ -700,7 +701,7 @@
+ 		 * there is no match, default to using the first 
+ 		 * interface found.
+ 		 */
+-		al = search_routing_table(to, al, n);
++		al = search_routing_table(to, allist, n);
+ 		setsin(from, al->addr);
+ #else
+ 		/*

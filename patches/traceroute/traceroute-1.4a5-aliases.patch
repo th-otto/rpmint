@@ -1,0 +1,98 @@
+--- traceroute-1.4a5/ifaddrlist.c.aliases	Mon Jul 10 11:02:23 2000
++++ traceroute-1.4a5/ifaddrlist.c	Mon Jul 10 11:02:37 2000
+@@ -161,6 +161,15 @@
+ 
+ 		sin = (struct sockaddr_in *)&ifr.ifr_addr;
+ 		al->addr = sin->sin_addr.s_addr;
++		if (ioctl(fd, SIOCGIFNETMASK, (char *)&ifr) < 0) {
++			(void)sprintf(errbuf, "SIOCGIFNETMASK: %s: %s",
++			    device, strerror(errno));
++			(void)close(fd);
++			return (-1);
++		}
++
++		sin = (struct sockaddr_in *)&ifr.ifr_netmask;
++		al->mask = sin->sin_addr.s_addr;
+ 		al->device = savestr(device);
+ 		++al;
+ 		++nipaddr;
+--- traceroute-1.4a5/ifaddrlist.h.aliases	Tue Apr 22 16:15:51 1997
++++ traceroute-1.4a5/ifaddrlist.h	Mon Jul 10 11:02:37 2000
+@@ -23,6 +23,7 @@
+ 
+ struct ifaddrlist {
+ 	u_int32_t addr;
++	u_int32_t mask;
+ 	char *device;
+ };
+ 
+--- traceroute-1.4a5/traceroute.c.aliases	Mon Jul 10 11:02:24 2000
++++ traceroute-1.4a5/traceroute.c	Mon Jul 10 11:04:35 2000
+@@ -1356,9 +1356,11 @@
+ 	char ifname[128];
+         unsigned int route_dest;
+ 	unsigned int mask;
+-	char best_name[128];
+ 	unsigned int best_mask;
+ 	unsigned int dest_addr;
++	unsigned int best_addr;
++	unsigned int gateway;
++	unsigned int use_gateway;
+ 	unsigned int convs;
+ 
+ 	/* How come using ntohl(to->sin_addr.s_addr) doesn't work here? */
+@@ -1375,17 +1377,19 @@
+ 		return al;
+ 	}
+ 
+-	best_name[0] = '\0';
+ 	best_mask = 0;
+-
++	best_addr = 0;
++	use_gateway = 0;
++	
+ 	while (fgets(buf, sizeof(buf), fp) != NULL) {
+ 		/* Field 1: interface name
+ 		 * Field 2: dest addr
++		 * Field 3: gateway addr
+ 		 * Field 8: genmask 
+ 		 */
+-		convs = sscanf(buf, "%s %x %*s %*s %*s %*s %*s %x", 
+-				ifname, &route_dest, &mask);
+-		if (convs != 3) {
++ 		convs = sscanf(buf, "%s %x %x %*s %*s %*s %*s %x", 
++ 				ifname, &route_dest, &gateway, &mask);
++ 		if (convs != 4) {
+ 			/* format error .... */
+ 			fclose(fp);
+ 			return al;
+@@ -1400,7 +1404,8 @@
+ 				 * previous match (or is the first match)
+ 				 */
+ 				best_mask = mask;
+-				strncpy(best_name, ifname, sizeof(best_name));
++				best_addr = route_dest;
++				use_gateway = gateway;
+ 			}
+ 		}
+ 	}
+@@ -1411,9 +1416,18 @@
+ 	first_if = al;
+ 
+ 	while (al < first_if + n) {
+-		if (strcmp(best_name, al->device) == 0) {
++		/* Use different approach if we send through gateway */
++		if (use_gateway) {
++			if ((al->addr & al->mask) == (use_gateway & al->mask)) {
++				return al;
++			}
++		} else {
++		/* Better way than comparing if names,
++		   this works with aliased if:s too */
++		if (best_addr == (al->addr & al->mask)) {
+ 			/* Got a match */
+ 			return al;
++		}
+ 		}
+ 		al++;
+ 	}

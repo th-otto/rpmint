@@ -1,0 +1,27 @@
+--- traceroute-1.4a5/Makefile.in.fhs	Sun Jun 18 08:52:26 2000
++++ traceroute-1.4a5/Makefile.in	Sun Jun 18 08:53:16 2000
+@@ -27,9 +27,9 @@
+ prefix = @prefix@
+ exec_prefix = @exec_prefix@
+ # Pathname of directory to install the binary
+-BINDEST = @sbindir@
++sbindir = @sbindir@
+ # Pathname of directory to install the man page
+-MANDEST = @mandir@
++mandir = @mandir@
+ 
+ # VPATH
+ srcdir = @srcdir@
+@@ -90,10 +90,10 @@
+ 	sed -e 's/.*/char version[] = "&";/' $(srcdir)/VERSION > $@
+ 
+ install: force
+-	$(INSTALL) -m 4755 traceroute $(DESTDIR)$(BINDEST)
++	$(INSTALL) -m 4755 traceroute $(DESTDIR)$(sbindir)
+ 
+ install-man: force
+-	$(INSTALL) traceroute.8 $(DESTDIR)$(MANDEST)/man8
++	$(INSTALL) traceroute.8 $(DESTDIR)$(mandir)/man8
+ 
+ lint: $(GENSRC) force
+ 	lint -hbxn $(SRC) | \
