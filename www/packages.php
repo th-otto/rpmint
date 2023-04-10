@@ -3313,6 +3313,30 @@ The man package should be installed on your system because it is the
 primary way for finding documentation.
 '
 	),
+	'help2man' => array(
+		'name' => 'help2man',
+		'upstream' => 'https://www.gnu.org/software/help2man/',
+		'source' => 'https://ftp.gnu.org/gnu/help2man/%{name}-%{version}.tar.xz',
+		'version' => '1.49.3',
+		'patch' => 0,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 0,
+		'atari' => 0,
+		'amiga' => 0,
+		'noarch' => 1,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Tools/Doc Generators',
+		'summary' => 'Script for generating man pages from --help output',
+		'comment' => '
+help2man is a script to create simple man pages from the --help and
+--version output of programs.<br />
+<br />
+Since most GNU documentation is now in info format, this provides a way
+to generate a placeholder man page pointing to that resource while
+still providing some useful information.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

@@ -2123,6 +2123,8 @@ This notably applies to Perl and Python.
 
 <li>2023/04/09 Add man 1.5g</li>
 
+<li>2023/04/10 Add helpman 1.49.3</li>
+
 </ul>
 
 <p></p>
