@@ -11,6 +11,8 @@ srcarchive=Python${VERSION}
 
 . ${scriptdir}/functions.sh
 
+python_version=2.7
+
 PATCHES="
 patches/python2/python2-2.7-dirs.patch
 patches/python2/python2-distutils-rpm-8.patch
@@ -50,7 +52,7 @@ patches/python2/python2-pythonstart
 BINFILES="
 ${TARGET_BINDIR#/}/*
 ${TARGET_LIBDIR#/}/python
-${TARGET_LIBDIR#/}/python2.7
+${TARGET_LIBDIR#/}/python${python_version}
 ${TARGET_MANDIR#/}/*
 ${TARGET_SYSCONFDIR#/}/*
 "
@@ -59,8 +61,6 @@ srcdir="$here/Python${VERSION}"
 MINT_BUILD_DIR="$srcdir"
 
 unpack_archive
-
-python_version=$(echo ${VERSION#-} | head -c 3)
 
 cd "$MINT_BUILD_DIR"
 
@@ -130,7 +130,6 @@ EOF
 	${MAKE} DESTDIR="${buildroot}" SYSROOT=${sysroot} install
 
 	${MAKE} clean >/dev/null
-
 
 	rm -f ${buildroot}${TARGET_LIBDIR}$multilibdir/charset.alias	
 	rm -f ${buildroot}${TARGET_BINDIR}/*-config

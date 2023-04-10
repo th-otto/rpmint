@@ -1,11 +1,11 @@
-%define pkgname python2
-%global python_version 2.7
+%define pkgname python3
+%global python_version 3.6
 
 %rpmint_header
 
 Summary:        Python Interpreter
 Name:           %{crossmint}%{pkgname}
-Version:        2.7.14
+Version:        3.6.4
 Release:        1
 License:        Python-2.0
 Group:          Development/Languages/Python
@@ -19,37 +19,29 @@ BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0:        http://www.python.org/ftp/python/%{version}/Python-%{version}.tar.xz
 Source1:        patches/automake/mintelf-config.sub
-Source2:        patches/python2/python2-python.csh
-Source3:        patches/python2/python2-python.sh
-Source4:        patches/python2/python2-pythonstart
+Source2:        patches/python3/python3-macros.python3
 
-Patch0:         patches/%{pkgname}/python2-2.7-dirs.patch
-Patch1:         patches/python2/python2-distutils-rpm-8.patch
-Patch2:         patches/python2/python2-2.7.5-multilib.patch
-Patch3:         patches/python2/python2-2.5.1-sqlite.patch
-Patch4:         patches/python2/python2-2.7.4-canonicalize2.patch
-Patch5:         patches/python2/python2-2.6-gettext-plurals.patch
-Patch6:         patches/python2/python2-2.6b3-curses-panel.patch
-Patch7:         patches/python2/python2-sparc_longdouble.patch
-Patch8:         patches/python2/python2-2.7.2-fix_date_time_compiler.patch
-Patch9:         patches/python2/python2-bundle-lang.patch
-Patch10:        patches/python2/python2-2.7-libffi-aarch64.patch
-Patch11:        patches/python2/python2-bsddb6.diff
-Patch12:        patches/python2/python2-2.7.9-ssl_ca_path.patch
-Patch13:        patches/python2/python2-ncurses-6.0-accessors.patch
-Patch14:        patches/python2/python2-reproducible.patch
-Patch15:        patches/python2/python2-fix-shebang.patch
-Patch16:        patches/python2/python2-skip_random_failing_tests.patch
-Patch17:        patches/python2/python2-sorted_tar.patch
-Patch18:        patches/python2/python2-path.patch
-Patch19:        patches/python2/python2-mint.patch
-Patch20:        patches/python2/python2-mintnosharedmod.patch
-Patch21:        patches/python2/python2-mintsetupdist.patch
-Patch22:        patches/python2/python2-math.patch
+Patch0:         patches/python3/python3-3.0b1-record-rpm.patch
+Patch1:         patches/python3/python3-3.6.0-multilib-new.patch
+Patch2:         patches/python3/python3-3.3.0b1-localpath.patch
+Patch3:         patches/python3/python3-3.3.0b1-fix_date_time_compiler.patch
+Patch4:         patches/python3/python3-3.3.0b1-curses-panel.patch
+Patch5:         patches/python3/python3-3.3.0b1-test-posix_fadvise.patch
+Patch6:         patches/python3/python3-3.3.3-skip-distutils-test_sysconfig_module.patch
+Patch7:         patches/python3/python3-subprocess-raise-timeout.patch
+Patch8:         patches/python3/python3-0001-allow-for-reproducible-builds-of-python-packages.patch
+Patch9:         patches/python3/python3-distutils-reproducible-compile.patch
+Patch10:        patches/python3/python3-skip_random_failing_tests.patch
+Patch11:        patches/python3/python3-fix-localeconv-encoding-for-LC_NUMERIC.patch
+Patch12:        patches/python3/python3-sorted_tar.patch
+Patch13:        patches/python3/python3-mint.patch
+Patch14:        patches/python3/python3-mintnosharedmod.patch
+Patch15:        patches/python3/python3-cross-config.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  automake
+BuildRequires:  python3
 
 %rpmint_build_arch
 
@@ -102,16 +94,9 @@ in ASCII text files and in LaTeX source files.
 %patch13 -p1
 %patch14 -p1
 %patch15 -p1
-%patch16 -p1
-%patch17 -p1
-%patch18 -p1
-%patch19 -p1
-%patch20 -p1
-%patch21 -p1
-%patch22 -p1
 
 # drop Autoconf version requirement
-sed -i 's/^version_required/dnl version_required/' configure.ac
+sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
 
 autoreconf -fiv
 rm -f config.sub
@@ -136,6 +121,7 @@ CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_
 	--enable-unicode=ucs4
 	--with-system-expat
 	--without-thread
+	--without-ensurepip
 	--config-cache
 "
 COMMON_CFLAGS+=" -fwrapv -DOPENSSL_LOAD_CONF"
@@ -167,12 +153,23 @@ EOF
 	AR="%{_rpmint_target_ar}" \
 	RANLIB="%{_rpmint_target_ranlib}" \
 	STRIP="%{_rpmint_target_strip}" \
+	PYTHON_FOR_BUILD=python3 \
+	LIBS=-liconv \
 	sh ./configure ${CONFIGURE_FLAGS}
 
 	make %{?_smp_mflags}
 	buildroot="%{buildroot}%{_rpmint_sysroot}"
-	make DESTDIR="${buildroot}" SYSROOT=%{_rpmint_sysroot} install
+	make DESTDIR="${buildroot}" TARGET=${TARGET} SYSROOT=%{_rpmint_sysroot} install
 
+	# RPM macros
+	mkdir -p ${buildroot}/etc/rpm
+	install -m 644 %{S:2} ${buildroot}/etc/rpm/macros.python3
+
+	# scripts
+	install -m 755 Tools/scripts/pydoc3 ${buildroot}%{_rpmint_target_prefix}/bin/pydoc3-%{python_version}
+	install -m 755 Tools/scripts/2to3 ${buildroot}%{_rpmint_target_prefix}/bin/2to3-%{python_version}
+	install -m 755 Tools/scripts/pyvenv ${buildroot}%{_rpmint_target_prefix}/bin/pyvenv-%{python_version}
+	
 	make clean > /dev/null
 
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias	
@@ -190,19 +187,18 @@ EOF
 	fi
 	
 	# remove hard links and replace them with symlinks
+	# keeping python2.7 the default
 	for dir in bin include lib ; do
 	    rm -f ${buildroot}%{_rpmint_target_prefix}/$dir/python
-	    ln -s python%{python_version} ${buildroot}%{_rpmint_target_prefix}/$dir/python
 	done
+	rm -f ${buildroot}%{_rpmint_target_prefix}/lib/pkgconfig/python.pc
 
-	########################################
-	# startup script
-	########################################
-	install -d -D -m 755 ${buildroot}/etc/profile.d
-	install -m 644 %{S:4} ${buildroot}/etc/pythonstart
-	install -m 644 %{S:3} ${buildroot}/etc/profile.d/python.sh
-	install -m 644 %{S:2} ${buildroot}/etc/profile.d/python.csh
+	# remove wrapper scripts for packages not built
+	rm -f ${buildroot}%{_rpmint_target_prefix}/bin/idle*
 
+	# the directory for modules must exist; getpath.c depends on it
+	mkdir -p ${buildroot}%{_rpmint_target_prefix}/lib/python%{python_version}/lib-dynload
+	
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
 		rm -f %{buildroot}%{_rpmint_bindir}/*
@@ -231,14 +227,12 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %defattr(-,root,root)
 %{_isysroot}/etc
 %{_isysroot}%{_rpmint_target_prefix}/bin/*
-%{_isysroot}%{_rpmint_target_prefix}/lib/python
 %{_isysroot}%{_rpmint_target_prefix}/lib/python%{python_version}
 %{_isysroot}%{_rpmint_target_prefix}/share/man/*/*
 
 %files devel
 %defattr(-,root,root)
-%{_isysroot}%{_rpmint_target_prefix}/include/python
-%{_isysroot}%{_rpmint_target_prefix}/include/python%{python_version}
+%{_isysroot}%{_rpmint_target_prefix}/include/python%{python_version}m
 %{_isysroot}%{_rpmint_target_prefix}/lib/*.a
 %{_isysroot}%{_rpmint_target_prefix}/lib/*/*.a
 %{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/*.pc
@@ -249,13 +243,13 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 %files docs
 %defattr(-,root,root)
 %license LICENSE
-%doc README Doc
+%doc README.rst Doc
 
 
 %changelog
-* Sun Apr 09 2023 Thorsten Otto <admin@tho-otto.de>
+* Mon Apr 10 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
-- Update to version 2.7.14
+- Update to version 3.6.4
 
 * Tue Sep 14 2004 Mark Duckworth <mduckworth@atari-source.com>
 - Updated to the latest version
