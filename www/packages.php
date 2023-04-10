@@ -3337,6 +3337,27 @@ to generate a placeholder man page pointing to that resource while
 still providing some useful information.
 '
 	),
+	'sed' => array(
+		'name' => 'sed',
+		'upstream' => 'https://www.gnu.org/software/sed/',
+		'source' => 'https://ftp.gnu.org/gnu/sed/%{name}-%{version}.tar.xz',
+		'version' => '4.9',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'System/Base',
+		'summary' => 'A Stream-Oriented Non-Interactive Text Editor',
+		'comment' => '
+Sed takes text input, performs one or more operations on it, and
+outputs the modified text. Sed is typically used for extracting parts
+of a file using pattern matching or  for substituting multiple
+occurrences of a string within a file.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

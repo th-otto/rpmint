@@ -174,7 +174,7 @@ do
 	# according to FHS 3.0, tar must be in /bin
 	mkdir -p %{buildroot}%{_isysroot}/bin
 	rm -f %{buildroot}%{_isysroot}/bin/tar
-	ln -s ../usr/bin/tar %{buildroot}%{_isysroot}/bin
+	ln -s ..%{_rpmint_target_prefix}/bin/tar %{buildroot}%{_isysroot}/bin
 
 	make distclean
 done

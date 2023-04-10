@@ -2125,6 +2125,8 @@ This notably applies to Perl and Python.
 
 <li>2023/04/10 Add helpman 1.49.3</li>
 
+<li>2023/04/10 Add sed 4.9</li>
+
 </ul>
 
 <p></p>
