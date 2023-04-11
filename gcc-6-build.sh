@@ -367,10 +367,10 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
-	for i in c++ cpp g++ gcc gcov gfortran gdc; do
-		if test -x ../../bin/${TARGET}-$i; then
-			rm -f ${i} ${i}${BUILD_EXEEXT}
-			$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i
+	for tool in c++ cpp g++ gcc gcov gfortran gdc; do
+		if test -x ../../bin/${TARGET}-${tool}; then
+			rm -f ${tool} ${tool}${BUILD_EXEEXT}
+			$LN_S ../../bin/${TARGET}-${tool}${BUILD_EXEEXT} ${tool}
 		fi
 	done
 	
@@ -525,13 +525,14 @@ rm -rf ${PREFIX#/}/share/gcc*/python
 # create a separate archive for the fortran backend
 #
 if $with_fortran; then
-fortran=${gccsubdir#/}/finclude
-fortran="$fortran "${gccsubdir#/}/*/finclude
-fortran="$fortran "${gccsubdir#/}/f951
-fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
-fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
-${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
-rm -rf $fortran
+	fortran=`find ${gccsubdir#/} -name finclude`
+	fortran="$fortran "${PREFIX#/}/bin/*gfortran*
+	fortran="$fortran "${PREFIX#/}/${TARGET}/bin/*gfortran*
+	fortran="$fortran "${gccsubdir#/}/f951
+	fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
+	fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
+	rm -rf $fortran
 fi
 
 #

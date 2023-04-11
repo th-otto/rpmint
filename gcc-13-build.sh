@@ -534,7 +534,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
 	for tool in c++ cpp g++ gcc gcov gfortran gdc; do
-		if test -x ../../bin/${TARGET}-$i; then
+		if test -x ../../bin/${TARGET}-${tool}; then
 			rm -f ${tool} ${tool}${BUILD_EXEEXT}
 			$LN_S ../../bin/${TARGET}-${tool}${BUILD_EXEEXT} ${tool}
 		fi
@@ -691,7 +691,7 @@ rm -rf ${PREFIX#/}/share/gcc*/python
 if $with_fortran; then
 	fortran=`find ${gccsubdir#/} -name finclude`
 	fortran="$fortran "${PREFIX#/}/bin/*gfortran*
-	fortran="$fortran "${PREFIX#/}/${TARGET}/*gfortran*
+	fortran="$fortran "${PREFIX#/}/${TARGET}/bin/*gfortran*
 	fortran="$fortran "${gccsubdir#/}/f951
 	fortran="$fortran "`find ${gccsubdir#/} -name libcaf_single.a`
 	fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
