@@ -3384,6 +3384,59 @@ Install traceroute if you need a tool for diagnosing network connectivity
 problems.
 '
 	),
+	'x3270' => array(
+		'name' => 'x3270',
+		'upstream' => 'https://github.com/pmattes/x3270',
+		'source' => $download_dir . 'x3270-%{version}.tar.gz',
+		'version' => '4.2ga9',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'System/X11/Terminals',
+		'summary' => 'A Family of IBM 3270 Terminal Emulators',
+		'comment' => '
+This package contains a family of IBM 3270 mainframe terminal
+emulators:<br />
+<br />
+* terminal emulators for interactive use x3270	X Window System
+   c3270  curses based
+<br />
+* terminal emulators for scripted use s3270    see the x3270-script
+   man page tcl3270  Tcl based
+<br />
+* printer emulator pr3287
+<br />
+x3270 is an IBM 3270 terminal emulator for the X Window System.  x3270
+runs over a telnet connection (with or without TN3270E) and emulates
+either an IBM 3279 (color) or 3278 (monochrome).  It supports APL2
+characters, IND$FILE file transfer, NVT mode, a pop-up keypad for
+3270-specific keys, alternative keymaps, 3287 printer sessions, and a
+scrollbar and has extensive debugging and scripting facilities.
+<br />
+x3270a is a script that computes the correct font sizes for
+higher-resolution displays, then runs x3270.
+(x3270 handles scaling of visual elements automatically,
+but it cannot adjust the font sizes by itself.)
+<br />
+b3270 is a generic back-end for 3270 emulators.
+It implements the 3270 protocol and host input/output,
+and communicates with a front end application using a simple XML-based protocol.
+<br />
+c3270 is the curses-based version of x3270.  It runs on any dumb
+terminal (an xterm or a console, for example), and supports (almost)
+all of the x3270 features.  c3270 scripts are compatible with x3270
+scripts, and the subset of command line options and resource
+definitions are also compatible.
+<br />
+s3270 is a scripting-only version of x3270.  This program is intended
+primarily for writing "screen-scraping" applications, for example a CGI
+back-end script that retrieves database information from a mainframe.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
