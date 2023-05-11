@@ -170,4 +170,7 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 - Update to version 6.2.1
 
 * Thu Aug 27 2020 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+
+* Fri Mar 6 2009 Keith Scroggins <kws@radix.net>
+- Initial build of GMP RPM

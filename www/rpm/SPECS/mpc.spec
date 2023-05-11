@@ -144,4 +144,7 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %changelog
 * Thu Aug 27 2020 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+
+* Fri May 28 2010 Keith Scroggins <kws@radix.net>
+- Initial build of MPC RPM

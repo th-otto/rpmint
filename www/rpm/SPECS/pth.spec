@@ -159,4 +159,16 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 - Add link warnings
 
 * Tue Mar 07 2023 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+
+* Thu Oct 30 2003 Keith Scroggins <kws@radix.net>
+- Updated to 2.0.0 and fixed 1 patch to apply correctly
+
+* Wed Jun 20 2001 Frank Naumann <fnaumann@freemint.de>
+- recompiled with pthread interface and soft syscall mapping
+
+* Tue May 29 2001 Frank Naumann <fnaumann@freemint.de>
+- updated to 1.4
+
+* Sat Mar 17 2001 Frank Naumann <fnaumann@freemint.de>
+- initial revision for SpareMiNT

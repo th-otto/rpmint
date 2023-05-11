@@ -100,4 +100,24 @@ make PREFIX=${install_prefix} install
 
 %changelog
 * Wed Sep 2 2020 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+
+* Sun Jul 18 2004 Frank Naumann <fnaumann@freemint.de>
+- updated to version 0.21.0, using the new gemlib 0.43.2
+
+* Tue Jan  6 2004 Standa Opichal <opichals@seznam.cz>
+- updated to version 0.20.1, using the new gemlib 0.43.1
+
+* Thu Feb 15 2001 Frank Naumann <fnaumann@freemint.de>
+- updated to version 0.20.0
+
+* Fri May 26 2000 Frank Naumann <fnaumann@freemint.de>
+- patch in objc.c for new MiNTLib, replaced itoa by ltoa
+
+* Mon Mar 27 2000 Frank Naumann <fnaumann@freemint.de>
+- rebuild against new MiNTLib 0.55
+- small patch for new MiNTLib
+- removed CR in cflib.h
+
+* Thu Oct 21 1999 Guido Flohr <guido@freemint.de>
+- Initial version for Sparemint

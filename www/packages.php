@@ -3387,7 +3387,7 @@ problems.
 	'x3270' => array(
 		'name' => 'x3270',
 		'upstream' => 'https://github.com/pmattes/x3270',
-		'source' => $download_dir . 'x3270-%{version}.tar.gz',
+		'source' => $download_dir . 'x3270-%{version}.tar.xz',
 		'version' => '4.2ga9',
 		'patch' => 1,
 		'script' => 1,

@@ -127,4 +127,11 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %changelog
 * Thu Mar 02 2023 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+
+* Mon Mar 27 2000 Frank Naumann <fnaumann@freemint.de>
+- rebuild against new MiNTLib 0.55
+
+* Wed Aug 25 1999 Frank Naumann <fnaumann@freemint.de>
+- compressed manpages
+- correct Packager and Vendor

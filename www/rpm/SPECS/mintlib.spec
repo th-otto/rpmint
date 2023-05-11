@@ -134,4 +134,77 @@ popd
   required by some scientific applications.
 
 * Mon Aug 31 2020 Thorsten Otto <admin@tho-otto.de>
-- RPMint spec file
+- Rewritten as RPMint spec file
+
+* Tue Jun 01 2010 Keith Scroggins <kws@radix.net>
+- update to 0.59.1 stable release and enabled / added Coldfire libraries to the
+- distribution also changed mintbin to require latest package build
+
+* Wed Jan 13 2010 Alan Hourihane <alanh@fairlite.co.uk>
+- update to 0.59.0 stable release
+
+* Tue Apr 29 2008 Frank Naumann <fnaumann@freemint.de>
+- updated to 0.58.0 stable release
+  Please note: the libsocket is now integrated into the libc.
+
+* Sat Dec 03 2005 Frank Naumann <fnaumann@freemint.de>
+- updated to 0.57.6 stable release
+
+* Wed Aug 04 2004 Frank Naumann <fnaumann@freemint.de>
+- recompiled against gcc update
+
+* Sun Jul 11 2004 Frank Naumann <fnaumann@freemint.de>
+- updated to 0.57.5 stable release; this include all previous
+  fixes and some enhancements in socket library; look into the
+  ChangeLog for more details.
+
+* Fri Jan 23 2004 Frank Naumann <fnaumann@freemint.de>
+- updated to 0.57.4 stable release
+
+* Fri Mar 14 2003 Frank Naumann <fnaumann@freemint.de>
+- updated to 0.57.3 stable release
+
+* Thu Aug 09 2001 Frank Naumann <fnaumann@freemint.de>
+- updated to 0.57 stable release
+
+* Fri Mar 09 2001 Frank Naumann <fnaumann@freemint.de>
+- updated to 0.56.1 stable release
+
+* Fri Dec 08 2000 Frank Naumann <fnaumann@freemint.de>
+- updated to 0.56 stable release
+
+* Tue Jul 18 2000 Frank Naumann <fnaumann@freemint.de>
+- replaced mfp based profiler support with system independant itimer method
+  (stolen from glibc)
+- fixed setitimer function
+- fixed dsetkey binding
+
+* Wed Jun 07 2000 Frank Naumann <fnaumann@freemint.de>
+- added Slbopen/Slbclose systemcall bindings to mintbind.h
+- added some small patches for <sys/stat.h>
+- temporary fix for setsid() <-> ioctl(TIOCNOTTY) non working interaction
+
+* Fri May 12 2000 Frank Naumann <fnaumann@freemint.de>
+- corrected a typo that result in undefined references at linktime
+
+* Wed May 10 2000 Frank Naumann <fnaumann@freemint.de>
+- updated to 0.55.3
+
+* Fri Apr 28 2000 Frank Naumann <fnaumann@freemint.de>
+- added small <sys/stat.h> patch: S_IFSOCK and S_ISSOCK definitions missing
+
+* Tue Apr 18 2000 Frank Naumann <fnaumann@freemint.de>
+- changed base type of time_t to long
+- added stat -> Fxattr(nblocks) correction
+
+* Fri Apr 14 2000 Guido Flohr <guido@freemint.de>
+- Modified for 0.55
+- Moved mshort libs into separate package to simplify removal.
+- Crude support for a cross-lib rpm, try out if it works.
+
+* Wed Mar 29 2000 Frank Naumann <fnaumann@freemint.de>
+- lot of changes for the final 0.55 version, added all Conflicts
+
+* Mon Feb 28 2000 Frank Naumann <fnaumann@freemint.de>
+- changes related to gcc 2.95.2, removed libgcc2 stuff
+- removed mbaserel libs
