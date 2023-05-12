@@ -1,6 +1,7 @@
-diff -rup x3270.orig/Common/codepage.c x3270/Common/codepage.c
---- x3270.orig/Common/codepage.c	2023-03-06 00:35:02.000000000 +0100
-+++ x3270/Common/codepage.c	2023-05-10 16:55:20.517546644 +0200
+diff --git a/Common/codepage.c b/Common/codepage.c
+index e3923ce7..3812ac8a 100644
+--- a/Common/codepage.c
++++ b/Common/codepage.c
 @@ -52,7 +52,7 @@
  #include "utils.h"
  
@@ -17,7 +18,7 @@ diff -rup x3270.orig/Common/codepage.c x3270/Common/codepage.c
 -#if !defined(_WIN32) /*[*/
 +#if defined(__MINT__)
 +    codeset_name = "ATARI";
-+#else  
++#else
 +#if !defined(_WIN32) && !defined(__MINT__) /*[*/
      /* Get all of the locale stuff right. */
      setlocale(LC_ALL, "");
@@ -30,9 +31,56 @@ diff -rup x3270.orig/Common/codepage.c x3270/Common/codepage.c
      set_codeset(codeset_name, appres.utf8);
  
      if (cpname == NULL) {
-diff -rup x3270.orig/c3270/Makefile.obj.in x3270/c3270/Makefile.obj.in
---- x3270.orig/c3270/Makefile.obj.in	2023-03-06 00:35:02.000000000 +0100
-+++ x3270/c3270/Makefile.obj.in	2023-05-08 17:11:35.275514636 +0200
+diff --git a/Common/pr3287/codepage.c b/Common/pr3287/codepage.c
+index b91eb96f..ca67db25 100644
+--- a/Common/pr3287/codepage.c
++++ b/Common/pr3287/codepage.c
+@@ -37,7 +37,9 @@
+ #include <stdlib.h>
+ #if !defined(_WIN32) /*[*/
+ # include <locale.h>
++#if !defined(__MINT__)
+ # include <langinfo.h>
++#endif
+ #endif /*]*/
+ 
+ #if defined(__CYGWIN__) /*[*/
+@@ -76,6 +78,10 @@ codepage_init(const char *cpname)
+     const char *host_codepage;
+     const char *cgcsgid_str;
+ 
++#if defined(__MINT__)
++	codeset_name = "ATARI";
++	set_codeset(codeset_name, false);
++#else
+ #if !defined(_WIN32) /*[*/
+     setlocale(LC_ALL, "");
+     codeset_name = nl_langinfo(CODESET);
+@@ -100,6 +106,7 @@ codepage_init(const char *cpname)
+ # endif /*]*/
+     set_codeset(codeset_name, false);
+ #endif /*]*/
++#endif
+ 
+     if (!set_uni(cpname, LOCAL_CODEPAGE, &host_codepage, &cgcsgid_str, NULL,
+ 		NULL)) {
+diff --git a/b3270/Makefile.obj.in b/b3270/Makefile.obj.in
+index fa4d7e79..d8d9efa6 100644
+--- a/b3270/Makefile.obj.in
++++ b/b3270/Makefile.obj.in
+@@ -69,7 +69,7 @@ fallbacks.c: mkfb $(FALLBACKS)
+ 	./mkfb -c -o $@ $(filter-out mkfb,$^)
+ 
+ mkfb: mkfb.c
+-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(filter %.c,$^)
++	gcc -o $@ $(XCPPFLAGS) $(filter %.c,$^)
+ 
+ b3270: $(OBJS1) $(DEP3270) $(DEP3270I) $(DEP32XX) $(DEP3270STUBS)
+ 	$(CC) -o $@ $(OBJS1) $(LDFLAGS) $(LD3270) $(LD3270I) $(LD32XX) $(LD3270STUBS) $(LIBS)
+diff --git a/c3270/Makefile.obj.in b/c3270/Makefile.obj.in
+index f52e0e90..819ad9e7 100644
+--- a/c3270/Makefile.obj.in
++++ b/c3270/Makefile.obj.in
 @@ -69,13 +69,16 @@ fallbacks.c: mkfb $(FALLBACKS)
  	./mkfb -c -o $@ $(filter-out mkfb,$^)
  
@@ -51,9 +99,10 @@ diff -rup x3270.orig/c3270/Makefile.obj.in x3270/c3270/Makefile.obj.in
  c3270: $(OBJS1) $(DEP3270) $(DEP3270I) $(DEP32XX) $(DEP3270STUBS) $(DEP32XX)
  	$(CC) -o $@ $(OBJS1) $(LDFLAGS) $(LD3270) $(LD3270I) $(LD32XX) $(LD3270STUBS) $(LIBS)
  
-diff -rup x3270.orig/lib/3270/Makefile.obj.in x3270/lib/3270/Makefile.obj.in
---- x3270.orig/lib/3270/Makefile.obj.in	2023-03-06 00:35:02.000000000 +0100
-+++ x3270/lib/3270/Makefile.obj.in	2023-05-08 17:07:18.851736875 +0200
+diff --git a/lib/3270/Makefile.obj.in b/lib/3270/Makefile.obj.in
+index 65ace7a5..ef2c0ad1 100644
+--- a/lib/3270/Makefile.obj.in
++++ b/lib/3270/Makefile.obj.in
 @@ -59,6 +59,9 @@ favicon.o: favicon.c
  favicon.c: favicon.ico mkicon
  	./mkicon $< >$@
@@ -64,21 +113,11 @@ diff -rup x3270.orig/lib/3270/Makefile.obj.in x3270/lib/3270/Makefile.obj.in
  clean:
  	$(RM) *.o favicon.c mkicon $(LIB3270)
  
-diff -rup x3270.orig/x3270/Makefile.obj.in x3270/x3270/Makefile.obj.in
---- x3270.orig/x3270/Makefile.obj.in	2023-03-06 00:35:02.000000000 +0100
-+++ x3270/x3270/Makefile.obj.in	2023-05-08 17:42:03.501953814 +0200
-@@ -82,7 +82,7 @@ fallbacks.c: mkfb $(FALLBACKS)
- 	./mkfb -o $@ $(filter-out mkfb,$^)
- 
- mkfb: mkfb.c
--	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(filter %.c,$^)
-+	gcc -o $@ $(XCPPFLAGS) $(filter %.c,$^)
- 
- x3270: $(OBJS1) $(DEP3270) $(DEP3270I) $(DEP32XX) $(DEP3270STUBS)
- 	$(CC) -o $@ $(OBJS1) $(LDFLAGS) $(LD3270) $(LD3270I) $(LD32XX) $(LD3270STUBS) $(LIBS)
---- a/x3270/s3270/Makefile.obj.in	2023-03-06 00:35:02.000000000 +0100
-+++ b/s3270/Makefile.obj.in	2023-05-10 18:59:49.343103364 +0200
-@@ -69,7 +69,7 @@
+diff --git a/s3270/Makefile.obj.in b/s3270/Makefile.obj.in
+index 08d17fdb..2b6b2234 100644
+--- a/s3270/Makefile.obj.in
++++ b/s3270/Makefile.obj.in
+@@ -69,7 +69,7 @@ fallbacks.c: mkfb $(FALLBACKS)
  	./mkfb -c -o $@ $(filter-out mkfb,$^)
  
  mkfb: mkfb.c
@@ -87,14 +126,29 @@ diff -rup x3270.orig/x3270/Makefile.obj.in x3270/x3270/Makefile.obj.in
  
  s3270: $(OBJS1) $(DEP3270) $(DEP32XX) $(DEP3270STUBS)
  	$(CC) -o $@ $(OBJS1) $(LDFLAGS) $(LD3270) $(LD32XX) $(LD3270STUBS) $(LIBS)
---- a/x3270.orig/b3270/Makefile.obj.in	2023-03-06 00:35:02.000000000 +0100
-+++ b/b3270/Makefile.obj.in	2023-05-10 19:37:03.757699737 +0200
-@@ -69,7 +69,7 @@
+diff --git a/tcl3270/Makefile.obj.in b/tcl3270/Makefile.obj.in
+index 52469961..237ad3d0 100644
+--- a/tcl3270/Makefile.obj.in
++++ b/tcl3270/Makefile.obj.in
+@@ -70,7 +70,7 @@ fallbacks.c: mkfb $(FALLBACKS)
  	./mkfb -c -o $@ $(filter-out mkfb,$^)
  
  mkfb: mkfb.c
 -	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(filter %.c,$^)
 +	gcc -o $@ $(XCPPFLAGS) $(filter %.c,$^)
  
- b3270: $(OBJS1) $(DEP3270) $(DEP3270I) $(DEP32XX) $(DEP3270STUBS)
+ tcl3270: $(OBJS1)
+ 	$(CC) -o $@ $(OBJS1) $(LDFLAGS) $(LIBS)
+diff --git a/x3270/Makefile.obj.in b/x3270/Makefile.obj.in
+index e8d924e8..10ca298b 100644
+--- a/x3270/Makefile.obj.in
++++ b/x3270/Makefile.obj.in
+@@ -82,7 +82,7 @@ fallbacks.c: mkfb $(FALLBACKS)
+ 	./mkfb -o $@ $(filter-out mkfb,$^)
+ 
+ mkfb: mkfb.c
+-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(filter %.c,$^)
++	gcc -o $@ $(XCPPFLAGS) $(filter %.c,$^)
+ 
+ x3270: $(OBJS1) $(DEP3270) $(DEP3270I) $(DEP32XX) $(DEP3270STUBS)
  	$(CC) -o $@ $(OBJS1) $(LDFLAGS) $(LD3270) $(LD3270I) $(LD32XX) $(LD3270STUBS) $(LIBS)

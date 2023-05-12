@@ -111,7 +111,7 @@ do
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s" \
-	LIBS="-lSM -lICE -lXpm -lXext -lX11" \
+	LIBS="-lSM -lICE -lXpm -lXext -lX11 -lz" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
 
