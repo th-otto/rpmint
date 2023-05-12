@@ -2134,6 +2134,8 @@ This notably applies to Perl and Python.
 
 <li>2023/05/10 Add x3270 4.2ga9</li>
 
+<li>2023/05/11 Add wget 1.21.3</li>
+
 </ul>
 
 <p></p>

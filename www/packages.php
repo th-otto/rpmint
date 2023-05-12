@@ -3437,6 +3437,24 @@ primarily for writing "screen-scraping" applications, for example a CGI
 back-end script that retrieves database information from a mainframe.
 '
 	),
+	'wget' => array(
+		'name' => 'wget',
+		'source' => https://ftp.gnu.org/gnu/wget/%{name}-%{version}.tar.gz',
+		'version' => '1.21.3',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Applications/Networking',
+		'summary' => 'Retrieve files from the World Wide Web using HTTP and FTP',
+		'comment' => '
+Wget enables you to retrieve WWW documents or FTP files from a server.
+This can be done in script files or via the command line.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
