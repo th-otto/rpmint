@@ -103,6 +103,7 @@ This is the last official version with support for it.
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
+		'atari' => 1,
 		'license' => 'GPL-3.0-or-later',
 		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The system GNU C Compiler',
@@ -3439,7 +3440,7 @@ back-end script that retrieves database information from a mainframe.
 	),
 	'wget' => array(
 		'name' => 'wget',
-		'source' => https://ftp.gnu.org/gnu/wget/%{name}-%{version}.tar.gz',
+		'source' => 'https://ftp.gnu.org/gnu/wget/%{name}-%{version}.tar.gz',
 		'version' => '1.21.3',
 		'patch' => 1,
 		'script' => 1,

@@ -6,6 +6,10 @@
 #
 
 me="$0"
+
+unset CDPATH
+unset LANG LANGUAGE LC_ALL LC_CTYPE LC_TIME LC_NUMERIC LC_COLLATE LC_MONETARY LC_MESSAGES
+
 scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
@@ -35,10 +39,7 @@ TARGET_BINDIR=${TARGET_PREFIX}/bin
 #
 # Where to look for the original source archives
 #
-case $host in
-	mingw* | msys*) here=`pwd` ;;
-	*) here=`pwd` ;;
-esac
+here=`pwd`
 ARCHIVES_DIR="$here"
 
 #
@@ -47,6 +48,9 @@ ARCHIVES_DIR="$here"
 # libmpc.
 # Should be a static compiled version, so the
 # compiler does not depend on non-standard shared libs
+# We will compile now the required libraries before
+# trying to compile gcc, in order to produce universal
+# libraries
 #
 CROSSTOOL_DIR="$HOME/crosstools"
 
@@ -151,11 +155,11 @@ fi
 #
 if ! test -f ${prefix}/${TARGET}/sys-root/usr/include/compiler.h; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
-		sudo mkdir -p ${PREFIX}/${TARGET}/sys-root/usr
+		sudo mkdir -p ${prefix}/${TARGET}/sys-root/usr
 		echo "fetching mintlib"
-		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-latest.tar.bz2" | sudo $TAR -C "${prefix}/${TARGET}/sys-root/usr" -xjf -
 		echo "fetching fdlibm"
-		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-latest.tar.bz2" | sudo $TAR -C "${prefix}/${TARGET}/sys-root/usr" -xjf -
 	fi
 fi
 

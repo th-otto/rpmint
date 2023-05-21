@@ -137,7 +137,7 @@ with_D=false
 #
 # whether to include the ada backend
 #
-with_ada=true
+with_ada=false
 case $host in
 	linux64 | linux32)
 		;;

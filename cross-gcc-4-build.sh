@@ -14,15 +14,15 @@ scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
-VERSION=-7.5.0
-VERSIONPATCH=-20200101
+VERSION=-4.6.4
+VERSIONPATCH=-20230210
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
 # For which target we build-
-# should be either m68k-atari-mint or m68k-atari-mintelf
+# should be m68k-atari-mint
 #
-TARGET=${1:-m68k-atari-mint}
+TARGET=m68k-atari-mint
 
 #
 # The prefix where the executables should
@@ -64,7 +64,7 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
+MINT_BUILD_DIR="$BUILD_DIR/gcc-build4"
 
 #
 # Where to put the binary packages
@@ -84,7 +84,7 @@ fi
 #
 # whether to include the fortran backend
 #
-with_fortran=true
+with_fortran=false
 
 #
 # whether to include the D backend
@@ -100,11 +100,12 @@ with_ada=false
 #
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
-# - checking out the mint/gcc-7 branch
-# - running git diff releases/gcc-7_5_0 HEAD
+# - checking out the mint/gcc-4.6 branch
+# - running git diff releases/gcc-4.6 HEAD
 #
 PATCHES="patches/gcc/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch"
 OTHER_PATCHES="
+patches/gcc/${PACKAGENAME}${VERSION}-fastcall.patch
 patches/gmp/gmp-universal.patch
 patches/gmp/gmp-6.2.1-CVE-2021-43618.patch
 patches/gmp/gmp-6.2.1-arm64-invert_limb.patch
@@ -185,7 +186,7 @@ if test "$BASE_VER" != "${VERSION#-}"; then
 	echo "version mismatch: this script is for gcc ${VERSION#-}, but gcc source is version $BASE_VER" >&2
 	exit 1
 fi
-gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
+gcc_dir_version=${BASE_VER}
 gccsubdir=${TARGET_LIBDIR}/gcc/${TARGET}/${gcc_dir_version}
 gxxinclude=/usr/include/c++/${gcc_dir_version}
 
