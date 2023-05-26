@@ -14,8 +14,8 @@ scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
-VERSION=-9.5.0
-VERSIONPATCH=-20230302
+VERSION=-13.1.0
+VERSIONPATCH=-20230522
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -96,6 +96,14 @@ with_D=false
 # whether to include the ada backend
 #
 with_ada=false
+
+#
+# whether to include the modula-2 backend
+#
+# FIXME: building the native compiler with a cross-compiler currently does not work,
+# because m2/boot-bin/mklink is compiled using the cross-compiler, then executed
+#
+with_m2=false
 
 #
 # this patch can be recreated by
@@ -216,6 +224,7 @@ languages=c,c++
 $with_fortran && languages="$languages,fortran"
 $with_ada && languages="$languages,ada"
 $with_D && { languages="$languages,d"; enable_libphobos=; } # --enable-libphobos does not work because of missing swapcontext() in mintlib
+$with_m2 && languages="$languages,m2"
 ranlib=ranlib
 
 case "${TARGET}" in
@@ -455,7 +464,7 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 		rm -f ${TARGET}-c++${TARGET_EXEEXT} ${TARGET}-c++
 		$LN_S ${TARGET}-g++${TARGET_EXEEXT} ${TARGET}-c++${TARGET_EXEEXT}
 	fi
-	for tool in gcc gfortran gdc gccgo go gofmt; do
+	for tool in gcc gfortran gdc gccgo go gofmt gm2; do
 		if test -x ${TARGET}-${tool}; then
 			rm -f ${TARGET}-${tool}-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-${tool}-${BASE_VER}
 			rm -f ${TARGET}-${tool}-${gcc_dir_version}${TARGET_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}
@@ -512,7 +521,7 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	rmdir m* || :
 	popd
 
-	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${TARGET_EXEEXT} \
+	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,cc1gm2,g++-mapper-server}${TARGET_EXEEXT} \
 		${gccsubdir#/}/${LTO_PLUGIN} \
 		${gccsubdir#/}/plugin/gengtype${TARGET_EXEEXT} \
 		${gccsubdir#/}/install-tools/fixincl${TARGET_EXEEXT}; do
@@ -621,6 +630,19 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 		ada="$ada "`find ${TARGET_PREFIX#/}/bin -name "*gnat*"`
 		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-ada-${CPU}.tar.xz $ada || exit 1
 		rm -rf $ada
+	fi
+
+	#
+	# create a separate archive for the modula-2 backend
+	#
+	if $with_m2; then
+		m2=
+		test -d ${gccsubdir#/}/m2 && m2="$m2 "${gccsubdir#/}/m2
+		m2="$m2 "`find ${gccsubdir#/} -name "libm2*"`
+		m2="$m2 "`find ${gccsubdir#/} -name "cc1gm2*"`
+		m2="$m2 "${TARGET_PREFIX#/}/bin/${TARGET}-gm2*
+		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-m2-${CPU}.tar.xz $m2 || exit 1
+		rm -rf $m2
 	fi
 
 	#

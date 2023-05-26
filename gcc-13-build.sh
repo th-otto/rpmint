@@ -13,8 +13,8 @@ scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
-VERSION=-13.0.1
-VERSIONPATCH=-20230214
+VERSION=-13.1.0
+VERSIONPATCH=-20230522
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -147,6 +147,8 @@ case $host in
 		with_ada=false
 		# D backend takes too long on github runners
 		with_D=false
+		# m2 backend needs pthread.h
+		with_m2=false
 		;;
 esac
 
@@ -615,15 +617,16 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	cd "${INSTALL_DIR}"
 
 	case $host in
-		cygwin*) LTO_PLUGIN=cyglto_plugin-0.dll; MY_LTO_PLUGIN=cyglto_plugin_mintelf-${gcc_dir_version}.dll ;;
-		mingw* | msys*) LTO_PLUGIN=liblto_plugin-0.dll; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}.dll ;;
-		macos*) LTO_PLUGIN=liblto_plugin.dylib; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}.dylib ;;
-		*) LTO_PLUGIN=liblto_plugin.so.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf.so.${gcc_dir_version} ;;
+		cygwin*) soext=.dll; LTO_PLUGIN=cyglto_plugin-0${soext}; MY_LTO_PLUGIN=cyglto_plugin_mintelf-${gcc_dir_version}${soext} ;;
+		mingw* | msys*) soext=.dll; LTO_PLUGIN=liblto_plugin-0${soext}; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}${soext} ;;
+		macos*) soext=.dylib; LTO_PLUGIN=liblto_plugin${soext}; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}${soext} ;;
+		*) soext=.so; LTO_PLUGIN=liblto_plugin${soext}.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf${soext}.${gcc_dir_version} ;;
 	esac
 	
 	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,cc1gm2,g++-mapper-server}${BUILD_EXEEXT} \
 		${gccsubdir#/}/${LTO_PLUGIN} \
 		${gccsubdir#/}/plugin/gengtype${BUILD_EXEEXT} \
+		${gccsubdir#/}/plugin/m2rte${soext} \
 		${gccsubdir#/}/install-tools/fixincl${BUILD_EXEEXT}; do
 		test -f "$f" && ${STRIP} "$f"
 	done
@@ -730,9 +733,10 @@ fi
 #
 if $with_m2; then
 	m2=
-	test -d ${gccsubdir#/}include/m2 && m2="$m2 "${gccsubdir#/}include/m2
+	test -d ${gccsubdir#/}/m2 && m2="$m2 "${gccsubdir#/}/m2
 	m2="$m2 "`find ${gccsubdir#/} -name "libm2*"`
 	m2="$m2 "`find ${gccsubdir#/} -name "cc1gm2*"`
+	test -f ${gccsubdir#/}/plugin/m2rte${soext} && m2="$m2 ${gccsubdir#/}/plugin/m2rte${soext}"
 	m2="$m2 "${PREFIX#/}/bin/${TARGET}-gm2*
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-m2-${host}.tar.xz $m2 || exit 1
 	rm -rf $m2

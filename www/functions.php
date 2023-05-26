@@ -11,15 +11,15 @@ $targets = array(
 );
 $platforms = array(
 	'all' => array('display' => 'All'),
-	'cygwin32' => array('display' => 'Cygwin32'),
-	'cygwin64' => array('display' => 'Cygwin64'),
-	'mingw32' => array('display' => 'MinGW32'),
-	'mingw64' => array('display' => 'MinGW64'),
-	'linux32' => array('display' => 'Linux (x86)'),
-	'linux64' => array('display' => 'Linux'),
-	'macos32' => array('display' => 'MacOSX (x86)'),
-	'macos64' => array('display' => 'MacOSX'),
-	'atari' => array('display' => 'Atari'),
+	'cygwin32' => array('display' => 'Cygwin32', 'image' => 'os-cygwin.ico'),
+	'cygwin64' => array('display' => 'Cygwin64', 'image' => 'os-cygwin.ico'),
+	'mingw32' => array('display' => 'MinGW32', 'image' => 'os-mingw.ico'),
+	'mingw64' => array('display' => 'MinGW64', 'image' => 'os-mingw.ico'),
+	'linux32' => array('display' => 'Linux (x86)', 'image' => 'os-linux.ico'),
+	'linux64' => array('display' => 'Linux', 'image' => 'os-linux.ico'),
+	'macos32' => array('display' => 'MacOSX (x86)', 'image' => 'os-macos.ico'),
+	'macos64' => array('display' => 'MacOSX', 'image' => 'os-macos.ico'),
+	'atari' => array('display' => 'Atari', 'image' => 'os-atari.png'),
 );
 
 function last_changetime($filename)

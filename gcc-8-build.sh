@@ -688,7 +688,6 @@ ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/gcc*/python
-exit 1
 
 #
 # create a separate archive for the fortran backend

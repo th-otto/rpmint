@@ -54,6 +54,7 @@ include('packages.php');
 
 $gccver = 'gcc950';
 
+
 ?>
 
 <body>
@@ -233,6 +234,123 @@ Comments
 
 <?php
 
+function gen_baselinks($package, string $os, string $cpu)
+{
+	global $basepackages;
+	global $platforms;
+	global $download_dir;
+	global $gccver;
+	
+	$fdate = '';
+	if ($os === 'atari')
+	{
+		$fbin = '';
+		$fos = $cpu;
+	} else
+	{
+		$fbin = '-bin';
+		if ($os === 'macos64')
+			$fos = '-' . 'macos';
+		else
+			$fos = '-' . $os;
+		if (isset($package['date']))
+			$fdate = '-' . $package['date'];
+	}
+
+	$name = $package['name'];
+	if (substr($name, 0, 3) === "gcc")
+		$name = "gcc";
+
+	echo '<td class="sourcelink">';
+	$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . $fbin . $fos . '.tar.xz';
+	$text = $name . '-' . $package['version'] . '-mint' . $fbin . $fos . '.tar.xz';
+	gen_link($filename, $text);
+	if ($package['fortran'])
+	{
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
+		echo '<tr><td></td><td></td><td class="sourcelink">';
+		$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-fortran' . $fos . '.tar.xz';
+		$text = $name . '-' . $package['version'] . '-mint' . '-fortran' . $fos . '.tar.xz';
+		gen_link($filename, $text);
+	}
+	if ($package['D'] && ($os === 'linux32' || $os === 'linux64'))
+	{
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
+		echo '<tr><td></td><td></td><td class="sourcelink">';
+		$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-d' . $fos . '.tar.xz';
+		$text = $name . '-' . $package['version'] . '-mint' . '-d' . $fos . '.tar.xz';
+		gen_link($filename, $text);
+	}
+	if ($package['ada'] && ($os === 'linux32' || $os === 'linux64'))
+	{
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
+		echo '<tr><td></td><td></td><td class="sourcelink">';
+		$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-ada' . $fos . '.tar.xz';
+		$text = $name . '-' . $package['version'] . '-mint' . '-ada' . $fos . '.tar.xz';
+		gen_link($filename, $text);
+	}
+	if ($package['m2'] && ($os === 'linux32' || $os === 'linux64'))
+	{
+		echo '</td>' . "\n";
+		echo '</tr>' . "\n";
+		echo '<tr><td></td><td></td><td class="sourcelink">';
+		$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-m2' . $fos . '.tar.xz';
+		$text = $name . '-' . $package['version'] . '-mint' . '-m2' . $fos . '.tar.xz';
+		gen_link($filename, $text);
+	}
+	echo '</td>' . "\n";
+	echo '</tr>' . "\n";
+	echo '<tr><td></td><td></td><td class="sourcelink">';
+	if ($package['elf'] && $basepackages[$gccver][$os])
+	{
+		$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf' . $fdate . $fbin . $fos . '.tar.xz';
+		$text = $name . '-' . $package['version'] . '-mintelf' . $fbin . $fos . '.tar.xz';
+		gen_link($filename, $text);
+		if ($package['fortran'])
+		{
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+			echo '<tr><td></td><td></td><td class="sourcelink">';
+			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf' . $fdate . '-fortran' . $fos . '.tar.xz';
+			$text = $name . '-' . $package['version'] . '-mintelf' . '-fortran' . $fos . '.tar.xz';
+			gen_link($filename, $text);
+		}
+		if ($package['D'] && ($os === 'linux32' || $os === 'linux64'))
+		{
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+			echo '<tr><td></td><td></td><td class="sourcelink">';
+			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf' . $fdate . '-d' . $fos . '.tar.xz';
+			$text = $name . '-' . $package['version'] . '-mintelf' . '-d' . $fos . '.tar.xz';
+			gen_link($filename, $text);
+		}
+		if ($package['ada'] && ($os === 'linux32' || $os === 'linux64'))
+		{
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+			echo '<tr><td></td><td></td><td class="sourcelink">';
+			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf' . $fdate . '-ada' . $fos . '.tar.xz';
+			$text = $name . '-' . $package['version'] . '-mintelf' . '-ada' . $fos . '.tar.xz';
+			gen_link($filename, $text);
+		}
+		if ($package['m2'] && ($os === 'linux32' || $os === 'linux64'))
+		{
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+			echo '<tr><td></td><td></td><td class="sourcelink">';
+			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf' . $fdate . '-m2' . $fos . '.tar.xz';
+			$text = $name . '-' . $package['version'] . '-mintelf' . '-m2' . $fos . '.tar.xz';
+			gen_link($filename, $text);
+		}
+	}
+	echo '</td>' . "\n";
+	echo '</tr>' . "\n";
+}
+
+
 foreach ($basepackages as $key => $package)
 {
 	echo '<tr id="' . $key . '">' . "\n";
@@ -358,931 +476,26 @@ foreach ($basepackages as $key => $package)
 		echo '</tr>' . "\n";
 	}
 	
-	if ($package['cygwin32'] && ($platform == 'cygwin32' || $platform == 'all'))
+	foreach (array('cygwin32', 'cygwin64', 'mingw32', 'mingw64', 'linux64', 'linux32', 'macos64', 'atari') as $os)
 	{
-		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin32"></img></td>' . "\n";
-		echo '<td class="linkdesc">Cygwin32 Package:</td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-bin-cygwin32.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint-bin-cygwin32.tar.xz';
-		gen_link($filename, $text);
-		if ($package['fortran'])
+		if (isset($package[$os]) && $package[$os] && ($platform == $os || $platform == 'all'))
 		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-fortran-cygwin32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-fortran-cygwin32.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['D'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-d-cygwin32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-d-cygwin32.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['ada'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-ada-cygwin32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-ada-cygwin32.tar.xz';
-			gen_link($filename, $text);
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'] && $basepackages[$gccver]['cygwin32'])
-		{
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-bin-cygwin32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mintelf-bin-cygwin32.tar.xz';
-			gen_link($filename, $text);
-			if ($package['fortran'])
+			echo '<tr>' . "\n";
+			echo '<td class="icon"><img src="images/' . $platforms[$os]['image'] . '" width="32" height="32" alt="' . $platforms[$os]['display'] . '"></img></td>' . "\n";
+			echo '<td class="linkdesc">' . $platforms[$os]['display'] . ' Package:</td>' . "\n";
+			
+			gen_baselinks($package, $os, "-000");
+			
+			if ($os === 'atari')
 			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-fortran-cygwin32.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-fortran-cygwin32.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['D'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-d-cygwin32.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-d-cygwin32.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['ada'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-ada-cygwin32.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-ada-cygwin32.tar.xz';
-				gen_link($filename, $text);
+				echo '<tr><td></td><td></td>';
+				gen_baselinks($package, $os, "-020");
+				echo '<tr><td></td><td></td>';
+				gen_baselinks($package, $os, "-v4e");
 			}
 		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
 	}
-	
-	if ($package['cygwin64'] && ($platform == 'cygwin64' || $platform == 'all'))
-	{
-		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin64"></img></td>' . "\n";
-		echo '<td class="linkdesc">Cygwin64 Package:</td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-bin-cygwin64.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint-bin-cygwin64.tar.xz';
-		gen_link($filename, $text);
-		if ($package['fortran'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-fortran-cygwin64.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-fortran-cygwin64.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['D'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-d-cygwin64.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-d-cygwin64.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['ada'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-ada-cygwin64.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-ada-cygwin64.tar.xz';
-			gen_link($filename, $text);
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'] && $basepackages[$gccver]['cygwin64'])
-		{
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-bin-cygwin64.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mintelf-bin-cygwin64.tar.xz';
-			gen_link($filename, $text);
-			if ($package['fortran'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-fortran-cygwin64.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-fortran-cygwin64.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['D'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-d-cygwin64.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-d-cygwin64.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['ada'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-ada-cygwin64.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-ada-cygwin64.tar.xz';
-				gen_link($filename, $text);
-			}
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-	}
-	
-	if ($package['mingw32'] && ($platform == 'mingw32' || $platform == 'all'))
-	{
-		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW32"></img></td>' . "\n";
-		echo '<td class="linkdesc">MinGW32 Package:</td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-bin-mingw32.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint-bin-mingw32.tar.xz';
-		gen_link($filename, $text);
-		if ($package['fortran'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-fortran-mingw32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-fortran-mingw32.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['D'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-d-mingw32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-d-mingw32.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['ada'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-ada-mingw32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-ada-mingw32.tar.xz';
-			gen_link($filename, $text);
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'] && $basepackages[$gccver]['mingw32'])
-		{
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-bin-mingw32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mintelf-bin-mingw32.tar.xz';
-			gen_link($filename, $text);
-			if ($package['fortran'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-fortran-mingw32.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-fortran-mingw32.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['D'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-d-mingw32.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-d-mingw32.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['ada'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-ada-mingw32.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-ada-mingw32.tar.xz';
-				gen_link($filename, $text);
-			}
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-	}
-	
-	if ($package['mingw64'] && ($platform == 'mingw64' || $platform == 'all'))
-	{
-		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW64"></img></td>' . "\n";
-		echo '<td class="linkdesc">MinGW64 Package:</td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-bin-mingw64.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint-bin-mingw64.tar.xz';
-		gen_link($filename, $text);
-		if ($package['fortran'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-fortran-mingw64.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-fortran-mingw64.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['D'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-d-mingw64.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-d-mingw64.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['ada'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-ada-mingw64.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-ada-mingw64.tar.xz';
-			gen_link($filename, $text);
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'] && $basepackages[$gccver]['mingw64'])
-		{
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= -bin-mingw64.tar.xz;
-			$text = $name . '-' . $package['version'] . '-mintelf-bin-mingw64.tar.xz';
-			gen_link($filename, $text);
-			if ($package['fortran'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-fortran-mingw64.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-fortran-mingw64.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['D'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-d-mingw64.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-d-mingw64.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['ada'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-ada-mingw64.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-ada-mingw64.tar.xz';
-				gen_link($filename, $text);
-			}
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-	}
-
-	if (!$package['mingw32'] && !$package['mingw64'] && ($platform == 'mingw32' || $platform == 'all'))
-	{
-		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW"></img></td>' . "\n";
-		echo '<td class="linkdesc">MinGW Package:</td>' . "\n";
-		echo '<td class="sourcelink">(not yet available)</td>' . "\n";
-		echo '</tr>';
-	}
-	
-	if ($package['linux64'] && ($platform == 'linux64' || $platform == 'all'))
-	{
-		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-linux.png" width="32" height="32" alt="Linux"></img></td>' . "\n";
-		echo '<td class="linkdesc">Linux64 Package:</td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
- 		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-bin-linux64.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint-bin-linux64.tar.xz';
-		gen_link($filename, $text);
-		if ($package['fortran'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-fortran-linux64.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-fortran-linux64.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['D'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-d-linux64.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-d-linux64.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['ada'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-ada-linux64.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-ada-linux64.tar.xz';
-			gen_link($filename, $text);
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'])
-		{
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-bin-linux64.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mintelf-bin-linux64.tar.xz';
-			gen_link($filename, $text);
-			if ($package['fortran'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-fortran-linux64.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-fortran-linux64.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['D'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-d-linux64.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-d-linux64.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['ada'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-ada-linux64.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-ada-linux64.tar.xz';
-				gen_link($filename, $text);
-			}
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-	}
-	
-	if ($package['linux32'] && ($platform == 'linux32' || $platform == 'all'))
-	{
-		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-linux.png" width="32" height="32" alt="Linux"></img></td>' . "\n";
-		echo '<td class="linkdesc">Linux32 Package:</td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
- 		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-bin-linux32.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint-bin-linux32.tar.xz';
-		gen_link($filename, $text);
-		if ($package['fortran'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-fortran-linux32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-fortran-linux32.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['D'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-d-linux32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-d-linux32.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['ada'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-ada-linux32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-ada-linux32.tar.xz';
-			gen_link($filename, $text);
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'])
-		{
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-bin-linux32.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mintelf-bin-linux32.tar.xz';
-			gen_link($filename, $text);
-			if ($package['fortran'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-fortran-linux32.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-fortran-linux32.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['D'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-d-linux32.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-d-linux32.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['ada'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-ada-linux32.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-ada-linux32.tar.xz';
-				gen_link($filename, $text);
-			}
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-	}
-	
-	if ($package['macos64'] && ($platform == 'macos64' || $platform == 'all'))
-	{
-		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-macos.png" width="32" height="32" alt="MacOSX"></img></td>' . "\n";
-		echo '<td class="linkdesc">MacOSX Package:</td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-bin-macos.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint-bin-macos.tar.xz';
-		gen_link($filename, $text);
-		if ($package['fortran'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-fortran-macos.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-fortran-macos.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['D'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-d-macos.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-d-macos.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['ada'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-ada-macos.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-ada-macos.tar.xz';
-			gen_link($filename, $text);
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'])
-		{
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-			if (isset($package['date']))
-				$filename .= '-' . $package['date'];
-			$filename .= '-bin-macos.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mintelf-bin-macos.tar.xz';
-			gen_link($filename, $text);
-			if ($package['fortran'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-fortran-macos.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-fortran-macos.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['D'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-d-macos.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-d-macos.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['ada'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf';
-				if (isset($package['date']))
-					$filename .= '-' . $package['date'];
-				$filename .= '-ada-macos.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-ada-macos.tar.xz';
-				gen_link($filename, $text);
-			}
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-	}
-	
-	if (isset($package['atari']) && $package['atari'] && ($platform == 'atari' || $platform == 'all'))
-	{
-		echo '<tr>' . "\n";
-		echo '<td class="icon"><img src="images/os-atari.png" width="32" height="32" alt="Atari" style="background-color: #ffffff"></img></td>' . "\n";
-		echo '<td class="linkdesc">Atari Package:</td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint-000.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint-000.tar.xz';
-		gen_link($filename, $text);
-		if ($package['fortran'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint-fortran-000.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-fortran-000.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['D'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint-d-000.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-d-000.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['ada'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint-ada-000.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-ada-000.tar.xz';
-			gen_link($filename, $text);
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'])
-		{
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-000.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mintelf-000.tar.xz';
-			gen_link($filename, $text);
-			if ($package['fortran'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-fortran-000.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-fortran-000.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['D'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-d-000.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-d-000.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['ada'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-ada-000.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-ada-000.tar.xz';
-				gen_link($filename, $text);
-			}
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint-020.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint-020.tar.xz';
-		gen_link($filename, $text);
-		if ($package['fortran'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint-fortran-020.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-fortran-020.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['D'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint-d-020.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-d-020.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['ada'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint-ada-020.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-ada-020.tar.xz';
-			gen_link($filename, $text);
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'])
-		{
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-020.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mintelf-020.tar.xz';
-			gen_link($filename, $text);
-			if ($package['fortran'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-fortran-020.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-fortran-020.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['D'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-d-020.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-d-020.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['ada'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-ada-020.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-ada-020.tar.xz';
-				gen_link($filename, $text);
-			}
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint-v4e.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint-v4e.tar.xz';
-		gen_link($filename, $text);
-		if ($package['fortran'])
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint-fortran-v4e.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-fortran-v4e.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['D'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint-d-v4e.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-d-v4e.tar.xz';
-			gen_link($filename, $text);
-		}
-		if ($package['ada'] && 0)
-		{
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
-			echo '<tr><td></td><td></td><td class="sourcelink">';
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mint-ada-v4e.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mint-ada-v4e.tar.xz';
-			gen_link($filename, $text);
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		if ($package['elf'])
-		{
-			$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-v4e.tar.xz';
-			$text = $name . '-' . $package['version'] . '-mintelf-v4e.tar.xz';
-			gen_link($filename, $text);
-			if ($package['fortran'])
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-fortran-v4e.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-fortran-v4e.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['D'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-d-v4e.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-d-v4e.tar.xz';
-				gen_link($filename, $text);
-			}
-			if ($package['ada'] && 0)
-			{
-				echo '</td>' . "\n";
-				echo '</tr>' . "\n";
-				echo '<tr><td></td><td></td><td class="sourcelink">';
-				$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf-ada-v4e.tar.xz';
-				$text = $name . '-' . $package['version'] . '-mintelf-ada-v4e.tar.xz';
-				gen_link($filename, $text);
-			}
-		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-	}
-	
+		
 	echo '</table></td>' . "\n";
 
 	echo '<td>';
@@ -2138,6 +1351,8 @@ This notably applies to Perl and Python.
 
 <li>2023/05/32 Provide archives for native gcc 4.6.4</li>
 
+<li>2023/05/22 Add gcc 13.1.0</li>
+
 </ul>
 
 <p></p>
@@ -2322,6 +1537,13 @@ gcc 12.2.0:
 	cygwin64: 129min
 	macos:   57min
 	linux:   11min8sec
+
+gcc 13.1.0:
+	cygwin32: 80min
+	cygwin32: 134min
+	cygwin64: 143min
+	macos:   54min
+	linux:   12min40sec
 
 -->
 </body>

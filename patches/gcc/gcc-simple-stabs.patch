@@ -1,0 +1,89 @@
+diff --git a/gcc/config/m68k/m68k.cc b/gcc/config/m68k/m68k.cc
+index 51dac3dc705..27ff29eb5cc 100644
+--- a/gcc/config/m68k/m68k.cc
++++ b/gcc/config/m68k/m68k.cc
+@@ -67,6 +67,7 @@ along with GCC; see the file COPYING3.  If not see
+ #include "builtins.h"
+ #include "rtl-iter.h"
+ #include "toplev.h"
++#include "dbxout.h"
+ 
+ /* This file should be included last.  */
+ #include "target-def.h"
+@@ -7088,55 +7089,6 @@ m68k_conditional_register_usage (void)
+     fixed_regs[PIC_REG] = call_used_regs[PIC_REG] = 1;
+ }
+ 
+-#if !defined(USING_ELFOS_H) && !defined(DBX_DEBUG)
+-
+-/* even without debug info, we need to generate ctors/dtors */
+-
+-/* Begin a .stabs directive with string STR, type STYPE, and desc 0.
+-   The value field is the responsibility of the caller.  */
+-static void
+-begin_simple_stabs (const char *str, int stype)
+-{
+-  fputs ("\t.stabs\t", asm_out_file);
+-  output_quoted_string (asm_out_file, str);
+-  fprintf (asm_out_file, ",%d,0,0,", stype);
+-}
+-
+-/* Write out the label LABEL as the value of a stab.  */
+-static void
+-stab_value_label (const char *label)
+-{
+-  assemble_name (asm_out_file, label);
+-  putc ('\n', asm_out_file);
+-}
+-
+-
+-/* Record an element in the table of global destructors.  SYMBOL is
+-   a SYMBOL_REF of the function to be called; PRIORITY is a number
+-   between 0 and MAX_INIT_PRIORITY.  */
+-
+-void mint_asm_out_destructor (rtx symbol ATTRIBUTE_UNUSED, int priority ATTRIBUTE_UNUSED)
+-{
+-  /* Tell GNU LD that this is part of the static destructor set.
+-     This will work for any system that uses stabs, most usefully
+-     aout systems.  */
+-  begin_simple_stabs ("___DTOR_LIST__", 22 /* N_SETT */);
+-  stab_value_label (XSTR (symbol, 0));
+-}
+-
+-/* Likewise for global constructors.  */
+-
+-void mint_asm_out_constructor (rtx symbol ATTRIBUTE_UNUSED, int priority ATTRIBUTE_UNUSED)
+-{
+-  /* Tell GNU LD that this is part of the static destructor set.
+-     This will work for any system that uses stabs, most usefully
+-     aout systems.  */
+-  begin_simple_stabs ("___CTOR_LIST__", 22 /* N_SETT */);
+-  stab_value_label (XSTR (symbol, 0));
+-}
+-
+-#endif
+-
+ static void
+ m68k_init_libfuncs (void)
+ {
+diff --git a/gcc/config/m68k/mint.h b/gcc/config/m68k/mint.h
+index 909bcec7587..60a6095d9de 100644
+--- a/gcc/config/m68k/mint.h
++++ b/gcc/config/m68k/mint.h
+@@ -22,16 +22,7 @@ along with GCC; see the file COPYING3.  If not see
+ #ifndef USING_ELFOS_H
+ /* We can only do STABS.  */
+ #undef PREFERRED_DEBUGGING_TYPE
+-#ifdef DBX_DEBUG
+ #define PREFERRED_DEBUGGING_TYPE DBX_DEBUG
+-#else
+-/* we can't do STABS in a.out */
+-#define PREFERRED_DEBUGGING_TYPE NO_DEBUG
+-#define TARGET_ASM_CONSTRUCTOR mint_asm_out_constructor
+-#define TARGET_ASM_DESTRUCTOR mint_asm_out_destructor
+-void mint_asm_out_constructor (rtx, int);
+-void mint_asm_out_destructor (rtx, int);
+-#endif
+ #endif
+ 
+ /* Here are four prefixes that are used by asm_fprintf to
