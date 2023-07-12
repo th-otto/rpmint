@@ -1353,6 +1353,8 @@ This notably applies to Perl and Python.
 
 <li>2023/05/22 Add gcc 13.1.0</li>
 
+<li>2023/07/12 pth: fix a crash in pth_clenanup</li>
+
 </ul>
 
 <p></p>
@@ -1517,12 +1519,12 @@ gcc 9.1.1:
 	macos:   31min
 	linux:   4min12sec
 
-gcc 10.2.0:
+gcc 10.5.0:
 	mingw32: 50min
 	cygwin32: 85min
 	cygwin64: 88min
 	macos:   32min
-	linux:   6min23sec
+	linux:   7min48sec
 
 gcc 11.3.0:
 	mingw32: 73min
