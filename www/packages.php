@@ -84,7 +84,7 @@ This is the last official version with support for it.
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '4.6.4',
-		'date' => '20230210',
+		'date' => '20230719',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-4.6',
 		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.bz2',

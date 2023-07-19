@@ -1353,7 +1353,9 @@ This notably applies to Perl and Python.
 
 <li>2023/05/22 Add gcc 13.1.0</li>
 
-<li>2023/07/12 pth: fix a crash in pth_clenanup</li>
+<li>2023/07/12 pth: fix a crash in pth_cleanup</li>
+
+<li>2023/07/19 gcc4: rebuild with newer libgcc for long-double</li>
 
 </ul>
 
@@ -1541,7 +1543,7 @@ gcc 12.2.0:
 	linux:   11min8sec
 
 gcc 13.1.0:
-	cygwin32: 80min
+	mingw32: 80min
 	cygwin32: 134min
 	cygwin64: 143min
 	macos:   54min
