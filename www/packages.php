@@ -91,7 +91,7 @@ This is the last official version with support for it.
 		'patch' => 1,
 		'patchcomment' => 'This archive also contains an (experimental) patch for -mfastcall support.',
 		'script' => 1,
-		'crossscript' => 0,
+		'crossscript' => 1,
 		'doc' => 1,
 		'elf' => 0,
 		'fortran' => 0,
@@ -242,12 +242,12 @@ Slightly older version of GCC. </br>
 This compiler was not able to compile itself for m68k, so it might be broken.
 '
 	),
-	'gcc1040' => array(
+	'gcc1050' => array(
 		'name' => 'gcc10',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '10.4.0',
-		'date' => '20230210',
+		'version' => '10.5.0',
+		'date' => '20230719',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-10',
 		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',

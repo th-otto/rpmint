@@ -1357,6 +1357,8 @@ This notably applies to Perl and Python.
 
 <li>2023/07/19 gcc4: rebuild with newer libgcc for long-double</li>
 
+<li>2023/07/20 gcc10: rebuild with newer libgcc for long-double</li>
+
 </ul>
 
 <p></p>
