@@ -205,12 +205,12 @@ use fdlibm instead of the ancient pml math library.
 Slightly older version of GCC.
 '
 	),
-	'gcc1130' => array(
+	'gcc1140' => array(
 		'name' => 'gcc11',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '11.3.0',
-		'date' => '20230214',
+		'version' => '11.4.0',
+		'date' => '20230719',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-11',
 		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
