@@ -170,12 +170,12 @@ using this format (although theoretically it should be possible to mix them).<br
 use fdlibm instead of the ancient pml math library.
 '
 	),
-	'gcc1220' => array(
+	'gcc1240' => array(
 		'name' => 'gcc12',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '12.2.0',
-		'date' => '20230210',
+		'version' => '12.3.0',
+		'date' => '20230719',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-12',
 		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
