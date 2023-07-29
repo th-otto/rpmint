@@ -14,8 +14,8 @@ if (isset($_SESSION['target']))
 {
 	$target = $_SESSION['target'];
 	$platform = $_SESSION['platform'];
-	$_COOKIE['target'] = $target;
-	$_COOKIE['platform'] = $platform;
+	$_COOKIE['target'] = "$target; SameSite=Strict";
+	$_COOKIE['platform'] = "$platform; SameSite=Strict";
 }
 include('mintvars.php');
 include('functions.php');
@@ -531,7 +531,7 @@ if (isset($package['date']))
 if ($package['cygwin32'] && ($platform == 'cygwin32' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
-	echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin32"></img></td>' . "\n";
+	echo '<td class="icon"><img src="images/' . $platforms['cygwin32']['image'] . '" width="32" height="32" alt="' . $platforms['cygwin32']['display'] . '"></img></td>' . "\n";
 	echo '<td class="linkdesc">Cygwin32 Archive:</td>' . "\n";
 	echo '<td class="sourcelink">';
 	$filename = $download_dir . $basename . '-cygwin32.tar.xz';
@@ -543,7 +543,7 @@ if ($package['cygwin32'] && ($platform == 'cygwin32' || $platform == 'all'))
 if ($package['cygwin64'] && ($platform == 'cygwin64' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
-	echo '<td class="icon"><img src="images/os-cygwin.ico" width="32" height="32" alt="Cygwin64"></img></td>' . "\n";
+	echo '<td class="icon"><img src="images/' . $platforms['cygwin64']['image'] . '" width="32" height="32" alt="' . $platforms['cygwin64']['display'] . '"></img></td>' . "\n";
 	echo '<td class="linkdesc">Cygwin64 Archive:</td>' . "\n";
 	echo '<td class="sourcelink">';
 	$filename = $download_dir . $basename . '-cygwin64.tar.xz';
@@ -555,7 +555,7 @@ if ($package['cygwin64'] && ($platform == 'cygwin64' || $platform == 'all'))
 if ($package['mingw32'] && ($platform == 'mingw32' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
-	echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MingW32"></img></td>' . "\n";
+	echo '<td class="icon"><img src="images/' . $platforms['mingw32']['image'] . '" width="32" height="32" alt="' . $platforms['mingw32']['display'] . '"></img></td>' . "\n";
 	echo '<td class="linkdesc">MinGW Archive:</td>' . "\n";
 	echo '<td class="sourcelink">';
 	$filename = $download_dir . $basename . '-mingw32.tar.xz';
@@ -567,7 +567,7 @@ if ($package['mingw32'] && ($platform == 'mingw32' || $platform == 'all'))
 if ($package['mingw64'] && ($platform == 'mingw64' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
-	echo '<td class="icon"><img src="images/os-mingw.ico" width="32" height="32" alt="MinGW64"></img></td>' . "\n";
+	echo '<td class="icon"><img src="images/' . $platforms['mingw64']['image'] . '" width="32" height="32" alt="' . $platforms['mingw64']['display'] . '"></img></td>' . "\n";
 	echo '<td class="linkdesc">MinGW Archive:</td>' . "\n";
 	echo '<td class="sourcelink">';
 	$filename = $download_dir . $basename . '-mingw64.tar.xz';
@@ -579,7 +579,7 @@ if ($package['mingw64'] && ($platform == 'mingw64' || $platform == 'all'))
 if ($package['linux64'] && ($platform == 'linux64' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
-	echo '<td class="icon"><img src="images/os-linux.png" width="32" height="32" alt="Linux"></img></td>' . "\n";
+	echo '<td class="icon"><img src="images/' . $platforms['linux64']['image'] . '" width="32" height="32" alt="' . $platforms['linux64']['display'] . '"></img></td>' . "\n";
 	echo '<td class="linkdesc">Linux64 Archive:</td>' . "\n";
 	echo '<td class="sourcelink">';
 	$filename = $download_dir . $basename . '-linux64.tar.xz';
@@ -591,7 +591,7 @@ if ($package['linux64'] && ($platform == 'linux64' || $platform == 'all'))
 if ($package['linux32'] && ($platform == 'linux32' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
-	echo '<td class="icon"><img src="images/os-linux.png" width="32" height="32" alt="Linux"></img></td>' . "\n";
+	echo '<td class="icon"><img src="images/' . $platforms['linux32']['image'] . '" width="32" height="32" alt="' . $platforms['linux32']['display'] . '"></img></td>' . "\n";
 	echo '<td class="linkdesc">Linux32 Archive:</td>' . "\n";
 	echo '<td class="sourcelink">';
 	$filename = $download_dir . $basename . '-linux32.tar.xz';
@@ -603,7 +603,7 @@ if ($package['linux32'] && ($platform == 'linux32' || $platform == 'all'))
 if ($package['macos64'] && ($platform == 'macos64' || $platform == 'all'))
 {
 	echo '<tr>' . "\n";
-	echo '<td class="icon"><img src="images/os-macos.png" width="32" height="32" alt="MacOSX"></img></td>' . "\n";
+	echo '<td class="icon"><img src="images/os-macos.png" width="32" height="32" alt="' . $platforms['macos64']['display'] . '"></img></td>' . "\n";
 	echo '<td class="linkdesc">MacOSX Archive:</td>' . "\n";
 	echo '<td class="sourcelink">';
 	$filename = $download_dir . $basename . '-macos.tar.xz';
@@ -783,7 +783,7 @@ foreach ($libpackages as $package)
 		echo '<table><tr><td>';
 		if (isset($package['atari']) && $package['atari'])
 		{
-			echo '<img class="smallicon" src="images/os-atari.png" width="16" height="16" alt="Atari"></img>' . "\n";
+			echo '<img class="smallicon" src="images/' . $platforms['atari']['image'] . '" width="16" height="16" alt="Atari"></img>' . "\n";
 		}
 		echo '</td><td>';
 		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
@@ -801,7 +801,7 @@ foreach ($libpackages as $package)
 			echo '<table><tr><td>';
 			if (isset($package['atari']) && $package['atari'])
 			{
-				echo '<img class="smallicon" src="images/os-atari.png" width="16" height="16" alt="Atari"></img>' . "\n";
+				echo '<img class="smallicon" src="images/' . $platforms['atari']['image'] . '" width="16" height="16" alt="Atari"></img>' . "\n";
 			}
 			echo '</td><td>';
 			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mintelf';
@@ -817,7 +817,7 @@ foreach ($libpackages as $package)
 			echo '<tr><td></td>';
 			echo '<td class="sourcelink">';
 			echo '<table><tr><td>';
-			echo '<img class="smallicon" src="images/os-amigaos.png" width="16" height="16" alt="Amiga"></img>' . "\n";
+			echo '<img class="smallicon" src="images/' . $platforms['amiga']['image'] . '" width="16" height="16" alt="Amiga"></img>' . "\n";
 			echo '</td><td>';
 			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-amigaos';
 			if (isset($package['date']))
@@ -1362,6 +1362,8 @@ This notably applies to Perl and Python.
 <li>2023/07/22 gcc11: rebuild with newer libgcc for long-double</li>
 
 <li>2023/07/24 gcc12: rebuild with newer libgcc for long-double</li>
+
+<li>2023/07/26 gcc7: rebuild with newer libgcc for long-double</li>
 
 </ul>
 

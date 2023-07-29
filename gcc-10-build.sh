@@ -404,11 +404,18 @@ esac
 # GCC=gcc-10 GXX=g++-10 before running this script
 #
 case $GCC in
+	*-[0-9]*-m32)
+		adahostsuffix=-"${GCC%-*}"
+		adahostsuffix=-"${adahostsuffix##*-}"
+		m32=" -m32"
+		;;
 	*-[0-9]*)
 		adahostsuffix=-"${GCC##*-}"
+		m32=""
 		;;
 	*)
 		adahostsuffix=
+		m32=""
 		;;
 esac
 if $with_ada; then
@@ -422,11 +429,12 @@ if $with_ada; then
 		exit 1
 	fi
 	mkdir -p host-tools/bin
-	$LN_S -f /usr/bin/gnatmake${adahostsuffix} host-tools/bin/gnatmake
-	$LN_S -f /usr/bin/gnatlink${adahostsuffix} host-tools/bin/gnatlink
-	$LN_S -f /usr/bin/gnatbind${adahostsuffix} host-tools/bin/gnatbind
-	$LN_S -f /usr/bin/gnatls${adahostsuffix} host-tools/bin/gnatls
-	$LN_S -f /usr/bin/gcc${adahostsuffix} host-tools/bin/gcc
+	echo "exec /usr/bin/gnatmake${adahostsuffix}${m32} "'"$@"' > host-tools/bin/gnatmake
+	echo "exec /usr/bin/gnatlink${adahostsuffix}${m32} "'"$@"' > host-tools/bin/gnatlink
+	echo "exec /usr/bin/gnatbind${adahostsuffix}${m32} "'"$@"' > host-tools/bin/gnatbind
+	echo "exec /usr/bin/gnatls${adahostsuffix} "'"$@"' > host-tools/bin/gnatls
+	echo "exec /usr/bin/gcc${adahostsuffix}${m32} "'"$@"' > host-tools/bin/gcc
+	chmod 755 host-tools/bin/*
 	if test $host = linux64; then
 		$LN_S -f /usr/lib64 host-tools/lib64
 	else
@@ -437,9 +445,9 @@ fi
 
 export CC="${GCC}"
 export CXX="${GXX}"
-GNATMAKE="gnatmake${adahostsuffix}"
-GNATBIND="gnatbind${adahostsuffix}"
-GNATLINK="gnatlink${adahostsuffix}"
+GNATMAKE="gnatmake${adahostsuffix}${m32}"
+GNATBIND="gnatbind${adahostsuffix}${m32}"
+GNATLINK="gnatlink${adahostsuffix}${m32}"
 
 
 fail()
