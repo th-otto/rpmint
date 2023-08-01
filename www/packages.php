@@ -317,7 +317,7 @@ Slightly older version of GCC.
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '8.5.0',
-		'date' => '20230226',
+		'date' => '20230719',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-8',
 		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
