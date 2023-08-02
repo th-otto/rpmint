@@ -185,6 +185,13 @@ if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
 	  cd "$BUILD_DIR"
 	done
 	touch ".patched-${PACKAGENAME}${VERSION}"
+else
+	for f in $PATCHES; do
+	  if ! test -f "$f"; then
+	    echo "missing patch $f" >&2
+	    exit 1
+	  fi
+	done
 fi
 
 if test ! -d "$srcdir"; then

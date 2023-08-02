@@ -47,8 +47,8 @@ Name:           cross-mint-%{pkgname}
 Name:           %{pkgname}
 %endif
 Version:        4.6.4
-Release:        2
-%define releasedate 20230210
+Release:        3
+%define releasedate 20230719
 License:        GPL-3.0+
 Group:          Development/Languages/C and C++
 %if "%{buildtype}" != "cross"
