@@ -9,8 +9,8 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version       : 1.5.4
-Release       : 1
+Version       : 1.5.5
+Release       : 2
 License       : BSD-3-Clause and GPL-2.0
 Group         : Productivity/Archiving/Compression
 
@@ -153,6 +153,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Wed Aug 02 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to version 1.5.5
+
 * Fri Mar 24 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
 - Update to version 1.5.4
