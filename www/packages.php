@@ -127,12 +127,12 @@ The full documentation can be found
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
-	'gcc1310' => array(
+	'gcc1320' => array(
 		'name' => 'gcc13',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '13.1.0',
-		'date' => '20230522',
+		'version' => '13.2.0',
+		'date' => '20230801',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-13',
 		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
@@ -170,7 +170,7 @@ using this format (although theoretically it should be possible to mix them).<br
 use fdlibm instead of the ancient pml math library.
 '
 	),
-	'gcc1240' => array(
+	'gcc1230' => array(
 		'name' => 'gcc12',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',

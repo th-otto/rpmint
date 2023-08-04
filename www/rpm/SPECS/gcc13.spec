@@ -37,9 +37,9 @@
 
 Summary:        The system GNU C Compiler
 Name:           %{crossmint}%{pkgname}
-Version:        13.1.0
-Release:        2
-%define releasedate 20230522
+Version:        13.2.0
+Release:        3
+%define releasedate 20230801
 License:        GPL-3.0+
 Group:          Development/Languages/C and C++
 %if "%{buildtype}" != "cross"
