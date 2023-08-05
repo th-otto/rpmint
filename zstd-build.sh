@@ -11,6 +11,7 @@ VERSIONPATCH=
 
 PATCHES="
 patches/${PACKAGENAME}/zstd-compiler.h.patch
+patches/${PACKAGENAME}/zstd-posix.patch
 "
 DISABLED_PATCHES="
 patches/${PACKAGENAME}/zstd-pzstd.1.patch

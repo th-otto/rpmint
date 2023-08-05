@@ -1,0 +1,48 @@
+diff -rup zstd-1.5.5.orig/programs/fileio.c zstd-1.5.5/programs/fileio.c
+--- zstd-1.5.5.orig/programs/fileio.c	2023-04-04 22:13:52.000000000 +0200
++++ zstd-1.5.5/programs/fileio.c	2023-08-05 19:55:35.573639604 +0200
+@@ -739,7 +739,7 @@ static size_t FIO_setDictBufferMalloc(FI
+     return (size_t)fileSize;
+ }
+ 
+-#if (PLATFORM_POSIX_VERSION > 0)
++#if (PLATFORM_POSIX_VERSION > 0) && !defined(__MINT__)
+ #include <sys/mman.h>
+ static void FIO_munmap(FIO_Dict_t* dict)
+ {
+diff -rup zstd-1.5.5.orig/programs/platform.h zstd-1.5.5/programs/platform.h
+--- zstd-1.5.5.orig/programs/platform.h	2023-04-04 22:13:52.000000000 +0200
++++ zstd-1.5.5/programs/platform.h	2023-08-05 19:56:20.273613066 +0200
+@@ -89,7 +89,7 @@ extern "C" {
+  */
+ #  elif !defined(_WIN32) \
+      && ( defined(__unix__) || defined(__unix) \
+-       || defined(__midipix__) || defined(__VMS) || defined(__HAIKU__) )
++       || defined(__midipix__) || defined(__VMS) || defined(__HAIKU__) || defined(__MINT__) )
+ 
+ #    if defined(__linux__) || defined(__linux) || defined(__CYGWIN__)
+ #      ifndef _POSIX_C_SOURCE
+@@ -97,6 +97,11 @@ extern "C" {
+ #      endif
+ #    endif
+ #    include <unistd.h>  /* declares _POSIX_VERSION */
++#    if defined(__MINT__) && defined(_POSIX_VERSION) && _POSIX_VERSION == 199506L
++#      /* work around a bug in <unistd.h> from mintlib */
++#      undef _POSIX_VERSION
++#      define _POSIX_VERSION 200809L
++#    endif
+ #    if defined(_POSIX_VERSION)  /* POSIX compliant */
+ #      define PLATFORM_POSIX_VERSION _POSIX_VERSION
+ #    else
+diff -rup zstd-1.5.5.orig/programs/util.c zstd-1.5.5/programs/util.c
+--- zstd-1.5.5.orig/programs/util.c	2023-04-04 22:13:52.000000000 +0200
++++ zstd-1.5.5/programs/util.c	2023-08-05 19:57:21.673576434 +0200
+@@ -259,7 +259,7 @@ int UTIL_utime(const char* filename, con
+      * that struct stat has a struct timespec st_mtim member. We need this
+      * check because there are some platforms that claim to be POSIX 2008
+      * compliant but which do not have st_mtim... */
+-#if (PLATFORM_POSIX_VERSION >= 200809L) && defined(st_mtime)
++#if (PLATFORM_POSIX_VERSION >= 200809L) && defined(st_mtime) && !defined(__MINT__)
+     {
+         /* (atime, mtime) */
+         struct timespec timebuf[2] = { {0, UTIME_NOW} };
