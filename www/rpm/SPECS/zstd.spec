@@ -4,11 +4,7 @@
 %rpmint_header
 
 Summary       : Zstandard compression tools
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name          : %{crossmint}%{pkgname}
 Version       : 1.5.5
 Release       : 2
 License       : BSD-3-Clause and GPL-2.0
@@ -21,7 +17,7 @@ BuildRequires : cross-mint-zlib-devel
 BuildRequires : zlib-devel
 %endif
 
-Packager      : Thorsten Otto <admin@tho-otto.de>
+Packager      : %{packager}
 URL           : https://github.com/facebook/zstd/releases
 
 Prefix        : %{_rpmint_target_prefix}
@@ -50,13 +46,8 @@ compression for the same ratio, or ~1-4% size reduction for same time.
 %package devel
 Summary       : Development files for the Zstd compression library
 Group         : Development/Libraries/C and C++
-%if "%{buildtype}" == "cross"
-Provides      : cross-mint-lib%{pkgname}-devel = %{version}
-Requires      : cross-mint-%{pkgname} = %{version}
-%else
-Provides      : lib%{pkgname}-devel = %{version}
-Requires      : %{pkgname} = %{version}
-%endif
+Provides      : %{crossmint}lib%{pkgname}-devel = %{version}
+Requires      : %{crossmint}%{pkgname} = %{version}
 
 %description devel
 Zstd, short for Zstandard, is a lossless compression algorithm,

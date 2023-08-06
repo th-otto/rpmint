@@ -34,6 +34,7 @@ BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libtool
 BuildRequires:  pkgconfig
+BuildRequires:  makeinfo
 
 #
 # Note: the following sections are designed to build the 32bit

@@ -1,0 +1,1 @@
+../../../zstd-for-gcc.sh

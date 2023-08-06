@@ -1373,6 +1373,8 @@ This notably applies to Perl and Python.
 
 <li>2023/08/04 Update zstd to 1.5.5</li>
 
+<li>2023/08/06 Update xz to 5.4.4</li>
+
 </ul>
 
 <p></p>

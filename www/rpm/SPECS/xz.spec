@@ -3,21 +3,17 @@
 %rpmint_header
 
 Summary:        A Program for Compressing Files with the Lempel–Ziv–Markov algorithm
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
-Version:        5.2.4
-Release:        1
+Name:           %{crossmint}%{pkgname}
+Version:        5.4.4
+Release:        2
 License:        LGPL-2.1+ AND GPL-2.0+
 Group:          Productivity/Archiving/Compression
 
-Packager:       Thorsten Otto <admin@tho-otto.de>
+Packager:       %{packager}
 URL:            http://tukaani.org/xz/
 
-Prefix:         %{_prefix}
-Docdir:         %{_prefix}/share/doc
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: http://tukaani.org/xz/%{pkgname}-%{version}.tar.xz
@@ -85,6 +81,8 @@ for CPU in ${ALL_CPUS}; do
 		rm -f %{buildroot}%{_rpmint_bindir}/*
 	fi
 	%rpmint_make_bin_archive $CPU
+	%else
+	%{_rpmint_target_strip} %{buildroot}%{_rpmint_bindir}/* || :
 	%endif
 
 	make clean
@@ -128,5 +126,8 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Sun Aug 06 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to 5.4.4
+
 * Thu Mar 02 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

@@ -239,11 +239,12 @@ unpack_archive()
 		missing=true
 		test -z "$srcarchive" && srcarchive=${PACKAGENAME}${VERSION}
 		for f in "$ARCHIVES_DIR/${srcarchive}.tar.xz" \
+		         "$ARCHIVES_DIR/${srcarchive}.tar.zst" \
 		         "$ARCHIVES_DIR/${srcarchive}.tar.lz" \
 		         "$ARCHIVES_DIR/${srcarchive}.tar.bz2" \
 		         "$ARCHIVES_DIR/${srcarchive}.tar.gz" \
 		         "$ARCHIVES_DIR/${srcarchive}.tgz" \
-		         "${here}/${srcarchive}.tar.xz" \
+		         "${here}/${srcarchive}.tar.zst" \
 		         "${here}/${srcarchive}.tar.lz" \
 		         "${here}/${srcarchive}.tar.bz2" \
 		         "${here}/${srcarchive}.tar.gz" \
