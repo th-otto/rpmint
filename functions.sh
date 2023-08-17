@@ -244,11 +244,13 @@ unpack_archive()
 		         "$ARCHIVES_DIR/${srcarchive}.tar.bz2" \
 		         "$ARCHIVES_DIR/${srcarchive}.tar.gz" \
 		         "$ARCHIVES_DIR/${srcarchive}.tgz" \
+		         "$ARCHIVES_DIR/${srcarchive}.tlz" \
 		         "${here}/${srcarchive}.tar.zst" \
 		         "${here}/${srcarchive}.tar.lz" \
 		         "${here}/${srcarchive}.tar.bz2" \
 		         "${here}/${srcarchive}.tar.gz" \
-		         "${here}/${srcarchive}.tgz"; do
+		         "${here}/${srcarchive}.tgz" \
+		         "${here}/${srcarchive}.tlz"; do
 			if test -f "$f"; then missing=false; tar xf "$f" || exit 1; fi
 		done
 		if $missing; then
