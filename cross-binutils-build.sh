@@ -8,11 +8,15 @@
 me="$0"
 
 PACKAGENAME=binutils
-VERSION=-2.40
-VERSIONPATCH=-20230224
+VERSION=-2.41
+VERSIONPATCH=-20230818
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
+if test "$TARGET" = m68k-atari-mintelf; then
+REVISION="GNU Binutils for MiNT ELF ${VERSIONPATCH#-}"
+fi
+
 prefix=/usr
 TARGET_PREFIX=/usr
 TARGET_LIBDIR=${TARGET_PREFIX}/lib
@@ -190,6 +194,26 @@ THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}
 
+create_config_cache_helper()
+{
+cat <<EOF
+ac_cv_header_pthread_h=no
+gl_have_pthread_h=no
+ac_cv_func_pthread_setname_np=no
+ac_cv_func_pthread_sigmask=no
+ax_cv_PTHREAD_PRIO_INHERIT=no
+gl_pthread_in_glibc=yes
+EOF
+}
+
+create_config_cache()
+{
+mkdir -p gdb gdbsupport gnulib
+create_config_cache_helper >gdb/config.cache
+create_config_cache_helper >gdbsupport/config.cache
+create_config_cache_helper >gnulib/config.cache
+}
+
 for CPU in ${ALL_CPUS}; do
 	cd "$here" || exit 1
 	rm -rf "$MINT_BUILD_DIR"
@@ -206,7 +230,9 @@ for CPU in ${ALL_CPUS}; do
 	CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer ${CPU_CFLAGS}"
 	LDFLAGS_FOR_BUILD="-s ${CPU_CFLAGS}"
 	CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD ${CPU_CFLAGS}"
-	
+
+	create_config_cache
+
 	../$srcdir/configure \
 		--target="${TARGET}" --host="${TARGET}" --build="$BUILD" \
 		--prefix="${TARGET_PREFIX}" \
@@ -231,6 +257,7 @@ for CPU in ${ALL_CPUS}; do
 		--disable-nls \
 		--with-system-zlib \
 		--with-system-readline \
+		--disable-bracketed-paste-default \
 		--with-cpu=$with_cpu \
 		--with-build-sysroot="${prefix}/${TARGET}/sys-root"
 	
@@ -269,7 +296,20 @@ for CPU in ${ALL_CPUS}; do
 		*) rm -f ${f}.gz; gzip -9 $f ;;
 		esac
 	done
-	
+
+	# create separate archive for gdb
+	if test -f ${TARGET_PREFIX#/}/bin/gdb; then
+		gdb=${TARGET_PREFIX#/}/bin/gdb*
+		gdb="$gdb "${TARGET_PREFIX#/}/share/gdb
+		gdb="$gdb "${TARGET_PREFIX#/}/share/info/*gdb*
+		gdb="$gdb "${TARGET_PREFIX#/}/share/man/*/*gdb*
+		gdb="$gdb "${TARGET_PREFIX#/}/include/gdb
+		gdb_version=`cat $MINT_BUILD_DIR/../$srcdir/gdb/version.in`
+		gdb_version=${gdb_version//.DATE-git/}
+		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/gdb-${gdb_version}-${TARGET##*-}-${CPU}.tar.xz $gdb || exit 1
+		rm -rf $gdb
+	fi
+
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-${CPU}.tar.xz *
 	
 	rm -rf ${TARGET_PREFIX#/}/lib

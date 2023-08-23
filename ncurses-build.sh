@@ -208,7 +208,7 @@ configure_ncurses()
 			$mixedcase \
 			"$@" \
 			|| exit $?
-		hack_lto_cflags
+		: hack_lto_cflags
 	fi
 }
 

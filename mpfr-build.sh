@@ -19,7 +19,7 @@ unpack_archive
 
 cd "$srcdir"
 
-cp patches/automake/mintelf-config.sub config.sub
+cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 

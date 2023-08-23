@@ -1,19 +1,21 @@
 #include <stdio.h>
+#include <exception>
 
 
-void test()
+void func_exception(void)
 {
-	throw 100;
+	printf("in %s\n", __func__);
+	throw std::exception();
 }
 
 int main(void)
 {
-	try
+	printf("Hello, C++\n");
+	try {
+		func_exception();
+	} catch (const std::exception &e)
 	{
-		test();
-	} catch (int e)
-	{
-		fprintf(stderr, "Got exception %d\n", e);
+		printf("got exception %s\n", e.what());
 	}
 	return 0;
 }

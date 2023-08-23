@@ -487,11 +487,13 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	
 # that directory only contains the gdb pretty printers;
 # on the host we don't want them because they would conflict
-# with the system ones; on the target we don't need them
-# because gdb does not work
-	rm -rf ${TARGET_PREFIX#/}/share/gcc-${gcc_dir_version}
-	if test -d ${TARGET_PREFIX#/}/${TARGET}/lib; then find ${TARGET_PREFIX#/}/${TARGET}/lib -name "libstdc++*.py" -delete; fi
-	if test -d ${TARGET_PREFIX#/}/lib; then find ${TARGET_PREFIX#/}/lib -name "libstdc++*.py" -delete; fi
+# with the system ones
+# the new mintelf target eventually supports gdb again
+	if test ${TARGET} != m68k-atari-mintelf; then
+		rm -rf ${TARGET_PREFIX#/}/share/gcc-${gcc_dir_version}
+		if test -d ${TARGET_PREFIX#/}/${TARGET}/lib; then find ${TARGET_PREFIX#/}/${TARGET}/lib -name "libstdc++*.py" -delete; fi
+		if test -d ${TARGET_PREFIX#/}/lib; then find ${TARGET_PREFIX#/}/lib -name "libstdc++*.py" -delete; fi
+	fi
 
 	rm -f ${TARGET_PREFIX#/}/share/info/dir
 	for f in ${TARGET_PREFIX#/}/share/man/*/* ${TARGET_PREFIX#/}/share/info/*; do

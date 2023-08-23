@@ -14,11 +14,14 @@ scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=binutils
-VERSION=-2.40
-VERSIONPATCH=-20230224
+VERSION=-2.41
+VERSIONPATCH=-20230818
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
+if test "$TARGET" = m68k-atari-mintelf; then
+REVISION="GNU Binutils for MiNT ELF ${VERSIONPATCH#-}"
+fi
 PREFIX=/usr
 
 case `uname -s` in
@@ -51,8 +54,8 @@ srcdir="${PACKAGENAME}${VERSION}"
 # BINUTILS_SUPPORT_DIRS is from src-release.sh
 #
 # The mint patch can be recreated by running
-# git diff binutils-2_40-branch binutils-2_40-mint
-# in my fork (https://github.com/th-otto/binutils/tree/binutils-2_39-mint)
+# git diff binutils-2_41-branch binutils-2_41-mint
+# in my fork (https://github.com/th-otto/binutils/)
 #
 PATCHES="\
         patches/binutils/${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}.patch \
@@ -118,6 +121,15 @@ if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
 	exit 1
 fi
+srcdir=`cd "$srcdir"; pwd`
+
+# we may need to regenerate some file in the source tree,
+# if it is a git repo
+cd "$srcdir/ld"
+if test ldlex.l -nt ldlex.c; then rm -f ldlex.c; fi
+if test ldgram.y -nt ldgram.c; then rm -f ldgram.c ldgram.h; fi
+if test deffilep.y -nt deffilep.c; then rm -f deffilep.c deffilep.h; fi
+cd "$BUILD_DIR"
 
 if test -d /usr/lib64 -a $host = linux64; then
 	BUILD_LIBDIR=${PREFIX}/lib64
@@ -230,7 +242,7 @@ case $host in
 	linux64)
 		CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 		CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
-		export GLIBC_SO="$here/$srcdir/bfd/glibc.so"
+		export GLIBC_SO="$srcdir/bfd/glibc.so"
 		;;
 esac
 
@@ -252,7 +264,7 @@ fail()
 
 cd "$MINT_BUILD_DIR"
 
-../$srcdir/configure \
+$srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
 	--prefix="${PREFIX}" \
 	--libdir="$BUILD_LIBDIR" \
@@ -263,6 +275,7 @@ cd "$MINT_BUILD_DIR"
 	LDFLAGS="$LDFLAGS_FOR_BUILD" \
 	$bfd_targets \
 	--with-pkgversion="$REVISION" \
+	--with-bugurl=https://github.com/freemint/m68k-atari-mint-binutils-gdb/issues \
 	--with-stage1-ldflags= \
 	--with-boot-ldflags="$LDFLAGS_FOR_BUILD" \
 	--with-gcc --with-gnu-as --with-gnu-ld \
@@ -277,6 +290,7 @@ cd "$MINT_BUILD_DIR"
 	--with-system-zlib \
 	$with_zstd \
 	--with-system-readline \
+	--disable-bracketed-paste-default \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root"
 
 ${MAKE} $JOBS || exit 1
@@ -336,6 +350,19 @@ done
 cd "${THISPKG_DIR}" || exit 1
 
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
+
+# create separate archive for gdb
+if test -f ${PREFIX#/}/bin/${TARGET}-gdb; then
+	gdb=${PREFIX#/}/bin/${TARGET}-gdb*
+	gdb="$gdb "${PREFIX#/}/share/gdb
+	gdb="$gdb "${PREFIX#/}/share/info/*gdb*
+	gdb="$gdb "${PREFIX#/}/share/man/*/*gdb*
+	gdb="$gdb "${PREFIX#/}/include/gdb
+	gdb_version=`cat $srcdir/gdb/version.in`
+	gdb_version=${gdb_version//.DATE-git/}
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/gdb-${gdb_version}-${TARGET##*-}${VERSIONPATCH}-${host}.tar.xz $gdb || exit 1
+	rm -rf $gdb
+fi
 
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info

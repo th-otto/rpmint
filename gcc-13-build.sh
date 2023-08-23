@@ -22,6 +22,9 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 # should be either m68k-atari-mint or m68k-atari-mintelf
 #
 TARGET=${1:-m68k-atari-mint}
+if test "$TARGET" = m68k-atari-mintelf; then
+REVISION="MiNT ELF ${VERSIONPATCH#-}"
+fi
 
 #
 # The hosts compiler.
@@ -353,11 +356,11 @@ fi
 
 
 
-try="${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"
+try="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-${ranlib}"
 if test -x "$try"; then
 	ranlib="$try"
-	strip="${PKG_DIR}/${PREFIX}/bin/${TARGET}-strip"
-	as="${PKG_DIR}/${PREFIX}/bin/${TARGET}-as"
+	strip="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-strip"
+	as="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-as"
 else
 	ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
 	strip=`which "${TARGET}-strip" 2>/dev/null`
@@ -479,6 +482,12 @@ fi
 
 cd "$MINT_BUILD_DIR"
 
+gcc4_compat=
+if test $gcc_major_version -lt 13; then
+	# with gcc 13 and above, do not longer use the comtatible interface
+	gcc4_compat=--with-default-libstdcxx-abi=gcc4-compatible
+fi
+
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
 	--prefix="${PREFIX}" \
@@ -503,7 +512,7 @@ $srcdir/configure \
 	--disable-libcc1 \
 	--disable-werror \
 	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root${gxxinclude} \
-	--with-default-libstdcxx-abi=gcc4-compatible \
+	$gcc4_compat \
 	--with-gcc-major-version-only \
 	--with-gcc --with-gnu-as --with-gnu-ld \
 	--with-system-zlib \
@@ -541,6 +550,12 @@ case $host in
 esac
 
 ${MAKE} $JOBS all-gcc || exit 1
+
+# The temporary compiler is very slow on Cygwin (it will be fast when fully installed)
+# The following hack can sometimes increase the compilation speed
+# by avoiding a shell wrapper for "as".
+rm gcc/as && $LN_S "$as" gcc/as
+
 ${MAKE} $JOBS all-target-libgcc || exit 1
 ${MAKE} $JOBS || exit 1
 
@@ -640,9 +655,14 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		cygwin*) soext=.dll; LTO_PLUGIN=cyglto_plugin-0${soext}; MY_LTO_PLUGIN=cyglto_plugin_mintelf-${gcc_dir_version}${soext} ;;
 		mingw* | msys*) soext=.dll; LTO_PLUGIN=liblto_plugin-0${soext}; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}${soext} ;;
 		macos*) soext=.dylib; LTO_PLUGIN=liblto_plugin${soext}; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}${soext} ;;
-		*) soext=.so; LTO_PLUGIN=liblto_plugin${soext}.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf${soext}.${gcc_dir_version} ;;
+		*) soext=.so; LTO_PLUGIN=liblto_plugin${soext}; MY_LTO_PLUGIN=liblto_plugin_mintelf${soext}.${gcc_dir_version} ;;
 	esac
 	
+	if test -f ${gccsubdir#/}/${LTO_PLUGIN}.0.0.0; then
+		rm -f ${gccsubdir#/}/${LTO_PLUGIN} ${gccsubdir#/}/${LTO_PLUGIN}.0
+		mv ${gccsubdir#/}/${LTO_PLUGIN}.0.0.0 ${gccsubdir#/}/${LTO_PLUGIN}
+	fi
+
 	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,cc1gm2,g++-mapper-server}${BUILD_EXEEXT} \
 		${gccsubdir#/}/${LTO_PLUGIN} \
 		${gccsubdir#/}/plugin/gengtype${BUILD_EXEEXT} \

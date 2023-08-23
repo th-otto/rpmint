@@ -10,9 +10,9 @@ CFLAGS = -O2 -fomit-frame-pointer
 ASFLAGS = $(CFLAGS)
 LDFLAGS = $(CFLAGS)
 
-PROGRAMS = multest memtest ctorc ctorcc
+PROGRAMS = multest memtest ctorc ctorcc throw thread
 
-all: $(PROGRAMS)
+all: $(PROGRAMS) compile-tests
 
 multest: multest.o mulfast.o
 
@@ -23,6 +23,15 @@ ctorc: ctorc.o
 
 ctorcc: ctorcc.o
 	$(CXX) -o $@ $^
+
+throw: throw.cc
+	$(CXX) -o $@ $^
+
+compile-tests::
+	$(CC) -S -O2 -o - structpad.c | grep '\.long' | grep -q 10
+	$(CXX) -S -O2 -o - structpad.cc | grep '\.long' | grep -q 10
+	if $(CC) -S -O2 -o - structret.c | grep -q 'a1'; then false; fi
+.PHONY: compile-tests
 
 clean::
 	$(RM) *.o $(PROGRAMS) a.out core
