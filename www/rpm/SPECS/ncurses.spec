@@ -3,13 +3,9 @@
 %rpmint_header
 
 Summary:        Terminal control library
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
-Version:        6.0
-Release:        1
+Name:           %{crossmint}%{pkgname}
+Version:        6.4
+Release:        2
 License:        MIT
 Group:          System/Base
 
@@ -17,21 +13,23 @@ Packager:       Thorsten Otto <admin@tho-otto.de>
 URL:            http://invisible-island.net/ncurses/ncurses.html
 
 Prefix:         %{_prefix}
-Docdir:         %{_prefix}/share/doc
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: ftp://ftp.gnu.org/pub/gnu/%{pkgname}/%{pkgname}-%{version}.tar.gz
-Source1: patches/ncurses/ncurses-6.0-patches.tar.bz2
+Source1: patches/ncurses/ncurses-6.4-patches.tar.bz2
 Source2: patches/automake/mintelf-config.sub
-Patch1: patches/ncurses/ncurses-6.0.dif
+Source3: patches/ncurses/ncurses-6.4-README.devel
+Patch1: patches/ncurses/ncurses-6.4.dif
 Patch2: patches/ncurses/ncurses-5.9-ibm327x.dif
-Patch3: patches/ncurses/ncurses-6.0-0003-overwrite.patch
-Patch4: patches/ncurses/ncurses-6.0-0005-environment.patch
-Patch5: patches/ncurses/ncurses-6.0-0010-source.patch
-Patch6: patches/ncurses/ncurses-6.0-0011-termcap.patch
-Patch7: patches/ncurses/ncurses-6.0-0020-configure.patch
-Patch9: patches/ncurses/ncurses-6.0-0022-dynamic.patch
+Patch3: patches/ncurses/ncurses-6.4-0003-overwrite.patch
+Patch4: patches/ncurses/ncurses-6.4-0005-environment.patch
+Patch5: patches/ncurses/ncurses-6.4-0010-source.patch
+Patch6: patches/ncurses/ncurses-6.4-0011-termcap.patch
+Patch7: patches/ncurses/ncurses-6.4-0020-configure.patch
+Patch9: patches/ncurses/ncurses-6.4-0022-dynamic.patch
 Patch10: patches/ncurses/ncurses-no-include.patch
+Patch11: patches/ncurses/ncurses-tw100-fix.patch
 
 
 %rpmint_essential
@@ -70,8 +68,13 @@ find -name '*.orig' -delete
 %patch7 -p1
 %patch9 -p1
 %patch10 -p1
+%patch11 -p1
 
 cp %{S:2} config.sub
+cp -a %{S:3} README.devel
+bzip2 -c doc/ncurses-intro.doc > doc/ncurses-intro.txt.bz2
+bzip2 -c doc/hackguide.doc > doc/hackguide.txt.bz2
+bzip2 -c misc/terminfo.src > misc/terminfo.src.bz2
 
 %define MINT_BUILD_DIR %{_builddir}/%{?buildsubdir}/build-target
 %define HOST_BUILD_DIR %{_builddir}/%{?buildsubdir}/build-host
@@ -97,7 +100,7 @@ rm -rf autom4te.cache config.h.in.orig
 
 %rpmint_cflags
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600"
 
 CC_FOR_BUILD=gcc
 CXX_FOR_BUILD=g++
@@ -164,7 +167,6 @@ configure_ncurses_for_build()
 			--with-manpage-format=gzip \
 			--with-manpage-renames=${srcdir}/man/man_db.renames \
 			--with-manpage-aliases	\
-			--enable-term-driver \
 			--enable-pc-files \
 			--with-pkg-config-libdir="${prefix}/lib/pkgconfig" \
 			--disable-rpath \
@@ -184,7 +186,7 @@ configure_ncurses_for_build()
 			--enable-sp-funcs \
 			--enable-interop \
 			--enable-weak-symbols \
-			--enable-wgetch-events \
+			--disable-wgetch-events \
 			--enable-pthreads-eintr \
 			--disable-string-hacks \
 			$(test $abi -ge 6 && echo $abi6_conf_args || echo $abi5_conf_args) \
@@ -220,9 +222,9 @@ configure_ncurses()
 			--without-manpage-tbl \
 			--with-manpage-format=gzip \
 			--with-manpage-renames=${srcdir}/man/man_db.renames \
-			--with-manpage-aliases	\
-			--enable-term-driver \
+			--with-manpage-aliases \
 			--enable-pc-files \
+			--with-pc-suffix \
 			--with-pkg-config-libdir="%{_rpmint_target_prefix}/lib/pkgconfig" \
 			--disable-rpath \
 			--disable-rpath-hack \
@@ -244,6 +246,9 @@ configure_ncurses()
 			--enable-wgetch-events \
 			--enable-pthreads-eintr \
 			--disable-string-hacks \
+			--disable-stripping \
+			--with-ticlib=tic \
+			--disable-tic-depends \
 			$(test $abi -ge 6 && echo $abi6_conf_args || echo $abi5_conf_args) \
 			$withchtype \
 			$speed_t \
@@ -260,6 +265,59 @@ configure_ncurses()
 }
 
 
+fix_pkgconfig()
+{
+	local f
+	local w
+	
+	f=$1
+	w=$2
+	cd "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/lib/pkgconfig"
+	# configure script insists on tacking "t" to the filename :/
+	if test -f "${f}t${w}.pc"; then
+		mv "${f}t${w}.pc" "${f}${w}.pc"
+	fi
+	if test -f "${f}${w}.pc"; then
+		if test "$abi" = 5; then
+			mv "${f}${w}.pc" "${f}${w}5.pc"
+			pc="${f}${w}5.pc"
+			sed -i 's@includedir=${prefix}/include@includedir=${prefix}/include/ncurses5@' "${pc}"
+			sed -i "s@-l${f}${w}@-l${f}${w}5@" "${pc}"
+			sed -i "s@private: ncurses${w}@private: ncurses${w}5@" "${pc}"
+			sed -i "s@private: panel${w}, menu${w}, form${w}, ncurses${w}@private: panel${w}5, menu${w}5, form${w}5, ncurses${w}5@" "${pc}"
+		else
+			pc="${f}${w}.pc"
+		fi
+		sed -i "s| $STACKSIZE||" "${pc}"
+	fi
+	cd "%{MINT_BUILD_DIR}"
+}
+
+
+build_tinfo_lib()
+{
+	local f
+	local i
+	local files
+	
+	f=$1
+	files="
+access.o add_tries.o alloc_ttype.o codes.o comp_captab.o comp_error.o comp_hash.o
+comp_userdefs.o db_iterator.o doalloc.o entries.o fallback.o free_ttype.o
+getenv_num.o home_terminfo.o init_keytry.o lib_acs.o lib_baudrate.o lib_cur_term.o
+lib_data.o lib_has_cap.o lib_kernel.o lib_keyname.o lib_longname.o lib_napms.o
+lib_options.o lib_raw.o lib_setup.o lib_termcap.o lib_termname.o lib_tgoto.o lib_ti.o
+lib_tparm.o lib_tputs.o lib_trace.o lib_ttyflags.o lib_twait.o name_match.o names.o
+obsolete.o read_entry.o read_termcap.o strings.o tries.o trim_sgr0.o unctrl.o visbuf.o
+alloc_entry.o captoinfo.o comp_expand.o comp_parse.o comp_scan.o parse_entry.o
+write_entry.o define_key.o hashed_db.o key_defined.o keybound.o keyok.o version.o
+"
+	cd objects
+	${TARGET}-ar rcs ../lib/lib${f}.a $files || exit 1
+	cd ..
+}
+
+
 build_ncurses()
 {
 	local TERM="$TERM"
@@ -273,8 +331,8 @@ build_ncurses()
 	local GZIP="-9"
 	local speed_t with_gpm dlsym shared without_cxx termcap disable_root mixedcase
 	local abi
-	local abi5_conf_args="--without-pthread --disable-reentrant --disable-ext-mouse --disable-widec --disable-ext-colors"
-	local abi6_conf_args="--with-pthread    --enable-reentrant  --enable-ext-mouse  --enable-widec  --enable-ext-colors"
+	local abi5_conf_args="--without-pthread --disable-reentrant --disable-ext-mouse --disable-widec --disable-ext-colors --disable-opaque-curses --disable-opaque-form --disable-opaque-menu --disable-opaque-panel	--disable-wattr-macros --with-abi-version=5"
+	local abi6_conf_args="--without-pthread --enable-reentrant  --enable-ext-mouse  --disable-widec --enable-ext-colors  --enable-opaque-curses  --enable-opaque-form  --enable-opaque-menu  --enable-opaque-panel 	--enable-wattr-macros  --with-abi-version=6"
 	local BUILD_TIC BUILD_INFOCMP
 	
 	srcdir=`pwd`
@@ -287,7 +345,7 @@ build_ncurses()
 		configure_ncurses_for_build
 		make %{?_smp_mflags} -C include &&
 		make %{?_smp_mflags} -C ncurses fallback.c FALLBACK_LIST="" &&
-		make %{?_smp_mflags} -C progs termsort.c &&
+		make %{?_smp_mflags} -C progs termsort.h &&
 		make %{?_smp_mflags} -C progs transform.h &&
 		make %{?_smp_mflags} -C progs infocmp$BUILD_EXEEXT &&
 		make %{?_smp_mflags} -C progs tic$BUILD_EXEEXT \
@@ -303,7 +361,8 @@ build_ncurses()
 	
 	CC="$CC_FOR_TARGET"
 	CXX="$CXX_FOR_TARGET"
-	LDFLAGS="-Wl,-stack,256k"
+	STACKSIZE="-Wl,-stack,256k"
+	LDFLAGS="$STACKSIZE"
 	: cflags -Wl,-O2                  LDFLAGS
 	: cflags -Wl,-Bsymbolic-functions LDFLAGS
 	: cflags -Wl,--hash-size=8599     LDFLAGS
@@ -313,6 +372,11 @@ build_ncurses()
 	# backward compatible with ncurses 5.4
 	withchtype=--with-chtype=long
 	
+	# No --enable-term-driver as this had crashed last time
+	# in ncurses/tinfo/lib_setup.c due to the fact that
+	# _nc_globals.term_driver was a NULL function pointer as
+	# this is for the MinGW port!
+	#
 	# No --enable-tcap-names because we may have to recompile
 	# programs or foreign programs won't work
 	#
@@ -324,7 +388,9 @@ build_ncurses()
 	#
 	# No --with-termlib=tinfo because libncurses depend on
 	# libtinfo (is linked with) and therefore there is no
-	# advantage about splitting of a libtinfo (IMHO).
+	# advantage about splitting of a libtinfo.
+	# It would also result in undefined symbols when linking only
+	# the static ncurses library.
 	#
 	# No --enable-hard-tabs for users which have disabled
 	# the use of tabs
@@ -379,25 +445,50 @@ EOF
 	export CC CXX CFLAGS CXXFLAGS LDFLAGS TERM GZIP PATH TMPDIR
 	
 	for CPU in ${ALL_CPUS}; do
-		eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-		eval multilibdir=\${CPU_LIBDIR_$CPU}
-		configure_ncurses
-		pwd
-		ls -l
-		test -z "$CXX_FOR_TARGET" || make -C c++ etip.h || exit 1
-		make %{?_smp_mflags} || exit $?
-		make DESTDIR="%{buildroot}%{_rpmint_sysroot}" includesubdir=/ncurses libdir=%{_rpmint_target_prefix}/lib/$multilibdir install || exit $?
-		( cd "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/include"; $LN_S -f ncurses/{curses,ncurses,term,termcap}.h . )
-	
-		# remove obsolete config script
-		rm -f %{buildroot}%{_rpmint_bindir}/ncurses*-config
+		for abi in 5 6; do
+			cd "%{MINT_BUILD_DIR}"
+			eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
+			eval multilibdir=\${CPU_LIBDIR_$CPU}
+			configure_ncurses
+			pwd
+			ls -l
+			test -z "$CXX_FOR_TARGET" || make -C c++ etip.h || exit 1
+			make %{?_smp_mflags} || exit $?
+			#
+			# build libtinfo.
+			# We could do that using --with-termlib=tinfo,
+			# but this will give problems with packages that only link to ncurses.
+			# However, libtinfo may be needed as a separate library by newer versions of readline
+			#
+			build_tinfo_lib tinfo
+			mkdir -p "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/lib/$multilibdir"
+			cp -a lib/libtinfo.a "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/lib/$multilibdir/libtinfo.a"
+			if test "$abi" = 5; then
+				make DESTDIR="%{buildroot}%{_rpmint_sysroot}" includedir='${prefix}/include/ncurses5' includesubdir=/ncurses libdir=%{_rpmint_target_prefix}/lib/$multilibdir install || exit $?
+				cd "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/include/ncurses5"
+				$LN_S -f ncurses/{curses,ncurses,term,termcap}.h .
+				cd "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/lib/$multilibdir"
+				for f in form menu ncurses++ ncurses panel tic; do
+					mv lib${f}.a lib${f}5.a || exit 1
+				done
+			else
+				make DESTDIR="%{buildroot}%{_rpmint_sysroot}" includesubdir=/ncurses libdir=%{_rpmint_target_prefix}/lib/$multilibdir install || exit $?
+				cd "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/include"
+				$LN_S -f ncurses/{curses,ncurses,term,termcap}.h .
+			fi
+			for f in form menu ncurses++ ncurses panel tic; do
+				fix_pkgconfig $f ""
+			done
+
+			# remove obsolete config script
+			rm -f %{buildroot}%{_rpmint_bindir}/ncurses*-config
+		done
 		%if "%{buildtype}" != "cross"
 		if test "%{buildtype}" != "$CPU"; then
 			rm -f %{buildroot}%{_rpmint_bindir}/*
 		fi
 		%rpmint_make_bin_archive $CPU
 		%endif
-
 	done
 		
 	# Now use --enable-widec for UTF8/wide character support.
@@ -406,14 +497,27 @@ EOF
 	#
 	if true; then
 		for CPU in ${ALL_CPUS}; do
-			eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-			eval multilibdir=\${CPU_LIBDIR_$CPU}
-			configure_ncurses --enable-widec --without-progs
-			test -z "$CXX_FOR_TARGET" || make -C c++ etip.h || exit 1
-			make %{?_smp_mflags} || exit $?
-			make DESTDIR="%{buildroot}%{_rpmint_sysroot}" includesubdir=/ncursesw libdir=%{_rpmint_target_prefix}/lib/$multilibdir install.libs install.includes || exit $?
-			# remove obsolete config script
-			rm -f %{buildroot}%{_rpmint_bindir}/ncurses*-config
+			for abi in 5 6; do
+				cd "%{MINT_BUILD_DIR}"
+				eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
+				eval multilibdir=\${CPU_LIBDIR_$CPU}
+				configure_ncurses --enable-widec --without-progs --with-ticlib=ticw
+				test -z "$CXX_FOR_TARGET" || make -C c++ etip.h || exit 1
+				make %{?_smp_mflags} || exit $?
+				build_tinfo_lib tinfow
+				cp -a lib/libtinfow.a "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/lib/$multilibdir/libtinfow.a"
+				if test "$abi" = 5; then
+					make DESTDIR="%{buildroot}%{_rpmint_sysroot}" includedir='${prefix}/include/ncurses5' includesubdir=/ncursesw libdir=%{_rpmint_target_prefix}/lib/$multilibdir install.libs install.includes || exit $?
+					cd "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/lib/$multilibdir"
+					for f in form menu ncurses++ ncurses panel tic; do
+						mv lib${f}w.a lib${f}w5.a || exit 1
+					done
+				else
+					make DESTDIR="%{buildroot}%{_rpmint_sysroot}" includesubdir=/ncursesw libdir=%{_rpmint_target_prefix}/lib/$multilibdir install.libs install.includes || exit $?
+				fi
+				# remove obsolete config script
+				rm -f %{buildroot}%{_rpmint_bindir}/ncurses*-config
+			done
 		done
 	fi
 
@@ -447,22 +551,32 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files
 %defattr(-,root,root)
+%doc AUTHORS
+%doc README
+%doc NEWS
+%doc COPYING
+%doc README.devel
+%doc misc/terminfo.src.bz2
+%doc doc/html/announce.html
+%doc doc/html/hackguide.html
+%doc doc/html/NCURSES-Programming-HOWTO.html
+%doc doc/html/Ada95.html
+%doc doc/ncurses-intro.txt.bz2
+%doc doc/hackguide.txt.bz2
+%{_isysroot}%{_rpmint_target_prefix}/bin
+%{_isysroot}%{_rpmint_target_prefix}/include
+%{_isysroot}%{_rpmint_target_prefix}/lib
+%{_isysroot}%{_rpmint_target_prefix}/share
 %if "%{buildtype}" == "cross"
-%{_rpmint_bindir}
-%{_rpmint_includedir}
-%{_rpmint_libdir}
 %{_rpmint_cross_pkgconfigdir}
-%{_rpmint_datadir}
-%else
-%{_rpmint_target_prefix}/bin
-%{_rpmint_target_prefix}/include
-%{_rpmint_target_prefix}/lib
-%{_rpmint_target_prefix}/share
 %endif
 
 
 
 %changelog
+* Thu Aug 24 2023 Thorsten Otto <admin@tho-otto.de>
+- updated to 6.4
+
 * Thu Mar 02 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
 - updated to 6.0

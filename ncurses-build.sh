@@ -4,8 +4,8 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=ncurses
-VERSION=-6.0
-#VERSIONPATCH=-20171006
+VERSION=-6.4
+#VERSIONPATCH=-20230812
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -13,20 +13,22 @@ VERSIONPATCH=
 MINT_BUILD_DIR="$srcdir/build-target"
 HOST_BUILD_DIR="$srcdir/build-host"
 
-PATCHES="patches/ncurses/ncurses-6.0.dif
+PATCHES="
+patches/ncurses/ncurses-6.4.dif
 patches/ncurses/ncurses-5.9-ibm327x.dif
-patches/ncurses/ncurses-6.0-0003-overwrite.patch
-patches/ncurses/ncurses-6.0-0005-environment.patch
-patches/ncurses/ncurses-6.0-0010-source.patch
-patches/ncurses/ncurses-6.0-0011-termcap.patch
-patches/ncurses/ncurses-6.0-0020-configure.patch
-patches/ncurses/ncurses-6.0-0022-dynamic.patch
+patches/ncurses/ncurses-6.4-0003-overwrite.patch
+patches/ncurses/ncurses-6.4-0005-environment.patch
+patches/ncurses/ncurses-6.4-0010-source.patch
+patches/ncurses/ncurses-6.4-0011-termcap.patch
+patches/ncurses/ncurses-6.4-0020-configure.patch
+patches/ncurses/ncurses-6.4-0022-dynamic.patch
 patches/ncurses/ncurses-no-include.patch
+patches/ncurses/ncurses-tw100-fix.patch
 "
 DISABLED_PATCHES="
 patches/automake/mintelf-config.sub
 "
-PATCHARCHIVE=patches/ncurses/ncurses-6.0-patches.tar.bz2
+PATCHARCHIVE=patches/ncurses/ncurses-6.4-patches.tar.bz2
 
 BINFILES="
 ${TARGET_BINDIR#/}/clear
@@ -49,7 +51,7 @@ ${TARGET_PREFIX#/}/share/tabset
 
 unpack_archive
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -pipe -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -pipe -D_REENTRANT -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600"
 
 export CROSS_TOOL=${TARGET}
 
@@ -118,7 +120,6 @@ configure_ncurses_for_build()
 			--with-manpage-format=gzip \
 			--with-manpage-renames=${srcdir}/man/man_db.renames \
 			--with-manpage-aliases	\
-			--enable-term-driver \
 			--enable-pc-files \
 			--with-pkg-config-libdir="${prefix}/lib/pkgconfig" \
 			--disable-rpath \
@@ -138,7 +139,7 @@ configure_ncurses_for_build()
 			--enable-sp-funcs \
 			--enable-interop \
 			--enable-weak-symbols \
-			--enable-wgetch-events \
+			--disable-wgetch-events \
 			--enable-pthreads-eintr \
 			--disable-string-hacks \
 			$(test $abi -ge 6 && echo $abi6_conf_args || echo $abi5_conf_args) \
@@ -173,9 +174,9 @@ configure_ncurses()
 			--without-manpage-tbl \
 			--with-manpage-format=gzip \
 			--with-manpage-renames=${srcdir}/man/man_db.renames \
-			--with-manpage-aliases	\
-			--enable-term-driver \
+			--with-manpage-aliases \
 			--enable-pc-files \
+			--with-pc-suffix \
 			--with-pkg-config-libdir="${TARGET_LIBDIR}/pkgconfig" \
 			--disable-rpath \
 			--disable-rpath-hack \
@@ -197,6 +198,9 @@ configure_ncurses()
 			--enable-wgetch-events \
 			--enable-pthreads-eintr \
 			--disable-string-hacks \
+			--disable-stripping \
+			--with-ticlib=tic \
+			--disable-tic-depends \
 			$(test $abi -ge 6 && echo $abi6_conf_args || echo $abi5_conf_args) \
 			$withchtype \
 			$speed_t \
@@ -210,6 +214,59 @@ configure_ncurses()
 			|| exit $?
 		: hack_lto_cflags
 	fi
+}
+
+
+fix_pkgconfig()
+{
+	local f
+	local w
+	
+	f=$1
+	w=$2
+	cd "${THISPKG_DIR}${sysroot}$TARGET_LIBDIR/pkgconfig"
+	# configure script insists on tacking "t" to the filename :/
+	if test -f "${f}t${w}.pc"; then
+		mv "${f}t${w}.pc" "${f}${w}.pc"
+	fi
+	if test -f "${f}${w}.pc"; then
+		if test "$abi" = 5; then
+			mv "${f}${w}.pc" "${f}${w}5.pc"
+			pc="${f}${w}5.pc"
+			sed -i 's@includedir=${prefix}/include@includedir=${prefix}/include/ncurses5@' "${pc}"
+			sed -i "s@-l${f}${w}@-l${f}${w}5@" "${pc}"
+			sed -i "s@private: ncurses${w}@private: ncurses${w}5@" "${pc}"
+			sed -i "s@private: panel${w}, menu${w}, form${w}, ncurses${w}@private: panel${w}5, menu${w}5, form${w}5, ncurses${w}5@" "${pc}"
+		else
+			pc="${f}${w}.pc"
+		fi
+		sed -i "s| $STACKSIZE||" "${pc}"
+	fi
+	cd "$MINT_BUILD_DIR"
+}
+
+
+build_tinfo_lib()
+{
+	local f
+	local i
+	local files
+	
+	f=$1
+	files="
+access.o add_tries.o alloc_ttype.o codes.o comp_captab.o comp_error.o comp_hash.o
+comp_userdefs.o db_iterator.o doalloc.o entries.o fallback.o free_ttype.o
+getenv_num.o home_terminfo.o init_keytry.o lib_acs.o lib_baudrate.o lib_cur_term.o
+lib_data.o lib_has_cap.o lib_kernel.o lib_keyname.o lib_longname.o lib_napms.o
+lib_options.o lib_raw.o lib_setup.o lib_termcap.o lib_termname.o lib_tgoto.o lib_ti.o
+lib_tparm.o lib_tputs.o lib_trace.o lib_ttyflags.o lib_twait.o name_match.o names.o
+obsolete.o read_entry.o read_termcap.o strings.o tries.o trim_sgr0.o unctrl.o visbuf.o
+alloc_entry.o captoinfo.o comp_expand.o comp_parse.o comp_scan.o parse_entry.o
+write_entry.o define_key.o hashed_db.o key_defined.o keybound.o keyok.o version.o
+"
+	cd objects
+	${TARGET}-ar rcs ../lib/lib${f}.a $files || exit 1
+	cd ..
 }
 
 
@@ -227,8 +284,8 @@ build_ncurses()
 	local GZIP="-9"
 	local speed_t with_gpm dlsym shared without_cxx termcap disable_root mixedcase
 	local abi
-	local abi5_conf_args="--without-pthread --disable-reentrant --disable-ext-mouse --disable-widec --disable-ext-colors"
-	local abi6_conf_args="--with-pthread    --enable-reentrant  --enable-ext-mouse  --enable-widec  --enable-ext-colors"
+	local abi5_conf_args="--without-pthread --disable-reentrant --disable-ext-mouse --disable-widec --disable-ext-colors --disable-opaque-curses --disable-opaque-form --disable-opaque-menu --disable-opaque-panel	--disable-wattr-macros --with-abi-version=5"
+	local abi6_conf_args="--without-pthread --enable-reentrant  --enable-ext-mouse  --disable-widec --enable-ext-colors  --enable-opaque-curses  --enable-opaque-form  --enable-opaque-menu  --enable-opaque-panel 	--enable-wattr-macros  --with-abi-version=6"
 	local BUILD_TIC BUILD_INFOCMP
 	
 	NAME=${PACKAGENAME}${VERSION}
@@ -239,7 +296,7 @@ build_ncurses()
 		configure_ncurses_for_build
 		${MAKE} $JOBS -C include &&
 		${MAKE} $JOBS -C ncurses fallback.c FALLBACK_LIST="" &&
-		${MAKE} $JOBS -C progs termsort.c &&
+		${MAKE} $JOBS -C progs termsort.h &&
 		${MAKE} $JOBS -C progs transform.h &&
 		${MAKE} $JOBS -C progs infocmp$BUILD_EXEEXT &&
 		${MAKE} $JOBS -C progs tic$BUILD_EXEEXT \
@@ -255,7 +312,8 @@ build_ncurses()
 	
 	CC="$CC_FOR_TARGET"
 	CXX="$CXX_FOR_TARGET"
-	LDFLAGS="-Wl,-stack,256k"
+	STACKSIZE="-Wl,-stack,256k"
+	LDFLAGS="$STACKSIZE"
 	: cflags -Wl,-O2                  LDFLAGS
 	: cflags -Wl,-Bsymbolic-functions LDFLAGS
 	: cflags -Wl,--hash-size=8599     LDFLAGS
@@ -265,6 +323,11 @@ build_ncurses()
 	# backward compatible with ncurses 5.4
 	withchtype=--with-chtype=long
 	
+	# No --enable-term-driver as this had crashed last time
+	# in ncurses/tinfo/lib_setup.c due to the fact that
+	# _nc_globals.term_driver was a NULL function pointer as
+	# this is for the MinGW port!
+	#
 	# No --enable-tcap-names because we may have to recompile
 	# programs or foreign programs won't work
 	#
@@ -276,7 +339,9 @@ build_ncurses()
 	#
 	# No --with-termlib=tinfo because libncurses depend on
 	# libtinfo (is linked with) and therefore there is no
-	# advantage about splitting of a libtinfo (IMHO).
+	# advantage about splitting of a libtinfo.
+	# It would also result in undefined symbols when linking only
+	# the static ncurses library.
 	#
 	# No --enable-hard-tabs for users which have disabled
 	# the use of tabs
@@ -334,34 +399,76 @@ EOF
 #	exec 0< /dev/null
 	
 	for CPU in ${ALL_CPUS}; do
-		eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-		eval multilibdir=\${CPU_LIBDIR_$CPU}
-		configure_ncurses
-		pwd
-		ls -l
-		test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
-		${MAKE} $JOBS || exit $?
-		${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" includesubdir=/ncurses libdir=${TARGET_LIBDIR}/$multilibdir install || exit $?
-		( cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include"; $LN_S -f ncurses/{curses,ncurses,term,termcap}.h . )
-		# remove obsolete config script
-		rm -f ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/ncurses*-config
+		for abi in 5 6; do
+			cd "$MINT_BUILD_DIR"
+			eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
+			eval multilibdir=\${CPU_LIBDIR_$CPU}
+			configure_ncurses
+			pwd
+			ls -l
+			test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
+			${MAKE} $JOBS || exit $?
+			#
+			# build libtinfo.
+			# We could do that using --with-termlib=tinfo,
+			# but this will give problems with packages that only link to ncurses.
+			# However, libtinfo may be needed as a separate library by newer versions of readline
+			#
+			build_tinfo_lib tinfo
+			mkdir -p "${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/$multilibdir"
+			cp -a lib/libtinfo.a "${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/$multilibdir/libtinfo.a"
+			if test "$abi" = 5; then
+				${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" includedir='${prefix}/include/ncurses5' includesubdir=/ncurses libdir=${TARGET_LIBDIR}/$multilibdir install || exit $?
+				cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include/ncurses5"
+				$LN_S -f ncurses/{curses,ncurses,term,termcap}.h .
+				cd "${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/$multilibdir"
+				for f in form menu ncurses++ ncurses panel tic tinfo; do
+					mv lib${f}.a lib${f}5.a || exit 1
+				done
+			else
+				${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" includesubdir=/ncurses libdir=${TARGET_LIBDIR}/$multilibdir install || exit $?
+				cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include"
+				$LN_S -f ncurses/{curses,ncurses,term,termcap}.h .
+			fi
+			for f in form menu ncurses++ ncurses panel tic; do
+				fix_pkgconfig $f ""
+			done
+			# remove obsolete config script
+			rm -f ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/ncurses*-config
+		done
 		make_bin_archive $CPU
 	done
-		
+
 	# Now use --enable-widec for UTF8/wide character support.
 	# The libs with 16 bit wide characters are binary incompatible
 	# to the normal 8bit wide character libs.
 	#
 	if true; then
 		for CPU in ${ALL_CPUS}; do
-			eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-			eval multilibdir=\${CPU_LIBDIR_$CPU}
-			configure_ncurses --enable-widec --without-progs
-			test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
-			${MAKE} $JOBS || exit $?
-			${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" includesubdir=/ncursesw libdir=${TARGET_LIBDIR}/$multilibdir install.libs install.includes || exit $?
-			# remove obsolete config script
-			rm -f ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/ncurses*-config
+			for abi in 5 6; do
+				cd "$MINT_BUILD_DIR"
+				eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
+				eval multilibdir=\${CPU_LIBDIR_$CPU}
+				configure_ncurses --enable-widec --without-progs --with-ticlib=ticw
+				test -z "$CXX_FOR_TARGET" || ${MAKE} -C c++ etip.h || exit 1
+				${MAKE} $JOBS || exit $?
+				build_tinfo_lib tinfow
+				cp -a lib/libtinfow.a "${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/$multilibdir/libtinfow.a"
+				if test "$abi" = 5; then
+					${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" includedir='${prefix}/include/ncurses5' includesubdir=/ncursesw libdir=${TARGET_LIBDIR}/$multilibdir install.libs install.includes || exit $?
+					cd "${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/$multilibdir"
+					for f in form menu ncurses++ ncurses panel tic tinfo; do
+						mv lib${f}w.a lib${f}w5.a || exit 1
+					done
+				else
+					${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" includesubdir=/ncursesw libdir=${TARGET_LIBDIR}/$multilibdir install.libs install.includes || exit $?
+				fi
+				for f in form menu ncurses++ ncursesw panel; do
+					fix_pkgconfig $f "w"
+				done
+				# remove obsolete config script
+				rm -f ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/ncurses*-config
+			done
 		done
 	fi
 	
@@ -399,6 +506,7 @@ build_ncurses
 
 configured_prefix="${TARGET_PREFIX}"
 copy_pkg_configs "ncurses*.pc"
+copy_pkg_configs "ncurses++*.pc"
 copy_pkg_configs "form*.pc"
 copy_pkg_configs "menu*.pc"
 copy_pkg_configs "panel*.pc"

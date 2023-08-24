@@ -727,7 +727,7 @@ In some cases, you have to add -I/usr/m68k-atari-mint/sys-root/usr/include/SDL i
 		'name' => 'ncurses',
 		'upstream' => 'http://invisible-island.net/ncurses/ncurses.html',
 		'source' => 'ftp://ftp.gnu.org/pub/gnu/%{name}/%{name}-%{version}.tar.gz',
-		'version' => '6.0',
+		'version' => '6.4',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

@@ -1375,6 +1375,8 @@ This notably applies to Perl and Python.
 
 <li>2023/08/06 Update xz to 5.4.4</li>
 
+<li>2023/08/24 Update ncurses to 6.4</li>
+
 </ul>
 
 <p></p>

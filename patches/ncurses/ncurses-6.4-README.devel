@@ -1,0 +1,77 @@
+  Versions of Ncurses Libraries
+  =============================
+
+There are several Ncurses Libraries which can be used for building
+with an terminal based application.
+
+For a thread safe version (also known as `reentrant') please
+use the libraries with ABI 6.0
+
+       /usr/include/ncurses/*.h
+       /usr/lib/libncurses.a
+       /usr/lib/libform.a
+       /usr/lib/libmenu.a
+       /usr/lib/libpanel.a
+
+together with the header files found at /usr/include/ncurses/
+e.g. ncurses.h. For backward compatibility with simply older programs
+the headers curses.h, ncurses.h, and term.h will be also found in
+/usr/include/.  Use the output of
+
+       pkg-config --cflags ncurses  for CFLAGS
+       pkg-config --libs   ncurses  for LDFLAGS
+
+to extend the CFLAGS and the LDFLAGS.
+For a version with both wide character support and thread safe
+please use the libraries with ABI 6.0
+
+       /usr/include/ncursesw/*.h
+       /usr/lib/libncursesw.a
+       /usr/lib/libformw.a
+       /usr/lib/libmenuw.a
+       /usr/lib/libpanelw.a
+
+Use the output of
+
+       pkg-config --cflags ncursesw for CFLAGS
+       pkg-config --libs   ncursesw for LDFLAGS
+
+to extend the CFLAGS and the LDFLAGS. It should be noted that the ABI 6.0
+is not only thread safe but also includes extended mouse support and in
+case of the wide character version also extended color support.
+
+
+A compatibility library is given with ABI 5.9
+
+       /usr/include/ncurses/ncurses5/*.h
+       /usr/lib/libncurses5.a
+       /usr/lib/libform5.a
+       /usr/lib/libmenu5.a
+       /usr/lib/libpanel5.a
+
+and its header are installed in /usr/include/ncurses/ e.g.
+ncurses.h.  For backward compatibility with simply older
+programs the headers curses.h, ncurses.h, and term.h
+will be also found in /usr/include/.  Use the output of
+
+       pkg-config --cflags ncurses5 for CFLAGS
+       pkg-config --libs   ncurses5 for LDFLAGS
+
+to extend the CFLAGS and the LDFLAGS.
+For a version with wide character support please use the
+libraries with old ABI 5.9
+
+       /usr/include/ncurses5/ncursesw/*.h
+       /usr/lib/libncurses5w.a
+       /usr/lib/libform5w.a
+       /usr/lib/libmenu5w.a
+       /usr/lib/libpanel5w.a
+
+Use the output of
+
+       pkg-config --cflags ncurses5w for CFLAGS
+       pkg-config --libs   ncurses5w for LDFLAGS
+
+to extend the CFLAGS and the LDFLAGS.
+
+

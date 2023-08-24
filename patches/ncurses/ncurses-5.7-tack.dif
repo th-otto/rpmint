@@ -1,6 +1,6 @@
 ---
- tack/Makefile.in |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ tack/Makefile.in |   10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
 --- a/tack/Makefile.in
 +++ b/tack/Makefile.in	2017-08-01 08:31:12.368616475 +0000
@@ -37,6 +37,10 @@
  tack$x: $(DEPS_TACK) @NCURSES_TREE@$(DEPS_CURSES)
 -	@ECHO_LINK@ $(LINK) $(DEPS_TACK) $(LDFLAGS_DEFAULT) -o $@
 +	$(LINK) $(DEPS_TACK) $(LDFLAGS_DEFAULT) -o $@
+ 
+ tackgen$x: $(MODEL)/tackgen$o @NCURSES_TREE@$(DEPS_CURSES)
+-	@ECHO_LINK@ $(LINK) $(MODEL)/tackgen$o $(LDFLAGS_DEFAULT) -o $@
++	$(LINK) $(MODEL)/tackgen$o $(LDFLAGS_DEFAULT) -o $@
  
  #
  # Utility productions start here

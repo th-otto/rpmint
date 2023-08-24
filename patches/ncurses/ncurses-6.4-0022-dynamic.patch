@@ -1,0 +1,46 @@
+diff -rupN ncurses-6.4.orig/aclocal.m4 ncurses-6.4/aclocal.m4
+--- ncurses-6.4.orig/aclocal.m4	2023-08-23 16:53:29.159913430 +0200
++++ ncurses-6.4/aclocal.m4	2023-08-23 16:54:18.443212159 +0200
+@@ -1360,7 +1360,7 @@ CF_EOF
+ 	# library is stripped for install, we cannot use that.  So we're forced
+ 	# to rely on the static library, noting that some packagers may not
+ 	# include it.
+-	LIBS="-static -lgpm -dynamic $LIBS"
++	LIBS="-Wl,-Bstatic -lgpm -Wl,-Bdynamic $LIBS"
+ 	if AC_TRY_EVAL(ac_compile) ; then
+ 		if AC_TRY_EVAL(ac_link) ; then
+ 			cf_cv_check_gpm_wgetch="`nm \"conftest$ac_exeext\" | ${EGREP-egrep} '\<wgetch\>' | ${EGREP-egrep} '\<[[vVwW]]\>'`"
+@@ -4282,8 +4282,8 @@ if test "$GCC" = yes ; then
+ 		LDFLAGS_SHARED=
+ 		;;
+ 	(*) 	# normally, except when broken
+-		LDFLAGS_STATIC=-static
+-		LDFLAGS_SHARED=-dynamic
++		LDFLAGS_STATIC=-Wl,-Bstatic
++		LDFLAGS_SHARED=-Wl,-Bdynamic
+ 		;;
+ 	esac
+ else
+diff -rupN ncurses-6.4.orig/configure ncurses-6.4/configure
+--- ncurses-6.4.orig/configure	2023-08-23 16:53:29.403246592 +0200
++++ ncurses-6.4/configure	2023-08-23 16:56:19.153127406 +0200
+@@ -8005,7 +8005,7 @@ CF_EOF
+ 	# library is stripped for install, we cannot use that.  So we're forced
+ 	# to rely on the static library, noting that some packagers may not
+ 	# include it.
+-	LIBS="-static -lgpm -dynamic $LIBS"
++	LIBS="-Wl,-Bstatic -lgpm -Wl,-Bdynamic $LIBS"
+ 	if { (eval echo "$as_me:8009: \"$ac_compile\"") >&5
+   (eval $ac_compile) 2>&5
+   ac_status=$?
+@@ -28628,8 +28628,8 @@ if test "$GCC" = yes ; then
+ 		LDFLAGS_SHARED=
+ 		;;
+ 	(*) 	# normally, except when broken
+-		LDFLAGS_STATIC=-static
+-		LDFLAGS_SHARED=-dynamic
++		LDFLAGS_STATIC=-Wl,-Bstatic
++		LDFLAGS_SHARED=-Wl,-Bdynamic
+ 		;;
+ 	esac
+ else

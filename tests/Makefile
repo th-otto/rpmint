@@ -10,7 +10,7 @@ CFLAGS = -O2 -fomit-frame-pointer
 ASFLAGS = $(CFLAGS)
 LDFLAGS = $(CFLAGS)
 
-PROGRAMS = multest memtest ctorc ctorcc throw thread
+PROGRAMS = multest memtest ctorc ctorcc throw thread curses
 
 all: $(PROGRAMS) compile-tests
 
@@ -20,6 +20,10 @@ memtest: memtest.o memfast.o memcpyf.o
 
 ctorc: ctorc.o
 	$(CC) -o $@ $^
+
+curses: curses.c
+	$(CC) -o $@ $^ -lncurses
+	$(CC) -o $@ $^ -lncursesw
 
 ctorcc: ctorcc.o
 	$(CXX) -o $@ $^
