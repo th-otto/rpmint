@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=file
-VERSION=-5.32
+VERSION=-5.45
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -17,25 +17,25 @@ patches/file/file-4.20-ssd.dif
 patches/file/file-4.20-xen.dif
 patches/file/file-5.22-elf.dif
 patches/file/file-5.19-printf.dif
-patches/file/file-5.12-zip.dif
-patches/file/file-5.17-option.dif
 patches/file/file-4.21-scribus.dif
 patches/file/file-4.21-xcursor.dif
 patches/file/file-5.19-cromfs.dif
-patches/file/file-5.18-javacheck.dif
 patches/file/file-5.19-solv.dif
 patches/file/file-5.19-zip2.0.dif
-patches/file/file-5.19-biorad.dif
 patches/file/file-5.19-clicfs.dif
-patches/file/file-5.23-endian.patch
-patches/file/file-5.24-nitpick.dif
-patches/file/file-5.15-clear-invalid.patch
+patches/file/file-5.45-endian.patch
+patches/file/file-5.45-clear-invalid.patch
 patches/file/file-secure_getenv.patch
-patches/file/file-5.28-btrfs-image.dif
-patches/file/file-5.32-mint.patch
-patches/file/file-5.32.dif
+patches/file/file-5.45-mint.patch
 "
 # patches/file/file-5.16-ocloexec.patch
+# patches/file/file-5.12-zip.dif
+# patches/file/file-5.17-option.dif
+# patches/file/file-5.18-javacheck.dif
+# patches/file/file-5.19-biorad.dif
+# patches/file/file-5.24-nitpick.dif
+# patches/file/file-5.28-btrfs-image.dif
+# patches/file/file-5.32.dif
 DISABLED_PATCHES="
 patches/automake/mintelf-config.sub
 "
@@ -115,7 +115,7 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} V=1 FILE_COMPILE='$(top_builddir)/src/file.host' $JOBS || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install

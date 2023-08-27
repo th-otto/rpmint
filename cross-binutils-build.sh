@@ -131,6 +131,7 @@ test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 bfd_targets=""
 enable_plugins=--disable-plugins
 enable_lto=--disable-lto
+enable_tui=
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -148,6 +149,8 @@ case "${TARGET}" in
     *-*-*mintelf*)
     	enable_lto=--enable-lto
     	ranlib=gcc-ranlib
+		# explictly --enable-tui for gdb so we get error early if curses is not found
+		enable_tui=--enable-tui
 		;;
     *-*-*elf* | *-*-linux* | *-*-darwin*)
     	enable_lto=--enable-lto
@@ -208,10 +211,15 @@ EOF
 
 create_config_cache()
 {
-mkdir -p gdb gdbsupport gnulib
-create_config_cache_helper >gdb/config.cache
-create_config_cache_helper >gdbsupport/config.cache
-create_config_cache_helper >gnulib/config.cache
+case $TARGET in
+*-*-mintelf*)
+	mkdir -p gdb gdbsupport gnulib gdbserver
+	create_config_cache_helper >gdb/config.cache
+	create_config_cache_helper >gdbsupport/config.cache
+	create_config_cache_helper >gdbserver/config.cache
+	create_config_cache_helper >gnulib/config.cache
+	;;
+esac
 }
 
 for CPU in ${ALL_CPUS}; do
@@ -253,6 +261,7 @@ for CPU in ${ALL_CPUS}; do
 		--enable-relro \
 		--enable-default-hash-style=both \
 		$enable_lto \
+		$enable_tui \
 		$enable_plugins \
 		--disable-nls \
 		--with-system-zlib \

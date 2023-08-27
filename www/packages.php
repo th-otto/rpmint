@@ -1526,7 +1526,7 @@ awk.
 		'name' => 'file',
 		'upstream' => 'http://www.darwinsys.com/file/',
 		'source' => 'ftp://ftp.astron.com/pub/%{name}/%{name}-%{version}.tar.gz',
-		'version' => '5.32',
+		'version' => '5.45',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

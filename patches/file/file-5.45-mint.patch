@@ -1,0 +1,144 @@
+diff -rupN file-5.45.orig/magic/Magdir/atari file-5.45/magic/Magdir/atari
+--- file-5.45.orig/magic/Magdir/atari	1970-01-01 01:00:00.000000000 +0100
++++ file-5.45/magic/Magdir/atari	2023-08-27 19:43:46.096106713 +0200
+@@ -0,0 +1,85 @@
++#------------------------------------------------------------------------------
++# atari:  file(1) magic for some specific Atari files
++#
++# GEMDOS executables
++#
++0	beshort		0x601a		Atari executable,
++>18     belong          0x4d694e54	MiNT,
++>18     belong&0xffffff00  0x454c4600	ELF,
++>2      belong          x               text len %u,
++>6      belong          x               data len %u,
++>10     belong          x               bss len %u,
++>14     belong          x               symboltab len %u,
++>24	byte		&0x08		shared text,
++>25	byte		&0x01		fastload,
++>25	byte		&0x02		load to Alt-RAM,
++>25	byte		&0x04		malloc from Alt-RAM
++>25	byte&0xf0	0x00		private
++>25	byte&0xf0	0x10		global
++>25	byte&0xf0	0x20		super
++>25	byte&0xf0	0x30		readable
++>22     belong&0xfffff708 !0            flags: %#X
++>26     beshort         0               
++>26     beshort         !0              no relocation tab
++>30     string          SFX             [Self-Extracting LZH SFX archive]
++>38     string          SFX             [Self-Extracting LZH SFX archive]
++>44     string          ZIP!            [Self-Extracting ZIP SFX archive]
++0	beshort		0x0064		CPX file
++>8	beshort		x		(version %04x)
++0	string		#!/bin/sh	Bourne shell script
++0	string		#!mupfel	Mupfel script
++0	string		#!		script file
++#
++# object files
++#
++0	belong		0x4efa001c	Borland object file
++0	belong		0x00000107	GNU object file
++#
++# archive files
++#
++0	string		LZRF		LZRF archive
++>4	beshort		>0x00ff		(version %04x)
++0	string		BDIF		Binary Diff archive
++>4	beshort		>0x00ff		(version %04x)
++#
++# word processor documents
++#
++0	beshort		0x1f30		Wordplus document
++0	string		sdoc0001	Signum!2 document
++2	string		sdoc		Signum!3 document
++13	string		CDK		Calamus document
++0	string		PAP1		Papyrus document
++1	string		T_WORD		Tempus Word document
++1	string		J_WORD		Tempus Word junior document
++#
++# image files
++#
++16	string		XIMG		XIMG raster image
++>12	leshort		x		(%d width *
++>14	leshort		x		%d height)
++
++0	lelong		0x00010008	IMG-1-8-Format
++>4	leshort		x		(%1d plane,
++>12	leshort		x		%4d width *
++>14	leshort		x		%4d height)
++
++0	lelong		0xffff1800	GEM metafile
++
++#
++# AVR sound files
++#
++0	string		2BIT		AVR sound file
++>12	beshort		0x0		mono,
++>12	beshort		0xffff		stereo,
++>14	beshort		x		%d bit,
++>16	beshort		0x0		unsigned,
++>16	beshort		0xffff		signed,
++>24	beshort		x		%d Hz.
++#
++# other files
++#
++0	string		Help		Borland help file
++#34	leshort		f		GEM RSC-File
++0	string		PBAS		PureC project data base
++0	beshort		0x2771		MultiTOS AES keyboard table
++0	string		xbtoa		btoa'd file
+diff -rupN file-5.45.orig/magic/Makefile.am file-5.45/magic/Makefile.am
+--- file-5.45.orig/magic/Makefile.am	2023-08-27 19:35:39.113133588 +0200
++++ file-5.45/magic/Makefile.am	2023-08-27 19:36:52.506412634 +0200
+@@ -35,6 +35,7 @@ $(MAGIC_FRAGMENT_DIR)/asf \
+ $(MAGIC_FRAGMENT_DIR)/assembler \
+ $(MAGIC_FRAGMENT_DIR)/asterix \
+ $(MAGIC_FRAGMENT_DIR)/att3b \
++$(MAGIC_FRAGMENT_DIR)/atari \
+ $(MAGIC_FRAGMENT_DIR)/audio \
+ $(MAGIC_FRAGMENT_DIR)/avm \
+ $(MAGIC_FRAGMENT_DIR)/basis \
+--- a/magic/Magdir/motorola.orig	2023-08-27 19:51:33.785759416 +0200
++++ b/magic/Magdir/motorola	2023-08-27 19:54:13.925635058 +0200
+@@ -31,41 +31,3 @@
+ #
+ # Motorola S-Records, from Gerd Truschinski <gt@freebsd.first.gmd.de>
+ 0   string      S0          Motorola S-Record; binary data in text format
+-
+-# ATARI ST relocatable PRG
+-#
+-# from Oskar Schirmer <schirmer@scara.com> Feb 3, 2001
+-# (according to Roland Waldi, Oct 21, 1987)
+-# besides the magic 0x601a, the text segment size is checked to be
+-# not larger than 1 MB (which is a lot on ST).
+-# The additional 0x601b distinction I took from Doug Lee's magic.
+-0	belong&0xFFFFFFF0	0x601A0000	Atari ST M68K contiguous executable
+->2	belong			x		(txt=%d,
+->6	belong			x		dat=%d,
+->10	belong			x		bss=%d,
+->14	belong			x		sym=%d)
+-0	belong&0xFFFFFFF0	0x601B0000	Atari ST M68K non-contig executable
+->2	belong			x		(txt=%d,
+->6	belong			x		dat=%d,
+->10	belong			x		bss=%d,
+->14	belong			x		sym=%d)
+-
+-# Atari ST/TT... program format (sent by Wolfram Kleff <kleff@cs.uni-bonn.de>)
+-0       beshort         0x601A          Atari 68xxx executable,
+->2      belong          x               text len %u,
+->6      belong          x               data len %u,
+->10     belong          x               BSS len %u,
+->14     belong          x               symboltab len %u,
+->18     belong          0
+->22     belong          &0x01           fastload flag,
+->22     belong          &0x02           may be loaded to alternate RAM,
+->22     belong          &0x04           malloc may be from alternate RAM,
+->22     belong          x               flags: %#X,
+->26     beshort         0               no relocation tab
+->26     beshort         !0              + relocation tab
+->30     string          SFX             [Self-Extracting LZH SFX archive]
+->38     string          SFX             [Self-Extracting LZH SFX archive]
+->44     string          ZIP!            [Self-Extracting ZIP SFX archive]
+-
+-0       beshort         0x0064          Atari 68xxx CPX file
+->8      beshort         x               (version %04x)

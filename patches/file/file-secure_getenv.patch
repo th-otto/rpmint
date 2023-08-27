@@ -1,35 +1,28 @@
----
- file-5.29/configure.ac |    2 ++
- file-5.29/src/file.c   |    2 +-
- file-5.29/src/file.h   |    8 ++++++++
- file-5.29/src/magic.c  |   10 +++++-----
- 4 files changed, 16 insertions(+), 6 deletions(-)
-
---- file-5.29/configure.ac
-+++ file-5.29/configure.ac	2016-11-24 09:13:33.451612426 +0000
-@@ -97,6 +97,8 @@ AC_CHECK_TYPE([sig_t],[AC_DEFINE([HAVE_S
- #include <signal.h>
- #endif])
+--- a/configure.ac.orig	2023-07-27 21:45:01.000000000 +0200
++++ b/configure.ac	2023-08-27 19:17:00.107118570 +0200
+@@ -130,6 +130,8 @@ if test "$enable_lzlib" != "no"; then
+ fi
+ AC_CHECK_TYPE([sig_t],[AC_DEFINE([HAVE_SIG_T],1,[Have sig_t type])],,[#include <signal.h>])
  
 +AC_CHECK_FUNCS([__secure_getenv secure_getenv])
 +
  dnl Checks for typedefs, structures, and compiler characteristics.
- AC_C_CONST
  AC_TYPE_OFF_T
---- file-5.29/src/file.c
-+++ file-5.29/src/file.c	2016-11-24 09:13:33.451612426 +0000
-@@ -623,7 +623,7 @@ docprint(const char *opts, int def)
- private void
- help(void)
- {
--	const unsigned long posix = (unsigned long)getenv("POSIXLY_CORRECT");
-+	const unsigned long posix = (unsigned long)secure_getenv("POSIXLY_CORRECT");
- 	(void)fputs(
- "Usage: file [OPTION...] [FILE...]\n"
- "Determine type of FILEs.\n"
---- file-5.29/src/file.h
-+++ file-5.29/src/file.h	2016-11-24 09:13:33.451612426 +0000
-@@ -615,4 +615,12 @@ static const char *rcsid(const char *p)
+ AC_TYPE_SIZE_T
+--- a/src/file.c.orig	2023-05-30 22:17:50.000000000 +0200
++++ b/src/file.c	2023-08-27 19:18:25.423737017 +0200
+@@ -222,7 +222,7 @@ main(int argc, char *argv[])
+ 
+ 
+ #ifdef S_IFLNK
+-	posixly = getenv("POSIXLY_CORRECT") != NULL;
++	posixly = secure_getenv("POSIXLY_CORRECT") != NULL;
+ 	flags |=  posixly ? MAGIC_SYMLINK : 0;
+ #endif
+ 	while ((c = getopt_long(argc, argv, OPTSTRING, long_options,
+--- a/src/file.h.orig	2023-07-27 21:40:22.000000000 +0200
++++ b/src/file.h	2023-08-27 19:17:00.107118570 +0200
+@@ -726,4 +726,12 @@ static const char *rcsid(const char *p)
  #define __RCSID(a)
  #endif
  
@@ -42,8 +35,8 @@
 +#endif
 +
  #endif /* __file_h__ */
---- file-5.29/src/magic.c
-+++ file-5.29/src/magic.c	2016-11-24 09:13:33.451612426 +0000
+--- a/src/magic.c.orig	2023-07-27 21:33:24.000000000 +0200
++++ b/src/magic.c	2023-08-27 19:17:00.107118570 +0200
 @@ -185,7 +185,7 @@ get_default_magic(void)
  		free(default_magic);
  		default_magic = NULL;
@@ -53,8 +46,8 @@
  		return MAGIC;
  
  	if (asprintf(&hmagicpath, "%s/.magic.mgc", home) < 0)
-@@ -222,16 +222,16 @@ out:
- 	}
+@@ -226,16 +226,16 @@ out:
+ 		_w32_append_path(&hmagicpath, "%s%s", home, hmagic);
  
  	/* First, try to get a magic file from user-application data */
 -	if ((home = getenv("LOCALAPPDATA")) != NULL)
@@ -73,7 +66,7 @@
  		_w32_append_path(&hmagicpath, "%s%s", home, hmagic);
  
  	/* Fourth, try to get magic file relative to exe location */
-@@ -252,7 +252,7 @@ magic_getpath(const char *magicfile, int
+@@ -256,7 +256,7 @@ magic_getpath(const char *magicfile, int
  	if (magicfile != NULL)
  		return magicfile;
  

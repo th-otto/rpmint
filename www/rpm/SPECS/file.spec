@@ -4,8 +4,8 @@
 
 Summary:        A Tool to Determine File Types
 Name:           %{crossmint}%{pkgname}
-Version:        5.32
-Release:        1
+Version:        5.45
+Release:        2
 License:        BSD-2-Clause
 Group:          Productivity/File utilities
 
@@ -27,23 +27,23 @@ Patch3:  patches/file/file-4.20-ssd.dif
 Patch4:  patches/file/file-4.20-xen.dif
 Patch5:  patches/file/file-5.22-elf.dif
 Patch6:  patches/file/file-5.19-printf.dif
-Patch7:  patches/file/file-5.12-zip.dif
-Patch8:  patches/file/file-5.17-option.dif
+#Patch7:  patches/file/file-5.12-zip.dif
+#Patch8:  patches/file/file-5.17-option.dif
 Patch9:  patches/file/file-4.21-scribus.dif
 Patch10:  patches/file/file-4.21-xcursor.dif
 Patch11:  patches/file/file-5.19-cromfs.dif
-Patch12:  patches/file/file-5.18-javacheck.dif
+#Patch12:  patches/file/file-5.18-javacheck.dif
 Patch13:  patches/file/file-5.19-solv.dif
 Patch14:  patches/file/file-5.19-zip2.0.dif
-Patch15:  patches/file/file-5.19-biorad.dif
+#Patch15:  patches/file/file-5.19-biorad.dif
 Patch16:  patches/file/file-5.19-clicfs.dif
-Patch17:  patches/file/file-5.23-endian.patch
-Patch18:  patches/file/file-5.24-nitpick.dif
-Patch19:  patches/file/file-5.15-clear-invalid.patch
+Patch17:  patches/file/file-5.45-endian.patch
+#Patch18:  patches/file/file-5.24-nitpick.dif
+Patch19:  patches/file/file-5.45-clear-invalid.patch
 Patch20:  patches/file/file-secure_getenv.patch
-Patch21:  patches/file/file-5.28-btrfs-image.dif
-Patch22:  patches/file/file-5.32-mint.patch
-Patch23:  patches/file/file-5.32.dif
+#Patch21:  patches/file/file-5.28-btrfs-image.dif
+Patch22:  patches/file/file-5.45-mint.patch
+#Patch23:  patches/file/file-5.32.dif
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -69,23 +69,16 @@ used by apsfilter to permit automatic printing of different file types.
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
-%patch7 -p1
-%patch8 -p1
 %patch9 -p1
 %patch10 -p1
 %patch11 -p1
-%patch12 -p1
 %patch13 -p1
 %patch14 -p1
-%patch15 -p1
 %patch16 -p1
 %patch17 -p1
-%patch18 -p1
 %patch19 -p1
 %patch20 -p1
-%patch21 -p1
 %patch22 -p1
-%patch23 -p1
 
 rm -f Magdir/*,v Magdir/*~
 rm -f ltcf-c.sh ltconfig ltmain.sh
