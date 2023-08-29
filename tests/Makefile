@@ -35,6 +35,9 @@ compile-tests::
 	$(CC) -S -O2 -o - structpad.c | grep '\.long' | grep -q 10
 	$(CXX) -S -O2 -o - structpad.cc | grep '\.long' | grep -q 10
 	if $(CC) -S -O2 -o - structret.c | grep -q 'a1'; then false; fi
+	$(CC) -c branch.S
+	$(CROSS_PREFIX)objdump -d branch.o | grep -q bsrs
+
 .PHONY: compile-tests
 
 clean::
