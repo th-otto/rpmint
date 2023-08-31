@@ -19,9 +19,9 @@ unpack_archive
 JOBS=-j1
 
 cd "$srcdir"
-if test "$LTO_CFLAGS" != ""; then
-	sed -i "\@^DEFINITIONS =@i OPTS += $LTO_CFLAGS" CONFIGVARS
-fi
+#if test "$LTO_CFLAGS" != ""; then
+#	sed -i "\@^DEFINITIONS =@i OPTS += $LTO_CFLAGS" CONFIGVARS
+#fi
 
 #
 # ugly hack until makefiles have been ajusted

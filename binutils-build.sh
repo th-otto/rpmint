@@ -275,7 +275,7 @@ $srcdir/configure \
 	LDFLAGS="$LDFLAGS_FOR_BUILD" \
 	$bfd_targets \
 	--with-pkgversion="$REVISION" \
-	--with-bugurl=https://github.com/freemint/m68k-atari-mint-binutils-gdb/issues \
+	--with-bugurl='https://github.com/freemint/m68k-atari-mint-binutils-gdb/issues' \
 	--with-stage1-ldflags= \
 	--with-boot-ldflags="$LDFLAGS_FOR_BUILD" \
 	--with-gcc --with-gnu-as --with-gnu-ld \
@@ -354,10 +354,20 @@ TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}${VERSIONPATCH}
 # create separate archive for gdb
 if test -f ${PREFIX#/}/bin/${TARGET}-gdb; then
 	gdb=${PREFIX#/}/bin/${TARGET}-gdb*
-	gdb="$gdb "${PREFIX#/}/share/gdb
-	gdb="$gdb "${PREFIX#/}/share/info/*gdb*
-	gdb="$gdb "${PREFIX#/}/share/man/*/*gdb*
-	gdb="$gdb "${PREFIX#/}/include/gdb
+	# do not overwrite the system files
+	if test "${PREFIX}" = /usr -o "${PREFIX}" = "$MINGW_PREFIX"; then
+		rm -rf "${PREFIX#/}/share/gdb"
+		rm -f "${PREFIX#/}/share/info/"*gdb*
+		rm -f "${PREFIX#/}/share/man/"*/*gdb*
+		rm -rf "${PREFIX#/}/include/gdb"
+	else
+		gdb="$gdb "${PREFIX#/}/share/gdb"
+		gdb="$gdb "${PREFIX#/}/share/info/"*gdb*
+		gdb="$gdb "${PREFIX#/}/share/man/"*/*gdb*
+		gdb="$gdb "${PREFIX#/}/include/gdb"
+	fi
+	# this is empty currently
+	rmdir "${PREFIX#/}/include/sim" || true
 	gdb_version=`cat $srcdir/gdb/version.in`
 	gdb_version=${gdb_version//.DATE-git/}
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/gdb-${gdb_version}-${TARGET##*-}${VERSIONPATCH}-${host}.tar.xz $gdb || exit 1

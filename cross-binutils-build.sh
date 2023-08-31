@@ -29,7 +29,7 @@ esac
 
 ARCHIVES_DIR=$HOME/packages
 BUILD_DIR="$here"
-MINT_BUILD_DIR="$BUILD_DIR/binutils-build"
+MINT_BUILD_DIR="$BUILD_DIR/binutils-build-cross"
 DIST_DIR="$here/pkgs"
 
 srcdir="${PACKAGENAME}${VERSION}"
@@ -252,6 +252,7 @@ for CPU in ${ALL_CPUS}; do
 		LDFLAGS="$LDFLAGS_FOR_BUILD ${STACKSIZE}" \
 		$bfd_targets \
 		--with-pkgversion="$REVISION" \
+		--with-bugurl='https://github.com/freemint/m68k-atari-mint-binutils-gdb/issues' \
 		--with-stage1-ldflags= \
 		--with-boot-ldflags="$LDFLAGS_FOR_BUILD" \
 		--with-gcc --with-gnu-as --with-gnu-ld \
