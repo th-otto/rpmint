@@ -34,7 +34,7 @@ cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build-scripts/config.sub
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--disable-video-opengl
@@ -52,7 +52,7 @@ for CPU in ${ALL_CPUS}; do
 	LIBS="-lm" \
 	${srcdir}/configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 
-	hack_lto_cflags
+	: hack_lto_cflags
 	# ICONV isn't really used
 	sed -i 's/ -liconv//' config.status
 	./config.status

@@ -21,7 +21,7 @@ patches/zlib/zlib-1.2.12-0013-segfault.patch \
 unpack_archive
 
 export CHOST=$TARGET
-COMMON_CFLAGS="-O3 -fomit-frame-pointer $LTO_CFLAGS ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O3 -fomit-frame-pointer ${ELF_CFLAGS} ${CFLAGS_AMIGAOS}"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"

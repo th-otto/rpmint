@@ -29,7 +29,7 @@ cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" builds/unix/config.sub
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -std=gnu99 -D_GNU_SOURCE ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -std=gnu99 -D_GNU_SOURCE ${ELF_CFLAGS} ${CFLAGS_AMIGAOS}"
 
 #
 # Several programs on AmigaOS compile against a bundled

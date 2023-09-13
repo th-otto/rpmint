@@ -28,7 +28,7 @@ cd "$srcdir"
 rm -f config.sub
 cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --with-ogg=yes --disable-shared ${CONFIGURE_FLAGS_AMIGAOS}"
 

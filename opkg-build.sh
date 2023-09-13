@@ -44,7 +44,7 @@ rm -rf autom4te.cache config.h.in.orig
 # autoreconf may have overwritten config.sub
 cp "$BUILD_DIR/patches/automake/mintelf-config.sub" conf/config.sub
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} \
 	--prefix=${prefix}

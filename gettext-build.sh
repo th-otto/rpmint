@@ -40,11 +40,11 @@ cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub || ex
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 WHOLE_LIBINTL=
 if test "$LTO_CFLAGS" != ""; then
-	WHOLE_LIBINTL=--enable-whole-libintl
+	: WHOLE_LIBINTL=--enable-whole-libintl
 fi
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
 	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME} \
@@ -78,7 +78,7 @@ for CPU in ${ALL_CPUS}; do
 	RANLIB="$ranlib" \
 	./configure ${CONFIGURE_FLAGS} \
 		--libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags . gettext-runtime gettext-runtime/libasprintf gettext-tools 
+	: hack_lto_cflags . gettext-runtime gettext-runtime/libasprintf gettext-tools 
 
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1

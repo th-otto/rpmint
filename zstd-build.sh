@@ -31,7 +31,7 @@ mv lib/common/compiler.h lib/common/zcompiler.h
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 case $TARGET in
 m68k-atari-mint*)
 	STACKSIZE="-Wl,-stack,256k"

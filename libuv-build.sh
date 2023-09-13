@@ -23,7 +23,7 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -UHAVE_PTHREAD_H"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -UHAVE_PTHREAD_H ${ELF_CFLAGS}"
 STACKSIZE="-Wl,-stack,256k"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}

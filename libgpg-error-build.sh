@@ -29,7 +29,7 @@ cd "$MINT_BUILD_DIR"
 
 cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared --disable-threads"
 
@@ -44,7 +44,7 @@ for CPU in ${ALL_CPUS}; do
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
-	hack_lto_cflags
+	: hack_lto_cflags
 	echo '#undef HAVE_PTHREAD_H' >> config.h
 	echo "#undef HAVE_PTHREAD_API" >> config.h
 	echo "#undef HAVE_PTHREAD_MUTEX_RECURSIVE" >> config.h

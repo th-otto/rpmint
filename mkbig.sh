@@ -10,11 +10,11 @@ TAR_OPTS=${TAR_OPTS---owner=0 --group=0}
 for sys in cygwin32 cygwin64 mingw32 linux32 linux64 macos; do
 	d=`mktemp -d`
 	for pkg in "gcc-4.6.4-mint-*-bin-$sys.tar.xz" \
-		"binutils-2.34-mint-*-bin-$sys.tar.xz" \
-		"binutils-2.34-mintelf-*-bin-$sys.tar.xz" \
+		"binutils-2.41-mint-*-bin-$sys.tar.xz" \
+		"binutils-2.41-mintelf-*-bin-$sys.tar.xz" \
 		"mintbin-*-mint-*-bin-$sys.tar.xz" \
-		"gcc-10.1.0-mint-*-bin-$sys.tar.xz" \
-		"gcc-10.1.0-mintelf-*-bin-$sys.tar.xz" \
+		"gcc-13.2.0-mint-*-bin-$sys.tar.xz" \
+		"gcc-13.2.0-mintelf-*-bin-$sys.tar.xz" \
 		"gemlib-*-mint-*-dev.tar.xz" \
 		"gemlib-*-mintelf-*-dev.tar.xz" \
 		"mintlib-*-mint-*-dev.tar.xz" \

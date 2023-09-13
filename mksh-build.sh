@@ -29,7 +29,7 @@ cd "$srcdir"
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS ${ELF_CFLAGS} ${CFLAGS_AMIGAOS}"
 case $TARGET in
 m68k-atari-mint*)
 	STACKSIZE="-Wl,-stack,256k"

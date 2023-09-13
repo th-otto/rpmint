@@ -1,0 +1,49 @@
+archive="$1"
+
+set -x
+set -e
+
+if test "$archive" = ""; then exit 1; fi
+newarchive=${archive%%-*}
+echo $newarchive
+
+tar xvf "$archive"
+rm -rf opt
+mkdir -p opt/cross-mintelf/m68k-atari-mintelf
+rm -rf usr/m68k-atari-mintelf/sys-root/usr/bin
+rm -rf usr/m68k-atari-mintelf/sys-root/usr/sbin
+rm -rf usr/m68k-atari-mintelf/sys-root/usr/share
+rm -rf usr/m68k-atari-mintelf/sys-root/usr/stguide
+if test "$newarchive" = gemma; then
+  rm -rf usr/m68k-atari-mintelf/sys-root/mint
+fi
+if test -d usr/m68k-atari-mintelf/sys-root/usr/lib; then
+  mkdir -p opt/cross-mintelf/m68k-atari-mintelf/lib
+  rm -rf usr/m68k-atari-mintelf/lib
+  if test -d usr/m68k-atari-mintelf/sys-root/usr/lib/pkgconfig; then
+    for i in usr/m68k-atari-mintelf/sys-root/usr/lib/pkgconfig/*.pc; do
+      sed -i 's|prefix=/usr|prefix=/opt/cross-mintelf/m68k-atari-mintelf|' $i
+    done
+  fi
+  mv usr/m68k-atari-mintelf/sys-root/usr/lib opt/cross-mintelf/m68k-atari-mintelf
+  cd opt/cross-mintelf/m68k-atari-mintelf/lib
+  for i in `find . -name "*.a"`; do
+     cp -a $i /opt/cross-mintelf/m68k-atari-mintelf/sys-root/usr/lib/$i
+  done
+  cd ../../../..
+fi
+if test -d usr/m68k-atari-mintelf/sys-root/usr/include; then
+  mv usr/m68k-atari-mintelf/sys-root/usr/include opt/cross-mintelf/m68k-atari-mintelf/
+  rmdir usr/m68k-atari-mintelf/sys-root/usr/
+  cd opt/cross-mintelf/m68k-atari-mintelf/include
+  cp -pvr . /opt/cross-mintelf/m68k-atari-mintelf/sys-root/usr/include/
+  cd ../../../..
+fi
+if test -d usr/m68k-atari-mintelf/sys-root/; then rmdir usr/m68k-atari-mintelf/sys-root; fi
+rmdir usr/m68k-atari-mintelf
+rmdir usr
+
+
+tar --owner=0 --group=0 -Jcvf $newarchive-mintelf.tar.xz opt/cross-mintelf
+
+rm -rf opt

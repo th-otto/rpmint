@@ -37,7 +37,7 @@ rm -rf autom4te.cache config.h.in.orig
 # autoreconf may have overwritten config.sub
 cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build/config.sub
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -DNO_CATCHSIGNAL ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -DNO_CATCHSIGNAL ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
 LDFLAGS="${STACKSIZE}"

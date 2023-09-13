@@ -32,7 +32,7 @@ cd "$MINT_BUILD_DIR"
 sed -e 's@-unknown-@-${VENDOR}-@g' lib/config.guess > lib/config.guess.new && mv lib/config.guess.new lib/config.guess
 touch -r configure Makefile.am Makefile.in t/testsuite-part.am
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} \
 	--prefix=${prefix}

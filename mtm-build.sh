@@ -24,7 +24,7 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-std=c99 -Wall -Wextra -pedantic -Os -fomit-frame-pointer $LTO_CFLAGS"
+COMMON_CFLAGS="-std=c99 -Wall -Wextra -pedantic -Os -fomit-frame-pointer ${ELF_CFLAGS} $LTO_CFLAGS"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"

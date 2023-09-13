@@ -14,7 +14,7 @@ scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
 VERSION=-6.2.1
-VERSIONPATCH=-20220824
+VERSIONPATCH=-20230908
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -22,6 +22,9 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 # should be either m68k-atari-mint or m68k-atari-mintelf
 #
 TARGET=${1:-m68k-atari-mint}
+if test "$TARGET" = m68k-atari-mintelf; then
+REVISION="MiNT ELF ${VERSIONPATCH#-}"
+fi
 
 #
 # The hosts compiler.
@@ -36,12 +39,13 @@ TARGET=${1:-m68k-atari-mint}
 GCC=${GCC-gcc}
 GXX=${GXX-g++}
 
+#
 # Where to put the executables for later use.
 # This should be the same as the one configured
 # in the binutils script
 #
 here=`pwd`
-PKG_DIR="$here/binary7-package"
+PKG_DIR="$here/amiga-package"
 
 #
 # The prefix where the executables should
@@ -125,13 +129,6 @@ BUILD_DIR="$here"
 MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
 
 #
-# Where to put the executables for later use.
-# This should be the same as the one configured
-# in the binutils script
-#
-PKG_DIR="$here/amiga-package"
-
-#
 # Where to put the binary packages
 #
 DIST_DIR="$here/pkgs"
@@ -183,6 +180,14 @@ case $host in
 		with_m2=false
 		;;
 esac
+
+
+#
+# whether to use dwarf2 exceptions instead of sjlj.
+# Only works for elf toolchains.
+#
+#with_dw2_exceptions=--disable-sjlj-exceptions
+
 
 
 #
@@ -243,6 +248,24 @@ fi
 
 if test ! -d "$srcdir"; then
 	echo "$srcdir: no such directory" >&2
+	exit 1
+fi
+
+#
+# install mintlib if needed, so libstdc++ can be configured
+#
+if ! test -f ${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h; then
+	if test "${GITHUB_REPOSITORY}" != ""; then
+		sudo mkdir -p ${PREFIX}/${TARGET}/sys-root/usr
+		echo "fetching mintlib"
+		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+		echo "fetching fdlibm"
+		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+	fi
+fi
+
+if test ! -f "${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h"; then
+	echo "mintlib headers must be installed in ${PREFIX}/${TARGET}/sys-root/usr/include" >&2
 	exit 1
 fi
 
@@ -338,11 +361,26 @@ case $host in
 	mingw* | msys*) LN_S="cp -p" ;;
 esac
 
-try="${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"
+
+#
+# install binutils if needed
+#
+mkdir -p "${PKG_DIR}"
+if test ! -f "${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"; then
+	if test "${GITHUB_REPOSITORY}" != ""; then
+		echo "fetching binutils"
+		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.41-${TARGET##*-}-20230906-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
+		export PATH="${PKG_DIR}${PREFIX}/bin:$PATH"
+	fi
+fi
+
+
+
+try="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-${ranlib}"
 if test -x "$try"; then
 	ranlib="$try"
-	strip="${PKG_DIR}/${PREFIX}/bin/${TARGET}-strip"
-	as="${PKG_DIR}/${PREFIX}/bin/${TARGET}-as"
+	strip="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-strip"
+	as="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-as"
 else
 	ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
 	strip=`which "${TARGET}-strip" 2>/dev/null`
@@ -351,6 +389,17 @@ fi
 if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 	echo "cross-binutil tools for ${TARGET} not found" >&2
 	exit 1
+fi
+
+if test "$TARGET" = m68k-atari-mintelf; then
+  # new PRG+ELF format requires binutils >= 2.41
+  asversion=`$as --version | head -1 | sed -e 's/^.* \([.0-9]*\)$/\1/'`
+  asversion=${asversion%.0}
+  asversion=${asversion//./}
+  if test "$asversion" -lt 241; then
+	echo "cross-binutils >= 2.41 required" >&2
+	exit 1
+  fi
 fi
 
 mpfr_config=
@@ -410,6 +459,12 @@ fi
 
 cd "$MINT_BUILD_DIR"
 
+gcc4_compat=
+if test $gcc_major_version -lt 13; then
+	# with gcc 13 and above, do not longer use the comtatible interface
+	gcc4_compat=--with-default-libstdcxx-abi=gcc4-compatible
+fi
+
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
 	--prefix="${PREFIX}" \
@@ -431,7 +486,7 @@ $srcdir/configure \
 	--disable-libcc1 \
 	--disable-werror \
 	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root${gxxinclude} \
-	--with-default-libstdcxx-abi=gcc4-compatible \
+	$gcc4_compat \
 	--with-gcc --with-gnu-as --with-gnu-ld \
 	--with-system-zlib \
 	--disable-libgomp \
@@ -447,6 +502,7 @@ $srcdir/configure \
 	--disable-decimal-float \
 	--disable-nls \
 	$with_zstd \
+	$with_dw2_exceptions \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
 	$mpfr_config \
@@ -467,6 +523,12 @@ case $host in
 esac
 
 ${MAKE} $JOBS all-gcc || exit 1
+
+# The temporary compiler is very slow on Cygwin (it will be fast when fully installed)
+# The following hack can sometimes increase the compilation speed
+# by avoiding a shell wrapper for "as".
+rm gcc/as && $LN_S "$as" gcc/as
+
 ${MAKE} $JOBS all-target-libgcc || exit 1
 ${MAKE} $JOBS || exit 1
 
@@ -476,7 +538,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "$MINT_BUILD_DIR"
 	${MAKE} DESTDIR="${INSTALL_DIR}" install >/dev/null || exit 1
-	
+
 	mkdir -p "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
@@ -571,9 +633,14 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		cygwin*) soext=.dll; LTO_PLUGIN=cyglto_plugin-0${soext}; MY_LTO_PLUGIN=cyglto_plugin_mintelf-${gcc_dir_version}${soext} ;;
 		mingw* | msys*) soext=.dll; LTO_PLUGIN=liblto_plugin-0${soext}; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}${soext} ;;
 		macos*) soext=.dylib; LTO_PLUGIN=liblto_plugin${soext}; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}${soext} ;;
-		*) soext=.so; LTO_PLUGIN=liblto_plugin${soext}.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf${soext}.${gcc_dir_version} ;;
+		*) soext=.so; LTO_PLUGIN=liblto_plugin${soext}; MY_LTO_PLUGIN=liblto_plugin_mintelf${soext}.${gcc_dir_version} ;;
 	esac
 	
+	if test -f ${gccsubdir#/}/${LTO_PLUGIN}.0.0.0; then
+		rm -f ${gccsubdir#/}/${LTO_PLUGIN} ${gccsubdir#/}/${LTO_PLUGIN}.0
+		mv ${gccsubdir#/}/${LTO_PLUGIN}.0.0.0 ${gccsubdir#/}/${LTO_PLUGIN}
+	fi
+
 	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,cc1gm2,g++-mapper-server}${BUILD_EXEEXT} \
 		${gccsubdir#/}/${LTO_PLUGIN} \
 		${gccsubdir#/}/plugin/gengtype${BUILD_EXEEXT} \
@@ -584,9 +651,9 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 
 	rmdir ${PREFIX#/}/include
 	
-	if test -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN}; then
-		mkdir -p ${PREFIX#/}/lib/bfd-plugins
-		cd ${PREFIX#/}/lib/bfd-plugins
+	if test -f ${gccsubdir#/}/${LTO_PLUGIN}; then
+		mkdir -p ${BUILD_LIBDIR#/}/bfd-plugins
+		cd ${BUILD_LIBDIR#/}/bfd-plugins
 		rm -f ${MY_LTO_PLUGIN}
 		$LN_S ../../${BUILD_LIBDIR##*/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN} ${MY_LTO_PLUGIN}
 		cd "${INSTALL_DIR}"
@@ -637,7 +704,8 @@ BINTARNAME=${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
-rm -rf ${PREFIX#/}/share/gcc*/python
+rm -rf ${PREFIX#/}/share/gcc*
+rm -rf ${PREFIX#/}/share/gdb
 
 #
 # create a separate archive for the fortran backend

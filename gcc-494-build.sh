@@ -22,6 +22,9 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 # should be m68k-atari-mint
 #
 TARGET=m68k-atari-mint
+if test "$TARGET" = m68k-atari-mintelf; then
+REVISION="MiNT ELF ${VERSIONPATCH#-}"
+fi
 
 #
 # The hosts compiler.
@@ -124,6 +127,11 @@ with_fortran=false
 with_D=false
 
 #
+# whether to include the modula-2 backend
+#
+with_m2=false
+
+#
 # whether to include the ada backend
 #
 with_ada=false
@@ -135,8 +143,18 @@ case $host in
 		with_ada=false
 		# D backend takes too long on github runners
 		with_D=false
+		# m2 backend needs pthread.h
+		with_m2=false
 		;;
 esac
+
+
+#
+# whether to use dwarf2 exceptions instead of sjlj.
+# Only works for elf toolchains.
+#
+#with_dw2_exceptions=--disable-sjlj-exceptions
+
 
 
 #
@@ -151,6 +169,7 @@ patches/gmp/gmp-universal.patch
 patches/gmp/gmp-6.2.1-CVE-2021-43618.patch
 patches/gmp/gmp-6.2.1-arm64-invert_limb.patch
 gmp-for-gcc.sh
+zstd-for-gcc.sh
 "
 
 if test ! -f ".patched-${PACKAGENAME}${VERSION}"; then
@@ -240,6 +259,7 @@ if test "$BASE_VER" != "${VERSION#-}"; then
 	echo "version mismatch: this script is for gcc ${VERSION#-}, but gcc source is version $BASE_VER" >&2
 	exit 1
 fi
+gcc_major_version=$(echo $BASE_VER | cut -d '.' -f 1)
 gcc_dir_version=${BASE_VER}
 gccsubdir=${BUILD_LIBDIR}/gcc/${TARGET}/${gcc_dir_version}
 gxxinclude=/usr/include/c++/${gcc_dir_version}
@@ -259,7 +279,7 @@ for a in "" -1.16 -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 done
 test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
 case $BUILD in
-	x86_64-pc-mingw32) BUILD=x86_64-pc-mingw32 ;;
+	x86_64-pc-mingw32) BUILD=x86_64-pc-msys ;;
 	i686-pc-mingw32) BUILD=i686-pc-msys ;;
 esac
 
@@ -282,6 +302,7 @@ languages=c,c++
 $with_fortran && languages="$languages,fortran"
 $with_ada && languages="$languages,ada"
 $with_D && { languages="$languages,d"; enable_libphobos=; } # --enable-libphobos does not work because of missing swapcontext() in mintlib
+$with_m2 && languages="$languages,m2"
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -315,18 +336,18 @@ mkdir -p "${PKG_DIR}"
 if test ! -f "${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
 		echo "fetching binutils"
-		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.39-${TARGET##*-}-20230206-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
+		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.41-${TARGET##*-}-20230906-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
 		export PATH="${PKG_DIR}${PREFIX}/bin:$PATH"
 	fi
 fi
 
 
 
-try="${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"
+try="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-${ranlib}"
 if test -x "$try"; then
 	ranlib="$try"
-	strip="${PKG_DIR}/${PREFIX}/bin/${TARGET}-strip"
-	as="${PKG_DIR}/${PREFIX}/bin/${TARGET}-as"
+	strip="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-strip"
+	as="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-as"
 else
 	ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
 	strip=`which "${TARGET}-strip" 2>/dev/null`
@@ -337,10 +358,21 @@ if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 	exit 1
 fi
 
+if test "$TARGET" = m68k-atari-mintelf; then
+  # new PRG+ELF format requires binutils >= 2.41
+  asversion=`$as --version | head -1 | sed -e 's/^.* \([.0-9]*\)$/\1/'`
+  asversion=${asversion%.0}
+  asversion=${asversion//./}
+  if test "$asversion" -lt 241; then
+	echo "cross-binutils >= 2.41 required" >&2
+	exit 1
+  fi
+fi
+
 mpfr_config=
 
 unset GLIBC_SO
-without_zstd=
+with_zstd=
 
 case $host in
 	macos*)
@@ -365,8 +397,10 @@ case $host in
 		CXXFLAGS_FOR_BUILD="-pipe -O2 -stdlib=libc++ ${ARCHS}"
 		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names ${ARCHS}"
 		mpfr_config="--with-mpc=${CROSSTOOL_DIR}"
-		# zstd gives link errors on github runners
-		without_zstd=--without-zstd
+		if test $gcc_major_version -ge 10; then
+			export PKG_CONFIG_LIBDIR="$PKG_CONFIG_LIBDIR:${CROSSTOOL_DIR}/lib/pkgconfig"
+			with_zstd="--with-zstd=${CROSSTOOL_DIR}"
+		fi
 		;;
 esac
 
@@ -389,8 +423,17 @@ fail()
 # Now, for darwin, build gmp etc.
 #
 . ${scriptdir}/gmp-for-gcc.sh
+if test $gcc_major_version -ge 10; then
+	. ${scriptdir}/zstd-for-gcc.sh
+fi
 
 cd "$MINT_BUILD_DIR"
+
+gcc4_compat=
+if test $gcc_major_version -lt 13; then
+	# with gcc 13 and above, do not longer use the comtatible interface
+	gcc4_compat=--with-default-libstdcxx-abi=gcc4-compatible
+fi
 
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
@@ -416,7 +459,7 @@ $srcdir/configure \
 	--disable-libcc1 \
 	--disable-shared \
 	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root${gxxinclude} \
-	--with-default-libstdcxx-abi=gcc4-compatible \
+	$gcc4_compat \
 	--with-gcc --with-gnu-as --with-gnu-ld \
 	--with-system-zlib \
 	--disable-libgomp \
@@ -430,9 +473,12 @@ $srcdir/configure \
 	$enable_plugin \
 	--disable-decimal-float \
 	--disable-nls \
+	$with_zstd \
+	$with_dw2_exceptions \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
 	$mpfr_config \
+	$build_time_tools \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root" \
 	--enable-languages="$languages" || fail "gcc"
 
@@ -448,10 +494,14 @@ case $host in
 esac
 
 ${MAKE} $JOBS all-gcc || exit 1
+
+# The temporary compiler is very slow on Cygwin (it will be fast when fully installed)
+# The following hack can sometimes increase the compilation speed
+# by avoiding a shell wrapper for "as".
+rm gcc/as && $LN_S "$as" gcc/as
+
 ${MAKE} $JOBS all-target-libgcc || exit 1
 ${MAKE} || exit 1
-
-gcc_major_version=$(echo $BASE_VER | cut -d '.' -f 1)
 
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
@@ -459,7 +509,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "$MINT_BUILD_DIR"
 	${MAKE} DESTDIR="${INSTALL_DIR}" install >/dev/null || exit 1
-	
+
 	mkdir -p "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
@@ -485,13 +535,20 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
 		$LN_S ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-c++${BUILD_EXEEXT}
 	fi
-	if test -x ${TARGET}-gcc && test ! -h ${TARGET}-gcc; then
-		rm -f ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}
-		rm -f ${TARGET}-gcc-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_major_version}
-		mv ${TARGET}-gcc${BUILD_EXEEXT} ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc${BUILD_EXEEXT}
-		$LN_S ${TARGET}-gcc-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-gcc-${gcc_major_version}${BUILD_EXEEXT}
-	fi
+	for tool in gcc gfortran gdc gccgo go gofmt gm2 \
+	            gnat gnatbind gnatchop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep gnatxref; do
+		if test -x ${TARGET}-${tool} && test ! -h ${TARGET}-${tool}; then
+			rm -f ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}
+			rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
+			mv ${TARGET}-${tool}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT}
+			$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}${BUILD_EXEEXT}
+			if test ${BASE_VER} != ${gcc_major_version}; then
+				rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
+				rm -f ${tool}-${gcc_major_version}${BUILD_EXEEXT} ${tool}-${gcc_major_version}${BUILD_EXEEXT}
+				$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
+			fi
+		fi
+	done
 	if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
 		rm -f ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}
 		mv ${TARGET}-cpp${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT}
@@ -517,12 +574,14 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	done
 	
 	rm -f */*/libiberty.a
-	find . -type f -name "*.la" -delete -printf "rm %p\n"
+	# macOS does not understand -printf
+	# find . -type f -name "*.la" -delete -printf "rm %p\n"
+	find . -type f -name "*.la" -delete
 
 #
 # move compiler dependant libraries to the gcc subdirectory
 #
-	pushd ${INSTALL_DIR}${PREFIX}/${TARGET}/lib || exit 1
+	cd ${INSTALL_DIR}${PREFIX}/${TARGET}/lib || exit 1
 	libs=`find . -name "lib*.a" ! -path "*/gcc/*"`
 	$TAR -c $libs | $TAR -x -C ${INSTALL_DIR}${gccsubdir}
 	rm -f $libs
@@ -534,27 +593,33 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	rmdir m*/*/* || :
 	rmdir m*/* || :
 	rmdir m* || :
-	popd
+	cd "${INSTALL_DIR}"
 
 	case $host in
-		cygwin*) LTO_PLUGIN=cyglto_plugin-0.dll; MY_LTO_PLUGIN=cyglto_plugin_mintelf-${gcc_dir_version}.dll ;;
-		mingw* | msys*) LTO_PLUGIN=liblto_plugin-0.dll; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}.dll ;;
-		macos*) LTO_PLUGIN=liblto_plugin.dylib; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}.dylib ;;
-		*) LTO_PLUGIN=liblto_plugin.so.0.0.0; MY_LTO_PLUGIN=liblto_plugin_mintelf.so.${gcc_dir_version} ;;
+		cygwin*) soext=.dll; LTO_PLUGIN=cyglto_plugin-0${soext}; MY_LTO_PLUGIN=cyglto_plugin_mintelf-${gcc_dir_version}${soext} ;;
+		mingw* | msys*) soext=.dll; LTO_PLUGIN=liblto_plugin-0${soext}; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}${soext} ;;
+		macos*) soext=.dylib; LTO_PLUGIN=liblto_plugin${soext}; MY_LTO_PLUGIN=liblto_plugin_mintelf-${gcc_dir_version}${soext} ;;
+		*) soext=.so; LTO_PLUGIN=liblto_plugin${soext}; MY_LTO_PLUGIN=liblto_plugin_mintelf${soext}.${gcc_dir_version} ;;
 	esac
 	
-	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,g++-mapper-server}${BUILD_EXEEXT} \
+	if test -f ${gccsubdir#/}/${LTO_PLUGIN}.0.0.0; then
+		rm -f ${gccsubdir#/}/${LTO_PLUGIN} ${gccsubdir#/}/${LTO_PLUGIN}.0
+		mv ${gccsubdir#/}/${LTO_PLUGIN}.0.0.0 ${gccsubdir#/}/${LTO_PLUGIN}
+	fi
+
+	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,cc1gm2,g++-mapper-server}${BUILD_EXEEXT} \
 		${gccsubdir#/}/${LTO_PLUGIN} \
 		${gccsubdir#/}/plugin/gengtype${BUILD_EXEEXT} \
+		${gccsubdir#/}/plugin/m2rte${soext} \
 		${gccsubdir#/}/install-tools/fixincl${BUILD_EXEEXT}; do
 		test -f "$f" && ${STRIP} "$f"
 	done
 
 	rmdir ${PREFIX#/}/include
 	
-	if test -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN}; then
-		mkdir -p ${PREFIX#/}/lib/bfd-plugins
-		cd ${PREFIX#/}/lib/bfd-plugins
+	if test -f ${gccsubdir#/}/${LTO_PLUGIN}; then
+		mkdir -p ${BUILD_LIBDIR#/}/bfd-plugins
+		cd ${BUILD_LIBDIR#/}/bfd-plugins
 		rm -f ${MY_LTO_PLUGIN}
 		$LN_S ../../${BUILD_LIBDIR##*/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN} ${MY_LTO_PLUGIN}
 		cd "${INSTALL_DIR}"
@@ -579,6 +644,22 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 			test "$i" = "." || rmdir "$i"
 		done
 	}
+
+	# these are currently identically compiled 2 times; FIXME
+	# this only happens if gcc was patched to put the m68000 libraries also
+	# in a sub-directory of /usr/lib
+	m68000=`"${INSTALL_DIR}/${PREFIX}/bin/${TARGET}-gcc" -m68000 -print-multi-directory`
+	if test "$m68000" = "m68000"; then
+		for dir in . mshort mfastcall mfastcall/mshort; do
+			for f in libgcov.a libgcc.a libcaf_single.a; do
+				rm -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/$dir/$f
+			done
+		done
+		for dir in mfastcall/mshort mfastcall mshort; do
+			rmdir ${BUILD_LIBDIR#/}/gcc/${TARGET}/$dir 2>/dev/null
+		done
+	fi
+
 done
 
 cd "${THISPKG_DIR}" || exit 1
@@ -589,7 +670,8 @@ BINTARNAME=${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
-rm -rf ${PREFIX#/}/share/gcc*/python
+rm -rf ${PREFIX#/}/share/gcc*
+rm -rf ${PREFIX#/}/share/gdb
 
 #
 # create a separate archive for the fortran backend
@@ -603,6 +685,46 @@ if $with_fortran; then
 	fortran="$fortran "`find ${gccsubdir#/} -name "*gfortran*"`
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-fortran-${host}.tar.xz $fortran || exit 1
 	rm -rf $fortran
+fi
+
+#
+# create a separate archive for the D backend
+#
+if $with_D; then
+	D=
+	test -d ${gccsubdir#/}include/d && D="$D "${gccsubdir#/}include/d
+	D="$D "`find ${gccsubdir#/} -name "libgdruntim*"`
+	D="$D "`find ${gccsubdir#/} -name "libgphobos*"`
+	D="$D "`find ${gccsubdir#/} -name "d21*"`
+	D="$D "${PREFIX#/}/bin/*-gdc*
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-d-${host}.tar.xz $D || exit 1
+	rm -rf $D
+fi
+
+#
+# create a separate archive for the ada backend
+#
+if $with_ada; then
+	ada=`find ${gccsubdir#/} -name adainclude`
+	ada="$ada "`find ${gccsubdir#/} -name adalib`
+	ada="$ada "`find ${gccsubdir#/} -name "gnat1*"`
+	ada="$ada "${PREFIX#/}/bin/${TARGET}-gnat*
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-ada-${host}.tar.xz $ada || exit 1
+	rm -rf $ada
+fi
+
+#
+# create a separate archive for the modula-2 backend
+#
+if $with_m2; then
+	m2=
+	test -d ${gccsubdir#/}/m2 && m2="$m2 "${gccsubdir#/}/m2
+	m2="$m2 "`find ${gccsubdir#/} -name "libm2*"`
+	m2="$m2 "`find ${gccsubdir#/} -name "cc1gm2*"`
+	test -f ${gccsubdir#/}/plugin/m2rte${soext} && m2="$m2 ${gccsubdir#/}/plugin/m2rte${soext}"
+	m2="$m2 "${PREFIX#/}/bin/${TARGET}-gm2*
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-m2-${host}.tar.xz $m2 || exit 1
+	rm -rf $m2
 fi
 
 #

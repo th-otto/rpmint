@@ -19,7 +19,7 @@ unpack_archive
 
 cd "$srcdir"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS} ${CFLAGS_AMIGAOS}"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"

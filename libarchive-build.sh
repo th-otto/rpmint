@@ -29,7 +29,7 @@ autoreconf -fi
 # autoreconf may have overwritten config.sub
 cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build/autoconf/config.sub
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
 	--docdir=${TARGET_PREFIX}/share/doc/${PACKAGENAME} \
@@ -49,7 +49,7 @@ for CPU in ${ALL_CPUS}; do
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 	echo '#undef HAVE_PTHREAD_H' >> config.h
 
 	${MAKE} $JOBS || exit 1

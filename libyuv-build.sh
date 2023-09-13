@@ -22,7 +22,7 @@ cd "$srcdir"
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"

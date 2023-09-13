@@ -37,7 +37,7 @@ rm -f config.sub
 cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing $LTO_CFLAGS"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing ${ELF_CFLAGS}"
 STACKSIZE="-Wl,-stack,256k"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \

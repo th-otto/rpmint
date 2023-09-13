@@ -63,7 +63,7 @@ sed -e 's/@suse_version@/%{?suse_version}%{!?suse_version:0}/' \
     -e 's/@leap_version@/%{?leap_version}%{!?leap_version:0}/' \
   < "${BUILD_DIR}/patches/rpm/rpm-mint_macros" > ${VENDOR}_macros
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} \
 	--prefix=${prefix} \

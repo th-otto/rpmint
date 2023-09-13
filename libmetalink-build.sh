@@ -41,7 +41,7 @@ cd "$MINT_BUILD_DIR"
 export LIBXML2_CFLAGS=-I${sysroot}${TARGET_PREFIX}/include/libxml2
 export LIBXML2_LIBS="-lxml2 -lz -llzma -liconv -lm"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer $LIBXML2_CFLAGS"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer $LIBXML2_CFLAGS ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --docdir=${TARGET_PREFIX}/share/doc/${PACKAGENAME} \
 --without-libexpat \
@@ -66,7 +66,7 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	create_config_cache
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS $LIBXML2_LIBS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} ${JOBS} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install >/dev/null
 	${MAKE} clean >/dev/null

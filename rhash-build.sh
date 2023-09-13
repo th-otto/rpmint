@@ -28,7 +28,7 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 STACKSIZE="-Wl,-stack,256k"
 
 CONFIGURE_FLAGS="--prefix=${prefix} --disable-lib-shared --enable-lib-static --enable-static --sysconfdir=/etc"
@@ -44,7 +44,7 @@ for CPU in ${ALL_CPUS}; do
 	CC="${TARGET}-gcc" \
 	AR="${ar}" \
 	RANLIB=${ranlib} \
-	OPTFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -D_GNU_SOURCE $LTO_CFLAGS" \
+	OPTFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -D_GNU_SOURCE" \
 	OPTLDFLAGS="$CPU_CFLAGS $LTO_CFLAGS ${STACKSIZE}" \
 		./configure $CONFIGURE_FLAGS || exit 1
 
@@ -53,7 +53,7 @@ for CPU in ${ALL_CPUS}; do
 		CC="${TARGET}-gcc" \
 		AR="${ar}" \
 		RANLIB=${ranlib} \
-		OPTFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -D_GNU_SOURCE $LTO_CFLAGS" \
+		OPTFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -D_GNU_SOURCE" \
 		OPTLDFLAGS="$CPU_CFLAGS $LTO_CFLAGS ${STACKSIZE}" \
 		lib-static all || exit 1
 

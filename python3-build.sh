@@ -68,7 +68,8 @@ touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
 
 COMMON_CFLAGS="\
 	-O2 -fomit-frame-pointer -fwrapv \
-	-DOPENSSL_LOAD_CONF"
+	-DOPENSSL_LOAD_CONF \
+	${ELF_CFLAGS}"
 STACKSIZE="-Wl,-stack,512k"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${TARGET_PREFIX}
@@ -116,7 +117,7 @@ EOF
 	sh ./configure \
 		${CONFIGURE_FLAGS} \
 		|| exit 1
-	hack_lto_cflags
+	: hack_lto_cflags
 
 	${MAKE} ${JOBS} || exit 1
 	

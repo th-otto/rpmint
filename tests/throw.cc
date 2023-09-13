@@ -24,6 +24,7 @@ int main(void)
 {
 	int i;
 	
+	setvbuf(stderr, NULL, _IONBF, 0);
 	printf("Hello, C++\n");
 	try {
 		for (i = 0; i < 10; i++)

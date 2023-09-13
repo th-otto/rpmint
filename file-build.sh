@@ -68,7 +68,7 @@ cat "${BUILD_DIR}/patches/file/file-zisofs.magic" >> magic/Localstuff
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -DHOWMANY=69632"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS} -DHOWMANY=69632"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
 	--sysconfdir=/etc

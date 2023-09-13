@@ -36,7 +36,7 @@ cd "$srcdir"
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -D_GNU_SOURCE -DNONLS"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -D_GNU_SOURCE -DNONLS ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="-default +fsstnd +sgid"
 

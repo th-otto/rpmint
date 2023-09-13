@@ -62,7 +62,7 @@ sed -i 's:^CROSSPREFIX=\(.*\):CROSSPREFIX='${TARGET}-':' Makefile.conf
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing ${ELF_CFLAGS}"
 
 with_ldap=false
 with_ldapcase=false
@@ -113,7 +113,7 @@ USRMANEXT = .1
 EOF
 
 	./configure ${CONFIGURE_FLAGS}
-	M68K_ATARI_MINT_CFLAGS="${CPU_CFLAGS} $COMMON_CFLAGS ${LTO_CFLAGS} ${STACKSIZE}" CROSSPREFIX="${TARGET}-" ${MAKE} $JOBS || exit 1
+	M68K_ATARI_MINT_CFLAGS="${CPU_CFLAGS} $COMMON_CFLAGS ${ELF_CFLAGS} ${LTO_CFLAGS} ${STACKSIZE}" CROSSPREFIX="${TARGET}-" ${MAKE} $JOBS || exit 1
 
 	mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}$multilibdir
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1

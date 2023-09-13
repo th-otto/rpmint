@@ -22,7 +22,7 @@ cd "$srcdir"
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing -ffast-math ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing -ffast-math ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}"
 

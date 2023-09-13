@@ -43,7 +43,7 @@ cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing ${ELF_CFLAGS}"
 STACKSIZE="-Wl,-stack,256k"
 
 CONFIGURE_FLAGS="--host=${TARGET}
@@ -65,7 +65,7 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"$srcdir/configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 
 	${MAKE} $JOBS || exit 1
 

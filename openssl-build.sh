@@ -35,7 +35,7 @@ ${TARGET_MANDIR#/}/man7/*
 #
 # CFLAGS have been patched in the Configure script
 #
-COMMON_CFLAGS="-O3 -fomit-frame-pointer"
+COMMON_CFLAGS="-O3 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--prefix=${prefix} --cross-compile-prefix=${TARGET}- --openssldir=${SSLETCDIR} zlib"
 

@@ -24,7 +24,7 @@ cd "$srcdir"
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS ${ELF_CFLAGS}"
 
 NO_STRIP=1
 

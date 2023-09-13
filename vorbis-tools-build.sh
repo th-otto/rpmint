@@ -33,7 +33,7 @@ cd "$srcdir"
 
 cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-nls"
 

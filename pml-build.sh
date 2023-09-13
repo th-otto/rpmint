@@ -24,8 +24,11 @@ unpack_archive
 LTO_CFLAGS=""
 
 cd "$srcdir"
-if test "$LTO_CFLAGS" != ""; then
-	sed -i "\@^CP    =@i CFLAGS += ${LTO_CFLAGS}" CONFIGVARS
+#if test "$LTO_CFLAGS" != ""; then
+#	sed -i "\@^CP    =@i CFLAGS += ${LTO_CFLAGS}" CONFIGVARS
+#fi
+if test "$ELF_CFLAGS" != ""; then
+	sed -i "\@^CP    =@i CFLAGS += ${ELF_CFLAGS}" CONFIGVARS
 fi
 
 cd "$MINT_BUILD_DIR"

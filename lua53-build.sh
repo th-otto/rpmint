@@ -32,7 +32,7 @@ cd "$MINT_BUILD_DIR"
 cat doc/lua.1  | sed 's/TH LUA 1/TH LUA${major_version} 1/' > doc/lua${major_version}.1
 cat doc/luac.1 | sed 's/TH LUAC 1/TH LUAC${major_version} 1/' > doc/luac${major_version}.1
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 STACKSIZE="-Wl,-stack,256k"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared"

@@ -41,7 +41,7 @@ autoreconf -fiv
 rm -rf autom4te.cache
 cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub || exit 1
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -s -Wall $LTO_CFLAGS"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -s -Wall ${ELF_CFLAGS} $LTO_CFLAGS"
 
 autoconf || exit 1
 

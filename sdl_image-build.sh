@@ -30,7 +30,7 @@ rm -rf autom4te.cache config.h.in.orig
 # autoreconf may have overwritten config.sub
 cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
 
@@ -54,7 +54,7 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS ${STACKSIZE}" \
 	LIBS="-lm" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} $JOBS || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install

@@ -14,7 +14,7 @@ scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
 VERSION=-8.5.0
-VERSIONPATCH=-20230719
+VERSIONPATCH=-20230908
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -22,6 +22,9 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 # should be either m68k-atari-mint or m68k-atari-mintelf
 #
 TARGET=${1:-m68k-atari-mint}
+if test "$TARGET" = m68k-atari-mintelf; then
+REVISION="MiNT ELF ${VERSIONPATCH#-}"
+fi
 
 #
 # The hosts compiler.
@@ -151,6 +154,14 @@ case $host in
 		with_m2=false
 		;;
 esac
+
+
+#
+# whether to use dwarf2 exceptions instead of sjlj.
+# Only works for elf toolchains.
+#
+#with_dw2_exceptions=--disable-sjlj-exceptions
+
 
 
 #
@@ -346,18 +357,18 @@ mkdir -p "${PKG_DIR}"
 if test ! -f "${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
 		echo "fetching binutils"
-		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.39-${TARGET##*-}-20230206-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
+		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.41-${TARGET##*-}-20230906-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
 		export PATH="${PKG_DIR}${PREFIX}/bin:$PATH"
 	fi
 fi
 
 
 
-try="${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"
+try="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-${ranlib}"
 if test -x "$try"; then
 	ranlib="$try"
-	strip="${PKG_DIR}/${PREFIX}/bin/${TARGET}-strip"
-	as="${PKG_DIR}/${PREFIX}/bin/${TARGET}-as"
+	strip="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-strip"
+	as="${PKG_DIR}/${PREFIX#/}/bin/${TARGET}-as"
 else
 	ranlib=`which ${TARGET}-${ranlib} 2>/dev/null`
 	strip=`which "${TARGET}-strip" 2>/dev/null`
@@ -366,6 +377,17 @@ fi
 if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 	echo "cross-binutil tools for ${TARGET} not found" >&2
 	exit 1
+fi
+
+if test "$TARGET" = m68k-atari-mintelf; then
+  # new PRG+ELF format requires binutils >= 2.41
+  asversion=`$as --version | head -1 | sed -e 's/^.* \([.0-9]*\)$/\1/'`
+  asversion=${asversion%.0}
+  asversion=${asversion//./}
+  if test "$asversion" -lt 241; then
+	echo "cross-binutils >= 2.41 required" >&2
+	exit 1
+  fi
 fi
 
 mpfr_config=
@@ -412,7 +434,7 @@ esac
 #
 # Note: for ADA, you have to use the same major of gcc as the one we are compiling here.
 # If your hosts compiler is a newer one, set
-# GCC=gcc-7 GXX=g++-7 before running this script
+# GCC=gcc-8 GXX=g++-8 before running this script
 #
 case $GCC in
 	*-[0-9]*-m32)
@@ -479,6 +501,12 @@ fi
 
 cd "$MINT_BUILD_DIR"
 
+gcc4_compat=
+if test $gcc_major_version -lt 13; then
+	# with gcc 13 and above, do not longer use the comtatible interface
+	gcc4_compat=--with-default-libstdcxx-abi=gcc4-compatible
+fi
+
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
 	--prefix="${PREFIX}" \
@@ -503,7 +531,7 @@ $srcdir/configure \
 	--disable-libcc1 \
 	--disable-werror \
 	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root${gxxinclude} \
-	--with-default-libstdcxx-abi=gcc4-compatible \
+	$gcc4_compat \
 	--with-gcc-major-version-only \
 	--with-gcc --with-gnu-as --with-gnu-ld \
 	--with-system-zlib \
@@ -522,6 +550,7 @@ $srcdir/configure \
 	--disable-decimal-float \
 	--disable-nls \
 	$with_zstd \
+	$with_dw2_exceptions \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
 	$mpfr_config \
@@ -541,6 +570,12 @@ case $host in
 esac
 
 ${MAKE} $JOBS all-gcc || exit 1
+
+# The temporary compiler is very slow on Cygwin (it will be fast when fully installed)
+# The following hack can sometimes increase the compilation speed
+# by avoiding a shell wrapper for "as".
+rm gcc/as && $LN_S "$as" gcc/as
+
 ${MAKE} $JOBS all-target-libgcc || exit 1
 ${MAKE} $JOBS || exit 1
 
@@ -550,7 +585,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "$MINT_BUILD_DIR"
 	${MAKE} DESTDIR="${INSTALL_DIR}" install >/dev/null || exit 1
-	
+
 	mkdir -p "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
@@ -658,9 +693,9 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 
 	rmdir ${PREFIX#/}/include
 	
-	if test -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN}; then
-		mkdir -p ${PREFIX#/}/lib/bfd-plugins
-		cd ${PREFIX#/}/lib/bfd-plugins
+	if test -f ${gccsubdir#/}/${LTO_PLUGIN}; then
+		mkdir -p ${BUILD_LIBDIR#/}/bfd-plugins
+		cd ${BUILD_LIBDIR#/}/bfd-plugins
 		rm -f ${MY_LTO_PLUGIN}
 		$LN_S ../../${BUILD_LIBDIR##*/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN} ${MY_LTO_PLUGIN}
 		cd "${INSTALL_DIR}"
@@ -711,7 +746,8 @@ BINTARNAME=${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
-rm -rf ${PREFIX#/}/share/gcc*/python
+rm -rf ${PREFIX#/}/share/gcc*
+rm -rf ${PREFIX#/}/share/gdb
 
 #
 # create a separate archive for the fortran backend

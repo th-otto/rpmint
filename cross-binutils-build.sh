@@ -9,7 +9,7 @@ me="$0"
 
 PACKAGENAME=binutils
 VERSION=-2.41
-VERSIONPATCH=-20230906
+VERSIONPATCH=-20230911
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
@@ -316,6 +316,7 @@ for CPU in ${ALL_CPUS}; do
 		gdb="$gdb "${TARGET_PREFIX#/}/include/gdb
 		gdb_version=`cat $MINT_BUILD_DIR/../$srcdir/gdb/version.in`
 		gdb_version=${gdb_version//.DATE-git/}
+		gdb_version=$(echo ${gdb_version} | cut -d '.' -f 1-2)
 		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/gdb-${gdb_version}-${TARGET##*-}-${CPU}.tar.xz $gdb || exit 1
 		rm -rf $gdb
 	fi

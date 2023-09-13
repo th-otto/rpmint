@@ -8,8 +8,8 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        0.3
-Release:        20200828
+Version:        0.4
+Release:        20230911
 License:        GPL-2.0-or-later
 Group:          Development/Languages/C and C++
 

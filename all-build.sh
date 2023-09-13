@@ -2,10 +2,12 @@
 
 me="$0"
 
+TARGET=${1:-m68k-atari-mint}
+
 export KEEP_PKGDIR=no
 export KEEP_SRCDIR=no
 
-for pkg in gemlib \
+for pkg in \
 	arc \
 	arj \
 	asap \
@@ -135,7 +137,11 @@ for pkg in gemlib \
 ; do
 	script=${pkg}-build.sh
 	ls -l $script
+	echo -ne "\033]2;$pkg\007"
+	: time ./$script ${TARGET}
 done
+
+echo -ne "\033]2;\007"
 
 exit 0
 

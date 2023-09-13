@@ -44,7 +44,7 @@ cp "$BUILD_DIR/patches/automake/mintelf-config.sub" unix/config/config.sub
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS ${ELF_CFLAGS}"
 STACKSIZE="-Wl,-stack,256k"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}

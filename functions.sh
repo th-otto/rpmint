@@ -27,8 +27,13 @@ case `uname -s` in
 	MSYS*) host=msys ;;
 	CYGWIN*) if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=cygwin32; else host=cygwin64; fi ;;
 	Darwin*) host=macos; STRIP=strip; TAR_OPTS= ;;
-	*) host=linux64
+	Linux) host=linux64
 	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then host=linux32; fi
+	   ;;
+	*)
+	   echo "unsupported host os: ${host}" >&2
+	   uname -a >&2
+	   exit 1
 	   ;;
 esac
 case $host in
@@ -167,9 +172,14 @@ for a in "" -1.16 -1.15 -1.14 -1.13 -1.12 -1.11 -1.10; do
 	test "$host" = "macos" && BUILD=`/opt/local/share/automake${a}/config.guess 2>/dev/null`
 	test "$BUILD" != "" && break
 done
-test "$BUILD" = "" && BUILD=`$srcdir/config.guess`
+if test "$BUILD" = ""; then
+	if test -f "$srcdir/config.guess"; then
+		BUILD=`$srcdir/config.guess`
+	fi
+fi
 
 LTO_CFLAGS=
+ELF_CFLAGS=
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -179,6 +189,7 @@ case "${TARGET}" in
 		# we cannot add this to CFLAGS, because then autoconf tests
 		# for missing c library functions will always succeed
 		LTO_CFLAGS="-flto -ffat-lto-objects"
+		ELF_CFLAGS="-ffunction-sections -fdata-sections"
 		;;
 esac
 
@@ -191,7 +202,7 @@ if test ! -f "${prefix}/bin/${TARGET}-${ranlib}"; then
 		echo "fetching binutils"
 		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.39-${TARGET##*-}-20230206-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
 		echo "fetching gcc"
-		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/gcc-7/gcc-7.5.0-${TARGET##*-}-20230206-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
+		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/gcc-7/gcc-7.5.0-${TARGET##*-}-20230210-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
 		if test "${PACKAGENAME}" != mintbin; then
 			echo "fetching mintbin"
 			wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/mintbin/mintbin-0.3-${TARGET##*-}-20230206-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
@@ -245,6 +256,7 @@ unpack_archive()
 		         "$ARCHIVES_DIR/${srcarchive}.tar.gz" \
 		         "$ARCHIVES_DIR/${srcarchive}.tgz" \
 		         "$ARCHIVES_DIR/${srcarchive}.tlz" \
+		         "${here}/${srcarchive}.tar.xz" \
 		         "${here}/${srcarchive}.tar.zst" \
 		         "${here}/${srcarchive}.tar.lz" \
 		         "${here}/${srcarchive}.tar.bz2" \

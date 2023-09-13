@@ -92,7 +92,7 @@ cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" support/config.sub
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -DIMPORT_FUNCTIONS_DEF=0"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS} -DIMPORT_FUNCTIONS_DEF=0"
 STACKSIZE="-Wl,-stack,256k"
 
 SYSMALLOC="--without-gnu-malloc --without-bash-malloc"
@@ -196,7 +196,7 @@ for CPU in ${ALL_CPUS}; do
 		"$srcdir/configure" ${MINSH_CONFIGURE_FLAGS} \
 		--libdir='${exec_prefix}/lib'$multilibdir \
 		--libexecdir='${exec_prefix}/libexec/bash'$multilibexecdir
-		hack_lto_cflags
+		: hack_lto_cflags
 		disable_iconv
 
 		${MAKE} ${JOBS} Program=sh sh || exit 1
@@ -210,7 +210,7 @@ for CPU in ${ALL_CPUS}; do
 
 	sed -i 's/^install:.*/install:/' examples/loadables/Makefile
 
-	hack_lto_cflags
+	: hack_lto_cflags
 	disable_iconv
 
 	${MAKE} ${JOBS} || exit 1

@@ -78,6 +78,16 @@ It would be easy to recompile them on any operating system already supporting th
 Feel free to redistribute, recompile, and improve the packages,
 with respect to their own licenses.
 </p>
+
+<p>&nbsp;</p>
+
+<p><span class="important">Important Note for the mintelf toolchains:</span><br />
+<img src="images/newbutton.png" width="60" height="40" alt="New" />
+All the elf toolchains have now been updated to produce the new PRG+ELF executable format,
+which finally makes almost all elf features available. This requires binutils >= 2.41.
+If you have previously been using the mintelf toolchains, you should also update all
+libraries. They also now produce dwarf-2 debug information by default.
+
 </div>
 
 <hr />
@@ -262,48 +272,53 @@ function gen_baselinks($package, string $os, string $cpu)
 		$name = "gcc";
 
 	echo '<td class="sourcelink">';
-	$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . $fbin . $fos . '.tar.xz';
-	$text = $name . '-' . $package['version'] . '-mint' . $fbin . $fos . '.tar.xz';
-	gen_link($filename, $text);
-	if ($package['fortran'])
+	/* gdb is currently only available for elf */
+	if ($name !== "gdb")
 	{
+		$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . $fbin . $fos . '.tar.xz';
+		$text = $name . '-' . $package['version'] . '-mint' . $fbin . $fos . '.tar.xz';
+		gen_link($filename, $text);
+		if ($package['fortran'])
+		{
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+			echo '<tr><td></td><td></td><td class="sourcelink">';
+			$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-fortran' . $fos . '.tar.xz';
+			$text = $name . '-' . $package['version'] . '-mint' . '-fortran' . $fos . '.tar.xz';
+			gen_link($filename, $text);
+		}
+		if ($package['D'] && ($os === 'linux32' || $os === 'linux64'))
+		{
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+			echo '<tr><td></td><td></td><td class="sourcelink">';
+			$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-d' . $fos . '.tar.xz';
+			$text = $name . '-' . $package['version'] . '-mint' . '-d' . $fos . '.tar.xz';
+			gen_link($filename, $text);
+		}
+		if ($package['ada'] && ($os === 'linux32' || $os === 'linux64'))
+		{
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+			echo '<tr><td></td><td></td><td class="sourcelink">';
+			$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-ada' . $fos . '.tar.xz';
+			$text = $name . '-' . $package['version'] . '-mint' . '-ada' . $fos . '.tar.xz';
+			gen_link($filename, $text);
+		}
+		if ($package['m2'] && ($os === 'linux32' || $os === 'linux64'))
+		{
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+			echo '<tr><td></td><td></td><td class="sourcelink">';
+			$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-m2' . $fos . '.tar.xz';
+			$text = $name . '-' . $package['version'] . '-mint' . '-m2' . $fos . '.tar.xz';
+			gen_link($filename, $text);
+		}
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";
 		echo '<tr><td></td><td></td><td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-fortran' . $fos . '.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint' . '-fortran' . $fos . '.tar.xz';
-		gen_link($filename, $text);
 	}
-	if ($package['D'] && ($os === 'linux32' || $os === 'linux64'))
-	{
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-d' . $fos . '.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint' . '-d' . $fos . '.tar.xz';
-		gen_link($filename, $text);
-	}
-	if ($package['ada'] && ($os === 'linux32' || $os === 'linux64'))
-	{
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-ada' . $fos . '.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint' . '-ada' . $fos . '.tar.xz';
-		gen_link($filename, $text);
-	}
-	if ($package['m2'] && ($os === 'linux32' || $os === 'linux64'))
-	{
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr><td></td><td></td><td class="sourcelink">';
-		$filename = $download_dir . $name . '-' . $package['version'] . '-mint' . $fdate . '-m2' . $fos . '.tar.xz';
-		$text = $name . '-' . $package['version'] . '-mint' . '-m2' . $fos . '.tar.xz';
-		gen_link($filename, $text);
-	}
-	echo '</td>' . "\n";
-	echo '</tr>' . "\n";
-	echo '<tr><td></td><td></td><td class="sourcelink">';
+
 	if ($package['elf'] && $basepackages[$gccver][$os])
 	{
 		$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf' . $fdate . $fbin . $fos . '.tar.xz';
@@ -1378,6 +1393,8 @@ This notably applies to Perl and Python.
 <li>2023/08/24 Update ncurses to 6.4</li>
 
 <li>2023/08/27 Update file to 5.45</li>
+
+<li>2023/09/11 Update binutils to 2.41</li>
 
 </ul>
 

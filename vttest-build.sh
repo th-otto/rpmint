@@ -26,7 +26,7 @@ CONFIGURE_FLAGS="--host=${TARGET} \
 	--prefix=${prefix} \
 	--sysconfdir=/etc"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 

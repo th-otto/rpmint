@@ -53,7 +53,7 @@ rm -rf autom4te.cache
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -Wall"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -Wall ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}
 	--docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME}

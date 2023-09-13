@@ -49,6 +49,7 @@ COMMON_CFLAGS="-O3 -fomit-frame-pointer \
 -DUNICODE_WCHAR -DNO_LCHMOD \
 -DDATE_FORMAT=DF_YMD -I. -fno-strict-aliasing \
 -DUSE_BZIP2 \
+${ELF_CFLAGS} \
 $LTO_CFLAGS"
 STACKSIZE=-Wl,-stack,96k
 

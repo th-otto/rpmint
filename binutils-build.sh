@@ -15,7 +15,7 @@ scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=binutils
 VERSION=-2.41
-VERSIONPATCH=-20230906
+VERSIONPATCH=-20230911
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
@@ -370,6 +370,7 @@ if test -f ${PREFIX#/}/bin/${TARGET}-gdb; then
 	rmdir "${PREFIX#/}/include/sim" 2>/dev/null || true
 	gdb_version=`cat $srcdir/gdb/version.in`
 	gdb_version=${gdb_version//.DATE-git/}
+	gdb_version=$(echo ${gdb_version} | cut -d '.' -f 1-2)
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/gdb-${gdb_version}-${TARGET##*-}${VERSIONPATCH}-${host}.tar.xz $gdb || exit 1
 	rm -rf $gdb
 fi

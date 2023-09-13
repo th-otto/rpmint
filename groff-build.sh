@@ -63,7 +63,7 @@ cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing ${ELF_CFLAGS}"
 
 # libdir redefined as it is just bunch of scripts
 CONFIGURE_FLAGS="--host=${TARGET}

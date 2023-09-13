@@ -36,7 +36,7 @@ unpack_archive
 
 cd "$srcdir"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
 
@@ -48,7 +48,7 @@ for CPU in ${ALL_CPUS}; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS $LTO_CFLAGS"
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS"
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -lm ${STACKSIZE}"
 
 	# netpbm has _interactive_ configure perl script

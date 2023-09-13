@@ -30,7 +30,7 @@ autoreconf -fi
 cd "$srcdir"
 cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} \
 	--prefix=${prefix} \
@@ -49,7 +49,7 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	./configure ${CONFIGURE_FLAGS} \
 		--libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 
 	${MAKE} || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install

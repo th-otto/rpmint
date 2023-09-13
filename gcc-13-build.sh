@@ -14,7 +14,7 @@ scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
 VERSION=-13.2.0
-VERSIONPATCH=-20230801
+VERSIONPATCH=-20230908
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -154,6 +154,14 @@ case $host in
 		with_m2=false
 		;;
 esac
+
+
+#
+# whether to use dwarf2 exceptions instead of sjlj.
+# Only works for elf toolchains.
+#
+#with_dw2_exceptions=--disable-sjlj-exceptions
+
 
 
 #
@@ -349,7 +357,7 @@ mkdir -p "${PKG_DIR}"
 if test ! -f "${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
 		echo "fetching binutils"
-		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.39-${TARGET##*-}-20230206-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
+		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.41-${TARGET##*-}-20230906-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
 		export PATH="${PKG_DIR}${PREFIX}/bin:$PATH"
 	fi
 fi
@@ -369,6 +377,17 @@ fi
 if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 	echo "cross-binutil tools for ${TARGET} not found" >&2
 	exit 1
+fi
+
+if test "$TARGET" = m68k-atari-mintelf; then
+  # new PRG+ELF format requires binutils >= 2.41
+  asversion=`$as --version | head -1 | sed -e 's/^.* \([.0-9]*\)$/\1/'`
+  asversion=${asversion%.0}
+  asversion=${asversion//./}
+  if test "$asversion" -lt 241; then
+	echo "cross-binutils >= 2.41 required" >&2
+	exit 1
+  fi
 fi
 
 mpfr_config=
@@ -531,6 +550,7 @@ $srcdir/configure \
 	--disable-decimal-float \
 	--disable-nls \
 	$with_zstd \
+	$with_dw2_exceptions \
 	--with-libiconv-prefix="${PREFIX}" \
 	--with-libintl-prefix="${PREFIX}" \
 	$mpfr_config \
@@ -565,7 +585,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 	
 	cd "$MINT_BUILD_DIR"
 	${MAKE} DESTDIR="${INSTALL_DIR}" install >/dev/null || exit 1
-	
+
 	mkdir -p "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
 	
 	cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
@@ -673,9 +693,9 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 
 	rmdir ${PREFIX#/}/include
 	
-	if test -f ${BUILD_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN}; then
-		mkdir -p ${PREFIX#/}/lib/bfd-plugins
-		cd ${PREFIX#/}/lib/bfd-plugins
+	if test -f ${gccsubdir#/}/${LTO_PLUGIN}; then
+		mkdir -p ${BUILD_LIBDIR#/}/bfd-plugins
+		cd ${BUILD_LIBDIR#/}/bfd-plugins
 		rm -f ${MY_LTO_PLUGIN}
 		$LN_S ../../${BUILD_LIBDIR##*/}/gcc/${TARGET}/${gcc_dir_version}/${LTO_PLUGIN} ${MY_LTO_PLUGIN}
 		cd "${INSTALL_DIR}"
@@ -726,7 +746,8 @@ BINTARNAME=${PACKAGENAME}${VERSION}-mint${VERSIONPATCH}
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
-rm -rf ${PREFIX#/}/share/gcc*/python
+rm -rf ${PREFIX#/}/share/gcc*
+rm -rf ${PREFIX#/}/share/gdb
 
 #
 # create a separate archive for the fortran backend

@@ -40,7 +40,7 @@ cp ${BUILD_DIR}/patches/automake/mintelf-config.sub config.sub
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
 	--sysconfdir=/etc
@@ -59,7 +59,7 @@ for CPU in ${ALL_CPUS}; do
 	create_config_cache
 	STACKSIZE="-Wl,-stack,128k"
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	hack_lto_cflags
+	: hack_lto_cflags
 	${MAKE} || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install

@@ -40,4 +40,8 @@ find . \( -name 00README \
 	-o -name Makefile \
 	-o -name clean-include \) -delete -printf "rm %%p\n"
 
+# strip non-locals, but not debug informations
+find . -name "*.a" ! -type l -exec "${strip}" -X -w -N '.L[0-9]*' '{}' \;
+
+NO_STRIP=yes
 make_archives

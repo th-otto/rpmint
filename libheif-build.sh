@@ -34,7 +34,7 @@ rm -rf autom4te.cache config.h.in.orig
 # autoreconf may have overwritten config.sub
 cp "$BUILD_DIR/patches/automake/mintelf-config.sub" config.sub || exit 1
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--disable-threads

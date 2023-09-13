@@ -17,7 +17,7 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-W -Wall -O2 -fomit-frame-pointer -I../../include -I.. -I. $LTO_CFLAGS"
+COMMON_CFLAGS="-W -Wall -O2 -fomit-frame-pointer -I../../include -I.. -I. ${ELF_CFLAGS}"
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}

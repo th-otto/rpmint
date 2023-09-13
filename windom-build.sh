@@ -24,7 +24,7 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-Os -fomit-frame-pointer $LTO_CFLAGS"
+COMMON_CFLAGS="-Os -fomit-frame-pointer ${ELF_CFLAGS}"
 
 SUBDIRS="src demo"
 

@@ -27,7 +27,7 @@ cd "$MINT_BUILD_DIR"
 
 autoreconf -f -i || exit 1
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -Wall"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -Wall ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} \
 	--prefix=${prefix} \
@@ -62,7 +62,7 @@ for CPU in ${ALL_CPUS}; do
 	--libdir='${exec_prefix}/lib'$multilibdir || exit 1
 	
 	all_make_args="${make_args} privatedir=${prefix}/libexec/${PACKAGENAME}$multilibexecdir"
-	hack_lto_cflags
+	: hack_lto_cflags
 
 	${MAKE} ${all_make_args} || exit 1
 

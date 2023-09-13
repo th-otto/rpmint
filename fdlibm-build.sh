@@ -12,7 +12,7 @@ PATCHES=""
 
 unpack_archive
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix}"
 
@@ -21,7 +21,7 @@ export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 
 cd "$MINT_BUILD_DIR"
 CFLAGS="$COMMON_CFLAGS" LDFLAGS="$COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS}
-hack_lto_cflags
+: hack_lto_cflags
 ${MAKE} $JOBS || exit 1
 ${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 
