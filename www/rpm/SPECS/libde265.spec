@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        Open h.265 codec implementation
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        1.0.9
 Release:        1
 License:        MIT
@@ -28,15 +24,9 @@ Patch0:  patches/%{pkgname}/libde265-v1.0.9.patch
 BuildRequires:  autoconf
 BuildRequires:  make
 BuildRequires:  libtool
-%if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-gcc-c++
-BuildRequires:  cross-mint-pthread-devel
-Provides:       cross-mint-libde265-devel
-%else
-BuildRequires:  gcc-c++
-BuildRequires:  pthread-devel
-Provides:       libde265-devel
-%endif
+BuildRequires:  %{crossmint}gcc-c++
+BuildRequires:  %{crossmint}pthread-devel
+Provides:       %{crossmint}libde265-devel
 
 %rpmint_build_arch
 

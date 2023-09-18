@@ -1,5 +1,6 @@
+diff -rupN a/include/symbols.h b/include/symbols.h
 --- a/include/symbols.h	1970-01-01 01:00:00.000000000 +0100
-+++ b/include/symbols.h	2017-10-12 06:04:41.402901922 +0200
++++ b/include/symbols.h	2023-09-17 14:50:06.554556705 +0200
 @@ -0,0 +1,54 @@
 +#ifndef __USER_LABEL_PREFIX__
 +#define __USER_LABEL_PREFIX__ _
@@ -55,9 +56,9 @@
 +#define pc REG(pc)
 +
 +#define sr REG(sr)
-diff -rup SDL-1.2.16-hg.orig/src/audio/mint/SDL_mintaudio_it.S SDL-1.2.16-hg/src/audio/mint/SDL_mintaudio_it.S
---- SDL-1.2.16-hg.orig/src/audio/mint/SDL_mintaudio_it.S	2023-04-08 08:34:01.478558986 +0200
-+++ SDL-1.2.16-hg/src/audio/mint/SDL_mintaudio_it.S	2023-04-08 09:16:50.629957908 +0200
+diff -rupN a/src/audio/mint/SDL_mintaudio_it.S b/src/audio/mint/SDL_mintaudio_it.S
+--- a/src/audio/mint/SDL_mintaudio_it.S	2023-04-08 08:34:01.478558986 +0200
++++ b/src/audio/mint/SDL_mintaudio_it.S	2023-09-17 14:51:06.854506617 +0200
 @@ -20,6 +20,8 @@
      slouken@libsdl.org
  */
@@ -113,7 +114,7 @@ diff -rup SDL-1.2.16-hg.orig/src/audio/mint/SDL_mintaudio_it.S SDL-1.2.16-hg/src
  #if defined(__mcoldfire__)
  	lea	sp@(-12),sp
  	moveml	d0-d1/a0,sp@
-@@ -86,10 +88,10 @@ _SDL_MintAudio_Dma8Interrupt:
+@@ -86,20 +88,20 @@ _SDL_MintAudio_Dma8Interrupt:
  	bclr	#5,0xfffffa0f:w
  #endif
  
@@ -127,7 +128,20 @@ diff -rup SDL-1.2.16-hg.orig/src/audio/mint/SDL_mintaudio_it.S SDL-1.2.16-hg/src
   
  	cmp.l	#5,d0
  	bmi.s	_SDL_MintAudio_nosilence
-@@ -117,8 +119,8 @@ _SDL_MintAudio_nosilence:
+ 
+-	move.l	_SDL_MintAudio_itbuffer,d1
++	move.l	SYM(SDL_MintAudio_itbuffer),d1
+ 	beq.s	_SDL_MintAudio_nosilence
+ 	move.l	d1,a0
+ 
+-	move.l	_SDL_MintAudio_itbuflen,d0
+-	move.l	_SDL_MintAudio_itsilence,d1
++	move.l	SYM(SDL_MintAudio_itbuflen),d0
++	move.l	SYM(SDL_MintAudio_itsilence),d1
+ _SDL_MintAudio_fillsilence:
+ 	move.l	d1,a0@+
+ 	subq.l	#1,d0
+@@ -117,9 +119,9 @@ _SDL_MintAudio_nosilence:
  	.bss
  
  	.even
@@ -136,11 +150,15 @@ diff -rup SDL-1.2.16-hg.orig/src/audio/mint/SDL_mintaudio_it.S SDL-1.2.16-hg/src
 +	.comm	SYM(SDL_MintAudio_clocktics),4
 +	.comm	SYM(SDL_MintAudio_num_its),4
  
- 	.comm	_SDL_MintAudio_itbuffer,4	/* Audio DMA buffer */
- 	.comm	_SDL_MintAudio_itbuflen,4	/* Length in longword */
-diff -rup SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_ataric2p.S SDL-1.2.16-hg/src/video/ataricommon/SDL_ataric2p.S
---- SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_ataric2p.S	2023-04-08 08:34:01.498558952 +0200
-+++ SDL-1.2.16-hg/src/video/ataricommon/SDL_ataric2p.S	2023-04-08 09:16:50.629957908 +0200
+-	.comm	_SDL_MintAudio_itbuffer,4	/* Audio DMA buffer */
+-	.comm	_SDL_MintAudio_itbuflen,4	/* Length in longword */
+-	.comm	_SDL_MintAudio_itsilence,4	/* Silence value */
++	.comm	SYM(SDL_MintAudio_itbuffer),4	/* Audio DMA buffer */
++	.comm	SYM(SDL_MintAudio_itbuflen),4	/* Length in longword */
++	.comm	SYM(SDL_MintAudio_itsilence),4	/* Silence value */
+diff -rupN a/src/video/ataricommon/SDL_ataric2p.S b/src/video/ataricommon/SDL_ataric2p.S
+--- a/src/video/ataricommon/SDL_ataric2p.S	2023-04-08 08:34:01.498558952 +0200
++++ b/src/video/ataricommon/SDL_ataric2p.S	2023-09-17 14:50:06.554556705 +0200
 @@ -20,6 +20,8 @@
      slouken@libsdl.org
  */
@@ -217,9 +235,9 @@ diff -rup SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_ataric2p.S SDL-1.2.16-hg/
  
  	.comm	c2p_source,4	/* Source framebuffer */
  	.comm	c2p_dest,4		/* Destination framebuffer */
-diff -rup SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_atarieddi.S SDL-1.2.16-hg/src/video/ataricommon/SDL_atarieddi.S
---- SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_atarieddi.S	2023-04-08 08:34:01.498558952 +0200
-+++ SDL-1.2.16-hg/src/video/ataricommon/SDL_atarieddi.S	2023-04-08 09:18:10.821814583 +0200
+diff -rupN a/src/video/ataricommon/SDL_atarieddi.S b/src/video/ataricommon/SDL_atarieddi.S
+--- a/src/video/ataricommon/SDL_atarieddi.S	2023-04-08 08:34:01.498558952 +0200
++++ b/src/video/ataricommon/SDL_atarieddi.S	2023-09-17 14:50:06.554556705 +0200
 @@ -20,6 +20,8 @@
      slouken@libsdl.org
  */
@@ -243,9 +261,9 @@ diff -rup SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_atarieddi.S SDL-1.2.16-hg
  #if defined(__mcoldfire__)
  	movel	sp@(4),a0
  	movel	a0,eddi_cookie
-diff -rup SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_ikbdinterrupt.S SDL-1.2.16-hg/src/video/ataricommon/SDL_ikbdinterrupt.S
---- SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_ikbdinterrupt.S	2023-04-08 08:34:01.498558952 +0200
-+++ SDL-1.2.16-hg/src/video/ataricommon/SDL_ikbdinterrupt.S	2023-04-08 09:16:50.629957908 +0200
+diff -rupN a/src/video/ataricommon/SDL_ikbdinterrupt.S b/src/video/ataricommon/SDL_ikbdinterrupt.S
+--- a/src/video/ataricommon/SDL_ikbdinterrupt.S	2023-04-08 08:34:01.498558952 +0200
++++ b/src/video/ataricommon/SDL_ikbdinterrupt.S	2023-09-17 14:50:06.557890036 +0200
 @@ -20,6 +20,8 @@
      slouken@libsdl.org
  */
@@ -401,9 +419,9 @@ diff -rup SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_ikbdinterrupt.S SDL-1.2.1
 +	.comm	SYM(SDL_AtariIkbd_mousey),2
 +	.comm	SYM(SDL_AtariIkbd_mouseb),2
 +	.comm	SYM(SDL_AtariIkbd_joystick),2
-diff -rup SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_xbiosinterrupt.S SDL-1.2.16-hg/src/video/ataricommon/SDL_xbiosinterrupt.S
---- SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_xbiosinterrupt.S	2023-04-08 08:34:01.498558952 +0200
-+++ SDL-1.2.16-hg/src/video/ataricommon/SDL_xbiosinterrupt.S	2023-04-08 09:16:50.633957901 +0200
+diff -rupN a/src/video/ataricommon/SDL_xbiosinterrupt.S b/src/video/ataricommon/SDL_xbiosinterrupt.S
+--- a/src/video/ataricommon/SDL_xbiosinterrupt.S	2023-04-08 08:34:01.498558952 +0200
++++ b/src/video/ataricommon/SDL_xbiosinterrupt.S	2023-09-17 14:50:06.557890036 +0200
 @@ -20,6 +20,8 @@
      slouken@libsdl.org
  */
@@ -543,9 +561,9 @@ diff -rup SDL-1.2.16-hg.orig/src/video/ataricommon/SDL_xbiosinterrupt.S SDL-1.2.
  	.even
 -	.comm	_SDL_AtariXbios_joystick,2*1
 +	.comm	SYM(SDL_AtariXbios_joystick),2*1
-diff -rup SDL-1.2.16-hg.orig/src/video/xbios/SDL_xbios.h SDL-1.2.16-hg/src/video/xbios/SDL_xbios.h
---- SDL-1.2.16-hg.orig/src/video/xbios/SDL_xbios.h	2023-04-08 08:34:01.518558914 +0200
-+++ SDL-1.2.16-hg/src/video/xbios/SDL_xbios.h	2023-04-08 09:16:50.633957901 +0200
+diff -rupN a/src/video/xbios/SDL_xbios.h b/src/video/xbios/SDL_xbios.h
+--- a/src/video/xbios/SDL_xbios.h	2023-04-08 08:34:01.518558914 +0200
++++ b/src/video/xbios/SDL_xbios.h	2023-09-17 14:50:06.557890036 +0200
 @@ -152,4 +152,7 @@ void SDL_XBIOS_VideoInit_Milan(_THIS);
  /* SDL_xbios_ctpci.c */
  void SDL_XBIOS_VideoInit_Ctpci(_THIS);
@@ -554,9 +572,9 @@ diff -rup SDL-1.2.16-hg.orig/src/video/xbios/SDL_xbios.h SDL-1.2.16-hg/src/video
 +void SDL_XBIOS_VideoInit_Nova(_THIS, void *cookie_nova);
 +
  #endif /* _SDL_xbios_h */
-diff -rup SDL-1.2.16-hg.orig/src/video/xbios/SDL_xbios_nova.c SDL-1.2.16-hg/src/video/xbios/SDL_xbios_nova.c
---- SDL-1.2.16-hg.orig/src/video/xbios/SDL_xbios_nova.c	2023-04-08 08:34:01.518558914 +0200
-+++ SDL-1.2.16-hg/src/video/xbios/SDL_xbios_nova.c	2023-04-08 09:16:50.633957901 +0200
+diff -rupN a/src/video/xbios/SDL_xbios_nova.c b/src/video/xbios/SDL_xbios_nova.c
+--- a/src/video/xbios/SDL_xbios_nova.c	2023-04-08 08:34:01.518558914 +0200
++++ b/src/video/xbios/SDL_xbios_nova.c	2023-09-17 14:50:06.557890036 +0200
 @@ -266,10 +266,10 @@ static void NOVA_SetMode(_THIS, int num_
  	oldstack = (void *)Super(NULL);
  

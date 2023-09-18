@@ -1,0 +1,136 @@
+diff -ru physfs-3.2.0.orig/src/physfs.h physfs-3.2.0/src/physfs.h
+--- physfs-3.2.0.orig/src/physfs.h	2022-09-30 22:13:07.000000000 +0200
++++ physfs-3.2.0/src/physfs.h	2023-09-16 14:28:55.568696715 +0200
+@@ -231,7 +231,7 @@
+ #define PHYSFS_DECL __declspec(dllexport)
+ #elif defined(__SUNPRO_C)
+ #define PHYSFS_DECL __global
+-#elif ((__GNUC__ >= 3) && (!defined(__EMX__)) && (!defined(sun)))
++#elif ((__GNUC__ >= 3) && (!defined(__EMX__)) && (!defined(sun))) && (!defined(__MINT__) || defined(__ELF__))
+ #define PHYSFS_DECL __attribute__((visibility("default")))
+ #else
+ #define PHYSFS_DECL
+diff -ru physfs-3.2.0.orig/src/physfs_internal.h physfs-3.2.0/src/physfs_internal.h
+--- physfs-3.2.0.orig/src/physfs_internal.h	2022-09-30 22:13:07.000000000 +0200
++++ physfs-3.2.0/src/physfs_internal.h	2023-09-16 14:28:55.568696715 +0200
+@@ -69,7 +69,7 @@
+    All file-private symbols need to be marked "static".
+    Everything shared between PhysicsFS sources needs to be in this
+    file between the visibility pragma blocks. */
+-#if !defined(_WIN32) && (PHYSFS_MINIMUM_GCC_VERSION(4,0) || defined(__clang__))
++#if !defined(_WIN32) && (PHYSFS_MINIMUM_GCC_VERSION(4,0) || defined(__clang__)) && (!defined(__MINT__) || defined(__ELF__))
+ #define PHYSFS_HAVE_PRAGMA_VISIBILITY 1
+ #endif
+ 
+diff -ru physfs-3.2.0.orig/src/physfs_platform_posix.c physfs-3.2.0/src/physfs_platform_posix.c
+--- physfs-3.2.0.orig/src/physfs_platform_posix.c	2022-09-30 22:13:07.000000000 +0200
++++ physfs-3.2.0/src/physfs_platform_posix.c	2023-09-16 14:30:02.838631135 +0200
+@@ -19,7 +19,11 @@
+ #include <dirent.h>
+ #include <errno.h>
+ #include <fcntl.h>
++#ifndef __MINT__
+ #include <pthread.h>
++#else
++typedef void *pthread_t;
++#endif
+ 
+ #include "physfs_internal.h"
+ 
+@@ -369,7 +373,9 @@
+ 
+ typedef struct
+ {
++#ifndef __MINT__
+     pthread_mutex_t mutex;
++#endif
+     pthread_t owner;
+     PHYSFS_uint32 count;
+ } PthreadMutex;
+@@ -377,7 +383,11 @@
+ 
+ void *__PHYSFS_platformGetThreadID(void)
+ {
++#ifndef __MINT__
+     return ( (void *) ((size_t) pthread_self()) );
++#else
++    return _base;
++#endif
+ } /* __PHYSFS_platformGetThreadID */
+ 
+ 
+@@ -386,7 +396,11 @@
+     int rc;
+     PthreadMutex *m = (PthreadMutex *) allocator.Malloc(sizeof (PthreadMutex));
+     BAIL_IF(!m, PHYSFS_ERR_OUT_OF_MEMORY, NULL);
++#ifndef __MINT__
+     rc = pthread_mutex_init(&m->mutex, NULL);
++#else
++    rc = 0;
++#endif
+     if (rc != 0)
+     {
+         allocator.Free(m);
+@@ -403,11 +417,13 @@
+ {
+     PthreadMutex *m = (PthreadMutex *) mutex;
+ 
++#ifndef __MINT__
+     /* Destroying a locked mutex is a bug, but we'll try to be helpful. */
+     if ((m->owner == pthread_self()) && (m->count > 0))
+         pthread_mutex_unlock(&m->mutex);
+ 
+     pthread_mutex_destroy(&m->mutex);
++#endif
+     allocator.Free(m);
+ } /* __PHYSFS_platformDestroyMutex */
+ 
+@@ -415,6 +431,7 @@
+ int __PHYSFS_platformGrabMutex(void *mutex)
+ {
+     PthreadMutex *m = (PthreadMutex *) mutex;
++#ifndef __MINT__
+     pthread_t tid = pthread_self();
+     if (m->owner != tid)
+     {
+@@ -422,6 +439,7 @@
+             return 0;
+         m->owner = tid;
+     } /* if */
++#endif
+ 
+     m->count++;
+     return 1;
+@@ -431,14 +449,16 @@
+ void __PHYSFS_platformReleaseMutex(void *mutex)
+ {
+     PthreadMutex *m = (PthreadMutex *) mutex;
+-    assert(m->owner == pthread_self());  /* catch programming errors. */
++    assert(m->owner == __PHYSFS_platformGetThreadID());  /* catch programming errors. */
+     assert(m->count > 0);  /* catch programming errors. */
+-    if (m->owner == pthread_self())
++    if (m->owner == __PHYSFS_platformGetThreadID())
+     {
+         if (--m->count == 0)
+         {
+             m->owner = (pthread_t) 0xDEADBEEF;
++#ifndef __MINT__
+             pthread_mutex_unlock(&m->mutex);
++#endif
+         } /* if */
+     } /* if */
+ } /* __PHYSFS_platformReleaseMutex */
+diff -ru physfs-3.2.0.orig/src/physfs_platforms.h physfs-3.2.0/src/physfs_platforms.h
+--- physfs-3.2.0.orig/src/physfs_platforms.h	2022-09-30 22:13:07.000000000 +0200
++++ physfs-3.2.0/src/physfs_platforms.h	2023-09-16 14:28:55.568696715 +0200
+@@ -72,6 +72,10 @@
+ #elif defined(unix) || defined(__unix__)
+ #  define PHYSFS_PLATFORM_UNIX 1
+ #  define PHYSFS_PLATFORM_POSIX 1
++#elif defined(__MINT__)
++#  define PHYSFS_NO_CDROM_SUPPORT 1
++#  define PHYSFS_PLATFORM_UNIX 1
++#  define PHYSFS_PLATFORM_POSIX 1
+ #else
+ #  error Unknown platform.
+ #endif

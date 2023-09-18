@@ -3092,7 +3092,7 @@ WebP codec is a library to encode and decode images in WebP format.
 This package contains the library that can be used in other programs to
 add WebP support, as well as the command line tools &apos;cwebp&apos; and &apos;dwebp&apos;
 to compress and decompress images respectively.</br>
-
+</br>
 Original MiNT-Patch by medmed.
 '
 	),
@@ -3125,7 +3125,7 @@ portability and run-time performance than with preemptive scheduling.
 The event facility allows threads to wait until various types of events
 occur, including pending I/O on filedescriptors, asynchronous signals,
 elapsed timers, pending I/O on message ports, thread and process
-termination, and even customized callback functions. 
+termination, and even customized callback functions.</br>
 </br>
 Original MiNT-Patch by Patrice Mandin & medmed.
 '
@@ -3171,6 +3171,7 @@ It is suitable for use in real time applications such as WebRTC. See
 </br></br>
 Needs the pth library from above.</br>
 You need to use g++ to link against this library.
+</br>
 Original MiNT-Patch by medmed.</br>
 A simple GEM example can be found in <a href="https://www.atari-forum.com/viewtopic.php?p=436559#p436559">this thread</a>
 '
@@ -3319,8 +3320,29 @@ integration into other software.
 </br>
 </br></br>
 Needs the pth library from above.</br>
-You need to use g++ to link against this library.
+You need to use g++ to link against this library.</br>
+</br>
 Original MiNT-Patch contributed by medmed.</br>
+'
+	),
+	'x265' => array(
+		'name' => 'x265',
+		'upstream' => 'https://bitbucket.org/multicoreware/x265_git',
+		'source' => 'https://bitbucket.org/multicoreware/x265_git/downloads/%{name}_%{version}.tar.gz',
+		'repo' => 'https://bitbucket.org/multicoreware/x265_git',
+		'version' => '3.5',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Productivity/Multimedia/Video/Editors and Convertors',
+		'summary' => 'A free h265/HEVC encoder - encoder binary',
+		'comment' => '
+x265 is a free library for encoding next-generation H265/HEVC video
+streams.
 '
 	),
 	'libheif' => array(
@@ -3368,6 +3390,7 @@ codecs.
 		'summary' => 'mtm is the Micro Terminal Multiplexer, a terminal multiplexer',
 		'comment' => '
 mtm is the Micro Terminal Multiplexer, a terminal multiplexer.</br>
+</br>
 Original MiNT-Patch contributed by medmed.
 '
 	),
@@ -3537,6 +3560,40 @@ back-end script that retrieves database information from a mainframe.
 		'comment' => '
 Wget enables you to retrieve WWW documents or FTP files from a server.
 This can be done in script files or via the command line.
+'
+	),
+	'physfs' => array(
+		'name' => 'physfs',
+		'upstream' => 'https://www.icculus.org/physfs/',
+		'source' => 'https://github.com/icculus/physfs/archive/refs/tags/release-%{version}.tar.gz',
+		'version' => '3.2.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => '(CPL-1.0 OR LGPL-2.1-or-later) AND Zlib',
+		'category' => 'System/Libraries',
+		'summary' => 'PhysicsFS file abstraction layer for games',
+		'comment' => '
+PhysicsFS is a library to provide abstract access to various archives.
+It is intended for use in video games, and the design was somewhat
+inspired by Quake 3&apos;s file subsystem. The programmer defines a "write
+directory" on the physical filesystem. No file writing done through the
+PhysicsFS API can leave that write directory, for security. For
+example, an embedded scripting language cannot write outside of this
+path if it uses PhysFS for all of its I/O, which means that untrusted
+scripts can run more safely. Symbolic links can be disabled as well,
+for added safety. For file reading, the programmer lists directories
+and archives that form a "search path". Once the search path is
+defined, it becomes a single, transparent hierarchical filesystem. This
+makes for easy access to ZIP files in the same way as you access a file
+directly on the disk, and it makes it easy to ship a new archive that
+will override a previous archive on a per-file basis. Finally,
+PhysicsFS gives you platform-abstracted means to determine if CD-ROMs
+are available, the user&apos;s home directory, where in the real filesystem
+your program is running, etc.
 '
 	),
 /*

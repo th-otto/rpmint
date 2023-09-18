@@ -102,6 +102,7 @@ for pkg in \
 	p7zip \
 	patch \
 	perl \
+	physfs \
 	pml \
 	pngtools \
 	popt \
@@ -128,6 +129,7 @@ for pkg in \
 	windom \
 	windom1 \
 	wolfssl \
+	libx265 \
 	xz \
 	zip \
 	zita-resampler \

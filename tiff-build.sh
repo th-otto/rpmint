@@ -81,5 +81,6 @@ done
 
 move_prefix
 configured_prefix="${prefix}"
+copy_pkg_configs
 
 make_archives

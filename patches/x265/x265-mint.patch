@@ -1,0 +1,263 @@
+diff -rup x265_3.5.orig/source/CMakeLists.txt x265_3.5/source/CMakeLists.txt
+--- x265_3.5.orig/source/CMakeLists.txt	2023-09-18 13:08:15.465382097 +0200
++++ x265_3.5/source/CMakeLists.txt	2023-09-18 13:08:34.625366619 +0200
+@@ -80,6 +80,8 @@ elseif(${SYSPROC} STREQUAL "aarch64")
+     message(STATUS "Detected AArch64 system processor")
+     set(ARMV7 1)
+     add_definitions(-DX265_ARCH_ARM=1 -DX265_ARCH_ARM64=1 -DHAVE_ARMV6=0 -DHAVE_NEON=0)
++elseif(${SYSPROC} STREQUAL "m68k")
++    message(STATUS "Detected ${CMAKE_SYSTEM_PROCESSOR} system processor")
+ else()
+     message(STATUS "CMAKE_SYSTEM_PROCESSOR value `${CMAKE_SYSTEM_PROCESSOR}` is unknown")
+     message(STATUS "Please add this value near ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE}")
+@@ -643,7 +645,7 @@ if(ENABLE_SHARED)
+         set_target_properties(x265-shared PROPERTIES VERSION ${X265_BUILD})
+         if(APPLE)
+             set_target_properties(x265-shared PROPERTIES MACOSX_RPATH 1)
+-        elseif(CYGWIN)
++        elseif(CYGWIN OR MINT)
+             # Cygwin is not officially supported or tested. MinGW with msys is recommended.
+         else()
+             list(APPEND LINKER_OPTIONS "-Wl,-Bsymbolic,-znoexecstack")
+diff -rup x265_3.5.orig/source/common/bitstream.cpp x265_3.5/source/common/bitstream.cpp
+--- x265_3.5.orig/source/common/bitstream.cpp	2021-03-16 13:53:00.000000000 +0100
++++ x265_3.5/source/common/bitstream.cpp	2023-09-18 13:08:19.352045624 +0200
+@@ -42,7 +42,7 @@ void Bitstream::push_back(uint8_t val)
+     m_fifo[m_byteOccupancy++] = val;
+ }
+ 
+-void Bitstream::write(uint32_t val, uint32_t numBits)
++void Bitstream::bc_write(uint32_t val, uint32_t numBits)
+ {
+     X265_CHECK(numBits <= 32, "numBits out of range\n");
+     X265_CHECK(numBits == 32 || ((val & (~0u << numBits)) == 0), "numBits & val out of range\n");
+@@ -92,7 +92,7 @@ void Bitstream::writeAlignOne()
+ {
+     uint32_t numBits = (8 - m_partialByteBits) & 0x7;
+ 
+-    write((1 << numBits) - 1, numBits);
++    bc_write((1 << numBits) - 1, numBits);
+ }
+ 
+ void Bitstream::writeAlignZero()
+@@ -107,7 +107,7 @@ void Bitstream::writeAlignZero()
+ 
+ void Bitstream::writeByteAlignment()
+ {
+-    write(1, 1);
++    bc_write(1, 1);
+     writeAlignZero();
+ }
+ 
+@@ -122,6 +122,6 @@ void SyntaxElementWriter::writeUvlc(uint
+     uint32_t length = (uint32_t)idx * 2 + 1;
+ 
+     // Take care of cases where length > 32
+-    m_bitIf->write(0, length >> 1);
+-    m_bitIf->write(code, (length + 1) >> 1);
++    m_bitIf->bc_write(0, length >> 1);
++    m_bitIf->bc_write(code, (length + 1) >> 1);
+ }
+diff -rup x265_3.5.orig/source/common/bitstream.h x265_3.5/source/common/bitstream.h
+--- x265_3.5.orig/source/common/bitstream.h	2021-03-16 13:53:00.000000000 +0100
++++ x265_3.5/source/common/bitstream.h	2023-09-18 13:08:19.352045624 +0200
+@@ -32,7 +32,7 @@ class BitInterface
+ {
+ public:
+ 
+-    virtual void     write(uint32_t val, uint32_t numBits)  = 0;
++    virtual void     bc_write(uint32_t val, uint32_t numBits)  = 0;
+     virtual void     writeByte(uint32_t val)                = 0;
+     virtual void     resetBits()                            = 0;
+     virtual uint32_t getNumberOfWrittenBits() const         = 0;
+@@ -51,7 +51,7 @@ public:
+ 
+     BitCounter() : m_bitCounter(0) {}
+ 
+-    void     write(uint32_t, uint32_t num)  { m_bitCounter += num; }
++    void     bc_write(uint32_t, uint32_t num)  { m_bitCounter += num; }
+     void     writeByte(uint32_t)            { m_bitCounter += 8;   }
+     void     resetBits()                    { m_bitCounter = 0;    }
+     uint32_t getNumberOfWrittenBits() const { return m_bitCounter; }
+@@ -73,7 +73,7 @@ public:
+     const uint8_t* getFIFO() const           { return m_fifo; }
+     void     copyBits(Bitstream* stream)     { m_partialByteBits = stream->m_partialByteBits; m_byteOccupancy = stream->m_byteOccupancy; m_partialByte = stream->m_partialByte; }
+ 
+-    void     write(uint32_t val, uint32_t numBits);
++    void     bc_write(uint32_t val, uint32_t numBits);
+     void     writeByte(uint32_t val);
+ 
+     void     writeAlignOne();      // insert one bits until the bitstream is byte-aligned
+@@ -149,10 +149,10 @@ public:
+     inline void WRITE_SVLC(int32_t  code,                  const char *) { writeSvlc(code); }
+     inline void WRITE_FLAG(bool flag,                      const char *) { writeFlag(flag); }
+ 
+-    void writeCode(uint32_t code, uint32_t length) { m_bitIf->write(code, length); }
++    void writeCode(uint32_t code, uint32_t length) { m_bitIf->bc_write(code, length); }
+     void writeUvlc(uint32_t code);
+     void writeSvlc(int32_t code)                   { uint32_t ucode = (code <= 0) ? -code << 1 : (code << 1) - 1; writeUvlc(ucode); }
+-    void writeFlag(bool code)                      { m_bitIf->write(code, 1); }
++    void writeFlag(bool code)                      { m_bitIf->bc_write(code, 1); }
+ };
+ 
+ }
+diff -rup x265_3.5.orig/source/common/common.h x265_3.5/source/common/common.h
+--- x265_3.5.orig/source/common/common.h	2021-03-16 13:53:00.000000000 +0100
++++ x265_3.5/source/common/common.h	2023-09-18 13:08:19.352045624 +0200
+@@ -70,7 +70,7 @@
+ #define FENC_STRIDE 64
+ #define NUM_INTRA_MODE 35
+ 
+-#if defined(__GNUC__)
++#if defined(__GNUC__) && !defined(__MINT__)
+ #define ALIGN_VAR_4(T, var)  T var __attribute__((aligned(4)))
+ #define ALIGN_VAR_8(T, var)  T var __attribute__((aligned(8)))
+ #define ALIGN_VAR_16(T, var) T var __attribute__((aligned(16)))
+@@ -89,6 +89,12 @@
+ #define ALIGN_VAR_64(T, var) __declspec(align(64)) T var
+ #define fseeko _fseeki64
+ #define ftello _ftelli64
++#else
++#define ALIGN_VAR_4(T, var)  T var
++#define ALIGN_VAR_8(T, var)  T var
++#define ALIGN_VAR_16(T, var) T var
++#define ALIGN_VAR_32(T, var) T var
++#define ALIGN_VAR_64(T, var) T var
+ #endif // if defined(__GNUC__)
+ #if HAVE_INT_TYPES_H
+ #define __STDC_FORMAT_MACROS
+diff -rup x265_3.5.orig/source/common/threading.h x265_3.5/source/common/threading.h
+--- x265_3.5.orig/source/common/threading.h	2021-03-16 13:53:00.000000000 +0100
++++ x265_3.5/source/common/threading.h	2023-09-18 13:08:19.352045624 +0200
+@@ -33,7 +33,9 @@
+ #include "winxp.h"  // XP workarounds for CONDITION_VARIABLE and ATOMIC_OR
+ #else
+ #include <pthread.h>
++#ifndef __MINT__
+ #include <semaphore.h>
++#endif
+ #include <errno.h>
+ #include <fcntl.h>
+ #endif
+diff -rup x265_3.5.orig/source/common/threadpool.cpp x265_3.5/source/common/threadpool.cpp
+--- x265_3.5.orig/source/common/threadpool.cpp	2021-03-16 13:53:00.000000000 +0100
++++ x265_3.5/source/common/threadpool.cpp	2023-09-18 13:08:19.352045624 +0200
+@@ -634,7 +634,7 @@ int ThreadPool::getCpuCount()
+     /* Return the number of processors configured by OS. Because, most embedded linux distributions
+      * uses only one processor as the scheduler doesn't have enough work to utilize all processors */
+     return sysconf(_SC_NPROCESSORS_CONF);
+-#elif __unix__
++#elif __unix__ && defined(_SC_NPROCESSORS_ONLN)
+     return sysconf(_SC_NPROCESSORS_ONLN);
+ #elif MACOS && __MACH__
+     int nm[2];
+diff -rup x265_3.5.orig/source/encoder/api.cpp x265_3.5/source/encoder/api.cpp
+--- x265_3.5.orig/source/encoder/api.cpp	2021-03-16 13:53:00.000000000 +0100
++++ x265_3.5/source/encoder/api.cpp	2023-09-18 13:08:19.352045624 +0200
+@@ -1088,14 +1088,18 @@ typedef const x265_api* (*api_query_func
+ #include <dlfcn.h>
+ #define ext ".dylib"
+ #else
++#ifndef __MINT__
+ #include <dlfcn.h>
++#endif
+ #define ext ".so"
+ #endif
+ #if defined(__GNUC__) && __GNUC__ >= 8
+ #pragma GCC diagnostic ignored "-Wcast-function-type"
+ #endif
+ 
++#if defined(_WIN32) || defined(RTLD_LAZY)
+ static int g_recursion /* = 0 */;
++#endif
+ const x265_api* x265_api_get(int bitDepth)
+ {
+     if (bitDepth && bitDepth != X265_DEPTH)
+@@ -1110,6 +1114,7 @@ const x265_api* x265_api_get(int bitDept
+         if (bitDepth == 12) return x265_12bit::x265_api_get(0);
+ #endif
+ 
++#if defined(_WIN32) || defined(RTLD_LAZY)
+         const char* libname = NULL;
+         const char* method = "x265_api_get_" xstr(X265_BUILD);
+         const char* multilibname = "libx265" ext;
+@@ -1168,6 +1173,7 @@ const x265_api* x265_api_get(int bitDept
+         }
+ 
+         return api;
++#endif
+     }
+ 
+     return &libapi;
+@@ -1196,6 +1202,7 @@ const x265_api* x265_api_query(int bitDe
+         if (bitDepth == 12) return x265_12bit::x265_api_query(0, apiVersion, err);
+ #endif
+ 
++#if defined(_WIN32) || defined(RTLD_LAZY)
+         const char* libname = NULL;
+         const char* method = "x265_api_query";
+         const char* multilibname = "libx265" ext;
+@@ -1265,6 +1272,7 @@ const x265_api* x265_api_query(int bitDe
+ 
+         if (err) *err = api ? X265_API_QUERY_ERR_NONE : e;
+         return api;
++#endif
+     }
+ 
+     return &libapi;
+diff -rup x265_3.5.orig/source/encoder/encoder.cpp x265_3.5/source/encoder/encoder.cpp
+--- x265_3.5.orig/source/encoder/encoder.cpp	2021-03-16 13:53:00.000000000 +0100
++++ x265_3.5/source/encoder/encoder.cpp	2023-09-18 13:08:19.352045624 +0200
+@@ -3262,7 +3262,7 @@ void Encoder::getStreamHeaders(NALList&
+     if (m_param->dolbyProfile && !m_param->bRepeatHeaders)
+     {
+         bs.resetBits();
+-        bs.write(0x10, 8);
++        bs.bc_write(0x10, 8);
+         list.serialize(NAL_UNIT_ACCESS_UNIT_DELIMITER, bs);
+     }
+     
+diff -rup x265_3.5.orig/source/encoder/entropy.cpp x265_3.5/source/encoder/entropy.cpp
+--- x265_3.5.orig/source/encoder/entropy.cpp	2021-03-16 13:53:00.000000000 +0100
++++ x265_3.5/source/encoder/entropy.cpp	2023-09-18 13:08:19.352045624 +0200
+@@ -2426,7 +2426,7 @@ void Entropy::finish()
+             m_numBufferedBytes--;
+         }
+     }
+-    m_bitIf->write(m_low >> 8, 13 + m_bitsLeft);
++    m_bitIf->bc_write(m_low >> 8, 13 + m_bitsLeft);
+ }
+ 
+ void Entropy::copyState(const Entropy& other)
+diff -rup x265_3.5.orig/source/encoder/frameencoder.cpp x265_3.5/source/encoder/frameencoder.cpp
+--- x265_3.5.orig/source/encoder/frameencoder.cpp	2021-03-16 13:53:00.000000000 +0100
++++ x265_3.5/source/encoder/frameencoder.cpp	2023-09-18 13:08:19.352045624 +0200
+@@ -1094,7 +1094,7 @@ void FrameEncoder::compressFrame()
+         m_bs.resetBits();
+         while (filler > 0)
+         {
+-            m_bs.write(0xff, 8);
++            m_bs.bc_write(0xff, 8);
+             filler--;
+         }
+         m_bs.writeByteAlignment();
+@@ -1108,7 +1108,7 @@ void FrameEncoder::compressFrame()
+     {
+         m_bs.resetBits();
+         for (int i = 0; i < m_frame->m_rpu.payloadSize; i++)
+-            m_bs.write(m_frame->m_rpu.payload[i], 8);
++            m_bs.bc_write(m_frame->m_rpu.payload[i], 8);
+         m_nalList.serialize(NAL_UNIT_UNSPECIFIED, m_bs);
+     }
+ 
+diff -rup x265_3.5.orig/source/x265.pc.in x265_3.5/source/x265.pc.in
+--- x265_3.5.orig/source/x265.pc.in	2023-09-18 12:19:49.884401217 +0200
++++ x265_3.5/source/x265.pc.in	2023-09-18 13:08:19.352045624 +0200
+@@ -6,6 +6,6 @@ includedir=${prefix}/include
+ Name: @CMAKE_PROJECT_NAME@
+ Description: H.265/HEVC video encoder
+ Version: @X265_LATEST_TAG@
+-Libs: -L${libdir} -lx265
++Libs: -L${libdir} -lx265 -lstdc++ -lm
+ Libs.private: @PRIVATE_LIBS@
+ Cflags: -I${includedir}

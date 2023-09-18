@@ -1,0 +1,14 @@
+Only in x265_3.5/build: m68k-atari-mint
+diff -rup x265_3.5.orig/source/common/cpu.cpp x265_3.5/source/common/cpu.cpp
+--- x265_3.5.orig/source/common/cpu.cpp	2021-03-16 13:53:00.000000000 +0100
++++ x265_3.5/source/common/cpu.cpp	2023-09-18 12:14:00.601351094 +0200
+@@ -60,7 +60,9 @@ static void sigill_handler(int sig)
+ #endif // if X265_ARCH_ARM
+ 
+ namespace X265_NS {
++#if X265_ARCH_X86
+ static bool enable512 = false;
++#endif
+ const cpu_name_t cpu_names[] =
+ {
+ #if X265_ARCH_X86

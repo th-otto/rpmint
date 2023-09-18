@@ -263,7 +263,7 @@ unpack_archive()
 		         "${here}/${srcarchive}.tar.gz" \
 		         "${here}/${srcarchive}.tgz" \
 		         "${here}/${srcarchive}.tlz"; do
-			if test -f "$f"; then missing=false; tar xf "$f" || exit 1; fi
+			if test -f "$f"; then missing=false; tar xf "$f" || exit 1; break; fi
 		done
 		if $missing; then
 			echo "${srcarchive}.*: no such file" >&2

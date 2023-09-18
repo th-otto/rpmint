@@ -1396,6 +1396,10 @@ This notably applies to Perl and Python.
 
 <li>2023/09/11 Update binutils to 2.41</li>
 
+<li>2023/09/16 Add physfs 3.2.0</li>
+
+<li>2023/09/18 Add x265 3.5</li>
+
 </ul>
 
 <p></p>

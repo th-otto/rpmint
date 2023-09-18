@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        HEIF and AVIF (AV1 Image File Format) file format decoder and encoder
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        1.14.2
 Release:        1
 License:        LGPL-3.0-or-later
@@ -29,16 +25,11 @@ BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libtool
 BuildRequires:  make
-%if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-gcc-c++
-BuildRequires:  cross-mint-libde265-devel
-Requires:       cross-mint-libde265
-Provides:       cross-mint-libheif-devel
-%else
-BuildRequires:  gcc-c++
-BuildRequires:  libde265-devel
-Requires:       libde265
-Provides:       libheif-devel
+BuildRequires:  %{crossmint}gcc-c++
+BuildRequires:  %{crossmint}libde265-devel
+BuildRequires:  %{crossmint}x265
+Requires:       %{crossmint}libde265
+Provides:       %{crossmint}libheif-devel
 %endif
 
 %rpmint_build_arch
