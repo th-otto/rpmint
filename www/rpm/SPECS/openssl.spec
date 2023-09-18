@@ -4,13 +4,9 @@
 
 %define _sonum  1_1
 Summary:        Secure Sockets and Transport Layer Security
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        1.1.1p
-Release:        1
+Release:        2
 License:        OpenSSL
 Group:          Productivity/Networking/Security
 
@@ -28,15 +24,9 @@ Patch2: patches/openssl/openssl-bn_div-asm.patch
 
 %rpmint_essential
 BuildRequires:  pkgconfig
-%if "%{buildtype}" == "cross"
-Provides:       pkgconfig(cross-mint-libssl) = %{version}
-Provides:       pkgconfig(cross-mint-libcrypto) = %{version}
-Provides:       pkgconfig(cross-mint-openssl) = %{version}
-%else
-Provides:       pkgconfig(libssl) = %{version}
-Provides:       pkgconfig(libcrypto) = %{version}
-Provides:       pkgconfig(openssl) = %{version}
-%endif
+Provides:       pkgconfig(%{crossmint}libssl) = %{version}
+Provides:       pkgconfig(%{crossmint}libcrypto) = %{version}
+Provides:       pkgconfig(%{crossmint}openssl) = %{version}
 
 %rpmint_build_arch
 
@@ -139,6 +129,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Mon Sep 18 2023 Thorsten Otto <admin@tho-otto.de>
+- Fix missing 68020 & coldfire libraries
+
 * Sun Mar 5 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
 - Upgraded to 1.1.1p

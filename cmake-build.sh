@@ -52,7 +52,7 @@ STACKSIZE="-Wl,--stack,512k"
 
 CMAKE_SYSTEM_NAME="${TARGET##*-}"
 
-$LN_S -f ${CMAKE_SYSTEM_NAME}.cmake "$MINT_BUILD_DIR/Modules/Platform/${TARGET#-}.cmake"
+( cd "$MINT_BUILD_DIR/Modules/Platform/"; $LN_S -f ${CMAKE_SYSTEM_NAME}.cmake "${TARGET}.cmake" )
 
 gcc=`which ${TARGET}-gcc`
 gxx=`which ${TARGET}-g++`
@@ -105,15 +105,17 @@ for CPU in ${ALL_CPUS}; do
 	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake.prov -D ${buildroot}${TARGET_PREFIX}/lib/rpm/cmake.prov
 	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake-${CMAKE_SYSTEM_NAME}.cmake -D ${buildroot}${TARGET_PREFIX}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake
 	if test "${CMAKE_SYSTEM_NAME}" = mint; then
-		ln -sf ${CMAKE_SYSTEM_NAME}.cmake "${buildroot}${TARGET_PREFIX}/share/cmake/Modules/Platform/FreeMiNT.cmake"
+	    ( cd "${buildroot}${TARGET_PREFIX}/share/cmake/Modules/Platform/"; $LN_S -f ${CMAKE_SYSTEM_NAME}.cmake FreeMiNT.cmake )
 	fi
 	
-	# install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake-${CMAKE_SYSTEM_NAME}-cross.cmake -D "${THISPKG_DIR}${prefix}/${TARGET}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
 	install -m644 ${BUILD_DIR}/patches/${PACKAGENAME}/cmake-${CMAKE_SYSTEM_NAME}-cross.cmake -D "${THISPKG_DIR}${prefix}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
-	if test "${CMAKE_SYSTEM_NAME}" = mint; then
-		ln -sf ${CMAKE_SYSTEM_NAME}.cmake "${THISPKG_DIR}${prefix}/share/cmake/Modules/Platform/FreeMiNT.cmake"
-	fi
-	
+	( cd "${THISPKG_DIR}${prefix}/share/cmake/Modules/Platform";
+	  $LN_S ${CMAKE_SYSTEM_NAME}.cmake ${TARGET}.cmake;
+	  if test "${CMAKE_SYSTEM_NAME}" = mint; then
+	    $LN_S -f ${CMAKE_SYSTEM_NAME}.cmake FreeMiNT.cmake
+	  fi
+	)
+
 	# no shared libs -> no plugins
 	# rm -f ${buildroot}${TARGET_PREFIX}/share/cmake/include/*.h
 	# rmdir ${buildroot}${TARGET_PREFIX}/share/cmake/include

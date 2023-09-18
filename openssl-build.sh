@@ -35,9 +35,9 @@ ${TARGET_MANDIR#/}/man7/*
 #
 # CFLAGS have been patched in the Configure script
 #
-COMMON_CFLAGS="-O3 -fomit-frame-pointer ${ELF_CFLAGS}"
+COMMON_CFLAGS="-O3 -fomit-frame-pointer"
 
-CONFIGURE_FLAGS="--prefix=${prefix} --cross-compile-prefix=${TARGET}- --openssldir=${SSLETCDIR} zlib"
+CONFIGURE_FLAGS="--prefix=${prefix} --cross-compile-prefix=${TARGET}- --openssldir=${SSLETCDIR} ${ELF_CFLAGS} zlib"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
@@ -51,6 +51,11 @@ for CPU in ${ALL_CPUS}; do
 	"$srcdir/Configure" ${CONFIGURE_FLAGS} $targetconf
 	${MAKE} $JOBS || exit 1
 	${MAKE} MANDIR=${TARGET_MANDIR} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+	# if the library for coldfire/m68020 ended up in the toplevel directory, something went wrong
+	if test "${CPU}" != 000 -a -f "${THISPKG_DIR}${sysroot}/${TARGET_LIBDIR}/libssl.a"; then
+		echo "libssl.a installed to wrong directory" >&2
+		exit 1
+	fi
 	${MAKE} distclean
 	make_bin_archive $CPU
 done

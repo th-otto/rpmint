@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        Cross-platform, open-source make system
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        3.10.2
 Release:        1
 License:        BSD-3-Clause
@@ -47,13 +43,9 @@ BuildRequires:  autoconf
 BuildRequires:  libtool
 BuildRequires:  make
 Provides:       cmake(%_rpmint_target)
-%if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-libuv-devel
-BuildRequires:  cross-mint-librhash-devel
-%else
-BuildRequires:  libuv-devel
-BuildRequires:  librhash-devel
-%endif
+BuildRequires:  %{crossmint}libuv-devel
+BuildRequires:  %{crossmint}librhash-devel
+BuildRequires:  pkgconfig(%{crossmint}libcrypto)
 
 %rpmint_build_arch
 
@@ -112,7 +104,7 @@ sed -e 's,CMAKE_C_COMPILER [^)]*),CMAKE_C_COMPILER '"$gcc"'),' \
     -e 's,CMAKE_CXX_COMPILER [^)]*),CMAKE_CXX_COMPILER '"$gxx"'),' \
     "%{S:5}" > "Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
 
-$LN_S -f ${CMAKE_SYSTEM_NAME}.cmake "Modules/Platform/${TARGET#-}.cmake"
+( cd "Modules/Platform"; $LN_S -f ${CMAKE_SYSTEM_NAME}.cmake "${TARGET}.cmake" )
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
@@ -140,15 +132,17 @@ for CPU in ${ALL_CPUS}; do
 	install -m644 %{S:3} -D ${buildroot}%{_rpmint_target_prefix}/lib/rpm/cmake.prov
 	install -m644 %{S:4} -D ${buildroot}%{_rpmint_target_prefix}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake
 	if test "${CMAKE_SYSTEM_NAME}" = mint; then
-		ln -sf ${CMAKE_SYSTEM_NAME}.cmake "${buildroot}%{_rpmint_target_prefix}/share/cmake/Modules/Platform/FreeMiNT.cmake"
+		( cd "${buildroot}%{_rpmint_target_prefix}/share/cmake/Modules/Platform/"; $LN_S -f ${CMAKE_SYSTEM_NAME}.cmake FreeMiNT.cmake )
 	fi
 	
 	%if "%{buildtype}" == "cross"
 	install -m644 %{S:5} -D "%{buildroot}%{_prefix}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake"
-	$LN_S -f ${CMAKE_SYSTEM_NAME}.cmake "%{buildroot}%{_prefix}/share/cmake/Modules/Platform/${TARGET#-}.cmake"
-	if test "${CMAKE_SYSTEM_NAME}" = mint; then
-		ln -sf ${CMAKE_SYSTEM_NAME}.cmake "%{buildroot}%{_prefix}/share/cmake/Modules/Platform/FreeMiNT.cmake"
-	fi
+	( cd "%{buildroot}%{_prefix}/share/cmake/Modules/Platform";
+	  $LN_S -f ${CMAKE_SYSTEM_NAME}.cmake ${TARGET}.cmake;
+	  if test "${CMAKE_SYSTEM_NAME}" = mint; then
+	    $LN_S -f ${CMAKE_SYSTEM_NAME}.cmake FreeMiNT.cmake
+	  fi
+	)
 	%endif
 	
 	make clean >/dev/null
