@@ -662,6 +662,12 @@ export CXXFLAGS="-O2 -fomit-frame-pointer"
 
 %endif
 
+gcc4_compat=
+if test %{gcc_major_ver} -lt 13; then
+	# with gcc 13 and above, do not longer use the compatible interface
+	gcc4_compat=--with-default-libstdcxx-abi=gcc4-compatible
+fi
+
 ../configure \
 	--target="${TARGET}" \
 %if "%{buildtype}" != "cross"
@@ -691,8 +697,6 @@ export CXXFLAGS="-O2 -fomit-frame-pointer"
 	GNATLINK_FOR_HOST="${GNATLINK}" \
 %endif
 	--with-pkgversion="MiNT %{releasedate}" \
-	--disable-libvtv \
-	--disable-libmpx \
 	--disable-libcc1 \
 %if %{gcc_major_ver} >= 7
 	--disable-werror \
@@ -703,7 +707,7 @@ export CXXFLAGS="-O2 -fomit-frame-pointer"
 %else
 	--with-gxx-include-dir=%{gxxinclude} \
 %endif
-	--with-default-libstdcxx-abi=gcc4-compatible \
+	$gcc4_compat \
 %if %{gcc_major_ver} >= 6
 	--with-gcc-major-version-only \
 %endif

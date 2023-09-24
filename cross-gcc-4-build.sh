@@ -15,14 +15,14 @@ scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
 VERSION=-4.6.4
-VERSIONPATCH=-20230719
+VERSIONPATCH=-20230908
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
 # For which target we build-
-# should be m68k-atari-mint
+# should be either m68k-atari-mint or m68k-atari-mintelf
 #
-TARGET=m68k-atari-mint
+TARGET=${1:-m68k-atari-mint}
 
 #
 # The prefix where the executables should
@@ -64,7 +64,7 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-build4"
+MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
 
 #
 # Where to put the binary packages
@@ -96,6 +96,25 @@ with_D=false
 # whether to include the ada backend
 #
 with_ada=false
+
+#
+# whether to include the modula-2 backend
+#
+# FIXME: building the native compiler with a cross-compiler currently does not work,
+# because m2/boot-bin/mklink is compiled using the cross-compiler, then executed
+#
+with_m2=false
+
+#
+# whether to use dwarf2 exceptions instead of sjlj.
+# Only works for elf toolchains.
+#
+case $TARGET in
+*-*-*elf)
+	with_dw2_exceptions=--disable-sjlj-exceptions
+	;;
+esac
+
 
 #
 # this patch can be recreated by
@@ -186,7 +205,8 @@ if test "$BASE_VER" != "${VERSION#-}"; then
 	echo "version mismatch: this script is for gcc ${VERSION#-}, but gcc source is version $BASE_VER" >&2
 	exit 1
 fi
-gcc_dir_version=${BASE_VER}
+gcc_major_version=$(echo $BASE_VER | cut -d '.' -f 1)
+gcc_dir_version=$gcc_major_version
 gccsubdir=${TARGET_LIBDIR}/gcc/${TARGET}/${gcc_dir_version}
 gxxinclude=/usr/include/c++/${gcc_dir_version}
 
@@ -217,6 +237,7 @@ languages=c,c++
 $with_fortran && languages="$languages,fortran"
 $with_ada && languages="$languages,ada"
 $with_D && { languages="$languages,d"; enable_libphobos=; } # --enable-libphobos does not work because of missing swapcontext() in mintlib
+$with_m2 && languages="$languages,m2"
 ranlib=ranlib
 
 case "${TARGET}" in
@@ -254,6 +275,12 @@ if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 fi
 
 mpfr_config=
+
+gcc4_compat=
+if test $gcc_major_version -lt 13; then
+	# with gcc 13 and above, do not longer use the compatible interface
+	gcc4_compat=--with-default-libstdcxx-abi=gcc4-compatible
+fi
 
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}
 
@@ -363,12 +390,10 @@ chmod 755 "${GXX_WRAPPER}"
 		--bindir="${TARGET_BINDIR}" \
 		--libexecdir='${libdir}' \
 		--with-pkgversion="$REVISION" \
-		--disable-libvtv \
-		--disable-libmpx \
 		--disable-libcc1 \
 		--disable-werror \
 		--with-gxx-include-dir=${TARGET_PREFIX}/include/c++/${gcc_dir_version} \
-		--with-default-libstdcxx-abi=gcc4-compatible \
+		$gcc4_compat \
 		--with-gcc-major-version-only \
 		--with-gcc --with-gnu-as --with-gnu-ld \
 		--with-system-zlib \
@@ -384,6 +409,7 @@ chmod 755 "${GXX_WRAPPER}"
 		$enable_plugin \
 		--disable-decimal-float \
 		--disable-nls \
+		$with_dw2_exceptions \
 		$mpfr_config \
 		--with-cpu=$with_cpu \
 		--with-sysroot="${prefix}/${TARGET}/sys-root" \
@@ -456,7 +482,7 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 		rm -f ${TARGET}-c++${TARGET_EXEEXT} ${TARGET}-c++
 		$LN_S ${TARGET}-g++${TARGET_EXEEXT} ${TARGET}-c++${TARGET_EXEEXT}
 	fi
-	for tool in gcc gfortran gdc gccgo go gofmt; do
+	for tool in gcc gfortran gdc gccgo go gofmt gm2; do
 		if test -x ${TARGET}-${tool}; then
 			rm -f ${TARGET}-${tool}-${BASE_VER}${TARGET_EXEEXT} ${TARGET}-${tool}-${BASE_VER}
 			rm -f ${TARGET}-${tool}-${gcc_dir_version}${TARGET_EXEEXT} ${TARGET}-${tool}-${gcc_dir_version}
@@ -479,11 +505,13 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	
 # that directory only contains the gdb pretty printers;
 # on the host we don't want them because they would conflict
-# with the system ones; on the target we don't need them
-# because gdb does not work
-	rm -rf ${TARGET_PREFIX#/}/share/gcc-${gcc_dir_version}
-	if test -d ${TARGET_PREFIX#/}/${TARGET}/lib; then find ${TARGET_PREFIX#/}/${TARGET}/lib -name "libstdc++*.py" -delete; fi
-	if test -d ${TARGET_PREFIX#/}/lib; then find ${TARGET_PREFIX#/}/lib -name "libstdc++*.py" -delete; fi
+# with the system ones
+# the new mintelf target eventually supports gdb again
+	if test ${TARGET} != m68k-atari-mintelf; then
+		rm -rf ${TARGET_PREFIX#/}/share/gcc-${gcc_dir_version}
+		if test -d ${TARGET_PREFIX#/}/${TARGET}/lib; then find ${TARGET_PREFIX#/}/${TARGET}/lib -name "libstdc++*.py" -delete; fi
+		if test -d ${TARGET_PREFIX#/}/lib; then find ${TARGET_PREFIX#/}/lib -name "libstdc++*.py" -delete; fi
+	fi
 
 	rm -f ${TARGET_PREFIX#/}/share/info/dir
 	for f in ${TARGET_PREFIX#/}/share/man/*/* ${TARGET_PREFIX#/}/share/info/*; do
@@ -513,7 +541,7 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	rmdir m* || :
 	popd
 
-	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1}${TARGET_EXEEXT} \
+	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,cc1gm2,g++-mapper-server}${TARGET_EXEEXT} \
 		${gccsubdir#/}/${LTO_PLUGIN} \
 		${gccsubdir#/}/plugin/gengtype${TARGET_EXEEXT} \
 		${gccsubdir#/}/install-tools/fixincl${TARGET_EXEEXT}; do
@@ -622,6 +650,19 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 		ada="$ada "`find ${TARGET_PREFIX#/}/bin -name "*gnat*"`
 		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-ada-${CPU}.tar.xz $ada || exit 1
 		rm -rf $ada
+	fi
+
+	#
+	# create a separate archive for the modula-2 backend
+	#
+	if $with_m2; then
+		m2=
+		test -d ${gccsubdir#/}/m2 && m2="$m2 "${gccsubdir#/}/m2
+		m2="$m2 "`find ${gccsubdir#/} -name "libm2*"`
+		m2="$m2 "`find ${gccsubdir#/} -name "cc1gm2*"`
+		m2="$m2 "${TARGET_PREFIX#/}/bin/${TARGET}-gm2*
+		${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-m2-${CPU}.tar.xz $m2 || exit 1
+		rm -rf $m2
 	fi
 
 	#

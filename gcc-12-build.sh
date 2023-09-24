@@ -503,7 +503,7 @@ cd "$MINT_BUILD_DIR"
 
 gcc4_compat=
 if test $gcc_major_version -lt 13; then
-	# with gcc 13 and above, do not longer use the comtatible interface
+	# with gcc 13 and above, do not longer use the compatible interface
 	gcc4_compat=--with-default-libstdcxx-abi=gcc4-compatible
 fi
 
@@ -526,8 +526,6 @@ $srcdir/configure \
 	GNATBIND_FOR_HOST="${GNATBIND}" \
 	GNATLINK_FOR_HOST="${GNATLINK}" \
 	--with-pkgversion="$REVISION" \
-	--disable-libvtv \
-	--disable-libmpx \
 	--disable-libcc1 \
 	--disable-werror \
 	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root${gxxinclude} \

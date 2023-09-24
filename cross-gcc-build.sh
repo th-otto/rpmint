@@ -15,7 +15,7 @@ scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
 VERSION=-13.2.0
-VERSIONPATCH=-20230801
+VERSIONPATCH=-20230908
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -106,6 +106,17 @@ with_ada=false
 with_m2=false
 
 #
+# whether to use dwarf2 exceptions instead of sjlj.
+# Only works for elf toolchains.
+#
+case $TARGET in
+*-*-*elf)
+	with_dw2_exceptions=--disable-sjlj-exceptions
+	;;
+esac
+
+
+#
 # this patch can be recreated by
 # - cloning https://github.com/th-otto/m68k-atari-mint-gcc.git
 # - checking out the mint/gcc-12 branch
@@ -193,7 +204,8 @@ if test "$BASE_VER" != "${VERSION#-}"; then
 	echo "version mismatch: this script is for gcc ${VERSION#-}, but gcc source is version $BASE_VER" >&2
 	exit 1
 fi
-gcc_dir_version=$(echo $BASE_VER | cut -d '.' -f 1)
+gcc_major_version=$(echo $BASE_VER | cut -d '.' -f 1)
+gcc_dir_version=$gcc_major_version
 gccsubdir=${TARGET_LIBDIR}/gcc/${TARGET}/${gcc_dir_version}
 gxxinclude=/usr/include/c++/${gcc_dir_version}
 
@@ -262,6 +274,12 @@ if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 fi
 
 mpfr_config=
+
+gcc4_compat=
+if test $gcc_major_version -lt 13; then
+	# with gcc 13 and above, do not longer use the compatible interface
+	gcc4_compat=--with-default-libstdcxx-abi=gcc4-compatible
+fi
 
 TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}
 
@@ -371,12 +389,10 @@ chmod 755 "${GXX_WRAPPER}"
 		--bindir="${TARGET_BINDIR}" \
 		--libexecdir='${libdir}' \
 		--with-pkgversion="$REVISION" \
-		--disable-libvtv \
-		--disable-libmpx \
 		--disable-libcc1 \
 		--disable-werror \
 		--with-gxx-include-dir=${TARGET_PREFIX}/include/c++/${gcc_dir_version} \
-		--with-default-libstdcxx-abi=gcc4-compatible \
+		$gcc4_compat \
 		--with-gcc-major-version-only \
 		--with-gcc --with-gnu-as --with-gnu-ld \
 		--with-system-zlib \
@@ -392,6 +408,7 @@ chmod 755 "${GXX_WRAPPER}"
 		$enable_plugin \
 		--disable-decimal-float \
 		--disable-nls \
+		$with_dw2_exceptions \
 		$mpfr_config \
 		--with-cpu=$with_cpu \
 		--with-build-sysroot="${prefix}/${TARGET}/sys-root" \

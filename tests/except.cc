@@ -1,20 +1,24 @@
 #include <stdio.h>
-#include <exception>
 
-void test()
+class MyException
 {
-	printf("throwing oops\n");
-	throw("oops");
-}
 
+};
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	try {
-		test();
-	} catch (const char *s)
+	puts("Start");
+
+	try 
 	{
-		printf("got exception %s\n", s);
+		throw MyException();
 	}
+	catch (const MyException& e)
+	{
+		puts("Exception!!");
+	}
+
+	puts("End");
+
 	return 0;
 }
