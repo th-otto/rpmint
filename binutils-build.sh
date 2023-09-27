@@ -15,7 +15,7 @@ scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=binutils
 VERSION=-2.41
-VERSIONPATCH=-20230911
+VERSIONPATCH=-20230926
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
@@ -49,7 +49,7 @@ srcdir="${PACKAGENAME}${VERSION}"
 
 #
 # The branch patch was created by
-# BINUTILS_SUPPORT_DIRS="bfd gas include libiberty opcodes ld elfcpp gold gprof intl setup.com makefile.vms cpu zlib"
+# BINUTILS_SUPPORT_DIRS="libsframe bfd gas include libiberty libctf opcodes ld elfcpp gold gprof gprofng intl setup.com makefile.vms cpu zlib"
 # git diff binutils-2_29_1.1 binutils-2_29-branch -- $BINUTILS_SUPPORT_DIRS
 # BINUTILS_SUPPORT_DIRS is from src-release.sh
 #
@@ -214,7 +214,8 @@ CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 
 unset GLIBC_SO
 
-with_zstd=
+with_gmp=
+gdb=
 SED_INPLACE=-i
 
 case $host in
@@ -238,6 +239,9 @@ case $host in
 		LDFLAGS_FOR_BUILD="-Wl,-headerpad_max_install_names ${ARCHS}"
 		export PKG_CONFIG_LIBDIR="$PKG_CONFIG_LIBDIR:${CROSSTOOL_DIR}/lib/pkgconfig"
 		SED_INPLACE="-i .orig"
+		with_gmp=--with-gmp=${CROSSTOOL_DIR}
+		# disable gdb for now, since it is not part of the binutils archive
+		gdb=--disable-gdb
 		;;
 	linux64)
 		CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
@@ -260,11 +264,15 @@ fail()
 #
 # Now, for darwin, build gmp etc.
 #
+if test "$gdb" = ""; then
+	. ${scriptdir}/gmp-for-gcc.sh
+fi
 . ${scriptdir}/zstd-for-gcc.sh
 
 cd "$MINT_BUILD_DIR"
 
 $srcdir/configure \
+	MAKEINFO="echo texinfo 7.0" \
 	--target="${TARGET}" --build="$BUILD" \
 	--prefix="${PREFIX}" \
 	--libdir="$BUILD_LIBDIR" \
@@ -288,7 +296,7 @@ $srcdir/configure \
 	$enable_plugins \
 	--disable-nls \
 	--with-system-zlib \
-	$with_zstd \
+	$with_gmp $gdb \
 	--with-system-readline \
 	--disable-bracketed-paste-default \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root"

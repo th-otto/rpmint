@@ -199,13 +199,17 @@ esac
 #
 if test ! -f "${prefix}/bin/${TARGET}-${ranlib}"; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
-		echo "fetching binutils"
-		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.39-${TARGET##*-}-20230206-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
-		echo "fetching gcc"
-		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/gcc-7/gcc-7.5.0-${TARGET##*-}-20230210-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
-		if test "${PACKAGENAME}" != mintbin; then
+		if test "${PACKAGENAME}" != binutils; then
+			echo "fetching binutils"
+			wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.41-${TARGET##*-}-20230926-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
+		fi
+		if test "${PACKAGENAME}" != gcc -a "${PACKAGENAME}" != binutils; then
+			echo "fetching gcc"
+			wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/gcc-7/gcc-7.5.0-${TARGET##*-}-20230210-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
+		fi
+		if test "${PACKAGENAME}" != mintbin -a "${PACKAGENAME}" != gcc -a "${PACKAGENAME}" != binutils; then
 			echo "fetching mintbin"
-			wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/mintbin/mintbin-0.3-${TARGET##*-}-20230206-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
+			wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/mintbin/mintbin-0.4-${TARGET##*-}-20230911-bin-${host}.tar.xz" | sudo $TAR -C "/" -xJf -
 		fi
 		if test "${prefix}" != /usr; then
 			export PATH="${prefix}/bin:$PATH"
@@ -220,9 +224,9 @@ if ! test -f ${sysroot}/usr/include/compiler.h; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
 		sudo mkdir -p "${sysroot}/usr"
 		echo "fetching mintlib"
-		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-latest.tar.bz2" | sudo $TAR -C "${sysroot}/usr" -xjf -
+		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-${TARGET##*-}-latest.tar.bz2" | sudo $TAR -C "${sysroot}/usr" -xjf -
 		echo "fetching fdlibm"
-		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-latest.tar.bz2" | sudo $TAR -C "${sysroot}/usr" -xjf -
+		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-${TARGET##*-}-latest.tar.bz2" | sudo $TAR -C "${sysroot}/usr" -xjf -
 	fi
 fi
 

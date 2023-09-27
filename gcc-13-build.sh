@@ -160,8 +160,11 @@ esac
 # whether to use dwarf2 exceptions instead of sjlj.
 # Only works for elf toolchains.
 #
-#with_dw2_exceptions=--disable-sjlj-exceptions
-
+case $TARGET in
+*-*-*elf)
+	with_dw2_exceptions=--disable-sjlj-exceptions
+	;;
+esac
 
 
 #
@@ -246,9 +249,9 @@ if ! test -f ${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
 		sudo mkdir -p ${PREFIX}/${TARGET}/sys-root/usr
 		echo "fetching mintlib"
-		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-${TARGET##*-}-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
 		echo "fetching fdlibm"
-		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-${TARGET##*-}-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
 	fi
 fi
 
@@ -357,7 +360,7 @@ mkdir -p "${PKG_DIR}"
 if test ! -f "${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
 		echo "fetching binutils"
-		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.41-${TARGET##*-}-20230906-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
+		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.41-${TARGET##*-}-20230926-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
 		export PATH="${PKG_DIR}${PREFIX}/bin:$PATH"
 	fi
 fi
