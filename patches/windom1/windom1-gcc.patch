@@ -1,0 +1,1145 @@
+diff -rup windom1-1.21.3.orig/src/appl_init.c windom1-1.21.3/src/appl_init.c
+--- windom1-1.21.3.orig/src/appl_init.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/appl_init.c	2023-09-30 14:15:39.181431168 +0200
+@@ -59,8 +59,8 @@ int ApplReInit( short * global) {
+ 	app.work_in[10] = 2; */
+ 	app.handle = app.aeshdl;
+ 	v_opnvwk( app.work_in, &app.handle, app.work_out);
+-	_res = ( app.y+app.h-1 >=240)?1:0;
+-	CONF(app)->hicon = _res?72:36;
++	_windom1_res = ( app.y+app.h-1 >=240)?1:0;
++	CONF(app)->hicon = _windom1_res?72:36;
+ 	
+ 	for( dum = 1; dum<MAX_WINDOW; __windowlist[dum++]=0);
+ 	__windowlist[0]=-1;
+diff -rup windom1-1.21.3.orig/src/av_init.c windom1-1.21.3/src/av_init.c
+--- windom1-1.21.3.orig/src/av_init.c	2023-09-30 12:48:33.744345461 +0200
++++ windom1-1.21.3/src/av_init.c	2023-09-30 13:38:05.124054518 +0200
+@@ -44,7 +44,7 @@ int av_server_id( void) {
+ 	
+ 	shel_envrn(&p, "AVSERVER=");
+ 	if( p) {
+-		sprintf(name, "%- 8s", p);
++		sprintf(name, "%8.8s", p);
+ 		id = appl_find( name);
+ 	}	
+ 	if( id != -1) return id;
+@@ -55,7 +55,6 @@ int av_server_id( void) {
+ 	id = appl_find( "THING   ");
+ 	if( id != -1) return id;
+ 	if( app.aes4 & AES4_APPSEARCH) {
+-		char name[9];
+ 		INT16 type;
+ 		appl_search( 0, name, &type, &id);
+ 		
+@@ -76,10 +75,12 @@ static int av_ping( int status, long idl
+ 	strcpy( app.pipe, __av_name);
+ 	ApplWrite( app.avid, AV_PROTOKOLL, status, 0, 0, ADR(app.pipe));
+ 	if( AvWaitfor( VA_PROTOSTATUS, msg, idle)) {
++		char **pp;
+ 		__av_status[0] = msg[3];
+ 		__av_status[1] = msg[4];
+ 		__av_status[2] = msg[5];
+-		strcpy( __av_server, *(char **)&msg[6]);
++		pp = (char **)&msg[6];
++		strcpy( __av_server, *pp);
+ 		return 1;
+ 	} else
+ 		return 0;
+diff -rup windom1-1.21.3.orig/src/bubble_call.c windom1-1.21.3/src/bubble_call.c
+--- windom1-1.21.3.orig/src/bubble_call.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/bubble_call.c	2023-09-30 13:35:47.980885850 +0200
+@@ -25,6 +25,7 @@
+  */
+ 
+ #include <stdlib.h>
++#include <string.h>
+ #include "globals.h"
+ #include "cookie.h"
+ 
+diff -rup windom1-1.21.3.orig/src/bubble_modal.c windom1-1.21.3/src/bubble_modal.c
+--- windom1-1.21.3.orig/src/bubble_modal.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/bubble_modal.c	2023-09-30 14:31:18.913698241 +0200
+@@ -80,7 +80,7 @@ int BubbleModal( char *hlp, int mx, int
+         		/* attente */
+         if( !get_cookie( BHLP_COOKIE, (long*)&bhlp))
+        		bhlp.delay = 200;
+-		evnt_timer( bhlp.delay);
++        evnt_timer( bhlp.delay);
+ 		/* fin protocole */
+         ApplWrite( bubble_id, BUBBLEGEM_HIDE, 0, 0, 0, 0, 0);
+         graf_mouse( ARROW, NULL);
+diff -rup windom1-1.21.3.orig/src/cicon.c windom1-1.21.3/src/cicon.c
+--- windom1-1.21.3.orig/src/cicon.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/cicon.c	2023-09-30 14:28:22.513897564 +0200
+@@ -88,7 +88,6 @@ static void xfix_cicon   ( UWORD *col_da
+ static void std_to_byte  ( UWORD *col_data, LONG len, WORD old_planes, ULONG *farbtbl2, MFDB *s);
+ static WORD test_rez     ( void);
+ static void xfill_farbtbl( XRSRCFIX *fix);
+-int __CDECL xdraw_cicon  ( PARMBLK *pb);
+ 
+ /*****************************************************************************/
+ /* changer le format de l'ic“ne et l'adapter aux autres r‚solutions.         */
+@@ -273,7 +272,7 @@ static void xfill_farbtbl ( XRSRCFIX *fi
+ 				/* vro_cpyfm, weil v_get_pixel nicht mit TrueColor (>=24 Planes) funktioniert */
+ 				vro_cpyfm (app.handle, S_ONLY, pxy, &screen, &pixel);
+ 	
+-				if (fix->farbtbl2 != NULL && xpixelbytes)
++				if (xpixelbytes)
+ 				{	fix->farbtbl2[color] = 0L;
+ 					memcpy (&fix->farbtbl2[color], pixel.fd_addr, xpixelbytes);
+ 				}
+@@ -293,7 +292,7 @@ static void xfill_farbtbl ( XRSRCFIX *fi
+ 			graf_mouse (M_ON, NULL);
+ 		}
+ 		else
+-		{	if (fix->farbtbl2 != NULL && xpixelbytes)
++		{	if (xpixelbytes)
+ 				for (color = 0; color < 256; color++)
+ 					*(UBYTE *)&fix->farbtbl2[color] = color;
+ 		}
+@@ -635,7 +634,7 @@ MFDB  *s;
+ /* dessine l'ic“ne couleur                                                        */
+ /*****************************************************************************/
+ 
+-int __CDECL xdraw_cicon (PARMBLK *pb)
++WORD __CDECL xdraw_cicon (PARMBLK *pb)
+ {
+ 	WORD	 	ob_x, ob_y, x, y, m_mode, i_mode=0, mskcol, icncol;
+ 	INT16		pxy[4], xy[4], dummy;
+diff -rup windom1-1.21.3.orig/src/conf_inquire.c windom1-1.21.3/src/conf_inquire.c
+--- windom1-1.21.3.orig/src/conf_inquire.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/conf_inquire.c	2023-09-30 13:18:25.295459974 +0200
+@@ -86,7 +86,7 @@ static int conf_inquire( char *buffer, c
+ 					case 'd':
+ 					case 'x':
+ 						ptr = (void*)va_arg( args, int *);
+-						sscanf( p, (*q=='d')?"%d":"%x", ptr);
++						sscanf( p, (*q=='d')?"%d":"%x", (int *)ptr);
+ 						break;						
+ 					case 'f':
+ 						ptr = (void*)va_arg( args, float *);
+diff -rup windom1-1.21.3.orig/src/data.c windom1-1.21.3/src/data.c
+--- windom1-1.21.3.orig/src/data.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/data.c	2023-09-30 13:14:27.685741403 +0200
+@@ -132,6 +132,7 @@ void DataClear( WINDOW *win) {
+ 
+ #include <stdio.h>
+ 
++#if 0
+ void DataTrace( WINDOW *win) {
+ 	WDATA *scan;
+ 	printf( "window %d:\n", win->handle);
+@@ -141,7 +142,8 @@ void DataTrace( WINDOW *win) {
+ 									(char)(scan->magic >> 16),
+ 									(char)(scan->magic >>  8),
+ 									(char)(scan->magic >>  0),
+-									scan->data);
++									(long)scan->data);
+ }
++#endif
+ 
+ /* EOF */
+diff -rup windom1-1.21.3.orig/src/debug_windom.c windom1-1.21.3/src/debug_windom.c
+--- windom1-1.21.3.orig/src/debug_windom.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/debug_windom.c	2023-09-30 14:25:15.467442251 +0200
+@@ -45,7 +45,7 @@ void DebugWindom(  const char *format, .
+ 		va_end( arglist);
+ 
+ 		if( !stricmp( type, "alert")) {
+-			char alert[255];
++			char alert[255+12];
+ 			sprintf( alert, "[1][%s][Okay]", debug);
+ 			form_alert( 1, alert);	
+ 		} else
+@@ -56,11 +56,13 @@ void DebugWindom(  const char *format, .
+ 				ShelWrite( path, "", NULL, 1, 0);
+ 			id = appl_find( "DEBUG   ");
+ 			if( id > 0) {
++				char **pp;
+ 				evnt.buff[0] = AP_DEBUG;
+ 				evnt.buff[1] = app.id;
+ 				evnt.buff[2] = 0;
+ 				evnt.buff[3] = wglb.front?wglb.front->handle:0;
+-				*(char **)&evnt.buff[4] = debug;
++				pp = (char **)&evnt.buff[4];
++				*pp = debug;
+ 				appl_write( id, 16, evnt.buff);
+ 				/* On attend la r‚ponse */
+ 				do {
+diff -rup windom1-1.21.3.orig/src/evnt_windom.c windom1-1.21.3/src/evnt_windom.c
+--- windom1-1.21.3.orig/src/evnt_windom.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/evnt_windom.c	2023-09-30 12:56:43.543732156 +0200
+@@ -53,7 +53,8 @@ int _do_evnt_msg( int *evnt_res) {
+ 		msg = EvntFind( NULL, MN_SELECTED);
+ 		/* We have to find the target window */
+ 		for( win = wglb.first; win; win=win->next) {
+-			if( win->menu.root == *(OBJECT**) &evnt.buff[5]) {
++			OBJECT **p = (OBJECT**) &evnt.buff[5];
++			if( win->menu.root == *p) {
+ 				msg = EvntFind( win, MN_SELECTED);
+ 				break;
+ 			}
+diff -rup windom1-1.21.3.orig/src/font_name2id.c windom1-1.21.3/src/font_name2id.c
+--- windom1-1.21.3.orig/src/font_name2id.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/font_name2id.c	2023-09-30 13:52:13.619715886 +0200
+@@ -26,6 +26,7 @@
+ 
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <string.h>
+ #include "globals.h"
+ 
+ /* Retourne l'id d'un nom de fonte ou -1 si la fonte
+diff -rup windom1-1.21.3.orig/src/font_sel.c windom1-1.21.3/src/font_sel.c
+--- windom1-1.21.3.orig/src/font_sel.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/font_sel.c	2023-09-30 14:27:22.283965622 +0200
+@@ -52,8 +52,8 @@ static void fill_field( OBJECT *tree, st
+ 				strcpy( buf, "system font");
+ 			else
+ 				strcpy( buf, list[i-FONT1+pos].name);
+-			strncpy( tree[i].ob_spec.free_string, buf, 30);
+-			tree[i].ob_spec.free_string[30]='\0';
++			buf[30] = '\0';
++			strcpy( tree[i].ob_spec.free_string, buf);
+ 		} else
+ 			strcpy( tree[i].ob_spec.free_string, "");
+ 	}
+diff -rup windom1-1.21.3.orig/src/fontsel.rsh windom1-1.21.3/src/fontsel.rsh
+--- windom1-1.21.3.orig/src/fontsel.rsh	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/fontsel.rsh	2023-09-30 13:51:25.763104680 +0200
+@@ -26,76 +26,76 @@
+ #define STATE15 0x8000
+ 
+ static TEDINFO rs_tedinfo[] =
+-{ "__",
++{ { "__",
+   " __ pts",
+   "99",
+-  IBM  , 0, TE_CNTR , 0x1180, 0, -1, 3, 8,
+-  "123456",
++  IBM  , 0, TE_CNTR , 0x1180, 0, -1, 3, 8 },
++  { "123456",
+   "Id: ______",
+   "999999",
+-  SMALL, 0, TE_CNTR , 0x1100, 0, -1, 7, 11
++  SMALL, 0, TE_CNTR , 0x1100, 0, -1, 7, 11 }
+ };
+ 
+ static OBJECT rs_object[] =
+ { 
+   /******** Tree 0 FONTSEL ****************************************************/
+-        -1, FONT_DRAW       , IDFONT          , G_BOX             ,   /* Object 0  */
+-  FLAGS10, DRAW3D, (LONG)0x00001100L,
+-  0x0000, 0x0000, 0x0024, 0x0011,
+-  FONT_OK         , FONT_USER       , FONT_USER       , G_BOX             ,   /* Object 1 FONT_DRAW */
+-  NONE, NORMAL, (LONG)0x00FF1101L,
+-  0x0002, 0x0001, 0x0020, 0x0803,
+-  FONT_DRAW       ,       -1,       -1, G_IBOX            ,   /* Object 2 FONT_USER */
+-  NONE, NORMAL, (LONG)0x00FF1141L,
+-  0x0000, 0x0000, 0x0020, 0x0803,
+-  FONT_CANCEL     ,       -1,       -1, G_BUTTON          ,   /* Object 3 FONT_OK */
+-  SELECTABLE|DEFAULT|EXIT|FLAGS9|FLAGS10, NORMAL, (LONG)"OK",
+-  0x000D, 0x000F, 0x0008, 0x0001,
+-         5,       -1,       -1, G_BUTTON          |0x1F00,   /* Object 4 FONT_CANCEL */
+-  SELECTABLE|EXIT|FLAGS9|FLAGS10|FLAGS11, NORMAL, (LONG)"Cancel",
+-  0x0402, 0x000F, 0x0008, 0x0001,
+-  FONT_SIZE       , FONT_DN         , FONT_BACK       , G_IBOX            ,   /* Object 5  */
+-  NONE, NORMAL, (LONG)0x00001101L,
+-  0x0002, 0x0006, 0x0420, 0x0008,
+-  FONT_UP         ,       -1,       -1, G_BOXCHAR         |0x0F00,   /* Object 6 FONT_DN */
+-  SELECTABLE|TOUCHEXIT, DRAW3D, (LONG) ((LONG)'\002' << 24)|0x00FE1100L,
+-  0x011E, 0x0104, 0x0002, 0x0F03,
+-  FONT_BACK       ,       -1,       -1, G_BOXCHAR         |0x0F00,   /* Object 7 FONT_UP */
+-  SELECTABLE|TOUCHEXIT, DRAW3D, (LONG) ((LONG)'\001' << 24)|0x00FE1100L,
+-  0x011E, 0x0000, 0x0002, 0x0004,
+-         5, FONT1           , FONT8           , G_BOX             ,   /* Object 8 FONT_BACK */
+-  NONE, NORMAL, (LONG)0x00FF1101L,
+-  0x0000, 0x0000, 0x001E, 0x0008,
+-  FONT2           ,       -1,       -1, G_STRING          ,   /* Object 9 FONT1 */
+-  TOUCHEXIT, NORMAL, (LONG)"Font Name 1                   ",
+-  0x0000, 0x0000, 0x001E, 0x0001,
+-  FONT3           ,       -1,       -1, G_STRING          ,   /* Object 10 FONT2 */
+-  TOUCHEXIT, NORMAL, (LONG)"Font Name 2                   ",
+-  0x0000, 0x0001, 0x001E, 0x0001,
+-  FONT4           ,       -1,       -1, G_STRING          ,   /* Object 11 FONT3 */
+-  TOUCHEXIT, NORMAL, (LONG)"Font Name 3                   ",
+-  0x0000, 0x0002, 0x001E, 0x0001,
+-  FONT5           ,       -1,       -1, G_STRING          ,   /* Object 12 FONT4 */
+-  TOUCHEXIT, NORMAL, (LONG)"Font Name 4                   ",
+-  0x0000, 0x0003, 0x001E, 0x0001,
+-  FONT6           ,       -1,       -1, G_STRING          ,   /* Object 13 FONT5 */
+-  TOUCHEXIT, NORMAL, (LONG)"Font Name 5                   ",
+-  0x0000, 0x0004, 0x001E, 0x0001,
+-  FONT7           ,       -1,       -1, G_STRING          ,   /* Object 14 FONT6 */
+-  TOUCHEXIT, NORMAL, (LONG)"Font Name 6                   ",
+-  0x0000, 0x0005, 0x001E, 0x0001,
+-  FONT8           ,       -1,       -1, G_STRING          ,   /* Object 15 FONT7 */
+-  TOUCHEXIT, NORMAL, (LONG)"Font Name 7                   ",
+-  0x0000, 0x0006, 0x001E, 0x0001,
+-  FONT_BACK       ,       -1,       -1, G_STRING          ,   /* Object 16 FONT8 */
+-  TOUCHEXIT, NORMAL, (LONG)"Font Name 8                   ",
+-  0x0000, 0x0007, 0x001E, 0x0001,
+-  IDFONT          ,       -1,       -1, G_FBOXTEXT        ,   /* Object 17 FONT_SIZE */
+-  EDITABLE, NORMAL, (LONG)&rs_tedinfo[0],
+-  0x0419, 0x000F, 0x0008, 0x0001,
+-         0,       -1,       -1, G_FTEXT           ,   /* Object 18 IDFONT */
+-  LASTOB, NORMAL, (LONG)&rs_tedinfo[1],
+-  0x0002, 0x0005, 0x0407, 0x0600
++  {      -1, FONT_DRAW       , IDFONT          , G_BOX             ,   /* Object 0  */
++  FLAGS10, DRAW3D, {(LONG)0x00001100L},
++  0x0000, 0x0000, 0x0024, 0x0011},
++  {FONT_OK         , FONT_USER       , FONT_USER       , G_BOX             ,   /* Object 1 FONT_DRAW */
++  NONE, NORMAL, {(LONG)0x00FF1101L},
++  0x0002, 0x0001, 0x0020, 0x0803},
++  {FONT_DRAW       ,       -1,       -1, G_IBOX            ,   /* Object 2 FONT_USER */
++  NONE, NORMAL, {(LONG)0x00FF1141L},
++  0x0000, 0x0000, 0x0020, 0x0803},
++  {FONT_CANCEL     ,       -1,       -1, G_BUTTON          ,   /* Object 3 FONT_OK */
++  SELECTABLE|DEFAULT|EXIT|FLAGS9|FLAGS10, NORMAL, {(LONG)"OK"},
++  0x000D, 0x000F, 0x0008, 0x0001},
++  {       5,       -1,       -1, G_BUTTON          |0x1F00,   /* Object 4 FONT_CANCEL */
++  SELECTABLE|EXIT|FLAGS9|FLAGS10|FLAGS11, NORMAL, {(LONG)"Cancel"},
++  0x0402, 0x000F, 0x0008, 0x0001},
++  {FONT_SIZE       , FONT_DN         , FONT_BACK       , G_IBOX            ,   /* Object 5  */
++  NONE, NORMAL, {(LONG)0x00001101L},
++  0x0002, 0x0006, 0x0420, 0x0008},
++  {FONT_UP         ,       -1,       -1, G_BOXCHAR         |0x0F00,   /* Object 6 FONT_DN */
++  SELECTABLE|TOUCHEXIT, DRAW3D, {((LONG)'\002' << 24)|0x00FE1100L},
++  0x011E, 0x0104, 0x0002, 0x0F03},
++  {FONT_BACK       ,       -1,       -1, G_BOXCHAR         |0x0F00,   /* Object 7 FONT_UP */
++  SELECTABLE|TOUCHEXIT, DRAW3D, {((LONG)'\001' << 24)|0x00FE1100L},
++  0x011E, 0x0000, 0x0002, 0x0004},
++  {       5, FONT1           , FONT8           , G_BOX             ,   /* Object 8 FONT_BACK */
++  NONE, NORMAL, {(LONG)0x00FF1101L},
++  0x0000, 0x0000, 0x001E, 0x0008},
++  {FONT2           ,       -1,       -1, G_STRING          ,   /* Object 9 FONT1 */
++  TOUCHEXIT, NORMAL, {(LONG)"Font Name 1                   "},
++  0x0000, 0x0000, 0x001E, 0x0001},
++  {FONT3           ,       -1,       -1, G_STRING          ,   /* Object 10 FONT2 */
++  TOUCHEXIT, NORMAL, {(LONG)"Font Name 2                   "},
++  0x0000, 0x0001, 0x001E, 0x0001},
++  {FONT4           ,       -1,       -1, G_STRING          ,   /* Object 11 FONT3 */
++  TOUCHEXIT, NORMAL, {(LONG)"Font Name 3                   "},
++  0x0000, 0x0002, 0x001E, 0x0001},
++  {FONT5           ,       -1,       -1, G_STRING          ,   /* Object 12 FONT4 */
++  TOUCHEXIT, NORMAL, {(LONG)"Font Name 4                   "},
++  0x0000, 0x0003, 0x001E, 0x0001},
++  {FONT6           ,       -1,       -1, G_STRING          ,   /* Object 13 FONT5 */
++  TOUCHEXIT, NORMAL, {(LONG)"Font Name 5                   "},
++  0x0000, 0x0004, 0x001E, 0x0001},
++  {FONT7           ,       -1,       -1, G_STRING          ,   /* Object 14 FONT6 */
++  TOUCHEXIT, NORMAL, {(LONG)"Font Name 6                   "},
++  0x0000, 0x0005, 0x001E, 0x0001},
++  {FONT8           ,       -1,       -1, G_STRING          ,   /* Object 15 FONT7 */
++  TOUCHEXIT, NORMAL, {(LONG)"Font Name 7                   "},
++  0x0000, 0x0006, 0x001E, 0x0001},
++  {FONT_BACK       ,       -1,       -1, G_STRING          ,   /* Object 16 FONT8 */
++  TOUCHEXIT, NORMAL, {(LONG)"Font Name 8                   "},
++  0x0000, 0x0007, 0x001E, 0x0001},
++  {IDFONT          ,       -1,       -1, G_FBOXTEXT        ,   /* Object 17 FONT_SIZE */
++  EDITABLE, NORMAL, {(LONG)&rs_tedinfo[0]},
++  0x0419, 0x000F, 0x0008, 0x0001},
++  {       0,       -1,       -1, G_FTEXT           ,   /* Object 18 IDFONT */
++  LASTOB, NORMAL, {(LONG)&rs_tedinfo[1]},
++  0x0002, 0x0005, 0x0407, 0x0600}
+ };
+ 
+ static OBJECT *rs_trindex[] =
+diff -rup windom1-1.21.3.orig/src/frame_calc.c windom1-1.21.3/src/frame_calc.c
+--- windom1-1.21.3.orig/src/frame_calc.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/frame_calc.c	2023-09-30 13:04:20.516493286 +0200
+@@ -57,6 +57,7 @@ int FrameCalc( WINDOW *win, int mode, IN
+ 	scan = frame->list;
+ 	line = GETFINFO(scan)->line;
+ 	hc = 0;
++	finfo = NULL;
+ 	for(; scan;scan=scan->next) {
+ 		/* new line */
+ 		finfo = GETFINFO(scan);
+@@ -73,10 +74,10 @@ int FrameCalc( WINDOW *win, int mode, IN
+ 				  + frame->border;
+ 	}
+ 	
+-	/* TODO : Warning, here finfo may be uninitialised */
+-	w = PROPOR( finfo->flags & FRAME_WSCALE, w, GETFINFO(win)->w);
+-	h = PROPOR( finfo->flags & FRAME_HSCALE, h, GETFINFO(win)->h);
+-	
++	if (finfo) {
++		w = PROPOR( finfo->flags & FRAME_WSCALE, w, GETFINFO(win)->w);
++		h = PROPOR( finfo->flags & FRAME_HSCALE, h, GETFINFO(win)->h);
++	}
+ 	/* Intersection between root area and frame area */
+ 	rc_set( &r2, x, y, w, h);
+ 	rc_intersect( &r1, &r2);
+diff -rup windom1-1.21.3.orig/src/frame_create.c windom1-1.21.3/src/frame_create.c
+--- windom1-1.21.3.orig/src/frame_create.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/frame_create.c	2023-09-30 13:07:18.566270341 +0200
+@@ -501,6 +501,7 @@ static void frame_click( WINDOW *win) {
+ 
+ 		wind_get( win -> handle, WF_CURRXYWH, &x, &y, &w, &h);
+ 		WindCalc( 1, win, x, y, w, h, &xr, &yr, &wr, &hr);
++		col = 0;
+ 		res = get_board( win, evnt.mx, evnt.my, &line, &col, &r);
+ 		if( res == -1)
+ 			return;	/* erreur - pas encore g‚r‚ */
+diff -rup windom1-1.21.3.orig/src/fsel.c windom1-1.21.3/src/fsel.c
+--- windom1-1.21.3.orig/src/fsel.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/fsel.c	2023-09-30 13:13:17.659157659 +0200
+@@ -125,6 +125,7 @@ static int slct_check( UWORD version) {
+ **
+ ** ------------------------------------------------------------------------- */
+ 
++#if 0
+ static int slct_extpath(int ext_num, char *(*ext)[], int path_num, char *(*paths)[]) {
+ 	if(slct_check(0x0100)) {
+ 		slct->num_ext = ext_num;
+@@ -135,6 +136,7 @@ static int slct_extpath(int ext_num, cha
+ 	} else
+ 		return(FALSE);
+ }
++#endif
+ 
+ /* ------------------------------------------------------------------------- */
+ /* ----- slct_morenames ---------------------------------------------------- */
+@@ -159,6 +161,7 @@ static int slct_extpath(int ext_num, cha
+ **
+ ** ------------------------------------------------------------------------- */
+ 
++#if 0
+ static int slct_morenames(int mode, int num, void *ptr)
+ {
+    if(slct_check(0x0100))
+@@ -173,6 +176,7 @@ static int slct_morenames(int mode, int
+    else
+       return(FALSE);
+ }
++#endif
+ 
+ /* ------------------------------------------------------------------------- */
+ /* ----- slct_first -------------------------------------------------------- */
+@@ -197,6 +201,7 @@ static int slct_morenames(int mode, int
+ **
+ ** ------------------------------------------------------------------------- */
+ 
++#if 0
+ static int slct_first(DTA *mydta, int attr)
+ {
+    if(slct_check(0x0102))
+@@ -204,6 +209,7 @@ static int slct_first(DTA *mydta, int at
+    else
+       return(-32);
+ }
++#endif
+ 
+ /* ------------------------------------------------------------------------- */
+ /* ----- slct_next --------------------------------------------------------- */
+@@ -220,12 +226,14 @@ static int slct_first(DTA *mydta, int at
+ **
+ ** ------------------------------------------------------------------------- */
+ 
++#if 0
+ static int slct_next(DTA *mydta) {
+    if(slct_check(0x0102))
+       return(slct->get_next(mydta));
+    else
+       return(-32);
+ }
++#endif
+ 
+ /* ------------------------------------------------------------------------- */
+ /* ----- release_dir ------------------------------------------------------- */
+@@ -242,12 +250,14 @@ static int slct_next(DTA *mydta) {
+ **
+ ** ------------------------------------------------------------------------- */
+ 
++#if 0
+ static int slct_release(void) {
+    if(slct_check(0x0102))
+       return(slct->release_dir());
+    else
+       return(-32);
+ }
++#endif
+ 
+ /* Pr‚paration d'une liste pour
+  * les s‚lecteurs de fichiers.
+@@ -296,7 +306,7 @@ int FselInput( char *path, char *name, c
+ 	char *lpath, char *lext) {
+ 
+ 	INT16 res, dum;
+-	int npath, nmask;
++	int npath = 0, nmask = 0;
+ 	char *p;
+ 	char *paths=NULL, *mask=NULL;
+ 	char buf[FILE_SIZE];
+@@ -479,9 +489,9 @@ int FselInput( char *path, char *name, c
+ 			/* On installe les chemins et mask */
+ 		/* 	slct_extpath( nmask,  &pmask, npath, &ppath);*/
+ 			slct->num_ext 	= nmask;
+-			slct->ext 		= pmask;
++			slct->ext 		= (void *)pmask;
+ 			slct->num_paths = npath;
+-			slct->paths 	= ppath;
++			slct->paths 	= (void *)ppath;
+ 
+ 			/* Appel du s‚lecteur */
+ 			fsel_exinput( path, name, &res, title);
+diff -rup windom1-1.21.3.orig/src/globals.c windom1-1.21.3/src/globals.c
+--- windom1-1.21.3.orig/src/globals.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/globals.c	2023-09-30 14:15:30.268108025 +0200
+@@ -91,7 +91,7 @@ EVNTvar evnt = { 0L, 258, 3, 0,
+ 
+ 
+ 
+-int    _res;					/* r‚solution actuelle
++int    _windom1_res;					/* r‚solution actuelle
+ 								 * 0 - basse, 1 - haute	
+ 								 */
+ 
+diff -rup windom1-1.21.3.orig/src/globals.h windom1-1.21.3/src/globals.h
+--- windom1-1.21.3.orig/src/globals.h	2023-09-30 12:48:56.524316937 +0200
++++ windom1-1.21.3/src/globals.h	2023-09-30 14:15:30.268108025 +0200
+@@ -482,7 +482,7 @@ extern char *__av_name;					/* nom du cl
+ extern char __av_server[9];				/* nom du serveur AV */
+ extern INT16 __av_status[3];			/* action support‚s par le serveur */
+ 
+-extern int _res;
++extern int _windom1_res;
+ extern int __bubble_quit;
+ extern int _menu_disabled;
+ extern WORD __windowlist[];
+diff -rup windom1-1.21.3.orig/src/load_fontid.c windom1-1.21.3/src/load_fontid.c
+--- windom1-1.21.3.orig/src/load_fontid.c	2004-11-24 22:08:29.000000000 +0100
++++ windom1-1.21.3/src/load_fontid.c	2023-09-30 14:30:16.650435263 +0200
+@@ -110,9 +110,11 @@ int load_fontid( void) {
+ 		listfontid = (struct fontid *)malloc( sizeof(struct fontid));
+ 		if( !listfontid) {
+ 			maxfontid = 2;
++#if 0
+ 			strcpy( listfontid[0].name, "system font");
+ 			listfontid[0].id = 1;
+ 			listfontid[0].flags = FNT_MONO;
++#endif
+ 		}
+ 		
+ 		return -33;	/* file not found */
+diff -rup windom1-1.21.3.orig/src/objc_dup.c windom1-1.21.3/src/objc_dup.c
+--- windom1-1.21.3.orig/src/objc_dup.c	2023-09-30 12:48:33.744345461 +0200
++++ windom1-1.21.3/src/objc_dup.c	2023-09-30 12:58:27.116935799 +0200
+@@ -133,7 +133,7 @@ OBJECT *ObjcDup( OBJECT *src, WINDOW *wi
+ 				case G_TITLE:
+ 					mem_adr = __malloc_obspec(&cpy[i],strlen((char*)wparm->wp_spec)+1);
+ 					strcpy(mem_adr,(char*)wparm->wp_spec);
+-					wparm->wp_spec = mem_adr;
++					wparm->wp_spec = (long)mem_adr;
+ 					break;
+ 				}
+ 			}
+diff -rup windom1-1.21.3.orig/src/objc_string.c windom1-1.21.3/src/objc_string.c
+--- windom1-1.21.3.orig/src/objc_string.c	2023-09-30 12:48:33.744345461 +0200
++++ windom1-1.21.3/src/objc_string.c	2023-09-30 12:59:14.876875997 +0200
+@@ -78,7 +78,7 @@ char *ObjcString( OBJECT *tree, int idx,
+ 		case XFREESTR:
+ 			user = tree[idx].ob_spec.userblk;
+ 			if( put)
+-				((W_PARM*)user->ub_parm)->wp_spec = put;
++				((W_PARM*)user->ub_parm)->wp_spec = (long)put;
+ 			return ( (char*)((W_PARM*)user->ub_parm)->wp_spec);
+ 
+ #ifdef MODIF_XEDIT
+diff -rup windom1-1.21.3.orig/src/popup.c windom1-1.21.3/src/popup.c
+--- windom1-1.21.3.orig/src/popup.c	2023-09-30 12:48:33.744345461 +0200
++++ windom1-1.21.3/src/popup.c	2023-09-30 13:44:15.443609886 +0200
+@@ -80,14 +80,12 @@ typedef struct __xuserblk {
+ static XUSERBLK uo[4];
+ 
+ extern void align_obj3d( OBJECT *tree, int index, int mode) ;
+-extern WORD __CDECL ub_box3d     ( PARMBLK *pblk);
+-extern WORD __CDECL ub_boxchar3d ( PARMBLK *pblk);
+ 
+ #define		FL3DMASK	0x0600	/* 3D objects AES 3.4	*/
+ 
+ static void uo_init_type( OBJECT *tree, int index, void *func, 
+ 						  int extype, XUSERBLK * uo) {
+-	uo -> user . ub_parm = & ( uo -> w_parm );
++	uo -> user . ub_parm = (long)& ( uo -> w_parm );
+ 	uo -> user . ub_code = func;
+ 	((W_PARM*)uo -> user . ub_parm) -> wp_type = tree[index].ob_type; 
+ 	((W_PARM*)uo -> user . ub_parm) -> wp_spec = tree[index].ob_spec.index;
+@@ -319,22 +317,22 @@ int MenuPopUp( void *list, int _x, int _
+ 			   int size, int seen, int item, int mode) {
+ 	OBJECT *menu;
+ 	MFDB fond;
+-	WINDOW *win, *front;
++	WINDOW *win = 0, *front;
+ 	int res,key;
+ 	INT16 dum, button;
+ 	INT16 xclip, yclip, wclip, hclip;
+-	INT16 xtclip, ytclip, wtclip, htclip;  /* zone "T"exte, sans l'ascenseur */
++	INT16 xtclip = 0, ytclip = 0, wtclip = 0, htclip = 0;  /* zone "T"exte, sans l'ascenseur */
+ 	INT16 x = _x ;
+ 	INT16 y = _y ;
+ 	INT16 x16,y16;
+ 	EVNTvar save;
+ 	int last_choice = -1;
+-	int new_choice;
++	int new_choice = -1;
+ 	/***** ajout Arnaud *******/
+ 	int popwind = 0;  /* par d‚faut, le pop n'est pas en fenˆtre */
+ 	int poplist=0;  /* TRUE pour les P_LIST avec un ascenseur vertical … g‚rer */
+ 	int max;
+-	int ypos=0, ypos_max;  /* ascenseur vertical si poplist */
++	int ypos=0, ypos_max=0;  /* ascenseur vertical si poplist */
+ 	INT16 attrib[10];
+ #define HCELL attrib[9]
+ 	int len_max = 0;
+@@ -652,9 +650,9 @@ GO_M1:
+ 			if ((poplist) && (!button) && (new_choice>seen))  /* clic sur l'ascenseur */
+ 			{
+ 				int decal=0;  /* dcalage … appliquer sur ypos ou 0 */
+-				INT16 x, y;
++				INT16 xx, yy;
+ 				int new_ypos;
+-				EVNTvar save;
++				EVNTvar save2;
+ 				int e;
+ 				int obj_asc_sele; /* objet du formulaire s‚lectionn‚ */
+ 				
+@@ -663,7 +661,7 @@ GO_M1:
+ 					case ASC_UP : decal = -1; break;
+ 					case ASC_DW : decal = 1;  break;
+ 					case ASC_PG : 
+-						objc_offset(menu,seen+ASC_SL,&x,&y);
++						objc_offset(menu,seen+ASC_SL,&xx,&yy);
+ 						decal = (evnt.my < y) ? -seen : seen;
+ 						break;
+ 					case ASC_SL : decal = 0;
+@@ -688,7 +686,7 @@ GO_M1:
+ 				}
+ 					
+ 				if( decal) {  /* gestion d'un evnt LINE/PAGE_UP/DW */
+-					save = evnt;
++					save2 = evnt;
+ 					evnt.bmask  = 1 ;
+ 					evnt.bstate = 0;
+ 					evnt.bclick = 1;
+@@ -730,13 +728,13 @@ GO_M1:
+ 									&dum, &dum, &evnt.keybd, &dum);
+ 						evnt.timer = TEMPO2;
+ 					} while ( ! (e & MU_BUTTON) ) ;
+-					evnt = save;
++					evnt = save2;
+ 				} else { /* gestion d'un SLIDER temps r‚els */
+ 					/* decal est maintenant le decalage entre la */
+ 					/* position du slider et la position de la souris */
+-					objc_offset(menu,seen+ASC_SL,&x,&y);
++					objc_offset(menu,seen+ASC_SL,&xx,&yy);
+ 					decal = evnt.my - y;
+-					objc_offset(menu,seen+ASC_PG,&x,&y);
++					objc_offset(menu,seen+ASC_PG,&xx,&yy);
+ 										
+ 					do {
+ 						/* ‚valuation de new_ypos */
+diff -rup windom1-1.21.3.orig/src/shel_write.c windom1-1.21.3/src/shel_write.c
+--- windom1-1.21.3.orig/src/shel_write.c	2004-11-24 22:08:30.000000000 +0100
++++ windom1-1.21.3/src/shel_write.c	2023-09-30 14:24:15.267510274 +0200
+@@ -56,13 +56,15 @@ int ShelWrite( char *prg, char *cmd, voi
+ 		p = strrchr( name, '.');
+ 		if( p) *p = '\0';
+ 		strupr( name);
+-		sprintf( aesname, "%-8s", name);
++		sprintf( aesname, "%-8.8s", name);
+ 		id_app = appl_find( aesname);
+ 		if( id_app >= 0) {
++			char **pp;
+ 			msg[0] = VA_START;
+ 			msg[1] = app.id;
+ 			msg[2] = 0;
+-			*(char **)&msg[3] = file;
++			pp = (char **)&msg[3];
++			*pp = file;
+ 		    msg[5] = 0;
+     	    msg[6] = 0;
+     	    msg[7] = 0;
+diff -rup windom1-1.21.3.orig/src/userdef.c windom1-1.21.3/src/userdef.c
+--- windom1-1.21.3.orig/src/userdef.c	2004-11-24 22:08:30.000000000 +0100
++++ windom1-1.21.3/src/userdef.c	2023-09-30 14:15:30.268108025 +0200
+@@ -116,11 +116,9 @@
+  *  surcharg‚es en variables locales.
+  */
+ 
+-static INT16 tab[12], dum;	/* utilis‚ par v_plines() */
+-static INT16 attrib[10];	/* utilis‚ par vqt_attributes() */
++static INT16 tab[12];	/* utilis‚ par v_plines() */
+ static PARMBLK pb;
+ static char str[128];
+-static GRECT r1, r2;		/* pour user_draw */
+ 
+ /*	Fonctions externes
+  */
+@@ -150,10 +148,10 @@ static VDIPB vdi_params = {
+         &vdi_ptsout[0] 
+ };
+ 
+-static void my_v_ftext( int handle, int x, int y, char *str) {
++static void my_v_ftext( int handle, int x, int y, char *_str) {
+ 	static short i;
+ 
+-	i = vdi_str2array(str, vdi_intin);
++	i = vdi_str2array(_str, vdi_intin);
+ 	vdi_ptsin[0] = x;
+ 	vdi_ptsin[1] = y;
+ 
+@@ -165,26 +163,26 @@ static void my_v_ftext( int handle, int
+ 	vdi(&vdi_params);
+ }
+ 
+-static void my_v_gtext (int handle, int x, int y, char *str) {
++static void my_v_gtext (int handle, int x, int y, char *_str) {
+ 	vdi_ptsin[0] = x;
+ 	vdi_ptsin[1] = y;
+ 	
+ 	vdi_control[0] = 8;
+ 	vdi_control[1] = 1;
+-	vdi_control[3] = vdi_str2array (str, vdi_intin);
++	vdi_control[3] = vdi_str2array (_str, vdi_intin);
+ 	vdi_control[5] = 0;
+ 	vdi_control[6] = handle;
+ 
+ 	vdi (&vdi_params);
+ }
+ 
+-static void my_vqt_extent (int handle, char *str, INT16 extent[]) {
++static void my_vqt_extent (int handle, char *_str, INT16 extent[]) {
+ 	static int i;
+ 	static INT16 *ptr;
+ 
+ 	vdi_control[0] = 116;
+ 	vdi_control[1] = vdi_control[5] = 0;
+-	vdi_control[3] = vdi_str2array (str, vdi_intin);
++	vdi_control[3] = vdi_str2array (_str, vdi_intin);
+ 	vdi_control[6] = handle;
+ 
+ 	vdi (&vdi_params);
+@@ -246,6 +244,7 @@ static void set_parm( PARMBLK *dest, PAR
+  *	Retourne la couleur fix‚ par Let's them fly
+  */
+ 
++#if 0
+ static int let_them_fly_color( void) {
+ 	static char *buff;
+ 	
+@@ -256,19 +255,20 @@ static int let_them_fly_color( void) {
+ 	else
+ 		return( CONF(app)->key_color & 0x000F);
+ }
++#endif
+ 
+ /*
+  *	S‚lectionne fonte, couleur et taille du texte
+  *  retourne la fonte choisie
+  */
+ 
+-int set_attrib( ATTRIB *attrib) {
+-	static INT16 dum;
+-	static int res;
++static int set_attrib( ATTRIB *attrib) {
++	INT16 dum;
++	int res;
+ 
+ 	/* Dans les modes basses r‚solution, on ne gŠre que la
+ 	   font systŠme pour des raisons esth‚tiques */
+-	if( _res) {
++	if( _windom1_res) {
+ 		if( app.gdos && attrib->font >= 0) res = vst_font( app.handle, attrib->font);
+ 		else res = SYSFONT;
+ 		if( attrib->size) vst_point( app.handle, attrib->size, &dum, &dum, &dum, &dum);
+@@ -290,7 +290,7 @@ static void draw_text( PARMBLK *pblk, in
+ 	
+ 	effect = 0;
+ 	
+-	if( _res == 0) y++;
++	if( _windom1_res == 0) y++;
+ 	/* effets */
+ 	if( pblk->pb_currstate & STATE9)
+ 		effect |= BOLD;
+@@ -448,6 +448,7 @@ static void draw_but3D(PARMBLK* pblk, ch
+ 	static int hcar;
+ 	static int x, y, width;
+ 	static int col1, col2;
++	INT16 attrib[10];	/* utilis‚ par vqt_attributes() */
+ 	
+    	vqt_attributes( app.handle, attrib);
+ 	hcar = attrib[7];
+@@ -711,6 +712,7 @@ static char* str_formater( char *src, ch
+ 
+ static void set_attrib_xtedinfo( ATTRIB *attrib, int smallsize, TEDINFO *tedinfo, INT16 *hchar, INT16 *hcell) {
+ 	static int fontid;
++	INT16 dum;
+ 	
+ 	fontid = set_attrib( attrib);
+ 
+@@ -872,6 +874,8 @@ WORD __CDECL ub_boxtext3d( PARMBLK *pblk
+ 	static INT16 tabclip[4];
+ 	static int width;
+ 	static int fillpattern, interiorcol, border, bordercol;
++	INT16 attrib[10];	/* utilis‚ par vqt_attributes() */
++	INT16 dum;
+ 
+ 	/* on masque */ 
+ 	grect2xy( &pblk->pb_xc, tabclip);
+@@ -947,12 +951,12 @@ WORD __CDECL ub_boxtext3d( PARMBLK *pblk
+ 
+ WORD __CDECL ub_boxchar3d( PARMBLK *pblk) {
+ 	static int x,y;
+-	static int x1,y1,x2,y2;
+ 	static INT16 char_l, char_h, cell_l, cell_h;
+ 	static int fontid;
+ 	static int fillpattern, interiorcol, border, bordercol;
+ 	static BFOBSPEC obspec;
+ 	static char c[2];
++	INT16 attrib[10];	/* utilis‚ par vqt_attributes() */
+ 
+ 	/* on masque */ 
+ 	grect2xy( &pblk->pb_xc, tab);
+@@ -967,10 +971,6 @@ WORD __CDECL ub_boxchar3d( PARMBLK *pblk
+ 	draw_box3D( pblk, border, bordercol, fillpattern, interiorcol);
+ 
+ 	grect2xy( &pblk->pb_x, tab);
+-	x1 = tab[0] ;
+-	y1 = tab[1] ;
+-	x2 = tab[2] ;
+-	y2 = tab[3] ;
+ 	
+ 	/* et le caractere */
+ 	vswr_mode( app.handle, obspec.textmode? MD_REPLACE : MD_TRANS);
+@@ -1057,10 +1057,11 @@ WORD __CDECL ub_box3d( PARMBLK *pblk) {
+ WORD __CDECL ub_but3d( PARMBLK *pblk) {
+ 	static int x,y;
+ 	static int border;
+-	static int x1,y1,x2,y2;
++	static int x1,y1;
+ 	static int char_h, cell_h;
+ 	static int width;
+ 	static int rac_pos;
++	INT16 attrib[10];	/* utilis‚ par vqt_attributes() */
+ 
+ 	/* Recherche raccourci clavier */
+ 	rac_pos = find_shortcut( pblk);
+@@ -1078,8 +1079,6 @@ WORD __CDECL ub_but3d( PARMBLK *pblk) {
+ 	grect2xy( &pblk->pb_x, tab);
+ 	x1 = tab[0] ;
+ 	y1 = tab[1] ;
+-	x2 = tab[2] ;
+-	y2 = tab[3] ;
+ 	
+ 	/* et le texte */
+ 	vswr_mode( app.handle, MD_TRANS);
+@@ -1157,24 +1156,24 @@ WORD __CDECL ub_button( PARMBLK *pblk) {
+ 	if( IS_FLAGS(pblk,RBUTTON)) {	
+ 		/* Bouton radio */
+ 		if( IS_STATE(pblk,DRAW3D)) {
+-			if(  _res)
++			if(  _windom1_res)
+ 				pb.pb_obj = ( pblk->pb_tree[pblk->pb_obj].ob_state & STATE8)?HRAD2:HRAD;
+ 			else
+ 				pb.pb_obj = ( pblk->pb_tree[pblk->pb_obj].ob_state & STATE8)?LRAD2:LRAD;
+ 		} else {
+-			if(  _res)
++			if(  _windom1_res)
+ 				pb.pb_obj = ( pblk->pb_tree[pblk->pb_obj].ob_state & STATE8)?MHRAD2:MHRAD;
+ 			else
+ 				pb.pb_obj = ( pblk->pb_tree[pblk->pb_obj].ob_state & STATE8)?MLRAD2:MLRAD;
+ 		}
+ 	} else {
+ 		if( IS_STATE(pblk,DRAW3D)) {
+-			if(  _res)
++			if(  _windom1_res)
+ 				pb.pb_obj = ( pblk->pb_tree[pblk->pb_obj].ob_state & STATE8)?HBUT2:HBUT;
+ 			else
+ 				pb.pb_obj = ( pblk->pb_tree[pblk->pb_obj].ob_state & STATE8)?LBUT2:LBUT;
+ 		} else {
+-			if(  _res)
++			if( _windom1_res)
+ 				pb.pb_obj = ( pblk->pb_tree[pblk->pb_obj].ob_state & STATE8)?MHBUT2:MHBUT;
+ 			else
+ 				pb.pb_obj = ( pblk->pb_tree[pblk->pb_obj].ob_state & STATE8)?MLBUT2:MLBUT;
+@@ -1213,6 +1212,8 @@ WORD __CDECL ub_onglet( PARMBLK *pblk) {
+ 	static int hcar, hcell;
+ 	static int rac_pos;
+ 	static int x,y,sel,draw3d;
++	INT16 dum;
++	INT16 attrib[10];	/* utilis‚ par vqt_attributes() */
+ 
+ 	/* Recherche raccourci clavier */
+ 	rac_pos = find_shortcut( pblk);
+@@ -1313,9 +1314,9 @@ WORD __CDECL ub_boxcircle( PARMBLK *pblk
+ 	pb.pb_tree  = __xtype_trindex(USERDEF);
+ 	
+ 	if( IS_STATE(pblk,DRAW3D))
+-		pb.pb_obj = _res?HCIR:LCIR;
++		pb.pb_obj = _windom1_res?HCIR:LCIR;
+ 	else
+-		pb.pb_obj = _res?MHCIR:MLCIR;
++		pb.pb_obj = _windom1_res?MHCIR:MLCIR;
+ 	set_parm( &pb, pblk);
+ 
+ 	/* masquer */
+@@ -1353,7 +1354,8 @@ WORD __CDECL ub_but3D( PARMBLK *pblk) {
+  */
+ 
+ WORD __CDECL ub_boxtitle(PARMBLK* pblk) {
+-	static int hcar;
++	int hcar;
++	INT16 attrib[10];	/* utilis‚ par vqt_attributes() */
+ 
+    	grect2xy(&pblk->pb_xc, tab);
+ 	vs_clip( app.handle, 1, tab);
+@@ -1448,6 +1450,7 @@ WORD __CDECL ub_popuptext( PARMBLK *pblk
+ 	static int hcar, hcell;
+ 	static int rac_pos;
+ 	static int x,y;
++	INT16 attrib[10];	/* utilis‚ par vqt_attributes() */
+ 	
+ 	/* Recherche raccourci clavier */
+ 	rac_pos = find_shortcut( pblk);
+@@ -1525,7 +1528,8 @@ WORD __CDECL ub_mntitle( PARMBLK *pblk)
+ 	static int line;
+ 	static int pre, post;
+ 	static int type;
+-	static GRECT r1, r2;
++	GRECT r1, r2;
++	INT16 attrib[10];	/* utilis‚ par vqt_attributes() */
+ 	
+ 	line = 0;
+ 	pre = 0;
+@@ -1786,6 +1790,7 @@ WORD __CDECL ub_editable( PARMBLK *pblk)
+ 	static int y;
+ 	static W_XEDIT *xedit;
+ 	static char *pvalid;
++	GRECT r1, r2;		/* pour user_draw */
+ 	
+ 	xedit = (W_XEDIT *)pblk->pb_parm;
+ 	pvalid = xedit->tedinfo->te_pvalid;
+diff -rup windom1-1.21.3.orig/src/userdef.h windom1-1.21.3/src/userdef.h
+--- windom1-1.21.3.orig/src/userdef.h	2004-11-24 22:08:30.000000000 +0100
++++ windom1-1.21.3/src/userdef.h	2023-09-30 13:46:31.443446594 +0200
+@@ -62,3 +62,25 @@ typedef struct {
+ 		WINDOW *win;
+ 		void *draw, *data;
+ 	} USER_DRAW;
++
++/*    Fonctions externes
++ */
++WORD __CDECL ub_button    ( PARMBLK *pblk);
++WORD __CDECL ub_boxtitle  ( PARMBLK *pblk);
++WORD __CDECL ub_xboxchar  ( PARMBLK *pblk);
++WORD __CDECL ub_onglet    ( PARMBLK *pblk);
++WORD __CDECL ub_boxcircle ( PARMBLK *pblk);
++WORD __CDECL ub_but3D     ( PARMBLK *pblk);
++WORD __CDECL ub_ulinetext ( PARMBLK *pblk);
++WORD __CDECL ub_popuptext ( PARMBLK *pblk);
++WORD __CDECL ub_mntitle   ( PARMBLK *pblk);
++WORD __CDECL ub_dialmover ( PARMBLK *pblk);
++WORD __CDECL ub_editable  ( PARMBLK *pblk);
++WORD __CDECL ub_but3d     ( PARMBLK *pblk);
++WORD __CDECL ub_multiligne( PARMBLK *pblk);
++WORD __CDECL ub_box3d     ( PARMBLK *pblk);
++WORD __CDECL ub_ibox3d    ( PARMBLK *pblk);
++WORD __CDECL ub_boxchar3d ( PARMBLK *pblk);
++WORD __CDECL ub_boxtext3d ( PARMBLK *pblk);
++
++WORD __CDECL xdraw_cicon  ( PARMBLK *pb);
+diff -rup windom1-1.21.3.orig/src/vq_xaaes.c windom1-1.21.3/src/vq_xaaes.c
+--- windom1-1.21.3.orig/src/vq_xaaes.c	2004-11-24 22:08:30.000000000 +0100
++++ windom1-1.21.3/src/vq_xaaes.c	2023-09-30 13:55:22.986163100 +0200
+@@ -25,6 +25,7 @@
+  */
+ 
+ #include <gem.h>
++#include "windom.h"
+ 
+ /********************* MagiC Binding ************************/
+ 
+diff -rup windom1-1.21.3.orig/src/vqt_xname2.c windom1-1.21.3/src/vqt_xname2.c
+--- windom1-1.21.3.orig/src/vqt_xname2.c	2004-11-24 22:08:30.000000000 +0100
++++ windom1-1.21.3/src/vqt_xname2.c	2023-09-30 13:35:26.670911436 +0200
+@@ -26,6 +26,7 @@
+ 
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <string.h>
+ #include "globals.h"
+ 
+ /*
+diff -rup windom1-1.21.3.orig/src/wind_get.c windom1-1.21.3/src/wind_get.c
+--- windom1-1.21.3.orig/src/wind_get.c	2004-11-24 22:08:30.000000000 +0100
++++ windom1-1.21.3/src/wind_get.c	2023-09-30 12:57:35.277000710 +0200
+@@ -119,12 +119,12 @@ int WindGet( WINDOW *win, int mode, ...)
+ 			res = (*__calc)( win, 1, x, y, w, h);
+ 		else
+ 			res = wind_get( win->handle, WF_CURRXYWH, x, y, w, h);
+-			if( *w == 0 && *h == 0) {
+-				*x = win->createsize.g_x;
+-				*y = win->createsize.g_y;
+-				*w = win->createsize.g_w;
+-				*h = win->createsize.g_h;
+-			}
++		if( *w == 0 && *h == 0) {
++			*x = win->createsize.g_x;
++			*y = win->createsize.g_y;
++			*w = win->createsize.g_w;
++			*h = win->createsize.g_h;
++		}
+ 		break;
+ 	case WF_BEVENT:
+ 		if( win->status & WS_UNTOPPABLE)
+diff -rup windom1-1.21.3.orig/src/wsystem.rsh windom1-1.21.3/src/wsystem.rsh
+--- windom1-1.21.3.orig/src/wsystem.rsh	2004-11-24 22:08:30.000000000 +0100
++++ windom1-1.21.3/src/wsystem.rsh	2023-09-30 13:01:43.430023317 +0200
+@@ -1261,46 +1261,46 @@ static CICON rs_cicon[] =
+ #endif
+ 
+ static CICONBLK rs_ciconblk[] =
+-{ {RS0_MMASK, RS0_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,   8,   5,   1,   6,   8, &rs_cicon[0]},
+-  {RS1_MMASK, RS1_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,   8,   5,   1,   6,   8, &rs_cicon[2]},
+-  {RS2_MMASK, RS2_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,   8,   5,   1,   6,   8, &rs_cicon[4]},
+-  {RS3_MMASK, RS3_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,   8,   5,   1,   6,   8, &rs_cicon[5]},
+-  {RS4_MMASK, RS4_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,  16,   5,   5,   6,   8, &rs_cicon[6]},
+-  {RS5_MMASK, RS5_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,  16,   5,   5,   6,   8, &rs_cicon[8]},
+-  {RS6_MMASK, RS6_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,  16,   5,   5,   6,   8, &rs_cicon[10]},
+-  {RS7_MMASK, RS7_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,  16,   5,   5,   6,   8, &rs_cicon[11]},
+-  {RS8_MMASK, RS8_MDATA, "\0\000", 0x1000|'\0',
+-    5,   7,   0,   0,  16,  16,   5,   4,   6,   8, &rs_cicon[12]},
+-  {RS9_MMASK, RS9_MDATA, "\0\000", 0x1000|'\0',
+-    5,   2,   0,   0,  16,   8,   3,   0,   6,   8, &rs_cicon[14]},
+-  {RS10_MMASK, RS10_MDATA, "\0\000", 0x1000|'\0',
+-    5,   7,   0,   0,  16,  16,   5,   4,   6,   8, &rs_cicon[16]},
+-  {RS11_MMASK, RS11_MDATA, "\0\000", 0x1000|'\0',
+-    5,   2,   0,   0,  16,   8,   3,   0,   6,   8, &rs_cicon[17]},
+-  {RS12_MMASK, RS12_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,  16,   5,   5,   6,   8, &rs_cicon[18]},
+-  {RS13_MMASK, RS13_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,  16,   5,   5,   6,   8, &rs_cicon[20]},
+-  {RS14_MMASK, RS14_MDATA, "\0\000", 0x1000|'\0',
+-    8,   2,   0,   0,  16,   8,   5,   5,   6,   8, &rs_cicon[22]},
+-  {RS15_MMASK, RS15_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,  16,   5,   5,   6,   8, &rs_cicon[24]},
+-  {RS16_MMASK, RS16_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,  16,   5,   5,   6,   8, &rs_cicon[25]},
+-  {RS17_MMASK, RS17_MDATA, "\0\000", 0x1000|'\0',
+-    8,   2,   0,   0,  16,   8,   5,   5,   6,   8, &rs_cicon[26]},
+-  {RS18_MMASK, RS18_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,   8,   5,   5,   6,   8, &rs_cicon[27]},
+-  {RS19_MMASK, RS19_MDATA, "\0\000", 0x1000|'\0',
+-   14,  21,   0,   0,  16,   8,   5,   5,   6,   8, &rs_cicon[29]}
++{ {{RS0_MMASK, RS0_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,   8,   5,   1,   6,   8}, &rs_cicon[0]},
++  {{RS1_MMASK, RS1_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,   8,   5,   1,   6,   8}, &rs_cicon[2]},
++  {{RS2_MMASK, RS2_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,   8,   5,   1,   6,   8}, &rs_cicon[4]},
++  {{RS3_MMASK, RS3_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,   8,   5,   1,   6,   8}, &rs_cicon[5]},
++  {{RS4_MMASK, RS4_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,  16,   5,   5,   6,   8}, &rs_cicon[6]},
++  {{RS5_MMASK, RS5_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,  16,   5,   5,   6,   8}, &rs_cicon[8]},
++  {{RS6_MMASK, RS6_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,  16,   5,   5,   6,   8}, &rs_cicon[10]},
++  {{RS7_MMASK, RS7_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,  16,   5,   5,   6,   8}, &rs_cicon[11]},
++  {{RS8_MMASK, RS8_MDATA, "\0\000", 0x1000|'\0',
++    5,   7,   0,   0,  16,  16,   5,   4,   6,   8}, &rs_cicon[12]},
++  {{RS9_MMASK, RS9_MDATA, "\0\000", 0x1000|'\0',
++    5,   2,   0,   0,  16,   8,   3,   0,   6,   8}, &rs_cicon[14]},
++  {{RS10_MMASK, RS10_MDATA, "\0\000", 0x1000|'\0',
++    5,   7,   0,   0,  16,  16,   5,   4,   6,   8}, &rs_cicon[16]},
++  {{RS11_MMASK, RS11_MDATA, "\0\000", 0x1000|'\0',
++    5,   2,   0,   0,  16,   8,   3,   0,   6,   8}, &rs_cicon[17]},
++  {{RS12_MMASK, RS12_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,  16,   5,   5,   6,   8}, &rs_cicon[18]},
++  {{RS13_MMASK, RS13_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,  16,   5,   5,   6,   8}, &rs_cicon[20]},
++  {{RS14_MMASK, RS14_MDATA, "\0\000", 0x1000|'\0',
++    8,   2,   0,   0,  16,   8,   5,   5,   6,   8}, &rs_cicon[22]},
++  {{RS15_MMASK, RS15_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,  16,   5,   5,   6,   8}, &rs_cicon[24]},
++  {{RS16_MMASK, RS16_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,  16,   5,   5,   6,   8}, &rs_cicon[25]},
++  {{RS17_MMASK, RS17_MDATA, "\0\000", 0x1000|'\0',
++    8,   2,   0,   0,  16,   8,   5,   5,   6,   8}, &rs_cicon[26]},
++  {{RS18_MMASK, RS18_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,   8,   5,   5,   6,   8}, &rs_cicon[27]},
++  {{RS19_MMASK, RS19_MDATA, "\0\000", 0x1000|'\0',
++   14,  21,   0,   0,  16,   8,   5,   5,   6,   8}, &rs_cicon[29]}
+ };
+ 
+ static WORD rgb_palette[][4] =
+diff -rup windom1-1.21.3.orig/src/xrsrc.c windom1-1.21.3/src/xrsrc.c
+--- windom1-1.21.3.orig/src/xrsrc.c	2004-11-24 22:08:30.000000000 +0100
++++ windom1-1.21.3/src/xrsrc.c	2023-09-30 13:28:19.688089449 +0200
+@@ -45,27 +45,6 @@
+ 
+ static XRSRCFIX     __iconsys;        /* fixe les icones couleurs internes */
+ 
+-/*    Fonctions externes
+- */
+-WORD __CDECL ub_button    ( PARMBLK *pblk);
+-WORD __CDECL ub_boxtitle  ( PARMBLK *pblk);
+-WORD __CDECL ub_xboxchar  ( PARMBLK *pblk);
+-WORD __CDECL ub_onglet    ( PARMBLK *pblk);
+-WORD __CDECL ub_boxcircle ( PARMBLK *pblk);
+-WORD __CDECL ub_but3D     ( PARMBLK *pblk);
+-WORD __CDECL ub_ulinetext ( PARMBLK *pblk);
+-WORD __CDECL ub_popuptext ( PARMBLK *pblk);
+-WORD __CDECL user_draw    ( PARMBLK *pblk);
+-WORD __CDECL ub_mntitle   ( PARMBLK *pblk);
+-WORD __CDECL ub_dialmover ( PARMBLK *pblk);
+-WORD __CDECL ub_editable  ( PARMBLK *pblk);
+-WORD __CDECL ub_but3d     ( PARMBLK *pblk);
+-WORD __CDECL ub_multiligne( PARMBLK *pblk);
+-WORD __CDECL ub_box3d     ( PARMBLK *pblk);
+-WORD __CDECL ub_ibox3d    ( PARMBLK *pblk);
+-WORD __CDECL ub_boxchar3d ( PARMBLK *pblk);
+-WORD __CDECL ub_boxtext3d ( PARMBLK *pblk);
+-
+ #ifdef MODIF_XEDIT
+ size_t realloc_xedit( size_t old, size_t len);
+ #endif
+--- windom1-1.21.3.orig/demo/evnt-fnc.c	2004-11-24 22:08:26.000000000 +0100
++++ windom1-1.21.3/demo/evnt-fnc.c	2023-09-30 14:35:57.376716926 +0200
+@@ -28,9 +28,9 @@
+  */
+ 
+ void ap_term( void) {
+-    /* Save the Set up */
+-    if( param.setup & SETUP_AUTOSAVE)
+-    	setup_save();
++	/* Save the Set up */
++	if( param.setup & SETUP_AUTOSAVE)
++		setup_save();
+ 	/* Close all windows */
+ 	while( wglb.first) {
+ 		ApplWrite( app.id, WM_CLOSED, wglb.first->handle, 0, 0, 0, 0);
+--- windom1-1.21.3.orig/demo/win-cust.c	2004-11-24 22:08:26.000000000 +0100
++++ windom1-1.21.3/demo/win-cust.c	2023-09-30 14:37:33.359941803 +0200
+@@ -96,7 +96,8 @@ static void draw_custom( WINDOW *win, DR
+  */
+ 
+ static void timer_custom( WINDOW *win, DRAW *draw) {
+-	draw->color = ++draw->color % 16;
++	++draw->color;
++	draw->color = draw->color % 16;
+ 	snd_rdw( win);
+ }
+ 

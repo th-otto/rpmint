@@ -15,6 +15,7 @@ patches/windom1/windom1-cross.patch
 patches/windom1/windom1-menuexec.patch
 patches/windom1/windom1-formthumb.patch
 patches/windom1/windom1-gemlib.patch
+patches/windom1/windom1-gcc.patch
 "
 
 BINFILES="
