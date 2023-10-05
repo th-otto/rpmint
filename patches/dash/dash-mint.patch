@@ -1,0 +1,287 @@
+diff -rup dash-0.5.12.orig/src/bltin/printf.c dash-0.5.12/src/bltin/printf.c
+--- dash-0.5.12.orig/src/bltin/printf.c	2020-06-03 03:19:23.000000000 +0200
++++ dash-0.5.12/src/bltin/printf.c	2023-10-04 08:34:44.044061427 +0200
+@@ -52,6 +52,7 @@ static void      check_conversion(const
+ static int	rval;
+ static char  **gargv;
+ 
++#undef isodigit
+ #define isodigit(c)	((c) >= '0' && (c) <= '7')
+ #define octtobin(c)	((c) - '0')
+ 
+diff -rup dash-0.5.12.orig/src/expand.c dash-0.5.12/src/expand.c
+--- dash-0.5.12.orig/src/expand.c	2022-12-11 07:29:21.000000000 +0100
++++ dash-0.5.12/src/expand.c	2023-10-04 08:34:03.074105393 +0200
+@@ -1168,6 +1168,7 @@ void *opendir_interruptible(const char *
+ 	return opendir(pathname);
+ }
+ #else
++#undef GLOB_ALTDIRFUNC
+ #define GLOB_ALTDIRFUNC 0
+ #endif
+ 
+--- /dev/null	2023-08-17 17:18:57.178888522 +0200
++++ dash-0.5.12/src/signames.c	2023-10-04 08:47:27.146575866 +0200
+@@ -0,0 +1,174 @@
++/* This file was automatically created by ./mksignames.
++   Do not edit.  Edit support/mksignames.c instead. */
++
++#include <signal.h>
++
++/* A translation list so we can be polite to our users. */
++const char *const signal_names[NSIG + 1] = {
++    "EXIT",
++#ifdef __MINT__
++    "HUP",
++    "INT",
++    "QUIT",
++    "ILL",
++    "TRAP",
++    "ABRT",
++	"PRIV",
++    "FPE",
++    "KILL",
++	"BUS",
++    "SEGV",
++    "SYS",
++    "PIPE",
++    "ALRM",
++    "TERM",
++    "URG",
++    "STOP",
++    "TSTP",
++    "CONT",
++    "CHLD",
++    "TTIN",
++    "TTOU",
++    "IO",
++    "XCPU",
++    "XFSZ",
++    "VTALRM",
++    "PROF",
++    "WINCH",
++    "USR1",
++    "USR2",
++    "PWR",
++#else
++    "HUP",
++    "INT",
++    "QUIT",
++    "ILL",
++    "TRAP",
++    "ABRT",
++    "BUS",
++    "FPE",
++    "KILL",
++    "USR1",
++    "SEGV",
++    "USR2",
++    "PIPE",
++    "ALRM",
++    "TERM",
++    "16",
++    "CHLD",
++    "CONT",
++    "STOP",
++    "TSTP",
++    "TTIN",
++    "TTOU",
++    "URG",
++    "XCPU",
++    "XFSZ",
++    "VTALRM",
++    "PROF",
++    "WINCH",
++    "IO",
++    "PWR",
++    "SYS",
++#endif
++#if NSIG > 32
++    "32",
++#endif
++#if NSIG > 33
++    "33",
++#endif
++#if NSIG > 34
++    "RTMIN",
++#endif
++#if NSIG > 35
++    "RTMIN+1",
++#endif
++#if NSIG > 36
++    "RTMIN+2",
++#endif
++#if NSIG > 37
++    "RTMIN+3",
++#endif
++#if NSIG > 38
++    "RTMIN+4",
++#endif
++#if NSIG > 39
++    "RTMIN+5",
++#endif
++#if NSIG > 40
++    "RTMIN+6",
++#endif
++#if NSIG > 41
++    "RTMIN+7",
++#endif
++#if NSIG > 42
++    "RTMIN+8",
++#endif
++#if NSIG > 43
++    "RTMIN+9",
++#endif
++#if NSIG > 44
++    "RTMIN+10",
++#endif
++#if NSIG > 45
++    "RTMIN+11",
++#endif
++#if NSIG > 46
++    "RTMIN+12",
++#endif
++#if NSIG > 47
++    "RTMIN+13",
++#endif
++#if NSIG > 48
++    "RTMIN+14",
++#endif
++#if NSIG > 49
++    "RTMIN+15",
++#endif
++#if NSIG > 50
++    "RTMAX-14",
++#endif
++#if NSIG > 51
++    "RTMAX-13",
++#endif
++#if NSIG > 52
++    "RTMAX-12",
++#endif
++#if NSIG > 53
++    "RTMAX-11",
++#endif
++#if NSIG > 54
++    "RTMAX-10",
++#endif
++#if NSIG > 55
++    "RTMAX-9",
++#endif
++#if NSIG > 56
++    "RTMAX-8",
++#endif
++#if NSIG > 57
++    "RTMAX-7",
++#endif
++#if NSIG > 58
++    "RTMAX-6",
++#endif
++#if NSIG > 59
++    "RTMAX-5",
++#endif
++#if NSIG > 60
++    "RTMAX-4",
++#endif
++#if NSIG > 61
++    "RTMAX-3",
++#endif
++#if NSIG > 62
++    "RTMAX-2",
++#endif
++#if NSIG > 63
++    "RTMAX-1",
++#endif
++#if NSIG > 64
++    "RTMAX",
++#endif
++    (char *)0x0
++};
+--- dash-0.5.12.orig/src/Makefile.am	2020-06-03 04:23:24.000000000 +0200
++++ dash-0.5.12/src/Makefile.am	2023-10-04 08:57:41.322669665 +0200
+@@ -27,8 +27,8 @@
+ 	expand.h \
+ 	init.h input.h jobs.h machdep.h mail.h main.h memalloc.h miscbltin.h \
+ 	myhistedit.h mystring.h options.h output.h parser.h redir.h shell.h \
+-	show.h system.h trap.h var.h
+-dash_LDADD = builtins.o init.o nodes.o signames.o syntax.o
++	show.h system.h trap.h var.h signames.c
++dash_LDADD = builtins.o init.o nodes.o syntax.o
+ 
+ HELPERS = mkinit mksyntax mknodes mksignames
+ 
+@@ -61,9 +61,6 @@
+ syntax.c syntax.h: mksyntax
+ 	$(AM_V_GEN)./$^
+ 
+-signames.c: mksignames
+-	$(AM_V_GEN)./$^
+-
+ mksyntax: token.h
+ 
+ $(HELPERS): %: %.c
+--- dash-0.5.12.orig/src/histedit.c	2020-06-03 03:19:23.000000000 +0200
++++ dash-0.5.12/src/histedit.c	2023-10-05 10:32:55.135320489 +0200
+@@ -215,11 +215,7 @@
+ 	if (argc == 1)
+ 		sh_error("missing history argument");
+ 
+-#ifdef __GLIBC__
+-	optind = 0;
+-#else
+-	optreset = 1; optind = 1; /* initialize getopt */
+-#endif
++	optind = 0; /* initialize getopt */
+ 	while (not_fcnumber(argv[optind]) &&
+ 	      (ch = getopt(argc, argv, ":e:lnrs")) != -1)
+ 		switch ((char)ch) {
+--- dash-0.5.12.orig/src/main.h	2020-06-03 03:19:23.000000000 +0200
++++ dash-0.5.12/src/main.h	2023-10-05 10:35:56.375124356 +0200
+@@ -42,13 +42,6 @@
+ extern int shlvl;
+ #define rootshell (!shlvl)
+ 
+-#ifdef __GLIBC__
+-/* glibc sucks */
+-extern int *dash_errno;
+-#undef errno
+-#define errno (*dash_errno)
+-#endif
+-
+ void readcmdfile(char *);
+ int dotcmd(int, char **);
+ int exitcmd(int, char **);
+--- dash-0.5.12.orig/src/main.c	2022-01-20 06:54:13.000000000 +0100
++++ dash-0.5.12/src/main.c	2023-10-05 10:35:57.445123197 +0200
+@@ -64,9 +64,6 @@
+ 
+ int rootpid;
+ int shlvl;
+-#ifdef __GLIBC__
+-int *dash_errno;
+-#endif
+ #if PROFILE
+ short profile_buf[16384];
+ extern int etext();
+@@ -94,10 +91,6 @@
+ 	struct stackmark smark;
+ 	int login;
+ 
+-#ifdef __GLIBC__
+-	dash_errno = __errno_location();
+-#endif
+-
+ #if PROFILE
+ 	monitor(4, etext, profile_buf, sizeof profile_buf, 50);
+ #endif
+--- a/configure.ac.orig	2023-10-05 10:43:01.114664714 +0200
++++ b/configure.ac	2023-10-05 10:43:08.957989559 +0200
+@@ -189,7 +189,7 @@
+ if test "$use_libedit" != "yes"; then
+ 	AC_DEFINE([SMALL], 1, [Define if you build with -DSMALL])
+ else
+-	export LIBS="$LIBS -ledit"
++	export LIBS="$LIBS -ledit -lncurses"
+ fi
+ AC_ARG_ENABLE(lineno, AS_HELP_STRING(--disable-lineno, \
+ 				     [Disable LINENO support]))

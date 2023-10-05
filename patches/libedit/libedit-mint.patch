@@ -1,0 +1,119 @@
+diff -rup libedit-20230828-3.1.orig/configure.ac libedit-20230828-3.1/configure.ac
+--- libedit-20230828-3.1.orig/configure.ac	2023-08-27 20:19:09.000000000 +0200
++++ libedit-20230828-3.1/configure.ac	2023-10-05 11:33:20.351393863 +0200
+@@ -73,7 +73,7 @@ AC_CHECK_INCLUDES_DEFAULT
+ AC_PROG_EGREP
+ 
+ AC_HEADER_SYS_WAIT
+-AC_CHECK_HEADERS([fcntl.h limits.h malloc.h stdlib.h string.h sys/ioctl.h sys/param.h unistd.h curses.h ncurses.h sys/cdefs.h termcap.h])
++AC_CHECK_HEADERS([fcntl.h limits.h malloc.h stdlib.h string.h sys/ioctl.h sys/param.h unistd.h curses.h ncurses.h sys/cdefs.h termcap.h langinfo.h])
+ 
+ AC_CHECK_HEADER([ncurses.h], [],
+   [AC_CHECK_HEADER([curses.h], [],
+diff -rup libedit-20230828-3.1.orig/src/chartype.h libedit-20230828-3.1/src/chartype.h
+--- libedit-20230828-3.1.orig/src/chartype.h	2022-06-11 09:57:59.000000000 +0200
++++ libedit-20230828-3.1/src/chartype.h	2023-10-05 11:33:20.354727192 +0200
+@@ -39,6 +39,7 @@
+ 	!(defined(__APPLE__) && defined(__MACH__)) && \
+ 	!defined(__OpenBSD__) && \
+ 	!defined(__FreeBSD__) && \
++	!defined(__MINT__) && \
+ 	!defined(__DragonFly__)
+ #ifndef __STDC_ISO_10646__
+ /* In many places it is assumed that the first 127 code points are ASCII
+@@ -52,8 +53,10 @@
+  * ref: ISO/IEC DTR 19769
+  */
+ #if WCHAR_MAX < INT32_MAX
++#ifndef __MINT__
+ #warning Build environment does not support non-BMP characters
+ #endif
++#endif
+ 
+ /*
+  * Conversion buffer
+diff -rup libedit-20230828-3.1.orig/src/el.c libedit-20230828-3.1/src/el.c
+--- libedit-20230828-3.1.orig/src/el.c	2023-08-27 09:25:53.000000000 +0200
++++ libedit-20230828-3.1/src/el.c	2023-10-05 11:33:20.354727192 +0200
+@@ -51,7 +51,9 @@ __RCSID("$NetBSD: el.c,v 1.101 2022/10/3
+ #include <sys/types.h>
+ #include <sys/param.h>
+ #include <ctype.h>
++#ifdef HAVE_LANGINFO_H
+ #include <langinfo.h>
++#endif
+ #include <locale.h>
+ #include <stdarg.h>
+ #include <stdlib.h>
+diff -rup libedit-20230828-3.1.orig/src/sys.h libedit-20230828-3.1/src/sys.h
+--- libedit-20230828-3.1.orig/src/sys.h	2023-10-05 11:32:18.521462194 +0200
++++ libedit-20230828-3.1/src/sys.h	2023-10-05 11:33:20.354727192 +0200
+@@ -67,7 +67,11 @@
+ #endif
+ 
+ /* If your compiler does not support this, define it to be empty. */
++#ifdef __ELF__
+ #define libedit_private __attribute__((__visibility__("hidden")))
++#else
++#define libedit_private
++#endif
+ 
+ #ifndef __arraycount
+ # define __arraycount(a) (sizeof(a) / sizeof(*(a)))
+diff -rup libedit-20230828-3.1.orig/src/vis.c libedit-20230828-3.1/src/vis.c
+--- libedit-20230828-3.1.orig/src/vis.c	2023-08-27 20:12:40.000000000 +0200
++++ libedit-20230828-3.1/src/vis.c	2023-10-05 11:35:21.491257434 +0200
+@@ -307,7 +307,7 @@ static wchar_t *
+ do_svis(wchar_t *dst, wint_t c, int flags, wint_t nextc, const wchar_t *extra)
+ {
+ 	int iswextra, i, shft;
+-	uint64_t bmsk, wmsk;
++	uint32_t bmsk, wmsk;
+ 
+ 	iswextra = wcschr(extra, c) != NULL;
+ 	if (!iswextra && (ISGRAPH(flags, c) || iswwhite(c) ||
+@@ -319,12 +319,12 @@ do_svis(wchar_t *dst, wint_t c, int flag
+ 	/* See comment in istrsenvisx() output loop, below. */
+ 	wmsk = 0;
+ 	for (i = sizeof(wmsk) - 1; i >= 0; i--) {
+-		shft = i * NBBY;
+-		bmsk = (uint64_t)0xffLL << shft;
++		shft = i * CHAR_BIT;
++		bmsk = (uint32_t)0xffUL << shft;
+ 		wmsk |= bmsk;
+ 		if ((c & wmsk) || i == 0)
+ 			dst = do_mbyte(dst, (wint_t)(
+-			    (uint64_t)(c & bmsk) >> shft),
++			    (uint32_t)(c & bmsk) >> shft),
+ 			    flags, nextc, iswextra);
+ 	}
+ 
+@@ -401,7 +401,7 @@ istrsenvisx(char **mbdstp, size_t *dlen,
+ 	char mbbuf[MB_LEN_MAX];
+ 	wchar_t *dst, *src, *pdst, *psrc, *start, *extra;
+ 	size_t len, olen;
+-	uint64_t bmsk, wmsk;
++	uint32_t bmsk, wmsk;
+ 	wint_t c;
+ 	visfun_t f;
+ 	int clen = 0, cerr, error = -1, i, shft;
+@@ -624,8 +624,8 @@ istrsenvisx(char **mbdstp, size_t *dlen,
+ 			clen = 0;
+ 			wmsk = 0;
+ 			for (i = sizeof(wmsk) - 1; i >= 0; i--) {
+-				shft = i * NBBY;
+-				bmsk = (uint64_t)0xffLL << shft;
++				shft = i * CHAR_BIT;
++				bmsk = (uint32_t)0xffUL << shft;
+ 				wmsk |= bmsk;
+ 				if ((*dst & wmsk) || i == 0) {
+ 					if (olen + clen + 1 >= maxolen) {
+@@ -634,7 +634,7 @@ istrsenvisx(char **mbdstp, size_t *dlen,
+ 					}
+ 
+ 					mbdst[clen++] = (char)(
+-					    (uint64_t)(*dst & bmsk) >>
++					    (uint32_t)(*dst & bmsk) >>
+ 					    shft);
+ 				}
+ 			}

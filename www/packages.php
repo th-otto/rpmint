@@ -3596,6 +3596,45 @@ are available, the user&apos;s home directory, where in the real filesystem
 your program is running, etc.
 '
 	),
+	'libedit' => array(
+		'name' => 'libedit',
+		'upstream' => 'https://www.thrysoee.dk/editline/',
+		'source' => 'https://www.thrysoee.dk/editline/libedit-%{version}.tar.gz',
+		'version' => '20230828-3.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Libraries/C and C++',
+		'summary' => 'Command Line Editing and History Library',
+		'comment' => '
+libedit is a command line editing and history library. It is designed
+to be used by interactive programs that allow the user to type commands
+at a terminal prompt.
+'
+	),
+	'dash' => array(
+		'name' => 'dash',
+		'upstream' => 'http://gondor.apana.org.au/~herbert/dash/',
+		'source' => 'http://gondor.apana.org.au/~herbert/dash/files/%{name}-%{version}.tar.gz',
+		'version' => '0.5.12',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'System/Shells',
+		'summary' => 'POSIX-compliant Implementation of /bin/sh',
+		'comment' => '
+DASH is a POSIX-compliant implementation of /bin/sh that aims to be as small as
+possible without sacrificing speed where possible.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

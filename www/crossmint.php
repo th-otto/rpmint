@@ -1400,6 +1400,8 @@ This notably applies to Perl and Python.
 
 <li>2023/09/18 Add x265 3.5</li>
 
+<li>2023/10/04 Add libedit 3.1 & dash 0.5.12</li>
+
 </ul>
 
 <p></p>
