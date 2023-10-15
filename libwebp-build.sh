@@ -4,14 +4,13 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=libwebp
-VERSION=-1.2.3
+VERSION=-1.3.2
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/libwebp-png.patch
-patches/${PACKAGENAME}/libwebp-v1.2.3-m68k-atari-mint.patch
+patches/${PACKAGENAME}/libwebp-v1.3.2.patch
 "
 DISABLED_PATCHES="
 patches/automake/mintelf-config.sub

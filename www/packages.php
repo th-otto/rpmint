@@ -3076,8 +3076,8 @@ the disk, a magnetic tape, or a pipe.
 	'libwebp' => array(
 		'name' => 'libwebp',
 		'upstream' => 'https://chromium.googlesource.com/webm/libwebp',
-		'source' => $download_dir . '%{name}-%{version}.tar.gz',
-		'version' => '1.2.3',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '1.3.2',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

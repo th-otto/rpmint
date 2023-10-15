@@ -1402,6 +1402,8 @@ This notably applies to Perl and Python.
 
 <li>2023/10/04 Add libedit 3.1 & dash 0.5.12</li>
 
+<li>2023/10/14 Update libwebp to 1.3.2</li>
+
 </ul>
 
 <p></p>

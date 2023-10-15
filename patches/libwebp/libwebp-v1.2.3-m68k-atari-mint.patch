@@ -44,18 +44,6 @@ diff -ur libwebp-main/src/utils/bit_reader_utils.c libwebp-Mint/src/utils/bit_re
  #define VP8L_USE_FAST_LOAD
  #endif
  
-diff -ur libwebp-main/src/utils/bit_reader_utils.h libwebp-Mint/src/utils/bit_reader_utils.h
---- libwebp-main/src/utils/bit_reader_utils.h	2022-07-29 07:10:22.000000000 +0200
-+++ libwebp-Mint/src/utils/bit_reader_utils.h	2022-08-01 22:08:22.000000000 +0200
-@@ -68,6 +68,8 @@
- #define BITS 56
- #elif defined(__mips__)                        // MIPS
- #define BITS 24
-+#elif defined(__MINT__)                        // MINT
-+#define BITS 24
- #else                                          // reasonable default
- #define BITS 24
- #endif
 --- a/configure.ac.orig	2023-03-31 17:11:59.912775297 +0200
 +++ b/configure.ac	2023-03-31 17:13:04.336703946 +0200
 @@ -591,7 +591,7 @@

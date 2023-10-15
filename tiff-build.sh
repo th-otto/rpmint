@@ -13,7 +13,6 @@ PATCHES="
 patches/tiff/tiff-4.0.3-seek.patch
 patches/tiff/tiff-4.0.3-compress-warning.patch
 patches/tiff/tiff-disable-assertions.patch
-patches/tiff/tiff-CVE-2022-48281.patch
 patches/tiff/tiff-CVE-2023-0795.patch
 patches/tiff/tiff-CVE-2023-0800.patch
 "
@@ -26,6 +25,7 @@ patches/tiff/tiff-CVE-2018-10963.patch
 patches/tiff/tiff-CVE-2017-18013.patch
 patches/tiff/tiff-CVE-2018-7456.patch
 patches/tiff/tiff-CVE-2018-8905.patch
+patches/tiff/tiff-CVE-2022-48281.patch
 "
 DISABLED_PATCHES+="
 patches/automake/mintelf-config.sub

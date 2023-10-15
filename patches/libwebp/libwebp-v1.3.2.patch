@@ -1,0 +1,253 @@
+diff --git a/configure.ac b/configure.ac
+index 2216e4a8..f3a52be2 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -524,13 +524,8 @@ AC_ARG_ENABLE([png], AS_HELP_STRING([--disable-png],
+                                      @<:@default=auto@:>@]))
+ AS_IF([test "x$enable_png" != "xno"], [
+   CLEAR_LIBVARS([PNG])
+-  AC_PATH_PROGS([LIBPNG_CONFIG],
+-                [libpng-config libpng16-config libpng15-config libpng14-config \
+-                 libpng12-config])
+-  if test -n "$LIBPNG_CONFIG"; then
+-    PNG_INCLUDES=`$LIBPNG_CONFIG --cflags`
+-    PNG_LIBS="`$LIBPNG_CONFIG --ldflags`"
+-  fi
++  PNG_INCLUDES=""
++  PNG_LIBS="-lpng -lz -lm"
+ 
+   WITHLIB_OPTION([png], [PNG])
+ 
+@@ -596,7 +591,7 @@ AS_IF([test "x$enable_tiff" != "xno"], [
+   LIBCHECK_PROLOGUE([TIFF])
+   AC_CHECK_HEADER(tiffio.h,
+     AC_CHECK_LIB(tiff, TIFFGetVersion,
+-                 [TIFF_LIBS="$TIFF_LIBS -ltiff"
++                 [TIFF_LIBS="$TIFF_LIBS -ltiff -lzstd -llzma -ljpeg -lm"
+                   TIFF_INCLUDES="$TIFF_INCLUDES -DWEBP_HAVE_TIFF"
+                   AC_DEFINE(WEBP_HAVE_TIFF, [1],
+                             [Set to 1 if TIFF library is installed])
+diff --git a/extras/Makefile.am b/extras/Makefile.am
+index 7e29888b..03d69273 100644
+--- a/extras/Makefile.am
++++ b/extras/Makefile.am
+@@ -8,7 +8,6 @@ noinst_HEADERS += ../src/webp/types.h
+ libwebpextras_la_SOURCES =
+ libwebpextras_la_SOURCES += extras.c extras.h quality_estimate.c
+ 
+-libwebpextras_la_CPPFLAGS = $(AM_CPPFLAGS)
+ libwebpextras_la_LDFLAGS = -lm
+ libwebpextras_la_LIBADD = ../src/libwebp.la
+ 
+@@ -22,7 +21,6 @@ if BUILD_VWEBP_SDL
+ endif
+ 
+ get_disto_SOURCES  = get_disto.c
+-get_disto_CPPFLAGS = $(AM_CPPFLAGS)
+ get_disto_LDADD =
+ get_disto_LDADD += ../imageio/libimageio_util.la
+ get_disto_LDADD += ../imageio/libimagedec.la
+@@ -30,7 +28,6 @@ get_disto_LDADD += ../src/libwebp.la
+ get_disto_LDADD += $(PNG_LIBS) $(JPEG_LIBS) $(TIFF_LIBS)
+ 
+ webp_quality_SOURCES  = webp_quality.c
+-webp_quality_CPPFLAGS = $(AM_CPPFLAGS)
+ webp_quality_LDADD =
+ webp_quality_LDADD += ../imageio/libimageio_util.la
+ webp_quality_LDADD += libwebpextras.la
+diff --git a/sharpyuv/Makefile.am b/sharpyuv/Makefile.am
+index 8d9ba7ca..2f7b212d 100644
+--- a/sharpyuv/Makefile.am
++++ b/sharpyuv/Makefile.am
+@@ -3,7 +3,7 @@ AM_CPPFLAGS += -I$(top_builddir)/src -I$(top_srcdir)/src
+ 
+ lib_LTLIBRARIES = libsharpyuv.la
+ 
+-noinst_LTLIBRARIES =
++noinst_LTLIBRARIES = libsharpyuv_int.la
+ noinst_LTLIBRARIES += libsharpyuv_sse2.la
+ noinst_LTLIBRARIES += libsharpyuv_neon.la
+ 
+@@ -17,25 +17,27 @@ noinst_HEADERS += ../src/webp/types.h
+ 
+ libsharpyuv_sse2_la_SOURCES =
+ libsharpyuv_sse2_la_SOURCES += sharpyuv_sse2.c
+-libsharpyuv_sse2_la_CPPFLAGS = $(libsharpyuv_la_CPPFLAGS)
+ libsharpyuv_sse2_la_CFLAGS = $(AM_CFLAGS) $(SSE2_FLAGS)
+ 
+ libsharpyuv_neon_la_SOURCES =
+ libsharpyuv_neon_la_SOURCES += sharpyuv_neon.c
+-libsharpyuv_neon_la_CPPFLAGS = $(libsharpyuv_la_CPPFLAGS)
+ libsharpyuv_neon_la_CFLAGS = $(AM_CFLAGS) $(NEON_FLAGS)
+ 
+-libsharpyuv_la_SOURCES =
+-libsharpyuv_la_SOURCES += sharpyuv_cpu.c sharpyuv_cpu.h
+-libsharpyuv_la_SOURCES += sharpyuv_csp.c sharpyuv_csp.h
+-libsharpyuv_la_SOURCES += sharpyuv_dsp.c sharpyuv_dsp.h
+-libsharpyuv_la_SOURCES += sharpyuv_gamma.c sharpyuv_gamma.h
+-libsharpyuv_la_SOURCES += sharpyuv.c sharpyuv.h
++libsharpyuv_int_la_SOURCES =
++libsharpyuv_int_la_SOURCES += sharpyuv_cpu.c sharpyuv_cpu.h
++libsharpyuv_int_la_SOURCES += sharpyuv_csp.c sharpyuv_csp.h
++libsharpyuv_int_la_SOURCES += sharpyuv_dsp.c sharpyuv_dsp.h
++libsharpyuv_int_la_SOURCES += sharpyuv_gamma.c sharpyuv_gamma.h
++libsharpyuv_int_la_SOURCES += sharpyuv.c sharpyuv.h
+ 
+-libsharpyuv_la_CPPFLAGS = $(AM_CPPFLAGS)
+-libsharpyuv_la_LDFLAGS = -no-undefined -version-info 0:1:0 -lm
++libsharpyuv_int_la_LIBADD =
++libsharpyuv_int_la_LIBADD += libsharpyuv_sse2.la
++libsharpyuv_int_la_LIBADD += libsharpyuv_neon.la
++libsharpyuvincludedir = $(includedir)/webp/sharpyuv
++
++libsharpyuv_la_SOURCES = $(libsharpyuv_int_la_SOURCES)
+ libsharpyuv_la_LIBADD =
+ libsharpyuv_la_LIBADD += libsharpyuv_sse2.la
+ libsharpyuv_la_LIBADD += libsharpyuv_neon.la
+-libsharpyuvincludedir = $(includedir)/webp/sharpyuv
++
+ pkgconfig_DATA = libsharpyuv.pc
+diff --git a/sharpyuv/libsharpyuv.pc.in b/sharpyuv/libsharpyuv.pc.in
+index 0fb565a6..04981a9c 100644
+--- a/sharpyuv/libsharpyuv.pc.in
++++ b/sharpyuv/libsharpyuv.pc.in
+@@ -7,5 +7,5 @@ Name: libsharpyuv
+ Description: Library for sharp RGB to YUV conversion
+ Version: @PACKAGE_VERSION@
+ Cflags: -I${includedir}
+-Libs: -L${libdir} -l@webp_libname_prefix@sharpyuv
+-Libs.private: -lm @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
++Libs: -L${libdir} -l@webp_libname_prefix@sharpyuv -lm
++Libs.private: @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+diff --git a/src/Makefile.am b/src/Makefile.am
+index bc4a320a..77c079f8 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -31,12 +31,13 @@ libwebp_la_LIBADD += dec/libwebpdecode.la
+ libwebp_la_LIBADD += dsp/libwebpdsp.la
+ libwebp_la_LIBADD += enc/libwebpencode.la
+ libwebp_la_LIBADD += utils/libwebputils.la
++libwebp_la_LIBADD += -lm
+ 
+ # Use '-no-undefined' to declare that libwebp does not depend on any libraries
+ # other than the ones listed on the command line, i.e., after linking, it will
+ # not have unresolved symbols. Some platforms (Windows among them) require all
+ # symbols in shared libraries to be resolved at library creation.
+-libwebp_la_LDFLAGS = -no-undefined -version-info 8:8:1
++libwebp_la_LDFLAGS = -no-undefined -version-info 8:8:1 -lm
+ libwebpincludedir = $(includedir)/webp
+ pkgconfig_DATA = libwebp.pc
+ 
+diff --git a/src/dec/Makefile.am b/src/dec/Makefile.am
+index f8c6398d..308be6cd 100644
+--- a/src/dec/Makefile.am
++++ b/src/dec/Makefile.am
+@@ -25,5 +25,4 @@ libwebpdecodeinclude_HEADERS += ../webp/types.h
+ noinst_HEADERS =
+ noinst_HEADERS += ../webp/format_constants.h
+ 
+-libwebpdecode_la_CPPFLAGS = $(AM_CPPFLAGS)
+ libwebpdecodeincludedir = $(includedir)/webp
+diff --git a/src/dec/vp8l_dec.c b/src/dec/vp8l_dec.c
+index 11c00ea9..fad4010a 100644
+--- a/src/dec/vp8l_dec.c
++++ b/src/dec/vp8l_dec.c
+@@ -950,7 +950,7 @@ static WEBP_INLINE void CopyBlock8b(uint8_t* const dst, int dist, int length) {
+     switch (dist) {
+       case 1:
+         pattern = src[0];
+-#if defined(__arm__) || defined(_M_ARM)   // arm doesn't like multiply that much
++#if defined(__arm__) || defined(_M_ARM) || defined(__MINT__)  // arm doesn't like multiply that much
+         pattern |= pattern << 8;
+         pattern |= pattern << 16;
+ #elif defined(WEBP_USE_MIPS_DSP_R2)
+@@ -965,7 +965,7 @@ static WEBP_INLINE void CopyBlock8b(uint8_t* const dst, int dist, int length) {
+ #else
+         pattern = ((uint32_t)src[0] << 8) | src[1];
+ #endif
+-#if defined(__arm__) || defined(_M_ARM)
++#if defined(__arm__) || defined(_M_ARM) || defined(__MINT__)
+         pattern |= pattern << 16;
+ #elif defined(WEBP_USE_MIPS_DSP_R2)
+         __asm__ volatile ("replv.ph %0, %0" : "+r"(pattern));
+diff --git a/src/demux/libwebpdemux.pc.in b/src/demux/libwebpdemux.pc.in
+index 4da2e40a..0c41c13f 100644
+--- a/src/demux/libwebpdemux.pc.in
++++ b/src/demux/libwebpdemux.pc.in
+@@ -6,6 +6,6 @@ includedir=@includedir@
+ Name: libwebpdemux
+ Description: Library for parsing the WebP graphics format container
+ Version: @PACKAGE_VERSION@
+-Requires.private: libwebp >= 0.2.0
++Requires: libwebp >= 0.2.0
+ Cflags: -I${includedir}
+-Libs: -L${libdir} -l@webp_libname_prefix@webpdemux
++Libs: -L${libdir} -l@webp_libname_prefix@webpdemux -lm
+diff --git a/src/enc/Makefile.am b/src/enc/Makefile.am
+index 2fec804c..ecbaea97 100644
+--- a/src/enc/Makefile.am
++++ b/src/enc/Makefile.am
+@@ -37,7 +37,6 @@ libwebpencodeinclude_HEADERS += ../webp/types.h
+ noinst_HEADERS =
+ noinst_HEADERS += ../webp/format_constants.h
+ 
+-libwebpencode_la_LIBADD = ../../sharpyuv/libsharpyuv.la
++libwebpencode_la_LIBADD = ../../sharpyuv/libsharpyuv_int.la
+ libwebpencode_la_LDFLAGS = -lm
+-libwebpencode_la_CPPFLAGS = $(AM_CPPFLAGS)
+ libwebpencodeincludedir = $(includedir)/webp
+diff --git a/src/libwebp.pc.in b/src/libwebp.pc.in
+index 783090ef..d239bd62 100644
+--- a/src/libwebp.pc.in
++++ b/src/libwebp.pc.in
+@@ -6,7 +6,7 @@ includedir=@includedir@
+ Name: libwebp
+ Description: Library for the WebP graphics format
+ Version: @PACKAGE_VERSION@
+-Requires.private: libsharpyuv
++Requires.private: 
+ Cflags: -I${includedir}
+-Libs: -L${libdir} -l@webp_libname_prefix@webp
+-Libs.private: -lm @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
++Libs: -L${libdir} -l@webp_libname_prefix@webp -lm
++Libs.private: @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+diff --git a/src/libwebpdecoder.pc.in b/src/libwebpdecoder.pc.in
+index 134de0e7..0669c309 100644
+--- a/src/libwebpdecoder.pc.in
++++ b/src/libwebpdecoder.pc.in
+@@ -7,5 +7,5 @@ Name: libwebpdecoder
+ Description: Library for the WebP graphics format (decode only)
+ Version: @PACKAGE_VERSION@
+ Cflags: -I${includedir}
+-Libs: -L${libdir} -l@webp_libname_prefix@webpdecoder
+-Libs.private: -lm @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
++Libs: -L${libdir} -l@webp_libname_prefix@webpdecoder -lm
++Libs.private: @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+diff --git a/src/mux/libwebpmux.pc.in b/src/mux/libwebpmux.pc.in
+index c770daaf..baec886b 100644
+--- a/src/mux/libwebpmux.pc.in
++++ b/src/mux/libwebpmux.pc.in
+@@ -6,7 +6,7 @@ includedir=@includedir@
+ Name: libwebpmux
+ Description: Library for manipulating the WebP graphics format container
+ Version: @PACKAGE_VERSION@
+-Requires.private: libwebp >= 0.2.0
++Requires: libwebp >= 0.2.0
+ Cflags: -I${includedir}
+-Libs: -L${libdir} -l@webp_libname_prefix@webpmux
++Libs: -L${libdir} -l@webp_libname_prefix@webpmux -lm
+ Libs.private: -lm
+diff --git a/src/utils/bit_reader_utils.c b/src/utils/bit_reader_utils.c
+index a26557aa..41cddc5a 100644
+--- a/src/utils/bit_reader_utils.c
++++ b/src/utils/bit_reader_utils.c
+@@ -124,7 +124,8 @@ int32_t VP8GetSignedValue(VP8BitReader* const br, int bits,
+ 
+ #if defined(__arm__) || defined(_M_ARM) || WEBP_AARCH64 || \
+     defined(__i386__) || defined(_M_IX86) || \
+-    defined(__x86_64__) || defined(_M_X64)
++    defined(__x86_64__) || defined(_M_X64) || \
++    defined(__MINT__)
+ #define VP8L_USE_FAST_LOAD
+ #endif
+ 

@@ -3,12 +3,8 @@
 %rpmint_header
 
 Summary:        Library and tools for the WebP graphics format
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
-Version:        1.2.3
+Name:           %{crossmint}%{pkgname}
+Version:        1.3.2
 Release:        1
 License:        BSD-3-Clause
 Group:          Development/Libraries/C and C++
@@ -22,18 +18,14 @@ BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: %{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0: patches/%{pkgname}/libwebp-png.patch
-Patch1: patches/%{pkgname}/libwebp-v1.2.3-m68k-atari-mint.patch
+Patch1: patches/%{pkgname}/libwebp-v1.3.2.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  libtool
 BuildRequires:  make
-%if "%{buildtype}" == "cross"
-Provides:       cross-mint-libwebp-devel
-%else
-Provides:       libwebp-devel
-%endif
+Provides:       %{crossmint}libwebp-devel
+Provides:       %{crossmint}libwebp-tools
 
 %rpmint_build_arch
 
@@ -46,7 +38,6 @@ to compress and decompress images respectively.</br>
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
 %setup -q -n %{pkgname}-%{version}
-%patch0 -p1
 %patch1 -p1
 
 autoreconf -fiv
@@ -143,5 +134,8 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Fri Oct 14 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to version 1.3.2
+
 * Fri Mar 31 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
