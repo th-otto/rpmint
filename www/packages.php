@@ -3635,6 +3635,26 @@ DASH is a POSIX-compliant implementation of /bin/sh that aims to be as small as
 possible without sacrificing speed where possible.
 '
 	),
+	'xpdf' => array(
+		'name' => 'xpdf',
+		'upstream' => 'https://www.xpdfreader.com/',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '4.04',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later AND GPL-3.0-or-later',
+		'category' => 'System/Shells',
+		'summary' => 'A PDF file viewer',
+		'comment' => '
+The Xpdf open source project includes a PDF viewer along with a
+collection of command line tools which perform various functions on PDF
+files.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

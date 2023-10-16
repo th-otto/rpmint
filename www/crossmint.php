@@ -1404,6 +1404,8 @@ This notably applies to Perl and Python.
 
 <li>2023/10/14 Update libwebp to 1.3.2</li>
 
+<li>2023/10/16 Add xpdf 4.04</li>
+
 </ul>
 
 <p></p>
