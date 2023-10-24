@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # This is an almost automatic script for building the binary packages.
 # It is designed to be run on linux, cygwin or mingw,

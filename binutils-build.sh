@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # This script is for building the binutils
@@ -82,7 +82,7 @@ case `uname -s` in
 	*) host=linux64
 	   if echo "" | ${GCC} -dM -E - 2>/dev/null | grep -q i386; then
 	      host=linux32
-	      PKG_DIR+="-32bit"
+	      PKG_DIR="$PKG_DIR-32bit"
 	      export PATH=$PKG_DIR/usr/bin:$PATH
 	   fi
 	   ;;
@@ -208,7 +208,15 @@ mkdir -p "$MINT_BUILD_DIR"
 
 cd "$MINT_BUILD_DIR"
 
+glibc_hack=false
+if test `lsb_release -s -i 2>/dev/null` = openSUSE; then
+	glibc_hack=true
+fi
+
 CFLAGS_FOR_BUILD="-O2 -fomit-frame-pointer"
+if ! $glibc_hack; then
+	CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD -D__LIBC_CUSTOM_BINDINGS_H__"
+fi
 LDFLAGS_FOR_BUILD="-s"
 CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 
@@ -246,7 +254,9 @@ case $host in
 	linux64)
 		CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 		CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
-		export GLIBC_SO="$srcdir/bfd/glibc.so"
+		if $glibc_hack; then
+			export GLIBC_SO="$srcdir/bfd/glibc.so"
+		fi
 		;;
 esac
 
@@ -297,7 +307,6 @@ $srcdir/configure \
 	--disable-nls \
 	--with-system-zlib \
 	$with_gmp $gdb \
-	--with-system-readline \
 	--disable-bracketed-paste-default \
 	--with-sysroot="${PREFIX}/${TARGET}/sys-root"
 
@@ -318,7 +327,11 @@ esac
 #
 THISPKG_DIR="${DIST_DIR}/${PACKAGENAME}${VERSION}"
 rm -rf "${THISPKG_DIR}"
-for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
+INSTALL_DIRS="${THISPKG_DIR}"
+if $glibc_hack; then
+	INSTALL_DIRS="${PKG_DIR} ${INSTALL_DIRS}"
+fi
+for INSTALL_DIR in ${INSTALL_DIRS}; do
 	
 	cd "$MINT_BUILD_DIR"
 	${MAKE} DESTDIR="$INSTALL_DIR" prefix="${PREFIX}" bindir="${PREFIX}/bin" install-strip >/dev/null || exit 1
@@ -387,7 +400,15 @@ ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
 
-${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
+if test $glibc_hack = false -a \( $host = linux32 -o $host = linux64 \); then
+	id=`lsb_release -i -s | tr '[[:upper:]]' '[[:lower:]]'`
+	release=`lsb_release -r -s`
+	# binutils-x.y-ubuntu-20.04-mint.tar.xz
+	TARNAME=${PACKAGENAME}${VERSION}-${id}-${release}-${TARGET##*-}
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}.tar.xz ${PREFIX#/}
+else
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
+fi
 
 cd "${BUILD_DIR}"
 if test "$KEEP_PKGDIR" != yes; then

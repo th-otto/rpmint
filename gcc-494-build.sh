@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # This is an almost automatic script for building the binary packages.
 # It is designed to be run on linux, cygwin or mingw,
@@ -19,9 +19,9 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
 # For which target we build-
-# should be m68k-atari-mint
+# should be either m68k-atari-mint or m68k-atari-mintelf
 #
-TARGET=m68k-atari-mint
+TARGET=${1:-m68k-atari-mint}
 if test "$TARGET" = m68k-atari-mintelf; then
 REVISION="MiNT ELF ${VERSIONPATCH#-}"
 fi
