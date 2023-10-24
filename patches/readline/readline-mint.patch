@@ -1,11 +1,12 @@
---- a/lib/readline/terminal.c.orig	Tue Feb  6 21:39:22 2001
-+++ b/lib/readline/terminal.c	Thu Jul  5 13:14:00 2001
-@@ -543,7 +543,7 @@
- int
- rl_crlf ()
- {
--#if defined (NEW_TTY_DRIVER)
-+#if defined (NEW_TTY_DRIVER) || defined (__MINT__)
-   if (_rl_term_cr)
-     tputs (_rl_term_cr, 1, _rl_output_character_function);
- #endif /* NEW_TTY_DRIVER */
+--- a/rltty.c	2023-10-20 12:31:21.830496168 +0200
++++ b/rltty.c	2023-10-20 12:32:54.113728024 +0200
+@@ -546,7 +546,9 @@
+     tiop->c_iflag &= ~(ISTRIP | INPCK);
+ 
+   /* Make sure we differentiate between CR and NL on input. */
++#ifndef __MINT__
+   tiop->c_iflag &= ~(ICRNL | INLCR);
++#endif
+ 
+ #if !defined (HANDLE_SIGNALS)
+   tiop->c_lflag &= ~ISIG;

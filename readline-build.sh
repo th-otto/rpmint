@@ -9,6 +9,14 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
+PATCHES="
+patches/readline/readline70-001.patch
+patches/readline/readline70-002.patch
+patches/readline/readline70-003.patch
+patches/readline/readline70-004.patch
+patches/readline/readline70-005.patch
+patches/readline/readline-mint.patch
+"
 DISABLED_PATCHES="patches/automake/mintelf-config.sub"
 
 unpack_archive
