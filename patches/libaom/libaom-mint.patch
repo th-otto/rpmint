@@ -1,0 +1,106 @@
+diff -ur --exclude=.git --exclude=.vscode libaom-3.6.1-orig/aom_dsp/flow_estimation/corner_detect.c libaom-3.6.1/aom_dsp/flow_estimation/corner_detect.c
+--- libaom-3.6.1-orig/aom_dsp/flow_estimation/corner_detect.c	2023-05-08 20:17:52
++++ libaom-3.6.1/aom_dsp/flow_estimation/corner_detect.c	2023-11-01 14:15:08
+@@ -11,6 +11,7 @@
+ 
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <string.h>
+ #include <memory.h>
+ #include <math.h>
+ #include <assert.h>
+diff -ur --exclude=.git --exclude=.vscode libaom-3.6.1-orig/aom_ports/mem.h libaom-3.6.1/aom_ports/mem.h
+--- libaom-3.6.1-orig/aom_ports/mem.h	2023-05-08 20:17:52
++++ libaom-3.6.1/aom_ports/mem.h	2023-11-01 14:04:54
+@@ -15,6 +15,7 @@
+ #include "aom/aom_integer.h"
+ #include "config/aom_config.h"
+ 
++#ifndef __MINT__
+ #if (defined(__GNUC__) && __GNUC__) || defined(__SUNPRO_C)
+ #define DECLARE_ALIGNED(n, typ, val) typ val __attribute__((aligned(n)))
+ #elif defined(_MSC_VER)
+@@ -23,7 +24,9 @@
+ #warning No alignment directives known for this compiler.
+ #define DECLARE_ALIGNED(n, typ, val) typ val
+ #endif
+-
++#else
++#define DECLARE_ALIGNED(n, typ, val) typ val
++#endif
+ /* Indicates that the usage of the specified variable has been audited to assure
+  * that it's safe to use uninitialized. Silences 'may be used uninitialized'
+  * warnings on gcc.
+diff -ur --exclude=.git --exclude=.vscode libaom-3.6.1-orig/aom_util/aom_thread.c libaom-3.6.1/aom_util/aom_thread.c
+--- libaom-3.6.1-orig/aom_util/aom_thread.c	2023-05-08 20:17:52
++++ libaom-3.6.1/aom_util/aom_thread.c	2023-11-01 14:23:45
+@@ -111,8 +111,11 @@
+   memset(worker, 0, sizeof(*worker));
+   worker->status_ = NOT_OK;
+ }
+-
++#ifndef __MINT__
+ static int sync(AVxWorker *const worker) {
++#else
++static int aom_sync(AVxWorker *const worker) {
++#endif
+ #if CONFIG_MULTITHREAD
+   change_state(worker, OK);
+ #endif
+@@ -152,7 +155,11 @@
+     worker->status_ = OK;
+ #endif
+   } else if (worker->status_ > OK) {
++#ifndef __MINT__
+     ok = sync(worker);
++#else
++    ok = aom_sync(worker);
++#endif    
+   }
+   assert(!ok || (worker->status_ == OK));
+   return ok;
+@@ -190,10 +197,13 @@
+ }
+ 
+ //------------------------------------------------------------------------------
+-
++#ifndef __MINT__
+ static AVxWorkerInterface g_worker_interface = { init,   reset,   sync,
+                                                  launch, execute, end };
+-
++#else
++static AVxWorkerInterface g_worker_interface = { init,   reset,   aom_sync,
++                                                 launch, execute, end };
++#endif
+ int aom_set_worker_interface(const AVxWorkerInterface *const winterface) {
+   if (winterface == NULL || winterface->init == NULL ||
+       winterface->reset == NULL || winterface->sync == NULL ||
+diff -ur --exclude=.git --exclude=.vscode libaom-3.6.1-orig/third_party/libyuv/include/libyuv/row.h libaom-3.6.1/third_party/libyuv/include/libyuv/row.h
+--- libaom-3.6.1-orig/third_party/libyuv/include/libyuv/row.h	2023-05-08 20:17:52
++++ libaom-3.6.1/third_party/libyuv/include/libyuv/row.h	2023-11-01 14:39:01
+@@ -631,10 +631,14 @@
+ typedef __declspec(align(32)) uint8_t ulvec8[32];
+ #elif !defined(__pnacl__) && (defined(__GNUC__) || defined(__clang__))
+ // Caveat GCC 4.2 to 4.7 have a known issue using vectors with const.
++#ifndef __MINT__
+ #if defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2)
+ #define SIMD_ALIGNED(var) var __attribute__((aligned(32)))
+ #else
+ #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
++#endif
++#else
++#define SIMD_ALIGNED(var) var __attribute__((aligned(2)))
+ #endif
+ typedef int16_t __attribute__((vector_size(16))) vec16;
+ typedef int32_t __attribute__((vector_size(16))) vec32;
+diff -rup libaom-3.7.0.orig/third_party/libwebm/mkvmuxer/mkvmuxerutil.cc libaom-3.7.0/third_party/libwebm/mkvmuxer/mkvmuxerutil.cc
+--- libaom-3.7.0.orig/third_party/libwebm/mkvmuxer/mkvmuxerutil.cc	2023-08-25 21:06:01.000000000 +0200
++++ libaom-3.7.0/third_party/libwebm/mkvmuxer/mkvmuxerutil.cc	2023-11-03 13:24:24.973560525 +0100
+@@ -6,6 +6,7 @@
+ // in the file PATENTS.  All contributing project authors may
+ // be found in the AUTHORS file in the root of the source tree.
+ 
++#define _GNU_SOURCE
+ #include "mkvmuxer/mkvmuxerutil.h"
+ 
+ #ifdef __ANDROID__

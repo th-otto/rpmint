@@ -3713,7 +3713,7 @@ liba52 is a library for decoding ATSC A/52 streams.
 Pixman is a pixel manipulation library for X and cairo.
 '
 	),
-	'cairo' => array(
+ 	'cairo' => array(
 		'name' => 'cairo',
 		'upstream' => 'https://cairographics.org',
 		'source' => 'https://cairographics.org/releases/%{name}-%{version}.tar.xz',
@@ -3733,6 +3733,25 @@ Currently supported output targets include the X Window System,
 in-memory image buffers, and PostScript. Cairo is designed to produce
 identical output on all output media while taking advantage of display
 hardware acceleration when available.
+'
+	),
+ 	'libaom' => array(
+		'name' => 'libaom',
+		'upstream' => 'https://aomedia.googlesource.com/aom/',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '3.7.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'BSD-2-Clause',
+		'category' => 'Productivity/Multimedia/Other',
+		'summary' => 'AV1 codec library',
+		'comment' => '
+This is a library for AOMedia Video 1 (AV1), an open, royalty-free
+video coding format designed for video transmissions over the Internet.
 '
 	),
 /*
