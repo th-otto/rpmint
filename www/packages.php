@@ -3703,7 +3703,7 @@ liba52 is a library for decoding ATSC A/52 streams.
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
-		'bin' => 1,
+		'bin' => 0,
 		'atari' => 1,
 		'amiga' => 0,
 		'license' => 'MIT',
