@@ -3754,6 +3754,26 @@ This is a library for AOMedia Video 1 (AV1), an open, royalty-free
 video coding format designed for video transmissions over the Internet.
 '
 	),
+ 	'opus' => array(
+		'name' => 'opus',
+		'upstream' => 'https://opus-codec.org/',
+		'source' => 'https://github.com/xiph/opus/releases/download/v%{version}/%{name}-%{version}.tar.gz',
+		'version' => '1.4',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Development/Libraries/C and C++',
+		'summary' => 'Audio Codec Library',
+		'comment' => '
+The Opus codec is designed for interactive speech and audio transmission over
+the Internet. It is designed by the IETF Codec Working Group and incorporates
+technology from Skype&apos;s SILK codec and Xiph.Org&apos;s CELT codec.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

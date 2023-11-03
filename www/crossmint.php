@@ -1416,6 +1416,8 @@ This notably applies to Perl and Python.
 
 <li>2023/11/03 Add libaom 3.7.0</li>
 
+<li>2023/11/03 Add opus 1.4</li>
+
 </ul>
 
 <p></p>
