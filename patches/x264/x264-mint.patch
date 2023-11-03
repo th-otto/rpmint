@@ -1,0 +1,41 @@
+diff -ru x264-20230215.orig/common/cpu.c x264-20230215/common/cpu.c
+--- x264-20230215.orig/common/cpu.c	2023-01-28 23:11:33.000000000 +0100
++++ x264-20230215/common/cpu.c	2023-11-03 17:20:09.952876936 +0100
+@@ -27,7 +27,7 @@
+ 
+ #include "base.h"
+ 
+-#if SYS_CYGWIN || SYS_SunOS || SYS_OPENBSD
++#if SYS_CYGWIN || SYS_SunOS || SYS_OPENBSD || SYS_MINT
+ #include <unistd.h>
+ #endif
+ #if SYS_LINUX
+diff -ru x264-20230215.orig/common/osdep.h x264-20230215/common/osdep.h
+--- x264-20230215.orig/common/osdep.h	2023-01-28 23:11:33.000000000 +0100
++++ x264-20230215/common/osdep.h	2023-11-03 17:28:12.982298117 +0100
+@@ -279,7 +279,9 @@
+ #define x264_glue3_expand(x,y,z) x##_##y##_##z
+ #define x264_glue3(x,y,z) x264_glue3_expand(x,y,z)
+ 
+-#ifdef _MSC_VER
++#ifdef __MINT__
++#define DECLARE_ALIGNED( var, n ) var
++#elif defined(_MSC_VER)
+ #define DECLARE_ALIGNED( var, n ) __declspec(align(n)) var
+ #else
+ #define DECLARE_ALIGNED( var, n ) var __attribute__((aligned(n)))
+diff -ru x264-20230215.orig/configure x264-20230215/configure
+--- x264-20230215.orig/configure	2023-01-28 23:11:33.000000000 +0100
++++ x264-20230215/configure	2023-11-03 17:15:57.329846323 +0100
+@@ -682,6 +683,11 @@
+         define HAVE_MALLOC_H
+         libm="-lm"
+         ;;
++    mint | mintelf)
++        SYS="MINT"
++        define HAVE_MALLOC_H
++        libm="-lm"
++        ;;
+     gnu*)
+         SYS="HURD"
+         define HAVE_MALLOC_H

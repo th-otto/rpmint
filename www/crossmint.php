@@ -1422,6 +1422,8 @@ This notably applies to Perl and Python.
 
 <li>2023/11/03 Add libvpx 1.3.1</li>
 
+<li>2023/11/03 Add x264 snapshot 20230215</li>
+
 </ul>
 
 <p></p>

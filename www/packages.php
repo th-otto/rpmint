@@ -3819,6 +3819,24 @@ and audio streams compressed with the Vorbis audio codec.
 The WebM file structure is based on the Matroska container.
 '
 	),
+ 	'x264' => array(
+		'name' => 'x264',
+		'upstream' => 'https://www.webmproject.org/',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '20230215',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Productivity/Multimedia/Other',
+		'summary' => 'H.264/MPEG-4 AVC format encoder',
+		'comment' => '
+x264 package provides a library for encoding video streams into the H.264/MPEG-4 AVC format. 
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
