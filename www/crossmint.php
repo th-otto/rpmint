@@ -1408,6 +1408,10 @@ This notably applies to Perl and Python.
 
 <li>2023/11/03 Add libaacplus 2.0.2</li>
 
+<li>2023/11/03 Add a52dec 0.8.0</li>
+
+<li>2023/11/03 Add pixman 0.42.2</li>
+
 </ul>
 
 <p></p>

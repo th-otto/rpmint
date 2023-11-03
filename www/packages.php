@@ -3669,12 +3669,48 @@ files.
 		'amiga' => 0,
 		'license' => '-',
 		'category' => 'Development/Libraries/C and C++',
-		'summary' => '3GPP AAC+ High Efficiency Advanced Audio Codec v2 (HE-AAC+) Encoder  Library',
+		'summary' => '3GPP AAC+ High Efficiency Advanced Audio Codec v2 (HE-AAC+) Encoder Library',
 		'comment' => '
 3GPP released reference implementation of 3GPP AAC Advanced Audio -
 (HE-AAC+) Encoder (3GPP TS 26.410 V8.0.0).
 </br>
 Original MiNT-Patch by medmed.
+'
+	),
+	'a52dec' => array(
+		'name' => 'a52dec',
+		'upstream' => 'https://git.adelielinux.org/community/a52dec/',
+		'source' => 'https://distfiles.adelielinux.org/source/a52dec/%{name}-%{version}.tar.gz',
+		'version' => '0.8.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Development/Libraries/C and C++',
+		'summary' => 'ATSC A/52 stream decoder library',
+		'comment' => '
+liba52 is a library for decoding ATSC A/52 streams.
+'
+	),
+	'pixman' => array(
+		'name' => 'pixman',
+		'upstream' => 'https://gitlab.freedesktop.org/pixman/pixman',
+		'source' => 'https://www.cairographics.org/releases/%{name}-%{version}.tar.gz',
+		'version' => '0.42.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Development/Libraries/C and C++',
+		'summary' => 'Pixel manipulation library',
+		'comment' => '
+Pixman is a pixel manipulation library for X and cairo.
 '
 	),
 /*
