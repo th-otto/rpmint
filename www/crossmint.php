@@ -1418,6 +1418,8 @@ This notably applies to Perl and Python.
 
 <li>2023/11/03 Add opus 1.4</li>
 
+<li>2023/11/03 Add lame 3.100</li>
+
 </ul>
 
 <p></p>

@@ -3774,6 +3774,28 @@ the Internet. It is designed by the IETF Codec Working Group and incorporates
 technology from Skype&apos;s SILK codec and Xiph.Org&apos;s CELT codec.
 '
 	),
+ 	'lame' => array(
+		'name' => 'lame',
+		'upstream' => 'https://lame.sourceforge.net/',
+		'source' => 'http://prdownloads.sourceforge.net/lame/lame-%{version}.tar.gz',
+		'version' => '3.100',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'LGPL-2.0-or-later',
+		'category' => 'Productivity/Multimedia/Sound/Editors and Convertors',
+		'summary' => 'The LAME MP3 encoder',
+		'comment' => '
+LAME is an educational tool to be used for learning about MP3 encoding.
+The goal of the LAME project is to use the open source model to improve the
+psycho acoustics, noise shaping and speed of MP3.
+Another goal of the LAME project is to use these improvements for the basis of
+a patent free audio compression codec for the GNU project.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
