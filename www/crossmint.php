@@ -1412,6 +1412,8 @@ This notably applies to Perl and Python.
 
 <li>2023/11/03 Add pixman 0.42.2</li>
 
+<li>2023/11/03 Add cairo 1.18.0</li>
+
 </ul>
 
 <p></p>

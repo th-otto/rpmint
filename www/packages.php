@@ -3713,6 +3713,28 @@ liba52 is a library for decoding ATSC A/52 streams.
 Pixman is a pixel manipulation library for X and cairo.
 '
 	),
+	'cairo' => array(
+		'name' => 'cairo',
+		'upstream' => 'https://cairographics.org',
+		'source' => 'https://cairographics.org/releases/%{name}-%{version}.tar.xz',
+		'version' => '1.18.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later OR MPL-1.1',
+		'category' => 'Development/Libraries/C and C++',
+		'summary' => 'Vector Graphics Library with Cross-Device Output Support',
+		'comment' => '
+Cairo is a vector graphics library with cross-device output support.
+Currently supported output targets include the X Window System,
+in-memory image buffers, and PostScript. Cairo is designed to produce
+identical output on all output media while taking advantage of display
+hardware acceleration when available.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
