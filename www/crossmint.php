@@ -1420,6 +1420,8 @@ This notably applies to Perl and Python.
 
 <li>2023/11/03 Add lame 3.100</li>
 
+<li>2023/11/03 Add libvpx 1.3.1</li>
+
 </ul>
 
 <p></p>

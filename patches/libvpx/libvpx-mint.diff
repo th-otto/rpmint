@@ -1,0 +1,78 @@
+diff -ur --strip-trailing-cr --exclude=.git --exclude=.vscode libvpx-ori/third_party/libwebm/mkvmuxer/mkvmuxerutil.cc libvpx/third_party/libwebm/mkvmuxer/mkvmuxerutil.cc
+--- libvpx-ori/third_party/libwebm/mkvmuxer/mkvmuxerutil.cc	2023-05-23 02:58:50
++++ libvpx/third_party/libwebm/mkvmuxer/mkvmuxerutil.cc	2023-05-23 02:55:29
+@@ -634,7 +634,7 @@
+       close(fd);
+     }
+     const int32 nn = temp_num;
+-#elif defined __MINGW32__
++#elif defined __MINGW32__ || __MINT__
+     const int32 nn = rand();
+ #else
+     const int32 nn = rand_r(seed);
+diff -ur --strip-trailing-cr --exclude=.git --exclude=.vscode libvpx-ori/third_party/libyuv/include/libyuv/row.h libvpx/third_party/libyuv/include/libyuv/row.h
+--- libvpx-ori/third_party/libyuv/include/libyuv/row.h	2023-05-23 02:58:50
++++ libvpx/third_party/libyuv/include/libyuv/row.h	2023-05-23 02:39:59
+@@ -502,7 +502,7 @@
+ typedef __declspec(align(32)) uint16_t ulvec16[16];
+ typedef __declspec(align(32)) uint32_t ulvec32[8];
+ typedef __declspec(align(32)) uint8_t ulvec8[32];
+-#elif !defined(__pnacl__) && (defined(__GNUC__) || defined(__clang__))
++#elif !defined(__pnacl__) && !defined(__m68k__) && (defined(__GNUC__) || defined(__clang__))
+ // Caveat GCC 4.2 to 4.7 have a known issue using vectors with const.
+ #if defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2)
+ #define SIMD_ALIGNED(var) var __attribute__((aligned(32)))
+diff -ur --strip-trailing-cr --exclude=.git --exclude=.vscode libvpx-ori/vpx_ports/mem.h libvpx/vpx_ports/mem.h
+--- libvpx-ori/vpx_ports/mem.h	2023-05-23 02:58:50
++++ libvpx/vpx_ports/mem.h	2023-05-23 01:51:39
+@@ -14,7 +14,9 @@
+ #include "vpx_config.h"
+ #include "vpx/vpx_integer.h"
+ 
+-#if (defined(__GNUC__) && __GNUC__) || defined(__SUNPRO_C)
++#ifdef __MINT__
++#define DECLARE_ALIGNED(n, typ, val) typ val __attribute__((aligned(2)))
++#elif (defined(__GNUC__) && __GNUC__) || defined(__SUNPRO_C)
+ #define DECLARE_ALIGNED(n, typ, val) typ val __attribute__((aligned(n)))
+ #elif defined(_MSC_VER)
+ #define DECLARE_ALIGNED(n, typ, val) __declspec(align(n)) typ val
+diff -ur --strip-trailing-cr --exclude=.git --exclude=.vscode libvpx-ori/vpx_util/vpx_thread.c libvpx/vpx_util/vpx_thread.c
+--- libvpx-ori/vpx_util/vpx_thread.c	2023-05-23 02:58:50
++++ libvpx/vpx_util/vpx_thread.c	2023-05-23 01:49:24
+@@ -81,7 +81,7 @@
+   worker->status_ = NOT_OK;
+ }
+ 
+-static int sync(VPxWorker *const worker) {
++static int _sync(VPxWorker *const worker) {
+ #if CONFIG_MULTITHREAD
+   change_state(worker, OK);
+ #endif
+@@ -121,7 +121,7 @@
+     worker->status_ = OK;
+ #endif
+   } else if (worker->status_ > OK) {
+-    ok = sync(worker);
++    ok = _sync(worker);
+   }
+   assert(!ok || (worker->status_ == OK));
+   return ok;
+@@ -160,7 +160,7 @@
+ 
+ //------------------------------------------------------------------------------
+ 
+-static VPxWorkerInterface g_worker_interface = { init,   reset,   sync,
++static VPxWorkerInterface g_worker_interface = { init,   reset,   _sync,
+                                                  launch, execute, end };
+ 
+ int vpx_set_worker_interface(const VPxWorkerInterface *const winterface) {
+--- a/vp8/common/threading.h	2023-05-24 16:24:23.413655525 +0200
++++ b/vp8/common/threading.h	2023-05-24 16:24:40.789643080 +0200
+@@ -77,6 +77,7 @@
+ #endif
+ 
+ #include <pthread.h>
++#undef system
+ /* pthreads */
+ /* Nearly everything is already defined */
+ #define THREAD_FUNCTION void *

@@ -3796,6 +3796,29 @@ Another goal of the LAME project is to use these improvements for the basis of
 a patent free audio compression codec for the GNU project.
 '
 	),
+ 	'libvpx' => array(
+		'name' => 'libvpx',
+		'upstream' => 'https://www.webmproject.org/',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '1.3.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'BSD-3-Clause AND GPL-2.0-or-later',
+		'category' => 'Productivity/Multimedia/Other',
+		'summary' => 'VP8/VP9 codec library',
+		'comment' => '
+WebM is an open, royalty-free, media file format designed for the web.
+< /br>
+WebM defines the file container structure, video and audio formats.
+WebM files consist of video streams compressed with the VP8 video codec
+and audio streams compressed with the Vorbis audio codec.
+The WebM file structure is based on the Matroska container.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

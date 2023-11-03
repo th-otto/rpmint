@@ -61,6 +61,7 @@ for CPU in ${ALL_CPUS}; do
 	RANLIB=${ranlib} \
 	NM=${TARGET}-nm \
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	"$srcdir/configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir || exit 1
 
