@@ -26,7 +26,7 @@ patches/tar/tar-bsc1202436-1.patch
 patches/tar/tar-bsc1202436-2.patch
 patches/tar/tar-fix-CVE-2022-48303.patch
 "
-DISABLED_PATHES="
+DISABLED_PATCHES="
 patches/tar/tar-1.29-extract_pathname_bypass.patch
 patches/automake/mintelf-config.sub
 "

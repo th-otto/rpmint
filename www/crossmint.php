@@ -1406,6 +1406,8 @@ This notably applies to Perl and Python.
 
 <li>2023/10/16 Add xpdf 4.04</li>
 
+<li>2023/11/03 Add libaacplus 2.0.2</li>
+
 </ul>
 
 <p></p>

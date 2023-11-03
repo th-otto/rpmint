@@ -16,7 +16,7 @@ patches/man/man-1.5-manconf.patch
 patches/man/man-1.5g-make.patch
 patches/man/man-1.5g-mint.patch
 "
-DISABLED_PATHES="
+DISABLED_PATCHES="
 "
 POST_INSTALL_SCRIPTS="
 patches/man/man-makewhatis.cronweekly

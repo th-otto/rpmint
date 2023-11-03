@@ -3655,6 +3655,28 @@ collection of command line tools which perform various functions on PDF
 files.
 '
 	),
+	'libaacplus' => array(
+		'name' => 'libaacplus',
+		'upstream' => 'https://www.tipok.org.ua/node/17',
+		/* 'source' => 'https://www.tipok.org.ua/downloads/media/aacplus/%{name}/%{name}-%{version}.tar.gz', */
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'version' => '2.0.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => '-',
+		'category' => 'Development/Libraries/C and C++',
+		'summary' => '3GPP AAC+ High Efficiency Advanced Audio Codec v2 (HE-AAC+) Encoder  Library',
+		'comment' => '
+3GPP released reference implementation of 3GPP AAC Advanced Audio -
+(HE-AAC+) Encoder (3GPP TS 26.410 V8.0.0).
+</br>
+Original MiNT-Patch by medmed.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
