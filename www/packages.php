@@ -3837,6 +3837,32 @@ The WebM file structure is based on the Matroska container.
 x264 package provides a library for encoding video streams into the H.264/MPEG-4 AVC format. 
 '
 	),
+ 	'fribidi' => array(
+		'name' => 'fribidi',
+		'upstream' => 'https://github.com/fribidi/fribidi',
+		'source' => $download_dir . '%{name}-%{version}.tar.xz',
+		'version' => '1.0.13',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'LGPL-2.1-only',
+		'category' => 'Development/Libraries/C and C++',
+		'summary' => 'An implementation of the Unicode BiDi algorithm',
+		'comment' => '
+This library implements the algorithm as described in "Unicode
+Standard Annex #9, the Bidirectional Algorithm,
+http://www.unicode.org/unicode/reports/tr9/". FriBidi is
+tested against the Bidi Reference Code and, to the best of the
+developers&apos; knowledge, does not contain any conformance bugs.
+< /br>
+The API was inspired by the document "Bi-Di languages support - BiDi
+API proposal" by Franck Portaneri, which he wrote as a proposal for
+adding BiDi support to Mozilla.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

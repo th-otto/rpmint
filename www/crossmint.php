@@ -1424,6 +1424,8 @@ This notably applies to Perl and Python.
 
 <li>2023/11/03 Add x264 snapshot 20230215</li>
 
+<li>2023/11/03 Add fribidi 1.0.13</li>
+
 </ul>
 
 <p></p>
