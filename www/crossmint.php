@@ -1426,6 +1426,8 @@ This notably applies to Perl and Python.
 
 <li>2023/11/03 Add fribidi 1.0.13</li>
 
+<li>2023/11/05 Add graphite2 1.3.14</li>
+
 </ul>
 
 <p></p>

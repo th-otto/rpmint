@@ -3863,6 +3863,29 @@ API proposal" by Franck Portaneri, which he wrote as a proposal for
 adding BiDi support to Mozilla.
 '
 	),
+ 	'graphite2' => array(
+		'name' => 'graphite2',
+		'upstream' => 'http://graphite.sil.org/',
+		'source' => 'https://github.com/silnrsi/graphite/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz',
+		'version' => '1.3.14',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later OR LGPL-2.1-or-later OR MPL-2.0',
+		'category' => 'Development/Libraries/C and C++',
+		'summary' => 'Font rendering capabilities for complex non-Roman writing systems',
+		'comment' => '
+Graphite2 is a project within SIL&apos;s Non-Roman Script Initiative and Language
+Software Development groups to provide rendering capabilities for complex
+non-Roman writing systems. Graphite can be used to create "smart fonts" capable
+of displaying writing systems with various complex behaviors. With respect to
+the Text Encoding Model, Graphite handles the "Rendering" aspect of writing
+system implementation.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
