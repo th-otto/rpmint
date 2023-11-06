@@ -3713,7 +3713,7 @@ liba52 is a library for decoding ATSC A/52 streams.
 Pixman is a pixel manipulation library for X and cairo.
 '
 	),
- 	'cairo' => array(
+	'cairo' => array(
 		'name' => 'cairo',
 		'upstream' => 'https://cairographics.org',
 		'source' => 'https://cairographics.org/releases/%{name}-%{version}.tar.xz',
@@ -3800,7 +3800,7 @@ a patent free audio compression codec for the GNU project.
 		'name' => 'libvpx',
 		'upstream' => 'https://www.webmproject.org/',
 		'source' => $download_dir . '%{name}-%{version}.tar.xz',
-		'version' => '1.3.1',
+		'version' => '1.13.1',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
@@ -3884,6 +3884,69 @@ non-Roman writing systems. Graphite can be used to create "smart fonts" capable
 of displaying writing systems with various complex behaviors. With respect to
 the Text Encoding Model, Graphite handles the "Rendering" aspect of writing
 system implementation.
+'
+	),
+ 	'lcms2' => array(
+		'name' => 'lcms2',
+		'upstream' => 'https://www.littlecms.com/',
+		'source' => 'https://github.com/mm2/Little-CMS/releases/download/lcms%{version}/lcms2-%{version}.tar.gz',
+		'version' => '2.15',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Productivity/Graphics/Other',
+		'summary' => 'Little CMS Engine - A color management library and tools',
+		'comment' => '
+Littlecms is a small speed optimized color management engine.
+Little CMS intends to be a small-footprint color management engine
+with a special focus on accuracy and performance. It uses the International
+Color Consortium standard (ICC), which is the modern standard when
+regarding to color management. The ICC specification is widely used and is
+referred to in many International and other de-facto standards.
+'
+	),
+ 	'faad2' => array(
+		'name' => 'faad2',
+		'upstream' => 'https://github.com/knik0/faad2',
+		'source' => 'https://github.com/knik0/faad2/archive/refs/tags/%{version}.tar.gz',
+		'version' => '2.10.1',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Development/Libraries/C and C++',
+		'summary' => 'Freeware Advanced Audio (AAC) Decoder including SBR decoding',
+		'comment' => '
+FAAD2 is a HE, LC, MAIN and LTP profile, MPEG2 and MPEG-4 AAC decoder.
+FAAD2 includes code for SBR (HE AAC) decoding.
+FAAD2 is licensed under the GPL.
+'
+	),
+ 	'ffmpeg' => array(
+		'name' => 'ffmpeg',
+		'upstream' => 'https://ffmpeg.org/',
+		'source' => 'https://github.com/silnrsi/graphite/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz',
+		'version' => '6.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Productivity/Multimedia/Video/Editors and Convertors',
+		'summary' => 'Set of libraries for working with various multimedia formats',
+		'comment' => '
+FFmpeg is a multimedia framework, able to decode, encode,
+transcode, mux, demux, stream, filter and play several formats
+that humans and machines have created.
 '
 	),
 /*

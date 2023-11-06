@@ -1,0 +1,134 @@
+diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/configure ffmpeg-6.0/configure
+--- ffmpeg-6.0-orig/configure	2023-02-27 21:43:45
++++ ffmpeg-6.0/configure	2023-11-02 20:05:14
+@@ -5538,6 +5538,8 @@
+         ;;
+     freebsd)
+         ;;
++    freemint)
++        ;;        
+     bsd/os)
+         add_extralibs -lpoll -lgnugetopt
+         strip="strip -d"
+diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/fftools/ffmpeg.c ffmpeg-6.0/fftools/ffmpeg.c
+--- ffmpeg-6.0-orig/fftools/ffmpeg.c	2023-02-27 21:43:45
++++ ffmpeg-6.0/fftools/ffmpeg.c	2023-11-02 19:34:42
+@@ -1547,7 +1547,7 @@
+                 av_log(NULL, AV_LOG_VERBOSE, "; ");
+             }
+ 
+-            av_log(NULL, AV_LOG_VERBOSE, "%"PRIu64" packets muxed (%"PRIu64" bytes); ",
++            av_log(NULL, AV_LOG_VERBOSE, "%"PRIu32" packets muxed (%"PRIu64" bytes); ",
+                    atomic_load(&ost->packets_written), ost->data_size_mux);
+ 
+             av_log(NULL, AV_LOG_VERBOSE, "\n");
+diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/fftools/ffmpeg.h ffmpeg-6.0/fftools/ffmpeg.h
+--- ffmpeg-6.0-orig/fftools/ffmpeg.h	2023-02-27 21:43:45
++++ ffmpeg-6.0/fftools/ffmpeg.h	2023-11-02 19:32:19
+@@ -660,7 +660,11 @@
+     // combined size of all the packets received from the encoder
+     uint64_t data_size_enc;
+     // number of packets send to the muxer
++    #ifdef __MINT__
++    atomic_uint_least32_t packets_written;
++    #else
+     atomic_uint_least64_t packets_written;
++    #endif
+     // number of frames/samples sent to the encoder
+     uint64_t frames_encoded;
+     uint64_t samples_encoded;
+diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/fftools/ffmpeg_mux.h ffmpeg-6.0/fftools/ffmpeg_mux.h
+--- ffmpeg-6.0-orig/fftools/ffmpeg_mux.h	2023-02-27 21:43:45
++++ ffmpeg-6.0/fftools/ffmpeg_mux.h	2023-11-02 19:31:26
+@@ -82,7 +82,11 @@
+ 
+     /* filesize limit expressed in bytes */
+     int64_t limit_filesize;
++    #ifdef __MINT__
++    atomic_int_least32_t last_filesize;
++    #else
+     atomic_int_least64_t last_filesize;
++    #endif
+     int header_written;
+ 
+     SyncQueue *sq_mux;
+diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavformat/fifo.c ffmpeg-6.0/libavformat/fifo.c
+--- ffmpeg-6.0-orig/libavformat/fifo.c	2023-02-27 21:43:45
++++ ffmpeg-6.0/libavformat/fifo.c	2023-11-02 19:01:10
+@@ -79,8 +79,11 @@
+     int overflow_flag_lock_initialized;
+     /* Value > 0 signals queue overflow */
+     volatile uint8_t overflow_flag;
+-
++    #ifndef __MINT__
+     atomic_int_least64_t queue_duration;
++    #else
++    atomic_int_least32_t queue_duration;
++    #endif
+     int64_t last_sent_dts;
+     int64_t timeshift;
+ } FifoContext;
+@@ -642,7 +645,11 @@
+             av_usleep(10000);
+             ret = av_thread_message_queue_send(fifo->queue, &msg, AV_THREAD_MESSAGE_NONBLOCK);
+         } while (ret >= 0 || ret == AVERROR(EAGAIN));
++        #ifndef __MINT__
+         atomic_store(&fifo->queue_duration, INT64_MAX);
++        #else
++        atomic_store(&fifo->queue_duration, INT32_MAX);
++        #endif
+     }
+ 
+     ret = pthread_join(fifo->writer_thread, NULL);
+diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavformat/os_support.c ffmpeg-6.0/libavformat/os_support.c
+--- ffmpeg-6.0-orig/libavformat/os_support.c	2022-11-04 21:16:28
++++ ffmpeg-6.0/libavformat/os_support.c	2023-11-02 16:34:37
+@@ -23,6 +23,9 @@
+ /* needed by inet_aton() */
+ #define _DEFAULT_SOURCE
+ #define _SVID_SOURCE
++#ifdef __MINT__
++typedef unsigned short u_short;
++#endif
+ 
+ #include "config.h"
+ #include "avformat.h"
+diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavutil/cpu.c ffmpeg-6.0/libavutil/cpu.c
+--- ffmpeg-6.0-orig/libavutil/cpu.c	2023-02-27 21:43:45
++++ ffmpeg-6.0/libavutil/cpu.c	2023-11-02 16:42:47
+@@ -43,7 +43,11 @@
+ #include <sys/param.h>
+ #endif
+ #include <sys/types.h>
++#ifndef __MINT__
+ #include <sys/sysctl.h>
++#else
++#include <mint/sysctl.h>
++#endif
+ #endif
+ #if HAVE_UNISTD_H
+ #include <unistd.h>
+diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavutil/mem_internal.h ffmpeg-6.0/libavutil/mem_internal.h
+--- ffmpeg-6.0-orig/libavutil/mem_internal.h	2023-02-27 21:43:45
++++ ffmpeg-6.0/libavutil/mem_internal.h	2023-11-02 16:29:31
+@@ -75,6 +75,7 @@
+  * @param v Name of the variable
+  */
+ 
++#ifndef __MINT__
+ #if defined(__INTEL_COMPILER) && __INTEL_COMPILER < 1110 || defined(__SUNPRO_C)
+     #define DECLARE_ALIGNED(n,t,v)      t __attribute__ ((aligned (n))) v
+     #define DECLARE_ASM_ALIGNED(n,t,v)  t __attribute__ ((aligned (n))) v
+@@ -96,7 +97,11 @@
+     #define DECLARE_ASM_ALIGNED(n,t,v)  t v
+     #define DECLARE_ASM_CONST(n,t,v)    static const t v
+ #endif
+-
++#else
++    #define DECLARE_ALIGNED(n,t,v)      t v
++    #define DECLARE_ASM_ALIGNED(n,t,v)  t v
++    #define DECLARE_ASM_CONST(n,t,v)    static const t v
++#endif
+ // Some broken preprocessors need a second expansion
+ // to be forced to tokenize __VA_ARGS__
+ #define E1(x) x

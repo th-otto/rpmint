@@ -1428,6 +1428,12 @@ This notably applies to Perl and Python.
 
 <li>2023/11/05 Add graphite2 1.3.14</li>
 
+<li>2023/11/05 Add lcms2 2.15</li>
+
+<li>2023/11/06 Add faad2 2.10.1</li>
+
+<li>2023/11/06 Add ffmpeg 6.0</li>
+
 </ul>
 
 <p></p>
