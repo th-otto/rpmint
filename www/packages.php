@@ -3821,7 +3821,7 @@ The WebM file structure is based on the Matroska container.
 	),
  	'x264' => array(
 		'name' => 'x264',
-		'upstream' => 'https://www.webmproject.org/',
+		'upstream' => 'https://code.videolan.org/videolan/x264',
 		'source' => $download_dir . '%{name}-%{version}.tar.xz',
 		'version' => '20230215',
 		'patch' => 1,
@@ -3835,6 +3835,8 @@ The WebM file structure is based on the Matroska container.
 		'summary' => 'H.264/MPEG-4 AVC format encoder',
 		'comment' => '
 x264 package provides a library for encoding video streams into the H.264/MPEG-4 AVC format. 
+</br></br>
+Needs the pth library from above.</br>
 '
 	),
  	'fribidi' => array(
@@ -3845,7 +3847,7 @@ x264 package provides a library for encoding video streams into the H.264/MPEG-4
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
-		'bin' => 0,
+		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
 		'license' => 'LGPL-2.1-only',

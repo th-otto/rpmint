@@ -32,6 +32,7 @@ COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing -Wno-attributes ${C
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--enable-static
 	--disable-shared
+	--enable-custom-modes
 "
 
 for CPU in ${ALL_CPUS}; do

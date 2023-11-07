@@ -1,85 +1,77 @@
-%define pkgname x265
+%define pkgname x264
 
 %rpmint_header
 
-Summary       : A free h265/HEVC encoder - encoder binary
+Summary       : H.264/MPEG-4 AVC format encoder
 Name          : %{crossmint}%{pkgname}
-Version       : 3.5
+Version       : 20230215
 Release       : 1
 License       : GPL-2.0-or-later
-Group         : Productivity/Multimedia/Video/Editors and Convertors
+Group         : Productivity/Multimedia/Other
 
 %rpmint_essential
 BuildRequires:  cmake >= 3.10.0
 BuildRequires:  %{crossmint}cmake
 BuildRequires:  %{crossmint}gcc-c++
 BuildRequires:  pkgconfig
-Provides:       %{crossmint}libx265-devel
+Provides:       %{crossmint}libx264-devel
 
 Packager      : %{packager}
-URL           : https://bitbucket.org/multicoreware/x265_git
+URL           : https://code.videolan.org/videolan/x264
 
 Prefix        : %{_rpmint_target_prefix}
 Docdir        : %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot     : %{_tmppath}/%{name}-root
 
-Source0: https://bitbucket.org/multicoreware/x265_git/downloads/%{pkgname}_%{version}.tar.gz
-patch0: patches/x265/x265-arm.patch
-patch1: patches/x265/x265-fix_enable512.patch
-patch2: patches/x265/x265-mint.patch
+Source0: %{pkgname}-%{version}.tar.xz
+Source1: patches/automake/mintelf-config.sub
+patch0: patches/x264/x264-mint.patch
 
 %rpmint_build_arch
 
 
 %description
-x265 is a free library for encoding next-generation H265/HEVC video
-streams.
+x264 package provides a library for encoding video streams into the H.264/MPEG-4 AVC format. 
 
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
-%setup -q -n %{pkgname}_%{version}
+%setup -q -n %{pkgname}-%{version}
 %patch0 -p1
-%patch1 -p1
-%patch2 -p1
+
+cp %{S:1} config.sub
 
 %build
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 %rpmint_cflags
-CMAKE_SYSTEM_NAME="${TARGET##*-}"
+COMMON_CFLAGS+=" -fno-strict-aliasing"
 
-export prefix=%{_rpmint_target_prefix}
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
+	--enable-static
+	--disable-avs
+	--disable-opencl
+	--disable-cli
+"
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
-	mkdir -p build/${TARGET}
-	cd build/${TARGET}
-	
-	cmake \
-		-Wno-dev \
-		-DCMAKE_BUILD_TYPE=Release \
-		-DCMAKE_INSTALL_PREFIX=%{_rpmint_target_prefix} \
-		-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME} \
-		-DCMAKE_C_COMPILER="${TARGET}-gcc" \
-		-DCMAKE_CXX_COMPILER="${TARGET}-g++" \
-		-DCMAKE_C_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-		-DCMAKE_CXX_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-		-DENABLE_PIC=OFF \
-		-DENABLE_CLI=ON \
-		-DCMAKE_TOOLCHAIN_FILE="%{_rpmint_target_prefix}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake" \
-		../../source
+	LD="${TARGET}-gcc" \
+	CC="${TARGET}-gcc" \
+	CXX="${TARGET}-g++" \
+	AR="${ar}" \
+	RANLIB=${ranlib} \
+	NM=${TARGET}-nm \
+	STRIP=${TARGET}-strip \
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	"./configure" ${CONFIGURE_FLAGS} \
+	--libdir='${exec_prefix}/lib'$multilibdir
 
-	# parallel does not work? creates truncated objects in libx265.a
-	make
+	make %{?_smp_mflags}
 	make DESTDIR="%{buildroot}%{_rpmint_sysroot}" install
-	
-	if test "$multilibdir" != ""; then
-		mkdir -p %{buildroot}%{_rpmint_libdir}$multilibdir
-		mv %{buildroot}%{_rpmint_libdir}/*.a %{buildroot}%{_rpmint_libdir}$multilibdir
-	fi
 	
 	# compress manpages
 	%rpmint_gzip_docs
@@ -94,7 +86,6 @@ for CPU in ${ALL_CPUS}; do
 	%endif
 
 	make clean
-	cd ../..
 done
 
 
@@ -120,15 +111,15 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files
 %defattr(-,root,root)
+%license COPYING
+%doc AUTHORS
 %{_isysroot}%{_rpmint_target_prefix}/include/*
 %{_isysroot}%{_rpmint_target_prefix}/lib/*
-%{_isysroot}%{_rpmint_target_prefix}/bin/*
 %if "%{buildtype}" == "cross"
 %{_rpmint_cross_pkgconfigdir}/*.pc
 %endif
 
 
 %changelog
-* Mon Sep 18 2023 Thorsten Otto <admin@tho-otto.de>
+* Mon Nov 06 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
-- Update to version 3.5

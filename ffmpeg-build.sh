@@ -71,6 +71,9 @@ CONFIGURE_FLAGS="--prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--disable-xlib
 	--disable-libxcb
 "
+STACKSIZE="-Wl,-stack,512k"
+
+extratools="aviocat cws2fws ffescape ffeval ffhash fourcc2pixfmt graph2dot ismindex pktdumper probetest qt-faststart seek_print sidxindex trasher"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
@@ -81,14 +84,31 @@ for CPU in ${ALL_CPUS}; do
 	"$srcdir/configure" ${CONFIGURE_FLAGS} \
 	--extra-cxxflags="$CPU_CFLAGS $COMMON_CFLAGS" \
 	--extra-cflags="$CPU_CFLAGS $COMMON_CFLAGS" \
-	--extra-ldflags="$CPU_CFLAGS $COMMON_CFLAGS" \
+	--extra-ldflags="$CPU_CFLAGS $COMMON_CFLAGS $STACKSIZE" \
 	--libdir="${prefix}/lib$multilibdir" || exit 1
 
 	# hack_lto_cflags
 	${MAKE} V=1 $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
+	for i in $extratools; do
+		${MAKE} V=1 "tools/$i"
+		cp -a "tools/$i" "${THISPKG_DIR}${sysroot}${TARGET_BINDIR}"
+	done
 	
+	# Install private headers required by libav-tools
+	for i in libavformat/options_table.h libavformat/os_support.h \
+	  libavformat/internal.h libavcodec/options_table.h libavutil/libm.h \
+	  libavutil/internal.h libavutil/colorspace.h libavutil/timer.h \
+	  libavutil/x86/emms.h libavutil/aarch64/timer.h libavutil/arm/timer.h \
+	  libavutil/bfin/timer.h libavutil/ppc/timer.h libavutil/x86/timer.h; do
+		mkdir -p "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include/ffmpeg/private/"`dirname $i`
+		cp -a $i "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/include/ffmpeg/private/$i"
+	done
+
 	${MAKE} clean >/dev/null
+	for i in $extratools; do
+		rm -f tools/$i tools/$i.o
+	done
 
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/charset.alias
 	make_bin_archive $CPU

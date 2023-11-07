@@ -17,6 +17,7 @@ patches/automake/mintelf-config.sub
 
 BINFILES="
 ${TARGET_BINDIR#/}/*
+${TARGET_MANDIR#/}/man1/*
 "
 
 unpack_archive

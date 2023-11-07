@@ -52,7 +52,12 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	"$srcdir/configure" ${CONFIGURE_FLAGS} --libdir="${prefix}/lib$multilibdir" || exit 1
 
-	# hack_lto_cflags
+	# the --size-limit switch is broken atm ...
+	echo "#undef CONFIG_SIZE_LIMIT" >> vpx_config.h
+	echo "#define CONFIG_SIZE_LIMIT 1" >> vpx_config.h
+	echo '#define DECODE_WIDTH_LIMIT 8192'  >> vpx_config.h
+	echo '#define DECODE_HEIGHT_LIMIT 8192' >> vpx_config.h
+
 	${MAKE} V=1 $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 	${MAKE} distclean

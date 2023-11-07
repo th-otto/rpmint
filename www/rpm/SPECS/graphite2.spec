@@ -1,51 +1,51 @@
-%define pkgname x265
+%define pkgname graphite2
 
 %rpmint_header
 
-Summary       : A free h265/HEVC encoder - encoder binary
+Summary       : Font rendering capabilities for complex non-Roman writing systems
 Name          : %{crossmint}%{pkgname}
-Version       : 3.5
+Version       : 1.3.14
 Release       : 1
-License       : GPL-2.0-or-later
-Group         : Productivity/Multimedia/Video/Editors and Convertors
+License       : GPL-2.0-or-later OR LGPL-2.1-or-later OR MPL-2.0
+Group         : Development/Libraries/C and C++
 
 %rpmint_essential
 BuildRequires:  cmake >= 3.10.0
-BuildRequires:  %{crossmint}cmake
+BuildRequires:  %{crossmint}cmake >= 3.10.0
 BuildRequires:  %{crossmint}gcc-c++
+BuildRequires:  %{crossmint}freetype2-devel
 BuildRequires:  pkgconfig
-Provides:       %{crossmint}libx265-devel
+Provides:       %{crossmint}libgraphite2-devel
 
 Packager      : %{packager}
-URL           : https://bitbucket.org/multicoreware/x265_git
+URL           : http://graphite.sil.org/
 
 Prefix        : %{_rpmint_target_prefix}
 Docdir        : %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot     : %{_tmppath}/%{name}-root
 
-Source0: https://bitbucket.org/multicoreware/x265_git/downloads/%{pkgname}_%{version}.tar.gz
-patch0: patches/x265/x265-arm.patch
-patch1: patches/x265/x265-fix_enable512.patch
-patch2: patches/x265/x265-mint.patch
+Source0: https://github.com/silnrsi/graphite/archive/%{version}.tar.gz#/%{pkgname}-%{version}.tar.gz
 
 %rpmint_build_arch
 
 
 %description
-x265 is a free library for encoding next-generation H265/HEVC video
-streams.
+Graphite2 is a project within SIL's Non-Roman Script Initiative and Language
+Software Development groups to provide rendering capabilities for complex
+non-Roman writing systems. Graphite can be used to create "smart fonts" capable
+of displaying writing systems with various complex behaviors. With respect to
+the Text Encoding Model, Graphite handles the "Rendering" aspect of writing
+system implementation.
 
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
-%setup -q -n %{pkgname}_%{version}
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
+%setup -q -n graphite-%{version}
 
 %build
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 %rpmint_cflags
+COMMON_CFLAGS+=" -fno-strict-aliasing"
 CMAKE_SYSTEM_NAME="${TARGET##*-}"
 
 export prefix=%{_rpmint_target_prefix}
@@ -55,25 +55,22 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
-	mkdir -p build/${TARGET}
-	cd build/${TARGET}
+	mkdir -p build
+	cd build
 	
-	cmake \
-		-Wno-dev \
+	cmake -G "Unix Makefiles" \
 		-DCMAKE_BUILD_TYPE=Release \
+		-DBUILD_SHARED_LIBS=OFF \
 		-DCMAKE_INSTALL_PREFIX=%{_rpmint_target_prefix} \
 		-DCMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME} \
 		-DCMAKE_C_COMPILER="${TARGET}-gcc" \
 		-DCMAKE_CXX_COMPILER="${TARGET}-g++" \
 		-DCMAKE_C_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 		-DCMAKE_CXX_FLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-		-DENABLE_PIC=OFF \
-		-DENABLE_CLI=ON \
 		-DCMAKE_TOOLCHAIN_FILE="%{_rpmint_target_prefix}/share/cmake/Modules/Platform/${CMAKE_SYSTEM_NAME}.cmake" \
-		../../source
+		..
 
-	# parallel does not work? creates truncated objects in libx265.a
-	make
+	make %{?_smp_mflags}
 	make DESTDIR="%{buildroot}%{_rpmint_sysroot}" install
 	
 	if test "$multilibdir" != ""; then
@@ -93,8 +90,8 @@ for CPU in ${ALL_CPUS}; do
 	%{_rpmint_target_strip} %{buildroot}%{_rpmint_bindir}/* || :
 	%endif
 
-	make clean
-	cd ../..
+	make clean > /dev/null
+	cd ..
 done
 
 
@@ -120,15 +117,16 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files
 %defattr(-,root,root)
+%license LICENSE COPYING
 %{_isysroot}%{_rpmint_target_prefix}/include/*
 %{_isysroot}%{_rpmint_target_prefix}/lib/*
 %{_isysroot}%{_rpmint_target_prefix}/bin/*
+%{_isysroot}%{_rpmint_target_prefix}/share/%{pkgname}
 %if "%{buildtype}" == "cross"
 %{_rpmint_cross_pkgconfigdir}/*.pc
 %endif
 
 
 %changelog
-* Mon Sep 18 2023 Thorsten Otto <admin@tho-otto.de>
+* Mon Nov 06 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
-- Update to version 3.5
