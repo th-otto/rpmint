@@ -1434,6 +1434,8 @@ This notably applies to Perl and Python.
 
 <li>2023/11/06 Add ffmpeg 6.0</li>
 
+<li>2023/11/08 Add SDL_gfx 2.0.26</li>
+
 </ul>
 
 <p></p>

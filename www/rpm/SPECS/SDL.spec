@@ -31,6 +31,7 @@ BuildRequires:  %{crossmint}gemlib
 BuildRequires:  %{crossmint}ldg-devel
 Provides:       %{crossmint}libSDL-devel = %{version}
 Provides:       %{crossmint}SDL-devel = %{version}
+Provides:       pkgconfig(%{crossmint}sdl)
 
 %rpmint_build_arch
 

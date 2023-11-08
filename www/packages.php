@@ -3951,6 +3951,35 @@ transcode, mux, demux, stream, filter and play several formats
 that humans and machines have created.
 '
 	),
+ 	'sdl_gfx' => array(
+		'name' => 'SDL_gfx',
+		'upstream' => 'http://www.ferzkopp.net/wordpress/2016/01/02/sdl_gfx-sdl2_gfx/',
+		'source' => 'http://www.ferzkopp.net/Software/SDL_gfx-2.0/%{name}-%{version}.tar.gz',
+		'version' => '2.0.26',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'Zlib',
+		'category' => 'Development/Libraries/X11',
+		'summary' => 'SDL Graphics Routines for Primitives and Other Support Functions',
+		'comment' => '
+The SDL_gfx library evolved out of the SDL_gfxPrimitives code which
+provided basic drawing routines such as lines, circles or polygons and
+SDL_rotozoom which implemented a interpolating rotozoomer for SDL
+surfaces. The current components of the SDL_gfx library are:
+<ul>
+<li>Graphic Primitives (SDL_gfxPrimitves.h)</li>
+<li>Rotozoomer (SDL_rotozoom.h)</li>
+<li>Framerate control (SDL_framerate.h)</li>
+<li>MMX image filters (SDL_imageFilter.h)</li>
+</ul>
+The library is backwards compatible to the above mentioned code. It is
+written in plain C and can be used in C++ code.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
