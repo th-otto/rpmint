@@ -18,7 +18,7 @@ patches/flac/flac-config.patch
 patches/flac/flac-amigaos.patch
 patches/flac/flac-wcwidth.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

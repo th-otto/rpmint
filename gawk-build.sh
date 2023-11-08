@@ -14,7 +14,7 @@ patches/gawk/gawk-ppc64le_ignore_transient_test_time_failure.patch
 patches/gawk/gawk-4.1.4-mint.patch
 patches/gawk/gawk-libexecdir.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

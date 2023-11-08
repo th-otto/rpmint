@@ -15,7 +15,7 @@ patches/${PACKAGENAME}/curl-mint-build.patch
 patches/${PACKAGENAME}/curl-secure-getenv.patch
 patches/${PACKAGENAME}/curl-staticlibs.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 # patches/curl/curl-libcurl-ocloexec.patch

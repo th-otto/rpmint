@@ -10,7 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES=""
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

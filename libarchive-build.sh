@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/libarchive/libarchive-fix-CVE-2017-14166.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

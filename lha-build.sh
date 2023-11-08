@@ -13,7 +13,7 @@ VERSIONPATCH=
 PATCHES="
 patches/lha/lha-1.14i-ext.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

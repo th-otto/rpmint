@@ -16,6 +16,8 @@ patches/make/make-clockskew.patch
 
 DISABLED_PATCHES="
 patches/make/make-library-search-path.diff
+"
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

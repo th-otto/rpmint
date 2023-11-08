@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/${PACKAGENAME}/fdk-aac-mint.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 BINFILES="

@@ -13,7 +13,7 @@ PATCHES="
 patches/libmikmod/libmikmod-cflags.patch
 patches/libmikmod/libmikmod-config.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

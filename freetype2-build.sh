@@ -17,7 +17,7 @@ PATCHES="
 patches/freetype2/freetype2-bugzilla-308961-cmex-workaround.patch
 patches/freetype2/freetype2-static-config.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

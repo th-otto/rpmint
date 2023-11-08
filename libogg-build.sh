@@ -14,7 +14,7 @@ patches/libogg/libogg-m4.diff
 patches/libogg/libogg-lib64.dif
 patches/libogg/libogg-config.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

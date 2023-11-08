@@ -27,7 +27,7 @@ patches/tiff/tiff-CVE-2018-7456.patch
 patches/tiff/tiff-CVE-2018-8905.patch
 patches/tiff/tiff-CVE-2022-48281.patch
 "
-DISABLED_PATCHES+="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

@@ -17,7 +17,7 @@ patches/vorbis-tools/vorbis-tools-r19117-CVE-2014-9640.patch
 patches/vorbis-tools/vorbis-tools-oggenc-CVE-2014-9639.patch
 patches/vorbis-tools/vorbis-tools-oggenc-Fix-large-alloca.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

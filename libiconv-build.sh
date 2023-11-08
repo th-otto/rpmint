@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/${PACKAGENAME}/libiconv-1.16-aliases.patch
 "
-DISABLE_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

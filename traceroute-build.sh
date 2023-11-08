@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/${PACKAGENAME}/traceroute-mint.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

@@ -14,7 +14,7 @@ patches/${PACKAGENAME}/pth-2.0.7-m68k-atari-mint.patch
 patches/${PACKAGENAME}/pth-link-warning.patch
 patches/${PACKAGENAME}/pth-cleanup-fix.patch
 "
-DISABLE_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 BINFILES="

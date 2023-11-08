@@ -14,6 +14,8 @@ patches/lcms2/lcms2-visibility.patch
 "
 DISABLED_PATCHES="
 patches/lcms2/lcms2-ocloexec.patch
+"
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

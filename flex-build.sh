@@ -13,7 +13,7 @@ PATCHES="
 patches/${PACKAGENAME}/flex-use-extensions.patch
 patches/${PACKAGENAME}/flex-help2man.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

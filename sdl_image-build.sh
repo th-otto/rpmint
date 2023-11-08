@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/sdl_image/sdl_image-config.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

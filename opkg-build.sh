@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/opkg/opkg-0.6.1.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

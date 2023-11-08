@@ -14,7 +14,7 @@ patches/x265/x265-arm.patch
 patches/x265/x265-fix_enable512.patch
 patches/x265/x265-mint.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 "
 
 BINFILES="

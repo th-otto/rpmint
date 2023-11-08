@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/${PACKAGENAME}/nghttp2-remove-python-build.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

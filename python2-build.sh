@@ -39,13 +39,15 @@ patches/python2/python2-mintsetupdist.patch
 patches/python2/python2-math.patch
 "
 DISABLED_PATCHES="
-patches/automake/mintelf-config.sub
 patches/python2/python2-remove-static-libpython.diff
 "
 POST_INSTALL_SCRIPTS="
 patches/python2/python2-python.csh
 patches/python2/python2-python.sh
 patches/python2/python2-pythonstart
+"
+EXTRA_DIST="
+patches/automake/mintelf-config.sub
 "
 
 

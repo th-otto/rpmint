@@ -14,7 +14,7 @@ patches/popt/popt-libc-updates.patch
 patches/popt/popt-alignment-checks.patch
 patches/popt/popt-glibc-clashes.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

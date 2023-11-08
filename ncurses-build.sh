@@ -25,7 +25,7 @@ patches/ncurses/ncurses-6.4-0022-dynamic.patch
 patches/ncurses/ncurses-no-include.patch
 patches/ncurses/ncurses-tw100-fix.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 PATCHARCHIVE=patches/ncurses/ncurses-6.4-patches.tar.bz2

@@ -9,7 +9,7 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 # patches/expat/expat-1.95.2-mint.patch

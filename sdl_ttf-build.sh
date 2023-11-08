@@ -13,7 +13,7 @@ PATCHES="
 patches/sdl_ttf/sdl_ttf-config.patch
 patches/sdl_ttf/sdl_ttf-amigaos.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

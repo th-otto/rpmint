@@ -18,7 +18,7 @@ patches/${PACKAGENAME}/libmad-thumb.diff
 patches/${PACKAGENAME}/libmad-0.15.1b-ppc.patch
 patches/${PACKAGENAME}/libmad-frame_length.diff
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

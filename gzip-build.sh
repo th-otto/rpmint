@@ -19,7 +19,7 @@ patches/${PACKAGENAME}/gzip-manpage-no-date.patch
 patches/${PACKAGENAME}/gzip-1.9-mint.patch
 patches/${PACKAGENAME}/gzip-gnulib-strerror_r.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

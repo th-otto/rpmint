@@ -19,7 +19,7 @@ patches/hermes/hermes-ns-recipe.patch
 patches/hermes/hermes-warnings.patch
 patches/hermes/hermes-install.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

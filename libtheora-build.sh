@@ -13,7 +13,7 @@ VERSIONPATCH=
 PATCHES="
 patches/${PACKAGENAME}/libtheora-config.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

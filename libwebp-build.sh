@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/${PACKAGENAME}/libwebp-v1.3.2.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

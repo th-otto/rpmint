@@ -13,7 +13,7 @@ PATCHES="
 patches/lame/lame-field-width-fix.patch
 patches/lame/lame-mint.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

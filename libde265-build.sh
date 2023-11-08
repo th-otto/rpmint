@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/libde265/libde265-v1.0.9.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

@@ -16,7 +16,7 @@ LTO_CFLAGS=
 PATCHES="
 patches/${PACKAGENAME}/gmp-coldfire.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

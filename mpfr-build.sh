@@ -13,7 +13,7 @@ VERSIONPATCH=
 ranlib=${TARGET}-ranlib
 LTO_CFLAGS=
 
-DISABLED_PATCHES="patches/automake/mintelf-config.sub"
+EXTRA_DIST="patches/automake/mintelf-config.sub"
 
 unpack_archive
 

@@ -33,7 +33,7 @@ patches/python3/python3-mintnosharedmod.patch
 patches/python3/python3-mintsetupdist.patch
 patches/python3/python3-cross-config.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 POST_INSTALL_SCRIPTS="

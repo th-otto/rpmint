@@ -13,6 +13,8 @@ PATCHES="
 "
 DISABLED_PATCHES="
 patches/${PACKAGENAME}/libaacplus-mint.patch
+"
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/libpng/libpng-1.6.34-0001-config.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

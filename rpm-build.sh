@@ -14,7 +14,7 @@ VERSIONPATCH=
 PATCHES="
 patches/rpm/rpm-4.15-mint.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

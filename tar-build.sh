@@ -28,9 +28,11 @@ patches/tar/tar-fix-CVE-2022-48303.patch
 "
 DISABLED_PATCHES="
 patches/tar/tar-1.29-extract_pathname_bypass.patch
-patches/automake/mintelf-config.sub
 "
 # patches/tar/tar-recursive--files-from.patch
+EXTRA_DIST="
+patches/automake/mintelf-config.sub
+"
 
 BINFILES="
 ${TARGET_BINDIR#/}/*

@@ -23,7 +23,7 @@ patches/arj/arj-004_parallel_build.patch
 patches/arj/arj-doc_refer_robert_k_jung.patch
 patches/arj/arj-strip.patch
 "
-DISABLED_PATCHES="patches/automake/mintelf-config.sub"
+EXTRA_DIST="patches/automake/mintelf-config.sub"
 
 BINFILES="
 ${TARGET_BINDIR#/}/arj

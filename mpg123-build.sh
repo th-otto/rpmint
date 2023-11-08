@@ -14,7 +14,7 @@ PATCHES="
 patches/${PACKAGENAME}/mpg123-math.patch
 patches/${PACKAGENAME}/mpg123-amigaos.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

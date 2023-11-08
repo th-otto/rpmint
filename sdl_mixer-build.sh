@@ -18,6 +18,8 @@ patches/sdl_mixer/sdl_mixer-double-free-crash.patch
 patches/sdl_mixer/sdl_mixer-mikmod1.patch
 patches/sdl_mixer/sdl_mixer-mikmod2.patch
 patches/sdl_mixer/sdl_mixer-smpeg-config.patch
+"
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

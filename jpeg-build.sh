@@ -18,7 +18,7 @@ ${TARGET_MANDIR#/}/man1/*
 PATCHES="
 patches/jpeg/jpeg-8d-0007-mintslb.patch 
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

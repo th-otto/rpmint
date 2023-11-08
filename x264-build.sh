@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/x264/x264-mint.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/libuv/libuv-mint.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

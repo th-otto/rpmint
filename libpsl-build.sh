@@ -13,7 +13,7 @@ PATCHES="
 patches/libpsl/libpsl-mint-no-langinfo.patch
 patches/libpsl/libpsl-staticlibs.patch
 "
-DISABLE_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

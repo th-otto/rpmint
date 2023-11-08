@@ -15,7 +15,7 @@ patches/${PACKAGENAME}/x3270-usr_local_bin.patch
 patches/${PACKAGENAME}/x3270-mint.patch
 "
 
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

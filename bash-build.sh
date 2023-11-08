@@ -68,6 +68,8 @@ patches/bash/bash-readline-6.2-endpw.dif
 patches/bash/bash-readline-6.2-xmalloc.dif
 patches/bash/bash-readline-6.3-destdir.patch
 patches/bash/bash-readline-6.3-rltrace.patch
+"
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

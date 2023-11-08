@@ -14,7 +14,7 @@ ${TARGET_BINDIR#/}/*
 ${TARGET_MANDIR#/}/man3/*
 "
 
-DISABLED_PATCHES="patches/automake/mintelf-config.sub"
+EXTRA_DIST="patches/automake/mintelf-config.sub"
 
 unpack_archive
 

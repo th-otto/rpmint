@@ -16,7 +16,7 @@ patches/db/db-malloc-align.patch
 patches/db/db-lockstub.patch
 patches/db/db-thread.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

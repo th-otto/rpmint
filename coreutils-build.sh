@@ -30,7 +30,7 @@ patches/coreutils/coreutils-mint-mountlist.patch
 patches/coreutils/coreutils-mint-procfile.patch
 patches/coreutils/coreutils-mint-thread.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

@@ -14,7 +14,7 @@ patches/${PACKAGENAME}/libedit-20180525-manpage-conflicts.patch
 patches/${PACKAGENAME}/libedit-hidden-symbols.patch
 patches/${PACKAGENAME}/libedit-mint.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

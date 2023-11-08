@@ -9,7 +9,7 @@ VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-DISABLED_PATCHES="patches/automake/mintelf-config.sub"
+EXTRA_DIST="patches/automake/mintelf-config.sub"
 
 BINFILES="
 ${TARGET_BINDIR#/}/*

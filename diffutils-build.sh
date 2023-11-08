@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/diffutils/diffutils-diff-3.6-mint.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

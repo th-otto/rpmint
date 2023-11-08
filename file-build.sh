@@ -36,7 +36,7 @@ patches/file/file-5.45-mint.patch
 # patches/file/file-5.24-nitpick.dif
 # patches/file/file-5.28-btrfs-image.dif
 # patches/file/file-5.32.dif
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 POST_INSTALL_SCRIPTS="patches/file/file-zisofs.magic"

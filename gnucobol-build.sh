@@ -13,7 +13,7 @@ PATCHES="
 patches/gnucobol/gnucobol-CFLAGS.patch
 patches/gnucobol/gnucobol-ltdl.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

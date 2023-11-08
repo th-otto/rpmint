@@ -17,6 +17,8 @@ patches/${PACKAGENAME}/povray-reproducible.patch
 "
 DISABLED_PATCHES="
 patches/${PACKAGENAME}/povray37-autoconf.patch
+"
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

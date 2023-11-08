@@ -27,7 +27,7 @@ patches/libgcrypt/libgcrypt-FIPS-rndjent_poll.patch
 patches/libgcrypt/libgcrypt-1.10.0-use-fipscheck.patch
 patches/libgcrypt/libgcrypt-mint.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

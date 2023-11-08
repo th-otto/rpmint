@@ -15,7 +15,7 @@ patches/libxml2/libxml2-python3-unicode-errors.patch
 patches/libxml2/libxml2-python3-string-null-check.patch
 patches/libxml2/libxml2-make-XPATH_MAX_NODESET_LENGTH-configurable.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

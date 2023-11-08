@@ -13,7 +13,7 @@ PATCHES="
 patches/${PACKAGENAME}/libmetalink-autotools.patch
 patches/${PACKAGENAME}/libmetalink-skip-libxml2-script-crap.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

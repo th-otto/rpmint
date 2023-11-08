@@ -27,6 +27,8 @@ patches/groff/groff-xditview.patch
 "
 DISABLED_PATCHES="
 patches/groff/groff-multi-thread.patch
+"
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

@@ -13,7 +13,7 @@ PATCHES="
 patches/${PACKAGENAME}/pngtools-0.4.patch
 "
 
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

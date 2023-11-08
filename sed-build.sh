@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/sed/sed-nothreads.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

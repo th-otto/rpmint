@@ -12,7 +12,7 @@ VERSIONPATCH=-fdlibm
 PATCHES="
 patches/povray/povray36-autoconf.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

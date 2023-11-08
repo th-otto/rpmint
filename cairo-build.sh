@@ -14,7 +14,7 @@ patches/cairo/cairo-get_bitmap_surface-bsc1036789-CVE-2017-7475.diff
 patches/cairo/cairo-xlib-endianness.patch
 patches/cairo/cairo-mint.patch
 " 
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/meson/m68k-atari-mint.txt
 patches/meson/m68k-atari-mintelf.txt
 "

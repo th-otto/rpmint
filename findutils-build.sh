@@ -18,6 +18,8 @@ patches/findutils/findutils-notexinfo-clean.patch
 DISABLED_PATCHES="
 patches/findutils/findutils-sv-bug-48030-find-exec-plus-does-not-pass-all-arguments.patch
 patches/findutils/findutils-4.6-mint.patch
+"
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

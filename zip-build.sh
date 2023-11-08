@@ -20,7 +20,7 @@ patches/zip/zip-3.0-nomutilation.patch
 patches/zip/zip-3.0-atari.patch
 patches/zip/zip-3.0-no-setbuf.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/zip/zip-notimestamp.patch
 "
 

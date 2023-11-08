@@ -39,6 +39,8 @@ patches/cpio/cpio-2.4.2-mtime.patch
 patches/cpio/cpio-default_tape_dev.patch
 patches/cpio/cpio-2.12-CVE-2019-14866.patch
 patches/cpio/cpio-2.12-CVE-2016-2037-out_of_bounds_write.patch
+"
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

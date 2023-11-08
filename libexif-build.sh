@@ -14,8 +14,10 @@ patches/libexif/libexif-build-date.patch
 patches/libexif/libexif-CVE-2017-7544.patch
 "
 DISABLED_PATCHES="
-patches/automake/mintelf-config.sub
 patches/libexif/libexif-CVE-2016-6328.patch
+"
+EXTRA_DIST="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="

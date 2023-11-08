@@ -19,7 +19,7 @@ patches/libbeecrypt6/beecrypt-libdir.patch
 patches/libbeecrypt6/beecrypt-no-asm-m68k.patch
 patches/libbeecrypt6/beecrypt-enable-cplusplus.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

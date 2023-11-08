@@ -12,7 +12,7 @@ VERSIONPATCH=
 PATCHES="
 patches/libheif/libheif-mint.patch
 "
-DISABLE_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 BINFILES="

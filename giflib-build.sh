@@ -15,8 +15,10 @@ patches/giflib/giflib-automake-1_13.patch
 patches/giflib/giflib-CVE-2016-3977.patch
 "
 DISABLED_PATCHES="
-patches/automake/mintelf-config.sub
 patches/giflib/giflib-fix-autoconf11.patch
+"
+EXTRA_DIST="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="

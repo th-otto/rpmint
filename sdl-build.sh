@@ -15,8 +15,10 @@ patches/sdl/sdl-1.2.16-asm.patch
 patches/sdl/sdl-gsxb.patch
 "
 DISABLED_PATCHES="
-patches/automake/mintelf-config.sub
 patches/sdl/sdl-1.2.15-c99.patch
+"
+EXTRA_DIST="
+patches/automake/mintelf-config.sub
 "
 
 unpack_archive

@@ -16,9 +16,11 @@ patches/elfutils/elfutils-mint.patch
 patches/elfutils/elfutils-lto-warnings.patch
 "
 DISABLED_PATCHES="
-patches/automake/mintelf-config.sub
 patches/elfutils/elfutils-0001-backends-Add-support-for-EM_PPC64-GNU_ATTRIBUTES.patch
 patches/elfutils/elfutils-ppc-machine-flags.patch
+"
+EXTRA_DIST="
+patches/automake/mintelf-config.sub
 "
 
 BINFILES="

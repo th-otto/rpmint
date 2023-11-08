@@ -13,7 +13,7 @@ PATCHES="
 patches/${PACKAGENAME}/wolfssl-5.5.0-mint.patch
 patches/${PACKAGENAME}/wolfssl-single-thread.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 BINFILES="

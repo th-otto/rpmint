@@ -13,7 +13,7 @@ PATCHES="
 patches/source-highlight/source-highlight-0001-Remove-throw-specifications.patch
 patches/source-highlight/source-highlight-use-lessopen.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 POST_INSTALL_SCRIPTS="patches/source-highlight/source-highlight-apache2.conf"

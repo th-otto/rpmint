@@ -18,7 +18,7 @@ patches/wget/wget-errno-clobber.patch
 patches/wget/wget-remove-env-from-shebang.patch
 patches/wget/wget-do-not-propagate-credentials.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 

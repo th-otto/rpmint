@@ -17,7 +17,7 @@ ${TARGET_BINDIR#/}
 PATCHES="
 patches/libgpg-error/libgpg-error-mint.patch
 "
-DISABLED_PATCHES="
+EXTRA_DIST="
 patches/automake/mintelf-config.sub
 "
 
