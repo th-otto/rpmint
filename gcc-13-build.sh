@@ -313,7 +313,7 @@ mkdir -p "$MINT_BUILD_DIR"
 cd "$MINT_BUILD_DIR"
 
 glibc_hack=false
-if test `lsb_release -s -i 2>/dev/null` = openSUSE; then
+if test "`lsb_release -s -i 2>/dev/null`" = openSUSE; then
 	glibc_hack=true
 fi
 

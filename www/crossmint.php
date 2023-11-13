@@ -1545,6 +1545,7 @@ CosmosEx is a hardware extension as small as a floppy drive which brings SD-Card
 Build times:
 binutils:
 	mingw32: 10min
+	mingw64: 10min
 	cygwin32:  8min
 	cygwin64:  6min
 	macos:   3min (ld does not have support for the native platform)
@@ -1555,6 +1556,7 @@ gcc 2.95.3:
 
 gcc 4.6.4:
 	mingw32: 15min
+	mingw64: 38min
 	cygwin:  19min
 	macos:   15min
 	linux:   2min30sec
@@ -1565,8 +1567,9 @@ gcc 7.2:
 	macos:   23min
 	linux:   3min
 	
-gcc 7.3:
-	mingw32: 32min
+gcc 7.5:
+	mingw32: 68min
+	mingw64: 60min
 	cygwin32: 36min
 	cygwin64: 28min
 	macos:   25min
@@ -1586,15 +1589,17 @@ gcc 8.2:
 	macos:   33min
 	linux:   3min54sec
 
-gcc 8.3:
+gcc 8.5:
 	mingw32: 33min
+	mingw64: 63min
 	cygwin32: 39min
 	cygwin64: 35min
 	macos:   29min
 	linux:   4min12sec
 
-gcc 9.1.1:
+gcc 9.5.0:
 	mingw32: 38min
+	mingw64: 69min
 	cygwin32: 45min
 	cygwin64: 42min
 	macos:   31min
@@ -1602,6 +1607,7 @@ gcc 9.1.1:
 
 gcc 10.5.0:
 	mingw32: 50min
+	mingw64: 70min
 	cygwin32: 85min
 	cygwin64: 88min
 	macos:   32min
@@ -1609,6 +1615,7 @@ gcc 10.5.0:
 
 gcc 11.3.0:
 	mingw32: 73min
+	mingw64: 85min
 	cygwin32: 126min
 	cygwin64: 116min
 	macos:   52min
@@ -1616,6 +1623,7 @@ gcc 11.3.0:
 
 gcc 12.2.0:
 	mingw32: 76min
+	mingw64: 89min
 	cygwin32: 129min
 	cygwin64: 129min
 	macos:   57min
@@ -1623,6 +1631,7 @@ gcc 12.2.0:
 
 gcc 13.1.0:
 	mingw32: 80min
+	mingw64: 111min
 	cygwin32: 134min
 	cygwin64: 143min
 	macos:   54min

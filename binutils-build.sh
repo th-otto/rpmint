@@ -175,13 +175,11 @@ test "$host" = "macos" && bfd_targets=""
 # add opposite of default mingw32 target for binutils,
 # and also host target
 case "${TARGET}" in
-    x86_64-*-mingw32*)
-    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
-	    bfd_targets="${bfd_targets}i686-pc-mingw32"
+    x86_64-*-mingw*)
+	    bfd_targets="${bfd_targets},i686-pc-mingw32"
     	;;
     i686-*-mingw*)
-    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
-    	bfd_targets="${bfd_targets}x86_64-w64-mingw64"
+    	bfd_targets="${bfd_targets},x86_64-w64-mingw64"
 		;;
     *-*-*elf* | *-*-linux* | *-*-darwin*)
     	enable_lto=--enable-lto
@@ -191,12 +189,10 @@ case "${TARGET}" in
 esac
 case "${TARGET}" in
     m68k-atari-mintelf*)
-    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
-    	bfd_targets="${bfd_targets}m68k-atari-mint"
+    	bfd_targets="${bfd_targets},m68k-atari-mint"
 		;;
     m68k-atari-mint*)
-    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
-    	bfd_targets="${bfd_targets}m68k-atari-mintelf"
+    	bfd_targets="${bfd_targets},m68k-atari-mintelf"
 		;;
     *-*-darwin*)
         bfd_targets="${bfd_targets},aarch64-apple-darwin"
@@ -209,7 +205,7 @@ mkdir -p "$MINT_BUILD_DIR"
 cd "$MINT_BUILD_DIR"
 
 glibc_hack=false
-if test `lsb_release -s -i 2>/dev/null` = openSUSE; then
+if test "`lsb_release -s -i 2>/dev/null`" = openSUSE; then
 	glibc_hack=true
 fi
 
@@ -223,7 +219,7 @@ CXXFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
 unset GLIBC_SO
 
 with_gmp=
-gdb=
+build_gdb=true
 SED_INPLACE=-i
 
 case $host in
@@ -249,7 +245,7 @@ case $host in
 		SED_INPLACE="-i .orig"
 		with_gmp=--with-gmp=${CROSSTOOL_DIR}
 		# disable gdb for now, since it is not part of the binutils archive
-		gdb=--disable-gdb
+		build_gdb=false
 		;;
 	linux64)
 		CFLAGS_FOR_BUILD="$CFLAGS_FOR_BUILD"
@@ -258,7 +254,16 @@ case $host in
 			export GLIBC_SO="$srcdir/bfd/glibc.so"
 		fi
 		;;
+	mingw*)
+		build_gdb=false
+		;;
 esac
+if test "$TARGET" != m68k-atari-mintelf; then
+	build_gdb=false
+fi
+if ! $build_gdb; then
+	gdb="--disable-gdb --disable-gdbserver --disable-sim --disable-readline"
+fi
 
 export CC="${GCC}"
 export CXX="${GXX}"
@@ -399,6 +404,7 @@ fi
 ${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-doc.tar.xz ${PREFIX#/}/share/info ${PREFIX#/}/share/man
 rm -rf ${PREFIX#/}/share/info
 rm -rf ${PREFIX#/}/share/man
+rmdir "${PREFIX#/}/share" 2>/dev/null || :
 
 if test $glibc_hack = false -a \( $host = linux32 -o $host = linux64 \); then
 	id=`lsb_release -i -s | tr '[[:upper:]]' '[[:lower:]]'`
