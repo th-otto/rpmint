@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=zlib
-VERSION=-1.2.13
+VERSION=-1.3
 VERSIONPATCH=-20230301
 
 . ${scriptdir}/functions.sh
@@ -13,9 +13,10 @@ VERSIONPATCH=-20230301
 ranlib=${TARGET}-ranlib
 LTO_CFLAGS=
 
-PATCHES="patches/zlib/zlib-pkgconfig.patch \
-patches/zlib/zlib-1.2.12-0012-format.patch \
-patches/zlib/zlib-1.2.12-0013-segfault.patch \
+PATCHES="
+patches/zlib/zlib-pkgconfig.patch
+patches/zlib/zlib-1.2.12-0013-segfault.patch
+patches/zlib/zlib-shared.patch
 "
 
 unpack_archive

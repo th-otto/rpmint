@@ -8,7 +8,7 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        1.2.13
+Version:        1.3
 Release:        1
 License:        Zlib
 Group:          System/Libraries
@@ -22,7 +22,7 @@ BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: http://www.zlib.net/%{pkgname}-%{version}.tar.xz
 Patch0: zlib-pkgconfig.patch
-Patch1: zlib-1.2.12-0012-format.patch
+Patch1: zlib-shared.patch
 Patch2: zlib-1.2.12-0013-segfault.patch
 
 %rpmint_essential
@@ -134,13 +134,13 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 * Sat Jan 16 2010 Keith Scroggins <kws@radix.net>
 - updated to 1.2.3 and built for 68000/68020-60/5475
 
-* Sun Jan 04 2003 Matthias Alles <alles@rhrk.uni-kl.de>
+* Sat Jan 04 2003 Matthias Alles <alles@rhrk.uni-kl.de>
 - updated to 1.2.1
 
 * Wed Mar 13 2002 Frank Naumann <fnaumann@freemint.de>
 - updated to 1.1.4
 
-* Mon Mar 25 2000 Frank Naumann <fnaumann@freemint.de>
+* Sat Mar 25 2000 Frank Naumann <fnaumann@freemint.de>
 - rebuild against new MiNTLib 0.55
 
 * Wed Aug 25 1999 Frank Naumann <fnaumann@freemint.de>

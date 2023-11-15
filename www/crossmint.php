@@ -1436,6 +1436,8 @@ This notably applies to Perl and Python.
 
 <li>2023/11/08 Add SDL_gfx 2.0.26</li>
 
+<li>2023/11/15 Update zlib to 1.3</li>
+
 </ul>
 
 <p></p>

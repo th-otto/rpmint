@@ -1,0 +1,1133 @@
+diff -rup zlib-1.3.orig/zconf.h.in zlib-1.3/zconf.h.in
+--- zlib-1.3.orig/zconf.h.in	2023-04-17 23:35:17.000000000 +0200
++++ zlib-1.3/zconf.h.in	2023-11-15 14:28:29.759036455 +0100
+@@ -152,10 +152,8 @@
+ #  define gz_header             z_gz_header
+ #  define gz_headerp            z_gz_headerp
+ #  define in_func               z_in_func
+-#  define intf                  z_intf
+ #  define out_func              z_out_func
+ #  define uInt                  z_uInt
+-#  define uIntf                 z_uIntf
+ #  define uLong                 z_uLong
+ #  define uLongf                z_uLongf
+ #  define voidp                 z_voidp
+@@ -214,7 +212,7 @@
+ #if !defined(STDC) && (defined(__STDC__) || defined(__cplusplus))
+ #  define STDC
+ #endif
+-#if !defined(STDC) && (defined(__GNUC__) || defined(__BORLANDC__))
++#if !defined(STDC) && (defined(__GNUC__) || defined(__BORLANDC__) || defined(__PUREC__) || defined(__AHCC__))
+ #  define STDC
+ #endif
+ #if !defined(STDC) && (defined(MSDOS) || defined(WINDOWS) || defined(WIN32))
+@@ -234,11 +232,7 @@
+ #  endif
+ #endif
+ 
+-#if defined(ZLIB_CONST) && !defined(z_const)
+-#  define z_const const
+-#else
+-#  define z_const
+-#endif
++#define z_const const
+ 
+ #ifdef Z_SOLO
+ #  ifdef _WIN64
+@@ -300,6 +294,10 @@
+ #  endif
+ #endif
+ 
++#ifdef HAVE_STDARG_H    /* may be set to #if 1 by ./configure */
++#  define Z_HAVE_STDARG_H
++#endif
++
+ #ifndef Z_ARG /* function prototypes for stdarg */
+ #  if defined(STDC) || defined(Z_HAVE_STDARG_H)
+ #    define Z_ARG(args)  args
+@@ -335,19 +333,47 @@
+ #  endif
+ #endif
+ 
++/* When a specific build of zlib is done on Windows, it is either a
++ * DLL or not. That build should have a specific corresponding zconf.h
++ * distributed. The zconf.h thus knows a priori whether the
++ * corresponding library was built as a DLL or not. Requiring the
++ * library user to define ZLIB_DLL when compiling his code, intending
++ * to link against the import library for such a DLL build, is
++ * silly. Instead just unconditionally define ZLIB_DLL here as the
++ * official Windows build of zlib is a DLL, period.
++ *
++ * Similarly, when a specific build of zlib is done on (32-bit)
++ * Windows, it either uses the WINAPI calling convention or not. A
++ * user of a prebuilt library can not choose later. So it is pointless
++ * to require the user to define ZLIB_WINAPI when compiling. Instead,
++ * just have a specific copy of this zconf.h that corresponds to that
++ * build of zlib. For the case of the official build, it does not use WINAPI,
++ * so ignore any attempt by a misguided user to use it.
++ */
++
++#undef ZLIB_DLL
++#if !defined(ZLIB_COMPILATION) && !defined(ZLIB_STATIC)
++#define ZLIB_DLL 1
++#endif
++
++#undef ZLIB_WINAPI
++
+ #if defined(WINDOWS) || defined(WIN32)
++   /* NOTE: Bogus. See above comment about ZLIB_DLL */
+    /* If building or using zlib as a DLL, define ZLIB_DLL.
+     * This is not mandatory, but it offers a little performance increase.
+     */
+ #  ifdef ZLIB_DLL
+ #    if defined(WIN32) && (!defined(__BORLANDC__) || (__BORLANDC__ >= 0x500))
+-#      ifdef ZLIB_INTERNAL
++#      ifdef ZLIB_COMPILATION
+ #        define ZEXTERN extern __declspec(dllexport)
+ #      else
+ #        define ZEXTERN extern __declspec(dllimport)
+ #      endif
+ #    endif
+ #  endif  /* ZLIB_DLL */
++
++   /* NOTE: Bogus. See above comment about ZLIB_WINAPI */
+    /* If building or using zlib with the WINAPI/WINAPIV calling convention,
+     * define ZLIB_WINAPI.
+     * Caution: the standard ZLIB1.DLL is NOT compiled using ZLIB_WINAPI.
+@@ -373,7 +399,7 @@
+ 
+ #if defined (__BEOS__)
+ #  ifdef ZLIB_DLL
+-#    ifdef ZLIB_INTERNAL
++#    ifdef ZLIB_COMPILATION
+ #      define ZEXPORT   __declspec(dllexport)
+ #      define ZEXPORTVA __declspec(dllexport)
+ #    else
+@@ -383,12 +409,22 @@
+ #  endif
+ #endif
+ 
++#if defined(ZLIB_SLB) && (defined(__PUREC__) || defined(__AHCC__))
++#  define ZEXPORT cdecl
++#  define ZEXPORTVA cdecl
++#  define ZCALLBACK cdecl
++#endif
++
++
+ #ifndef ZEXTERN
+ #  define ZEXTERN extern
+ #endif
+ #ifndef ZEXPORT
+ #  define ZEXPORT
+ #endif
++#ifndef ZCALLBACK
++#  define ZCALLBACK
++#endif
+ #ifndef ZEXPORTVA
+ #  define ZEXPORTVA
+ #endif
+@@ -400,7 +436,13 @@
+ #if !defined(__MACTYPES__)
+ typedef unsigned char  Byte;  /* 8 bits */
+ #endif
++#if (defined(__MSHORT__) || defined(__PUREC__) || defined(__AHCC__)) && defined(ZLIB_SLB)
++typedef unsigned long  uInt;  /* 16 bits or more */
++typedef long z_int_t;
++#else
+ typedef unsigned int   uInt;  /* 16 bits or more */
++typedef int z_int_t;
++#endif
+ typedef unsigned long  uLong; /* 32 bits or more */
+ 
+ #ifdef SMALL_MEDIUM
+@@ -410,8 +452,6 @@ typedef unsigned long  uLong; /* 32 bits
+    typedef Byte  FAR Bytef;
+ #endif
+ typedef char  FAR charf;
+-typedef int   FAR intf;
+-typedef uInt  FAR uIntf;
+ typedef uLong FAR uLongf;
+ 
+ #ifdef STDC
+@@ -441,14 +481,10 @@ typedef uLong FAR uLongf;
+    typedef unsigned long z_crc_t;
+ #endif
+ 
+-#ifdef HAVE_UNISTD_H    /* may be set to #if 1 by ./configure */
++#if defined(HAVE_UNISTD_H) || defined(__GNUC__)    /* may be set to #if 1 by ./configure */
+ #  define Z_HAVE_UNISTD_H
+ #endif
+ 
+-#ifdef HAVE_STDARG_H    /* may be set to #if 1 by ./configure */
+-#  define Z_HAVE_STDARG_H
+-#endif
+-
+ #ifdef STDC
+ #  ifndef Z_SOLO
+ #    include <sys/types.h>      /* for off_t */
+@@ -467,23 +503,13 @@ typedef uLong FAR uLongf;
+ #  endif
+ #endif
+ 
+-/* a little trick to accommodate both "#define _LARGEFILE64_SOURCE" and
+- * "#define _LARGEFILE64_SOURCE 1" as requesting 64-bit operations, (even
+- * though the former does not conform to the LFS document), but considering
+- * both "#undef _LARGEFILE64_SOURCE" and "#define _LARGEFILE64_SOURCE 0" as
+- * equivalently requesting no 64-bit operations
+- */
+-#if defined(_LARGEFILE64_SOURCE) && -_LARGEFILE64_SOURCE - -1 == 1
+-#  undef _LARGEFILE64_SOURCE
+-#endif
+-
+ #ifndef Z_HAVE_UNISTD_H
+ #  ifdef __WATCOMC__
+ #    define Z_HAVE_UNISTD_H
+ #  endif
+ #endif
+ #ifndef Z_HAVE_UNISTD_H
+-#  if defined(_LARGEFILE64_SOURCE) && !defined(_WIN32)
++#  if (defined(_LARGEFILE64_SOURCE) && _LARGEFILE64_SOURCE) && !defined(_WIN32)
+ #    define Z_HAVE_UNISTD_H
+ #  endif
+ #endif
+@@ -494,20 +520,20 @@ typedef uLong FAR uLongf;
+ #      include <unixio.h>       /* for off_t */
+ #    endif
+ #    ifndef z_off_t
+-#      define z_off_t off_t
++#      ifdef _WIN32
++#        define z_off_t _off_t
++#      else
++#        define z_off_t off_t
++#      endif
+ #    endif
+ #  endif
+ #endif
+ 
+-#if defined(_LFS64_LARGEFILE) && _LFS64_LARGEFILE-0
+-#  define Z_LFS64
+-#endif
+-
+-#if defined(_LARGEFILE64_SOURCE) && defined(Z_LFS64)
++#if defined(_LARGEFILE64_SOURCE) && _LARGEFILE64_SOURCE
+ #  define Z_LARGE64
+ #endif
+ 
+-#if defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS-0 == 64 && defined(Z_LFS64)
++#if defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS-0 == 64
+ #  define Z_WANT64
+ #endif
+ 
+@@ -521,13 +547,16 @@ typedef uLong FAR uLongf;
+ #  define z_off_t long
+ #endif
+ 
+-#if !defined(_WIN32) && defined(Z_LARGE64)
+-#  define z_off64_t off64_t
+-#else
+-#  if defined(_WIN32) && !defined(__GNUC__)
++#if !defined(Z_SOLO)
++#  if defined(__GNUC__)
++__extension__ typedef long long z_off64_t_;
++#    define z_off64_t z_off64_t_
++#  elif defined(_WIN32)
+ #    define z_off64_t __int64
++#  elif defined(ULONG_MAX) && (ULONG_MAX > 0xffffffffUL)
++#    define z_off64_t long
+ #  else
+-#    define z_off64_t z_off_t
++#    define z_off64_t off_t
+ #  endif
+ #endif
+ 
+diff -rup zlib-1.3.orig/zlib.h zlib-1.3/zlib.h
+--- zlib-1.3.orig/zlib.h	2023-08-18 10:45:36.000000000 +0200
++++ zlib-1.3/zlib.h	2023-11-15 14:28:44.039017745 +0100
+@@ -31,7 +31,7 @@
+ #ifndef ZLIB_H
+ #define ZLIB_H
+ 
+-#include "zconf.h"
++#include <zconf.h>
+ 
+ #ifdef __cplusplus
+ extern "C" {
+@@ -84,7 +84,7 @@ typedef void   (*free_func)(voidpf opaqu
+ struct internal_state;
+ 
+ typedef struct z_stream_s {
+-    z_const Bytef *next_in;     /* next input byte */
++    const Bytef *next_in;     /* next input byte */
+     uInt     avail_in;  /* number of bytes available at next_in */
+     uLong    total_in;  /* total number of input bytes read so far */
+ 
+@@ -92,14 +92,14 @@ typedef struct z_stream_s {
+     uInt     avail_out; /* remaining free space at next_out */
+     uLong    total_out; /* total number of bytes output so far */
+ 
+-    z_const char *msg;  /* last error message, NULL if no error */
++    const char *msg;  /* last error message, NULL if no error */
+     struct internal_state FAR *state; /* not visible by applications */
+ 
+     alloc_func zalloc;  /* used to allocate the internal state */
+     free_func  zfree;   /* used to free the internal state */
+     voidpf     opaque;  /* private data object passed to zalloc and zfree */
+ 
+-    int     data_type;  /* best guess about the data type: binary or text
++    z_int_t data_type;  /* best guess about the data type: binary or text
+                            for deflate, or the decoding state for inflate */
+     uLong   adler;      /* Adler-32 or CRC-32 value of the uncompressed data */
+     uLong   reserved;   /* reserved for future use */
+@@ -112,10 +112,10 @@ typedef z_stream FAR *z_streamp;
+   for more details on the meanings of these fields.
+ */
+ typedef struct gz_header_s {
+-    int     text;       /* true if compressed data believed to be text */
++    z_int_t text;       /* true if compressed data believed to be text */
+     uLong   time;       /* modification time */
+-    int     xflags;     /* extra flags (not used when writing a gzip file) */
+-    int     os;         /* operating system */
++    z_int_t xflags;     /* extra flags (not used when writing a gzip file) */
++    z_int_t os;         /* operating system */
+     Bytef   *extra;     /* pointer to extra field or Z_NULL if none */
+     uInt    extra_len;  /* extra field length (valid if extra != Z_NULL) */
+     uInt    extra_max;  /* space at extra (only when reading header) */
+@@ -123,8 +123,8 @@ typedef struct gz_header_s {
+     uInt    name_max;   /* space at name (only when reading header) */
+     Bytef   *comment;   /* pointer to zero-terminated comment or Z_NULL */
+     uInt    comm_max;   /* space at comment (only when reading header) */
+-    int     hcrc;       /* true if there was or will be a header crc */
+-    int     done;       /* true when done reading gzip header (not used
++    z_int_t hcrc;       /* true if there was or will be a header crc */
++    z_int_t done;       /* true when done reading gzip header (not used
+                            when writing a gzip file) */
+ } gz_header;
+ 
+@@ -225,7 +225,7 @@ ZEXTERN const char * ZEXPORT zlibVersion
+  */
+ 
+ /*
+-ZEXTERN int ZEXPORT deflateInit(z_streamp strm, int level);
++ZEXTERN z_int_t ZEXPORT deflateInit(z_streamp strm, z_int_t level);
+ 
+      Initializes the internal stream state for compression.  The fields
+    zalloc, zfree and opaque must be initialized before by the caller.  If
+@@ -247,7 +247,7 @@ ZEXTERN int ZEXPORT deflateInit(z_stream
+ */
+ 
+ 
+-ZEXTERN int ZEXPORT deflate(z_streamp strm, int flush);
++ZEXTERN z_int_t ZEXPORT deflate(z_streamp strm, z_int_t flush);
+ /*
+     deflate compresses as much data as possible, and stops when the input
+   buffer becomes empty or the output buffer becomes full.  It may introduce
+@@ -360,7 +360,7 @@ ZEXTERN int ZEXPORT deflate(z_streamp st
+ */
+ 
+ 
+-ZEXTERN int ZEXPORT deflateEnd(z_streamp strm);
++ZEXTERN z_int_t ZEXPORT deflateEnd(z_streamp strm);
+ /*
+      All dynamically allocated data structures for this stream are freed.
+    This function discards any unprocessed input and does not flush any pending
+@@ -375,7 +375,7 @@ ZEXTERN int ZEXPORT deflateEnd(z_streamp
+ 
+ 
+ /*
+-ZEXTERN int ZEXPORT inflateInit(z_streamp strm);
++ZEXTERN z_int_t ZEXPORT inflateInit(z_streamp strm);
+ 
+      Initializes the internal stream state for decompression.  The fields
+    next_in, avail_in, zalloc, zfree and opaque must be initialized before by
+@@ -398,7 +398,7 @@ ZEXTERN int ZEXPORT inflateInit(z_stream
+ */
+ 
+ 
+-ZEXTERN int ZEXPORT inflate(z_streamp strm, int flush);
++ZEXTERN z_int_t ZEXPORT inflate(z_streamp strm, z_int_t flush);
+ /*
+     inflate decompresses as much data as possible, and stops when the input
+   buffer becomes empty or the output buffer becomes full.  It may introduce
+@@ -518,7 +518,7 @@ ZEXTERN int ZEXPORT inflate(z_streamp st
+ */
+ 
+ 
+-ZEXTERN int ZEXPORT inflateEnd(z_streamp strm);
++ZEXTERN z_int_t ZEXPORT inflateEnd(z_streamp strm);
+ /*
+      All dynamically allocated data structures for this stream are freed.
+    This function discards any unprocessed input and does not flush any pending
+@@ -536,12 +536,12 @@ ZEXTERN int ZEXPORT inflateEnd(z_streamp
+ */
+ 
+ /*
+-ZEXTERN int ZEXPORT deflateInit2(z_streamp strm,
+-                                 int level,
+-                                 int method,
+-                                 int windowBits,
+-                                 int memLevel,
+-                                 int strategy);
++ZEXTERN z_int_t ZEXPORT deflateInit2(z_streamp strm,
++                                     z_int_t  level,
++                                     z_int_t  method,
++                                     z_int_t  windowBits,
++                                     z_int_t  memLevel,
++                                     z_int_t  strategy);
+ 
+      This is another version of deflateInit with more compression options.  The
+    fields zalloc, zfree and opaque must be initialized before by the caller.
+@@ -608,9 +608,9 @@ ZEXTERN int ZEXPORT deflateInit2(z_strea
+    compression: this will be done by deflate().
+ */
+ 
+-ZEXTERN int ZEXPORT deflateSetDictionary(z_streamp strm,
+-                                         const Bytef *dictionary,
+-                                         uInt  dictLength);
++ZEXTERN z_int_t ZEXPORT deflateSetDictionary(z_streamp strm,
++                                             const Bytef *dictionary,
++                                             uInt  dictLength);
+ /*
+      Initializes the compression dictionary from the given byte sequence
+    without producing any compressed output.  When using the zlib format, this
+@@ -652,9 +652,9 @@ ZEXTERN int ZEXPORT deflateSetDictionary
+    not perform any compression: this will be done by deflate().
+ */
+ 
+-ZEXTERN int ZEXPORT deflateGetDictionary(z_streamp strm,
+-                                         Bytef *dictionary,
+-                                         uInt  *dictLength);
++ZEXTERN z_int_t ZEXPORT deflateGetDictionary(z_streamp strm,
++                                             Bytef *dictionary,
++                                             uInt  *dictLength);
+ /*
+      Returns the sliding dictionary being maintained by deflate.  dictLength is
+    set to the number of bytes in the dictionary, and that many bytes are copied
+@@ -674,8 +674,8 @@ ZEXTERN int ZEXPORT deflateGetDictionary
+    stream state is inconsistent.
+ */
+ 
+-ZEXTERN int ZEXPORT deflateCopy(z_streamp dest,
+-                                z_streamp source);
++ZEXTERN z_int_t ZEXPORT deflateCopy(z_streamp dest,
++                                    z_streamp source);
+ /*
+      Sets the destination stream as a complete copy of the source stream.
+ 
+@@ -692,7 +692,7 @@ ZEXTERN int ZEXPORT deflateCopy(z_stream
+    destination.
+ */
+ 
+-ZEXTERN int ZEXPORT deflateReset(z_streamp strm);
++ZEXTERN z_int_t ZEXPORT deflateReset(z_streamp strm);
+ /*
+      This function is equivalent to deflateEnd followed by deflateInit, but
+    does not free and reallocate the internal compression state.  The stream
+@@ -703,9 +703,9 @@ ZEXTERN int ZEXPORT deflateReset(z_strea
+    stream state was inconsistent (such as zalloc or state being Z_NULL).
+ */
+ 
+-ZEXTERN int ZEXPORT deflateParams(z_streamp strm,
+-                                  int level,
+-                                  int strategy);
++ZEXTERN z_int_t ZEXPORT deflateParams(z_streamp strm,
++                                      z_int_t level,
++                                      z_int_t strategy);
+ /*
+      Dynamically update the compression level and compression strategy.  The
+    interpretation of level and strategy is as in deflateInit2().  This can be
+@@ -741,11 +741,11 @@ ZEXTERN int ZEXPORT deflateParams(z_stre
+    retried with more output space.
+ */
+ 
+-ZEXTERN int ZEXPORT deflateTune(z_streamp strm,
+-                                int good_length,
+-                                int max_lazy,
+-                                int nice_length,
+-                                int max_chain);
++ZEXTERN z_int_t ZEXPORT deflateTune(z_streamp strm,
++                                    z_int_t good_length,
++                                    z_int_t max_lazy,
++                                    z_int_t nice_length,
++                                    z_int_t max_chain);
+ /*
+      Fine tune deflate's internal compression parameters.  This should only be
+    used by someone who understands the algorithm used by zlib's deflate for
+@@ -773,9 +773,9 @@ ZEXTERN uLong ZEXPORT deflateBound(z_str
+    than Z_FINISH or Z_NO_FLUSH are used.
+ */
+ 
+-ZEXTERN int ZEXPORT deflatePending(z_streamp strm,
+-                                   unsigned *pending,
+-                                   int *bits);
++ZEXTERN z_int_t ZEXPORT deflatePending(z_streamp strm,
++                                       uInt *pending,
++                                       z_int_t *bits);
+ /*
+      deflatePending() returns the number of bytes and bits of output that have
+    been generated, but not yet provided in the available output.  The bytes not
+@@ -788,9 +788,9 @@ ZEXTERN int ZEXPORT deflatePending(z_str
+    stream state was inconsistent.
+  */
+ 
+-ZEXTERN int ZEXPORT deflatePrime(z_streamp strm,
+-                                 int bits,
+-                                 int value);
++ZEXTERN z_int_t ZEXPORT deflatePrime(z_streamp strm,
++                                     z_int_t bits,
++                                     z_int_t value);
+ /*
+      deflatePrime() inserts bits in the deflate output stream.  The intent
+    is that this function is used to start off the deflate output with the bits
+@@ -805,8 +805,8 @@ ZEXTERN int ZEXPORT deflatePrime(z_strea
+    source stream state was inconsistent.
+ */
+ 
+-ZEXTERN int ZEXPORT deflateSetHeader(z_streamp strm,
+-                                     gz_headerp head);
++ZEXTERN z_int_t ZEXPORT deflateSetHeader(z_streamp strm,
++                                         gz_headerp head);
+ /*
+      deflateSetHeader() provides gzip header information for when a gzip
+    stream is requested by deflateInit2().  deflateSetHeader() may be called
+@@ -831,8 +831,8 @@ ZEXTERN int ZEXPORT deflateSetHeader(z_s
+ */
+ 
+ /*
+-ZEXTERN int ZEXPORT inflateInit2(z_streamp strm,
+-                                 int windowBits);
++ZEXTERN z_int_t ZEXPORT inflateInit2(z_streamp strm,
++                                     z_int_t  windowBits);
+ 
+      This is another version of inflateInit with an extra parameter.  The
+    fields next_in, avail_in, zalloc, zfree and opaque must be initialized
+@@ -885,9 +885,9 @@ ZEXTERN int ZEXPORT inflateInit2(z_strea
+    deferred until inflate() is called.
+ */
+ 
+-ZEXTERN int ZEXPORT inflateSetDictionary(z_streamp strm,
+-                                         const Bytef *dictionary,
+-                                         uInt  dictLength);
++ZEXTERN z_int_t ZEXPORT inflateSetDictionary(z_streamp strm,
++                                             const Bytef *dictionary,
++                                             uInt  dictLength);
+ /*
+      Initializes the decompression dictionary from the given uncompressed byte
+    sequence.  This function must be called immediately after a call of inflate,
+@@ -908,9 +908,9 @@ ZEXTERN int ZEXPORT inflateSetDictionary
+    inflate().
+ */
+ 
+-ZEXTERN int ZEXPORT inflateGetDictionary(z_streamp strm,
+-                                         Bytef *dictionary,
+-                                         uInt  *dictLength);
++ZEXTERN z_int_t ZEXPORT inflateGetDictionary(z_streamp strm,
++                                             Bytef *dictionary,
++                                             uInt  *dictLength);
+ /*
+      Returns the sliding dictionary being maintained by inflate.  dictLength is
+    set to the number of bytes in the dictionary, and that many bytes are copied
+@@ -923,7 +923,7 @@ ZEXTERN int ZEXPORT inflateGetDictionary
+    stream state is inconsistent.
+ */
+ 
+-ZEXTERN int ZEXPORT inflateSync(z_streamp strm);
++ZEXTERN z_int_t ZEXPORT inflateSync(z_streamp strm);
+ /*
+      Skips invalid compressed data until a possible full flush point (see above
+    for the description of deflate with Z_FULL_FLUSH) can be found, or until all
+@@ -942,8 +942,8 @@ ZEXTERN int ZEXPORT inflateSync(z_stream
+    input each time, until success or end of the input data.
+ */
+ 
+-ZEXTERN int ZEXPORT inflateCopy(z_streamp dest,
+-                                z_streamp source);
++ZEXTERN z_int_t ZEXPORT inflateCopy(z_streamp dest,
++                                    z_streamp source);
+ /*
+      Sets the destination stream as a complete copy of the source stream.
+ 
+@@ -958,7 +958,7 @@ ZEXTERN int ZEXPORT inflateCopy(z_stream
+    destination.
+ */
+ 
+-ZEXTERN int ZEXPORT inflateReset(z_streamp strm);
++ZEXTERN z_int_t ZEXPORT inflateReset(z_streamp strm);
+ /*
+      This function is equivalent to inflateEnd followed by inflateInit,
+    but does not free and reallocate the internal decompression state.  The
+@@ -969,8 +969,8 @@ ZEXTERN int ZEXPORT inflateReset(z_strea
+    stream state was inconsistent (such as zalloc or state being Z_NULL).
+ */
+ 
+-ZEXTERN int ZEXPORT inflateReset2(z_streamp strm,
+-                                  int windowBits);
++ZEXTERN z_int_t ZEXPORT inflateReset2(z_streamp strm,
++                                      z_int_t windowBits);
+ /*
+      This function is the same as inflateReset, but it also permits changing
+    the wrap and window size requests.  The windowBits parameter is interpreted
+@@ -983,9 +983,9 @@ ZEXTERN int ZEXPORT inflateReset2(z_stre
+    the windowBits parameter is invalid.
+ */
+ 
+-ZEXTERN int ZEXPORT inflatePrime(z_streamp strm,
+-                                 int bits,
+-                                 int value);
++ZEXTERN z_int_t ZEXPORT inflatePrime(z_streamp strm,
++                                     z_int_t bits,
++                                     z_int_t value);
+ /*
+      This function inserts bits in the inflate input stream.  The intent is
+    that this function is used to start inflating at a bit position in the
+@@ -1032,8 +1032,8 @@ ZEXTERN long ZEXPORT inflateMark(z_strea
+    source stream state was inconsistent.
+ */
+ 
+-ZEXTERN int ZEXPORT inflateGetHeader(z_streamp strm,
+-                                     gz_headerp head);
++ZEXTERN z_int_t ZEXPORT inflateGetHeader(z_streamp strm,
++                                         gz_headerp head);
+ /*
+      inflateGetHeader() requests that gzip header information be stored in the
+    provided gz_header structure.  inflateGetHeader() may be called after
+@@ -1073,8 +1073,8 @@ ZEXTERN int ZEXPORT inflateGetHeader(z_s
+ */
+ 
+ /*
+-ZEXTERN int ZEXPORT inflateBackInit(z_streamp strm, int windowBits,
+-                                    unsigned char FAR *window);
++ZEXTERN z_int_t ZEXPORT inflateBackInit(z_streamp strm, z_int_t windowBits,
++                                        unsigned char FAR *window);
+ 
+      Initialize the internal stream state for decompression using inflateBack()
+    calls.  The fields zalloc, zfree and opaque in strm must be initialized
+@@ -1094,13 +1094,13 @@ ZEXTERN int ZEXPORT inflateBackInit(z_st
+    the version of the header file.
+ */
+ 
+-typedef unsigned (*in_func)(void FAR *,
+-                            z_const unsigned char FAR * FAR *);
+-typedef int (*out_func)(void FAR *, unsigned char FAR *, unsigned);
+-
+-ZEXTERN int ZEXPORT inflateBack(z_streamp strm,
+-                                in_func in, void FAR *in_desc,
+-                                out_func out, void FAR *out_desc);
++typedef uInt ZCALLBACK (*in_func)(void FAR *,
++                                const unsigned char FAR * FAR *);
++typedef z_int_t ZCALLBACK (*out_func)(void FAR *, unsigned char FAR *, uInt);
++
++ZEXTERN z_int_t ZEXPORT inflateBack(z_streamp strm,
++                                    in_func in, void FAR *in_desc,
++                                    out_func out, void FAR *out_desc);
+ /*
+      inflateBack() does a raw inflate with a single call using a call-back
+    interface for input and output.  This is potentially more efficient than
+@@ -1168,7 +1168,7 @@ ZEXTERN int ZEXPORT inflateBack(z_stream
+    cannot return Z_OK.
+ */
+ 
+-ZEXTERN int ZEXPORT inflateBackEnd(z_streamp strm);
++ZEXTERN z_int_t ZEXPORT inflateBackEnd(z_streamp strm);
+ /*
+      All memory allocated by inflateBackInit() is freed.
+ 
+@@ -1229,8 +1229,8 @@ ZEXTERN uLong ZEXPORT zlibCompileFlags(v
+    you need special options.
+ */
+ 
+-ZEXTERN int ZEXPORT compress(Bytef *dest,   uLongf *destLen,
+-                             const Bytef *source, uLong sourceLen);
++ZEXTERN z_int_t ZEXPORT compress(Bytef *dest,   uLongf *destLen,
++                                 const Bytef *source, uLong sourceLen);
+ /*
+      Compresses the source buffer into the destination buffer.  sourceLen is
+    the byte length of the source buffer.  Upon entry, destLen is the total size
+@@ -1244,9 +1244,9 @@ ZEXTERN int ZEXPORT compress(Bytef *dest
+    buffer.
+ */
+ 
+-ZEXTERN int ZEXPORT compress2(Bytef *dest,   uLongf *destLen,
+-                              const Bytef *source, uLong sourceLen,
+-                              int level);
++ZEXTERN z_int_t ZEXPORT compress2(Bytef *dest,   uLongf *destLen,
++                                  const Bytef *source, uLong sourceLen,
++                                  z_int_t level);
+ /*
+      Compresses the source buffer into the destination buffer.  The level
+    parameter has the same meaning as in deflateInit.  sourceLen is the byte
+@@ -1267,8 +1267,8 @@ ZEXTERN uLong ZEXPORT compressBound(uLon
+    compress() or compress2() call to allocate the destination buffer.
+ */
+ 
+-ZEXTERN int ZEXPORT uncompress(Bytef *dest,   uLongf *destLen,
+-                               const Bytef *source, uLong sourceLen);
++ZEXTERN z_int_t ZEXPORT uncompress(Bytef *dest,   uLongf *destLen,
++                                   const Bytef *source, uLong sourceLen);
+ /*
+      Decompresses the source buffer into the destination buffer.  sourceLen is
+    the byte length of the source buffer.  Upon entry, destLen is the total size
+@@ -1285,8 +1285,8 @@ ZEXTERN int ZEXPORT uncompress(Bytef *de
+    buffer with the uncompressed data up to that point.
+ */
+ 
+-ZEXTERN int ZEXPORT uncompress2(Bytef *dest,   uLongf *destLen,
+-                                const Bytef *source, uLong *sourceLen);
++ZEXTERN z_int_t ZEXPORT uncompress2(Bytef *dest,   uLongf *destLen,
++                                    const Bytef *source, uLong *sourceLen);
+ /*
+      Same as uncompress, except that sourceLen is a pointer, where the
+    length of the source is *sourceLen.  On return, *sourceLen is the number of
+@@ -1342,7 +1342,7 @@ ZEXTERN gzFile ZEXPORT gzopen(const char
+    file could not be opened.
+ */
+ 
+-ZEXTERN gzFile ZEXPORT gzdopen(int fd, const char *mode);
++ZEXTERN gzFile ZEXPORT gzdopen(z_int_t fd, const char *mode);
+ /*
+      Associate a gzFile with the file descriptor fd.  File descriptors are
+    obtained from calls like open, dup, creat, pipe or fileno (if the file has
+@@ -1365,7 +1365,7 @@ ZEXTERN gzFile ZEXPORT gzdopen(int fd, c
+    will not detect if fd is invalid (unless fd is -1).
+ */
+ 
+-ZEXTERN int ZEXPORT gzbuffer(gzFile file, unsigned size);
++ZEXTERN z_int_t ZEXPORT gzbuffer(gzFile file, uInt size);
+ /*
+      Set the internal buffer size used by this library's functions for file to
+    size.  The default buffer size is 8192 bytes.  This function must be called
+@@ -1381,7 +1381,7 @@ ZEXTERN int ZEXPORT gzbuffer(gzFile file
+    too late.
+ */
+ 
+-ZEXTERN int ZEXPORT gzsetparams(gzFile file, int level, int strategy);
++ZEXTERN z_int_t ZEXPORT gzsetparams(gzFile file, z_int_t level, z_int_t strategy);
+ /*
+      Dynamically update the compression level and strategy for file.  See the
+    description of deflateInit2 for the meaning of these parameters. Previously
+@@ -1392,7 +1392,7 @@ ZEXTERN int ZEXPORT gzsetparams(gzFile f
+    or Z_MEM_ERROR if there is a memory allocation error.
+ */
+ 
+-ZEXTERN int ZEXPORT gzread(gzFile file, voidp buf, unsigned len);
++ZEXTERN z_int_t ZEXPORT gzread(gzFile file, voidp buf, uInt len);
+ /*
+      Read and decompress up to len uncompressed bytes from file into buf.  If
+    the input file is not in gzip format, gzread copies the given number of
+@@ -1448,14 +1448,14 @@ ZEXTERN z_size_t ZEXPORT gzfread(voidp b
+    file, resetting and retrying on end-of-file, when size is not 1.
+ */
+ 
+-ZEXTERN int ZEXPORT gzwrite(gzFile file, voidpc buf, unsigned len);
++ZEXTERN z_int_t ZEXPORT gzwrite(gzFile file, voidpc buf, uInt len);
+ /*
+      Compress and write the len uncompressed bytes at buf to file. gzwrite
+    returns the number of uncompressed bytes written or 0 in case of error.
+ */
+ 
+ ZEXTERN z_size_t ZEXPORT gzfwrite(voidpc buf, z_size_t size,
+-                                  z_size_t nitems, gzFile file);
++                                      z_size_t nitems, gzFile file);
+ /*
+      Compress and write nitems items of size size from buf to file, duplicating
+    the interface of stdio's fwrite(), with size_t request and return types.  If
+@@ -1468,7 +1468,11 @@ ZEXTERN z_size_t ZEXPORT gzfwrite(voidpc
+    is returned, and the error state is set to Z_STREAM_ERROR.
+ */
+ 
+-ZEXTERN int ZEXPORTVA gzprintf(gzFile file, const char *format, ...);
++ZEXTERN z_int_t ZEXPORTVA gzprintf(gzFile file, const char *format, ...)
++#ifdef __GNUC__
++	__attribute__((__format__(__printf__,2,3)))
++#endif
++;
+ /*
+      Convert, format, compress, and write the arguments (...) to file under
+    control of the string format, as in fprintf.  gzprintf returns the number of
+@@ -1483,7 +1487,7 @@ ZEXTERN int ZEXPORTVA gzprintf(gzFile fi
+    This can be determined using zlibCompileFlags().
+ */
+ 
+-ZEXTERN int ZEXPORT gzputs(gzFile file, const char *s);
++ZEXTERN z_int_t ZEXPORT gzputs(gzFile file, const char *s);
+ /*
+      Compress and write the given null-terminated string s to file, excluding
+    the terminating null character.
+@@ -1491,7 +1495,7 @@ ZEXTERN int ZEXPORT gzputs(gzFile file,
+      gzputs returns the number of characters written, or -1 in case of error.
+ */
+ 
+-ZEXTERN char * ZEXPORT gzgets(gzFile file, char *buf, int len);
++ZEXTERN char * ZEXPORT gzgets(gzFile file, char *buf, z_int_t len);
+ /*
+      Read and decompress bytes from file into buf, until len-1 characters are
+    read, or until a newline character is read and transferred to buf, or an
+@@ -1505,13 +1509,13 @@ ZEXTERN char * ZEXPORT gzgets(gzFile fil
+    buf are indeterminate.
+ */
+ 
+-ZEXTERN int ZEXPORT gzputc(gzFile file, int c);
++ZEXTERN z_int_t ZEXPORT gzputc(gzFile file, z_int_t c);
+ /*
+      Compress and write c, converted to an unsigned char, into file.  gzputc
+    returns the value that was written, or -1 in case of error.
+ */
+ 
+-ZEXTERN int ZEXPORT gzgetc(gzFile file);
++ZEXTERN z_int_t ZEXPORT gzgetc(gzFile file);
+ /*
+      Read and decompress one byte from file.  gzgetc returns this byte or -1
+    in case of end of file or error.  This is implemented as a macro for speed.
+@@ -1520,7 +1524,7 @@ ZEXTERN int ZEXPORT gzgetc(gzFile file);
+    points to has been clobbered or not.
+ */
+ 
+-ZEXTERN int ZEXPORT gzungetc(int c, gzFile file);
++ZEXTERN z_int_t ZEXPORT gzungetc(z_int_t c, gzFile file);
+ /*
+      Push c back onto the stream for file to be read as the first character on
+    the next read.  At least one character of push-back is always allowed.
+@@ -1532,7 +1536,7 @@ ZEXTERN int ZEXPORT gzungetc(int c, gzFi
+    gzseek() or gzrewind().
+ */
+ 
+-ZEXTERN int ZEXPORT gzflush(gzFile file, int flush);
++ZEXTERN z_int_t ZEXPORT gzflush(gzFile file, z_int_t flush);
+ /*
+      Flush all pending output to file.  The parameter flush is as in the
+    deflate() function.  The return value is the zlib error number (see function
+@@ -1549,7 +1553,7 @@ ZEXTERN int ZEXPORT gzflush(gzFile file,
+ 
+ /*
+ ZEXTERN z_off_t ZEXPORT gzseek(gzFile file,
+-                               z_off_t offset, int whence);
++                                   z_off_t offset, z_int_t whence);
+ 
+      Set the starting position to offset relative to whence for the next gzread
+    or gzwrite on file.  The offset represents a number of bytes in the
+@@ -1567,7 +1571,7 @@ ZEXTERN z_off_t ZEXPORT gzseek(gzFile fi
+    would be before the current position.
+ */
+ 
+-ZEXTERN int ZEXPORT    gzrewind(gzFile file);
++ZEXTERN z_int_t ZEXPORT    gzrewind(gzFile file);
+ /*
+      Rewind file. This function is supported only for reading.
+ 
+@@ -1595,7 +1599,7 @@ ZEXTERN z_off_t ZEXPORT gzoffset(gzFile
+    be used for a progress indicator.  On error, gzoffset() returns -1.
+ */
+ 
+-ZEXTERN int ZEXPORT gzeof(gzFile file);
++ZEXTERN z_int_t ZEXPORT gzeof(gzFile file);
+ /*
+      Return true (1) if the end-of-file indicator for file has been set while
+    reading, false (0) otherwise.  Note that the end-of-file indicator is set
+@@ -1610,7 +1614,7 @@ ZEXTERN int ZEXPORT gzeof(gzFile file);
+    has grown since the previous end of file was detected.
+ */
+ 
+-ZEXTERN int ZEXPORT gzdirect(gzFile file);
++ZEXTERN z_int_t ZEXPORT gzdirect(gzFile file);
+ /*
+      Return true (1) if file is being copied directly while reading, or false
+    (0) if file is a gzip stream being decompressed.
+@@ -1631,7 +1635,7 @@ ZEXTERN int ZEXPORT gzdirect(gzFile file
+    gzip file reading and decompression, which may not be desired.)
+ */
+ 
+-ZEXTERN int ZEXPORT    gzclose(gzFile file);
++ZEXTERN z_int_t ZEXPORT    gzclose(gzFile file);
+ /*
+      Flush all pending output for file, if necessary, close file and
+    deallocate the (de)compression state.  Note that once file is closed, you
+@@ -1644,8 +1648,8 @@ ZEXTERN int ZEXPORT    gzclose(gzFile fi
+    last read ended in the middle of a gzip stream, or Z_OK on success.
+ */
+ 
+-ZEXTERN int ZEXPORT gzclose_r(gzFile file);
+-ZEXTERN int ZEXPORT gzclose_w(gzFile file);
++ZEXTERN z_int_t ZEXPORT gzclose_r(gzFile file);
++ZEXTERN z_int_t ZEXPORT gzclose_w(gzFile file);
+ /*
+      Same as gzclose(), but gzclose_r() is only for use when reading, and
+    gzclose_w() is only for use when writing or appending.  The advantage to
+@@ -1656,7 +1660,7 @@ ZEXTERN int ZEXPORT gzclose_w(gzFile fil
+    zlib library.
+ */
+ 
+-ZEXTERN const char * ZEXPORT gzerror(gzFile file, int *errnum);
++ZEXTERN const char * ZEXPORT gzerror(gzFile file, z_int_t *errnum);
+ /*
+      Return the error message for the last error which occurred on file.
+    errnum is set to zlib error number.  If an error occurred in the file system
+@@ -1781,48 +1785,48 @@ ZEXTERN uLong ZEXPORT crc32_combine_op(u
+ /* deflateInit and inflateInit are macros to allow checking the zlib version
+  * and the compiler's view of z_stream:
+  */
+-ZEXTERN int ZEXPORT deflateInit_(z_streamp strm, int level,
+-                                 const char *version, int stream_size);
+-ZEXTERN int ZEXPORT inflateInit_(z_streamp strm,
+-                                 const char *version, int stream_size);
+-ZEXTERN int ZEXPORT deflateInit2_(z_streamp strm, int  level, int  method,
+-                                  int windowBits, int memLevel,
+-                                  int strategy, const char *version,
+-                                  int stream_size);
+-ZEXTERN int ZEXPORT inflateInit2_(z_streamp strm, int  windowBits,
+-                                  const char *version, int stream_size);
+-ZEXTERN int ZEXPORT inflateBackInit_(z_streamp strm, int windowBits,
+-                                     unsigned char FAR *window,
+-                                     const char *version,
+-                                     int stream_size);
++ZEXTERN z_int_t ZEXPORT deflateInit_(z_streamp strm, z_int_t level,
++                                     const char *version, z_int_t stream_size);
++ZEXTERN z_int_t ZEXPORT inflateInit_(z_streamp strm,
++                                     const char *version, z_int_t stream_size);
++ZEXTERN z_int_t ZEXPORT deflateInit2_(z_streamp strm, z_int_t  level, z_int_t  method,
++                                      z_int_t windowBits, z_int_t memLevel,
++                                      z_int_t strategy, const char *version,
++                                      z_int_t stream_size);
++ZEXTERN z_int_t ZEXPORT inflateInit2_(z_streamp strm, z_int_t  windowBits,
++                                      const char *version, z_int_t stream_size);
++ZEXTERN z_int_t ZEXPORT inflateBackInit_(z_streamp strm, z_int_t windowBits,
++                                         unsigned char FAR *window,
++                                         const char *version,
++                                         z_int_t stream_size);
+ #ifdef Z_PREFIX_SET
+ #  define z_deflateInit(strm, level) \
+-          deflateInit_((strm), (level), ZLIB_VERSION, (int)sizeof(z_stream))
++          deflateInit_((strm), (level), ZLIB_VERSION, (z_int_t)sizeof(z_stream))
+ #  define z_inflateInit(strm) \
+-          inflateInit_((strm), ZLIB_VERSION, (int)sizeof(z_stream))
++          inflateInit_((strm), ZLIB_VERSION, (z_int_t)sizeof(z_stream))
+ #  define z_deflateInit2(strm, level, method, windowBits, memLevel, strategy) \
+           deflateInit2_((strm),(level),(method),(windowBits),(memLevel),\
+-                        (strategy), ZLIB_VERSION, (int)sizeof(z_stream))
++                        (strategy), ZLIB_VERSION, (z_int_t)sizeof(z_stream))
+ #  define z_inflateInit2(strm, windowBits) \
+           inflateInit2_((strm), (windowBits), ZLIB_VERSION, \
+-                        (int)sizeof(z_stream))
++                        (z_int_t)sizeof(z_stream))
+ #  define z_inflateBackInit(strm, windowBits, window) \
+           inflateBackInit_((strm), (windowBits), (window), \
+-                           ZLIB_VERSION, (int)sizeof(z_stream))
++                           ZLIB_VERSION, (z_int_t)sizeof(z_stream))
+ #else
+ #  define deflateInit(strm, level) \
+-          deflateInit_((strm), (level), ZLIB_VERSION, (int)sizeof(z_stream))
++          deflateInit_((strm), (level), ZLIB_VERSION, (z_int_t)sizeof(z_stream))
+ #  define inflateInit(strm) \
+-          inflateInit_((strm), ZLIB_VERSION, (int)sizeof(z_stream))
++          inflateInit_((strm), ZLIB_VERSION, (z_int_t)sizeof(z_stream))
+ #  define deflateInit2(strm, level, method, windowBits, memLevel, strategy) \
+           deflateInit2_((strm),(level),(method),(windowBits),(memLevel),\
+-                        (strategy), ZLIB_VERSION, (int)sizeof(z_stream))
++                        (strategy), ZLIB_VERSION, (z_int_t)sizeof(z_stream))
+ #  define inflateInit2(strm, windowBits) \
+           inflateInit2_((strm), (windowBits), ZLIB_VERSION, \
+-                        (int)sizeof(z_stream))
++                        (z_int_t)sizeof(z_stream))
+ #  define inflateBackInit(strm, windowBits, window) \
+           inflateBackInit_((strm), (windowBits), (window), \
+-                           ZLIB_VERSION, (int)sizeof(z_stream))
++                           ZLIB_VERSION, (z_int_t)sizeof(z_stream))
+ #endif
+ 
+ #ifndef Z_SOLO
+@@ -1835,11 +1839,11 @@ ZEXTERN int ZEXPORT inflateBackInit_(z_s
+  * only be used by the gzgetc() macro.  You have been warned.
+  */
+ struct gzFile_s {
+-    unsigned have;
++    uInt have;
+     unsigned char *next;
+     z_off64_t pos;
+ };
+-ZEXTERN int ZEXPORT gzgetc_(gzFile file);       /* backward compatibility */
++ZEXTERN z_int_t ZEXPORT gzgetc_(gzFile file);  /* backward compatibility */
+ #ifdef Z_PREFIX_SET
+ #  undef z_gzgetc
+ #  define z_gzgetc(g) \
+@@ -1855,9 +1859,9 @@ ZEXTERN int ZEXPORT gzgetc_(gzFile file)
+  * functions are changed to 64 bits) -- in case these are set on systems
+  * without large file support, _LFS64_LARGEFILE must also be true
+  */
+-#ifdef Z_LARGE64
++#if defined(Z_LARGE64) || defined(Z_WANT64)
+    ZEXTERN gzFile ZEXPORT gzopen64(const char *, const char *);
+-   ZEXTERN z_off64_t ZEXPORT gzseek64(gzFile, z_off64_t, int);
++   ZEXTERN z_off64_t ZEXPORT gzseek64(gzFile, z_off64_t, z_int_t);
+    ZEXTERN z_off64_t ZEXPORT gztell64(gzFile);
+    ZEXTERN z_off64_t ZEXPORT gzoffset64(gzFile);
+    ZEXTERN uLong ZEXPORT adler32_combine64(uLong, uLong, z_off64_t);
+@@ -1883,18 +1887,9 @@ ZEXTERN int ZEXPORT gzgetc_(gzFile file)
+ #    define crc32_combine crc32_combine64
+ #    define crc32_combine_gen crc32_combine_gen64
+ #  endif
+-#  ifndef Z_LARGE64
+-     ZEXTERN gzFile ZEXPORT gzopen64(const char *, const char *);
+-     ZEXTERN z_off_t ZEXPORT gzseek64(gzFile, z_off_t, int);
+-     ZEXTERN z_off_t ZEXPORT gztell64(gzFile);
+-     ZEXTERN z_off_t ZEXPORT gzoffset64(gzFile);
+-     ZEXTERN uLong ZEXPORT adler32_combine64(uLong, uLong, z_off_t);
+-     ZEXTERN uLong ZEXPORT crc32_combine64(uLong, uLong, z_off_t);
+-     ZEXTERN uLong ZEXPORT crc32_combine_gen64(z_off_t);
+-#  endif
+ #else
+    ZEXTERN gzFile ZEXPORT gzopen(const char *, const char *);
+-   ZEXTERN z_off_t ZEXPORT gzseek(gzFile, z_off_t, int);
++   ZEXTERN z_off_t ZEXPORT gzseek(gzFile, z_off_t, z_int_t);
+    ZEXTERN z_off_t ZEXPORT gztell(gzFile);
+    ZEXTERN z_off_t ZEXPORT gzoffset(gzFile);
+    ZEXTERN uLong ZEXPORT adler32_combine(uLong, uLong, z_off_t);
+@@ -1911,23 +1906,23 @@ ZEXTERN int ZEXPORT gzgetc_(gzFile file)
+ #endif /* !Z_SOLO */
+ 
+ /* undocumented functions */
+-ZEXTERN const char   * ZEXPORT zError(int);
+-ZEXTERN int            ZEXPORT inflateSyncPoint(z_streamp);
++ZEXTERN const char   * ZEXPORT zError(z_int_t);
++ZEXTERN z_int_t        ZEXPORT inflateSyncPoint(z_streamp);
+ ZEXTERN const z_crc_t FAR * ZEXPORT get_crc_table(void);
+-ZEXTERN int            ZEXPORT inflateUndermine(z_streamp, int);
+-ZEXTERN int            ZEXPORT inflateValidate(z_streamp, int);
++ZEXTERN z_int_t        ZEXPORT inflateUndermine(z_streamp, z_int_t);
++ZEXTERN z_int_t        ZEXPORT inflateValidate(z_streamp, z_int_t);
+ ZEXTERN unsigned long  ZEXPORT inflateCodesUsed(z_streamp);
+-ZEXTERN int            ZEXPORT inflateResetKeep(z_streamp);
+-ZEXTERN int            ZEXPORT deflateResetKeep(z_streamp);
+-#if defined(_WIN32) && !defined(Z_SOLO)
++ZEXTERN z_int_t        ZEXPORT inflateResetKeep(z_streamp);
++ZEXTERN z_int_t        ZEXPORT deflateResetKeep(z_streamp);
++#if (defined(_WIN32) || defined(__CYGWIN__)) && !defined(Z_SOLO)
+ ZEXTERN gzFile         ZEXPORT gzopen_w(const wchar_t *path,
+-                                        const char *mode);
++                                            const char *mode);
+ #endif
+ #if defined(STDC) || defined(Z_HAVE_STDARG_H)
+ #  ifndef Z_SOLO
+-ZEXTERN int            ZEXPORTVA gzvprintf(gzFile file,
+-                                           const char *format,
+-                                           va_list va);
++ZEXTERN z_int_t        ZEXPORTVA gzvprintf(gzFile file,
++                                                  const char *format,
++                                                  va_list va);
+ #  endif
+ #endif
+ 
+@@ -1935,4 +1930,13 @@ ZEXTERN int            ZEXPORTVA gzvprin
+ }
+ #endif
+ 
++#if !defined(ZLIB_COMPILATION) && !defined(ZLIB_STATIC) && defined(ZLIB_SLB)
++#include <slb/zlib.h>
++#endif
++
++/* for buggy compilers */
++#if !defined(ZLIB_COMPILATION) && (defined(__PUREC__) || defined(__AHCC__))
++struct internal_state { int dummy; };
++#endif
++
+ #endif /* ZLIB_H */
+diff -rup zlib-1.3.orig/zutil.h zlib-1.3/zutil.h
+--- zlib-1.3.orig/zutil.h	2023-04-16 06:17:31.000000000 +0200
++++ zlib-1.3/zutil.h	2023-11-15 14:29:40.705610165 +0100
+@@ -19,6 +19,10 @@
+ #  define ZLIB_INTERNAL
+ #endif
+ 
++#ifdef __GNUC__
++#define NO_DUMMY_DECL
++#endif
++
+ #include "zlib.h"
+ 
+ #if defined(STDC) && !defined(Z_SOLO)
+@@ -42,18 +46,18 @@ typedef unsigned short ush;
+ typedef ush FAR ushf;
+ typedef unsigned long  ulg;
+ 
+-#if !defined(Z_U8) && !defined(Z_SOLO) && defined(STDC)
++#if !defined(Z_U8) && !defined(Z_SOLO)
+ #  include <limits.h>
+-#  if (ULONG_MAX == 0xffffffffffffffff)
++#  if (ULONG_MAX == 0xffffffffffffffffUL)
+ #    define Z_U8 unsigned long
+-#  elif (ULLONG_MAX == 0xffffffffffffffff)
++#  elif (ULLONG_MAX == 0xffffffffffffffffUL)
+ #    define Z_U8 unsigned long long
+-#  elif (UINT_MAX == 0xffffffffffffffff)
+-#    define Z_U8 unsigned
++#  elif (UINT_MAX == 0xffffffffffffffffUL)
++#    define Z_U8 unsigned int
+ #  endif
+ #endif
+ 
+-extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
++extern const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
+ /* (size given to avoid silly warnings with Visual C++) */
+ 
+ #define ERR_MSG(err) z_errmsg[Z_NEED_DICT-(err)]
+@@ -93,7 +97,7 @@ extern z_const char * const z_errmsg[10]
+ #  define OS_CODE  0x00
+ #  ifndef Z_SOLO
+ #    if defined(__TURBOC__) || defined(__BORLANDC__)
+-#      if (__STDC__ == 1) && (defined(__LARGE__) || defined(__COMPACT__))
++#      if (defined(__STRICT_ANSI__)) && (defined(__LARGE__) || defined(__COMPACT__))
+          /* Allow compilation with ANSI keywords only enabled */
+          void _Cdecl farfree( void *block );
+          void *_Cdecl farmalloc( unsigned long nbytes );
+@@ -126,8 +130,10 @@ extern z_const char * const z_errmsg[10]
+ #  endif
+ #endif
+ 
+-#if defined(ATARI) || defined(atarist)
+-#  define OS_CODE  5
++#if defined(ATARI) || defined(__atarist__) || defined(__TOS__)
++#  ifndef __MINT__ /* MiNT is Unix, not TOS */
++#    define OS_CODE  0x05
++#  endif
+ #endif
+ 
+ #ifdef OS2
+@@ -191,9 +197,9 @@ extern z_const char * const z_errmsg[10]
+ /* provide prototypes for these when building zlib without LFS */
+ #if !defined(_WIN32) && \
+     (!defined(_LARGEFILE64_SOURCE) || _LFS64_LARGEFILE-0 == 0)
+-    ZEXTERN uLong ZEXPORT adler32_combine64(uLong, uLong, z_off_t);
+-    ZEXTERN uLong ZEXPORT crc32_combine64(uLong, uLong, z_off_t);
+-    ZEXTERN uLong ZEXPORT crc32_combine_gen64(z_off_t);
++    ZEXTERN uLong ZEXPORT adler32_combine64(uLong, uLong, z_off64_t);
++    ZEXTERN uLong ZEXPORT crc32_combine64(uLong, uLong, z_off64_t);
++    ZEXTERN uLong ZEXPORT crc32_combine_gen64(z_off64_t);
+ #endif
+ 
+         /* common defaults */
+@@ -272,4 +278,8 @@ extern z_const char * const z_errmsg[10]
+ #define ZSWAP32(q) ((((q) >> 24) & 0xff) + (((q) >> 8) & 0xff00) + \
+                     (((q) & 0xff00) << 8) + (((q) & 0xff) << 24))
+ 
++#if defined(ZLIB_COMPILATION) && defined(ZLIB_SLB)
++#include "zlibslb.h"
++#endif
++
+ #endif /* ZUTIL_H */
+--- zlib-1.3.orig/trees.c	2023-04-16 06:17:31.000000000 +0200
++++ zlib-1.3/trees.c	2023-11-15 16:30:55.003015981 +0100
+@@ -116,7 +116,7 @@
+ 
+ struct static_tree_desc_s {
+     const ct_data *static_tree;  /* static tree or NULL */
+-    const intf *extra_bits;      /* extra bits for each code or NULL */
++    const int *extra_bits;       /* extra bits for each code or NULL */
+     int     extra_base;          /* base index for extra_bits */
+     int     elems;               /* max number of elements in the tree */
+     int     max_length;          /* max bit length for the codes */
+@@ -539,7 +539,7 @@
+     ct_data *tree        = desc->dyn_tree;
+     int max_code         = desc->max_code;
+     const ct_data *stree = desc->stat_desc->static_tree;
+-    const intf *extra    = desc->stat_desc->extra_bits;
++    const int *extra     = desc->stat_desc->extra_bits;
+     int base             = desc->stat_desc->extra_base;
+     int max_length       = desc->stat_desc->max_length;
+     int h;              /* heap index */
