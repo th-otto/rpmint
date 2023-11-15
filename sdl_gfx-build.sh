@@ -10,6 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
+patches/sdl_gfx/sdl_gfx-include.patch
 "
 EXTRA_DIST="
 patches/automake/mintelf-config.sub
