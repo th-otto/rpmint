@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        An EXIF Tag Parsing Library for Digital Cameras
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        0.6.22
 Release:        1
 License:        LGPL-2.1-or-later
@@ -16,14 +12,14 @@ Group:          Development/Libraries/C and C++
 Packager:       Thorsten Otto <admin@tho-otto.de>
 URL:            http://libexif.sourceforge.net
 
-Prefix:         %{_prefix}
-Docdir:         %{_prefix}/share/doc
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://downloads.sourceforge.net/project/libexif/%{pkgname}/%{version}/%{pkgname}-%{version}.tar.bz2
+Source0: https://github.com/libexif/libexif/releases/download/libexif-0_6_22-release/%{pkgname}-%{version}.tar.bz2
 Source1: patches/automake/mintelf-config.sub
 Patch0:  patches/libexif/libexif-build-date.patch
-Patch1:  patches/libexif/libexif-CVE-2017-7544.patch
+Patch1:  patches/libexif/libexif-shared.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -38,8 +34,25 @@ digital cameras.
 %prep
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
+%patch1 -p1
 
 cp %{S:1} config.sub
+
+cd libexif
+	
+mv exif-byte-order.h exifbyte.h ; ln -s exifbyte.h exif-byte-order.h
+mv exif-content.h    exifcont.h ; ln -s exifcont.h exif-content.h
+mv exif-data.h       exifdata.h ; ln -s exifdata.h exif-data.h
+mv exif-data-type.h  exiftype.h ; ln -s exiftype.h exif-data-type.h
+mv exif-entry.h      exifent.h  ; ln -s exifent.h  exif-entry.h
+mv exif-format.h     exifform.h ; ln -s exifform.h exif-format.h
+mv exif-ifd.h        exififd.h  ; ln -s exififd.h  exif-ifd.h
+mv exif-loader.h     exifload.h ; ln -s exifload.h exif-loader.h
+mv exif-log.h        exiflog.h  ; ln -s exiflog.h  exif-log.h
+mv exif-mem.h        exifmem.h  ; ln -s exifmem.h  exif-mem.h
+mv exif-mnote-data.h exifnote.h ; ln -s exifnote.h exif-mnote-data.h
+mv exif-tag.h        exiftag.h  ; ln -s exiftag.h  exif-tag.h
+mv exif-utils.h      exifutil.h ; ln -s exifutil.h exif-utils.h
 
 %build
 
@@ -73,6 +86,25 @@ for CPU in ${ALL_CPUS}; do
 
 	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
+
+	cwd=`pwd`
+	cd "%{buildroot}%{_rpmint_sysroot}%{_rpmint_target_prefix}/include/libexif"
+
+mv exif-byte-order.h exifbyte.h ; ln -s exifbyte.h exif-byte-order.h
+mv exif-content.h    exifcont.h ; ln -s exifcont.h exif-content.h
+mv exif-data.h       exifdata.h ; ln -s exifdata.h exif-data.h
+mv exif-data-type.h  exiftype.h ; ln -s exiftype.h exif-data-type.h
+mv exif-entry.h      exifent.h  ; ln -s exifent.h  exif-entry.h
+mv exif-format.h     exifform.h ; ln -s exifform.h exif-format.h
+mv exif-ifd.h        exififd.h  ; ln -s exififd.h  exif-ifd.h
+mv exif-loader.h     exifload.h ; ln -s exifload.h exif-loader.h
+mv exif-log.h        exiflog.h  ; ln -s exiflog.h  exif-log.h
+mv exif-mem.h        exifmem.h  ; ln -s exifmem.h  exif-mem.h
+mv exif-mnote-data.h exifnote.h ; ln -s exifnote.h exif-mnote-data.h
+mv exif-tag.h        exiftag.h  ; ln -s exiftag.h  exif-tag.h
+mv exif-utils.h      exifutil.h ; ln -s exifutil.h exif-utils.h
+
+	cd "$cwd"
 
 	# compress manpages
 	%rpmint_gzip_docs
@@ -110,19 +142,18 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files
 %defattr(-,root,root)
+%{_isysroot}%{_rpmint_target_prefix}/include
+%{_isysroot}%{_rpmint_target_prefix}/lib
+%{_isysroot}%{_rpmint_target_prefix}/share
 %if "%{buildtype}" == "cross"
-%{_rpmint_includedir}
-%{_rpmint_libdir}
 %{_rpmint_cross_pkgconfigdir}
-%{_rpmint_datadir}
-%else
-%{_rpmint_target_prefix}/include
-%{_rpmint_target_prefix}/lib
-%{_rpmint_target_prefix}/share
 %endif
 
 
 
 %changelog
+* Thu Nov 16 2023 Thorsten Otto <admin@tho-otto.de>
+- update header files with sharedlib version
+
 * Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

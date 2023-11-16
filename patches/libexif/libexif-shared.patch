@@ -1,0 +1,1890 @@
+--- a/libexif/exif-byte-order.h	2020-02-23 09:13:14.000000000 +0100
++++ a/libexif/exif-byte-order.h	2019-09-26 19:47:47.000000000 +0200
+@@ -1,4 +1,4 @@
+-/*! \file exif-byte-order.h
++/*! \file exifbyte.h
+  * \brief Defines the ExifByteOrder enum and the associated functions.
+  */
+ /* 
+@@ -39,7 +39,7 @@ typedef enum {
+  * \param[in] order byte order
+  * \return localized textual name of the byte order, or NULL if unknown
+  */
+-const char *exif_byte_order_get_name (ExifByteOrder order);
++EXIF_API(const char *) exif_byte_order_get_name (exif_enum(ExifByteOrder) order);
+ 
+ #ifdef __cplusplus
+ }
+--- a/libexif/exif-content.h	2020-02-23 09:13:14.000000000 +0100
++++ a/libexif/exif-content.h	2019-09-26 19:47:47.000000000 +0200
+@@ -1,4 +1,4 @@
+-/*! \file exif-content.h
++/*! \file exifcont.h
+  *  \brief Handling EXIF IFDs
+  */
+ /*
+@@ -31,16 +31,16 @@ extern "C" {
+ typedef struct _ExifContent        ExifContent;
+ typedef struct _ExifContentPrivate ExifContentPrivate;
+ 
+-#include <libexif/exif-tag.h>
+-#include <libexif/exif-entry.h>
+-#include <libexif/exif-data.h>
+-#include <libexif/exif-log.h>
+-#include <libexif/exif-mem.h>
++#include <libexif/exiftag.h>
++#include <libexif/exifent.h>
++#include <libexif/exifdata.h>
++#include <libexif/exiflog.h>
++#include <libexif/exifmem.h>
+ 
+ struct _ExifContent
+ {
+-        ExifEntry **entries;
+-        unsigned int count;
++	ExifEntry **entries;
++	exif_uint_t count;
+ 
+ 	/*! Data containing this content */
+ 	ExifData *parent;
+@@ -56,7 +56,7 @@ struct _ExifContent
+  *
+  * \see exif_content_new_mem, exif_content_unref
+  */
+-ExifContent *exif_content_new     (void);
++EXIF_API(ExifContent *) exif_content_new     (void);
+ 
+ /*! Reserve memory for and initialize new #ExifContent using the specified
+  * memory allocator.
+@@ -65,7 +65,7 @@ ExifContent *exif_content_new     (void)
+  *
+  * \see exif_content_new, exif_content_unref
+  */
+-ExifContent *exif_content_new_mem (ExifMem *);
++EXIF_API(ExifContent *) exif_content_new_mem (ExifMem *);
+ 
+ /*! Increase reference counter for #ExifContent.
+  *
+@@ -73,14 +73,14 @@ ExifContent *exif_content_new_mem (ExifM
+  *
+  * \see exif_content_unref
+  */
+-void         exif_content_ref     (ExifContent *content);
++EXIF_API(void)         exif_content_ref     (ExifContent *content);
+ 
+ /*! Decrease reference counter for #ExifContent.
+  * When the reference count drops to zero, free the content.
+  *
+  * \param[in] content #ExifContent
+  */
+-void         exif_content_unref   (ExifContent *content);
++EXIF_API(void)         exif_content_unref   (ExifContent *content);
+ 
+ /*! Actually free the #ExifContent.
+  *
+@@ -89,7 +89,7 @@ void         exif_content_unref   (ExifC
+  *
+  * \param[in] content #ExifContent
+  */
+-void         exif_content_free    (ExifContent *content);
++EXIF_API(void)         exif_content_free    (ExifContent *content);
+ 
+ /*! Add an EXIF tag to an IFD.
+  * If this tag already exists in the IFD, this function does nothing.
+@@ -98,7 +98,7 @@ void         exif_content_free    (ExifC
+  * \param[out] c IFD
+  * \param[in] entry EXIF entry to add
+  */
+-void         exif_content_add_entry    (ExifContent *c, ExifEntry *entry);
++EXIF_API(void)         exif_content_add_entry    (ExifContent *c, ExifEntry *entry);
+ 
+ /*! Remove an EXIF tag from an IFD.
+  * If this tag does not exist in the IFD, this function does nothing.
+@@ -106,7 +106,7 @@ void         exif_content_add_entry    (
+  * \param[out] c IFD
+  * \param[in] e EXIF entry to remove
+  */
+-void         exif_content_remove_entry (ExifContent *c, ExifEntry *e);
++EXIF_API(void)         exif_content_remove_entry (ExifContent *c, ExifEntry *e);
+ 
+ /*! Return the #ExifEntry in this IFD corresponding to the given tag.
+  * This is a pointer into a member of the #ExifContent array and must NOT be
+@@ -116,7 +116,7 @@ void         exif_content_remove_entry (
+  * \param[in] tag EXIF tag to return
+  * \return #ExifEntry of the tag, or NULL on error
+  */
+-ExifEntry   *exif_content_get_entry    (ExifContent *content, ExifTag tag);
++EXIF_API(ExifEntry *)  exif_content_get_entry    (ExifContent *content, ExifTag tag);
+ 
+ /*! Fix the IFD to bring it into specification. Call #exif_entry_fix on
+  * each entry in this IFD to fix existing entries, create any new entries
+@@ -125,9 +125,9 @@ ExifEntry   *exif_content_get_entry    (
+  *
+  * \param[in,out] c EXIF content for an IFD
+  */
+-void         exif_content_fix          (ExifContent *c);
++EXIF_API(void)         exif_content_fix          (ExifContent *c);
+ 
+-typedef void (* ExifContentForeachEntryFunc) (ExifEntry *, void *user_data);
++typedef void EXIF_CALLBACK (* ExifContentForeachEntryFunc) (ExifEntry *, void *user_data);
+ 
+ /*! Executes function on each EXIF tag in this IFD in turn.
+  * The tags will not necessarily be visited in numerical order.
+@@ -136,7 +136,7 @@ typedef void (* ExifContentForeachEntryF
+  * \param[in] func function to call for each entry
+  * \param[in] user_data data to pass into func on each call
+  */
+-void         exif_content_foreach_entry (ExifContent *content,
++EXIF_API(void)         exif_content_foreach_entry (ExifContent *content,
+ 					 ExifContentForeachEntryFunc func,
+ 					 void *user_data);
+ 
+@@ -145,7 +145,7 @@ void         exif_content_foreach_entry
+  * \param[in] c an #ExifContent*
+  * \return IFD number, or #EXIF_IFD_COUNT on error
+  */
+-ExifIfd exif_content_get_ifd (ExifContent *c);
++EXIF_API(ExifIfd) exif_content_get_ifd (ExifContent *c);
+ 
+ /*! Return a textual representation of the EXIF data for a tag.
+  *
+@@ -165,14 +165,14 @@ ExifIfd exif_content_get_ifd (ExifConten
+  * \param[in] content IFD data
+  * \param[in] indent how many levels deep to indent the data
+  */
+-void exif_content_dump  (ExifContent *content, unsigned int indent);
++EXIF_API(void) exif_content_dump  (ExifContent *content, exif_uint_t indent);
+ 
+ /*! Set the log message object for this IFD.
+  *
+  * \param[in] content IFD
+  * \param[in] log #ExifLog*
+  */
+-void exif_content_log   (ExifContent *content, ExifLog *log);
++EXIF_API(void) exif_content_log   (ExifContent *content, ExifLog *log);
+ 
+ #ifdef __cplusplus
+ }
+--- a/libexif/exif-data.h	2020-02-23 09:13:14.000000000 +0100
++++ a/libexif/exif-data.h	2019-09-26 19:47:47.000000000 +0200
+@@ -28,19 +28,20 @@
+ extern "C" {
+ #endif /* __cplusplus */
+ 
+-#include <libexif/exif-byte-order.h>
+-#include <libexif/exif-data-type.h>
+-#include <libexif/exif-ifd.h>
+-#include <libexif/exif-log.h>
+-#include <libexif/exif-tag.h>
++#include <libexif/exifutil.h>
++#include <libexif/exifbyte.h>
++#include <libexif/exifdata.h>
++#include <libexif/exififd.h>
++#include <libexif/exiflog.h>
++#include <libexif/exiftag.h>
+ 
+ /*! Represents the entire EXIF data found in an image */
+ typedef struct _ExifData        ExifData;
+ typedef struct _ExifDataPrivate ExifDataPrivate;
+ 
+-#include <libexif/exif-content.h>
+-#include <libexif/exif-mnote-data.h>
+-#include <libexif/exif-mem.h>
++#include <libexif/exifcont.h>
++#include <libexif/exifnote.h>
++#include <libexif/exifmem.h>
+ 
+ /*! Represents the entire EXIF data found in an image */
+ struct _ExifData
+@@ -52,7 +53,7 @@ struct _ExifData
+ 	unsigned char *data;
+ 
+ 	/*! Number of bytes in thumbnail image at \c data */
+-	unsigned int size;
++	uint32_t size;
+ 
+ 	ExifDataPrivate *priv;
+ };
+@@ -64,7 +65,7 @@ struct _ExifData
+  *
+  * \return allocated #ExifData, or NULL on error
+  */
+-ExifData *exif_data_new           (void);
++EXIF_API(ExifData *) exif_data_new           (void);
+ 
+ /*! Allocate a new #ExifData using the given memory allocator.
+  * The #ExifData contains an empty #ExifContent for each IFD and the default
+@@ -73,7 +74,7 @@ ExifData *exif_data_new           (void)
+  *
+  * \return allocated #ExifData, or NULL on error
+  */
+-ExifData *exif_data_new_mem       (ExifMem *);
++EXIF_API(ExifData *) exif_data_new_mem       (ExifMem *);
+ 
+ /*! Allocate a new #ExifData and load EXIF data from a JPEG file.
+  * Uses an #ExifLoader internally to do the loading.
+@@ -81,7 +82,7 @@ ExifData *exif_data_new_mem       (ExifM
+  * \param[in] path filename including path
+  * \return allocated #ExifData, or NULL on error
+  */
+-ExifData *exif_data_new_from_file (const char *path);
++EXIF_API(ExifData *) exif_data_new_from_file (const char *path);
+ 
+ /*! Allocate a new #ExifData and load EXIF data from a memory buffer.
+  *
+@@ -89,8 +90,7 @@ ExifData *exif_data_new_from_file (const
+  * \param[in] size number of bytes of data at data
+  * \return allocated #ExifData, or NULL on error
+  */
+-ExifData *exif_data_new_from_data (const unsigned char *data,
+-				   unsigned int size);
++EXIF_API(ExifData *) exif_data_new_from_data (const unsigned char *data, uint32_t size);
+ 
+ /*! Load the #ExifData structure from the raw JPEG or EXIF data in the given
+  * memory buffer. If the EXIF data contains a recognized MakerNote, it is
+@@ -103,8 +103,7 @@ ExifData *exif_data_new_from_data (const
+  * \param[in] d pointer to raw JPEG or EXIF data
+  * \param[in] size number of bytes of data at d
+  */
+-void      exif_data_load_data (ExifData *data, const unsigned char *d, 
+-			       unsigned int size);
++EXIF_API(void) exif_data_load_data (ExifData *data, const unsigned char *d, uint32_t size);
+ 
+ /*! Store raw EXIF data representing the #ExifData structure into a memory
+  * buffer. The buffer is allocated by this function and must subsequently be
+@@ -116,19 +115,18 @@ void      exif_data_load_data (ExifData
+  * \param[out] ds pointer to variable to hold the number of bytes of
+  *   data at d, or set to 0 on error
+  */
+-void      exif_data_save_data (ExifData *data, unsigned char **d,
+-			       unsigned int *ds);
++EXIF_API(void) exif_data_save_data (ExifData *data, unsigned char **d, uint32_t *ds);
+ 
+-void      exif_data_ref   (ExifData *data);
+-void      exif_data_unref (ExifData *data);
+-void      exif_data_free  (ExifData *data);
++EXIF_API(void) exif_data_ref   (ExifData *data);
++EXIF_API(void) exif_data_unref (ExifData *data);
++EXIF_API(void) exif_data_free  (ExifData *data);
+ 
+ /*! Return the byte order in use by this EXIF structure.
+  *
+  * \param[in] data EXIF data
+  * \return byte order
+  */
+-ExifByteOrder exif_data_get_byte_order  (ExifData *data);
++EXIF_API(ExifByteOrder) exif_data_get_byte_order  (ExifData *data);
+ 
+ /*! Set the byte order to use for this EXIF data. If any tags already exist
+  * (including MakerNote tags) they are are converted to the specified byte
+@@ -137,7 +135,7 @@ ExifByteOrder exif_data_get_byte_order
+  * \param[in,out] data EXIF data
+  * \param[in] order byte order
+  */
+-void          exif_data_set_byte_order  (ExifData *data, ExifByteOrder order);
++EXIF_API(void) exif_data_set_byte_order  (ExifData *data, exif_enum(ExifByteOrder) order);
+ 
+ /*! Return the MakerNote data out of the EXIF data.  Only certain
+  * MakerNote formats that are recognized by libexif are supported.
+@@ -147,7 +145,7 @@ void          exif_data_set_byte_order
+  * \param[in] d EXIF data
+  * \return MakerNote data, or NULL if not found or not supported
+  */
+-ExifMnoteData *exif_data_get_mnote_data (ExifData *d);
++EXIF_API(ExifMnoteData *) exif_data_get_mnote_data (ExifData *d);
+ 
+ /*! Fix the EXIF data to bring it into specification. Call #exif_content_fix
+  * on each IFD to fix existing entries, create any new entries that are
+@@ -156,9 +154,9 @@ ExifMnoteData *exif_data_get_mnote_data
+  *
+  * \param[in,out] d EXIF data
+  */
+-void           exif_data_fix (ExifData *d);
++EXIF_API(void) exif_data_fix (ExifData *d);
+ 
+-typedef void (* ExifDataForeachContentFunc) (ExifContent *, void *user_data);
++typedef void EXIF_CALLBACK (*ExifDataForeachContentFunc) (ExifContent *, void *user_data);
+ 
+ /*! Execute a function on each IFD in turn.
+  *
+@@ -166,9 +164,7 @@ typedef void (* ExifDataForeachContentFu
+  * \param[in] func function to call for each entry
+  * \param[in] user_data data to pass into func on each call
+  */
+-void          exif_data_foreach_content (ExifData *data,
+-					 ExifDataForeachContentFunc func,
+-					 void *user_data);
++EXIF_API(void) exif_data_foreach_content (ExifData *data, ExifDataForeachContentFunc func, void *user_data);
+ 
+ /*! Options to configure the behaviour of #ExifData */
+ typedef enum {
+@@ -188,7 +184,7 @@ typedef enum {
+  * \return localized textual description of the option,
+  *   or NULL if unknown
+  */
+-const char *exif_data_option_get_name        (ExifDataOption o);
++EXIF_API(const char *) exif_data_option_get_name(exif_enum(ExifDataOption) o);
+ 
+ /*! Return a verbose textual description of the given #ExifDataOption.
+  *
+@@ -196,49 +192,49 @@ const char *exif_data_option_get_name
+  * \return verbose localized textual description of the option,
+  *   or NULL if unknown
+  */
+-const char *exif_data_option_get_description (ExifDataOption o);
++EXIF_API(const char *) exif_data_option_get_description (exif_enum(ExifDataOption) o);
+ 
+ /*! Set the given option on the given #ExifData.
+  *
+  * \param[in] d EXIF data
+  * \param[in] o option
+  */
+-void        exif_data_set_option             (ExifData *d, ExifDataOption o);
++EXIF_API(void) exif_data_set_option             (ExifData *d, exif_enum(ExifDataOption) o);
+ 
+ /*! Clear the given option on the given #ExifData.
+  *
+  * \param[in] d EXIF data
+  * \param[in] o option
+  */
+-void        exif_data_unset_option           (ExifData *d, ExifDataOption o);
++EXIF_API(void) exif_data_unset_option           (ExifData *d, exif_enum(ExifDataOption) o);
+ 
+ /*! Set the data type for the given #ExifData.
+  *
+  * \param[in] d EXIF data
+  * \param[in] dt data type
+  */
+-void         exif_data_set_data_type (ExifData *d, ExifDataType dt);
++EXIF_API(void) exif_data_set_data_type (ExifData *d, exif_enum(ExifDataType) dt);
+ 
+ /*! Return the data type for the given #ExifData.
+  *
+  * \param[in] d EXIF data
+  * \return data type, or #EXIF_DATA_TYPE_UNKNOWN on error
+  */
+-ExifDataType exif_data_get_data_type (ExifData *d);
++EXIF_API(ExifDataType) exif_data_get_data_type (ExifData *d);
+ 
+ /*! Dump all EXIF data to stdout.
+  * This is intended for diagnostic purposes only.
+  *
+  * \param[in] data EXIF data
+  */
+-void exif_data_dump (ExifData *data);
++EXIF_API(void) exif_data_dump (ExifData *data);
+ 
+ /*! Set the log message object for all IFDs.
+  *
+  * \param[in] data EXIF data
+  * \param[in] log #ExifLog
+  */
+-void exif_data_log  (ExifData *data, ExifLog *log);
++EXIF_API(void) exif_data_log  (ExifData *data, ExifLog *log);
+ 
+ /*! Return an #ExifEntry for the given tag if found in any IFD.
+  * Each IFD is searched in turn and the first containing a tag with
+@@ -260,6 +256,16 @@ void exif_data_log  (ExifData *data, Exi
+ 	 exif_content_get_entry(d->ifd[EXIF_IFD_INTEROPERABILITY],t) ?	\
+ 	 exif_content_get_entry(d->ifd[EXIF_IFD_INTEROPERABILITY],t) : NULL)
+ 
++#if defined(__PUREC__) && !defined(BUILDING_LIBEXIF)
++struct _ExifEntryPrivate { int dummy; };
++struct _ExifDataPrivate { int dummy; };
++struct _ExifMnoteData { int dummy; };
++struct _ExifContentPrivate { int dummy; };
++struct _ExifLog { int dummy; };
++struct _ExifMem { int dummy; };
++struct _ExifLoader { int dummy; };
++#endif
++
+ #ifdef __cplusplus
+ }
+ #endif /* __cplusplus */
+--- a/libexif/exif-entry.h	2020-02-23 09:13:14.000000000 +0100
++++ a/libexif/exif-entry.h	2019-09-26 19:47:47.000000000 +0200
+@@ -35,9 +35,9 @@ extern "C" {
+ typedef struct _ExifEntry        ExifEntry;
+ typedef struct _ExifEntryPrivate ExifEntryPrivate;
+ 
+-#include <libexif/exif-content.h>
+-#include <libexif/exif-format.h>
+-#include <libexif/exif-mem.h>
++#include <libexif/exifcont.h>
++#include <libexif/exifform.h>
++#include <libexif/exifmem.h>
+ 
+ /*! Data found in one EXIF tag */
+ struct _ExifEntry {
+@@ -45,7 +45,7 @@ struct _ExifEntry {
+         ExifTag tag;
+ 	
+ 	/*! Type of data in this entry */
+-        ExifFormat format;
++        exif_enum(ExifFormat) format;
+ 
+ 	/*! Number of elements in the array, if this is an array entry.
+ 	 * Contains 1 for non-array data types. */
+@@ -58,7 +58,7 @@ struct _ExifEntry {
+ 
+ 	/*! Number of bytes in the buffer at \c data. This must be no less
+ 	 * than exif_format_get_size(format)*components */
+-        unsigned int size;
++        uint32_t size;
+ 
+ 	/*! #ExifContent containing this entry. 
+ 	 * \see exif_entry_get_ifd */
+@@ -77,7 +77,7 @@ struct _ExifEntry {
+  *
+  * \see exif_entry_new_mem, exif_entry_unref
+  */
+-ExifEntry  *exif_entry_new     (void);
++EXIF_API(ExifEntry  *) exif_entry_new     (void);
+ 
+ /*! Reserve memory for and initialize new #ExifEntry using the specified
+  * memory allocator.
+@@ -87,7 +87,7 @@ ExifEntry  *exif_entry_new     (void);
+  *
+  * \see exif_entry_new, exif_entry_unref
+  */
+-ExifEntry  *exif_entry_new_mem (ExifMem *);
++EXIF_API(ExifEntry *) exif_entry_new_mem (ExifMem *);
+ 
+ /*! Increase reference counter for #ExifEntry.
+  *
+@@ -95,14 +95,14 @@ ExifEntry  *exif_entry_new_mem (ExifMem
+  *
+  * \see exif_entry_unref
+  */
+-void        exif_entry_ref     (ExifEntry *entry);
++EXIF_API(void)        exif_entry_ref     (ExifEntry *entry);
+ 
+ /*! Decrease reference counter for #ExifEntry.
+  * When the reference count drops to zero, free the entry.
+  *
+  * \param[in] entry #ExifEntry
+  */
+-void        exif_entry_unref   (ExifEntry *entry);
++EXIF_API(void)        exif_entry_unref   (ExifEntry *entry);
+ 
+ /*! Actually free the #ExifEntry.
+  *
+@@ -111,7 +111,7 @@ void        exif_entry_unref   (ExifEntr
+  *
+  * \param[in] entry EXIF entry
+  */
+-void        exif_entry_free  (ExifEntry *entry);
++EXIF_API(void)        exif_entry_free  (ExifEntry *entry);
+ 
+ /*! Initialize an empty #ExifEntry with default data in the correct format
+  * for the given tag. If the entry is already initialized, this function
+@@ -122,7 +122,7 @@ void        exif_entry_free  (ExifEntry
+  * \param[out] e entry to initialize
+  * \param[in] tag tag number to initialize as
+  */
+-void        exif_entry_initialize (ExifEntry *e, ExifTag tag);
++EXIF_API(void)        exif_entry_initialize (ExifEntry *e, ExifTag tag);
+ 
+ /*! Fix the type or format of the given EXIF entry to bring it into spec.
+  * If the data for this EXIF tag is in of the wrong type or is in an invalid
+@@ -137,7 +137,7 @@ void        exif_entry_initialize (ExifE
+  *
+  * \param[in,out] entry EXIF entry
+  */
+-void        exif_entry_fix        (ExifEntry *entry);
++EXIF_API(void)        exif_entry_fix        (ExifEntry *entry);
+ 
+ 
+ /* For your convenience */
+@@ -161,8 +161,7 @@ void        exif_entry_fix        (ExifE
+  * \param[in] maxlen length of the buffer val
+  * \return val pointer
+  */
+-const char *exif_entry_get_value (ExifEntry *entry, char *val,
+-				  unsigned int maxlen);
++EXIF_API(const char *) exif_entry_get_value (ExifEntry *entry, char *val, uint32_t maxlen);
+ 
+ /*! Dump text representation of #ExifEntry to stdout.
+  * This is intended for diagnostic purposes only.
+@@ -170,14 +169,14 @@ const char *exif_entry_get_value (ExifEn
+  * \param[in] entry EXIF tag data
+  * \param[in] indent how many levels deep to indent the data
+  */
+-void        exif_entry_dump      (ExifEntry *entry, unsigned int indent);
++EXIF_API(void)        exif_entry_dump      (ExifEntry *entry, exif_uint_t indent);
+ 
+ /*! Return the IFD number of the given #ExifEntry
+  *
+  * \param[in] e an #ExifEntry*
+  * \return #ExifIfd, or #EXIF_IFD_COUNT on error
+  */
+-#define exif_entry_get_ifd(e) ((e)?exif_content_get_ifd((e)->parent):EXIF_IFD_COUNT)
++#define exif_entry_get_ifd(e) ((e) ? exif_content_get_ifd((e)->parent) : EXIF_IFD_COUNT)
+ 
+ #ifdef __cplusplus
+ }
+--- a/libexif/exif-format.h	2020-02-23 09:13:14.000000000 +0100
++++ a/libexif/exif-format.h	2019-09-26 19:47:47.000000000 +0200
+@@ -30,16 +30,16 @@ extern "C" {
+ 
+ /*! EXIF tag data formats */
+ typedef enum {
+-        EXIF_FORMAT_BYTE       =  1,
+-        EXIF_FORMAT_ASCII      =  2,
+-        EXIF_FORMAT_SHORT      =  3,
+-        EXIF_FORMAT_LONG       =  4,
+-        EXIF_FORMAT_RATIONAL   =  5,
++	EXIF_FORMAT_BYTE       =  1,
++	EXIF_FORMAT_ASCII      =  2,
++	EXIF_FORMAT_SHORT      =  3,
++	EXIF_FORMAT_LONG       =  4,
++	EXIF_FORMAT_RATIONAL   =  5,
+ 	EXIF_FORMAT_SBYTE      =  6,
+-        EXIF_FORMAT_UNDEFINED  =  7,
++	EXIF_FORMAT_UNDEFINED  =  7,
+ 	EXIF_FORMAT_SSHORT     =  8,
+-        EXIF_FORMAT_SLONG      =  9,
+-        EXIF_FORMAT_SRATIONAL  = 10,
++	EXIF_FORMAT_SLONG      =  9,
++	EXIF_FORMAT_SRATIONAL  = 10,
+ 	EXIF_FORMAT_FLOAT      = 11,
+ 	EXIF_FORMAT_DOUBLE     = 12
+ } ExifFormat;
+@@ -49,14 +49,14 @@ typedef enum {
+  * \param[in] format EXIF data format
+  * \return localized textual name, or NULL if unknown
+  */
+-const char   *exif_format_get_name (ExifFormat format);
++EXIF_API(const char   *) exif_format_get_name (exif_enum(ExifFormat) format);
+ 
+ /*! Return the raw size of the given EXIF data type.
+  *
+  * \param[in] format EXIF data format
+  * \return size in bytes
+  */
+-unsigned char exif_format_get_size (ExifFormat format);
++EXIF_API(unsigned char) exif_format_get_size (exif_enum(ExifFormat) format);
+ 
+ #ifdef __cplusplus
+ }
+--- a/libexif/exif-ifd.h	2020-05-16 17:20:19.000000000 +0200
++++ a/libexif/exif-ifd.h	2020-09-09 12:52:12.591339700 +0200
+@@ -23,7 +23,7 @@
+ 
+ #ifdef __cplusplus
+ extern "C" {
+-#endif /* __cplusplus */
++#endif
+ 
+ /*! Possible EXIF Image File Directories */
+ typedef enum {
+@@ -42,7 +42,7 @@ typedef enum {
+  * \param[in] ifd IFD
+  * \return textual name of the IFD, or NULL if unknown
+  */
+-const char *exif_ifd_get_name (ExifIfd ifd);
++EXIF_API(const char *) exif_ifd_get_name (exif_enum(ExifIfd) ifd);
+ 
+ #ifdef __cplusplus
+ }
+--- a/libexif/exif-loader.h	2018-08-26 12:21:36.000000000 +0200
++++ a/libexif/exif-loader.h	2019-09-26 19:47:47.000000000 +0200
+@@ -23,9 +23,9 @@
+ #ifndef __EXIF_LOADER_H__
+ #define __EXIF_LOADER_H__
+ 
+-#include <libexif/exif-data.h>
+-#include <libexif/exif-log.h>
+-#include <libexif/exif-mem.h>
++#include <libexif/exifdata.h>
++#include <libexif/exiflog.h>
++#include <libexif/exifmem.h>
+ 
+ #ifdef __cplusplus
+ extern "C" {
+@@ -38,27 +38,27 @@ typedef struct _ExifLoader ExifLoader;
+  *
+  *  \return allocated ExifLoader
+  */
+-ExifLoader *exif_loader_new     (void);
++EXIF_API(ExifLoader *) exif_loader_new     (void);
+ 
+ /*! Allocate a new #ExifLoader using the specified memory allocator.
+  *
+  *  \param[in] mem the ExifMem
+  *  \return allocated ExifLoader
+  */
+-ExifLoader *exif_loader_new_mem (ExifMem *mem);
++EXIF_API(ExifLoader *) exif_loader_new_mem (ExifMem *mem);
+ 
+ /*! Increase the refcount of the #ExifLoader.
+  *
+  *  \param[in] loader the ExifLoader to increase the refcount of.
+  */
+-void        exif_loader_ref     (ExifLoader *loader);
++EXIF_API(void) exif_loader_ref     (ExifLoader *loader);
+ 
+ /*! Decrease the refcount of the #ExifLoader.
+  * If the refcount reaches 0, the loader is freed.
+  *
+  * \param[in] loader ExifLoader for which to decrease the refcount
+  */
+-void        exif_loader_unref   (ExifLoader *loader);
++EXIF_API(void) exif_loader_unref   (ExifLoader *loader);
+ 
+ /*! Load a file into the given #ExifLoader from the filesystem.
+  * The relevant data is copied in raw form into the #ExifLoader.
+@@ -66,7 +66,7 @@ void        exif_loader_unref   (ExifLoa
+  * \param[in] loader loader to write to
+  * \param[in] fname path to the file to read
+  */
+-void        exif_loader_write_file (ExifLoader *loader, const char *fname);
++EXIF_API(void) exif_loader_write_file (ExifLoader *loader, const char *fname);
+ 
+ /*! Load a buffer into the #ExifLoader from a memory buffer.
+  * The relevant data is copied in raw form into the #ExifLoader.
+@@ -77,14 +77,14 @@ void        exif_loader_write_file (Exif
+  * \return 1 while EXIF data is read (or while there is still hope that
+  *   there will be EXIF data later on), 0 otherwise.
+  */
+-unsigned char exif_loader_write (ExifLoader *loader, unsigned char *buf, unsigned int sz);
++EXIF_API(unsigned char) exif_loader_write (ExifLoader *loader, unsigned char *buf, uint32_t sz);
+ 
+ /*! Free any data previously loaded and reset the #ExifLoader to its
+  * newly-initialized state.
+  *
+  * \param[in] loader the loader
+  */
+-void          exif_loader_reset (ExifLoader *loader);
++EXIF_API(void) exif_loader_reset (ExifLoader *loader);
+ 
+ /*! Create an #ExifData from the data in the loader. The loader must
+  * already contain data from a previous call to #exif_loader_write_file
+@@ -100,7 +100,7 @@ void          exif_loader_reset (ExifLoa
+  *
+  * \see exif_loader_get_buf
+  */
+-ExifData     *exif_loader_get_data (ExifLoader *loader);
++EXIF_API(ExifData *) exif_loader_get_data (ExifLoader *loader);
+ 
+ /*! Return the raw data read by the loader.  The returned pointer is only
+  * guaranteed to be valid until the next call to a function modifying
+@@ -112,14 +112,14 @@ ExifData     *exif_loader_get_data (Exif
+  *                 in case of error
+  * \param[out] buf_size size of the data at buf, or 0 in case of error
+  */
+-void exif_loader_get_buf (ExifLoader *loader, const unsigned char **buf,
+-						  unsigned int *buf_size);
++EXIF_API(void) exif_loader_get_buf (ExifLoader *loader, const unsigned char **buf,
++						  uint32_t *buf_size);
+ 
+ /*! Set the log message object used by this #ExifLoader.
+  * \param[in] loader the loader
+  * \param[in] log #ExifLog
+  */
+-void exif_loader_log (ExifLoader *loader, ExifLog *log);
++EXIF_API(void) exif_loader_log (ExifLoader *loader, ExifLog *log);
+ 
+ #ifdef __cplusplus
+ }
+--- a/libexif/exif-log.h	2020-02-23 09:13:14.000000000 +0100
++++ a/libexif/exif-log.h	2019-09-26 19:47:47.000000000 +0200
+@@ -27,21 +27,33 @@
+ extern "C" {
+ #endif /* __cplusplus */
+ 
+-#include <libexif/exif-mem.h>
++#include <libexif/exifmem.h>
+ #include <stdarg.h>
+ 
+-/*! State maintained by the logging interface */
+ typedef struct _ExifLog        ExifLog;
+ 
++typedef enum {
++	EXIF_LOG_CODE_NONE,
++	EXIF_LOG_CODE_DEBUG,
++	EXIF_LOG_CODE_NO_MEMORY,
++	EXIF_LOG_CODE_CORRUPT_DATA
++} ExifLogCode;
++
++/*! Log callback function prototype.
++ */
++typedef void EXIF_CALLBACK (* ExifLogFunc) (ExifLog *log, exif_enum(ExifLogCode), const char *domain,
++			      const char *format, va_list args, void *data);
++
++
+ /*! Create a new logging instance.
+  * \see exif_log_free
+  *
+  * \return new instance of #ExifLog
+  */
+-ExifLog *exif_log_new     (void);
+-ExifLog *exif_log_new_mem (ExifMem *);
+-void     exif_log_ref     (ExifLog *log);
+-void     exif_log_unref   (ExifLog *log);
++EXIF_API(ExifLog *) exif_log_new     (void);
++EXIF_API(ExifLog *) exif_log_new_mem (ExifMem *);
++EXIF_API(void)     exif_log_ref     (ExifLog *log);
++EXIF_API(void)     exif_log_unref   (ExifLog *log);
+ 
+ /*! Delete instance of #ExifLog.
+  * \see exif_log_new
+@@ -49,33 +61,21 @@ void     exif_log_unref   (ExifLog *log)
+  * \param[in] log #ExifLog
+  * \return new instance of #ExifLog
+  */
+-void     exif_log_free    (ExifLog *log);
+-
+-typedef enum {
+-	EXIF_LOG_CODE_NONE,
+-	EXIF_LOG_CODE_DEBUG,
+-	EXIF_LOG_CODE_NO_MEMORY,
+-	EXIF_LOG_CODE_CORRUPT_DATA
+-} ExifLogCode;
++EXIF_API(void)     exif_log_free    (ExifLog *log);
+ 
+ /*! Return a textual description of the given class of error log.
+  *
+  * \param[in] code logging message class
+  * \return textual description of the log class, or NULL if unknown
+  */
+-const char *exif_log_code_get_title   (ExifLogCode code);
++EXIF_API(const char *) exif_log_code_get_title   (exif_enum(ExifLogCode) code);
+ 
+ /*! Return a verbose description of the given class of error log.
+  *
+  * \param[in] code logging message class
+  * \return verbose description of the log class, or NULL if unknown
+  */
+-const char *exif_log_code_get_message (ExifLogCode code);
+-
+-/*! Log callback function prototype.
+- */
+-typedef void (* ExifLogFunc) (ExifLog *log, ExifLogCode, const char *domain,
+-			      const char *format, va_list args, void *data);
++EXIF_API(const char *) exif_log_code_get_message (exif_enum(ExifLogCode) code);
+ 
+ /*! Register log callback function.
+  * Calls to the log callback function are purely for diagnostic purposes.
+@@ -84,10 +84,10 @@ typedef void (* ExifLogFunc) (ExifLog *l
+  * \param[in] func callback function to set
+  * \param[in] data data to pass into callback function
+  */
+-void     exif_log_set_func (ExifLog *log, ExifLogFunc func, void *data);
++EXIF_API(void)     exif_log_set_func (ExifLog *log, ExifLogFunc func, void *data);
+ 
+ #ifndef NO_VERBOSE_TAG_STRINGS
+-void     exif_log  (ExifLog *log, ExifLogCode, const char *domain,
++EXIF_API(void)     exif_log  (ExifLog *log, exif_enum(ExifLogCode), const char *domain,
+ 		    const char *format, ...)
+ #ifdef __GNUC__
+ 			__attribute__((__format__(printf,4,5)))
+@@ -103,7 +103,7 @@ void     exif_log  (ExifLog *log, ExifLo
+ #endif
+ #endif
+ 
+-void     exif_logv (ExifLog *log, ExifLogCode, const char *domain,
++EXIF_API(void)     exif_logv (ExifLog *log, exif_enum(ExifLogCode), const char *domain,
+ 		    const char *format, va_list args);
+ 
+ /* For your convenience */
+--- a/libexif/exif-mem.h	2020-02-23 09:13:14.000000000 +0100
++++ a/libexif/exif-mem.h	2019-09-26 19:47:47.000000000 +0200
+@@ -25,18 +25,20 @@
+ #ifndef __EXIF_MEM_H__
+ #define __EXIF_MEM_H__
+ 
+-#include <libexif/exif-utils.h>
++#include <libexif/exifutil.h>
+ 
+ #ifdef __cplusplus
+ extern "C" {
+ #endif /* __cplusplus */
+ 
++typedef struct _ExifMem ExifMem;
++
+ /*! Should work like calloc()
+  *
+  *  \param[in] s the size of the block to allocate.
+  *  \return the allocated memory and initialized. 
+  */
+-typedef void * (* ExifMemAllocFunc)   (ExifLong s);
++typedef void * EXIF_CALLBACK (* ExifMemAllocFunc)   (ExifLong s);
+ 
+ /*! Should work like realloc()
+  *
+@@ -44,17 +46,14 @@ typedef void * (* ExifMemAllocFunc)   (E
+  * \param[in] s the size of the reallocated block
+  * \return allocated memory 
+  */
+-typedef void * (* ExifMemReallocFunc) (void *p, ExifLong s);
++typedef void * EXIF_CALLBACK (* ExifMemReallocFunc) (void *p, ExifLong s);
+ 
+ /*! Free method for ExifMem
+  *
+  * \param[in] p the pointer to free
+  * \return the freed pointer
+  */
+-typedef void   (* ExifMemFreeFunc)    (void *p);
+-
+-/*! ExifMem define a memory allocator */
+-typedef struct _ExifMem ExifMem;
++typedef void   EXIF_CALLBACK (* ExifMemFreeFunc)    (void *p);
+ 
+ /*! Create a new ExifMem
+  *
+@@ -63,26 +62,26 @@ typedef struct _ExifMem ExifMem;
+  * \param[in] f the free function
+  * \return allocated #ExifMem, or NULL on error
+  */
+-ExifMem *exif_mem_new   (ExifMemAllocFunc a, ExifMemReallocFunc r,
++EXIF_API(ExifMem *) exif_mem_new   (ExifMemAllocFunc a, ExifMemReallocFunc r,
+ 			 ExifMemFreeFunc f);
+ /*! Refcount an ExifMem
+  */
+-void     exif_mem_ref   (ExifMem *);
++EXIF_API(void)     exif_mem_ref   (ExifMem *);
+ 
+ /*! Unrefcount an ExifMem.
+  * If the refcount reaches 0, the ExifMem is freed
+  */
+-void     exif_mem_unref (ExifMem *);
++EXIF_API(void)     exif_mem_unref (ExifMem *);
+ 
+-void *exif_mem_alloc   (ExifMem *m, ExifLong s);
+-void *exif_mem_realloc (ExifMem *m, void *p, ExifLong s);
+-void  exif_mem_free    (ExifMem *m, void *p);
++EXIF_API(void *) exif_mem_alloc   (ExifMem *m, ExifLong s);
++EXIF_API(void *) exif_mem_realloc (ExifMem *m, void *p, ExifLong s);
++EXIF_API(void)  exif_mem_free    (ExifMem *m, void *p);
+ 
+ /*! Create a new ExifMem with default values for your convenience
+  *
+  * \return return a new default ExifMem
+  */
+-ExifMem *exif_mem_new_default (void);
++EXIF_API(ExifMem *) exif_mem_new_default (void);
+ 
+ #ifdef __cplusplus
+ }
+--- a/libexif/exif-mnote-data.h	2020-02-23 09:13:14.000000000 +0100
++++ a/libexif/exif-mnote-data.h	2019-09-26 19:47:47.000000000 +0200
+@@ -27,13 +27,13 @@
+ extern "C" {
+ #endif /* __cplusplus */
+ 
+-#include <libexif/exif-log.h>
++#include <libexif/exiflog.h>
+ 
+ /*! Data found in the MakerNote tag */
+ typedef struct _ExifMnoteData ExifMnoteData;
+ 
+-void exif_mnote_data_ref   (ExifMnoteData *);
+-void exif_mnote_data_unref (ExifMnoteData *);
++EXIF_API(void) exif_mnote_data_ref   (ExifMnoteData *);
++EXIF_API(void) exif_mnote_data_unref (ExifMnoteData *);
+ 
+ /*! Load the MakerNote data from a memory buffer.
+  *
+@@ -41,8 +41,7 @@ void exif_mnote_data_unref (ExifMnoteDat
+  * \param[in] buf pointer to raw MakerNote tag data
+  * \param[in] buf_size number of bytes of data at buf
+  */
+-void exif_mnote_data_load (ExifMnoteData *d, const unsigned char *buf,
+-			   unsigned int buf_size);
++EXIF_API(void) exif_mnote_data_load (ExifMnoteData *d, const unsigned char *buf, uint32_t buf_size);
+ 
+ /*!
+  * Save the raw MakerNote data into a memory buffer.  The buffer is
+@@ -53,15 +52,14 @@ void exif_mnote_data_load (ExifMnoteData
+  * \param[out] buf pointer to buffer pointer containing MakerNote data on return
+  * \param[out] buf_size pointer to the size of the buffer
+  */
+-void exif_mnote_data_save (ExifMnoteData *d, unsigned char **buf,
+-			   unsigned int *buf_size);
++EXIF_API(void) exif_mnote_data_save (ExifMnoteData *d, unsigned char **buf, uint32_t *buf_size);
+ 
+ /*! Return the number of tags in the MakerNote.
+  *
+  * \param[in] d MakerNote data
+  * \return number of tags, or 0 if no MakerNote or the type is not supported
+  */
+-unsigned int exif_mnote_data_count           (ExifMnoteData *d);
++EXIF_API(uint32_t) exif_mnote_data_count           (ExifMnoteData *d);
+ 
+ /*! Return the MakerNote tag number for the tag at the specified index within
+  * the MakerNote.
+@@ -70,7 +68,7 @@ unsigned int exif_mnote_data_count
+  * \param[in] n index of the entry within the MakerNote data
+  * \return MakerNote tag number
+  */
+-unsigned int exif_mnote_data_get_id          (ExifMnoteData *d, unsigned int n);
++EXIF_API(uint32_t) exif_mnote_data_get_id          (ExifMnoteData *d, uint32_t n);
+ 
+ /*! Returns textual name of the given MakerNote tag. The name is a short,
+  * unique (within this type of MakerNote), non-localized text string
+@@ -80,7 +78,7 @@ unsigned int exif_mnote_data_get_id
+  * \param[in] n index of the entry within the MakerNote data
+  * \return textual name of the tag or NULL on error
+  */
+-const char  *exif_mnote_data_get_name        (ExifMnoteData *d, unsigned int n);
++EXIF_API(const char  *) exif_mnote_data_get_name        (ExifMnoteData *d, uint32_t n);
+ 
+ /*! Returns textual title of the given MakerNote tag.
+  * The title is a short, localized textual description of the tag.
+@@ -89,7 +87,7 @@ const char  *exif_mnote_data_get_name
+  * \param[in] n index of the entry within the MakerNote data
+  * \return textual name of the tag or NULL on error
+  */
+-const char  *exif_mnote_data_get_title       (ExifMnoteData *d, unsigned int n);
++EXIF_API(const char *) exif_mnote_data_get_title       (ExifMnoteData *d, uint32_t n);
+ 
+ /*! Returns verbose textual description of the given MakerNote tag.
+  *
+@@ -97,7 +95,7 @@ const char  *exif_mnote_data_get_title
+  * \param[in] n index of the entry within the MakerNote data
+  * \return textual description of the tag or NULL on error
+  */
+-const char  *exif_mnote_data_get_description (ExifMnoteData *d, unsigned int n);
++EXIF_API(const char *) exif_mnote_data_get_description (ExifMnoteData *d, uint32_t n);
+ 
+ /*! Return a textual representation of the value of the MakerNote entry.
+  *
+@@ -111,9 +109,9 @@ const char  *exif_mnote_data_get_descrip
+  * \param[in] maxlen length of the buffer val
+  * \return val pointer, or NULL on error
+  */
+-char  *exif_mnote_data_get_value (ExifMnoteData *d, unsigned int n, char *val, unsigned int maxlen);
++EXIF_API(char *) exif_mnote_data_get_value (ExifMnoteData *d, uint32_t n, char *val, uint32_t maxlen);
+ 
+-void exif_mnote_data_log (ExifMnoteData *, ExifLog *);
++EXIF_API(void) exif_mnote_data_log (ExifMnoteData *, ExifLog *);
+ 
+ #ifdef __cplusplus
+ }
+--- a/libexif/exif-tag.h	2020-05-17 09:03:24.000000000 +0200
++++ a/libexif/exif-tag.h	2020-09-09 13:07:59.567367800 +0200
+@@ -27,161 +27,161 @@
+ extern "C" {
+ #endif /* __cplusplus */
+ 
+-#include <libexif/exif-ifd.h>
+-#include <libexif/exif-data-type.h>
++#include <libexif/exififd.h>
++#include <libexif/exiftype.h>
+ 
+ /*! EXIF tags */
+-typedef enum {
+-	EXIF_TAG_INTEROPERABILITY_INDEX		= 0x0001,
+-	EXIF_TAG_INTEROPERABILITY_VERSION	= 0x0002,
+-	EXIF_TAG_NEW_SUBFILE_TYPE		= 0x00fe,
+-	EXIF_TAG_IMAGE_WIDTH 			= 0x0100,
+-	EXIF_TAG_IMAGE_LENGTH 			= 0x0101,
+-	EXIF_TAG_BITS_PER_SAMPLE 		= 0x0102,
+-	EXIF_TAG_COMPRESSION 			= 0x0103,
+-	EXIF_TAG_PHOTOMETRIC_INTERPRETATION 	= 0x0106,
+-	EXIF_TAG_FILL_ORDER 			= 0x010a,
+-	EXIF_TAG_DOCUMENT_NAME 			= 0x010d,
+-	EXIF_TAG_IMAGE_DESCRIPTION 		= 0x010e,
+-	EXIF_TAG_MAKE 				= 0x010f,
+-	EXIF_TAG_MODEL 				= 0x0110,
+-	EXIF_TAG_STRIP_OFFSETS 			= 0x0111,
+-	EXIF_TAG_ORIENTATION 			= 0x0112,
+-	EXIF_TAG_SAMPLES_PER_PIXEL 		= 0x0115,
+-	EXIF_TAG_ROWS_PER_STRIP 		= 0x0116,
+-	EXIF_TAG_STRIP_BYTE_COUNTS		= 0x0117,
+-	EXIF_TAG_X_RESOLUTION 			= 0x011a,
+-	EXIF_TAG_Y_RESOLUTION 			= 0x011b,
+-	EXIF_TAG_PLANAR_CONFIGURATION 		= 0x011c,
+-	EXIF_TAG_RESOLUTION_UNIT 		= 0x0128,
+-	EXIF_TAG_TRANSFER_FUNCTION 		= 0x012d,
+-	EXIF_TAG_SOFTWARE 			= 0x0131,
+-	EXIF_TAG_DATE_TIME			= 0x0132,
+-	EXIF_TAG_ARTIST				= 0x013b,
+-	EXIF_TAG_WHITE_POINT			= 0x013e,
+-	EXIF_TAG_PRIMARY_CHROMATICITIES		= 0x013f,
+-	EXIF_TAG_SUB_IFDS			= 0x014a,
+-	EXIF_TAG_TRANSFER_RANGE			= 0x0156,
+-	EXIF_TAG_JPEG_PROC			= 0x0200,
+-	EXIF_TAG_JPEG_INTERCHANGE_FORMAT	= 0x0201,
+-	EXIF_TAG_JPEG_INTERCHANGE_FORMAT_LENGTH	= 0x0202,
+-	EXIF_TAG_YCBCR_COEFFICIENTS		= 0x0211,
+-	EXIF_TAG_YCBCR_SUB_SAMPLING		= 0x0212,
+-	EXIF_TAG_YCBCR_POSITIONING		= 0x0213,
+-	EXIF_TAG_REFERENCE_BLACK_WHITE		= 0x0214,
+-	EXIF_TAG_XML_PACKET			= 0x02bc,
+-	EXIF_TAG_RELATED_IMAGE_FILE_FORMAT	= 0x1000,
+-	EXIF_TAG_RELATED_IMAGE_WIDTH		= 0x1001,
+-	EXIF_TAG_RELATED_IMAGE_LENGTH		= 0x1002,
+-	EXIF_TAG_CFA_REPEAT_PATTERN_DIM		= 0x828d,
+-	EXIF_TAG_CFA_PATTERN			= 0x828e,
+-	EXIF_TAG_BATTERY_LEVEL			= 0x828f,
+-	EXIF_TAG_COPYRIGHT			= 0x8298,
+-	EXIF_TAG_EXPOSURE_TIME			= 0x829a,
+-	EXIF_TAG_FNUMBER			= 0x829d,
+-	EXIF_TAG_IPTC_NAA			= 0x83bb,
+-	EXIF_TAG_IMAGE_RESOURCES		= 0x8649,
+-	EXIF_TAG_EXIF_IFD_POINTER		= 0x8769,
+-	EXIF_TAG_INTER_COLOR_PROFILE		= 0x8773,
+-	EXIF_TAG_EXPOSURE_PROGRAM		= 0x8822,
+-	EXIF_TAG_SPECTRAL_SENSITIVITY		= 0x8824,
+-	EXIF_TAG_GPS_INFO_IFD_POINTER		= 0x8825,
+-	EXIF_TAG_ISO_SPEED_RATINGS		= 0x8827,
+-	EXIF_TAG_OECF				= 0x8828,
+-	EXIF_TAG_TIME_ZONE_OFFSET		= 0x882a,
+-	EXIF_TAG_EXIF_VERSION			= 0x9000,
+-	EXIF_TAG_DATE_TIME_ORIGINAL		= 0x9003,
+-	EXIF_TAG_DATE_TIME_DIGITIZED		= 0x9004,
+-	EXIF_TAG_COMPONENTS_CONFIGURATION	= 0x9101,
+-	EXIF_TAG_COMPRESSED_BITS_PER_PIXEL	= 0x9102,
+-	EXIF_TAG_SHUTTER_SPEED_VALUE		= 0x9201,
+-	EXIF_TAG_APERTURE_VALUE			= 0x9202,
+-	EXIF_TAG_BRIGHTNESS_VALUE		= 0x9203,
+-	EXIF_TAG_EXPOSURE_BIAS_VALUE		= 0x9204,
+-	EXIF_TAG_MAX_APERTURE_VALUE		= 0x9205,
+-	EXIF_TAG_SUBJECT_DISTANCE		= 0x9206,
+-	EXIF_TAG_METERING_MODE			= 0x9207,
+-	EXIF_TAG_LIGHT_SOURCE			= 0x9208,
+-	EXIF_TAG_FLASH				= 0x9209,
+-	EXIF_TAG_FOCAL_LENGTH			= 0x920a,
+-	EXIF_TAG_SUBJECT_AREA			= 0x9214,
+-	EXIF_TAG_TIFF_EP_STANDARD_ID		= 0x9216,
+-	EXIF_TAG_MAKER_NOTE			= 0x927c,
+-	EXIF_TAG_USER_COMMENT			= 0x9286,
+-	EXIF_TAG_SUB_SEC_TIME			= 0x9290,
+-	EXIF_TAG_SUB_SEC_TIME_ORIGINAL		= 0x9291,
+-	EXIF_TAG_SUB_SEC_TIME_DIGITIZED		= 0x9292,
+-	EXIF_TAG_XP_TITLE			= 0x9c9b,
+-	EXIF_TAG_XP_COMMENT			= 0x9c9c,
+-	EXIF_TAG_XP_AUTHOR			= 0x9c9d,
+-	EXIF_TAG_XP_KEYWORDS			= 0x9c9e,
+-	EXIF_TAG_XP_SUBJECT			= 0x9c9f,
+-	EXIF_TAG_FLASH_PIX_VERSION		= 0xa000,
+-	EXIF_TAG_COLOR_SPACE			= 0xa001,
+-	EXIF_TAG_PIXEL_X_DIMENSION		= 0xa002,
+-	EXIF_TAG_PIXEL_Y_DIMENSION		= 0xa003,
+-	EXIF_TAG_RELATED_SOUND_FILE		= 0xa004,
+-	EXIF_TAG_INTEROPERABILITY_IFD_POINTER	= 0xa005,
+-	EXIF_TAG_FLASH_ENERGY			= 0xa20b,
+-	EXIF_TAG_SPATIAL_FREQUENCY_RESPONSE	= 0xa20c,
+-	EXIF_TAG_FOCAL_PLANE_X_RESOLUTION	= 0xa20e,
+-	EXIF_TAG_FOCAL_PLANE_Y_RESOLUTION	= 0xa20f,
+-	EXIF_TAG_FOCAL_PLANE_RESOLUTION_UNIT	= 0xa210,
+-	EXIF_TAG_SUBJECT_LOCATION		= 0xa214,
+-	EXIF_TAG_EXPOSURE_INDEX			= 0xa215,
+-	EXIF_TAG_SENSING_METHOD			= 0xa217,
+-	EXIF_TAG_FILE_SOURCE			= 0xa300,
+-	EXIF_TAG_SCENE_TYPE			= 0xa301,
+-	EXIF_TAG_NEW_CFA_PATTERN		= 0xa302,
+-	EXIF_TAG_CUSTOM_RENDERED		= 0xa401,
+-	EXIF_TAG_EXPOSURE_MODE			= 0xa402,
+-	EXIF_TAG_WHITE_BALANCE			= 0xa403,
+-	EXIF_TAG_DIGITAL_ZOOM_RATIO		= 0xa404,
+-	EXIF_TAG_FOCAL_LENGTH_IN_35MM_FILM	= 0xa405,
+-	EXIF_TAG_SCENE_CAPTURE_TYPE		= 0xa406,
+-	EXIF_TAG_GAIN_CONTROL			= 0xa407,
+-	EXIF_TAG_CONTRAST			= 0xa408,
+-	EXIF_TAG_SATURATION			= 0xa409,
+-	EXIF_TAG_SHARPNESS			= 0xa40a,
+-	EXIF_TAG_DEVICE_SETTING_DESCRIPTION	= 0xa40b,
+-	EXIF_TAG_SUBJECT_DISTANCE_RANGE		= 0xa40c,
+-	EXIF_TAG_IMAGE_UNIQUE_ID		= 0xa420,
+-	EXIF_TAG_CAMERA_OWNER_NAME 		= 0xa430,
+-	EXIF_TAG_BODY_SERIAL_NUMBER 		= 0xa431,
+-	EXIF_TAG_LENS_SPECIFICATION 		= 0xa432,
+-	EXIF_TAG_LENS_MAKE	 		= 0xa433,
+-	EXIF_TAG_LENS_MODEL	 		= 0xa434,
+-	EXIF_TAG_LENS_SERIAL_NUMBER 		= 0xa435,
+-	EXIF_TAG_COMPOSITE_IMAGE 		= 0xa460,
+-	EXIF_TAG_SOURCE_IMAGE_NUMBER_OF_COMPOSITE_IMAGE 		= 0xa461,
+-	EXIF_TAG_SOURCE_EXPOSURE_TIMES_OF_COMPOSITE_IMAGE 		= 0xa462,
+-	EXIF_TAG_GAMMA				= 0xa500,
+-	EXIF_TAG_PRINT_IMAGE_MATCHING		= 0xc4a5,
+-	EXIF_TAG_PADDING			= 0xea1c
+-} ExifTag;
++typedef uint32_t ExifTag;
++
++#define EXIF_TAG_INTEROPERABILITY_INDEX		0x0001
++#define EXIF_TAG_INTEROPERABILITY_VERSION	0x0002
++#define EXIF_TAG_NEW_SUBFILE_TYPE			0x00fe
++#define EXIF_TAG_IMAGE_WIDTH 				0x0100
++#define EXIF_TAG_IMAGE_LENGTH 				0x0101
++#define EXIF_TAG_BITS_PER_SAMPLE 			0x0102
++#define EXIF_TAG_COMPRESSION 				0x0103
++#define EXIF_TAG_PHOTOMETRIC_INTERPRETATION 0x0106
++#define EXIF_TAG_FILL_ORDER 				0x010a
++#define EXIF_TAG_DOCUMENT_NAME 				0x010d
++#define EXIF_TAG_IMAGE_DESCRIPTION 			0x010e
++#define EXIF_TAG_MAKE 						0x010f
++#define EXIF_TAG_MODEL 						0x0110
++#define EXIF_TAG_STRIP_OFFSETS 				0x0111
++#define EXIF_TAG_ORIENTATION 				0x0112
++#define EXIF_TAG_SAMPLES_PER_PIXEL 			0x0115
++#define EXIF_TAG_ROWS_PER_STRIP 			0x0116
++#define EXIF_TAG_STRIP_BYTE_COUNTS			0x0117
++#define EXIF_TAG_X_RESOLUTION 				0x011a
++#define EXIF_TAG_Y_RESOLUTION 				0x011b
++#define EXIF_TAG_PLANAR_CONFIGURATION 		0x011c
++#define EXIF_TAG_RESOLUTION_UNIT 			0x0128
++#define EXIF_TAG_TRANSFER_FUNCTION 			0x012d
++#define EXIF_TAG_SOFTWARE 					0x0131
++#define EXIF_TAG_DATE_TIME					0x0132
++#define EXIF_TAG_ARTIST						0x013b
++#define EXIF_TAG_WHITE_POINT				0x013e
++#define EXIF_TAG_PRIMARY_CHROMATICITIES		0x013f
++#define EXIF_TAG_SUB_IFDS					0x014a
++#define EXIF_TAG_TRANSFER_RANGE				0x0156
++#define EXIF_TAG_JPEG_PROC					0x0200
++#define EXIF_TAG_JPEG_INTERCHANGE_FORMAT	0x0201
++#define EXIF_TAG_JPEG_INTERCHANGE_FORMAT_LENGTH	0x0202
++#define EXIF_TAG_YCBCR_COEFFICIENTS			0x0211
++#define EXIF_TAG_YCBCR_SUB_SAMPLING			0x0212
++#define EXIF_TAG_YCBCR_POSITIONING			0x0213
++#define EXIF_TAG_REFERENCE_BLACK_WHITE		0x0214
++#define EXIF_TAG_XML_PACKET					0x02bc
++#define EXIF_TAG_RELATED_IMAGE_FILE_FORMAT	0x1000
++#define EXIF_TAG_RELATED_IMAGE_WIDTH		0x1001
++#define EXIF_TAG_RELATED_IMAGE_LENGTH		0x1002
++#define EXIF_TAG_CFA_REPEAT_PATTERN_DIM		0x828d
++#define EXIF_TAG_CFA_PATTERN				0x828e
++#define EXIF_TAG_BATTERY_LEVEL				0x828f
++#define EXIF_TAG_COPYRIGHT					0x8298
++#define EXIF_TAG_EXPOSURE_TIME				0x829a
++#define EXIF_TAG_FNUMBER					0x829d
++#define EXIF_TAG_IPTC_NAA					0x83bb
++#define EXIF_TAG_IMAGE_RESOURCES			0x8649
++#define EXIF_TAG_EXIF_IFD_POINTER			0x8769
++#define EXIF_TAG_INTER_COLOR_PROFILE		0x8773
++#define EXIF_TAG_EXPOSURE_PROGRAM			0x8822
++#define EXIF_TAG_SPECTRAL_SENSITIVITY		0x8824
++#define EXIF_TAG_GPS_INFO_IFD_POINTER		0x8825
++#define EXIF_TAG_ISO_SPEED_RATINGS			0x8827
++#define EXIF_TAG_OECF						0x8828
++#define EXIF_TAG_TIME_ZONE_OFFSET			0x882a
++#define EXIF_TAG_EXIF_VERSION				0x9000
++#define EXIF_TAG_DATE_TIME_ORIGINAL			0x9003
++#define EXIF_TAG_DATE_TIME_DIGITIZED		0x9004
++#define EXIF_TAG_COMPONENTS_CONFIGURATION	0x9101
++#define EXIF_TAG_COMPRESSED_BITS_PER_PIXEL	0x9102
++#define EXIF_TAG_SHUTTER_SPEED_VALUE		0x9201
++#define EXIF_TAG_APERTURE_VALUE				0x9202
++#define EXIF_TAG_BRIGHTNESS_VALUE			0x9203
++#define EXIF_TAG_EXPOSURE_BIAS_VALUE		0x9204
++#define EXIF_TAG_MAX_APERTURE_VALUE			0x9205
++#define EXIF_TAG_SUBJECT_DISTANCE			0x9206
++#define EXIF_TAG_METERING_MODE				0x9207
++#define EXIF_TAG_LIGHT_SOURCE				0x9208
++#define EXIF_TAG_FLASH						0x9209
++#define EXIF_TAG_FOCAL_LENGTH				0x920a
++#define EXIF_TAG_SUBJECT_AREA				0x9214
++#define EXIF_TAG_TIFF_EP_STANDARD_ID		0x9216
++#define EXIF_TAG_MAKER_NOTE					0x927c
++#define EXIF_TAG_USER_COMMENT				0x9286
++#define EXIF_TAG_SUB_SEC_TIME				0x9290
++#define EXIF_TAG_SUB_SEC_TIME_ORIGINAL		0x9291
++#define EXIF_TAG_SUB_SEC_TIME_DIGITIZED		0x9292
++#define EXIF_TAG_XP_TITLE					0x9c9b
++#define EXIF_TAG_XP_COMMENT					0x9c9c
++#define EXIF_TAG_XP_AUTHOR					0x9c9d
++#define EXIF_TAG_XP_KEYWORDS				0x9c9e
++#define EXIF_TAG_XP_SUBJECT					0x9c9f
++#define EXIF_TAG_FLASH_PIX_VERSION			0xa000
++#define EXIF_TAG_COLOR_SPACE				0xa001
++#define EXIF_TAG_PIXEL_X_DIMENSION			0xa002
++#define EXIF_TAG_PIXEL_Y_DIMENSION			0xa003
++#define EXIF_TAG_RELATED_SOUND_FILE			0xa004
++#define EXIF_TAG_INTEROPERABILITY_IFD_POINTER	0xa005
++#define EXIF_TAG_FLASH_ENERGY				0xa20b
++#define EXIF_TAG_SPATIAL_FREQUENCY_RESPONSE	0xa20c
++#define EXIF_TAG_FOCAL_PLANE_X_RESOLUTION	0xa20e
++#define EXIF_TAG_FOCAL_PLANE_Y_RESOLUTION	0xa20f
++#define EXIF_TAG_FOCAL_PLANE_RESOLUTION_UNIT	0xa210
++#define EXIF_TAG_SUBJECT_LOCATION			0xa214
++#define EXIF_TAG_EXPOSURE_INDEX				0xa215
++#define EXIF_TAG_SENSING_METHOD				0xa217
++#define EXIF_TAG_FILE_SOURCE				0xa300
++#define EXIF_TAG_SCENE_TYPE					0xa301
++#define EXIF_TAG_NEW_CFA_PATTERN			0xa302
++#define EXIF_TAG_CUSTOM_RENDERED			0xa401
++#define EXIF_TAG_EXPOSURE_MODE				0xa402
++#define EXIF_TAG_WHITE_BALANCE				0xa403
++#define EXIF_TAG_DIGITAL_ZOOM_RATIO			0xa404
++#define EXIF_TAG_FOCAL_LENGTH_IN_35MM_FILM	0xa405
++#define EXIF_TAG_SCENE_CAPTURE_TYPE			0xa406
++#define EXIF_TAG_GAIN_CONTROL				0xa407
++#define EXIF_TAG_CONTRAST					0xa408
++#define EXIF_TAG_SATURATION					0xa409
++#define EXIF_TAG_SHARPNESS					0xa40a
++#define EXIF_TAG_DEVICE_SETTING_DESCRIPTION	0xa40b
++#define EXIF_TAG_SUBJECT_DISTANCE_RANGE		0xa40c
++#define EXIF_TAG_IMAGE_UNIQUE_ID			0xa420
++#define EXIF_TAG_CAMERA_OWNER_NAME 			0xa430
++#define EXIF_TAG_BODY_SERIAL_NUMBER 		0xa431
++#define EXIF_TAG_LENS_SPECIFICATION 		0xa432
++#define EXIF_TAG_LENS_MAKE	 				0xa433
++#define EXIF_TAG_LENS_MODEL	 				0xa434
++#define EXIF_TAG_LENS_SERIAL_NUMBER 		0xa435
++#define EXIF_TAG_COMPOSITE_IMAGE 			0xa460
++#define EXIF_TAG_SOURCE_IMAGE_NUMBER_OF_COMPOSITE_IMAGE 		0xa461
++#define EXIF_TAG_SOURCE_EXPOSURE_TIMES_OF_COMPOSITE_IMAGE 		0xa462
++#define EXIF_TAG_GAMMA						0xa500
++#define EXIF_TAG_PRINT_IMAGE_MATCHING		0xc4a5
++#define EXIF_TAG_PADDING					0xea1c
+ 
+ /* GPS tags overlap with above ones. */
+-#define EXIF_TAG_GPS_VERSION_ID        0x0000
+-#define EXIF_TAG_GPS_LATITUDE_REF      0x0001 /* INTEROPERABILITY_INDEX   */
+-#define EXIF_TAG_GPS_LATITUDE          0x0002 /* INTEROPERABILITY_VERSION */
+-#define EXIF_TAG_GPS_LONGITUDE_REF     0x0003
+-#define EXIF_TAG_GPS_LONGITUDE         0x0004
+-#define EXIF_TAG_GPS_ALTITUDE_REF      0x0005
+-#define EXIF_TAG_GPS_ALTITUDE          0x0006
+-#define EXIF_TAG_GPS_TIME_STAMP        0x0007
+-#define EXIF_TAG_GPS_SATELLITES        0x0008
+-#define EXIF_TAG_GPS_STATUS            0x0009
+-#define EXIF_TAG_GPS_MEASURE_MODE      0x000a
+-#define EXIF_TAG_GPS_DOP               0x000b
+-#define EXIF_TAG_GPS_SPEED_REF         0x000c
+-#define EXIF_TAG_GPS_SPEED             0x000d
+-#define EXIF_TAG_GPS_TRACK_REF         0x000e
+-#define EXIF_TAG_GPS_TRACK             0x000f
+-#define EXIF_TAG_GPS_IMG_DIRECTION_REF 0x0010
+-#define EXIF_TAG_GPS_IMG_DIRECTION     0x0011
+-#define EXIF_TAG_GPS_MAP_DATUM         0x0012
+-#define EXIF_TAG_GPS_DEST_LATITUDE_REF 0x0013
+-#define EXIF_TAG_GPS_DEST_LATITUDE     0x0014
++#define EXIF_TAG_GPS_VERSION_ID         0x0000
++#define EXIF_TAG_GPS_LATITUDE_REF       0x0001 /* INTEROPERABILITY_INDEX   */
++#define EXIF_TAG_GPS_LATITUDE           0x0002 /* INTEROPERABILITY_VERSION */
++#define EXIF_TAG_GPS_LONGITUDE_REF      0x0003
++#define EXIF_TAG_GPS_LONGITUDE          0x0004
++#define EXIF_TAG_GPS_ALTITUDE_REF       0x0005
++#define EXIF_TAG_GPS_ALTITUDE           0x0006
++#define EXIF_TAG_GPS_TIME_STAMP         0x0007
++#define EXIF_TAG_GPS_SATELLITES         0x0008
++#define EXIF_TAG_GPS_STATUS             0x0009
++#define EXIF_TAG_GPS_MEASURE_MODE       0x000a
++#define EXIF_TAG_GPS_DOP                0x000b
++#define EXIF_TAG_GPS_SPEED_REF          0x000c
++#define EXIF_TAG_GPS_SPEED              0x000d
++#define EXIF_TAG_GPS_TRACK_REF          0x000e
++#define EXIF_TAG_GPS_TRACK              0x000f
++#define EXIF_TAG_GPS_IMG_DIRECTION_REF  0x0010
++#define EXIF_TAG_GPS_IMG_DIRECTION      0x0011
++#define EXIF_TAG_GPS_MAP_DATUM          0x0012
++#define EXIF_TAG_GPS_DEST_LATITUDE_REF  0x0013
++#define EXIF_TAG_GPS_DEST_LATITUDE      0x0014
+ #define EXIF_TAG_GPS_DEST_LONGITUDE_REF 0x0015
+ #define EXIF_TAG_GPS_DEST_LONGITUDE     0x0016
+ #define EXIF_TAG_GPS_DEST_BEARING_REF   0x0017
+@@ -216,7 +216,7 @@ typedef enum {
+  * \note The tag not found value cannot be distinguished from a legitimate
+  *   tag number 0.
+  */
+-ExifTag          exif_tag_from_name                (const char *name);
++EXIF_API(ExifTag) exif_tag_from_name                (const char *name);
+ 
+ /*! Return a textual name of the given tag when found in the given IFD. The
+  * name is a short, unique, non-localized text string containing only
+@@ -226,7 +226,7 @@ ExifTag          exif_tag_from_name
+  * \param[in] ifd IFD
+  * \return textual name of the tag, or NULL if the tag is unknown
+  */
+-const char      *exif_tag_get_name_in_ifd          (ExifTag tag, ExifIfd ifd);
++EXIF_API(const char *) exif_tag_get_name_in_ifd          (ExifTag tag, exif_enum(ExifIfd) ifd);
+ 
+ /*! Return a textual title of the given tag when found in the given IFD.
+  * The title is a short, localized description of the tag.
+@@ -235,7 +235,7 @@ const char      *exif_tag_get_name_in_if
+  * \param[in] ifd IFD
+  * \return textual title of the tag, or NULL if the tag is unknown
+  */
+-const char      *exif_tag_get_title_in_ifd         (ExifTag tag, ExifIfd ifd);
++EXIF_API(const char *) exif_tag_get_title_in_ifd         (ExifTag tag, exif_enum(ExifIfd) ifd);
+ 
+ /*! Return a verbose textual description of the given tag when found in the
+  * given IFD. The description is a verbose, localized description of the tag.
+@@ -244,7 +244,7 @@ const char      *exif_tag_get_title_in_i
+  * \param[in] ifd IFD
+  * \return textual description of the tag, or NULL if the tag is unknown
+  */
+-const char      *exif_tag_get_description_in_ifd   (ExifTag tag, ExifIfd ifd);
++EXIF_API(const char *) exif_tag_get_description_in_ifd   (ExifTag tag, exif_enum(ExifIfd) ifd);
+ 
+ /*! Return whether the given tag is mandatory or not in the given IFD and
+  * data type according to the EXIF specification. If the IFD given is
+@@ -258,31 +258,31 @@ const char      *exif_tag_get_descriptio
+  * \param[in] t data type or EXIF_DATA_TYPE_UNKNOWN
+  * \return the level of support for this tag
+  */
+-ExifSupportLevel exif_tag_get_support_level_in_ifd (ExifTag tag, ExifIfd ifd,
+-                                                    ExifDataType t);
++EXIF_API(ExifSupportLevel) exif_tag_get_support_level_in_ifd (ExifTag tag, exif_enum(ExifIfd) ifd,
++                                                    exif_enum(ExifDataType) t);
+ 
+ /* Don't use these functions. They are here for compatibility only. */
+ 
+ /*! \deprecated Use #exif_tag_get_name_in_ifd instead */
+-const char     *exif_tag_get_name        (ExifTag tag);
++EXIF_API(const char *) exif_tag_get_name        (ExifTag tag);
+ 
+ /*! \deprecated Use #exif_tag_get_title_in_ifd instead */
+-const char     *exif_tag_get_title       (ExifTag tag);
++EXIF_API(const char *) exif_tag_get_title       (ExifTag tag);
+ 
+ /*! \deprecated Use #exif_tag_get_description_in_ifd instead */
+-const char     *exif_tag_get_description (ExifTag tag);
++EXIF_API(const char *) exif_tag_get_description (ExifTag tag);
+ 
+ 
+ /* For now, do not use these functions. */
+ 
+ /*! \internal */
+-ExifTag      exif_tag_table_get_tag  (unsigned int n);
++EXIF_API(ExifTag) exif_tag_table_get_tag  (uint32_t n);
+ 
+ /*! \internal */
+-const char  *exif_tag_table_get_name (unsigned int n);
++EXIF_API(const char *) exif_tag_table_get_name (uint32_t n);
+ 
+ /*! \internal */
+-unsigned int exif_tag_table_count    (void);
++EXIF_API(uint32_t) exif_tag_table_count(void);
+ 
+ 
+ /* Don't use these definitions. They are here for compatibility only. */
+--- a/libexif/exif-utils.h	2020-02-23 09:13:14.000000000 +0100
++++ a/libexif/exif-utils.h	2019-09-26 19:47:47.000000000 +0200
+@@ -27,14 +27,29 @@
+ extern "C" {
+ #endif /* __cplusplus */
+ 
+-#include <libexif/exif-byte-order.h>
+-#include <libexif/exif-format.h>
+-#include <libexif/_stdint.h>
+ 
++#if (defined(__MSHORT__) || defined(__PUREC__) || defined(__AHCC__)) && defined(EXIF_SLB) && (defined(__atarist__) || defined(__TOS__))
++typedef long exif_int_t;
++typedef unsigned long exif_uint_t;
++#define exif_enum(x) exif_int_t
++#else
++typedef int exif_int_t;
++typedef unsigned int exif_uint_t;
++#define exif_enum(x) x
++#endif
++#if defined(EXIF_SLB) && (defined(__atarist__) || defined(__TOS__))
++#  include <features.h>
++#  define EXIF_CALLBACK __CDECL
++#  define EXIF_API(x) x __CDECL
++#else
++#  define EXIF_API(x) x
++#  define EXIF_CALLBACK
++#endif
++
++#include <libexif/exifbyte.h>
++#include <libexif/exifform.h>
++#include <stdint.h>
+ 
+-/* If these definitions don't work for you, please let us fix the 
+- * macro generating _stdint.h */
+-	
+ /*! EXIF Unsigned Byte data type */
+ typedef unsigned char	ExifByte;          /* 1 byte  */
+ 	
+@@ -61,6 +76,7 @@ typedef struct {ExifLong numerator; Exif
+ 
+ typedef char		ExifUndefined;     /* 1 byte  */
+ 
++
+ /*! EXIF Signed Rational data type */
+ typedef struct {ExifSLong numerator; ExifSLong denominator;} ExifSRational;
+ 
+@@ -71,7 +87,7 @@ typedef struct {ExifSLong numerator; Exi
+  * \param[in] order byte order of raw value
+  * \return value
+  */
+-ExifShort     exif_get_short     (const unsigned char *b, ExifByteOrder order);
++EXIF_API(ExifShort)     exif_get_short     (const unsigned char *b, exif_enum(ExifByteOrder) order);
+ 
+ /*! Retrieve an #ExifSShort value from memory.
+  *
+@@ -79,7 +95,7 @@ ExifShort     exif_get_short     (const
+  * \param[in] order byte order of raw value
+  * \return value
+  */
+-ExifSShort    exif_get_sshort    (const unsigned char *b, ExifByteOrder order);
++EXIF_API(ExifSShort)    exif_get_sshort    (const unsigned char *b, exif_enum(ExifByteOrder) order);
+ 
+ /*! Retrieve an #ExifLong value from memory.
+  *
+@@ -87,7 +103,7 @@ ExifSShort    exif_get_sshort    (const
+  * \param[in] order byte order of raw value
+  * \return value
+  */
+-ExifLong      exif_get_long      (const unsigned char *b, ExifByteOrder order);
++EXIF_API(ExifLong)      exif_get_long      (const unsigned char *b, exif_enum(ExifByteOrder) order);
+ 
+ /*! Retrieve an #ExifSLong value from memory.
+  *
+@@ -95,7 +111,7 @@ ExifLong      exif_get_long      (const
+  * \param[in] order byte order of raw value
+  * \return value
+  */
+-ExifSLong     exif_get_slong     (const unsigned char *b, ExifByteOrder order);
++EXIF_API(ExifSLong)     exif_get_slong     (const unsigned char *b, exif_enum(ExifByteOrder) order);
+ 
+ /*! Retrieve an #ExifRational value from memory.
+  *
+@@ -103,7 +119,7 @@ ExifSLong     exif_get_slong     (const
+  * \param[in] order byte order of raw value
+  * \return value
+  */
+-ExifRational  exif_get_rational  (const unsigned char *b, ExifByteOrder order);
++EXIF_API(ExifRational)  exif_get_rational  (const unsigned char *b, exif_enum(ExifByteOrder) order);
+ 
+ /*! Retrieve an #ExifSRational value from memory.
+  *
+@@ -111,7 +127,7 @@ ExifRational  exif_get_rational  (const
+  * \param[in] order byte order of raw value
+  * \return value
+  */
+-ExifSRational exif_get_srational (const unsigned char *b, ExifByteOrder order);
++EXIF_API(ExifSRational) exif_get_srational (const unsigned char *b, exif_enum(ExifByteOrder) order);
+ 
+ /*! Store an ExifShort value into memory in EXIF format.
+  *
+@@ -119,8 +135,7 @@ ExifSRational exif_get_srational (const
+  * \param[in] order byte order to use
+  * \param[in] value data value to store
+  */
+-void exif_set_short     (unsigned char *b, ExifByteOrder order,
+-			 ExifShort value);
++EXIF_API(void) exif_set_short(unsigned char *b, exif_enum(ExifByteOrder) order, exif_uint_t value);
+ 
+ /*! Store an ExifSShort value into memory in EXIF format.
+  *
+@@ -128,8 +143,7 @@ void exif_set_short     (unsigned char *
+  * \param[in] order byte order to use
+  * \param[in] value data value to store
+  */
+-void exif_set_sshort    (unsigned char *b, ExifByteOrder order,
+-			 ExifSShort value);
++EXIF_API(void) exif_set_sshort(unsigned char *b, exif_enum(ExifByteOrder) order, exif_int_t value);
+ 
+ /*! Store an ExifLong value into memory in EXIF format.
+  *
+@@ -137,8 +151,7 @@ void exif_set_sshort    (unsigned char *
+  * \param[in] order byte order to use
+  * \param[in] value data value to store
+  */
+-void exif_set_long      (unsigned char *b, ExifByteOrder order,
+-			 ExifLong value);
++EXIF_API(void) exif_set_long(unsigned char *b, exif_enum(ExifByteOrder) order, ExifLong value);
+ 
+ /*! Store an ExifSLong value into memory in EXIF format.
+  *
+@@ -146,8 +159,7 @@ void exif_set_long      (unsigned char *
+  * \param[in] order byte order to use
+  * \param[in] value data value to store
+  */
+-void exif_set_slong     (unsigned char *b, ExifByteOrder order,
+-			 ExifSLong value);
++EXIF_API(void) exif_set_slong(unsigned char *b, exif_enum(ExifByteOrder) order, ExifSLong value);
+ 
+ /*! Store an ExifRational value into memory in EXIF format.
+  *
+@@ -155,8 +167,7 @@ void exif_set_slong     (unsigned char *
+  * \param[in] order byte order to use
+  * \param[in] value data value to store
+  */
+-void exif_set_rational  (unsigned char *b, ExifByteOrder order,
+-			 ExifRational value);
++EXIF_API(void) exif_set_rational(unsigned char *b, exif_enum(ExifByteOrder) order, const ExifRational *value);
+ 
+ /*! Store an ExifSRational value into memory in EXIF format.
+  *
+@@ -164,17 +175,15 @@ void exif_set_rational  (unsigned char *
+  * \param[in] order byte order to use
+  * \param[in] value data value to store
+  */
+-void exif_set_srational (unsigned char *b, ExifByteOrder order,
+-			 ExifSRational value);
++EXIF_API(void) exif_set_srational(unsigned char *b, exif_enum(ExifByteOrder order), const ExifSRational *value);
+ 
+ /*! \internal */
+-void exif_convert_utf16_to_utf8 (char *out, const unsigned char *in, int maxlen);
++EXIF_API(void) exif_convert_utf16_to_utf8 (char *out, const unsigned short *in, int32_t maxlen);
+ 
+ /* Please do not use this function outside of the library. */
+ 
+ /*! \internal */
+-void exif_array_set_byte_order (ExifFormat, unsigned char *, unsigned int,
+-		ExifByteOrder o_orig, ExifByteOrder o_new);
++EXIF_API(void) exif_array_set_byte_order (exif_enum(ExifFormat), unsigned char *, uint32_t, exif_enum(ExifByteOrder) o_orig, exif_enum(ExifByteOrder) o_new);
+ 
+ #undef  MIN
+ #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+@@ -191,4 +200,8 @@ void exif_array_set_byte_order (ExifForm
+ }
+ #endif /* __cplusplus */
+ 
++#if defined(EXIF_SLB) && (defined(__atarist__) || defined(__TOS__))
++#include <slb/exif.h>
++#endif
++
+ #endif /* __EXIF_UTILS_H__ */
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/canon/exif-mnote-data-canon.c libexif-0.6.22/libexif/canon/exif-mnote-data-canon.c
+--- libexif-0.6.22.orig/libexif/canon/exif-mnote-data-canon.c	2020-05-17 08:26:57.000000000 +0200
++++ libexif-0.6.22/libexif/canon/exif-mnote-data-canon.c	2023-11-16 13:28:07.503568892 +0100
+@@ -20,6 +20,7 @@
+  */
+ 
+ #include <config.h>
++#include "libexif/exifutil.h"
+ #include "exif-mnote-data-canon.h"
+ 
+ #include <stdlib.h>
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/canon/mnote-canon-entry.c libexif-0.6.22/libexif/canon/mnote-canon-entry.c
+--- libexif-0.6.22.orig/libexif/canon/mnote-canon-entry.c	2020-02-23 09:13:14.000000000 +0100
++++ libexif-0.6.22/libexif/canon/mnote-canon-entry.c	2023-11-16 13:28:21.096884552 +0100
+@@ -20,6 +20,7 @@
+  */
+ 
+ #include "config.h"
++#include "libexif/exifutil.h"
+ #include "mnote-canon-entry.h"
+ 
+ #include <stdio.h>
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-byte-order.c libexif-0.6.22/libexif/exif-byte-order.c
+--- libexif-0.6.22.orig/libexif/exif-byte-order.c	2018-08-26 12:21:36.000000000 +0200
++++ libexif-0.6.22/libexif/exif-byte-order.c	2023-11-16 13:19:12.167610762 +0100
+@@ -20,6 +20,7 @@
+ 
+ #include <config.h>
+ 
++#include "libexif/exifutil.h"
+ #include <libexif/exif-byte-order.h>
+ #include <libexif/i18n.h>
+ 
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-content.c libexif-0.6.22/libexif/exif-content.c
+--- libexif-0.6.22.orig/libexif/exif-content.c	2020-05-17 08:26:57.000000000 +0200
++++ libexif-0.6.22/libexif/exif-content.c	2023-11-16 13:19:27.287590520 +0100
+@@ -20,6 +20,7 @@
+ 
+ #include <config.h>
+ 
++#include "libexif/exifutil.h"
+ #include <libexif/exif-content.h>
+ #include <libexif/exif-system.h>
+ 
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-data.c libexif-0.6.22/libexif/exif-data.c
+--- libexif-0.6.22.orig/libexif/exif-data.c	2020-05-17 10:16:18.000000000 +0200
++++ libexif-0.6.22/libexif/exif-data.c	2023-11-16 13:20:16.137525120 +0100
+@@ -20,6 +20,7 @@
+ 
+ #include <config.h>
+ 
++#include "libexif/exifutil.h"
+ #include <libexif/exif-mnote-data.h>
+ #include <libexif/exif-data.h>
+ #include <libexif/exif-ifd.h>
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-entry.c libexif-0.6.22/libexif/exif-entry.c
+--- libexif-0.6.22.orig/libexif/exif-entry.c	2020-05-17 08:26:57.000000000 +0200
++++ libexif-0.6.22/libexif/exif-entry.c	2023-11-16 13:25:05.480472216 +0100
+@@ -20,9 +20,9 @@
+ 
+ #include <config.h>
+ 
++#include "libexif/exifutil.h"
+ #include <libexif/exif-entry.h>
+ #include <libexif/exif-ifd.h>
+-#include <libexif/exif-utils.h>
+ #include <libexif/i18n.h>
+ 
+ #include <ctype.h>
+@@ -303,7 +303,7 @@ exif_entry_fix (ExifEntry *e)
+ 				r.denominator = (ExifLong) sr.denominator;
+ 				exif_set_rational (e->data + i *
+ 					exif_format_get_size (
+-						EXIF_FORMAT_RATIONAL), o, r);
++						EXIF_FORMAT_RATIONAL), o, &r);
+ 			}
+ 			e->format = EXIF_FORMAT_RATIONAL;
+ 			exif_entry_log (e, EXIF_LOG_CODE_DEBUG,
+@@ -336,7 +336,7 @@ exif_entry_fix (ExifEntry *e)
+ 				sr.denominator = (ExifLong) r.denominator;
+ 				exif_set_srational (e->data + i *
+ 					exif_format_get_size (
+-						EXIF_FORMAT_SRATIONAL), o, sr);
++						EXIF_FORMAT_SRATIONAL), o, &sr);
+ 			}
+ 			e->format = EXIF_FORMAT_SRATIONAL;
+ 			exif_entry_log (e, EXIF_LOG_CODE_DEBUG,
+@@ -1369,7 +1369,7 @@ exif_entry_get_value (ExifEntry *e, char
+ 	case EXIF_TAG_XP_KEYWORDS:
+ 	case EXIF_TAG_XP_SUBJECT:
+ 	{
+-		unsigned char *utf16;
++		unsigned short *utf16;
+ 
+ 		/* Sanity check the size to prevent overflow */
+ 		if (e->size+sizeof(uint16_t)+1 < e->size) break;
+@@ -1582,7 +1582,7 @@ exif_entry_initialize (ExifEntry *e, Exi
+ 		if (!e->data) { clear_entry(e); break; }
+ 		r.numerator = 72;
+ 		r.denominator = 1;
+-		exif_set_rational (e->data, o, r);
++		exif_set_rational (e->data, o, &r);
+ 		break;
+ 
+ 	/* RATIONAL, 2 components, no default */
+@@ -1603,22 +1603,22 @@ exif_entry_initialize (ExifEntry *e, Exi
+ 		if (!e->data) { clear_entry(e); break; }
+ 		r.denominator = 1;
+ 		r.numerator = 0;
+-		exif_set_rational (e->data, o, r);
++		exif_set_rational (e->data, o, &r);
+ 		r.numerator = 255;
+ 		exif_set_rational (
+-			e->data + exif_format_get_size (e->format), o, r);
++			e->data + exif_format_get_size (e->format), o, &r);
+ 		r.numerator = 0;
+ 		exif_set_rational (
+-			e->data + 2 * exif_format_get_size (e->format), o, r);
++			e->data + 2 * exif_format_get_size (e->format), o, &r);
+ 		r.numerator = 255;
+ 		exif_set_rational (
+-			e->data + 3 * exif_format_get_size (e->format), o, r);
++			e->data + 3 * exif_format_get_size (e->format), o, &r);
+ 		r.numerator = 0;
+ 		exif_set_rational (
+-			e->data + 4 * exif_format_get_size (e->format), o, r);
++			e->data + 4 * exif_format_get_size (e->format), o, &r);
+ 		r.numerator = 255;
+ 		exif_set_rational (
+-			e->data + 5 * exif_format_get_size (e->format), o, r);
++			e->data + 5 * exif_format_get_size (e->format), o, &r);
+ 		break;
+ 
+ 	/* ASCII, 20 components */
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-format.c libexif-0.6.22/libexif/exif-format.c
+--- libexif-0.6.22.orig/libexif/exif-format.c	2020-02-23 09:13:14.000000000 +0100
++++ libexif-0.6.22/libexif/exif-format.c	2023-11-16 13:20:16.137525120 +0100
+@@ -20,6 +20,7 @@
+ 
+ #include <config.h>
+ 
++#include "libexif/exifutil.h"
+ #include <libexif/exif-format.h>
+ #include <libexif/i18n.h>
+ 
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-ifd.c libexif-0.6.22/libexif/exif-ifd.c
+--- libexif-0.6.22.orig/libexif/exif-ifd.c	2018-08-26 12:21:36.000000000 +0200
++++ libexif-0.6.22/libexif/exif-ifd.c	2023-11-16 13:20:16.137525120 +0100
+@@ -20,6 +20,7 @@
+ 
+ #include <config.h>
+ 
++#include "libexif/exifutil.h"
+ #include <libexif/exif-ifd.h>
+ 
+ #include <stdlib.h>
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-loader.c libexif-0.6.22/libexif/exif-loader.c
+--- libexif-0.6.22.orig/libexif/exif-loader.c	2020-02-23 10:36:54.000000000 +0100
++++ libexif-0.6.22/libexif/exif-loader.c	2023-11-16 13:20:16.137525120 +0100
+@@ -20,6 +20,7 @@
+ 
+ #include <config.h>
+ 
++#include "libexif/exifutil.h"
+ #include <libexif/exif-loader.h>
+ #include <libexif/exif-utils.h>
+ #include <libexif/i18n.h>
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-log.c libexif-0.6.22/libexif/exif-log.c
+--- libexif-0.6.22.orig/libexif/exif-log.c	2018-08-26 12:21:36.000000000 +0200
++++ libexif-0.6.22/libexif/exif-log.c	2023-11-16 13:20:16.137525120 +0100
+@@ -20,6 +20,7 @@
+ 
+ #include <config.h>
+ 
++#include "libexif/exifutil.h"
+ #include <libexif/exif-log.h>
+ #include <libexif/i18n.h>
+ 
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-mem.c libexif-0.6.22/libexif/exif-mem.c
+--- libexif-0.6.22.orig/libexif/exif-mem.c	2018-08-26 12:21:36.000000000 +0200
++++ libexif-0.6.22/libexif/exif-mem.c	2023-11-16 13:20:16.140858449 +0100
+@@ -1,3 +1,4 @@
++#include "libexif/exifutil.h"
+ #include <libexif/exif-mem.h>
+ 
+ #include <stdlib.h>
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-mnote-data.c libexif-0.6.22/libexif/exif-mnote-data.c
+--- libexif-0.6.22.orig/libexif/exif-mnote-data.c	2018-08-26 12:21:36.000000000 +0200
++++ libexif-0.6.22/libexif/exif-mnote-data.c	2023-11-16 13:20:16.140858449 +0100
+@@ -20,6 +20,7 @@
+ 
+ #include <config.h>
+ 
++#include "libexif/exifutil.h"
+ #include <libexif/exif-mnote-data.h>
+ #include <libexif/exif-mnote-data-priv.h>
+ 
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-tag.c libexif-0.6.22/libexif/exif-tag.c
+--- libexif-0.6.22.orig/libexif/exif-tag.c	2020-05-17 09:03:24.000000000 +0200
++++ libexif-0.6.22/libexif/exif-tag.c	2023-11-16 13:20:16.140858449 +0100
+@@ -20,6 +20,7 @@
+ 
+ #include <config.h>
+ 
++#include "libexif/exifutil.h"
+ #include <libexif/exif-tag.h>
+ #include <libexif/i18n.h>
+ 
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/exif-utils.c libexif-0.6.22/libexif/exif-utils.c
+--- libexif-0.6.22.orig/libexif/exif-utils.c	2020-02-23 09:13:14.000000000 +0100
++++ libexif-0.6.22/libexif/exif-utils.c	2023-11-16 13:33:38.823138128 +0100
+@@ -59,7 +59,7 @@ exif_array_set_byte_order (ExifFormat f,
+ 	case EXIF_FORMAT_RATIONAL:
+ 		for (j = 0; j < n; j++) {
+ 			r = exif_get_rational (b + j * fs, o_orig);
+-			exif_set_rational (b + j * fs, o_new, r);
++			exif_set_rational (b + j * fs, o_new, &r);
+ 		}
+ 		break;
+ 	case EXIF_FORMAT_SLONG:
+@@ -71,7 +71,7 @@ exif_array_set_byte_order (ExifFormat f,
+ 	case EXIF_FORMAT_SRATIONAL:
+ 		for (j = 0; j < n; j++) {
+ 			sr = exif_get_srational (b + j * fs, o_orig);
+-			exif_set_srational (b + j * fs, o_new, sr);
++			exif_set_srational (b + j * fs, o_new, &sr);
+ 		}
+ 		break;
+ 	case EXIF_FORMAT_UNDEFINED:
+@@ -105,7 +105,7 @@ exif_get_short (const unsigned char *buf
+ }
+ 
+ void
+-exif_set_sshort (unsigned char *b, ExifByteOrder order, ExifSShort value)
++exif_set_sshort (unsigned char *b, ExifByteOrder order, exif_int_t value)
+ {
+ 	if (!b) return;
+ 	switch (order) {
+@@ -121,7 +121,7 @@ exif_set_sshort (unsigned char *b, ExifB
+ }
+ 
+ void
+-exif_set_short (unsigned char *b, ExifByteOrder order, ExifShort value)
++exif_set_short (unsigned char *b, ExifByteOrder order, exif_uint_t value)
+ {
+ 	exif_set_sshort (b, order, value);
+ }
+@@ -197,33 +197,33 @@ exif_get_rational (const unsigned char *
+ 
+ void
+ exif_set_rational (unsigned char *buf, ExifByteOrder order,
+-		   ExifRational value)
++		   const ExifRational *value)
+ {
+ 	if (!buf) return;
+-	exif_set_long (buf, order, value.numerator);
+-	exif_set_long (buf + 4, order, value.denominator);
++	exif_set_long (buf, order, value->numerator);
++	exif_set_long (buf + 4, order, value->denominator);
+ }
+ 
+ void
+ exif_set_srational (unsigned char *buf, ExifByteOrder order,
+-		    ExifSRational value)
++		    const ExifSRational *value)
+ {
+ 	if (!buf) return;
+-	exif_set_slong (buf, order, value.numerator);
+-	exif_set_slong (buf + 4, order, value.denominator);
++	exif_set_slong (buf, order, value->numerator);
++	exif_set_slong (buf + 4, order, value->denominator);
+ }
+ 
+ /*! This function converts rather UCS-2LE than UTF-16 to UTF-8.
+  * It should really be replaced by iconv().
+  */
+ void
+-exif_convert_utf16_to_utf8 (char *out, const unsigned char *in, int maxlen)
++exif_convert_utf16_to_utf8 (char *out, const unsigned short *in, int maxlen)
+ {
+ 	if (maxlen <= 0) {
+ 		return;
+ 	}
+ 	for (;;) {
+-		ExifShort v = exif_get_short(in, EXIF_BYTE_ORDER_INTEL);
++		ExifShort v = exif_get_short((const unsigned char *)in, EXIF_BYTE_ORDER_INTEL);
+ 		if (!v)
+ 			break;
+ 		if (v < 0x80) {
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/fuji/exif-mnote-data-fuji.c libexif-0.6.22/libexif/fuji/exif-mnote-data-fuji.c
+--- libexif-0.6.22.orig/libexif/fuji/exif-mnote-data-fuji.c	2020-05-17 08:26:57.000000000 +0200
++++ libexif-0.6.22/libexif/fuji/exif-mnote-data-fuji.c	2023-11-16 13:29:17.750144227 +0100
+@@ -23,6 +23,7 @@
+ 
+ 
+ #include <config.h>
++#include "libexif/exifutil.h"
+ #include <libexif/exif-byte-order.h>
+ #include <libexif/exif-utils.h>
+ 
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/fuji/mnote-fuji-entry.c libexif-0.6.22/libexif/fuji/mnote-fuji-entry.c
+--- libexif-0.6.22.orig/libexif/fuji/mnote-fuji-entry.c	2020-02-23 09:13:14.000000000 +0100
++++ libexif-0.6.22/libexif/fuji/mnote-fuji-entry.c	2023-11-16 13:29:17.753477557 +0100
+@@ -26,6 +26,7 @@
+ 
+ #include <libexif/i18n.h>
+ 
++#include "libexif/exifutil.h"
+ #include "mnote-fuji-entry.h"
+ 
+ #define CF(format,target,v,maxlen)                              \
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/olympus/exif-mnote-data-olympus.c libexif-0.6.22/libexif/olympus/exif-mnote-data-olympus.c
+--- libexif-0.6.22.orig/libexif/olympus/exif-mnote-data-olympus.c	2020-05-17 08:26:57.000000000 +0200
++++ libexif-0.6.22/libexif/olympus/exif-mnote-data-olympus.c	2023-11-16 13:29:01.343498892 +0100
+@@ -19,6 +19,7 @@
+  */
+ 
+ #include <config.h>
++#include "libexif/exifutil.h"
+ #include "exif-mnote-data-olympus.h"
+ 
+ #include <stdlib.h>
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/olympus/mnote-olympus-entry.c libexif-0.6.22/libexif/olympus/mnote-olympus-entry.c
+--- libexif-0.6.22.orig/libexif/olympus/mnote-olympus-entry.c	2020-02-23 09:13:14.000000000 +0100
++++ libexif-0.6.22/libexif/olympus/mnote-olympus-entry.c	2023-11-16 13:29:01.343498892 +0100
+@@ -19,6 +19,7 @@
+  */
+ 
+ #include <config.h>
++#include "libexif/exifutil.h"
+ #include "mnote-olympus-entry.h"
+ 
+ #include <stdio.h>
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/pentax/exif-mnote-data-pentax.c libexif-0.6.22/libexif/pentax/exif-mnote-data-pentax.c
+--- libexif-0.6.22.orig/libexif/pentax/exif-mnote-data-pentax.c	2020-05-17 08:26:57.000000000 +0200
++++ libexif-0.6.22/libexif/pentax/exif-mnote-data-pentax.c	2023-11-16 13:28:37.776862865 +0100
+@@ -19,6 +19,7 @@
+  */
+ 
+ #include "config.h"
++#include "libexif/exifutil.h"
+ #include "exif-mnote-data-pentax.h"
+ 
+ #include <stdlib.h>
+diff -rup -x '*.Plo' libexif-0.6.22.orig/libexif/pentax/mnote-pentax-entry.c libexif-0.6.22/libexif/pentax/mnote-pentax-entry.c
+--- libexif-0.6.22.orig/libexif/pentax/mnote-pentax-entry.c	2020-02-23 09:13:14.000000000 +0100
++++ libexif-0.6.22/libexif/pentax/mnote-pentax-entry.c	2023-11-16 13:28:47.120184051 +0100
+@@ -19,6 +19,7 @@
+  */
+ 
+ #include <config.h>
++#include "libexif/exifutil.h"
+ #include "mnote-pentax-entry.h"
+ 
+ #include <libexif/i18n.h>
