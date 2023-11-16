@@ -2,6 +2,7 @@
 
 quiet=
 nodeps=
+valgrind=
 while test $# -gt 0; do
 	case $1 in
 	--quiet)
@@ -10,6 +11,10 @@ while test $# -gt 0; do
 		;;
 	--nodeps)
 		nodeps=--nodeps
+		shift
+		;;
+	--valgrind)
+		valgrind=valgrind
 		shift
 		;;
 	--*)
@@ -43,11 +48,11 @@ gnucobol*)
 	# gnucobol is not a cross-compiler
 	;;
 *)
-	rpmbuild $quiet $nodeps -ba ${spec}
+	$valgrind rpmbuild $quiet $nodeps -ba ${spec}
 	;;
 esac
-rpmbuild $quiet --nodeps --target m68k-atari-mint --define="buildtype 000" -ba ${spec}
-rpmbuild $quiet --nodeps --target m68020-atari-mint --define="buildtype 020" -bb ${spec}
-rpmbuild $quiet --nodeps --target m5475-atari-mint --define="buildtype v4e" -bb ${spec}
+$valgrind rpmbuild $quiet --nodeps --target m68k-atari-mint --define="buildtype 000" -ba ${spec}
+$valgrind rpmbuild $quiet --nodeps --target m68020-atari-mint --define="buildtype 020" -bb ${spec}
+$valgrind rpmbuild $quiet --nodeps --target m5475-atari-mint --define="buildtype v4e" -bb ${spec}
 
 rm -rf "${topdir}/BUILD/${pkgname}"*

@@ -32,8 +32,9 @@ cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} \
-	--prefix=${prefix} \
+CONFIGURE_FLAGS="--host=${TARGET}
+	--prefix=${prefix}
+	--disable-nls
 "
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"

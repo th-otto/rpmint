@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        Library implementing the DEFLATE compression algorithm
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        1.3
 Release:        1
 License:        Zlib
@@ -16,8 +12,8 @@ Group:          System/Libraries
 Packager:       Thorsten Otto <admin@tho-otto.de>
 URL:            http://www.zlib.net/
 
-Prefix:         %{_prefix}
-Docdir:         %{_prefix}/share/doc
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: http://www.zlib.net/%{pkgname}-%{version}.tar.xz
@@ -26,11 +22,7 @@ Patch1: zlib-shared.patch
 Patch2: zlib-1.2.12-0013-segfault.patch
 
 %rpmint_essential
-%if "%{buildtype}" == "cross"
-Provides:       cross-mint-zlib-devel
-%else
-Provides:       zlib-devel
-%endif
+Provides:       %{crossmint}zlib-devel
 
 %rpmint_build_arch
 
@@ -110,20 +102,20 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files
 %defattr(-,root,root)
+%{_isysroot}%{_rpmint_target_prefix}/include
+%{_isysroot}%{_rpmint_target_prefix}/lib
+%{_isysroot}%{_rpmint_target_prefix}/share
 %if "%{buildtype}" == "cross"
-%{_rpmint_includedir}
-%{_rpmint_libdir}
 %{_rpmint_cross_pkgconfigdir}
-%{_rpmint_mandir}
-%else
-%{_rpmint_target_prefix}/include
-%{_rpmint_target_prefix}/lib
-%{_rpmint_target_prefix}/share/man
 %endif
 
 
 
 %changelog
+* Wed Nov 15 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to 1.3
+- update header file with sharedlib version
+
 * Wed Mar 1 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
 - Update to 1.2.13

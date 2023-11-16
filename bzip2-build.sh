@@ -16,6 +16,7 @@ patches/${PACKAGENAME}/bzip2-1.0.8-patch-0005-progress.patch
 patches/${PACKAGENAME}/bzip2-1.0.6-patch-0006-mint.patch
 patches/${PACKAGENAME}/bzip2-1.0.7-patch-0007-Fix-printfs-of-file-sizes.patch
 patches/${PACKAGENAME}/bzip2-amigaos.patch
+patches/${PACKAGENAME}/bzip2-shared.patch
 "
 DISABLED_PATCHES="
 patches/${PACKAGENAME}/bzip2-1.0.6-patch-0003-debian-bzgrep.patch

@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        A file compression utility
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        1.0.8
 Release:        1
 License:        BSD-3-Clause
@@ -16,8 +12,8 @@ Group:          Productivity/Archiving/Compression
 Packager:       Thorsten Otto <admin@tho-otto.de>
 URL:            http://www.bzip.org/
 
-Prefix:         %{_prefix}
-Docdir:         %{_prefix}/share/doc
+Prefix:         %{_rpmint_target_prefix}
+Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: http://www.bzip.org/%{version}/bzip2-%{version}.tar.gz
@@ -30,6 +26,7 @@ Patch4: patches/%{pkgname}/bzip2-1.0.8-patch-0005-progress.patch
 Patch5: patches/%{pkgname}/bzip2-1.0.6-patch-0006-mint.patch
 Patch6: patches/%{pkgname}/bzip2-1.0.7-patch-0007-Fix-printfs-of-file-sizes.patch
 Patch7: patches/%{pkgname}/bzip2-amigaos.patch
+Patch8: patches/%{pkgname}/bzip2-shared.patch
 
 BuildRequires:  autoconf
 BuildRequires:  automake
@@ -53,11 +50,7 @@ Install bzip2 if you need a compression utility.
 Summary:        Header files and libraries for developing apps which will use bzip2.
 Group:          Development/Libraries/C and C++
 Requires:       bzip2 = %{version}
-%if "%{buildtype}" == "cross"
-Provides:       cross-mint-libbz2-devel = %{version}
-%else
-Provides:       libbz2-devel = %{version}
-%endif
+Provides:       %{crossmint}libbz2-devel = %{version}
 
 %description devel
 Header files and a static library of bzip2 functions, for developing apps
@@ -79,6 +72,7 @@ Documentation for bzip2
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
 
 
 %build
@@ -162,17 +156,10 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files devel
 %defattr(-,root,root)
+%{_isysroot}%{_rpmint_target_prefix}/include
+%{_isysroot}%{_rpmint_target_prefix}/lib
 %if "%{buildtype}" == "cross"
-%{_rpmint_includedir}/*
-%{_rpmint_libdir}/*.a
-%{_rpmint_libdir}/*/*.a
-%{_rpmint_libdir}/pkgconfig/*.pc
 %{_rpmint_cross_pkgconfigdir}/*.pc
-%else
-%{_rpmint_target_prefix}/include/*
-%{_rpmint_target_prefix}/lib/*.a
-%{_rpmint_target_prefix}/lib/*/*.a
-%{_rpmint_target_prefix}/lib/pkgconfig/*.pc
 %endif
 
 %files doc
@@ -198,6 +185,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Thu Nov 16 2023 Thorsten Otto <admin@tho-otto.de>
+- update header file with sharedlib version
+
 * Tue Mar 7 2023 Thorsten Otto <admin@tho-otto.de>
 - Update to version 1.0.8
 
