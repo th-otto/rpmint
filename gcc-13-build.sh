@@ -520,6 +520,15 @@ if test $gcc_major_version -lt 13; then
 	gcc4_compat=--with-default-libstdcxx-abi=gcc4-compatible
 fi
 
+#
+# gcc 13 and above need support for a zoneinfo database
+# in std::chrono
+#
+zoneinfo=
+if test $gcc_major_version -ge 13; then
+	zoneinfo=--with-libstdcxx-zoneinfo=/usr/share/zoneinfo
+fi
+
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
 	--prefix="${PREFIX}" \
@@ -543,6 +552,7 @@ $srcdir/configure \
 	--disable-werror \
 	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root${gxxinclude} \
 	$gcc4_compat \
+	$zoneinfo \
 	--with-gcc-major-version-only \
 	--with-gcc --with-gnu-as --with-gnu-ld \
 	--with-system-zlib \
