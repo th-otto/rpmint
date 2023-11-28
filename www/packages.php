@@ -737,7 +737,8 @@ This is the 1.x release of windom.
 	'sdl' => array(
 		'name' => 'SDL',
 		'upstream' => 'https://www.libsdl.org/',
-		'version' => '1.2.16-hg',
+		'repo' => 'https://github.com/libsdl-org/SDL-1.2',
+		'version' => '1.2.16-git',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

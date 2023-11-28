@@ -1438,6 +1438,8 @@ This notably applies to Perl and Python.
 
 <li>2023/11/15 Update zlib to 1.3</li>
 
+<li>2023/11/28 Update SDL to 1.2.16-git</li>
+
 </ul>
 
 <p></p>

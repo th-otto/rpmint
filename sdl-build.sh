@@ -4,18 +4,18 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=SDL
-VERSION=-1.2.16-hg
-#VERSIONPATCH=-20171006
+VERSION=-1.2.16-git
+#VERSIONPATCH=-20231128
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/sdl/sdl-1.2.16-asm.patch
-patches/sdl/sdl-gsxb.patch
 "
 DISABLED_PATCHES="
+patches/sdl/sdl-1.2.16-asm.patch
 patches/sdl/sdl-1.2.15-c99.patch
+patches/sdl/sdl-gsxb.patch
 "
 EXTRA_DIST="
 patches/automake/mintelf-config.sub
