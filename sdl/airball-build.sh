@@ -36,12 +36,16 @@ for CPU in ${ALL_CPUS}; do
 	cd ..
 
 	mkdir -p "${THISPKG_DIR}/level_ed"
-	cp -pr airball0/airball.prg airball0/airball.cfg airball0/data "${THISPKG_DIR}"
-	cp -pr config0/airball_cfg.prg exechk0/exechk.ttp psdprot0/psdprot.ttp "${THISPKG_DIR}"
-	cp -pr level_ed0/airball_ed.prg level_ed0/*.bmp level_ed0/tmp.txt level_ed0/_rooms.txt level_ed0/rooms.bin "${THISPKG_DIR}/level_ed"
+	cp -p airball0/airball.prg "${THISPKG_DIR}/airball-${CPU}.prg"
+	cp -p config0/airball_cfg.prg "${THISPKG_DIR}/airball_cfg-${CPU}.prg"
+	cp -p psdprot0/psdprot.ttp "${THISPKG_DIR}/psdprot-${CPU}.ttp"
+	cp -p exechk0/exechk.ttp "${THISPKG_DIR}/exechk-${CPU}.ttp"
+	cp -pr airball0/airball.cfg airball0/data "${THISPKG_DIR}"
+	cp -p level_ed0/airball_ed.prg "${THISPKG_DIR}/level_ed/airball_ed-${CPU}.prg"
+	cp -pr level_ed0/*.bmp level_ed0/tmp.txt level_ed0/_rooms.txt level_ed0/rooms.bin "${THISPKG_DIR}/level_ed"
 	
 	${MAKE} clean >/dev/null
-	make_bin_archive $CPU
 done
 
+make_bin_archive
 make_archives

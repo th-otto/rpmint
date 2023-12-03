@@ -307,7 +307,7 @@ unpack_archive()
 
 make_bin_archive()
 {
-	archsuffix=${1-000}
+	archsuffix=bin
 
 	cd "${DIST_DIR}" || exit 1
 

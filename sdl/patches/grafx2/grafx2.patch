@@ -1,0 +1,103 @@
+diff -rup grafx2/src/Makefile grafx2.new/src/Makefile
+--- grafx2/src/Makefile	2023-11-21 10:04:12.000000000 +0100
++++ grafx2.new/src/Makefile	2023-12-03 19:02:15.785168851 +0100
+@@ -452,11 +452,10 @@ endif
+     OBJDIR = ../obj/m68k-atari-mint
+     PLATFORM = m68k-atari-mint
+     STRIP = strip -s 
+-    STACK = stack
+-    FIX_FLAGS = flags
+     FCLOPT = 
+     COPT = -W -Wall -m68020-60 -fomit-frame-pointer -std=c99 -Wdeclaration-after-statement -D__MINT__ -DNO_INLINE_MATH -O$(OPTIM) -I$(PREFIX)/include `$(PREFIX)/bin/libpng12-config --cflags` `$(PREFIX)/bin/sdl-config --cflags` $(JOYCOPT) $(LUACOPT)
+     LOPT = -static -m68020-60 -lSDL_image `$(PREFIX)/bin/sdl-config --libs` -L$(PREFIX)/lib -ltiff -ljpeg `$(PREFIX)/bin/libpng12-config --libs` -lz -lm $(TTFLOPT) -lfreetype $(LUALOPT) $(LAYERLOPT)
++    LOPT += -Wl,--stack,128k -Wl,--msuper-memory
+   else
+   ifeq ($(PLATFORM),syllable) #11
+     #Syllable
+@@ -621,36 +620,25 @@ endif
+         #cross compile an exec for atari TOS/MiNT machine
+         ARCH ?= m68k
+         MCPU ?= -m68020-60
+-        CC = $(ARCH)-atari-mint-gcc
++        CC = $(CROSS_PREFIX)gcc
+         BIN = ../bin/grafx2.ttp
+         LUALOPT = -llua
+         OBJDIR = ../obj/$(ARCH)-atari-mint
+         PLATFORM = $(ARCH)-atari-mint
+-        STRIP = $(ARCH)-atari-mint-strip -s 
+-        STACK = $(ARCH)-atari-mint-stack
+-        FIX_FLAGS = $(ARCH)-atari-mint-flags
++        STRIP = $(CROSS_PREFIX)strip -s 
+         FCLOPT = 
+-        #LIBPNG_CONFIG = $(wildcard $(PREFIX)/bin/libpng12-config $(PREFIX)/bin/libpng14-config $(PREFIX)/bin/libpng16-config)
+-        LIBPNG_CONFIG ?= $(shell which ../3rdparty/usr-atari/bin/libpng-config || which $(PREFIX)/bin/libpng16-config)
+-        SDLCONFIG ?= $(shell which ../3rdparty/usr-atari/bin/sdl-config || which $(PREFIX)/bin/sdl-config)
+         COPT = -W -Wall
+         COPT += $(MCPU) -fomit-frame-pointer -std=c99 -Wdeclaration-after-statement
+         COPT += -D__MINT__ -ffast-math -O$(OPTIM)
+-        ifneq ($(wildcard ../3rdparty/usr-atari/include),)
+-          COPT += -I../3rdparty/usr-atari/include
+-        else
+-          COPT += -I$(PREFIX)/include
+-        endif
+-        COPT += $(shell $(LIBPNG_CONFIG) --cflags)
+-        COPT += $(shell $(SDLCONFIG) --cflags)
++        COPT += $(shell pkg-config --cflags libpng lua)
++        COPT += $(shell pkg-config --cflags sdl)
+         COPT += $(JOYCOPT) $(LUACOPT)
+         COPT += $(TTFCOPT)
+         LOPT = -static $(MCPU)
+-        LOPT += $(shell $(LIBPNG_CONFIG) --libs)
+-        LOPT += -lSDL_image -ltiff -ljpeg
+-        LOPT += $(TTFLOPT) -lfreetype $(LUALOPT) -Wl,--stack,8k
++        LOPT += $(shell pkg-config --libs libpng)
++        LOPT += $(shell pkg-config --libs sdl SDL_image SDL_ttf)
++        LOPT += $(TTFLOPT) -lfreetype $(LUALOPT) -Wl,--stack,128k -Wl,--msuper-memory
+         LOPT += -lz -lm
+-        LOPT += $(shell $(SDLCONFIG) --libs)
+       else
+ 
+         # Compiles a regular linux executable for the native platform
+@@ -980,14 +968,6 @@ endif
+ 	#tar cvzf grafx2-git$(GIT_REVISION)-macosx.tgz --exclude '.git' --exclude '*DS_Store*' Grafx2.app/*
+ else
+ all : $(BIN)
+-ifeq ($(ATARICROSS),1)
+-	$(STACK) -S 128k $(BIN)
+-	$(FIX_FLAGS) -S $(BIN)
+-else
+-ifeq ($(PLATFORM),FreeMiNT)  
+-	$(STACK) -S 128k $(BIN)
+-	$(FIX_FLAGS) -S $(BIN)
+-else
+ ifeq ($(SWITCH), 1)
+ 	@nacptool --create "grafX2" "grafX2 team / romain337 (nxbuild)" "$(VERSIONTAG)" $(BIN).nacp
+ 	@echo built ... $(BIN).nacp
+@@ -995,27 +975,15 @@ ifeq ($(SWITCH), 1)
+ 	@echo built ... $(BIN).nro
+ endif
+ endif
+-endif
+-endif
+ 
+ 
+ debug : $(BIN)
+-ifeq ($(ATARICROSS),1)
+-	$(STACK) -S 128k $(BIN)
+-	$(FIX_FLAGS) -S $(BIN)
+-else
+-ifeq ($(PLATFORM),FreeMiNT)  
+-	$(STACK) -S 128k $(BIN)
+-	$(FIX_FLAGS) -S $(BIN)
+-else
+ ifeq ($(SWITCH), 1)
+ 	@nacptool --create "grafX2" "grafX2 team / romain337 (nxbuild)" "$(VERSIONTAG)" $(BIN).nacp
+ 	@echo built ... $(BIN).nacp
+ 	@elf2nro $(BIN) $(BIN).nro $(BIN).nacp --icon=../misc/switch/icon.jpg --nacp=$(BIN).nacp
+ 	@echo built ... $(BIN).nro
+ endif
+-endif
+-endif
+ 
+ 
+ # Make release will strip the executable to make it smaller but non-debugable

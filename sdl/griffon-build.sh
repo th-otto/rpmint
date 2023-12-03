@@ -32,12 +32,12 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
-	cp -pr build/griffon "${THISPKG_DIR}/griffon.prg"
+	cp -p build/griffon "${THISPKG_DIR}/griffon-${CPU}.prg"
 
 	cp -pr COPYING LICENSE README build/objectdb.dat build/readme.txt build/art build/data build/mapdb build/music build/sfx build/griffon.png "${THISPKG_DIR}"
 	
 	${MAKE} clean >/dev/null
-	make_bin_archive $CPU
 done
 
+make_bin_archive
 make_archives

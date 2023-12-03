@@ -32,16 +32,16 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
-	cp -pr airstrike "${THISPKG_DIR}/airstrike.prg"
+	cp -p airstrike "${THISPKG_DIR}/airstrike-${CPU}.prg"
 
 	${MAKE} clean >/dev/null
 	${MAKE} CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" airstrike-sound || exit 1
-	cp -pr airstrike "${THISPKG_DIR}/airstrike-sound.prg"
+	cp -p airstrike "${THISPKG_DIR}/airstrike-sound-${CPU}.prg"
 
 	cp -pr COPYING ChangeLog LICENSE README airstrikerc data doc pov "${THISPKG_DIR}"
 	
 	${MAKE} clean >/dev/null
-	make_bin_archive $CPU
 done
 
+make_bin_archive
 make_archives

@@ -32,12 +32,12 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
-	cp -pr amph "${THISPKG_DIR}/amph.prg"
+	cp -p amph "${THISPKG_DIR}/amph-${CPU}.prg"
 
 	cp -pr COPYING ChangeLog NEWS README game "${THISPKG_DIR}"
 	
 	${MAKE} clean >/dev/null
-	make_bin_archive $CPU
 done
 
+make_bin_archive
 make_archives

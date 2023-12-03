@@ -106,6 +106,8 @@ function gen_link($filename, $text, $must_exist = true)
 		
 		if (fnmatch('*.tar.gz', $filename))
 			$ext_ok = function_exists('gzopen') || $stat;
+		else if (fnmatch('*.tgz', $filename))
+			$ext_ok = function_exists('gzopen') || $stat;
 		else if (fnmatch('*.tar.bz2', $filename))
 			$ext_ok = function_exists('bzopen') || $stat;
 		else if (fnmatch('*.tar.xz', $filename))

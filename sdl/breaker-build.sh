@@ -35,13 +35,13 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
-	cp -pr breaker "${THISPKG_DIR}/breaker.prg"
+	cp -p breaker "${THISPKG_DIR}/breaker-${CPU}.prg"
 
 	${MAKE} clean >/dev/null
 
 	cp -pr _LISEZMOI.txt _README.txt gfx sfx "${THISPKG_DIR}"
 
-	make_bin_archive $CPU
 done
 
+make_bin_archive
 make_archives

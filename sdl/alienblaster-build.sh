@@ -34,12 +34,12 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
-	cp -pr alienBlaster "${THISPKG_DIR}/alienBlaster.prg"
+	cp -p alienBlaster "${THISPKG_DIR}/alienBlaster-${CPU}.prg"
 
 	cp -pr AUTHORS CHANGELOG LICENSE README VERSION cfg images sound "${THISPKG_DIR}"
 	
 	${MAKE} clean >/dev/null
-	make_bin_archive $CPU
 done
 
+make_bin_archive
 make_archives

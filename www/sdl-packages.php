@@ -122,6 +122,23 @@ Brick breaker (Arkanoid like), C language, SDL. See the README.TXT file in break
 <img src="' . $download_dir . 'breaker.png" width="320" height="240">
 '
 	),
+	'grafx2' => array(
+		'name' => 'grafx2',
+		'version' => '2.8.3200',
+		'title' => 'GrafX2',
+		'upstream' => 'https://grafx2.eu/',
+		'repo' => 'https://gitlab.com/GrafX2/grafX2/',
+		'source' => $download_dir . '%{name}-%{version}.tgz',
+		'category' => 'Productivity/Graphics/Bitmap Editors',
+		'summary' => 'GrafX2 is a bitmap paint program',
+		'comment' => '
+GrafX2 is a bitmap paint program inspired by the Amiga programs Deluxe
+Paint and Brilliance. Specialized in 256-color drawing, it includes a
+very large number of tools and effects that make it particularly
+suitable for pixel art, game graphics, and generally any detailed
+graphics painted with a mouse.
+'
+	),
 );
 
 ?>

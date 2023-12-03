@@ -32,7 +32,7 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
-	cp -pr BlobWars "${THISPKG_DIR}/BlobWars.prg"
+	cp -p BlobWars "${THISPKG_DIR}/BlobWars-${CPU}.prg"
 
 	${MAKE} clean >/dev/null
 
@@ -41,7 +41,7 @@ for CPU in ${ALL_CPUS}; do
 	cp -pr Readme_MorphOS "${THISPKG_DIR}/README"
 	cp -pr blobwars.pak doc locale "${THISPKG_DIR}"
 
-	make_bin_archive $CPU
 done
 
+make_bin_archive
 make_archives

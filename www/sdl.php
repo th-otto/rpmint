@@ -159,30 +159,8 @@ foreach ($sdlpackages as $package)
 		$filename = $download_dir . $package['name'] . $version;
 		if (isset($package['date']))
 			$filename .= '-' . $package['date'];
-		$filename .= '-000.tar.xz';
-		$text = $package['name'] . $version . '-000.tar.xz';
-		gen_link($filename, $text);
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr>' . "\n";
-		echo '<td class="linkdesc"></td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $package['name'] . $version;
-		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-020.tar.xz';
-		$text = $package['name'] . $version . '-020.tar.xz';
-		gen_link($filename, $text);
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr>' . "\n";
-		echo '<td class="linkdesc"></td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $package['name'] . $version;
-		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-v4e.tar.xz';
-		$text = $package['name'] . $version . '-v4e.tar.xz';
+		$filename .= '-bin.tar.xz';
+		$text = $package['name'] . $version . '-bin.tar.xz';
 		gen_link($filename, $text);
 		echo '</td>' . "\n";
 		echo '</tr>' . "\n";

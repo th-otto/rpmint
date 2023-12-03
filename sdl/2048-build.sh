@@ -32,10 +32,11 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} CROSS_PREFIX=${TARGET}- CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
-	cp -pr 2048.prg ${BUILD_DIR}/patches/${PACKAGENAME}/fonts "${THISPKG_DIR}"
+	cp -p 2048.prg "${THISPKG_DIR}/2048-${CPU}.prg"
+	cp -pr ${BUILD_DIR}/patches/${PACKAGENAME}/fonts "${THISPKG_DIR}/"
 	
 	${MAKE} clean >/dev/null
-	make_bin_archive $CPU
 done
 
+make_bin_archive
 make_archives
