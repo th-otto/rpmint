@@ -1,0 +1,599 @@
+diff -rupN airball/Makefile airball.new/Makefile
+--- airball/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ airball.new/Makefile	2023-12-02 18:43:10.252923427 +0100
+@@ -0,0 +1,4 @@
++SUBDIRS = airball0 config0 exechk0 level_ed0 psdprot0
++
++all clean::
++	for i in $(SUBDIRS); do $(MAKE) -C $$i $@ || exit $@; done
+diff -rupN airball/airball0/Makefile airball.new/airball0/Makefile
+--- airball/airball0/Makefile	2012-10-17 00:03:30.000000000 +0200
++++ airball.new/airball0/Makefile	2023-12-03 06:07:44.730926013 +0100
+@@ -1,22 +1,27 @@
+ # Makefile
+ 
+-TARGET = airball 
++TARGET = airball.prg
+ OBJECTS = main.o anims.o animspr.o font.o frame.o game.o hero.o menu.o psd.o render.o room.o sfx.o
+ 
+-CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -L. -s -DNDEBUG 
+-LIBS = -lSDL -s libymlib.a
++CFLAGS = $(CPU_CFLAGS) -O3 -Wall `pkg-config --cflags sdl` -L. -DNDEBUG
++LDFLAGS = -s
++LIBS = ymlib/libymlib.a `pkg-config --libs sdl`
+ 
+-CC = gcc
+-LINKER = g++
++CC = $(CROSS_PREFIX)gcc
++CXX = $(CROSS_PREFIX)g++
+ 
+-all: $(TARGET)
++all: $(TARGET) swapdata
+ 
+-$(TARGET): $(OBJECTS)
+-	$(LINKER) $(CFLAGS) -o $@ $^ $(LIBS) 
++$(TARGET): $(OBJECTS) ymlib/libymlib.a
++	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
+-.cc.o:
+-	$(CC) $(CFLAGS) -o $< 
++swapdata: swapdata.c
++	gcc -O2 -o $@ $<
++
++ymlib/libymlib.a:
++	$(MAKE) -C ymlib
+ 
+ clean:
+-	rm $(OBJECTS)
++	$(MAKE) -C ymlib clean
++	rm -f $(OBJECTS) $(TARGET) swapdata
+ 
+diff -rupN airball/airball0/psd.c airball.new/airball0/psd.c
+--- airball/airball0/psd.c	2012-10-17 00:03:30.000000000 +0200
++++ airball.new/airball0/psd.c	2023-12-02 18:52:48.998732831 +0100
+@@ -25,7 +25,7 @@ void PSD_Unprotect(u8 *pBuf)
+ 	// ** Le fichier est protégé, on retire la protection.
+ 
+ 	// 4 premiers octets.
+-	strncpy((char *)pBuf, pNorm, 4);
++	memcpy((char *)pBuf, pNorm, 4);
+ 	// Remise en ordre des valeurs H et W.
+ 	nVar8 = *(((u8 *)pBuf) + 21) ^ 0x82;
+ 	*(((u8 *)pBuf) + 21) = *(((u8 *)pBuf) + 16) ^ 0x14;
+diff -rupN airball/airball0/swapdata.c airball.new/airball0/swapdata.c
+--- airball/airball0/swapdata.c	1970-01-01 01:00:00.000000000 +0100
++++ airball.new/airball0/swapdata.c	2023-12-03 08:03:49.415215800 +0100
+@@ -0,0 +1,258 @@
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <stdint.h>
++#include <errno.h>
++#include "ctypes.h"
++#define SDL_Surface void
++#include "room.h"
++#include "menu.h"
++
++
++#ifndef FALSE
++#define FALSE 0
++#define TRUE 1
++#endif
++
++#define swap32(x) __builtin_bswap32(x)
++#define swap16(x) __builtin_bswap16(x)
++
++int to_foreign = 1;
++
++
++static u32 Room_sub_RoomChecksum(u32 *pdata, u32 nDWNb, int swap)
++{
++	u32	i;
++	u32	nSum = 0;
++	u32 d;
++
++	for (i = 0; i < nDWNb; i++)
++	{
++		d = pdata[i];
++		if (swap)
++			d = swap32(d);
++		if (i & 1)
++			nSum += d;
++		else
++			nSum ^= d;
++	}
++
++	return nSum;
++}
++
++#define	FILE_MAGIC_NUMBER	0xCC170206
++
++
++#define	LOAD(data_adr, data_sz) \
++		nSz = fread(data_adr, 1, data_sz, fp); \
++		if (nSz != data_sz) \
++		{ \
++			fprintf(stderr, "%s: read error\n", filename); \
++			free(rooms); \
++			fclose(fp); \
++			return FALSE; \
++		}
++#define	SAVE(data_adr, data_sz) \
++		nSz = fwrite(data_adr, 1, data_sz, fp); \
++		if (nSz != data_sz) \
++		{ \
++			fprintf(stderr, "%s: write error\n", filename); \
++			free(rooms); \
++			fclose(fp); \
++			return FALSE; \
++		}
++
++static int swap_rooms(const char *filename)
++{
++	FILE *fp;
++	uint32_t magic, t, nRoomsNb;
++	size_t nSz;
++	struct SRoomData *rooms = NULL;
++	uint32_t nChkSumFile, nChkSumData;
++	size_t roomdatasize;
++
++	if ((fp = fopen(filename, "rb")) == NULL)
++	{
++		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
++		return FALSE;
++	}
++
++	LOAD(&magic, sizeof(magic));
++	if (magic == (to_foreign ? swap32(FILE_MAGIC_NUMBER) : FILE_MAGIC_NUMBER))
++	{
++		fclose(fp);
++		fprintf(stderr, "swap_rooms(%s): already swapped\n", filename);
++		return TRUE;
++	}
++	magic = swap32(magic);
++	if (magic != (to_foreign ? swap32(FILE_MAGIC_NUMBER) : FILE_MAGIC_NUMBER))
++	{
++		fclose(fp);
++		fprintf(stderr, "swap_rooms(%s): Magic number not found. Aborted.\n", filename);
++		return FALSE;
++	}
++
++	LOAD(&nRoomsNb, sizeof(nRoomsNb));
++	if (!to_foreign)
++		nRoomsNb = swap32(nRoomsNb);
++	roomdatasize = nRoomsNb * sizeof(struct SRoomData);
++
++	if ((rooms = (struct SRoomData *)malloc(roomdatasize)) == NULL)
++	{
++		fclose(fp);
++		fprintf(stderr, "swap_rooms(): malloc error.\n");
++		return FALSE;
++	}
++
++	LOAD(rooms, roomdatasize);
++
++	LOAD(&nChkSumFile, sizeof(nChkSumFile));
++	fclose(fp);
++	if (!to_foreign)
++		nChkSumFile = swap32(nChkSumFile);
++
++	nChkSumData = 0;
++	for (t = 0; t < nRoomsNb; t++)
++		nChkSumData += Room_sub_RoomChecksum((uint32_t *)&rooms[t], sizeof(struct SRoomData) / 4, !to_foreign);
++
++	if (nChkSumFile != nChkSumData)
++	{
++		fprintf(stderr, "%s: Data has been corrupted. Aborted. %08x != %08x\n", filename, nChkSumFile, nChkSumData);
++		free(rooms);
++		return FALSE;
++	}
++	{
++		int i;
++		
++		for (t = 0; t < nRoomsNb; t++)
++			for (i = 0; i < 4; i++)
++				rooms[t].pExits[i] = swap16(rooms[t].pExits[i]);
++	}
++	
++	if ((fp = fopen(filename, "wb")) == NULL)
++	{
++		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
++		free(rooms);
++		return FALSE;
++	}
++	SAVE(&magic, sizeof(magic));
++	if (to_foreign)
++		nRoomsNb = swap32(nRoomsNb);
++	SAVE(&nRoomsNb, sizeof(nRoomsNb));
++	SAVE(rooms, roomdatasize);
++	nChkSumData = 0;
++	if (to_foreign)
++		nRoomsNb = swap32(nRoomsNb);
++	for (t = 0; t < nRoomsNb; t++)
++		nChkSumData += Room_sub_RoomChecksum((uint32_t *)&rooms[t], sizeof(struct SRoomData) / 4, to_foreign);
++	nChkSumFile = to_foreign ? swap32(nChkSumData) : nChkSumData;
++	SAVE(&nChkSumFile, sizeof(nChkSumFile));
++	fclose(fp);
++
++	free(rooms);
++	
++	return TRUE;
++}
++#undef LOAD
++#undef SAVE
++
++
++
++static u32 CfgChecksumCalc(struct SAirballCfg *cfg, int swap)
++{
++	int i;
++	u32 nSum = 0;
++	u16 d;
++	
++	for (i = 0; i < e_CfgKey_MAX; i++)
++	{
++		d = cfg->pKeys[i];
++		if (swap)
++			d = swap16(d);
++		nSum += d;
++	}
++	d = cfg->nVideoMode;
++	if (swap)
++		d = swap16(d);
++	nSum += d;
++
++	if (swap)
++		nSum = swap16(nSum);
++	return nSum;
++}
++
++
++#define SDLK_UP 273
++
++static int swap_cfg(const char *filename)
++{
++	FILE *fp;
++	size_t nSz;
++	u16 cksum;
++	struct SAirballCfg cfg;
++	int i;
++
++	fp = fopen(filename, "rb");
++	if (fp == NULL)
++	{
++		fprintf(stderr, "%s: %s.\n", filename, strerror(errno));
++		return FALSE;
++	}
++	nSz = fread(&cfg, 1, sizeof(cfg), fp);
++	fclose(fp);
++	if (nSz != sizeof(cfg))
++	{
++		fprintf(stderr, "swap_cfg(): read error.\n");
++		return FALSE;
++	}
++	if (cfg.pKeys[e_CfgKey_Up] == (to_foreign ? swap16(SDLK_UP) : SDLK_UP))
++	{
++		fprintf(stderr, "%s: already swapped.\n", filename);
++		return TRUE;
++	}
++
++	cksum = CfgChecksumCalc(&cfg, !to_foreign);
++	if (cfg.nChecksum != cksum)
++	{
++		fprintf(stderr, "%s: Checksum error.\n", filename);
++		return FALSE;
++	}
++	for (i = 0; i < e_CfgKey_MAX; i++)
++		cfg.pKeys[i] = swap16(cfg.pKeys[i]);
++	cfg.nVideoMode = swap16(cfg.nVideoMode);
++	cfg.nChecksum = CfgChecksumCalc(&cfg, to_foreign);
++
++	fp = fopen(filename, "wb");
++	if (fp == NULL)
++	{
++		fprintf(stderr, "%s: %s.\n", filename, strerror(errno));
++		return FALSE;
++	}
++
++	nSz = fwrite(&cfg, 1, sizeof(cfg), fp);
++	fclose(fp);
++	if (nSz != sizeof(cfg))
++	{
++		fprintf(stderr, "swap_cfg(): write error.\n");
++		return FALSE;
++	}
++	return TRUE;
++}
++
++
++int main(int argc, char **argv)
++{
++	int ret = TRUE;
++	
++	to_foreign = 1;
++	if (argc >= 2 && strcmp(argv[1], "-l") == 0)
++		to_foreign = 0;
++		
++	ret &= swap_rooms("data/rooms.bin");
++	ret &= swap_cfg("airball.cfg");
++
++	ret &= swap_rooms("../level_ed0/rooms.bin");
++	ret &= swap_cfg("../config0/airball.cfg");
++	
++	return ret ? 0 : 1;
++}
+diff -rupN airball/airball0/ymlib/LzhLib.cpp airball.new/airball0/ymlib/LzhLib.cpp
+--- airball/airball0/ymlib/LzhLib.cpp	2012-10-16 23:48:52.000000000 +0200
++++ airball.new/airball0/ymlib/LzhLib.cpp	2023-12-02 18:30:09.360745339 +0100
+@@ -32,6 +32,7 @@
+ -----------------------------------------------------------------------------*/
+ 
+ #include <memory.h>
++#include <string.h>
+ #include "YmTypes.h"
+ #include "LZH.H"
+ 
+diff -rupN airball/airball0/ymlib/Makefile airball.new/airball0/ymlib/Makefile
+--- airball/airball0/ymlib/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ airball.new/airball0/ymlib/Makefile	2023-12-02 18:52:03.758799849 +0100
+@@ -0,0 +1,21 @@
++# Makefile to build the static lib 'libymlib.a'
++
++TARGET = libymlib.a 
++OBJECTS = digidrum.o Ym2149Ex.o YmMusic.o LzhLib.o YmLoad.o YmUserInterface.o
++
++CFLAGS = $(CPU_CFLAGS) -O3 -Wall -Wno-write-strings -DNDEBUG 
++LDFLAGS = -s
++CXX = $(CROSS_PREFIX)g++
++
++all: $(TARGET)
++
++$(TARGET): $(OBJECTS)
++	rm -f $@
++	$(CROSS_PREFIX)ar rcs -o $@ $^ 
++
++.cpp.o:
++	$(CXX) $(CFLAGS) -c -o $@ $< 
++
++clean:
++	rm -f $(OBJECTS) $(TARGET)
++
+diff -rupN airball/config0/Makefile airball.new/config0/Makefile
+--- airball/config0/Makefile	2012-10-02 22:29:15.000000000 +0200
++++ airball.new/config0/Makefile	2023-12-02 19:24:45.265901795 +0100
+@@ -1,17 +1,18 @@
+ # Mon Makefile
+-#PATH = /usr/include/SDL
+-TARGET = airball_cfg 
++
++TARGET = airball_cfg.prg
+ OBJECTS = main.o font.o 
+ 
+-CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -fno-strict-aliasing -s 
+-LIBS = -lSDL
+-CC = gcc
++CFLAGS =$(CPU_CFLAGS) -O3 -Wall `pkg-config --cflags sdl` -fno-strict-aliasing
++LDFLAGS = -s
++LIBS =  `pkg-config --libs sdl`
++CC = $(CROSS_PREFIX)gcc
+ 
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJECTS)
+-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) 
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
+ clean:
+-	rm $(TARGET) $(OBJECTS)
++	rm -f $(TARGET) $(OBJECTS)
+ 
+diff -rupN airball/exechk0/Makefile airball.new/exechk0/Makefile
+--- airball/exechk0/Makefile	2012-10-02 22:20:54.000000000 +0200
++++ airball.new/exechk0/Makefile	2023-12-02 19:24:45.265901795 +0100
+@@ -1,17 +1,17 @@
+ # Mon Makefile
+-#PATH = /usr/include/SDL
+-TARGET = exechk 
++TARGET = exechk.ttp
+ OBJECTS = main.o
+  
+-CFLAGS = -O3 -Wall -g -I/usr/include/SDL -L/usr/lib -fno-strict-aliasing -D__LINUX__ 
++CFLAGS = $(CPU_CFLAGS) -O3 -Wall -fno-strict-aliasing
++LDFLAGS = -s
+ LIBS = 
+-CC = gcc
++CC = $(CROSS_PREFIX)gcc
+ 
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJECTS)
+-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) 
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
+ clean:
+-	rm $(TARGET) $(OBJECTS)
++	rm -f $(TARGET) $(OBJECTS)
+ 
+diff -rupN airball/level_ed0/Makefile airball.new/level_ed0/Makefile
+--- airball/level_ed0/Makefile	2013-01-10 00:04:40.000000000 +0100
++++ airball.new/level_ed0/Makefile	2023-12-02 19:24:45.265901795 +0100
+@@ -1,17 +1,18 @@
+ # Mon Makefile
+-#PATH = /usr/include/SDL
+-TARGET = airball_ed 
++
++TARGET = airball_ed.prg
+ OBJECTS = main.o font.o gfx.o editor.o preca.o render.o rooms.o frame.o
+ 
+-CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -fno-strict-aliasing -s 
+-LIBS = -lSDL
+-CC = gcc
++CFLAGS = $(CPU_CFLAGS) -O3 -Wall `pkg-config --cflags sdl` -fno-strict-aliasing
++LDFLAGS = -s
++LIBS = `pkg-config --libs sdl`
++CC = $(CROSS_PREFIX)gcc
+ 
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJECTS)
+-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) 
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
+ clean:
+-	rm $(TARGET) $(OBJECTS)
++	rm -f $(TARGET) $(OBJECTS)
+ 
+diff -rupN airball/psdprot0/Makefile airball.new/psdprot0/Makefile
+--- airball/psdprot0/Makefile	2012-10-02 22:35:10.000000000 +0200
++++ airball.new/psdprot0/Makefile	2023-12-02 19:24:45.269235124 +0100
+@@ -1,17 +1,17 @@
+ # Mon Makefile
+-#PATH = /usr/include/SDL
+-TARGET = psdprot 
++TARGET = psdprot.ttp
+ OBJECTS = main.o
+  
+-CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -fno-strict-aliasing -D__LINUX__ 
++CFLAGS = -O3 -Wall -fno-strict-aliasing
++LDFLAGS = -s
+ LIBS = 
+-CC = gcc
++CC = $(CROSS_PREFIX)gcc
+ 
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJECTS)
+-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) 
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
+ clean:
+-	rm $(TARGET) $(OBJECTS)
++	rm -f $(TARGET) $(OBJECTS)
+ 
+diff -rupN airball/psdprot0/main.c airball.new/psdprot0/main.c
+--- airball/psdprot0/main.c	2012-09-09 13:06:26.000000000 +0200
++++ airball.new/psdprot0/main.c	2023-12-03 04:47:11.089636949 +0100
+@@ -3,14 +3,13 @@
+ // Clément '17o2!!' CORDE
+ 
+ 
+-#ifdef __LINUX__
+ //	#include <unistd.h>		// chdir()
+ 	#include <strings.h>
+ 	#include <sys/types.h>
++	#include <sys/stat.h>
+ 	#include <dirent.h>
+ 	#include <errno.h>
+-#endif
+-#ifdef WIN32
++#ifdef _WIN32
+ 	#include <windows.h>
+ 	#include <direct.h>		// _chdir()
+ #endif
+@@ -94,7 +93,7 @@ u32 PSD_Protect(u8 *pBuf)
+ 	if (gPrm.nMode == e_Mode_Protect)
+ 	{ // Protection.
+ 		// 4 premiers octets.
+-		strncpy((char *)pBuf, pProt, 4);
++		memcpy((char *)pBuf, pProt, 4);
+ 		// Mélange des valeurs H et W.
+ 		nVar8 = *(((u8 *)pBuf) + 16) ^ 0x82;
+ 		*(((u8 *)pBuf) + 16) = *(((u8 *)pBuf) + 21) ^ 0x14;
+@@ -108,7 +107,7 @@ u32 PSD_Protect(u8 *pBuf)
+ 	else
+ 	{ // Déprotection.
+ 		// 4 premiers octets.
+-		strncpy((char *)pBuf, pNorm, 4);
++		memcpy((char *)pBuf, pNorm, 4);
+ 		// Remise en ordre des valeurs H et W.
+ 		nVar8 = *(((u8 *)pBuf) + 21) ^ 0x82;
+ 		*(((u8 *)pBuf) + 21) = *(((u8 *)pBuf) + 16) ^ 0x14;
+@@ -126,14 +125,6 @@ u32 PSD_Protect(u8 *pBuf)
+ 
+ //=============================================================================
+ 
+-#ifdef __LINUX__
+-// stricmp n'existe pas en Linux : C'est strcasecmp à la place, dans strings.h.
+-int stricmp(char *pStr1, char *pStr2)
+-{
+-	return (strcasecmp(pStr1, pStr2));
+-}
+-#endif
+-
+ // Lecture du fichier.
+ void FileLoad(char *pFilename)
+ {
+@@ -209,7 +200,8 @@ u32 FilesSearch(char *pNewDir)
+ 	strcpy(pCurDir, pNewDir);
+ 	strcat(pCurDir, "/");
+ 
+-#ifdef __LINUX__
++#ifndef _WIN32
++	{
+ 	DIR	*dip;
+ 	struct dirent	*dit;
+ 	int	nDirPos;
+@@ -227,10 +219,12 @@ u32 FilesSearch(char *pNewDir)
+ 	while ((dit = readdir(dip)) != NULL)
+ 	{
+ 		// Est-ce un fichier normal ?
++#ifdef DT_REG
+ 		if (dit->d_type != DT_REG) continue;
++#endif
+ 		// C'est un ".psd" ?
+ 		if (strlen(dit->d_name) > strlen(pExt))
+-		if (stricmp(&dit->d_name[strlen(dit->d_name) - strlen(pExt)], pExt) == 0)
++		if (strcasecmp(&dit->d_name[strlen(dit->d_name) - strlen(pExt)], pExt) == 0)
+ 		{
+ 			strcpy(&pCurDir[nDirPos], dit->d_name);
+ 			printf("%s ", pCurDir);
+@@ -260,10 +254,19 @@ u32 FilesSearch(char *pNewDir)
+ 	while ((dit = readdir(dip)) != NULL)
+ 	{
+ 		// Est-ce un répertoire ?
++#ifdef DT_REG
+ 		if (dit->d_type != DT_DIR) continue;
++#endif
+ 
+ 		if (strcmp(dit->d_name, ".") == 0 || strcmp(dit->d_name, "..") == 0) continue;
+ 		strcpy(&pCurDir[nDirPos], dit->d_name);
++#ifndef DT_REG
++		{
++			struct stat s;
++			if (stat(pCurDir, &s) != 0) continue;
++			if (!S_ISDIR(s.st_mode)) continue;
++		}
++#endif
+ 		nFilesNb += FilesSearch(pCurDir);
+ 	}
+ 	// Fermeture du répertoire.
+@@ -272,9 +275,11 @@ u32 FilesSearch(char *pNewDir)
+ 		fprintf(stderr, "FilesSearch(): 'closedir' error.\n");
+ 		exit(0);
+ 	}
++	}
+ #endif
+ 
+-#ifdef WIN32
++#ifdef _WIN32
++	{
+ 	WIN32_FIND_DATA ffd;
+ 	HANDLE hFind;
+ 
+@@ -296,7 +301,7 @@ u32 FilesSearch(char *pNewDir)
+ 		// Fichier.
+ 		// C'est un ".psd" ?
+ 		if (strlen(ffd.cFileName) > strlen(pExt))
+-		if (stricmp(&ffd.cFileName[strlen(ffd.cFileName) - strlen(pExt)], pExt) == 0)
++		if (strcasecmp(&ffd.cFileName[strlen(ffd.cFileName) - strlen(pExt)], pExt) == 0)
+ 		{
+ 			printf("%s%s ", pCurDir, ffd.cFileName);
+ 			FileLoad(ffd.cFileName);
+@@ -334,6 +339,7 @@ _dir:
+ 	}
+ 	while (FindNextFile(hFind, &ffd) != 0);
+ 	FindClose(hFind);
++	}
+ #endif
+ 
+ 	return (nFilesNb);

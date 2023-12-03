@@ -89,7 +89,7 @@ function gen_link($filename, $text, $must_exist = true)
 	echo '<a class="archive tippybtn"';
 	if ($exists)
 	{
-		echo 'href="' . htmlspecialchars($filename) . '"';
+		echo ' href="' . htmlspecialchars($filename) . '"';
 	}
 	echo ' id="' . $id. '"';
 	if ($exists && $stat)

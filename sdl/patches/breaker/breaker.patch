@@ -1,0 +1,25 @@
+diff -rup breaker3264/Makefile breaker3264.new/Makefile
+--- breaker3264/Makefile	2014-09-22 16:51:24.000000000 +0200
++++ breaker3264.new/Makefile	2023-12-03 16:09:48.110483570 +0100
+@@ -3,15 +3,16 @@
+ TARGET = breaker 
+ OBJECTS = main.o render.o anims.o sprites.o dust.o frame.o mst.o animspr.o fire.o menu.o preca.o breaker.o font.o monsters.o sfx.o transit.o
+ 
+-CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -s -DNDEBUG 
+-LIBS = -lSDL
+-CC = gcc
++CFLAGS = $(CPU_CFLAGS) -O2 -Wall -fomit-frame-pointer -fno-strict-aliasing -DNDEBUG $(shell pkg-config --cflags sdl)
++LDFLAGS = -s
++LIBS = $(shell pkg-config --libs sdl) -lm
++CC = $(CROSS_PREFIX)gcc
+ 
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJECTS)
+-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) 
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
+ clean:
+-	rm $(TARGET) $(OBJECTS)
++	rm -f $(TARGET) $(OBJECTS)
+ 

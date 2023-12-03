@@ -1,0 +1,30 @@
+diff -rup 2048-git/Makefile 2048-git.new/Makefile
+--- 2048-git/Makefile	2023-12-02 16:15:36.305828287 +0100
++++ 2048-git.new/Makefile	2023-12-02 13:54:13.218309881 +0100
+@@ -1,14 +1,16 @@
+-CC = gcc
+-RM = rm -rf
+-EXEC = 2048
++CROSS_PREFIX=
++CC = $(CROSS_PREFIX)gcc
++RM = rm -f
++EXEC = 2048.prg
+ SRC = 2048.c
+-LDFLAGS = `sdl-config --cflags --libs`
+-LIBS = SDL_ttf
++CFLAGS = $(CPU_CFLAGS) `pkg-config --cflags sdl`
++LDFLAGS = `pkg-config --libs SDL_ttf` -s
++LIBS= -lfreetype -lpng -lz -lbz2 -lm
+ 
+-all: game
++all: $(EXEC)
+ 
+-game:
+-	$(CC) $(SRC) -o $(EXEC) $(LDFLAGS) -l $(LIBS)
++$(EXEC):
++	$(CC) $(SRC) -o $@ $(CFLAGS) $(LDFLAGS) $(LIBS)
+ 
+ clean:
+-	$(RM) 2048
+\ No newline at end of file
++	$(RM) $(EXEC)

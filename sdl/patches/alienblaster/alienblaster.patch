@@ -1,0 +1,53 @@
+diff -rup alienblaster/src/Makefile alienblaster.new/src/Makefile
+--- alienblaster/src/Makefile	2004-08-19 18:24:20.000000000 +0200
++++ alienblaster.new/src/Makefile	2023-12-03 10:34:26.043804927 +0100
+@@ -2,23 +2,24 @@
+ GAME_NAME=alienBlaster
+ 
+ # the compiler to use
+-COMPILER=g++
++CXX=$(CROSS_PREFIX)g++
+ 
+ # include path
+ INCLUDE_PATH=-I.
+ 
+ #OPTIMIZATION=-g -pg -fprofile-arcs
+ #OPTIMIZATION=-O3
+-OPTIMIZATION=-g
++OPTIMIZATION=$(CPU_CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing
+ #OPTIMIZATION=
+ 
+ # SDL library
+-SDL_LIBS=$(shell sdl-config --libs)
+-SDL_FLAGS=$(shell sdl-config --cflags)
++SDL_LIBS=$(shell pkg-config --libs SDL_mixer)
++SDL_FLAGS=$(shell pkg-config --cflags sdl)
+ 
+ # game flags
+ GAME_FLAGS=-D_GNU_SOURCE -Wall -Winline -finline-functions $(SDL_FLAGS) $(OPTIMIZATION)
+-GAME_LIBS=-lSDL_mixer $(SDL_LIBS) $(OPTIMIZATION)
++GAME_LIBS=$(SDL_LIBS) $(OPTIMIZATION)
++LDFLAGS=-s
+ 
+ # all objectfiles
+ OBJECT_FILES=main.o surfaceDB.o soundDB.o options.o geometry.o video.o game.o \
+@@ -44,17 +45,12 @@ rebuild: realclean game
+ 
+ # How to compile a c++ programm
+ $(GAME_NAME): $(OBJECT_FILES)
+-	@echo ""
+-	@echo ""
+ 	@echo "Linking $@"
+-	@$(COMPILER) $(GAME_LIBS) -o $(GAME_NAME) $(OBJECT_FILES)
++	$(CXX) $(CPU_CFLAGS) -o $(GAME_NAME) $(OBJECT_FILES) $(LDFLAGS) $(GAME_LIBS)
+ 	mv $(GAME_NAME) ../
+ 
+ %.o: %.cc
+-	@echo ""
+-	@echo ""
+-	@echo "Compiling $<"
+-	@$(COMPILER) $(GAME_FLAGS) $(INCLUDE_PATH) -c $< -o $@ 
++	$(CXX) $(GAME_FLAGS) $(INCLUDE_PATH) -c $< -o $@ 
+ 
+ depend:  dep
+ 

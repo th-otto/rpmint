@@ -1,0 +1,119 @@
+diff -rup amphetamine-0.8.10/Makefile amphetamine-0.8.10.new/Makefile
+--- amphetamine-0.8.10/Makefile	2002-03-25 20:11:26.000000000 +0100
++++ amphetamine-0.8.10.new/Makefile	2023-12-03 12:49:13.604394970 +0100
+@@ -7,11 +7,10 @@ PREFIX := /usr/local
+ INSTALL_DIR := ${PREFIX}/games/amph
+ 
+ # Libraries
+-USE_LIB_XPM := TRUE
++USE_LIB_XPM := FALSE
+ 
+-SDL_CONFIG := sdl-config
+-SDL_HEADERS := $(shell $(SDL_CONFIG) --cflags)
+-SDL_LIBS := $(shell $(SDL_CONFIG) --libs)
++SDL_HEADERS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl)
+ 
+ #=======================================================
+ # You should not have to change anything below
+@@ -26,19 +25,19 @@ SEARCHDIRS := -I${MYCODEDIR} ${SDL_HEADE
+ 
+ # makemake variables
+ 
+-LINKER       := g++
+ DEPENDFLAGS  := -g  ${SEARCHDIRS}
+ TOUCHHEADERS := ${MYCODEDIR}/*.h
+ 
+ # C
+ 
+-CC     := gcc
++CC     := $(CROSS_PREFIX)gcc $(CPU_CFLAGS)
+ CFLAGS  = ${DEPENDFLAGS}
+ 
+ # C++
+ 
+-CXX      := g++
+-CXXFLAGS  = ${DEPENDFLAGS} -O9 -funroll-loops -fomit-frame-pointer -ffast-math -Wcast-align
++CXX      := $(CROSS_PREFIX)g++ $(CPU_CFLAGS)
++LINKER       := $(CXX)
++CXXFLAGS  = ${DEPENDFLAGS} -O2 -fomit-frame-pointer -ffast-math -Wcast-align
+ 
+ %.o : %.cpp
+ 	${CXX} ${CPPFLAGS} -c $< ${CXXFLAGS} -o $@
+@@ -47,7 +46,7 @@ CXXFLAGS  = ${DEPENDFLAGS} -O9 -funroll-
+ 	${CXX} ${CPPFLAGS} -c $< ${CXXFLAGS}
+ 
+ # C preprocessor (C, C++, FORTRAN)
+-CPPFLAGS = -DINSTALL_DIR="\"${INSTALL_DIR}\""
++#CPPFLAGS = -DINSTALL_DIR="\"${INSTALL_DIR}\""
+ 
+ ifeq ($(USE_LIB_XPM), TRUE)
+     CPPFLAGS := $(CPPFLAGS) -D_USE_LIB_XPM 
+@@ -66,7 +65,7 @@ ifeq ($(USE_LIB_XPM),TRUE)
+     LOADLIBES := $(LOADLIBES) -lXpm -lXt
+ endif
+ 
+-LDFLAGS   = -L/usr/lib -L/usr/local/lib -L/usr/X11R6/lib 
++LDFLAGS   = -s
+ 
+ .PHONY : default
+ default : amph
+Only in amphetamine-0.8.10.new: amph
+Only in amphetamine-0.8.10.new/src: Appl.o
+Only in amphetamine-0.8.10.new/src: Bullet.o
+Only in amphetamine-0.8.10.new/src: Clut.o
+Only in amphetamine-0.8.10.new/src: ConstVal.o
+Only in amphetamine-0.8.10.new/src: Creeper.o
+Only in amphetamine-0.8.10.new/src: Element.o
+Only in amphetamine-0.8.10.new/src: File.o
+Only in amphetamine-0.8.10.new/src: Gifload.o
+Only in amphetamine-0.8.10.new/src: Graphfil.o
+Only in amphetamine-0.8.10.new/src: Gui.o
+Only in amphetamine-0.8.10.new/src: Item.o
+Only in amphetamine-0.8.10.new/src: Level.o
+Only in amphetamine-0.8.10.new/src: Main.o
+Only in amphetamine-0.8.10.new/src: Monster.o
+Only in amphetamine-0.8.10.new/src: Monstrxx.o
+Only in amphetamine-0.8.10.new/src: ObjInfo.o
+Only in amphetamine-0.8.10.new/src: Object.o
+Only in amphetamine-0.8.10.new/src: Player.o
+Only in amphetamine-0.8.10.new/src: Pltform.o
+Only in amphetamine-0.8.10.new/src: Shape.o
+Only in amphetamine-0.8.10.new/src: ShapeLd.o
+Only in amphetamine-0.8.10.new/src: SndSys.o
+Only in amphetamine-0.8.10.new/src: SoundList.o
+diff -rup amphetamine-0.8.10/src/Surface.cpp amphetamine-0.8.10.new/src/Surface.cpp
+--- amphetamine-0.8.10/src/Surface.cpp	2005-12-05 00:50:32.000000000 +0100
++++ amphetamine-0.8.10.new/src/Surface.cpp	2023-12-03 13:06:55.792772205 +0100
+@@ -95,7 +95,7 @@ void	CGraphicSurface::PaintGraphic(short
+ 		linePtr = baseAddr;
+ 		
+ 		if (modus == kShapemodusNormal) {
+-			//memcpy(linePtr, sourcePtr, k);
++			memcpy(linePtr, sourcePtr, k);
+ 		} else {
+ 			while (k) {
+ 				gClutManager->SetPixel((unsigned char *)sourceLinePtr, (unsigned char *)linePtr, modus, 0);
+Only in amphetamine-0.8.10.new/src: Surface.o
+diff -rup amphetamine-0.8.10/src/System.hpp amphetamine-0.8.10.new/src/System.hpp
+--- amphetamine-0.8.10/src/System.hpp	2005-12-05 01:30:10.000000000 +0100
++++ amphetamine-0.8.10.new/src/System.hpp	2023-12-03 13:08:46.072603834 +0100
+@@ -16,11 +16,11 @@ extern "C" {
+ #define INSTALL_DIR  "game"
+ #endif
+ 
+-//#if SDL_BYTEORDER == SDL_LIL_ENDIAN  //__amigaos4__
+-//#undef __BIG_ENDIAN__
+-//#else
++#if SDL_BYTEORDER == SDL_LIL_ENDIAN  //__amigaos4__
++#undef __BIG_ENDIAN__
++#else
+ #define __BIG_ENDIAN__ 1
+-//#endif
++#endif
+ 
+ typedef bool boolVar;
+ 
+Only in amphetamine-0.8.10.new/src: System.o
+Only in amphetamine-0.8.10.new/src: Thing.o
+Only in amphetamine-0.8.10.new/src: Weapon.o

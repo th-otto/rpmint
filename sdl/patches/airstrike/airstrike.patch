@@ -1,0 +1,51 @@
+diff -rup airstrike-pre6a.orig/src/Makefile airstrike-pre6a/src/Makefile
+--- airstrike-pre6a.orig/src/Makefile	2003-11-08 14:40:05.000000000 +0100
++++ airstrike-pre6a/src/Makefile	2023-12-03 09:26:35.523464427 +0100
+@@ -1,15 +1,17 @@
+-CFLAGS:= -g -O2 -Wall -Wno-unused $(OPTIONS)
++CC = $(CROSS_PREFIX)gcc
++CFLAGS:= $(CPU_CFLAGS) -g -O2 -Wall -Wno-unused $(OPTIONS)
+ 
+-CFLAGS += $(shell sdl-config --cflags) -Isprite -I. -Isupport -DINLINE=inline
+-CFLAGS += -DLINUX 
++CFLAGS += $(shell pkg-config --cflags sdl) -Isprite -I. -Isupport -DINLINE=inline
++LDFLAGS=-s
+ CFILES:= $(shell find . -name '*.c')
+ OBJECTS:= $(CFILES:.c=.o)
++LIBS = $(shell pkg-config --libs sdl SDL_image)
+ 
+ airstrike: $(OBJECTS)
+-	$(CC) -o $@ $(CFLAGS) $(OBJECTS) `sdl-config --libs` -lSDL_image
++	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $(OBJECTS) $(LIBS)
+ 
+ airstrike-sound: $(OBJECTS)
+-	$(CC) -o $@ $(CFLAGS) $(OBJECTS) `sdl-config --libs` -lSDL_image -lSDL_mixer
++	$(CC) -o $@ $(CFLAGS) $(LDFLAGS) $(OBJECTS) $(LIBS) $(shell pkg-config --libs SDL_mixer)
+ 
+ # Use the rule below when coding new sprite types
+ #sprites_autogen.h: sprite_types/*.c
+diff -rup airstrike-pre6a.orig/utils/Makefile airstrike-pre6a/utils/Makefile
+--- airstrike-pre6a.orig/utils/Makefile	2003-01-18 20:48:05.000000000 +0100
++++ airstrike-pre6a/utils/Makefile	2023-12-03 09:08:58.515215829 +0100
+@@ -1,14 +1,16 @@
++CC = $(CROSS_PREFIX)gcc
++CFLAGS:= $(CPU_CFLAGS) -O2 -Wall
+ 
+ all: showanim hfinter heightfield
+ 
+ showanim: showanim.c
+-	$(CC) -Wall -o $@ $^ `sdl-config --cflags --libs` -lSDL_image
++	$(CC) $(CFLAGS) -o $@ $^ `pkg-config --cflags --libs sdl` -lSDL_image
+ 
+ hfinter: hfinter.c
+-	$(CC) -Wall -o $@ $^ `sdl-config --cflags --libs` -lSDL_image
++	$(CC) $(CFLAGS) -o $@ $^ `pkg-config --cflags --libs sdl` -lSDL_image
+ 
+ heightfield: heightfield.c
+-	$(CC) -Wall -g -o $@ $^ `sdl-config --cflags --libs` -lSDL_image
++	$(CC) $(CFLAGS) -o $@ $^ `pkg-config --cflags --libs sdl` -lSDL_image
+ 
+ clean:
+-	rm -f showanim *~ \#*
+\ No newline at end of file
++	rm -f showanim *~ \#*
