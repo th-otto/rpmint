@@ -31,33 +31,43 @@ for CPU in ${ALL_CPUS}; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	${MAKE} MCPU=${CPU_CFLAGS} ATARICROSS=1 NOLAYERS=1 NORECOIL=1 \
-		|| exit 1
+	${MAKE} MCPU=${CPU_CFLAGS} ATARICROSS=1 NOLAYERS=1 NOGIT=1 || exit 1
 
 	mkdir -p "${THISPKG_DIR}/doc"
 	
-	cp -p ../bin/grafx2.ttp "${THISPKG_DIR}/grafx2-${CPU}.ttp"
+	cp -p ../bin/grafx2.ttp "${THISPKG_DIR}/grafx2-${CPU}.gtp"
 	${MAKE} clean >/dev/null
 	cd ..
 
-	cp -pr share/grafx2/gfx2def.ini share/grafx2/gfx2.png share/grafx2/scripts "${THISPKG_DIR}"
-	mkdir -p "${THISPKG_DIR}/fonts"
-	for f in share/grafx2/fonts/*; do
-	  n=$(basename $f | sed -e 's/PF_\([a-zA-Z]\)[a-zA-Z]*_/PF\1/')
-	  cp -p "$f" "${THISPKG_DIR}/fonts/$n"
-	done
-	mkdir -p "${THISPKG_DIR}/skins"
-	for f in share/grafx2/skins/*; do
-	  n=$(basename $f | sed -e 's/^\([a-z]\).*_/\1/')
-	  cp -p "$f" "${THISPKG_DIR}/skins/$n"
-	done
-	cp -p doc/COMPILING.txt "${THISPKG_DIR}/doc/compile.txt"
-	cp -p doc/README-6502.txt "${THISPKG_DIR}/doc/6502.txt"
-	cp -p doc/README-recoil.txt "${THISPKG_DIR}/doc/recoil.txt"
-	cp -p doc/README.txt "${THISPKG_DIR}/doc"
-	cp -p doc/PF_fonts.txt "${THISPKG_DIR}/doc"
-	cp -p doc/gpl-2.0.txt "${THISPKG_DIR}/doc"
 done
+
+cd "$MINT_BUILD_DIR"
+cp -pr share/grafx2/gfx2def.ini share/grafx2/gfx2.png "${THISPKG_DIR}"
+mkdir -p "${THISPKG_DIR}/fonts"
+for f in share/grafx2/fonts/*; do
+  n=$(basename $f | sed -e 's/PF_\([a-zA-Z]\)[a-zA-Z]*_/PF\1/')
+  cp -p "$f" "${THISPKG_DIR}/fonts/$n"
+done
+mkdir -p "${THISPKG_DIR}/skins"
+for f in share/grafx2/skins/*; do
+  n=$(basename $f | sed -e 's/^\([a-z]\).*_/\1/')
+  cp -p "$f" "${THISPKG_DIR}/skins/$n"
+done
+for f in `find share/grafx2/scripts -type f`; do
+  n="$(basename $f .lua | sed -e 's/ostro_/ostro/' -e 's/^\(.\{8\}\).*/\1/').lua" ; \
+  d=$(dirname $f | sed -e 's#^share/grafx2/scripts##' -e 's/-8bit//') ; \
+  mkdir -p "${THISPKG_DIR}/scripts$d" ; \
+  if [ -f "${THISPKG_DIR}/scripts$d/$n" ] ; then \
+    n=$(echo $n | sed -e 's/^\(.\{7\}\)./\1_/') ; \
+  fi ; \
+  cp -p "$f" "${THISPKG_DIR}/scripts$d/$n" ; \
+done
+cp -p doc/COMPILING.txt "${THISPKG_DIR}/doc/compile.txt"
+cp -p doc/README-6502.txt "${THISPKG_DIR}/doc/6502.txt"
+cp -p doc/README-recoil.txt "${THISPKG_DIR}/doc/recoil.txt"
+cp -p doc/README.txt "${THISPKG_DIR}/doc"
+cp -p doc/PF_fonts.txt "${THISPKG_DIR}/doc"
+cp -p doc/gpl-2.0.txt "${THISPKG_DIR}/doc"
 
 make_bin_archive
 make_archives

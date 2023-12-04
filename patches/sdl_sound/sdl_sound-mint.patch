@@ -1,0 +1,11 @@
+--- a/configure.ac	2023-12-04 08:29:29.214086098 +0100
++++ b/configure.ac	2023-12-04 08:29:31.440749325 +0100
+@@ -194,7 +194,7 @@
+   AC_CHECK_HEADER([mpg123.h], [have_mpg123_hdr=yes])
+   AC_CHECK_LIB([mpg123], [mpg123_replace_reader_handle], [have_mpg123_lib=yes])
+   if test x$have_mpg123_hdr = xyes -a x$have_mpg123_lib = xyes; then
+-    LIBS="$LIBS -lmpg123"
++    LIBS="$LIBS -lmpg123 -lm"
+     AC_DEFINE(SOUND_SUPPORTS_MPG123, 1, [Define if MPG123 support is desired.])
+   fi
+ fi

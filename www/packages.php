@@ -3981,6 +3981,35 @@ The library is backwards compatible to the above mentioned code. It is
 written in plain C and can be used in C++ code.
 '
 	),
+ 	'sdl_sound' => array(
+		'name' => 'SDL_sound',
+		'repo' => 'https://github.com/icculus/SDL_sound',
+		'branch' => 'stable-1.0',
+		'upstream' => 'https://icculus.org/SDL_sound/',
+		'version' => '1.0.4',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/C and C++',
+		'summary' => 'SDL_sound; an abstract soundfile decoder.',
+		'comment' => '
+SDL_sound is a library that handles the decoding of several popular
+sound file formats, such as .WAV and .MP3. It is meant to make the
+programmer&apos;s sound playback tasks simpler. The programmer gives
+SDL_sound a filename, or feeds it data directly from one of many
+sources, and then reads the decoded waveform data back at their
+leisure. If resource constraints are a concern, SDL_sound can process
+sound data in programmer-specified blocks. Alternately, SDL_sound can
+decode a whole sound file and hand back a single pointer to the whole
+waveform. SDL_sound can also handle sample rate, audio format, and
+channel conversion on-the-fly and behind-the-scenes, if the programmer
+desires.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
