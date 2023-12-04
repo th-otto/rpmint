@@ -1,0 +1,69 @@
+diff -rup sqlite-version-3.44.2.orig/src/os_setup.h sqlite-version-3.44.2/src/os_setup.h
+--- sqlite-version-3.44.2.orig/src/os_setup.h	2023-11-24 12:41:44.000000000 +0100
++++ sqlite-version-3.44.2/src/os_setup.h	2023-12-04 10:19:35.284691490 +0100
+@@ -46,6 +46,9 @@
+ #    define SQLITE_OS_UNIX 1
+ #  endif
+ #endif
++#ifdef __MINT__
++#define SQLITE_OMIT_WAL 1
++#endif
+ #if SQLITE_OS_OTHER+1>1
+ #  undef SQLITE_OS_KV
+ #  define SQLITE_OS_KV 0
+diff -rup sqlite-version-3.44.2.orig/src/os_unix.c sqlite-version-3.44.2/src/os_unix.c
+--- sqlite-version-3.44.2.orig/src/os_unix.c	2023-11-24 12:41:44.000000000 +0100
++++ sqlite-version-3.44.2/src/os_unix.c	2023-12-04 10:19:35.291358146 +0100
+@@ -188,6 +188,9 @@
+ ** Remove and stub certain info for WASI (WebAssembly System
+ ** Interface) builds.
+ */
++#ifdef __MINT__
++#  define SQLITE_DEFAULT_UNIX_VFS "unix-dotfile"
++#endif
+ #ifdef SQLITE_WASI
+ # undef HAVE_FCHMOD
+ # undef HAVE_FCHOWN
+diff -rup sqlite-version-3.44.2.orig/src/vdbeapi.c sqlite-version-3.44.2/src/vdbeapi.c
+--- sqlite-version-3.44.2.orig/src/vdbeapi.c	2023-11-24 12:41:44.000000000 +0100
++++ sqlite-version-3.44.2/src/vdbeapi.c	2023-12-04 10:19:35.291358146 +0100
+@@ -1270,8 +1270,13 @@ static const Mem *columnNullValue(void){
+   ** __attribute__((aligned(8))) macro.  */
+   static const Mem nullMem
+ #if defined(SQLITE_DEBUG) && defined(__GNUC__)
++#ifdef __MINT__
++  __attribute__((aligned(2)))
++#else
+     __attribute__((aligned(8)))
+ #endif
++
++#endif
+     = {
+         /* .u          = */ {0},
+         /* .z          = */ (char*)0,
+diff -rup sqlite-version-3.44.2.orig/src/wal.c sqlite-version-3.44.2/src/wal.c
+--- sqlite-version-3.44.2.orig/src/wal.c	2023-11-24 12:41:44.000000000 +0100
++++ sqlite-version-3.44.2/src/wal.c	2023-12-04 10:19:35.291358146 +0100
+@@ -724,7 +724,7 @@ static void sehInjectFault(Wal *pWal){
+ # define SEH_SET_ON_ERROR(X,Y)
+ #endif /* ifdef SQLITE_USE_SEH */
+ 
+-
++#ifndef SQLITE_OMIT_WAL
+ /*
+ ** Obtain a pointer to the iPage'th page of the wal-index. The wal-index
+ ** is broken into pages of WALINDEX_PGSZ bytes. Wal-index pages are
+@@ -792,6 +792,7 @@ static SQLITE_NOINLINE int walIndexPageR
+   assert( iPage==0 || *ppPage || rc!=SQLITE_OK );
+   return rc;
+ }
++
+ static int walIndexPage(
+   Wal *pWal,               /* The WAL context */
+   int iPage,               /* The page we seek */
+@@ -4499,3 +4500,4 @@ sqlite3_file *sqlite3WalFile(Wal *pWal){
+ }
+ 
+ #endif /* #ifndef SQLITE_OMIT_WAL */
++#endif
+\ No newline at end of file

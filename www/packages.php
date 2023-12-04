@@ -4010,6 +4010,34 @@ channel conversion on-the-fly and behind-the-scenes, if the programmer
 desires.
 '
 	),
+ 	'sqlite3' => array(
+		'name' => 'sqlite3',
+		'repo' => 'https://github.com/sqlite/sqlite',
+		'upstream' => 'https://www.sqlite.org/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'version' => '3.44.2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'Public-Domain',
+		'category' => 'Productivity/Databases/Servers',
+		'summary' => 'Embeddable SQL Database Engine',
+		'comment' => '
+SQLite is a C library that implements an embeddable SQL database
+engine. Programs that link with the SQLite library can have SQL
+database access without running a separate RDBMS process.
+</br>
+SQLite is not a client library used to connect to a big database
+server. SQLite is a server and the SQLite library reads and writes
+directly to and from the database files on disk.
+</br>
+SQLite can be used via the sqlite command line tool or via any
+application that supports the Qt database plug-ins.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',

@@ -9,7 +9,7 @@ Release:        1
 License:        LGPL-2.1-or-later
 Group:          Development/Libraries/C and C++
 
-Packager:       Thorsten Otto <admin@tho-otto.de>
+Packager:       %{packager}
 URL:            https://icculus.org/SDL_sound/
 VCS:            https://github.com/icculus/SDL_sound/tree/stable-1.0
 

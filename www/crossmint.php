@@ -1442,6 +1442,8 @@ This notably applies to Perl and Python.
 
 <li>2023/12/04 Add SDL_sound 1.0.4</li>
 
+<li>2023/12/04 Add sqlite3 3.44.2</li>
+
 </ul>
 
 <p></p>
