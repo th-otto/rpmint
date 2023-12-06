@@ -1,0 +1,149 @@
+Only in zeldaolb_us.new: Audio.o
+Only in zeldaolb_us.new: Bouclier.o
+Only in zeldaolb_us.new: Caisse.o
+Only in zeldaolb_us.new: Carte.o
+Only in zeldaolb_us.new: Encyclopedie.o
+Only in zeldaolb_us.new: Ennemi.o
+Only in zeldaolb_us.new: Generique.o
+Only in zeldaolb_us.new: Jeu.o
+Only in zeldaolb_us.new: Joueur.o
+diff -rup zeldaolb_us.orig/Keyboard.cpp zeldaolb_us.new/Keyboard.cpp
+--- zeldaolb_us.orig/Keyboard.cpp	2009-03-15 13:46:19.000000000 +0100
++++ zeldaolb_us.new/Keyboard.cpp	2023-12-06 15:17:37.916125296 +0100
+@@ -15,7 +15,7 @@
+ #include "Keyboard.h"
+ 
+ Keyboard::Keyboard(Jeu* jeu, Carte* carte, Encyclopedie* encycl, SDL_Surface* screen, int m) : 
+-    gpJeu(jeu), gpCarte(carte), gpEncyclopedie(encycl), mode(m), gFullScreen(1), 
++    gpJeu(jeu), gpCarte(carte), gpEncyclopedie(encycl), mode(m), gFullScreen(0), 
+     gpScreen(screen), tmp(0), tmpx(0), tmpc(0), tmpw(0), tmpt(0), tmpp(0), tmpm(0), tmpo(0), 
+     tmptp(0), ligne(0), colonne(0), ligneOption(2), volume(32), volson(32), ligneRecord(3), 
+     colonneRecord(0), temps(0), ligneVal(0), intro(0), telep(0) {
+Only in zeldaolb_us.new: Keyboard.o
+Only in zeldaolb_us.new: Listable.o
+diff -rup zeldaolb_us.orig/Makefile zeldaolb_us.new/Makefile
+--- zeldaolb_us.orig/Makefile	2009-03-15 12:27:31.000000000 +0100
++++ zeldaolb_us.new/Makefile	2023-12-06 15:16:07.986243573 +0100
+@@ -4,10 +4,10 @@
+ #--------------------------------------------------------------
+ 
+ PREFIX  = /usr/local
+-CFLAGS  = -O2 -Wall
+-LDFLAGS = -lSDL_gfx -lSDL_image -lSDL_mixer -lSDL
++CFLAGS  = $(CPU_CFLAGS) -O2 -Wall
++LIBS    = $(shell pkg-config --libs SDL_gfx SDL_image SDL_mixer sdl)
+ 
+-CC = g++
++CC = $(CROSS_PREFIX)g++
+ RM = rm -f
+ INSTALL_PROG = install -m 755 -s
+ 
+@@ -15,76 +15,13 @@ EXE = ZeldaOLB
+ 
+ OBJS = Audio.o Bouclier.o Caisse.o Carte.o Encyclopedie.o Ennemi.o Generique.o Jeu.o Joueur.o Keyboard.o Listable.o main.o Menu.o Monde.o Objet.o Personnage.o Pnj.o Projectile.o Snipe.o Statut.o Texte.o ZoneRect.o
+ 
+-ALL : $(EXE)
++all : $(EXE)
+ 
+-Audio.o : Audio.cpp
+-	$(CC) -c Audio.cpp $(CFLAGS) -o Audio.o
+-
+-Bouclier.o : Bouclier.cpp
+-	$(CC) -c Bouclier.cpp $(CFLAGS) -o Bouclier.o
+-
+-Caisse.o : Caisse.cpp
+-	$(CC) -c Caisse.cpp $(CFLAGS) -o Caisse.o
+-
+-Carte.o : Carte.cpp
+-	$(CC) -c Carte.cpp $(CFLAGS) -o Carte.o
+-
+-Encyclopedie.o : Encyclopedie.cpp
+-	$(CC) -c Encyclopedie.cpp $(CFLAGS) -o Encyclopedie.o
+-
+-Ennemi.o : Ennemi.cpp
+-	$(CC) -c Ennemi.cpp $(CFLAGS) -o Ennemi.o
+-
+-Generique.o : Generique.cpp
+-	$(CC) -c Generique.cpp $(CFLAGS) -o Generique.o
+-
+-Jeu.o : Jeu.cpp
+-	$(CC) -c Jeu.cpp $(CFLAGS) -o Jeu.o
+-
+-Joueur.o : Joueur.cpp
+-	$(CC) -c Joueur.cpp $(CFLAGS) -o Joueur.o
+-
+-Keyboard.o : Keyboard.cpp
+-	$(CC) -c Keyboard.cpp $(CFLAGS) -o Keyboard.o
+-
+-Listable.o : Listable.cpp
+-	$(CC) -c Listable.cpp $(CFLAGS) -o Listable.o
+-
+-main.o : main.cpp
+-	$(CC) -c main.cpp $(CFLAGS) -o main.o
+-
+-Menu.o : Menu.cpp
+-	$(CC) -c Menu.cpp $(CFLAGS) -o Menu.o
+-
+-Monde.o : Monde.cpp
+-	$(CC) -c Monde.cpp $(CFLAGS) -o Monde.o
+-
+-Objet.o : Objet.cpp
+-	$(CC) -c Objet.cpp $(CFLAGS) -o Objet.o
+-
+-Personnage.o : Personnage.cpp
+-	$(CC) -c Personnage.cpp $(CFLAGS) -o Personnage.o
+-
+-Pnj.o : Pnj.cpp
+-	$(CC) -c Pnj.cpp $(CFLAGS) -o Pnj.o
+-
+-Projectile.o : Projectile.cpp
+-	$(CC) -c Projectile.cpp $(CFLAGS) -o Projectile.o
+-
+-Snipe.o : Snipe.cpp
+-	$(CC) -c Snipe.cpp $(CFLAGS) -o Snipe.o
+-
+-Statut.o : Statut.cpp
+-	$(CC) -c Statut.cpp $(CFLAGS) -o Statut.o
+-
+-Texte.o : Texte.cpp
+-	$(CC) -c Texte.cpp $(CFLAGS) -o Texte.o
+-
+-ZoneRect.o : ZoneRect.cpp
+-	$(CC) -c ZoneRect.cpp $(CFLAGS) -o ZoneRect.o
++.cpp.o:
++	$(CC) $(CFLAGS) -c $< -o $@
+ 
+ $(EXE) : $(OBJS)
+-	$(CC) $(OBJS) -o $(EXE) $(LDFLAGS)
++	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $(EXE) $(LIBS)
+ 
+ install : $(EXE)
+ 	$(INSTALL_PROG) $(EXE) $(PREFIX)/bin
+Only in zeldaolb_us.new: Menu.o
+Only in zeldaolb_us.new: Monde.o
+Only in zeldaolb_us.new: Objet.o
+Only in zeldaolb_us.new: Personnage.o
+Only in zeldaolb_us.new: Pnj.o
+Only in zeldaolb_us.new: Projectile.o
+Only in zeldaolb_us.new: Snipe.o
+Only in zeldaolb_us.new: Statut.o
+Only in zeldaolb_us.new: Texte.o
+Only in zeldaolb_us.new: ZeldaOLB
+Only in zeldaolb_us.new: ZoneRect.o
+Only in zeldaolb_us.new/data/save: system.dat
+diff -rup zeldaolb_us.orig/main.cpp zeldaolb_us.new/main.cpp
+--- zeldaolb_us.orig/main.cpp	2009-03-15 13:36:06.000000000 +0100
++++ zeldaolb_us.new/main.cpp	2023-12-06 15:17:38.762790849 +0100
+@@ -31,9 +31,9 @@ SDL_Surface* init() {             // ini
+     SDL_SetColorKey(icon,SDL_SRCCOLORKEY,SDL_MapRGB(icon->format,0,0,0));
+     SDL_WM_SetIcon(icon,NULL);
+ 
+-    SDL_ShowCursor(SDL_DISABLE);
++    SDL_ShowCursor(SDL_ENABLE);
+     
+-    return SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN);
++    return SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE|SDL_DOUBLEBUF);
+ }
+ 
+ int main(int argc, char** argv) {
+Only in zeldaolb_us.new: main.o

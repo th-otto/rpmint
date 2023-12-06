@@ -1,0 +1,1709 @@
+diff -rupN zeldaboh.orig/Audio.cpp zeldaboh.new/Audio.cpp
+--- zeldaboh.orig/Audio.cpp	2009-11-03 14:18:40.000000000 +0100
++++ zeldaboh.new/Audio.cpp	2023-12-06 16:46:27.475603397 +0100
+@@ -19,90 +19,136 @@
+ #include "Audio.h"
+ 
+ Audio::Audio() : volume(0), musiqueId(0), specialId(0) {
++#ifdef _WIN32
+     SOUND = FSOUND_Init(44100, 32, 0);
++#else
++    SOUND = true;
++    if(SDL_InitSubSystem(SDL_INIT_AUDIO) == -1) SOUND = false;
++#endif
+     music = NULL;
+     
+     if (SOUND) {
++#ifdef _WIN32
+         previous_volume = -1;
+         previous_volson = FSOUND_GetSFXMasterVolume();
++#else
++        Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 2048);
++        previous_volume = Mix_VolumeMusic(32);
++#endif
+         loadSounds();
++#ifndef _WIN32
++        setVolson(32);
++#endif
+     }
+ }
+ 
+ Audio::~Audio() {
+     if (SOUND) {
+         freeSounds();
++#ifdef _WIN32
+         FMUSIC_StopSong(music);
+         FMUSIC_SetMasterVolume(music, previous_volume);
+         FMUSIC_FreeSong(music);
+         FSOUND_SetSFXMasterVolume(previous_volson);
+         FSOUND_Close();
++#else
++        Mix_PauseMusic();
++        Mix_VolumeMusic(previous_volume);
++        Mix_HaltMusic();
++        Mix_FreeMusic(music);
++        Mix_CloseAudio();
++#endif
+     }
+ }
+ 
+-void Audio::setVolume(int vol) {volume=vol*4;
++void Audio::setVolume(int vol) {
++#ifdef _WIN32
++	volume=vol*4;
+     if (previous_volume == -1) previous_volume = FMUSIC_GetMasterVolume(music);
+-    FMUSIC_SetMasterVolume(music, volume);}
+-void Audio::setVolson(int volson) {FSOUND_SetSFXMasterVolume(volson*4);
+-   // for (int i = 0; i < 40; i++) Mix_VolumeChunk(sons[i], volson);
++    FMUSIC_SetMasterVolume(music, volume);
++#else
++    Mix_VolumeMusic(volume);
++#endif
++}
++
++void Audio::setVolson(int volson) {
++#ifdef _WIN32
++    FSOUND_SetSFXMasterVolume(volson*4);
++#else
++    for (int i = 0; i < 40; i++) Mix_VolumeChunk(sons[i], volson);
++#endif
+ }
+ 
+ void Audio::loadSounds() {
++#ifdef _WIN32
+     sons = new FSOUND_SAMPLE*[40];
+-    
+-    sons[0] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/text.ogg",0,0,0); // lettres
+-    sons[1] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/menu1.ogg",0,0,0); // menu 1
+-    sons[2] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/menu2.ogg",0,0,0); // menu 2
+-    sons[3] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/menu3.ogg",0,0,0); // menu 3
+-    sons[4] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/menu4.ogg",0,0,0); // menu 4
+-    sons[5] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/timewarp.ogg",0,0,0); // time retour
+-    sons[6] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/tombe.ogg",0,0,0); // tombe (ennemi)
+-    sons[7] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/hitenemy.ogg",0,0,0); //shot 1
+-    sons[8] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/killenemy.ogg",0,0,0); // shot 2
+-    sons[9] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/surprise.ogg",0,0,0); // surprise
+-    sons[10] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/monte.ogg",0,0,0); // monte
+-    sons[11] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/descend.ogg",0,0,0); // descend
+-    sons[12] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/chute.ogg",0,0,0); // chute
+-    sons[13] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/item.ogg",0,0,0); // item
+-    sons[14] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/rupee.ogg",0,0,0); // rubis
+-    sons[15] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/heart.ogg",0,0,0); // coeur
+-    sons[16] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/bomb.ogg",0,0,0); // bombe
+-    sons[17] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/textnext.ogg",0,0,0); // suite texte
+-    sons[18] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/textend.ogg",0,0,0); // fin texte
+-    sons[19] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/happy.ogg",0,0,0); // trouve objet
+-    sons[20] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/door.ogg",0,0,0); // ouvre porte
+-    sons[21] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/pics.ogg",0,0,0); // pics contre mur
+-    sons[22] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/sword.ogg",0,0,0); // épée
+-    sons[23] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/SwordCharging.ogg",0,0,0); // chargée
+-    sons[24] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/Sword360.ogg",0,0,0); // spin
+-    sons[25] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/shoot.ogg",0,0,0); // flèche
+-    sons[26] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/hookshot.ogg",0,0,0); // grappin
+-    sons[27] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/stamp.ogg",0,0,0); // pose bombe
+-    sons[28] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/magic.ogg",0,0,0); // magie
+-    sons[29] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/burn.ogg",0,0,0); // brûle
+-    sons[30] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/hammer.ogg",0,0,0); // marteau
+-    sons[31] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/plouf.ogg",0,0,0); // plouf
+-    sons[32] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/danger.ogg",0,0,0); // danger
+-    sons[33] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/hurt.ogg",0,0,0); // link se blesse
+-    sons[34] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/porte.ogg",0,0,0); // porte objet
+-    sons[35] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/lance.ogg",0,0,0); // lance objet
+-    sons[36] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/casse.ogg",0,0,0); // casse objet
+-    sons[37] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/charge.ogg",0,0,0); // charge magie
+-    sons[38] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/buisson.ogg",0,0,0); // coupe buisson
+-    sons[39] = FSOUND_Sample_Load(FSOUND_FREE, "data/sound/pousse.ogg",0,0,0); // pousse caisse
+-    
++#define LOADSOUND(n) FSOUND_Sample_Load(FSOUND_FREE, n,0,0,0);
++#else
++    sons = new Mix_Chunk*[40];
++#define LOADSOUND(n) Mix_LoadWAV(n)
++#endif
++    sons[0] = LOADSOUND("data/sound/text.ogg"); // lettres
++    sons[1] = LOADSOUND("data/sound/menu1.ogg"); // menu 1
++    sons[2] = LOADSOUND("data/sound/menu2.ogg"); // menu 2
++    sons[3] = LOADSOUND("data/sound/menu3.ogg"); // menu 3
++    sons[4] = LOADSOUND("data/sound/menu4.ogg"); // menu 4
++    sons[5] = LOADSOUND("data/sound/timewarp.ogg"); // time retour
++    sons[6] = LOADSOUND("data/sound/tombe.ogg"); // tombe (ennemi)
++    sons[7] = LOADSOUND("data/sound/hitenemy.ogg"); //shot 1
++    sons[8] = LOADSOUND("data/sound/killenemy.ogg"); // shot 2
++    sons[9] = LOADSOUND("data/sound/surprise.ogg"); // surprise
++    sons[10] = LOADSOUND("data/sound/monte.ogg"); // monte
++    sons[11] = LOADSOUND("data/sound/descend.ogg"); // descend
++    sons[12] = LOADSOUND("data/sound/chute.ogg"); // chute
++    sons[13] = LOADSOUND("data/sound/item.ogg"); // item
++    sons[14] = LOADSOUND("data/sound/rupee.ogg"); // rubis
++    sons[15] = LOADSOUND("data/sound/heart.ogg"); // coeur
++    sons[16] = LOADSOUND("data/sound/bomb.ogg"); // bombe
++    sons[17] = LOADSOUND("data/sound/textnext.ogg"); // suite texte
++    sons[18] = LOADSOUND("data/sound/textend.ogg"); // fin texte
++    sons[19] = LOADSOUND("data/sound/happy.ogg"); // trouve objet
++    sons[20] = LOADSOUND("data/sound/door.ogg"); // ouvre porte
++    sons[21] = LOADSOUND("data/sound/pics.ogg"); // pics contre mur
++    sons[22] = LOADSOUND("data/sound/sword.ogg"); // épée
++    sons[23] = LOADSOUND("data/sound/SwordCharging.ogg"); // chargée
++    sons[24] = LOADSOUND("data/sound/Sword360.ogg"); // spin
++    sons[25] = LOADSOUND("data/sound/shoot.ogg"); // flèche
++    sons[26] = LOADSOUND("data/sound/hookshot.ogg"); // grappin
++    sons[27] = LOADSOUND("data/sound/stamp.ogg"); // pose bombe
++    sons[28] = LOADSOUND("data/sound/magic.ogg"); // magie
++    sons[29] = LOADSOUND("data/sound/burn.ogg"); // brûle
++    sons[30] = LOADSOUND("data/sound/hammer.ogg"); // marteau
++    sons[31] = LOADSOUND("data/sound/plouf.ogg"); // plouf
++    sons[32] = LOADSOUND("data/sound/danger.ogg"); // danger
++    sons[33] = LOADSOUND("data/sound/hurt.ogg"); // link se blesse
++    sons[34] = LOADSOUND("data/sound/porte.ogg"); // porte objet
++    sons[35] = LOADSOUND("data/sound/lance.ogg"); // lance objet
++    sons[36] = LOADSOUND("data/sound/casse.ogg"); // casse objet
++    sons[37] = LOADSOUND("data/sound/charge.ogg"); // charge magie
++    sons[38] = LOADSOUND("data/sound/buisson.ogg"); // coupe buisson
++    sons[39] = LOADSOUND("data/sound/pousse.ogg"); // pousse caisse
++#undef LOADSOUND
++
+ }
+ 
+ void Audio::freeSounds() {
+     if (SOUND) {
++#ifdef _WIN32
+         for (int i = 0; i < 40; i++) FSOUND_Sample_Free(sons[i]);
++#else
++        for (int i = 0; i < 40; i++) Mix_FreeChunk(sons[i]);
++#endif
+         delete[] sons;
+     }
+ }
+ 
+ void Audio::playSound(int id, int chl) {
+-    if (SOUND) //Mix_PlayChannel(chl,sons[id],0);
++    if (SOUND)
++#ifdef _WIN32
+         FSOUND_PlaySound(chl, sons[id]);
++#else
++        Mix_PlayChannel(chl,sons[id],0);
++#endif
+ }
+ 
+ void Audio::playMusic(int id) {
+@@ -110,6 +156,7 @@ void Audio::playMusic(int id) {
+         if (musiqueId != id) {
+             musiqueId = id;            
+             if (specialId == 0) {
++#ifdef _WIN32
+                 FMUSIC_StopSong(music);
+                 FMUSIC_FreeSong(music);
+                 music = choixMusique(id);
+@@ -117,6 +164,12 @@ void Audio::playMusic(int id) {
+                 FMUSIC_SetMasterVolume(music, volume);
+                 FMUSIC_SetLooping(music, 1);
+                 FMUSIC_PlaySong(music);
++#else
++                Mix_HaltMusic();
++                Mix_FreeMusic(music);
++                music = choixMusique(id);
++                Mix_PlayMusic(music,-1);
++#endif
+                 specialId = 0;
+             }
+         }
+@@ -124,49 +177,71 @@ void Audio::playMusic(int id) {
+ }
+ 
+ void Audio::stopMusic() {
+-    if (SOUND) FMUSIC_StopSong(music);
++    if (SOUND)
++    {
++#ifdef _WIN32
++       FMUSIC_StopSong(music);
++#else
++       Mix_HaltMusic();
++#endif
++	}
+ }
+ 
+ void Audio::replayMusic() {
+-    if (SOUND) FMUSIC_PlaySong(music);
++    if (SOUND)
++    {
++#ifdef _WIN32
++        FMUSIC_PlaySong(music);
++#else
++        Mix_PlayMusic(music,-1);
++#endif
++    }
+ }
+ 
+-FMUSIC_MODULE* Audio::choixMusique(int id) {
++#ifdef _WIN32
++FMUSIC_MODULE* Audio::choixMusique(int id)
++#define LOADMUSIC(n) FMUSIC_LoadSong(n)
++#else
++Mix_Music* Audio::choixMusique(int id)
++#define LOADMUSIC(n) Mix_LoadMUS(n)
++#endif
++{
+     switch (id) {
+-        case 1 : return FMUSIC_LoadSong("data/music/Chateau.mid");//FMUSIC_LoadSong("data/music/Foret.mid");
+-        case 2 : return FMUSIC_LoadSong("data/music/Plaine.mid");
+-        case 3 : return FMUSIC_LoadSong("data/music/Lac.mid");
+-        case 4 : return FMUSIC_LoadSong("data/music/Mont.mid");
+-        case 5 : return FMUSIC_LoadSong("data/music/Desert.mid");
+-        case 6 : return FMUSIC_LoadSong("data/music/Ombre.mid");
+-        case 7 : return FMUSIC_LoadSong("data/music/Feu.mid");
+-        case 8 : return FMUSIC_LoadSong("data/music/Cocorico.mid");
+-        case 9 : return FMUSIC_LoadSong("data/music/Chateau.mid");
+-        case 10 : case 11 : return FMUSIC_LoadSong("data/music/Secret.mid");
+-        case 12 : case 13 : case 14 : return FMUSIC_LoadSong("data/music/Donjon1.mid");
+-        case 15 : return FMUSIC_LoadSong("data/music/DDesert.mid");
+-        case 16 : case 17 : case 18 : return FMUSIC_LoadSong("data/music/Donjon2.mid");
+-        case 19 : return FMUSIC_LoadSong("data/music/DSecret.mid");
+-        case 20 : return FMUSIC_LoadSong("data/music/DFinal.mid");
+-        case 21 : return FMUSIC_LoadSong("data/music/Home.mid");
+-        case 22 : case 23 : return FMUSIC_LoadSong("data/music/Cave.mid");
+-        case 24 : case 25 : case 26 : case 27 : return FMUSIC_LoadSong("data/music/Fee.mid"); break;
++        case 1 : return LOADMUSIC("data/music/Chateau.mid");//LOADMUSIC("data/music/Foret.mid");
++        case 2 : return LOADMUSIC("data/music/Plaine.mid");
++        case 3 : return LOADMUSIC("data/music/Lac.mid");
++        case 4 : return LOADMUSIC("data/music/Mont.mid");
++        case 5 : return LOADMUSIC("data/music/Desert.mid");
++        case 6 : return LOADMUSIC("data/music/Ombre.mid");
++        case 7 : return LOADMUSIC("data/music/Feu.mid");
++        case 8 : return LOADMUSIC("data/music/Cocorico.mid");
++        case 9 : return LOADMUSIC("data/music/Chateau.mid");
++        case 10 : case 11 : return LOADMUSIC("data/music/Secret.mid");
++        case 12 : case 13 : case 14 : return LOADMUSIC("data/music/Donjon1.mid");
++        case 15 : return LOADMUSIC("data/music/DDesert.mid");
++        case 16 : case 17 : case 18 : return LOADMUSIC("data/music/Donjon2.mid");
++        case 19 : return LOADMUSIC("data/music/DSecret.mid");
++        case 20 : return LOADMUSIC("data/music/DFinal.mid");
++        case 21 : return LOADMUSIC("data/music/Home.mid");
++        case 22 : case 23 : return LOADMUSIC("data/music/Cave.mid");
++        case 24 : case 25 : case 26 : case 27 : return LOADMUSIC("data/music/Fee.mid"); break;
+ //case 28 : case 32 : case 35 : case 36 : case 38 : case 41 : case 42 : case 43 : case 44 :
+-//    return FMUSIC_LoadSong("data/music/Maison.mid"); break;
+-        case 29 : case 37 : case 40 : return FMUSIC_LoadSong("data/music/Potion.mid"); break;
+-        case 30 : return FMUSIC_LoadSong("data/music/Bar.mid"); break;
+-        case 31 : return FMUSIC_LoadSong("data/music/Magasin.mid"); break;
+-        case 33 : case 34 : case 39 : return FMUSIC_LoadSong("data/music/Jeu.mid"); break;
+-        case 45 : return FMUSIC_LoadSong("data/music/Titre.mid"); break;
+-        case 46 : return FMUSIC_LoadSong("data/music/Selection.mid"); break;
+-        case 47 : return FMUSIC_LoadSong("data/music/Debut.mid"); break;
+-        default : return FMUSIC_LoadSong("data/music/Maison.mid");
++//    return LOADMUSIC("data/music/Maison.mid"); break;
++        case 29 : case 37 : case 40 : return LOADMUSIC("data/music/Potion.mid"); break;
++        case 30 : return LOADMUSIC("data/music/Bar.mid"); break;
++        case 31 : return LOADMUSIC("data/music/Magasin.mid"); break;
++        case 33 : case 34 : case 39 : return LOADMUSIC("data/music/Jeu.mid"); break;
++        case 45 : return LOADMUSIC("data/music/Titre.mid"); break;
++        case 46 : return LOADMUSIC("data/music/Selection.mid"); break;
++        case 47 : return LOADMUSIC("data/music/Debut.mid"); break;
++        default : return LOADMUSIC("data/music/Maison.mid");
+     }
+ }
+ 
+ void Audio::playSpecial(int id) {
+     if (SOUND) {
+         if (specialId != id) {
++#ifdef _WIN32
+             FMUSIC_StopSong(music);
+             FMUSIC_FreeSong(music);
+             music = choixSpecial(id);
+@@ -174,6 +249,12 @@ void Audio::playSpecial(int id) {
+             FMUSIC_SetMasterVolume(music, volume);
+             FMUSIC_SetLooping(music, 1);
+             FMUSIC_PlaySong(music);
++#else
++            Mix_HaltMusic();
++            Mix_FreeMusic(music);
++            music = choixMusique(id);
++            Mix_PlayMusic(music,-1);
++#endif
+             specialId=id;
+         }    
+     }
+@@ -187,14 +268,19 @@ void Audio::stopSpecial() {
+     playMusic(tmp);
+ }
+ 
+-FMUSIC_MODULE* Audio::choixSpecial(int id) {
++#ifdef _WIN32
++FMUSIC_MODULE* Audio::choixSpecial(int id)
++#else
++Mix_Music* Audio::choixSpecial(int id)
++#endif
++{
+     switch (id) {
+-        case 1 : return FMUSIC_LoadSong("data/music/Boss.mid");
+-        case 2 : return FMUSIC_LoadSong("data/music/Mort.mid");
+-        case 3 : return FMUSIC_LoadSong("data/music/Epee.mid");
+-        case 4 : return FMUSIC_LoadSong("data/music/BossF.mid");
+-        case 5 : return FMUSIC_LoadSong("data/music/Fin.mid");
+-        default : return FMUSIC_LoadSong("data/music/Boss.mid");
++        case 1 : return LOADMUSIC("data/music/Boss.mid");
++        case 2 : return LOADMUSIC("data/music/Mort.mid");
++        case 3 : return LOADMUSIC("data/music/Epee.mid");
++        case 4 : return LOADMUSIC("data/music/BossF.mid");
++        case 5 : return LOADMUSIC("data/music/Fin.mid");
++        default : return LOADMUSIC("data/music/Boss.mid");
+     }
+ }
+ 
+diff -rupN zeldaboh.orig/Audio.h zeldaboh.new/Audio.h
+--- zeldaboh.orig/Audio.h	2009-11-03 14:18:48.000000000 +0100
++++ zeldaboh.new/Audio.h	2023-12-06 16:02:08.639220523 +0100
+@@ -15,7 +15,12 @@
+ #ifndef __AUDIO_H__
+ #define __AUDIO_H__
+ 
++#ifdef _WIN32
+ #include <FMOD/fmod.h>
++#else
++#include <SDL/SDL_mixer.h>
++#define FSOUND_FREE -1
++#endif
+ 
+ class Audio {
+     public :
+@@ -33,8 +38,13 @@ class Audio {
+     private :
+         void loadSounds();
+         void freeSounds();
++#ifdef _WIN32
+         FMUSIC_MODULE* choixMusique(int id);
+         FMUSIC_MODULE* choixSpecial(int id);
++#else
++        Mix_Music* choixMusique(int id);
++        Mix_Music* choixSpecial(int id);
++#endif
+         
+         bool SOUND;
+         int previous_volume;
+@@ -42,8 +52,13 @@ class Audio {
+         int volume;
+         int musiqueId;
+         int specialId;
++#ifdef _WIN32
+         FSOUND_SAMPLE** sons;
+         FMUSIC_MODULE* music;
++#else
++        Mix_Chunk** sons;
++        Mix_Music* music;
++#endif
+ 
+ };
+ 
+diff -rupN zeldaboh.orig/Carte.cpp zeldaboh.new/Carte.cpp
+--- zeldaboh.orig/Carte.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Carte.cpp	2023-12-06 17:16:52.259791262 +0100
+@@ -25,8 +25,6 @@ Carte::~Carte() {
+ void Carte::init() {
+     SDL_Rect src;
+     SDL_Rect dst;
+-    Joueur* gpJoueur = gpJeu->getJoueur();
+-    int zone = gpJeu->getZone();
+     
+     SDL_Surface* tmp = IMG_Load("data/images/carte/monde.png");
+     src.w = 320; src.h = 240; src.x = 0; src.y = 0; dst.y = 0; dst.x = 0;
+diff -rupN zeldaboh.orig/Client.cpp zeldaboh.new/Client.cpp
+--- zeldaboh.orig/Client.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Client.cpp	2023-12-06 17:46:44.724072479 +0100
+@@ -34,7 +34,9 @@ int Client::init()
+     stopUDP = true;
+     attendUDP = true;
+     
++#ifdef _WIN32
+     WSAStartup(MAKEWORD(2,0),&wsa);	
++#endif
+ 
+ 	sin.sin_family=AF_INET;
+ 	sin.sin_addr.s_addr=inet_addr((gpJeu->getIPName()).c_str());
+@@ -55,7 +57,7 @@ int Client::init()
+           return 1;
+     }
+     
+-	CliProjectile == new Projectile(gpJeu, 0, N, 0, 0, 0);
++	CliProjectile = new Projectile(gpJeu, 0, N, 0, 0, 0);
+ 	
+ 	tosize = sizeof to;
+ 	to.sin_addr.s_addr=inet_addr((gpJeu->getIPName()).c_str());
+@@ -80,7 +82,7 @@ int Client::init()
+     oss << "!";
+     envoiInfo = oss.str();
+ 	for (i = 0; i < tailleBuffer; i++) buffer[i] = ' ';
+-	for (i = 0; i < envoiInfo.length(); i++) buffer[i] = envoiInfo[i];
++	for (i = 0; i < (int)envoiInfo.length(); i++) buffer[i] = envoiInfo[i];
+ 	err=send(sock,buffer,envoiInfo.length(),0);
+     
+     //Reception des infos du serveur
+@@ -97,11 +99,13 @@ int Client::init()
+     stptr = strtok (NULL, "!");
+     gpJeu->getPartie()->setLimite(atoi(stptr));
+    
++	(void)err;
+ 	return 0;
+ }
+ 
+ void Client::lanceThread()
+ {
++#ifdef _WIN32
+     //lance le thread TCP
+     HANDLE hProcessThreadTCP;
+ 	hProcessThreadTCP = CreateThread(NULL, 0,&Client::ThreadLauncherStartTCP, this,0,NULL);
+@@ -113,7 +117,13 @@ void Client::lanceThread()
+ 	//lance le thread envoiUDP
+     HANDLE hProcessThread2UDP;
+ 	hProcessThread2UDP = CreateThread(NULL, 0,&Client::ThreadLauncherStart2UDP, this,0,NULL);
++#else
++	pthread_t hProcessThreadTCP, hProcessThreadUDP, hProcessThread2UDP;
+ 	
++	pthread_create(&hProcessThreadTCP, NULL, Client::ThreadLauncherStartTCP, (void *)this);
++	pthread_create(&hProcessThreadUDP, NULL, Client::ThreadLauncherStartUDP, (void *)this);
++	pthread_create(&hProcessThread2UDP, NULL, Client::ThreadLauncherStart2UDP, (void *)this);
++#endif
+ }
+ 
+ Client::~Client()
+@@ -121,18 +131,19 @@ Client::~Client()
+     delete  CliProjectile;              
+ }
+ 
++#ifdef _WIN32
+ DWORD Client::DialogueTCP()
++#else
++void *Client::DialogueTCP()
++#endif
+ {
+     int err=0;
+ 	int i;
+ 	string envoiInfo = "";
+ 	std::ostringstream out;
+-    int ret=0;
+ 	char *stptr;
+-	Projectile* tmpProjectile;
+ 	
+     int lire = 0;
+-    int totalRecu;
+ 
+ 
+     int tailleBufferTCP = 800;
+@@ -182,7 +193,7 @@ DWORD Client::DialogueTCP()
+         
+         //ENVOI
+         for (i = 0; i < tailleBufferTCP; i++) bufferTCP[i] = ' ';
+-    	for (i = 0; i < envoiInfo.length (); i++) bufferTCP[i] = envoiInfo[i];
++    	for (i = 0; i < (int)envoiInfo.length (); i++) bufferTCP[i] = envoiInfo[i];
+     	err=send(sock,bufferTCP,envoiInfo.length(),0);
+     	
+         //RECEPTION
+@@ -203,7 +214,6 @@ DWORD Client::DialogueTCP()
+         
+         delete stptr;
+         
+-        totalRecu = lire;
+         lire = 2; // saute les infos Nbjoueur et parti fini
+         
+         //info Perso
+@@ -285,15 +295,15 @@ DWORD Client::DialogueTCP()
+                  
+             if(gpJeu->getAutreJoueur(numeroJoueurLu)->getCouleur()!=atoi(infoRecuTCP[lire]))
+                 gpJeu->getAutreJoueur(numeroJoueurLu)->setCouleur(atoi(infoRecuTCP[lire]));
+-        	lire++;
++            lire++;
+         	
+             if(gpJeu->getAutreJoueur(numeroJoueurLu)->getNom()!=atoi(infoRecuTCP[lire]))
+                 gpJeu->getAutreJoueur(numeroJoueurLu)->setNom(atoi(infoRecuTCP[lire]));
+-        	lire++;
++            lire++;
+         	
+         	if(gpJeu->getAutreJoueur(numeroJoueurLu)->getPseudo()!=infoRecuTCP[lire])
+                 gpJeu->getAutreJoueur(numeroJoueurLu)->setPseudo(infoRecuTCP[lire]);
+-        	lire++;
++            lire++;
+         	
+         	if(gpJeu->getAutreJoueur(numeroJoueurLu)->getZone()!=atoi(infoRecuTCP[lire]))
+                 gpJeu->getAutreJoueur(numeroJoueurLu)->setZone(atoi(infoRecuTCP[lire]));
+@@ -343,11 +353,17 @@ DWORD Client::DialogueTCP()
+         {
+            Sleep(20);
+         }
++        (void)err;
+      }
+-    
++
++     return 0;    
+ }
+ 
++#ifdef _WIN32
+ DWORD Client::EcouteUDP()
++#else
++void *Client::EcouteUDP()
++#endif
+ {
+     int i;
+     
+@@ -362,7 +378,10 @@ DWORD Client::EcouteUDP()
+     FD_ZERO(&readfs);
+     FD_SET(sockUDP, &readfs);
+     
+-    while(attendUDP) {Sleep(20);}
++    while(attendUDP)
++    {
++    	Sleep(20);
++    }
+     
+     stopUDP=false;
+     
+@@ -380,14 +399,14 @@ DWORD Client::EcouteUDP()
+        if(FD_ISSET(sockUDP, &readfs))
+        {
+             err=recvfrom(sockUDP,threadbuffer,threadtailleBuffer,0,(SOCKADDR *) &to, &tosize);
+-            
++            (void)err;
++
+             std::istringstream issBuf(threadbuffer);
+             
+         	char *stptr;
+         	Projectile* tmpProjectile;
+         	
+             int lire = 0;
+-            int totalRecu;
+         	
+         	
+             stptr = strtok (threadbuffer,"!");
+@@ -399,7 +418,6 @@ DWORD Client::EcouteUDP()
+                 stptr = strtok (NULL, "!");
+             }
+             
+-            totalRecu = lire;
+             lire = 1;
+             int numeroJoueurLu = 0;
+             
+@@ -446,11 +464,15 @@ DWORD Client::EcouteUDP()
+             
+         }
+     }
+-    
++
++    return 0;    
+ }
+ 
+-//void Client::EnvoiUDP() 
++#ifdef _WIN32
+ DWORD Client::EnvoiUDP()
++#else
++void *Client::EnvoiUDP()
++#endif
+ {
+     //memset(buffer,0,sizeof(buffer));
+ 	int err=0;
+@@ -483,16 +505,18 @@ DWORD Client::EnvoiUDP()
+         
+         //scanf("%s",buffer);
+         for (i = 0; i < threadtailleBuffer; i++) threadbuffer[i] = ' ';
+-    	for (i = 0; i < envoiInfo.length (); i++) threadbuffer[i] = envoiInfo[i];
++    	for (i = 0; i < (int)envoiInfo.length (); i++) threadbuffer[i] = envoiInfo[i];
+    	    
+    	    //cout<<"ClientE:"<<envoiInfo<<endl;
+ 	    
+    	    
+         err=sendto(sockUDP,threadbuffer,envoiInfo.length(),0,(SOCKADDR *) &to, tosize);
+-        
++        (void)err;
++
+         Sleep(20);
+     }
+-    
++
++    return 0;    
+ }
+ 
+ Projectile* Client::getProjectile() {
+diff -rupN zeldaboh.orig/Client.h zeldaboh.new/Client.h
+--- zeldaboh.orig/Client.h	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Client.h	2023-12-06 17:12:23.860153871 +0100
+@@ -10,9 +10,11 @@
+ #ifndef __CLIENT_H__
+ #define __CLIENT_H__
+ 
+-#include<stdio.h>	
+-#include<winsock2.h>
+-#pragma comment(lib,"ws2_32.lib")
++#include <stdio.h>	
++#include "netinc.h"
++#ifndef _WIN32
++#include <pthread.h>
++#endif
+ #include "Projectile.h"
+ 
+ 
+@@ -36,17 +38,24 @@ class Client {
+ 	    //TCP
+         SOCKET sock;	
+ 	    SOCKADDR_IN sin;
++#ifdef _WIN32
+ 	    WSADATA wsa;
++#endif
+ 	    
+ 	    //UDP
+ 	    SOCKADDR_IN to;
+ 	    fd_set readfs;
+-        int tosize;
++        socklen_t tosize;
+ 	    SOCKET sockUDP;	
++#ifdef _WIN32
+ 	    DWORD EcouteUDP();
+ 	    DWORD EnvoiUDP();
+ 	    DWORD DialogueTCP();
+-	    
++#else
++	    void *EcouteUDP();
++	    void *EnvoiUDP();
++	    void *DialogueTCP();
++#endif	    
+ 	    
+ 	    Projectile* CliProjectile;
+ 	    
+@@ -69,6 +78,7 @@ class Client {
+         Projectile* getProjectile();
+         void setProjectile(Projectile* Pro);
+         
++#ifdef _WIN32
+         static DWORD WINAPI ThreadLauncherStartUDP(void *cli){
+ 			Client *c = (Client*)cli;                          
+ 			return c->EcouteUDP();       
+@@ -83,6 +93,22 @@ class Client {
+ 			Client *c = (Client*)cli;                          
+ 			return c->DialogueTCP();       
+ 		}
++#else
++        static void *ThreadLauncherStartUDP(void *cli){
++			Client *c = (Client*)cli;                          
++			return c->EcouteUDP();       
++		}
++		
++		static void *ThreadLauncherStart2UDP(void *cli){
++			Client *c = (Client*)cli;                          
++			return c->EnvoiUDP();       
++		}
++		
++		static void *ThreadLauncherStartTCP(void *cli){
++			Client *c = (Client*)cli;                          
++			return c->DialogueTCP();       
++		}
++#endif
+ 
+ 
+ };
+diff -rupN zeldaboh.orig/Generique.cpp zeldaboh.new/Generique.cpp
+--- zeldaboh.orig/Generique.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Generique.cpp	2023-12-06 17:38:44.371368981 +0100
+@@ -480,7 +480,6 @@ void Generique::initAide2() {
+     gpJeu->affiche(image, "Quitter:Entrée - Retour:Gauche - Suite:Droite", 24, 208);
+     
+     //int ligne = 64-112;
+-    Joueur* gpJoueur = gpJeu->getJoueur();
+     
+     //ligne+=64;
+     int ligne = 64;
+@@ -649,9 +648,12 @@ void Generique::initScore() {
+         gpJeu->getKeyboard()->setTemps(temps); gpJeu->getKeyboard()->saveP();}
+         
+     oss.str(""); 
+-    if (gpJoueur->getTemps(2)<10)oss<<"0";oss << gpJoueur->getTemps(2) << ":";
+-    if (gpJoueur->getTemps(1)<10)oss<<"0";oss << gpJoueur->getTemps(1) << ":";
+-    if (gpJoueur->getTemps(0)<10)oss<<"0";oss << gpJoueur->getTemps(0);
++    if (gpJoueur->getTemps(2)<10)oss<<"0";
++    oss << gpJoueur->getTemps(2) << ":";
++    if (gpJoueur->getTemps(1)<10)oss<<"0";
++    oss << gpJoueur->getTemps(1) << ":";
++    if (gpJoueur->getTemps(0)<10)oss<<"0";
++    oss << gpJoueur->getTemps(0);
+     gpJeu->affiche(image, ("Temps de jeu : " + oss.str()).c_str(), 10, 30);
+     
+     int tmp=gpJoueur->getMort();
+diff -rupN zeldaboh.orig/Jeu.cpp zeldaboh.new/Jeu.cpp
+--- zeldaboh.orig/Jeu.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Jeu.cpp	2023-12-06 17:37:02.218171553 +0100
+@@ -23,9 +23,9 @@
+ #include <cstdlib>
+ #include <iostream>
+ 
+-Jeu::Jeu(Audio* audio) : gpAudio(audio), gpGenerique(0), gpKeyboard(0),
++Jeu::Jeu(Audio* audio) : fct(), gpAudio(audio), gpGenerique(0), gpKeyboard(0),
+ zone(21), stop(false), transition(false),
+-menu(false), text(false), vueHorz(0), vueVert(0), fct()  {
++menu(false), text(false), vueHorz(0), vueVert(0)  {
+     phg[0] = 0;
+     phg[1] = 0;
+     
+@@ -412,6 +412,7 @@ int Jeu::dir2Int(Direction d)
+     int a;
+     
+     switch(d){
++       default:
+        case N : a=0;break;
+        case S : a=1;break;
+        case O : a=2;break;
+@@ -425,6 +426,7 @@ Direction Jeu::int2Dir(int a)
+     Direction d;
+     
+     switch(a){
++       default:
+        case 0 : d=N;break;
+        case 1 : d=S;break;
+        case 2 : d=O;break;
+@@ -582,6 +584,7 @@ bool Jeu::tueJoueur(int i, int j, int an
+         case S : coupX=i-5; coupY=j+19; coupW = 35; coupH = 20; break;
+         case O : coupX=i-25; coupY=j; coupW = 25; coupH = 33; break;
+         case E : coupX=i+15; coupY=j; coupW = 25; coupH = 33; break;
++        default: return false;
+     }
+     
+     for (int k = coupX; k < coupX + coupW; k++) {
+@@ -853,6 +856,7 @@ void Jeu::ramasse() {
+         case S : i=gpJoueur->getX()+8; j=gpJoueur->getY()+24+2; break;
+         case O : i=gpJoueur->getX()-1-2; j=gpJoueur->getY()+16; break;
+         case E : i=gpJoueur->getX()+16+2; j=gpJoueur->getY()+16; break;
++        default: return;
+     }
+     if (isRamassable(i,j,g)) {gpJoueur->setTypeAnim(SOULEVE); return;}
+     if (g < 2) if (isRamassable(i,j,2)) gpJoueur->setTypeAnim(LOURD);
+@@ -867,6 +871,7 @@ int Jeu::enleve() {
+         case S : i=gpJoueur->getX()+8; j=gpJoueur->getY()+24+2; break;
+         case O : i=gpJoueur->getX()-1-2; j=gpJoueur->getY()+16; break;
+         case E : i=gpJoueur->getX()+16+2; j=gpJoueur->getY()+16; break;
++        default: return 0;
+     }
+     if (!isRamassable(i,j, g)) return 0;
+     int val = gpMonde->motifValue(i,j);
+@@ -963,7 +968,6 @@ void Jeu::finZone() {
+ 
+ void Jeu::testFin() {
+      
+-    int depart=0;
+     int posX,posY;
+     if (transition) return;
+     //si peut ramasser un objet
+@@ -1003,7 +1007,7 @@ void Jeu::testFin() {
+             gpMonde->transitSalle(O);dir=O;}
+         if (gpJoueur->getX()>gpMonde->regionValue(2)-24 && !transition) {
+             gpMonde->transitSalle(E);dir=E;}
+-            
++        (void)dir;
+     }
+ }
+ 
+diff -rupN zeldaboh.orig/Joueur.cpp zeldaboh.new/Joueur.cpp
+--- zeldaboh.orig/Joueur.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Joueur.cpp	2023-12-06 17:31:57.891909777 +0100
+@@ -21,14 +21,14 @@
+ #include "Projectile.h"
+ #include "Jeu.h"
+ 
+-Joueur::Joueur(Jeu* jeu) : Personnage(), temps(0), xdep2(0), 
++Joueur::Joueur(Jeu* jeu) : Personnage(), viensDeRevivre(0), temps(0), xdep2(0), 
+ ydep2(0), dirdep2(S), magie(0), 
+ magiemax(32), typeanim(AUCUNE), minanim(0), fleche(0), bombe(0), rubis(0), objet(0), 
+ boucl(0), bouclier(1), epee(0), gpJeu(jeu), charge(0), flechemax(30), bombemax(10),
+ rubismax(999), fantome(0), onilink(false), oni(false), onijauge(0), onimax(5), plouf(0), 
+ mort(0), porte(0), boostVie(0), boostMagie(0), boostRubis(0), pousse(0), trouve(0), 
+ avancement(0), invisible(false), dirglisse(0), dirglace(0), glace(0), glisse(0), vitesse(0),
+-oldxg(0), oldyg(0), couleur(1), nom(0), zone(0), etage(0), score(0), immo(false), loader(false), viensDeRevivre(0) {
++oldxg(0), oldyg(0), immo(false), loader(false), couleur(1), nom(0), zone(0), etage(0), score(0) {
+     image = IMG_Load("data/images/link/link1.png");
+     SDL_SetColorKey(image,SDL_SRCCOLORKEY,SDL_MapRGB(image->format,0,0,255));
+     imageSpin = IMG_Load("data/images/link/spin.png");
+@@ -217,6 +217,7 @@ void Joueur::draw(SDL_Surface* gpScreen)
+                 case S : a=x+8; b=y+32; break;
+                 case O : a=x-8; b=y+16; break;
+                 case E : a=x+24; b=y+16; break;
++                default: return;
+             }
+             gpJeu->pousse(a,b,direction);
+             pousse=0;
+@@ -779,7 +780,7 @@ void Joueur::drawImmoMarche(SDL_Surface*
+                 if (anim2 == 1 || anim2 == 3 || anim2 == 5 || anim2 == 7) bcl->y--;
+                 if (anim2 == 2 || anim2 == 6) bcl->y-=2;
+                 break;
+-            default : break;
++            default : xbcl = ybcl = 0; break; /* FIXME: S missing? */
+         }
+         boucl->draw(gpScreen, xbcl, ybcl, new ZoneRect(bcl), direction);
+     }
+@@ -846,16 +847,20 @@ void Joueur::drawCharge(SDL_Surface* gpS
+     switch (direction) {
+         case N : dst.x+=4; src.w = 8; src.h = 12;
+             if (!anim) dst.y-=2; else dst.y--; 
+-            if (epee>3) { dst.x-=2; dst.y-=2; src.h = 15;} break;
++            if (epee>3) { dst.x-=2; dst.y-=2; src.h = 15;}
++            break;
+         case S : dst.x+=8; src.w = 8; src.h = 12;
+             if (!anim) dst.y+=19; else dst.y+=20;
+-            if (epee>3) {dst.x--; src.h = 14;} break;
++            if (epee>3) {dst.x--; src.h = 14;}
++            break;
+         case O : dst.x-=8; src.w = 12; src.h = 8;
+             if (!anim) dst.y+=14; else dst.y+=15;
+-            if (epee>3) {dst.x-=3; src.w = 15;} break;
++            if (epee>3) {dst.x-=3; src.w = 15;}
++            break;
+         case E : dst.x+=12; src.w = 12; src.h = 8;
+             if (!anim) dst.y+=14; else dst.y+=15;
+-            if (epee>3) src.w = 15; break;
++            if (epee>3) src.w = 15;
++            break;
+     }
+     SDL_BlitSurface(imageEpee, &src, gpScreen, &dst);
+     if (gpJeu->testEpee(
+@@ -1014,7 +1019,7 @@ void Joueur::drawSpin(SDL_Surface* gpScr
+     switch (direction) {
+         case N :
+             //Link
+-            if (anim==0 || anim==5 || anim>=21 && anim<=26) { src.x = 64; src.y = 120;}
++            if (anim==0 || anim==5 || (anim>=21 && anim<=26)) { src.x = 64; src.y = 120;}
+             if (anim>=1 && anim<=4) { src.x = 64; src.y = 144;}
+             if (anim>=6 && anim<=8) { src.x = 64; src.y = 168;}
+             if (anim>=9 && anim<=12) { src.x = 80; src.y = 120;}
+@@ -1025,7 +1030,7 @@ void Joueur::drawSpin(SDL_Surface* gpScr
+             else {
+             
+                 //Epée
+-                if (anim==0 || anim==5 || anim>=21 && anim<=26) { 
++                if (anim==0 || anim==5 || (anim>=21 && anim<=26)) { 
+                     dst2.x=dst.x-4; dst2.y=dst.y+17;src2.x = 68; src2.y = 12;
+                     if (epee > 3) {dst2.x--; src2.x = 94; src2.y = 14;}
+                 }
+@@ -1076,7 +1081,7 @@ void Joueur::drawSpin(SDL_Surface* gpScr
+             }
+             break;
+         case S :
+-            if (anim==0 || anim==5 || anim>=21 && anim<=26) { src.x = 96; src.y = 120;}
++            if (anim==0 || anim==5 || (anim>=21 && anim<=26)) { src.x = 96; src.y = 120;}
+             if (anim>=1 && anim<=4) { src.x = 96; src.y = 144;}
+             if (anim>=6 && anim<=8) { src.x = 80; src.y = 144;}
+             if (anim>=9 && anim<=12) { src.x = 80; src.y = 168;}
+@@ -1086,7 +1091,7 @@ void Joueur::drawSpin(SDL_Surface* gpScr
+             else {
+             
+                 //Epée
+-                if (anim==0 || anim==5 || anim>=21 && anim<=26) { 
++                if (anim==0 || anim==5 || (anim>=21 && anim<=26)) { 
+                     dst2.x=dst.x+13; dst2.y=dst.y-2;src2.x = 56; src2.y = 0;
+                     if (epee > 3) {dst2.y-=2; src2.x = 80; src2.y = 0;}
+                 }
+@@ -1137,7 +1142,7 @@ void Joueur::drawSpin(SDL_Surface* gpScr
+             }
+             break;
+         case O :
+-            if (anim==0 || anim==5 || anim>=21 && anim<=26) { src.x = 96; src.y = 168;}
++            if (anim==0 || anim==5 || (anim>=21 && anim<=26)) { src.x = 96; src.y = 168;}
+             if (anim>=1 && anim<=4) { src.x = 112; src.y = 120;}
+             if (anim>=6 && anim<=8) { src.x = 80; src.y = 168;}
+             if (anim>=9 && anim<=12) { src.x = 64; src.y = 168;}
+@@ -1147,7 +1152,7 @@ void Joueur::drawSpin(SDL_Surface* gpScr
+             else {
+             
+                 //Epée
+-                if (anim==0 || anim==5 || anim>=21 && anim<=26) { 
++                if (anim==0 || anim==5 || (anim>=21 && anim<=26)) { 
+                     dst2.x=dst.x+11; dst2.y=dst.y+16;src2.x = 68; src2.y = 24;
+                     if (epee > 3) {src2.x = 94; src2.y = 28;}
+                 }
+@@ -1199,7 +1204,7 @@ void Joueur::drawSpin(SDL_Surface* gpScr
+             }
+             break;
+         case E :
+-            if (anim==0 || anim==5 || anim>=21 && anim<=26) { src.x = 112; src.y = 144;}
++            if (anim==0 || anim==5 || (anim>=21 && anim<=26)) { src.x = 112; src.y = 144;}
+             if (anim>=1 && anim<=4) { src.x = 112; src.y = 168;}
+             if (anim>=6 && anim<=8) { src.x = 80; src.y = 120;}
+             if (anim>=9 && anim<=12) { src.x = 80; src.y = 144;}
+@@ -1209,7 +1214,7 @@ void Joueur::drawSpin(SDL_Surface* gpScr
+             else {
+             
+                 //Epée
+-                if (anim==0 || anim==5 || anim>=21 && anim<=26) { 
++                if (anim==0 || anim==5 || (anim>=21 && anim<=26)) { 
+                     dst2.x=dst.x-8; dst2.y=dst.y+6;src2.x = 56; src2.y = 36;
+                     if (epee > 3) {dst2.x-=2; dst2.y--; src2.x = 80; src2.y = 42;}
+                 }
+@@ -2314,13 +2319,21 @@ void Joueur::drawBaguette(SDL_Surface* g
+     if (typeanim==MARTEAU) src.y+=42;
+     switch (direction) {
+         case N : dst.x = x - phg[0]-2; dst.y = y - phg[1]-5; 
+-            if (anim2==1) dst.y+=3; if (anim2==2) dst.y+=7; break;
++            if (anim2==1) dst.y+=3;
++            if (anim2==2) dst.y+=7;
++            break;
+         case S : dst.x = x - phg[0]+ 10; dst.y = y - phg[1]-3;
+-            if (anim2==1) dst.y+=13; if (anim2==2) {dst.x--; dst.y+=23;} break;
++            if (anim2==1) dst.y+=13;
++            if (anim2==2) {dst.x--; dst.y+=23;}
++            break;
+         case O : dst.x = x - phg[0]; dst.y = y - phg[1]-1;
+-            if (anim2==1) {dst.x-=8;dst.y+=5;} if (anim2==2) {dst.x-=10; dst.y+=15;} break;
++            if (anim2==1) {dst.x-=8;dst.y+=5;}
++            if (anim2==2) {dst.x-=10; dst.y+=15;}
++            break;
+         case E : dst.x = x - phg[0]+8; dst.y = y - phg[1]-1;
+-            if (anim2==1) {dst.x+=5;dst.y+=5;} if (anim2==2) {dst.x+=4; dst.y+=15;} break;
++            if (anim2==1) {dst.x+=5;dst.y+=5;}
++            if (anim2==2) {dst.x+=4; dst.y+=15;}
++            break;
+     }
+     SDL_BlitSurface(imageObjets, &src, gpScreen, &dst);
+     
+@@ -2331,6 +2344,7 @@ void Joueur::drawBaguette(SDL_Surface* g
+             case S : i = x; j = y + 24; break;
+             case O : i = x-16; j = y + 8; break;
+             case E : i = x+16; j = y + 8; break;
++            default: return;
+         }
+         gpJeu->testEpee(i,j,16,16,COUP_MARTEAU,3,direction);
+     }
+diff -rupN zeldaboh.orig/Joueur.h zeldaboh.new/Joueur.h
+--- zeldaboh.orig/Joueur.h	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Joueur.h	2023-12-06 16:47:31.595515729 +0100
+@@ -119,7 +119,7 @@ class Joueur : public Personnage {
+         int getMort();
+         int getCouleur();
+         void setCouleur(int i);
+-        string Joueur::getCouleurName();
++        string getCouleurName();
+         int getNumero();
+         void setNumero(int i);
+         int getEtage();
+@@ -128,12 +128,12 @@ class Joueur : public Personnage {
+         void setScore(int i);
+         int getNom();
+         void setNom(int i);
+-        string Joueur::getNomName();
++        string getNomName();
+         int getZone();
+         void setZone(int i);
+         string getPseudo();
+         void setPseudo(string p);
+-        string Joueur::getNomComplet();
++        string getNomComplet();
+         int getAttaque();
+         void setAttaque(int i);
+         int getDefense();
+diff -rupN zeldaboh.orig/Keyboard.cpp zeldaboh.new/Keyboard.cpp
+--- zeldaboh.orig/Keyboard.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Keyboard.cpp	2023-12-06 17:19:28.532913470 +0100
+@@ -133,7 +133,7 @@ void Keyboard::pollKeys(Uint8* keys) {
+                 else if (gpJeu->getMenu()) gpJeu->setMenu(false);
+                 tmp = 1;
+             }
+-            if (!keys[SDLK_RETURN] && !gpJeu->getMenu() || gpJeu->getMenu() 
++            if (((!keys[SDLK_RETURN] && !gpJeu->getMenu()) || gpJeu->getMenu())
+             && !keys[SDLK_RETURN] && !keys[SDLK_LEFT] && !keys[SDLK_RIGHT] 
+             && !keys[SDLK_UP] && !keys[SDLK_DOWN]) tmp=0;
+             
+@@ -534,10 +534,12 @@ void Keyboard::pollKeys(Uint8* keys) {
+             }
+             
+             if (keys[SDLK_UP] && !tmp) {
+-                if (--ligneVal<0) ligneVal=2; tmp=1; 
++                if (--ligneVal<0) ligneVal=2;
++                tmp=1; 
+                 gpJeu->getAudio()->playSound(3);}
+             if (keys[SDLK_DOWN] && !tmp) {
+-                if (++ligneVal>2) ligneVal=0; tmp=1;
++                if (++ligneVal>2) ligneVal=0;
++                tmp=1;
+                 gpJeu->getAudio()->playSound(3);}
+             
+             if (!(keys[SDLK_RETURN] || keys[SDLK_SPACE]) && !keys[SDLK_UP] && !keys[SDLK_DOWN] && tmp) tmp=0;
+diff -rupN zeldaboh.orig/Makefile zeldaboh.new/Makefile
+--- zeldaboh.orig/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ zeldaboh.new/Makefile	2023-12-06 16:24:07.230766972 +0100
+@@ -0,0 +1,28 @@
++PREFIX  = /usr/local
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing -Wall
++LIBS = $(shell pkg-config --libs sdl SDL_gfx SDL_image SDL_mixer SDL_ttf)
++
++CC = $(CROSS_PREFIX)g++
++RM = rm -f
++INSTALL_PROG = install -m 755 -s
++
++EXE = ZeldaBOH
++
++OBJS = Audio.o Bouclier.o Carte.o Client.o Generique.o Jeu.o Joueur.o Keyboard.o Listable.o main.o Menu.o Message.o Monde.o Objet.o Partie.o Personnage.o Projectile.o Serveur.o Snipe.o Statut.o Texte.o Utile.o ZoneRect.o
++
++all : $(EXE)
++
++.cpp.o:
++	$(CC) -c $< $(CFLAGS) -o $@
++
++$(EXE) : $(OBJS)
++	$(CC) $(CPU_CFLAGS) $(LDFLAGS) $(OBJS) -o $(EXE) $(LIBS)
++
++install : $(EXE)
++	$(INSTALL_PROG) $(EXE) $(PREFIX)/bin
++
++uninstall :
++	$(RM) $(PREFIX)/bin/$(EXE)
++
++clean :
++	$(RM) $(OBJS) $(EXE)
+diff -rupN zeldaboh.orig/Menu.cpp zeldaboh.new/Menu.cpp
+--- zeldaboh.orig/Menu.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Menu.cpp	2023-12-06 18:13:25.105345628 +0100
+@@ -377,10 +377,9 @@ void Menu::drawClassement(SDL_Surface* g
+ void Menu::drawInfo(SDL_Surface* gpScreen) {
+     int dec = 120-val;
+     
+-    SDL_Rect src;
+     SDL_Rect dst;
+     
+-    src.w=16; src.h=16; src.y=68;
++    //src.w=16; src.h=16; src.y=68;
+     dst.x=110; dst.y=197+dec;
+     
+     gpJeu->affiche(gpScreen, gpJeu->getJoueur()->getNomName(), 23,dst.y);
+diff -rupN zeldaboh.orig/Message.cpp zeldaboh.new/Message.cpp
+--- zeldaboh.orig/Message.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Message.cpp	2023-12-06 18:14:01.568632340 +0100
+@@ -41,9 +41,11 @@ delete difMsg;
+ }
+ 
+ void Message::draw(SDL_Surface* gpScreen, int cptMessage) {
++#if 0
+     int phg[2];
+     phg[0] = gpJeu->getPhg(0);
+     phg[1] = gpJeu->getPhg(1);
++#endif
+     
+     TTF_Font* p_font = NULL;
+        
+diff -rupN zeldaboh.orig/Monde.cpp zeldaboh.new/Monde.cpp
+--- zeldaboh.orig/Monde.cpp	2009-11-05 19:13:08.000000000 +0100
++++ zeldaboh.new/Monde.cpp	2023-12-06 18:14:42.705246410 +0100
+@@ -63,7 +63,6 @@ void Monde::changeZone(int newZone) {
+ }
+ 
+ void Monde::corrigeMap(int zone) {
+-    Joueur* gpJoueur = gpJeu->getJoueur();
+    
+ }
+ 
+@@ -149,7 +148,7 @@ void Monde::drawSol(SDL_Surface* screen,
+                         case 2 : val=129; break;                    
+                     }    
+                 }
+-                if (val >= 425 && val <= 452 || val >= 457 && val <= 466
++                if ((val >= 425 && val <= 452) || (val >= 457 && val <= 466)
+                     || val == 540 || val == 543) {
+                     switch (anim%3) {
+                         case 0 : val++; break;
+diff -rupN zeldaboh.orig/Partie.cpp zeldaboh.new/Partie.cpp
+--- zeldaboh.orig/Partie.cpp	2009-11-05 19:18:14.000000000 +0100
++++ zeldaboh.new/Partie.cpp	2023-12-06 18:16:08.038470639 +0100
+@@ -82,6 +82,7 @@ int Partie::getLimiteVal() {
+       case 1 : val = 10; break;
+       case 2 : val = 20; break;
+       case 3 : val = 40; break;
++      default:
+       case 4 : val = 99; break;
+       }
+     
+@@ -95,6 +96,7 @@ string Partie::getLimiteName() {
+       case 1 : im = "Score- 10 pts"; break;
+       case 2 : im = "Score- 20 pts"; break;
+       case 3 : im = "Score- 40 pts"; break;
++      default:
+       case 4 : im = "Score- 99 pts"; break;
+       }
+     
+@@ -119,6 +121,7 @@ int Partie::getAreneToZone() {
+   
+     int im;
+     switch(Arene) {
++      default:
+       case 0 : im = 9; break;
+       case 1 : im = 8; break;
+       case 2 : im = 12; break;
+@@ -143,6 +146,7 @@ int Partie::getAreneToZone() {
+ string Partie::getAreneName() {
+     string im;
+     switch(Arene) {
++      default:
+       case 0 : im = "Le chateau"; break;
+       case 1 : im = "Le village"; break;
+       case 2 : im = "Le donjon"; break;
+diff -rupN zeldaboh.orig/Partie.h zeldaboh.new/Partie.h
+--- zeldaboh.orig/Partie.h	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Partie.h	2023-12-06 16:32:19.760095626 +0100
+@@ -9,9 +9,8 @@
+ #ifndef __PARTIE_H__
+ #define __PARTIE_H__
+ 
+-#include<stdio.h>	
+-#include<winsock2.h>
+-#pragma comment(lib,"ws2_32.lib")
++#include <stdio.h>	
++#include "netinc.h"
+ #include "Projectile.h"
+ 
+ class Jeu;
+diff -rupN zeldaboh.orig/Projectile.cpp zeldaboh.new/Projectile.cpp
+--- zeldaboh.orig/Projectile.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Projectile.cpp	2023-12-06 18:20:17.528172018 +0100
+@@ -19,9 +19,9 @@
+ #include "Jeu.h"
+ 
+ Projectile::Projectile(Jeu* jeu, int type, Direction dir, int a, int b, int vit) : 
+-Listable(), gpJeu(jeu), id(type), direction(dir), x(a), y(b), anim(0), max(0), 
++Listable(), gpJeu(jeu), tireur(0), id(type), direction(dir), x(a), y(b), anim(0), max(0), 
+ vanim(120), vie(1), hauteur(0), vitesse(vit), image(NULL), etape(1), chemin(0), 
+-chmax(0), tireur(0) {
++chmax(0) {
+     
+     changeType(id);
+     
+@@ -29,9 +29,9 @@ chmax(0), tireur(0) {
+ }
+ 
+ Projectile::Projectile(Jeu* jeu, int type, Direction dir, int a, int b, int vit, int letireur) : 
+-Listable(), gpJeu(jeu), id(type), direction(dir), x(a), y(b), anim(0), max(0), 
++Listable(), gpJeu(jeu), tireur(letireur), id(type), direction(dir), x(a), y(b), anim(0), max(0), 
+ vanim(120), vie(1), hauteur(0), vitesse(vit), image(NULL), etape(1), chemin(0), 
+-chmax(0), tireur(letireur) {
++chmax(0) {
+     
+     changeType(id);
+     
+@@ -254,16 +254,20 @@ void Projectile::attaque() {
+             switch (direction) {
+                 case N:
+                     if (gpJeu->testEpee(x+zx+(zw/2), y+zy+4, 1, 1, COUP_GRAPPIN, 1, direction)) 
+-                        etape=2; break;
++                        etape=2;
++                    break;
+                 case S:
+                     if (gpJeu->testEpee(x+zx+(zw/2), y+zy+zh-1-4, 1, 1, COUP_GRAPPIN, 1, direction)) 
+-                        etape=2; break;
++                        etape=2;
++                    break;
+                 case O:
+                     if (gpJeu->testEpee(x+zx+4, y+zy+(zh/2), 1, 1, COUP_GRAPPIN, 1, direction)) 
+-                        etape=2; break;
++                        etape=2;
++                    break;
+                 case E:
+                     if (gpJeu->testEpee(x+zx+zw-1-4, y+zy+(zh/2), 1, 1, COUP_GRAPPIN, 1, direction)) 
+-                        etape=2; break;
++                        etape=2;
++                    break;
+             }
+             break;
+         case 4 : 
+@@ -345,7 +349,7 @@ void Projectile::move(int dx, int dy) {
+     
+     //if (id!=1) && id!=2 && id!=5 && id!=6)//c'est le serveur qui gere la position des fleche feu glace
+     //{
+-        if ((obstacle && !hauteur || hauteur < 0 || (chmax>0 && chemin>=chmax)) && etape == 1) {
++        if (((obstacle && !hauteur) || hauteur < 0 || (chmax>0 && chemin>=chmax)) && etape == 1) {
+             fin();
+         }else {
+             x+=dx; y+=dy; 
+diff -rupN zeldaboh.orig/Serveur.cpp zeldaboh.new/Serveur.cpp
+--- zeldaboh.orig/Serveur.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Serveur.cpp	2023-12-06 17:57:58.523198416 +0100
+@@ -44,12 +44,14 @@ int Serveur::init(){
+     struct in_addr  MyAddress;
+ 	struct hostent  *host;
+ 	char HostName[_MAX_HOST_LENGTH_];
++#ifdef _WIN32
+ 	WSADATA	      wsaData;
+     
+     if(WSAStartup(MAKEWORD(2,2), &wsaData ) != 0 ){
+ 		cerr <<"WSAStartup a échoué "<< endl;
+ 		return 1;
+ 	}
++#endif
+ 
+ 	if( gethostname( HostName, _MAX_HOST_LENGTH_ ) == SOCKET_ERROR ){
+ 		cerr<< "gethostname() a rencontré l'erreur "<< WSAGetLastError()  << endl;
+@@ -90,6 +92,7 @@ int Serveur::init(){
+     //fin creation socket UDP
+     
+     //lance le thread TCP
++#ifdef _WIN32
+ 	HANDLE hProcessThread;
+ 	hProcessThread = CreateThread(NULL, 0,&Serveur::ThreadLauncherStart, this,0,NULL);
+ 	
+@@ -100,6 +103,13 @@ int Serveur::init(){
+     //lance le thread UDP envoi
+     HANDLE hProcessThreadUDPen;
+   	hProcessThreadUDPen = CreateThread(NULL, 0,&Serveur::ThreadLauncherStart2UDP, this,0,NULL);
++#else
++	pthread_t hProcessThread, hProcessThreadUDPec, hProcessThreadUDPen;
++	
++	pthread_create(&hProcessThread, NULL, Serveur::ThreadLauncherStart, (void *)this);
++	pthread_create(&hProcessThreadUDPec, NULL, Serveur::ThreadLauncherStartUDP, (void *)this);
++	pthread_create(&hProcessThreadUDPen, NULL, Serveur::ThreadLauncherStart2UDP, (void *)this);
++#endif
+ 			
+ 	return 0;
+ }
+@@ -112,10 +122,14 @@ void Serveur::setProjectile(Projectile*
+     ServProjectile = Pro;
+ }
+ 
+-DWORD Serveur::start (){
++#ifdef _WIN32
++DWORD Serveur::start ()
++#else
++void *Serveur::start ()
++#endif
++{
+ 	SOCKADDR_IN                 ClientAddr;
+-	int                         ClientAddrLen;
+-	HANDLE                      hProcessThread;
++	socklen_t                         ClientAddrLen;
+ 	SOCKET                      NewConnection;
+ 	struct thread_param         p;
+     
+@@ -123,7 +137,7 @@ DWORD Serveur::start (){
+ 	if( ( ListeningSocket = socket( PF_INET, SOCK_STREAM, 0 ) ) == INVALID_SOCKET ){
+ 		cerr << "Le serveur ne peut créer la socket. Erreur n° " << WSAGetLastError()<< endl;
+ 		WSACleanup();
+-		return 1;
++		return (void *)1;
+ 	}
+ 
+ 	if( bind( ListeningSocket, (SOCKADDR *)&ServerAddr, sizeof( ServerAddr ) ) == SOCKET_ERROR ){
+@@ -131,14 +145,14 @@ DWORD Serveur::start (){
+ 		cerr << "Le port est peut-être déjà utilisé par un autre processus " << endl;
+ 		closesocket( ListeningSocket );
+ 		WSACleanup();
+-		return 1;
++		return (void *)1;
+ 	}
+ 
+ 	if( listen( ListeningSocket, 5 ) == SOCKET_ERROR ){
+ 		cerr << "listen a échoué avec l'erreur " << WSAGetLastError() << endl;
+ 		closesocket( ListeningSocket );
+ 		WSACleanup();
+-		return 1;
++		return (void *)1;
+ 	}
+ 
+ 	//cout << "Serveur demarre : a l'ecoute du port " << port << endl;
+@@ -151,7 +165,7 @@ DWORD Serveur::start (){
+ 			cerr  << "accept a echoue avec l'erreur " << WSAGetLastError() << endl;;
+ 			closesocket( ListeningSocket );
+ 			WSACleanup();
+-			return 1;
++			return (void *)1;
+ 		}
+ 
+ 		p.ser = this;
+@@ -159,8 +173,14 @@ DWORD Serveur::start (){
+ 
+ 		//cout << "client connecte ::  IP : " <<inet_ntoa( ClientAddr.sin_addr )<< " ,port = " <<ntohs( ClientAddr.sin_port ) << endl;
+ 
++#ifdef _WIN32
++	    HANDLE                      hProcessThread;
+ 		hProcessThread = CreateThread(NULL, 0,&Serveur::ThreadLauncher, &p,0,NULL);
+-		if ( hProcessThread == NULL ){
++#else
++        pthread_t hProcessThread = 0;
++        pthread_create(&hProcessThread, NULL, Serveur::ThreadLauncher, (void *)&p);
++#endif
++		if ( hProcessThread == 0 ){
+ 			cerr << "CreateThread a echoue avec l'erreur " <<GetLastError()<< endl;
+ 		}
+         
+@@ -183,7 +203,12 @@ int Serveur::pause (){
+ 	return 0;
+ }
+ 
+-DWORD Serveur::EcouteUDP (){
++#ifdef _WIN32
++DWORD Serveur::EcouteUDP ()
++#else
++void *Serveur::EcouteUDP ()
++#endif
++{
+     
+     int i, j;
+     
+@@ -210,7 +235,7 @@ DWORD Serveur::EcouteUDP (){
+     
+     //test socket
+     SOCKADDR_IN  from = { 0 };
+-	int fromsize = sizeof(from);
++	socklen_t fromsize = sizeof(from);
+     
+     stopEcouteUDP = false;
+     
+@@ -219,6 +244,7 @@ DWORD Serveur::EcouteUDP (){
+     {
+       
+       err=recvfrom(sockUDP,buffer,tailleBuffer,0,(SOCKADDR *) &from, &fromsize);
++      (void)err;
+       lire = 0;
+       
+         //recu = issBuf.str();
+@@ -281,9 +307,15 @@ DWORD Serveur::EcouteUDP (){
+ 
+     //closesocket(sockUDP);
+ 	
++	return 0;
+ }
+ 
+-DWORD Serveur::EnvoiUDP (){
++#ifdef _WIN32
++DWORD Serveur::EnvoiUDP ()
++#else
++void *Serveur::EnvoiUDP ()
++#endif
++{
+     
+     int i;
+     
+@@ -328,12 +360,15 @@ DWORD Serveur::EnvoiUDP (){
+         	//on envoi a tous le monde
+         	envoiInfo = oss.str();
+             for (i = 0; i < tailleBufferEnvoi; i++) bufferEnvoi[i] = ' ';
+-        	for (i = 0; i < envoiInfo.length(); i++) bufferEnvoi[i] = envoiInfo[i];
++        	for (i = 0; i < (int)envoiInfo.length(); i++) bufferEnvoi[i] = envoiInfo[i];
+     	
+             for(i = 0; i < gpJeu->getPartie()->getNbJoueur(); i++)
+             {
+                if(listeCli[i].actifCli && listeCli[i].okUdpCli)
++               {
+                   err=sendto(sockUDP,bufferEnvoi,envoiInfo.length(),0,(SOCKADDR *) &listeCli[i].sinCli, sizeof(listeCli[i].sinCli));
++                  (void)err;
++               }
+             }
+             //cout<<"ServeurEnvoiUDP:"<<envoiInfo<<endl;
+         }
+@@ -342,6 +377,7 @@ DWORD Serveur::EnvoiUDP (){
+     }
+     //closesocket(sockUDP);
+ 	
++	return 0;
+ }
+ 
+ void Serveur::imitClient(){
+@@ -386,9 +422,13 @@ void Serveur::testProjectile(){
+ 	          
+ }
+ 
+-DWORD Serveur::ClientThread(SOCKET soc){
++#ifdef _WIN32
++DWORD Serveur::ClientThread(SOCKET soc)
++#else
++void *Serveur::ClientThread(SOCKET soc)
++#endif
++{
+ 	//initialisation du thread
+-	int a = 0;
+ 	int i;
+ 	int err = 0;
+ 	bool stopClient = false;
+@@ -407,10 +447,11 @@ DWORD Serveur::ClientThread(SOCKET soc){
+ 	char** infoRecu = new char*[100];
+     string recu;
+     
++#if 0
+     //pour ne pas repeter les actions
+     bool aTouche[gpJeu->getPartie()->getNbJoueur()];
+     for(i=0; i<=gpJeu->getPartie()->getNbJoueur(); i++) aTouche[i] = false;
+-    bool aTire = false;
++#endif
+     
+     //detemie le numero du client
+     nombreDeJoueur ++;
+@@ -466,7 +507,7 @@ DWORD Serveur::ClientThread(SOCKET soc){
+     oss << "!";
+     envoiInfo = oss.str();
+ 	for (i = 0; i < tailleBuffer; i++) buffer[i] = ' ';
+-	for (i = 0; i < envoiInfo.length(); i++) buffer[i] = envoiInfo[i];
++	for (i = 0; i < (int)envoiInfo.length(); i++) buffer[i] = envoiInfo[i];
+ 	    err=send(soc,buffer,envoiInfo.length(),0);
+     
+     gpJeu->setMessage(2,threadJoueur);
+@@ -504,11 +545,11 @@ DWORD Serveur::ClientThread(SOCKET soc){
+             }
+             if(gpJeu->getAutreJoueur(atoi(infoRecu[0]))->getNom()!=atoi(infoRecu[2]))
+                 gpJeu->getAutreJoueur(atoi(infoRecu[0]))->setNom(atoi(infoRecu[2]));
+-        	/*if(gpJeu->getAutreJoueur(threadJoueur)->getVie()<=0 && atoi(infoRecu[3])==gpJeu->getAutreJoueur(threadJoueur)->getVieMax())
+-            	gpJeu->getAutreJoueur(threadJoueur)->setVie(atoi(infoRecu[3]));*/
+-        	if(gpJeu->getAutreJoueur(atoi(infoRecu[0]))->getZone()!=atoi(infoRecu[4]))
++            /*if(gpJeu->getAutreJoueur(threadJoueur)->getVie()<=0 && atoi(infoRecu[3])==gpJeu->getAutreJoueur(threadJoueur)->getVieMax())
++                gpJeu->getAutreJoueur(threadJoueur)->setVie(atoi(infoRecu[3]));*/
++            if(gpJeu->getAutreJoueur(atoi(infoRecu[0]))->getZone()!=atoi(infoRecu[4]))
+                 gpJeu->getAutreJoueur(atoi(infoRecu[0]))->setZone(atoi(infoRecu[4]));
+-        	if(gpJeu->getAutreJoueur(atoi(infoRecu[0]))->getObjet()!=atoi(infoRecu[5]))
++            if(gpJeu->getAutreJoueur(atoi(infoRecu[0]))->getObjet()!=atoi(infoRecu[5]))
+         	 {
+                 //le joueur tient une bouteille
+                 if (atoi(infoRecu[5])>= 5)
+@@ -623,12 +664,12 @@ DWORD Serveur::ClientThread(SOCKET soc){
+ 	   // cout<<"ServeurE:"<<envoiInfo<<endl;
+ 	    
+         for (i = 0; i < tailleBuffer; i++) buffer[i] = ' ';
+-    	for (i = 0; i < envoiInfo.length(); i++) buffer[i] = envoiInfo[i];
++    	for (i = 0; i < (int)envoiInfo.length(); i++) buffer[i] = envoiInfo[i];
+     	err=send(soc,buffer,envoiInfo.length(),0);
+         if(err==-1)
+-         break;
++            break;
+          
+-         Sleep(2);
++        Sleep(2);
+         
+     }
+     
+@@ -670,7 +711,7 @@ DWORD Serveur::ClientThread(SOCKET soc){
+ 
+     
+     closesocket(soc);
+-    delete buffer;
++    delete []buffer;
+     return 0;
+     
+ }
+diff -rupN zeldaboh.orig/Serveur.h zeldaboh.new/Serveur.h
+--- zeldaboh.orig/Serveur.h	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Serveur.h	2023-12-06 16:50:07.628635729 +0100
+@@ -9,9 +9,11 @@
+ #ifndef __SERVEUR_H__
+ #define __SERVEUR_H__
+ 
+-#include<stdio.h>	
+-#include<winsock2.h>
+-#pragma comment(lib,"ws2_32.lib")
++#include <stdio.h>	
++#include "netinc.h"
++#ifndef _WIN32
++#include <pthread.h>
++#endif
+ #include "Projectile.h"
+ //#include "UDP.h"
+ 
+@@ -39,10 +41,17 @@ class Serveur{
+ 		SOCKADDR_IN   sin;
+ 		bool          running;  
+ 		SOCKADDR_IN   ServerAddr;   
++#ifdef _WIN32
+ 		DWORD         ClientThread(SOCKET);
+ 		DWORD start();
+ 		DWORD EcouteUDP();
+ 		DWORD EnvoiUDP();
++#else
++		void *ClientThread(SOCKET);
++		void *start();
++		void *EcouteUDP();
++		void *EnvoiUDP();
++#endif
+ 		
+ 		int nombreDeJoueur;
+ 		Jeu* gpJeu;
+@@ -73,6 +82,7 @@ class Serveur{
+         int getnombreDeJoueur();
+ 		int pause ();
+ 			
++#ifdef _WIN32
+         static DWORD WINAPI ThreadLauncherStart(void *ser){
+ 			Serveur *s = (Serveur*)ser;                          
+ 			return s->start();       
+@@ -88,12 +98,33 @@ class Serveur{
+ 			return s->EnvoiUDP();       
+ 		}
+ 		
+-        
+         static DWORD WINAPI ThreadLauncher(void *p){
+ 			struct thread_param *Obj = reinterpret_cast<struct thread_param*>(p);               
+ 			Serveur *s = Obj->ser;                          
+ 			return s->ClientThread(Obj->soc);       
+ 		}
++#else
++        static void *ThreadLauncherStart(void *ser){
++			Serveur *s = (Serveur*)ser;                          
++			return s->start();       
++		}
++		
++		static void *ThreadLauncherStartUDP(void *ser){
++			Serveur *s = (Serveur*)ser;                          
++			return s->EcouteUDP();       
++		}
++		
++		static void *ThreadLauncherStart2UDP(void *ser){
++			Serveur *s = (Serveur*)ser;                          
++			return s->EnvoiUDP();       
++		}
++		
++        static void *ThreadLauncher(void *p){
++			struct thread_param *Obj = reinterpret_cast<struct thread_param*>(p);
++			Serveur *s = Obj->ser;                          
++			return s->ClientThread(Obj->soc);       
++		}
++#endif
+ }; 
+ 
+ 
+diff -rupN zeldaboh.orig/Snipe.cpp zeldaboh.new/Snipe.cpp
+--- zeldaboh.orig/Snipe.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Snipe.cpp	2023-12-06 18:20:32.504820892 +0100
+@@ -132,7 +132,7 @@ void Snipe::depl() {
+         else if (valeur == GAUCHE || valeur == HAUT_GAUCHE || valeur == BAS_GAUCHE) hauteur--;
+     }
+     
+-    if (obstacle && !hauteur || hauteur < 0 ) fin();
++    if ((obstacle && !hauteur) || hauteur < 0 ) fin();
+     else {
+         for (int i = 0; i < 7; i++) {
+             historique[7-i][0]=historique[6-i][0];
+diff -rupN zeldaboh.orig/Texte.cpp zeldaboh.new/Texte.cpp
+--- zeldaboh.orig/Texte.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/Texte.cpp	2023-12-06 18:08:35.122383058 +0100
+@@ -64,9 +64,9 @@ void Texte::chercheText() {
+         case 25 : texte = "N : Cimetière Hanté**Entrée interdite"; break;
+         case 26 : texte = "Village de l'Ombre"; break;
+         case 27 : texte = "Je vends un flacon pour 100 rubis, ça t'intéresse ?*              OUI ?            non  "; 
+-            if (gpJeu->getJoueur()->hasBouteille(0) && gpJeu->getZone()==8
+-            || gpJeu->getJoueur()->hasBouteille(1) && gpJeu->getZone()==5
+-            || gpJeu->getJoueur()->hasBouteille(2) && gpJeu->getZone()==6) {id=32; chercheText();break;}
++            if ((gpJeu->getJoueur()->hasBouteille(0) && gpJeu->getZone()==8)
++            || (gpJeu->getJoueur()->hasBouteille(1) && gpJeu->getZone()==5)
++            || (gpJeu->getJoueur()->hasBouteille(2) && gpJeu->getZone()==6)) {id=32; chercheText();break;}
+             if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<100) idsuiv=29;
+             else idsuiv=30;
+             break;
+@@ -152,7 +152,8 @@ void Texte::chercheText() {
+             && gpJeu->getJoueur()->hasBouteille(1)!=1
+             && gpJeu->getJoueur()->hasBouteille(2)!=1) {id=105; chercheText();break;}
+             if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<60) idsuiv=29;
+-            else idsuiv=108; break;
++            else idsuiv=108;
++            break;
+         case 107 : texte = "Une potion rouge pour 60 rubis, ça t'intéresse?*              oui              NON ?"; break;
+         case 108 : texte = "Merci, voilà ta potion.";break;
+         case 109 : texte = "Tu as obtenu une potion rouge !!!*Bois-la pour restaurer ton énergie!!!"; break;
+@@ -164,40 +165,46 @@ void Texte::chercheText() {
+             if (gpJeu->getJoueur()->getVie()+gpJeu->getJoueur()->getBoostVie()
+             == gpJeu->getJoueur()->getVieMax()) {id=128; chercheText();break;}
+             if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<10) idsuiv=29;
+-            else idsuiv=129; break;
++            else idsuiv=129;
++            break;
+         case 115 : texte = "Un coeur pour 10 rubis, ok ?**              oui              NON ?"; break;
+         case 116 : texte = "Un peu de magie pour 20 rubis, ok ?**              OUI ?            non  "; 
+             if (gpJeu->getJoueur()->getMagie()+gpJeu->getJoueur()->getBoostMagie()
+             == gpJeu->getJoueur()->getMagieMax() || !gpJeu->getJoueur()->hasObjet(O_LANTERNE)) {
+                 id=128; chercheText();break;}
+             if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<20) idsuiv=29;
+-            else idsuiv=129; break;
++            else idsuiv=129;
++            break;
+         case 117 : texte = "Un peu de magie pour 20 rubis, ok ?**              oui              NON ?"; break;
+         case 118 : texte = "Beaucoup de magie pour 30 rubis, ok ?**              OUI ?            non  "; 
+             if (gpJeu->getJoueur()->getMagie()+gpJeu->getJoueur()->getBoostMagie()
+             == gpJeu->getJoueur()->getMagieMax() || !gpJeu->getJoueur()->hasObjet(O_LANTERNE)) {
+                 id=128; chercheText();break;}
+             if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<30) idsuiv=29;
+-            else idsuiv=129; break;
++            else idsuiv=129;
++            break;
+         case 119 : texte = "Beaucoup de magie pour 30 rubis, ok ?**              oui              NON ?"; break;
+         case 120 : texte = "5 flèches pour 30 rubis, ok ?**              OUI ?            non  "; 
+             if (gpJeu->getJoueur()->getFleche() == gpJeu->getJoueur()->getFlecheMax() 
+             || !gpJeu->getJoueur()->hasObjet(O_ARC)) {id=128; chercheText();break;}
+             if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<30) idsuiv=29;
+-            else idsuiv=129; break;
++            else idsuiv=129;
++            break;
+         case 121 : texte = "5 flèches pour 30 rubis, ok ?**              oui              NON ?"; break;
+         case 122 : texte = "Une bombe pour 30 rubis, ok ?**              OUI ?            non  "; 
+             if (gpJeu->getJoueur()->getBombe() == gpJeu->getJoueur()->getBombeMax() 
+             || !gpJeu->getJoueur()->hasObjet(O_SAC_BOMBES)) {id=128; chercheText();break;}
+             if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<30) idsuiv=29;
+-            else idsuiv=129; break;
++            else idsuiv=129;
++            break;
+         case 123 : texte = "Une bombe pour 30 rubis, ok ?**              oui              NON ?"; break;
+         case 124 : texte = "Un arc pour 1000 rubis, ok ?**              OUI ?            non  "; 
+             idsuiv=29; break;
+         case 125 : texte = "Un arc pour 1000 rubis, ok ?**              oui              NON ?"; break;
+         case 126 : texte = "Un arc pour 50 rubis, ok ?**              OUI ?            non  "; 
+             if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<50) idsuiv=29;
+-            else idsuiv=129; break;
++            else idsuiv=129;
++            break;
+         case 127 : texte = "Un arc pour 50 rubis, ok ?**              oui              NON ?"; break;
+         case 128 : texte = "Tu n'as pas besoin de ça maintenant."; break;
+         case 129 : texte = "Merci."; break;
+@@ -223,7 +230,8 @@ void Texte::chercheText() {
+         case 151 : texte = "Il est temps d'affronter Ganon et de lui reprendre la Triforce!"; break;
+         case 152 : texte = "Hey! Il faut payer pour ouvrir un de mes coffres!!!"; break;
+         case 153 : texte = "Un de ces coffres contient un quart de coeur, tu veux tenter ta chance pour 10 rubis ?*Tu ne pourras ouvrir qu'un seul coffre, ok ?*              OUI ?            non  "; 
+-            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<10) idsuiv=29; break;
++            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<10) idsuiv=29;
++            break;
+         case 154 : texte = "Un de ces coffres contient un quart de coeur, tu veux tenter ta chance pour 10 rubis ?*Tu ne pourras ouvrir qu'un seul coffre, ok ?*              oui              NON ?"; break;
+         case 155 : texte = "Choisis un coffre."; break;
+         case 156 : texte = "Je n'ai plus de prix à mettre en jeu, désolé."; break;
+@@ -237,7 +245,8 @@ void Texte::chercheText() {
+             && gpJeu->getJoueur()->hasBouteille(1)!=1
+             && gpJeu->getJoueur()->hasBouteille(2)!=1) {id=163; chercheText();break;}
+             if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<40) idsuiv=29;
+-            else idsuiv=108; break;
++            else idsuiv=108;
++            break;
+         case 162 : texte = "Une potion verte pour 40 rubis, ça t'intéresse?*              oui              NON ?"; break;
+         case 163 : texte = "Reviens me voir quand tu auras un flacon vide et je te vendrai une potion verte qui restaure la magie."; break;
+         case 164 : texte = "Reviens plus tard, je suis débordé!"; break;
+@@ -264,7 +273,8 @@ void Texte::chercheText() {
+             && gpJeu->getJoueur()->hasBouteille(1)!=1
+             && gpJeu->getJoueur()->hasBouteille(2)!=1) {id=175; chercheText();break;}
+             if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<160) idsuiv=29;
+-            else idsuiv=108; break;
++            else idsuiv=108;
++            break;
+         case 177 : texte = "Une potion bleue pour 160 rubis, ça t'intéresse?*              oui              NON ?"; break;
+         case 178 : texte = "Notre village a été fondé pour empêcher les aventuriers imprudents d'accéder au temple, je ne donne pas l'autorisation de passer à n'importe qui."; break;
+         case 179 : texte = "Mmmm... Tu as déjà trouvé 4 cristaux ?*Je dois avouer que tu m'impressionnes...";
+diff -rupN zeldaboh.orig/main.cpp zeldaboh.new/main.cpp
+--- zeldaboh.orig/main.cpp	2009-11-03 14:25:18.000000000 +0100
++++ zeldaboh.new/main.cpp	2023-12-06 17:37:21.304812826 +0100
+@@ -39,7 +39,7 @@ SDL_Surface* init() {             // ini
+ int main(int argc, char** argv) {
+     if (argc && argv); //pour éviter un warning.....
+     
+-    std::srand(std::time(NULL));
++    std::srand(::time(NULL));
+     
+     SDL_Rect src;
+     SDL_Rect dst;
+diff -rupN zeldaboh.orig/netinc.h zeldaboh.new/netinc.h
+--- zeldaboh.orig/netinc.h	1970-01-01 01:00:00.000000000 +0100
++++ zeldaboh.new/netinc.h	2023-12-06 17:50:16.233798104 +0100
+@@ -0,0 +1,22 @@
++#ifdef _WIN32
++#include <winsock2.h>
++#pragma comment(lib,"ws2_32.lib")
++#else
++#include <netinet/in.h>
++#include <arpa/inet.h>
++#include <sys/socket.h>
++#include <net/if.h>
++#include <netdb.h>
++#include <unistd.h>
++#define SOCKET int
++#define INVALID_SOCKET (-1)
++#define SOCKET_ERROR   (-1)
++#define DWORD unsigned int
++#define SOCKADDR_IN struct sockaddr_in
++#define SOCKADDR struct sockaddr
++#define closesocket(s) close(s)
++#define WSAGetLastError() errno
++#define GetLastError() errno
++#define WSACleanup()
++#define Sleep(n) usleep((n) * 1000)
++#endif

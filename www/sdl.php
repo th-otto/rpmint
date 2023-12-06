@@ -12,7 +12,7 @@ setcookie("platform", $platform, time() + 3600);
 <html xml:lang="en" lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>SDL built games</title>
+<title>SDL games</title>
 <meta name="keywords" content="ORCS, CAT, GC, PBEM, PBM, GC-Ork, GCORK, ARAnyM, UDO, EmuTOS, GCC" />
 <link rel="stylesheet" type="text/css" href="home.css" />
 <link rel="stylesheet" type="text/css" href="tippy/tippy.css" />
@@ -28,13 +28,43 @@ include('sdl-packages.php');
 ?>
 
 <body>
-<h1>SDL built games</h1>
+<h1>SDL games</h1>
+
+Always needed:
+<ul><li><a href="crossmint.php#SDL">SDL</a></li></ul>
+
+Most games will also need additional libraries:
+<ul>
+<li><a href="crossmint.php#SDL_mixer">SDL_mixer</a></li>
+<li><a href="crossmint.php#SDL_image">SDL_image</a></li>
+<li><a href="crossmint.php#SDL_gfx">SDL_gfx</a></li>
+<li><a href="crossmint.php#SDL_net">SDL_net</a></li>
+<li><a href="crossmint.php#SDL_ttf">SDL_ttf</a></li>
+</ul>
+
+Addition libraries needed by the above:
+<ul>
+<li><a href="crossmint.php#tiff">TIFF</a></li>
+<li><a href="crossmint.php#libpng">libpng</a></li>
+<li><a href="crossmint.php#zlib">ZLib</a></li>
+<li><a href="crossmint.php#jpeg">JPEG</a></li>
+<li><a href="crossmint.php#xz">XZ/LZMA</a></li>
+<li><a href="crossmint.php#zstd">ZStd</a></li>
+<li><a href="crossmint.php#bzip2">BZip2</a></li>
+<li><a href="crossmint.php#libwebp">WebP</a></li>
+<li><a href="crossmint.php#freetype2">Freetype</a></li>
+<li><a href="crossmint.php#flac">FLAC</a></li>
+<li><a href="crossmint.php#libvorbis">vorbis</a></li>
+<li><a href="crossmint.php#libogg">Ogg</a></li>
+<li><a href="crossmint.php#mpg123">mpg123</a></li>
+<li><a href="crossmint.php#ldg">LDG</a></li>
+</ul>
 
 <hr />
 
 <p>&nbsp;</p>
 
-<h1>Packages</h1>
+<h1>Ports</h1>
 
 <p>&nbsp;</p>
 

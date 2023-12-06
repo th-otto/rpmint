@@ -1,0 +1,79 @@
+From ebef35121aad9eb554a4819c85437fe20bb45a2f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Per=20=C3=98yvind=20Karlsen?= <peroyvind@mandriva.org>
+Date: Mon, 12 Sep 2011 01:02:21 +0200
+Subject: [PATCH] fix symbol crash with 'readdir()'
+
+---
+ digger.c | 4 ++--
+ input.c  | 4 ++--
+ input.h  | 4 ++--
+ main.c   | 2 +-
+ 4 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/digger.c b/digger.c
+index bbc59ab..dc84240 100644
+--- a/src/digger.c
++++ b/src/digger.c
+@@ -385,8 +385,8 @@ void updatedigger(int n)
+   Sint4 dir,ddir,diggerox,diggeroy,nmon;
+   bool push=TRUE,bagf;
+   int clfirst[TYPES],clcoll[SPRITES],i;
+-  readdir(n-curplayer);
+-  dir=getdir(n-curplayer);
++  readdirect(n-curplayer);
++  dir=getdirect(n-curplayer);
+   if (dir==DIR_RIGHT || dir==DIR_UP || dir==DIR_LEFT || dir==DIR_DOWN)
+     ddir=dir;
+   else
+diff --git a/input.c b/input.c
+index 64cf8be..d3cd461 100644
+--- a/src/input.c
++++ b/src/input.c
+@@ -435,7 +435,7 @@ void clearfire(int n)
+ bool oupressed=FALSE,odpressed=FALSE,olpressed=FALSE,orpressed=FALSE;
+ bool ou2pressed=FALSE,od2pressed=FALSE,ol2pressed=FALSE,or2pressed=FALSE;
+ 
+-void readdir(int n)
++void readdirect(int n)
+ {
+   Sint4 j;
+   bool u=FALSE,d=FALSE,l=FALSE,r=FALSE;
+@@ -587,9 +587,9 @@ bool teststart(void)
+   return TRUE;
+ }
+ 
+-/* Why the joystick reading is split between readdir and getdir like this is a
++/* Why the joystick reading is split between readdirect and getdir like this is a
+    mystery to me. */
+-Sint4 getdir(int n)
++Sint4 getdirect(int n)
+ {
+   Sint4 dir=((n==0) ? keydir : keydir2);
+   if (joyflag) {
+diff --git a/input.h b/input.h
+index 04b6ea9..17afa8d 100644
+--- a/src/input.h
++++ b/src/input.h
+@@ -1,7 +1,7 @@
+ void detectjoy(void);
+ bool teststart(void);
+-void readdir(int n);
+-Sint4 getdir(int n);
++void readdirect(int n);
++Sint4 getdirect(int n);
+ void checkkeyb(void);
+ void flushkeybuf(void);
+ void findkey(int kn);
+diff --git a/main.c b/main.c
+index c852e20..dc98cdb 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -222,7 +222,7 @@ void game(void)
+ 
+       flushkeybuf();
+       for (i=0;i<diggers;i++)
+-        readdir(i);
++        readdirect(i);
+       while (!alldead && !gamedat[curplayer].levdone && !escape && !timeout) {
+         penalty=0;
+         dodigger();

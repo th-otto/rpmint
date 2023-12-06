@@ -1,0 +1,72 @@
+From dd2f036b10823992639bb622c8c4246b8776658d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Per=20=C3=98yvind=20Karlsen?= <peroyvind@mandriva.org>
+Date: Mon, 12 Sep 2011 00:29:15 +0200
+Subject: [PATCH] enable sound by default, only disable it if /Q is passed
+
+---
+ main.c | 37 +++++++++++++++++++++----------------
+ 1 file changed, 21 insertions(+), 16 deletions(-)
+
+diff --git a/main.c b/main.c
+index 0ca1d7b..0de7ceb 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -593,7 +593,7 @@
+ {
+   char *word;
+   Sint4 arg,i,j,speedmul;
+-  bool sf,gs=FALSE,norepf=FALSE;
++  bool sf,gs=FALSE,norepf=FALSE,quiet=FALSE;
+   FILE *levf;
+ 
+   for (arg=1;arg<argc;arg++) {
+@@ -718,22 +718,9 @@
+       if (word[1]=='A' || word[1]=='a') {
+         sscanf(word+i,"%hu,%hx,%hu,%hu,%hu,%hu",&sound_device,&sound_port,&sound_irq,
+                &sound_dma,&sound_rate,&sound_length);
+-        killsound();
+-        volume=1;
+-        setupsound=s1setupsound;
+-        killsound=s1killsound;
+-        fillbuffer=s1fillbuffer;
+-        initint8=s1initint8;
+-        restoreint8=s1restoreint8;
+-        soundoff=s1soundoff;
+-        setspkrt2=s1setspkrt2;
+-        settimer0=s1settimer0;
+-        timer0=s1timer0;
+-        settimer2=s1settimer2;
+-        timer2=s1timer2;
+-        soundinitglob(sound_port,sound_irq,sound_dma,sound_length,sound_rate);
+-        initsound();
+       }
++      if (word[1]=='Q' || word[1]=='q')
++        quiet=TRUE;
+       if (word[1]=='V' || word[1]=='v')
+         synchvid=TRUE;
+ #endif
+@@ -779,6 +766,24 @@
+     }
+   }
+ 
++  if (!quiet) {
++    killsound();
++    volume=1;
++    setupsound=s1setupsound;
++    killsound=s1killsound;
++    fillbuffer=s1fillbuffer;
++    initint8=s1initint8;
++    restoreint8=s1restoreint8;
++    soundoff=s1soundoff;
++    setspkrt2=s1setspkrt2;
++    settimer0=s1settimer0;
++    timer0=s1timer0;
++    settimer2=s1settimer2;
++    timer2=s1timer2;
++    soundinitglob(sound_port,sound_irq,sound_dma,sound_length,sound_rate);
++    initsound();
++  }
++
+   if (levfflag) {
+     levf=fopen(levfname,"rb");
+     if (levf==NULL) {

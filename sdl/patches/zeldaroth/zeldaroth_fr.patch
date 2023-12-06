@@ -1,0 +1,53 @@
+diff -rup zeldaroth_fr.orig/src/Keyboard.cpp zeldaroth_fr.new/src/Keyboard.cpp
+--- zeldaroth_fr.orig/src/Keyboard.cpp	2009-02-18 23:30:03.000000000 +0100
++++ zeldaroth_fr.new/src/Keyboard.cpp	2023-12-06 08:09:40.621542794 +0100
+@@ -21,7 +21,7 @@
+ #include "Keyboard.h"
+ 
+ Keyboard::Keyboard(Jeu* jeu, Carte* carte, Encyclopedie* encycl, SDL_Surface* screen, int m) : 
+-    gpJeu(jeu), gpCarte(carte), gpEncyclopedie(encycl), mode(m), gFullScreen(1), 
++    gpJeu(jeu), gpCarte(carte), gpEncyclopedie(encycl), mode(m), gFullScreen(0), 
+     gpScreen(screen), tmp(0), tmpx(0), tmpc(0), tmpw(0), tmpt(0), tmpp(0), tmpm(0),
+     ligne(0), colonne(0), ligneOption(2), volume(32), volson(32), ligneRecord(3), 
+     colonneRecord(0), temps(0), ligneVal(0), intro(0) {
+diff -rup zeldaroth_fr.orig/src/Makefile zeldaroth_fr.new/src/Makefile
+--- zeldaroth_fr.orig/src/Makefile	2009-02-18 22:57:13.000000000 +0100
++++ zeldaroth_fr.new/src/Makefile	2023-12-06 08:04:26.948706832 +0100
+@@ -4,10 +4,10 @@
+ #--------------------------------------------------------------
+ 
+ PREFIX  = /usr/local
+-CFLAGS  = -O2 -Wall
+-LDFLAGS = -lSDL_gfx -lSDL_image -lSDL_mixer -lSDL
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing -Wall
++LIBS = $(shell pkg-config --libs sdl SDL_gfx SDL_image SDL_mixer)
+ 
+-CC = g++
++CC = $(CROSS_PREFIX)g++
+ RM = rm -f
+ INSTALL_PROG = install -m 755 -s
+ 
+@@ -84,7 +84,7 @@ ZoneRect.o : ZoneRect.cpp
+ 	$(CC) -c ZoneRect.cpp $(CFLAGS) -o ZoneRect.o
+ 
+ $(EXE) : $(OBJS)
+-	$(CC) $(OBJS) -o $(EXE) $(LDFLAGS)
++	$(CC) $(CPU_CFLAGS) $(LDFLAGS) $(OBJS) -o $(EXE) $(LIBS)
+ 
+ install : $(EXE)
+ 	$(INSTALL_PROG) $(EXE) $(PREFIX)/bin
+diff -rup zeldaroth_fr.orig/src/main.cpp zeldaroth_fr.new/src/main.cpp
+--- zeldaroth_fr.orig/src/main.cpp	2008-12-10 20:10:20.000000000 +0100
++++ zeldaroth_fr.new/src/main.cpp	2023-12-06 08:09:40.621542794 +0100
+@@ -31,9 +31,9 @@ SDL_Surface* init() {             // ini
+     SDL_SetColorKey(icon,SDL_SRCCOLORKEY,SDL_MapRGB(icon->format,0,0,0));
+     SDL_WM_SetIcon(icon,NULL);
+ 
+-    SDL_ShowCursor(SDL_DISABLE);
++    SDL_ShowCursor(SDL_ENABLE);
+ 
+-    return SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN);
++    return SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE|SDL_DOUBLEBUF);
+ }
+ 
+ int main(int argc, char** argv) {

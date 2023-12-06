@@ -139,6 +139,261 @@ suitable for pixel art, game graphics, and generally any detailed
 graphics painted with a mouse.
 '
 	),
+	'circuslinux' => array(
+		'name' => 'circuslinux',
+		'version' => '1.0.3',
+		'title' => 'Circus Linux!',
+		'upstream' => 'http://www.newbreedsoftware.com/circus-linux/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => '"Circus Linux!" is a clone of the Atari 2600 game "Circus Atari',
+		'comment' => '
+"Circus Linux!" is a clone of the Atari 2600 game "Circus Atari,"
+produced by Atari, Inc. (which is itself a clone of an earlier arcade
+game named, simply "Circus").
+</br></br>
+<img src="' . $download_dir . 'circus-linux.gif" width="320" height="240">
+'
+	),
+	'lbreakout2' => array(
+		'name' => 'lbreakout2',
+		'version' => '2.6.5',
+		'title' => 'LBreakout2',
+		'upstream' => 'https://lgames.sourceforge.io/LBreakout2/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'Successor to LBreakout',
+		'comment' => '
+The successor to LBreakout offers you a new challenge in more than 50
+levels with loads of new bonuses (goldshower, joker, explosive balls,
+bonus magnet ...), maluses (chaos, darkness, weak balls, malus magnet
+...) and special bricks (growing bricks, explosive bricks, regenerative
+bricks ...). If you are hungry for more you can create your own
+levelsets with the integrated level editor. There is also an
+experimental two player mode (via LAN) available.
+</br></br>
+<img src="' . $download_dir . 'lbreakout2.jpg" width="320" height="240">
+'
+	),
+	'deathris' => array(
+		'name' => 'deathris',
+		'version' => '',
+		'upstream' => 'https://github.com/portalrat/deathris',
+		'repo' => 'https://github.com/portalrat/deathris',
+		'category' => 'Games',
+		'summary' => 'Simple Tetris clone',
+		'comment' => '
+</br></br>
+<img src="' . $download_dir . 'deathris.png" width="320" height="240">
+'
+	),
+	'digger' => array(
+		'name' => 'digger',
+		'version' => '',
+		'upstream' => 'https://aminet.net/package/game/misc/digger-68k',
+		'category' => 'Games',
+		'summary' => 'Digger - the SDL version of old DOS game',
+		'comment' => '
+Digger was originally created by Windmill software in 1983 and released as a
+copy-protected, bootable 5.25" floppy disk for the IBM PC. As it requires a
+genuine CGA card, it didn&apos;t work on modern PCs.
+</br></br>
+<img src="' . $download_dir . 'digger1.png" width="320" height="240">
+'
+	),
+	'xpired' => array(
+		'name' => 'xpired',
+		'version' => '',
+		'upstream' => 'https://aminet.net/package/game/shoot/Xpired_m68k',
+		'category' => 'Games',
+		'summary' => 'X-pired + level editor',
+		'comment' => '
+Xpired is sokoban inspired logic adventure game.
+There is an editor and another set of levels included
+</br></br>
+<img src="' . $download_dir . 'xpired.png" width="300" height="300">
+'
+	),
+	'fillets-ng' => array(
+		'name' => 'fillets-ng',
+		'version' => '1.0.1',
+		'upstream' => 'https://fillets.sourceforge.net/index.php',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'Solve the puzzle and help the fish escape',
+		'comment' => '
+Fish Fillets NG is strictly a puzzle game. The goal in every of the
+seventy levels is always the same: find a safe way out. The fish utter
+witty remarks about their surroundings, the various inhabitants of
+their underwater realm quarrel among themselves or comment on the
+efforts of your fish. The whole game is accompanied by quiet,
+comforting music.
+</br></br>
+Tips: Tab to pass the intro, space to swap between fishes
+</br></br>
+<a href="' . $download_dir . 'fillets-ng-data-1.0.1.tar.gz">data are needed</a> for both the binary and the source version (~146MB).
+</br></br>
+<img src="' . $download_dir . 'fillets-ng.png" width="300" height="300">
+'
+	),
+	'gemdropx' => array(
+		'name' => 'gemdropx',
+		'title' => 'Gem Drop X',
+		'version' => '0.9',
+		'upstream' => 'http://www.newbreedsoftware.com/gemdropx/',
+		'source' => 'https://tuxpaint.org/ftp/unix/x/gemdropx/src/%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'A Catch the droping gems game! Betcha can&apos;t!',
+		'comment' => '
+    "Gem Drop X" is an interesting one-player puzzle game using the
+    Simple DirectMedia Layer (SDL) libraries.
+    It is a direct port of "Gem Drop," an Atari 8-bit game written in Action!
+    (a very fast C- and Pascal-like compiled language for the Atari).
+    It was originally ported to X11, using SDL for sound and music.
+    Eventually, the Xlib graphics calls were removed and replaced with
+    SDL calls.
+    The concept of the game "Gem Drop" is based on an arcade game for the
+    NeoGeo system called "Magical Drop III" by SNK.
+    If you&apos;re familiar with games like Jewels, Klax, Bust-A-Move or Tetris,
+    this game is similar to them all.  I consider it closest to Klax.
+    Some people have compared it to "Tetris meets Space Invaders."
+</br></br>
+<img src="' . $download_dir . 'gemdropx.gif" width="240" height="300">
+'
+	),
+	'zeldaroth_fr' => array(
+		'name' => 'zeldaroth_fr',
+		'title' => 'Zelda ROTH',
+		'version' => '',
+		'upstream' => 'http://www.zeldaroth.fr/zroth.php',
+		'category' => 'Games',
+		'summary' => 'Zelda Return Of The Hylian',
+		'comment' => '
+Story : After Link&apos;s victory over Ganon (in "A Link to the Past"), no
+one knows what Link?s wish to the Triforce was. But this wish reunified
+the Light World and the Dark World and brought the 7 wise men?s
+descendants back to life. Peace was back in Hyrule. But unfortunately,
+this wish also ressurected Ganon and his henchmen. He was preparing his
+revenge, but he couldn?t do anything without the Triforce. One night, a
+familiar voice speaks to Link in his sleep?
+</br></br>
+This is the french version.</br>
+The patch makes it start in windowed mode; press CTRL+Return to toggle fullscreen.
+</br></br>
+<img src="' . $download_dir . 'zeldaroth.png" width="320" height="240">
+'
+	),
+	'zeldaroth_us' => array(
+		'name' => 'zeldaroth_us',
+		'title' => 'Zelda ROTH',
+		'version' => '',
+		'upstream' => 'http://www.zeldaroth.fr/us/zroth.php',
+		'category' => 'Games',
+		'summary' => 'Zelda Return Of The Hylian',
+		'comment' => 'English version of Zelda ROTH'
+	),
+	'zeldansq' => array(
+		'name' => 'zeldansq',
+		'title' => 'Zelda NSQ',
+		'version' => '',
+		'upstream' => 'http://www.zeldaroth.fr/dlnsq.php',
+		'category' => 'Games',
+		'summary' => 'Zelda Navi&apos;s Quest',
+		'comment' => '
+Zelda Navi&apos;s Quest is an Open Source game.
+</br></br>
+Use the option dialog to select french dialogs. </br>
+The patch makes it start in windowed mode; press CTRL+Return to toggle fullscreen.
+</br></br>
+<img src="' . $download_dir . 'zeldansq.png" width="400" height="300">
+'
+	),
+	'zelda3t_fr' => array(
+		'name' => 'zelda3t_fr',
+		'title' => 'Zelda 3T',
+		'version' => '',
+		'upstream' => 'http://www.zeldaroth.fr/z3t.php',
+		'category' => 'Games',
+		'summary' => 'Zelda Time To Triumph',
+		'comment' => '
+Story : After the events that occured in Termina and the victory of the
+hero on his evil alter-ego, Zelda and Link knew that, from the bottom
+of hell, Ganon the immortal drawed his power from his wish to the
+Triforce, and rounded up his army with a view to invade Hyrule. Until
+the day when, after months spent watching out for an attack, an event
+came up and put an end to this endless waiting...
+</br></br>
+This is the french version.</br>
+The patch makes it start in windowed mode; press CTRL+Return to toggle fullscreen.
+</br></br>
+<img src="' . $download_dir . 'zelda3t.png" width="320" height="240">
+'
+	),
+	'zelda3t_us' => array(
+		'name' => 'zelda3t_us',
+		'title' => 'Zelda 3T',
+		'version' => '',
+		'upstream' => 'http://www.zeldaroth.fr/us/z3t.php',
+		'category' => 'Games',
+		'summary' => 'Zelda Time To Triumph',
+		'comment' => 'English version of Zelda 3T'
+	),
+	'zeldapicross_fr' => array(
+		'name' => 'zeldapicross_fr',
+		'title' => 'Zelda Picross',
+		'version' => '',
+		'upstream' => 'http://www.zeldaroth.fr/dlpicross.php',
+		'category' => 'Games',
+		'summary' => 'Zelda Picross',
+		'comment' => '
+Scenario: Following a wish to the Triforce made by Ganon on a sad rainy
+day, the kingdom of Hyrule changed into Picross grids. Gathering his
+courage and his pencil, Link set off to try this new challenge.
+</br></br>
+This is the french version.</br>
+The patch makes it start in windowed mode; press CTRL+Return to toggle fullscreen.
+</br></br>
+<img src="' . $download_dir . 'zeldapicross.png" width="320" height="240">
+'
+	),
+	'zeldapicross_us' => array(
+		'name' => 'zeldapicross_us',
+		'title' => 'Zelda Picross',
+		'version' => '',
+		'upstream' => 'http://www.zeldaroth.fr/us/dlpicross.php',
+		'category' => 'Games',
+		'summary' => 'Zelda Picross',
+		'comment' => 'English version of Zelda Picross'
+	),
+	'zeldaolb_fr' => array(
+		'name' => 'zeldaolb_fr',
+		'title' => 'Zelda olb',
+		'version' => '',
+		'upstream' => 'http://www.zeldaroth.fr/dlolb.php',
+		'category' => 'Games',
+		'summary' => 'Zelda Oni Link Begins',
+		'comment' => '
+Story : Brought down by a terrible curse since his recent victory on
+the Dark Lord, Link is changing, day by day, into a powerful creature
+with a destructive nature named Oni-Link. Bannished from Hyrule, the
+young hylian asks the princess Zelda some help. She shows him his last
+hope: a portal to a secret world.
+</br></br>
+This is the french version.</br>
+The patch makes it start in windowed mode; press CTRL+Return to toggle fullscreen.
+</br></br>
+<img src="' . $download_dir . 'zeldaolb.jpg" width="320" height="240">
+'
+	),
+	'zeldaolb_us' => array(
+		'name' => 'zeldaolb_us',
+		'title' => 'Zelda Oni Link Begins',
+		'version' => '',
+		'upstream' => 'http://www.zeldaroth.fr/us/dlolb.php',
+		'category' => 'Games',
+		'summary' => 'Zelda olb',
+		'comment' => 'English version of Zelda Oni Link Begins'
+	),
 );
 
 ?>

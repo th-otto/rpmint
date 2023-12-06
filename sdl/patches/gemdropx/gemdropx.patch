@@ -1,0 +1,71 @@
+diff -rup gemdropx-0.9.orig/Makefile gemdropx-0.9.new/Makefile
+--- gemdropx-0.9.orig/Makefile	2002-05-18 10:53:29.000000000 +0200
++++ gemdropx-0.9.new/Makefile	2023-12-06 07:04:23.398072454 +0100
+@@ -14,26 +14,25 @@
+ # Added 'install' target (finally!): May 18, 2002
+ 
+ 
+-DATA_PREFIX=/usr/local/share/gemdropx
+-SDL_CFLAGS := $(shell sdl-config --cflags)
+-SDL_LDFLAGS := $(shell sdl-config --libs)
+-CC=gcc
+-CXX=gcc
++DATA_PREFIX=.
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++MIXER = $(shell pkg-config --libs SDL_mixer)
++SDL_LIBS := $(MIXER) $(shell pkg-config --libs sdl)
++CC=$(CROSS_PREFIX)gcc
++CXX=$(CROSS_PREFIX)gcc
+ 
+ 
+-MIXER=-lSDL_mixer
+ NOSOUNDFLAG=$(SOUND)SOUND
+ JOYFLAG=$(JOY)JOYSTICK
+ EMBEDDEDFLAG=NOT_EMBEDDED
+ 
+ 
+-CFLAGS=-Wall $(SDL_CFLAGS) \
++CFLAGS=$(CPU_CFLAGS) -Wall $(SDL_CFLAGS) \
+ 	-DDATA_PREFIX=\"$(DATA_PREFIX)\" -D$(NOSOUNDFLAG) -D$(JOYFLAG) \
+ 	-D$(EMBEDDEDFLAG) $(XTRA_FLAGS)
+-SDL_LIB=$(MIXER) $(SDL_LDFLAGS)
+ CQML_LIB=-L./cqml -lcqml -L/opt/Qtopia/lib -lqpe -lqte
+ #CQML_LIB=-L/opt/Qtopia/lib -lqpe -lqte
+-GFX_LIB=$(SDL_LIB)
++GFX_LIB=$(SDL_LIBS)
+ 
+ 
+ all:	gemdropx
+@@ -56,12 +55,12 @@ nosound:
+ #		GFX_LIB="$(CQML_LIB)" SDL_CFLAGS=
+ 
+ clean:
+-	-rm gemdropx
+-	-rm *.o
++	-rm -f gemdropx
++	-rm -f *.o
+ 
+ 
+ gemdropx:	gemdropx.o
+-	$(CXX) $(CFLAGS) -o gemdropx gemdropx.o $(GFX_LIB) -lm
++	$(CXX) $(CFLAGS) $(LDFLAGS) -o gemdropx gemdropx.o $(GFX_LIB) -lm
+ 
+ 
+ gemdropx.o:	gemdropx.c
+diff -rup gemdropx-0.9.orig/gemdropx.c gemdropx-0.9.new/gemdropx.c
+--- gemdropx-0.9.orig/gemdropx.c	2002-02-12 09:45:34.000000000 +0100
++++ gemdropx-0.9.new/gemdropx.c	2023-12-06 07:00:39.765121648 +0100
+@@ -194,11 +194,11 @@ enum {
+ };
+ 
+ Uint8 * cursor_bitmap[NUM_CURSORS] = {
+-  nothing_bits, left_bits, right_bits, action_bits
++  (Uint8 *)nothing_bits, (Uint8 *)left_bits, (Uint8 *)right_bits, (Uint8 *)action_bits
+ };
+ 
+ Uint8 * cursor_bitmask[NUM_CURSORS] = {
+-  nothing_mask_bits, left_mask_bits, right_mask_bits, action_mask_bits
++  (Uint8 *)nothing_mask_bits, (Uint8 *)left_mask_bits, (Uint8 *)right_mask_bits, (Uint8 *)action_mask_bits
+ };
+ 
+ #endif

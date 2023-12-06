@@ -1,0 +1,328 @@
+diff -rup zeldansq.orig/makefile zeldansq.new/makefile
+--- zeldansq.orig/makefile	2014-08-11 23:19:30.000000000 +0200
++++ zeldansq.new/makefile	2023-12-06 09:38:15.687859694 +0100
+@@ -5,37 +5,37 @@
+ 
+ WORKDIR = `pwd`
+ 
+-CC = gcc
+-CXX = g++
+-AR = ar
+-LD = g++
+-WINDRES = windres
++CC = $(CROSS_PREFIX)gcc
++CXX = $(CROSS_PREFIX)g++
++AR = $(CROSS_PREFIX)ar
++LD = $(CROSS_PREFIX)g++
++WINDRES = $(CROSS_PREFIX)windres
+ 
+ INC = 
+-CFLAGS = -Wall
++CFLAGS = $(CPU_CFLAGS) -Wall
+ RESINC = 
+ LIBDIR = 
+ LIB = 
+ LDFLAGS = 
+ 
+ INC_DEBUG = $(INC)
+-CFLAGS_DEBUG = $(CFLAGS) -Wall -g
++CFLAGS_DEBUG = $(CFLAGS) -g
+ RESINC_DEBUG = $(RESINC)
+ RCFLAGS_DEBUG = $(RCFLAGS)
+ LIBDIR_DEBUG = $(LIBDIR)
+ LIB_DEBUG = $(LIB)
+-LDFLAGS_DEBUG = $(LDFLAGS) -lSDLmain -lSDL -lSDL_image -lSDL_gfx -lSDL_mixer
++LDFLAGS_DEBUG = $(LDFLAGS) $(shell pkg-config --libs sdl SDL_image SDL_gfx SDL_mixer)
+ OBJDIR_DEBUG = obj/Debug
+ DEP_DEBUG = 
+ OUT_DEBUG = bin/Debug/ZeldaNSQ
+ 
+ INC_RELEASE = $(INC)
+-CFLAGS_RELEASE = $(CFLAGS) -O2
++CFLAGS_RELEASE = $(CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing
+ RESINC_RELEASE = $(RESINC)
+ RCFLAGS_RELEASE = $(RCFLAGS)
+ LIBDIR_RELEASE = $(LIBDIR)
+ LIB_RELEASE = $(LIB)
+-LDFLAGS_RELEASE = $(LDFLAGS) -s -lSDLmain -lSDL -lSDL_image -lSDL_gfx -lSDL_mixer
++LDFLAGS_RELEASE = $(LDFLAGS) -s $(shell pkg-config --libs sdl SDL_image SDL_gfx SDL_mixer)
+ OBJDIR_RELEASE = obj/Release
+ DEP_RELEASE = 
+ OUT_RELEASE = bin/Release/ZeldaNSQ
+@@ -108,7 +108,7 @@ after_debug:
+ debug: before_debug out_debug after_debug
+ 
+ out_debug: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
+-	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG)
++	$(LD) $(CPU_CFLAGS) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG)
+ 
+ $(OBJDIR_DEBUG)/src/game/content/projectiles/ProjSpear.o: src/game/content/projectiles/ProjSpear.cpp
+ 	$(CXX) $(CFLAGS_DEBUG) $(INC_DEBUG) -c src/game/content/projectiles/ProjSpear.cpp -o $(OBJDIR_DEBUG)/src/game/content/projectiles/ProjSpear.o
+@@ -931,7 +931,7 @@ after_release:
+ release: before_release out_release after_release
+ 
+ out_release: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
+-	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
++	$(LD) $(CPU_CFLAGS) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
+ 
+ $(OBJDIR_RELEASE)/src/game/content/projectiles/ProjSpear.o: src/game/content/projectiles/ProjSpear.cpp
+ 	$(CXX) $(CFLAGS_RELEASE) $(INC_RELEASE) -c src/game/content/projectiles/ProjSpear.cpp -o $(OBJDIR_RELEASE)/src/game/content/projectiles/ProjSpear.o
+diff -rup zeldansq.orig/src/engine/common/Common.h zeldansq.new/src/engine/common/Common.h
+--- zeldansq.orig/src/engine/common/Common.h	2014-07-06 11:44:46.000000000 +0200
++++ zeldansq.new/src/engine/common/Common.h	2023-12-06 10:31:05.263116314 +0100
+@@ -11,7 +11,7 @@
+ #ifndef __COMMON_H__
+ #define __COMMON_H__
+ 
+-#define FULLSCREEN          true
++#define FULLSCREEN          false
+ #define WINDOW_SIZE_W       640
+ #define WINDOW_SIZE_H       480
+ 
+diff -rup zeldansq.orig/src/engine/window/Event.cpp zeldansq.new/src/engine/window/Event.cpp
+--- zeldansq.orig/src/engine/window/Event.cpp	2014-07-19 10:54:08.000000000 +0200
++++ zeldansq.new/src/engine/window/Event.cpp	2023-12-06 10:27:13.240128017 +0100
+@@ -81,21 +81,25 @@ void Event::update(Uint8* keys) {
+ }
+ 
+ bool Event::isDown(Keys key) {
++#if 0 /* the address of Event::current will never be NULL */
+     if (current == 0) {
+         return false;
+     }
++#endif
+     return current[key];
+ }
+ 
+ bool Event::isPushed(Keys key) {
++#if 0 /* the address of Event::current will never be NULL */
+     if (current == 0 || past == 0) {
+         return false;
+     }
++#endif
+     return current[key] && !past[key];
+ }
+ 
+ void Event::setEvent(Keys key, bool b) {
+-    if (current != 0) {
++    /* if (current != 0) */ {
+         current[key] = b;
+     }
+ }
+diff -rup zeldansq.orig/src/game/content/ennemis/Ennemi111.cpp zeldansq.new/src/game/content/ennemis/Ennemi111.cpp
+--- zeldansq.orig/src/game/content/ennemis/Ennemi111.cpp	2014-07-25 20:25:02.000000000 +0200
++++ zeldansq.new/src/game/content/ennemis/Ennemi111.cpp	2023-12-06 10:29:05.509961063 +0100
+@@ -218,6 +218,7 @@ void Ennemi111::multi() {
+         } else {
+             fd = fy > 0 ? S : N;
+         }
++		(void) fd;
+ 
+         ProjectileHelper::getInstance()->addProjectile(TP_BIG_GLACE, x + 25, y + 25, fx, fy);
+     }
+diff -rup zeldansq.orig/src/game/content/ennemis/Ennemi146.cpp zeldansq.new/src/game/content/ennemis/Ennemi146.cpp
+--- zeldansq.orig/src/game/content/ennemis/Ennemi146.cpp	2014-07-19 19:25:14.000000000 +0200
++++ zeldansq.new/src/game/content/ennemis/Ennemi146.cpp	2023-12-06 10:28:17.920031833 +0100
+@@ -304,6 +304,7 @@ void Ennemi146::multi() {
+         } else {
+             fd = fy > 0 ? S : N;
+         }
++		(void) fd;
+ 
+         ProjectileHelper::getInstance()->addProjectile(TP_PIERRE, x + 25, y + 25, fx, fy);
+     }
+diff -rup zeldansq.orig/src/game/content/link/Link.cpp zeldansq.new/src/game/content/link/Link.cpp
+--- zeldansq.orig/src/game/content/link/Link.cpp	2014-08-16 20:27:14.000000000 +0200
++++ zeldansq.new/src/game/content/link/Link.cpp	2023-12-06 10:24:20.760384508 +0100
+@@ -478,7 +478,7 @@ void Link::loop() {
+     }
+ 
+     // hit
+-    if (status->getVirtualLife() > 0 && epee > 0) {
++    if (status->getVirtualLife() > 0 && epee != 0) {
+         bool hit = epee->hit(x, y, direction, animation, anim, charge, getForce());
+         if (hit && charge) {
+             charge = 0;
+@@ -673,6 +673,7 @@ void Link::loop() {
+                         case S: a = x + 6; b = y + 16; break;
+                         case W: a = x - 4; b = y + 11; break;
+                         case E: a = x + 4; b = y + 11; break;
++                        default: return;
+                     }
+                     TypeProjectile type;
+                     switch (inventory->getCurrent()) {
+@@ -731,6 +732,7 @@ void Link::loop() {
+                         case S: a = x; b = y + 16; break;
+                         case W: a = x - 16 + 1; b = y + 8; break;
+                         case E: a = x + 16 - 1 - 4; b = y + 8; break;
++                        default: return;
+                     }
+                     ProjectileHelper::getInstance()->addProjectile(TP_BAGUETTE_FEU, a, b, direction);
+                     AudioManager::getInstance()->playSound(TS_BAGUETTE_FEU);
+@@ -749,6 +751,7 @@ void Link::loop() {
+                         case S: a = x; b = y + 16; break;
+                         case W: a = x - 16 + 1; b = y + 8; break;
+                         case E: a = x + 16 - 1 - 4; b = y + 8; break;
++                        default: return;
+                     }
+                     ProjectileHelper::getInstance()->addProjectile(TP_BAGUETTE_GLACE, a, b, direction);
+                     AudioManager::getInstance()->playSound(TS_BAGUETTE_GLACE);
+@@ -984,11 +987,11 @@ void Link::draw(int offsetX, int offsetY
+         }
+     }
+ 
+-    if (status->getVirtualLife() > 0 && direction == N && bouclier > 0 && animation != HIT_EPEE && !charge && status->isVisible() && !lapin) {
++    if (status->getVirtualLife() > 0 && direction == N && bouclier != 0 && animation != HIT_EPEE && !charge && status->isVisible() && !lapin) {
+         bouclier->draw(dstX2, dstY, direction, animation, anim, 0);
+     }
+ 
+-    if (status->getVirtualLife() > 0 && epee > 0 && animation == SPIN_EPEE && status->isVisible()) {
++    if (status->getVirtualLife() > 0 && epee != 0 && animation == SPIN_EPEE && status->isVisible()) {
+         if ((direction == N && anim >= 9 && anim <= 12)
+             || (direction == S && anim >= 5 && anim <= 17)
+             || (direction == W && anim >= 13 && anim <= 16)
+@@ -1002,10 +1005,12 @@ void Link::draw(int offsetX, int offsetY
+             case IDLE :
+                 if (status->getVirtualLife() <= 0) drawDead(dstX2, dstY);
+                 else if (charge) drawCharge(dstX2, dstY);
+-                else drawIdle(dstX2, dstY); break;
++                else drawIdle(dstX2, dstY);
++                break;
+             case WALK :
+                 if (charge) drawCharge(dstX2, dstY);
+-                else drawWalk(dstX2, dstY); break;
++                else drawWalk(dstX2, dstY);
++                break;
+             case PUSH : drawPush(dstX2, dstY); break;
+             case TOUCHE : drawTouche(dstX2, dstY); break;
+             case ELECTRIC : drawElectric(dstX2, dstY); break;
+@@ -1053,11 +1058,11 @@ void Link::draw(int offsetX, int offsetY
+         }
+     }
+ 
+-    if (status->getVirtualLife() > 0 && (direction != N || animation == HIT_EPEE || charge) && bouclier > 0 && status->isVisible() && !lapin) {
++    if (status->getVirtualLife() > 0 && (direction != N || animation == HIT_EPEE || charge) && bouclier != 0 && status->isVisible() && !lapin) {
+         bouclier->draw(dstX2, dstY, direction, animation, anim, charge);
+     }
+ 
+-    if (status->getVirtualLife() > 0 && epee > 0 && status->isVisible()) {
++    if (status->getVirtualLife() > 0 && epee != 0 && status->isVisible()) {
+         if (animation != SPIN_EPEE || !(
+             (direction == N && anim >= 9 && anim <= 12)
+             || (direction == S && anim >= 5 && anim <= 17)
+@@ -1996,6 +2001,7 @@ bool Link::useStuff() {
+                     case S : a = x; b = y + 24; break;
+                     case W : a = x - 16; b = y + 8; break;
+                     case E : a = x + 16; b = y + 8; break;
++                    default: return false;
+                 }
+                 delete flamme;
+                 flamme = new Flamme(a, b, direction);
+@@ -2533,6 +2539,7 @@ void Link::drawSpin(int dstX, int dstY)
+             if (anim>=13 && anim<=16) { srcX = 80; srcY = 168;}
+             if (anim>=17 && anim<=20) { srcX = 64; srcY = 168;}
+             break;
++        default: return;
+     }
+ 
+     if (anim > 26) drawIdle(dstX, dstY);
+diff -rup zeldansq.orig/src/game/content/link/Shield.cpp zeldansq.new/src/game/content/link/Shield.cpp
+--- zeldansq.orig/src/game/content/link/Shield.cpp	2014-07-06 10:49:22.000000000 +0200
++++ zeldansq.new/src/game/content/link/Shield.cpp	2023-12-06 10:18:44.917556934 +0100
+@@ -188,6 +188,7 @@ void Shield::draw(int dstX, int dstY, Di
+                 default : return;
+             }
+             break;
++        default: return;
+     }
+ 
+     int srcY = 0;
+diff -rup zeldansq.orig/src/game/content/link/Sword.cpp zeldansq.new/src/game/content/link/Sword.cpp
+--- zeldansq.orig/src/game/content/link/Sword.cpp	2014-08-19 18:29:22.000000000 +0200
++++ zeldansq.new/src/game/content/link/Sword.cpp	2023-12-06 10:17:34.687663673 +0100
+@@ -76,6 +76,7 @@ bool Sword::hit(int offsetX, int offsetY
+                 }
+                 i -= 2;
+                 break;
++            default: return false;
+         }
+         box.setX(i + offsetX);
+         box.setY(j + offsetY);
+@@ -142,6 +143,7 @@ bool Sword::hit(int offsetX, int offsetY
+                 if (step==17 || step==18) {i=-14; j=15; a=14; b=14; dir=W; break;}
+                 if (step==19 || step==20) {i=-14; j=7; a=14; b=14; dir=W; break;}
+                 return false;
++            default: return false;
+         }
+ 
+         box.setX(i + offsetX);
+@@ -1092,16 +1094,21 @@ bool Sword::hit(int offsetX, int offsetY
+         switch (dir) {
+             case N : i = 4; j = -2; a = 8; b = 12;
+                 if (move && step2) j++;
+-                if (force > 1 || onilink) {i -= 2; j -= 2; b = 15;} break;
++                if (force > 1 || onilink) {i -= 2; j -= 2; b = 15;}
++                break;
+             case S : i = 8; j = 19; a = 8; b = 12;
+                 if (move && step2) j++;
+-                if (force > 1 || onilink) {i--; b = 14;} break;
++                if (force > 1 || onilink) {i--; b = 14;}
++                break;
+             case W : i = -8; a = 12; b = 8; j = 14;
+                 if (move && step2) j++;
+-                if (force > 1 || onilink) {i -= 3; a = 15;} break;
++                if (force > 1 || onilink) {i -= 3; a = 15;}
++                break;
+             case E : i = 12; a = 12; b = 8; j = 14;
+                 if (move && step2) j++;
+-                if (force > 1 || onilink) a = 15; break;
++                if (force > 1 || onilink) a = 15;
++                break;
++            default: return false;
+         }
+ 
+         box.setX(i + offsetX);
+@@ -2119,16 +2126,20 @@ void Sword::drawCharge(int dstX, int dst
+     switch (dir) {
+         case N : dstX += 4; srcW = 8; srcH = 12; dstY -= 2;
+             if (move && step) dstY++;
+-            if (force > 1 || onilink) {dstX -= 2; dstY -= 2; srcH = 15;} break;
++            if (force > 1 || onilink) {dstX -= 2; dstY -= 2; srcH = 15;}
++            break;
+         case S : dstX += 8; srcW = 8; srcH = 12; dstY += 19;
+             if (move && step) dstY++;
+-            if (force > 1 || onilink) {dstX--; srcH = 14;} break;
++            if (force > 1 || onilink) {dstX--; srcH = 14;}
++            break;
+         case W : dstX -= 8; srcW = 12; srcH = 8; dstY += 14;
+             if (move && step) dstY++;
+-            if (force > 1 || onilink) {dstX -= 3; srcW = 15;} break;
++            if (force > 1 || onilink) {dstX -= 3; srcW = 15;}
++            break;
+         case E : dstX += 12; srcW = 12; srcH = 8; dstY += 14;
+             if (move && step) dstY++;
+-            if (force > 1 || onilink) srcW = 15; break;
++            if (force > 1 || onilink) srcW = 15;
++            break;
+     }
+     WindowManager::getInstance()->draw(image, srcX, srcY, srcW, srcH, dstX, dstY);
+ 
+diff -rup zeldansq.orig/src/game/content/projectiles/ProjGrappin.cpp zeldansq.new/src/game/content/projectiles/ProjGrappin.cpp
+--- zeldansq.orig/src/game/content/projectiles/ProjGrappin.cpp	2014-06-15 15:19:34.000000000 +0200
++++ zeldansq.new/src/game/content/projectiles/ProjGrappin.cpp	2023-12-06 10:13:42.631349692 +0100
+@@ -69,6 +69,7 @@ void ProjGrappin::projLoop() {
+                 case S : i = x + 6; j = y + 7 - 8; break;
+                 case W : i = x + 8; j = y + 6; break;
+                 case E : i = x + 7 - 8; j = y + 6; break;
++                default: return;
+             }
+ 
+             // check level +
+@@ -92,6 +93,7 @@ void ProjGrappin::projLoop() {
+                 case S : i = x + 6; j = y + 7; break;
+                 case W : i = x; j = y + 6; break;
+                 case E : i = x + 7; j = y + 6; break;
++                default: return;
+             }
+ 
+             scene = MainController::getInstance()->getGameController()->getSceneController()->getScene();

@@ -1,0 +1,235 @@
+diff -rup xpired/src/Makefile xpired.new/src/Makefile
+--- xpired/src/Makefile	2002-08-01 20:42:52.000000000 +0200
++++ xpired.new/src/Makefile	2023-12-05 09:01:41.830606118 +0100
+@@ -1,23 +1,24 @@
+ PREFIX=/usr/local
+-SHARE_PREFIX=$(PREFIX)/share/xpired
+-CFLAGS=`sdl-config --cflags` -DUNIX -DPREFIX=\"$(PREFIX)\" -DSHARE_PREFIX=\"$(SHARE_PREFIX)\"
+-LDFLAGS=`sdl-config --libs` -lSDL -lSDL_mixer -lSDL_image -lSDL_gfx
+-CC=gcc
++SHARE_PREFIX=.
++CFLAGS=$(CPU_CFLAGS) `pkg-config --cflags sdl` -DUNIX -DSHARE_PREFIX=\"$(SHARE_PREFIX)\"
++LIBS=`pkg-config --libs sdl SDL_mixer SDL_image SDL_gfx`
++LDFLAGS=-s
++CC=$(CROSS_PREFIX)gcc
+ 
+ BINARIES = xpired xpiredit
+ 
+ all: $(BINARIES)
+ 
+ xpired: xpired.o
+-	$(CC) -o xpired xpired.o $(LDFLAGS)
++	$(CC) $(CFLAGS) -o xpired xpired.o $(LIBS) $(LDFLAGS)
+ 
+ xpiredit: xpiredit.o xpired_unix.h
+-	$(CC) -o xpiredit xpiredit.o $(LDFLAGS)
++	$(CC) $(CFLAGS) -o xpiredit xpiredit.o $(LIBS) $(LDFLAGS)
+ 
+ .PHONY: clean
+ 
+ clean:
+-	rm $(BINARIES) xp*.o
++	rm -f $(BINARIES) xp*.o
+ 
+ install: xpired xpiredit xpired.lvl xpired.cfg bgimages.txt
+ 	if [ ! -d $(PREFIX)/bin ]; then mkdir -p $(PREFIX)/bin; fi
+diff -rup xpired/src/xpired.c xpired.new/src/xpired.c
+--- xpired/src/xpired.c	2009-08-15 22:38:32.000000000 +0200
++++ xpired.new/src/xpired.c	2023-12-05 09:49:52.990298584 +0100
+@@ -15,7 +15,7 @@
+ #include <SDL_image.h>
+ #include <SDL_gfxPrimitives.h>
+ 
+-#define	ShowFPS 1
++#define	ShowFPS 0
+ #define	GCycle 33
+ #define	TextDelay 100
+ #define	DeadDelay 30
+@@ -764,7 +764,7 @@ void DR_RCT(int x1, int y1, int x2, int
+ }
+ 
+ 
+-void DR_SPR(int x, int y, char Sprite){
++void DR_SPR(int x, int y, unsigned char Sprite){
+ 	if (Spr[Sprite].img!=NULL)
+ 		DR_RCT(x,y,x+Spr[Sprite].img->w,y+Spr[Sprite].img->h);
+ //	else
+@@ -1059,7 +1059,9 @@ int I,J,K,L,P;
+ char BEM2=0;
+ 
+ 	for (I=0;I<MaxLvlSize;I++)
+-			for (J=0;J<MaxLvlSize;J++) if (ALvl.M[I][J].f)
++			for (J=0;J<MaxLvlSize;J++)
++			if (ALvl.M[I][J].f)
++			{
+ 				if (ALvl.M[I][J].f<3){// SHIFT/SWIFT
+ 					DR_SPR(I*20+ALvl.M[I][J].x,J*20+ALvl.M[I][J].y,ALvl.M[I][J].FSpr);
+ 					if ((!ALvl.M[I][J].x)&&(!ALvl.M[I][J].y)){
+@@ -1142,6 +1144,7 @@ char BEM2=0;
+ 							for (K=-1;K<=1;K++)
+ 								for (L=-1;L<=1;L++)
+ 									if ((K||L)&&(I+K>=0)&&(I+K<MaxLvlSize)&&(J+L>=0)&&(J+L<MaxLvlSize))
++									{
+ 										if (((ALvl.M[I+K][J+L].FTyp=='o')||(ALvl.M[I+K][J+L].FTyp=='O'))&&((ALvl.M[I+K][J+L].f<4)||(ALvl.M[I+K][J+L].f>6))){
+ 											ALvl.M[I+K][J+L].f=4+(ALvl.M[I+K][J+L].FTyp=='O');
+ 											ALvl.M[I+K][J+L].x+=K;
+@@ -1171,6 +1174,7 @@ char BEM2=0;
+ 												ALvl.M[I+K][J+L].y=0;
+ 												}
+ 										}
++									}
+ 						}else
+ 						if (ALvl.M[I][J].px==2){
+ 							for (K=10;K<=20;K+=ALvl.M[I][J].f)
+@@ -1257,7 +1261,7 @@ char BEM2=0;
+ 					fprintf(stderr,"?! %i at %i,%i\n",ALvl.M[I][J].f,I,J);
+ 					ALvl.M[I][J].f--;
+ 				}
+-
++			}
+ 	if (BEM&&(!BEM2)){
+ 		for (I=0;I<MaxLvlSize;I++)
+ 			for (J=0;J<MaxLvlSize;J++)
+@@ -1278,11 +1282,11 @@ SDL_Rect Rct;
+ 	PPX=0;
+ 	PPY=0;
+ 
+-	if ((Lvl[Lev].Pw[0]=='\0')||(DemoMode))
+-		sprintf(Caption,"%s: %s",APPNAME,Lvl[Lev].Name);
++	if ((Lvl[(unsigned char)Lev].Pw[0]=='\0')||(DemoMode))
++		sprintf(Caption,"%s: %s",APPNAME,Lvl[(unsigned char)Lev].Name);
+ 	else{
+-		strcpy(Passwd,Lvl[Lev].Pw);
+-		sprintf(Caption,"%s: %s [%s]",APPNAME,Lvl[Lev].Name,Lvl[Lev].Pw);
++		strcpy(Passwd,Lvl[(unsigned char)Lev].Pw);
++		sprintf(Caption,"%s: %s [%s]",APPNAME,Lvl[(unsigned char)Lev].Name,Lvl[(unsigned char)Lev].Pw);
+ 	}
+ 
+ 	SDL_WM_SetCaption(Caption,Caption);
+@@ -1290,24 +1294,24 @@ SDL_Rect Rct;
+ 	BEM=0;
+ 	for (I=0;I<MaxLvlSize;I++)
+ 		for (J=0;J<MaxLvlSize;J++)
+-			if (Lvl[Lev].M[I][J].FTyp=='B')
++			if (Lvl[(unsigned char)Lev].M[I][J].FTyp=='B')
+ 				BEM=1;
+ 
+-	ALvl.DL=Lvl[Lev].DL;
+-	strcpy(ALvl.Name,Lvl[Lev].Name);
+-	strcpy(ALvl.Pw,Lvl[Lev].Pw);
++	ALvl.DL=Lvl[(unsigned char)Lev].DL;
++	strcpy(ALvl.Name,Lvl[(unsigned char)Lev].Name);
++	strcpy(ALvl.Pw,Lvl[(unsigned char)Lev].Pw);
+ 	for (I=0;I<MaxLvlSize;I++)
+ 		for (J=0;J<MaxLvlSize;J++){
+-			if (Lvl[Lev].M[I][J].BTyp=='*'){
++			if (Lvl[(unsigned char)Lev].M[I][J].BTyp=='*'){
+ 				PX=I;
+ 				PY=J;
+ 			}
+-			ALvl.M[I][J].FTyp=Lvl[Lev].M[I][J].FTyp;
+-			ALvl.M[I][J].FSpr=Lvl[Lev].M[I][J].FSpr;
+-			ALvl.M[I][J].BTyp=Lvl[Lev].M[I][J].BTyp;
+-			ALvl.M[I][J].BSpr=Lvl[Lev].M[I][J].BSpr;
+-			ALvl.M[I][J].f=Lvl[Lev].M[I][J].f;
+-			ALvl.M[I][J].txt=Lvl[Lev].M[I][J].txt;
++			ALvl.M[I][J].FTyp=Lvl[(unsigned char)Lev].M[I][J].FTyp;
++			ALvl.M[I][J].FSpr=Lvl[(unsigned char)Lev].M[I][J].FSpr;
++			ALvl.M[I][J].BTyp=Lvl[(unsigned char)Lev].M[I][J].BTyp;
++			ALvl.M[I][J].BSpr=Lvl[(unsigned char)Lev].M[I][J].BSpr;
++			ALvl.M[I][J].f=Lvl[(unsigned char)Lev].M[I][J].f;
++			ALvl.M[I][J].txt=Lvl[(unsigned char)Lev].M[I][J].txt;
+ 			ALvl.M[I][J].x=0;
+ 			ALvl.M[I][J].y=0;
+ 			ALvl.M[I][J].px=0;
+@@ -1316,7 +1320,7 @@ SDL_Rect Rct;
+ 				ALvl.M[I][J].f=10;
+ 		}
+ 	for (I=0;I<MaxText;I++)
+-		strcpy(ALvl.Text[I],Lvl[Lev].Text[I]);
++		strcpy(ALvl.Text[I],Lvl[(unsigned char)Lev].Text[I]);
+ 
+ 	if (Lvl[Level].Bg!=NULL){
+ 		Rct.w=Lvl[Level].Bg->w;
+@@ -1368,7 +1372,7 @@ char M=0,I;
+ 
+ 	while ((!Quit)&&(!Fire)){
+ 		for (I=0;I<3;I++){
+-			stringRGBA(screen,40,175+30*I,Menu[I],0,200+50*(I==M),0,255);
++			stringRGBA(screen,40,175+30*I,Menu[(unsigned char)I],0,200+50*(I==M),0,255);
+ 			boxRGBA(screen,160,175+30*I,359,175+30*I+8,0,64,0,255);
+ 		}
+ 			boxRGBA(screen,160,175+30*0+1,160+((float)Shades/255.0)*200,175+30*0+7,0,128,0,255);
+@@ -1575,23 +1579,28 @@ do{
+ 						PPY=0;
+ 					}
+ 				}
+-				if ((Left&&!Right&&!Up&&!Down)||(Left&&Down&&Sw)||(Left&&Up&&!Sw))		if (is_free(-1,0))		{Sw=!Sw;PPX=-1;PPY=0;DR_SPR(PX*20,PY*20,'*');} else Sw=!Sw;
+-				else
+-				if ((Right&&!Left&&!Up&&!Down)||(Right&&Down&&!Sw)||(Right&&Up&&Sw))	if (is_free(+1,0))		{Sw=!Sw;PPX=+1;PPY=0;DR_SPR(PX*20,PY*20,'*');} else Sw=!Sw;
+-				else
+-				if ((Up&&!Down&&!Left&&!Right)||(Up&&Left&&Sw)||(Up&&Right&&!Sw))		if (is_free(0,-1))		{Sw=!Sw;PPY=-1;PPX=0;DR_SPR(PX*20,PY*20,'*');} else Sw=!Sw;
+-				else
+-				if ((Down&&!Up&&!Left&&!Right)||(Down&&Left&&!Sw)||(Down&&Right&&Sw))	if (is_free(0,+1))		{Sw=!Sw;PPY=+1;PPX=0;DR_SPR(PX*20,PY*20,'*');} else Sw=!Sw;
++				if ((Left&&!Right&&!Up&&!Down)||(Left&&Down&&Sw)||(Left&&Up&&!Sw)) {
++					if (is_free(-1,0)) {Sw=!Sw;PPX=-1;PPY=0;DR_SPR(PX*20,PY*20,'*');} else Sw=!Sw;
++				}
++				else if ((Right&&!Left&&!Up&&!Down)||(Right&&Down&&!Sw)||(Right&&Up&&Sw)) {
++					if (is_free(+1,0))		{Sw=!Sw;PPX=+1;PPY=0;DR_SPR(PX*20,PY*20,'*');} else Sw=!Sw;
++				}
++				else if ((Up&&!Down&&!Left&&!Right)||(Up&&Left&&Sw)||(Up&&Right&&!Sw)) {
++					if (is_free(0,-1))		{Sw=!Sw;PPY=-1;PPX=0;DR_SPR(PX*20,PY*20,'*');} else Sw=!Sw;
++				}
++				else if ((Down&&!Up&&!Left&&!Right)||(Down&&Left&&!Sw)||(Down&&Right&&Sw)) {
++					if (is_free(0,+1))		{Sw=!Sw;PPY=+1;PPX=0;DR_SPR(PX*20,PY*20,'*');} else Sw=!Sw;
++				}
+ 			}
+ 
+ 			if (!BEM&&(ALvl.M[PX][PY].BTyp=='+')){
+ 				Lives+=(Level%2);
+ 				SetLevel(Level+1,DemoMode);
+ 			}
+-			if ((ALvl.M[PX][PY].txt>=0)&&(ALvl.Text[ALvl.M[PX][PY].txt][0]!='\0')){
+-				TextAdd(PX*20+10,PY*20+10,ALvl.Text[ALvl.M[PX][PY].txt]);
+-				ALvl.Text[ALvl.M[PX][PY].txt][0]='\0';
+-				ALvl.M[PX][PY].txt=-1;
++			if ((ALvl.M[PX][PY].txt>=0)&&(ALvl.Text[(unsigned char)ALvl.M[(unsigned char)PX][(unsigned char)PY].txt][0]!='\0')){
++				TextAdd(PX*20+10,PY*20+10,ALvl.Text[(unsigned char)ALvl.M[(unsigned char)PX][(unsigned char)PY].txt]);
++				ALvl.Text[(unsigned char)ALvl.M[(unsigned char)PX][(unsigned char)PY].txt][0]='\0';
++				ALvl.M[(unsigned char)PX][(unsigned char)PY].txt=-1;
+ 			}
+ 
+ 			//--- SMRT
+@@ -1713,12 +1722,12 @@ Uint32 OldTicks;
+ 				Passwd[strlen(Passwd)-1]='\0';
+ 			if (UC==13)
+ 				Return=1;
+-				SDL_BlitSurface(TitleS,&Src,screen,NULL);
+-				if (Passwd[0]!='\0'){
+-					boxRGBA(screen,0,390,399,399,0,255,0,64);
+-					stringRGBA(screen,200-strlen(Passwd)*4,391,Passwd,10,250,10,128);
+-				}
+-				SDL_UpdateRect(screen, 0, 390, 400, 10);
++			SDL_BlitSurface(TitleS,&Src,screen,NULL);
++			if (Passwd[0]!='\0'){
++				boxRGBA(screen,0,390,399,399,0,255,0,64);
++				stringRGBA(screen,200-strlen(Passwd)*4,391,Passwd,10,250,10,128);
++			}
++			SDL_UpdateRect(screen, 0, 390, 400, 10);
+ 		}
+ 		if (SDL_GetTicks()-OldTicks>10000){
+             int StartTime, EndTime; //wawa
+diff -rup xpired/src/xpired_unix.h xpired.new/src/xpired_unix.h
+--- xpired/src/xpired_unix.h	2002-08-01 20:37:34.000000000 +0200
++++ xpired.new/src/xpired_unix.h	2023-12-05 08:45:48.698598044 +0100
+@@ -11,10 +11,6 @@
+ #include<sys/types.h>
+ #include<unistd.h>
+ 
+-#ifndef PREFIX
+-#define PREFIX "/usr/local"
+-#endif
+-
+ #ifndef SHARE_PREFIX
+ #define SHARE_PREFIX "/usr/local/share/xpired"
+ #endif

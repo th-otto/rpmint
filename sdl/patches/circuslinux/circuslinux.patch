@@ -1,0 +1,134 @@
+diff -rup circuslinux-1.0.3/Makefile.am circuslinux-1.0.3.new/Makefile.am
+--- circuslinux-1.0.3/Makefile.am	2001-04-29 08:53:26.000000000 +0200
++++ circuslinux-1.0.3.new/Makefile.am	2023-12-04 14:30:51.645517804 +0100
+@@ -18,19 +18,16 @@ VERSION = @VERSION@
+ CC=@CC@
+ DATA_PREFIX=$(pkgdatadir)/data/
+ JOY=@JOY@
+-TARGET_DEF=@TARGET_DEF@
+ 
+ 
+ CFLAGS  = @CFLAGS@ -Wall -O2 -DDATA_PREFIX=\"$(DATA_PREFIX)\" \
+-	  -D$(TARGET_DEF) -DJOY_$(JOY)
++	  -DJOY_$(JOY)
+ LIBS    = @LIBS@ 
+ 
+ 
+ bin_PROGRAMS = circuslinux
+ 
+ circuslinux_SOURCES = circuslinux.c
+-circuslinux_CFLAGS  = CFLAGS
+-circuslinux_LIBS    = LIBS
+ 
+ docdir = $(prefix)/share/doc/$(PACKAGE)-$(VERSION)
+ 
+diff -rup circuslinux-1.0.3/circuslinux.c circuslinux-1.0.3.new/circuslinux.c
+--- circuslinux-1.0.3/circuslinux.c	2001-04-29 08:38:01.000000000 +0200
++++ circuslinux-1.0.3.new/circuslinux.c	2023-12-04 14:31:01.728836001 +0100
+@@ -60,7 +60,7 @@
+ #include <SDL_mixer.h>
+ #endif
+ 
+-#ifdef LINUX
++#ifdef __linux__
+ #include <pwd.h>
+ #include <sys/types.h>
+ #include <ctype.h>
+@@ -2809,7 +2809,7 @@ void setup(void)
+ #ifndef NOSOUND
+   if (use_sound == 1)
+     {
+-      if (Mix_OpenAudio(44100, AUDIO_S16, 2, 256) < 0)
++      if (Mix_OpenAudio(44100, AUDIO_S16, 2, 2048) < 0)
+         {
+           fprintf(stderr,
+                   "\nWarning: I could not set up audio for 44100 Hz "
+@@ -3430,12 +3430,12 @@ FILE * open_option_file(char * mode)
+ {
+   char * filename;
+   FILE * fi;
+-#ifdef LINUX
++#ifdef __linux__
+   char * home;
+ #endif
+   
+   
+-#ifdef LINUX
++#ifdef __linux__
+   /* Get home directory (from $HOME variable)... if we can't determine it,
+      use the current directory ("."): */
+ 
+@@ -3735,7 +3735,7 @@ int pausescreen(void)
+ void getinitials(void)
+ {
+   int i;
+-#ifdef LINUX
++#ifdef __linux__
+   struct passwd * pw;
+ #endif
+   char * tmp;
+@@ -3747,7 +3747,7 @@ void getinitials(void)
+     username_initials[i] = '\0';
+   
+   
+-#ifdef LINUX
++#ifdef __linux__
+   if (getenv("USER") != NULL)
+     {
+       pw = getpwnam(getenv("USER"));
+diff -rup circuslinux-1.0.3/configure.in circuslinux-1.0.3.new/configure.in
+--- circuslinux-1.0.3/configure.in	2000-06-11 03:50:39.000000000 +0200
++++ circuslinux-1.0.3.new/configure.in	2023-12-04 14:30:51.648851133 +0100
+@@ -28,10 +28,7 @@ dnl Use the macro SDL provides to check
+ dnl development environment.  Abort the configuration process if the
+ dnl minimum	 version we require isn't available.
+ SDL_VERSION=1.0.8
+-AM_PATH_SDL($SDL_VERSION,
+-             :,
+-            AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!])
+-           )
++PKG_CHECK_MODULES([SDL], [sdl], :, AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!]))
+ 
+ 
+ dnl Add the SDL preprocessor flags and libraries to the build process
+@@ -43,18 +40,12 @@ AC_SUBST(LIBS)
+ 
+ dnl Checks for libraries.
+ dnl Replace `main' with a function in -lSDL_image:
+-AC_CHECK_LIB(SDL_image, main,
+-	     LIBS="$LIBS -lSDL_image",
+-	     AC_MSG_ERROR([*** SDL_image library not found!])	
+-	    )
++PKG_CHECK_MODULES([SDL_IMAGE], [SDL_image], LIBS="$LIBS $SDL_IMAGE_LIBS", AC_MSG_ERROR([*** SDL_image library not found!]))
+ 
+ 
+ dnl Replace `main' with a function in -lSDL_mixer:
+ use_mixer=yes
+-AC_CHECK_LIB(SDL_mixer, main,
+-	     LIBS="$LIBS -lSDL_mixer",
+-	     use_mixer=no
+-	    )
++PKG_CHECK_MODULES([SDL_MIXER], [SDL_mixer],  LIBS="$LIBS $SDL_MIXER_LIBS", use_mixer=no)
+ if test x$use_mixer = xyes; then
+    CFLAGS="$CFLAGS -D__SOUND"
+ else
+@@ -71,19 +62,6 @@ AC_ARG_ENABLE(joystick,
+ AC_SUBST(JOY)
+ 	
+ 
+-dnl Target
+-case "$target" in
+-	*-*-linux*)
+-	TARGET_DEF=LINUX
+-	;;	
+-
+- *-*-cygwin* | *-*-mingw32*)
+-	TARGET_DEF=WIN32
+-	;;
+-esac	
+-AC_SUBST(TARGET_DEF)
+-
+-
+ AC_OUTPUT([
+ 	   Makefile
+ 	   data/Makefile

@@ -1,0 +1,30 @@
+From a8e273c2dbccbaf9762a9f0704979c80bac661dd Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Per=20=C3=98yvind=20Karlsen?= <peroyvind@mandriva.org>
+Date: Mon, 12 Sep 2011 21:00:48 +0200
+Subject: [PATCH] don't try to print non-alphanumeric chars to screen as it'll
+ crash
+
+---
+ drawing.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drawing.c b/drawing.c
+index 46b7c62..8e89226 100644
+--- a/src/drawing.c
++++ b/src/drawing.c
+@@ -1,5 +1,6 @@
+ #include <stdio.h>
+ #include <string.h>
++#include <ctype.h>
+ #include "def.h"
+ #include "drawing.h"
+ #include "main.h"
+@@ -36,7 +37,7 @@
+ {
+   Sint4 i;
+   for (i=0;p[i];i++) {
+-    gwrite(x,y,p[i],c);
++    gwrite(x,y,isalnum(p[i]) ? p[i] : ' ',c);
+     x+=12;
+   }
+ }

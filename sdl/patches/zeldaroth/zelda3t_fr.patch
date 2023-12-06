@@ -1,0 +1,1937 @@
+diff -rup zelda3t.orig/Carte.cpp zelda3t.new/Carte.cpp
+--- zelda3t.orig/Carte.cpp	2009-09-10 21:11:08.000000000 +0200
++++ zelda3t.new/Carte.cpp	2023-12-06 11:19:08.098892616 +0100
+@@ -188,14 +188,32 @@ void Carte::initEtage() {
+     
+     switch (zone-46) {
+         case 0 : case 4 : case 5 : case 6 : case 13 :
+-            if (levely<-1) levely=2; if (levely>2) levely=-1; break;
++            if (levely<-1) levely=2;
++            if (levely>2) levely=-1;
++            break;
+         case 1 : case 2 : case 3 : case 8 : case 9 : 
+-            if (levely<-2) levely=0; if (levely>0) levely=-2; break;
+-        case 7 : if (levely<-2) levely=2; if (levely>2) levely=-2; break;
+-        case 10 : if (levely<0) levely=1; if (levely>1) levely=0; break;
+-        case 11 : if (levely<-2) levely=1; if (levely>1) levely=-2; break;
+-        case 12 : levely=0; break;
+-        case 14 : if (levely<-1) levely=0; if (levely>0) levely=-1; break;
++            if (levely<-2) levely=0;
++            if (levely>0) levely=-2;
++            break;
++        case 7 :
++            if (levely<-2) levely=2;
++            if (levely>2) levely=-2;
++            break;
++        case 10 :
++            if (levely<0) levely=1;
++            if (levely>1) levely=0;
++            break;
++        case 11 :
++            if (levely<-2) levely=1;
++            if (levely>1) levely=-2;
++            break;
++        case 12 :
++            levely=0;
++            break;
++        case 14 :
++            if (levely<-1) levely=0;
++            if (levely>0) levely=-1;
++            break;
+     }
+     src.h = 16; src.w = 32;src.x = 0;src.y=32-levely*16;dst.x = 40; dst.y = 96-levely*16;
+     
+diff -rup zelda3t.orig/Ennemi.cpp zelda3t.new/Ennemi.cpp
+--- zelda3t.orig/Ennemi.cpp	2009-09-10 20:46:34.000000000 +0200
++++ zelda3t.new/Ennemi.cpp	2023-12-06 11:27:46.674810985 +0100
+@@ -328,16 +328,20 @@ void Ennemi::draw(SDL_Surface* gpScreen)
+             switch (direction) {
+                 case S : 
+                     if (gpJoueur->getX()>x-4 && gpJoueur->getX()<x+32 
+-                    && gpJoueur->getY()>y && gpJoueur->getY()+10<y+43) special1=1; break;
++                    && gpJoueur->getY()>y && gpJoueur->getY()+10<y+43) special1=1;
++                    break;
+                 case N : 
+                     if (gpJoueur->getX()>x-12 && gpJoueur->getX()<x+26 
+-                    && gpJoueur->getY()<y && gpJoueur->getY()+22>y-17) special1=1; break;
++                    && gpJoueur->getY()<y && gpJoueur->getY()+22>y-17) special1=1;
++                    break;
+                 case O : 
+                     if (gpJoueur->getX()+14>x-18 && gpJoueur->getX()<x 
+-                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1; break;
++                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1;
++                    break;
+                 case E : 
+                     if (gpJoueur->getX()+5<x+36 && gpJoueur->getX()>x 
+-                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1; break;
++                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1;
++                    break;
+             }
+             
+             int aa1=0; int bb1=0; int aa2=w; int bb2=h;
+@@ -432,16 +436,20 @@ void Ennemi::draw(SDL_Surface* gpScreen)
+             switch (direction) {
+                 case S : 
+                     if (gpJoueur->getX()>x-4 && gpJoueur->getX()<x+32 
+-                    && gpJoueur->getY()>y && gpJoueur->getY()+10<y+41) special1=1; break;
++                    && gpJoueur->getY()>y && gpJoueur->getY()+10<y+41) special1=1;
++                    break;
+                 case N : 
+                     if (gpJoueur->getX()>x-12 && gpJoueur->getX()<x+26 
+-                    && gpJoueur->getY()<y && gpJoueur->getY()+22>y-8) special1=1; break;
++                    && gpJoueur->getY()<y && gpJoueur->getY()+22>y-8) special1=1;
++                    break;
+                 case O : 
+                     if (gpJoueur->getX()+14>x-21 && gpJoueur->getX()<x 
+-                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1; break;
++                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1;
++                    break;
+                 case E : 
+                     if (gpJoueur->getX()+5<x+39 && gpJoueur->getX()>x 
+-                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1; break;
++                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1;
++                    break;
+             }
+             
+             int aa1=0; int bb1=0; int aa2=w; int bb2=h;
+@@ -531,16 +539,20 @@ void Ennemi::draw(SDL_Surface* gpScreen)
+             switch (direction) {
+                 case S : 
+                     if (gpJoueur->getX()>x-6 && gpJoueur->getX()<x+22 
+-                    && gpJoueur->getY()>y && gpJoueur->getY()+10<y+45) special1=1; break;
++                    && gpJoueur->getY()>y && gpJoueur->getY()+10<y+45) special1=1;
++                    break;
+                 case N : 
+                     if (gpJoueur->getX()>x-5 && gpJoueur->getX()<x+10 
+-                    && gpJoueur->getY()<y && gpJoueur->getY()+22>y-17) special1=1; break;
++                    && gpJoueur->getY()<y && gpJoueur->getY()+22>y-17) special1=1;
++                    break;
+                 case O : 
+                     if (gpJoueur->getX()+14>x-28 && gpJoueur->getX()<x 
+-                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1; break;
++                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1;
++                    break;
+                 case E : 
+                     if (gpJoueur->getX()+5<x+46 && gpJoueur->getX()>x 
+-                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1; break;
++                    && gpJoueur->getY()+10<y+32 && gpJoueur->getY()+22>y-1) special1=1;
++                    break;
+             }
+             
+             int aa1=0; int bb1=0; int aa2=w; int bb2=h;
+@@ -1178,14 +1190,16 @@ void Ennemi::draw(SDL_Surface* gpScreen)
+             if (gpJeu->getJoueur()->getX()+16 < x) src.x=156;
+             if (gpJeu->getJoueur()->getX() > x+w) src.x=78;
+             if (special2==0 && h < 123) {
+-                if (!gpJeu->getStop()) h+=vitesse; if (h > 123) h = 123;
++                if (!gpJeu->getStop()) h+=vitesse;
++                if (h > 123) h = 123;
+                 if (h-59 < 0) zonesVulnerables->getZone()->y = 0;
+                 else zonesVulnerables->getZone()->y = h-59;
+                 if (h-(9+64) < 0) zonesVulnerables->getZone()->h = 0;
+                 else zonesVulnerables->getZone()->h = h-(9+64);
+             }
+             if ((special2==(((viemax-vie)/8) + 1) && h > 1) || (special2 > 0 && h < 123)) {
+-                if (!gpJeu->getStop()) h-=vitesse; if (h < 1) h = 1;
++                if (!gpJeu->getStop()) h-=vitesse;
++                if (h < 1) h = 1;
+                 if (h-59 < 0) zonesVulnerables->getZone()->y = 0;
+                 else zonesVulnerables->getZone()->y = h-59;
+                 if (h-(9+64) < 0) zonesVulnerables->getZone()->h = 0;
+@@ -1301,7 +1315,8 @@ void Ennemi::draw(SDL_Surface* gpScreen)
+                     force=10; 
+                     getSuivant()->special1=1; 
+                     getSuivant()->getSuivant()->special1=1;
+-                    for (int k = 0; k < 25; k++) effets[k]=2; effets[FEU]=0;
++                    for (int k = 0; k < 25; k++) effets[k]=2;
++                    effets[FEU]=0;
+                     zonesVulnerables->getZone()->y = 67;
+                     zonesVulnerables->getZone()->h = 16;
+                 }
+@@ -2148,7 +2163,8 @@ void Ennemi::setVie(int i) {
+     if (id == 62 && special2==0) {
+         if (i > 0 && i <= 5) {
+             special1=0;special2=1;recul=0;typeIA=IA_RIEN;force=0;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[EXPLOSION]=2;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[EXPLOSION]=2;
+             zonesVulnerables->getZone()->w=w; zonesVulnerables->getZone()->h=16;
+             zonesVulnerables->getZone()->x=0; zonesVulnerables->getZone()->y=21; 
+         }
+@@ -2312,7 +2328,8 @@ void Ennemi::setVie(int i) {
+     }
+     if (id == 120 && i<=0) gpJeu->getPnj()->getSuivant()->setVie(1);
+     if (id == 124) {
+-        for (int k = 0; k < 25; k++) effets[k]=0; i=vie;
++        for (int k = 0; k < 25; k++) effets[k]=0;
++        i=vie;
+         special2=1;
+         typeIA = IA_RIEN;
+         gpJeu->getAudio()->playSound(7);
+@@ -2332,7 +2349,8 @@ void Ennemi::setVie(int i) {
+             gpJeu->getJoueur()->setCoffre(12,13,2);
+     }
+     if (id == 125) {
+-        for (int k = 0; k < 25; k++) effets[k]=0; i=vie;
++        for (int k = 0; k < 25; k++) effets[k]=0;
++        i=vie;
+         special2=1;
+         typeIA = IA_RIEN;
+         gpJeu->getAudio()->playSound(7);
+@@ -2427,7 +2445,8 @@ void Ennemi::setVie(int i) {
+     if (id == 135 && special2==0) {
+         if (i > 0 && i <= 10) {
+             special1=0;special2=1;recul=0;typeIA=IA_RIEN;force=0;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[EXPLOSION]=2;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[EXPLOSION]=2;
+             zonesVulnerables->getZone()->w=w; zonesVulnerables->getZone()->h=16;
+             zonesVulnerables->getZone()->x=0; zonesVulnerables->getZone()->y=21; 
+         }
+@@ -3771,7 +3790,8 @@ void Ennemi::init() {
+             gpZoneBase->getZone()->x=0; gpZoneBase->getZone()->y=10; 
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+-            for (int k = 0; k < 25; k++) effets[k]=1; effets[FEU]=2;
++            for (int k = 0; k < 25; k++) effets[k]=1;
++            effets[FEU]=2;
+             maxglace=100;
+             break;
+         case 30 :
+@@ -3793,7 +3813,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             maxglace=40; recul=0; typeEnn=E_MONO_DIR; vanim=120;
+-            for (int k = 0; k < 25; k++) effets[k]=1; effets[ENNEMI]=2; 
++            for (int k = 0; k < 25; k++) effets[k]=1;
++            effets[ENNEMI]=2; 
+             break;
+         case 32 :
+             viemax=5; w=16; h=23; animmax=2; typeIA=IA_FONCE; porte=200; force = 3;
+@@ -3821,7 +3842,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             recul=8; maxglace=100;
+-            for (int k = 0; k < 25; k++) effets[k]=1; effets[FLECHE]=2;
++            for (int k = 0; k < 25; k++) effets[k]=1;
++            effets[FLECHE]=2;
+             break;
+         case 35 :
+             viemax=12; w=32; h=32; animmax=2; typeIA=IA_FONCE; porte=300; force = 3;
+@@ -3866,7 +3888,8 @@ void Ennemi::init() {
+             gpZoneBase->getZone()->x=4; gpZoneBase->getZone()->y=9; 
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+-            for (int k = 0; k < 25; k++) effets[k]=1; effets[FLECHE]=2; recul=8; maxglace=100;
++            for (int k = 0; k < 25; k++) effets[k]=1;
++            effets[FLECHE]=2; recul=8; maxglace=100;
+             break;
+         case 40 :
+             viemax=12; w=54; h=42; animmax=8; typeIA=IA_FONCE; porte=300; force = 3;
+@@ -3894,7 +3917,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             maxglace=10; direction=N; typeEnn=E_MONO_DIR; type_att=COUP_GLACE;
+-            for (int k = 0; k < 25; k++) effets[k]=1; effets[FEU]=2;
++            for (int k = 0; k < 25; k++) effets[k]=1;
++            effets[FEU]=2;
+             break;
+         case 43 :
+             viemax=16; w=32; h=32; animmax=2; typeIA=IA_FONCE; porte=300; force = 4;
+@@ -3922,7 +3946,8 @@ void Ennemi::init() {
+             zonesAttaques->ajout(new ZoneRect(0,67,16,9));
+             zonesAttaques->ajout(new ZoneRect(50,59,16,9));
+             zonesVulnerables = new ZoneRect(9,29,48,38);
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[COUP_MARTEAU]=2;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[COUP_MARTEAU]=2;
+             typeEnn=E_MONO_DIR; recul=4; spectre=1; maxglace=40; vanim = 120;
+             break;
+         case 46 :
+@@ -4128,7 +4153,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,0);
+             zonesVulnerables = new ZoneRect(0,0,w,0);
+             maxglace=60; recul=0; vanim=120; direction=S; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=0; vol=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            vol=1;
+             break;
+         case 67 :
+             viemax=0; w=8; h=0; animmax=24; typeIA=IA_SPECIAL; porte=300; force = 0;
+@@ -4138,7 +4164,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             maxglace=60; recul=0; vanim=120; direction=N; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=0; vol=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            vol=1;
+             break;
+         case 68 :
+             viemax=0; w=26; h=0; animmax=3; typeIA=IA_SPECIAL; porte=300; force = 8;
+@@ -4148,7 +4175,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             maxglace=60; recul=0; vanim=120; direction=E; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=0; vol=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            vol=1;
+             break;
+         case 69 :
+             viemax=0; w=26; h=0; animmax=3; typeIA=IA_SPECIAL; porte=300; force = 8;
+@@ -4158,7 +4186,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             maxglace=60; recul=0; vanim=120; direction=O; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=0; vol=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            vol=1;
+             break;
+         case 70 :
+             viemax=1; w=1; h=272; animmax=0; typeIA=IA_RIEN; porte=300; force = 0;
+@@ -4168,7 +4197,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             maxglace=0; recul=0; vanim=120; direction=O; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=0; spectre=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            spectre=1;
+             break;
+         case 71 :
+             viemax=30; w=52; h=55; animmax=3; typeIA=IA_FONCE; porte=300; force = 12;
+@@ -4196,7 +4226,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(30,0,14,h); direction=E; typeEnn=E_MONO_DIR;
+             zonesAttaques->ajout(new ZoneRect(30,30,40,74));
+             zonesVulnerables = new ZoneRect(30,30,40,74); maxglace=0; recul=0;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[COUP_GLACE]=2; spectre=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[COUP_GLACE]=2; spectre=1;
+             break;
+         case 74 :
+             viemax=90; w=104; h=153; animmax=3; typeIA=IA_RIEN; porte=300; force = 24;
+@@ -4206,7 +4237,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(60,0,14,h); direction=O; typeEnn=E_MONO_DIR;
+             zonesAttaques->ajout(new ZoneRect(24,30,40,74));
+             zonesVulnerables = new ZoneRect(24,30,40,74); maxglace=0; recul=0;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[FEU]=2; spectre=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[FEU]=2; spectre=1;
+             break;
+         case 75 :
+             viemax=100; w=19; h=24; animmax=7; typeIA=IA_FONCE; porte=300; force = 1;
+@@ -4216,7 +4248,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h); type_att=DEMI;
+             zonesAttaques->ajout(new ZoneRect(0,0,w,h));
+             zonesVulnerables = new ZoneRect(0,0,w,h); maxglace=0;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[COUP_EPEE]=2; effets[EPEE_SPIN]=2;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[COUP_EPEE]=2; effets[EPEE_SPIN]=2;
+             break;
+         case 76 :
+             viemax=70; w=60; h=51; animmax=5; typeIA=IA_FONCE; porte=300; force = 20;
+@@ -4310,7 +4343,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             maxglace=0; typeEnn=E_PROFIL;
+-            for (int k = 0; k < 25; k++) effets[k]=0; spectre=1; vol=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            spectre=1; vol=1;
+             break;
+         case 86 :
+             viemax=1; w=16; h=16; animmax=1; typeIA=IA_SNIPE; porte=200; force = 5;
+@@ -4406,7 +4440,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,20,22);
+             zonesVulnerables = new ZoneRect(0,0,20,22);
+             direction=N; typeEnn=E_PROFIL; recul=0;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[FEU]=2;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[FEU]=2;
+             break;
+         case 96 :
+             viemax=1; w=16; h=16; animmax=0; typeIA=IA_RIEN; porte=300; force = 0;
+@@ -4426,7 +4461,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(9,6,35,58);
+             zonesVulnerables = new ZoneRect(9,6,35,58);
+             direction=N; typeEnn=E_MONO_DIR; recul=0;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[FEU]=2;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[FEU]=2;
+             break;
+         case 98 :
+             viemax=14; w=32; h=32; animmax=0; typeIA=IA_RIEN; porte=300; force = 4;
+@@ -4445,7 +4481,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,0,0);
+             zonesVulnerables = new ZoneRect(0,0,0,0);
+             direction=N; typeEnn=E_MONO_DIR; vol=1; spectre=1; nage=1; recul=0;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[ENNEMI]=2;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[ENNEMI]=2;
+             break;
+         case 100 :
+             viemax=1; w=63; h=31; animmax=0; typeIA=IA_RIEN; porte=0; force = 4;
+@@ -4513,7 +4550,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(8,16,64,64);
+             zonesVulnerables = new ZoneRect(8,16,64,64);
+             maxglace=30; recul=0;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[ENNEMI]=2;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[ENNEMI]=2;
+             break;
+         case 106 :
+             viemax=1; w=39; h=48; animmax=1; typeIA=IA_RIEN; porte=300; force = 1;
+@@ -4523,7 +4561,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,0,0);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             maxglace=60; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[ENNEMI]=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[ENNEMI]=1;
+             break;
+         case 107 :
+             viemax=120; w=78; h=1/*123*/; animmax=0; typeIA=IA_RIEN; porte=300; force = 0;
+@@ -4533,7 +4572,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,0,0);
+             zonesVulnerables = new ZoneRect(18,0,42,0/*50*/);
+             maxglace=60; spectre=1; typeEnn=E_MONO_DIR; recul=0;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[POT]=2;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[POT]=2;
+             if (gpJeu->getKeyboard()->getMode()==13) {w=77; h=51;}
+             break;
+         case 108 :
+@@ -4594,7 +4634,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(6,10,16,16);
+             maxglace=60; direction=N; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=0; effets[COUP_GLACE]=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            effets[COUP_GLACE]=1;
+             break;
+         case 114 :
+             viemax=1; w=16; h=32; animmax=2; typeIA=IA_RANDOM; porte=300; force = 8;
+@@ -4615,7 +4656,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(32,67,64,16);
+             zonesVulnerables = new ZoneRect(32,0,64,0);
+             maxglace=70; direction=S; typeEnn=E_MONO_DIR; recul=0;
+-            for (int k = 0; k < 25; k++) effets[k]=0; spectre=1; vol=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            spectre=1; vol=1;
+             special2=-30;
+             if (gpJeu->getKeyboard()->getMode()==13) {h=91; special2=1;}
+             break;
+@@ -4627,7 +4669,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(8,32,42,28);
+             zonesVulnerables = new ZoneRect(8,32,42,28);
+             direction=S; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=0; spectre=1; vol=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            spectre=1; vol=1;
+             special2=-5;
+             break;
+         case 117 :
+@@ -4638,7 +4681,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(28,32,48,28);
+             zonesVulnerables = new ZoneRect(28,32,48,28);
+             direction=S; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=0; spectre=1; vol=1;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            spectre=1; vol=1;
+             special2=-15;
+             break;
+         case 118 :
+@@ -4671,7 +4715,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             maxglace=40; recul=0; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=1; effets[ENNEMI]=2; 
++            for (int k = 0; k < 25; k++) effets[k]=1;
++            effets[ENNEMI]=2; 
+             break;
+         case 121 :
+             viemax=1; w=16; h=16; animmax=1; typeIA=IA_RANDOM; porte=60; force = 1;
+@@ -4689,7 +4734,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             direction=S; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=0; type_att=MORTEL;
++            for (int k = 0; k < 25; k++) effets[k]=0;
++            type_att=MORTEL;
+             break;
+         case 123 :
+             viemax=9; w=22; h=26; animmax=1; typeIA=IA_FONCE; porte=300; force = 8;
+@@ -4751,7 +4797,8 @@ void Ennemi::init() {
+             gpZoneBase->getZone()->x=0; gpZoneBase->getZone()->y=21; 
+             zonesAttaques = new ZoneRect(0,5,w,32);
+             zonesVulnerables = new ZoneRect(0,5,w,32); recul = 8; vanim = 30; typeEnn=E_MONO_DIR;
+-            for (int k = 0; k < 25; k++) effets[k]=1; type_att=OMBRE;
++            for (int k = 0; k < 25; k++) effets[k]=1;
++            type_att=OMBRE;
+             break;
+         case 130 :
+             viemax=20; w=24; h=31; animmax=20; typeIA=IA_FONCE; porte=200; force = 1;
+@@ -4769,7 +4816,8 @@ void Ennemi::init() {
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h);
+             maxglace=40; recul=0; type_att=OMBRE;
+-            for (int k = 0; k < 25; k++) effets[k]=1; effets[OMBRE]=2;
++            for (int k = 0; k < 25; k++) effets[k]=1;
++            effets[OMBRE]=2;
+             break;
+         case 132 :
+             viemax=5; w=16; h=26; animmax=1; typeIA=IA_FONCE; porte=300; force = 1;
+@@ -4778,7 +4826,8 @@ void Ennemi::init() {
+             gpZoneBase->getZone()->x=0; gpZoneBase->getZone()->y=10; 
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h); type_att=OMBRE;
+-            for (int k = 0; k < 25; k++) effets[k]=1; effets[FEU]=2;
++            for (int k = 0; k < 25; k++) effets[k]=1;
++            effets[FEU]=2;
+             maxglace=100;
+             break;
+         case 133 :
+@@ -4788,7 +4837,8 @@ void Ennemi::init() {
+             gpZoneBase->getZone()->x=4; gpZoneBase->getZone()->y=9; 
+             zonesAttaques = new ZoneRect(0,0,w,h);
+             zonesVulnerables = new ZoneRect(0,0,w,h); type_att=OMBRE;
+-            for (int k = 0; k < 25; k++) effets[k]=1; effets[FLECHE]=2; recul=8; maxglace=100;
++            for (int k = 0; k < 25; k++) effets[k]=1;
++            effets[FLECHE]=2; recul=8; maxglace=100;
+             break;
+         case 134 :
+             viemax=20; w=22; h=26; animmax=1; typeIA=IA_FONCE; porte=300; force = 1;
+diff -rup zelda3t.orig/Generique.cpp zelda3t.new/Generique.cpp
+--- zelda3t.orig/Generique.cpp	2009-08-10 16:39:10.000000000 +0200
++++ zelda3t.new/Generique.cpp	2023-12-06 11:33:03.167690729 +0100
+@@ -332,9 +332,12 @@ void Generique::initRecord() {
+     int h = temps/3600;
+     int m = (temps - ((int)(temps/3600))*3600)/60;
+     int s = temps%60;
+-    if (h < 10) oss<<"0"; oss << h << ":";
+-    if (m < 10) oss<<"0"; oss << m << ":";
+-    if (s < 10) oss<<"0"; oss << s;
++    if (h < 10) oss<<"0";
++    oss << h << ":";
++    if (m < 10) oss<<"0";
++    oss << m << ":";
++    if (s < 10) oss<<"0";
++    oss << s;
+     
+     
+     gpJeu->affiche(image, "RECORDS", 40, 16);
+@@ -469,7 +472,8 @@ void Generique::initAide1() {
+         ligne+=16;}
+     gpJeu->affiche(image, "Menu de sélection d'objet : Entrée", 24, ligne); ligne+=16;
+     if (ligne < 176)
+-    gpJeu->affiche(image, "Utiliser l'objet sélectionné : X", 24, ligne); ligne+=16;
++        gpJeu->affiche(image, "Utiliser l'objet sélectionné : X", 24, ligne);
++    ligne+=16;
+     if (gpJoueur->hasObjet(O_GANTS)) {
+         if (ligne < 176) gpJeu->affiche(image, "Porter : C", 24, ligne); 
+         ligne+=16;}
+@@ -493,11 +497,14 @@ void Generique::initAide1() {
+         if (ligne < 176) gpJeu->affiche(image, "Transformation Oni Link : O", 24, ligne); 
+         ligne+=16;}
+     if (ligne < 176)
+-    gpJeu->affiche(image, "Regarder autour : Ctrl et direction", 24, ligne); ligne+=16;
++        gpJeu->affiche(image, "Regarder autour : Ctrl et direction", 24, ligne);
++    ligne+=16;
+     if (ligne < 176)
+-    gpJeu->affiche(image, "Agrandir / Rétrécir : Ctrl et Entrée", 24, ligne); ligne+=16;
++        gpJeu->affiche(image, "Agrandir / Rétrécir : Ctrl et Entrée", 24, ligne);
++    ligne+=16;
+     if (ligne < 176)
+-    gpJeu->affiche(image, "Sauvegarder / Quitter : Echap", 24, ligne); ligne+=16;
++        gpJeu->affiche(image, "Sauvegarder / Quitter : Echap", 24, ligne);
++    ligne+=16;
+     
+     if (ligne >= 288) gpJeu->affiche(image, "AIDE 1/3", 40, 16);
+     else gpJeu->affiche(image, "AIDE 1/2", 40, 16);
+@@ -547,7 +554,8 @@ void Generique::initAide2() {
+     if (gpJoueur->hasObjet(O_BOTTES)) ligne+=16;
+     if (gpJoueur->getEpee()) ligne+=32;
+     if (ligne >= 64) 
+-    gpJeu->affiche(image, "Utiliser l'objet sélectionné : X", 24, ligne); ligne+=16;
++        gpJeu->affiche(image, "Utiliser l'objet sélectionné : X", 24, ligne);
++    ligne+=16;
+     if (gpJoueur->hasObjet(O_GANTS)) {
+         if (ligne >= 64) gpJeu->affiche(image, "Porter : C", 24, ligne); 
+         ligne+=16;}
+@@ -575,19 +583,23 @@ void Generique::initAide2() {
+         gpJeu->affiche(image, "Retour au jeu : Entrée - Suite : Droite", 24, 208);
+         return;}
+     if (ligne >= 64) 
+-    gpJeu->affiche(image, "Regarder autour : Ctrl et direction", 24, ligne); ligne+=16;
++        gpJeu->affiche(image, "Regarder autour : Ctrl et direction", 24, ligne);
++    ligne+=16;
+     if (ligne >= 176) {
+         gpJeu->affiche(image, "AIDE 2/3", 40, 16); 
+         gpJeu->affiche(image, "Retour au jeu : Entrée - Suite : Droite", 24, 208);
+         return;}
+     if (ligne >= 64) 
+-    gpJeu->affiche(image, "Agrandir / Rétrécir : Ctrl et Entrée", 24, ligne); ligne+=16;
++        gpJeu->affiche(image, "Agrandir / Rétrécir : Ctrl et Entrée", 24, ligne);
++    ligne+=16;
+     if (ligne >= 176) {
+         gpJeu->affiche(image, "AIDE 2/3", 40, 16); 
+         gpJeu->affiche(image, "Retour au jeu : Entrée - Suite : Droite", 24, 208);
+-        return;}
++        return;
++    }
+     if (ligne >= 64) 
+-    gpJeu->affiche(image, "Sauvegarder / Quitter : Echap", 24, ligne); ligne+=16;
++        gpJeu->affiche(image, "Sauvegarder / Quitter : Echap", 24, ligne);
++    ligne+=16;
+     
+     gpJeu->affiche(image, "AIDE 2/2", 40, 16);
+     gpJeu->affiche(image, "Retour au jeu : Entrée - Précédent : Gauche", 24, 208);
+@@ -648,9 +660,11 @@ bool Generique::initAide3() {
+     if (gpJoueur->hasObjet(O_SAC_TROC)) ligne+=16;
+     if (gpJoueur->hasObjet(O_MASQUE)) ligne+=16;
+     if (ligne >= 64) 
+-    gpJeu->affiche(image, "Regarder autour : Ctrl et direction", 24, ligne); ligne+=16;
++        gpJeu->affiche(image, "Regarder autour : Ctrl et direction", 24, ligne);
++    ligne+=16;
+     if (ligne >= 64) 
+-    gpJeu->affiche(image, "Agrandir / Rétrécir : Ctrl et Entrée", 24, ligne); ligne+=16;
++        gpJeu->affiche(image, "Agrandir / Rétrécir : Ctrl et Entrée", 24, ligne);
++    ligne+=16;
+     if (ligne >= 64) 
+         gpJeu->affiche(image, "Sauvegarder / Quitter : Echap", 24, ligne);
+     else {
+@@ -730,57 +744,68 @@ void Generique::initTroc() {
+                     if (gpJoueur->getTroc(i)>1)
+                         gpJeu->affiche(image, oss.str()+" SACS DE RIZ", colonne, ligne);
+                     else
+-                        gpJeu->affiche(image, oss.str()+" SAC DE RIZ", colonne, ligne); break;
++                        gpJeu->affiche(image, oss.str()+" SAC DE RIZ", colonne, ligne);
++                    break;
+                 case 1 : 
+                     if (gpJoueur->getTroc(i)>1)
+                         gpJeu->affiche(image, oss.str()+" BOCAUX D'EPICES", colonne, ligne);
+                     else
+-                        gpJeu->affiche(image, oss.str()+" BOCAL D'EPICES", colonne, ligne); break;
++                        gpJeu->affiche(image, oss.str()+" BOCAL D'EPICES", colonne, ligne);
++                    break;
+                 case 2 : 
+                     if (gpJoueur->getTroc(i)>1)
+                         gpJeu->affiche(image, oss.str()+" SACS D'OLIVES", colonne, ligne);
+                     else
+-                        gpJeu->affiche(image, oss.str()+" SAC D'OLIVES", colonne, ligne); break;
++                        gpJeu->affiche(image, oss.str()+" SAC D'OLIVES", colonne, ligne);
++                    break;
+                 case 3 : 
+                     if (gpJoueur->getTroc(i)>1)
+                         gpJeu->affiche(image, oss.str()+" PERLES", colonne, ligne);
+                     else
+-                        gpJeu->affiche(image, oss.str()+" PERLE", colonne, ligne); break;
++                        gpJeu->affiche(image, oss.str()+" PERLE", colonne, ligne);
++                    break;
+                 case 4 : 
+                     if (gpJoueur->getTroc(i)>1)
+                         gpJeu->affiche(image, oss.str()+" PLUMES", colonne, ligne);
+                     else
+-                        gpJeu->affiche(image, oss.str()+" PLUME", colonne, ligne); break;
++                        gpJeu->affiche(image, oss.str()+" PLUME", colonne, ligne);
++                    break;
+                 case 5 : 
+                     if (gpJoueur->getTroc(i)>1)
+                         gpJeu->affiche(image, oss.str()+" POULETS", colonne, ligne);
+                     else
+-                        gpJeu->affiche(image, oss.str()+" POULET", colonne, ligne); break;
++                        gpJeu->affiche(image, oss.str()+" POULET", colonne, ligne);
++                    break;
+                 case 6 : 
+                     if (gpJoueur->getTroc(i)>1)
+                         gpJeu->affiche(image, oss.str()+" TAPISSERIES", colonne, ligne);
+                     else
+-                        gpJeu->affiche(image, oss.str()+" TAPISSERIE", colonne, ligne); break;
++                        gpJeu->affiche(image, oss.str()+" TAPISSERIE", colonne, ligne);
++                    break;
+                 case 7 : 
+                     if (gpJoueur->getTroc(i)>1)
+                         gpJeu->affiche(image, oss.str()+" AMULETTES", colonne, ligne);
+                     else
+-                        gpJeu->affiche(image, oss.str()+" AMULETTE", colonne, ligne); break;
++                        gpJeu->affiche(image, oss.str()+" AMULETTE", colonne, ligne);
++                    break;
+                 case 8 : 
+                     if (gpJoueur->getTroc(i)>1)
+                         gpJeu->affiche(image, oss.str()+" PARFUMS", colonne, ligne);
+                     else
+-                        gpJeu->affiche(image, oss.str()+" PARFUM", colonne, ligne); break;
++                        gpJeu->affiche(image, oss.str()+" PARFUM", colonne, ligne);
++                    break;
+                 case 9 : 
+                     if (gpJoueur->getTroc(i)>1)
+                         gpJeu->affiche(image, oss.str()+" ROCS MAGMA", colonne, ligne);
+                     else
+-                        gpJeu->affiche(image, oss.str()+" ROC MAGMA", colonne, ligne); break;
++                        gpJeu->affiche(image, oss.str()+" ROC MAGMA", colonne, ligne);
++                    break;
+                 case 10 : 
+                     if (gpJoueur->getTroc(i)>1)
+                         gpJeu->affiche(image, oss.str()+" ROCS GIVRE", colonne, ligne);
+                     else
+-                        gpJeu->affiche(image, oss.str()+" ROC GIVRE", colonne, ligne); break;
++                        gpJeu->affiche(image, oss.str()+" ROC GIVRE", colonne, ligne);
++                    break;
+                 case 11 : gpJeu->affiche(image, oss.str()+" POIVRON", colonne, ligne); break;
+                 case 12 : gpJeu->affiche(image, oss.str()+" ROUAGE", colonne, ligne); break;
+                 case 13 : gpJeu->affiche(image, oss.str()+" JAUGE", colonne, ligne); break;
+@@ -991,9 +1016,12 @@ void Generique::initScore() {
+         gpJeu->getKeyboard()->setTemps(temps); gpJeu->getKeyboard()->saveP();}
+         
+     oss.str(""); 
+-    if (gpJoueur->getTemps(2)<10)oss<<"0";oss << gpJoueur->getTemps(2) << ":";
+-    if (gpJoueur->getTemps(1)<10)oss<<"0";oss << gpJoueur->getTemps(1) << ":";
+-    if (gpJoueur->getTemps(0)<10)oss<<"0";oss << gpJoueur->getTemps(0);
++    if (gpJoueur->getTemps(2)<10)oss<<"0";
++    oss << gpJoueur->getTemps(2) << ":";
++    if (gpJoueur->getTemps(1)<10)oss<<"0";
++    oss << gpJoueur->getTemps(1) << ":";
++    if (gpJoueur->getTemps(0)<10)oss<<"0";
++    oss << gpJoueur->getTemps(0);
+     gpJeu->affiche(image, ("Temps de jeu : " + oss.str()).c_str(), 10, 30);
+     
+     int tmp=gpJoueur->getMort();
+diff -rup zelda3t.orig/Jeu.cpp zelda3t.new/Jeu.cpp
+--- zelda3t.orig/Jeu.cpp	2009-09-06 13:24:44.000000000 +0200
++++ zelda3t.new/Jeu.cpp	2023-12-06 11:45:47.029944474 +0100
+@@ -491,10 +491,13 @@ bool Jeu::finTexte(int id) {
+             gpJoueur->setPoisson(id-9);
+             gpJoueur->setBoostVie(16);
+             break;
+-        case 44 : if (gpJoueur->getAvancement()<PARLE_GARDE_DEVANT_CHEZ_LINK) 
+-            gpJoueur->setAvancement(PARLE_GARDE_DEVANT_CHEZ_LINK); break;
++        case 44 :
++            if (gpJoueur->getAvancement()<PARLE_GARDE_DEVANT_CHEZ_LINK) 
++                gpJoueur->setAvancement(PARLE_GARDE_DEVANT_CHEZ_LINK);
++            break;
+         case 47 : case 49 : case 52 : case 56 : case 58 : case 60 : case 63 : case 66 :
+-            gpJoueur->setTypeAnim(AUCUNE); break;
++            gpJoueur->setTypeAnim(AUCUNE);
++            break;
+         case 48 : case 50 : case 53 : case 61 : 
+             gpJoueur->setMelodie(0,2); 
+             return true;
+@@ -842,8 +845,10 @@ bool Jeu::finTexte(int id) {
+                 ajouteProjectile(26, N, 9*16+8, 6*16+8, 0);
+             }
+             break;
+-        case 320 : if (gpJoueur->getAvancement()<PARLE_ZELDA_GROTTE) 
+-            gpJoueur->setAvancement(PARLE_ZELDA_GROTTE); break;
++        case 320 :
++            if (gpJoueur->getAvancement()<PARLE_ZELDA_GROTTE) 
++               gpJoueur->setAvancement(PARLE_ZELDA_GROTTE);
++            break;
+         case 322 : gpPnj->getSuivant()->setDirection(S); ecrit(323); return true; break;
+         case 324 : gpJoueur->trouveObjet(O_CARTE); trouve(C_CARTE); return true; break;
+         case 325 : ecrit(330); return true; break;
+@@ -866,12 +871,18 @@ bool Jeu::finTexte(int id) {
+             if (gpJoueur->getTroc(M_OLIVES)>99) gpJoueur->setTroc(M_OLIVES,99);
+             if (zone==66) gpJoueur->setCoffre(15,9);
+             break;
+-        case 338 : if (gpJoueur->getAvancement()<PANCARTE_MINE_LUE) 
+-            gpJoueur->setAvancement(PANCARTE_MINE_LUE); break;
+-        case 339 : if (gpJoueur->getAvancement()<PARLE_GARS_MINE_MINE) 
+-            gpJoueur->setAvancement(PARLE_GARS_MINE_MINE); break;
+-        case 340 : if (gpJoueur->getAvancement()<PLANCHES_TROUVEES) 
+-            gpJoueur->setAvancement(PLANCHES_TROUVEES); break;
++        case 338 :
++            if (gpJoueur->getAvancement()<PANCARTE_MINE_LUE) 
++                gpJoueur->setAvancement(PANCARTE_MINE_LUE);
++            break;
++        case 339 :
++            if (gpJoueur->getAvancement()<PARLE_GARS_MINE_MINE) 
++                gpJoueur->setAvancement(PARLE_GARS_MINE_MINE);
++            break;
++        case 340 :
++            if (gpJoueur->getAvancement()<PLANCHES_TROUVEES) 
++                gpJoueur->setAvancement(PLANCHES_TROUVEES);
++            break;
+         case 341 :
+             if (gpJoueur->getAvancement()<PONT_CONSTRUIT) 
+                 gpJoueur->setAvancement(PONT_CONSTRUIT);
+@@ -885,8 +896,9 @@ bool Jeu::finTexte(int id) {
+                 gpMonde->passage(9,3,1);
+             }
+             break;
+-        case 348 : if (gpJoueur->getAvancement()<PORTAIL_PRE_PRESENT_FERME) 
+-            gpJoueur->setAvancement(PORTAIL_PRE_PRESENT_FERME); 
++        case 348 :
++            if (gpJoueur->getAvancement()<PORTAIL_PRE_PRESENT_FERME) 
++                gpJoueur->setAvancement(PORTAIL_PRE_PRESENT_FERME); 
+             gpMonde->passage(9,3,10);
+             break;
+         case 349 :
+@@ -1080,20 +1092,28 @@ bool Jeu::finTexte(int id) {
+         case 496 : gpJoueur->setCoeur(27); trouve(C_QUART_COEUR); return true; break;
+         case 498 : gpJoueur->trouveObjet(O_POISSONS,2); trouve(C_VIRE); return true; break;
+         case 508 : gpJoueur->trouveObjet(O_TROC2,2); trouve(C_VIELLE_BOTTE); return true; break;
+-        case 527 : if (gpJoueur->getAvancement()<PARLE_BARMAN_SALOON) 
+-            gpJoueur->setAvancement(PARLE_BARMAN_SALOON); break;
++        case 527 :
++            if (gpJoueur->getAvancement()<PARLE_BARMAN_SALOON) 
++                gpJoueur->setAvancement(PARLE_BARMAN_SALOON);
++            break;
+         case 533 : 
+             if (gpJoueur->getAvancement()<DETTE_PAYEE) {
+                 gpJoueur->setAvancement(DETTE_PAYEE);
+                 gpJoueur->setTroc(M_ROC_GIVRE,gpJoueur->getTroc(M_ROC_GIVRE)-1);
+             } 
+             break;
+-        case 537 : if (gpJoueur->getAvancement()<PARLE_GARS_MINE_SALOON) 
+-            gpJoueur->setAvancement(PARLE_GARS_MINE_SALOON); break;
+-        case 539 : if (gpJoueur->getAvancement()<APPREND_POUR_ROC_GIVRE) 
+-            gpJoueur->setAvancement(APPREND_POUR_ROC_GIVRE); break;
+-        case 543 : if (gpJoueur->getAvancement()<GARS_MINE_AIDE) 
+-            gpJoueur->setAvancement(GARS_MINE_AIDE); break;
++        case 537 :
++            if (gpJoueur->getAvancement()<PARLE_GARS_MINE_SALOON) 
++                gpJoueur->setAvancement(PARLE_GARS_MINE_SALOON);
++            break;
++        case 539 :
++            if (gpJoueur->getAvancement()<APPREND_POUR_ROC_GIVRE) 
++                gpJoueur->setAvancement(APPREND_POUR_ROC_GIVRE);
++            break;
++        case 543 :
++            if (gpJoueur->getAvancement()<GARS_MINE_AIDE) 
++                gpJoueur->setAvancement(GARS_MINE_AIDE);
++            break;
+         case 558 :
+             int g;
+             int gmax;
+@@ -1149,8 +1169,10 @@ bool Jeu::finTexte(int id) {
+             gpJoueur->setTroc(M_POIVRON,gpJoueur->getTroc(M_POIVRON)+1);
+             trouve(C_POIVRON); return true; break;
+         case 633 : gpJoueur->trouveObjet(O_GRAPPIN); trouve(C_GRAPPIN); return true; break;
+-        case 638 : if (gpJoueur->getAvancement()<SAGES_GROTTE) 
+-            gpJoueur->setAvancement(SAGES_GROTTE); break;
++        case 638 :
++            if (gpJoueur->getAvancement()<SAGES_GROTTE) 
++                gpJoueur->setAvancement(SAGES_GROTTE);
++            break;
+         case 641 : 
+             gpJoueur->setBoostGanon(-10);
+             gpJoueur->setFleche(gpJoueur->getFleche()+10); 
+@@ -1229,22 +1251,26 @@ bool Jeu::finTexte(int id) {
+             gpJoueur->setBoostPiece(-5);
+             gpJoueur->setFleche(gpJoueur->getFleche()+10); 
+             gpAudio->playSound(13);
+-            ecrit(375); return true; break;
++            ecrit(375);
++            return true;
+         case 752 : 
+             gpJoueur->setBoostPiece(-10);
+             gpJoueur->setBombe(gpJoueur->getBombe()+5); 
+             gpAudio->playSound(13);
+-            ecrit(375); return true; break;
++            ecrit(375);
++            return true;
+         case 754 :
+             gpJoueur->setBoostPiece(-1);
+             gpJoueur->setBoostVie(gpJoueur->getBoostVie()+2);
+             if (gpJoueur->getVie()==gpJoueur->getVieMax()) gpAudio->playSound(15);
+-            ecrit(375); return true; break;
++            ecrit(375);
++            return true;
+         case 756 : 
+             gpJoueur->setBoostPiece(-3);
+             gpJoueur->setBoostMagie(gpJoueur->getBoostMagie()+gpJoueur->getMagieMax()/8);
+             gpAudio->playSound(13);
+-            ecrit(375); return true; break;
++            ecrit(375);
++            return true;
+         case 758 : 
+             gpJoueur->setBoostPiece(-6);
+             gpJoueur->setBoostMagie(gpJoueur->getBoostMagie()+gpJoueur->getMagieMax()/4);
+@@ -1253,8 +1279,10 @@ bool Jeu::finTexte(int id) {
+             else gpAudio->playSound(13);
+             ecrit(375); return true; break;
+         case 760 : gpJoueur->trouveObjet(O_LIVRE); break;
+-        case 762 : if (gpJoueur->getAvancement()<TEMPETE_NEIGE_FINIE) 
+-            gpJoueur->setAvancement(TEMPETE_NEIGE_FINIE); break;
++        case 762 :
++            if (gpJoueur->getAvancement()<TEMPETE_NEIGE_FINIE) 
++                gpJoueur->setAvancement(TEMPETE_NEIGE_FINIE);
++            break;
+         case 767 :
+             i=0; while(gpJoueur->hasBouteille(i)!=1) i++;
+             gpJoueur->setBouteille(i,2);
+@@ -1274,9 +1302,12 @@ bool Jeu::finTexte(int id) {
+         case 792 : gpJoueur->setCoffre(15,23,2); break;
+         case 793 : gpJoueur->setCoffre(15,23,3); 
+             if (gpJoueur->getAvancement()<INFO_PASSE_OK) 
+-            gpJoueur->setAvancement(INFO_PASSE_OK); break;
+-        case 806 : if (gpJoueur->getAvancement()<GANON_CAPTURE) 
+-            gpJoueur->setAvancement(GANON_CAPTURE); break;
++                gpJoueur->setAvancement(INFO_PASSE_OK);
++            break;
++        case 806 :
++            if (gpJoueur->getAvancement()<GANON_CAPTURE) 
++                gpJoueur->setAvancement(GANON_CAPTURE);
++            break;
+         case 815 : gpJoueur->trouveGemme(178); trouve(C_GEMME); return true; break;
+         case 825 : gpJoueur->trouveObjet(O_TROC2,6); trouve(C_CORDE); return true; break;
+         case 831 : gpJoueur->trouveObjet(O_TROC1,7); break;
+@@ -1558,10 +1589,15 @@ bool Jeu::finTexte(int id) {
+         case 968 : gpJoueur->trouveObjet(O_BGLACE); gpJoueur->setMagie(gpJoueur->getMagieMax()); break;
+         case 970 : gpJoueur->trouveObjet(O_BFEU); gpJoueur->setMagie(gpJoueur->getMagieMax()); break;
+         case 972 : gpJoueur->setBouclier(3); gpJoueur->calculDef(); break;
+-        case 980 : if (gpJoueur->getAvancement()<SPEECH_AGAHNIM) 
+-            gpJoueur->setAvancement(SPEECH_AGAHNIM); break;
+-        case 982 : gpPnj->getSuivant()->setDirection(N); 
+-            gpJoueur->setImmo(true); setStop(true); break;
++        case 980 :
++            if (gpJoueur->getAvancement()<SPEECH_AGAHNIM) 
++                gpJoueur->setAvancement(SPEECH_AGAHNIM);
++            break;
++        case 982 :
++            gpPnj->getSuivant()->setDirection(N); 
++            gpJoueur->setImmo(true);
++            setStop(true);
++            break;
+         case 998 : trouve(C_EPEE_J); gpJoueur->setEpee(5); return true; break;
+         case 999 : trouve(C_ARC_OR); gpJoueur->trouveObjet(O_ARC_OR); return true; break;
+         case 1000 : ecrit(1001); return true;
+@@ -1569,45 +1605,72 @@ bool Jeu::finTexte(int id) {
+             gpAudio->playSound(5);
+             gpMonde->transitFull(19, 16*39+8, 16*45+8);
+             break;
+-        case 1003 : if (gpJoueur->getAvancement()<TELE_ZELDA) 
+-            gpJoueur->setAvancement(TELE_ZELDA); ecrit(199); return true; break;
+-        case 1006 : if (gpJoueur->getAvancement()<PARLE_GARDE_PALAIS) 
+-            gpJoueur->setAvancement(PARLE_GARDE_PALAIS); break;
+-        case 1008 : if (gpJoueur->getAvancement()<PARLE_GARDE_RESERVE) 
+-            gpJoueur->setAvancement(PARLE_GARDE_RESERVE); break;
++        case 1003 :
++            if (gpJoueur->getAvancement()<TELE_ZELDA) 
++                gpJoueur->setAvancement(TELE_ZELDA);
++            ecrit(199);
++            return true;
++        case 1006 :
++            if (gpJoueur->getAvancement()<PARLE_GARDE_PALAIS) 
++                gpJoueur->setAvancement(PARLE_GARDE_PALAIS);
++            break;
++        case 1008 :
++            if (gpJoueur->getAvancement()<PARLE_GARDE_RESERVE) 
++                gpJoueur->setAvancement(PARLE_GARDE_RESERVE);
++            break;
+         case 1011 : gpJoueur->setBouclier(1); break;
+         case 1012 : gpJoueur->setRubisMax(99); break;
+-        case 1013 : if (gpJoueur->getAvancement()<RESERVE_VIDE) 
+-            gpJoueur->setAvancement(RESERVE_VIDE); break;
+-        case 1019 : if (gpJoueur->getAvancement()<PARLE_ZELDA_PALAIS) 
+-            gpJoueur->setAvancement(PARLE_ZELDA_PALAIS); break;
+-        case 1020 : if (gpJoueur->getAvancement()<PARLE_GARDE_CH_FORTE) 
+-            gpJoueur->setAvancement(PARLE_GARDE_CH_FORTE); break;
++        case 1013 :
++            if (gpJoueur->getAvancement()<RESERVE_VIDE) 
++                gpJoueur->setAvancement(RESERVE_VIDE);
++            break;
++        case 1019 :
++            if (gpJoueur->getAvancement()<PARLE_ZELDA_PALAIS) 
++               gpJoueur->setAvancement(PARLE_ZELDA_PALAIS);
++            break;
++        case 1020 :
++            if (gpJoueur->getAvancement()<PARLE_GARDE_CH_FORTE) 
++                gpJoueur->setAvancement(PARLE_GARDE_CH_FORTE);
++            break;
+         case 1022 : 
+             if (gpJoueur->getAvancement()<PARLE_GARDE_SOUS_SOL) {
+                 gpJoueur->setAvancement(PARLE_GARDE_SOUS_SOL); 
+                 gpAudio->playSound(20); gpMonde->passage(100,171,1);
+-            } break;
+-        case 1028 : if (gpJoueur->getAvancement()<RIDEAUX_REPERES) 
+-            gpJoueur->setAvancement(RIDEAUX_REPERES); break;
+-        case 1030 : if (gpJoueur->getAvancement()<PASSAGE_TROUVE) 
+-            gpJoueur->setAvancement(PASSAGE_TROUVE);
++            }
++            break;
++        case 1028 :
++            if (gpJoueur->getAvancement()<RIDEAUX_REPERES) 
++                gpJoueur->setAvancement(RIDEAUX_REPERES);
++            break;
++        case 1030 :
++            if (gpJoueur->getAvancement()<PASSAGE_TROUVE) 
++                gpJoueur->setAvancement(PASSAGE_TROUVE);
+             gpAudio->playSound(9); gpMonde->passage(109,165,4); 
+-            ecrit(1031); return true; break;
++            ecrit(1031);
++            return true;
+         case 1048 : 
+             gpJoueur->setIvre(); 
+             gpJoueur->setBoostVie(gpJoueur->getBoostVie()+2); break;
+         case 1058 :
+             if (gpJoueur->getTroc(M_SOURCE_ENERGIE)==-1) gpJoueur->setTroc(M_SOURCE_ENERGIE,0);
+-            gpJoueur->setTroc(M_SOURCE_ENERGIE,gpJoueur->getTroc(M_SOURCE_ENERGIE)+1); break;
+-        case 1061 : if (gpJoueur->getAvancement()<MOT_DE_PASSE_DONNE) 
+-            gpJoueur->setAvancement(MOT_DE_PASSE_DONNE); break;
+-        case 1063 : if (gpJoueur->getAvancement()<MULTIPASSE_UTILISE) 
+-            gpJoueur->setAvancement(MULTIPASSE_UTILISE); break;
+-        case 1070 : if (gpJoueur->getAvancement()<MOT_DE_PASSE_CONNU) 
+-            gpJoueur->setAvancement(MOT_DE_PASSE_CONNU); break;
+-        case 1073 : if (gpJoueur->getAvancement()<MULTIPASS) 
+-            gpJoueur->setAvancement(MULTIPASS); break;
++            gpJoueur->setTroc(M_SOURCE_ENERGIE,gpJoueur->getTroc(M_SOURCE_ENERGIE)+1);
++            break;
++        case 1061 :
++            if (gpJoueur->getAvancement()<MOT_DE_PASSE_DONNE) 
++                gpJoueur->setAvancement(MOT_DE_PASSE_DONNE);
++            break;
++        case 1063 :
++            if (gpJoueur->getAvancement()<MULTIPASSE_UTILISE) 
++               gpJoueur->setAvancement(MULTIPASSE_UTILISE);
++            break;
++        case 1070 :
++            if (gpJoueur->getAvancement()<MOT_DE_PASSE_CONNU) 
++                gpJoueur->setAvancement(MOT_DE_PASSE_CONNU);
++            break;
++        case 1073 :
++            if (gpJoueur->getAvancement()<MULTIPASS) 
++                gpJoueur->setAvancement(MULTIPASS);
++            break;
+         case 1076 : gpJoueur->trouveObjet(O_TROC4,7); trouve(C_CLOUS); return true; break;
+         case 1080 : gpJoueur->trouveObjet(O_OCARINA); break;
+         case 1081 : 
+@@ -1630,10 +1693,14 @@ bool Jeu::finTexte(int id) {
+             gpJoueur->trouveObjet(O_ARC_OR,2);
+             ecrit(1094); return true; break;
+         case 1098 : gpJoueur->setImmo(true); break;
+-        case 1099 : if (gpJoueur->getAvancement()<SPEECH_GANON) 
+-            gpJoueur->setAvancement(SPEECH_GANON); break;
+-        case 1109 : if (gpJoueur->getAvancement()<SPEECH_GANONDORF) 
+-            gpJoueur->setAvancement(SPEECH_GANONDORF); break;
++        case 1099 :
++            if (gpJoueur->getAvancement()<SPEECH_GANON) 
++               gpJoueur->setAvancement(SPEECH_GANON);
++            break;
++        case 1109 :
++            if (gpJoueur->getAvancement()<SPEECH_GANONDORF) 
++                gpJoueur->setAvancement(SPEECH_GANONDORF);
++            break;
+         case 1110 : gpAudio->playSpecial(5); gpKeyboard->setMode(11);
+             ecrit(1111, false, true, 0, 0, 322, 240); break;
+         case 1111 :
+@@ -1979,18 +2046,23 @@ bool Jeu::coupeBuisson(int i, int j, int
+                     if ((gpJoueur->getRubis()<gpJoueur->getRubisMax() && getEpoque()==T_PRESENT)
+                     || (gpJoueur->getGanon()<gpJoueur->getGanonMax() && getEpoque()==T_FUTUR)
+                     || (gpJoueur->getPiece()<gpJoueur->getPieceMax() && getEpoque()==T_PASSE)) 
+-                    ob=I_RUBIS_VERT; break;
++                        ob=I_RUBIS_VERT;
++                    break;
+                 case 2: if (gpJoueur->getVie()<gpJoueur->getVieMax()) 
+-                    ob=I_PETIT_COEUR; break;
++                        ob=I_PETIT_COEUR;
++                    break;
+                 case 3: if (gpJoueur->getFleche()<gpJoueur->getFlecheMax()
+                     && gpJoueur->hasObjet(O_ARC)) 
+-                    ob=I_FLECHE; break;
++                        ob=I_FLECHE;
++                    break;
+                 case 4: if (gpJoueur->getBombe()<gpJoueur->getBombeMax()
+                     && gpJoueur->hasObjet(O_SAC_BOMBES)) 
+-                    ob=I_BOMBE; break;
++                        ob=I_BOMBE;
++                    break;
+                 case 5: if (gpJoueur->getMagie()<gpJoueur->getMagieMax()
+                     && gpJoueur->hasObjet(O_LANTERNE)) 
+-                    ob=I_MAGIE_PEU; break; 
++                        ob=I_MAGIE_PEU;
++                    break; 
+             }
+             if(ob>0) ajouteObjet(ob, i-(i%16), j-(j%16));
+         }
+@@ -2275,19 +2347,25 @@ bool Jeu::exploseMur(int i, int j) {
+         int x1 = 0, y1 = 0;
+         switch(val) {
+             case 2324 : case 3325 :
+-                x1=((int)(i/16)); y1=((int)(j/16))-1; break;
++                x1=((int)(i/16)); y1=((int)(j/16))-1;
++                break;
+             case 2325 : case 3326 :
+-                x1=((int)(i/16))-1; y1=((int)(j/16))-1; break;
++                x1=((int)(i/16))-1; y1=((int)(j/16))-1;
++                break;
+             case 2326 : case 3333 : case 6224 : case 4735 :
+-                x1=((int)(i/16)); y1=((int)(j/16))+2; break;
++                x1=((int)(i/16)); y1=((int)(j/16))+2;
++                break;
+             case 2327 : case 3334 : case 6225 : case 4736 :
+-                x1=((int)(i/16))-1; y1=((int)(j/16))+2; break;
++                x1=((int)(i/16))-1; y1=((int)(j/16))+2;
++                break;
+             case 3739 : case 5187 : case 5836 :
+                 x1=((int)(i/16)); y1=((int)(j/16))-1;
+-                if (gpMonde->motifValue(i+16,j)!=val) x1--; break;
++                if (gpMonde->motifValue(i+16,j)!=val) x1--;
++                break;
+             case 3740 : case 5188 : case 5837 :
+                 x1=((int)(i/16)); y1=((int)(j/16))+2;
+-                if (gpMonde->motifValue(i+16,j)!=val) x1--; break;
++                if (gpMonde->motifValue(i+16,j)!=val) x1--;
++                break;
+         }
+         gpMonde->passage(x1,y1,4);
+         gpAudio->playSound(9);
+@@ -2954,7 +3032,6 @@ void Jeu::monteWagon(int x, int y) {
+ 
+ void Jeu::descendWagon() {
+     if (gpJoueur->getTypeAnim()!=WAGON) return;
+-    int ind;
+     switch (gpJoueur->getPosWagon()) {
+         case 1 :
+             gpJoueur->setDirection(E);
+@@ -2971,7 +3048,7 @@ void Jeu::descendWagon() {
+             gpJoueur->setX(28*16);
+             gpJoueur->setY(4*16+8);
+             break;
+-        default : ind = 0; break;
++        default : break;
+     }
+     gpJoueur->setImmo(false);
+     gpJoueur->setTypeAnim(AUCUNE);
+@@ -7068,6 +7145,6 @@ void Jeu::testFin() {
+             gpMonde->transitSalle(O);dir=O;}
+         if (gpJoueur->getX()>gpMonde->regionValue(2)-24 && !transition) {
+             gpMonde->transitSalle(E);dir=E;}
+-        
++        (void)dir;
+     }
+ }
+diff -rup zelda3t.orig/Joueur.cpp zelda3t.new/Joueur.cpp
+--- zelda3t.orig/Joueur.cpp	2009-09-10 20:42:54.000000000 +0200
++++ zelda3t.new/Joueur.cpp	2023-12-06 11:53:57.665934733 +0100
+@@ -523,6 +523,7 @@ void Joueur::draw(SDL_Surface* gpScreen)
+                 case S : a=x+8; b=y+32; break;
+                 case O : a=x-8; b=y+16; break;
+                 case E : a=x+24; b=y+16; break;
++                default: return;
+             }
+             gpJeu->pousse(a,b,direction);
+             pousse=0;
+@@ -1200,22 +1201,26 @@ void Joueur::tireFleche() {
+     switch (objet) {
+         case 0 : 
+             gpJeu->getAudio()->playSound(25);
+-            if (objets[O_ARC] == 2) f=1; else f=2; break;
++            if (objets[O_ARC] == 2) f=1; else f=2;
++            break;
+         case 3 : 
+             if (magie + boostMagie < 8) return;
+             setMagie(magie-8);
+             gpJeu->getAudio()->playSound(28);
+-            if (objets[O_FFEU]) f=30; break;
++            if (objets[O_FFEU]) f=30;
++            break;
+         case 7 : 
+             if (magie + boostMagie < 8) return;
+             setMagie(magie-8);
+             gpJeu->getAudio()->playSound(28);
+-            if (objets[O_FGLACE]) f=31; break;
++            if (objets[O_FGLACE]) f=31;
++            break;
+         case 11 : 
+             if (magie + boostMagie < 16) return;
+             setMagie(magie-16);
+             gpJeu->getAudio()->playSound(28);
+-            if (objets[O_FLUM]) f=32; break;
++            if (objets[O_FLUM]) f=32;
++            break;
+     }
+     
+     gpJeu->ajouteProjectile(f, direction, i, j, 8);
+@@ -1487,16 +1492,20 @@ void Joueur::drawCharge(SDL_Surface* gpS
+     switch (direction) {
+         case N : dst.x+=4; src.w = 8; src.h = 12;
+             if (!anim) dst.y-=2; else dst.y--; 
+-            if (epee>1 || oni) { dst.x-=2; dst.y-=2; src.h = 15;} break;
++            if (epee>1 || oni) { dst.x-=2; dst.y-=2; src.h = 15;}
++            break;
+         case S : dst.x+=8; src.w = 8; src.h = 12;
+             if (!anim) dst.y+=19; else dst.y+=20;
+-            if (epee>1 || oni) {dst.x--; src.h = 14;} break;
++            if (epee>1 || oni) {dst.x--; src.h = 14;}
++            break;
+         case O : dst.x-=8; src.w = 12; src.h = 8;
+             if (!anim) dst.y+=14; else dst.y+=15;
+-            if (epee>1 || oni) {dst.x-=3; src.w = 15;} break;
++            if (epee>1 || oni) {dst.x-=3; src.w = 15;}
++            break;
+         case E : dst.x+=12; src.w = 12; src.h = 8;
+             if (!anim) dst.y+=14; else dst.y+=15;
+-            if (epee>1 || oni) src.w = 15; break;
++            if (epee>1 || oni) src.w = 15;
++            break;
+     }
+     SDL_BlitSurface(imageEpee, &src, gpScreen, &dst);
+     int force = getForce();
+@@ -2960,13 +2969,21 @@ void Joueur::drawBaguette(SDL_Surface* g
+     if (typeanim==MARTEAU) src.y+=42;
+     switch (direction) {
+         case N : dst.x = x - phg[0]-2; dst.y = y - phg[1]-5; 
+-            if (anim2==1) dst.y+=3; if (anim2==2) dst.y+=7; break;
++            if (anim2==1) dst.y+=3;
++            if (anim2==2) dst.y+=7;
++            break;
+         case S : dst.x = x - phg[0]+ 10; dst.y = y - phg[1]-3;
+-            if (anim2==1) dst.y+=13; if (anim2==2) {dst.x--; dst.y+=23;} break;
++            if (anim2==1) dst.y+=13;
++            if (anim2==2) {dst.x--; dst.y+=23;}
++            break;
+         case O : dst.x = x - phg[0]; dst.y = y - phg[1]-1;
+-            if (anim2==1) {dst.x-=8;dst.y+=5;} if (anim2==2) {dst.x-=10; dst.y+=15;} break;
++            if (anim2==1) {dst.x-=8;dst.y+=5;}
++            if (anim2==2) {dst.x-=10; dst.y+=15;}
++            break;
+         case E : dst.x = x - phg[0]+8; dst.y = y - phg[1]-1;
+-            if (anim2==1) {dst.x+=5;dst.y+=5;} if (anim2==2) {dst.x+=4; dst.y+=15;} break;
++            if (anim2==1) {dst.x+=5;dst.y+=5;}
++            if (anim2==2) {dst.x+=4; dst.y+=15;}
++            break;
+     }
+     SDL_BlitSurface(imageObjets, &src, gpScreen, &dst);
+     
+diff -rup zelda3t.orig/Keyboard.cpp zelda3t.new/Keyboard.cpp
+--- zelda3t.orig/Keyboard.cpp	2009-08-14 09:10:58.000000000 +0200
++++ zelda3t.new/Keyboard.cpp	2023-12-06 11:54:47.962532877 +0100
+@@ -17,7 +17,7 @@
+ Keyboard::Keyboard(Jeu* jeu, Carte* carte, Encyclopedie* encycl, Poissons* poissons,
+ SDL_Surface* screen, int m, bool e) : 
+     gpJeu(jeu), gpCarte(carte), gpEncyclopedie(encycl), gpPoissons(poissons), mode(m), 
+-    gFullScreen(1), gpScreen(screen), tmp(0), tmpx(0), tmpc(0), tmpw(0), tmpt(0), tmpp(0), 
++    gFullScreen(0), gpScreen(screen), tmp(0), tmpx(0), tmpc(0), tmpw(0), tmpt(0), tmpp(0), 
+     tmpm(0), tmpo(0), tmptp(0), tmpl(0), tmpi(0), ligne(0), colonne(0), ligneOption(2), 
+     volume(32), volson(32), ligneRecord(3), colonneRecord(0), temps(0), ligneVal(0), 
+     intro(0), telep(0), etire(e) {
+@@ -754,10 +754,12 @@ void Keyboard::pollKeys(Uint8* keys) {
+             }
+             
+             if (keys[SDLK_UP] && !tmp) {
+-                if (--ligneVal<0) ligneVal=2; tmp=1; 
++                if (--ligneVal<0) ligneVal=2;
++                tmp=1; 
+                 gpJeu->getAudio()->playSound(3);}
+             if (keys[SDLK_DOWN] && !tmp) {
+-                if (++ligneVal>2) ligneVal=0; tmp=1;
++                if (++ligneVal>2) ligneVal=0;
++                tmp=1;
+                 gpJeu->getAudio()->playSound(3);}
+             
+             if (!keys[SDLK_RETURN] && !keys[SDLK_UP] && !keys[SDLK_DOWN] && tmp) tmp=0;
+@@ -893,7 +895,8 @@ void Keyboard::pollKeys(Uint8* keys) {
+             
+             if ((keys[SDLK_LEFT] || keys[SDLK_RIGHT]) && ligneRecord==3 && !tmp) {
+                 if (colonneRecord == 0) colonneRecord=1;
+-                else colonneRecord=0; tmp=1;
++                else colonneRecord=0;
++                tmp=1;
+                 gpJeu->getAudio()->playSound(3);}
+             
+             if (!keys[SDLK_RETURN] && !keys[SDLK_UP] && !keys[SDLK_DOWN] 
+diff -rup zelda3t.orig/Makefile zelda3t.new/Makefile
+--- zelda3t.orig/Makefile	2009-08-10 15:23:20.000000000 +0200
++++ zelda3t.new/Makefile	2023-12-06 11:19:25.698867220 +0100
+@@ -4,10 +4,10 @@
+ #--------------------------------------------------------------
+ 
+ PREFIX  = /usr/local
+-CFLAGS  = -O2 -Wall
+-LDFLAGS = -lSDL_gfx -lSDL_image -lSDL_mixer -lSDL
++CFLAGS  = $(CPU_CFLAGS) -O2 -Wall
++LIBS  = $(shell pkg-config --libs SDL_gfx SDL_image SDL_mixer sdl)
+ 
+-CC = g++
++CC = $(CROSS_PREFIX)g++
+ RM = rm -f
+ INSTALL_PROG = install -m 755 -s
+ 
+@@ -15,79 +15,13 @@ EXE = Zelda3T
+ 
+ OBJS = Audio.o Bouclier.o Caisse.o Carte.o Encyclopedie.o Ennemi.o Generique.o Jeu.o Joueur.o Keyboard.o Listable.o main.o Menu.o Monde.o Objet.o Personnage.o Pnj.o Poissons.o Projectile.o Snipe.o Statut.o Texte.o ZoneRect.o
+ 
+-ALL : $(EXE)
++all : $(EXE)
+ 
+-Audio.o : Audio.cpp
+-	$(CC) -c Audio.cpp $(CFLAGS) -o Audio.o
+-
+-Bouclier.o : Bouclier.cpp
+-	$(CC) -c Bouclier.cpp $(CFLAGS) -o Bouclier.o
+-
+-Caisse.o : Caisse.cpp
+-	$(CC) -c Caisse.cpp $(CFLAGS) -o Caisse.o
+-
+-Carte.o : Carte.cpp
+-	$(CC) -c Carte.cpp $(CFLAGS) -o Carte.o
+-
+-Encyclopedie.o : Encyclopedie.cpp
+-	$(CC) -c Encyclopedie.cpp $(CFLAGS) -o Encyclopedie.o
+-
+-Ennemi.o : Ennemi.cpp
+-	$(CC) -c Ennemi.cpp $(CFLAGS) -o Ennemi.o
+-
+-Generique.o : Generique.cpp
+-	$(CC) -c Generique.cpp $(CFLAGS) -o Generique.o
+-
+-Jeu.o : Jeu.cpp
+-	$(CC) -c Jeu.cpp $(CFLAGS) -o Jeu.o
+-
+-Joueur.o : Joueur.cpp
+-	$(CC) -c Joueur.cpp $(CFLAGS) -o Joueur.o
+-
+-Keyboard.o : Keyboard.cpp
+-	$(CC) -c Keyboard.cpp $(CFLAGS) -o Keyboard.o
+-
+-Listable.o : Listable.cpp
+-	$(CC) -c Listable.cpp $(CFLAGS) -o Listable.o
+-
+-main.o : main.cpp
+-	$(CC) -c main.cpp $(CFLAGS) -o main.o
+-
+-Menu.o : Menu.cpp
+-	$(CC) -c Menu.cpp $(CFLAGS) -o Menu.o
+-
+-Monde.o : Monde.cpp
+-	$(CC) -c Monde.cpp $(CFLAGS) -o Monde.o
+-
+-Objet.o : Objet.cpp
+-	$(CC) -c Objet.cpp $(CFLAGS) -o Objet.o
+-
+-Personnage.o : Personnage.cpp
+-	$(CC) -c Personnage.cpp $(CFLAGS) -o Personnage.o
+-
+-Pnj.o : Pnj.cpp
+-	$(CC) -c Pnj.cpp $(CFLAGS) -o Pnj.o
+-
+-Poissons.o : Poissons.cpp
+-	$(CC) -c Poissons.cpp $(CFLAGS) -o Poissons.o
+-
+-Projectile.o : Projectile.cpp
+-	$(CC) -c Projectile.cpp $(CFLAGS) -o Projectile.o
+-
+-Snipe.o : Snipe.cpp
+-	$(CC) -c Snipe.cpp $(CFLAGS) -o Snipe.o
+-
+-Statut.o : Statut.cpp
+-	$(CC) -c Statut.cpp $(CFLAGS) -o Statut.o
+-
+-Texte.o : Texte.cpp
+-	$(CC) -c Texte.cpp $(CFLAGS) -o Texte.o
+-
+-ZoneRect.o : ZoneRect.cpp
+-	$(CC) -c ZoneRect.cpp $(CFLAGS) -o ZoneRect.o
++.cpp.o:
++	$(CC) $(CFLAGS) -c $< -o $@
+ 
+ $(EXE) : $(OBJS)
+-	$(CC) $(OBJS) -o $(EXE) $(LDFLAGS)
++	$(CC) $(CPU_CLFAGS) $(LDFLAGS) $(OBJS) -o $(EXE) $(LIBS)
+ 
+ install : $(EXE)
+ 	$(INSTALL_PROG) $(EXE) $(PREFIX)/bin
+diff -rup zelda3t.orig/Menu.cpp zelda3t.new/Menu.cpp
+--- zelda3t.orig/Menu.cpp	2009-08-18 23:17:34.000000000 +0200
++++ zelda3t.new/Menu.cpp	2023-12-06 11:55:42.219125625 +0100
+@@ -359,12 +359,16 @@ void Menu::drawEquipe(SDL_Surface* gpScr
+             switch (gpJoueur->hasObjet(O_TROC1)) {
+                 case 1 : gpJeu->affiche(gpScreen, "GEMME ROUGE", 184,24-dec); break;
+                 case 2 : gpJeu->affiche(gpScreen, "ENCLUME", 184,24-dec); break;
+-                case 3 : if (!gpJoueur->getCoffre(15,14)) 
+-                    gpJeu->affiche(gpScreen, "FER A CHEVAL", 184,24-dec); break;
++                case 3 :
++                    if (!gpJoueur->getCoffre(15,14)) 
++                        gpJeu->affiche(gpScreen, "FER A CHEVAL", 184,24-dec);
++                    break;
+                 case 4 : gpJeu->affiche(gpScreen, "BIJOU PRECIEUX", 184,24-dec); break;
+                 case 5 : gpJeu->affiche(gpScreen, "LETTRE", 184,24-dec); break;
+-                case 6 : if (!gpJoueur->getCoffre(15,26)) 
+-                    gpJeu->affiche(gpScreen, "ALLIANCE", 184,24-dec); break;
++                case 6 :
++                    if (!gpJoueur->getCoffre(15,26)) 
++                        gpJeu->affiche(gpScreen, "ALLIANCE", 184,24-dec);
++                    break;
+                 case 7 : gpJeu->affiche(gpScreen, "MARTEAU", 184,24-dec); break;
+             }
+             break;
+diff -rup zelda3t.orig/Monde.cpp zelda3t.new/Monde.cpp
+--- zelda3t.orig/Monde.cpp	2009-09-07 20:45:28.000000000 +0200
++++ zelda3t.new/Monde.cpp	2023-12-06 12:00:00.755440065 +0100
+@@ -103,7 +103,8 @@ void Monde::corrigeMap(int zone) {
+     
+     switch(zone) {
+         case 1 :
+-            if (gpJoueur->getCoffre(15, 0)) passage(59,10,5); break;
++            if (gpJoueur->getCoffre(15, 0)) passage(59,10,5);
++            break;
+         case 4 :  
+             if (!gpJoueur->getCoffre(15, 2)) {
+                 for (int j = 0; j < 11; j++) for (int i = 0; i < 42; i++)
+@@ -191,7 +192,8 @@ void Monde::corrigeMap(int zone) {
+             }
+             break;
+         case 23 :
+-            if (gpJoueur->getCoffre(15, 4)) passage(58,18,1); break;
++            if (gpJoueur->getCoffre(15, 4)) passage(58,18,1);
++            break;
+         case 26 :
+             if (!gpJoueur->hasObjet(O_PALMES)) barque(gpJoueur->getPosBarqueOld(), true);
+             break;
+@@ -1244,7 +1246,7 @@ void Monde::corrigeMap(int zone) {
+             }
+             break;
+         case 140 :
+-            if (!gpJoueur->hasObjet(O_TROC1)<7 && !gpJoueur->hasObjet(O_FFEU)) 
++            if (!(gpJoueur->hasObjet(O_TROC1)<7) && !gpJoueur->hasObjet(O_FFEU)) 
+                 setValeur(26*16,5*16,303,-1,PLEIN,C_MARTEAU3);
+             else setValeur(26*16,5*16,304,-1,PLEIN,C_RIEN);
+             if (!gpJoueur->getCoffre(15,24)) setValeur(26*16,8*16,303,-1,PLEIN,C_EPICES);
+@@ -5252,11 +5254,13 @@ int Monde::etage() {
+         case 67 : level=(region[0]/(40*16))-1; break;
+         case 68 : 
+             if (region[0]==0 || (region[1]<30*16 && region[0]<80*16)) level=0;
+-            else level=1; break;
++            else level=1;
++            break;
+         case 78 : level=(region[0]/(60*16))-1; break;
+         case 137 : 
+             if (region[1]<60*16) level=-1;
+-            else level=0; break;
++            else level=0;
++            break;
+         case 150 : level=1-(region[0]/(60*16)); break;
+         case 154 :
+             if (region[0]==0) level=1;
+@@ -5581,7 +5585,8 @@ void Monde::drawAir(SDL_Surface* screen,
+         
+         phg0 = gpJeu->getNewX() - 320/2 + 8 + gpJeu->getVueHorz();
+         phg1 = gpJeu->getNewY() - 240/2 + 16 + gpJeu->getVueVert();
+-        if (phg0 < 0) phg0 = 0; if (phg1 < 0) phg1 = 0;
++        if (phg0 < 0) phg0 = 0;
++        if (phg1 < 0) phg1 = 0;
+         
+         dst.x=0; dst.y=0; src.x=phg0/2; src.y=phg1/2; src.w=320; src.h=240;
+         while (src.x >= 256) src.x-=256;
+@@ -5613,7 +5618,8 @@ void Monde::drawAir(SDL_Surface* screen,
+         
+         phg0 = gpJeu->getNewX() - 320/2 + 8 + gpJeu->getVueHorz();
+         phg1 = gpJeu->getNewY() - 240/2 + 16 + gpJeu->getVueVert();
+-        if (phg0 < 0) phg0 = 0; if (phg1 < 0) phg1 = 0;
++        if (phg0 < 0) phg0 = 0;
++        if (phg1 < 0) phg1 = 0;
+         
+         dst.x=0; dst.y=0; src.x=phg0/2; src.y=phg1/2; src.w=320; src.h=240;
+         while (src.x >= 256) src.x-=256;
+@@ -5650,7 +5656,8 @@ void Monde::drawAir(SDL_Surface* screen,
+         
+         phg0 = gpJeu->getNewX() - 320/2 + 8 + gpJeu->getVueHorz();
+         phg1 = gpJeu->getNewY() - 240/2 + 16 + gpJeu->getVueVert();
+-        if (phg0 < 0) phg0 = 0; if (phg1 < 0) phg1 = 0;
++        if (phg0 < 0) phg0 = 0;
++        if (phg1 < 0) phg1 = 0;
+         
+         afiltre+=0.5; if (afiltre >= 256) afiltre-=256;
+         xfiltre=src.x; yfiltre=src.y;
+@@ -5773,10 +5780,6 @@ void Monde::transitTemps(int nzone, int
+     gpJeu->setStop(true);
+     //gpJeu->setTransition(true);
+     
+-    SDL_Rect dst;
+-    
+-    dst.y = 0; dst.x = 0;
+-    
+     SDL_FreeSurface(imageSpe[8]);
+     imageSpe[8]=NULL;
+     
+diff -rup zelda3t.orig/Projectile.cpp zelda3t.new/Projectile.cpp
+--- zelda3t.orig/Projectile.cpp	2009-08-10 15:28:12.000000000 +0200
++++ zelda3t.new/Projectile.cpp	2023-12-06 12:00:36.568724607 +0100
+@@ -203,16 +203,20 @@ void Projectile::attaque() {
+             switch (direction) {
+                 case N:
+                     if (gpJeu->testEpee(x+zx+(zw/2), y+zy+4, 1, 1, COUP_GRAPPIN, 1, direction)) 
+-                        etape=2; break;
++                        etape=2;
++                    break;
+                 case S:
+                     if (gpJeu->testEpee(x+zx+(zw/2), y+zy+zh-1-4, 1, 1, COUP_GRAPPIN, 1, direction)) 
+-                        etape=2; break;
++                        etape=2;
++                     break;
+                 case O:
+                     if (gpJeu->testEpee(x+zx+4, y+zy+(zh/2), 1, 1, COUP_GRAPPIN, 1, direction)) 
+-                        etape=2; break;
++                        etape=2;
++                    break;
+                 case E:
+                     if (gpJeu->testEpee(x+zx+zw-1-4, y+zy+(zh/2), 1, 1, COUP_GRAPPIN, 1, direction)) 
+-                        etape=2; break;
++                        etape=2;
++                    break;
+             }
+             break;
+         case 4 : 
+diff -rup zelda3t.orig/Texte.cpp zelda3t.new/Texte.cpp
+--- zelda3t.orig/Texte.cpp	2009-08-29 14:31:30.000000000 +0200
++++ zelda3t.new/Texte.cpp	2023-12-06 12:08:39.408070323 +0100
+@@ -314,7 +314,8 @@ void Texte::chercheText() {
+         case 156 : texte = "La place du marché est la principale activité de la ville maintenant que le bar a été détruit..."; break;
+         case 157 : 
+             if (gpJeu->getJoueur()->hasObjet(O_PERLE)) texte = "Tu as obtenu la perle de Lune ?*Enfin vu le résultat c'était peut-être pas une affaire...";
+-            else texte = "La perle de Lune permet de retrouver une apparence humaine, mais le marchand qui en a une la vend beaucoup trop chère..."; break;
++            else texte = "La perle de Lune permet de retrouver une apparence humaine, mais le marchand qui en a une la vend beaucoup trop chère...";
++            break;
+         case 158 : 
+             if (!gpJeu->getJoueur()->hasObjet(O_LIVRE)) {id=319; chercheText(); break;}
+             texte = "N : Terres Sacrées - Camping interdit"; break;
+@@ -478,7 +479,8 @@ void Texte::chercheText() {
+         case 227 : 
+             texte = "Repaire des Preux Chevaliers";
+             if (gpJeu->getJoueur()->getAvancement()<GANON_CAPTURE)
+-            texte += "**NB : Si nous ne sommes pas là, passez voir à la taverne."; break;
++            texte += "**NB : Si nous ne sommes pas là, passez voir à la taverne.";
++            break;
+         case 228 :
+             if (gpJeu->getJoueur()->getGemme(91)) {id=230; chercheText();break;}
+             texte = "Une gemme de force contre 2 perles ?**              OUI ?            non  "; 
+@@ -507,7 +509,8 @@ void Texte::chercheText() {
+         case 236 : texte = "Au-delà de la frontière Sud d'Hyrule, on dit que se dresse un vaste océan..."; buffer="A la belle saison des mouettes franchissent les falaises qui nous séparent de la plage et viennent jusqu'à ce village."; break;
+         case 237 : texte = "Ce village est sous la protection des chevaliers Hyliens, tu es donc en sécurité ici."; 
+             if (gpJeu->getJoueur()->getAvancement()<GANON_CAPTURE) 
+-            buffer="Toutefois, depuis qu'une taverne a ouvert dans un village voisin, on ne voit plus beaucoup nos protecteurs dans le coin..."; break;
++                buffer="Toutefois, depuis qu'une taverne a ouvert dans un village voisin, on ne voit plus beaucoup nos protecteurs dans le coin...";
++            break;
+         case 238 : 
+             if (gpJeu->getJoueur()->hasObjet(O_TROC2)>2) {id=245; chercheText();break;}
+             if (gpJeu->getJoueur()->hasObjet(O_TROC2)==2 
+@@ -575,7 +578,8 @@ void Texte::chercheText() {
+         case 275 : texte = "Le village Cocorico est un passage obligé pour les aventuriers qui souhaitent gravir la montagne. Les moins courageux se contentent d'atteindre le saloon..."; break;
+         case 276 : texte = "Soit le bienvenu au village, Link! *Amuse-toi, mais évite tout de même de trop t'approcher des cactus..."; break;
+         case 277 : texte = "Les bottes de Pégase permettent de se déplacer beaucoup plus rapidement. Cela donne un réel avantage au combat."; 
+-            if (gpJeu->getJoueur()->hasObjet(O_BOTTES)) buffer="Tu as ces bottes ? *Tu dois être plutôt fort désormais..."; break;
++            if (gpJeu->getJoueur()->hasObjet(O_BOTTES)) buffer="Tu as ces bottes ? *Tu dois être plutôt fort désormais...";
++            break;
+         case 278 : 
+             texte = "Un roc givre contre une tapisserie, une amulette et un parfum ? *              OUI ?            non  "; 
+             if (gpJeu->getJoueur()->getTroc(M_TAPISSERIE)<1
+@@ -724,7 +728,8 @@ void Texte::chercheText() {
+         case 361 : texte = "Ta réserve de magie a doublé!"; break;
+         case 362 : 
+             if (gpJeu->getEpoque()==T_PASSE && !gpJeu->getJoueur()->hasObjet(O_LIVRE)) {id=319; chercheText(); break;}
+-            texte = "Je te sers quelque chose ?"; break;
++            texte = "Je te sers quelque chose ?";
++            break;
+         case 363 : texte = "D'après les rumeurs, une fée se cacherait derrière une cascade...*Quelle sornette..."; break;
+         case 364 : texte = "Je euh... monte la garde dans le bar, oui voilà.*Mais je préfèrerai que ça reste entre nous, ok?"; break;
+         case 365 : texte = "Héros d'Hyrule ou pas, ne pense pas boire à l'oeil."; break;
+@@ -737,12 +742,14 @@ void Texte::chercheText() {
+         case 368 : texte = "10 flèches pour 20 rubis ?**              OUI ?            non  ";
+             if (!gpJeu->getJoueur()->hasObjet(O_ARC)) {id=373; chercheText(); break;}
+             else if (gpJeu->getJoueur()->getFleche() == gpJeu->getJoueur()->getFlecheMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<20) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<20) idsuiv=75;
++            break;
+         case 369 : texte = "10 flèches pour 20 rubis ?**              oui              NON ?"; break;
+         case 370 : texte = "5 bombes pour 30 rubis ?**              OUI ?            non  ";
+             if (!gpJeu->getJoueur()->hasObjet(O_SAC_BOMBES)) {id=372; chercheText(); break;}
+             else if (gpJeu->getJoueur()->getBombe() == gpJeu->getJoueur()->getBombeMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<30) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<30) idsuiv=75;
++            break;
+         case 371 : texte = "5 bombes pour 30 rubis ?**              oui              NON ?"; break;
+         case 372 : texte = "Il te faut un sac de bombes pour acheter ceci."; break;
+         case 373 : texte = "Il te faut un arc pour acheter ceci."; break;
+@@ -750,15 +757,18 @@ void Texte::chercheText() {
+         case 375 : texte = "Merci."; break;
+         case 376 : texte = "Un petit coeur pour 5 rubis ?**              OUI ?            non  ";
+             if (gpJeu->getJoueur()->getVie() + gpJeu->getJoueur()->getBoostVie() >= gpJeu->getJoueur()->getVieMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<5) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<5) idsuiv=75;
++            break;
+         case 377 : texte = "Un petit coeur pour 5 rubis ?**              oui              NON ?"; break;
+         case 378 : texte = "Une petite fiole de magie pour 15 rubis ?**              OUI ?            non  ";
+             if (gpJeu->getJoueur()->getMagie() + gpJeu->getJoueur()->getBoostMagie() >= gpJeu->getJoueur()->getMagieMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<15) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<15) idsuiv=75;
++            break;
+         case 379 : texte = "Une petite fiole de magie pour 15 rubis ?**              oui              NON ?"; break;
+         case 380 : texte = "Une grande fiole de magie pour 25 rubis ?**              OUI ?            non  ";
+             if (gpJeu->getJoueur()->getMagie() + gpJeu->getJoueur()->getBoostMagie() >= gpJeu->getJoueur()->getMagieMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<25) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<25) idsuiv=75;
++            break;
+         case 381 : texte = "Une grande fiole de magie pour 25 rubis ?**              oui              NON ?"; break;
+         case 382 :
+             if (gpJeu->getJoueur()->getAvancement()<APPREND_POUR_ROC_GIVRE) {texte = "Je viens d'arriver dans cette ville, je ne suis pas encore ouvert, reviens plus tard."; break;}
+@@ -770,42 +780,50 @@ void Texte::chercheText() {
+             buffer = "Dès ta prochaine visite je serai ouvert, tu pourras acheter des articles rarissimes contre des gemmes.";
+             break;
+         case 383 : texte = "Je te le cède pour 30 gemmes de force, ok ?**              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getGemme()<30) idsuiv=385; break;
++            if (gpJeu->getJoueur()->getGemme()<30) idsuiv=385;
++            break;
+         case 384 : texte = "Je te le cède pour 30 gemmes de force, ok ?**              oui              NON ?"; idsuiv=76; break;
+         case 385 : texte = "Tu n'as pas assez de gemmes.*Cherche mieux, on en trouve partout."; break;
+         case 386 : texte = "Ce détecteur permet de voir si tu as trouvé toutes les gemmes de force de ta zone actuelle. Un outil indispensable pour trouver toutes les gemmes, il est à toi contre 20 gemmes de force!"; idsuiv=387; break;
+         case 387 : texte = "Le détecteur pour 20 gemmes de force, ok ?**              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getGemme()<20) idsuiv=385; break;
++            if (gpJeu->getJoueur()->getGemme()<20) idsuiv=385;
++            break;
+         case 388 : texte = "Le détecteur pour 20 gemmes de force, ok ?**              oui              NON ?"; break;
+         case 389 : texte = "Tu as obtenu le détecteur !*Lorsque tu appuies sur Entrée, le nombre de gemmes en ta possession sera écrit en vert si tu les as toutes dans la zone."; break;
+         case 390 : 
+             if (gpJeu->getJoueur()->hasBouteille(0)) {id=393; chercheText(); break;}
+             texte = "Une bouteille vide pour 10 gemmes de force ?**              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getGemme()<10) idsuiv=385; break;
++            if (gpJeu->getJoueur()->getGemme()<10) idsuiv=385;
++            break;
+         case 391 : texte = "Une bouteille vide pour 10 gemmes de force ?**              oui              NON ?"; break;
+         case 392 : texte = "Tu as obtenu une bouteille !*Tu vas pouvoir stocker des potions dedans !"; break;
+         case 393 : texte = "Une bouteille vide pour 20 gemmes de force ?**              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getGemme()<20) idsuiv=385; break;
++            if (gpJeu->getJoueur()->getGemme()<20) idsuiv=385;
++            break;
+         case 394 : texte = "Une bouteille vide pour 20 gemmes de force ?**              oui              NON ?"; break;
+         case 395 : 
+             if (gpJeu->getJoueur()->hasObjet(O_BONUS_FORCE)==1) {id=398; chercheText(); break;}
+             texte = "Une augmentation de ta force pour 20 gemmes ?**              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getGemme()<20) idsuiv=385; break;
++            if (gpJeu->getJoueur()->getGemme()<20) idsuiv=385;
++            break;
+         case 396 : texte = "Une augmentation de ta force pour 20 gemmes ?**              oui              NON ?"; break;
+         case 397 : texte = "Ta force augmente d'un point!"; break; 
+         case 398 : 
+             texte = "Une augmentation de ta force pour 40 gemmes ?**              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getGemme()<40) idsuiv=385; break;
++            if (gpJeu->getJoueur()->getGemme()<40) idsuiv=385;
++            break;
+         case 399 : texte = "Une augmentation de ta force pour 40 gemmes ?**              oui              NON ?"; break;
+         case 400 : 
+             if (gpJeu->getJoueur()->hasObjet(O_BONUS_DEFENSE)==1) {id=403; chercheText(); break;}
+             texte = "Une augmentation de ta défense pour 20 gemmes ? *              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getGemme()<20) idsuiv=385; break;
++            if (gpJeu->getJoueur()->getGemme()<20) idsuiv=385;
++            break;
+         case 401 : texte = "Une augmentation de ta défense pour 20 gemmes ? *              oui              NON ?"; break;
+         case 402 : texte = "Ta défense augmente d'un point!"; break; 
+         case 403 : 
+             texte = "Une augmentation de ta défense pour 40 gemmes ? *              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getGemme()<40) idsuiv=385; break;
++            if (gpJeu->getJoueur()->getGemme()<40) idsuiv=385;
++            break;
+         case 404 : texte = "Une augmentation de ta défense pour 40 gemmes ? *              oui              NON ?"; break;
+         case 405 : texte = "Mmm... mon stock est vide..."; idsuiv=406; break;
+         case 406 : texte = "Tu as dû trouver toutes les gemmes de force, c'est incroyable..."; idsuiv=407; break;
+@@ -821,13 +839,16 @@ void Texte::chercheText() {
+         case 410 : texte = "Que désires-tu ?*                ? POTION ROUGE ?*                  potion verte  *                      rien      "; idsuiv=413; break;
+         case 411 : texte = "Que désires-tu ?*                  potion rouge  *                ? POTION VERTE ?*                      rien      "; 
+             if (!gpJeu->getJoueur()->hasObjet(O_LANTERNE)) idsuiv=374;
+-            else idsuiv=415; break;
++            else idsuiv=415;
++            break;
+         case 412 : texte = "Que désires-tu ?*                  potion rouge  *                  potion verte  *                ?     RIEN     ?"; break;
+         case 413 : texte = "Une potion rouge pour 60 rubis ?**              OUI ?            non  "; 
+-            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<60) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<60) idsuiv=75;
++            break;
+         case 414 : texte = "Une potion rouge pour 60 rubis ?**              oui              NON ?"; break;
+         case 415 : texte = "Une potion verte pour 40 rubis ?**              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<40) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<40) idsuiv=75;
++            break;
+         case 416 : texte = "Une potion verte pour 40 rubis ?**              oui              NON ?"; break;
+         case 417 : texte = "Tu as trouvé une potion rouge !!!**Bois-la pour restaurer toute ton énergie!!!"; break;
+         case 418 : texte = "Tu as trouvé une potion verte !!!**Bois-la pour restaurer toute ta magie!!!"; break;
+@@ -856,7 +877,8 @@ void Texte::chercheText() {
+             if (tmp==0) {id=432; chercheText();break;}
+             os << tmp; os2 << ((4-tmp+1)*5);
+             texte = "Il y a "+os.str()+" prix dans ces 9 coffres, tu veux tenter ta chance pour "+os2.str()+" rubis ?*Tu ne pourras ouvrir qu'un seul coffre, ok ?              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<(4-tmp+1)*5) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<(4-tmp+1)*5) idsuiv=75;
++            break;
+         case 434 : 
+             tmp = 4-(gpJeu->getJoueur()->getCoeur(28) + gpJeu->getJoueur()->getGemme(160) 
+             + gpJeu->getJoueur()->getGemme(161) + gpJeu->getJoueur()->getGemme(162));
+@@ -887,7 +909,8 @@ void Texte::chercheText() {
+             && gpJeu->getJoueur()->hasBouteille(2)!=1
+             && gpJeu->getJoueur()->hasBouteille(3)!=1) {id=408; chercheText(); break;}
+             texte = "Une potion bleue pour 160 rubis ?*Tu ne seras pas déçu...*              OUI ?            non  "; 
+-            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<160) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<160) idsuiv=75;
++            break;
+         case 448 : texte = "Une potion bleue pour 160 rubis ?*Tu ne seras pas déçu...*              oui              NON ?"; break;
+         case 449 : 
+             if (gpJeu->getJoueur()->hasObjet(O_TROC4)>1) {id=456; chercheText();break;}
+@@ -912,20 +935,24 @@ void Texte::chercheText() {
+         case 459 : texte = "Pour inaugurer l'ouverture du stand, j'organise un grand concours de pêche!*Tu as dû en entendre parler, toute la ville participe!"; idsuiv=460; break;
+         case 460 : texte = "Pour remporter le concours et gagner un prix spécial, il faut être le premier à pêcher 5 espèces de poissons différentes."; idsuiv=461; break;
+         case 461 : texte = "Veux-tu participer ? Les droits d'inscriptions sont de 10 Rubis, ok ?*              OUI ?            non  "; idsuiv=463;
+-            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<10) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<10) idsuiv=75;
++            break;
+         case 462 : texte = "Veux-tu participer ? Les droits d'inscriptions sont de 10 Rubis, ok ?*              oui              NON ?"; idsuiv=464; break;
+         case 463 : texte = "Très bien, voici une canne à pêche, reviens lorsque tu auras pêché 5 poissons différents."; break;
+         case 464 : 
+             texte = "Mmm... Veux-tu participer pour 5 Rubis ?**              OUI ?            non  "; idsuiv=466; 
+-            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<5) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<5) idsuiv=75;
++            break;
+         case 465 : texte = "Mmm... Veux-tu participer pour 5 Rubis ?**              oui              NON ?"; idsuiv=467; break;
+         case 466 : texte = "Bien, voici une canne à pêche, reviens lorsque tu auras pêché 5 poissons différents."; break;
+         case 467 : texte = "Et pour 2 Rubis ?**              OUI ?            non  "; idsuiv=469;
+-            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<2) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<2) idsuiv=75;
++            break;
+         case 468 : texte = "Et pour 2 Rubis ?**              oui              NON ?"; idsuiv=470; break;
+         case 469 : texte = "Bon, voici une canne à pêche, reviens lorsque tu auras pêché 5 poissons différents."; break;
+         case 470 : texte = "Pour 1 Rubis ?**              OUI ?            non  "; idsuiv=472;
+-            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<1) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getRubis() + gpJeu->getJoueur()->getBoostRubis()<1) idsuiv=75;
++            break;
+         case 471 : texte = "Pour 1 Rubis ?**              oui              NON ?"; idsuiv=473; break;
+         case 472 : texte = "Ok, voici une canne à pêche, reviens lorsque tu auras pêché 5 poissons différents."; break;
+         case 473 : texte = "Tu ne veux tout de même pas participer gratuitement ???*               SI ?            non  "; idsuiv=475; break;
+@@ -939,7 +966,8 @@ void Texte::chercheText() {
+             tmp = 5-gpJeu->getJoueur()->nbPoissons();
+             os << tmp;
+             if (tmp > 1) texte = "Encore "+os.str()+" poissons différents à trouver, bonne chance!";
+-            else texte = "Plus qu'un poisson à trouver!"; break;
++            else texte = "Plus qu'un poisson à trouver!";
++            break;
+         case 479 : texte = "Tu as trouvé suffisamment de poissons ???*Tu dois être un super pêcheur!"; idsuiv=480; break;
+         case 480 : texte = "Ca signifie que le concours de pêche est terminé, tu en es le vainqueur!"; idsuiv=481; break;
+         case 481 : texte = "J'imagine que tu vas vouloir ton prix...*Pour te récompenser d'avoir remporter le concours de pêche : *... ... ..."; idsuiv=482; break;
+@@ -1018,7 +1046,8 @@ void Texte::chercheText() {
+         case 520 : texte = "Tsss... la jeunesse de nos jours..."; break;
+         case 521 : 
+             if (!gpJeu->getJoueur()->hasObjet(O_POISSONS)) texte = "J'ai passé des heures à pêcher au bord du lac, et je n'ai pu trouver que 3 poissons différents..."; 
+-            else texte = "Il fallait aller pêcher à différents endroits pour trouver plus de 3 poissons ?*Si j'avais su..."; break;
++            else texte = "Il fallait aller pêcher à différents endroits pour trouver plus de 3 poissons ?*Si j'avais su...";
++            break;
+         case 522 :
+             if (gpJeu->getJoueur()->getAvancement()==PARLE_GARS_MINE_SALOON) {id=523; chercheText();break;}
+             if (gpJeu->getJoueur()->getAvancement()>=PARLE_BARMAN_SALOON
+@@ -1281,24 +1310,29 @@ void Texte::chercheText() {
+         case 641 : texte = "10 flèches pour 10 Ganon d'or ?**              OUI ?            non  ";
+             if (!gpJeu->getJoueur()->hasObjet(O_ARC)) {id=373; chercheText(); break;}
+             else if (gpJeu->getJoueur()->getFleche() == gpJeu->getJoueur()->getFlecheMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<10) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<10) idsuiv=75;
++            break;
+         case 642 : texte = "10 flèches pour 10 Ganon d'or ?**              oui              NON ?"; break;
+         case 643 : texte = "5 bombes pour 15 Ganon d'or ?**              OUI ?            non  ";
+             if (!gpJeu->getJoueur()->hasObjet(O_SAC_BOMBES)) {id=372; chercheText(); break;}
+             else if (gpJeu->getJoueur()->getBombe() == gpJeu->getJoueur()->getBombeMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<15) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<15) idsuiv=75;
++            break;
+         case 644 : texte = "5 bombes pour 15 Ganon d'or ?**              oui              NON ?"; break;
+         case 645 : texte = "Un petit coeur pour 4 Ganon d'or ?**              OUI ?            non  ";
+             if (gpJeu->getJoueur()->getVie() + gpJeu->getJoueur()->getBoostVie() >= gpJeu->getJoueur()->getVieMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<4) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<4) idsuiv=75;
++            break;
+         case 646 : texte = "Un petit coeur pour 4 Ganon d'or ?**              oui              NON ?"; break;
+         case 647 : texte = "Une petite fiole de magie pour 8 Ganon d'or ?**              OUI ?            non  ";
+             if (gpJeu->getJoueur()->getMagie() + gpJeu->getJoueur()->getBoostMagie() >= gpJeu->getJoueur()->getMagieMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<8) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<8) idsuiv=75;
++            break;
+         case 648 : texte = "Une petite fiole de magie pour 8 Ganon d'or ?**              oui              NON ?"; break;
+         case 649 : texte = "Une grande fiole de magie pour 16 Ganon d'or ? *              OUI ?            non  ";
+             if (gpJeu->getJoueur()->getMagie() + gpJeu->getJoueur()->getBoostMagie() >= gpJeu->getJoueur()->getMagieMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<16) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<16) idsuiv=75;
++            break;
+         case 650 : texte = "Une grande fiole de magie pour 16 Ganon d'or ? *              oui              NON ?"; break;
+         case 651 : 
+             if (gpJeu->getJoueur()->getGanonMax()>0) {id=652; chercheText(); break;}
+@@ -1346,13 +1380,16 @@ void Texte::chercheText() {
+         case 675 : texte = "Que désires-tu ?*                ? POTION ROUGE ?*                  potion verte  *                      rien      "; idsuiv=678; break;
+         case 676 : texte = "Que désires-tu ?*                  potion rouge  *                ? POTION VERTE ?*                      rien      "; 
+             if (!gpJeu->getJoueur()->hasObjet(O_LANTERNE)) idsuiv=374;
+-            else idsuiv=680; break;
++            else idsuiv=680;
++            break;
+         case 677 : texte = "Que désires-tu ?*                  potion rouge  *                  potion verte  *                ?     RIEN     ?"; break;
+         case 678 : texte = "Une potion rouge pour 40 Ganon d'or ?**              OUI ?            non  "; 
+-            if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<40) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<40) idsuiv=75;
++            break;
+         case 679 : texte = "Une potion rouge pour 40 Ganon d'or ?**              oui              NON ?"; break;
+         case 680 : texte = "Une potion verte pour 25 Ganon d'or ?**              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<25) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getGanon() + gpJeu->getJoueur()->getBoostGanon()<25) idsuiv=75;
++            break;
+         case 681 : texte = "Une potion verte pour 25 Ganon d'or ?**              oui              NON ?"; break;
+         case 682 : 
+             if (gpJeu->getJoueur()->getCoffre(15,14)) {id=683; chercheText();break;}
+@@ -1481,7 +1518,8 @@ void Texte::chercheText() {
+         case 745 : texte = "Ce ne sera pas long, ne t'inquiète pas."; break;
+         case 746 :
+             if (gpJeu->getJoueur()->getEpee()) {id=748; chercheText();break;}
+-            texte = "C'est prêt, voici ton épée :"; break;
++            texte = "C'est prêt, voici ton épée :";
++            break;
+         case 747 : texte = "Excalibur a été reforgée! Sa puissance a bien augmenté!"; break;
+         case 748 : texte = "Un jour, je forgerai une épée aussi belle que la tienne, foi de forgeron!"; break;
+         case 749 : texte = "Tu ne devrais pas t'éloigner du village par ce temps..."; break;
+@@ -1490,32 +1528,37 @@ void Texte::chercheText() {
+             texte = "10 flèches pour 5 Pièces d'or ?**              OUI ?            non  ";
+             if (!gpJeu->getJoueur()->hasObjet(O_ARC)) {id=373; chercheText(); break;}
+             else if (gpJeu->getJoueur()->getFleche() == gpJeu->getJoueur()->getFlecheMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<5) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<5) idsuiv=75;
++            break;
+         case 751 : texte = "10 flèches pour 5 Pièces d'or ?**              oui              NON ?"; break;
+         case 752 : 
+             if (!gpJeu->getJoueur()->hasObjet(O_LIVRE)) {id=319; chercheText(); break;}
+             texte = "5 bombes pour 10 Pièces d'or ?**              OUI ?            non  ";
+             if (!gpJeu->getJoueur()->hasObjet(O_SAC_BOMBES)) {id=372; chercheText(); break;}
+             else if (gpJeu->getJoueur()->getBombe() == gpJeu->getJoueur()->getBombeMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<10) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<10) idsuiv=75;
++            break;
+         case 753 : texte = "5 bombes pour 10 Pièces d'or ?**              oui              NON ?"; break;
+         case 754 : 
+             if (!gpJeu->getJoueur()->hasObjet(O_LIVRE)) {id=319; chercheText(); break;}
+             texte = "Un petit coeur pour 1 Pièce d'or ?**              OUI ?            non  ";
+             if (gpJeu->getJoueur()->getVie() + gpJeu->getJoueur()->getBoostVie() >= gpJeu->getJoueur()->getVieMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<1) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<1) idsuiv=75;
++            break;
+         case 755 : texte = "Un petit coeur pour 1 Pièce d'or ?**              oui              NON ?"; break;
+         case 756 : 
+             if (!gpJeu->getJoueur()->hasObjet(O_LIVRE)) {id=319; chercheText(); break;}
+             texte = "Une petite fiole de magie pour 3 Pièces d'or ? *              OUI ?            non  ";
+             if (gpJeu->getJoueur()->getMagie() + gpJeu->getJoueur()->getBoostMagie() >= gpJeu->getJoueur()->getMagieMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<3) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<3) idsuiv=75;
++            break;
+         case 757 : texte = "Une petite fiole de magie pour 3 Pièces d'or ? *              oui              NON ?"; break;
+         case 758 : 
+             if (!gpJeu->getJoueur()->hasObjet(O_LIVRE)) {id=319; chercheText(); break;}
+             texte = "Une grande fiole de magie pour 6 Pièces d'or ? *              OUI ?            non  ";
+             if (gpJeu->getJoueur()->getMagie() + gpJeu->getJoueur()->getBoostMagie() >= gpJeu->getJoueur()->getMagieMax()) {id=374; chercheText(); break;}
+-            else if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<6) idsuiv=75; break;
++            else if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<6) idsuiv=75;
++            break;
+         case 759 : texte = "Une grande fiole de magie pour 6 Pièces d'or ? *              oui              NON ?"; break;
+         case 760 : texte = "Tu as trouvé le livre de Mudora!*Tu comprends désormais le Hylien ancien !"; break;
+         case 761 : 
+@@ -1533,13 +1576,16 @@ void Texte::chercheText() {
+         case 764 : texte = "Que désires-tu ?*                ? POTION ROUGE ?*                  potion verte  *                      rien      "; idsuiv=767; break;
+         case 765 : texte = "Que désires-tu ?*                  potion rouge  *                ? POTION VERTE ?*                      rien      "; 
+             if (!gpJeu->getJoueur()->hasObjet(O_LANTERNE)) idsuiv=374;
+-            else idsuiv=769; break;
++            else idsuiv=769;
++            break;
+         case 766 : texte = "Que désires-tu ?*                  potion rouge  *                  potion verte  *                ?     RIEN     ?"; break;
+         case 767 : texte = "Une potion rouge pour 15 Pièces d'or ?**              OUI ?            non  "; 
+-            if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<15) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<15) idsuiv=75;
++            break;
+         case 768 : texte = "Une potion rouge pour 15 Pièces d'or ?**              oui              NON ?"; break;
+         case 769 : texte = "Une potion verte pour 10 Pièces d'or ?**              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<10) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<10) idsuiv=75;
++            break;
+         case 770 : texte = "Une potion verte pour 10 Pièces d'or ?**              oui              NON ?"; break;
+         case 771 : texte = "Tu as l'air bien pauvre, tu n'as même pas de bourse sur toi ?*Prends donc celle-là :"; break;
+         case 772 : texte = "Tu as obtenu une bourse pouvant contenir 99 pièces d'or !"; break;
+@@ -1582,7 +1628,8 @@ void Texte::chercheText() {
+             texte = "J'ai plein d'infos secrètes connues de nous seuls (et de Ganondorf). Un verre de bière coûte 1 pièce d'or, affaire conclue ?"; idsuiv=789; break;
+         case 789 : 
+             texte = "Une info pour 1 pièce d'or, ok ?**              OUI ?            non  ";
+-            if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<1) idsuiv=75; break;
++            if (gpJeu->getJoueur()->getPiece() + gpJeu->getJoueur()->getBoostPiece()<1) idsuiv=75;
++            break;
+         case 790 : texte = "Une info pour 1 pièce d'or, ok ?**              oui              NON ?"; idsuiv=76; break;
+         case 791 : 
+             if (gpJeu->getJoueur()->getCoffre(15,23)>0) {id=792; chercheText(); break;}
+@@ -2053,7 +2100,8 @@ void Texte::chercheText() {
+             if (gpJeu->getJoueur()->getCoffre(12,13) == 2) {id=1129; chercheText();break;}
+             if (gpJeu->getJoueur()->getCoffre(12,13) == 3) {id=1130; chercheText();break;}
+             texte = "Frappe les ennemis pour les arrêter sur un signe. Obtient les 4 signes différents et tu gagneras un prix."; 
+-            if (!gpJeu->getJoueur()->getCoffre(12,13)) idsuiv=1126; break;
++            if (!gpJeu->getJoueur()->getCoffre(12,13)) idsuiv=1126;
++            break;
+         case 1126: texte = "Veux-tu essayer pour 10 Ganon d'or ?**              OUI ?            non  "; break;
+         case 1127: texte = "Veux-tu essayer pour 10 Ganon d'or ?**              oui              NON ?"; idsuiv=1116; break;
+         case 1128: texte = "Tu as déjà remporté ce jeu."; break;
+@@ -2065,7 +2113,8 @@ void Texte::chercheText() {
+             if (gpJeu->getJoueur()->getCoffre(12,13) == 3) {id=1132; chercheText();break;}
+             texte = "Frappe les ennemis pour les arrêter sur un chiffre. Obtiens un 4, un 2 et un 1 et tu gagneras un prix."; 
+             buffer="Parle-moi si tu échoues, tu pourras recommencer en conservant les bons chiffres obtenus."; 
+-            if (!gpJeu->getJoueur()->getCoffre(12,13)) idsuiv=1126; break;
++            if (!gpJeu->getJoueur()->getCoffre(12,13)) idsuiv=1126;
++            break;
+         case 1132: texte = "Veux-tu compléter pour 5 Ganon d'or ?**              OUI ?            non  "; break;
+         case 1133: texte = "Veux-tu compléter pour 5 Ganon d'or ?**              oui              NON ?"; idsuiv=1116; break;
+         case 1134:
+@@ -2076,13 +2125,15 @@ void Texte::chercheText() {
+         case 1135: texte = "Tu perds du temps là, tu sais ?"; break;
+         case 1136:
+             if (gpJeu->getJoueur()->getCoffre(12,5)) {id=1128; chercheText();break;}
+-            texte = "C'est la ligne d'arrivée de la grande course du Casino. Va à la ligne de départ si tu veux essayer de battre le record."; break;
++            texte = "C'est la ligne d'arrivée de la grande course du Casino. Va à la ligne de départ si tu veux essayer de battre le record.";
++            break;
+         case 1137:
+             if (gpJeu->getJoueur()->getCle(12,0)) {id=1128; chercheText();break;}
+             if (gpJeu->getJoueur()->getCoffre(12,13) == 2) {id=1129; chercheText();break;}
+             if (gpJeu->getJoueur()->getCoffre(12,13) == 3) {id=1130; chercheText();break;}
+             texte = "Frappe les ennemis pour les arrêter sur un chiffre et fait plus que moi avec un dé en moins."; 
+-            if (!gpJeu->getJoueur()->getCoffre(12,13)) idsuiv=1126; break;
++            if (!gpJeu->getJoueur()->getCoffre(12,13)) idsuiv=1126;
++            break;
+         case 1138:
+             if (gpJeu->getJoueur()->getCoffre(12,4)) {id=1128; chercheText();break;}
+             if (gpJeu->getJoueur()->getCoffre(12,13) == 2) {id=1129; chercheText();break;}
+@@ -2098,12 +2149,14 @@ void Texte::chercheText() {
+             if (gpJeu->getJoueur()->getCoffre(12,13) == 2) {id=1129; chercheText();break;}
+             if (gpJeu->getJoueur()->getCoffre(12,13) == 3) {id=1130; chercheText();break;}
+             texte = "Frappe les ennemis pour les arrêter sur un chiffre qui sera transmis à une caisse de droite. Puis pousse les caisses pour qu'elles arrivent à 0 sur les dalles."; 
+-            if (!gpJeu->getJoueur()->getCoffre(12,13)) idsuiv=1126; break;
++            if (!gpJeu->getJoueur()->getCoffre(12,13)) idsuiv=1126;
++            break;
+         case 1144:
+             if (gpJeu->getJoueur()->getCoffre(12,3)) {id=1128; chercheText();break;}
+             if (gpJeu->getJoueur()->getCoffre(12,13) > 1) {id=1145; chercheText();break;}
+             texte = "Je te vends une clé pour un prix égal à la somme de tes 4 dés fois le montant du miens."; 
+-            if (!gpJeu->getJoueur()->getCoffre(12,13)) idsuiv=1126; break;
++            if (!gpJeu->getJoueur()->getCoffre(12,13)) idsuiv=1126;
++            break;
+         case 1145:
+             tmp = gpJeu->getJoueur()->getCoffre(12,13)-2; os << tmp;
+             texte = "Je te vends une petite clé pour "+os.str()+" Ganon d'or, ça te va ?*              OUI ?            non  "; idsuiv=1129; 
+Only in zelda3t.new/data/save: system.dat
+diff -rup zelda3t.orig/main.cpp zelda3t.new/main.cpp
+--- zelda3t.orig/main.cpp	2009-08-10 16:31:40.000000000 +0200
++++ zelda3t.new/main.cpp	2023-12-06 11:13:20.909393511 +0100
+@@ -31,13 +31,13 @@ SDL_Surface* init(bool* etire) {
+     SDL_SetColorKey(icon,SDL_SRCCOLORKEY,SDL_MapRGB(icon->format,0,0,0));
+     SDL_WM_SetIcon(icon,NULL);
+ 
+-    SDL_ShowCursor(SDL_DISABLE);
++    SDL_ShowCursor(SDL_ENABLE);
+ 
+ 
+     SDL_Rect** modes;
+     int gBpp = 0;
+     
+-    modes = SDL_ListModes(NULL,SDL_FULLSCREEN|SDL_HWSURFACE);
++    modes = SDL_ListModes(NULL,SDL_HWSURFACE|SDL_FULLSCREEN);
+     if (modes == (SDL_Rect**)-1) gBpp = 1;
+     else {
+         for (int i = 0; modes[i]; ++i) {
+@@ -49,9 +49,9 @@ SDL_Surface* init(bool* etire) {
+     
+     if(!gBpp) {
+         *etire = true;
+-        return SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN);
++        return SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE|SDL_DOUBLEBUF);
+     } else {
+-        return SDL_SetVideoMode(320, 240, 32, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN);
++        return SDL_SetVideoMode(320, 240, 32, SDL_HWSURFACE|SDL_DOUBLEBUF);
+     }
+ }
+ 

@@ -1,0 +1,134 @@
+diff -rup -x Makefile.in -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs lbreakout2-2.6.5/client/Makefile.am lbreakout2-2.6.5.new/client/Makefile.am
+--- lbreakout2-2.6.5/client/Makefile.am	2013-05-03 19:06:20.000000000 +0200
++++ lbreakout2-2.6.5.new/client/Makefile.am	2023-12-04 17:27:08.346260792 +0100
+@@ -1,4 +1,5 @@
+-DEFS = @network_flag@ @sdlnet_flag@ @arch_flag@ @warp_flag@ @audio_flag@ @inst_flag@ @hi_inst_flag@ @locdir_flag@ @DEFS@
++locdir_flag = -DLOCALEDIR=\"${localedir}\"
++DEFS = @network_flag@ @sdlnet_flag@ @arch_flag@ @warp_flag@ @audio_flag@ @inst_flag@ @hi_inst_flag@ $(locdir_flag) @DEFS@
+ 
+ lbreakout2res.o: win32.ico 
+ 	@echo "1 VERSIONINFO" > $(PACKAGE).rc
+diff -rup -x Makefile.in -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs lbreakout2-2.6.5/client/main.c lbreakout2-2.6.5.new/client/main.c
+--- lbreakout2-2.6.5/client/main.c	2013-05-03 19:06:20.000000000 +0200
++++ lbreakout2-2.6.5.new/client/main.c	2023-12-04 15:34:54.666348312 +0100
+@@ -66,11 +66,13 @@ int main(int argc, char *argv[])
+     char path[512];
+     const char *set_name = NULL;
+     SDL_Surface *loading;
+-#ifdef __unix__
+-    gid_t realgid;
+ 
+     hi_dir_chart_file = fopen(HI_DIR "/" CHART_FILE_NAME, "r+");
+ 
++#ifdef __linux__
++	{
++    gid_t realgid;
++
+     /* This is where we drop our setuid/setgid privileges.
+      */
+     realgid = getgid();
+@@ -78,6 +80,7 @@ int main(int argc, char *argv[])
+         perror("Could not drop setgid privileges.  Aborting.");
+         exit(1);
+     }
++    }
+ #endif
+    
+ /* i18n */
+diff -rup -x Makefile.in -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs lbreakout2-2.6.5/configure.in lbreakout2-2.6.5.new/configure.in
+--- lbreakout2-2.6.5/configure.in	2015-10-17 18:10:09.000000000 +0200
++++ lbreakout2-2.6.5.new/configure.in	2023-12-04 18:21:27.738379964 +0100
+@@ -21,7 +21,7 @@ AC_CHECK_LIB(z, main,, AC_MSG_ERROR(libz
+ AC_CHECK_LIB(png, main,, AC_MSG_ERROR(libpng is needed))
+ 
+ dnl check SDL version
+-AM_PATH_SDL(1.2.0,, AC_MSG_ERROR(lib SDL is needed))
++PKG_CHECK_MODULES([SDL], [sdl], :, AC_MSG_ERROR([lib SDL is needed]))
+ CFLAGS="-Wall $CFLAGS $SDL_CFLAGS"
+ LIBS="$LIBS $SDL_LIBS"
+ 
+@@ -33,15 +33,15 @@ AC_SUBST(warp_flag)
+ 
+ dnl check sound
+ audio_flag="-DAUDIO_ENABLED"
+-mixer_flag="-lSDL_mixer"
++mixer_flag=""
+ AC_ARG_ENABLE( audio,
+ [  --disable-audio             Disables Audio], audio_flag=""; mixer_flag="")
+ 
+ dnl check if SDL_mixer's installed
+ dnl if not: clear sound_flag and mixer_flag
+-AC_CHECK_LIB(SDL_mixer, main,
+-AC_MSG_RESULT("SDL_Mixer found"), 
+-AC_MSG_RESULT("SDL_Mixer NOT found \(http://libsdl.org\): Audio disabled"); audio_flag=""; mixer_flag="")
++PKG_CHECK_MODULES([SDL_MIXER], [SDL_mixer],
++[mixer_flag="$SDL_MIXER_LIBS"],
++AC_MSG_RESULT("SDL_Mixer NOT found \(http://libsdl.org\): Audio disabled"); audio_flag=""; wmixer_flag="")
+ 
+ AC_SUBST(audio_flag)
+ AC_SUBST(mixer_flag)
+@@ -64,13 +64,13 @@ dnl SDL_net usage
+ sdlnet_flag=""
+ sdlnet_lib_flag=""
+ AC_ARG_ENABLE( sdl-net,
+-[  --enable-sdl-net           Use SDL_Net for networking.], sdlnet_flag="-DSDL_NET_ENABLED"; sdlnet_lib_flag="-lSDL_net" )
++[  --enable-sdl-net           Use SDL_Net for networking.], sdlnet_flag="-DSDL_NET_ENABLED")
+ AC_SUBST(sdlnet_flag)
+ AC_SUBST(sdlnet_lib_flag)
+ if test "$sdlnet_flag" == "-DSDL_NET_ENABLED" ; then
+   dnl check if SDL_net is installed
+-  AC_CHECK_LIB(SDL_net, main,
+-  AC_MSG_RESULT("SDL_net found"), 
++  PKG_CHECK_MODULES(SDL_NET, SDL_net,
++  [sdlnet_lib_flag="$SDL_NET_LIBS"],
+   AC_MSG_RESULT("SDL_net NOT found \(http://libsdl.org\): Networking disabled"); sdlnet_flag=""; sdlnet_lib_flag=""; network_flag="")
+ fi
+ 
+@@ -81,23 +81,21 @@ AC_ARG_ENABLE( netdebug,
+ AC_SUBST(netdebug_flag)
+ 
+ dnl set localedir
+-localedir=$datadir/locale
+-locdir_flag="-DLOCALEDIR=\\\"$localedir\\\""
+ 
+ dnl installation&highscore path
+-inst_dir="$datadir/lbreakout2"
+-hi_dir=$localstatedir
++inst_dir='${datadir}/lbreakout2'
++hi_dir='${localstatedir}'
+ 
+ dnl check if installation was disabled
+ AC_ARG_ENABLE( install,
+ [  --disable-install           No installation. Played from the source directory.], 
+ inst_dir="." hi_dir="." 
+-locdir_flag="-DLOCALEDIR=\\\"../dict\\\"" 
+-    rm -rf dict; mkdir dict
++    mkdir -p client/locale
+     for lang in `cat po/LINGUAS`; do
+-        mkdir dict/$lang; mkdir dict/$lang/LC_MESSAGES
+-        ln -s ../../../po/$lang.gmo dict/$lang/LC_MESSAGES/$PACKAGE.mo
++        mkdir -p client/locale/$lang/LC_MESSAGES
++        ln -s ../../../../po/$lang.gmo client/locale/$lang/LC_MESSAGES/$PACKAGE.mo
+     done
++localedir=locale
+ )
+ 
+ inst_flag="-DSRC_DIR=\\\"$inst_dir\\\""
+@@ -107,7 +105,6 @@ AC_SUBST(inst_flag)
+ AC_SUBST(hi_inst_flag)
+ AC_SUBST(inst_dir)
+ AC_SUBST(hi_dir)
+-AC_SUBST(locdir_flag)
+ 
+ case "$host" in
+ 	*-mingw32)
+diff -rup -x Makefile.in -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs lbreakout2-2.6.5/server/Makefile.am lbreakout2-2.6.5.new/server/Makefile.am
+--- lbreakout2-2.6.5/server/Makefile.am	2013-05-03 19:06:06.000000000 +0200
++++ lbreakout2-2.6.5.new/server/Makefile.am	2023-12-04 17:27:18.162913352 +0100
+@@ -1,4 +1,5 @@
+-DEFS = @DEFS@ @network_flag@ @sdlnet_flag@ @inst_flag@ @locdir_flag@
++locdir_flag = -DLOCALEDIR=\"${localedir}\"
++DEFS = @DEFS@ @network_flag@ @sdlnet_flag@ @inst_flag@ $(locdir_flag)
+ 
+ bin_PROGRAMS = lbreakout2server
+ 

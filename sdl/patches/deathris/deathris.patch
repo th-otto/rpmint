@@ -1,0 +1,53 @@
+diff -rup deathris/tetris.cpp deathris.new/tetris.cpp
+--- deathris/tetris.cpp	2016-10-12 12:37:31.000000000 +0200
++++ deathris.new/tetris.cpp	2023-12-05 07:03:29.504215515 +0100
+@@ -16,6 +16,7 @@
+ #include <queue>
+ #include <sstream>
+ #include <cctype> 
++#include <time.h>
+ 
+ using namespace std;
+ 
+@@ -160,12 +161,26 @@ SDL_Event event;
+ 
+ SDL_Surface *load_image(string name)
+ {
+-    SDL_Surface *image = NULL;
++    SDL_Surface *image;
+     
+-    image = IMG_Load(name.c_str());
++    string filename = "data/" + name;
++    image = IMG_Load(filename.c_str());
++    if (!image)
++	    image = IMG_Load(name.c_str());
+     return image;
+ }
+ 
++Mix_Chunk *load_sound(string name)
++{
++    Mix_Chunk *sound;
++    
++    string filename = "data/" + name;
++    sound = Mix_LoadWAV(filename.c_str());
++    if (!sound)
++	    sound = Mix_LoadWAV(name.c_str());
++    return sound;
++}
++
+ void blit_surface(int x, int y, SDL_Surface *src, SDL_Surface *dst)
+ {
+     SDL_Rect rect;
+@@ -236,9 +251,9 @@ bool init()
+     
+     // lataa ääniefektit
+ 
+-    block_rotate = Mix_LoadWAV("block_rotate.wav");
+-    block_drop = Mix_LoadWAV("block_drop.wav");
+-    line_delete = Mix_LoadWAV("line_delete.wav");
++    block_rotate = load_sound("block_rotate.wav");
++    block_drop = load_sound("block_drop.wav");
++    line_delete = load_sound("line_delete.wav");
+     
+     // debug 
+     //block_rotate = Mix_LoadWAV("empty.wav");

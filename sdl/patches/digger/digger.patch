@@ -1,0 +1,409 @@
+diff -rup digger/src/Makefile digger.new/src/Makefile
+--- digger/src/Makefile	2003-04-01 10:10:00.000000000 +0200
++++ digger.new/src/Makefile	2023-12-05 07:54:13.149421389 +0100
+@@ -1,5 +1,5 @@
+-CC	?= gcc
+-CFLAGS	+= -O -g -pipe -Wall -D_SDL
++CC	= $(CROSS_PREFIX)gcc
++CFLAGS	+= $(CPU_CFLAGS) -O2 -g -pipe -Wall -D_SDL
+ OBJS	= main.o digger.o drawing.o sprite.o scores.o record.o sound.o \
+ 			newsnd.o ini.o input.o monster.o bags.o alpha.o vgagrafx.o \
+ 			title_gz.o icon.o sdl_kbd.o sdl_vid.o sdl_timer.o sdl_snd.o
+@@ -24,8 +24,8 @@ endif
+ 
+ ifeq ($(ARCH),"LINUX")
+ OBJS	+= fbsd_sup.o	# strup()
+-CFLAGS	+= -DLINUX `sdl-config --cflags`
+-LIBS	+= `sdl-config --libs` -lz
++CFLAGS	+= -DLINUX `pkg-config --cflags sdl`
++LIBS	+= `pkg-config --libs sdl` -lz
+ ESUFFIX	=
+ endif
+ 
+@@ -39,7 +39,7 @@ endif
+ all: digger$(ESUFFIX)
+ 
+ digger$(ESUFFIX): $(OBJS)
+-	$(CC) -o digger$(ESUFFIX) $(OBJS) $(LIBS)
++	$(CC) $(CFLAGS) -o digger$(ESUFFIX) $(OBJS) $(LIBS) $(LDFLAGS)
+ 
+ $(OBJS): %.o: %.c
+ 	$(CC) -c $(CFLAGS) $< -o $@
+diff -rup digger/src/alpha.c digger.new/src/alpha.c
+--- digger/src/alpha.c	2000-04-03 20:42:48.000000000 +0200
++++ digger.new/src/alpha.c	2023-12-05 07:19:14.655979347 +0100
+@@ -1,7 +1,6 @@
+ #include "def.h"
+ 
+-char copyright[]="Portions Copyright(c) 1983 Windmill Software
+-Inc.";
++char copyright[]="Portions Copyright(c) 1983 Windmill Software Inc.";
+ 
+ Sint textoffdat[16]={
+    72,   0, -72,-72,
+diff -rup digger/src/bags.c digger.new/src/bags.c
+--- digger/src/bags.c	2000-04-03 20:42:46.000000000 +0200
++++ digger.new/src/bags.c	2023-12-05 07:21:53.112388103 +0100
+@@ -169,6 +169,7 @@ void updatebag(Sint4 bag)
+     case DIR_RIGHT:
+     case DIR_LEFT:
+       if (xr==0)
++      {
+         if (y<180 && (getfield(h,v+1)&0xfdf)!=0xfdf) {
+           bagdat[bag].dir=DIR_DOWN;
+           bagdat[bag].wt=0;
+@@ -176,6 +177,7 @@ void updatebag(Sint4 bag)
+         }
+         else
+           baghitground(bag);
++      }
+       break;
+     case DIR_DOWN:
+       if (yr==0)
+@@ -189,10 +191,12 @@ void updatebag(Sint4 bag)
+       checkmonscared(bagdat[bag].h);
+   }
+   if (bagdat[bag].dir!=DIR_NONE)
++  {
+     if (bagdat[bag].dir!=DIR_DOWN && pushcount!=0)
+       pushcount--;
+     else
+       pushbag(bag,bagdat[bag].dir);
++  }
+ }
+ 
+ void baghitground(Sint4 bag)
+diff -rup digger/src/def.h digger.new/src/def.h
+--- digger/src/def.h	2000-04-13 12:07:32.000000000 +0200
++++ digger.new/src/def.h	2023-12-05 08:08:51.851593752 +0100
+@@ -140,14 +140,19 @@ typedef unsigned long int Uint5;
+ #ifdef FREEBSD
+ #include <sys/syslimits.h>
+ #else /* I donno what is analog of PATH_MAX for Linux :( */
++#ifndef PATH_MAX
+ #define PATH_MAX 1024
+ #endif
+-#define ININAME strncat(strncpy(malloc(PATH_MAX),getenv("HOME"),PATH_MAX),"/.digger.rc",PATH_MAX)
++#endif
++#define ININAME strcat(strcpy(malloc(PATH_MAX),getenv("HOME")),"/.digger.rc")
+ #else
+ #define ININAME "DIGGER.INI"
+ #endif
+ 
+ #if defined FREEBSD || defined LINUX
++#include <string.h>
++#undef strupr
++#define strupr mystrupr
+ #include "fbsd_sup.h"
+ #endif
+ 
+diff -rup digger/src/digger.c digger.new/src/digger.c
+--- digger/src/digger.c	2000-04-03 20:42:46.000000000 +0200
++++ digger.new/src/digger.c	2023-12-05 07:30:36.814881972 +0100
+@@ -154,7 +154,9 @@ void dodigger(void)
+     else
+       updatefire(n);
+     if (digvisible)
++    {
+       if (digdat[n].alive)
++      {
+         if (digdat[n].bagtime!=0) {
+           drawdig(n,digdat[n].mdir,digdat[n].x,digdat[n].y,
+                   digdat[n].notfiring && digdat[n].rechargetime==0);
+@@ -163,8 +165,9 @@ void dodigger(void)
+         }
+         else
+           updatedigger(n);
+-      else
++      } else
+         diggerdie(n);
++    }
+     if (digdat[n].emocttime>0)
+       digdat[n].emocttime--;
+   }
+@@ -203,7 +206,7 @@ void dodigger(void)
+ 
+ void updatefire(int n)
+ {
+-  Sint4 pix;
++  Sint4 pix=0;
+   int clfirst[TYPES],clcoll[SPRITES],i;
+   bool clflag;
+   if (digdat[n].notfiring) {
+diff -rup digger/src/fbsd_sup.c digger.new/src/fbsd_sup.c
+--- digger/src/fbsd_sup.c	2000-04-03 20:42:44.000000000 +0200
++++ digger.new/src/fbsd_sup.c	2023-12-05 07:19:36.712609388 +0100
+@@ -1,4 +1,5 @@
+ #include <ctype.h>
++#include <stdlib.h>
+ #include "def.h"
+ #include "hardware.h"
+ 
+diff -rup digger/src/main.c digger.new/src/main.c
+--- digger/src/main.c	2000-04-03 20:42:44.000000000 +0200
++++ digger.new/src/main.c	2023-12-05 07:36:55.990940842 +0100
+@@ -321,7 +321,7 @@ int main(int argc,char *argv[])
+ 
+ int mainprog(void)
+ {
+-  Sint4 frame,t,x;
++  Sint4 frame,t,x=0;
+   loadscores();
+ #ifdef _WINDOWS
+   show_main_menu();
+@@ -599,14 +599,17 @@ void parsecmd(int argc,char *argv[])
+   for (arg=1;arg<argc;arg++) {
+     word=argv[arg];
+     if (word[0]=='/' || word[0]=='-') {
++      i=0;
+       if (word[1]=='L' || word[1]=='l' || word[1]=='R' || word[1]=='r' ||
+           word[1]=='P' || word[1]=='p' || word[1]=='S' || word[1]=='s' ||
+           word[1]=='E' || word[1]=='e' || word[1]=='G' || word[1]=='g' ||
+           word[1]=='A' || word[1]=='a' || word[1]=='I' || word[1]=='i')
++      {
+         if (word[2]==':')
+           i=3;
+         else
+           i=2;
++      }
+       if (word[1]=='L' || word[1]=='l') {
+         j=0;
+         while (word[i]!=0)
+@@ -639,7 +642,7 @@ void parsecmd(int argc,char *argv[])
+         gs=TRUE;
+       }
+       if (word[1]=='I' || word[1]=='i')
+-        sscanf(word+i,"%u",&startlev);
++        sscanf(word+i,"%hu",&startlev);
+       if (word[1]=='U' || word[1]=='u')
+         unlimlives=TRUE;
+ #ifndef _WINDOWS        
+@@ -706,12 +709,14 @@ void parsecmd(int argc,char *argv[])
+         gpal(0);
+       }
+       if (word[1]=='K' || word[1]=='k')
++      {
+         if (word[2]=='A' || word[2]=='a')
+           redefkeyb(TRUE);
+         else
+           redefkeyb(FALSE);
++      }
+       if (word[1]=='A' || word[1]=='a') {
+-        sscanf(word+i,"%u,%x,%u,%u,%u,%u",&sound_device,&sound_port,&sound_irq,
++        sscanf(word+i,"%hu,%hx,%hu,%hu,%hu,%hu",&sound_device,&sound_port,&sound_irq,
+                &sound_dma,&sound_rate,&sound_length);
+         killsound();
+         volume=1;
+diff -rup digger/src/monster.c digger.new/src/monster.c
+--- digger/src/monster.c	2000-04-03 20:42:44.000000000 +0200
++++ digger.new/src/monster.c	2023-12-05 07:22:15.112352838 +0100
+@@ -395,6 +395,7 @@ void monai(Sint4 mon)
+   /* Collision with Digger */
+ 
+   if (clfirst[4]!=-1 && isalive())
++  {
+     if (bonusmode) {
+       killmon(mon);
+       i=clfirst[4];
+@@ -413,6 +414,7 @@ void monai(Sint4 mon)
+         i=clcoll[i];
+       }
+     }
++  }
+ 
+   /* Update co-ordinates */
+ 
+diff -rup digger/src/newsnd.c digger.new/src/newsnd.c
+--- digger/src/newsnd.c	2000-04-03 20:42:44.000000000 +0200
++++ digger.new/src/newsnd.c	2023-12-05 07:24:01.752181902 +0100
+@@ -176,7 +176,7 @@ bool subcarry(Uint4 *dest,Uint4 sub)
+ samp getsample(void)
+ {
+   bool f=FALSE,t2sw0;
+-  Uint4 spkrt2,noi8,complicate=0,not2;
++  Uint4 spkrt2=0,noi8=0,complicate=0,not2=0;
+ 
+   if (subcarry(&t2v,rate)) {
+     not2=t2v+rate; /* Amount of time that went by before change */
+@@ -208,6 +208,7 @@ samp getsample(void)
+   if (i8flag && i8pulse<=0) {
+     f=TRUE;
+     if (spkrmode!=0)
++    {
+       if (spkrmode!=1)
+         t2sw=!t2sw;
+       else {
+@@ -215,6 +216,7 @@ samp getsample(void)
+         t2sw=TRUE;
+         f=FALSE;
+       }
++    }
+   }
+ 
+   if (i8pulse>0) {
+diff -rup digger/src/record.c digger.new/src/record.c
+--- digger/src/record.c	2000-04-03 20:42:44.000000000 +0200
++++ digger.new/src/record.c	2023-12-05 07:26:06.615315086 +0100
+@@ -338,10 +338,12 @@ void recsavedrf(void)
+   if (!drfvalid)
+     return;
+   if (gotname)
++  {
+     if ((recf=fopen(rname,"wt"))==NULL)
+       gotname=FALSE;
+     else
+       gotfile=TRUE;
++  }
+   if (!gotname) {
+     if (nplayers==2)
+       recf=fopen(DEFAULTSN,"wt"); /* Should get a name, really */
+diff -rup digger/src/scores.c digger.new/src/scores.c
+--- digger/src/scores.c	2000-04-13 12:07:30.000000000 +0200
++++ digger.new/src/scores.c	2023-12-05 07:28:11.151782128 +0100
+@@ -57,7 +57,7 @@ void numtostring(char *p,Sint5 n);
+ 
+ #elif defined UNIX && !defined _VGL
+ 
+-#define SFNAME strncat(strncpy(malloc(PATH_MAX),getenv("HOME"),PATH_MAX),"/.digger.sco",PATH_MAX)
++#define SFNAME strcat(strcpy(malloc(PATH_MAX),getenv("HOME")),"/.digger.sco")
+ 
+ #else
+ 
+@@ -160,10 +160,12 @@ void drawscores(void)
+ {
+   writenum(scdat[0].score,0,0,6,3);
+   if (nplayers==2 || diggers==2)
++  {
+     if (scdat[1].score<100000l)
+       writenum(scdat[1].score,236,0,6,3);
+     else
+       writenum(scdat[1].score,248,0,6,3);
++  }
+ }
+ 
+ void addscore(int n,Sint4 score)
+diff -rup digger/src/sdl_kbd.c digger.new/src/sdl_kbd.c
+--- digger/src/sdl_kbd.c	2002-03-14 14:51:24.000000000 +0100
++++ digger.new/src/sdl_kbd.c	2023-12-05 07:20:20.295870349 +0100
+@@ -24,7 +24,7 @@ int Handler(const SDL_Event *event)
+ {
+ 	if(event->type == SDL_KEYDOWN) {
+ 		if(klen == KBLEN) /* Buffer is full, drop some pieces */
+-			memcpy(kbuffer, kbuffer + 1, --klen);
++			memmove(kbuffer, kbuffer + 1, --klen);
+ 		kbuffer[klen++] = event->key.keysym.sym;
+ 
+ 		/* ALT + Enter handling (fullscreen/windowed operation) */
+diff -rup digger/src/sound.c digger.new/src/sound.c
+--- digger/src/sound.c	2002-03-14 14:51:24.000000000 +0100
++++ digger.new/src/sound.c	2023-12-05 07:25:40.032024364 +0100
+@@ -241,6 +241,7 @@ void soundfalloff(void)
+ void soundfallupdate(void)
+ {
+   if (soundfallflag)
++  {
+     if (soundfalln<1) {
+       soundfalln++;
+       if (soundfallf)
+@@ -255,6 +256,7 @@ void soundfallupdate(void)
+       else
+         soundfallf=TRUE;
+     }
++  }
+ }
+ 
+ 
+@@ -277,12 +279,14 @@ void soundbreakoff(void)
+ void soundbreakupdate(void)
+ {
+   if (soundbreakflag)
++  {
+     if (soundbreakduration!=0) {
+       soundbreakduration--;
+       t2val=soundbreakvalue;
+     }
+     else
+       soundbreakflag=FALSE;
++  }
+ }
+ 
+ 
+@@ -345,6 +349,7 @@ void soundfireupdate(void)
+   for (n=0;n<FIREBALLS;n++) {
+     sff[n]=FALSE;
+     if (soundfireflag[n])
++    {
+       if (soundfiren[n]==1) {
+         soundfiren[n]=0;
+         soundfirevalue[n]+=soundfirevalue[n]/55;
+@@ -355,6 +360,7 @@ void soundfireupdate(void)
+       }
+       else
+         soundfiren[n]++;
++    }
+   }
+   if (f) {
+     do {
+@@ -391,6 +397,7 @@ void soundexplodeupdate(void)
+   for (n=0;n<FIREBALLS;n++) {
+     sef[n]=FALSE;
+     if (soundexplodeflag[n])
++    {
+       if (soundexplodeduration[n]!=0) {
+         soundexplodevalue[n]=soundexplodevalue[n]-(soundexplodevalue[n]>>3);
+         soundexplodeduration[n]--;
+@@ -399,6 +406,7 @@ void soundexplodeupdate(void)
+       }
+       else
+         soundexplodeflag[n]=FALSE;
++    }
+   }
+   if (f) {
+     do {
+@@ -481,6 +489,7 @@ void soundemeraldoff(void)
+ void soundemeraldupdate(void)
+ {
+   if (soundemeraldflag)
++  {
+     if (soundemeraldduration!=0) {
+       if (soundemeraldn==0 || soundemeraldn==1)
+         t2val=emerfreq;
+@@ -492,6 +501,7 @@ void soundemeraldupdate(void)
+     }
+     else
+       soundemeraldoff();
++  }
+ }
+ 
+ 
+@@ -553,6 +563,7 @@ void soundeatmoff(void)
+ void soundeatmupdate(void)
+ {
+   if (soundeatmflag)
++  {
+     if (soundeatmn!=0) {
+       if (soundeatmduration!=0) {
+         if ((soundeatmduration%4)==1)
+@@ -570,6 +581,7 @@ void soundeatmupdate(void)
+     }
+     else
+       soundeatmflag=FALSE;
++  }
+ }
+ 
+ 
+diff -rup digger/src/sprite.c digger.new/src/sprite.c
+--- digger/src/sprite.c	2000-04-03 20:42:42.000000000 +0200
++++ digger.new/src/sprite.c	2023-12-05 07:29:07.535025082 +0100
+@@ -263,9 +263,11 @@ void bcollides(int spr)
+     for (spc=firstt[i];spc<lastt[i];spc++)
+       if (sprenf[spc] && spc!=spr)
+         if (bcollide(spr,spc))
++        {
+           if (next==-1)
+             first[i]=next=spc;
+           else
+             coll[next=(coll[next]=spc)]=-1;
++        }
+   }
+ }

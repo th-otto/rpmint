@@ -3,18 +3,17 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=lua53
-VERSION=-5.3.4
+PACKAGENAME=lua51
+VERSION=-5.1.5
 VERSIONPATCH=
-major_version=5.3
+major_version=5.1
 
 srcarchive=lua${VERSION}
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/lua53/lua53-build-system.patch
-patches/lua53/lua53-buildconf.patch
+patches/lua53/lua51-build-system.patch
 "
 
 BINFILES="
@@ -59,12 +58,10 @@ for CPU in ${ALL_CPUS}; do
 		INSTALL_TOP="${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" \
 		INSTALL_LIB="${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}"$multilibdir \
 		install || exit 1
-	ln -s liblua${major_version}.a "${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}"$multilibdir/liblua.a
-	
-	: mv ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/lua ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/lua${major_version}
-	ln -s lua${major_version} ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/lua
-	: mv ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/luac ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/luac${major_version}
-	ln -s luac${major_version} ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/luac
+	# we have already lua 5.3 so don't make this the default
+	mv "${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}"$multilibdir/liblua.a "${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}"$multilibdir/liblua${major_version}.a
+	mv ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/lua ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/lua${major_version}
+	mv ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/luac ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/luac${major_version}
 
 	install -D -d -m 755 ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/lua/${major_version}
 	
@@ -88,7 +85,7 @@ Version: ${VERSION#-}
 Libs: -llua${major_version} -lm
 Cflags: -I\${includedir}
 EOF
-ln -s lua${major_version}.pc ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/pkgconfig/lua.pc
+# ln -s lua${major_version}.pc ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/pkgconfig/lua.pc
 
 move_prefix
 configured_prefix="${prefix}"

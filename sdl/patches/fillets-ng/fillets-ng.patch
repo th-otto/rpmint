@@ -1,0 +1,310 @@
+Only in fillets-ng-1.0.1.new: autom4te.cache
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/configure.in fillets-ng-1.0.1.new/configure.in
+--- fillets-ng-1.0.1.orig/configure.in	2011-09-08 20:10:22.000000000 +0200
++++ fillets-ng-1.0.1.new/configure.in	2023-12-05 18:08:42.565129938 +0100
+@@ -33,16 +33,11 @@ dnl ---- lua check ------------- (stolen
+ AC_ARG_WITH(lua,   [  --with-lua=PFX          Prefix where Lua is installed],
+     LUAPFX="$withval", LUAPFX="")
+ if test "x$LUAPFX" != x ; then
+-    LUA_CFLAGS="-I$LUAPFX"
+-    LUA_LIBS="-L$LUAPFX -llua -llualib"
++    LUA_CFLAGS="-I$LUAPFX/include"
++    LUA_LIBS="-L$LUAPFX/lib -llua"
+ else
+ dnl Debian, and possibly other systems, include this script...
+-    AC_CHECK_PROGS(LUACONFIG, [lua-config lua-config50 lua-config5.0], "")
+-    if test "x$LUACONFIG" != x; then
+-        LUA_CFLAGS="`[$LUACONFIG --include]`"
+-        LUA_LIBS="`[$LUACONFIG --static]`"
+-    else dnl ...otherwise, attempt to guess
+-        PKG_CHECK_MODULES(LUA, lua, [], [
++        PKG_CHECK_MODULES(LUA, lua5.1, [], [
+             LUA_CFLAGS=""
+             LUA_LIBS=""
+             AC_CHECK_LIB(lua, lua_setfenv, LUA_LIBS="$LUA_LIBS -llua",
+@@ -60,7 +55,6 @@ dnl Debian, and possibly other systems,
+                  You can download lua from http://www.lua.org])],
+                  $LUA_LIBS)], $LUA_LIBS)], $LUA_LIBS)
+         ])
+-   fi
+ fi
+ AC_SUBST(LUA_CFLAGS)
+ AC_SUBST(LUA_LIBS)
+@@ -70,36 +64,31 @@ dnl ---- end of lua check ------
+ ###################################################
+ # Check for SDL, and define SDL_CFLAGS and SDL_LIBS
+ SDL_VERSION=1.2.0
+-AM_PATH_SDL($SDL_VERSION,
+-    :, [AC_MSG_ERROR([*** library SDL-devel version $SDL_VERSION not found!])]
+-)
++PKG_CHECK_MODULES([SDL], [sdl], :, [AC_MSG_ERROR([*** library SDL-devel version $SDL_VERSION not found!])])
+ 
+ ###################################################
+ # Checks for C libraries.
+ # SDL_mixer
+-AC_CHECK_LIB([SDL_mixer], [Mix_OpenAudio],
+-             SDL_LIBS="-lSDL_mixer $SDL_LIBS",
+-             [AC_MSG_ERROR([*** SDL_mixer-devel library not found!])],
+-             $SDL_CFLAGS $SDL_LIBS
++PKG_CHECK_MODULES([SDL_MIXER], [SDL_mixer],
++             SDL_LIBS="$SDL_LIBS $SDL_MIXER_LIBS",
++             [AC_MSG_ERROR([*** SDL_mixer-devel library not found!])]
+ )
+ # SDL_image
+-AC_CHECK_LIB([SDL_image], [IMG_Load],
+-             SDL_LIBS="-lSDL_image $SDL_LIBS",
+-             [AC_MSG_ERROR([*** SDL_image-devel library not found!])],
+-             $SDL_CFLAGS $SDL_LIBS
++PKG_CHECK_MODULES([SDL_IMAGE], [SDL_image],
++             SDL_LIBS="$SDL_LIBS $SDL_IMAGE_LIBS",
++             [AC_MSG_ERROR([*** SDL_image-devel library not found!])]
+ )
+ # SDL_ttf
+-AC_CHECK_LIB([SDL_ttf], [TTF_OpenFont],
+-             SDL_LIBS="-lSDL_ttf $SDL_LIBS",
+-             [AC_MSG_ERROR([*** SDL_ttf-devel library not found!])],
+-             $SDL_CFLAGS $SDL_LIBS
++PKG_CHECK_MODULES([SDL_TTF], [SDL_ttf],
++             SDL_LIBS="$SDL_LIBS $SDL_TTF_LIBS",
++             [AC_MSG_ERROR([*** SDL_ttf-devel library not found!])]
+ )
+ 
+ ###################################################
+ # Test X11
+ X_LIBS=""
+ have_x11="no"
+-AC_ARG_WITH(X,
++AC_ARG_WITH(x,
+    [AC_HELP_STRING([--with-x],[enable X window manager support [default=detect]])],
+    [with_x11=$withval],[with_x11="maybe"])
+ if test "x$with_x11" != "xno" ; then
+Only in fillets-ng-1.0.1.new: configure.orig
+Only in fillets-ng-1.0.1.new: font
+Only in fillets-ng-1.0.1.new: images
+Only in fillets-ng-1.0.1.new: lua-5.0.3
+Only in fillets-ng-1.0.1.new: lua-5.1.5
+Only in fillets-ng-1.0.1.new: lua-5.2.4
+Only in fillets-ng-1.0.1.new: lua-5.3.6
+Only in fillets-ng-1.0.1.new: lua-5.4.6
+Only in fillets-ng-1.0.1.new: music
+Only in fillets-ng-1.0.1.new: script
+Only in fillets-ng-1.0.1.orig: sdl.m4
+Only in fillets-ng-1.0.1.new: sound
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/gengine/OptionAgent.cpp fillets-ng-1.0.1.new/src/gengine/OptionAgent.cpp
+--- fillets-ng-1.0.1.orig/src/gengine/OptionAgent.cpp	2010-10-26 21:01:04.000000000 +0200
++++ fillets-ng-1.0.1.new/src/gengine/OptionAgent.cpp	2023-12-05 14:26:45.373790226 +0100
+@@ -101,8 +101,8 @@ OptionAgent::prepareDataPaths()
+     if (home) {
+         userdir = FsPath::join(home, USER_DATA_DIR);
+         OptionAgent::agent()->setParam("userdir", userdir);
+-    }
+-    else {
++    } else
++    {
+         readUserConfig();
+     }
+ }
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/gengine/ScriptAgent.h fillets-ng-1.0.1.new/src/gengine/ScriptAgent.h
+--- fillets-ng-1.0.1.orig/src/gengine/ScriptAgent.h	2006-02-12 13:15:59.000000000 +0100
++++ fillets-ng-1.0.1.new/src/gengine/ScriptAgent.h	2023-12-05 11:26:35.008654305 +0100
+@@ -11,7 +11,9 @@ class ScriptState;
+ #include <string>
+ 
+ extern "C" {
++#define LUA_COMPAT_APIINTCASTS
+ #include "lua.h"
++#include "lauxlib.h"
+ }
+ 
+ /**
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/gengine/ScriptState.cpp fillets-ng-1.0.1.new/src/gengine/ScriptState.cpp
+--- fillets-ng-1.0.1.orig/src/gengine/ScriptState.cpp	2005-07-06 20:50:18.000000000 +0200
++++ fillets-ng-1.0.1.new/src/gengine/ScriptState.cpp	2023-12-05 17:25:32.242138220 +0100
+@@ -22,12 +22,38 @@ extern "C" {
+ //-----------------------------------------------------------------
+ ScriptState::ScriptState()
+ {
++#if LUA_VERSION_NUM >= 502
++    m_state = luaL_newstate();
++#define LUA_OPENLIB(n, f) \
++    luaL_requiref(m_state, n, f, 1); \
++    lua_pop(m_state, 1)  /* remove lib */
++
++    LUA_OPENLIB("_G", luaopen_base);
++    LUA_OPENLIB(LUA_STRLIBNAME, luaopen_string);
++    LUA_OPENLIB(LUA_MATHLIBNAME, luaopen_math);
++    LUA_OPENLIB(LUA_TABLIBNAME, luaopen_table);
++    luaL_openlibs(m_state);
++#elif LUA_VERSION_NUM >= 501
++    m_state = luaL_newstate();
++
++#define LUA_OPENLIB(n, f) \
++    lua_pushcfunction(m_state, f); \
++    lua_pushstring(m_state, n); \
++    lua_call(m_state, 1, 0)
++    
++    LUA_OPENLIB("", luaopen_base);
++    LUA_OPENLIB(LUA_STRLIBNAME, luaopen_string);
++    LUA_OPENLIB(LUA_MATHLIBNAME, luaopen_math);
++    LUA_OPENLIB(LUA_TABLIBNAME, luaopen_table);
++#else
+     m_state = lua_open();
+     luaopen_base(m_state);
+     luaopen_string(m_state);
+     luaopen_math(m_state);
+     luaopen_table(m_state);
++#endif
+ 
++#undef LUA_OPENLIB
+     prepareErrorHandler();
+ }
+ //-----------------------------------------------------------------
+@@ -42,9 +68,17 @@ ScriptState::~ScriptState()
+ void
+ ScriptState::prepareErrorHandler()
+ {
++#ifdef LUA_GLOBALSINDEX
+     lua_pushliteral(m_state, "_TRACEBACK");
+     lua_pushcfunction(m_state, script_debugStack);
+     lua_settable(m_state, LUA_GLOBALSINDEX);
++#else
++	lua_pushglobaltable(m_state);
++    lua_pushliteral(m_state, "_TRACEBACK");
++    lua_pushcfunction(m_state, script_debugStack);
++    lua_settable(m_state, -3);
++    lua_pop(m_state, 1);
++#endif
+ }
+ //-----------------------------------------------------------------
+ /**
+@@ -53,9 +87,15 @@ ScriptState::prepareErrorHandler()
+ void
+ ScriptState::insertErrorHandler(int index)
+ {
++#ifdef LUA_GLOBALSINDEX
+     lua_pushliteral(m_state, "_TRACEBACK");
+     lua_rawget(m_state, LUA_GLOBALSINDEX);
+     lua_insert(m_state, index);
++#else
++    lua_pushliteral(m_state, "_TRACEBACK");
++	lua_pushglobaltable(m_state);
++    lua_insert(m_state, index);
++#endif
+ }
+ //-----------------------------------------------------------------
+ /**
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/gengine/ScriptState.h fillets-ng-1.0.1.new/src/gengine/ScriptState.h
+--- fillets-ng-1.0.1.orig/src/gengine/ScriptState.h	2004-09-24 16:09:27.000000000 +0200
++++ fillets-ng-1.0.1.new/src/gengine/ScriptState.h	2023-12-05 11:26:42.425310241 +0100
+@@ -9,7 +9,9 @@ class Scripter;
+ #include <string>
+ 
+ extern "C" {
++#define LUA_COMPAT_APIINTCASTS
+ #include "lua.h"
++#include "lauxlib.h"
+ }
+ 
+ /**
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/gengine/def-script.h fillets-ng-1.0.1.new/src/gengine/def-script.h
+--- fillets-ng-1.0.1.orig/src/gengine/def-script.h	2004-09-24 16:09:28.000000000 +0200
++++ fillets-ng-1.0.1.new/src/gengine/def-script.h	2023-12-05 11:26:42.425310241 +0100
+@@ -8,6 +8,7 @@ class Scripter;
+ #include <stdexcept>
+ 
+ extern "C" {
++#define LUA_COMPAT_APIINTCASTS
+ #include "lua.h"
+ #include "lauxlib.h"
+ }
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/gengine/options-script.h fillets-ng-1.0.1.new/src/gengine/options-script.h
+--- fillets-ng-1.0.1.orig/src/gengine/options-script.h	2004-09-08 01:02:14.000000000 +0200
++++ fillets-ng-1.0.1.new/src/gengine/options-script.h	2023-12-05 11:26:35.011987633 +0100
+@@ -2,7 +2,9 @@
+ #define HEADER_OPTIONS_SCRIPT_H
+ 
+ extern "C" {
++#define LUA_COMPAT_APIINTCASTS
+ #include "lua.h"
++#include "lauxlib.h"
+ }
+ 
+ extern int script_options_sendMsg(lua_State *L) throw();
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/level/LevelStatus.cpp fillets-ng-1.0.1.new/src/level/LevelStatus.cpp
+--- fillets-ng-1.0.1.orig/src/level/LevelStatus.cpp	2004-11-30 04:20:59.000000000 +0100
++++ fillets-ng-1.0.1.new/src/level/LevelStatus.cpp	2023-12-05 11:26:35.008654305 +0100
+@@ -15,7 +15,9 @@
+ #include "DemoMode.h"
+ 
+ extern "C" {
++#define LUA_COMPAT_APIINTCASTS
+ #include "lua.h"
++#include "lauxlib.h"
+ }
+ #include <stdio.h>
+ 
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/level/game-script.h fillets-ng-1.0.1.new/src/level/game-script.h
+--- fillets-ng-1.0.1.orig/src/level/game-script.h	2009-06-06 23:40:41.000000000 +0200
++++ fillets-ng-1.0.1.new/src/level/game-script.h	2023-12-05 11:23:21.992266894 +0100
+@@ -2,7 +2,9 @@
+ #define HEADER_GAME_SCRIPT_H
+ 
+ extern "C" {
++#define LUA_COMPAT_APIINTCASTS
+ #include "lua.h"
++#include "lauxlib.h"
+ }
+ 
+ extern int script_game_setRoomWaves(lua_State *L) throw();
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/level/level-script.h fillets-ng-1.0.1.new/src/level/level-script.h
+--- fillets-ng-1.0.1.orig/src/level/level-script.h	2004-08-16 15:01:24.000000000 +0200
++++ fillets-ng-1.0.1.new/src/level/level-script.h	2023-12-05 11:23:41.602238522 +0100
+@@ -2,7 +2,9 @@
+ #define HEADER_LEVEL_SCRIPT_H
+ 
+ extern "C" {
++#define LUA_COMPAT_APIINTCASTS
+ #include "lua.h"
++#include "lauxlib.h"
+ }
+ 
+ extern int script_level_save(lua_State *L) throw();
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/menu/worldmap-script.h fillets-ng-1.0.1.new/src/menu/worldmap-script.h
+--- fillets-ng-1.0.1.orig/src/menu/worldmap-script.h	2009-05-31 15:50:07.000000000 +0200
++++ fillets-ng-1.0.1.new/src/menu/worldmap-script.h	2023-12-05 11:24:20.712181938 +0100
+@@ -2,7 +2,9 @@
+ #define HEADER_WORLDMAP_SCRIPT_H
+ 
+ extern "C" {
++#define LUA_COMPAT_APIINTCASTS
+ #include "lua.h"
++#include "lauxlib.h"
+ }
+ 
+ /**
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/plan/dialog-script.h fillets-ng-1.0.1.new/src/plan/dialog-script.h
+--- fillets-ng-1.0.1.orig/src/plan/dialog-script.h	2004-09-24 16:09:31.000000000 +0200
++++ fillets-ng-1.0.1.new/src/plan/dialog-script.h	2023-12-05 11:20:26.422524384 +0100
+@@ -2,7 +2,9 @@
+ #define HEADER_DIALOG_SCRIPT_H
+ 
+ extern "C" {
++#define LUA_COMPAT_APIINTCASTS
+ #include "lua.h"
++#include "lauxlib.h"
+ }
+ 
+ extern int script_game_planAction(lua_State *L) throw();
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x config.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs fillets-ng-1.0.1.orig/src/state/demo-script.h fillets-ng-1.0.1.new/src/state/demo-script.h
+--- fillets-ng-1.0.1.orig/src/state/demo-script.h	2004-08-01 15:27:52.000000000 +0200
++++ fillets-ng-1.0.1.new/src/state/demo-script.h	2023-12-05 11:21:04.245801963 +0100
+@@ -2,7 +2,9 @@
+ #define HEADER_DEMO_SCRIPT_H
+ 
+ extern "C" {
++#define LUA_COMPAT_APIINTCASTS
+ #include "lua.h"
++#include "lauxlib.h"
+ }
+ 
+ extern int script_demo_display(lua_State *L) throw();

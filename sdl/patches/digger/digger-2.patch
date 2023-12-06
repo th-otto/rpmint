@@ -1,0 +1,31 @@
+From ca1d4d3a8608d87a185faeff623a302ae04308a6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Per=20=C3=98yvind=20Karlsen?= <peroyvind@mandriva.org>
+Date: Mon, 12 Sep 2011 02:02:03 +0200
+Subject: [PATCH] make numtostring() static to prevent symbol crash on darwin
+
+---
+ scores.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/scores.c b/scores.c
+index c633228..be5a3fb 100644
+--- a/src/scores.c
++++ b/src/scores.c
+@@ -45,7 +45,7 @@
+ Sint4 getinitial(Sint4 x,Sint4 y);
+ void shufflehigh(void);
+ void writenum(Sint5 n,Sint4 x,Sint4 y,Sint4 w,Sint4 c);
+-void numtostring(char *p,Sint5 n);
++static void numtostring(char *p,Sint5 n);
+ 
+ #ifdef ARM
+ 
+@@ -431,7 +431,7 @@
+   }
+ }
+ 
+-void numtostring(char *p,Sint5 n)
++static void numtostring(char *p,Sint5 n)
+ {
+   int x;
+   for (x=0;x<6;x++) {

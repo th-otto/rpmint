@@ -1,0 +1,81 @@
+Only in zeldaroth_us.new/src: Audio.o
+Only in zeldaroth_us.new/src: Bouclier.o
+Only in zeldaroth_us.new/src: Caisse.o
+Only in zeldaroth_us.new/src: Carte.o
+Only in zeldaroth_us.new/src: Encyclopedie.o
+Only in zeldaroth_us.new/src: Ennemi.o
+Only in zeldaroth_us.new/src: Generique.o
+Only in zeldaroth_us.new/src: Jeu.o
+Only in zeldaroth_us.new/src: Joueur.o
+diff -rup zeldaroth_us.orig/src/Keyboard.cpp zeldaroth_us.new/src/Keyboard.cpp
+--- zeldaroth_us.orig/src/Keyboard.cpp	2009-02-18 23:56:22.000000000 +0100
++++ zeldaroth_us.new/src/Keyboard.cpp	2023-12-06 08:30:59.429612812 +0100
+@@ -21,7 +21,7 @@
+ #include "Keyboard.h"
+ 
+ Keyboard::Keyboard(Jeu* jeu, Carte* carte, Encyclopedie* encycl, SDL_Surface* screen, int m) : 
+-    gpJeu(jeu), gpCarte(carte), gpEncyclopedie(encycl), mode(m), gFullScreen(1), 
++    gpJeu(jeu), gpCarte(carte), gpEncyclopedie(encycl), mode(m), gFullScreen(0), 
+     gpScreen(screen), tmp(0), tmpx(0), tmpc(0), tmpw(0), tmpt(0), tmpp(0), tmpm(0),
+     ligne(0), colonne(0), ligneOption(2), volume(32), volson(32), ligneRecord(3), 
+     colonneRecord(0), temps(0), ligneVal(0), intro(0) {
+Only in zeldaroth_us.new/src: Keyboard.o
+Only in zeldaroth_us.new/src: Listable.o
+diff -rup zeldaroth_us.orig/src/Makefile zeldaroth_us.new/src/Makefile
+--- zeldaroth_us.orig/src/Makefile	2009-02-19 00:06:15.000000000 +0100
++++ zeldaroth_us.new/src/Makefile	2023-12-06 08:30:14.143010354 +0100
+@@ -4,14 +4,14 @@
+ #--------------------------------------------------------------
+ 
+ PREFIX  = /usr/local
+-CFLAGS  = -O2 -Wall
+-LDFLAGS = -lSDL_gfx -lSDL_image -lSDL_mixer -lSDL
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing -Wall
++LIBS = $(shell pkg-config --libs sdl SDL_gfx SDL_image SDL_mixer)
+ 
+-CC = g++
++CC = $(CROSS_PREFIX)g++
+ RM = rm -f
+ INSTALL_PROG = install -m 755 -s
+ 
+-EXE = ZeldaROTH_US
++EXE = ZeldaROTH
+ 
+ OBJS = Audio.o Bouclier.o Caisse.o Carte.o Encyclopedie.o Ennemi.o Generique.o Jeu.o Joueur.o Keyboard.o Listable.o main.o Menu.o Monde.o Objet.o Personnage.o Pnj.o Projectile.o Snipe.o Statut.o Texte.o ZoneRect.o
+ 
+@@ -84,7 +84,7 @@ ZoneRect.o : ZoneRect.cpp
+ 	$(CC) -c ZoneRect.cpp $(CFLAGS) -o ZoneRect.o
+ 
+ $(EXE) : $(OBJS)
+-	$(CC) $(OBJS) -o $(EXE) $(LDFLAGS)
++	$(CC) $(CPU_CFLAGS) $(LDFLAGS) $(OBJS) -o $(EXE) $(LIBS)
+ 
+ install : $(EXE)
+ 	$(INSTALL_PROG) $(EXE) $(PREFIX)/bin
+Only in zeldaroth_us.new/src: Menu.o
+Only in zeldaroth_us.new/src: Monde.o
+Only in zeldaroth_us.new/src: Objet.o
+Only in zeldaroth_us.new/src: Personnage.o
+Only in zeldaroth_us.new/src: Pnj.o
+Only in zeldaroth_us.new/src: Projectile.o
+Only in zeldaroth_us.new/src: Snipe.o
+Only in zeldaroth_us.new/src: Statut.o
+Only in zeldaroth_us.new/src: Texte.o
+Only in zeldaroth_us.new/src: ZeldaROTH
+Only in zeldaroth_us.new/src: ZoneRect.o
+diff -rup zeldaroth_us.orig/src/main.cpp zeldaroth_us.new/src/main.cpp
+--- zeldaroth_us.orig/src/main.cpp	2008-12-10 20:23:04.000000000 +0100
++++ zeldaroth_us.new/src/main.cpp	2023-12-06 08:30:51.149624551 +0100
+@@ -30,9 +30,9 @@ SDL_Surface* init() {             // ini
+     SDL_SetColorKey(icon,SDL_SRCCOLORKEY,SDL_MapRGB(icon->format,0,0,0));
+     SDL_WM_SetIcon(icon,NULL);
+ 
+-    SDL_ShowCursor(SDL_DISABLE);
++    SDL_ShowCursor(SDL_ENABLE);
+ 
+-    return SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN);
++    return SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE|SDL_DOUBLEBUF);
+ }
+ 
+ int main(int argc, char** argv) {
+Only in zeldaroth_us.new/src: main.o

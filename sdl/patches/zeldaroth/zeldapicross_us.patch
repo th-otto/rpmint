@@ -1,0 +1,174 @@
+diff -rup zeldapicross.orig/Makefile zeldapicross.new/Makefile
+--- zeldapicross.orig/Makefile	2010-12-30 22:35:02.000000000 +0100
++++ zeldapicross.new/Makefile	2023-12-06 13:54:06.439484242 +0100
+@@ -1,13 +1,13 @@
+ #--------------------------------------------------------------
+-# Makefile generated with cmak version 0.9.6 (4/2006).
++# Makefile originally generated with cmak version 0.9.6 (4/2006).
+ # Date: 13/1/2009 22:46:13
+ #--------------------------------------------------------------
+ 
+ PREFIX  = /usr/local
+-CFLAGS  = -O2 -Wall
+-LDFLAGS = -lSDL_gfx -lSDL_image -lSDL_mixer -lSDL
++CFLAGS  = $(CPU_CFLAGS) -O2 -Wall
++LIBS = $(shell pkg-config --libs SDL_gfx SDL_image SDL_mixer sdl)
+ 
+-CC = g++
++CC = $(CROSS_PREFIX)g++
+ RM = rm -f
+ INSTALL_PROG = install -m 755 -s
+ 
+@@ -15,97 +15,20 @@ EXE = ZeldaPicross
+ 
+ OBJS = Audio.o Cadre.o CaseIcon.o CaseMap.o CasePicross.o Chrono.o Ending.o Free.o Game.o Intro.o Joueur.o Keyboard.o Logo.o main.o Map.o Menu.o Options.o Picross.o Quest.o Records.o Resources.o StringTokeneizer.o Text.o Titre.o Transition.o Window.o
+ 
+-ALL : $(EXE)
++all : $(EXE)
+ 
+-Audio.o : Audio.cpp
+-	$(CC) -c Audio.cpp $(CFLAGS) -o Audio.o
++.cpp.o:
++	$(CC) $(CFLAGS) -c $< -o $@
+ 
+-Cadre.o : Cadre.cpp
+-	$(CC) -c Cadre.cpp $(CFLAGS) -o Cadre.o
+-
+-CaseIcon.o : CaseIcon.cpp
+-	$(CC) -c CaseIcon.cpp $(CFLAGS) -o CaseIcon.o
+-
+-Carte.o : Carte.cpp
+-	$(CC) -c Carte.cpp $(CFLAGS) -o Carte.o
+-
+-CaseMap.o : CaseMap.cpp
+-	$(CC) -c CaseMap.cpp $(CFLAGS) -o CaseMap.o
+-
+-CasePicross.o : CasePicross.cpp
+-	$(CC) -c CasePicross.cpp $(CFLAGS) -o CasePicross.o
+-
+-Chrono.o : Chrono.cpp
+-	$(CC) -c Chrono.cpp $(CFLAGS) -o Chrono.o
+-
+-Ending.o : Ending.cpp
+-	$(CC) -c Ending.cpp $(CFLAGS) -o Ending.o
+-
+-Free.o : Free.cpp
+-	$(CC) -c Free.cpp $(CFLAGS) -o Free.o
+-
+-Game.o : Game.cpp
+-	$(CC) -c Game.cpp $(CFLAGS) -o Game.o
+-
+-Intro.o : Intro.cpp
+-	$(CC) -c Intro.cpp $(CFLAGS) -o Intro.o
+-
+-Joueur.o : Joueur.cpp
+-	$(CC) -c Joueur.cpp $(CFLAGS) -o Joueur.o
+-
+-Keyboard.o : Keyboard.cpp
+-	$(CC) -c Keyboard.cpp $(CFLAGS) -o Keyboard.o
+-
+-Logo.o : Logo.cpp
+-	$(CC) -c Logo.cpp $(CFLAGS) -o Logo.o
+-
+-main.o : main.cpp
+-	$(CC) -c main.cpp $(CFLAGS) -o main.o
+-
+-Map.o : Map.cpp
+-	$(CC) -c Map.cpp $(CFLAGS) -o Map.o
+-
+-Menu.o : Menu.cpp
+-	$(CC) -c Menu.cpp $(CFLAGS) -o Menu.o
+-
+-Options.o : Options.cpp
+-	$(CC) -c Options.cpp $(CFLAGS) -o Options.o
+-
+-Picross.o : Picross.cpp
+-	$(CC) -c Picross.cpp $(CFLAGS) -o Picross.o
+-
+-Quest.o : Quest.cpp
+-	$(CC) -c Quest.cpp $(CFLAGS) -o Quest.o
+-
+-Records.o : Records.cpp
+-	$(CC) -c Records.cpp $(CFLAGS) -o Records.o
+-
+-Resources.o : Resources.cpp
+-	$(CC) -c Resources.cpp $(CFLAGS) -o Resources.o
+-
+-StringTokeneizer.o : StringTokeneizer.cpp
+-	$(CC) -c StringTokeneizer.cpp $(CFLAGS) -o StringTokeneizer.o
+-
+-Text.o : Text.cpp
+-	$(CC) -c Text.cpp $(CFLAGS) -o Text.o
+-
+-Titre.o : Titre.cpp
+-	$(CC) -c Titre.cpp $(CFLAGS) -o Titre.o
+-
+-Transition.o : Transition.cpp
+-	$(CC) -c Transition.cpp $(CFLAGS) -o Transition.o
+-
+-Window.o : Window.cpp
+-	$(CC) -c Window.cpp $(CFLAGS) -o Window.o
+ 
+ $(EXE) : $(OBJS)
+-	$(CC) $(OBJS) -o $(EXE) $(LDFLAGS)
++	$(CC) $(CPU_CFLAGS) $(LDFLAGS) $(OBJS) -o $(EXE) $(LIBS)
+ 
+ install : $(EXE)
+ 	$(INSTALL_PROG) $(EXE) $(PREFIX)/bin
+ 
+ uninstall :
+-	$(RM) $(PREFIX)/bin/$(EXE)
++	$(RM) -f $(PREFIX)/bin/$(EXE)
+ 
+ clean :
+-	$(RM) $(OBJS) $(EXE)
++	$(RM) -f $(OBJS) $(EXE)
+diff -rup zeldapicross.orig/Options.cpp zeldapicross.new/Options.cpp
+--- zeldapicross.orig/Options.cpp	2010-06-02 18:10:54.000000000 +0200
++++ zeldapicross.new/Options.cpp	2023-12-06 13:56:24.259298373 +0100
+@@ -269,7 +269,8 @@ void Options::draw(SDL_Surface* gpScreen
+     
+     //curseurLink
+     src.x = 0; src.y = 0; src.w = 16; src.h = 21;
+-    dst.x = 26 + 152 * column; dst.y = dst.y = 69 + 64 * line;
++    dst.x = 26 + 152 * column;
++    dst.y = 69 + 64 * line;
+     SDL_BlitSurface(curseurLink, &src, gpScreen, &dst);
+     
+     src.h = 16; src.w = 8; src.x = 32; src.y = 96;
+diff -rup zeldapicross.orig/Records.cpp zeldapicross.new/Records.cpp
+--- zeldapicross.orig/Records.cpp	2010-08-10 13:23:56.000000000 +0200
++++ zeldapicross.new/Records.cpp	2023-12-06 13:56:53.432592361 +0100
+@@ -265,7 +265,7 @@ void Records::draw(SDL_Surface* gpScreen
+     
+     //curseurLink
+     src.x = 0; src.y = 0; src.w = 16; src.h = 21;
+-    dst.x = 26 + 152 * column; dst.y = dst.y = 197;
++    dst.x = 26 + 152 * column; dst.y = 197;
+     SDL_BlitSurface(curseurLink, &src, gpScreen, &dst);
+     
+     if (erase) {
+diff -rup zeldapicross.orig/Window.cpp zeldapicross.new/Window.cpp
+--- zeldapicross.orig/Window.cpp	2010-08-09 19:17:56.000000000 +0200
++++ zeldapicross.new/Window.cpp	2023-12-06 14:00:01.145672531 +0100
+@@ -41,7 +41,7 @@ SDL_Surface* init(bool* zoom) {
+     SDL_SetColorKey(icon,SDL_SRCCOLORKEY,SDL_MapRGB(icon->format,0,0,0));
+     SDL_WM_SetIcon(icon,NULL);
+ 
+-    SDL_ShowCursor(SDL_DISABLE);
++    SDL_ShowCursor(SDL_ENABLE);
+ 
+ 
+     SDL_Rect** modes;
+@@ -59,9 +59,9 @@ SDL_Surface* init(bool* zoom) {
+     
+     if(!gBpp) {
+         *zoom = true;
+-        return SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN);
++        return SDL_SetVideoMode(640, 480, 32, SDL_HWSURFACE|SDL_DOUBLEBUF);
+     } else {
+-        return SDL_SetVideoMode(320, 240, 32, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN);
++        return SDL_SetVideoMode(320, 240, 32, SDL_HWSURFACE|SDL_DOUBLEBUF);
+     }
+ }
+ 
