@@ -39,6 +39,7 @@ CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--disable-shared
 	--enable-static
 "
+STACKSIZE="-Wl,-stack,512k"
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
@@ -48,7 +49,7 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 
-	${MAKE} DATA_PREFIX="data/" $JOBS || exit 1
+	${MAKE} $JOBS DATA_PREFIX="data/" $JOBS || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
 	cp -p circuslinux "${THISPKG_DIR}/circuslinux-${CPU}.prg"

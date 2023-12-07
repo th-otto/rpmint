@@ -13,8 +13,8 @@ diff -rup 2048-git/Makefile 2048-git.new/Makefile
 -LDFLAGS = `sdl-config --cflags --libs`
 -LIBS = SDL_ttf
 +CFLAGS = $(CPU_CFLAGS) `pkg-config --cflags sdl`
-+LDFLAGS = `pkg-config --libs SDL_ttf` -s
-+LIBS= -lfreetype -lpng -lz -lbz2 -lm
++LDFLAGS = -s
++LIBS= `pkg-config --libs SDL_ttf`
  
 -all: game
 +all: $(EXEC)

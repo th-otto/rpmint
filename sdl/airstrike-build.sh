@@ -23,6 +23,7 @@ cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 export CROSS_PREFIX=${TARGET}-
+STACKSIZE="-Wl,-stack,512k"
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
@@ -35,7 +36,7 @@ for CPU in ${ALL_CPUS}; do
 	cp -p airstrike "${THISPKG_DIR}/airstrike-${CPU}.prg"
 
 	${MAKE} clean >/dev/null
-	${MAKE} CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" airstrike-sound || exit 1
+	${MAKE} CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="${STACKSIZE} -s" airstrike-sound || exit 1
 	cp -p airstrike "${THISPKG_DIR}/airstrike-sound-${CPU}.prg"
 
 	cp -pr COPYING ChangeLog LICENSE README airstrikerc data doc pov "${THISPKG_DIR}"

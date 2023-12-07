@@ -11,6 +11,7 @@ VERSIONPATCH=
 THISPKG_DIR="${DIST_DIR}/zeldaroth"
 
 PATCHES="patches/zeldaroth/${PACKAGENAME}.patch"
+EXTRA_DIST=patches/timidity.tar.xz
 
 BINFILES="
 ${PACKAGENAME}
@@ -46,6 +47,7 @@ done
 cd "$MINT_BUILD_DIR"
 
 cp -pr src/data "${THISPKG_DIR}"
+tar -C "${THISPKG_DIR}" -xf "${here}/patches/timidity.tar.xz"
 
 PACKAGENAME="zeldaroth"
 make_bin_archive

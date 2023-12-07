@@ -35,6 +35,7 @@ rm -rf autom4te.cache config.h.in.orig
 cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing ${ELF_CFLAGS}"
+STACKSIZE="-Wl,-stack,512k"
 
 CONFIGURE_FLAGS="--host=${TARGET} \
 	--prefix=/

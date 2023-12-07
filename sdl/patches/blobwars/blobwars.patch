@@ -100,11 +100,11 @@ diff -rupN blobwars-1.14/src/makefile blobwars-1.14.new/src/makefile
 +
 +
 +$(PROG):	$(GAMEOBJS)
-+		$(CXX) $(GAMEOBJS) -o $@ $(LDFLAGS) $(LIBS)
++		$(CXX) $(CPU_CFLAGS) $(GAMEOBJS) -o $@ $(LDFLAGS) $(LIBS)
 +
 +
 +pak:	$(PAKOBJS)
-+		$(CXX) $(PAKOBJS) -o $@ $(LDFLAGS) $(LIBS)
++		$(CXX) $(CPU_CFLAGS) $(PAKOBJS) -o $@ $(LDFLAGS) $(LIBS)
 +
 +
 +#%.mo:	%.po
@@ -112,7 +112,7 @@ diff -rupN blobwars-1.14/src/makefile blobwars-1.14.new/src/makefile
 +
 +
 +#mapeditor:	$(MAPOBJS)
-+#		$(CXX) $(MAPOBJS) -o $@ $(LDFLAGS) $(LIBS)
++#		$(CXX) $(CPU_CFLAGS) $(MAPOBJS) -o $@ $(LDFLAGS) $(LIBS)
 +
 +
 +buildpak:

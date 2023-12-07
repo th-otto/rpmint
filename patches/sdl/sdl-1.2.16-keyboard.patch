@@ -1,0 +1,222 @@
+diff -rup -x configure SDL-1.2.16-git.orig/src/video/ataricommon/SDL_atarievents.c SDL-1.2.16-git/src/video/ataricommon/SDL_atarievents.c
+--- SDL-1.2.16-git.orig/src/video/ataricommon/SDL_atarievents.c	2023-11-27 20:30:39.000000000 +0100
++++ SDL-1.2.16-git/src/video/ataricommon/SDL_atarievents.c	2023-12-07 05:01:33.509980743 +0100
+@@ -58,7 +58,8 @@ enum {
+ 
+ /* The translation tables from a console scancode to a SDL keysym */
+ static SDLKey keymap[ATARIBIOS_MAXKEYS];
+-static char *keytab_normal;
++static const char *keytab_normal;
++static const char *keytab_shift;
+ 
+ void (*Atari_ShutdownEvents)(void);
+ 
+@@ -134,6 +135,7 @@ void SDL_Atari_InitInternalKeymap(_THIS)
+ 	/* Read system tables for scancode -> ascii translation */
+ 	key_tables = (_KEYTAB *) Keytbl(KT_NOCHANGE, KT_NOCHANGE, KT_NOCHANGE);
+ 	keytab_normal = key_tables->unshift;
++	keytab_shift = key_tables->shift;
+ 
+ 	/* Initialize keymap */
+ 	for ( i=0; i<ATARIBIOS_MAXKEYS; i++ )
+@@ -151,10 +153,13 @@ void SDL_Atari_InitInternalKeymap(_THIS)
+ 	keymap[SCANCODE_UNDO] = SDLK_UNDO;
+ 	keymap[SCANCODE_INSERT] = SDLK_INSERT;
+ 	keymap[SCANCODE_CLRHOME] = SDLK_HOME;
++	keymap[SCANCODE_CNTL_HOME] = SDLK_HOME;
+ 	keymap[SCANCODE_UP] = SDLK_UP;
+ 	keymap[SCANCODE_DOWN] = SDLK_DOWN;
+ 	keymap[SCANCODE_RIGHT] = SDLK_RIGHT;
++	keymap[SCANCODE_CNTL_RIGHT] = SDLK_RIGHT;
+ 	keymap[SCANCODE_LEFT] = SDLK_LEFT;
++	keymap[SCANCODE_CNTL_LEFT] = SDLK_LEFT;
+ 
+ 	/* Special keys */
+ 	keymap[SCANCODE_ESCAPE] = SDLK_ESCAPE;
+@@ -221,18 +226,29 @@ Uint16 SDL_AtariToUnicodeTable[256]={
+ };
+ 
+ SDL_keysym *SDL_Atari_TranslateKey(int scancode, SDL_keysym *keysym,
+-	SDL_bool pressed)
++	SDL_bool pressed, short kstate)
+ {
+ 	int asciicode = 0;
+ 
+ 	/* Set the keysym information */
+ 	keysym->scancode = scancode;
+ 	keysym->mod = KMOD_NONE;
++	if (kstate & K_LSHIFT)
++		keysym->mod |= KMOD_LSHIFT;
++	if (kstate & K_RSHIFT)
++		keysym->mod |= KMOD_RSHIFT;
++	if (kstate & K_CTRL)
++		keysym->mod |= KMOD_LCTRL;
++	if (kstate & K_ALT)
++		keysym->mod |= KMOD_LALT;
+ 	keysym->sym = keymap[scancode];
+ 	keysym->unicode = 0;
+ 
+ 	if (keysym->sym == SDLK_UNKNOWN) {
+-		keysym->sym = asciicode = keytab_normal[scancode];
++		if (kstate & (K_LSHIFT | K_RSHIFT))
++			keysym->sym = asciicode = keytab_shift[scancode];
++		else
++			keysym->sym = asciicode = keytab_normal[scancode];
+ 	}
+ 
+ 	if (SDL_TranslateUNICODE && pressed) {
+diff -rup -x configure SDL-1.2.16-git.orig/src/video/ataricommon/SDL_atarievents_c.h SDL-1.2.16-git/src/video/ataricommon/SDL_atarievents_c.h
+--- SDL-1.2.16-git.orig/src/video/ataricommon/SDL_atarievents_c.h	2023-11-27 20:30:39.000000000 +0100
++++ SDL-1.2.16-git/src/video/ataricommon/SDL_atarievents_c.h	2023-12-07 04:26:27.073700522 +0100
+@@ -49,6 +49,6 @@ extern void SDL_AtariMint_BackgroundTask
+ /* Atari to Unicode charset translation table */
+ extern Uint16 SDL_AtariToUnicodeTable[256];
+ SDL_keysym *SDL_Atari_TranslateKey(int scancode, SDL_keysym *keysym,
+-	SDL_bool pressed);
++	SDL_bool pressed, short kstate);
+ 
+ #endif /* _SDL_ATARI_EVENTS_H_ */
+diff -rup -x configure SDL-1.2.16-git.orig/src/video/ataricommon/SDL_atarikeys.h SDL-1.2.16-git/src/video/ataricommon/SDL_atarikeys.h
+--- SDL-1.2.16-git.orig/src/video/ataricommon/SDL_atarikeys.h	2023-11-27 20:30:39.000000000 +0100
++++ SDL-1.2.16-git/src/video/ataricommon/SDL_atarikeys.h	2023-12-06 19:42:03.595617245 +0100
+@@ -148,4 +148,10 @@
+ #define SCANCODE_RIGHT		0x4d
+ #define SCANCODE_LEFT		0x4b
+ 
++/* some keys give different scancode with CTRL */
++#define SCANCODE_CNTL_HOME	0x77
++#define SCANCODE_SHFT_HOME	0x4f
++#define SCANCODE_CNTL_LEFT	0x73
++#define SCANCODE_CNTL_RIGHT	0x74
++
+ #endif /* _SDL_ATARIKEYS_H_ */
+diff -rup -x configure SDL-1.2.16-git.orig/src/video/ataricommon/SDL_biosevents.c SDL-1.2.16-git/src/video/ataricommon/SDL_biosevents.c
+--- SDL-1.2.16-git.orig/src/video/ataricommon/SDL_biosevents.c	2023-11-27 20:30:39.000000000 +0100
++++ SDL-1.2.16-git/src/video/ataricommon/SDL_biosevents.c	2023-12-07 04:53:17.674157317 +0100
+@@ -70,6 +70,7 @@ void AtariBios_PumpEvents(_THIS)
+ {
+ 	int i;
+ 	SDL_keysym keysym;
++	short kstate;
+ 
+ 	SDL_AtariMint_BackgroundTasks();
+ 
+@@ -83,19 +84,20 @@ void AtariBios_PumpEvents(_THIS)
+ 	}
+ 
+ 	/* Read special keys */
+-	UpdateSpecialKeys(Kbshift(-1));
++	kstate = Kbshift(-1);
++	UpdateSpecialKeys(kstate);
+ 
+ 	/* Now generate events */
+ 	for (i=0; i<ATARIBIOS_MAXKEYS; i++) {
+ 		/* Key pressed ? */
+ 		if (bios_currentkeyboard[i] && !bios_previouskeyboard[i])
+ 			SDL_PrivateKeyboard(SDL_PRESSED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_TRUE));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_TRUE, kstate));
+ 			
+ 		/* Key unpressed ? */
+ 		if (bios_previouskeyboard[i] && !bios_currentkeyboard[i])
+ 			SDL_PrivateKeyboard(SDL_RELEASED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, 0));
+ 	}
+ 
+ 	if (use_dev_mouse) {
+diff -rup -x configure SDL-1.2.16-git.orig/src/video/ataricommon/SDL_gemdosevents.c SDL-1.2.16-git/src/video/ataricommon/SDL_gemdosevents.c
+--- SDL-1.2.16-git.orig/src/video/ataricommon/SDL_gemdosevents.c	2023-11-27 20:30:39.000000000 +0100
++++ SDL-1.2.16-git/src/video/ataricommon/SDL_gemdosevents.c	2023-12-07 04:54:41.134015795 +0100
+@@ -71,6 +71,7 @@ void AtariGemdos_PumpEvents(_THIS)
+ {
+ 	int i;
+ 	SDL_keysym keysym;
++	short kstate;
+ 
+ 	SDL_AtariMint_BackgroundTasks();
+ 
+@@ -84,19 +85,20 @@ void AtariGemdos_PumpEvents(_THIS)
+ 	}
+ 
+ 	/* Read special keys */
+-	UpdateSpecialKeys(Kbshift(-1));
++	kstate = Kbshift(-1);
++	UpdateSpecialKeys(kstate);
+ 
+ 	/* Now generate events */
+ 	for (i=0; i<ATARIBIOS_MAXKEYS; i++) {
+ 		/* Key pressed ? */
+ 		if (gemdos_currentkeyboard[i] && !gemdos_previouskeyboard[i])
+ 			SDL_PrivateKeyboard(SDL_PRESSED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_TRUE));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_TRUE, kstate));
+ 			
+ 		/* Key unpressed ? */
+ 		if (gemdos_previouskeyboard[i] && !gemdos_currentkeyboard[i])
+ 			SDL_PrivateKeyboard(SDL_RELEASED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, 0));
+ 	}
+ 
+ 	if (use_dev_mouse) {
+diff -rup -x configure SDL-1.2.16-git.orig/src/video/ataricommon/SDL_ikbdevents.c SDL-1.2.16-git/src/video/ataricommon/SDL_ikbdevents.c
+--- SDL-1.2.16-git.orig/src/video/ataricommon/SDL_ikbdevents.c	2023-11-27 20:30:39.000000000 +0100
++++ SDL-1.2.16-git/src/video/ataricommon/SDL_ikbdevents.c	2023-12-07 04:52:45.444211976 +0100
+@@ -43,6 +43,21 @@
+ 
+ static Uint16 atari_prevmouseb;	/* save state of mouse buttons */
+ 
++static short AtariIkbd_Shiftstate(void)
++{
++	short kstate = 0;
++
++	if (SDL_AtariIkbd_keyboard[SCANCODE_LEFTSHIFT] == KEY_PRESSED)
++		kstate |= K_LSHIFT;
++	if (SDL_AtariIkbd_keyboard[SCANCODE_RIGHTSHIFT] == KEY_PRESSED)
++		kstate |= K_RSHIFT;
++	if (SDL_AtariIkbd_keyboard[SCANCODE_LEFTCONTROL] == KEY_PRESSED)
++		kstate |= K_CTRL;
++	if (SDL_AtariIkbd_keyboard[SCANCODE_LEFTALT] == KEY_PRESSED)
++		kstate |= K_ALT;
++	return kstate;
++}
++
+ void AtariIkbd_InitOSKeymap(_THIS)
+ {
+ 	SDL_memset((void *) SDL_AtariIkbd_keyboard, KEY_UNDEFINED, sizeof(SDL_AtariIkbd_keyboard));
+@@ -82,14 +97,14 @@ void AtariIkbd_PumpEvents(_THIS)
+ 		/* Key pressed ? */
+ 		if (SDL_AtariIkbd_keyboard[i]==KEY_PRESSED) {
+ 			SDL_PrivateKeyboard(SDL_PRESSED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_TRUE));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_TRUE, AtariIkbd_Shiftstate()));
+ 			SDL_AtariIkbd_keyboard[i]=KEY_UNDEFINED;
+ 		}
+ 			
+ 		/* Key released ? */
+ 		if (SDL_AtariIkbd_keyboard[i]==KEY_RELEASED) {
+ 			SDL_PrivateKeyboard(SDL_RELEASED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, 0));
+ 			SDL_AtariIkbd_keyboard[i]=KEY_UNDEFINED;
+ 		}
+ 	}
+diff -rup -x configure SDL-1.2.16-git.orig/src/video/gem/SDL_gemevents.c SDL-1.2.16-git/src/video/gem/SDL_gemevents.c
+--- SDL-1.2.16-git.orig/src/video/gem/SDL_gemevents.c	2023-11-27 20:30:39.000000000 +0100
++++ SDL-1.2.16-git/src/video/gem/SDL_gemevents.c	2023-12-07 04:25:20.417161275 +0100
+@@ -160,12 +160,12 @@ void GEM_PumpEvents(_THIS)
+ 		/* Key pressed ? */
+ 		if (gem_currentkeyboard[i] && !gem_previouskeyboard[i])
+ 			SDL_PrivateKeyboard(SDL_PRESSED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_TRUE));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_TRUE, kstate));
+ 
+ 		/* Key unpressed ? */
+ 		if (gem_previouskeyboard[i] && !gem_currentkeyboard[i])
+ 			SDL_PrivateKeyboard(SDL_RELEASED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, 0));
+ 	}
+ 
+ 	SDL_memcpy(gem_previouskeyboard,gem_currentkeyboard,sizeof(gem_previouskeyboard));

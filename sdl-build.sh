@@ -11,6 +11,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
+patches/sdl/sdl-1.2.16-keyboard.patch
 "
 DISABLED_PATCHES="
 patches/sdl/sdl-1.2.16-asm.patch

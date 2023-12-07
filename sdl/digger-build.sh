@@ -30,6 +30,7 @@ cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing ${ELF_CFLAGS}"
 export CROSS_PREFIX=${TARGET}-
+STACKSIZE="-Wl,-stack,512k"
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
