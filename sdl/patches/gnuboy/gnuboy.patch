@@ -1,0 +1,227 @@
+diff -rup gnuboy-1.0.4.orig/configure.ac gnuboy-1.0.4.new/configure.ac
+--- gnuboy-1.0.4.orig/configure.ac	2022-01-04 20:49:29.000000000 +0100
++++ gnuboy-1.0.4.new/configure.ac	2023-12-11 12:42:06.625512063 +0100
+@@ -86,15 +86,7 @@ AC_CHECK_LIB(SDL2, SDL_Init, [
+ fi
+ 
+ if test "$with_sdl2" = "no" && test "$with_sdl" != "no" ; then
+- SDL_LIBS=-lSDL
+- AC_CHECK_LIB(SDL, SDL_Init, [
+-  AC_CHECK_HEADERS(SDL/SDL.h, [
+-    with_sdl=yes
+-   ], [
+-    AC_MSG_WARN(SDL found but headers are missing!!)
+-    with_sdl=no
+-  ])
+- ], [with_sdl=no], $SDL2_LIBS)
++ PKG_CHECK_MODULES([SDL], [sdl], with_sdl=yes, with_sdl=no)
+ else
+  with_sdl=no
+ fi
+@@ -153,7 +145,7 @@ AC_ARG_ENABLE(asm,      [  --enable-asm
+ if test "$enable_warnings" = yes ; then
+ case "$CC" in *gcc*)
+ AC_MSG_RESULT(enabling selected compiler warnings)
+-CFLAGS="$CFLAGS -ansi -pedantic -Wall" ;;
++CFLAGS="$CFLAGS -Wall" ;;
+ *)
+ AC_MSG_RESULT(disabling warnings for non-gcc compiler) ;;
+ esac
+diff -rup gnuboy-1.0.4.orig/cpu.c gnuboy-1.0.4.new/cpu.c
+--- gnuboy-1.0.4.orig/cpu.c	2022-01-04 20:49:29.000000000 +0100
++++ gnuboy-1.0.4.new/cpu.c	2023-12-11 12:22:51.783649045 +0100
+@@ -736,55 +736,93 @@ next:
+ 
+ 	case 0x18: /* JR */
+ 	__JR:
+-		JR; break;
++		JR;
++		break;
+ 	case 0x20: /* JR NZ */
+-		if (!(F&FZ)) goto __JR; NOJR; break;
++		if (!(F&FZ)) goto __JR;
++		NOJR;
++		break;
+ 	case 0x28: /* JR Z */
+-		if (F&FZ) goto __JR; NOJR; break;
++		if (F&FZ) goto __JR;
++		NOJR;
++		break;
+ 	case 0x30: /* JR NC */
+-		if (!(F&FC)) goto __JR; NOJR; break;
++		if (!(F&FC)) goto __JR;
++		NOJR;
++		break;
+ 	case 0x38: /* JR C */
+-		if (F&FC) goto __JR; NOJR; break;
++		if (F&FC) goto __JR;
++		NOJR;
++		break;
+ 
+ 	case 0xC3: /* JP */
+ 	__JP:
+-		JP; break;
++		JP;
++		break;
+ 	case 0xC2: /* JP NZ */
+-		if (!(F&FZ)) goto __JP; NOJP; break;
++		if (!(F&FZ)) goto __JP;
++		NOJP;
++		break;
+ 	case 0xCA: /* JP Z */
+-		if (F&FZ) goto __JP; NOJP; break;
++		if (F&FZ) goto __JP;
++		NOJP;
++		break;
+ 	case 0xD2: /* JP NC */
+-		if (!(F&FC)) goto __JP; NOJP; break;
++		if (!(F&FC)) goto __JP;
++		NOJP;
++		break;
+ 	case 0xDA: /* JP C */
+-		if (F&FC) goto __JP; NOJP; break;
++		if (F&FC) goto __JP;
++		NOJP;
++		break;
+ 	case 0xE9: /* JP HL */
+-		PC = HL; break;
++		PC = HL;
++		break;
+ 
+ 	case 0xC9: /* RET */
+ 	__RET:
+-		RET; break;
++		RET;
++		break;
+ 	case 0xC0: /* RET NZ */
+-		if (!(F&FZ)) goto __RET; NORET; break;
++		if (!(F&FZ)) goto __RET;
++		NORET;
++		break;
+ 	case 0xC8: /* RET Z */
+-		if (F&FZ) goto __RET; NORET; break;
++		if (F&FZ) goto __RET;
++		NORET;
++		break;
+ 	case 0xD0: /* RET NC */
+-		if (!(F&FC)) goto __RET; NORET; break;
++		if (!(F&FC)) goto __RET;
++		NORET;
++		break;
+ 	case 0xD8: /* RET C */
+-		if (F&FC) goto __RET; NORET; break;
++		if (F&FC) goto __RET;
++		NORET;
++		break;
+ 	case 0xD9: /* RETI */
+-		IME = IMA = 1; goto __RET;
++		IME = IMA = 1;
++		goto __RET;
+ 
+ 	case 0xCD: /* CALL */
+ 	__CALL:
+-		CALL; break;
++		CALL;
++		break;
+ 	case 0xC4: /* CALL NZ */
+-		if (!(F&FZ)) goto __CALL; NOCALL; break;
++		if (!(F&FZ)) goto __CALL;
++		NOCALL;
++		break;
+ 	case 0xCC: /* CALL Z */
+-		if (F&FZ) goto __CALL; NOCALL; break;
++		if (F&FZ) goto __CALL;
++		NOCALL;
++		break;
+ 	case 0xD4: /* CALL NC */
+-		if (!(F&FC)) goto __CALL; NOCALL; break;
++		if (!(F&FC)) goto __CALL;
++		NOCALL;
++		break;
+ 	case 0xDC: /* CALL C */
+-		if (F&FC) goto __CALL; NOCALL; break;
++		if (F&FC) goto __CALL;
++		NOCALL;
++		break;
+ 
+ 	case 0xC7: /* RST 0 */
+ 		b = 0x00; goto __RST;
+@@ -803,24 +841,34 @@ next:
+ 	case 0xFF: /* RST 38 */
+ 		b = 0x38;
+ 	__RST:
+-		RST(b); break;
++		RST(b);
++		break;
+ 			
+ 	case 0xC1: /* POP BC */
+-		POP(BC); break;
++		POP(BC);
++		break;
+ 	case 0xC5: /* PUSH BC */
+-		PUSH(BC); break;
++		PUSH(BC);
++		break;
+ 	case 0xD1: /* POP DE */
+-		POP(DE); break;
++		POP(DE);
++		break;
+ 	case 0xD5: /* PUSH DE */
+-		PUSH(DE); break;
++		PUSH(DE);
++		break;
+ 	case 0xE1: /* POP HL */
+-		POP(HL); break;
++		POP(HL);
++		break;
+ 	case 0xE5: /* PUSH HL */
+-		PUSH(HL); break;
++		PUSH(HL);
++		break;
+ 	case 0xF1: /* POP AF */
+-		POP(AF); AF &= 0xfff0; break;
++		POP(AF);
++		AF &= 0xfff0;
++		break;
+ 	case 0xF5: /* PUSH AF */
+-		PUSH(AF); break;
++		PUSH(AF);
++		break;
+ 
+ 	case 0xE8: /* ADD SP,imm */
+ 		{
+@@ -841,14 +889,18 @@ next:
+ 
+ 
+ 	case 0xF3: /* DI */
+-		DI; break;
++		DI;
++		break;
+ 	case 0xFB: /* EI */
+-		EI; break;
++		EI;
++		break;
+ 
+ 	case 0x37: /* SCF */
+-		SCF; break;
++		SCF;
++		break;
+ 	case 0x3F: /* CCF */
+-		CCF; break;
++		CCF;
++		break;
+ 
+ 	case 0x10: /* STOP */
+ 		PC++;
+diff -rup gnuboy-1.0.4.orig/xz/xz_crc64.c gnuboy-1.0.4.new/xz/xz_crc64.c
+--- gnuboy-1.0.4.orig/xz/xz_crc64.c	2022-01-04 20:49:29.000000000 +0100
++++ gnuboy-1.0.4.new/xz/xz_crc64.c	2023-12-11 12:41:10.642250905 +0100
+@@ -20,7 +20,7 @@ STATIC_RW_DATA uint64_t xz_crc64_table[2
+ 
+ XZ_EXTERN void xz_crc64_init(void)
+ {
+-	const uint64_t poly = 0xC96C5795D7870F42;
++	const uint64_t poly = 0xC96C5795D7870F42ULL;
+ 
+ 	uint32_t i;
+ 	uint32_t j;

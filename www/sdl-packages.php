@@ -394,6 +394,305 @@ The patch makes it start in windowed mode; press CTRL+Return to toggle fullscree
 		'summary' => 'Zelda olb',
 		'comment' => 'English version of Zelda Oni Link Begins'
 	),
+	'gnurobbo' => array(
+		'name' => 'gnurobbo',
+		'title' => 'GNU Robbo',
+		'version' => '0.66',
+		'upstream' => 'https://gnurobbo.sourceforge.net/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'GNU Robbo',
+		'comment' => '
+GNU Robbo is a free open source reimplementation of Janusz Pelc&apos;s Robbo
+(->) for the Atari XE/XL (->) which was distributed by LK Avalon (->)
+in 1989.
+</br></br>
+<img src="' . $download_dir . 'gnurobbo.png" width="320" height="240">
+'
+	),
+	'hcl' => array(
+		'name' => 'hcl',
+		'title' => 'Hydra Castle Labyrinth',
+		'version' => '',
+		'upstream' => 'https://github.com/ptitSeb/hydracastlelabyrinth/',
+		'repo' => 'https://github.com/ptitSeb/hydracastlelabyrinth/',
+		'category' => 'Games',
+		'summary' => 'This version of Hydra Castle Labyrinth is based on the 3DS port',
+		'comment' => '
+SDL port of a fan-made port of Hydra Castle Labyrinth for 3DS.
+</br></br>
+Anything related to the PSP and Wii are unfinished.
+</br>
+(Yes, it does look like a 3rd grader programmed this.)
+</br>
+The game&apos;s originally done by E.Hashimoto (a.k.a. Buster). You can download some of his works <a href="http://hp.vector.co.jp/authors/VA025956/">here</a>.
+</br></br>
+<img src="' . $download_dir . 'hcl.png" width="400" height="240">
+'
+	),
+	'hocoslamfy' => array(
+		'name' => 'hocoslamfy',
+		'version' => '',
+		'upstream' => 'https://github.com/Nebuleon/hocoslamfy',
+		'repo' => 'https://github.com/Nebuleon/hocoslamfy',
+		'category' => 'Games',
+		'summary' => 'You are a small bee and you must fly to avoid the bamboo shoots!',
+		'comment' => '
+hocoslamfy
+</br></br>
+You are a small bee and you must fly to avoid the bamboo shoots!
+</br></br>
+<img src="' . $download_dir . 'hocoslamfy.png" width="400" height="300">
+'
+	),
+	'kobo-deluxe' => array(
+		'name' => 'kobo-deluxe',
+		'version' => '0.5.1',
+		'upstream' => 'http://olofson.net/kobodl/',
+		'category' => 'Games',
+		'summary' => 'You are a small bee and you must fly to avoid the bamboo shoots!',
+		'comment' => '
+Kobo Deluxe is an enhanced version of Akira Higuchi&apos;s game XKobo for
+Un*x systems with X11. Kobo Deluxe adds sound, smoother animation, high
+resolution support, OpenGL acceleration (optional), an intuitive menu
+driven user interface, joystick support and other features. Recent
+versions also add a number of alternative skill levels with slightly
+modernized gameplay.
+</br></br>
+If you use a screen depth &lt; 32bpp then pass -noalpha args to the bin.
+You should try --help to get a complete list of args.
+There&apos;s also the possibility to set the samplerate via arg -samplerate 24585...
+</br></br>
+<img src="' . $download_dir . 'kobo-deluxe.png" width="400" height="300">
+'
+	),
+	'lmarbles' => array(
+		'name' => 'lmarbles',
+		'version' => '1.0.8',
+		'upstream' => 'https://lgames.sourceforge.io/LMarbles/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'LMarbles is an Atomix clone with a slight change in concept',
+		'comment' => '
+LMarbles is an Atomix clone with a slight change in concept. Instead of
+assembling molecules you create figures out of marbles. Nevertheless,
+the basic game play is the same: If a marble starts to move it will not
+stop until it hits a wall or another marble. To make it more
+interesting there are obstacles like one-way streets, crumbling walls
+and portals.</br>
+As Marbles is meant as a puzzle game you play against a
+move limit and not a time limit. This way you have as much time as you
+need to think.
+
+</br></br>
+<img src="' . $download_dir . 'lmarbles.jpg" width="400" height="300">
+'
+	),
+	'megamario' => array(
+		'name' => 'megamario',
+		'version' => '1.7',
+		'upstream' => 'https://sourceforge.net/projects/mmario/',
+		'category' => 'Games',
+		'summary' => 'Mega Mario is a Super Mario Bros. 1 clone',
+		'comment' => '
+Mega Mario is a Super Mario Bros. 1 clone. It features everything the
+original features - with better graphics, higher resolution, smoother
+movement and new levels. The story of Mario and Luigi continues, in
+old-school style. Also visit the <a href="http://www.megamario.de/">official HP</a>.
+</br></br>
+<img src="' . $download_dir . 'megamario.jpeg" width="320" height="240">
+'
+	),
+	'metrocross' => array(
+		'name' => 'metrocross',
+		'version' => '',
+		'upstream' => 'https://oldschoolprg.x10.mx/projets.php#metrocross',
+		'source' => $download_dir . '%{name}.tar.xz',
+		'category' => 'Games',
+		'summary' => 'Another remake of a good little game from the Atari ST.',
+		'comment' => '
+Another remake of a good little game from the Atari ST. Score to beat: 401750 (^_^)
+</br></br>
+<img src="' . $download_dir . 'metrocross0.png">
+'
+	),
+	'starfighter' => array(
+		'name' => 'starfighter',
+		'version' => '1.2',
+		'upstream' => 'https://pr-starfighter.github.io/',
+		'repo' => 'https://sourceforge.net/projects/pr-starfighter/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'Project: Starfighter is a space shoot &apos;em up game',
+		'comment' => '
+In the year 2579, the intergalactic weapons corporation, WEAPCO, has
+dominated the galaxy. Guide Chris Bainfield and his friend Sid Wilson
+on their quest to liberate the galaxy from the clutches of WEAPCO.
+Along the way, you will encounter new foes, make new allies, and assist
+local rebels in strikes against the evil corporation.
+</br></br>
+<img src="' . $download_dir . 'starfighter.png" width="320" height="240">
+'
+	),
+	'openjazz' => array(
+		'name' => 'openjazz',
+		'title' => 'OpenJazz',
+		'version' => '20231028',
+		'upstream' => 'http://www.alister.eu/jazz/oj/',
+		'repo' => 'https://github.com/AlisterT/openjazz',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'OpenJazz is a free, open-source version of the classic Jazz Jackrabbit games.',
+		'comment' => '
+OpenJazz is a free, open-source version of the classic Jazz Jackrabbit?
+games.
+</br></br>
+To play, you will need the files from one of the original games
+(shareware version included in the archive).
+</br></br>
+<img src="' . $download_dir . 'openjazz.png" width="320" height="200">
+</br></br>
+Another OpenJazz port for Atari: <a href="https://insane.tscc.de/">https://insane.tscc.de/</a>
+'
+	),
+	'opentyrian' => array(
+		'name' => 'opentyrian',
+		'title' => 'OpenTyrian',
+		'version' => '',
+		'upstream' => 'http://www.alister.eu/jazz/oj/',
+		'repo' => 'https://github.com/opentyrian/opentyrian/tree/sdl1',
+		'category' => 'Games',
+		'summary' => 'Tyrian is an arcade-style vertical scrolling shooter',
+		'comment' => '
+OpenTyrian is an open-source port of the DOS game Tyrian.
+</br>
+Tyrian is an arcade-style vertical scrolling shooter.  The story is set
+in 20,031 where you play as Trent Hawkins, a skilled fighter-pilot employed
+to fight MicroSol and save the galaxy.
+</br>
+Tyrian features a story mode, one- and two-player arcade modes, and networked
+multiplayer.
+</br></br>
+To play, you will need the files from one of the original games
+(freeware version included in the archive).
+</br></br>
+<img src="' . $download_dir . 'opentyrian.png" width="320" height="200">
+'
+	),
+	'sdlbomber' => array(
+		'name' => 'sdlbomber',
+		'title' => 'SDL-Bomber',
+		'version' => '1.0.4',
+		'upstream' => 'https://github.com/HerbFargus/SDL-Bomber',
+		'category' => 'Games',
+		'summary' => 'A basic clone of the fantastic game Atomic Bomberman',
+		'comment' => '
+You&apos;ve got to blow up other players to win. Spacebar drops a bomb. Get away
+and hope your enemy gets hit by the flame. The &apos;b&apos; key is a 2nd control
+for when you are lucky enough to pick up the bomb control--looks like a
+bomb with a timer on it. When you have that the bomb won&apos;t go off until
+detonated by another bomb, you are killed, or you press &apos;b&apos;.
+</br></br>
+<img src="' . $download_dir . 'sdlbomber.png" width="320" height="200">
+'
+	),
+	'gnuboy' => array(
+		'name' => 'gnuboy',
+		'version' => '1.0.4',
+		'upstream' => 'https://github.com/rofl0r/gnuboy',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'gnuboy is one of the fastest GB/GBC emulator available.',
+		'comment' => '
+</br></br>
+<img src="' . $download_dir . 'gnuboy.png" width="320" height="200">
+</br></br>
+Roms can be found for example on <a href="https://www.emulatorgames.net/roms/gameboy-color/">www.emulatorgames.net</a>
+'
+	),
+	'stargun' => array(
+		'name' => 'stargun',
+		'version' => '0.2',
+		'upstream' => 'https://stargun.sourceforge.net/',
+		'category' => 'Games',
+		'summary' => 'Stargun is a space shooter, vertical scroller game',
+		'comment' => '
+Stargun is a space shooter, vertical scroller game. It&apos;s platform
+independent (or at least it is the objetive). The target OS are Windows
+and Linux. There are plans to port Stargun to BeOs, FreeBSD and Amiga.
+</br>
+Stargun is written in C++ and uses SDL library.
+</br></br>
+<img src="' . $download_dir . 'stargun.png" width="320" height="300">
+'
+	),
+	'symphyla' => array(
+		'name' => 'symphyla',
+		'version' => '',
+		'upstream' => 'https://github.com/tondeur-h/symphyla/',
+		'category' => 'Games',
+		'summary' => 'A clone game (limited) of the Atari Centipede',
+		'comment' => '
+A clone game (limited) of the Atari Centipede under SDL 1.2 library
+</br>
+Work under Linux, not trested with other OS.
+</br></br>
+<img src="' . $download_dir . 'symphyla.png" width="320" height="240">
+'
+	),
+	'tetris' => array(
+		'name' => 'tetris',
+		'version' => '',
+		'upstream' => 'https://codes-sources.commentcamarche.net/source/51325-tetris-c-sdl',
+		'category' => 'Games',
+		'summary' => 'Another Tetris clone',
+		'comment' => '
+Little Tetris in C (no C++) and SDL. Works on Windows and Linux. I think it&apos;s pretty simple to "get into" the code.
+</br></br>
+<img src="' . $download_dir . 'tetris.png" width="320" height="240">
+'
+	),
+	'ltris' => array(
+		'name' => 'ltris',
+		'version' => '1.2.7',
+		'upstream' => 'https://lgames.sourceforge.io/LTris/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'LTris is a tetris clone',
+		'comment' => '
+LTris is a tetris clone. Pieces consisting of four blocks are dropping
+down and need to be stacked in the playing field so that lines get
+completed. Pieces can be shifted left/right or rotated. Completed lines
+get removed. The more lines at once the more score you get. When the
+next piece cannot be placed on top of the playing field the game ends.
+</br>
+There are different game modes (Normal: Regular game starting with an
+empty playing field. Figures: Each level has a new figure that needs to
+be cleared, later on new blocks and lines suddenly appear. Multiplayer:
+You can play either against up to two other human or computer players.)
+and two game styles (Classic: Follows the classic hardcore rules of NES
+tetris. Modern: Adds stuff like 7-bag, piece shadow, lock delay, wall
+kicks, ... for a more casual way to play).
+</br></br>
+<img src="' . $download_dir . 'ltris.jpg" width="320" height="240">
+'
+	),
+	'xgalaga' => array(
+		'name' => 'xgalaga',
+		'version' => '2.1.1.0',
+		'upstream' => 'http://rumsey.org/xgal.html',
+		'repo' => 'https://github.com/frank-zago/xgalaga-sdl',
+		'category' => 'Games',
+		'summary' => 'Clone of the classic game Galaga',
+		'comment' => '
+Galaga is a game based on classic shoot &apos;em up games like Galaga and
+Galaxian. The goal of the game is to destroy each wave of aliens while
+avoiding the bullets they hurl your way. Each wave gets more and more
+difficult, and you can only get hit once before losing a life.
+</br></br>
+<img src="' . $download_dir . 'xgalaga.png" width="300" height="400">
+'
+	),
 );
 
 ?>

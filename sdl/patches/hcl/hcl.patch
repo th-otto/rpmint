@@ -1,0 +1,459 @@
+diff -rupN hcl.orig/Makefile hcl.new/Makefile
+--- hcl.orig/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ hcl.new/Makefile	2023-12-08 08:03:48.986806421 +0100
+@@ -0,0 +1,86 @@
++prefix  = /usr
++#SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++CPPFLAGS = -D_SDL $(SDL_CFLAGS)
++CFLAGS  = $(CPU_CFLAGS) -O2 -Wall -Wno-switch
++LDFLAGS ?= -s
++LIBS    := $(shell pkg-config --libs SDL_mixer sdl) -lm
++
++CC = $(CROSS_PREFIX)gcc
++CXX = $(CROSS_PREFIX)g++
++RM = rm -f
++
++SRCS = \
++	src/collision.c \
++	src/effect.c \
++	src/enemy.c \
++	src/game.c \
++	src/hero.c \
++	src/ini.c \
++	src/inventory.c \
++	src/main.c \
++	src/object.c \
++	src/options.c \
++	src/PHL.c \
++	src/platform.c \
++	src/qda.c \
++	src/stagedata.c \
++	src/text.c \
++	src/titlescreen.c \
++	src/weapon.c \
++	src/enemies/batboss.c \
++	src/enemies/bat.c \
++	src/enemies/bee.c \
++	src/enemies/boar.c \
++	src/enemies/boomknight.c \
++	src/enemies/crab.c \
++	src/enemies/devil.c \
++	src/enemies/dodo.c \
++	src/enemies/dog.c \
++	src/enemies/firewheel.c \
++	src/enemies/fish.c \
++	src/enemies/garm.c \
++	src/enemies/gas.c \
++	src/enemies/ghoul.c \
++	src/enemies/golem.c \
++	src/enemies/gyra.c \
++	src/enemies/heads.c \
++	src/enemies/hydra.c \
++	src/enemies/jellyfish.c \
++	src/enemies/knight.c \
++	src/enemies/lolidra.c \
++	src/enemies/pendulum.c \
++	src/enemies/podoboo.c \
++	src/enemies/poisonknight.c \
++	src/enemies/pumpkin.c \
++	src/enemies/seal.c \
++	src/enemies/skeleton.c \
++	src/enemies/skull.c \
++	src/enemies/slime.c \
++	src/enemies/slug.c \
++	src/enemies/thwomp.c \
++	src/enemies/waterjumper.c \
++	src/enemies/wizard.c \
++	\
++	src/sdl/audio.c \
++	src/sdl/input.c \
++	src/sdl/graphics.c \
++	src/sdl/system.c \
++	$(empty)
++
++SRCS2= src/xBRZ/xbrz.cpp src/sdl/scale.cpp
++
++OBJS = $(SRCS:.c=.o) $(SRCS2:.cpp=.o)
++
++all : hcl
++
++.c.o:
++	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
++
++.cpp.o:
++	$(CXX) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
++
++hcl: $(OBJS)
++	$(CXX) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
++
++clean :
++	$(RM) $(OBJS) hcl
+diff -rupN hcl.orig/src/PHL.c hcl.new/src/PHL.c
+--- hcl.orig/src/PHL.c	2022-06-24 19:32:10.000000000 +0200
++++ hcl.new/src/PHL.c	2023-12-08 06:11:42.250628988 +0100
+@@ -41,7 +41,7 @@ void PHL_Deinit()
+ //Extracts bmps from the bmp.qda archive file
+ PHL_Surface PHL_LoadQDA(char* fname)
+ {	
+-	PHL_Surface surf;
++	PHL_Surface surf = 0;
+ 	
+ 	int numofsheets = 29;
+ 	
+diff -rupN hcl.orig/src/amigaos.h hcl.new/src/amigaos.h
+--- hcl.orig/src/amigaos.h	2022-06-24 19:32:10.000000000 +0200
++++ hcl.new/src/amigaos.h	2023-12-08 07:59:27.633829271 +0100
+@@ -1,15 +1,10 @@
+ #include <stdint.h>
+ #include <string.h>
+ 
+-inline void littleBigEndian (void *x, int sz) {
+-	unsigned char *toConvert = (unsigned char *)(x);
+-	unsigned char tmp;
+-	for (size_t i = 0; i < sz/2; ++i) {
+-		tmp = toConvert[i];
+-		toConvert[i] = toConvert[sz - i - 1];
+-		toConvert[sz - i - 1] = tmp;
+-	}
+-}
+-
+-inline void BE16(uint16_t* w) {littleBigEndian(w, 2);}
+-inline void BE32(uint32_t* i) {littleBigEndian(i, 4);}
+\ No newline at end of file
++#if defined(__amigaos4__) || defined(__MORPHOS__) || defined(__m68k__) || (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
++static inline void BE16(uint16_t* w) {*w = __builtin_bswap16(*w); }
++static inline void BE32(uint32_t* i) {*i = __builtin_bswap32(*i); }
++#else
++#define BE16(x)
++#define BE32(x)
++#endif
+diff -rupN hcl.orig/src/game.c hcl.new/src/game.c
+--- hcl.orig/src/game.c	2022-06-24 19:32:10.000000000 +0200
++++ hcl.new/src/game.c	2023-12-08 06:11:10.564015379 +0100
+@@ -273,7 +273,7 @@ void game()
+ 		strcat(savemap, "save.map");
+ 	} else {
+ 		strcpy(savename, "data/save.tmp");
+-		strcpy(savemap, savemap);
++		strcpy(savemap, "data/save.map");
+ 	}
+ #endif
+ 	//Setup services
+@@ -1860,6 +1860,7 @@ void loadSave(char* fname)
+ 		}		
+ 		fclose(f);
+ 		#undef D
++		(void)tmp;
+ 	}
+ 	
+ }
+diff -rupN hcl.orig/src/ini.c hcl.new/src/ini.c
+--- hcl.orig/src/ini.c	2022-06-24 19:32:10.000000000 +0200
++++ hcl.new/src/ini.c	2023-12-08 07:01:49.742399681 +0100
+@@ -32,8 +32,15 @@ void iniInit()
+ 		#elif defined(EMSCRIPTEN)
+ 		strcpy(fullPath, "hcl_data/");
+ 		#else
+-		strcpy(fullPath, getenv("HOME"));
+-		strcat(fullPath, "/.hydracastlelabyrinth/");
++		const char *home = getenv("HOME");
++		if (home)
++		{
++			strcpy(fullPath, home);
++			strcat(fullPath, "/.hydracastlelabyrinth/");
++		} else
++		{
++			strcpy(fullPath, "data/");
++		}
+ 		#endif
+ 		#elif defined(_3DS)
+ 		strcpy(fullPath, "sdmc:/3ds/appdata/HydraCastleLabyrinth/");
+@@ -68,8 +75,15 @@ void saveSettings()
+ 		#elif defined(EMSCRIPTEN)
+ 		strcpy(fullPath, "hcl_data/");
+ 		#else
+-		strcpy(fullPath, getenv("HOME"));
+-		strcat(fullPath, "/.hydracastlelabyrinth/");
++		const char *home = getenv("HOME");
++		if (home)
++		{
++			strcpy(fullPath, home);
++			strcat(fullPath, "/.hydracastlelabyrinth/");
++		} else
++		{
++			strcpy(fullPath, "data/");
++		}
+ 		#endif
+ 		#elif defined(_3DS)
+ 		strcpy(fullPath, "sdmc:/3ds/appdata/HydraCastleLabyrinth/");
+@@ -86,7 +100,7 @@ void saveSettings()
+ 		fprintf(f, "[disp]");
+ 		#ifdef _3DS
+ 			//Screen
+-			fprintf(f, "\r\nscreen=");
++			fprintf(f, "\nscreen=");
+ 			if (activeScreen->screen == GFX_BOTTOM) {
+ 				fprintf(f, "bottom");
+ 			}else{
+@@ -96,7 +110,7 @@ void saveSettings()
+ 		
+ 		#ifdef _PSP
+ 			//Screen Size
+-			fprintf(f, "\r\nsize=");
++			fprintf(f, "\nsize=");
+ 			if (getScreenSize() == 1) {
+ 				fprintf(f, "1");
+ 			}
+@@ -108,7 +122,7 @@ void saveSettings()
+ 			}
+ 			
+ 			//Screen Blur
+-			fprintf(f, "\r\nblur=");
++			fprintf(f, "\nblur=");
+ 			if (getBlur() == 1) {
+ 				fprintf(f, "on");
+ 			}else{
+@@ -117,7 +131,7 @@ void saveSettings()
+ 		#endif
+ 		#ifdef _SDL
+ 			//xBRZ Scaling
+-			fprintf(f, "\r\nxbrz=");
++			fprintf(f, "\nxbrz=");
+ 			if (getXBRZ() == 1) {
+ 				fprintf(f, "on");
+ 			}else{
+@@ -125,10 +139,10 @@ void saveSettings()
+ 			}			
+ 		#endif
+ 
+-		fprintf(f, "\r\n[system]");
++		fprintf(f, "\n[system]");
+ 		
+ 		//Language
+-		fprintf(f, "\r\nlanguage=");
++		fprintf(f, "\nlanguage=");
+ 		if (getLanguage() == 0) {
+ 			fprintf(f, "jp");
+ 		}
+@@ -137,7 +151,7 @@ void saveSettings()
+ 		}
+ 		
+ 		//Autosave
+-		fprintf(f, "\r\nautosave=");
++		fprintf(f, "\nautosave=");
+ 		if (getAutoSave() == 1) {
+ 			fprintf(f, "on");
+ 		}else{
+@@ -145,11 +159,12 @@ void saveSettings()
+ 		}
+ 
+ 		#ifdef _SDL
+-		fprintf(f, "\r\n[audio]");
+-		fprintf(f, "\r\nmusic_type=%s", getMusicType()?"ogg":"midi");
+-		fprintf(f, "\r\nmusic=%d", music_volume);
++		fprintf(f, "\n[audio]");
++		fprintf(f, "\nmusic_type=%s", getMusicType()?"ogg":"midi");
++		fprintf(f, "\nmusic=%d", music_volume);
+ 		// Audio
+ 		#endif
++		fprintf(f, "\n");
+ 		fclose(f);
+ 	}
+ 	#ifdef EMSCRIPTEN
+@@ -172,8 +187,15 @@ void loadSettings()
+ 		#elif defined(EMSCRIPTEN)
+ 		strcpy(fullPath, "hcl_data/");
+ 		#else
+-		strcpy(fullPath, getenv("HOME"));
+-		strcat(fullPath, "/.hydracastlelabyrinth/");
++		const char *home = getenv("HOME");
++		if (home)
++		{
++			strcpy(fullPath, home);
++			strcat(fullPath, "/.hydracastlelabyrinth/");
++		} else
++		{
++			strcpy(fullPath, "data/");
++		}
+ 		#endif
+ 		#elif defined(_3DS)
+ 		strcpy(fullPath, "sdmc:/3ds/appdata/HydraCastleLabyrinth/");
+diff -rupN hcl.orig/src/main.c hcl.new/src/main.c
+--- hcl.orig/src/main.c	2022-06-24 19:32:10.000000000 +0200
++++ hcl.new/src/main.c	2023-12-08 06:43:57.200799432 +0100
+@@ -38,8 +38,15 @@ void createSaveLocations()
+ 		#elif defined(EMSCRIPTEN)
+ 		strcpy(buff, "hcl_data");
+ 		#else
+-		strcpy(buff, getenv("HOME"));
+-		strcat(buff, "/.hydracastlelabyrinth");
++		const char *home = getenv("HOME");
++		if (home)
++		{
++			strcpy(buff, home);
++			strcat(buff, "/.hydracastlelabyrinth/");
++		} else
++		{
++			strcpy(buff, "data/");
++		}
+ 		#endif
+ 		// if exist first?
+ 		struct stat sb;
+diff -rupN hcl.orig/src/qda.c hcl.new/src/qda.c
+--- hcl.orig/src/qda.c	2022-06-24 19:32:10.000000000 +0200
++++ hcl.new/src/qda.c	2023-12-08 07:41:50.065288419 +0100
+@@ -2,9 +2,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#if defined(__amigaos4__) || defined(__MORPHOS__)
+ #include "amigaos.h"
+-#endif
+ 
+ QDAHeader headers[29];
+ //Load headers for each image
+@@ -50,11 +48,9 @@ int initQDA()
+ 						memcpy(&headers[i].size, &QDAFile[offset + 4], 4);
+ 						memcpy(&headers[i].bytes, &QDAFile[offset + 8], 4);
+ 						memcpy(&headers[i].fileName, &QDAFile[offset + 12], 0x100);
+-						#if defined(__amigaos4__) || defined(__MORPHOS__)
+ 						BE32(&headers[i].offset);
+ 						BE32(&headers[i].size);
+ 						BE32(&headers[i].bytes);
+-						#endif
+ 					}
+ 				}
+ 			}else{
+diff -rupN hcl.orig/src/qda.h hcl.new/src/qda.h
+--- hcl.orig/src/qda.h	2022-06-24 19:32:10.000000000 +0200
++++ hcl.new/src/qda.h	2023-12-08 07:58:50.563879792 +0100
+@@ -1,14 +1,15 @@
+ #ifndef QDA_H
+ #define QDA_H
++#include <stdint.h>
+ 
+ typedef struct {
+-	unsigned long offset;
+-	unsigned long size;
+-	unsigned long bytes;
++	uint32_t offset;
++	uint32_t size;
++	uint32_t bytes;
+ 	unsigned char* fileName[256];
+ } QDAHeader;
+ 
+ extern QDAHeader headers[29]; //names, offsets, and sizes of each sheet
+ int initQDA();
+ 
+-#endif
+\ No newline at end of file
++#endif
+diff -rupN hcl.orig/src/sdl/graphics.c hcl.new/src/sdl/graphics.c
+--- hcl.orig/src/sdl/graphics.c	2022-06-24 19:32:10.000000000 +0200
++++ hcl.new/src/sdl/graphics.c	2023-12-08 07:39:20.308829186 +0100
+@@ -4,9 +4,7 @@
+ #include "../qda.h"
+ #include "graphics.h"
+ #include "scale.h"
+-#if defined(__amigaos4__) || defined(__MORPHOS__)
+ #include "../amigaos.h"
+-#endif
+ 
+ SDL_Surface* screen = NULL;
+ SDL_Surface* drawbuffer = NULL;
+@@ -166,13 +164,13 @@ void PHL_FreeSurface(PHL_Surface surf)
+ //PHL_Surface PHL_LoadBMP(char* fname);
+ PHL_Surface PHL_LoadBMP(int index)
+ {
+-	SDL_Surface* surf;
++	SDL_Surface* surf = 0;
+ 	
+ 	FILE* f;
+ 	if ( (f = fopen("data/bmp.qda", "rb")) ) {
+ 		uint8_t* QDAFile = (uint8_t*)malloc(headers[index].size);
+ 		fseek(f, headers[index].offset, SEEK_SET);
+-		int tmp = fread(QDAFile, 1, headers[index].size, f);
++		(void)fread(QDAFile, 1, headers[index].size, f);
+ 		fclose(f);
+ 		
+ 		uint16_t w, h;
+@@ -180,9 +178,7 @@ PHL_Surface PHL_LoadBMP(int index)
+ 		//Read data from header
+ 		memcpy(&w, &QDAFile[18], 2);
+ 		memcpy(&h, &QDAFile[22], 2);
+-		#if defined(__amigaos4__) || defined(__MORPHOS__)
+ 		BE16(&w); BE16(&h);
+-		#endif
+ 		
+         	surf = PHL_NewSurface(w * screenScale, h * screenScale);
+ 		//surf = PHL_NewSurface(200, 200);
+@@ -202,7 +198,7 @@ PHL_Surface PHL_LoadBMP(int index)
+ 			}
+ 			Uint32* tmp = NULL;
+ 			tmp = (Uint32*)malloc(w*h*screenScale*4);
+-			Uint32 transp;
++			Uint32 transp = 0;
+ 			for (dx = 0; dx < w; dx++) {
+ 				for (dy = 0; dy < h; dy++) {
+ 				
+diff -rupN hcl.orig/src/sdl/input.c hcl.new/src/sdl/input.c
+--- hcl.orig/src/sdl/input.c	2022-06-24 19:32:10.000000000 +0200
++++ hcl.new/src/sdl/input.c	2023-12-08 06:13:19.763800962 +0100
+@@ -108,13 +108,13 @@ void Input_JoyAxisEvent(SDL_Event* evt)
+ 	#define DEADZONE 32
+ 	if(evt->jaxis.axis==0) {
+ 		int v = (evt->jaxis.value)/256;
+-		if(v>-DEADZONE & v<DEADZONE) axisX = 0;
++		if(v>-DEADZONE && v<DEADZONE) axisX = 0;
+ 		else if(v<0) axisX = -1;
+ 		else axisX = +1;
+ 	}
+ 	if(evt->jaxis.axis==1) {
+ 		int v = (evt->jaxis.value)/256;
+-		if(v>-DEADZONE & v<DEADZONE) axisY = 0;
++		if(v>-DEADZONE && v<DEADZONE) axisY = 0;
+ 		else if(v<0) axisY = -1;
+ 		else axisY = +1;
+ 	}
+diff -rupN hcl.orig/src/sdl2/graphics.c hcl.new/src/sdl2/graphics.c
+--- hcl.orig/src/sdl2/graphics.c	2022-06-24 19:32:10.000000000 +0200
++++ hcl.new/src/sdl2/graphics.c	2023-12-08 07:43:23.971825013 +0100
+@@ -4,9 +4,7 @@
+ #include "../qda.h"
+ #include "graphics.h"
+ #include "scale.h"
+-#ifdef __amigaos4__
+ #include "../amigaos.h"
+-#endif
+ 
+ 
+ SDL_Texture* drawbuffer = NULL;
+@@ -231,9 +229,7 @@ PHL_Surface PHL_LoadBMP(int index)
+ 		//Read data from header
+ 		memcpy(&w, &QDAFile[18], 2);
+ 		memcpy(&h, &QDAFile[22], 2);
+-		#ifdef __amigaos4__
+ 		BE16(&w); BE16(&h);
+-		#endif
+ 		
+         surf = PHL_NewSurface(w * screenScale, h * screenScale);
+ 		//surf = PHL_NewSurface(200, 200);
+diff -rupN hcl.orig/src/text.c hcl.new/src/text.c
+--- hcl.orig/src/text.c	2022-06-24 19:32:10.000000000 +0200
++++ hcl.new/src/text.c	2023-12-08 06:36:50.614822081 +0100
+@@ -18,7 +18,7 @@ void trimMessage(Message* m);
+ 
+ void textInit()
+ {
+-	gameLanguage = JAPANESE;
++	gameLanguage = ENGLISH;
+ 	
+ 	saving = (Message*)malloc(sizeof(Message));
+ 	
+@@ -210,4 +210,4 @@ void trimMessage(Message* m)
+ 			i = -1;
+ 		}
+ 	}
+-}
+\ No newline at end of file
++}

@@ -1,0 +1,125 @@
+diff -rup tetris.orig/Makefile tetris.new/Makefile
+--- tetris.orig/Makefile	2012-05-31 15:32:42.000000000 +0200
++++ tetris.new/Makefile	2023-12-11 16:24:48.221697152 +0100
+@@ -1,15 +1,18 @@
+-# Makefile
+-#PATH = /usr/include/SDL
+ TARGET = tetris 
+ OBJECTS = main.o game.o frame.o render.o font.o menu.o sfx.o
+ 
+-CFLAGS = -O3 -Wall -g -I/usr/include/SDL -L/usr/lib -s -DNDEBUG 
+-LIBS = -lSDL
+-CC = gcc
++SDL_CFLAGS = $(shell pkg-config --cflags sdl)
++SDL_LIBS = $(shell pkg-config --libs sdl)
++
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -Wall $(SDL_CFLAGS)  -DNDEBUG 
++LIBS = $(SDL_LIBS) -lm
++LDFLAGS = -s
++CC = $(CROSS_PREFIX)gcc
+ 
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJECTS)
+-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) 
+-
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
++clean:
++	rm -f $(OBJECTS) $(TARGET)
+diff -rup tetris.orig/font.c tetris.new/font.c
+--- tetris.orig/font.c	2012-05-31 14:55:59.578125000 +0200
++++ tetris.new/font.c	2023-12-11 17:50:37.375292510 +0100
+@@ -25,7 +25,7 @@ void FontPrint(u32 nOffset, char *pStr)
+ 	u32	nOffTmp;
+ 	u32	nOffFnt;
+ 	u32	y;
+-	char	cChr;
++	unsigned char cChr;
+ 	u8	*pScr, *pFnt;
+ 	s32	nScrPitch, nFntPitch;
+ 
+@@ -45,11 +45,13 @@ void FontPrint(u32 nOffset, char *pStr)
+ 			nOffFnt = (((u32)cChr) - ' ') << 4;
+ 			for (y = 0; y < 16; y++)
+ 			{
+-				// On fait un OR + la fonte est en couleur 255 : Transparence.
+-				*(u32 *)(pScr + nOffTmp + (y * nScrPitch)) |= *(u32 *)(pFnt + nOffFnt + (y * nFntPitch));
+-				*(u32 *)(pScr + nOffTmp + (y * nScrPitch) + 4) |= *(u32 *)(pFnt + nOffFnt + (y * nFntPitch) + 4);
+-				*(u32 *)(pScr + nOffTmp + (y * nScrPitch) + 8) |= *(u32 *)(pFnt + nOffFnt + (y * nFntPitch) + 8);
+-				*(u32 *)(pScr + nOffTmp + (y * nScrPitch) + 12) |= *(u32 *)(pFnt + nOffFnt + (y * nFntPitch) + 12);
++				// We make an OR + the font is in color 255: Transparency.
++				u32 *pDst = (u32 *)(pScr + nOffTmp + (y * nScrPitch));
++				u32 *pSrc = (u32 *)(pFnt + nOffFnt + (y * nFntPitch));
++				pDst[0] |= pSrc[0];
++				pDst[1] |= pSrc[1];
++				pDst[2] |= pSrc[2];
++				pDst[3] |= pSrc[3];
+ 			}
+ 		}
+ 		nOffTmp += 16;
+diff -rup tetris.orig/main.c tetris.new/main.c
+--- tetris.orig/main.c	2012-05-31 12:38:10.500000000 +0200
++++ tetris.new/main.c	2023-12-11 17:56:53.774823826 +0100
+@@ -89,6 +89,10 @@ u32 Menu(void (*pFctInit)(void), u32 (*p
+ 	// Sets up palette.
+ 	//SDL_SetColors(gVar.pScreen, gVar.pBkgMenu->format->palette->colors, 0, gVar.pBkgMenu->format->palette->ncolors);
+ //	SDL_SetPalette(gVar.pScreen, SDL_LOGPAL, gVar.pBkgMenu->format->palette->colors, 0, gVar.pBkgMenu->format->palette->ncolors);
++	gVar.pColors[255].r = 255;
++	gVar.pColors[255].g = 255;
++	gVar.pColors[255].b = 255;
++	gVar.pColors[255].unused = 255;
+ 	SDL_SetPalette(gVar.pScreen, SDL_LOGPAL, gVar.pColors, 0, 256);
+ 
+ 	// Main loop.
+@@ -186,6 +190,20 @@ int main(int argc, char *argv[])
+ 	// Load bitmap 16x16 font.
+ 	LoadPic(&gVar.pFont1616, "gfx/fnt.bmp");
+ 
++	/* Make sure color 255 is used for white in the font. FontPrint relies on this */
++{
++	int i, count;
++	u8 *pixels;
++	
++	count = gVar.pFont1616->w * gVar.pFont1616->h;
++	pixels = gVar.pFont1616->pixels;
++	for (i = 0; i < count; i++)
++	{
++		if (pixels[i] != 0)
++			pixels[i] = 255;
++	}
++}
++
+ 	// Init sound.
+ 	Sfx_SoundInit();
+ 	Sfx_LoadWavFiles();
+diff -rup tetris.orig/render.c tetris.new/render.c
+--- tetris.orig/render.c	2012-05-31 14:55:23.281250000 +0200
++++ tetris.new/render.c	2023-12-11 18:27:12.349239143 +0100
+@@ -5,7 +5,7 @@
+ 
+ #include "includes.h"
+ 
+-#if defined (__LINUX__) || defined (__APPLE__)
++#if 0
+ #define	BPP32_2X	1		// Useless with Windows - Vital with Linux.
+ #endif
+ 
+@@ -152,7 +152,7 @@ void Render_SetVideoMode(void)
+ 	case e_RenderMode_Normal:
+ 	default:
+ #ifdef BPP32_2X
+-		gVar.pScreen = VideoModeSet(SCR_Width, SCR_Height, 8, (gRender.nFullscreenMode ? SDL_FULLSCREEN : 0));
++		gVar.pScreen = VideoModeSet(SCR_Width, SCR_Height, 32, (gRender.nFullscreenMode ? SDL_FULLSCREEN : 0));
+ #else
+ 		gVar.pScreen = VideoModeSet(SCR_Width, SCR_Height, (gRender.nFullscreenMode ? SDL_FULLSCREEN : 0));
+ #endif
+@@ -187,7 +187,7 @@ void Render_InitVideo(void)
+ #endif
+ 	if (gVar.pScreen == NULL) exit(1);
+ 	// On créé un buffer de la taille de l'écran.
+-	// => En mode 2x, on switche le ptr pScreen sur cette surface, les rendus du jeu se font donc dedans. Puis on fait le scale/filtre du buffer vers la vraie surface écran.
++	// => In 2x mode, we switch the pScreen ptr to this surface, so the game is rendered inside. Then we scale/filter the buffer towards the real screen surface.
+ 	gRender.pScreenBuf2 = SDL_CreateRGBSurface(SDL_SWSURFACE, SCR_Width, SCR_Height, 8, gVar.pScreen->format->Rmask, gVar.pScreen->format->Gmask, gVar.pScreen->format->Bmask, 0);
+ 	if (gRender.pScreenBuf2 == NULL)
+ 	{

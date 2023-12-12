@@ -1,0 +1,2731 @@
+diff -rupN metrocross.orig/Makefile metrocross.new/Makefile
+--- metrocross.orig/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ metrocross.new/Makefile	2023-12-10 13:34:31.933732468 +0100
+@@ -0,0 +1,4 @@
++SUBDIRS = metrocross0 config0 exechk0 edtile0 psdprot0
++
++all clean::
++	for i in $(SUBDIRS); do $(MAKE) -C $$i $@ || exit $@; done
+diff -rupN metrocross.orig/config0/Makefile metrocross.new/config0/Makefile
+--- metrocross.orig/config0/Makefile	2013-12-09 11:15:52.000000000 +0100
++++ metrocross.new/config0/Makefile	2023-12-10 17:14:55.784139633 +0100
+@@ -1,17 +1,20 @@
+ # Mon Makefile
+-#PATH = /usr/include/SDL
+-TARGET = metro_cfg 
++TARGET = metro_cfg
+ OBJECTS = main.o font.o 
+ 
+-CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -fno-strict-aliasing -s 
+-LIBS = -lSDL
+-CC = gcc
++CPU_CFLAGS = -m32
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl)
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -Wall $(SDL_CFLAGS) -fno-strict-aliasing
++LDFLAGS = -s
++LIBS = $(SDL_LIBS)
++CC = $(CROSS_PREFIX)gcc
+ 
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJECTS)
+-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) 
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
+ clean:
+-	rm $(TARGET) $(OBJECTS)
++	rm -f $(TARGET) $(OBJECTS)
+ 
+diff -rupN metrocross.orig/config0/main.c metrocross.new/config0/main.c
+--- metrocross.orig/config0/main.c	2013-03-28 18:08:07.000000000 +0100
++++ metrocross.new/config0/main.c	2023-12-10 14:27:54.820102075 +0100
+@@ -29,7 +29,7 @@ enum
+ };
+ 
+ #pragma pack(1)
+-struct SMSCfg
++__attribute__((packed)) struct SMSCfg
+ {
+ 	u16	pKeys[e_CfgKey_MAX];
+ 	u16	nVideoMode;			// 0 = 320x224 / 1 = x2 / 2 = TV2x.
+diff -rupN metrocross.orig/edtile0/Makefile metrocross.new/edtile0/Makefile
+--- metrocross.orig/edtile0/Makefile	2013-07-16 16:36:08.000000000 +0200
++++ metrocross.new/edtile0/Makefile	2023-12-10 14:00:01.795189292 +0100
+@@ -2,16 +2,19 @@
+ TARGET = EdTile1 
+ OBJECTS = main.o font.o infobox.o keyboard.o mouse.o plane.o psd.o map.o cmd.o file.o visu.o undo.o
+ 
+-#CFLAGS = -O3 -Wall -Wno-write-strings -g -I/usr/include/SDL -L/usr/lib		# debug
+-CFLAGS = -O3 -Wall -Wno-write-strings -s -I/usr/include/SDL -L/usr/lib  
+-LIBS = -lSDL
+-CPP = gcc
++CPU_CFLAGS = -m32
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl)
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -Wall $(SDL_CFLAGS) -fno-strict-aliasing
++LDFLAGS = -s
++LIBS = $(SDL_LIBS)
++CC = $(CROSS_PREFIX)gcc
+ 
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJECTS)
+-	$(CPP) $(CFLAGS) -o $@ $^ $(LIBS) 
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
+ clean:
+-	rm $(TARGET) $(OBJECTS)
++	rm -f $(TARGET) $(OBJECTS)
+ 
+diff -rupN metrocross.orig/edtile0/cmd.c metrocross.new/edtile0/cmd.c
+--- metrocross.orig/edtile0/cmd.c	2013-07-22 14:14:18.000000000 +0200
++++ metrocross.new/edtile0/cmd.c	2023-12-10 17:16:38.624009860 +0100
+@@ -131,6 +131,7 @@ void Cmdfile_CmdFileExport(struct SCmdfi
+ 
+ 	// Ecriture.
+ 	nSz = fwrite(psCmdfile->pCmdfile, 1, strlen(psCmdfile->pCmdfile), fPt);
++	(void)nSz;
+ 	fclose(fPt);
+ 
+ 	// Date du fichier (update de la date de notre fichier, pour ne pas faire un update à la prochaine lecture).
+diff -rupN metrocross.orig/edtile0/file.c metrocross.new/edtile0/file.c
+--- metrocross.orig/edtile0/file.c	2013-07-22 15:49:54.000000000 +0200
++++ metrocross.new/edtile0/file.c	2023-12-10 17:17:39.680599481 +0100
+@@ -38,7 +38,7 @@ char * File_FilenameGet(struct SFile *ps
+ #pragma pack(1)
+ 
+ // Header de chaque container.
+-struct SContainer0
++__attribute__((packed)) struct SContainer0
+ {
+ 	u32	nSz;
+ 	u16	nType;
+@@ -46,27 +46,27 @@ struct SContainer0
+ };
+ 
+ // Struct pour datas de la map.
+-struct SMap0
++__attribute__((packed)) struct SMap0
+ {
+ 	u32	nMapLg, nMapHt, nMapPosX, nMapPosY, nPlanesNb, nFirstWnd, nActivePlane;
+ };
+ 
+ // Struct pour datas d'un plan.
+ /*
+-struct SPlane0
++__attribute__((packed)) struct SPlane0
+ {
+ 	u32	nPlaneNo, nFlags, nWndPosX, nWndPosY;
+ };
+ */
+ /*
+-struct SPlane1
++__attribute__((packed)) struct SPlane1
+ {
+ 	u32	nPlaneNo, nFlags, nWndPosX, nWndPosY;
+ 	u8	nHasCmd;				// Sera surtout utile à la lecture par le jeu, pour skipper le plan et récupérer les monstres dans la section suivante.
+ 	u8	nPad0, nPad1, nPad2;	// Padding.
+ };
+ */
+-struct SPlane2
++__attribute__((packed)) struct SPlane2
+ {
+ 	u32	nPlaneNo, nFlags, nWndPosX, nWndPosY;
+ 	u32	nBlkLg, nBlkHt;			// Largeur et hauteur du plan en blocs 16. Pour éventuel remap à la relecture.
+@@ -75,7 +75,7 @@ struct SPlane2
+ };
+ 
+ // Struct pour datas misc. (Hum, corrigée et paddée correctement pour pack).
+-struct SMisc0
++__attribute__((packed)) struct SMisc0
+ {
+ 	u32	nFlags;						// gMisc.nFlags.
+ 	u8	nTransR, nTransG, nTransB;	// RGB de la couleur de transparence.
+@@ -143,14 +143,15 @@ void File_Load(struct SFile *psFile)
+ 	{
+ 		fprintf(stderr, "File_Load(): Checksum error: Loaded = %08X / Calculated = %08X. Attempting to read file anyway.\n", nChecksum1, nChecksum0);
+ 
+-		static	char	*pMsgTitle = "Load error";
++	#if defined(_WIN32)
+ 		char	pMsgStr[256];
+-	#ifdef WIN32
++		static	char const pMsgTitle[] = "Load error";
+ 		sprintf(pMsgStr, "Checksum error:\nLoaded = %08X / Calculated = %08X.", nChecksum1, nChecksum0);
+ 		MessageBox(NULL, pMsgStr, pMsgTitle, MB_OK);
+-	#endif
+-	#ifdef __LINUX__
++	#elif defined( __linux__)
+ // !!! A tester !!!
++		char	pMsgStr[256];
++		static	char const pMsgTitle[] = "Load error";
+ 		// Avec xmessage.
+ 		sprintf(pMsgStr, "xmessage -center \"*** %s ***\n\nChecksum error:\nLoaded = %08X / Calculated = %08X.\" -button OK", pMsgTitle, nChecksum1, nChecksum0);
+ 		system(pMsgStr);
+diff -rupN metrocross.orig/edtile0/file.h metrocross.new/edtile0/file.h
+--- metrocross.orig/edtile0/file.h	2013-07-12 14:44:32.000000000 +0200
++++ metrocross.new/edtile0/file.h	2023-12-10 14:25:22.313595632 +0100
+@@ -2,7 +2,7 @@
+ 
+ // Struct pour lecture/sauvegarde d'un monstre.
+ #pragma pack(1)
+-struct SMst0
++__attribute__((packed)) struct SMst0
+ {
+ 	u32	nPosX, nPosY;
+ 	u16	nMstNo;		// = No du bloc.
+diff -rupN metrocross.orig/edtile0/includes.h metrocross.new/edtile0/includes.h
+--- metrocross.orig/edtile0/includes.h	2013-07-24 13:48:20.000000000 +0200
++++ metrocross.new/edtile0/includes.h	2023-12-10 13:49:17.082624629 +0100
+@@ -5,15 +5,13 @@
+ #include "SDL.h"
+ #include <sys/stat.h>
+ 
+-#ifdef __LINUX__
+-	#include <stdlib.h>
+-	#include <strings.h>
+-	#include <sys/types.h>
+-	#include <dirent.h>
+-	#include <errno.h>
+-#endif
+-#ifdef WIN32
+-//	#include <cstdlib>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <dirent.h>
++#include <errno.h>
++#ifdef _WIN32
+ 	#include <windows.h>
+ #endif
+ 
+diff -rupN metrocross.orig/edtile0/keyboard.c metrocross.new/edtile0/keyboard.c
+--- metrocross.orig/edtile0/keyboard.c	2013-07-22 15:09:30.000000000 +0200
++++ metrocross.new/edtile0/keyboard.c	2023-12-10 17:15:58.784060133 +0100
+@@ -301,16 +301,11 @@ RMB: Cut/release brush.\n\
+ \n\
+ ";
+ 		psKbd->pKeys[SDLK_F1] = 0;
+-#ifdef WIN32
++#if defined(_WIN32)
+ 		MessageBox(NULL, pHelpStr, pHelpTitle, MB_OK);
+-#endif
+-#ifdef __LINUX__
+-//		// Avec printf.
+-//		printf("*** %s ***\n", pHelpTitle);
+-//		printf(pHelpStr);
+-
++#elif defined(__linux__)
+ 		// Avec xmessage.
+-		static	const char	*pCmdStr = "xmessage -center \"*** %s ***\n\n%s\" -button OK";
++		static char const pCmdStr[] = "xmessage -center \"*** %s ***\n\n%s\" -button OK";
+ 		char *pCmdLn;
+ 
+ 		if ((pCmdLn = (char *)malloc(strlen(pCmdStr) + strlen(pHelpTitle) + strlen(pHelpStr))) != NULL)
+@@ -320,6 +315,10 @@ RMB: Cut/release brush.\n\
+ 			free(pCmdLn);
+ 			nUpdateDisp |= e_Update_All;
+ 		}
++#else
++		// Avec printf.
++		printf("*** %s ***\n", pHelpTitle);
++		printf("%s\n", pHelpStr);
+ #endif
+ 	}
+ 
+diff -rupN metrocross.orig/edtile0/main.c metrocross.new/edtile0/main.c
+--- metrocross.orig/edtile0/main.c	2013-08-18 17:41:15.000000000 +0200
++++ metrocross.new/edtile0/main.c	2023-12-10 17:04:43.408245707 +0100
+@@ -151,8 +151,8 @@ enum
+ s32 MyMsgBoxYesNo(const char *pStr, const char *pTitle)
+ {
+ 	s32	nRetVal = e_MsgBoxCancel;
++#if defined(_WIN32)
+ 	int	nRet;
+-#ifdef WIN32
+ 	nRet = MessageBox(NULL, pStr, pTitle, MB_YESNOCANCEL | MB_ICONSTOP);
+ 	switch (nRet)
+ 	{
+@@ -165,10 +165,10 @@ s32 MyMsgBoxYesNo(const char *pStr, cons
+ 	default:
+ 		break;
+ 	}
+-#endif
+-#ifdef __LINUX__
++#elif defined(__linux__)
+ 	static	const char	*pCmdStr = "xmessage -center \"*** %s ***\n\n%s\" -button Yes,No,Cancel";
+ 	char *pCmdLn;
++	int	nRet;
+ 
+ 	if ((pCmdLn = (char *)malloc(strlen(pCmdStr) + strlen(pStr) + strlen(pTitle))) != NULL)
+ 	{
+@@ -371,7 +371,7 @@ void Sub_GetArgInt(char **ppStr, u32 *pn
+ // Recherche un fichier .EDT dans le répertoire courant.
+ char * LookForEDT(void)
+ {
+-#ifdef __LINUX__
++#ifndef _WIN32
+ 	DIR	*dip;
+ 	struct dirent	*dit;
+ 
+@@ -386,7 +386,9 @@ char * LookForEDT(void)
+ 	while ((dit = readdir(dip)) != NULL)
+ 	{
+ 		// Est-ce un fichier normal ?
++#ifdef DT_REG
+ 		if (dit->d_type == DT_REG)
++#endif
+ 		{
+ 			if (strlen(dit->d_name) > 4)
+ 			if (strcmp(&dit->d_name[strlen(dit->d_name) - 4], ".edt") == 0)
+@@ -408,7 +410,7 @@ char * LookForEDT(void)
+ 	return (gFont.pString);
+ #endif
+ 
+-#ifdef WIN32
++#ifdef _WIN32
+ 	const char	*pRechFiles = "*.edt";
+ 	HANDLE	hFind;
+ 	WIN32_FIND_DATA	ffd;
+@@ -493,7 +495,7 @@ u32 CheckCommandLine(int nArgc, char **p
+ 		printf("Read file.\n");
+ 		File_Load(&gFile);
+ 	}
+-
++	(void)nNewFile;
+ 
+ 	// Passe 2 : Traitement des args.
+ 	u32	nPlaneNo;
+@@ -756,20 +758,6 @@ u32 CheckCommandLine(int nArgc, char **p
+ 	return (0);
+ }
+ 
+-/*
+-test peu concluant
+-
+-#ifdef __LINUX__
+-#define	STD_OUTPUT	"/dev/tty"
+-#endif
+-#ifdef WIN32
+-#define	STD_OUTPUT	"CON"
+-#endif
+-
+-//	freopen(STD_OUTPUT, "w", stdout);
+-//	freopen(STD_OUTPUT, "w", stderr);
+-*/
+-
+ //=============================================================================
+ 
+ // Main.
+diff -rupN metrocross.orig/edtile0/plane.c metrocross.new/edtile0/plane.c
+--- metrocross.orig/edtile0/plane.c	2013-07-24 14:33:04.000000000 +0200
++++ metrocross.new/edtile0/plane.c	2023-12-10 13:49:57.979238492 +0100
+@@ -9,14 +9,6 @@ void Plane_MstPlaneLineInsert(struct SPl
+ void Plane_MstPlaneLineDelete(struct SPlane *psPlane, u32 nLin);
+ 
+ 
+-#ifdef __LINUX__
+-// stricmp n'existe pas en Linux : C'est strcasecmp à la place, dans strings.h.
+-int stricmp(char *pStr1, char *pStr2)
+-{
+-	return (strcasecmp(pStr1, pStr2));
+-}
+-#endif
+-
+ // Constructeur.
+ struct SPlane * Plane_New(void)
+ {
+@@ -90,7 +82,7 @@ void Plane_PlaneInit(struct SPlane *psPl
+ 	strcpy(psPlane->pPlnFilename, pFilename);
+ 
+ 	// On regarde l'extension du fichier graphique.
+-	if (stricmp(pFilename + strlen(pFilename) - 3, "bmp") == 0)
++	if (strcasecmp(pFilename + strlen(pFilename) - 3, "bmp") == 0)
+ 	{
+ 		// Lecture du BMP.
+ 		psPlane->pGfx = SDL_LoadBMP(pFilename);
+@@ -100,12 +92,12 @@ void Plane_PlaneInit(struct SPlane *psPl
+ 		}
+ 	}
+ 	else
+-	if (stricmp(pFilename + strlen(pFilename) - 3, "psd") == 0)
++	if (strcasecmp(pFilename + strlen(pFilename) - 3, "psd") == 0)
+ 	{
+ 		pfFct = PSDLoad;
+ 	}
+ 	else
+-	if (stricmp(pFilename + strlen(pFilename) - 3, "xcf") == 0)
++	if (strcasecmp(pFilename + strlen(pFilename) - 3, "xcf") == 0)
+ 	{
+ 		pfFct = XCFLoad;
+ 	}
+diff -rupN metrocross.orig/exechk0/Makefile metrocross.new/exechk0/Makefile
+--- metrocross.orig/exechk0/Makefile	2012-10-02 22:20:54.000000000 +0200
++++ metrocross.new/exechk0/Makefile	2023-12-10 13:31:38.460597845 +0100
+@@ -1,17 +1,17 @@
+ # Mon Makefile
+-#PATH = /usr/include/SDL
+ TARGET = exechk 
+ OBJECTS = main.o
+  
+-CFLAGS = -O3 -Wall -g -I/usr/include/SDL -L/usr/lib -fno-strict-aliasing -D__LINUX__ 
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -Wall -fno-strict-aliasing
++LDFLAGS = -s
+ LIBS = 
+-CC = gcc
++CC = $(CROSS_PREFIX)gcc
+ 
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJECTS)
+-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) 
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
+ clean:
+-	rm $(TARGET) $(OBJECTS)
++	rm -f $(TARGET) $(OBJECTS)
+ 
+diff -rupN metrocross.orig/metrocross0/Makefile metrocross.new/metrocross0/Makefile
+--- metrocross.orig/metrocross0/Makefile	2013-11-18 15:09:40.000000000 +0100
++++ metrocross.new/metrocross0/Makefile	2023-12-10 17:10:42.831125494 +0100
+@@ -3,21 +3,29 @@
+ TARGET = metro 
+ OBJECTS = main.o frame.o preca.o render.o loader.o scroll.o psd.o sprites.o sprcache.o sprrz.o game.o anims.o animspr.o sfx.o mst.o monsters.o font.o menu.o roto.o
+ 
+-CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -L. -s -DNDEBUG 
+-LIBS = -lSDL -lGL -s libymlib.a
++CPU_CFLAGS = -m32
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl)
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing -Wall $(SDL_CFLAGS) -DNDEBUG 
++LDFLAGS = -g
++LIBS = ymlib/libymlib.a $(SDL_LIBS)
++
++CC = $(CROSS_PREFIX)gcc
++CXX = $(CROSS_PREFIX)g++
++
++all: $(TARGET) swapdata
+ 
+-CC = gcc
+-LINKER = g++
++$(TARGET): $(OBJECTS) ymlib/libymlib.a
++	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
+-all: $(TARGET)
++swapdata: swapdata.c
++	gcc -O2 -Wall -o $@ $<
+ 
+-$(TARGET): $(OBJECTS)
+-	$(LINKER) $(CFLAGS) -o $@ $^ $(LIBS) 
+-
+-.cc.o:
+-	$(CC) $(CFLAGS) -o $< 
++ymlib/libymlib.a:
++	$(MAKE) -C ymlib
+ 
+ clean:
+-	rm $(OBJECTS)
++	$(MAKE) -C ymlib clean
++	rm -f $(TARGET) $(OBJECTS) swapdata
+ 
+ 
+diff -rupN metrocross.orig/metrocross0/_README.txt metrocross.new/metrocross0/_README.txt
+--- metrocross.orig/metrocross0/_README.txt	2013-12-09 13:36:34.000000000 +0100
++++ metrocross.new/metrocross0/_README.txt	2023-12-10 14:20:51.953879672 +0100
+@@ -11,23 +11,35 @@
+ 
+ > Préambule :
+ 
+- Il s'agit d'un petit portage de Metro-Cross, jeu que j'avais beaucoup aimé à l'époque sur le ST. Il y a plein de choses dont je ne suis pas content dans ce projet, mais en jouant je retrouve du fun de l'original.
++ Il s'agit d'un petit portage de Metro-Cross, jeu que j'avais beaucoup
++aimé à l'époque sur le ST. Il y a plein de choses dont je ne suis pas
++content dans ce projet, mais en jouant je retrouve du fun de
++l'original.
+ 
+ 
+ 
+ > OpenGL :
+ 
+- Pour ce jeu, j'ai du utiliser OpenGL car le tearing en SDL pur est insupportable. Avec un scrolling lent, ça passe assez inaperçu, mais là non.
++ Pour ce jeu, j'ai du utiliser OpenGL car le tearing en SDL pur est
++insupportable. Avec un scrolling lent, ça passe assez inaperçu, mais là
++non.
+ 
+  Problème, je suis un noob total en OpenGL.
+ 
+- Le timing du jeu est basé sur la V-Sync. Il faut donc que cette dernière soit activée, sinon ça risque d'aller très très vite. Sous les deux configs Linux que j'ai testées, la V-Sync était activée par défaut. Avec mon vieux XP, la carte NVidia propose un panneau de configuration. Pour les autres je ne sais pas...
++ Le timing du jeu est basé sur la V-Sync. Il faut donc que cette
++dernière soit activée, sinon ça risque d'aller très très vite. Sous les
++deux configs Linux que j'ai testées, la V-Sync était activée par
++défaut. Avec mon vieux XP, la carte NVidia propose un panneau de
++configuration. Pour les autres je ne sais pas...
+ 
+  Il faut aussi que la fréquence de rafraîchissement soit 60 Hz.
+ 
+- C'est aussi pour avoir la V-Sync que le jeu ne tourne qu'en full screen. (En mode fenêtré, il n'y a pas de V-Sync).
++ C'est aussi pour avoir la V-Sync que le jeu ne tourne qu'en full
++screen. (En mode fenêtré, il n'y a pas de V-Sync).
+ 
+- Au cas où, il est quand même possible de lancer une version SDL pure en passant '/noGL' en paramètre au programme. Mais ce n'est vraiment pas beau.
++ Au cas où, il est quand même possible de lancer une version SDL pure
++en passant '/noGL' en paramètre au programme. Mais ce n'est vraiment
++pas beau.
+ 
+ 
+ 
+@@ -51,7 +63,8 @@
+ 
+ > Fichier "high.scr" :
+ 
+- Fichier des high-scores. Vous pouvez le supprimer pour remettre les scores à zéro, un nouveau fichier sera recréé.
++ Fichier des high-scores. Vous pouvez le supprimer pour remettre les
++scores à zéro, un nouveau fichier sera recréé.
+ 
+ 
+ 
+@@ -59,23 +72,33 @@
+ 
+ > Foreword:
+ 
+- It's a port of Metro-Cross, a game I enjoyed a lot at the time on my Atari ST. There are many things I'm not happy about with this project, but I think part of the fun is here anyway.
++ It's a port of Metro-Cross, a game I enjoyed a lot at the time on my
++Atari ST. There are many things I'm not happy about with this project,
++but I think part of the fun is here anyway.
+ 
+ 
+ 
+ > OpenGL:
+ 
+- I had to use OpenGL for this game, because I couldn't find any way to get rid of the tearing when using only SDL. It's more or less ok when the scrolling in slow, but here it was unbearable.
++ I had to use OpenGL for this game, because I couldn't find any way to
++get rid of the tearing when using only SDL. It's more or less ok when
++the scrolling in slow, but here it was unbearable.
+ 
+  Problem, I'm a complete noob with OpenGL.
+ 
+- The game timing is based on the V-Sync. It has then to be activated, otherwise the game might run rather quickly... On the two Linuxes I tried the game on, the V-Sync was on by default. On my old XP, the NVidia card has a control panel through which it is easy to turn the V-Sync on or off. I have no idea what others set ups are like.
++ The game timing is based on the V-Sync. It has then to be activated,
++otherwise the game might run rather quickly... On the two Linuxes I
++tried the game on, the V-Sync was on by default. On my old XP, the
++NVidia card has a control panel through which it is easy to turn the
++V-Sync on or off. I have no idea what others set ups are like.
+ 
+  The refresh rate should be set at 60 Hz.
+ 
+- It's also due to the need of V-Sync that the game only runs in full screen mode. (There is no V-Sync in windowed mode).
++ It's also due to the need of V-Sync that the game only runs in full
++screen mode. (There is no V-Sync in windowed mode).
+ 
+- Just in case, there is a way to run a SDL only version by specifying the '/noGL' parameter. You've been warned, the result is ugly.
++ Just in case, there is a way to run a SDL only version by specifying
++the '/noGL' parameter. You've been warned, the result is ugly.
+ 
+ 
+ 
+@@ -99,7 +122,8 @@
+ 
+ > "high.scr" file:
+ 
+- High-scores file. You can delete it to reset the scores, a new file will be created.
++ High-scores file. You can delete it to reset the scores, a new file
++will be created.
+ 
+ 
+ 
+diff -rupN metrocross.orig/metrocross0/frame.c metrocross.new/metrocross0/frame.c
+--- metrocross.orig/metrocross0/frame.c	2013-08-18 11:32:40.000000000 +0200
++++ metrocross.new/metrocross0/frame.c	2023-12-10 13:42:43.226466488 +0100
+@@ -22,6 +22,7 @@ void Frame_Wait(void)
+ {
+ 	u32	nTimer2;
+ 
++#ifdef Use_OPENGL
+ if (gRender.nUseGL)
+ {
+ 
+@@ -53,6 +54,7 @@ if (gRender.nUseGL)
+ 
+ }
+ else
++#endif
+ {
+ 
+ 
+Binary files metrocross.orig/metrocross0/high.scr and metrocross.new/metrocross0/high.scr differ
+Binary files metrocross.orig/metrocross0/high_top.scr and metrocross.new/metrocross0/high_top.scr differ
+diff -rupN metrocross.orig/metrocross0/includes.h metrocross.new/metrocross0/includes.h
+--- metrocross.orig/metrocross0/includes.h	2013-12-11 13:03:29.000000000 +0100
++++ metrocross.new/metrocross0/includes.h	2023-12-10 15:37:19.421724921 +0100
+@@ -3,7 +3,9 @@
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include "SDL.h"
++#ifdef Use_OPENGL
+ #include "SDL_opengl.h"
++#endif
+ #include <math.h>
+ #include <time.h>
+ #include <assert.h>
+diff -rupN metrocross.orig/metrocross0/loader.c metrocross.new/metrocross0/loader.c
+--- metrocross.orig/metrocross0/loader.c	2013-12-05 11:33:40.000000000 +0100
++++ metrocross.new/metrocross0/loader.c	2023-12-10 15:11:53.936912105 +0100
+@@ -1,4 +1,3 @@
+-
+ //
+ // Routines de lecture du EDT (simplifiÃ©es).
+ //
+@@ -12,7 +11,7 @@
+ // Struct pour lecture/sauvegarde d'un monstre.
+ // !!! Ne surtout pas toucher, c'est aussi le format utilisÃ© dans l'Ã©diteur de map et qui est relu directement !!!
+ #pragma pack(1)
+-struct SMstEdt0
++__attribute__((packed)) struct SMstEdt0
+ {
+ 	u32	nPosX, nPosY;
+ 	u16	nMstNo;		// = No du bloc.
+@@ -85,7 +84,7 @@ u32 ChecksumCalc(u8 *pBuf, u32 nSz)
+ 	return (nSum);
+ }
+ 
+-// Lecture du fichier, calcul du checksum et comparaison avec le checksum sauvegardÃ©.
++// Lecture du fichier, calcul du checksum et comparaison avec le checksum sauvegardé.
+ // Out: 1 = Ok / 0 = Failed.
+ u32 ChecksumVerify(u32 nLevNo)
+ {
+@@ -101,7 +100,7 @@ u32 ChecksumVerify(u32 nLevNo)
+ 		fprintf(stderr, "ChecksumVerify(): Error opening file '%s'.\n", pFilename);
+ 		goto _err_exit1;
+ 	}
+-	// RÃ©cupÃ©ration de la taille du fichier.
++	// Récupération de la taille du fichier.
+ 	s32	nFileSzToLoad, nSz;
+ 	fseek(fPt, 0L, SEEK_END);
+ 	nFileSzToLoad = ftell(fPt);
+@@ -146,10 +145,8 @@ _err_exit1:
+ }
+ 
+ //=============================================================================
+-/*
+-*/
+ 
+-// LibÃ¨re les ressources utilisÃ©es par le niveau en cours.
++// Libère les ressources utilisées par le niveau en cours.
+ void LevelRelease(u32 nLevelNo)
+ {
+ 	struct SMap	*pMap = &gMap[nLevelNo];
+@@ -203,7 +200,7 @@ void LevelRelease(u32 nLevelNo)
+ 
+ 
+ // La comparaison du qsort pour trier les monstres sur le X (puis sur le Y).
+-int qscmpMstXY(const void *pEl1, const void *pEl2)
++static int qscmpMstXY(const void *pEl1, const void *pEl2)
+ {
+ 	if ( (*(struct SMst0 **)pEl1)->nPosX == (*(struct SMst0 **)pEl2)->nPosX )
+ 		return ((*(struct SMst0 **)pEl1)->nPosY - (*(struct SMst0 **)pEl2)->nPosY);
+@@ -211,8 +208,7 @@ int qscmpMstXY(const void *pEl1, const v
+ 		return ((*(struct SMst0 **)pEl1)->nPosX - (*(struct SMst0 **)pEl2)->nPosX);
+ }
+ /*
+-/ *
+-//>> Ok, mais inutile, les monstres sont enregistrÃ©s de gauche Ã  droite et de haut en bas.
++//>> Ok, mais inutile, les monstres sont enregistrés de gauche à droite et de haut en bas.
+ // La comparaison du qsort pour trier les monstres sur le Y (puis sur le X).
+ int qscmpMstYX(const void *pEl1, const void *pEl2)
+ {
+@@ -221,11 +217,9 @@ int qscmpMstYX(const void *pEl1, const v
+ 	else
+ 		return ((*(struct SMst0 **)pEl1)->nPosY - (*(struct SMst0 **)pEl2)->nPosY);
+ }
+-* /
+-
+ */
+ 
+-// DiffÃ©rents types de sections du fichier EDT.
++// Différents types de sections du fichier EDT.
+ enum
+ {
+ 	e_FileSection_Map = 0,
+@@ -235,35 +229,35 @@ enum
+ };
+ 
+ 
+-// Pragma pack 1 sur les structures Ã  lire/Ã©crire.
++// Pragma pack 1 sur les structures à lire/écrire.
+ #pragma pack(1)
+ 
+-// Header de chaque container.
+-struct SContainer0
++// Header of each container.
++__attribute__((packed)) struct SContainer0
+ {
+ 	u32	nSz;
+ 	u16	nType;
+ 	u16	nPadding;
+ };
+ 
+-// Struct pour datas de la map.
+-struct SMap0
++// Struct for map data.
++__attribute__((packed)) struct SMap0
+ {
+ 	u32	nMapLg, nMapHt, nMapPosX, nMapPosY, nPlanesNb, nFirstWnd, nActivePlane;
+ };
+ 
+ #define	e_FlgFile_Plane_Codes	(1 << 31)		// Lecture/sauvegarde d'une page de code.
+-// Struct pour datas d'un plan.
+-struct SPlane2
++// Struct for plan data.
++__attribute__((packed)) struct SPlane2
+ {
+ 	u32	nPlaneNo, nFlags, nWndPosX, nWndPosY;
+-	u32	nBlkLg, nBlkHt;			// Largeur et hauteur du plan en blocs 16. Pour Ã©ventuel remap Ã  la relecture.
+-	u8	nHasCmd;				// Sera surtout utile Ã  la lecture par le jeu, pour skipper le plan et rÃ©cupÃ©rer les monstres dans la section suivante.
++	u32	nBlkLg, nBlkHt;			// Largeur et hauteur du plan en blocs 16. Pour éventuel remap à la relecture.
++	u8	nHasCmd;				// Sera surtout utile à la lecture par le jeu, pour skipper le plan et récupérer les monstres dans la section suivante.
+ 	u8	nPad0, nPad1, nPad2;	// Padding.
+ };
+ 
+-// Struct pour datas misc. (Hum, corrigÃ©e et paddÃ©e correctement pour pack).
+-struct SMisc0
++// Struct pour datas misc. (Hum, corrigée et paddée correctement pour pack).
++__attribute__((packed)) struct SMisc0
+ {
+ 	u32	nFlags;						// gMisc.nFlags.
+ 	u8	nTransR, nTransG, nTransB;	// RGB de la couleur de transparence.
+@@ -276,48 +270,25 @@ struct SMisc0
+ #pragma pack()
+ 
+ // Lecture d'un fichier EdTile.
+-// In : No du level. On lit le fichier "lev<no>.edt" dans le rÃ©pertoire "lev<no>".
++// In : No du level. On lit le fichier "lev<no>.edt" dans le répertoire "lev<no>".
+ void LevelLoad(u32 nLevelNo)
+ {
+ 	struct SMap	*pMap = &gMap[nLevelNo];
+ 	struct SLoadedMst	*pMst = &gMst[nLevelNo];
+ 
+-	FILE	*fPt = NULL;
++	FILE	*fPt;
+ 	u8	*pBuf = NULL;	// Pour lire les containers.
+ 	u8	*pCur;
+ 	u32	nSz;
++	u32	j, k;
+ 	u32	nType;
+ 	u32	nMapSection = 0;	// Flag, on doit trouver une section map avant de trouver des plans.
+-	u32	nPlaneNext = 0;		// Pour controler l'ordre de lecture des plans. Doit Ãªtre dans l'ordre.
++	u32	nPlaneNext = 0;		// Pour controler l'ordre de lecture des plans. Doit être dans l'ordre.
+ 
+ //	struct SMap0	sMap;
+-	u32	sMap_nPlanesNb;
+-	u32	nPlaneSav_BlkLg, nPlaneSav_BlkHt;	// Lg et Ht de la planche sauvÃ©e dans le EDT.
+-	u32	j, k;
+-
+-/*
+-	//char	*pBufTxt;
+-	u32	j, k;
+-	//char	pFilename[256];
+-	//CPlane	*pPlane;
++	u32	nPlaneSav_BlkLg, nPlaneSav_BlkHt;	// Lg et Ht de la planche sauvée dans le EDT.
+ 
+-	char	pDir[256];	// Pour crÃ©er le nom du rÃ©pertoire, Ã  ajouter avant les noms de fichiers.
+-*/
+ 	char	pLevFilename[256];	// Nom du fichier, prÃ©cÃ©dÃ© du rÃ©pertoire.
+-/*
+-	char	pFilename[256];		// Noms de fichiers annexes Ã  lire (planches...).
+-
+-
+-	// RAZ monstres.
+-	gLoadedMst.nMstNbInList = 0;
+-	gLoadedMst.pMstData = NULL;
+-	gLoadedMst.ppMstPtrX = NULL;
+-	gLoadedMst.ppMstPtrY = NULL;
+-	gLoadedMst.pMstState = NULL;
+-	gLoadedMst.nMstRechIdxX = 0;
+-	gLoadedMst.nMstRechIdxY = 0;
+-
+-*/
+ 
+ 
+ // non, plus lÃ . dans scroll init ?
+@@ -327,7 +298,7 @@ void LevelLoad(u32 nLevelNo)
+ //nPlayerPosX = (2 * TILE_W) + (TILE_W / 2);
+ //nPlayerPosY = (GND_BLK_HT * TILE_H) / 2;
+ 
+-	// CrÃ©ation du nom du rÃ©pertoire et du nom de fichier.
++	// Création du nom du répertoire et du nom de fichier.
+ /*
+ 	snprintf(pDir, sizeof(pDir), "lev%d/", (int)nLevelNo);
+ 	snprintf(pLevFilename, sizeof(pLevFilename), "%slev%d.edt", pDir, (int)nLevelNo);
+@@ -343,7 +314,7 @@ void LevelLoad(u32 nLevelNo)
+ 		fprintf(stderr, "LevelLoad(): Error opening file '%s'.\n", pLevFilename);
+ 		goto _ll_fatal;
+ 	}
+-	// RÃ©cupÃ©ration de la taille du fichier. (Note : Les containers sont lus un par un, donc on alloue dÃ©jÃ  trop, mais c'est pas bien grave).
++	// Récupération de la taille du fichier. (Note : Les containers sont lus un par un, donc on alloue déjà trop, mais c'est pas bien grave).
+ 	s32	nFileSzToLoad;
+ 	fseek(fPt, 0L, SEEK_END);
+ 	nFileSzToLoad = ftell(fPt);
+@@ -359,27 +330,27 @@ void LevelLoad(u32 nLevelNo)
+ 	}
+ 
+ 
+-	// En-tÃªte.
++	// En-tête.
+ 	fread(pBuf, 1, 5, fPt);
+-	// VÃ©rif "EDT".
++	// Vérif "EDT".
+ 	if (strncmp((char *)pBuf, "EDT", 3) != 0)
+ 	{
+ 		fprintf(stderr, "LevelLoad(): Wrong header.\n");
+ 		goto _ll_fatal;
+ 	}
+-	// VÃ©rif version du fichier.
+-	if (*(u16 *)(pBuf + 3) != 0x0100)
++	// Vérif version du fichier.
++	u16 nVersion;
++	memcpy(&nVersion, pBuf + 3, sizeof(nVersion));
++	if (nVersion != 0x100)
+ 	{
+ 		fprintf(stderr, "LevelLoad(): Unknown file version.\n");
+ 		goto _ll_fatal;
+ 	}
++
+ #ifdef DEBUG_INFO
+ 	printf("Header ok.\n");
+ #endif
+ 
+-/*
+-	gMap.nHeroPlane = 0;	// RAZ du plan de ref, au cas ou il n'y ait pas de monstres ?
+-*/
+ 	pMap->nPlanesNb = 0;		// RAZ du nombre de plans lus.
+ 	pMap->pMapBlocks = NULL;
+ 	//
+@@ -391,14 +362,18 @@ void LevelLoad(u32 nLevelNo)
+ 	// Lecture des containers.
+ 	while (1)
+ 	{
++		struct SContainer0 *scont0;
++
+ 		// Lecture du container.
+ 		nSz = fread(pBuf, 1, sizeof(struct SContainer0), fPt);
+ 		if (nSz != sizeof(struct SContainer0)) break;
+ 
+-		nSz = ((struct SContainer0 *)pBuf)->nSz;
+-		nType = ((struct SContainer0 *)pBuf)->nType;
++		scont0 = (struct SContainer0 *)pBuf;
++
++		nSz = scont0->nSz;
++		nType = scont0->nType;
+ 
+-		// Lecture des donnÃ©es.
++		// Lecture des données.
+ 		nSz -= sizeof(struct SContainer0);
+ 		fread(pBuf, 1, nSz, fPt);
+ 
+@@ -413,30 +388,25 @@ void LevelLoad(u32 nLevelNo)
+ 				printf("Duplicate map section found! Section ignored.\n");
+ 				break;
+ 			}
++			struct SMap0 *map0 = (struct SMap0 *) pBuf;
+ //			printf("lg=%d / ht=%d / posx=%d / posy=%d / nbpln=%d / firstwnd=%d / activepln=%d\n",
+-//			(int)((struct SMap0 *)pBuf)->nMapLg, (int)((struct SMap0 *)pBuf)->nMapHt,
+-//			(int)((struct SMap0 *)pBuf)->nMapPosX, (int)((struct SMap0 *)pBuf)->nMapPosY,
+-//			(int)((struct SMap0 *)pBuf)->nPlanesNb, (int)((struct SMap0 *)pBuf)->nFirstWnd, (int)((struct SMap0 *)pBuf)->nActivePlane);
+-
+-			pMap->nMapLg = ((struct SMap0 *)pBuf)->nMapLg;
+-			pMap->nMapHt = ((struct SMap0 *)pBuf)->nMapHt;
+-			//gMap.nMapPosX = ((SMap0 *)pBuf)->nMapPosX;
+-			//gMap.nMapPosY = ((SMap0 *)pBuf)->nMapPosY;
++//			(int)map0->nMapLg, (int)map0->nMapHt,
++//			(int)map0->nMapPosX, (int)map0->nMapPosY,
++//			(int)map0->nPlanesNb, (int)map0->nFirstWnd, (int)map0->nActivePlane);
++
++			pMap->nMapLg = map0->nMapLg;
++			pMap->nMapHt = map0->nMapHt;
++			//gMap.nMapPosX = map0->nMapPosX;
++			//gMap.nMapPosY = map0->nMapPosY;
+ 			// Pour plus tard.
+-			sMap_nPlanesNb = ((struct SMap0 *)pBuf)->nPlanesNb;
+-			//sMap.nFirstWnd = ((SMap0 *)pBuf)->nFirstWnd;
+-			//sMap.nActivePlane = ((SMap0 *)pBuf)->nActivePlane;
++			//sMap_nPlanesNb = map0->nPlanesNb;
++			//sMap.nFirstWnd = map0->nFirstWnd;
++			//sMap.nActivePlane = map0->nActivePlane;
+ 
+ #ifdef DEBUG_INFO
+-			printf("lg=%d / ht=%d / nb pln=%d\n", (int)pMap->nMapLg, (int)pMap->nMapHt, (int)sMap_nPlanesNb);
++			printf("lg=%d / ht=%d / nb pln=%d\n", (int)pMap->nMapLg, (int)pMap->nMapHt, map0->nPlanesNb);
+ #endif
+ 
+-/*
+-			// Par dÃ©faut, position de dÃ©part du joueur.
+-			gMap.nPlayerStartPosX = 5;//gMap.nMapLg / 2;
+-			gMap.nPlayerStartPosY = 5;//gMap.nMapHt - 2;
+-			*/
+-
+ 			nMapSection = 1;	// Flag.
+ 			break;
+ 
+@@ -449,10 +419,11 @@ void LevelLoad(u32 nLevelNo)
+ 				printf("> Plane section found prior to map section! Section ignored.\n");
+ 				break;
+ 			}
++			struct SPlane2 *splane2 = (struct SPlane2 *)pBuf;
+ //			printf("plnno=%d / flags=%d / wposx=%d / wposy=%d\n",
+-//			(int)((SPlane2 *)pBuf)->nPlaneNo, (int)((SPlane2 *)pBuf)->nFlags,
+-//			(int)((SPlane2 *)pBuf)->nWndPosX, (int)((SPlane2 *)pBuf)->nWndPosY);
+-			if (((struct SPlane2 *)pBuf)->nPlaneNo != nPlaneNext)
++//			(int)splane2->nPlaneNo, (int)splane2->nFlags,
++//			(int)splane2->nWndPosX, (int)splane2->nWndPosY);
++			if (splane2->nPlaneNo != nPlaneNext)
+ 			{
+ 				printf("> Plane section: Wrong plane number found. Section ignored.\n");
+ 				break;
+@@ -469,7 +440,7 @@ void LevelLoad(u32 nLevelNo)
+ 			}
+ 
+ 			// Si c'est un plan de monstres, skip.
+-			if (((struct SPlane2 *)pBuf)->nHasCmd)
++			if (splane2->nHasCmd)
+ 			{
+ #ifdef DEBUG_INFO
+ 				printf("> Plane section: Monsters planes, skipped.\n");
+@@ -479,151 +450,14 @@ void LevelLoad(u32 nLevelNo)
+ 			}
+ 
+ 
+-/*
+-			// Si c'est un plan de monstres, on recherche les chemins, puis break.
+-			// On va sÃ©parer les chemins de type air et les chemins de type sol.
+-			if (((struct SPlane2 *)pBuf)->nHasCmd)
+-			{
+-#ifdef DEBUG_INFO
+-				printf("Plane section: Monsters plane: Searching path blocks.\n");
+-#endif
+-				//
+-				pCur = pBuf + sizeof(struct SPlane2);
+-				j = *pCur;
+-				pCur++;
+-				pCur += j;
+-				// Passe 1 : On compte le nombre de blocs de type 'chemin'.
+-				gMap.nPathGndNb = 0;
+-				gMap.nPathAirNb = 0;
+-				for (j = 0; j < gMap.nMapLg * gMap.nMapHt; j++)
+-				{
+-					// Au passage, note la position de dÃ©part du hÃ©ros.
+-					if (*(((s32 *)pCur) + j) == MAP_BLK_HERO)
+-					{
+-						u32	nBlX, nBlY;
+-						nBlY = j / gMap.nMapLg;
+-						nBlX = j - (nBlY * gMap.nMapLg);
+-						gMap.nPlayerStartPosX = nBlX;
+-						gMap.nPlayerStartPosY = nBlY;
+-						gMap.nHeroPlane = gMap.nPlanesNb - 1;	// -1 car le plan des monstres est le plan suivant ! Donc gMap.nPlanesNb a dÃ©jÃ  Ã©tÃ© incrÃ©mentÃ©.
+-#ifdef DEBUG_INFO
+-printf("Hero at (%d, %d), Ref Plane #%d.\n", (int)gMap.nPlayerStartPosX, (int)gMap.nPlayerStartPosY, (int)gMap.nHeroPlane);
+-#endif
+-					}
+-					// Bloc de chemin ?
+-					if (*(((s32 *)pCur) + j) >= MAP_BLK_PATH_GND_MIN && *(((s32 *)pCur) + j) <= MAP_BLK_PATH_GND_MAX) gMap.nPathGndNb++;
+-					if (*(((s32 *)pCur) + j) >= MAP_BLK_PATH_AIR_MIN && *(((s32 *)pCur) + j) <= MAP_BLK_PATH_AIR_MAX) gMap.nPathAirNb++;
+-				}
+-#ifdef DEBUG_INFO
+-printf("Path search : gnd = %d / air = %d\n", (int)gMap.nPathGndNb, (int)gMap.nPathAirNb);
+-#endif
+-				// Passe 2 : Malloc.
+-				gMap.pPath = NULL;
+-				gMap.pPathGnd = NULL;
+-				gMap.pPathAir = NULL;
+-				if (gMap.nPathGndNb + gMap.nPathAirNb)
+-				{
+-					if ((gMap.pPath = (struct SPathBlock *)malloc((gMap.nPathGndNb + gMap.nPathAirNb) * sizeof(struct SPathBlock))) == NULL)
+-					{
+-						fprintf(stderr, "LoadLevel(): Path: malloc failed.\n");
+-						exit(1);
+-					}
+-					if (gMap.nPathGndNb) gMap.pPathGnd = gMap.pPath;
+-					if (gMap.nPathAirNb) gMap.pPathAir = gMap.pPath + gMap.nPathGndNb;
+-					//
+-					u32	kGnd = 0, kAir = 0;
+-					for (j = 0; j < gMap.nMapLg * gMap.nMapHt; j++)
+-					{
+-						u32	nBlX, nBlY;
+-						struct SPathBlock	*pPathBlk;
+-						u16	nBlockNo;
+-
+-						pPathBlk = NULL;
+-						nBlockNo = (u16)-1;
+-						if (*(((s32 *)pCur) + j) >= MAP_BLK_PATH_GND_MIN && *(((s32 *)pCur) + j) <= MAP_BLK_PATH_GND_MAX)
+-						{
+-							nBlockNo = *(((s32 *)pCur) + j) - MAP_BLK_PATH_GND_MIN;
+-							pPathBlk = &gMap.pPathGnd[kGnd];
+-							kGnd++;
+-#ifdef DEBUG_INFO
+-printf("Path GND : ");
+-#endif
+-						}
+-						if (*(((s32 *)pCur) + j) >= MAP_BLK_PATH_AIR_MIN && *(((s32 *)pCur) + j) <= MAP_BLK_PATH_AIR_MAX)
+-						{
+-							nBlockNo = *(((s32 *)pCur) + j) - MAP_BLK_PATH_AIR_MIN;
+-							pPathBlk = &gMap.pPathAir[kAir];
+-							kAir++;
+-#ifdef DEBUG_INFO
+-printf("Path Air : ");
+-#endif
+-						}
+-						if (nBlockNo != (u16)-1)
+-						{
+-							nBlY = j / gMap.nMapLg;
+-							nBlX = j - (nBlY * gMap.nMapLg);
+-							pPathBlk->nPosX = nBlX;
+-							pPathBlk->nPosY = nBlY;
+-							pPathBlk->nBlockNo = nBlockNo;
+-#ifdef DEBUG_INFO
+-printf("Path: (%d, %d) Blk:%d.\n", (int)pPathBlk->nPosX, (int)pPathBlk->nPosY, (int)pPathBlk->nBlockNo);
+-#endif
+-						}
+-
+-/ *
+-						if ((*(((s32 *)pCur) + j) >= 80 && *(((s32 *)pCur) + j) <= 96) ||
+-							(*(((s32 *)pCur) + j) >= 100 && *(((s32 *)pCur) + j) <= 116))
+-						{
+-							u32	nBlX, nBlY;
+-							nBlY = j / gMap.nMapLg;
+-							nBlX = j - (nBlY * gMap.nMapLg);
+-							//printf("Path: (%d, %d) Blk:%d.\n", (int)nBlX, (int)nBlY, (int)(*(((s32 *)pCur) + j)));
+-							gMap.pPath[k].nPosX = nBlX;
+-							gMap.pPath[k].nPosY = nBlY;
+-							gMap.pPath[k].nBlockNo = *(((s32 *)pCur) + j) - 80;
+-							printf("Path: (%d, %d) Blk:%d.\n", (int)gMap.pPath[k].nPosX, (int)gMap.pPath[k].nPosY, (int)gMap.pPath[k].nBlockNo);
+-							k++;
+-						}
+-* /
+-						//pCur += sizeof(s32);
+-
+-					}
+-				}
+-				//
+-				//printf("Plane section: Monsters planes, skipped.\n");
+-				nPlaneNext++;
+-				break;
+-			}
+-
+-*/
+-
+-			// On rÃ©cupÃ¨re les datas qui seront utiles plus tard.
+-			nPlaneSav_BlkLg = ((struct SPlane2 *)pBuf)->nBlkLg;
+-			nPlaneSav_BlkHt = ((struct SPlane2 *)pBuf)->nBlkHt;
++			// On récupère les datas qui seront utiles plus tard.
++			nPlaneSav_BlkLg = splane2->nBlkLg;
++			nPlaneSav_BlkHt = splane2->nBlkHt;
+ 
+ 			// Saute la struct SPlane2.
+ 			pCur = pBuf + sizeof(struct SPlane2);
+ 
+ 			// Gfx filename, skip.
+-			/*
+-			j = *pCur;
+-			pCur++;
+-			strncpy(pFilename, (char *)pCur, j);
+-			pFilename[j] = 0;
+-			pCur += j;
+-			printf("fn=%s\n", pFilename);
+-			*/
+-/*
+-			j = *pCur;
+-			pCur++;
+-			strcpy(pFilename, pDir);
+-			strncpy(pFilename + strlen(pDir), (char *)pCur, j);
+-			pFilename[strlen(pDir) + j] = 0;
+-			pCur += j;
+-#ifdef DEBUG_INFO
+-			printf("file = %s\n", pFilename);
+-#endif
+-*/
+ 			j = *pCur++;
+ 			pCur += j;
+ 
+@@ -656,7 +490,7 @@ printf("Path: (%d, %d) Blk:%d.\n", (int)
+ 			struct SPSDPicture	*pPlanche = NULL;
+ 
+ 			// On regarde l'extension du fichier.
+-			if (stricmp(pFilename + strlen(pFilename) - 3, "bmp") == 0)
++			if (strcasecmp(pFilename + strlen(pFilename) - 3, "bmp") == 0)
+ 			{
+ 				// BMP.
+ 				pGfx2 = SDL_LoadBMP(pFilename);
+@@ -666,7 +500,7 @@ printf("Path: (%d, %d) Blk:%d.\n", (int)
+ 				}
+ 			}
+ 			else
+-			if (stricmp(pFilename + strlen(pFilename) - 3, "psd") == 0)
++			if (strcasecmp(pFilename + strlen(pFilename) - 3, "psd") == 0)
+ 			{
+ 				// PSD.
+ 				pPlanche = PSDLoad(pFilename);
+@@ -720,8 +554,8 @@ printf("Path: (%d, %d) Blk:%d.\n", (int)
+ */
+ 
+ 
+-			// Une page de codes est prÃ©sente ? => Skip.
+-			if (((struct SPlane2 *)pBuf)->nFlags & e_FlgFile_Plane_Codes)
++			// Une page de codes est présente ? => Skip.
++			if (splane2->nFlags & e_FlgFile_Plane_Codes)
+ 			{
+ #ifdef DEBUG_INFO
+ 				printf("> Plane #%d, codes found. Skipped.\n", (int)pMap->nPlanesNb);
+@@ -734,19 +568,12 @@ printf("Path: (%d, %d) Blk:%d.\n", (int)
+ /*
+ 			// Une page de codes est prÃ©sente ?
+ 			*(gMap.ppColCodes + gMap.nPlanesNb) = NULL;
+-			if (((struct SPlane2 *)pBuf)->nFlags & e_FlgFile_Plane_Codes)
++			if (splane2->nFlags & e_FlgFile_Plane_Codes)
+ 			{
+ #ifdef DEBUG_INFO
+-printf("Plane #%d, codes found.\n", (int)gMap.nPlanesNb);
++				printf("Plane #%d, codes found.\n", (int)gMap.nPlanesNb);
++				printf("struct SBlockCol size: %d\n", sizeof(struct SBlockCol));
+ #endif
+-//printf("struct SBlockCol size: %d\n", sizeof(struct SBlockCol));
+-/ *struct SBlockCol
+-{
+-	u32	pHt[2];		// [0;15] * 16 => 64 bits.
+-	u16	nZero;		// 1 bit en plus pour chaque colonne.
+-
+-	u8	nCol;		// Code de collision.
+-};* /
+ 
+ 				// Malloc des codes des blocs.
+ 				//if ((*(gMap.ppColCodes + gMap.nPlanesNb) = (u8 *)malloc(nPlaneSav_BlkLg * nPlaneSav_BlkHt * sizeof(u8))) == NULL)
+@@ -785,7 +612,7 @@ printf("Plane #%d, codes found.\n", (int
+ 							for (ri = 0; ri < 16; ri++)
+ 							{
+ 
+-								// Plafond ? On fait un NOT sur la hauteur (On sauve les hauteurs du nÃ©gatif du bloc).
++								// Plafond ? On fait un NOT sur la hauteur (On sauve les hauteurs du négatif du bloc).
+ 								if ((nCode & 0x0F) == e_BlockCode_Ceiling)
+ 								{
+ 									for (rj = 0; rj < 16; rj++)
+@@ -815,7 +642,7 @@ nCode, (*(pCodes + (k * nPlaneSav_BlkLg)
+ 				// Avance le pointeur.
+ 				pCur += nPlaneSav_BlkLg * nPlaneSav_BlkHt;
+ 			}
+-			// Si nÃ©cessaire, libÃ¨re les ressources du PSD.
++			// Si nécessaire, libère les ressources du PSD.
+ 			if (pPlanche != NULL)
+ 			{
+ 				free(pPlanche->pPlanes);
+@@ -825,12 +652,7 @@ nCode, (*(pCodes + (k * nPlaneSav_BlkLg)
+ 
+ 
+ 
+-//	 = NULL;		// Lg x Ht.
+-
+-
+-
+ 			// Malloc des blocs.
+-//			if ((*(gMap.ppPlanesBlocks + gMap.nPlanesNb) = (s32 *)malloc(gMap.nMapLg * gMap.nMapHt * sizeof(s32))) == NULL)
+ 			if ((pMap->pMapBlocks = (u8 *)malloc(pMap->nMapLg * pMap->nMapHt * sizeof(u8))) == NULL)
+ 			{
+ 				fprintf(stderr, "LevelLoad(): malloc failed / Plane %d.\n", (int)pMap->nPlanesNb);
+@@ -853,90 +675,12 @@ nCode, (*(pCodes + (k * nPlaneSav_BlkLg)
+ 				pCur += sizeof(s32);
+ 			}
+ 
+-/*
+-/ *
+-//> v.1.0 - ok. Il faut rajouter la dÃ©tection des tailles des plans.
+-			// Lecture des blocs.
+-			for (j = 0; j < gMap.nMapLg * gMap.nMapHt; j++)
+-			{
+-				*(*(gMap.ppPlanesBlocks + gMap.nPlanesNb) + j) = *(s32 *)pCur;	// < On pourrait tester les nÂ°s de blocs ici (cÃ d que Ã§a ne dÃ©passe pas le nÂ° maximum du bloc de la planche).
+-				// Tests sur les nÂ°s de blocs.
+-				if (*(s32 *)pCur == -1)
+-				{
+-					u32	nBlX, nBlY;
+-					nBlY = j / gMap.nMapLg;
+-					nBlX = j - (nBlY * gMap.nMapLg);
+-					fprintf(stderr, "LoadLevel(): Plane %d : Empty bloc found (%d, %d).\n", (int)gMap.nPlanesNb, (int)nBlX, (int)nBlY);
+-					exit(1);
+-				}
+-				pCur += sizeof(s32);
+-			}
+-//< v.1.0
+-* /
+-
+-//> v.2.0
+-			// Lecture des blocs.
+-			memcpy(*(gMap.ppPlanesBlocks + gMap.nPlanesNb), pCur, gMap.nMapLg * gMap.nMapHt * 4);
+-			{
+-			// Recherche de la largeur et de la hauteur du plan.
+-				u32	ri, rj;
+-				for (ri = 0; ri < gMap.nMapLg; ri++) if (*(*(gMap.ppPlanesBlocks + gMap.nPlanesNb) + ri) == -1) break;
+-				for (rj = 0; rj < gMap.nMapHt; rj++) if (*(*(gMap.ppPlanesBlocks + gMap.nPlanesNb) + (rj * gMap.nMapLg)) == -1) break;
+-				// Size ok ?
+-				if (ri == 0 || rj == 0)
+-				{
+-					fprintf(stderr, "LoadLevel(): Plane %d: Null plane size found! (w=%d, h=%d). Aborted.\n", (int)gMap.nPlanesNb, (int)ri, (int)rj);
+-					exit(1);
+-				}
+-				// Sauvegarde.
+-				gMap.pPlanesLg[gMap.nPlanesNb] = ri;	// Largeur et hauteur de chaque plan en blocs 16, dans une surface de nMapLg * nMapHt.
+-				gMap.pPlanesHt[gMap.nPlanesNb] = rj;
+-#ifdef DEBUG_INFO
+-printf("Plane #%d, lg=%d, ht=%d\n", (int)gMap.nPlanesNb, (int)gMap.pPlanesLg[gMap.nPlanesNb], (int)gMap.pPlanesHt[gMap.nPlanesNb]);
+-#endif
+-
+-			// Recherche des cases vides dans la zone valide (il ne doit pas y en avoir).
+-				for (rj = 0; rj < gMap.pPlanesHt[gMap.nPlanesNb]; rj++)
+-				for (ri = 0; ri < gMap.pPlanesLg[gMap.nPlanesNb]; ri++)
+-				if (*(*(gMap.ppPlanesBlocks + gMap.nPlanesNb) + (rj * gMap.nMapLg) + ri) == -1)
+-				{
+-					fprintf(stderr, "LoadLevel(): Plane %d: Empty bloc found at (%d, %d). Aborted.\n", (int)gMap.nPlanesNb, (int)ri, (int)rj);
+-					exit(1);
+-				}
+-
+-// Faire une passe pour transformer les -1 des bords en 0 ? (au cas ou le scroll afficherait en dehors des blocs ?)
+-
+-			}
+-//< v.2.0
+-
+-
+-/ *
+-			// Ajout du plan.
+-			gMap.PlaneAdd(pFilename);
+-
+-			// Misc datas.
+-			pPlane = *(gMap.ppPlanes + ((SPlane2 *)pBuf)->nPlaneNo);
+-			pPlane->nPlaneNo = ((SPlane2 *)pBuf)->nPlaneNo;
+-			pPlane->nFlags = ((SPlane2 *)pBuf)->nFlags;
+-			pPlane->nWndPosX = ((SPlane2 *)pBuf)->nWndPosX;
+-			pPlane->nWndPosY = ((SPlane2 *)pBuf)->nWndPosY;
+-			//((SPlane2 *)pBuf)->nWndPosY->nHasCmd
+-
+-			// Le plan.
+-			for (j = 0; j < gMap.nMapLg * gMap.nMapHt; j++)
+-			{
+-				*(pPlane->pPlane + j) = *(s32 *)pCur;	// < On pourrait tester les nos de blocs ici.
+-				pCur += sizeof(s32);
+-			}
+-* /
+-*/
+-
+ 			pMap->nPlanesNb++;	// Un plan en plus.
+ 			// Le prochain qui arrivera devrait Ãªtre le...
+ 			nPlaneNext++;
+ 			break;
+ 
+-		case e_FileSection_Cmd:		// On rajoute le fichier de commandes au dernier plan ajoutÃ©.
++		case e_FileSection_Cmd:		// On rajoute le fichier de commandes au dernier plan ajouté.
+ #ifdef DEBUG_INFO
+ 			printf("Cmd section\n");
+ #endif
+@@ -956,46 +700,16 @@ printf("Plane #%d, lg=%d, ht=%d\n", (int
+ 			pCur = pBuf;
+ 
+ 			j = *pCur++;
+-			pCur += j + 4;
+-			j = *(u32 *)pCur;
+-			pCur += 4 + j;
+-
+-/*
+-			j = *pCur;
+-			pCur++;
+-			//- strncpy(pFilename, (char *)pCur, j);
+-			//- pFilename[j] = 0;
+ 			pCur += j;
+-//			printf("cmd fn=%s\n", pFilename);
++			pCur += 4; /* skip date */
+ 
+-			//- nDate = *(u32 *)pCur;
+-			pCur += 4;
+-//			printf("cmd date=%d\n", (int)nDate);
+-
+-			j = *(u32 *)pCur;
+-			pCur += 4;
+-/ *
+-			//printf("sz=%d\n",(int)j);
+-			// Malloc du buffer de lecture.
+-			if ((pBufTxt = (char *)malloc(j + 1)) == NULL)
+-			{
+-				printf("Load/cmd : malloc failed.\n");
+-				break;
+-			}
+-			strncpy(pBufTxt, (char *)pCur, j);
+-			pBufTxt[j] = 0;
+-* /
+-			pCur += j;
+-			//printf("cmd file:\n%s\n", pBufTxt);
+-			//- // Ajoute le fichier de commandes au dernier plan.
+-			//- gMap.PlaneCmdfileAddFromBuf(gMap.nPlanesNb - 1, pFilename, pBufTxt, nDate);
+-			//- free(pBufTxt);
+-*/
++			j = *(u32 *)pCur; /* size */
++			pCur += 4 + j;
+ 
+ 			// On arrive aux monstres. On va stocker la liste directement.
+ 
+-			// u32 : Nb de monstres.
+-			// x : Datas des monstres, les uns Ã  la suite des autres : SMst0 + x bytes de data.
++			// u32 : Number of monsters.
++			// x : Datas des monstres, les uns à la suite des autres : SMst0 + x bytes de data.
+ 			j = *(u32 *)pCur;
+ 			pCur += 4;
+ 
+@@ -1004,27 +718,6 @@ printf("Plane #%d, lg=%d, ht=%d\n", (int
+ 			printf("nb bytes to read: %d\n", (int)((pBuf + nSz) - pCur));
+ #endif
+ 
+-/*
+-#pragma pack(1)
+-struct SMstEdt0
+-{
+-	u32	nPosX, nPosY;
+-	u16	nMstNo;		// = No du bloc.
+-	u16	nNbBytes;	// Nb de bytes utilisÃ©s.
+-};
+-#pragma pack()
+-
+-struct SMst0
+-{
+-	u32	nPosX, nPosY;
+-	u16	nMstNo;		// = No du bloc.
+-	u16	nNbBytes;	// Nb de bytes utilisÃ©s.
+-	u16	nIdx;		// Index du monstre, pour taper dans table pMstState.
+-	u16 _padding;
+-};
+-*/
+-
+-
+ 			// Allocations.
+ 			if ((pMst->pMstData = (u8 *)malloc( ((pBuf + nSz) - pCur) + (j * (sizeof(struct SMst0) - sizeof(struct SMstEdt0))) ) ) == NULL)	// Pour insertion nÂ° ordre.
+ 			{
+@@ -1081,12 +774,15 @@ struct SMst0
+ 				while (nb)
+ 				{
+ 					// Header.
+-					memcpy(pDstPt, pSrcPt, sizeof(struct SMstEdt0));
++					struct SMst0 *mst0 = (struct SMst0 *)pDstPt;
++					struct SMstEdt0 *emst0 = (struct SMstEdt0 *)pSrcPt;
++					mst0->nPosX = emst0->nPosX;
++					mst0->nPosY = emst0->nPosY;
++					mst0->nMstNo = emst0->nMstNo;
++					mst0->nNbBytes = emst0->nNbBytes;
+ 					pSrcPt += sizeof(struct SMstEdt0);
+-//					(*(struct SMst0 *)pDstPt).nIdx = k;		// Le fameux nÂ° d'ordre.
+-//					m = (*(struct SMst0 *)pDstPt).nNbBytes;	// Nb de bytes de datas.
+-					((struct SMst0 *)pDstPt)->nIdx = k;		// Le fameux nÂ° d'ordre.
+-					m = ((struct SMst0 *)pDstPt)->nNbBytes;	// Nb de bytes de datas.
++					mst0->nIdx = k;		// Le fameux n° d'ordre.
++					m = mst0->nNbBytes;	// Nb de bytes de datas.
+ 					pDstPt += sizeof(struct SMst0);
+ 					// Datas.
+ 					memcpy(pDstPt, pSrcPt, m);
+@@ -1288,7 +984,7 @@ void Loader_BlocksLoad(char *pFilename,
+ 
+ 
+ 	// On regarde l'extension du fichier.
+-	if (stricmp(pFilename + strlen(pFilename) - 3, "bmp") == 0)
++	if (strcasecmp(pFilename + strlen(pFilename) - 3, "bmp") == 0)
+ 	{
+ 		// BMP.
+ 		pTemp = SDL_LoadBMP(pFilename);
+@@ -1299,7 +995,7 @@ void Loader_BlocksLoad(char *pFilename,
+ 		}
+ 	}
+ 	else
+-	if (stricmp(pFilename + strlen(pFilename) - 3, "psd") == 0)
++	if (strcasecmp(pFilename + strlen(pFilename) - 3, "psd") == 0)
+ 	{
+ 		// PSD.
+ 		pTemp = PSDLoadToSDLSurf(pFilename);
+diff -rupN metrocross.orig/metrocross0/main.c metrocross.new/metrocross0/main.c
+--- metrocross.orig/metrocross0/main.c	2016-09-28 11:46:22.000000000 +0200
++++ metrocross.new/metrocross0/main.c	2023-12-10 13:47:53.012733175 +0100
+@@ -1,4 +1,3 @@
+-
+ // Metro-Cross.
+ // Code: Clement '17o2!!' CORDE
+ // Contact: Clement CORDE, c1702@yahoo.com
+@@ -21,19 +20,6 @@ struct SGene gVar;
+ 
+ //=============================================================================
+ 
+-/*
+-#if defined(__LINUX__) || defined(__APPLE__)
+-#include <strings.h>
+-// stricmp n'existe pas en Linux : C'est strcasecmp Ã  la place, dans strings.h.
+-int stricmp(char *pStr1, char *pStr2)
+-{
+-	return (strcasecmp(pStr1, pStr2));
+-}
+-#endif
+-*/
+-
+-//=============================================================================
+-
+ struct SCheatCodes	gCCodes;
+ 
+ // Cheat codes - Reset de la saisie.
+@@ -122,7 +108,7 @@ void CheatCodes_Display(void)
+ 			if (i == 0)
+ 			{
+ 				pStr[nIdx] = '(';
+-				snprintf(&pStr[nIdx+1], 3, "%02d", gCCodes.nLevel + 1);
++				sprintf(&pStr[nIdx+1], "%02d", gCCodes.nLevel + 1);
+ 				pStr[nIdx+3] = ')';
+ 				nIdx += 4;
+ 				pStr[nIdx] = 0;
+@@ -887,10 +873,12 @@ void CmdLine_Search(int argc, char **arg
+ 		char	*pPrm = argv[i++];
+ //		printf("%s\n", pPrm);
+ 		if (*pPrm == '-' || *pPrm == '/') pPrm++;
+-		if (stricmp(pPrm, "nogl") == 0)
++		if (strcasecmp(pPrm, "nogl") == 0)
+ 		{
+ //			printf("nogl found!\n");
++#ifdef Use_OPENGL
+ 			gRender.nUseGL = 0;
++#endif
+ 			return;
+ 		}
+ 	}
+@@ -904,7 +892,9 @@ int main(int argc, char **argv)
+ 	u32	nLoop;
+ 	u32	nMenuVal;
+ 
++#ifdef Use_OPENGL
+ 	gRender.nUseGL = 1;
++#endif
+ 	CmdLine_Search(argc, argv);		// Cherche pour 'nogl' dans les arguments.
+ 
+ /*
+@@ -939,12 +929,13 @@ int main(int argc, char **argv)
+ //printf("bits pp = %d / v=%d\n", pVideoInfo->vfmt->BitsPerPixel, gRender.nRenderBPP);
+ //printf("bytes pp = %d\n", pVideoInfo->vfmt->BytesPerPixel);
+ #endif
++#if 0
+ 	int	nOrgW, nOrgH, nOrgBitsPerPixel;
+ 	nOrgW = pVideoInfo->current_w;
+ 	nOrgH = pVideoInfo->current_h;
+ 	nOrgBitsPerPixel = pVideoInfo->vfmt->BitsPerPixel;
+-//fprintf(stderr, "Original resolution: %d x %d - %d BPP\n", nOrgW, nOrgH, nOrgBitsPerPixel);
+-
++	fprintf(stderr, "Original resolution: %d x %d - %d BPP\n", nOrgW, nOrgH, nOrgBitsPerPixel);
++#endif
+ 
+ 
+ 	// Video mode init.
+@@ -1215,7 +1206,8 @@ nMenuVal = MENU_Quit;
+ 	Render_Release();
+ 
+ 
+-#if defined(__LINUX__)
++#if defined(__linux__)
++#ifdef Use_OPENGL
+ if (gRender.nUseGL)
+ {
+ fprintf(stderr, "***\nTo Linux users:\n\
+@@ -1223,6 +1215,7 @@ Please enter the following command if th
+ xrandr -s %dx%d\n", nOrgW, nOrgH);
+ }
+ #endif
++#endif
+ 
+ 
+ 	SDL_Quit();
+diff -rupN metrocross.orig/metrocross0/menu.c metrocross.new/metrocross0/menu.c
+--- metrocross.orig/metrocross0/menu.c	2013-12-12 22:32:02.000000000 +0100
++++ metrocross.new/metrocross0/menu.c	2023-12-10 17:51:49.317935271 +0100
+@@ -572,7 +572,7 @@ u32 MenuCongratulations_Main(void)
+ #define	HISC_DefaultName	"UNKNOWN RUNNER"
+ 
+ #pragma pack(1)
+-struct SScore
++__attribute__((packed)) struct SScore
+ {
+ 	char	pName[HISC_NameLg];
+ 	u32	nScore;
+@@ -880,11 +880,13 @@ s32 Scr_PutNameInTable(char *pName, u32
+ 	// DÃ©calage de la table.
+ 	for (i = HISC_Nb - 2; i >= nRank; i--)
+ 	{
++		memset(&gpHighScores[i + 1], 0, sizeof(gpHighScores[i + 1]));
+ 		strcpy(gpHighScores[i + 1].pName, gpHighScores[i].pName);
+ 		gpHighScores[i + 1].nScore = gpHighScores[i].nScore;
+ 		gpHighScores[i + 1].nRound = gpHighScores[i].nRound;
+ 	}
+ 	// Le score Ã  insÃ©rer.
++	memset(&gpHighScores[nRank], 0, sizeof(gpHighScores[nRank]));
+ 	strcpy(gpHighScores[nRank].pName, pName);
+ 	gpHighScores[nRank].nScore = nScore;
+ 	gpHighScores[nRank].nRound = nRound;
+@@ -900,6 +902,7 @@ void Scr_RazTable(void)
+ 
+ 	for (i = 0; i < HISC_Nb; i++)
+ 	{
++		memset(&gpHighScores[i], 0, sizeof(gpHighScores[i]));
+ 		strcpy(gpHighScores[i].pName, pDefStr);
+ 		gpHighScores[i].nScore = 0;
+ 	}
+diff -rupN metrocross.orig/metrocross0/menu.h metrocross.new/metrocross0/menu.h
+--- metrocross.orig/metrocross0/menu.h	2013-12-07 11:56:06.000000000 +0100
++++ metrocross.new/metrocross0/menu.h	2023-12-10 14:28:02.873426948 +0100
+@@ -71,7 +71,7 @@ enum
+ };
+ 
+ #pragma pack(1)
+-struct SMetroCfg
++__attribute__((packed)) struct SMetroCfg
+ {
+ 	u16	pKeys[e_CfgKey_MAX];
+ 	u16	nVideoMode;			// 0 = 320x224 / 1 = x2 / 2 = TV2x.
+diff -rupN metrocross.orig/metrocross0/render.c metrocross.new/metrocross0/render.c
+--- metrocross.orig/metrocross0/render.c	2013-12-11 13:16:49.000000000 +0100
++++ metrocross.new/metrocross0/render.c	2023-12-10 13:40:20.293317701 +0100
+@@ -142,12 +142,14 @@ void R2x_32_CalculateCLUT(void)
+ */
+ 
+ //> *** BPP Solution 3. Ok partout, mais la manip dans InitVideo n'est pas trÃ¨s jolie...
++#ifdef Use_OPENGL
+ if (gRender.nUseGL)
+ {
+ 	pSrc = gVar.pScreen;
+ 	pDst = gRender.pSdlGlBuffer;
+ }
+ else
++#endif
+ {
+ 	pSrc = SDL_CreateRGBSurface(SDL_SWSURFACE, SCR_Width, SCR_Height, 16, gRender.pScreenBuf2->format->Rmask, gRender.pScreenBuf2->format->Gmask, gRender.pScreenBuf2->format->Bmask, 0);
+ 	pDst = SDL_CreateRGBSurface(SDL_SWSURFACE, SCR_Width, SCR_Height, 32, gVar.pScreen->format->Rmask, gVar.pScreen->format->Gmask, gVar.pScreen->format->Bmask, 0);
+@@ -169,7 +171,9 @@ else
+ 		gpTV2x_32_CLUT[i] = SDL_MapRGB(pDst->format, r, g, b);
+ 	}
+ 
++#ifdef Use_OPENGL
+ if (gRender.nUseGL == 0)
++#endif
+ {
+ 	SDL_FreeSurface(pSrc);
+ 	SDL_FreeSurface(pDst);
+@@ -288,6 +292,7 @@ typedef void (*pRenderFct)(SDL_Surface *
+ void Render_Flip(u32 nSync)
+ {
+ 
++#ifdef Use_OPENGL
+ if (gRender.nUseGL)
+ {
+ 
+@@ -385,6 +390,7 @@ if (gRender.nRenderMode == e_RenderMode_
+ 
+ }
+ else
++#endif
+ {
+ 
+ #if defined(RENDER_BPP)
+@@ -425,7 +431,9 @@ SDL_Surface * VideoModeSet(u32 nScrWidth
+ SDL_Surface * VideoModeSet(u32 nScrWidth, u32 nScrHeight, u32 nSDL_Flags)
+ #endif
+ {
++#ifdef Use_OPENGL
+ 	if (gRender.nUseGL) return NULL;
++#endif
+ 
+ 	SDL_Surface *pSurf;
+ 
+@@ -446,6 +454,7 @@ SDL_Surface * VideoModeSet(u32 nScrWidth
+ // Met le mode video qui va bien.
+ void Render_SetVideoMode(void)
+ {
++#ifdef Use_OPENGL
+ #if defined(GL_TV2x)
+ 	if (gRender.nUseGL)
+ 	{
+@@ -456,6 +465,7 @@ void Render_SetVideoMode(void)
+ #else
+ 	if (gRender.nUseGL) return;
+ #endif
++#endif
+ 
+ 	switch (gRender.nRenderMode)
+ 	{
+@@ -515,6 +525,7 @@ void Colors_Precalculate(void)
+ void Render_InitVideo(void)
+ {
+ 
++#ifdef Use_OPENGL
+ if (gRender.nUseGL)
+ {
+ 
+@@ -665,6 +676,7 @@ glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+ 
+ }
+ else
++#endif
+ {
+ 
+ 	gRender.nRenderMode = e_RenderMode_Normal;
+@@ -716,6 +728,7 @@ else
+ // LibÃ¨re les ressources du rendu. (1 fois !).
+ void Render_Release(void)
+ {
++#ifdef Use_OPENGL
+ if (gRender.nUseGL)
+ {
+ 	SDL_FreeSurface(gVar.pScreen);
+@@ -724,6 +737,7 @@ if (gRender.nUseGL)
+ 	glDeleteTextures(1, &gRender.nGlTextureId);
+ }
+ else
++#endif
+ {
+ 	SDL_FreeSurface(gRender.pScreenBuf2);
+ }
+diff -rupN metrocross.orig/metrocross0/render.h metrocross.new/metrocross0/render.h
+--- metrocross.orig/metrocross0/render.h	2013-09-05 18:15:56.000000000 +0200
++++ metrocross.new/metrocross0/render.h	2023-12-10 13:42:20.706495564 +0100
+@@ -29,6 +29,7 @@ struct SRender
+ 	u8	nRenderBPP;		// 0 = 16 bits / 1 = 32 bits.
+ #endif
+ 
++#ifdef Use_OPENGL
+ 	u8	nUseGL;			// 1 = Use OpenGL / 0 = SDL rendering.
+ 	GLuint	nGlTextureId;		// Texture object handle
+ 	SDL_Surface	*pSdlGlBuffer;	// Frame buffer.
+@@ -36,6 +37,7 @@ struct SRender
+ 	GLuint	nGlTextureTVId;		// Id de la texture pour le filtre TV.
+ 	SDL_Surface *pSdlGlTextureTV;	// La surface contenant le filtre.
+ #endif
++#endif
+ 
+ };
+ extern struct SRender	gRender;
+diff -rupN metrocross.orig/metrocross0/sprites.c metrocross.new/metrocross0/sprites.c
+--- metrocross.orig/metrocross0/sprites.c	2013-09-05 18:19:48.000000000 +0200
++++ metrocross.new/metrocross0/sprites.c	2023-12-10 13:47:46.442741658 +0100
+@@ -15,16 +15,6 @@
+ #endif
+ 
+ 
+-#if defined(__LINUX__) || defined(__APPLE__)
+-#include <strings.h>
+-// stricmp n'existe pas en Linux : C'est strcasecmp à la place, dans strings.h.
+-int stricmp(char *pStr1, char *pStr2)
+-{
+-	return (strcasecmp(pStr1, pStr2));
+-}
+-#endif
+-
+-
+ // Pour capture des sprites.
+ #define	SPRDEF_ALLOC_UNIT	256
+ struct SSprite	*gpSprDef;	// Définitions des sprites.
+@@ -923,13 +913,13 @@ void SprLoadPSD(char *pFilename)
+ void SprLoadGfx(char *pFilename)//, SDL_Color *pSprPal, u32 nPalIdx)
+ {
+ 	// On regarde l'extension du fichier.
+-	if (stricmp(pFilename + strlen(pFilename) - 3, "bmp") == 0)
++	if (strcasecmp(pFilename + strlen(pFilename) - 3, "bmp") == 0)
+ 	{
+ 		// Extraction des sprites depuis un BMP.
+ 		SprLoadBMP(pFilename);//pSprPal, nPalIdx);
+ 	}
+ 	else
+-	if (stricmp(pFilename + strlen(pFilename) - 3, "psd") == 0)
++	if (strcasecmp(pFilename + strlen(pFilename) - 3, "psd") == 0)
+ 	{
+ 		// Extraction des sprites depuis un PSD.
+ 		SprLoadPSD(pFilename);//, pSprPal, nPalIdx);
+diff -rupN metrocross.orig/metrocross0/sprites.h metrocross.new/metrocross0/sprites.h
+--- metrocross.orig/metrocross0/sprites.h	2013-09-05 18:08:06.000000000 +0200
++++ metrocross.new/metrocross0/sprites.h	2023-12-10 14:28:30.963397437 +0100
+@@ -23,7 +23,7 @@ enum
+ };
+ 
+ #pragma pack(1)
+-struct SSprRect
++__attribute__((packed)) struct SSprRect
+ {
+ //	u32	nType;
+ //	s32	nX1, nY1, nX2, nY2;
+@@ -31,7 +31,7 @@ struct SSprRect
+ 	s16	nX1, nY1, nX2, nY2;
+ };
+ 
+-struct SSprite
++__attribute__((packed)) struct SSprite
+ {
+ //	s32	nPtRefX, nPtRefY;	// Points de ref.
+ //	u32	nLg, nHt;			// Largeur et hauteur du sprite.
+@@ -76,9 +76,3 @@ void SprDisplayAll_Pass2(void);
+ struct SSprite *SprGetDesc(u32 nSprNo);
+ u32 SprCheckColBox(u32 nSpr1, s32 nPosX1, s32 nPosY1, u32 nSpr2, s32 nPosX2, s32 nPosY2);
+ u32 SprGetRect(u32 nSprNo, u32 nZone, struct SSprRect *pRectDst);
+-
+-#if defined(__LINUX__) || defined(__APPLE__)
+-int stricmp(char *pStr1, char *pStr2);
+-#endif
+-
+-
+diff -rupN metrocross.orig/metrocross0/swapdata.c metrocross.new/metrocross0/swapdata.c
+--- metrocross.orig/metrocross0/swapdata.c	1970-01-01 01:00:00.000000000 +0100
++++ metrocross.new/metrocross0/swapdata.c	2023-12-10 17:07:17.048051834 +0100
+@@ -0,0 +1,839 @@
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <stdint.h>
++#include <errno.h>
++#include "ctypes.h"
++#include "menu.h"
++
++#ifndef FALSE
++#define FALSE 0
++#define TRUE 1
++#endif
++
++/*
++ * cannot use "sprites.h" here,
++ * because the void * in the union is not saved to the file
++ * Make sure these structures match
++ */
++#define	SPRRECT_MAX_ZONES	3
++__attribute__((packed)) struct SSprRect
++{
++	u16	nType;
++	s16	nX1, nY1, nX2, nY2;
++};
++
++__attribute__((packed)) struct SSprite
++{
++	s16	nPtRefX, nPtRefY;
++	u16	nLg, nHt;
++	u32	nGfx8Offset;
++	u16	nRemapPalNo;
++
++	struct SSprRect	pRect[SPRRECT_MAX_ZONES];
++};
++
++
++
++#define swap32(x) __builtin_bswap32(x)
++#define swap16(x) __builtin_bswap16(x)
++
++int to_foreign = TRUE;
++
++
++static u32 SprChecksum(u8 *pdata, u32 nDataSz, int swap)
++{
++	u32	i;
++	u32	nRem;
++	u32	nSum;
++	u32 d;
++	u32 *p32data;
++	
++	nRem = nDataSz & 3;
++	nDataSz >>= 2;
++	nSum = 0;
++	p32data = (uint32_t *)pdata;
++	for (i = 0; i < nDataSz; i++)
++	{
++		d = *p32data;
++		if (swap)
++			d = swap32(d);
++		nSum += d;
++		p32data++;
++	}
++	pdata = (uint8_t *)p32data;
++	for (i = 0; i < nRem; i++)
++	{
++		nSum += *pdata;
++		pdata++;
++	}
++
++	return nSum;
++}
++
++
++static int swap_binsave(const char *filename)
++{
++	FILE *fp;
++	size_t nSz, nSz2, nSz3;
++	uint32_t nChkRead, nChkCalc;
++	u8 *pBuf;
++	uint32_t NbSprites;
++	uint32_t t;
++	int swapped;
++	struct SSprite *s;
++	
++	if ((fp = fopen(filename, "rb")) == NULL)
++	{
++		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
++		return FALSE;
++	}
++	fseek(fp, 0, SEEK_END);
++	nSz = ftell(fp);
++	fseek(fp, 0, SEEK_SET);
++	if (nSz <= sizeof(u32))
++	{
++		fprintf(stderr, "%s: Wrong file size (%d bytes).\n", filename, (int)nSz);
++		fclose(fp);
++		return FALSE;
++	}
++	nSz -= sizeof(u32);
++		
++	if ((pBuf = (u8 *)malloc(nSz)) == NULL)
++	{
++		fclose(fp);
++		fprintf(stderr, "swap_binsave(): malloc error.\n");
++		return FALSE;
++	}
++
++	nSz2 = fread(pBuf, 1, nSz, fp);
++	nSz3 = fread(&nChkRead, 1, sizeof(u32), fp);
++	fclose(fp);
++	NbSprites = nSz / sizeof(struct SSprite);
++
++	if (nSz != nSz2 || nSz3 != sizeof(u32) || (NbSprites * sizeof(struct SSprite)) != nSz)
++	{
++		free(pBuf);
++		fprintf(stderr, "%s: Error while reading file, wrong size.\n", filename);
++		return FALSE;
++	}
++	s = (struct SSprite *)pBuf;
++
++	/*
++	 * no magic in the files :(
++	 * we can only guess by looking at the sprite offsets
++	 */
++	swapped = FALSE;
++	for (t = 0; t < NbSprites; t++)
++	{
++		if (s[t].nGfx8Offset > 0x1000000)
++			swapped = TRUE;
++	}
++
++	if (swapped)
++	{
++		free(pBuf);
++		fprintf(stderr, "swap_binsave(%s): already swapped\n", filename);
++		return TRUE;
++	}
++
++	if (!to_foreign)
++		nChkRead = swap32(nChkRead);
++
++	nChkCalc = SprChecksum(pBuf, nSz, !to_foreign);
++
++	if (nChkCalc != nChkRead)
++	{
++		fprintf(stderr, "%s: Data has been corrupted. Aborted. %08x != %08x\n", filename, nChkRead, nChkCalc);
++		free(pBuf);
++		return FALSE;
++	}
++	{
++		int i;
++	
++		for (t = 0; t < NbSprites; t++)
++		{
++			s[t].nPtRefX = swap16(s[t].nPtRefX);
++			s[t].nPtRefY = swap16(s[t].nPtRefY);
++			s[t].nLg = swap16(s[t].nLg);
++			s[t].nHt = swap16(s[t].nHt);
++			s[t].nGfx8Offset = swap32(s[t].nGfx8Offset);
++			s[t].nRemapPalNo = swap16(s[t].nRemapPalNo);
++			for (i = 0; i < SPRRECT_MAX_ZONES; i++)
++			{
++				s[t].pRect[i].nType = swap16(s[t].pRect[i].nType);
++				s[t].pRect[i].nX1 = swap16(s[t].pRect[i].nX1);
++				s[t].pRect[i].nY1 = swap16(s[t].pRect[i].nY1);
++				s[t].pRect[i].nX2 = swap16(s[t].pRect[i].nX2);
++				s[t].pRect[i].nY2 = swap16(s[t].pRect[i].nY2);
++			}
++		}
++	}
++
++	if ((fp = fopen(filename, "wb")) == NULL)
++	{
++		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
++		free(pBuf);
++		return FALSE;
++	}
++	nChkCalc = SprChecksum(pBuf, nSz, to_foreign);
++	nChkRead = to_foreign ? swap32(nChkCalc) : nChkCalc;
++
++	nSz2 = fwrite(pBuf, 1, nSz, fp);
++	nSz3 = fwrite(&nChkRead, 1, sizeof(u32), fp);
++	fclose(fp);
++	free(pBuf);
++	
++	if (nSz != nSz2 || nSz3 != sizeof(u32))
++	{
++		fprintf(stderr, "%s: %s.\n", filename, strerror(errno));
++		return FALSE;
++	}
++
++	return TRUE;
++}
++
++
++
++static int swap_bin(const char *filename)
++{
++	FILE *fp;
++	size_t nSz, nSz2, nSz3;
++	uint32_t nChkRead, nChkCalc;
++	u8 *pBuf;
++	
++	if ((fp = fopen(filename, "rb")) == NULL)
++	{
++		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
++		return FALSE;
++	}
++	fseek(fp, 0, SEEK_END);
++	nSz = ftell(fp);
++	fseek(fp, 0, SEEK_SET);
++	if (nSz <= sizeof(u32))
++	{
++		fprintf(stderr, "%s: Wrong file size (%d bytes).\n", filename, (int)nSz);
++		fclose(fp);
++		return FALSE;
++	}
++	nSz -= sizeof(u32);
++		
++	if ((pBuf = (u8 *)malloc(nSz)) == NULL)
++	{
++		fclose(fp);
++		fprintf(stderr, "swap_binsave(): malloc error.\n");
++		return FALSE;
++	}
++
++	nSz2 = fread(pBuf, 1, nSz, fp);
++	nSz3 = fread(&nChkRead, 1, sizeof(u32), fp);
++	fclose(fp);
++
++	if (nSz != nSz2 || nSz3 != sizeof(u32))
++	{
++		free(pBuf);
++		fprintf(stderr, "%s: Error while reading file, wrong size.\n", filename);
++		return FALSE;
++	}
++
++	if (!to_foreign)
++		nChkRead = swap32(nChkRead);
++
++	nChkCalc = SprChecksum(pBuf, nSz, !to_foreign);
++
++	if (nChkCalc != nChkRead)
++	{
++		nChkCalc = SprChecksum(pBuf, nSz, to_foreign);
++		if (nChkCalc != swap32(nChkRead))
++		{
++			fprintf(stderr, "%s: Data has been corrupted. Aborted. %08x != %08x\n", filename, nChkRead, nChkCalc);
++			free(pBuf);
++			return FALSE;
++		}
++	}
++
++	/*
++	 * nothing to swap. Just have to update checksum
++	 */
++	if ((fp = fopen(filename, "wb")) == NULL)
++	{
++		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
++		free(pBuf);
++		return FALSE;
++	}
++	nChkCalc = SprChecksum(pBuf, nSz, to_foreign);
++	nChkRead = to_foreign ? swap32(nChkCalc) : nChkCalc;
++
++	nSz2 = fwrite(pBuf, 1, nSz, fp);
++	nSz3 = fwrite(&nChkRead, 1, sizeof(u32), fp);
++	fclose(fp);
++	free(pBuf);
++	
++	if (nSz != nSz2 || nSz3 != sizeof(u32))
++	{
++		fprintf(stderr, "%s: %s.\n", filename, strerror(errno));
++		return FALSE;
++	}
++
++	return TRUE;
++}
++
++
++
++static u32 CfgChecksumCalc(struct SMetroCfg *cfg, int swap)
++{
++	int i;
++	u32 nSum = 0;
++	u16 d;
++	
++	for (i = 0; i < e_CfgKey_MAX; i++)
++	{
++		d = cfg->pKeys[i];
++		if (swap)
++			d = swap16(d);
++		nSum += d;
++	}
++	d = cfg->nVideoMode;
++	if (swap)
++		d = swap16(d);
++	nSum += d;
++
++	if (swap)
++		nSum = swap16(nSum);
++	return nSum;
++}
++
++
++#define SDLK_UP 273
++
++static int swap_cfg(const char *filename)
++{
++	FILE *fp;
++	size_t nSz;
++	u16 cksum;
++	struct SMetroCfg cfg;
++	int i;
++
++	fp = fopen(filename, "rb");
++	if (fp == NULL)
++	{
++		fprintf(stderr, "%s: %s.\n", filename, strerror(errno));
++		return FALSE;
++	}
++	nSz = fread(&cfg, 1, sizeof(cfg), fp);
++	fclose(fp);
++	if (nSz != sizeof(cfg))
++	{
++		fprintf(stderr, "swap_cfg(): read error.\n");
++		return FALSE;
++	}
++	if (cfg.pKeys[e_CfgKey_Up] == (to_foreign ? swap16(SDLK_UP) : SDLK_UP))
++	{
++		fprintf(stderr, "%s: already swapped.\n", filename);
++		return TRUE;
++	}
++
++	cksum = CfgChecksumCalc(&cfg, !to_foreign);
++	if (cfg.nChecksum != cksum)
++	{
++		fprintf(stderr, "%s: Checksum error.\n", filename);
++		return FALSE;
++	}
++	for (i = 0; i < e_CfgKey_MAX; i++)
++		cfg.pKeys[i] = swap16(cfg.pKeys[i]);
++	cfg.nVideoMode = swap16(cfg.nVideoMode);
++	cfg.nChecksum = CfgChecksumCalc(&cfg, to_foreign);
++
++	fp = fopen(filename, "wb");
++	if (fp == NULL)
++	{
++		fprintf(stderr, "%s: %s.\n", filename, strerror(errno));
++		return FALSE;
++	}
++
++	nSz = fwrite(&cfg, 1, sizeof(cfg), fp);
++	fclose(fp);
++	if (nSz != sizeof(cfg))
++	{
++		fprintf(stderr, "swap_cfg(): write error.\n");
++		return FALSE;
++	}
++	return TRUE;
++}
++
++
++#define LEVEL_VERSION 0x100
++
++struct SContainer0
++{
++	u32	nSz;
++	u16	nType;
++	u16	nPadding;
++};
++
++struct SMst0
++{
++	u32	nPosX, nPosY;
++	u16	nMstNo;		/* = Block no.. */
++	u16	nNbBytes;	/* Number of bytes used. */
++};
++
++struct SMap
++{
++	u32	nMapLg;
++	u32	nMapHt;
++	u32	nPlanesNb;
++
++	u32	nHeroPlane;
++
++	u32	nPathGndNb;					/* Nb de blocs de path. */
++	u32	nPathAirNb;					/* Nb de blocs de path. */
++
++	u32	nPlayerStartPosX, nPlayerStartPosY;
++
++	u32	nTranspColorKey;			/* Valeur à passer à SDL_SetColorKey() pour la transparence des plans. */
++};
++
++struct SMap0
++{
++	u32	nMapLg, nMapHt, nMapPosX, nMapPosY, nPlanesNb, nFirstWnd, nActivePlane;
++};
++
++enum
++{
++	e_FileSection_Map = 0,
++	e_FileSection_Plane,
++	e_FileSection_Cmd,
++	e_FileSection_Misc,
++};
++
++struct SPlane2
++{
++	u32	nPlaneNo, nFlags, nWndPosX, nWndPosY;
++	u32	nBlkLg, nBlkHt;
++	u8 nHasCmd;
++	u8 nPad0, nPad1, nPad2;
++};
++
++struct SMisc0
++{
++	u32	nFlags;						/* gMisc.nFlags. */
++	u8	nTransR, nTransG, nTransB;	/* RGB de la couleur de transparence. */
++	u8	nPad0;						/* Padding. */
++	u16	nVisuLg, nVisuHt;			/* Taille de la visu (en pixels). */
++
++	u32	nBlank0, nBlank1, nBlank2, nBlank3, nChecksum;	/* Au cas ou on ait besoin de sauver plus de trucs par la suite. */
++};
++
++#define	e_FlgFile_Plane_Codes	((u32)1 << 31)		/* Lecture/sauvegarde d'une page de code. */
++
++static u32 CheckSumCalc(u8 *pdata, u32 nDataSz, int swap)
++{
++	u32	i;
++	u32	nRem;
++	u32	nSum;
++	u32 d;
++	u32 *p32data;
++	
++	nRem = nDataSz & 3;
++	nDataSz >>= 2;
++	nSum = 0;
++	p32data = (uint32_t *)pdata;
++	for (i = 0; i < nDataSz; i++)
++	{
++		d = *p32data;
++		if (swap)
++			d = swap32(d);
++		nSum ^= d;
++		p32data++;
++	}
++	pdata = (uint8_t *)p32data;
++	for (i = 0; i < nRem; i++)
++	{
++		nSum += *pdata;
++		pdata++;
++	}
++
++	return nSum;
++}
++
++
++static int swap_level(const char *filename)
++{
++	FILE *fp;
++	size_t nFileSzToLoad, nSz, nSz2;
++	u8 *pBuf, *p, *pCur, *pContainer;
++	u16 nVersion;
++	u32 tmp;
++	struct SMap gMap;
++	u32	nType;
++	u32	nMapSection = 0;
++	u32	nPlaneNext = 0;
++	u32 j;
++	u32	nPlaneSav_BlkLg, nPlaneSav_BlkHt, nFlags, nPlaneNo;
++	uint32_t nChkRead, nChkCalc;
++
++	if ((fp = fopen(filename, "rb")) == NULL)
++	{
++		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
++		return FALSE;
++	}
++	fseek(fp, 0, SEEK_END);
++	nFileSzToLoad = ftell(fp);
++	fseek(fp, 0, SEEK_SET);
++	if (nFileSzToLoad <= 9)
++	{
++		fprintf(stderr, "%s: Wrong file size (%d bytes).\n", filename, (int)nFileSzToLoad);
++		fclose(fp);
++		return FALSE;
++	}
++		
++	if ((pBuf = (u8 *)malloc(nFileSzToLoad)) == NULL)
++	{
++		fclose(fp);
++		fprintf(stderr, "swap_binsave(): malloc error.\n");
++		return FALSE;
++	}
++
++	nSz2 = fread(pBuf, 1, nFileSzToLoad, fp);
++	fclose(fp);
++
++	if (nFileSzToLoad != nSz2)
++	{
++		free(pBuf);
++		fprintf(stderr, "%s: Error while reading file, wrong size.\n", filename);
++		return FALSE;
++	}
++
++	memcpy(&nVersion, pBuf + 3, sizeof(nVersion));
++	if (strncmp((char *)pBuf, "EDT", 3) != 0)
++	{
++		free(pBuf);
++		fprintf(stderr, "%s: Wrong header.\n", filename);
++		return FALSE;
++	}
++	
++	if (nVersion == (to_foreign ? swap16(LEVEL_VERSION) : LEVEL_VERSION))
++	{
++		free(pBuf);
++		fprintf(stderr, "swap_level(%s): already swapped\n", filename);
++		return TRUE;
++	}
++	nVersion = swap16(nVersion);
++	if (nVersion != (to_foreign ? swap16(LEVEL_VERSION) : LEVEL_VERSION))
++	{
++		free(pBuf);
++		fprintf(stderr, "swap_level(%s): Magic number not found. Aborted.\n", filename);
++		return FALSE;
++	}
++	nSz2 -= sizeof(u32);
++	nChkRead = *((u32 *)(pBuf + nSz2));
++	
++	if (!to_foreign)
++		nChkRead = swap32(nChkRead);
++	nChkCalc = CheckSumCalc(pBuf, nSz2, !to_foreign);
++	if (nChkCalc != nChkRead)
++	{
++		fprintf(stderr, "%s: Data has been corrupted. Aborted. %08x != %08x\n", filename, nChkRead, nChkCalc);
++		free(pBuf);
++		return FALSE;
++	}
++
++	memcpy(pBuf + 3, &nVersion, sizeof(nVersion));
++
++	gMap.nPlanesNb = 0;
++	gMap.nHeroPlane = 0;
++	gMap.nMapLg = 0;
++	gMap.nMapHt = 0;
++
++	p = pBuf + 5;
++	nSz2 -= 5;
++	nSz2 += sizeof(u32); /* last entry seems to include checksum? */
++
++	for (;;)
++	{
++		if (nSz2 < sizeof(struct SContainer0))
++			break;
++
++		{
++			struct SContainer0 *scont0 = (struct SContainer0 *)p;
++
++			tmp = scont0->nSz;
++			scont0->nSz = swap32(tmp);
++			if (!to_foreign) tmp = swap32(tmp);
++			nSz = tmp;
++			tmp = scont0->nType;
++			scont0->nType = swap16(tmp);
++			if (!to_foreign) tmp = swap16(tmp);
++			nType = tmp;
++			scont0->nPadding = swap16(scont0->nPadding);
++
++			pContainer = p;
++			p += sizeof(struct SContainer0);
++		}
++		
++		switch (nType)
++		{
++		case e_FileSection_Map:
++			if (nMapSection)
++			{
++				fprintf(stderr, "%s: Duplicate map section found! Section ignored.\n", filename);
++			} else
++			{
++				struct SMap0 *map0 = (struct SMap0 *) p;
++				
++				tmp = map0->nMapLg;
++				map0->nMapLg = swap32(tmp);
++				if (!to_foreign) tmp = swap32(tmp);
++				gMap.nMapLg = tmp;
++				tmp = map0->nMapHt;
++				map0->nMapHt = swap32(tmp);
++				if (!to_foreign) tmp = swap32(tmp);
++				gMap.nMapHt = tmp;
++				map0->nMapPosX = swap32(map0->nMapPosX);
++				map0->nMapPosY = swap32(map0->nMapPosY);
++				map0->nPlanesNb = swap32(map0->nPlanesNb);
++				map0->nFirstWnd = swap32(map0->nFirstWnd);
++				map0->nActivePlane = swap32(map0->nActivePlane);
++				
++				gMap.nPlayerStartPosX = 5;
++				gMap.nPlayerStartPosY = 5;
++
++				nMapSection = 1;
++			}
++			break;
++
++		case e_FileSection_Plane:
++			{
++				struct SPlane2 *splane2 = (struct SPlane2 *)p;
++
++				if (nMapSection == 0)
++				{
++					fprintf(stderr, "%s: Plane section found prior to map section! Section ignored.\n", filename);
++					break;
++				}
++				tmp = splane2->nPlaneNo;
++				splane2->nPlaneNo = swap32(tmp);
++				if (!to_foreign) tmp = swap32(tmp);
++				nPlaneNo = tmp;
++
++				tmp = splane2->nFlags;
++				splane2->nFlags = swap32(tmp);
++				if (!to_foreign) tmp = swap32(tmp);
++				nFlags = tmp;
++				splane2->nWndPosX = swap32(splane2->nWndPosX);
++				splane2->nWndPosX = swap32(splane2->nWndPosY);
++		
++				tmp = splane2->nBlkLg;
++				splane2->nBlkLg = swap32(tmp);
++				if (!to_foreign) tmp = swap32(tmp);
++				nPlaneSav_BlkLg = tmp;
++				tmp = splane2->nBlkHt;
++				splane2->nBlkHt = swap32(tmp);
++				if (!to_foreign) tmp = swap32(tmp);
++				nPlaneSav_BlkHt = tmp;
++
++				if (nPlaneNo != nPlaneNext)
++				{
++					fprintf(stderr, "%s: Plane section: Wrong plane number found. Section ignored.\n", filename);
++					break;
++				}
++	
++				/* Metro-Cross, 1 plan. */
++				if (gMap.nPlanesNb > 0)
++				{
++#ifdef DEBUG_INFO
++					printf("> Plane section: Only 1 plane handled. Section ignored.\n");
++#endif
++					nPlaneNext++;
++					break;
++				}
++
++				if (splane2->nHasCmd)
++				{
++#ifdef DEBUG_INFO
++					printf("> Plane section: Monsters planes, skipped.\n");
++#endif
++					nPlaneNext++;
++					break;
++				}
++
++				pCur = p + sizeof(struct SPlane2);
++	
++				j = *pCur;
++				pCur++;
++				pCur += j;
++	
++				if (nFlags & e_FlgFile_Plane_Codes)
++				{
++					pCur += nPlaneSav_BlkLg * nPlaneSav_BlkHt;
++				}
++				{
++					s32 *p32;
++					u32 ri, rj;
++					
++					p32 = (s32 *)pCur;
++					
++					for (j = 0; j < gMap.nMapLg * gMap.nMapHt; j++)
++					{
++						tmp = p32[j];
++						p32[j] = swap32(tmp);
++					}
++					for (ri = 0; ri < gMap.nMapLg; ri++)
++						if (p32[ri] == -1)
++							break;
++					for (rj = 0; rj < gMap.nMapHt; rj++)
++						if (p32[rj * gMap.nMapLg] == -1)
++							break;
++					if (ri == 0 || rj == 0)
++					{
++						free(pBuf);
++						fprintf(stderr, "%s: Plane %d: Null plane size found! (w=%d, h=%d). Aborted.\n",
++							filename, (int) gMap.nPlanesNb, (int) ri, (int) rj);
++						return FALSE;
++					}
++				}
++				
++				gMap.nPlanesNb++;
++				nPlaneNext++;
++			}
++			break;
++
++		case e_FileSection_Cmd:
++			if (nMapSection == 0)
++			{
++				fprintf(stderr, "%s: Cmd section found prior to map section! Section ignored.\n", filename);
++				break;
++			}
++
++			pCur = p;
++
++			/* skip filename */
++			j = *pCur;
++			pCur++;
++			pCur += j;
++			
++			/* Date */
++			tmp = *(u32 *)pCur;
++			*(u32 *)pCur = swap32(tmp);
++			pCur += 4;
++			
++			/* cmd size */
++			tmp = *(u32 *)pCur;
++			*(u32 *)pCur = swap32(tmp);
++			if (!to_foreign) tmp = swap32(tmp);
++			j = tmp;
++			pCur += 4;
++			pCur += j;
++			
++			/* Number of monsters. */
++			tmp = *(u32 *)pCur;
++			*(u32 *)pCur = swap32(tmp);
++			if (!to_foreign) tmp = swap32(tmp);
++			j = tmp;
++			pCur += 4;
++
++			{
++				u8 *pSrcPt;
++				u32 nb;
++
++				pSrcPt = pCur;
++				nb = j;
++				while (nb)
++				{
++					struct SMst0 *mst = (struct SMst0 *)pSrcPt;
++					mst->nPosX = swap32(mst->nPosX);
++					mst->nPosY = swap32(mst->nPosY);
++					mst->nMstNo = swap16(mst->nMstNo);
++					tmp = mst->nNbBytes;
++					mst->nNbBytes = swap16(tmp);
++					if (!to_foreign) tmp = swap16(tmp);
++					pSrcPt += sizeof(struct SMst0);
++					pSrcPt += tmp;
++					nb--;
++				}
++			}
++
++			break;
++
++		case e_FileSection_Misc:
++			{
++				struct SMisc0 *m = (struct SMisc0 *)p;
++				
++				m->nFlags = swap32(m->nFlags);
++				m->nVisuLg = swap16(m->nVisuLg);
++				m->nVisuHt = swap16(m->nVisuHt);
++				m->nBlank0 = swap32(m->nBlank0);
++				m->nBlank1 = swap32(m->nBlank1);
++				m->nBlank2 = swap32(m->nBlank2);
++				m->nBlank3 = swap32(m->nBlank3);
++				m->nChecksum = swap32(m->nChecksum);
++			}
++			break;
++		
++		default:
++			free(pBuf);
++			fprintf(stderr, "%s: unknown container type %d\n", filename, nType);
++			return FALSE;
++		}
++		
++		p = pContainer + nSz;
++		if (nSz > nSz2)
++		{
++			free(pBuf);
++			fprintf(stderr, "%s: file corrupted (%lu > %lu)\n", filename, (unsigned long)nSz, (unsigned long)nSz2);
++			return FALSE;
++		}
++		nSz2 -= nSz;
++	}
++	
++	if ((fp = fopen(filename, "wb")) == NULL)
++	{
++		free(pBuf);
++		fprintf(stderr, "%s: %s\n", filename, strerror(errno));
++		return FALSE;
++	}
++
++	nSz2 = nFileSzToLoad - sizeof(u32);
++	nChkCalc = CheckSumCalc(pBuf, nSz2, to_foreign);
++	nChkRead = to_foreign ? swap32(nChkCalc) : nChkCalc;
++	*((u32 *)(pBuf + nSz2)) = nChkRead;
++
++	nSz2 = fwrite(pBuf, 1, nFileSzToLoad, fp);
++	fclose(fp);
++	free(pBuf);
++	
++	if (nFileSzToLoad != nSz2)
++	{
++		fprintf(stderr, "%s: %s.\n", filename, strerror(errno));
++		return FALSE;
++	}
++
++	return TRUE;
++}
++
++
++int main(int argc, char **argv)
++{
++	int ret = TRUE;
++	int i;
++	
++	to_foreign = TRUE;
++	argc--;
++	argv++;
++	if (argc >= 1 && strcmp(argv[0], "-l") == 0)
++	{
++		to_foreign = FALSE;
++		argc--;
++		argv++;
++	}
++	
++	ret &= swap_binsave("gfx/sprdef.bin");
++	ret &= swap_bin("gfx/sprpal.bin");
++	ret &= swap_bin("gfx/sprbuf.bin");
++	ret &= swap_cfg("metro.cfg");
++	for (i = 0; i < argc; i++)
++		ret &= swap_level(argv[i]);
++
++	return ret ? 0 : 1;
++}
+diff -rupN metrocross.orig/metrocross0/ymlib/LzhLib.cpp metrocross.new/metrocross0/ymlib/LzhLib.cpp
+--- metrocross.orig/metrocross0/ymlib/LzhLib.cpp	2013-03-11 15:31:22.000000000 +0100
++++ metrocross.new/metrocross0/ymlib/LzhLib.cpp	2023-12-10 15:19:25.526379616 +0100
+@@ -32,6 +32,7 @@
+ -----------------------------------------------------------------------------*/
+ 
+ #include <memory.h>
++#include <string.h>
+ #include "YmTypes.h"
+ #include "LZH.H"
+ 
+diff -rupN metrocross.orig/metrocross0/ymlib/Makefile metrocross.new/metrocross0/ymlib/Makefile
+--- metrocross.orig/metrocross0/ymlib/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ metrocross.new/metrocross0/ymlib/Makefile	2023-12-10 14:01:10.065117904 +0100
+@@ -0,0 +1,22 @@
++# Makefile to build the static lib 'libymlib.a'
++
++TARGET = libymlib.a 
++OBJECTS = digidrum.o Ym2149Ex.o YmMusic.o LzhLib.o YmLoad.o YmUserInterface.o
++
++CPU_CFLAGS = -m32
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing -Wall -Wno-write-strings -DNDEBUG 
++LDFLAGS = -s
++CXX = $(CROSS_PREFIX)g++
++
++all: $(TARGET)
++
++$(TARGET): $(OBJECTS)
++	rm -f $@
++	$(CROSS_PREFIX)ar rcs -o $@ $^ 
++
++.cpp.o:
++	$(CXX) $(CFLAGS) -c -o $@ $< 
++
++clean:
++	rm -f $(OBJECTS) $(TARGET)
++
+diff -rupN metrocross.orig/metrocross0/ymlib/Ym2149Ex.cpp metrocross.new/metrocross0/ymlib/Ym2149Ex.cpp
+--- metrocross.orig/metrocross0/ymlib/Ym2149Ex.cpp	2013-03-11 15:31:22.000000000 +0100
++++ metrocross.new/metrocross0/ymlib/Ym2149Ex.cpp	2023-12-10 15:19:50.926349666 +0100
+@@ -236,6 +236,8 @@ void	CYm2149Ex::reset(void)
+ {
+ 
+ 	for (int i=0;i<14;i++)
++		registers[i] = 0;
++	for (int i=0;i<14;i++)
+ 		writeRegister(i,0);
+ 
+ 	writeRegister(7,0xff);
+diff -rupN metrocross.orig/metrocross0/ymlib/YmLoad.h metrocross.new/metrocross0/ymlib/YmLoad.h
+--- metrocross.orig/metrocross0/ymlib/YmLoad.h	2013-03-11 15:31:22.000000000 +0100
++++ metrocross.new/metrocross0/ymlib/YmLoad.h	2023-12-10 15:20:13.636322887 +0100
+@@ -47,7 +47,7 @@ typedef struct
+ 	ymu8	reserved[5];
+ 	ymu8	level;
+ 	ymu8	name_lenght;
+-} lzhHeader_t;
++} __attribute__((packed)) lzhHeader_t;
+ #pragma pack()
+ 
+ #ifdef __cplusplus
+diff -rupN metrocross.orig/psdprot0/Makefile metrocross.new/psdprot0/Makefile
+--- metrocross.orig/psdprot0/Makefile	2012-10-02 22:35:10.000000000 +0200
++++ metrocross.new/psdprot0/Makefile	2023-12-10 13:32:20.350549861 +0100
+@@ -1,17 +1,17 @@
+ # Mon Makefile
+-#PATH = /usr/include/SDL
+ TARGET = psdprot 
+ OBJECTS = main.o
+  
+-CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -fno-strict-aliasing -D__LINUX__ 
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -Wall -fno-strict-aliasing
++LDFLAGS = -s
+ LIBS = 
+-CC = gcc
++CC = $(CROSS_PREFIX)gcc
+ 
+ all: $(TARGET)
+ 
+ $(TARGET): $(OBJECTS)
+-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) 
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
+ 
+ clean:
+-	rm $(TARGET) $(OBJECTS)
++	rm -f $(TARGET) $(OBJECTS)
+ 
+diff -rupN metrocross.orig/psdprot0/main.c metrocross.new/psdprot0/main.c
+--- metrocross.orig/psdprot0/main.c	2012-09-09 13:06:26.000000000 +0200
++++ metrocross.new/psdprot0/main.c	2023-12-10 17:09:17.927899297 +0100
+@@ -3,14 +3,12 @@
+ // Clément '17o2!!' CORDE
+ 
+ 
+-#ifdef __LINUX__
+-//	#include <unistd.h>		// chdir()
+-	#include <strings.h>
+-	#include <sys/types.h>
+-	#include <dirent.h>
+-	#include <errno.h>
+-#endif
+-#ifdef WIN32
++#include <string.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <dirent.h>
++#include <errno.h>
++#ifdef _WIN32
+ 	#include <windows.h>
+ 	#include <direct.h>		// _chdir()
+ #endif
+@@ -94,7 +92,7 @@ u32 PSD_Protect(u8 *pBuf)
+ 	if (gPrm.nMode == e_Mode_Protect)
+ 	{ // Protection.
+ 		// 4 premiers octets.
+-		strncpy((char *)pBuf, pProt, 4);
++		memcpy((char *)pBuf, pProt, 4);
+ 		// Mélange des valeurs H et W.
+ 		nVar8 = *(((u8 *)pBuf) + 16) ^ 0x82;
+ 		*(((u8 *)pBuf) + 16) = *(((u8 *)pBuf) + 21) ^ 0x14;
+@@ -108,7 +106,7 @@ u32 PSD_Protect(u8 *pBuf)
+ 	else
+ 	{ // Déprotection.
+ 		// 4 premiers octets.
+-		strncpy((char *)pBuf, pNorm, 4);
++		memcpy((char *)pBuf, pNorm, 4);
+ 		// Remise en ordre des valeurs H et W.
+ 		nVar8 = *(((u8 *)pBuf) + 21) ^ 0x82;
+ 		*(((u8 *)pBuf) + 21) = *(((u8 *)pBuf) + 16) ^ 0x14;
+@@ -126,14 +124,6 @@ u32 PSD_Protect(u8 *pBuf)
+ 
+ //=============================================================================
+ 
+-#ifdef __LINUX__
+-// stricmp n'existe pas en Linux : C'est strcasecmp à la place, dans strings.h.
+-int stricmp(char *pStr1, char *pStr2)
+-{
+-	return (strcasecmp(pStr1, pStr2));
+-}
+-#endif
+-
+ // Lecture du fichier.
+ void FileLoad(char *pFilename)
+ {
+@@ -209,7 +199,8 @@ u32 FilesSearch(char *pNewDir)
+ 	strcpy(pCurDir, pNewDir);
+ 	strcat(pCurDir, "/");
+ 
+-#ifdef __LINUX__
++#ifndef _WIN32
++	{
+ 	DIR	*dip;
+ 	struct dirent	*dit;
+ 	int	nDirPos;
+@@ -227,10 +218,12 @@ u32 FilesSearch(char *pNewDir)
+ 	while ((dit = readdir(dip)) != NULL)
+ 	{
+ 		// Est-ce un fichier normal ?
++#ifdef DT_REG
+ 		if (dit->d_type != DT_REG) continue;
++#endif
+ 		// C'est un ".psd" ?
+ 		if (strlen(dit->d_name) > strlen(pExt))
+-		if (stricmp(&dit->d_name[strlen(dit->d_name) - strlen(pExt)], pExt) == 0)
++		if (strcasecmp(&dit->d_name[strlen(dit->d_name) - strlen(pExt)], pExt) == 0)
+ 		{
+ 			strcpy(&pCurDir[nDirPos], dit->d_name);
+ 			printf("%s ", pCurDir);
+@@ -260,10 +253,19 @@ u32 FilesSearch(char *pNewDir)
+ 	while ((dit = readdir(dip)) != NULL)
+ 	{
+ 		// Est-ce un répertoire ?
++#ifdef DT_REG
+ 		if (dit->d_type != DT_DIR) continue;
++#endif
+ 
+ 		if (strcmp(dit->d_name, ".") == 0 || strcmp(dit->d_name, "..") == 0) continue;
+ 		strcpy(&pCurDir[nDirPos], dit->d_name);
++#ifndef DT_REG
++		{
++			struct stat s;
++			if (stat(pCurDir, &s) != 0) continue;
++			if (!S_ISDIR(s.st_mode)) continue;
++		}
++#endif
+ 		nFilesNb += FilesSearch(pCurDir);
+ 	}
+ 	// Fermeture du répertoire.
+@@ -272,9 +274,11 @@ u32 FilesSearch(char *pNewDir)
+ 		fprintf(stderr, "FilesSearch(): 'closedir' error.\n");
+ 		exit(0);
+ 	}
++	}
+ #endif
+ 
+-#ifdef WIN32
++#ifdef _WIN32
++	{
+ 	WIN32_FIND_DATA ffd;
+ 	HANDLE hFind;
+ 
+@@ -296,7 +300,7 @@ u32 FilesSearch(char *pNewDir)
+ 		// Fichier.
+ 		// C'est un ".psd" ?
+ 		if (strlen(ffd.cFileName) > strlen(pExt))
+-		if (stricmp(&ffd.cFileName[strlen(ffd.cFileName) - strlen(pExt)], pExt) == 0)
++		if (strcasecmp(&ffd.cFileName[strlen(ffd.cFileName) - strlen(pExt)], pExt) == 0)
+ 		{
+ 			printf("%s%s ", pCurDir, ffd.cFileName);
+ 			FileLoad(ffd.cFileName);
+@@ -334,6 +338,7 @@ _dir:
+ 	}
+ 	while (FindNextFile(hFind, &ffd) != 0);
+ 	FindClose(hFind);
++	}
+ #endif
+ 
+ 	return (nFilesNb);

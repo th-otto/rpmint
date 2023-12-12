@@ -1,0 +1,156 @@
+diff -rupN hocoslamfy.orig/Makefile hocoslamfy.new/Makefile
+--- hocoslamfy.orig/Makefile	2016-04-17 19:56:29.000000000 +0200
++++ hocoslamfy.new/Makefile	2023-12-08 08:42:01.033882611 +0100
+@@ -6,16 +6,14 @@ ifeq ($(TARGET), hocoslamfy-od)
+   OBJS       = platform/opendingux.o
+   DEFS      := -DOPK
+ else
+-  CC        := gcc
+-  STRIP     := strip
++  CC        := $(CROSS_PREFIX)gcc
++  STRIP     := $(CROSS_PREFIX)strip
+   OBJS       = platform/general.o
+   DEFS      := 
+ endif
+ 
+-SYSROOT     := $(shell $(CC) --print-sysroot)
+-SDL_CONFIG  ?= $(SYSROOT)/usr/bin/sdl-config
+-SDL_CFLAGS  := $(shell $(SDL_CONFIG) --cflags)
+-SDL_LIBS    := $(shell $(SDL_CONFIG) --libs)
++SDL_CFLAGS  := $(shell pkg-config --cflags sdl)
++SDL_LIBS    := $(shell pkg-config --libs SDL_image SDL_mixer sdl) -lm
+ 
+ OBJS        += main.o init.o title.o game.o score.o audio.o bg.o text.o unifont.o
+               
+@@ -24,9 +22,9 @@ HEADERS     += main.h init.h platform.h
+ INCLUDE     := -I.
+ DEFS        +=
+ 
+-CFLAGS       = $(SDL_CFLAGS) -Wall -Wno-unused-variable \
++CFLAGS       = $(CPU_CFLAGS) $(SDL_CFLAGS) -Wall -Wno-unused-variable \
+                -O2 -fomit-frame-pointer $(DEFS) $(INCLUDE)
+-LDFLAGS     := $(SDL_LIBS) -lm -lSDL_image -lSDL_mixer
++LDFLAGS     := -s
+ 
+ ifneq (, $(findstring MINGW, $(shell uname -s)))
+ 	CFLAGS+=-DDONT_USE_PWD
+diff -rupN hocoslamfy.orig/Makefile.rules hocoslamfy.new/Makefile.rules
+--- hocoslamfy.orig/Makefile.rules	2016-04-17 19:56:29.000000000 +0200
++++ hocoslamfy.new/Makefile.rules	2023-12-08 08:40:28.690664717 +0100
+@@ -9,7 +9,7 @@ endif
+ .PHONY: $(TARGET)
+ $(TARGET): $(OBJS)
+ 	$(SUM) "  LD      $@"
+-	$(CMD)$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
++	$(CMD)$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@ $(SDL_LIBS)
+ 
+ %.o: %.c
+ 	$(SUM) "  CC      $@"
+diff -rupN hocoslamfy.orig/audio.c hocoslamfy.new/audio.c
+--- hocoslamfy.orig/audio.c	2016-04-17 19:56:29.000000000 +0200
++++ hocoslamfy.new/audio.c	2023-12-08 09:14:04.091164265 +0100
+@@ -70,8 +70,8 @@ bool InitializeAudio()
+ 
+ 		SFX_Fly       = LoadSFX(DATA_PATH "fly.wav");
+ 		SFX_Pass      = LoadSFX(DATA_PATH "pass.wav");
+-		SFX_Collision = LoadSFX(DATA_PATH "collision.wav");
+-		SFX_HighScore = LoadSFX(DATA_PATH "highscore.wav");
++		SFX_Collision = LoadSFX(DATA_PATH "collisio.wav");
++		SFX_HighScore = LoadSFX(DATA_PATH "highscor.wav");
+ 	}
+ 
+ 	return true;
+diff -rupN hocoslamfy.orig/init.c hocoslamfy.new/init.c
+--- hocoslamfy.orig/init.c	2016-04-17 19:56:29.000000000 +0200
++++ hocoslamfy.new/init.c	2023-12-08 09:19:37.020673408 +0100
+@@ -31,7 +31,7 @@
+ 
+ static const char* BackgroundImageNames[BG_LAYER_COUNT] = {
+ 	"Sky.png",
+-	"Mountains.png",
++	"Mountain.png",
+ 	"Clouds3.png",
+ 	"Clouds2.png",
+ 	"Clouds1.png",
+@@ -41,14 +41,14 @@ static const char* BackgroundImageNames[
+ };
+ 
+ static const char* TitleScreenFrameNames[TITLE_FRAME_COUNT] = {
+-	"TitleHeader1.png",
+-	"TitleHeader2.png",
+-	"TitleHeader3.png",
+-	"TitleHeader4.png",
+-	"TitleHeader5.png",
+-	"TitleHeader6.png",
+-	"TitleHeader7.png",
+-	"TitleHeader8.png"
++	"TitleH1.png",
++	"TitleH2.png",
++	"TitleH3.png",
++	"TitleH4.png",
++	"TitleH5.png",
++	"TitleH6.png",
++	"TitleH7.png",
++	"TitleH8.png"
+ };
+ 
+ static SDL_Surface* LoadImage(const char* Path)
+@@ -105,8 +105,8 @@ void Initialize(bool* Continue, bool* Er
+ 		return;
+ 	} else printf("SDL initialisation succeeded\n");
+ 
+-	SDL_Surface* WindowIcon = LoadImage("hocoslamfy.png");
+-	if (!CheckImage(Continue, Error, WindowIcon, "hocoslamfy.png"))
++	SDL_Surface* WindowIcon = LoadImage("hocoslam.png");
++	if (!CheckImage(Continue, Error, WindowIcon, "hocoslam.png"))
+ 		return;
+ 	SDL_WM_SetIcon(WindowIcon, NULL);
+ 	SDL_WM_SetCaption("hocoslamfy", "hocoslamfy");
+@@ -165,10 +165,10 @@ void Initialize(bool* Continue, bool* Er
+ 		return;
+ 	if ((ColumnImage = ConvertSurface(Continue, Error, ColumnImage, "Bamboo.png")) == NULL)
+ 		return;
+-	GameOverFrame = LoadImage("GameOverHeader.png");
+-	if (!CheckImage(Continue, Error, GameOverFrame, "GameOverHeader.png"))
++	GameOverFrame = LoadImage("GOverH.png");
++	if (!CheckImage(Continue, Error, GameOverFrame, "GOverH.png"))
+ 		return;
+-	if ((GameOverFrame = ConvertSurface(Continue, Error, GameOverFrame, "GameOverHeader.png")) == NULL)
++	if ((GameOverFrame = ConvertSurface(Continue, Error, GameOverFrame, "GOverH.png")) == NULL)
+ 		return;
+ 
+ 	InitializePlatform();
+diff -rupN hocoslamfy.orig/score.c hocoslamfy.new/score.c
+--- hocoslamfy.orig/score.c	2016-04-17 19:56:29.000000000 +0200
++++ hocoslamfy.new/score.c	2023-12-08 09:14:38.421113650 +0100
+@@ -43,8 +43,10 @@ static bool  WaitingForRelease = false;
+ 
+ static char* ScoreMessage      = NULL;
+ 
++#ifndef DONT_USE_PWD
+ static const char* SavePath = ".hocoslamfy";
+-static const char* HighScoreFilePath = "highscore";
++#endif
++static const char* HighScoreFilePath = "highscor";
+ 
+ void ScoreGatherInput(bool* Continue)
+ {
+@@ -161,14 +163,12 @@ void ToScore(uint32_t Score, enum GameOv
+ 	OutputFrame = ScoreOutputFrame;
+ }
+ 
+-int MkDir(char *path)
+-{
+ #ifndef DONT_USE_PWD
+-	return mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO);
+-#else
+-	return mkdir(path);
+-#endif
++static int MkDir(char *path)
++{
++	return mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+ }
++#endif
+ 
+ void SaveHighScore(uint32_t Score)
+ {

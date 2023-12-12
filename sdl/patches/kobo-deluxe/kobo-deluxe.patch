@@ -1,0 +1,258 @@
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/Makefile.am kobo-deluxe-0.5.1.new/Makefile.am
+--- kobo-deluxe-0.5.1.orig/Makefile.am	2007-12-15 14:54:39.000000000 +0100
++++ kobo-deluxe-0.5.1.new/Makefile.am	2023-12-08 10:07:23.003279044 +0100
+@@ -8,7 +8,7 @@ endif
+ 
+ kobo_scoredir=@SCOREDIR@
+ 
+-INCLUDES =	-DKOBO_DATA_DIR=\""@DATADIR@"\"		\
++AM_CPPFLAGS =	-DKOBO_DATA_DIR=\""@DATADIR@"\"		\
+ 		-DKOBO_SCORE_DIR=\""$(kobo_scoredir)"\"	\
+ 		-DKOBO_CONFIG_DIR=\""@CONFIGDIR@"\"	\
+ 		-DKOBO_CONFIG_FILE=\""@CONFIGFILE@"\"	\
+Only in kobo-deluxe-0.5.1.orig: aconfig.h
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/configure.in kobo-deluxe-0.5.1.new/configure.in
+--- kobo-deluxe-0.5.1.orig/configure.in	2007-12-18 01:58:45.000000000 +0100
++++ kobo-deluxe-0.5.1.new/configure.in	2023-12-08 10:03:04.633634404 +0100
+@@ -94,6 +94,17 @@ case "$target_os" in
+ 		MATHLIB="-lm"
+ 		CFLAGS="$CFLAGS $X_CFLAGS"
+ 		;;
++	mint*)
++		AC_MSG_RESULT(FreeMint; Simple bundle)
++		build_simple_bundle=yes
++		unix_scoredir=no
++		DATADIR='EXE>>'
++		SCOREDIR='EXE>>scores'
++		CONFIGDIR='EXE>>'
++		CONFIGFILE='kobodl.cfg'
++		EXEFILE=kobodl
++		MATHLIB="-lm"
++		;;
+ 	*)
+ 		AC_MSG_RESULT(Unknown (assuming Un*x-like); Un*x style)
+ 	        MATHLIB="-lm"
+@@ -141,9 +152,7 @@ dnl-------------------------------------
+ dnl Checks for SDL
+ dnl-------------------------------------------------------
+ SDL_VERSION=1.2.0
+-AM_PATH_SDL($SDL_VERSION,:,
+-	AC_MSG_ERROR([*** SDL version $SDL_VERSION required!])
+-)
++PKG_CHECK_MODULES([SDL], [sdl], :, AC_MSG_ERROR([*** SDL version $SDL_VERSION required!]))
+ CFLAGS="$CFLAGS $SDL_CFLAGS"
+ CXXFLAGS="$CXXFLAGS $SDL_CFLAGS"
+ LIBS="$LIBS $SDL_LIBS"
+@@ -152,12 +161,11 @@ LIBS="$LIBS $SDL_LIBS"
+ dnl-------------------------------------------------------
+ dnl Checks for SDL_image
+ dnl-------------------------------------------------------
+-AC_CHECK_LIB(SDL_image, IMG_Load,,
++PKG_CHECK_MODULES([SDL_IMAGE], [SDL_image], :,
+ 	AC_MSG_ERROR([You need the SDL_image library to compile this software.
+-	Get it at http://www.libsdl.org/projects/SDL_image/]),
+-	-lSDL
++	Get it at http://www.libsdl.org/projects/SDL_image/])
+ )
+-LIBS="$LIBS -lSDL_image"
++LIBS="$LIBS $SDL_IMAGE_LIBS"
+ 
+ 
+ dnl-------------------------------------------------------
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/eel/Makefile.am kobo-deluxe-0.5.1.new/eel/Makefile.am
+--- kobo-deluxe-0.5.1.orig/eel/Makefile.am	2002-06-13 03:12:10.000000000 +0200
++++ kobo-deluxe-0.5.1.new/eel/Makefile.am	2023-12-08 10:07:47.569911924 +0100
+@@ -1,6 +1,6 @@
+ noinst_LIBRARIES = libeel.a
+ 
+-INCLUDES = @LOCALCFLAGS@
++AM_CPPFLAGS = @LOCALCFLAGS@
+ 
+ libeel_a_SOURCES = eel.c e_script.c e_symtab.c e_path.c e_util.c	\
+ 			e_lexer.c e_register.c e_builtin.c e_getargs.c
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/enemies.h kobo-deluxe-0.5.1.new/enemies.h
+--- kobo-deluxe-0.5.1.orig/enemies.h	2007-12-24 09:18:52.000000000 +0100
++++ kobo-deluxe-0.5.1.new/enemies.h	2023-12-08 09:53:49.994402847 +0100
+@@ -72,7 +72,7 @@ extern const enemy_kind bombdeto;
+ extern const enemy_kind cannon;
+ extern const enemy_kind pipe1;
+ extern const enemy_kind core;
+-extern const enemy_kind pipe2;
++extern const enemy_kind epipe2;
+ extern const enemy_kind rock;
+ extern const enemy_kind ring;
+ extern const enemy_kind enemy_m1;
+@@ -430,7 +430,7 @@ inline int _enemy::realize()
+ 
+ inline int _enemy::is_pipe()
+ {
+-	return ((_state != notuse) && ((ek == &pipe1) || (ek == &pipe2)));
++	return ((_state != notuse) && ((ek == &pipe1) || (ek == &epipe2)));
+ }
+ 
+ 
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/enemy.cpp kobo-deluxe-0.5.1.new/enemy.cpp
+--- kobo-deluxe-0.5.1.orig/enemy.cpp	2007-12-24 11:36:46.000000000 +0100
++++ kobo-deluxe-0.5.1.new/enemy.cpp	2023-12-08 09:54:22.587689832 +0100
+@@ -755,10 +755,10 @@ void _enemy::move_core()
+ 
+ void _enemy::kill_core()
+ {
+-	enemies.make(&pipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 3);
+-	enemies.make(&pipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 7);
+-	enemies.make(&pipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 1);
+-	enemies.make(&pipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 5);
++	enemies.make(&epipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 3);
++	enemies.make(&epipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 7);
++	enemies.make(&epipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 1);
++	enemies.make(&epipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 5);
+ 	enemies.make(&explosion4, CS2PIXEL(x), CS2PIXEL(y));
+ 	sound.g_base_core_explo(x, y);
+ 	release();
+@@ -863,7 +863,7 @@ const enemy_kind pipe1 = {
+ 
+ /*
+  * ===========================================================================
+- *                                pipe2
++ *                                epipe2
+  * ===========================================================================
+  */
+ void _enemy::make_pipe2()
+@@ -978,19 +978,19 @@ void _enemy::move_pipe2()
+ 	}
+ 	p ^= a;
+ 	if(p & U_MASK)
+-		enemies.make(&pipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 1);
++		enemies.make(&epipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 1);
+ 	if(p & R_MASK)
+-		enemies.make(&pipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 3);
++		enemies.make(&epipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 3);
+ 	if(p & D_MASK)
+-		enemies.make(&pipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 5);
++		enemies.make(&epipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 5);
+ 	if(p & L_MASK)
+-		enemies.make(&pipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 7);
++		enemies.make(&epipe2, CS2PIXEL(x), CS2PIXEL(y), 0, 0, 7);
+ 	manage.add_score(10);
+ 	release();
+ }
+ 
+ 
+-const enemy_kind pipe2 = {
++const enemy_kind epipe2 = {
+ 	0,
+ 	&_enemy::make_pipe2,
+ 	&_enemy::move_pipe2,
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/filemap.cpp kobo-deluxe-0.5.1.new/filemap.cpp
+--- kobo-deluxe-0.5.1.orig/filemap.cpp	2007-12-20 01:37:00.000000000 +0100
++++ kobo-deluxe-0.5.1.new/filemap.cpp	2023-12-08 10:12:06.809555389 +0100
+@@ -851,7 +851,7 @@ void filemapper_t::print(FILE *f, const
+ 	while(k)
+ 	{
+ 		if(strcmp(k->key, key) == 0 || all)
+-			fprintf(f, "%s"FM_DEREF_TOKEN" --> \"%s\"\n", k->key, k->path);
++			fprintf(f, "%s" FM_DEREF_TOKEN " --> \"%s\"\n", k->key, k->path);
+ 		k = k->next;
+ 	}
+ }
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/graphics/Makefile.am kobo-deluxe-0.5.1.new/graphics/Makefile.am
+--- kobo-deluxe-0.5.1.orig/graphics/Makefile.am	2007-10-19 03:25:32.000000000 +0200
++++ kobo-deluxe-0.5.1.new/graphics/Makefile.am	2023-12-08 10:07:57.049898886 +0100
+@@ -1,6 +1,6 @@
+ noinst_LIBRARIES = libgraphics.a
+ 
+-INCLUDES = @LOCALCFLAGS@
++AM_CPPFLAGS = @LOCALCFLAGS@
+ 
+ libgraphics_a_SOURCES = cs.c sprite.c filters.c glSDL.c		\
+ 			gfxengine.cpp window.cpp sofont.cpp	\
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/graphics/window.cpp kobo-deluxe-0.5.1.new/graphics/window.cpp
+--- kobo-deluxe-0.5.1.orig/graphics/window.cpp	2007-12-14 10:13:24.000000000 +0100
++++ kobo-deluxe-0.5.1.new/graphics/window.cpp	2023-12-08 09:52:17.714534070 +0100
+@@ -398,7 +398,7 @@ void window_t::center_token_fxp(int _x,
+ 		 */
+ 		if(token)
+ 		{
+-			char *tok = strchr(txt, token);
++			const char *tok = strchr(txt, token);
+ 			if(tok)
+ 				tokpos = tok-txt;
+ 			else
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/prefs.cpp kobo-deluxe-0.5.1.new/prefs.cpp
+--- kobo-deluxe-0.5.1.orig/prefs.cpp	2007-12-25 12:24:01.000000000 +0100
++++ kobo-deluxe-0.5.1.new/prefs.cpp	2023-12-08 10:12:47.066166691 +0100
+@@ -30,7 +30,7 @@
+ void prefs_t::init()
+ {
+ 	comment("--------------------------------------------");
+-	comment(" Kobo Deluxe "VERSION" Configuration File");
++	comment(" Kobo Deluxe " VERSION " Configuration File");
+ 	comment("--------------------------------------------");
+ 	comment(" Switches - [no]<switch>");
+ 	comment(" Values - <key> [<value>|\"<string>\"]");
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/scenes.h kobo-deluxe-0.5.1.new/scenes.h
+--- kobo-deluxe-0.5.1.orig/scenes.h	2007-02-09 13:00:15.000000000 +0100
++++ kobo-deluxe-0.5.1.new/scenes.h	2023-12-08 10:40:30.333802858 +0100
+@@ -54,7 +54,7 @@ struct _scene
+ 	int enemy_max;
+ 	enemy_set enemy[SCENE_ENEMY_MAX];
+ 	int base_max;
+-	_base base[SCENE_BASE_MAX];
++	struct _base base[SCENE_BASE_MAX];
+ };
+ 
+ extern const _scene scene[];
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/sound/Makefile.am kobo-deluxe-0.5.1.new/sound/Makefile.am
+--- kobo-deluxe-0.5.1.orig/sound/Makefile.am	2007-10-29 13:24:06.000000000 +0100
++++ kobo-deluxe-0.5.1.new/sound/Makefile.am	2023-12-08 10:08:11.169879467 +0100
+@@ -1,6 +1,6 @@
+ noinst_LIBRARIES = libsound.a
+ 
+-INCLUDES =	-I../eel -I../graphics @LOCALCFLAGS@
++AM_CPPFLAGS =	-I../eel -I../graphics @LOCALCFLAGS@
+ 
+ libsound_a_SOURCES = audio.c a_globals.c a_struct.c		\
+ 	audiodev.c a_midi.c sfifo.c a_pitch.c a_midisock.c	\
+diff -rup -x Makefile.in -x Makefile -x .deps -x configure -x missing -x depcomp -x aconfig.h.in -x aclocal.m4 -x compile -x config.guess -x config.sub -x install-sh -x mkinstalldirs kobo-deluxe-0.5.1.orig/sound/a_midicon.c kobo-deluxe-0.5.1.new/sound/a_midicon.c
+--- kobo-deluxe-0.5.1.orig/sound/a_midicon.c	2003-06-08 20:30:58.000000000 +0200
++++ kobo-deluxe-0.5.1.new/sound/a_midicon.c	2023-12-08 10:37:22.784069461 +0100
+@@ -106,7 +106,7 @@ static void __init(void)
+ }
+ 
+ 
+-static inline void __poly(unsigned ch, unsigned on)
++static inline void fastpoly(unsigned ch, unsigned on)
+ {
+ 	m[ch].poly = (int)on;
+ /*
+@@ -284,7 +284,7 @@ static void midicon_control_change(unsig
+ 			midicon_note_off(ch, (unsigned)m[ch].last, 64);
+ 		break;
+ 	  case 121:	/* Reset All Controllers */
+-		__poly(ch, 1);
++		fastpoly(ch, 1);
+ 		m[ch].mod = 0;
+ 		m[ch].volume = 100*512;
+ 		m[ch].send = 0;
+@@ -295,10 +295,10 @@ static void midicon_control_change(unsig
+ 		midicon_pitch_bend(ch, 0);
+ 		break;
+ 	  case 126:	/* Mono */
+-		__poly(ch, 0);
++		fastpoly(ch, 0);
+ 		break;
+ 	  case 127:	/* Poly */
+-		__poly(ch, 1);
++		fastpoly(ch, 1);
+ 		break;
+ 	  default:
+ 		break;
+@@ -331,7 +331,7 @@ int midicon_open(float framerate, int fi
+ 	first_channel = first_ch;
+ 	__init();
+ 	for(i = 0; i < 16; ++i)
+-		__poly(i, 1);
++		fastpoly(i, 1);
+ 	return 0;
+ }
+ 

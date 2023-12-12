@@ -1,0 +1,354 @@
+diff -rupN symphyla.orig/AppImg.c symphyla.new/AppImg.c
+--- symphyla.orig/AppImg.c	2023-12-11 14:26:48.267388469 +0100
++++ symphyla.new/AppImg.c	2023-12-11 15:42:30.494862956 +0100
+@@ -42,7 +42,7 @@ TTF_Font *fontSmall;
+ TTF_Font *fontGame;
+ TTF_Font *fontMenu;
+ SDL_Surface *txtMessage;
+-char buffer[50];
++static char buffer[320];
+ SDL_Rect rm;
+ SDL_Rect rd;
+ 
+@@ -258,7 +258,7 @@ int num;
+ 
+ void save_bestScore(){
+ 	int num=0;
+-	FILE* f=fopen(get_file("/gfx/score.scr"),"w");
++	FILE* f=fopen(get_file("gfx/score.scr"),"w");
+ 			if (f){
+ 				for (num=0;num<10;num++){
+ 					fprintf(f,"%s\n",tabScore[num].name);
+@@ -289,70 +289,70 @@ TTF_Init();
+ //printf("chemin %s ",data_path);
+ 
+ //Open the font
+-fontSmall = TTF_OpenFont(get_file("/gfx/font.fnt"), 18 );
++fontSmall = TTF_OpenFont(get_file("gfx/font.fnt"), 18 );
+ if (fontSmall==NULL){printf("Erreur loading font...\n");exit(3);}
+ 
+ //Open the font
+-fontGame = TTF_OpenFont(get_file("/gfx/font.fnt"), 28 );
++fontGame = TTF_OpenFont(get_file("gfx/font.fnt"), 28 );
+ if (fontGame==NULL){printf("Erreur loading font...\n");exit(3);}
+ 
+ //Open the font
+-fontMenu = TTF_OpenFont(get_file("/gfx/font.fnt"), 48 );
++fontMenu = TTF_OpenFont(get_file("gfx/font.fnt"), 48 );
+ if (fontMenu==NULL){printf("Erreur loading font...\n");exit(3);}
+ 
+ //load grass & convert it to right format
+-tempIN=IMG_Load(get_file("/gfx/symphylaBack.png"));
++tempIN=IMG_Load(get_file("gfx/symphylaBack.png"));
+ imgBackScreen = SDL_DisplayFormat(tempIN);
+ if (imgBackScreen==NULL){printf("error loading firstScreen...\n");exit(4);}
+ 
+ //load grass & convert it to right format
+-tempIN=IMG_Load(get_file("/gfx/grass.png"));
++tempIN=IMG_Load(get_file("gfx/grass.png"));
+ imgGrass = SDL_DisplayFormat(tempIN);
+ if (imgGrass==NULL){printf("error loading grass...\n");exit(4);}
+ 
+ //load mushroom 1
+-tempIN=IMG_Load(get_file("/gfx/mushroom.png"));
++tempIN=IMG_Load(get_file("gfx/mushroom.png"));
+ imgMush1 = SDL_DisplayFormat(tempIN);
+ if (imgMush1==NULL){printf("error loading mushroom1...\n");exit(4);}
+ 
+ //load mushroom 2
+-tempIN=IMG_Load(get_file("/gfx/mushroom2.png"));
++tempIN=IMG_Load(get_file("gfx/mushroom2.png"));
+ imgMush2 = SDL_DisplayFormat(tempIN);
+ if (imgMush2==NULL){printf("error loading mushroom2...\n");exit(4);}
+ 
+ //load mushroom 3
+-tempIN=IMG_Load(get_file("/gfx/mushroom3.png"));
++tempIN=IMG_Load(get_file("gfx/mushroom3.png"));
+ imgMush3 = SDL_DisplayFormat(tempIN);
+ if (imgMush3==NULL){printf("error loading mushroom3...\n");exit(4);}
+ 
+ //load life cartoon
+-tempIN=IMG_Load(get_file("/gfx/life.png"));
++tempIN=IMG_Load(get_file("gfx/life.png"));
+ imgLifeSpot = SDL_DisplayFormat(tempIN);
+ if (imgLifeSpot==NULL){printf("error loading life cartoon...\n");exit(4);}
+ 
+ //load arrow
+-tempIN=IMG_Load(get_file("/gfx/arrow.png"));
++tempIN=IMG_Load(get_file("gfx/arrow.png"));
+ imgArrow = SDL_DisplayFormat(tempIN);
+ if (imgArrow==NULL){printf("error loading arrow...\n");exit(4);}
+ 
+ //load man
+-tempIN=IMG_Load(get_file("/gfx/man.png"));
++tempIN=IMG_Load(get_file("gfx/man.png"));
+ imgMan = SDL_DisplayFormat(tempIN);
+ if (imgMan==NULL){printf("error loading man...\n");exit(4);}
+ 
+ //load wormb
+-tempIN=IMG_Load(get_file("/gfx/wormb.png"));
++tempIN=IMG_Load(get_file("gfx/wormb.png"));
+ imgwormb = SDL_DisplayFormat(tempIN);
+ if (imgwormb==NULL){printf("error loading wormb...\n");exit(4);}
+ 
+ //load wormhl
+ /*
+-tempIN=IMG_Load(get_file("/gfx/wormhl.png"));
++tempIN=IMG_Load(get_file("gfx/wormhl.png"));
+ imgwormhl = SDL_DisplayFormat(tempIN);
+ if (imgwormhl==NULL){printf("error loading wormhl...\n");exit(4);}
+ 
+ //load wormhr
+-tempIN=IMG_Load(get_file("/gfx/wormhr.png"));
++tempIN=IMG_Load(get_file("gfx/wormhr.png"));
+ imgwormhr = SDL_DisplayFormat(tempIN);
+ if (imgwormhr==NULL){printf("error loading wormhr...\n");exit(4);}
+ */
+diff -rupN symphyla.orig/AppImg.h symphyla.new/AppImg.h
+--- symphyla.orig/AppImg.h	2023-12-11 14:26:48.267388469 +0100
++++ symphyla.new/AppImg.h	2023-12-11 15:42:30.494862956 +0100
+@@ -12,24 +12,24 @@
+ 
+ #include "AppInit.h"
+ 
+-void load_img();
+-void draw_grass();
+-void draw_mush_worms();
+-void draw_best_score();
+-void draw_sound();
++void load_img(void);
++void draw_grass(void);
++void draw_mush_worms(void);
++void draw_best_score(void);
++void draw_sound(void);
+ void menu(int pos);
+ void destroy_img();
+ void fire(int pos);
+-void draw_firstScreen();
++void draw_firstScreen(void);
+ void draw_score_life(int level,int score, int life);
+-void draw_copyright();
+-void draw_game_over();
++void draw_copyright(void);
++void draw_game_over(void);
+ void pauseScreen(long duration);
+ int isBestScore(long score);
+-void save_bestScore();
++void save_bestScore(void);
+ void slide_bestScore(int pos);
+-void draw_hit();
+-void move_all();
++void draw_hit(void);
++void move_all(void);
+ void move_man(int pos);
+ int manage_colisions();
+ #endif /* APPIMG_H_ */
+diff -rupN symphyla.orig/AppInit.c symphyla.new/AppInit.c
+--- symphyla.orig/AppInit.c	2023-12-11 14:26:48.270721797 +0100
++++ symphyla.new/AppInit.c	2023-12-11 15:43:01.054823796 +0100
+@@ -8,30 +8,30 @@
+ #include "AppInit.h"
+ #include "global_var.h"
+ 
++struct items tabField[40][30];
++struct items tabFieldtmp[40][30];
++
++struct strScore tabScore[10];
++
++SDL_Surface* grass;
++
++Mix_Music *music;
++Mix_Chunk *click;
++Mix_Chunk *bow;
++Mix_Chunk *hit;
++Mix_Chunk *blop;
+ 
+ const int SCREEN_HEIGHT=480;
+ const int SCREEN_WIDTH=640;
+ const int BITS_PER_PIXEL=0;
+ 
+ 
+-/****************
+- * concat current directory with relatif path and file name...
+- *****************/
+-char* get_file(char* file){
+-char* retour;
+-	retour=(char*)malloc(150*sizeof(char));
+-	strcpy(retour,(char*)get_current_dir_name());
+-	strcat(retour,file);
+-return retour;
+-}
+-
+-
+ /*******************
+  * init SDL library
+  *******************/
+ int initSDL(){
+ 		//init SDL
+-	if (SDL_Init(SDL_INIT_EVERYTHING)==-1){
++	if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO)==-1){
+ 		printf("erreur init SDL");
+ 		printf(SDL_GetError());
+ 		return -1;
+@@ -47,7 +47,7 @@ int initSDL(){
+ 	int num;
+ 	char xstr[20];
+ 
+-	FILE* f=fopen(get_file("/gfx/score.scr"),"r");
++	FILE* f=fopen(get_file("gfx/score.scr"),"r");
+ 			if (f){
+ 				for (num=0;num<10;num++){
+ 
+@@ -73,19 +73,20 @@ int load_sound(){
+ 	 //Load the music
+ 
+ 
+-	    music = Mix_LoadMUS(get_file("/gfx/music1.mus"));
++	    music = Mix_LoadMUS(get_file("gfx/music1.wav"));
+ 
+ 	    //If there was a problem loading the music
+ 	    if( music == NULL )
+ 	    {
++	        printf("error gfx/music1.wav: %s\n", Mix_GetError());
+ 	        return -1;
+ 	    }//if
+ 
+ 	    //Load the sound effects
+-	    click = Mix_LoadWAV(get_file("/gfx/tick.snd"));
+-	    bow = Mix_LoadWAV(get_file("/gfx/bow.snd"));
+-	    hit = Mix_LoadWAV(get_file("/gfx/hit.snd"));
+-	    blop = Mix_LoadWAV(get_file("/gfx/blop.snd"));
++	    click = Mix_LoadWAV(get_file("gfx/tick.snd"));
++	    bow = Mix_LoadWAV(get_file("gfx/bow.snd"));
++	    hit = Mix_LoadWAV(get_file("gfx/hit.snd"));
++	    blop = Mix_LoadWAV(get_file("gfx/blop.snd"));
+ 
+ 	    //If there was a problem loading the sound effects
+ 	    if( click == NULL )
+diff -rupN symphyla.orig/AppInit.h symphyla.new/AppInit.h
+--- symphyla.orig/AppInit.h	2023-12-11 14:26:48.270721797 +0100
++++ symphyla.new/AppInit.h	2023-12-11 15:42:30.494862956 +0100
+@@ -20,7 +20,7 @@
+ 
+ 
+ //Global déclarations
+-SDL_Surface * screen;
++extern SDL_Surface * screen;
+ 
+ struct items{
+ 	int value;
+@@ -33,29 +33,24 @@ struct strScore{
+ 	long score;
+ };
+ 
+-struct items tabField[40][30];
+-struct items tabFieldtmp[40][30];
++extern struct items tabField[40][30];
++extern struct items tabFieldtmp[40][30];
+ 
+-struct strScore tabScore[10];
++extern struct strScore tabScore[10];
+ 
+ 
+ //images
+-SDL_Surface* grass;
+-SDL_Surface* tempIN;
+-SDL_Surface* mush;
+-SDL_Surface* mush2;
+-SDL_Surface* mush3;
+-SDL_Surface* lifeSpot;
+-SDL_Surface* backScreen;
++extern SDL_Surface* grass;
++extern SDL_Surface* tempIN;
+ 
+ //The music that will be played
+-Mix_Music *music;
++extern Mix_Music *music;
+ 
+ //The sound effects that will be used
+-Mix_Chunk *click;
+-Mix_Chunk *bow;
+-Mix_Chunk *hit;
+-Mix_Chunk *blop;
++extern Mix_Chunk *click;
++extern Mix_Chunk *bow;
++extern Mix_Chunk *hit;
++extern Mix_Chunk *blop;
+ 
+ 
+ /*
+@@ -73,11 +68,12 @@ Mix_Chunk *blop;
+ 
+ 
+ 
+-int initSDL();
++int initSDL(void);
+ int setVideo(int tvideo);
+ void initLevel(int level);
+-char* get_file(char* file);
+-int load_sound();
+-void quitSDL();
++int load_sound(void);
++void quitSDL(void);
++
++#define get_file(f) f
+ 
+ #endif /* APPINIT_H_ */
+diff -rupN symphyla.orig/AppInput.c symphyla.new/AppInput.c
+--- symphyla.orig/AppInput.c	2023-12-11 14:26:48.270721797 +0100
++++ symphyla.new/AppInput.c	2023-12-11 15:42:30.494862956 +0100
+@@ -29,7 +29,7 @@ SDL_Color scoreColor = { 0xFF, 0xFF, 0x0
+     //The text surface
+     SDL_Surface *text;
+ 
+-    char buffer[15];
++    static char buffer[15];
+ 
+ 
+ 
+@@ -37,7 +37,7 @@ SDL_Color scoreColor = { 0xFF, 0xFF, 0x0
+ void beginInput()
+ {
+ 	//Open the font
+-	font = TTF_OpenFont(get_file("/gfx/font.fnt"), 40 );
++	font = TTF_OpenFont(get_file("gfx/font.fnt"), 40 );
+ 	if (font==NULL){printf("Erreur loading font...\n");exit(3);}
+ 
+ 
+diff -rupN symphyla.orig/Makefile symphyla.new/Makefile
+--- symphyla.orig/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ symphyla.new/Makefile	2023-12-11 15:42:30.498196286 +0100
+@@ -0,0 +1,20 @@
++TARGET = symphyla
++OBJECTS = AppImg.o AppInit.o AppInput.o global_var.o main.o
++
++CPU_CFLAGS = 
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl SDL_image SDL_mixer SDL_ttf SDL_gfx)
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing -Wall $(SDL_CFLAGS)
++LDFLAGS = -s
++LIBS = $(SDL_LIBS)
++
++CC = $(CROSS_PREFIX)gcc
++CXX = $(CROSS_PREFIX)g++
++
++all: $(TARGET)
++
++$(TARGET): $(OBJECTS)
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
++
++clean:
++	rm -f $(TARGET) $(OBJECTS) swapdata
+diff -rupN symphyla.orig/main.c symphyla.new/main.c
+--- symphyla.orig/main.c	2023-12-11 14:26:48.307388417 +0100
++++ symphyla.new/main.c	2023-12-11 15:42:30.498196286 +0100
+@@ -49,9 +49,6 @@ if (argc==1){
+ 	runas=0;
+ }
+ 
+-//center windows on screen
+-putenv("SDL_VIDEO_CENTERED=1");
+-
+ //init SDL & set video mode
+ if (initSDL()==-1) {printf("Init SDL KO!");exit(1);}
+ if (setVideo(runas)==-1){printf("set video mode KO!");exit(2);}

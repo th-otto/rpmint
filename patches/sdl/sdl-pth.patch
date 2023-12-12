@@ -1,0 +1,12 @@
+--- ./src/video/ataricommon/SDL_atarievents.c.orig	2023-12-07 14:50:06.847596903 +0100
++++ ./src/video/ataricommon/SDL_atarievents.c	2023-12-07 15:25:17.218316938 +0100
+@@ -261,5 +261,9 @@
+ void SDL_AtariMint_BackgroundTasks(void)
+ {
+ 	SDL_AtariMint_UpdateAudio();
++#ifdef SDL_TIMER_MINT
+ 	if (SDL_timer_running) SDL_AtariMint_CheckTimer();
++#else
++	if (SDL_timer_running) SDL_ThreadedTimerCheck();
++#endif
+ }

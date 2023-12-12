@@ -12,6 +12,8 @@ VERSIONPATCH=
 
 PATCHES="
 patches/sdl/sdl-1.2.16-keyboard.patch
+patches/sdl/sdl-1.2.16-keyboard2.patch
+patches/sdl/sdl-pth.patch
 "
 DISABLED_PATCHES="
 patches/sdl/sdl-1.2.16-asm.patch
@@ -37,12 +39,23 @@ cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build-scripts/config.sub
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
+COMMON_CFLAGS="-O0 -g ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
+enable_pth=false
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--disable-video-opengl
-	--disable-threads
 "
+if $enable_pth; then
+  # the configure script looks up the pth-config script
+  mkdir -p bin
+  touch bin/pth-config
+  chmod 755 bin/pth-config
+  export PATH="$PATH:$MINT_BUILD_DIR/bin"
+  TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}-pth${VERSIONPATCH}
+  CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-threads --enable-pth"
+else
+  CONFIGURE_FLAGS="$CONFIGURE_FLAGS --disable-threads"
+fi
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"

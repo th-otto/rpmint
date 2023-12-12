@@ -1,0 +1,119 @@
+diff -rup sdlbomber-1.0.4.orig/Makefile sdlbomber-1.0.4.new/Makefile
+--- sdlbomber-1.0.4.orig/Makefile	2016-04-04 09:51:28.000000000 +0200
++++ sdlbomber-1.0.4.new/Makefile	2023-12-11 11:29:29.554216697 +0100
+@@ -1,11 +1,13 @@
+ #DBG = -g
+-CC	= gcc
+-CFLAGS	= -O2 -Wall $(shell sdl-config --cflags) $(DBG)
++CC	= $(CROSS_PREFIX)gcc
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl)
++CFLAGS	= $(CPU_CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing -Wall $(SDL_CFLAGS) $(DBG)
+ 
+ all: bomber matcher
+ 
+ bomber:	bomber.o gfx.o sound.o matcher
+-	gcc -o bomber bomber.o gfx.o sound.o $(shell sdl-config --libs) $(DBG)
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bomber.o gfx.o sound.o $(SDL_LIBS) $(DBG)
+ 
+ matcher: matcher.c
+ 
+diff -rup sdlbomber-1.0.4.orig/bomber.c sdlbomber-1.0.4.new/bomber.c
+--- sdlbomber-1.0.4.orig/bomber.c	2016-04-04 09:51:28.000000000 +0200
++++ sdlbomber-1.0.4.new/bomber.c	2023-12-11 11:14:38.925173634 +0100
+@@ -525,6 +525,7 @@ if(length>0 && *mesg!=PKT_MYDATA) printf
+ 		long lastsent;
+ 
+ 		lastsent=now=gtime();
++		(void)lastsent;
+ 		++mydatacount;
+ 		sendmine(mydatacount);
+ 		for(;;)
+@@ -890,7 +891,7 @@ char tname[256];
+ 	ihand=open(tname,O_RDONLY);
+ 	if(ihand<0)
+ 	{
+-		char tname2[256];
++		char tname2[256+4];
+ 		sprintf(tname2,"%s.pcx",tname);
+ 		ihand=open(tname2,O_RDONLY);
+ 		if(ihand<0)
+@@ -1175,13 +1176,12 @@ void drawflames(void)
+ {
+ flame *fl;
+ int xpos,ypos;
+-int color;
+ int fig;
+ 
+ 	fl=activeflames.next;
+ 	while(fl)
+ 	{
+-		color=fl->owner->color;
++		//color=fl->owner->color;
+ 		xpos=tovideox(fl->xpos);
+ 		ypos=tovideoy(fl->ypos);
+ 		fig=(fl->timer*10)/FLAMELIFE;
+@@ -1597,7 +1597,6 @@ int maxflame;
+ 
+ void doplayer(player *pl)
+ {
+-int last;
+ int color;
+ int speed;
+ int px,py;
+@@ -1614,9 +1613,9 @@ int what;
+ 	flags=pl->flags;
+ 	if(flags&FLG_DEAD) return;
+ 	color=pl->color;
+-	last=pl->doing;
+ 	pl->doing=what;
+ 	speed=pl->speed;
++	(void)speed;
+ 	px=screentoarrayx(pl->xpos);
+ 	py=screentoarrayy(pl->ypos);
+ 	there=field[py][px];
+@@ -1795,7 +1794,7 @@ void initheader(void *p)
+ 	memset(p,0,sizeof(list));
+ }
+ 
+-unsigned char opts[]={2,1,0,1,0,0,0,0,0};
++unsigned char opts[]={2,1,0,1,0,0,0,0,0,0};
+ 
+ void firstzero(void)
+ {
+diff -rup sdlbomber-1.0.4.orig/gfx.c sdlbomber-1.0.4.new/gfx.c
+--- sdlbomber-1.0.4.orig/gfx.c	2016-04-04 09:51:28.000000000 +0200
++++ sdlbomber-1.0.4.new/gfx.c	2023-12-11 11:16:06.765079340 +0100
+@@ -158,12 +158,10 @@ void gfxfetchsingle(figure *fig,gfxset *
+ {
+ uchar *p,*p2;
+ int dx,dy;
+-uchar *map1;
+ int gswidth;
+ int minx,miny,maxx,maxy;
+ int tx,ty;
+ 
+-	map1=gs->gs_inout;
+ 	gswidth=gs->gs_xsize;
+ 	p=gs->gs_pic+sourcex+gswidth*sourcey;
+ 	minx=miny=maxx=maxy=-1;
+@@ -500,7 +498,7 @@ int res=0;
+ 	}
+ 	return res;
+ }
+-int firstdown(vopid)
++int firstdown(void)
+ {
+ 	return *downcodes;
+ }
+diff -rup sdlbomber-1.0.4.orig/sound.c sdlbomber-1.0.4.new/sound.c
+--- sdlbomber-1.0.4.orig/sound.c	2016-04-04 09:51:28.000000000 +0200
++++ sdlbomber-1.0.4.new/sound.c	2023-12-11 11:16:44.068372628 +0100
+@@ -169,6 +169,7 @@ int i,file,size,len;
+ 	if(p1)
+ 	{
+ 		i=read(file,p1,size);
++		(void)i;
+ 		if(len-size) memset(p1+size,0,len-size);
+ 		while(size--) *p1++ ^= 0x80;
+ 	} else

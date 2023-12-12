@@ -1,0 +1,299 @@
+diff -rup gnurobbo-0.66.orig/Makefile gnurobbo-0.66.new/Makefile
+--- gnurobbo-0.66.orig/Makefile	2010-08-23 22:41:09.000000000 +0200
++++ gnurobbo-0.66.new/Makefile	2023-12-07 17:42:54.040464484 +0100
+@@ -26,7 +26,7 @@ DESIGNER=-DHAVE_DESIGNER
+ 
+ # Choose ONE of these and comment out the other
+ #FONT_USE_PIXMAP=-DUSE_PIXMAP_FONT
+-FONT_USE_SDL_TTF=-lSDL_ttf
++FONT_USE_SDL_TTF=$(shell pkg-config --libs SDL_ttf)
+ 
+ # You won't need to alter these
+ TARGET=$(shell cat TARGET)
+@@ -35,24 +35,24 @@ OBJECTS=$(patsubst %.c, %.o, $(SOURCES))
+ VERSION=$(shell cat VERSION)
+ 
+ # These should be ok for most
+-SDL_CONFIG?=sdl-config
+-CFLAGS?=-O3 -pipe
+-CFLAGS+=-Wall `$(SDL_CONFIG) --cflags` -DPLATFORM_PC -DVERSION=\"$(VERSION)\" \
++CC=$(CROSS_PREFIX)gcc
++CFLAGS?=$(CPU_CFLAGS) -O3 -pipe
++CFLAGS+=-fcommon -Wall $(shell pkg-config --cflags sdl) -DPLATFORM_PC -DVERSION=\"$(VERSION)\" \
+ 	-DPACKAGE_DATA_DIR=\"$(PACKAGE_DATA_DIR)\" $(FONT_USE_PIXMAP) $(MUSIC) $(DESIGNER)
+-LDFLAGS=
++LDFLAGS=-s
+ # Use these instead for debugging and/or profiling (mainly intended for GNU Robbo developers)
+ #CFLAGS?=-O0 -pipe -g -pg
+-#CFLAGS+=-Wall `$(SDL_CONFIG) --cflags` -DPLATFORM_PC -DVERSION=\"$(VERSION)\" \
++#CFLAGS+=-Wall $(shell pkg-config --cflags sdl) -DPLATFORM_PC -DVERSION=\"$(VERSION)\" \
+ #	-DPACKAGE_DATA_DIR=\"$(PACKAGE_DATA_DIR)\" $(FONT_USE_PIXMAP) $(MUSIC) $(DESIGNER)
+ #LDFLAGS=-pg
+ LINK=$(CC)
+-LIBS=`$(SDL_CONFIG) --libs` -lSDL_image -lSDL_mixer $(FONT_USE_SDL_TTF)
++LIBS=$(shell pkg-config --libs SDL_image SDL_mixer) $(FONT_USE_SDL_TTF)
+ 
+ # You won't need to alter anything below
+ all: $(SOURCES) $(TARGET)
+ 
+ $(TARGET): $(OBJECTS)
+-	$(LINK) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $@
++	$(LINK) $(CFLAGS) $(LDFLAGS) $(OBJECTS) $(LIBS) -o $@
+ 
+ %.o: %.c
+ 	$(CC) $(CFLAGS) -c $< -o $@
+@@ -60,7 +60,7 @@ $(TARGET): $(OBJECTS)
+ .PHONY: all clean install
+ 
+ clean:
+-	rm -f *.o
++	rm -f *.o gnurobbo
+ 
+ install:
+ 	@if [ "$(PACKAGE_DATA_DIR)" = ./data ] ; then \
+diff -rup gnurobbo-0.66.orig/board.c gnurobbo-0.66.new/board.c
+--- gnurobbo-0.66.orig/board.c	2010-08-31 16:17:53.000000000 +0200
++++ gnurobbo-0.66.new/board.c	2023-12-07 12:20:27.299627949 +0100
+@@ -802,7 +802,7 @@ update_game(void)
+ 				}
+ 			    } else
+ 				board[x][y].state = 0;
+-				board[x][y].redraw= 1;
++			    board[x][y].redraw= 1;
+ 			    if (in_viewport(x, y))
+ 				play_sound(SFX_BOX, SND_NORM);	/* play the sound */
+ 			  else
+diff -rup gnurobbo-0.66.orig/board.h gnurobbo-0.66.new/board.h
+--- gnurobbo-0.66.orig/board.h	2010-08-30 18:43:47.000000000 +0200
++++ gnurobbo-0.66.new/board.h	2023-12-07 11:39:22.093301118 +0100
+@@ -130,9 +130,9 @@ struct object
+   int redraw;			/* Set to 1 if this object/board location needs redrawing in show_game_area() */
+   struct Coords icon[MAX_ICONS];	/* Coords of left-up point of icons drawed on bitmap */
+ };
+-struct object board[MAX_W][MAX_H];	/* This is the game area. Each board location holds one and only one of the above objects */
++extern struct object board[MAX_W][MAX_H];	/* This is the game area. Each board location holds one and only one of the above objects */
+ 
+-struct
++struct robbo
+ {
+   int x;			/* Board x position */
+   int y;			/* Board y position */
+@@ -148,10 +148,11 @@ struct
+   int blocked;			/* robbo cannot move - possible magnet moving */
+   int blocked_direction;	/* where robbo should be moved after blocking */
+   int teleporting;		/* Set to TRUE when Robbo is teleporting */
+-} robbo;
++};
++extern struct robbo robbo;
+ 
+ /* What is shown of the board is seen through this viewport */
+-struct
++struct viewport
+ {
+   int x;			/* Board x position */
+   int y;			/* Board y position */
+@@ -163,15 +164,17 @@ struct
+   int yoffset;
+   int cycles_to_dest;
+   int maximise;
+-} viewport;
++};
++extern struct viewport viewport;
+ 
+ /* Some game mechanics that I have made available for modification via the rcfile */
+-struct
++struct game_mechanics
+ {
+   int sensible_bears;
+   int sensible_questionmarks;
+   int sensible_solid_lasers;
+-} game_mechanics;
++};
++extern struct game_mechanics game_mechanics;
+ 
+ /* Function prototypes */
+ void update_game (void);
+diff -rup gnurobbo-0.66.orig/game.c gnurobbo-0.66.new/game.c
+--- gnurobbo-0.66.orig/game.c	2010-09-03 18:06:05.000000000 +0200
++++ gnurobbo-0.66.new/game.c	2023-12-07 17:39:30.384077764 +0100
+@@ -30,6 +30,12 @@ PSP_MAIN_THREAD_ATTR (0);
+ PSP_MAIN_THREAD_STACK_SIZE_KB (2 * 1024);
+ #endif
+ 
++#ifdef __MINT__
++#define object gem_object
++#include <gem.h>
++#undef object
++#endif
++
+ /* Defines */
+ /*
+ #define DEBUG_MAIN
+@@ -66,8 +72,17 @@ int gua_device;			/* Used when getting a
+ int gua_id;			/* Used when getting actions */
+ int gua_state;			/* Used when getting actions */
+ 
++struct game_mechanics game_mechanics;
++struct viewport viewport;
++struct robbo robbo;
++struct object board[MAX_W][MAX_H];
++
+ /* Function prototypes */
++#ifdef __MINT__
++Uint32 game_timer (Uint32 interval);
++#else
+ Uint32 game_timer (Uint32 interval, void *param);
++#endif
+ void clean_up_before_exit (void);
+ void manage_intro_screen_select (int menuitemid);
+ void manage_intro_screen_decrement (int menuitemid);
+@@ -129,7 +144,7 @@ main (int argc, char *argv[])
+ 
+ #ifdef DEBUG_MAIN
+   printf ("*** Start %s ***\n", __func__);
+-  printf ("size of int: %i\n", sizeof (int));
++  printf ("size of int: %i\n", (int)sizeof (int));
+   printf ("SDL_PRESSED=%i\n", SDL_PRESSED);
+   printf ("SDL_RELEASED=%i\n", SDL_RELEASED);
+   printf ("*** Stop %s ***\n", __func__);
+@@ -160,7 +175,7 @@ main (int argc, char *argv[])
+   game_cycle_delay = 10;
+   game_cycle_limit = DEFAULT_GAME_CYCLE_LIMIT;
+   game_next_cycle = TRUE;
+-  game_timer_id = NULL;
++  game_timer_id = 0;
+   cycle_count = 0;
+   restart_timeout = -1;
+   
+@@ -391,7 +406,7 @@ main (int argc, char *argv[])
+       printf ("skins[%i].foldername=%s\n", count, skins[count].foldername);
+       printf ("skins[%i].name=%s\n", count, skins[count].name);
+       printf ("skins[%i].author=%s\n", count, skins[count].author);
+-      printf ("skins[%i].about=%s\n", count, skins[count].about);
++      printf ("skins[%i].about=%s\n", count, skins[count].about[0]);
+       printf ("skins[%i].background_colour=0x%06X\n", count,
+ 	      skins[count].background_colour);
+       printf ("skins[%i].version_text_colour=0x%06X\n", count,
+@@ -485,7 +500,11 @@ main (int argc, char *argv[])
+     }
+ 
+   /* Initiate a 10ms timer */
++#ifdef __MINT__
++  SDL_SetTimer(10, game_timer);
++#else
+   game_timer_id = SDL_AddTimer (10, game_timer, NULL);
++#endif
+ 
+   /* Font initialisation */
+   if (TTF_Init ())
+@@ -1571,8 +1590,24 @@ main (int argc, char *argv[])
+ 	{ 
+ 	  /* Wait until the timer sets the flag before proceeding */
+ 
++#ifdef __MINT__
++	  {
++	    /*
++	     * we cannot call _appl_yield() in XaAES because of a bug there,
++	     * and we cannot call appl_yield() in SingleTOS because it
++	     * does not exist
++	     */
++	    if (aes_global[1] == 1)
++	     _appl_yield();
++	    else
++	      appl_yield();
++	    SDL_Delay (1000 / game_cycle_limit);
++	    SDL_PumpEvents();
++	  }
++#else
+ 	  while (!game_next_cycle) 
+ 	      SDL_Delay (game_cycle_delay);	/* Robbo spends 90%+ of his time in this loop :) */
++#endif
+ 
+ 	  game_next_cycle = FALSE;
+ 
+@@ -1658,8 +1693,11 @@ clean_up_before_exit (void)
+  * Game Timer                                                              *
+  ***************************************************************************/
+ 
+-Uint32
+-game_timer (Uint32 interval, void *param)
++#ifdef __MINT__
++Uint32 game_timer (Uint32 interval)
++#else
++Uint32 game_timer (Uint32 interval, void *param)
++#endif
+ {
+   static int intervals = 0;
+ 
+diff -rup gnurobbo-0.66.orig/konstruktor.c gnurobbo-0.66.new/konstruktor.c
+--- gnurobbo-0.66.orig/konstruktor.c	2010-09-01 14:33:27.000000000 +0200
++++ gnurobbo-0.66.new/konstruktor.c	2023-12-07 12:19:47.499686295 +0100
+@@ -680,10 +680,9 @@ konstruktor_click()
+ 	    }
+ 	    
+ 	    if (K_icons[selected].game_obj != K_LASER)
+-		create_object(nx, ny, K_icons[selected].game_obj);
++			create_object(nx, ny, K_icons[selected].game_obj);
+ 		if(K_icons[selected].game_obj == BOMB && bombtype==1)						
+-		create_object(nx, ny, BOMB2
+-);
++			create_object(nx, ny, BOMB2);
+ 	    switch (K_icons[selected].game_obj) {
+ 	    case GROUND:
+ 		sprintf(infostring, txt_konstruktor_Ground);
+diff -rup gnurobbo-0.66.orig/konstruktor.h gnurobbo-0.66.new/konstruktor.h
+--- gnurobbo-0.66.orig/konstruktor.h	2010-01-16 16:10:33.000000000 +0100
++++ gnurobbo-0.66.new/konstruktor.h	2023-12-07 11:45:47.726054611 +0100
+@@ -36,6 +36,7 @@
+ #define K_RMSTATE 119		/* ratable/movable */
+ #define K_ERASER 120		/* clear level */
+ #define K_SAVE   121		/* save level */
++#undef K_INSERT /* defined in <mint/ostruct.h> */
+ #define K_INSERT  122		/* Insert new level */
+ #define K_SIZE    123
+ #define K_SCROLL 124
+diff -rup gnurobbo-0.66.orig/levels.c gnurobbo-0.66.new/levels.c
+--- gnurobbo-0.66.orig/levels.c	2010-08-30 18:43:47.000000000 +0200
++++ gnurobbo-0.66.new/levels.c	2023-12-07 13:01:33.499515640 +0100
+@@ -33,6 +33,10 @@ extern char *data_state[];
+ /* Function prototypes */
+ int transform_char (char c);
+ 
++#ifdef _WIN32
++#define mkdir(f, o) _mkdir(f)
++#endif
++
+ 
+ /***************************************************************************
+  * Level Initialisation                                                    *
+diff -rup gnurobbo-0.66.orig/screen.c gnurobbo-0.66.new/screen.c
+--- gnurobbo-0.66.orig/screen.c	2010-09-01 14:33:27.000000000 +0200
++++ gnurobbo-0.66.new/screen.c	2023-12-07 12:24:03.785980857 +0100
+@@ -1363,6 +1363,7 @@ set_video_mode (void)
+ #elif defined(PLATFORM_ZAURUS)
+ #elif defined(PLATFORM_PSP)
+ #endif
++  (void)hwsurface;
+ 
+   /* First attempt to set the user requested mode, then hi-res, then lo-res, then quit */
+   for (count = 0; count < 3; count++)
+diff -rup gnurobbo-0.66.orig/sound.c gnurobbo-0.66.new/sound.c
+--- gnurobbo-0.66.orig/sound.c	2010-08-23 22:41:09.000000000 +0200
++++ gnurobbo-0.66.new/sound.c	2023-12-07 12:51:26.610319947 +0100
+@@ -321,6 +321,7 @@ play_music(void)
+ 	if (playlist[c].music != NULL)
+ 	    current_song = c;	/* this way we can determine the current
+ 				 * song */
++		(void)current_song;
+     }
+     if (absents == MUS_MAXSONGS) {
+ 	absent = 1;		/* no hope, no music */
+@@ -698,7 +699,7 @@ audio_open()
+ #if defined(PLATFORM_GP2X) && defined(TOOLCHAIN_OPEN2X)
+     int             audio_buffers = 256;
+ #else
+-    int             audio_buffers = 1024;
++    int             audio_buffers = 4096;
+ #endif
+ 
+     if (audio_opened() == 0) {	/* check if we already initialized sound

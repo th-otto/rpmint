@@ -69,7 +69,7 @@ done
 
 cd "$MINT_BUILD_DIR"
 
-if test -d "${THISPKG_DIR}/."; then
+if test -d "${THISPKG_DIR}."; then
    mv "${THISPKG_DIR}."/* "${THISPKG_DIR}"
    rmdir "${THISPKG_DIR}."
 fi

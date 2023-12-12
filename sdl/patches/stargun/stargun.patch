@@ -1,0 +1,40 @@
+diff -rup stargun-0.2.orig/configure.in stargun-0.2.new/configure.in
+--- stargun-0.2.orig/configure.in	2003-11-16 00:04:20.000000000 +0100
++++ stargun-0.2.new/configure.in	2023-12-11 14:04:00.669156564 +0100
+@@ -30,13 +30,12 @@ esac
+ # development environment.  Abort the configuration process if the
+ # minimum version we require isn't available.
+ SDL_VERSION=1.0.8
+-AM_PATH_SDL($SDL_VERSION,
+-            :,
+-            AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!])
+-)
++PKG_CHECK_MODULES([SDL], [sdl], :, AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!]))
++PKG_CHECK_MODULES([SDL_MIXER], [SDL_mixer], :, AC_MSG_ERROR([*** SDL_mixer not found!]))
++PKG_CHECK_MODULES([SDL_TTF], [SDL_ttf], :, AC_MSG_ERROR([*** SDL_ttf not found!]))
+ # Add the SDL preprocessor flags and libraries to the build process
+ CXXFLAGS="$CXXFLAGS $SDL_CFLAGS"
+-LIBS="$LIBS $SDL_LIBS -lSDL_mixer -lSDL_ttf"
++LIBS="$LIBS $SDL_MIXER_LIBS $SDL_TTF_LIBS"
+ 
+ # Finally create all the generated files
+ # The configure script takes "file.in" and substitutes variables to produce
+diff -rup stargun-0.2.orig/src/main.cpp stargun-0.2.new/src/main.cpp
+--- stargun-0.2.orig/src/main.cpp	2003-11-17 01:22:56.000000000 +0100
++++ stargun-0.2.new/src/main.cpp	2023-12-11 13:54:41.929879050 +0100
+@@ -819,7 +819,7 @@ int salir=0;
+ 		return 1;
+ 	}
+ 
+-	screen = SDL_SetVideoMode(640,480,24,SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN);
++	screen = SDL_SetVideoMode(640,480,24,SDL_HWSURFACE|SDL_DOUBLEBUF);
+ 	if (screen == NULL) {
+ 		printf("No se puede inicializar el modo gráfico: \n",SDL_GetError());
+ 		return 1;
+@@ -977,4 +977,4 @@ int salir=0;
+ 	finaliza();
+ 
+ 	return 0;
+-}
+\ No newline at end of file
++}

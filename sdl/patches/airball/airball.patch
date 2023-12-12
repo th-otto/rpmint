@@ -1,26 +1,28 @@
-diff -rupN airball/Makefile airball.new/Makefile
---- airball/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ airball.new/Makefile	2023-12-02 18:43:10.252923427 +0100
+diff -rupN airball.orig/Makefile airball.new/Makefile
+--- airball.orig/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ airball.new/Makefile	2023-12-09 10:51:19.013274064 +0100
 @@ -0,0 +1,4 @@
 +SUBDIRS = airball0 config0 exechk0 level_ed0 psdprot0
 +
 +all clean::
 +	for i in $(SUBDIRS); do $(MAKE) -C $$i $@ || exit $@; done
-diff -rupN airball/airball0/Makefile airball.new/airball0/Makefile
---- airball/airball0/Makefile	2012-10-17 00:03:30.000000000 +0200
-+++ airball.new/airball0/Makefile	2023-12-03 06:07:44.730926013 +0100
-@@ -1,22 +1,27 @@
+diff -rupN airball.orig/airball0/Makefile airball.new/airball0/Makefile
+--- airball.orig/airball0/Makefile	2012-10-17 00:03:30.000000000 +0200
++++ airball.new/airball0/Makefile	2023-12-10 05:00:34.716504460 +0100
+@@ -1,22 +1,29 @@
  # Makefile
  
 -TARGET = airball 
-+TARGET = airball.prg
++TARGET = airball
  OBJECTS = main.o anims.o animspr.o font.o frame.o game.o hero.o menu.o psd.o render.o room.o sfx.o
  
 -CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -L. -s -DNDEBUG 
 -LIBS = -lSDL -s libymlib.a
-+CFLAGS = $(CPU_CFLAGS) -O3 -Wall `pkg-config --cflags sdl` -L. -DNDEBUG
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl)
++CFLAGS = $(CPU_CFLAGS) -O3 -Wall $(SDL_CFLAGS) -DNDEBUG
 +LDFLAGS = -s
-+LIBS = ymlib/libymlib.a `pkg-config --libs sdl`
++LIBS = ymlib/libymlib.a $(SDL_LIBS)
  
 -CC = gcc
 -LINKER = g++
@@ -48,9 +50,47 @@ diff -rupN airball/airball0/Makefile airball.new/airball0/Makefile
 +	$(MAKE) -C ymlib clean
 +	rm -f $(OBJECTS) $(TARGET) swapdata
  
-diff -rupN airball/airball0/psd.c airball.new/airball0/psd.c
---- airball/airball0/psd.c	2012-10-17 00:03:30.000000000 +0200
-+++ airball.new/airball0/psd.c	2023-12-02 18:52:48.998732831 +0100
+diff -rupN airball.orig/airball0/menu.c airball.new/airball0/menu.c
+--- airball.orig/airball0/menu.c	2012-10-17 00:03:30.000000000 +0200
++++ airball.new/airball0/menu.c	2023-12-10 03:40:36.890414256 +0100
+@@ -270,9 +270,9 @@ u32 MenuCredits_Main(void)
+ #define	HISC_DefaultName	"LUPIN III"
+ 
+ #pragma pack(1)
+-struct SScore
++__attribute__((packed)) struct SScore
+ {
+-	char	pName[HISC_NameLg];
++	char	pName[(HISC_NameLg+3)&~3];
+ 	u32	nTime;
+ 	u8	nObjects;
+ };
+@@ -567,11 +567,13 @@ s32 Scr_PutNameInTable(char *pName, u32
+ 	// Décalage de la table.
+ 	for (i = HISC_Nb - 2; i >= nRank; i--)
+ 	{
++		memset(&gpHighScores[i + 1], 0, sizeof(gpHighScores[i + 1]));
+ 		strcpy(gpHighScores[i + 1].pName, gpHighScores[i].pName);
+ 		gpHighScores[i + 1].nObjects = gpHighScores[i].nObjects;
+ 		gpHighScores[i + 1].nTime = gpHighScores[i].nTime;
+ 	}
+ 	// Le score à insérer.
++	memset(&gpHighScores[nRank], 0, sizeof(gpHighScores[nRank]));
+ 	strcpy(gpHighScores[nRank].pName, pName);
+ 	gpHighScores[nRank].nObjects = nObjects;
+ 	gpHighScores[nRank].nTime = nTime;
+@@ -587,7 +589,7 @@ void Scr_RazTable(void)
+ 
+ 	for (i = 0; i < HISC_Nb; i++)
+ 	{
+-		memset(gpHighScores[i].pName, 0, HISC_NameLg);
++		memset(&gpHighScores[i], 0, sizeof(gpHighScores[i]));
+ //		strcpy(gpHighScores[i].pName, pDefault);
+ 		strcpy(gpHighScores[i].pName, HISC_DefaultName);
+ 		gpHighScores[i].nTime = GAME_TIME_MAX;
+diff -rupN airball.orig/airball0/psd.c airball.new/airball0/psd.c
+--- airball.orig/airball0/psd.c	2012-10-17 00:03:30.000000000 +0200
++++ airball.new/airball0/psd.c	2023-12-09 10:51:19.016607393 +0100
 @@ -25,7 +25,7 @@ void PSD_Unprotect(u8 *pBuf)
  	// ** Le fichier est protégé, on retire la protection.
  
@@ -60,9 +100,9 @@ diff -rupN airball/airball0/psd.c airball.new/airball0/psd.c
  	// Remise en ordre des valeurs H et W.
  	nVar8 = *(((u8 *)pBuf) + 21) ^ 0x82;
  	*(((u8 *)pBuf) + 21) = *(((u8 *)pBuf) + 16) ^ 0x14;
-diff -rupN airball/airball0/swapdata.c airball.new/airball0/swapdata.c
---- airball/airball0/swapdata.c	1970-01-01 01:00:00.000000000 +0100
-+++ airball.new/airball0/swapdata.c	2023-12-03 08:03:49.415215800 +0100
+diff -rupN airball.orig/airball0/swapdata.c airball.new/airball0/swapdata.c
+--- airball.orig/airball0/swapdata.c	1970-01-01 01:00:00.000000000 +0100
++++ airball.new/airball0/swapdata.c	2023-12-09 10:51:19.016607393 +0100
 @@ -0,0 +1,258 @@
 +#include <stdio.h>
 +#include <stdlib.h>
@@ -322,9 +362,9 @@ diff -rupN airball/airball0/swapdata.c airball.new/airball0/swapdata.c
 +	
 +	return ret ? 0 : 1;
 +}
-diff -rupN airball/airball0/ymlib/LzhLib.cpp airball.new/airball0/ymlib/LzhLib.cpp
---- airball/airball0/ymlib/LzhLib.cpp	2012-10-16 23:48:52.000000000 +0200
-+++ airball.new/airball0/ymlib/LzhLib.cpp	2023-12-02 18:30:09.360745339 +0100
+diff -rupN airball.orig/airball0/ymlib/LzhLib.cpp airball.new/airball0/ymlib/LzhLib.cpp
+--- airball.orig/airball0/ymlib/LzhLib.cpp	2012-10-16 23:48:52.000000000 +0200
++++ airball.new/airball0/ymlib/LzhLib.cpp	2023-12-09 10:51:19.016607393 +0100
 @@ -32,6 +32,7 @@
  -----------------------------------------------------------------------------*/
  
@@ -333,9 +373,9 @@ diff -rupN airball/airball0/ymlib/LzhLib.cpp airball.new/airball0/ymlib/LzhLib.c
  #include "YmTypes.h"
  #include "LZH.H"
  
-diff -rupN airball/airball0/ymlib/Makefile airball.new/airball0/ymlib/Makefile
---- airball/airball0/ymlib/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ airball.new/airball0/ymlib/Makefile	2023-12-02 18:52:03.758799849 +0100
+diff -rupN airball.orig/airball0/ymlib/Makefile airball.new/airball0/ymlib/Makefile
+--- airball.orig/airball0/ymlib/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ airball.new/airball0/ymlib/Makefile	2023-12-09 10:51:19.016607393 +0100
 @@ -0,0 +1,21 @@
 +# Makefile to build the static lib 'libymlib.a'
 +
@@ -358,23 +398,49 @@ diff -rupN airball/airball0/ymlib/Makefile airball.new/airball0/ymlib/Makefile
 +clean:
 +	rm -f $(OBJECTS) $(TARGET)
 +
-diff -rupN airball/config0/Makefile airball.new/config0/Makefile
---- airball/config0/Makefile	2012-10-02 22:29:15.000000000 +0200
-+++ airball.new/config0/Makefile	2023-12-02 19:24:45.265901795 +0100
-@@ -1,17 +1,18 @@
+diff -rupN airball.orig/airball0/ymlib/Ym2149Ex.cpp airball.new/airball0/ymlib/Ym2149Ex.cpp
+--- airball.orig/airball0/ymlib/Ym2149Ex.cpp	2012-10-16 23:48:52.000000000 +0200
++++ airball.new/airball0/ymlib/Ym2149Ex.cpp	2023-12-10 07:30:24.876825604 +0100
+@@ -236,6 +236,8 @@ void	CYm2149Ex::reset(void)
+ {
+ 
+ 	for (int i=0;i<14;i++)
++		registers[i] = 0;
++	for (int i=0;i<14;i++)
+ 		writeRegister(i,0);
+ 
+ 	writeRegister(7,0xff);
+diff -rupN airball.orig/airball0/ymlib/YmLoad.h airball.new/airball0/ymlib/YmLoad.h
+--- airball.orig/airball0/ymlib/YmLoad.h	2012-10-16 23:48:52.000000000 +0200
++++ airball.new/airball0/ymlib/YmLoad.h	2023-12-10 03:32:38.787820816 +0100
+@@ -47,7 +47,7 @@ typedef struct
+ 	ymu8	reserved[5];
+ 	ymu8	level;
+ 	ymu8	name_lenght;
+-} lzhHeader_t;
++} __attribute__((packed)) lzhHeader_t;
+ #pragma pack()
+ 
+ #ifdef __cplusplus
+diff -rupN airball.orig/config0/Makefile airball.new/config0/Makefile
+--- airball.orig/config0/Makefile	2012-10-02 22:29:15.000000000 +0200
++++ airball.new/config0/Makefile	2023-12-10 05:01:00.773132615 +0100
+@@ -1,17 +1,20 @@
  # Mon Makefile
 -#PATH = /usr/include/SDL
 -TARGET = airball_cfg 
 +
-+TARGET = airball_cfg.prg
++TARGET = airball_cfg
  OBJECTS = main.o font.o 
  
 -CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -fno-strict-aliasing -s 
 -LIBS = -lSDL
 -CC = gcc
-+CFLAGS =$(CPU_CFLAGS) -O3 -Wall `pkg-config --cflags sdl` -fno-strict-aliasing
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl)
++CFLAGS =$(CPU_CFLAGS) -O3 -Wall $(SDL_CFLAGS) -fno-strict-aliasing
 +LDFLAGS = -s
-+LIBS =  `pkg-config --libs sdl`
++LIBS = $(SDL_LIBS)
 +CC = $(CROSS_PREFIX)gcc
  
  all: $(TARGET)
@@ -387,14 +453,14 @@ diff -rupN airball/config0/Makefile airball.new/config0/Makefile
 -	rm $(TARGET) $(OBJECTS)
 +	rm -f $(TARGET) $(OBJECTS)
  
-diff -rupN airball/exechk0/Makefile airball.new/exechk0/Makefile
---- airball/exechk0/Makefile	2012-10-02 22:20:54.000000000 +0200
-+++ airball.new/exechk0/Makefile	2023-12-02 19:24:45.265901795 +0100
+diff -rupN airball.orig/exechk0/Makefile airball.new/exechk0/Makefile
+--- airball.orig/exechk0/Makefile	2012-10-02 22:20:54.000000000 +0200
++++ airball.new/exechk0/Makefile	2023-12-09 10:53:23.089771571 +0100
 @@ -1,17 +1,17 @@
  # Mon Makefile
 -#PATH = /usr/include/SDL
 -TARGET = exechk 
-+TARGET = exechk.ttp
++TARGET = exechk
  OBJECTS = main.o
   
 -CFLAGS = -O3 -Wall -g -I/usr/include/SDL -L/usr/lib -fno-strict-aliasing -D__LINUX__ 
@@ -414,23 +480,25 @@ diff -rupN airball/exechk0/Makefile airball.new/exechk0/Makefile
 -	rm $(TARGET) $(OBJECTS)
 +	rm -f $(TARGET) $(OBJECTS)
  
-diff -rupN airball/level_ed0/Makefile airball.new/level_ed0/Makefile
---- airball/level_ed0/Makefile	2013-01-10 00:04:40.000000000 +0100
-+++ airball.new/level_ed0/Makefile	2023-12-02 19:24:45.265901795 +0100
-@@ -1,17 +1,18 @@
+diff -rupN airball.orig/level_ed0/Makefile airball.new/level_ed0/Makefile
+--- airball.orig/level_ed0/Makefile	2013-01-10 00:04:40.000000000 +0100
++++ airball.new/level_ed0/Makefile	2023-12-10 05:01:34.293083020 +0100
+@@ -1,17 +1,20 @@
  # Mon Makefile
 -#PATH = /usr/include/SDL
 -TARGET = airball_ed 
 +
-+TARGET = airball_ed.prg
++TARGET = airball_ed
  OBJECTS = main.o font.o gfx.o editor.o preca.o render.o rooms.o frame.o
  
 -CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -fno-strict-aliasing -s 
 -LIBS = -lSDL
 -CC = gcc
-+CFLAGS = $(CPU_CFLAGS) -O3 -Wall `pkg-config --cflags sdl` -fno-strict-aliasing
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl)
++CFLAGS = $(CPU_CFLAGS) -O3 -Wall $(SDL_CFLAGS) -fno-strict-aliasing
 +LDFLAGS = -s
-+LIBS = `pkg-config --libs sdl`
++LIBS = $(SDL_LIBS)
 +CC = $(CROSS_PREFIX)gcc
  
  all: $(TARGET)
@@ -443,14 +511,25 @@ diff -rupN airball/level_ed0/Makefile airball.new/level_ed0/Makefile
 -	rm $(TARGET) $(OBJECTS)
 +	rm -f $(TARGET) $(OBJECTS)
  
-diff -rupN airball/psdprot0/Makefile airball.new/psdprot0/Makefile
---- airball/psdprot0/Makefile	2012-10-02 22:35:10.000000000 +0200
-+++ airball.new/psdprot0/Makefile	2023-12-02 19:24:45.269235124 +0100
+diff -rupN airball.orig/level_ed0/editor.c airball.new/level_ed0/editor.c
+--- airball.orig/level_ed0/editor.c	2012-07-08 15:48:09.000000000 +0200
++++ airball.new/level_ed0/editor.c	2023-12-10 03:33:30.981073820 +0100
+@@ -853,7 +853,6 @@ void Editor_FileLoad(char *pFilename)
+ 	if (nChkSumLoaded != nChkSum)
+ 	{
+ 		fprintf(stderr, "Editor_FileLoad(): Checksum error. Loaded = %X / Calculated = %X. Aborted.\n", nChkSumLoaded, nChkSum);
+-		fclose(fPt);
+ 		exit(1);
+ 	}
+ 
+diff -rupN airball.orig/psdprot0/Makefile airball.new/psdprot0/Makefile
+--- airball.orig/psdprot0/Makefile	2012-10-02 22:35:10.000000000 +0200
++++ airball.new/psdprot0/Makefile	2023-12-09 10:53:58.799722887 +0100
 @@ -1,17 +1,17 @@
  # Mon Makefile
 -#PATH = /usr/include/SDL
 -TARGET = psdprot 
-+TARGET = psdprot.ttp
++TARGET = psdprot
  OBJECTS = main.o
   
 -CFLAGS = -O3 -Wall -I/usr/include/SDL -L/usr/lib -fno-strict-aliasing -D__LINUX__ 
@@ -470,9 +549,9 @@ diff -rupN airball/psdprot0/Makefile airball.new/psdprot0/Makefile
 -	rm $(TARGET) $(OBJECTS)
 +	rm -f $(TARGET) $(OBJECTS)
  
-diff -rupN airball/psdprot0/main.c airball.new/psdprot0/main.c
---- airball/psdprot0/main.c	2012-09-09 13:06:26.000000000 +0200
-+++ airball.new/psdprot0/main.c	2023-12-03 04:47:11.089636949 +0100
+diff -rupN airball.orig/psdprot0/main.c airball.new/psdprot0/main.c
+--- airball.orig/psdprot0/main.c	2012-09-09 13:06:26.000000000 +0200
++++ airball.new/psdprot0/main.c	2023-12-09 10:51:19.016607393 +0100
 @@ -3,14 +3,13 @@
  // Clément '17o2!!' CORDE
  

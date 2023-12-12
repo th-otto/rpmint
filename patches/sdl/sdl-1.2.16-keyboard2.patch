@@ -1,0 +1,48 @@
+diff -rup SDL-1.2.16-git.orig/src/video/ataricommon/SDL_biosevents.c SDL-1.2.16-git.new/src/video/ataricommon/SDL_biosevents.c
+--- SDL-1.2.16-git.orig/src/video/ataricommon/SDL_biosevents.c	2023-12-07 13:45:33.319421903 +0100
++++ SDL-1.2.16-git.new/src/video/ataricommon/SDL_biosevents.c	2023-12-07 13:45:41.062745264 +0100
+@@ -97,7 +97,7 @@ void AtariBios_PumpEvents(_THIS)
+ 		/* Key unpressed ? */
+ 		if (bios_previouskeyboard[i] && !bios_currentkeyboard[i])
+ 			SDL_PrivateKeyboard(SDL_RELEASED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, 0));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, kstate));
+ 	}
+ 
+ 	if (use_dev_mouse) {
+diff -rup SDL-1.2.16-git.orig/src/video/ataricommon/SDL_gemdosevents.c SDL-1.2.16-git.new/src/video/ataricommon/SDL_gemdosevents.c
+--- SDL-1.2.16-git.orig/src/video/ataricommon/SDL_gemdosevents.c	2023-12-07 13:45:33.319421903 +0100
++++ SDL-1.2.16-git.new/src/video/ataricommon/SDL_gemdosevents.c	2023-12-07 13:45:41.062745264 +0100
+@@ -98,7 +98,7 @@ void AtariGemdos_PumpEvents(_THIS)
+ 		/* Key unpressed ? */
+ 		if (gemdos_previouskeyboard[i] && !gemdos_currentkeyboard[i])
+ 			SDL_PrivateKeyboard(SDL_RELEASED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, 0));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, kstate));
+ 	}
+ 
+ 	if (use_dev_mouse) {
+diff -rup SDL-1.2.16-git.orig/src/video/ataricommon/SDL_ikbdevents.c SDL-1.2.16-git.new/src/video/ataricommon/SDL_ikbdevents.c
+--- SDL-1.2.16-git.orig/src/video/ataricommon/SDL_ikbdevents.c	2023-12-07 13:45:33.319421903 +0100
++++ SDL-1.2.16-git.new/src/video/ataricommon/SDL_ikbdevents.c	2023-12-07 13:45:41.062745264 +0100
+@@ -104,7 +104,7 @@ void AtariIkbd_PumpEvents(_THIS)
+ 		/* Key released ? */
+ 		if (SDL_AtariIkbd_keyboard[i]==KEY_RELEASED) {
+ 			SDL_PrivateKeyboard(SDL_RELEASED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, 0));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, AtariIkbd_Shiftstate()));
+ 			SDL_AtariIkbd_keyboard[i]=KEY_UNDEFINED;
+ 		}
+ 	}
+diff -rup SDL-1.2.16-git.orig/src/video/gem/SDL_gemevents.c SDL-1.2.16-git.new/src/video/gem/SDL_gemevents.c
+--- SDL-1.2.16-git.orig/src/video/gem/SDL_gemevents.c	2023-12-07 13:45:33.319421903 +0100
++++ SDL-1.2.16-git.new/src/video/gem/SDL_gemevents.c	2023-12-07 13:45:41.062745264 +0100
+@@ -165,7 +165,7 @@ void GEM_PumpEvents(_THIS)
+ 		/* Key unpressed ? */
+ 		if (gem_previouskeyboard[i] && !gem_currentkeyboard[i])
+ 			SDL_PrivateKeyboard(SDL_RELEASED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, 0));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, kstate));
+ 	}
+ 
+ 	SDL_memcpy(gem_previouskeyboard,gem_currentkeyboard,sizeof(gem_previouskeyboard));

@@ -1,0 +1,265 @@
+diff -rup starfighter-1.2.orig/code/aliens.cpp starfighter-1.2.new/code/aliens.cpp
+--- starfighter-1.2.orig/code/aliens.cpp	2011-12-26 23:15:43.000000000 +0100
++++ starfighter-1.2.new/code/aliens.cpp	2023-12-10 19:17:47.944608927 +0100
+@@ -144,7 +144,7 @@ bool addAlien()
+ 	signed char *alienArray;
+ 	signed char numberOfAliens = 1;
+ 
+-	alienArray = new signed char[5];
++	alienArray = new signed char[6];
+ 
+ 	switch(currentGame.area)
+ 	{
+diff -rup starfighter-1.2.orig/code/audio.cpp starfighter-1.2.new/code/audio.cpp
+--- starfighter-1.2.orig/code/audio.cpp	2012-02-26 22:29:32.000000000 +0100
++++ starfighter-1.2.new/code/audio.cpp	2023-12-10 19:55:17.905112126 +0100
+@@ -82,7 +82,10 @@ void loadMusic(const char *filename)
+ 
+ 	#if USEPACK
+ 	if(!unpack(filename, PAK_MOD))
++	{
++		engine.music = Mix_LoadMUS(filename);
+ 		return;
++	}
+ 
+ 	char musicFilename[PATH_MAX];
+ 	strcpy(musicFilename, "");
+diff -rup starfighter-1.2.orig/code/graphics.cpp starfighter-1.2.new/code/graphics.cpp
+--- starfighter-1.2.orig/code/graphics.cpp	2011-12-26 23:15:43.000000000 +0100
++++ starfighter-1.2.new/code/graphics.cpp	2023-12-10 19:16:07.554738501 +0100
+@@ -498,7 +498,7 @@ void circle(int xc, int yc, int R, SDL_S
+ 
+ void blevelRect(SDL_Surface *dest, int x, int y, int w, int h, Uint8 red, Uint8 green, Uint8 blue)
+ {
+-	SDL_Rect r = {x, y, w, h};
++	SDL_Rect r = {(Sint16)x, (Sint16)y, (Uint16)w, (Uint16)h};
+ 	SDL_FillRect(dest, &r, SDL_MapRGB(screen->format, red, green, blue));
+ 
+ 	drawLine(dest, x, y, x + w, y, SDL_MapRGB(screen->format, 255, 255, 255));
+@@ -557,7 +557,7 @@ SDL_Surface *textSurface(const char *inS
+ void textSurface(int index, const char *inString, int x, int y, int fontColor)
+ {
+ 	/* Shortcut: if we already rendered the same string in the same color, don't render it again. */
+-	if(textShape[index].text && textShape[index].image && textShape[index].fontColor == fontColor && !strcmp(textShape[index].text, inString)) {
++	if(/* textShape[index].text && */ textShape[index].image && textShape[index].fontColor == fontColor && !strcmp(textShape[index].text, inString)) {
+ 		textShape[index].x = x;
+ 		textShape[index].y = y;
+ 		if (x == -1)
+diff -rup starfighter-1.2.orig/code/init.cpp starfighter-1.2.new/code/init.cpp
+--- starfighter-1.2.orig/code/init.cpp	2012-02-26 22:29:32.000000000 +0100
++++ starfighter-1.2.new/code/init.cpp	2023-12-10 18:39:15.977597491 +0100
+@@ -20,12 +20,9 @@ Foundation, Inc., 59 Temple Place - Suit
+ 
+ #include "Starfighter.h"
+ 
+-#if LINUX
+ #include <sys/stat.h>
+-#include <pwd.h>
+ #include <unistd.h>
+ #include <errno.h>
+-#endif
+ 
+ /*
+ Initalises a whole load of variables
+@@ -113,40 +110,28 @@ This bit is just for Linux users. It att
+ home directory, then creates the .parallelrealities and .parallelrealities/starfighter
+ directories so that saves and temporary data files can be written there. Good, eh? :)
+ */
+-#if LINUX
++#ifdef __unix__
+ static void setupUserHomeDirectory()
+ {
+ 	char *userHome;
+ 
+-	char *name = getlogin();
+-	
+-	passwd *pass;
+-
+-	if (name != NULL)
+-		pass = getpwnam(name);
+-	else
+-		pass = getpwuid(geteuid());
+-
+-	if (pass == NULL)
+-	{
+-		printf("Couldn't determine the user home directory. Exitting.\n");
+-		exit(1);
+-	}
+-
+-	userHome = pass->pw_dir;
++	userHome = getenv("HOME");
+ 
+ 	char dir[PATH_MAX];
+ 	strcpy(dir, "");
+ 
+-	sprintf(dir, "%s/.parallelrealities", userHome);
+-	if ((mkdir(dir, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH) != 0) && (errno != EEXIST))
+-		showErrorAndExit(2, dir);
+-
+-	sprintf(dir, "%s/.parallelrealities/starfighter", userHome);
+-	if ((mkdir(dir, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH) != 0) && (errno != EEXIST))
+-		showErrorAndExit(2, dir);
+-
+-	sprintf(engine.userHomeDirectory, "%s/.parallelrealities/starfighter/", userHome);
++	if (userHome)
++	{
++		sprintf(dir, "%s/.parallelrealities", userHome);
++		if ((mkdir(dir, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH) != 0) && (errno != EEXIST))
++			showErrorAndExit(2, dir);
++	
++		sprintf(dir, "%s/.parallelrealities/starfighter", userHome);
++		if ((mkdir(dir, S_IRWXU|S_IRWXG|S_IROTH|S_IXOTH) != 0) && (errno != EEXIST))
++			showErrorAndExit(2, dir);
++	
++		sprintf(engine.userHomeDirectory, "%s/.parallelrealities/starfighter/", userHome);
++	}
+ }
+ #endif
+ 
+@@ -158,7 +143,7 @@ void initSystem()
+ {
+ 	strcpy(engine.userHomeDirectory, "");
+ 
+-	#if LINUX
++	#ifdef __unix__
+ 		setupUserHomeDirectory();
+ 	#endif
+ 
+diff -rup starfighter-1.2.orig/code/intermission.cpp starfighter-1.2.new/code/intermission.cpp
+--- starfighter-1.2.orig/code/intermission.cpp	2011-12-26 23:15:43.000000000 +0100
++++ starfighter-1.2.new/code/intermission.cpp	2023-12-10 19:21:03.321023417 +0100
+@@ -383,7 +383,7 @@ static void createOptions(SDL_Surface *o
+ 	}
+ 	else
+ 	{
+-		char string[] = "Slot %d";
++		char string[12] = "Slot %d";
+ 		sprintf(string, "Slot %d", currentGame.autoSaveSlot + 1);
+ 		blevelRect(optionsSurface, 190, 195, 110, 22, 0xff, 0x00, 0x00);
+ 		drawString(string, 225, 200, FONT_WHITE, optionsSurface);
+@@ -425,11 +425,11 @@ static void showOptions(SDL_Surface *opt
+ 		{
+ 			if (!engine.fullScreen)
+ 			{
+-				#if LINUX
++				#ifdef __linux__
+ 				SDL_WM_ToggleFullScreen(screen);
+ 				#else
+ 				screen = SDL_SetVideoMode(800, 600, 0, SDL_DOUBLEBUF|SDL_HWPALETTE|SDL_FULLSCREEN);
+-				drawBackground();
++				drawBackGround();
+ 				flushBuffer();
+ 				#endif
+ 				engine.fullScreen = true;
+@@ -440,11 +440,11 @@ static void showOptions(SDL_Surface *opt
+ 		{
+ 			if (engine.fullScreen)
+ 			{
+-				#if LINUX
++				#ifdef __linux__
+ 				SDL_WM_ToggleFullScreen(screen);
+ 				#else
+ 				screen = SDL_SetVideoMode(800, 600, 0, SDL_DOUBLEBUF|SDL_HWPALETTE);
+-				drawBackground();
++				drawBackGround();
+ 				flushBuffer();
+ 				#endif
+ 				engine.fullScreen = false;
+diff -rup starfighter-1.2.orig/code/player.cpp starfighter-1.2.new/code/player.cpp
+--- starfighter-1.2.orig/code/player.cpp	2011-12-26 23:15:43.000000000 +0100
++++ starfighter-1.2.new/code/player.cpp	2023-12-10 19:20:35.497725996 +0100
+@@ -340,8 +340,18 @@ void getPlayerInput()
+ 
+ 		if ((engine.keyState[SDLK_F11]) || ((engine.keyState[SDLK_RETURN]) && (engine.keyState[SDLK_LALT])))
+ 		{
+-			SDL_WM_ToggleFullScreen(screen);
+ 			engine.fullScreen = !engine.fullScreen;
++			#ifdef __linux__
++			SDL_WM_ToggleFullScreen(screen);
++			#else
++			if (engine.fullScreen)
++				screen = SDL_SetVideoMode(800, 600, 0, SDL_DOUBLEBUF|SDL_HWPALETTE|SDL_FULLSCREEN);
++			else
++				screen = SDL_SetVideoMode(800, 600, 0, SDL_DOUBLEBUF|SDL_HWPALETTE);
++
++			drawBackGround();
++			flushBuffer();
++			#endif
+ 			engine.keyState[SDLK_F11] = engine.keyState[SDLK_LALT] = engine.keyState[SDLK_RETURN] = 0;
+ 		}
+ 	}
+diff -rup starfighter-1.2.orig/code/title.cpp starfighter-1.2.new/code/title.cpp
+--- starfighter-1.2.orig/code/title.cpp	2012-02-26 22:29:32.000000000 +0100
++++ starfighter-1.2.new/code/title.cpp	2023-12-10 19:21:15.224341388 +0100
+@@ -214,7 +214,7 @@ int doTitle()
+ 	int redGlow = 255;
+ 	signed char redDir = -2;
+ 	char buildVersion[25];
+-	sprintf(buildVersion, "Version "VERSION);
++	sprintf(buildVersion, "Version " VERSION);
+ 
+ 	SDL_Rect optionRec;
+ 
+@@ -410,7 +410,7 @@ int doTitle()
+ 						else if (selectedOption == 3)
+ 						{
+ 							engine.fullScreen = !engine.fullScreen;
+-							#if LINUX
++							#ifdef __linux__
+ 							SDL_WM_ToggleFullScreen(screen);
+ 							#else
+ 							if (engine.fullScreen)
+@@ -418,7 +418,7 @@ int doTitle()
+ 							else
+ 								screen = SDL_SetVideoMode(800, 600, 0, SDL_DOUBLEBUF|SDL_HWPALETTE);
+ 
+-							drawBackground();
++							drawBackGround();
+ 							flushBuffer();
+ 							#endif
+ 						}
+diff -rup starfighter-1.2.orig/makefile starfighter-1.2.new/makefile
+--- starfighter-1.2.orig/makefile	2012-02-26 22:29:32.000000000 +0100
++++ starfighter-1.2.new/makefile	2023-12-10 19:26:10.583966954 +0100
+@@ -1,7 +1,11 @@
+-CFLAGS ?= -O2 -Wall -g
+-CFLAGS += `sdl-config --cflags` -DLINUX
+-LIBS = `sdl-config --libs` -lSDL_mixer -lSDL_image
++CFLAGS = $(CPU_CFLAGS) -O2 -Wall -fomit-frame-pointer -fno-strict-aliasing
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl SDL_mixer SDL_image)
++CFLAGS += $(SDL_CFLAGS)
++LIBS = $(SDL_LIBS)
+ OBJS = ai.o aliens.o audio.o bullets.o cargo.o collectable.o comms.o debris.o events.o explosions.o game.o globals.o graphics.o init.o intermission.o loadSave.o messages.o misc.o missions.o player.o resources.o script.o shop.o Starfighter.o title.o unpack.o weapons.o
++CC = $(CROSS_PREFIX)gcc
++CXX = $(CROSS_PREFIX)g++
+ 
+ VERSION = 1.2
+ PROG = starfighter
+@@ -10,12 +14,12 @@ DOCS = docs/*
+ DATA = data gfx sound
+ DATAFILES = data/* gfx/* sound/*
+ 
+-USEPACK ?= 1
++USEPACK = 1
+ 
+-PREFIX ?= /usr
+-BINDIR ?= $(PREFIX)/games/
+-DATADIR ?= $(PREFIX)/share/games/parallelrealities/
+-DOCDIR ?= $(PREFIX)/share/doc/$(PROG)/
++PREFIX = /usr
++BINDIR = $(PREFIX)/games/
++DATADIR = $(PREFIX)/share/games/parallelrealities/
++DOCDIR = $(PREFIX)/share/doc/$(PROG)/
+ 
+ # top-level rule to create the program.
+ ALL = $(PROG)
+@@ -31,7 +35,7 @@ all: $(ALL)
+ 
+ # linking the program.
+ $(PROG): $(OBJS)
+-	$(CXX) $(LDFLAGS) $(OBJS) -o $(PROG) $(LIBS)
++	$(CXX) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $(PROG) $(LIBS)
+ 
+ # cleaning everything that can be automatically recreated with "make".
+ clean:

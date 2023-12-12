@@ -1,0 +1,82 @@
+diff -rup openjazz-20231028.orig/Makefile openjazz-20231028.new/Makefile
+--- openjazz-20231028.orig/Makefile	2023-10-28 23:52:06.000000000 +0200
++++ openjazz-20231028.new/Makefile	2023-12-11 07:30:03.226012811 +0100
+@@ -2,8 +2,8 @@
+ include openjazz.mk
+ 
+ # Sane defaults
+-CXX ?= g++
+-CXXFLAGS ?= -g -Wall -O2
++CXX = $(CROSS_PREFIX)g++
++CXXFLAGS = $(CPU_CFLAGS) -Wall -O2 -fomit-frame-pointer -fno-strict-aliasing
+ DEFINES = -DSCALE -DPORTABLE
+ CPPFLAGS = $(DEFINES) -Isrc -Iext/scale2x -Iext/psmplug -Iext/miniz -Iext/argparse
+ 
+@@ -15,21 +15,21 @@ ifeq ($(OS),Windows_NT)
+ endif
+ 
+ # SDL1.2 or SDL2
+-SDLCONFIG ?= sdl-config
+-CXXFLAGS += $(shell $(SDLCONFIG) --cflags)
+-LIBS += $(shell $(SDLCONFIG) --libs)
++SDL = sdl
++SDL_CFLAGS := $(shell pkg-config --cflags $(SDL))
++SDL_LIBS := $(shell pkg-config --libs $(SDL))
++CXXFLAGS += $(SDL_CFLAGS)
++LIBS += $(SDL_LIBS)
+ 
+ LIBS += -lm
+ 
+ .PHONY: clean
+ 
+ OpenJazz: $(OBJS)
+-	@-echo [LD] $@
+-	@$(CXX) -o OpenJazz $(LDFLAGS) $(OBJS) $(LIBS)
++	$(CXX) -o OpenJazz $(CXXFLAGS) $(LDFLAGS) $(OBJS) $(LIBS)
+ 
+ %.o: %.cpp
+-	@-echo [CXX] $<
+-	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
++	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
+ 
+ clean:
+ 	@-echo Cleaning...
+diff -rup openjazz-20231028.orig/ext/psmplug/fastmix.cpp openjazz-20231028.new/ext/psmplug/fastmix.cpp
+--- openjazz-20231028.orig/ext/psmplug/fastmix.cpp	2023-10-28 23:52:06.000000000 +0200
++++ openjazz-20231028.new/ext/psmplug/fastmix.cpp	2023-12-11 08:08:11.142827312 +0100
+@@ -1668,7 +1668,7 @@ DWORD MPPASMCALL X86_Convert32To24(LPVOI
+ 		else if (n > vumax)
+ 			vumax = n;
+ 		p = n >> (8-MIXING_ATTENUATION) ; // 24-bit signed
+-#ifdef WORDS_BIGENDIAN
++#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+ 		buf[i*3+0] = p & 0xFF0000 >> 24;
+ 		buf[i*3+1] = p & 0x00FF00 >> 16 ;
+ 		buf[i*3+2] = p & 0x0000FF ;
+diff -rup openjazz-20231028.orig/ext/psmplug/sndfile.h openjazz-20231028.new/ext/psmplug/sndfile.h
+--- openjazz-20231028.orig/ext/psmplug/sndfile.h	2023-10-28 23:52:06.000000000 +0200
++++ openjazz-20231028.new/ext/psmplug/sndfile.h	2023-12-11 08:01:01.353381196 +0100
+@@ -964,7 +964,7 @@ ARM_get32(const void *data)
+ #define bswapBE32(X) bswap_32(ARM_get32(&X))
+ 
+ // From libsdl
+-#elif defined(WORDS_BIGENDIAN) && WORDS_BIGENDIAN
++#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+ #define bswapLE16(X) bswap_16(X)
+ #define bswapLE32(X) bswap_32(X)
+ #define bswapBE16(X) (X)
+diff -rup openjazz-20231028.orig/src/io/gfx/video.h openjazz-20231028.new/src/io/gfx/video.h
+--- openjazz-20231028.orig/src/io/gfx/video.h	2023-10-28 23:52:06.000000000 +0200
++++ openjazz-20231028.new/src/io/gfx/video.h	2023-12-11 08:12:32.262496903 +0100
+@@ -100,6 +100,11 @@
+ 	#define NO_RESIZE
+ 
+ 	#define FULLSCREEN_FLAGS (SDL_FULLSCREEN | SDL_HWSURFACE)
++#elif defined(__MINT__)
++	#define DEFAULT_SCREEN_WIDTH 640
++	#define DEFAULT_SCREEN_HEIGHT 480
++
++	#define FULLSCREEN_FLAGS (SDL_FULLSCREEN | SDL_DOUBLEBUF | SDL_HWSURFACE | SDL_HWPALETTE)
+ #else
+ 	#define DEFAULT_SCREEN_WIDTH SW
+ 	#define DEFAULT_SCREEN_HEIGHT SH

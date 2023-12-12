@@ -1,0 +1,135 @@
+diff -rup opentyrian.orig/Makefile opentyrian.new/Makefile
+--- opentyrian.orig/Makefile	2020-06-19 20:55:22.000000000 +0200
++++ opentyrian.new/Makefile	2023-12-11 10:20:43.735829378 +0100
+@@ -16,29 +16,27 @@ WITH_NETWORK := true
+ 
+ SHELL = /bin/sh
+ 
+-CC ?= gcc
+-INSTALL ?= install
+-PKG_CONFIG ?= pkg-config
+-
+-VCS_IDREV ?= (git describe --tags || git rev-parse --short HEAD)
+-
+-INSTALL_PROGRAM ?= $(INSTALL)
+-INSTALL_DATA ?= $(INSTALL) -m 644
+-
+-prefix ?= /usr/local
+-exec_prefix ?= $(prefix)
+-
+-bindir ?= $(exec_prefix)/bin
+-datarootdir ?= $(prefix)/share
+-datadir ?= $(datarootdir)
+-docdir ?= $(datarootdir)/doc/opentyrian
+-mandir ?= $(datarootdir)/man
+-man6dir ?= $(mandir)/man6
+-man6ext ?= .6
++CC = $(CROSS_PREFIX)gcc
++INSTALL = install
++PKG_CONFIG = pkg-config
++
++INSTALL_PROGRAM = $(INSTALL)
++INSTALL_DATA = $(INSTALL) -m 644
++
++prefix = /usr/local
++exec_prefix = $(prefix)
++
++bindir = $(exec_prefix)/bin
++datarootdir = $(prefix)/share
++datadir = $(datarootdir)
++docdir = $(datarootdir)/doc/opentyrian
++mandir = $(datarootdir)/man
++man6dir = $(mandir)/man6
++man6ext = .6
+ 
+ # see http://www.pathname.com/fhs/pub/fhs-2.3.html
+ 
+-gamesdir ?= $(datadir)/games
++gamesdir = $(datadir)/games
+ 
+ ###
+ 
+@@ -54,19 +52,13 @@ ifeq ($(WITH_NETWORK), true)
+     EXTRA_CPPFLAGS += -DWITH_NETWORK
+ endif
+ 
+-OPENTYRIAN_VERSION := $(shell $(VCS_IDREV) 2>/dev/null && \
+-                              touch src/opentyrian_version.h)
+-ifneq ($(OPENTYRIAN_VERSION), )
+-    EXTRA_CPPFLAGS += -DOPENTYRIAN_VERSION='"$(OPENTYRIAN_VERSION)"'
+-endif
+-
+ CPPFLAGS := -DNDEBUG
+-CFLAGS := -pedantic
+-CFLAGS += -MMD
++CFLAGS := $(CPU_CFLAGS) -pedantic
+ CFLAGS += -Wall \
+           -Wextra \
+-          -Wno-missing-field-initializers
+-CFLAGS += -O2
++          -Wno-missing-field-initializers \
++          -Wno-format-truncation
++CFLAGS += -O2 -fomit-frame-pointer -fno-strict-aliasing
+ LDFLAGS := 
+ LDLIBS := 
+ 
+Only in opentyrian.new: obj
+diff -rup opentyrian.orig/src/destruct.c opentyrian.new/src/destruct.c
+--- opentyrian.orig/src/destruct.c	2020-06-19 20:55:22.000000000 +0200
++++ opentyrian.new/src/destruct.c	2023-12-11 09:51:03.441496475 +0100
+@@ -2099,7 +2099,7 @@ static void DE_RunTickAI( void )
+ 			ptrUnit = ptrTarget->unit;
+ 			for (j = 0; j < config.max_installations; j++, ptrUnit++)
+ 			{
+-				if (abs(ptrUnit->unitX - ptrCurUnit->unitX) < 8)
++				if (abs((int)ptrUnit->unitX - (int)ptrCurUnit->unitX) < 8)
+ 				{
+ 					/* I get it.  This makes helicoptors hover over
+ 					 * their enemies. */
+diff -rup opentyrian.orig/src/episodes.c opentyrian.new/src/episodes.c
+--- opentyrian.orig/src/episodes.c	2020-06-19 20:55:22.000000000 +0200
++++ opentyrian.new/src/episodes.c	2023-12-11 09:57:01.281027376 +0100
+@@ -221,8 +221,14 @@ void JE_initEpisode( JE_byte newEpisode
+ 	
+ 	episodeNum = newEpisode;
+ 	
++	if (episodeNum >= 10)
++		return;
+ 	sprintf(levelFile,    "tyrian%d.lvl",  episodeNum);
++	if (episodeNum >= 10)
++		return;
+ 	sprintf(cube_file,    "cubetxt%d.dat", episodeNum);
++	if (episodeNum >= 10)
++		return;
+ 	sprintf(episode_file, "levels%d.dat",  episodeNum);
+ 	
+ 	JE_analyzeLevel();
+diff -rup opentyrian.orig/src/joystick.c opentyrian.new/src/joystick.c
+--- opentyrian.orig/src/joystick.c	2020-06-19 20:55:22.000000000 +0200
++++ opentyrian.new/src/joystick.c	2023-12-11 10:02:20.003942851 +0100
+@@ -496,7 +496,7 @@ void code_to_assignment( Joystick_assign
+  */
+ const char *assignment_to_code( const Joystick_assignment *assignment )
+ {
+-	static char name[7];
++	static char name[16];
+ 	
+ 	switch (assignment->type)
+ 	{
+diff -rup opentyrian.orig/src/video_scale_hqNx.c opentyrian.new/src/video_scale_hqNx.c
+--- opentyrian.orig/src/video_scale_hqNx.c	2020-06-19 20:55:22.000000000 +0200
++++ opentyrian.new/src/video_scale_hqNx.c	2023-12-11 10:07:19.530216826 +0100
+@@ -121,9 +121,9 @@ inline bool diff(unsigned int w1, unsign
+ {
+ 	Uint32 YUV1 = yuv_palette[w1];
+ 	Uint32 YUV2 = yuv_palette[w2];
+-	return ( ( abs((YUV1 & Ymask) - (YUV2 & Ymask)) > trY ) ||
+-	         ( abs((YUV1 & Umask) - (YUV2 & Umask)) > trU ) ||
+-	         ( abs((YUV1 & Vmask) - (YUV2 & Vmask)) > trV ) );
++	return ( ( abs((int)(YUV1 & Ymask) - (int)(YUV2 & Ymask)) > trY ) ||
++	         ( abs((int)(YUV1 & Umask) - (int)(YUV2 & Umask)) > trU ) ||
++	         ( abs((int)(YUV1 & Vmask) - (int)(YUV2 & Vmask)) > trV ) );
+ }
+ 
+ 
+Only in opentyrian.new: x
