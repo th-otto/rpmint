@@ -1,0 +1,370 @@
+diff -rupN pegs.orig/Makefile pegs.new/Makefile
+--- pegs.orig/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ pegs.new/Makefile	2023-12-12 09:20:05.148168768 +0100
+@@ -0,0 +1,4 @@
++SUBDIRS = src editor
++
++all clean:
++	for i in $(SUBDIRS); do $(MAKE) -C $$i $@ || exit 1; done
+diff -rupN pegs.orig/editor/Makefile pegs.new/editor/Makefile
+--- pegs.orig/editor/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ pegs.new/editor/Makefile	2023-12-12 09:14:15.948621500 +0100
+@@ -0,0 +1,22 @@
++# Makefile
++
++TARGET = pegs_ed
++OBJECTS = guiO.o main.o map.o tileset.o
++
++CPU_CFLAGS =
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl SDL_mixer)
++LIBS = $(SDL_LIBS)
++CXXFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing -Wall $(SDL_CFLAGS) -DNDEBUG 
++LDFLAGS = -s
++
++CC = $(CROSS_PREFIX)gcc
++CXX = $(CROSS_PREFIX)g++
++
++all: $(TARGET)
++
++$(TARGET): $(OBJECTS)
++	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
++
++clean:
++	rm -f $(TARGET) $(OBJECTS)
+diff -rupN pegs.orig/editor/guiO.h pegs.new/editor/guiO.h
+--- pegs.orig/editor/guiO.h	2005-03-31 18:13:54.000000000 +0200
++++ pegs.new/editor/guiO.h	2023-12-12 09:14:30.621935810 +0100
+@@ -16,7 +16,7 @@ public:
+ 	SDL_Surface *image;
+ 
+ 	guiO();
+-	void guiO::setcoords(int x, int y);
++	void setcoords(int x, int y);
+ 	~guiO(){}
+ 
+ };
+diff -rupN pegs.orig/editor/main.cpp pegs.new/editor/main.cpp
+--- pegs.orig/editor/main.cpp	2005-03-31 18:41:08.000000000 +0200
++++ pegs.new/editor/main.cpp	2023-12-12 09:17:13.861724173 +0100
+@@ -1,4 +1,3 @@
+-
+ /*********************************************************************
+  *
+  *
+@@ -65,8 +64,8 @@ void draw_tile(int x, int y, int tile);
+ void draw_map();
+ void draw_tilescreen();
+ int calc_curs(Uint16 mousex, Uint16 mousey);
+-void save_map(char *filename);
+-void load_map(char *filename);
++void save_map(const char *filename);
++void load_map(const char *filename);
+ void load_gui();
+ void draw_gui();
+ int check_gui(int pos);
+@@ -216,6 +215,7 @@ int check_input()
+ 	      if(event.button.button == SDL_BUTTON_LEFT)
+ 		{
+ 		  if (editor_state == 1)
++		  {
+ 
+ 			// Kollar gui funktioner
+ 
+@@ -224,6 +224,7 @@ int check_input()
+ 
+ 		   	if (mouse_pos > 49)
+ 			  map1.set_tilenr((mouse_x / tileset1.tile_widht)+scrollx, ((mouse_y-64) / tileset1.tile_height)+scrolly, active_tile);
++		  }
+ 
+ 		  if (editor_state == 2)
+ 		    {
+@@ -430,7 +431,7 @@ int calc_curs(Uint16 mousex, Uint16 mous
+ *******************************************************************************/
+ 
+ 
+-void save_map(char *filename)
++void save_map(const char *filename)
+ {
+   cout << "Saving map " << filename << "\n";
+  
+@@ -459,7 +460,7 @@ void save_map(char *filename)
+ *
+ *******************************************************************************/
+ 
+-void load_map(char *filename)
++void load_map(const char *filename)
+ {
+   cout << "Loading map " << filename << "\n";
+  
+diff -rupN pegs.orig/editor/map.cpp pegs.new/editor/map.cpp
+--- pegs.orig/editor/map.cpp	2004-03-28 21:02:54.000000000 +0200
++++ pegs.new/editor/map.cpp	2023-12-12 09:16:12.261804036 +0100
+@@ -78,7 +78,7 @@ int map::get_mapsizeY()
+ }
+ 
+ 
+-void map::smap(char *filename)
++void map::smap(const char *filename)
+ {
+ 	cout << "Saving map " << filename << "\n";
+ 
+@@ -95,7 +95,7 @@ void map::smap(char *filename)
+ 	fout.close();
+ }     
+ 
+-void map::lmap(char *filename)
++void map::lmap(const char *filename)
+ {
+ 	cout << "Loading map " << filename << "\n";
+  
+diff -rupN pegs.orig/editor/map.h pegs.new/editor/map.h
+--- pegs.orig/editor/map.h	2004-03-29 22:30:40.000000000 +0200
++++ pegs.new/editor/map.h	2023-12-12 09:16:12.261804036 +0100
+@@ -20,8 +20,8 @@ public:
+    void clear_map(int tilenr);
+    int get_mapsizeX();
+    int get_mapsizeY();
+-   void smap(char *filename);
+-   void lmap(char *filename);
++   void smap(const char *filename);
++   void lmap(const char *filename);
+ };
+ 
+ #endif
+diff -rupN pegs.orig/src/Makefile pegs.new/src/Makefile
+--- pegs.orig/src/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ pegs.new/src/Makefile	2023-12-12 09:12:13.782113220 +0100
+@@ -0,0 +1,22 @@
++# Makefile
++
++TARGET = pegs
++OBJECTS = main.o map.o tileset.o
++
++CPU_CFLAGS =
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl SDL_mixer)
++LIBS = $(SDL_LIBS)
++CXXFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing -Wall $(SDL_CFLAGS) -DNDEBUG 
++LDFLAGS = -s
++
++CC = $(CROSS_PREFIX)gcc
++CXX = $(CROSS_PREFIX)g++
++
++all: $(TARGET)
++
++$(TARGET): $(OBJECTS)
++	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) 
++
++clean:
++	rm -f $(TARGET) $(OBJECTS)
+diff -rupN pegs.orig/src/main.cpp pegs.new/src/main.cpp
+--- pegs.orig/src/main.cpp	2005-10-16 21:37:14.000000000 +0200
++++ pegs.new/src/main.cpp	2023-12-12 09:46:51.362714403 +0100
+@@ -30,7 +30,7 @@ Mix_Music *Pegs;          // musik
+ Mix_Chunk *push;          //ljudeffekt
+ Mix_Chunk *restart_level; //ljudeffekter
+ Mix_Chunk *colli;         //ljudeffekter
+-Mix_Chunk *next;          //ljudeffekter
++Mix_Chunk *nextsound;     //ljudeffekter
+ Mix_Chunk *rot;           //ljudeffekter
+ 
+ // Gfx
+@@ -108,7 +108,6 @@ return 0;
+ void game_loop()
+ {
+   done = 0;
+-  Uint32 black = 0;
+ 
+   while( ! done)
+   {
+@@ -246,12 +245,12 @@ void load_BMP()
+ void load_sounds()
+ {
+      // Laddar in musiken
+-     Pegs               = Mix_LoadMUS("sounds/Pegs.xm");
++     Pegs               = Mix_LoadMUS("sounds/pegs.xm");
+      //  ljudeffekter
+      push                = Mix_LoadWAV("sounds/push.wav");        
+      restart_level       = Mix_LoadWAV("sounds/restart.wav");
+      colli               = Mix_LoadWAV("sounds/colli.wav");          
+-     next                = Mix_LoadWAV("sounds/next.wav");
++     nextsound           = Mix_LoadWAV("sounds/next.wav");
+      rot                 = Mix_LoadWAV("sounds/rotate.wav");  
+   
+ }
+@@ -292,7 +291,13 @@ void controll_SDL()
+ *******************************************************************************/
+ void window_text()
+ {
++#if defined(__MINT__)
++     SDL_WM_SetCaption("Atari PEGS  -  By Fredrik Stridh & Eric Johansson 2005", "PEGS");  
++#elif defined(AMIGA)
+      SDL_WM_SetCaption("AmigaOS4 PEGS  -  By Fredrik Stridh & Eric Johansson 2005", "PEGS");  
++#else
++     SDL_WM_SetCaption("PEGS  -  By Fredrik Stridh & Eric Johansson 2005", "PEGS");  
++#endif
+ }
+ 
+ /******************************************************************************
+@@ -341,7 +346,7 @@ void load_map(int number)
+     }
+     if (level == 2)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_02.dat");
+        playerWorldPos.x = 1,
+        playerWorldPos.y = 5; 
+@@ -350,7 +355,7 @@ void load_map(int number)
+     }
+     if (level == 3)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_03.dat");
+        playerWorldPos.x = 2,
+        playerWorldPos.y = 2; 
+@@ -359,7 +364,7 @@ void load_map(int number)
+     }
+     if (level == 4)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_04.dat");
+        playerWorldPos.x = 6,
+        playerWorldPos.y = 3; 
+@@ -368,7 +373,7 @@ void load_map(int number)
+     }
+     if (level == 5)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_05.dat");
+        playerWorldPos.x = 6,
+        playerWorldPos.y = 5; 
+@@ -377,7 +382,7 @@ void load_map(int number)
+     }
+     if (level == 6)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_06.dat");
+        playerWorldPos.x = 1,
+        playerWorldPos.y = 1; 
+@@ -386,7 +391,7 @@ void load_map(int number)
+     }
+     if (level == 7)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_07.dat");
+        playerWorldPos.x = 7,
+        playerWorldPos.y = 4; 
+@@ -395,7 +400,7 @@ void load_map(int number)
+     }
+     if (level == 8)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_08.dat");
+        playerWorldPos.x = 1,
+        playerWorldPos.y = 4; 
+@@ -404,7 +409,7 @@ void load_map(int number)
+     }
+     if (level == 9)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_09.dat");
+        playerWorldPos.x = 6,
+        playerWorldPos.y = 5; 
+@@ -413,7 +418,7 @@ void load_map(int number)
+     }
+     if (level == 10)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_10.dat");
+        playerWorldPos.x = 12,
+        playerWorldPos.y = 2; 
+@@ -422,7 +427,7 @@ void load_map(int number)
+     }
+     if (level == 11)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_11.dat");
+        playerWorldPos.x = 2,
+        playerWorldPos.y = 1; 
+@@ -431,7 +436,7 @@ void load_map(int number)
+     }
+     if (level == 12)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_12.dat");
+        playerWorldPos.x = 1,
+        playerWorldPos.y = 1; 
+@@ -440,7 +445,7 @@ void load_map(int number)
+     }
+     if (level == 13)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_13.dat");
+        playerWorldPos.x = 1,
+        playerWorldPos.y = 4; 
+@@ -449,7 +454,7 @@ void load_map(int number)
+     }
+     if (level == 14)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_14.dat");
+        playerWorldPos.x = 11,
+        playerWorldPos.y = 6; 
+@@ -458,7 +463,7 @@ void load_map(int number)
+     }
+     if (level == 15)
+     {
+-       Mix_PlayChannel(0,next,0);
++       Mix_PlayChannel(0,nextsound,0);
+        map1.lmap("maps/map_15.dat");
+        playerWorldPos.x = 1,
+        playerWorldPos.y = 6; 
+diff -rupN pegs.orig/src/map.cpp pegs.new/src/map.cpp
+--- pegs.orig/src/map.cpp	2005-03-31 20:35:00.000000000 +0200
++++ pegs.new/src/map.cpp	2023-12-12 09:07:17.062497913 +0100
+@@ -78,7 +78,7 @@ int map::get_mapsizeY()
+ }
+ 
+ 
+-void map::smap(char *filename)
++void map::smap(const char *filename)
+ {
+ 	cout << "Saving map " << filename << "\n";
+ 
+@@ -95,7 +95,7 @@ void map::smap(char *filename)
+ 	fout.close();
+ }     
+ 
+-void map::lmap(char *filename)
++void map::lmap(const char *filename)
+ {
+ 	cout << "Loading map " << filename << "\n";
+  
+diff -rupN pegs.orig/src/map.h pegs.new/src/map.h
+--- pegs.orig/src/map.h	2005-03-31 20:35:00.000000000 +0200
++++ pegs.new/src/map.h	2023-12-12 09:07:21.472492195 +0100
+@@ -20,8 +20,8 @@ public:
+    void clear_map(int tilenr);
+    int get_mapsizeX();
+    int get_mapsizeY();
+-   void smap(char *filename);
+-   void lmap(char *filename);
++   void smap(const char *filename);
++   void lmap(const char *filename);
+ };
+ 
+ #endif

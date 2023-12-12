@@ -1,0 +1,284 @@
+diff -rup jetpac-0.2.5.orig/Makefile jetpac-0.2.5.new/Makefile
+--- jetpac-0.2.5.orig/Makefile	2001-05-08 21:07:30.000000000 +0200
++++ jetpac-0.2.5.new/Makefile	2023-12-12 07:50:24.691857744 +0100
+@@ -1,18 +1,18 @@
+ PREFIX= /usr/local
+-INCLUDES= `sdl-config --cflags`
+-LIBS= `sdl-config --libs`
+-CFLAGS= $(INCLUDES) $(LIBS)
++INCLUDES := $(shell pkg-config --cflags sdl)
++LIBS := $(shell pkg-config --libs sdl)
++CFLAGS= $(CPU_CFLAGS) -O2 -fomit-frame-pointer -Wall -Wno-write-strings $(INCLUDES)
++LDFLAGS = -s
+ OBJS= jetpac.o game.o menu.o graphics.o levels.o
+-CPP= g++
++CXX= $(CROSS_PREFIX)g++
+ 
++all: jetpac
+ 
+ jetpac: $(OBJS)
+-	@echo 'Linking jetpac'
+-	$(CPP) -o jetpac $(OBJS) $(CFLAGS)
++	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+ 
+ %.o: %.cpp
+-	@echo 'Compiling $<'
+-	@$(CPP) $(INCLUDES) -c -o $@ $< -Wall
++	$(CXX) $(CFLAGS) -c -o $@ $<
+ 
+ clean:
+ 	@echo 'Removing old object modules'
+diff -rup jetpac-0.2.5.orig/game.cpp jetpac-0.2.5.new/game.cpp
+--- jetpac-0.2.5.orig/game.cpp	2001-05-08 21:07:30.000000000 +0200
++++ jetpac-0.2.5.new/game.cpp	2023-12-12 08:11:34.806774867 +0100
+@@ -20,10 +20,12 @@ Foundation, Inc., 59 Temple Place - Suit
+ */
+ 
+ #include "jetpac.h"
+-#include <iostream.h>
++#include <iostream>
+ #include <stdlib.h>
+ #include <time.h>
+ 
++using namespace std;
++
+ 
+ #define TICK_INTERVAL 12
+ 
+@@ -508,7 +510,7 @@ if (!Level.Get_Rocket()->Is_Complete())
+ 
+ unsigned int n;
+ unsigned int Spare_Slot = N_DEF;
+-booty * C_Booty;
++booty * C_Booty = 0;
+ unsigned int Booty_Type;
+ 
+ for (n=0;n<Level.Get_Num_Booty();n++)
+@@ -1022,7 +1024,7 @@ move = true;
+ for (m=0;m<n;m++)
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+-		if (Collide (C_Monster,D_Monster) && n!=m & D_Monster->Is_Alive()
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()
+ 		    && D_Monster->Get_Behaviour() == ASTEROID) {
+ 			//Prevent this asteroid from moving.
+ 			move = false;
+@@ -1073,7 +1075,7 @@ case BEZERK:
+ 
+ if (!C_Monster->Is_Alive()) {
+ 	rnd = rand()%270;
+-	if (rnd == 0 & !C_Monster->Get_Spore()) { //then respawn (don't respawn spores!)
++	if (rnd == 0 && !C_Monster->Get_Spore()) { //then respawn (don't respawn spores!)
+ 	
+ 		//Respawn at the bottom of the screen and at the side!
+ 		rnd = rand()%2;
+@@ -1105,7 +1107,7 @@ case 0:
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+ 		if (!C_Monster->Get_Spore()) {
+-		if (Collide (C_Monster,D_Monster) & n!=m & D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Xpos( C_Monster->Get_Xpos()+M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1118,7 +1120,7 @@ case 1:
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+ 		if (!C_Monster->Get_Spore()) {
+-		if (Collide (C_Monster,D_Monster) & n!=m && D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Xpos( C_Monster->Get_Xpos()-M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1131,7 +1133,7 @@ case 2:
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+ 		if (!C_Monster->Get_Spore()) {
+-		if (Collide (C_Monster,D_Monster) & n!=m && D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Ypos( C_Monster->Get_Ypos()+M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1144,7 +1146,7 @@ case 3:
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+ 		if (!C_Monster->Get_Spore()) {
+-		if (Collide (C_Monster,D_Monster) && n!=m & D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Ypos( C_Monster->Get_Ypos()-M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1159,7 +1161,7 @@ case 6:
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+ 		if (!C_Monster->Get_Spore()) {
+-		if (Collide (C_Monster,D_Monster) && n!=m & D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Ypos( C_Monster->Get_Ypos()+M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1170,7 +1172,7 @@ case 6:
+ 		{
+ 		if (!C_Monster->Get_Spore()) {
+ 		D_Monster = Level.Get_Monster(m);
+-		if (Collide (C_Monster,D_Monster) && n!=m & D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Ypos( C_Monster->Get_Ypos()-M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1181,7 +1183,7 @@ case 6:
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+ 		if (!C_Monster->Get_Spore()) {
+-		if (Collide (C_Monster,D_Monster) & n!=m & D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Xpos( C_Monster->Get_Xpos()+M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1192,7 +1194,7 @@ case 6:
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+ 		if (!C_Monster->Get_Spore()) {
+-		if (Collide (C_Monster,D_Monster) & n!=m && D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Xpos( C_Monster->Get_Xpos()-M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1215,7 +1217,7 @@ case HOMING:
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+ 		if (!C_Monster->Get_Spore()) {
+-		if (Collide (C_Monster,D_Monster) && n!=m & D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Ypos( C_Monster->Get_Ypos()+M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1226,7 +1228,7 @@ case HOMING:
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+ 		if (!C_Monster->Get_Spore()) {
+-		if (Collide (C_Monster,D_Monster) & n!=m && D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Ypos( C_Monster->Get_Ypos()-M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1237,7 +1239,7 @@ case HOMING:
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+ 		if (!C_Monster->Get_Spore()) {
+-		if (Collide (C_Monster,D_Monster) & n!=m && D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Xpos( C_Monster->Get_Xpos()+M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1248,7 +1250,7 @@ case HOMING:
+ 		{
+ 		D_Monster = Level.Get_Monster(m);
+ 		if (!C_Monster->Get_Spore()) {
+-		if (Collide (C_Monster,D_Monster) & n!=m && D_Monster->Is_Alive()) {
++		if (Collide (C_Monster,D_Monster) && n!=m && D_Monster->Is_Alive()) {
+ 			C_Monster->Set_Xpos( C_Monster->Get_Xpos()-M_Speed); //undo this move.
+ 			}
+ 		}}
+@@ -1710,7 +1712,7 @@ SDL_Surface *screen;
+ 		exit(1);
+     	}
+ 
+-SDL_ShowCursor(false);	//Hide the cursor.
++//SDL_ShowCursor(false);	//Hide the cursor.
+ 
+ 
+ if (SDL_NumJoysticks()>0) {			//open joystick
+diff -rup jetpac-0.2.5.orig/jetpac.cpp jetpac-0.2.5.new/jetpac.cpp
+--- jetpac-0.2.5.orig/jetpac.cpp	2001-05-08 21:07:30.000000000 +0200
++++ jetpac-0.2.5.new/jetpac.cpp	2023-12-12 07:49:58.938559953 +0100
+@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suit
+ */
+ 
+ #include "jetpac.h"
+-#include <iostream.h>
++#include <iostream>
+ #include <stdlib.h>
+ 
+ 
+@@ -352,7 +352,7 @@ void monster::Set_Can_Spore(bool New_Can
+ 
+ void monster::Dec_Spore_Counter()
+ {
+-	if (Spore_Counter > 0 & rand()%5==0) Spore_Counter --;
++	if (Spore_Counter > 0 && rand()%5==0) Spore_Counter --;
+ }
+ 
+ void monster::Reset_Spore_Counter()
+diff -rup jetpac-0.2.5.orig/levels.cpp jetpac-0.2.5.new/levels.cpp
+--- jetpac-0.2.5.orig/levels.cpp	2001-05-08 21:07:30.000000000 +0200
++++ jetpac-0.2.5.new/levels.cpp	2023-12-12 07:44:21.035692954 +0100
+@@ -21,7 +21,9 @@ Foundation, Inc., 59 Temple Place - Suit
+ 
+ 
+ #include "jetpac.h"
+-#include <iostream.h>
++#include <iostream>
++
++using namespace std;
+ 
+ 
+ extern SDL_Surface * LifeSprite;
+diff -rup jetpac-0.2.5.orig/menu.cpp jetpac-0.2.5.new/menu.cpp
+--- jetpac-0.2.5.orig/menu.cpp	2001-05-08 21:07:30.000000000 +0200
++++ jetpac-0.2.5.new/menu.cpp	2023-12-12 08:21:27.705987637 +0100
+@@ -20,7 +20,9 @@ Foundation, Inc., 59 Temple Place - Suit
+ */
+ 
+ #include "jetpac.h"
+-#include <iostream.h>
++#include <iostream>
++
++using namespace std;
+ 
+ extern SDL_Joystick * Joystick;
+ 
+@@ -104,8 +106,8 @@ unsigned char CurrentCodePos = 0;
+ char LevelCodeStore[5];
+ char Level2Code[] = {'r','a','d','a','r'};
+ char Level3Code[] = {'a','s','t','r','o'};
+-char Level4Code[] = {'o','r','b','i','t'};
+-char Level5Code[] = {'l','u','n','a','r'};
++//char Level4Code[] = {'o','r','b','i','t'};
++//char Level5Code[] = {'l','u','n','a','r'};
+ 
+ 
+ SDL_Surface * Menu_Background = LoadBMP("pixmaps/background.bmp");
+@@ -159,7 +161,7 @@ case 2: //Level code input screen
+ 	
+ 	key_store = Get_Keyboard(keys);
+ 	
+-	if (key_store!=NULL && key_store!="\r" && key_store!="\b") {
++	if (key_store!=NULL && key_store[0]!='\r' && key_store[0]!='\b') {
+ 		if (CurrentCodePos<5) {
+ 			LevelCodeStore[CurrentCodePos] = *key_store;
+ 			Draw(250+(50*CurrentCodePos),250,Key_Icon->w,Key_Icon->h,Key_Icon,screen);
+@@ -167,13 +169,13 @@ case 2: //Level code input screen
+ 		}
+ 	}
+ 	
+-	if (key_store=="\b") {
++	if (key_store!=NULL && key_store[0]=='\b') {
+ 		if (CurrentCodePos!=0) CurrentCodePos--;
+ 		Erase(250+(50*CurrentCodePos),250,Key_Icon->w,Key_Icon->h,screen,Menu_Background);
+ 		Update(250+(50*CurrentCodePos),250,Key_Icon->w,Key_Icon->h,screen);
+ 	}
+ 	
+-	if (key_store == "\r") {
++	if (key_store!=NULL && key_store[0] == '\r') {
+ 	
+ 		Code_Match = 2;
+ 		for (i=0;i<5;i++) {
+@@ -216,6 +218,7 @@ case 0: //Main menu screen
+ 
+ 	while (state == 0) {
+ 	SDL_WaitEvent(&event);
++	if (event.type == SDL_QUIT) exit(0);
+ 	keys = SDL_GetKeyState(NULL);
+ 
+ 	switch(choice) {

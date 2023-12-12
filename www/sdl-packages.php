@@ -693,6 +693,39 @@ difficult, and you can only get hit once before losing a life.
 <img src="' . $download_dir . 'xgalaga.png" width="300" height="400">
 '
 	),
+	'jetpac' => array(
+		'name' => 'jetpac',
+		'version' => '0.2.5',
+		'upstream' => 'https://web.archive.org/web/20060405190513/http://web.ukonline.co.uk/james.blewitt/jetpac.html',
+		'category' => 'Games',
+		'summary' => 'Jetpac - The Return is a remake of the original game Jetpac for the ZX Spectrum',
+		'comment' => '
+Jetpac - The Return is a remake of the original game Jetpac for the ZX
+Spectrum and (I believe) the BBC.  The old version was about a space
+man with a rocket pack who had to construct his rocket and fill it with
+fuel before taking off to reach the next level.  It wasn&apos;t quite this
+simple however because aliens and asteroids and all sorts of nasties
+hindered the space man&apos;s mission.
+</br>
+This remake will attempt to stay true to the original formula whilst at
+the same time improving the graphics and adding lots more baddies,
+upgrades, features, levels etc, etc, etc.
+</br></br>
+<img src="' . $download_dir . 'jetpac.png" width="320" height="240">
+'
+	),
+	'pegs' => array(
+		'name' => 'pegs',
+		'version' => '',
+		'upstream' => 'http://aminet.net/package/game/think/pegs',
+		'category' => 'Games',
+		'summary' => 'SDL puzzle game',
+		'comment' => '
+The object of the game is to eliminate all of the blocks.
+</br></br>
+<img src="' . $download_dir . 'pegs.png" width="320" height="240">
+'
+	),
 );
 
 ?>
