@@ -31,7 +31,7 @@ for CPU in ${ALL_CPUS}; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	${MAKE} MCPU=${CPU_CFLAGS} ATARICROSS=1 NOLAYERS=1 NOGIT=1 || exit 1
+	${MAKE} $JOBS MCPU=${CPU_CFLAGS} ATARICROSS=1 NOLAYERS=1 NOGIT=1 || exit 1
 
 	mkdir -p "${THISPKG_DIR}/doc"
 	

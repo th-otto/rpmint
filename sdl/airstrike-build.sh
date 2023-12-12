@@ -30,7 +30,7 @@ for CPU in ${ALL_CPUS}; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	${MAKE} CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
+	${MAKE} $JOBS CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
 	cp -p airstrike "${THISPKG_DIR}/airstrike-${CPU}.prg"

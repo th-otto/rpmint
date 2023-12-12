@@ -51,7 +51,7 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 
-	${MAKE} $JOBS DATA_PREFIX="./" $JOBS || exit 1
+	${MAKE} $JOBS DATA_PREFIX="./" || exit 1
 
 	mkdir -p "${THISPKG_DIR}/scores"
 	cp -p kobodl "${THISPKG_DIR}/KoboDeluxe-${CPU}.prg"

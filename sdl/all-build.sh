@@ -1,0 +1,64 @@
+#!/bin/sh
+fails=
+for i in \
+	2048 \
+	airball \
+	airstrike \
+	alienblaster \
+	amphetamine \
+	blobwars \
+	breaker \
+	circuslinux \
+	deathris \
+	digger \
+	fillets-ng \
+	gemdropx \
+	gnuboy \
+	gnurobbo \
+	grafx2 \
+	griffon \
+	hcl \
+	hocoslamfy \
+	jetpac \
+	kobo-deluxe \
+	lbreakout2 \
+	lmarbles \
+	ltris \
+	megamario \
+	metrocross \
+	minislug \
+	openjazz \
+	opentyrian \
+	pegs \
+	sdlbomber \
+	starfighter \
+	stargun \
+	symphyla \
+	tetris \
+	xgalaga \
+	xpired \
+	zelda3t_fr \
+	zelda3t_us \
+	zeldansq \
+	zeldaolb_fr \
+	zeldaolb_us \
+	zeldapicross_fr \
+	zeldapicross_us \
+	zeldaroth_fr \
+	zeldaroth_us \
+	;
+do
+	echo "build $i"
+	if time ./${i}-build.sh > /dev/null 2>&1; then 
+		echo "ok"
+	else
+		echo "failed"
+		fails="$fails $i"
+	fi
+	echo "";
+done
+if test "$fails" != ""; then
+	echo "failed:$fails"
+else
+	echo "all ok"
+fi

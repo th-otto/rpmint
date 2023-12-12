@@ -33,7 +33,7 @@ for CPU in ${ALL_CPUS}; do
 	export CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS"
 	export LDFLAGS="${STACKSIZE} -s"
 	
-	${MAKE} V=0 DEFS=-DDONT_USE_PWD ${JOBS} || exit 1
+	${MAKE} $JOBS V=0 DEFS=-DDONT_USE_PWD || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
 
