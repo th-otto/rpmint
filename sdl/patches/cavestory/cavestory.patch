@@ -1,0 +1,4901 @@
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/Makefile cavestory-1.0.0.6.new/Makefile
+--- cavestory-1.0.0.6.orig/Makefile	2012-04-29 21:14:49.000000000 +0200
++++ cavestory-1.0.0.6.new/Makefile	2023-12-13 16:46:08.894309069 +0100
+@@ -1,7 +1,17 @@
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl SDL_ttf SDL_mixer)
+ 
+-all: nx
++CC = $(CROSS_PREFIX)gcc
++CXX = $(CROSS_PREFIX)g++
++CPU_CFLAGS =
++DEFINES = -DSDL_MIXER
++#DEFINES += -DDEBUG
++CFLAGS = $(CPU_CFLAGS) -O2 -fomit-frame-pointer -fno-strict-aliasing -Wall $(DEFINES)
++CXXFLAGS = $(CFLAGS) -Wno-overloaded-virtual
++LDFLAGS = -s
++LIBS = $(SDL_LIBS)
+ 
+-nx:  main.o game.o object.o ObjManager.o \
++OBJS = main.o game.o object.o ObjManager.o \
+ 	 map.o TextBox/TextBox.o TextBox/YesNoPrompt.o TextBox/ItemImage.o TextBox/StageSelect.o \
+ 	 TextBox/SaveSelect.o profile.o settings.o platform.o platform/Linux/vbesync.o \
+ 	 caret.o slope.o player.o playerstats.o p_arms.o \
+@@ -30,2520 +40,18 @@ nx:  main.o game.o object.o ObjManager.o
+ 	 autogen/objnames.o stagedata.o common/FileBuffer.o common/InitList.o common/BList.o \
+ 	 common/StringList.o common/DBuffer.o common/DString.o common/bufio.o common/stat.o \
+ 	 common/misc.o
+-	g++ -o nx \
+-	 main.o game.o object.o ObjManager.o \
+-	 map.o TextBox/TextBox.o TextBox/YesNoPrompt.o TextBox/ItemImage.o TextBox/StageSelect.o \
+-	 TextBox/SaveSelect.o profile.o settings.o platform.o platform/Linux/vbesync.o \
+-	 caret.o slope.o player.o playerstats.o p_arms.o \
+-	 statusbar.o tsc.o screeneffect.o floattext.o input.o \
+-	 replay.o trig.o inventory.o map_system.o debug.o \
+-	 console.o niku.o ai/ai.o ai/first_cave/first_cave.o ai/village/village.o \
+-	 ai/village/balrog_boss_running.o ai/village/ma_pignon.o ai/egg/egg.o ai/egg/igor.o ai/egg/egg2.o \
+-	 ai/weed/weed.o ai/weed/balrog_boss_flying.o ai/weed/frenzied_mimiga.o ai/sand/sand.o ai/sand/puppy.o \
+-	 ai/sand/curly_boss.o ai/sand/toroko_frenzied.o ai/maze/maze.o ai/maze/critter_purple.o ai/maze/gaudi.o \
+-	 ai/maze/pooh_black.o ai/maze/balrog_boss_missiles.o ai/maze/labyrinth_m.o ai/almond/almond.o ai/oside/oside.o \
+-	 ai/plantation/plantation.o ai/last_cave/last_cave.o ai/final_battle/balcony.o ai/final_battle/misery.o ai/final_battle/final_misc.o \
+-	 ai/final_battle/doctor.o ai/final_battle/doctor_frenzied.o ai/final_battle/doctor_common.o ai/final_battle/sidekicks.o ai/hell/hell.o \
+-	 ai/hell/ballos_priest.o ai/hell/ballos_misc.o ai/npc/balrog.o ai/npc/curly.o ai/npc/curly_ai.o \
+-	 ai/npc/misery.o ai/npc/npcregu.o ai/npc/npcguest.o ai/npc/npcplayer.o ai/weapons/weapons.o \
+-	 ai/weapons/polar_mgun.o ai/weapons/missile.o ai/weapons/fireball.o ai/weapons/blade.o ai/weapons/snake.o \
+-	 ai/weapons/nemesis.o ai/weapons/bubbler.o ai/weapons/spur.o ai/weapons/whimstar.o ai/sym/sym.o \
+-	 ai/sym/smoke.o ai/balrog_common.o ai/IrregularBBox.o stageboss.o ai/boss/omega.o \
+-	 ai/boss/balfrog.o ai/boss/x.o ai/boss/core.o ai/boss/ironhead.o ai/boss/sisters.o \
+-	 ai/boss/undead_core.o ai/boss/heavypress.o ai/boss/ballos.o endgame/island.o endgame/misc.o \
+-	 endgame/credits.o endgame/CredReader.o intro/intro.o intro/title.o pause/pause.o \
+-	 pause/options.o pause/dialog.o pause/message.o pause/objects.o graphics/nxsurface.o \
+-	 graphics/graphics.o graphics/sprites.o graphics/tileset.o graphics/font.o graphics/safemode.o \
+-	 graphics/palette.o sound/sound.o sound/sslib.o sound/org.o sound/pxt.o \
+-	 siflib/sif.o siflib/sifloader.o siflib/sectSprites.o siflib/sectStringArray.o extract/extract.o \
+-	 extract/extractpxt.o extract/extractfiles.o extract/extractstages.o extract/crc.o autogen/AssignSprites.o \
+-	 autogen/objnames.o stagedata.o common/FileBuffer.o common/InitList.o common/BList.o \
+-	 common/StringList.o common/DBuffer.o common/DString.o common/bufio.o common/stat.o \
+-	 common/misc.o \
+-	 `sdl-config --libs` -lSDL_ttf -lstdc++ -lm
+-
+-main.o:	main.cpp main.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h graphics/safemode.h
+-	g++ -g -O2 -c main.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o main.o
+-
+-game.o:	game.cpp game.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h endgame/island.h endgame/credits.h \
+-		endgame/CredReader.h intro/intro.h intro/title.h \
+-		pause/pause.h pause/options.h inventory.h \
+-		map_system.h profile.h
+-	g++ -g -O2 -c game.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o game.o
+-
+-object.o:	object.cpp object.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h common/llist.h
+-	g++ -g -O2 -c object.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o object.o
+-
+-ObjManager.o:	ObjManager.cpp ObjManager.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h common/llist.h
+-	g++ -g -O2 -c ObjManager.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ObjManager.o
+-
+-map.o:	map.cpp map.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c map.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o map.o
+-
+-TextBox/TextBox.o:	TextBox/TextBox.cpp TextBox/TextBox.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c TextBox/TextBox.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o TextBox/TextBox.o
+-
+-TextBox/YesNoPrompt.o:	TextBox/YesNoPrompt.cpp TextBox/YesNoPrompt.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c TextBox/YesNoPrompt.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o TextBox/YesNoPrompt.o
+-
+-TextBox/ItemImage.o:	TextBox/ItemImage.cpp TextBox/ItemImage.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c TextBox/ItemImage.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o TextBox/ItemImage.o
+-
+-TextBox/StageSelect.o:	TextBox/StageSelect.cpp TextBox/StageSelect.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c TextBox/StageSelect.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o TextBox/StageSelect.o
+-
+-TextBox/SaveSelect.o:	TextBox/SaveSelect.cpp TextBox/SaveSelect.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h profile.h inventory.h
+-	g++ -g -O2 -c TextBox/SaveSelect.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o TextBox/SaveSelect.o
+-
+-profile.o:	profile.cpp profile.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h profile.h
+-	g++ -g -O2 -c profile.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o profile.o
+-
+-settings.o:	settings.cpp settings.fdh settings.h input.h \
+-		replay.h common/FileBuffer.h common/DBuffer.h \
+-		common/basics.h
+-	g++ -g -O2 -c settings.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o settings.o
+-
+-platform.o:	platform.cpp platform.fdh config.h
+-	g++ -g -O2 -c platform.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o platform.o
+-
+-platform/Linux/vbesync.o:	platform/Linux/vbesync.c platform/Linux/vbesync.fdh
+-	g++ -g -O2 -c platform/Linux/vbesync.c -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o platform/Linux/vbesync.o
+-
+-caret.o:	caret.cpp caret.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h common/llist.h
+-	g++ -g -O2 -c caret.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o caret.o
+-
+-slope.o:	slope.cpp slope.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c slope.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o slope.o
+-
+-player.o:	player.cpp player.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c player.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o player.o
+-
+-playerstats.o:	playerstats.cpp playerstats.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c playerstats.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o playerstats.o
+-
+-p_arms.o:	p_arms.cpp p_arms.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c p_arms.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o p_arms.o
+-
+-statusbar.o:	statusbar.cpp statusbar.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c statusbar.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o statusbar.o
+-
+-tsc.o:	tsc.cpp tsc.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h vararray.h tsc_cmdtbl.cpp
+-	g++ -g -O2 -c tsc.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o tsc.o
+-
+-screeneffect.o:	screeneffect.cpp screeneffect.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c screeneffect.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o screeneffect.o
+-
+-floattext.o:	floattext.cpp floattext.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c floattext.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o floattext.o
+-
+-input.o:	input.cpp input.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c input.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o input.o
+-
+-replay.o:	replay.cpp replay.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h profile.h
+-	g++ -g -O2 -c replay.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o replay.o
+-
+-trig.o:	trig.cpp trig.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c trig.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o trig.o
+-
+-inventory.o:	inventory.cpp inventory.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h inventory.h
+-	g++ -g -O2 -c inventory.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o inventory.o
+-
+-map_system.o:	map_system.cpp map_system.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h map_system.h
+-	g++ -g -O2 -c map_system.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o map_system.o
+-
+-debug.o:	debug.cpp debug.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c debug.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o debug.o
+-
+-console.o:	console.cpp console.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c console.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o console.o
+-
+-niku.o:	niku.cpp niku.fdh
+-	g++ -g -O2 -c niku.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o niku.o
+-
+-ai/ai.o:	ai/ai.cpp ai/ai.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/ai.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/ai.o
+-
+-ai/first_cave/first_cave.o:	ai/first_cave/first_cave.cpp ai/first_cave/first_cave.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/first_cave/first_cave.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/first_cave/first_cave.o
+-
+-ai/village/village.o:	ai/village/village.cpp ai/village/village.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/village/village.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/village/village.o
+-
+-ai/village/balrog_boss_running.o:	ai/village/balrog_boss_running.cpp ai/village/balrog_boss_running.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/balrog_common.h
+-	g++ -g -O2 -c ai/village/balrog_boss_running.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/village/balrog_boss_running.o
+-
+-ai/village/ma_pignon.o:	ai/village/ma_pignon.cpp ai/village/ma_pignon.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/village/ma_pignon.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/village/ma_pignon.o
+-
+-ai/egg/egg.o:	ai/egg/egg.cpp ai/egg/egg.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/egg/egg.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/egg/egg.o
+-
+-ai/egg/igor.o:	ai/egg/igor.cpp ai/egg/igor.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/egg/igor.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/egg/igor.o
+-
+-ai/egg/egg2.o:	ai/egg/egg2.cpp ai/egg/egg2.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/egg/egg2.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/egg/egg2.o
+-
+-ai/weed/weed.o:	ai/weed/weed.cpp ai/weed/weed.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weed/weed.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weed/weed.o
+-
+-ai/weed/balrog_boss_flying.o:	ai/weed/balrog_boss_flying.cpp ai/weed/balrog_boss_flying.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weed/balrog_boss_flying.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weed/balrog_boss_flying.o
+-
+-ai/weed/frenzied_mimiga.o:	ai/weed/frenzied_mimiga.cpp ai/weed/frenzied_mimiga.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weed/frenzied_mimiga.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weed/frenzied_mimiga.o
+-
+-ai/sand/sand.o:	ai/sand/sand.cpp ai/sand/sand.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/sand/sand.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/sand/sand.o
+-
+-ai/sand/puppy.o:	ai/sand/puppy.cpp ai/sand/puppy.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/sand/puppy.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/sand/puppy.o
+-
+-ai/sand/curly_boss.o:	ai/sand/curly_boss.cpp ai/sand/curly_boss.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/sand/curly_boss.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/sand/curly_boss.o
+-
+-ai/sand/toroko_frenzied.o:	ai/sand/toroko_frenzied.cpp ai/sand/toroko_frenzied.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/sand/toroko_frenzied.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/sand/toroko_frenzied.o
+-
+-ai/maze/maze.o:	ai/maze/maze.cpp ai/maze/maze.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/maze/maze.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/maze/maze.o
+-
+-ai/maze/critter_purple.o:	ai/maze/critter_purple.cpp ai/maze/critter_purple.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/maze/critter_purple.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/maze/critter_purple.o
+-
+-ai/maze/gaudi.o:	ai/maze/gaudi.cpp ai/maze/gaudi.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/maze/gaudi.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/maze/gaudi.o
+-
+-ai/maze/pooh_black.o:	ai/maze/pooh_black.cpp ai/maze/pooh_black.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/maze/pooh_black.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/maze/pooh_black.o
+-
+-ai/maze/balrog_boss_missiles.o:	ai/maze/balrog_boss_missiles.cpp ai/maze/balrog_boss_missiles.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/balrog_common.h
+-	g++ -g -O2 -c ai/maze/balrog_boss_missiles.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/maze/balrog_boss_missiles.o
+-
+-ai/maze/labyrinth_m.o:	ai/maze/labyrinth_m.cpp ai/maze/labyrinth_m.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/maze/labyrinth_m.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/maze/labyrinth_m.o
+-
+-ai/almond/almond.o:	ai/almond/almond.cpp ai/almond/almond.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/almond/almond.h
+-	g++ -g -O2 -c ai/almond/almond.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/almond/almond.o
+-
+-ai/oside/oside.o:	ai/oside/oside.cpp ai/oside/oside.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/oside/oside.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/oside/oside.o
+-
+-ai/plantation/plantation.o:	ai/plantation/plantation.cpp ai/plantation/plantation.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/plantation/plantation.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/plantation/plantation.o
+-
+-ai/last_cave/last_cave.o:	ai/last_cave/last_cave.cpp ai/last_cave/last_cave.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/last_cave/last_cave.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/last_cave/last_cave.o
+ 
+-ai/final_battle/balcony.o:	ai/final_battle/balcony.cpp ai/final_battle/balcony.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/final_battle/balcony.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/final_battle/balcony.o
+-
+-ai/final_battle/misery.o:	ai/final_battle/misery.cpp ai/final_battle/misery.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/final_battle/misery.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/final_battle/misery.o
+-
+-ai/final_battle/final_misc.o:	ai/final_battle/final_misc.cpp ai/final_battle/final_misc.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/final_battle/final_misc.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/final_battle/final_misc.o
+-
+-ai/final_battle/doctor.o:	ai/final_battle/doctor.cpp ai/final_battle/doctor.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/final_battle/doctor.h
+-	g++ -g -O2 -c ai/final_battle/doctor.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/final_battle/doctor.o
+-
+-ai/final_battle/doctor_frenzied.o:	ai/final_battle/doctor_frenzied.cpp ai/final_battle/doctor_frenzied.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/final_battle/doctor.h
+-	g++ -g -O2 -c ai/final_battle/doctor_frenzied.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/final_battle/doctor_frenzied.o
+-
+-ai/final_battle/doctor_common.o:	ai/final_battle/doctor_common.cpp ai/final_battle/doctor_common.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/final_battle/doctor_common.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/final_battle/doctor_common.o
+-
+-ai/final_battle/sidekicks.o:	ai/final_battle/sidekicks.cpp ai/final_battle/sidekicks.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/final_battle/sidekicks.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/final_battle/sidekicks.o
+-
+-ai/hell/hell.o:	ai/hell/hell.cpp ai/hell/hell.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/hell/hell.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/hell/hell.o
+-
+-ai/hell/ballos_priest.o:	ai/hell/ballos_priest.cpp ai/hell/ballos_priest.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/hell/ballos_priest.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/hell/ballos_priest.o
+-
+-ai/hell/ballos_misc.o:	ai/hell/ballos_misc.cpp ai/hell/ballos_misc.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/hell/ballos_misc.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/hell/ballos_misc.o
+-
+-ai/npc/balrog.o:	ai/npc/balrog.cpp ai/npc/balrog.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/npc/balrog.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/npc/balrog.o
+-
+-ai/npc/curly.o:	ai/npc/curly.cpp ai/npc/curly.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/npc/curly.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/npc/curly.o
+-
+-ai/npc/curly_ai.o:	ai/npc/curly_ai.cpp ai/npc/curly_ai.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/npc/curly_ai.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/npc/curly_ai.o
+-
+-ai/npc/misery.o:	ai/npc/misery.cpp ai/npc/misery.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/npc/misery.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/npc/misery.o
+-
+-ai/npc/npcregu.o:	ai/npc/npcregu.cpp ai/npc/npcregu.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/final_battle/doctor.h
+-	g++ -g -O2 -c ai/npc/npcregu.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/npc/npcregu.o
+-
+-ai/npc/npcguest.o:	ai/npc/npcguest.cpp ai/npc/npcguest.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/npc/npcguest.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/npc/npcguest.o
+-
+-ai/npc/npcplayer.o:	ai/npc/npcplayer.cpp ai/npc/npcplayer.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/npc/npcplayer.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/npc/npcplayer.o
+-
+-ai/weapons/weapons.o:	ai/weapons/weapons.cpp ai/weapons/weapons.fdh ai/weapons/weapons.h ai/stdai.h \
+-		nx.h config.h common/basics.h \
+-		common/BList.h common/SupportDefs.h common/StringList.h \
+-		common/DBuffer.h common/DString.h common/InitList.h \
+-		graphics/graphics.h graphics/nxsurface.h graphics/tileset.h \
+-		graphics/sprites.h siflib/sif.h trig.h \
+-		autogen/sprites.h dirnames.h TextBox/TextBox.h \
+-		TextBox/YesNoPrompt.h TextBox/ItemImage.h TextBox/StageSelect.h \
+-		TextBox/SaveSelect.h graphics/font.h input.h \
+-		tsc.h stageboss.h ai/ai.h \
+-		map.h maprecord.h stagedata.h \
+-		statusbar.h floattext.h object.h \
+-		ObjManager.h console.h debug.h \
+-		game.h caret.h screeneffect.h \
+-		settings.h slope.h player.h \
+-		p_arms.h ai/weapons/whimstar.h replay.h \
+-		common/FileBuffer.h platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weapons/weapons.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weapons/weapons.o
+-
+-ai/weapons/polar_mgun.o:	ai/weapons/polar_mgun.cpp ai/weapons/polar_mgun.fdh ai/weapons/weapons.h ai/stdai.h \
+-		nx.h config.h common/basics.h \
+-		common/BList.h common/SupportDefs.h common/StringList.h \
+-		common/DBuffer.h common/DString.h common/InitList.h \
+-		graphics/graphics.h graphics/nxsurface.h graphics/tileset.h \
+-		graphics/sprites.h siflib/sif.h trig.h \
+-		autogen/sprites.h dirnames.h TextBox/TextBox.h \
+-		TextBox/YesNoPrompt.h TextBox/ItemImage.h TextBox/StageSelect.h \
+-		TextBox/SaveSelect.h graphics/font.h input.h \
+-		tsc.h stageboss.h ai/ai.h \
+-		map.h maprecord.h stagedata.h \
+-		statusbar.h floattext.h object.h \
+-		ObjManager.h console.h debug.h \
+-		game.h caret.h screeneffect.h \
+-		settings.h slope.h player.h \
+-		p_arms.h ai/weapons/whimstar.h replay.h \
+-		common/FileBuffer.h platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weapons/polar_mgun.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weapons/polar_mgun.o
+-
+-ai/weapons/missile.o:	ai/weapons/missile.cpp ai/weapons/missile.fdh ai/weapons/weapons.h ai/stdai.h \
+-		nx.h config.h common/basics.h \
+-		common/BList.h common/SupportDefs.h common/StringList.h \
+-		common/DBuffer.h common/DString.h common/InitList.h \
+-		graphics/graphics.h graphics/nxsurface.h graphics/tileset.h \
+-		graphics/sprites.h siflib/sif.h trig.h \
+-		autogen/sprites.h dirnames.h TextBox/TextBox.h \
+-		TextBox/YesNoPrompt.h TextBox/ItemImage.h TextBox/StageSelect.h \
+-		TextBox/SaveSelect.h graphics/font.h input.h \
+-		tsc.h stageboss.h ai/ai.h \
+-		map.h maprecord.h stagedata.h \
+-		statusbar.h floattext.h object.h \
+-		ObjManager.h console.h debug.h \
+-		game.h caret.h screeneffect.h \
+-		settings.h slope.h player.h \
+-		p_arms.h ai/weapons/whimstar.h replay.h \
+-		common/FileBuffer.h platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weapons/missile.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weapons/missile.o
+-
+-ai/weapons/fireball.o:	ai/weapons/fireball.cpp ai/weapons/fireball.fdh ai/weapons/weapons.h ai/stdai.h \
+-		nx.h config.h common/basics.h \
+-		common/BList.h common/SupportDefs.h common/StringList.h \
+-		common/DBuffer.h common/DString.h common/InitList.h \
+-		graphics/graphics.h graphics/nxsurface.h graphics/tileset.h \
+-		graphics/sprites.h siflib/sif.h trig.h \
+-		autogen/sprites.h dirnames.h TextBox/TextBox.h \
+-		TextBox/YesNoPrompt.h TextBox/ItemImage.h TextBox/StageSelect.h \
+-		TextBox/SaveSelect.h graphics/font.h input.h \
+-		tsc.h stageboss.h ai/ai.h \
+-		map.h maprecord.h stagedata.h \
+-		statusbar.h floattext.h object.h \
+-		ObjManager.h console.h debug.h \
+-		game.h caret.h screeneffect.h \
+-		settings.h slope.h player.h \
+-		p_arms.h ai/weapons/whimstar.h replay.h \
+-		common/FileBuffer.h platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weapons/fireball.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weapons/fireball.o
+-
+-ai/weapons/blade.o:	ai/weapons/blade.cpp ai/weapons/blade.fdh ai/weapons/weapons.h ai/stdai.h \
+-		nx.h config.h common/basics.h \
+-		common/BList.h common/SupportDefs.h common/StringList.h \
+-		common/DBuffer.h common/DString.h common/InitList.h \
+-		graphics/graphics.h graphics/nxsurface.h graphics/tileset.h \
+-		graphics/sprites.h siflib/sif.h trig.h \
+-		autogen/sprites.h dirnames.h TextBox/TextBox.h \
+-		TextBox/YesNoPrompt.h TextBox/ItemImage.h TextBox/StageSelect.h \
+-		TextBox/SaveSelect.h graphics/font.h input.h \
+-		tsc.h stageboss.h ai/ai.h \
+-		map.h maprecord.h stagedata.h \
+-		statusbar.h floattext.h object.h \
+-		ObjManager.h console.h debug.h \
+-		game.h caret.h screeneffect.h \
+-		settings.h slope.h player.h \
+-		p_arms.h ai/weapons/whimstar.h replay.h \
+-		common/FileBuffer.h platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weapons/blade.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weapons/blade.o
+-
+-ai/weapons/snake.o:	ai/weapons/snake.cpp ai/weapons/snake.fdh ai/weapons/weapons.h ai/stdai.h \
+-		nx.h config.h common/basics.h \
+-		common/BList.h common/SupportDefs.h common/StringList.h \
+-		common/DBuffer.h common/DString.h common/InitList.h \
+-		graphics/graphics.h graphics/nxsurface.h graphics/tileset.h \
+-		graphics/sprites.h siflib/sif.h trig.h \
+-		autogen/sprites.h dirnames.h TextBox/TextBox.h \
+-		TextBox/YesNoPrompt.h TextBox/ItemImage.h TextBox/StageSelect.h \
+-		TextBox/SaveSelect.h graphics/font.h input.h \
+-		tsc.h stageboss.h ai/ai.h \
+-		map.h maprecord.h stagedata.h \
+-		statusbar.h floattext.h object.h \
+-		ObjManager.h console.h debug.h \
+-		game.h caret.h screeneffect.h \
+-		settings.h slope.h player.h \
+-		p_arms.h ai/weapons/whimstar.h replay.h \
+-		common/FileBuffer.h platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weapons/snake.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weapons/snake.o
+-
+-ai/weapons/nemesis.o:	ai/weapons/nemesis.cpp ai/weapons/nemesis.fdh ai/weapons/weapons.h ai/stdai.h \
+-		nx.h config.h common/basics.h \
+-		common/BList.h common/SupportDefs.h common/StringList.h \
+-		common/DBuffer.h common/DString.h common/InitList.h \
+-		graphics/graphics.h graphics/nxsurface.h graphics/tileset.h \
+-		graphics/sprites.h siflib/sif.h trig.h \
+-		autogen/sprites.h dirnames.h TextBox/TextBox.h \
+-		TextBox/YesNoPrompt.h TextBox/ItemImage.h TextBox/StageSelect.h \
+-		TextBox/SaveSelect.h graphics/font.h input.h \
+-		tsc.h stageboss.h ai/ai.h \
+-		map.h maprecord.h stagedata.h \
+-		statusbar.h floattext.h object.h \
+-		ObjManager.h console.h debug.h \
+-		game.h caret.h screeneffect.h \
+-		settings.h slope.h player.h \
+-		p_arms.h ai/weapons/whimstar.h replay.h \
+-		common/FileBuffer.h platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weapons/nemesis.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weapons/nemesis.o
+-
+-ai/weapons/bubbler.o:	ai/weapons/bubbler.cpp ai/weapons/bubbler.fdh ai/weapons/weapons.h ai/stdai.h \
+-		nx.h config.h common/basics.h \
+-		common/BList.h common/SupportDefs.h common/StringList.h \
+-		common/DBuffer.h common/DString.h common/InitList.h \
+-		graphics/graphics.h graphics/nxsurface.h graphics/tileset.h \
+-		graphics/sprites.h siflib/sif.h trig.h \
+-		autogen/sprites.h dirnames.h TextBox/TextBox.h \
+-		TextBox/YesNoPrompt.h TextBox/ItemImage.h TextBox/StageSelect.h \
+-		TextBox/SaveSelect.h graphics/font.h input.h \
+-		tsc.h stageboss.h ai/ai.h \
+-		map.h maprecord.h stagedata.h \
+-		statusbar.h floattext.h object.h \
+-		ObjManager.h console.h debug.h \
+-		game.h caret.h screeneffect.h \
+-		settings.h slope.h player.h \
+-		p_arms.h ai/weapons/whimstar.h replay.h \
+-		common/FileBuffer.h platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weapons/bubbler.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weapons/bubbler.o
+-
+-ai/weapons/spur.o:	ai/weapons/spur.cpp ai/weapons/spur.fdh ai/weapons/weapons.h ai/stdai.h \
+-		nx.h config.h common/basics.h \
+-		common/BList.h common/SupportDefs.h common/StringList.h \
+-		common/DBuffer.h common/DString.h common/InitList.h \
+-		graphics/graphics.h graphics/nxsurface.h graphics/tileset.h \
+-		graphics/sprites.h siflib/sif.h trig.h \
+-		autogen/sprites.h dirnames.h TextBox/TextBox.h \
+-		TextBox/YesNoPrompt.h TextBox/ItemImage.h TextBox/StageSelect.h \
+-		TextBox/SaveSelect.h graphics/font.h input.h \
+-		tsc.h stageboss.h ai/ai.h \
+-		map.h maprecord.h stagedata.h \
+-		statusbar.h floattext.h object.h \
+-		ObjManager.h console.h debug.h \
+-		game.h caret.h screeneffect.h \
+-		settings.h slope.h player.h \
+-		p_arms.h ai/weapons/whimstar.h replay.h \
+-		common/FileBuffer.h platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weapons/spur.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weapons/spur.o
+-
+-ai/weapons/whimstar.o:	ai/weapons/whimstar.cpp ai/weapons/whimstar.fdh ai/weapons/weapons.h ai/stdai.h \
+-		nx.h config.h common/basics.h \
+-		common/BList.h common/SupportDefs.h common/StringList.h \
+-		common/DBuffer.h common/DString.h common/InitList.h \
+-		graphics/graphics.h graphics/nxsurface.h graphics/tileset.h \
+-		graphics/sprites.h siflib/sif.h trig.h \
+-		autogen/sprites.h dirnames.h TextBox/TextBox.h \
+-		TextBox/YesNoPrompt.h TextBox/ItemImage.h TextBox/StageSelect.h \
+-		TextBox/SaveSelect.h graphics/font.h input.h \
+-		tsc.h stageboss.h ai/ai.h \
+-		map.h maprecord.h stagedata.h \
+-		statusbar.h floattext.h object.h \
+-		ObjManager.h console.h debug.h \
+-		game.h caret.h screeneffect.h \
+-		settings.h slope.h player.h \
+-		p_arms.h ai/weapons/whimstar.h replay.h \
+-		common/FileBuffer.h platform.h sound/sound.h
+-	g++ -g -O2 -c ai/weapons/whimstar.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/weapons/whimstar.o
+-
+-ai/sym/sym.o:	ai/sym/sym.cpp ai/sym/sym.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/sym/sym.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/sym/sym.o
+-
+-ai/sym/smoke.o:	ai/sym/smoke.cpp ai/sym/smoke.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/sym/smoke.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/sym/smoke.o
+-
+-ai/balrog_common.o:	ai/balrog_common.cpp ai/balrog_common.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c ai/balrog_common.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/balrog_common.o
+-
+-ai/IrregularBBox.o:	ai/IrregularBBox.cpp ai/IrregularBBox.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h ai/IrregularBBox.h
+-	g++ -g -O2 -c ai/IrregularBBox.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/IrregularBBox.o
+-
+-stageboss.o:	stageboss.cpp stageboss.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h ai/boss/omega.h ai/boss/balfrog.h \
+-		ai/IrregularBBox.h ai/boss/x.h ai/boss/core.h \
+-		ai/boss/ironhead.h ai/boss/sisters.h ai/boss/undead_core.h \
+-		ai/boss/heavypress.h ai/boss/ballos.h
+-	g++ -g -O2 -c stageboss.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o stageboss.o
+-
+-ai/boss/omega.o:	ai/boss/omega.cpp ai/boss/omega.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/boss/omega.h
+-	g++ -g -O2 -c ai/boss/omega.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/boss/omega.o
+-
+-ai/boss/balfrog.o:	ai/boss/balfrog.cpp ai/boss/balfrog.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/boss/balfrog.h \
+-		ai/IrregularBBox.h
+-	g++ -g -O2 -c ai/boss/balfrog.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/boss/balfrog.o
+-
+-ai/boss/x.o:	ai/boss/x.cpp ai/boss/x.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/boss/x.h
+-	g++ -g -O2 -c ai/boss/x.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/boss/x.o
+-
+-ai/boss/core.o:	ai/boss/core.cpp ai/boss/core.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/almond/almond.h \
+-		ai/boss/core.h
+-	g++ -g -O2 -c ai/boss/core.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/boss/core.o
+-
+-ai/boss/ironhead.o:	ai/boss/ironhead.cpp ai/boss/ironhead.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/boss/ironhead.h
+-	g++ -g -O2 -c ai/boss/ironhead.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/boss/ironhead.o
+-
+-ai/boss/sisters.o:	ai/boss/sisters.cpp ai/boss/sisters.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/boss/sisters.h
+-	g++ -g -O2 -c ai/boss/sisters.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/boss/sisters.o
+-
+-ai/boss/undead_core.o:	ai/boss/undead_core.cpp ai/boss/undead_core.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/boss/undead_core.h
+-	g++ -g -O2 -c ai/boss/undead_core.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/boss/undead_core.o
+-
+-ai/boss/heavypress.o:	ai/boss/heavypress.cpp ai/boss/heavypress.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/boss/heavypress.h
+-	g++ -g -O2 -c ai/boss/heavypress.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/boss/heavypress.o
+-
+-ai/boss/ballos.o:	ai/boss/ballos.cpp ai/boss/ballos.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h ai/boss/ballos.h
+-	g++ -g -O2 -c ai/boss/ballos.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o ai/boss/ballos.o
+-
+-endgame/island.o:	endgame/island.cpp endgame/island.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c endgame/island.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o endgame/island.o
+-
+-endgame/misc.o:	endgame/misc.cpp endgame/misc.fdh ai/stdai.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c endgame/misc.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o endgame/misc.o
+-
+-endgame/credits.o:	endgame/credits.cpp endgame/credits.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h endgame/credits.h endgame/CredReader.h
+-	g++ -g -O2 -c endgame/credits.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o endgame/credits.o
+-
+-endgame/CredReader.o:	endgame/CredReader.cpp endgame/CredReader.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h endgame/CredReader.h
+-	g++ -g -O2 -c endgame/CredReader.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o endgame/CredReader.o
+-
+-intro/intro.o:	intro/intro.cpp intro/intro.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h ai/stdai.h
+-	g++ -g -O2 -c intro/intro.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o intro/intro.o
+-
+-intro/title.o:	intro/title.cpp intro/title.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c intro/title.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o intro/title.o
+-
+-pause/pause.o:	pause/pause.cpp pause/pause.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c pause/pause.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o pause/pause.o
+-
+-pause/options.o:	pause/options.cpp pause/options.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h pause/options.h pause/dialog.h \
+-		pause/message.h
+-	g++ -g -O2 -c pause/options.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o pause/options.o
+-
+-pause/dialog.o:	pause/dialog.cpp pause/dialog.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h pause/dialog.h pause/options.h
+-	g++ -g -O2 -c pause/dialog.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o pause/dialog.o
+-
+-pause/message.o:	pause/message.cpp pause/message.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h pause/message.h pause/options.h
+-	g++ -g -O2 -c pause/message.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o pause/message.o
+-
+-pause/objects.o:	pause/objects.cpp pause/objects.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h common/llist.h pause/options.h
+-	g++ -g -O2 -c pause/objects.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o pause/objects.o
+-
+-graphics/nxsurface.o:	graphics/nxsurface.cpp graphics/nxsurface.fdh settings.h input.h \
+-		config.h graphics/graphics.h graphics/nxsurface.h \
+-		common/basics.h
+-	g++ -g -O2 -c graphics/nxsurface.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o graphics/nxsurface.o
+-
+-graphics/graphics.o:	graphics/graphics.cpp graphics/graphics.fdh config.h graphics/graphics.h \
+-		graphics/nxsurface.h common/basics.h graphics/tileset.h \
+-		graphics/sprites.h siflib/sif.h dirnames.h
+-	g++ -g -O2 -c graphics/graphics.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o graphics/graphics.o
+-
+-graphics/sprites.o:	graphics/sprites.cpp graphics/sprites.fdh graphics/graphics.h graphics/nxsurface.h \
+-		common/basics.h siflib/sif.h siflib/sifloader.h \
+-		common/BList.h common/SupportDefs.h siflib/sectSprites.h \
+-		siflib/sectStringArray.h autogen/sprites.h common/StringList.h \
+-		dirnames.h settings.h input.h \
+-		graphics/sprites.h
+-	g++ -g -O2 -c graphics/sprites.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o graphics/sprites.o
+-
+-graphics/tileset.o:	graphics/tileset.cpp graphics/tileset.fdh graphics/graphics.h graphics/nxsurface.h \
+-		common/basics.h graphics/tileset.h
+-	g++ -g -O2 -c graphics/tileset.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o graphics/tileset.o
+-
+-graphics/font.o:	graphics/font.cpp graphics/font.fdh config.h nx.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h
+-	g++ -g -O2 -c graphics/font.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o graphics/font.o
+-
+-graphics/safemode.o:	graphics/safemode.cpp graphics/safemode.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h graphics/safemode.h
+-	g++ -g -O2 -c graphics/safemode.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o graphics/safemode.o
+-
+-graphics/palette.o:	graphics/palette.cpp graphics/palette.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h graphics/palette.h
+-	g++ -g -O2 -c graphics/palette.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o graphics/palette.o
+-
+-sound/sound.o:	sound/sound.cpp sound/sound.fdh nx.h config.h \
+-		common/basics.h common/BList.h common/SupportDefs.h \
+-		common/StringList.h common/DBuffer.h common/DString.h \
+-		common/InitList.h graphics/graphics.h graphics/nxsurface.h \
+-		graphics/tileset.h graphics/sprites.h siflib/sif.h \
+-		trig.h autogen/sprites.h dirnames.h \
+-		TextBox/TextBox.h TextBox/YesNoPrompt.h TextBox/ItemImage.h \
+-		TextBox/StageSelect.h TextBox/SaveSelect.h graphics/font.h \
+-		input.h tsc.h stageboss.h \
+-		ai/ai.h map.h maprecord.h \
+-		stagedata.h statusbar.h floattext.h \
+-		object.h ObjManager.h console.h \
+-		debug.h game.h caret.h \
+-		screeneffect.h settings.h slope.h \
+-		player.h p_arms.h ai/weapons/whimstar.h \
+-		replay.h common/FileBuffer.h platform.h \
+-		sound/sound.h sound/pxt.h
+-	g++ -g -O2 -c sound/sound.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o sound/sound.o
+-
+-sound/sslib.o:	sound/sslib.cpp sound/sslib.fdh common/basics.h sound/sslib.h
+-	g++ -g -O2 -c sound/sslib.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o sound/sslib.o
+-
+-sound/org.o:	sound/org.cpp sound/org.fdh common/basics.h sound/org.h \
+-		sound/pxt.h sound/sslib.h
+-	g++ -g -O2 -c sound/org.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o sound/org.o
+-
+-sound/pxt.o:	sound/pxt.cpp sound/pxt.fdh config.h sound/pxt.h \
+-		common/basics.h sound/sslib.h
+-	g++ -g -O2 -c sound/pxt.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o sound/pxt.o
+-
+-siflib/sif.o:	siflib/sif.cpp siflib/sif.fdh siflib/sif.h siflib/sifloader.h \
+-		common/BList.h common/SupportDefs.h siflib/sectSprites.h \
+-		siflib/sectStringArray.h
+-	g++ -g -O2 -c siflib/sif.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o siflib/sif.o
+-
+-siflib/sifloader.o:	siflib/sifloader.cpp siflib/sifloader.fdh siflib/sifloader.h common/BList.h \
+-		common/SupportDefs.h
+-	g++ -g -O2 -c siflib/sifloader.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o siflib/sifloader.o
+-
+-siflib/sectSprites.o:	siflib/sectSprites.cpp siflib/sectSprites.fdh common/DBuffer.h common/basics.h \
+-		common/bufio.h siflib/sectSprites.h siflib/sif.h
+-	g++ -g -O2 -c siflib/sectSprites.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o siflib/sectSprites.o
+-
+-siflib/sectStringArray.o:	siflib/sectStringArray.cpp siflib/sectStringArray.fdh common/DBuffer.h common/basics.h \
+-		common/DString.h common/bufio.h common/StringList.h \
+-		common/BList.h common/SupportDefs.h siflib/sectStringArray.h
+-	g++ -g -O2 -c siflib/sectStringArray.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o siflib/sectStringArray.o
+-
+-extract/extract.o:	extract/extract.cpp extract/extract.fdh graphics/safemode.h
+-	g++ -g -O2 -c extract/extract.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o extract/extract.o
+-
+-extract/extractpxt.o:	extract/extractpxt.cpp extract/extractpxt.fdh graphics/safemode.h common/basics.h
+-	g++ -g -O2 -c extract/extractpxt.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o extract/extractpxt.o
+-
+-extract/extractfiles.o:	extract/extractfiles.cpp extract/extractfiles.fdh common/basics.h graphics/safemode.h
+-	g++ -g -O2 -c extract/extractfiles.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o extract/extractfiles.o
+-
+-extract/extractstages.o:	extract/extractstages.cpp extract/extractstages.fdh graphics/safemode.h common/StringList.h \
+-		common/BList.h common/SupportDefs.h common/basics.h \
+-		stagedata.h maprecord.h
+-	g++ -g -O2 -c extract/extractstages.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o extract/extractstages.o
+-
+-extract/crc.o:	extract/crc.cpp extract/crc.fdh
+-	g++ -g -O2 -c extract/crc.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o extract/crc.o
+-
+-autogen/AssignSprites.o:	autogen/AssignSprites.cpp autogen/AssignSprites.fdh autogen/asdefs.h nx.h \
+-		config.h common/basics.h common/BList.h \
+-		common/SupportDefs.h common/StringList.h common/DBuffer.h \
+-		common/DString.h common/InitList.h graphics/graphics.h \
+-		graphics/nxsurface.h graphics/tileset.h graphics/sprites.h \
+-		siflib/sif.h trig.h autogen/sprites.h \
+-		dirnames.h TextBox/TextBox.h TextBox/YesNoPrompt.h \
+-		TextBox/ItemImage.h TextBox/StageSelect.h TextBox/SaveSelect.h \
+-		graphics/font.h input.h tsc.h \
+-		stageboss.h ai/ai.h map.h \
+-		maprecord.h stagedata.h statusbar.h \
+-		floattext.h object.h ObjManager.h \
+-		console.h debug.h game.h \
+-		caret.h screeneffect.h settings.h \
+-		slope.h player.h p_arms.h \
+-		ai/weapons/whimstar.h replay.h common/FileBuffer.h \
+-		platform.h sound/sound.h
+-	g++ -g -O2 -c autogen/AssignSprites.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o autogen/AssignSprites.o
+-
+-autogen/objnames.o:	autogen/objnames.cpp autogen/objnames.fdh
+-	g++ -g -O2 -c autogen/objnames.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o autogen/objnames.o
+-
+-stagedata.o:	stagedata.cpp stagedata.fdh stagedata.h
+-	g++ -g -O2 -c stagedata.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o stagedata.o
+-
+-common/FileBuffer.o:	common/FileBuffer.cpp common/FileBuffer.fdh common/FileBuffer.h common/DBuffer.h \
+-		common/basics.h
+-	g++ -g -O2 -c common/FileBuffer.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o common/FileBuffer.o
+-
+-common/InitList.o:	common/InitList.cpp common/InitList.fdh common/InitList.h
+-	g++ -g -O2 -c common/InitList.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o common/InitList.o
+-
+-common/BList.o:	common/BList.cpp common/BList.fdh common/BList.h common/SupportDefs.h
+-	g++ -g -O2 -c common/BList.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o common/BList.o
+-
+-common/StringList.o:	common/StringList.cpp common/StringList.fdh common/StringList.h common/BList.h \
+-		common/SupportDefs.h
+-	g++ -g -O2 -c common/StringList.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o common/StringList.o
+-
+-common/DBuffer.o:	common/DBuffer.cpp common/DBuffer.fdh common/DBuffer.h common/basics.h
+-	g++ -g -O2 -c common/DBuffer.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o common/DBuffer.o
+-
+-common/DString.o:	common/DString.cpp common/DString.fdh common/DString.h common/basics.h \
+-		common/DBuffer.h
+-	g++ -g -O2 -c common/DString.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o common/DString.o
+-
+-common/bufio.o:	common/bufio.cpp common/bufio.fdh common/DBuffer.h common/basics.h
+-	g++ -g -O2 -c common/bufio.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o common/bufio.o
+-
+-common/stat.o:	common/stat.cpp common/stat.fdh common/basics.h
+-	g++ -g -O2 -c common/stat.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o common/stat.o
++all: nx
+ 
+-common/misc.o:	common/misc.cpp common/misc.fdh common/basics.h
+-	g++ -g -O2 -c common/misc.cpp -D DEBUG `sdl-config --cflags` -Wreturn-type -Wformat -Wno-multichar -o common/misc.o
++nx:  $(OBJS)
++	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+ 
+ 
+ clean:
+-	rm -f main.o
+-	rm -f game.o
+-	rm -f object.o
+-	rm -f ObjManager.o
+-	rm -f map.o
+-	rm -f TextBox/TextBox.o
+-	rm -f TextBox/YesNoPrompt.o
+-	rm -f TextBox/ItemImage.o
+-	rm -f TextBox/StageSelect.o
+-	rm -f TextBox/SaveSelect.o
+-	rm -f profile.o
+-	rm -f settings.o
+-	rm -f platform.o
+-	rm -f platform/Linux/vbesync.o
+-	rm -f caret.o
+-	rm -f slope.o
+-	rm -f player.o
+-	rm -f playerstats.o
+-	rm -f p_arms.o
+-	rm -f statusbar.o
+-	rm -f tsc.o
+-	rm -f screeneffect.o
+-	rm -f floattext.o
+-	rm -f input.o
+-	rm -f replay.o
+-	rm -f trig.o
+-	rm -f inventory.o
+-	rm -f map_system.o
+-	rm -f debug.o
+-	rm -f console.o
+-	rm -f niku.o
+-	rm -f ai/ai.o
+-	rm -f ai/first_cave/first_cave.o
+-	rm -f ai/village/village.o
+-	rm -f ai/village/balrog_boss_running.o
+-	rm -f ai/village/ma_pignon.o
+-	rm -f ai/egg/egg.o
+-	rm -f ai/egg/igor.o
+-	rm -f ai/egg/egg2.o
+-	rm -f ai/weed/weed.o
+-	rm -f ai/weed/balrog_boss_flying.o
+-	rm -f ai/weed/frenzied_mimiga.o
+-	rm -f ai/sand/sand.o
+-	rm -f ai/sand/puppy.o
+-	rm -f ai/sand/curly_boss.o
+-	rm -f ai/sand/toroko_frenzied.o
+-	rm -f ai/maze/maze.o
+-	rm -f ai/maze/critter_purple.o
+-	rm -f ai/maze/gaudi.o
+-	rm -f ai/maze/pooh_black.o
+-	rm -f ai/maze/balrog_boss_missiles.o
+-	rm -f ai/maze/labyrinth_m.o
+-	rm -f ai/almond/almond.o
+-	rm -f ai/oside/oside.o
+-	rm -f ai/plantation/plantation.o
+-	rm -f ai/last_cave/last_cave.o
+-	rm -f ai/final_battle/balcony.o
+-	rm -f ai/final_battle/misery.o
+-	rm -f ai/final_battle/final_misc.o
+-	rm -f ai/final_battle/doctor.o
+-	rm -f ai/final_battle/doctor_frenzied.o
+-	rm -f ai/final_battle/doctor_common.o
+-	rm -f ai/final_battle/sidekicks.o
+-	rm -f ai/hell/hell.o
+-	rm -f ai/hell/ballos_priest.o
+-	rm -f ai/hell/ballos_misc.o
+-	rm -f ai/npc/balrog.o
+-	rm -f ai/npc/curly.o
+-	rm -f ai/npc/curly_ai.o
+-	rm -f ai/npc/misery.o
+-	rm -f ai/npc/npcregu.o
+-	rm -f ai/npc/npcguest.o
+-	rm -f ai/npc/npcplayer.o
+-	rm -f ai/weapons/weapons.o
+-	rm -f ai/weapons/polar_mgun.o
+-	rm -f ai/weapons/missile.o
+-	rm -f ai/weapons/fireball.o
+-	rm -f ai/weapons/blade.o
+-	rm -f ai/weapons/snake.o
+-	rm -f ai/weapons/nemesis.o
+-	rm -f ai/weapons/bubbler.o
+-	rm -f ai/weapons/spur.o
+-	rm -f ai/weapons/whimstar.o
+-	rm -f ai/sym/sym.o
+-	rm -f ai/sym/smoke.o
+-	rm -f ai/balrog_common.o
+-	rm -f ai/IrregularBBox.o
+-	rm -f stageboss.o
+-	rm -f ai/boss/omega.o
+-	rm -f ai/boss/balfrog.o
+-	rm -f ai/boss/x.o
+-	rm -f ai/boss/core.o
+-	rm -f ai/boss/ironhead.o
+-	rm -f ai/boss/sisters.o
+-	rm -f ai/boss/undead_core.o
+-	rm -f ai/boss/heavypress.o
+-	rm -f ai/boss/ballos.o
+-	rm -f endgame/island.o
+-	rm -f endgame/misc.o
+-	rm -f endgame/credits.o
+-	rm -f endgame/CredReader.o
+-	rm -f intro/intro.o
+-	rm -f intro/title.o
+-	rm -f pause/pause.o
+-	rm -f pause/options.o
+-	rm -f pause/dialog.o
+-	rm -f pause/message.o
+-	rm -f pause/objects.o
+-	rm -f graphics/nxsurface.o
+-	rm -f graphics/graphics.o
+-	rm -f graphics/sprites.o
+-	rm -f graphics/tileset.o
+-	rm -f graphics/font.o
+-	rm -f graphics/safemode.o
+-	rm -f graphics/palette.o
+-	rm -f sound/sound.o
+-	rm -f sound/sslib.o
+-	rm -f sound/org.o
+-	rm -f sound/pxt.o
+-	rm -f siflib/sif.o
+-	rm -f siflib/sifloader.o
+-	rm -f siflib/sectSprites.o
+-	rm -f siflib/sectStringArray.o
+-	rm -f extract/extract.o
+-	rm -f extract/extractpxt.o
+-	rm -f extract/extractfiles.o
+-	rm -f extract/extractstages.o
+-	rm -f extract/crc.o
+-	rm -f autogen/AssignSprites.o
+-	rm -f autogen/objnames.o
+-	rm -f stagedata.o
+-	rm -f common/FileBuffer.o
+-	rm -f common/InitList.o
+-	rm -f common/BList.o
+-	rm -f common/StringList.o
+-	rm -f common/DBuffer.o
+-	rm -f common/DString.o
+-	rm -f common/bufio.o
+-	rm -f common/stat.o
+-	rm -f common/misc.o
++	rm -f $(OBJS) nx
+ 
+ cleanfdh:
+-	rm -f main.fdh
+-	rm -f game.fdh
+-	rm -f object.fdh
+-	rm -f ObjManager.fdh
+-	rm -f map.fdh
+-	rm -f TextBox/TextBox.fdh
+-	rm -f TextBox/YesNoPrompt.fdh
+-	rm -f TextBox/ItemImage.fdh
+-	rm -f TextBox/StageSelect.fdh
+-	rm -f TextBox/SaveSelect.fdh
+-	rm -f profile.fdh
+-	rm -f settings.fdh
+-	rm -f platform.fdh
+-	rm -f platform/Linux/vbesync.fdh
+-	rm -f caret.fdh
+-	rm -f slope.fdh
+-	rm -f player.fdh
+-	rm -f playerstats.fdh
+-	rm -f p_arms.fdh
+-	rm -f statusbar.fdh
+-	rm -f tsc.fdh
+-	rm -f screeneffect.fdh
+-	rm -f floattext.fdh
+-	rm -f input.fdh
+-	rm -f replay.fdh
+-	rm -f trig.fdh
+-	rm -f inventory.fdh
+-	rm -f map_system.fdh
+-	rm -f debug.fdh
+-	rm -f console.fdh
+-	rm -f niku.fdh
+-	rm -f ai/ai.fdh
+-	rm -f ai/first_cave/first_cave.fdh
+-	rm -f ai/village/village.fdh
+-	rm -f ai/village/balrog_boss_running.fdh
+-	rm -f ai/village/ma_pignon.fdh
+-	rm -f ai/egg/egg.fdh
+-	rm -f ai/egg/igor.fdh
+-	rm -f ai/egg/egg2.fdh
+-	rm -f ai/weed/weed.fdh
+-	rm -f ai/weed/balrog_boss_flying.fdh
+-	rm -f ai/weed/frenzied_mimiga.fdh
+-	rm -f ai/sand/sand.fdh
+-	rm -f ai/sand/puppy.fdh
+-	rm -f ai/sand/curly_boss.fdh
+-	rm -f ai/sand/toroko_frenzied.fdh
+-	rm -f ai/maze/maze.fdh
+-	rm -f ai/maze/critter_purple.fdh
+-	rm -f ai/maze/gaudi.fdh
+-	rm -f ai/maze/pooh_black.fdh
+-	rm -f ai/maze/balrog_boss_missiles.fdh
+-	rm -f ai/maze/labyrinth_m.fdh
+-	rm -f ai/almond/almond.fdh
+-	rm -f ai/oside/oside.fdh
+-	rm -f ai/plantation/plantation.fdh
+-	rm -f ai/last_cave/last_cave.fdh
+-	rm -f ai/final_battle/balcony.fdh
+-	rm -f ai/final_battle/misery.fdh
+-	rm -f ai/final_battle/final_misc.fdh
+-	rm -f ai/final_battle/doctor.fdh
+-	rm -f ai/final_battle/doctor_frenzied.fdh
+-	rm -f ai/final_battle/doctor_common.fdh
+-	rm -f ai/final_battle/sidekicks.fdh
+-	rm -f ai/hell/hell.fdh
+-	rm -f ai/hell/ballos_priest.fdh
+-	rm -f ai/hell/ballos_misc.fdh
+-	rm -f ai/npc/balrog.fdh
+-	rm -f ai/npc/curly.fdh
+-	rm -f ai/npc/curly_ai.fdh
+-	rm -f ai/npc/misery.fdh
+-	rm -f ai/npc/npcregu.fdh
+-	rm -f ai/npc/npcguest.fdh
+-	rm -f ai/npc/npcplayer.fdh
+-	rm -f ai/weapons/weapons.fdh
+-	rm -f ai/weapons/polar_mgun.fdh
+-	rm -f ai/weapons/missile.fdh
+-	rm -f ai/weapons/fireball.fdh
+-	rm -f ai/weapons/blade.fdh
+-	rm -f ai/weapons/snake.fdh
+-	rm -f ai/weapons/nemesis.fdh
+-	rm -f ai/weapons/bubbler.fdh
+-	rm -f ai/weapons/spur.fdh
+-	rm -f ai/weapons/whimstar.fdh
+-	rm -f ai/sym/sym.fdh
+-	rm -f ai/sym/smoke.fdh
+-	rm -f ai/balrog_common.fdh
+-	rm -f ai/IrregularBBox.fdh
+-	rm -f stageboss.fdh
+-	rm -f ai/boss/omega.fdh
+-	rm -f ai/boss/balfrog.fdh
+-	rm -f ai/boss/x.fdh
+-	rm -f ai/boss/core.fdh
+-	rm -f ai/boss/ironhead.fdh
+-	rm -f ai/boss/sisters.fdh
+-	rm -f ai/boss/undead_core.fdh
+-	rm -f ai/boss/heavypress.fdh
+-	rm -f ai/boss/ballos.fdh
+-	rm -f endgame/island.fdh
+-	rm -f endgame/misc.fdh
+-	rm -f endgame/credits.fdh
+-	rm -f endgame/CredReader.fdh
+-	rm -f intro/intro.fdh
+-	rm -f intro/title.fdh
+-	rm -f pause/pause.fdh
+-	rm -f pause/options.fdh
+-	rm -f pause/dialog.fdh
+-	rm -f pause/message.fdh
+-	rm -f pause/objects.fdh
+-	rm -f graphics/nxsurface.fdh
+-	rm -f graphics/graphics.fdh
+-	rm -f graphics/sprites.fdh
+-	rm -f graphics/tileset.fdh
+-	rm -f graphics/font.fdh
+-	rm -f graphics/safemode.fdh
+-	rm -f graphics/palette.fdh
+-	rm -f sound/sound.fdh
+-	rm -f sound/sslib.fdh
+-	rm -f sound/org.fdh
+-	rm -f sound/pxt.fdh
+-	rm -f siflib/sif.fdh
+-	rm -f siflib/sifloader.fdh
+-	rm -f siflib/sectSprites.fdh
+-	rm -f siflib/sectStringArray.fdh
+-	rm -f extract/extract.fdh
+-	rm -f extract/extractpxt.fdh
+-	rm -f extract/extractfiles.fdh
+-	rm -f extract/extractstages.fdh
+-	rm -f extract/crc.fdh
+-	rm -f autogen/AssignSprites.fdh
+-	rm -f autogen/objnames.fdh
+-	rm -f stagedata.fdh
+-	rm -f common/FileBuffer.fdh
+-	rm -f common/InitList.fdh
+-	rm -f common/BList.fdh
+-	rm -f common/StringList.fdh
+-	rm -f common/DBuffer.fdh
+-	rm -f common/DString.fdh
+-	rm -f common/bufio.fdh
+-	rm -f common/stat.fdh
+-	rm -f common/misc.fdh
++	rm -f *.fdh */*.fdh */*/*.fdh
+ 
+ cleanall: clean cleanfdh
+ 
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/boss/ballos.cpp cavestory-1.0.0.6.new/ai/boss/ballos.cpp
+--- cavestory-1.0.0.6.orig/ai/boss/ballos.cpp	2010-08-08 01:20:25.000000000 +0200
++++ cavestory-1.0.0.6.new/ai/boss/ballos.cpp	2023-12-13 11:44:20.569453372 +0100
+@@ -40,6 +40,10 @@ enum BS_STATES
+ 	CS_SPIN_PLATFORMS	= 430
+ };
+ 
++static void SetRotatorStates(int newstate);
++static void spawn_impact_puffs(Object *o);
++static void make_puff(int x, int y, int bd);
++
+ INITFUNC(AIRoutines)
+ {
+ 	ONDEATH(OBJ_BALLOS_MAIN, ondeath_ballos);
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/boss/ballos.fdh cavestory-1.0.0.6.new/ai/boss/ballos.fdh
+--- cavestory-1.0.0.6.orig/ai/boss/ballos.fdh	2010-11-08 01:50:06.000000000 +0100
++++ cavestory-1.0.0.6.new/ai/boss/ballos.fdh	2023-12-13 11:44:20.569453372 +0100
+@@ -54,9 +54,6 @@ Object *SmokePuff(int x, int y);
+ void ondeath_ballos(Object *o);
+ void ai_ballos_rotator(Object *o);
+ void aftermove_ballos_rotator(Object *o);
+-static void SetRotatorStates(int newstate);
+-static void spawn_impact_puffs(Object *o);
+-static void make_puff(int x, int y, int bd);
+ void ai_ballos_platform(Object *o);
+ 
+ 
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/boss/heavypress.fdh cavestory-1.0.0.6.new/ai/boss/heavypress.fdh
+--- cavestory-1.0.0.6.orig/ai/boss/heavypress.fdh	2010-11-08 01:50:06.000000000 +0100
++++ cavestory-1.0.0.6.new/ai/boss/heavypress.fdh	2023-12-13 11:46:25.192632833 +0100
+@@ -27,10 +27,6 @@ void KillObjectsOfType(int type);
+ 
+ /* located in ai/hell/ballos_priest.cpp */
+ 
+-//--------------[referenced from ai/boss/heavypress.cpp]-------------//
+-static void run_defeated(Object *o);
+-
+-
+ /* located in ai/sym/smoke.cpp */
+ 
+ //--------------[referenced from ai/boss/heavypress.cpp]-------------//
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/boss/undead_core.cpp cavestory-1.0.0.6.new/ai/boss/undead_core.cpp
+--- cavestory-1.0.0.6.orig/ai/boss/undead_core.cpp	2010-08-08 01:20:26.000000000 +0200
++++ cavestory-1.0.0.6.new/ai/boss/undead_core.cpp	2023-12-13 11:42:19.049605693 +0100
+@@ -48,6 +48,8 @@ enum ROTR_STATES
+ void c------------------------------() {}
+ */
+ 
++static void CreateSpinner(int x, int y);
++
+ INITFUNC(AIRoutines)
+ {
+ 	ONSPAWN(OBJ_UD_MINICORE_IDLE, onspawn_ud_minicore_idle);
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/boss/undead_core.fdh cavestory-1.0.0.6.new/ai/boss/undead_core.fdh
+--- cavestory-1.0.0.6.orig/ai/boss/undead_core.fdh	2010-11-08 01:50:06.000000000 +0100
++++ cavestory-1.0.0.6.new/ai/boss/undead_core.fdh	2023-12-13 11:41:37.376324596 +0100
+@@ -48,18 +48,11 @@ void onspawn_ud_minicore_idle(Object *o)
+ void ai_udmini_platform(Object *o);
+ void ai_ud_pellet(Object *o);
+ void ai_ud_smoke(Object *o);
+-static void CreateSpinner(int x, int y);
+ void ai_ud_spinner(Object *o);
+ void ai_ud_spinner_trail(Object *o);
+ void ai_ud_blast(Object *o);
+ 
+ 
+-/* located in ai/boss/ballos.cpp */
+-
+-//--------------[referenced from ai/boss/undead_core.cpp]------------//
+-static void SetRotatorStates(int newstate);
+-
+-
+ /* located in sound/sound.cpp */
+ 
+ //--------------[referenced from ai/boss/undead_core.cpp]------------//
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/final_battle/misery.cpp cavestory-1.0.0.6.new/ai/final_battle/misery.cpp
+--- cavestory-1.0.0.6.orig/ai/final_battle/misery.cpp	2014-07-15 22:06:23.000000000 +0200
++++ cavestory-1.0.0.6.new/ai/final_battle/misery.cpp	2023-12-13 12:30:02.772760548 +0100
+@@ -138,9 +138,9 @@ static void run_spells(Object *o)
+ 			{
+ 				int x = player->x - (8 << CSF);
+ 				int y = player->y - (64 << CSF);
+-				CreateObject(x, y, OBJ_FALLING_BLOCK);
+-				o->sprite = SPR_BALCONY_BLOCK_LARGE;
+-				o->dir = DOWN;	// tell block it was spawned by Misery
++				Object *block = CreateObject(x, y, OBJ_FALLING_BLOCK);
++				block->sprite = SPR_BALCONY_BLOCK_LARGE;
++				block->dir = DOWN; // tell block it was spawned by Misery
+ 			}
+ 			
+ 			if (o->timer > 30)
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/maze/labyrinth_m.cpp cavestory-1.0.0.6.new/ai/maze/labyrinth_m.cpp
+--- cavestory-1.0.0.6.orig/ai/maze/labyrinth_m.cpp	2010-08-08 01:20:14.000000000 +0200
++++ cavestory-1.0.0.6.new/ai/maze/labyrinth_m.cpp	2023-12-13 11:24:54.207590016 +0100
+@@ -23,7 +23,7 @@ void c------------------------------() {
+ 
+ void ai_firewhirr(Object *o)
+ {
+-Object *shot;
++//Object *shot;
+ 
+ 	FACEPLAYER;
+ 	
+@@ -59,7 +59,7 @@ Object *shot;
+ 			// if time to fire, spawn a shot
+ 			if (o->timer2 > 20)
+ 			{
+-				shot = SpawnObjectAtActionPoint(o, OBJ_FIREWHIRR_SHOT);
++				/* shot = */ SpawnObjectAtActionPoint(o, OBJ_FIREWHIRR_SHOT);
+ 				o->timer2 = -100 + random(0, 20);
+ 				// tell Curly to acquire us as a target
+ 				if (o->onscreen)
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/plantation/plantation.cpp cavestory-1.0.0.6.new/ai/plantation/plantation.cpp
+--- cavestory-1.0.0.6.orig/ai/plantation/plantation.cpp	2010-08-08 01:20:25.000000000 +0200
++++ cavestory-1.0.0.6.new/ai/plantation/plantation.cpp	2023-12-13 11:25:57.304174827 +0100
+@@ -3,6 +3,8 @@
+ #include "../sand/puppy.fdh"
+ #include "plantation.fdh"
+ 
++static Caret *SpawnRocketTrail(Object *o, int side);
++
+ INITFUNC(AIRoutines)
+ {
+ 	ONTICK(OBJ_ORANGEBELL, ai_orangebell);
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/plantation/plantation.fdh cavestory-1.0.0.6.new/ai/plantation/plantation.fdh
+--- cavestory-1.0.0.6.orig/ai/plantation/plantation.fdh	2010-11-08 01:50:06.000000000 +0100
++++ cavestory-1.0.0.6.new/ai/plantation/plantation.fdh	2023-12-13 11:25:57.304174827 +0100
+@@ -55,7 +55,6 @@ void ai_kanpachi_standing(Object *o);
+ void ai_npc_momorin(Object *o);
+ void ai_proximity_press_hoz(Object *o);
+ void ai_rocket(Object *o);
+-static Caret *SpawnRocketTrail(Object *o, int side);
+ void ai_numahachi(Object *o);
+ 
+ 
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/sym/smoke.cpp cavestory-1.0.0.6.new/ai/sym/smoke.cpp
+--- cavestory-1.0.0.6.orig/ai/sym/smoke.cpp	2010-08-08 01:20:20.000000000 +0200
++++ cavestory-1.0.0.6.new/ai/sym/smoke.cpp	2023-12-13 11:32:45.670324388 +0100
+@@ -110,6 +110,8 @@ static const int SFAST = 0x600;
+ 			yi_min = -SSLOW; yi_max = 0;
+ 		}
+ 		break;
++		
++		default: return;
+ 	}
+ 	
+ 	for(int i=0;i<nclouds;i++)
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/sym/sym.cpp cavestory-1.0.0.6.new/ai/sym/sym.cpp
+--- cavestory-1.0.0.6.orig/ai/sym/sym.cpp	2010-09-04 21:05:55.000000000 +0200
++++ cavestory-1.0.0.6.new/ai/sym/sym.cpp	2023-12-13 12:35:56.398988440 +0100
+@@ -2,6 +2,8 @@
+ #include "../stdai.h"
+ #include "sym.fdh"
+ 
++static void hv_project_beam(Object *o);
++static void smoke_if_bonus_item(Object *o);
+ 
+ INITFUNC(AIRoutines)
+ {
+@@ -711,7 +713,7 @@ void ai_press(Object *o)
+ 				SmokeSide(o, 4, DOWN);
+ 				quake(10);
+ 				
+-				o->state = 11;
++				o->state = 0;
+ 				o->frame = 0;
+ 				o->damage = 0;
+ 				o->flags |= FLAG_SOLID_BRICK;
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/sym/sym.fdh cavestory-1.0.0.6.new/ai/sym/sym.fdh
+--- cavestory-1.0.0.6.orig/ai/sym/sym.fdh	2010-11-08 01:50:06.000000000 +0100
++++ cavestory-1.0.0.6.new/ai/sym/sym.fdh	2023-12-13 11:27:02.920756369 +0100
+@@ -59,7 +59,6 @@ void ai_animate4(Object *o);
+ //------------------[referenced from ai/sym/sym.cpp]-----------------//
+ void ai_null(Object *o);
+ void ai_hvtrigger(Object *o);
+-static void hv_project_beam(Object *o);
+ void ai_xp(Object *o);
+ void ai_powerup(Object *o);
+ bool Handle_Falling_Left(Object *o);
+@@ -69,7 +68,6 @@ void ai_save_point(Object *o);
+ void ai_recharge(Object *o);
+ void ai_chest_closed(Object *o);
+ void ai_chest_open(Object *o);
+-static void smoke_if_bonus_item(Object *o);
+ void ai_lightning(Object *o);
+ void ai_teleporter(Object *o);
+ void ai_door(Object *o);
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/weapons/nemesis.cpp cavestory-1.0.0.6.new/ai/weapons/nemesis.cpp
+--- cavestory-1.0.0.6.orig/ai/weapons/nemesis.cpp	2010-08-08 01:20:19.000000000 +0200
++++ cavestory-1.0.0.6.new/ai/weapons/nemesis.cpp	2023-12-13 11:31:30.623751792 +0100
+@@ -64,6 +64,8 @@ void ai_nemesis_shot(Object *o)
+ 					yi = 0x200;
+ 				}
+ 				break;
++				default:
++					return;
+ 			}
+ 			
+ 			x += o->xinertia;
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/weapons/polar_mgun.cpp cavestory-1.0.0.6.new/ai/weapons/polar_mgun.cpp
+--- cavestory-1.0.0.6.orig/ai/weapons/polar_mgun.cpp	2010-08-08 01:20:17.000000000 +0200
++++ cavestory-1.0.0.6.new/ai/weapons/polar_mgun.cpp	2023-12-13 11:30:08.543854676 +0100
+@@ -108,6 +108,7 @@ void ai_mgun_trail(Object *o)
+ 			case LEFT:  passed_leader = ((o->Left() >> CSF) <= (o->linkedobject->Left() >> CSF)); break;
+ 			case UP:    passed_leader = ((o->Top() >> CSF) <= (o->linkedobject->Top() >> CSF)); break;
+ 			case DOWN:  passed_leader = ((o->Bottom() >> CSF) >= (o->linkedobject->Bottom() >> CSF)); break;
++			default: passed_leader = false; break;
+ 		}
+ 		
+ 		if (passed_leader)
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/ai/weapons/weapons.cpp cavestory-1.0.0.6.new/ai/weapons/weapons.cpp
+--- cavestory-1.0.0.6.orig/ai/weapons/weapons.cpp	2010-08-08 01:20:17.000000000 +0200
++++ cavestory-1.0.0.6.new/ai/weapons/weapons.cpp	2023-12-13 11:28:23.630652847 +0100
+@@ -172,6 +172,8 @@ int x, y;
+ 				x = o->CenterX();
+ 				y = (o->y + o->Height());
+ 			break;
++			default:
++				return;
+ 		}
+ 	}
+ 	else
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/common/DString.cpp cavestory-1.0.0.6.new/common/DString.cpp
+--- cavestory-1.0.0.6.orig/common/DString.cpp	2010-08-08 01:20:46.000000000 +0200
++++ cavestory-1.0.0.6.new/common/DString.cpp	2023-12-13 12:09:11.020967096 +0100
+@@ -78,7 +78,7 @@ void DString::ReplaceString(const char *
+ 	DString newString;
+ 	char *str = String();
+ 	char *ptr = str;
+-	int oldLength, newLength;
++	int oldLength = 0, newLength = 0;
+ 	char *hit;
+ 	
+ 	for(;;)
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/common/SupportDefs.h cavestory-1.0.0.6.new/common/SupportDefs.h
+--- cavestory-1.0.0.6.orig/common/SupportDefs.h	2014-07-11 22:49:08.000000000 +0200
++++ cavestory-1.0.0.6.new/common/SupportDefs.h	2023-12-13 10:35:27.841520907 +0100
+@@ -70,16 +70,6 @@ typedef uint32			perform_code;
+ extern const char *B_EMPTY_STRING;
+ #endif
+ 
+-#ifndef UINT32_MAX
+-#define INT8_MAX	0x7f
+-#define INT16_MAX	0x7fff
+-#define INT32_MAX	0x7fffffff
+-#define INT64_MAX	0x7fffffffffffffff
+-#define UINT8_MAX	0xff
+-#define UINT16_MAX	0xffff
+-#define UINT32_MAX	0xffffffffffffffff
+-#endif
+-
+ /* min and max comparisons */
+ #ifndef __cplusplus
+ #	ifndef min
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/common/misc.cpp cavestory-1.0.0.6.new/common/misc.cpp
+--- cavestory-1.0.0.6.orig/common/misc.cpp	2012-01-08 02:44:09.000000000 +0100
++++ cavestory-1.0.0.6.new/common/misc.cpp	2023-12-13 08:40:03.580370753 +0100
+@@ -12,7 +12,7 @@
+ 
+ void stat(const char *fmt, ...);
+ 
+-#if __BYTE_ORDER == __LITTLE_ENDIAN
++#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+ uint16_t fgeti(FILE *fp)
+ {
+ uint16_t value;
+@@ -68,7 +68,7 @@ void fputl(uint32_t word, FILE *fp)
+ 	fputc(word >> 16, fp);
+ 	fputc(word >> 24, fp);
+ }
+-#endif		// __BYTE_ORDER  == __LITTLE_ENDIAN
++#endif
+ 
+ 
+ 
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/common/stat.cpp cavestory-1.0.0.6.new/common/stat.cpp
+--- cavestory-1.0.0.6.orig/common/stat.cpp	2010-11-08 02:37:34.000000000 +0100
++++ cavestory-1.0.0.6.new/common/stat.cpp	2023-12-13 06:20:39.920707375 +0100
+@@ -38,18 +38,19 @@ void c------------------------------() {
+ 
+ void stat(const char *fmt, ...)
+ {
++#ifdef DEBUG
+ va_list ar;
+ char buffer[MAXBUFSIZE];
+-
+ 	va_start(ar, fmt);
+ 	vsnprintf(buffer, sizeof(buffer), fmt, ar);
+ 	va_end(ar);
+ 	
+ 	puts(buffer);
+ 	fflush(stdout);
+-	
++
+ 	if (logfilename[0])
+ 		writelog(buffer, true);
++#endif
+ }
+ 
+ void staterr(const char *fmt, ...)
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/console.cpp cavestory-1.0.0.6.new/console.cpp
+--- cavestory-1.0.0.6.orig/console.cpp	2010-08-08 01:20:52.000000000 +0200
++++ cavestory-1.0.0.6.new/console.cpp	2023-12-13 11:24:09.344314884 +0100
+@@ -175,7 +175,7 @@ bool DebugConsole::HandleKey(int key)
+ 		
+ 		default:
+ 		{
+-			if (fLineLen < (sizeof(fLine) - 1))
++			if (fLineLen < ((int)sizeof(fLine) - 1))
+ 				fLine[fLineLen++] = key;
+ 		}
+ 		break;
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/endgame/CredReader.cpp cavestory-1.0.0.6.new/endgame/CredReader.cpp
+--- cavestory-1.0.0.6.orig/endgame/CredReader.cpp	2010-08-08 01:20:31.000000000 +0200
++++ cavestory-1.0.0.6.new/endgame/CredReader.cpp	2023-12-13 11:49:12.192429162 +0100
+@@ -44,7 +44,7 @@ int ch, i;
+ 	{
+ 		case CC_TEXT:
+ 		{
+-			for(i=0;i<sizeof(cmd->text)-1;i++)
++			for(i=0;i<(int)sizeof(cmd->text)-1;i++)
+ 			{
+ 				cmd->text[i] = get();
+ 				if (cmd->text[i] == ']' || !cmd->text[i]) break;
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/endgame/CredReader.fdh cavestory-1.0.0.6.new/endgame/CredReader.fdh
+--- cavestory-1.0.0.6.orig/endgame/CredReader.fdh	2010-11-08 01:50:06.000000000 +0100
++++ cavestory-1.0.0.6.new/endgame/CredReader.fdh	2023-12-13 11:49:07.832434480 +0100
+@@ -4,7 +4,6 @@
+ /* located in tsc.cpp */
+ 
+ //--------------[referenced from endgame/CredReader.cpp]-------------//
+-static int ReadNumber(const char **buf, const char *buf_end);
+ char *tsc_decrypt(const char *fname, int *fsize_out);
+ 
+ 
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/extract/crc.cpp cavestory-1.0.0.6.new/extract/crc.cpp
+--- cavestory-1.0.0.6.orig/extract/crc.cpp	2010-08-08 01:20:40.000000000 +0200
++++ cavestory-1.0.0.6.new/extract/crc.cpp	2023-12-13 12:14:04.843942089 +0100
+@@ -7,6 +7,25 @@
+ static uint32_t CRC_Table[256];
+ static const uint32_t poly = 0x04c11db7;
+ 
++
++
++static uint32_t reflect(uint32_t value, int size)
++{
++uint32_t newbits = 0;
++int i;
++
++	for(i=1;i<=size;i++)
++	{
++		if (value & 1)
++			newbits |= (1 << (size - i));
++		
++		value >>= 1;
++	}
++
++	return newbits;
++}
++
++
+ void crc_init(void)
+ {
+ int i, j;
+@@ -34,22 +53,3 @@ uint32_t crc = 0xFFFFFFFF;
+ 	
+ 	return (crc ^ 0xFFFFFFFF);
+ }
+-
+-
+-static uint32_t reflect(uint32_t value, int size)
+-{
+-uint32_t newbits = 0;
+-int i;
+-
+-	for(i=1;i<=size;i++)
+-	{
+-		if (value & 1)
+-			newbits |= (1 << (size - i));
+-		
+-		value >>= 1;
+-	}
+-
+-	return newbits;
+-}
+-
+-
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/extract/crc.fdh cavestory-1.0.0.6.new/extract/crc.fdh
+--- cavestory-1.0.0.6.orig/extract/crc.fdh	2010-11-08 01:50:06.000000000 +0100
++++ cavestory-1.0.0.6.new/extract/crc.fdh	2023-12-13 12:14:04.843942089 +0100
+@@ -6,5 +6,4 @@
+ //------------------[referenced from extract/crc.cpp]----------------//
+ void crc_init(void);
+ uint32_t crc_calc(uint8_t *buf, uint32_t size);
+-static uint32_t reflect(uint32_t value, int size);
+ 
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/extract/extractstages.cpp cavestory-1.0.0.6.new/extract/extractstages.cpp
+--- cavestory-1.0.0.6.orig/extract/extractstages.cpp	2012-01-18 13:12:06.000000000 +0100
++++ cavestory-1.0.0.6.new/extract/extractstages.cpp	2023-12-13 15:00:59.755627001 +0100
+@@ -104,7 +104,7 @@ int i;
+ 	
+ 	fputc(NMAPS, fpo);
+ 	for(i=0;i<NMAPS;i++)
+-		fwrite(&mapdata[i], sizeof(MapRecord), 1, fpo);
++		fwrite(&mapdata[i], SIZEOF_MAPRECORD, 1, fpo);
+ 	
+ 	fclose(fpo);
+ 	return 0;
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/game.cpp cavestory-1.0.0.6.new/game.cpp
+--- cavestory-1.0.0.6.orig/game.cpp	2010-10-25 23:07:38.000000000 +0200
++++ cavestory-1.0.0.6.new/game.cpp	2023-12-13 16:10:12.867083452 +0100
+@@ -46,7 +46,7 @@ bool Game::init()
+ {
+ int i;
+ 
+-	memset(&game, 0, sizeof(game));
++	game = Game();
+ 	
+ 	// set default properties
+ 	memset(objprop, 0, sizeof(objprop));
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/graphics/graphics.cpp cavestory-1.0.0.6.new/graphics/graphics.cpp
+--- cavestory-1.0.0.6.orig/graphics/graphics.cpp	2010-11-08 04:01:18.000000000 +0100
++++ cavestory-1.0.0.6.new/graphics/graphics.cpp	2023-12-13 10:02:17.307549533 +0100
+@@ -83,10 +83,6 @@ SDL_Surface *sdl_screen;
+ 	uint32_t flags = SDL_SWSURFACE | SDL_HWPALETTE;
+ 	if (is_fullscreen) flags |= SDL_FULLSCREEN;
+ 	
+-	#ifndef __SDLSHIM__
+-	putenv((char *)"SDL_VIDEO_CENTERED=1");
+-	#endif
+-	
+ 	stat("SDL_SetVideoMode: %dx%d @ %dbpp", SCREEN_WIDTH*SCALE, SCREEN_HEIGHT*SCALE, screen_bpp);
+ 	sdl_screen = SDL_SetVideoMode(SCREEN_WIDTH*SCALE, SCREEN_HEIGHT*SCALE, screen_bpp, flags);
+ 	if (!sdl_screen)
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/graphics/palette.cpp cavestory-1.0.0.6.new/graphics/palette.cpp
+--- cavestory-1.0.0.6.orig/graphics/palette.cpp	2010-12-07 08:06:33.000000000 +0100
++++ cavestory-1.0.0.6.new/graphics/palette.cpp	2023-12-13 11:50:43.142318243 +0100
+@@ -21,7 +21,7 @@ SDL_Surface *palette_add(SDL_Surface *sf
+ {
+ SDL_Palette *pal = sfc->format->palette;
+ int remap[MAX_COLORS];
+-int x, y, i;
++int i;
+ 
+ 	if (sfc->format->BitsPerPixel > 8)
+ 	{
+@@ -40,6 +40,7 @@ int x, y, i;
+ 	SDL_SetColors(screen->GetSDLSurface(), screenpal, 0, ncolors);
+ 	return sfc;
+ /*
++int x, y;
+ 	// remap indexes in surface
+ 	for(y=0;y<sfc->h;y++)
+ 	{
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/graphics/sprites.cpp cavestory-1.0.0.6.new/graphics/sprites.cpp
+--- cavestory-1.0.0.6.orig/graphics/sprites.cpp	2010-11-08 02:38:20.000000000 +0100
++++ cavestory-1.0.0.6.new/graphics/sprites.cpp	2023-12-13 10:17:32.692976717 +0100
+@@ -22,6 +22,14 @@ static StringList sheetfiles;
+ SIFSprite sprites[MAX_SPRITES];
+ int num_sprites;
+ 
++namespace Sprites
++{
++static void LoadSheetIfNeeded(int spr);
++	
++static void BlitSprite(int x, int y, int s, int frame, uint8_t dir, \
++						int xoff, int yoff, int wd, int ht);
++}
++
+ 
+ bool Sprites::Init()
+ {
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/graphics/sprites.h cavestory-1.0.0.6.new/graphics/sprites.h
+--- cavestory-1.0.0.6.orig/graphics/sprites.h	2010-08-08 01:20:49.000000000 +0200
++++ cavestory-1.0.0.6.new/graphics/sprites.h	2023-12-13 10:16:43.453043391 +0100
+@@ -15,12 +15,6 @@ namespace Sprites
+ 	void Close();
+ 	void FlushSheets();
+ 	
+-	static void LoadSheetIfNeeded(int spr);
+-	
+-	static void BlitSprite(int x, int y, int s, int frame, uint8_t dir, \
+-						int xoff, int yoff, int wd, int ht);
+-
+-
+ 	void draw_sprite(int x, int y, int s, int frame=0, uint8_t dir=0);
+ 	void draw_sprite_at_dp(int x, int y, int s, int frame=0, uint8_t dir=0);
+ 	void draw_sprite_clipped(int x, int y, int s, int frame, uint8_t dir, int clipx1, int clipx2, int clipy1, int clipy2);
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/input.cpp cavestory-1.0.0.6.new/input.cpp
+--- cavestory-1.0.0.6.orig/input.cpp	2010-11-08 01:59:36.000000000 +0100
++++ cavestory-1.0.0.6.new/input.cpp	2023-12-13 14:33:50.477621804 +0100
+@@ -43,9 +43,9 @@ bool input_init(void)
+ 		mappings[SDLK_s] = NEXTWPNKEY;
+ 		mappings[SDLK_q] = INVENTORYKEY;
+ 		mappings[SDLK_w] = MAPSYSTEMKEY;
+-		
++
+ 		mappings[SDLK_ESCAPE] = ESCKEY;
+-		
++
+ 		mappings[SDLK_F1] = F1KEY;
+ 		mappings[SDLK_F2] = F2KEY;
+ 		mappings[SDLK_F3] = F3KEY;
+@@ -58,7 +58,7 @@ bool input_init(void)
+ 		mappings[SDLK_F10] = F10KEY;
+ 		mappings[SDLK_F11] = F11KEY;
+ 		mappings[SDLK_F12] = F12KEY;
+-		
++
+ 		mappings[SDLK_SPACE] = FREEZE_FRAME_KEY;
+ 		mappings[SDLK_c] = FRAME_ADVANCE_KEY;
+ 		mappings[SDLK_v] = DEBUG_FLY_KEY;
+@@ -127,7 +127,7 @@ void input_poll(void)
+ {
+ SDL_Event evt;
+ int ino, key;
+-	
++
+ 	while(SDL_PollEvent(&evt))
+ 	{
+ 		switch(evt.type)
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/input.h cavestory-1.0.0.6.new/input.h
+--- cavestory-1.0.0.6.orig/input.h	2010-08-08 01:20:45.000000000 +0200
++++ cavestory-1.0.0.6.new/input.h	2023-12-13 14:33:50.480955134 +0100
+@@ -22,11 +22,11 @@ enum INPUTS
+ 	F10KEY,
+ 	F11KEY,
+ 	F12KEY,
+-	
++
+ 	FREEZE_FRAME_KEY,
+ 	FRAME_ADVANCE_KEY,
+ 	DEBUG_FLY_KEY,
+-	
++
+ 	INPUT_COUNT
+ };
+ 
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/main.cpp cavestory-1.0.0.6.new/main.cpp
+--- cavestory-1.0.0.6.orig/main.cpp	2012-04-29 21:06:54.000000000 +0200
++++ cavestory-1.0.0.6.new/main.cpp	2023-12-13 14:31:47.597771365 +0100
+@@ -5,6 +5,10 @@
+ #include "graphics/safemode.h"
+ #include "main.fdh"
+ 
++#ifdef SDL_MIXER
++#include <SDL/SDL_mixer.h>
++#endif
++
+ const char *data_dir = "data";
+ const char *stage_dir = "data/Stage";
+ const char *pic_dir = "endpic";
+@@ -409,7 +413,12 @@ void InitNewGame(bool with_intro)
+ void AppMinimized(void)
+ {
+ 	stat("Game minimized or lost focus--pausing...");
++#ifdef SDL_MIXER
++	Mix_Pause(-1);
++	Mix_PauseMusic();
++#else
+ 	SDL_PauseAudio(1);
++#endif
+ 	
+ 	for(;;)
+ 	{
+@@ -421,8 +430,13 @@ void AppMinimized(void)
+ 		input_poll();
+ 		SDL_Delay(20);
+ 	}
+-	
++
++#ifdef SDL_MIXER
++	Mix_Resume(-1);
++	Mix_ResumeMusic();
++#else
+ 	SDL_PauseAudio(0);
++#endif
+ 	stat("Focus regained, resuming play...");
+ }
+ 
+@@ -532,7 +546,6 @@ void speed_test(void)
+ 
+ void speed_test(void)
+ {
+-	SDL_Rect textrect;
+ 	SDL_Surface *vram = screen->GetSDLSurface();
+ 	int click = 0;
+ 	
+@@ -540,7 +553,7 @@ void speed_test(void)
+ 	fps = 0;
+ 	
+ 	SDL_FillRect(vram, NULL, SDL_MapRGB(vram->format, 255, 0, 0));
+-	int c = 0;
++	//int c = 0;
+ 	
+ 	game.running = true;
+ 	while(game.running)
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/map.cpp cavestory-1.0.0.6.new/map.cpp
+--- cavestory-1.0.0.6.orig/map.cpp	2014-07-11 22:45:54.000000000 +0200
++++ cavestory-1.0.0.6.new/map.cpp	2023-12-13 14:42:29.516990063 +0100
+@@ -24,7 +24,7 @@ unsigned int tilekey[MAX_TILES];			// ma
+ bool load_stage(int stage_no)
+ {
+ char stage[MAXPATHLEN];
+-char fname[MAXPATHLEN];
++char fname[MAXPATHLEN + 4];
+ 
+ 	stat(" >> Entering stage %d: '%s'.", stage_no, stages[stage_no].stagename);
+ 	game.curmap = stage_no;		// do it now so onspawn events will have it
+@@ -54,7 +54,7 @@ char fname[MAXPATHLEN];
+ 	if (load_entities(fname)) return 1;
+ 	
+ 	sprintf(fname, "%s.tsc", stage);
+-	if (tsc_load(fname, SP_MAP) == -1) return 1;
++	if (tsc_load(fname, SP_MAP)) return 1;
+ 	
+ 	map_set_backdrop(stages[stage_no].bg_no);
+ 	map.scrolltype = stages[stage_no].scroll_type;
+@@ -293,7 +293,7 @@ FILE *fp;
+ 	
+ 	num_stages = fgetc(fp);
+ 	for(int i=0;i<num_stages;i++)
+-		fread(&stages[i], sizeof(MapRecord), 1, fp);
++		fread(&stages[i], SIZEOF_MAPRECORD, 1, fp);
+ 	
+ 	return 0;
+ }
+@@ -328,7 +328,7 @@ void initmap(void)
+ void c------------------------------() {}
+ */
+ 
+-// backdrop_no 	- backdrop # to switch to
++// backdrop_no - backdrop # to switch to
+ void map_set_backdrop(int backdrop_no)
+ {
+ 	if (!LoadBackdropIfNeeded(backdrop_no))
+@@ -684,7 +684,7 @@ void map_scroll_do(void)
+ 		{
+ 			int pushx, pushy;
+ 			
+-			if (game.megaquaketime)		// Ballos fight
++			if (game.megaquaketime)	// Ballos fight
+ 			{
+ 				game.megaquaketime--;
+ 				pushx = random(-5, 5) << CSF;
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/maprecord.h cavestory-1.0.0.6.new/maprecord.h
+--- cavestory-1.0.0.6.orig/maprecord.h	2012-01-18 13:08:54.000000000 +0100
++++ cavestory-1.0.0.6.new/maprecord.h	2023-12-13 14:38:50.837256226 +0100
+@@ -15,6 +15,8 @@ struct MapRecord
+ 	uint8_t NPCset1;
+ 	uint8_t NPCset2;
+ };
++// Dirty hack for packed structs
++#define SIZEOF_MAPRECORD (32 + 35 + 6)
+ extern MapRecord stages[MAX_STAGES];
+ extern int num_stages;
+ 
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/platform/Linux/vbesync.c cavestory-1.0.0.6.new/platform/Linux/vbesync.c
+--- cavestory-1.0.0.6.orig/platform/Linux/vbesync.c	2012-01-18 13:03:37.000000000 +0100
++++ cavestory-1.0.0.6.new/platform/Linux/vbesync.c	2023-12-13 06:26:41.176848797 +0100
+@@ -1,7 +1,9 @@
+ 
+ #include <stdio.h>
+ #include <fcntl.h>
++#ifdef __linux__
+ #include <libdrm/drm.h>
++#endif
+ #include <errno.h>
+ #define DRM_VBLANK_RELATIVE		0x1
+ #if 0
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/platform.cpp cavestory-1.0.0.6.new/platform.cpp
+--- cavestory-1.0.0.6.orig/platform.cpp	2010-11-05 03:42:54.000000000 +0100
++++ cavestory-1.0.0.6.new/platform.cpp	2023-12-13 06:23:55.273756677 +0100
+@@ -1,5 +1,5 @@
+ 
+-#include <SDL.h>
++#include <SDL/SDL.h>
+ #include <stdio.h>
+ #include "config.h"
+ #include "platform.fdh"
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/platform.h cavestory-1.0.0.6.new/platform.h
+--- cavestory-1.0.0.6.orig/platform.h	2010-11-05 03:43:14.000000000 +0100
++++ cavestory-1.0.0.6.new/platform.h	2023-12-13 10:10:54.406849353 +0100
+@@ -2,11 +2,14 @@
+ #ifndef _PLATFORM_H
+ #define _PLATFORM_H
+ 
+-extern "C"
+-{
+-	void platform_sync_to_vblank(void);
+-};
++#ifdef __cplusplus
++extern "C" {
++#endif
+ 
++void platform_sync_to_vblank(void);
+ 
++#ifdef __cplusplus
++}
++#endif
+ 
+ #endif
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/player.cpp cavestory-1.0.0.6.new/player.cpp
+--- cavestory-1.0.0.6.orig/player.cpp	2012-04-29 21:01:52.000000000 +0200
++++ cavestory-1.0.0.6.new/player.cpp	2023-12-13 15:27:32.813636173 +0100
+@@ -324,6 +324,7 @@ int i;
+ void PHandleAttributes(void)
+ {
+ static const Point pattrpoints[] = { {8, 8}, {8, 14} };
++static const Point hurt_bottom_attrpoint =   {8, 7};
+ unsigned int attr;
+ int tile;
+ 
+@@ -435,6 +436,16 @@ int tile;
+ 	// add in the bottom pattrpoint, but don't let it set the "water" bit.
+ 	// only the top pattrpoint can set "water".
+ 	attr |= (player->GetAttributes(&pattrpoints[1], 1, &tile) & ~TA_WATER);
++
++	// If the tile has "hurt" bit, we recheck it with the the different bottom attrpoint.
++	// This fixes bottom spikes in water level, last cave... Standart bottom attrpoint
++	// allows intersection with spike only for 1 pixel, but origianl game allows 8 pixels
++	// of safe intersection.
++	if (attr & TA_HURTS_PLAYER)
++	{
++		attr &= ~TA_HURTS_PLAYER;
++		attr |= (player->GetAttributes(&hurt_bottom_attrpoint, 1, &tile) & ~TA_WATER);
++	}
+ 	
+ 	if (attr & TA_HURTS_PLAYER)
+ 		hurtplayer(10);
+@@ -721,7 +732,7 @@ int i, key;
+ 	if (player->lookaway)
+ 	{
+ 		// keys which deactivate lookaway when you are facing away from player
+-		static const char actionkeys[] = \
++		static const signed char actionkeys[] = \
+ 			{ LEFTKEY, RIGHTKEY, UPKEY, JUMPKEY, FIREKEY, -1 };
+ 		
+ 		// stop looking away if any keys are pushed
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/profile.cpp cavestory-1.0.0.6.new/profile.cpp
+--- cavestory-1.0.0.6.orig/profile.cpp	2010-10-25 10:40:58.000000000 +0200
++++ cavestory-1.0.0.6.new/profile.cpp	2023-12-13 15:30:19.986760591 +0100
+@@ -58,6 +58,11 @@ FILE *fp;
+ 		int type = fgetl(fp);
+ 		if (!type) break;
+ 		
++		if (type < 0 || type >= WPN_COUNT) {
++			staterr("profile_load: invalid weapon type %d", type);
++			break;
++		}
++
+ 		int level = fgetl(fp);
+ 		int xp = fgetl(fp);
+ 		int maxammo = fgetl(fp);
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/replay.cpp cavestory-1.0.0.6.new/replay.cpp
+--- cavestory-1.0.0.6.orig/replay.cpp	2010-11-02 23:26:49.000000000 +0100
++++ cavestory-1.0.0.6.new/replay.cpp	2023-12-13 16:01:16.827760948 +0100
+@@ -15,6 +15,18 @@ static int next_stopat = 0;
+ static bool next_accel = false;
+ extern int flipacceltime;
+ 
++namespace Replay
++{
++	static uint32_t EncodeBits(bool *values, int nvalues);
++	static void DecodeBits(uint32_t value, bool *array, int len);
++	
++	static void run_record();
++	static void run_playback();
++	
++	static int GetAvailableSlot(void);
++}
++
++
+ // begin recording a replay into the given file,
+ // creating the save-profile section from the current game state.
+ bool Replay::begin_record(const char *fname)
+@@ -23,7 +35,7 @@ FILE *fp;
+ Profile profile;
+ 
+ 	end_record();
+-	memset(&rec, 0, sizeof(rec));
++	rec = ReplayRecording();
+ 	
+ 	stat("begin_record('%s')", fname);
+ 	
+@@ -54,7 +66,7 @@ Profile profile;
+ 	rec.fp = fp;
+ 	seedrand(rec.hdr.randseed);
+ 	
+-	fputl('MARK', fp);
++	fputl(0x4d41524b, fp); /* 'MARK' */
+ 	rec.fb.SetFile(fp);
+ 	rec.fb.SetBufferSize(256);
+ 	rec.fb.Dump();
+@@ -73,7 +85,7 @@ bool Replay::end_record()
+ 	rec.fb.SetFile(NULL);
+ 	
+ 	fputc('!', rec.fp);
+-	fputl('STOP', rec.fp);
++	fputl(0x53544f50, rec.fp); /* 'STOP' */
+ 	
+ 	// go back and save the header again so we have total_frames correct.
+ 	fseek(rec.fp, PROFILE_LENGTH, SEEK_SET);
+@@ -81,7 +93,7 @@ bool Replay::end_record()
+ 	fclose(rec.fp);
+ 	
+ 	stat("end_record(): wrote %d frames", rec.hdr.total_frames);
+-	memset(&rec, 0, sizeof(rec));
++	rec = ReplayRecording();
+ 	return 0;
+ }
+ 
+@@ -128,7 +140,7 @@ Profile profile;
+ 	game_load(&profile);
+ 	seedrand(play.hdr.randseed);
+ 	
+-	if (fgetl(fp) != 'MARK')
++	if (fgetl(fp) != 0x4d41524b) /* 'MARK' */
+ 	{
+ 		console.Print("Replay fail MARK");
+ 		return 1;
+@@ -633,6 +645,7 @@ int i;
+ void c------------------------------() {}
+ */
+ 
++#if 0
+ static void dump_replay()
+ {
+ 	stat("=== Header ===");
+@@ -715,5 +728,4 @@ static void dump_replay()
+ 	stat("frames reported: %d", play.hdr.total_frames);
+ 	exit(1);
+ }
+-
+-
++#endif
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/replay.fdh cavestory-1.0.0.6.new/replay.fdh
+--- cavestory-1.0.0.6.orig/replay.fdh	2010-11-08 01:50:06.000000000 +0100
++++ cavestory-1.0.0.6.new/replay.fdh	2023-12-13 12:03:15.408067461 +0100
+@@ -33,7 +33,6 @@ FILE *fileopen(const char *fname, const
+ static void write_record(uint32_t keys, uint32_t runlength, FileBuffer *fb);
+ static bool read_record(uint32_t *keys, uint32_t *runlength, FILE *fp);
+ const char *GetReplayName(int slotno, char *buffer);
+-static void dump_replay();
+ 
+ 
+ /* located in debug.cpp */
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/replay.h cavestory-1.0.0.6.new/replay.h
+--- cavestory-1.0.0.6.orig/replay.h	2010-10-25 09:41:11.000000000 +0200
++++ cavestory-1.0.0.6.new/replay.h	2023-12-13 11:09:34.145451924 +0100
+@@ -88,14 +88,6 @@ namespace Replay
+ 	void GetSlotInfo(int slotno, ReplaySlotInfo *slot);
+ 	void FramesToTime(int framecount, char *buffer);
+ 	int GetPlaybackPosition(int max);
+-	
+-	static uint32_t EncodeBits(bool *values, int nvalues);
+-	static void DecodeBits(uint32_t value, bool *array, int len);
+-	
+-	static void run_record();
+-	static void run_playback();
+-	
+-	static int GetAvailableSlot(void);
+ };
+ 
+ 
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/settings.cpp cavestory-1.0.0.6.new/settings.cpp
+--- cavestory-1.0.0.6.orig/settings.cpp	2012-04-29 21:07:06.000000000 +0200
++++ cavestory-1.0.0.6.new/settings.cpp	2023-12-13 17:10:19.275777525 +0100
+@@ -1,5 +1,5 @@
+ 
+-#include <SDL.h>
++#include <SDL/SDL.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+@@ -22,6 +22,8 @@ bool settings_load(Settings *setfile)
+ 	
+ 	if (tryload(settings))
+ 	{
++		FILE *fp;
++
+ 		stat("No saved settings; using defaults.");
+ 		
+ 		memset(setfile, 0, sizeof(Settings));
+@@ -38,7 +40,11 @@ bool settings_load(Settings *setfile)
+ 		setfile->no_quake_in_hell = false;
+ 		setfile->inhibit_fullscreen = false;
+ 		setfile->files_extracted = false;
+-		
++		if ((fp = fileopen("pxt/fx01.pxt", "rb")) != NULL)
++		{
++			fclose(fp);
++			setfile->files_extracted = true;
++		}
+ 		// I found that 8bpp->32bpp blits are actually noticably faster
+ 		// than 32bpp->32bpp blits on several systems I tested. Not sure why
+ 		// but calling SDL_DisplayFormat seems to actually be slowing things
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/siflib/sifloader.cpp cavestory-1.0.0.6.new/siflib/sifloader.cpp
+--- cavestory-1.0.0.6.orig/siflib/sifloader.cpp	2010-11-08 01:57:12.000000000 +0100
++++ cavestory-1.0.0.6.new/siflib/sifloader.cpp	2023-12-13 12:06:29.764497095 +0100
+@@ -5,7 +5,7 @@
+ #include "sifloader.h"
+ #include "sifloader.fdh"
+ 
+-#define SIF_MAGICK	'SIF2'		// SIF magick and version denotation; first 4 bytes of file
++#define SIF_MAGICK	0x53494632 /* 'SIF2' */		// SIF magick and version denotation; first 4 bytes of file
+ 
+ SIFLoader::SIFLoader()
+ {
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/sound/org.cpp cavestory-1.0.0.6.new/sound/org.cpp
+--- cavestory-1.0.0.6.orig/sound/org.cpp	2012-04-29 21:01:52.000000000 +0200
++++ cavestory-1.0.0.6.new/sound/org.cpp	2023-12-13 15:00:34.018992497 +0100
+@@ -1,5 +1,8 @@
+ 
+ #include <SDL/SDL.h>
++#ifdef SDL_MIXER
++#include <SDL/SDL_mixer.h>
++#endif
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -73,6 +76,19 @@ static struct
+ 
+ static int pitch[NUM_NOTES];
+ 
++#ifndef DRUM_PXT
++static bool load_drum(char *fname, int d);
++#endif
++static bool load_drum_pxt(char *fname, int d);
++static bool init_buffers(void);
++static void free_buffers(void);
++static void queue_final_buffer(void);
++static void OrgBufferFinished(int channel, int buffer_no);
++static void ComputeVolumeRatios(int volume, int panning, double *volume_ratio, double *volume_left_ratio, double *volume_right_ratio);
++static void silence_gen(stNoteChannel *chan, int num_samples);
++static void generate_music(void);
++static void NextBeat(int m);
++
+ 
+ static void init_pitch(void)
+ {
+@@ -271,7 +287,7 @@ signed char *ptr;
+ 	fp = fileopen(fname, "rb");
+ 	if (!fp)
+ 	{
+-		stat("Unable to open wavetable.dat!!");
++		stat("Unable to open %s!!\n", fname);
+ 		return 1;
+ 	}
+ 	
+@@ -525,6 +541,9 @@ void org_stop(void)
+ {
+ 	if (song.playing)
+ 	{
++#ifdef SDL_MIXER
++		Mix_HaltMusic();
++#endif
+ 		song.playing = false;
+ 		// cancel whichever buffer is playing
+ 		SSAbortChannel(ORG_CHANNEL);
+@@ -536,23 +555,36 @@ bool org_is_playing(void)
+ 	return song.playing;
+ }
+ 
++void org_set_playing(bool qPlay)
++{
++    song.playing = qPlay;
++}
++
+ // resume a song paused with org_stop
+-/*void org_resume(void)
++#if 0
++void org_resume(void)
+ {
+ 	if (!song.playing)
+ 	{
+-/*		lprintf("restarting buffer %d\n", last_played_buffer);
++#if 0
++		lprintf("restarting buffer %d\n", last_played_buffer);
+ 		//StartOrgBuffer(last_played_buffer, &final_buffer[last_played_buffer].chunk);
+ 		song.playing = 1;
+-		song.volume = ORG_VOLUME;*/
+-/*	}
+-}*/
++		song.volume = ORG_VOLUME;
++#endif
++	}
++}
++#endif
+ 
+ 
+ void org_fade(void)
+ {
+ 	stat("org_fade");
++#ifdef SDL_MIXER
++	song.fading = false;
++#else
+ 	song.fading = true;
++#endif
+ 	song.last_fade_time = 0;
+ }
+ 
+@@ -574,7 +606,9 @@ static void runfade()
+ 		if (newvol <= 0)
+ 		{
+ 			song.fading = false;
++#ifndef SDL_MIXER
+ 			org_stop();
++#endif
+ 		}
+ 		else
+ 		{
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/sound/org.fdh cavestory-1.0.0.6.new/sound/org.fdh
+--- cavestory-1.0.0.6.orig/sound/org.fdh	2010-11-08 01:50:06.000000000 +0100
++++ cavestory-1.0.0.6.new/sound/org.fdh	2023-12-13 12:01:54.758165821 +0100
+@@ -30,40 +30,15 @@ void SSUnlockAudio(void);
+ /* located in sound/org.cpp */
+ 
+ //-------------------[referenced from sound/org.cpp]-----------------//
+-static void init_pitch(void);
+-static double GetNoteSampleRate(int note, int instrument_pitch);
+-static int MSToSamples(int ms);
+-static int SamplesToMS(int samples);
+-static bool load_drumtable(const char *pxt_path);
+-static bool load_drum(char *fname, int d);
+-static bool load_drum_pxt(char *fname, int d);
+-static bool load_wavetable(const char *fname);
+ int org_init(const char *wavetable_fname, const char *drum_pxt_dir, int org_volume);
+ void org_close(void);
+ char org_load(char *fname);
+-static bool init_buffers(void);
+-static void free_buffers(void);
+ bool org_start(int startbeat);
+ void org_stop(void);
+ bool org_is_playing(void);
+ void org_fade(void);
+ void org_set_volume(int newvolume);
+-static void runfade();
+-static void mix_buffers(void);
+-static void queue_final_buffer(void);
+-static void OrgBufferFinished(int channel, int buffer_no);
+-static void ComputeVolumeRatios(int volume, int panning, double *volume_ratio, double *volume_left_ratio, double *volume_right_ratio);
+-static double Interpolate(int sample1, int sample2, double ratio);
+-static void ForceSamplePos(int m, int desired_samples);
+-static void silence_gen(stNoteChannel *chan, int num_samples);
+-static void note_open(stNoteChannel *chan, int wave, int pitch, int note);
+-static void note_gen(stNoteChannel *chan, int num_samples);
+-static int note_close(stNoteChannel *chan);
+-static int drum_open(int m_channel, int wave, int note);
+-static void drum_gen(int m_channel, int num_samples);
+ void org_run(void);
+-static void generate_music(void);
+-static void NextBeat(int m);
+ int org_GetCurrentBeat(void);
+ int org_GetCurrentBuffer(void);
+ 
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/sound/pxt.cpp cavestory-1.0.0.6.new/sound/pxt.cpp
+--- cavestory-1.0.0.6.orig/sound/pxt.cpp	2012-04-29 21:01:52.000000000 +0200
++++ cavestory-1.0.0.6.new/sound/pxt.cpp	2023-12-13 13:49:49.610780613 +0100
+@@ -11,11 +11,15 @@
+ #include "../config.h"
+ #include "pxt.h"
+ #include "sslib.h"
++#ifdef SDL_MIXER
++#include <SDL/SDL_mixer.h>
++static Mix_Chunk *mixChunk;
++#endif
+ 
+ #include "pxt.fdh"
+ 
+ #define MODEL_SIZE			256
+-#define PXCACHE_MAGICK		'PXC1'
++#define PXCACHE_MAGICK		0x50584331 /* 'PXC1' */
+ 
+ // gets the next byte from wave "wave", scales it by the waves volume, and places result in "out".
+ // x * (y / z) = (x * y) / z
+@@ -736,7 +740,22 @@ int insize = snd->final_size;
+ // on error, returns -1.
+ int pxt_Play(int chan, int slot, char loop)
+ {
++#ifdef SDL_MIXER
++	if (mixChunk) {
++		pxt_chunk_free();
++	}
++
++	/* I don't know correct this way or no but it works! */
++	/* See https://github.com/EXL/NXEngine/blob/ddaf82dacc54aa7e45bf078c03ad19e6318e528e/sound/sslib.cpp#L157 for proper length in bytes. */
++	mixChunk = Mix_QuickLoad_RAW((Uint8 *)sound_fx[slot].buffer, sound_fx[slot].len * 2 * 2);
++
++	if(Mix_PlayChannel(chan, mixChunk, loop)==-1) {
++		stat("Mix_PlayChannel: %s\n",Mix_GetError());
++	}
++	return chan;
++#else
+ 	return pxt_PlayWithCallback(chan, slot, loop, NULL);
++#endif
+ }
+ 
+ int pxt_PlayWithCallback(int chan, int slot, char loop, void (*FinishedCB)(int, int))
+@@ -804,6 +823,9 @@ void pxt_Stop(int slot)
+ 	/// it could end up being left locked during the user's sound done callback.
+ 	if (sound_fx[slot].channel != -1)
+ 	{
++#ifdef SDL_MIXER
++		Mix_HaltChannel(sound_fx[slot].channel);
++#endif
+ 		sound_fx[slot].loops_left = 0;
+ 		SSAbortChannel(sound_fx[slot].channel);
+ 	}
+@@ -1239,6 +1261,14 @@ int i, j;
+ }
+ 
+ 
++#ifdef SDL_MIXER
++void pxt_chunk_free(void)
++{
++	Mix_FreeChunk(mixChunk);
++}
++#endif
++ 
++
+ static void SaveComponent(FILE *fp, const char *name, stPXWave *pxw)
+ {
+ char spaces[40];
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/sound/pxt.fdh cavestory-1.0.0.6.new/sound/pxt.fdh
+--- cavestory-1.0.0.6.orig/sound/pxt.fdh	2010-11-08 01:57:13.000000000 +0100
++++ cavestory-1.0.0.6.new/sound/pxt.fdh	2023-12-13 07:17:42.275816469 +0100
+@@ -55,6 +55,7 @@ char pxt_load(const char *fname, stPXSou
+ static char LoadComponent(FILE *fp, stPXWave *pxw);
+ static char ReadToBracket(FILE *fp);
+ char pxt_save(const char *fname, stPXSound *snd);
++void pxt_chunk_free(void);
+ static void SaveComponent(FILE *fp, const char *name, stPXWave *pxw);
+ static void SaveComponentMachine(FILE *fp, stPXWave *pxw, char trailcomma);
+ static void SaveEnvVertice(FILE *fp, stPXEnvelope *env, int v);
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/sound/sound.cpp cavestory-1.0.0.6.new/sound/sound.cpp
+--- cavestory-1.0.0.6.orig/sound/sound.cpp	2012-04-29 21:01:52.000000000 +0200
++++ cavestory-1.0.0.6.new/sound/sound.cpp	2023-12-13 14:01:27.589969524 +0100
+@@ -1,10 +1,14 @@
+-
+ /* SOUND.C
+   PXT/SS/Org sound interface
+ */
+ #include <stdio.h>
+ #include <string.h>
+ 
++#ifdef SDL_MIXER
++#include <SDL/SDL_mixer.h>
++static Mix_Music *music_xm;
++#endif
++
+ #include "../nx.h"
+ #include "../settings.h"
+ #include "pxt.h"
+@@ -35,22 +39,29 @@ const char *org_names[] =
+ static const char bossmusic[] = { 4, 7, 10, 11, 15, 16, 17, 18, 21, 22, 31, 33, 35, 0 };
+ 
+ static const char *pxt_dir = "./pxt/";
++#ifdef SDL_MIXER
++static const char *xm_dir = "./xm/";
++#else
+ static const char *org_dir = "./org/";
++#endif
+ static const char *sndcache = "sndcache.pcm";
+ static const char *org_wavetable = "wavetable.dat";
+ 
++static void start_track(int songno);
++
++
+ bool sound_init(void)
+ {
+ 	if (SSInit()) return 1;
+ 	if (pxt_init()) return 1;
+ 	if (pxt_LoadSoundFX(pxt_dir, sndcache, NUM_SOUNDS)) return 1;
+-	
++
+ 	if (org_init(org_wavetable, pxt_dir, ORG_VOLUME))
+ 	{
+ 		staterr("Music failed to initialize");
+ 		return 1;
+ 	}
+-	
++
+ 	return 0;
+ }
+ 
+@@ -68,7 +79,7 @@ void sound(int snd)
+ {
+ 	if (!settings->sound_enabled)
+ 		return;
+-	
++
+ 	pxt_Stop(snd);
+ 	pxt_Play(-1, snd, 0);
+ }
+@@ -77,7 +88,7 @@ void sound_loop(int snd)
+ {
+ 	if (!settings->sound_enabled)
+ 		return;
+-	
++
+ 	pxt_Play(-1, snd, -1);
+ }
+ 
+@@ -120,19 +131,19 @@ void music(int songno)
+ {
+ 	if (songno == cursong)
+ 		return;
+-	
++
+ 	lastsong = cursong;
+ 	cursong = songno;
+-	
++
+ 	stat(" >> music(%d)", songno);
+-	
++
+ 	if (songno != 0 && !should_music_play(songno, settings->music_enabled))
+ 	{
+ 		stat("Not playing track %d because music_enabled is %d", songno, settings->music_enabled);
+ 		org_stop();
+ 		return;
+ 	}
+-	
++
+ 	start_track(songno);
+ }
+ 
+@@ -166,10 +177,10 @@ void music_set_enabled(int newstate)
+ 	if (newstate != settings->music_enabled)
+ 	{
+ 		stat("music_set_enabled(%d)", newstate);
+-		
++
+ 		settings->music_enabled = newstate;
+ 		bool play = should_music_play(cursong, newstate);
+-		
++
+ 		if (play != org_is_playing())
+ 		{
+ 			if (play)
+@@ -182,23 +193,53 @@ void music_set_enabled(int newstate)
+ 
+ static void start_track(int songno)
+ {
+-char fname[MAXPATHLEN];
++	char fname[MAXPATHLEN];
+ 
+ 	if (songno == 0)
+ 	{
+ 		org_stop();
+ 		return;
+ 	}
+-	
++
++#ifdef SDL_MIXER
++	if (music_xm) {
++		music_free();
++	}
++
++	strcpy(fname, xm_dir);
++	strcat(fname, org_names[songno]);
++	strcat(fname, ".xm");
++
++	if((music_xm=Mix_LoadMUS(fname)) == NULL) {
++		stat("opening %s file: %s\n", fname, Mix_GetError());
++	}
++	// printf("Mix_LoadMUS Done %s\n", fname);
++	bool qLooped = (songno == 3 || songno == 10 || songno == 15 || songno == 16);
++
++	if(Mix_PlayMusic(music_xm, (qLooped) ? 0 : -1) == -1) {
++		staterr("Error in Mix_PlayMusic!");
++	}
++
++	org_set_playing(true);
++
++#else
+ 	strcpy(fname, org_dir);
+ 	strcat(fname, org_names[songno]);
+ 	strcat(fname, ".org");
+-	
++
+ 	if (!org_load(fname))
+ 	{
+ 		org_start(0);
+ 	}
++#endif
++}
++
++#ifdef SDL_MIXER
++void music_free(void)
++{
++	Mix_FreeMusic(music_xm);
+ }
++#endif
+ 
+ int music_cursong()		{ return cursong; }
+ int music_lastsong() 	{ return lastsong; }
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/sound/sound.fdh cavestory-1.0.0.6.new/sound/sound.fdh
+--- cavestory-1.0.0.6.orig/sound/sound.fdh	2010-11-08 01:50:06.000000000 +0100
++++ cavestory-1.0.0.6.new/sound/sound.fdh	2023-12-13 11:54:31.112040215 +0100
+@@ -17,7 +17,7 @@ void music(int songno);
+ bool should_music_play(int songno, int musicmode);
+ bool music_is_boss(int songno);
+ void music_set_enabled(int newstate);
+-static void start_track(int songno);
++void music_free();
+ int music_cursong();
+ int music_lastsong();
+ 
+@@ -35,6 +35,7 @@ void SSClose(void);
+ int org_init(const char *wavetable_fname, const char *drum_pxt_dir, int org_volume);
+ void org_stop(void);
+ bool org_is_playing(void);
++void org_set_playing(bool);
+ char org_load(char *fname);
+ bool org_start(int startbeat);
+ 
+@@ -48,6 +49,7 @@ void pxt_freeSoundFX(void);
+ void pxt_Stop(int slot);
+ int pxt_Play(int chan, int slot, char loop);
+ char pxt_IsPlaying(int slot);
++void pxt_chunk_free(void);
+ 
+ 
+ /* located in common/stat.cpp */
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/sound/sslib.cpp cavestory-1.0.0.6.new/sound/sslib.cpp
+--- cavestory-1.0.0.6.orig/sound/sslib.cpp	2011-05-15 07:28:03.000000000 +0200
++++ cavestory-1.0.0.6.new/sound/sslib.cpp	2023-12-13 17:08:31.045915924 +0100
+@@ -3,6 +3,9 @@
+ // more or less, my own version of SDL_mixer
+ 
+ #include <SDL/SDL.h>
++#ifdef SDL_MIXER
++#include <SDL/SDL_mixer.h>
++#endif
+ #include <stdio.h>
+ #include <stdint.h>
+ #include <stdlib.h>
+@@ -11,8 +14,9 @@
+ 
+ #include "sslib.h"
+ #include "sslib.fdh"
++#include "sound.fdh"
+ 
+-SSChannel channel[SS_NUM_CHANNELS];
++static SSChannel channel[SS_NUM_CHANNELS];
+ 
+ uint8_t *mixbuffer = NULL;
+ int mix_pos;
+@@ -22,17 +26,24 @@ int lockcount = 0;
+ 
+ char SSInit(void)
+ {
+-SDL_AudioSpec fmt, obtained;
++	SDL_AudioSpec fmt, obtained;
+ 
+ 	// Set 16-bit stereo audio at 22Khz
+ 	fmt.freq = SAMPLE_RATE;
+ 	fmt.format = AUDIO_S16;
+ 	fmt.channels = 2;
+-	fmt.samples = 512;
++	fmt.samples = 1024;
+ 	fmt.callback = mixaudio;
+ 	fmt.userdata = NULL;
+ 	
+ 	// Open the audio device and start playing sound!
++#ifdef SDL_MIXER
++	if (Mix_OpenAudio(fmt.freq, fmt.format, fmt.channels, fmt.samples)) {
++		staterr("SS: Unable to open audio: %s", Mix_GetError());
++		return 1;
++	}
++	obtained = fmt;
++#else	
+ 	if (SDL_OpenAudio(&fmt, &obtained) < 0)
+ 	{
+ 		staterr("SS: Unable to open audio: %s", SDL_GetError());
+@@ -43,8 +54,9 @@ SDL_AudioSpec fmt, obtained;
+ 		obtained.channels != fmt.channels)
+ 	{
+ 		staterr("SS: Failed to obtain the audio format I wanted");
+-		return 1;
++		// return 1;
+ 	}
++#endif
+ 	
+ 	mixbuffer = (uint8_t *)malloc(obtained.samples * obtained.channels * 2);
+ 	
+@@ -56,13 +68,23 @@ SDL_AudioSpec fmt, obtained;
+ 	stat("sslib: initilization was successful.");
+ 	
+ 	lockcount = 0;
++#ifdef SDL_MIXER
++	Mix_Pause(-1);
++#else
+ 	SDL_PauseAudio(0);
++#endif
+ 	return 0;
+ }
+ 
+ void SSClose(void)
+ {
++#ifdef SDL_MIXER
++	pxt_chunk_free();
++	music_free();
++	Mix_CloseAudio();
++#else
+ 	SDL_CloseAudio();
++#endif
+ 	if (mixbuffer) free(mixbuffer);
+ }
+ 
+@@ -274,14 +296,18 @@ void c------------------------------() {
+ // the audio "more", and you have to call it the same numbers of times before it will unlock.
+ void SSLockAudio(void)
+ {
++#ifndef SDL_MIXER
+ 	if (lockcount==0) SDL_LockAudio();
++#endif
+ 	lockcount++;
+ }
+ 
+ void SSUnlockAudio(void)
+ {
+ 	lockcount--;
++#ifndef _SDL_MIXER
+ 	if (!lockcount) SDL_UnlockAudio();
++#endif
+ }
+ 
+ /*
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/sound/sslib.h cavestory-1.0.0.6.new/sound/sslib.h
+--- cavestory-1.0.0.6.orig/sound/sslib.h	2011-05-15 07:27:55.000000000 +0200
++++ cavestory-1.0.0.6.new/sound/sslib.h	2023-12-13 07:30:00.148180879 +0100
+@@ -2,7 +2,11 @@
+ #ifndef _SSLIB_H
+ #define _SSLIB_H
+ 
++#ifdef __MINT__
++#define SAMPLE_RATE			44100
++#else
+ #define SAMPLE_RATE			22050
++#endif
+ #define MAX_QUEUED_CHUNKS		(180 +1)
+ #define SS_NUM_CHANNELS			16
+ 
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/stageboss.cpp cavestory-1.0.0.6.new/stageboss.cpp
+--- cavestory-1.0.0.6.orig/stageboss.cpp	2010-08-08 01:20:13.000000000 +0200
++++ cavestory-1.0.0.6.new/stageboss.cpp	2023-12-13 16:09:35.297130936 +0100
+@@ -15,6 +15,7 @@
+ 
+ StageBossManager::StageBossManager()
+ {
++	object = NULL;
+ 	fBoss = NULL;
+ 	fBossType = BOSS_NONE;
+ }
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/stageboss.h cavestory-1.0.0.6.new/stageboss.h
+--- cavestory-1.0.0.6.orig/stageboss.h	2010-08-08 01:20:40.000000000 +0200
++++ cavestory-1.0.0.6.new/stageboss.h	2023-12-13 11:40:33.666404454 +0100
+@@ -36,6 +36,7 @@ enum BossType
+ class StageBoss
+ {
+ public:
++	virtual ~StageBoss() { }
+ 	virtual void OnMapEntry() { }
+ 	virtual void OnMapExit() { }
+ 	
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/tools/extractmapinfo.c cavestory-1.0.0.6.new/tools/extractmapinfo.c
+--- cavestory-1.0.0.6.orig/tools/extractmapinfo.c	2010-08-08 01:20:34.000000000 +0200
++++ cavestory-1.0.0.6.new/tools/extractmapinfo.c	2023-12-13 14:55:51.596012108 +0100
+@@ -57,7 +57,7 @@ char *comma;
+ char buf[256];
+ 	
+ 	// read data from exe
+-	fp = fopen("/data/win/Programs/Games/Cave Story Deluxe/CaveStory/Doukutsu.exe", "rb");
++	fp = fopen("Doukutsu.exe", "rb");
+ 	if (!fp) { printf("Failed opening exe\n"); return 1; }
+ 	
+ 	// load raw data into struct
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/tools/org2xm.c cavestory-1.0.0.6.new/tools/org2xm.c
+--- cavestory-1.0.0.6.orig/tools/org2xm.c	1970-01-01 01:00:00.000000000 +0100
++++ cavestory-1.0.0.6.new/tools/org2xm.c	2023-12-13 16:40:45.701394799 +0100
+@@ -0,0 +1,838 @@
++/* Org2XM v1.1
++ * Converts Org songs from Cave Story to XM modules.
++ * Implementation 2008-04-02 by Jan "Rrrola" Kadlec. Public Domain.
++ * Updates by third party.
++ *
++ * v1.0: 2008-04-02
++ *   -Original release
++ * v1.1: 2015-nov-14
++ *   -Added support for Org-03 files
++ * TODO:
++ *   -Add option to toggle non-linear volumes and pan
++ *
++ * Usage: "org2xm input.org"
++ *        "org2xm input.org ORGxxxyy.DAT" to specify .DATfile used (default 210EN)
++ *        "org2xm input.org ORGxxxyy.DAT c" for compatibility (but quality is worse)
++ *
++ * Credits:
++ * - Pixel Studios for making Cave Story and composing all the songs
++ * - Pete Mackay for providing details about the original Org player routine
++ */
++
++#include <stdio.h>
++#include <stdint.h>
++#include <stdlib.h>
++#include <string.h>
++#include <math.h>
++
++#define PACKED __attribute__((packed))
++
++#define read(to, bytes) fread(to, 1, bytes, f)
++#define write(from, bytes) fwrite(from, 1, bytes, g)
++
++#define VOL 51							// default volume
++
++//////////////////////////////////////////////////////////////////////// Input
++//Original executable appears to have been compiled in Bloodshed's Dev-C++ 4.9.9.2,
++//where the PACKED define probably worked properly.
++//This is not the case with GCC 4.7.1, so I added some pragmas.
++//We need these structures packed be cause we read from file one struct at a time.
++#pragma pack(push,1)
++static struct OrgHeader
++{
++	uint8_t magic[6];
++	uint16_t msPerBeat;					// 1..2000
++	uint8_t measuresPerBar;
++	uint8_t beatsPerMeasure;
++	uint32_t loopStart;					// in beats
++	uint32_t loopEnd;
++} PACKED header;
++
++#pragma pack(pop)
++
++static struct Note
++{
++	uint32_t start;
++	uint8_t len;
++	uint8_t key;						// 0(C-0)..96(B-7)
++	uint8_t vol;						// 0..255
++	uint8_t pan;						// 0..12
++} *note[16];
++
++
++///////////////////////////////////////////////////// Immediate representation
++#pragma pack(push,1)
++static struct Instrument
++{
++	uint16_t freqShift;
++	uint8_t sample;						// melody(voice 0..7) 0-99, drums(voice 8..15) 0-11
++	uint8_t noLoop;
++	uint16_t notes;
++
++	uint8_t drum;
++	uint8_t instrument;
++	int8_t finetune;
++
++	int8_t lastPan;						// encoding state
++	uint8_t lastVol;
++	uint8_t played;
++} PACKED t[16];
++
++#pragma pack(pop)
++
++static struct Track
++{
++	float freq;							// if (freq != 0), a new note starts
++	uint8_t vol;						// 1..64; if (volume == 0), the note ends
++	int8_t pan;							// -127=left..127=right
++} *n[16];
++
++
++static uint8_t *pat[256];
++static uint8_t patTable[256];
++static int patLen[256];
++static int patterns;
++
++static int instruments;						// number of used instruments
++static int tracks;							// number of tracks
++static int barLen;							// pattern length
++static int rows, bars;						// song length
++static int loop;							// does the song loop?
++
++static int compatibility;					// reset instrument at each note?
++static int verorg;							//version of loaded song
++
++
++/////////////////////////////////////////////////////////////////////// Output
++#pragma pack(push,1)
++static struct XMHeader
++{
++	uint8_t id[17];
++	uint8_t moduleName[20];
++	uint8_t eof;
++	uint8_t trackerName[20];
++	uint16_t version;
++	uint32_t headerSize;
++	uint16_t songLength;				// in patterns
++	uint16_t restartPosition;
++	uint16_t channels;					// should be even, but we don't care ;)
++	uint16_t patterns;
++	uint16_t instruments;
++	uint16_t flags;
++	uint16_t tempo;
++	uint16_t bpm;
++	uint8_t patternOrder[256];
++} PACKED xmh = {
++	"Extended Module: ", "", 0x1A, "Org2XM by Rrrola    ", 0x104, 0x114
++};
++
++
++static struct XMInstrument
++{
++	uint32_t size;
++	char instrumentName[22];
++	uint8_t zero;
++	uint16_t samples;
++	uint32_t sampleHeaderSize;
++	uint8_t misc[230];
++	uint32_t sampleLength;
++	uint32_t loopStart;
++	uint32_t loopLength;
++	uint8_t volume;
++	int8_t finetune;
++	uint8_t type;
++	uint8_t panning;
++	uint8_t relativeKey;
++	uint8_t reserved;
++	char sampleName[22];
++} PACKED smp = {
++	0x107, "Melody-00", 0, 1, 0x28, {}, 256, 0, 256, VOL, 0, 1, 128, 48, 0, ""
++};
++
++#pragma pack(pop)
++
++/////////////////////////////////////////////////// Drums and drum accessories
++
++static struct SoundBank
++{
++	uint8_t magic[6];
++	uint8_t verbank;
++	uint8_t verorg;
++	uint8_t snumMelo;
++	uint8_t snumDrum;
++	uint16_t lenMelo;
++	uint32_t *tblLenDrum;
++	char (*tblNameDrum)[22];
++	int8_t *melody;
++	int8_t *drums;
++
++	uint32_t *tblOffDrum;
++	uint32_t lenAllDrm;
++} sbank;
++
++
++static int SBKload(const char *path)
++{
++	FILE *f;
++	uint32_t i, j;
++	uint32_t fSize;
++
++	if (!(f = fopen(path, "rb")))
++		goto Err10;
++
++	//file size, just in case
++	fseek(f, 0, SEEK_END);
++	fSize = ftell(f);
++	rewind(f);
++	(void)fSize;
++
++	//read sample bank
++	//header
++	read(&sbank.magic, 6);
++	if (memcmp(sbank.magic, "ORGBNK", 6))
++		goto Err11;
++
++	//bank version
++	read(&sbank.verbank, 1);
++	//Organya song version this bank is intended for
++	read(&sbank.verorg, 1);
++
++	//number of melody samples
++	read(&sbank.snumMelo, 1);
++	//number of drums
++	read(&sbank.snumDrum, 1);
++
++	//length of each melody sample
++	uint16_t tmp = 0;
++	uint16_t x = 0;
++
++	read(&x, 1);
++	tmp = (tmp << 8) + x;
++	read(&x, 1);
++	tmp = (tmp << 8) + x;
++	sbank.lenMelo = tmp;
++
++	//drum sample length and offset tables
++	sbank.tblLenDrum = malloc(sbank.snumDrum * sizeof(uint32_t));
++	sbank.tblOffDrum = malloc(sbank.snumDrum * sizeof(uint32_t));
++	sbank.lenAllDrm = 0;
++	uint32_t off = 0;
++
++	for (i = 0; i < sbank.snumDrum; i++)
++	{
++		uint32_t tmp = 0;
++		uint32_t x = 0;
++
++		read(&x, 1);
++		tmp = (tmp << 8) + x;
++		read(&x, 1);
++		tmp = (tmp << 8) + x;
++		read(&x, 1);
++		tmp = (tmp << 8) + x;
++		read(&x, 1);
++		tmp = (tmp << 8) + x;
++		sbank.tblLenDrum[i] = tmp;
++		sbank.lenAllDrm += tmp;
++		//offsets
++		sbank.tblOffDrum[i] = off;
++		off += tmp;
++	}
++
++	//drum sample names
++#define MAXSTR 23
++	sbank.tblNameDrum = malloc(sbank.snumDrum * sizeof(char[MAXSTR]));
++	for (i = 0; i < sbank.snumDrum; i++)
++		for (j = 0; j < MAXSTR; j++)
++		{
++			char c = (char) fgetc(f);
++
++			sbank.tblNameDrum[i][j] = j == MAXSTR - 1 ? '\0' : c;
++			if (c == '\0')
++				break;
++		}
++
++	//melody waves
++	sbank.melody = malloc(sbank.snumMelo * sbank.lenMelo * 1);
++	read(sbank.melody, sbank.snumMelo * sbank.lenMelo * 1);
++
++	//drum waves
++	sbank.drums = malloc(sbank.lenAllDrm * 1);
++	read(sbank.drums, sbank.lenAllDrm * 1);
++
++	//delta encode samples
++	int8_t *buf;
++
++	//melody
++	for (i = 0; i < sbank.snumMelo; i++)
++	{
++		buf = &sbank.melody[i * sbank.lenMelo];
++		for (j = sbank.lenMelo - 1; j > 0; --j)
++			buf[j] -= buf[j - 1];
++	}
++	//drums
++	for (i = 0; i < sbank.snumDrum; i++)
++	{
++		buf = &sbank.drums[sbank.tblOffDrum[i]];
++		for (j = sbank.tblLenDrum[i] - 1; j > 0; --j)
++			buf[j] -= buf[j - 1];
++		buf[0] ^= 0x80;
++	}
++
++	fclose(f);
++
++	return 0;
++	//errors
++  Err11:
++	printf("Invalid samplebank header!\n");
++	return 11;
++  Err10:
++	printf("Couldn't open samplebank!\n");
++	return 10;
++}
++
++
++////////////////////////////////////////////////////////// XM pattern encoding
++// returns whatever is supposed to be encoded for (track i, row j)
++// assumes that (i, j-1) has already been processed
++
++static int key, finetune;
++
++static uint8_t wKey;
++static uint8_t wInst;
++static uint8_t wVol;
++static uint8_t wFine;
++static uint8_t wPan;
++static uint8_t wPanVol;
++static uint8_t wSkip;
++
++
++static void encode(int i, int j)
++{
++	void resetPanVol(void)
++	{
++		wPan = (n[i][j].pan != (wInst ? 0 : t[i].lastPan));
++		wVol = (n[i][j].vol != (wInst ? VOL : t[i].lastVol));
++	}
++
++	if (!j)
++		t[i].lastPan = t[i].lastVol = 0;
++	if (j % barLen == 0)
++		t[i].played = 0;				// independent patterns: drop running fx
++
++	wKey = wInst = wVol = wFine = wPan = wPanVol = 0;
++	wSkip = (j == header.loopEnd - 1 && i == tracks - 1);
++
++	// kill looping notes at loop start
++	if (j == header.loopStart && !t[i].noLoop)
++		t[i].lastVol = -1;
++
++	if (n[i][j].freq)
++	{
++		wKey = 1;
++
++		finetune = (log2(n[i][j].freq / 8363) * 12 - t[i].finetune / 128. + t[i].drum * 36) * 8 + .5;
++		key = (finetune + 4) / 8;
++		finetune -= key * 8;
++
++		wInst = !t[i].played;
++		if (compatibility)
++			wInst = 1;
++		wFine = !!finetune;
++		resetPanVol();
++
++		// if panning is default, set instrument
++		if (wPan && !n[i][j].pan)
++		{
++			wInst = 1;
++			resetPanVol();
++		}
++
++		// if the volume is default and panning can't improve, set instrument
++		if (wVol && n[i][j].vol == VOL && (n[i][j].pan != t[i].lastPan || !n[i][j].pan))
++		{
++			wInst = 1;
++			resetPanVol();
++		}
++
++
++		// if there's panning with another effect, try panning in volume column
++		if (wPan && (wFine || wSkip) && !wVol)
++		{
++			wPan = 0;
++			wPanVol = 1;
++		}
++	} else
++	{
++		if (n[i][j].vol != t[i].lastVol)
++			wVol = 1;
++		if (n[i][j].vol && n[i][j].pan != t[i].lastPan)
++			wPan = 1;
++
++		// write note endings
++		if (wVol && !n[i][j].vol)
++		{
++			wVol = wPan = wFine = 0;
++			if (!t[i].noLoop)
++			{
++				wKey = 1;
++				key = 0x60;
++			}
++
++			t[i].lastVol = 0;
++		}
++	}
++
++	if (wInst)
++	{
++		t[i].lastPan = 0;
++		t[i].lastVol = VOL;
++		t[i].played = 1;
++	}
++
++	if (wVol)
++	{
++		wPanVol = 0;
++		t[i].lastVol = n[i][j].vol;
++	}
++
++	if (wPanVol || wPan)
++		t[i].lastPan = n[i][j].pan;
++	if (wSkip)
++		wPan = wFine = 0;
++	if (wPan)
++		wFine = 0;
++}
++
++
++
++///////////////////////////////////////////////////////////////////////// Main
++
++int main(int argc, char **argv)
++{
++	int i, j, k;
++	FILE *f, *g;
++	unsigned int bestTempo;
++	unsigned int bestBPM;
++	unsigned int bestE;
++
++	if (argc < 2)
++		goto Err1;
++	if (argc > 3)
++		compatibility = 1;
++
++	//Read bank file
++	int ret = SBKload(argc < 3 ? "ORG210EN.DAT" : argv[2]);
++
++	if (ret)
++		return ret;
++
++	if (!(f = fopen(argv[1], "rb")))
++		goto Err2;
++
++
++	// Read the Org file
++
++	read(&header, sizeof(struct OrgHeader));
++
++	//Check if sounbank meets requirements of org file
++	if (memcmp(header.magic, "Org-02", 6))
++	{
++		verorg = 2;
++	} else if (memcmp(header.magic, "Org-03", 6))
++	{
++		verorg = 3;
++		//special case, CS compat mode
++		//this bank has only CS drums
++		if (sbank.verorg == 0xFF)
++			goto Err6;
++	} else
++	{
++		goto Err3;
++	}
++	if (sbank.verorg < verorg)
++		goto Err6;
++
++
++	for (i = 0; i < 16; ++i)
++		read(&t[i], 6);
++
++	for (i = 0; i < 16; ++i)
++	{
++		note[i] = malloc(t[i].notes * sizeof(struct Note));
++
++		if (i >= 8)
++		{
++			t[i].sample += 100;			// drum
++			t[i].noLoop = 1;
++			t[i].drum = 1;
++		} else
++		{
++			t[i].drum = 0;
++		}
++
++		for (j = 0; j < t[i].notes; ++j)
++			read(&note[i][j].start, 4);
++		for (j = 0; j < t[i].notes; ++j)
++			read(&note[i][j].key, 1);
++		for (j = 0; j < t[i].notes; ++j)
++			read(&note[i][j].len, 1);
++		for (j = 0; j < t[i].notes; ++j)
++			read(&note[i][j].vol, 1);
++		for (j = 0; j < t[i].notes; ++j)
++			read(&note[i][j].pan, 1);
++
++		for (j = 0; j < t[i].notes; ++j)	// find last beat
++			if (rows < note[i][j].start + note[i][j].len + 1)
++				rows = note[i][j].start + note[i][j].len + 1;
++	}
++
++	barLen = header.measuresPerBar * header.beatsPerMeasure;
++
++	if (header.loopStart < rows)
++	{
++		loop = 1;
++		bars = header.loopEnd / barLen;	// loop: end the song right afer loopEnd
++	} else
++	{
++		loop = 0;
++		bars = (rows + barLen - 1) / barLen;	// no loop: finish last bar
++	}
++	rows = bars * barLen;
++	fclose(f);
++
++
++	// Convert notes to tracks, find number of instruments and tracks
++	for (i = tracks = 0; i < 16; ++i)
++	{
++		if (!t[i].notes)
++			continue;
++
++		n[tracks] = malloc(rows * sizeof(struct Track));
++		memset(n[tracks], 0, rows * sizeof(struct Track));
++
++		for (j = 0; j < t[i].notes; ++j)
++		{
++			k = note[i][j].start;
++			if (k >= rows)
++				continue;
++
++			int vol = note[i][j].vol;
++			int pan = note[i][j].pan;
++
++			vol = (vol == 0xff ? VOL : (vol / 255.) * 56.5 + 8.499);	//org minimum volume adjustment
++			pan = (pan == 0xff ? 0 : (pan - 6) * 127 / 6);
++
++			// "new note" or "change note parameters"?
++			if (note[i][j].key != 0xff)
++			{
++				//TODO: deal with doubling of freq shift per octave
++				n[tracks][k].freq = t[i].freqShift - 1000;
++				if (t[i].drum)
++					n[tracks][k].freq += 800 * note[i][j].key + 100;
++				else
++					n[tracks][k].freq += 8363 * pow(2, note[i][j].key / 12.);
++
++				// non-looping instruments don't need "note off" commands
++				if (t[i].noLoop)
++					note[i][j].len = 16;
++
++				// fill rows with note parameters
++				do
++				{
++					n[tracks][k].vol = vol;
++					n[tracks][k].pan = pan;
++				} while (--note[i][j].len && ++k < rows && !(n[tracks][k].freq));
++
++			} else
++			{
++				for (; n[tracks][k].vol && !(n[tracks][k].freq) && k < rows; ++k)
++				{
++					if (note[i][j].vol != 0xff)
++						n[tracks][k].vol = vol;
++					if (note[i][j].pan != 0xff)
++						n[tracks][k].pan = pan;
++				}
++			}
++
++			t[tracks] = t[i];			// squish instrument info
++		}
++		++tracks;
++		free(note[i]);
++	}
++
++	// Find the best bmp+tempo combination, bpm preferably around 125
++
++	bestTempo = 0;
++	bestBPM = 0;
++	bestE = -1;
++
++	for (i = 1; i < 32; ++i)
++	{
++		unsigned bpm = 2500 * i / header.msPerBeat;
++
++		if (bpm > 31 && bpm < 256)
++		{
++			int e = abs(2500000 * i / bpm - header.msPerBeat * 1000);
++
++			if (bestE > e || (bestE == e && abs(bestBPM - 125) > abs(bpm - 125)))
++			{
++				bestTempo = i;
++				bestBPM = bpm;
++				bestE = e;
++			}
++		}
++	}
++
++	if (!bestTempo)
++		goto Err5;
++
++	// Find best finetune: minimize frequency distortion and E5x usage
++
++	for (i = 0; i < tracks; ++i)
++	{
++		double bestE = 1e30;
++		uint8_t bestFinetune = 0;
++
++		for (k = -64; k < 64; k++)		// try every possible finetune
++		{
++			double e = 0;
++
++			t[i].finetune = k;
++
++			// mimic pattern encoding to find whether finetune is available
++			for (j = 0; j < rows; j++)
++			{
++				encode(i, j);
++				if (wKey && key != 0x60)
++				{
++					if (!wFine)
++						finetune = 0;	// can't use finetune on this note :-(
++
++					float logfreq = log2(8363) + (key + finetune / 8. + t[i].finetune / 128. - t[i].drum * 36) / 12.;
++					float d = log2(n[i][j].freq) - logfreq;
++
++					e += d * d + (finetune ? 1e-8 : 0);
++				}
++				if (e > bestE)
++					goto nextk;			// break if already worse than the best
++			}
++
++			bestFinetune = k;
++			bestE = e;
++
++		  nextk:continue;
++		}
++
++		t[i].finetune = bestFinetune;
++	}
++
++	// Join instruments with the same sample, loop type and finetune
++
++	for (i = 0; i < tracks; ++i)
++		t[i].instrument = i;
++
++	for (i = 0; i < tracks; ++i)
++		if (t[i].instrument == i)
++		{
++			for (j = i + 1; j < tracks; ++j)
++			{
++				if (t[j].sample == t[i].sample && t[j].finetune == t[i].finetune && t[j].noLoop == t[i].noLoop)
++					t[j].instrument = i;
++			}
++		}
++
++	for (instruments = 0, i = 0; i < tracks; ++i)	// renumber them sequentially
++	{
++		if (t[i].instrument == i)
++			t[i].instrument = ++instruments;
++		else
++			t[i].instrument = t[t[i].instrument].instrument;
++	}
++
++	// Create XM patterns
++
++	for (k = 0; k < bars; ++k)
++	{
++		int len;
++		uint8_t *buf = pat[k] = malloc(5 * barLen * tracks + 9);
++
++		memset(buf, 0, 5 * barLen * tracks + 9);
++
++		*(uint32_t *) & buf[0] = len = 9;
++		*(uint16_t *) & buf[5] = barLen;
++
++		for (j = k * barLen; j < (k + 1) * barLen; ++j)
++			for (i = 0; i < tracks; ++i)
++			{
++				encode(i, j);
++
++				uint8_t p = 0x80 | wKey | wInst * 2 | (wVol || wPanVol) * 4 | (wPan || wSkip || wFine) * 24;
++
++				if (p != 0x9F)
++					buf[len++] = p;
++
++				// key column
++				if (wKey)
++					buf[len++] = key + 1;
++
++				// instrument column
++				if (wInst)
++					buf[len++] = t[i].instrument;
++
++				// volume column
++				if (wVol)
++					buf[len++] = 0x10 + n[i][j].vol;
++				else if (wPanVol)
++					buf[len++] = 0xC0 + (n[i][j].pan > 0x77 ? 0xF : (n[i][j].pan + 0x88) >> 4);
++
++				// effect column
++				if (wSkip)
++				{
++					buf[len++] = 0xB;
++					buf[len++] = header.loopStart / barLen;
++				}
++
++				else if (wPan)
++				{
++					buf[len++] = 8;
++					buf[len++] = n[i][j].pan + 0x80;
++				}
++
++				else if (wFine)
++				{
++					buf[len++] = 0xE;
++					buf[len++] = 0x58 + finetune;
++				}
++			}
++
++		*(uint16_t *) & buf[7] = len - 9;
++		patLen[k] = len;
++	}
++
++	// Find duplicate patterns
++
++	for (i = 0; i < bars; ++i)
++		patTable[i] = i;
++
++	for (i = 0; i < bars; ++i)
++		if (patTable[i] == i)
++			for (j = i + 1; j < bars; ++j)
++				if (patLen[i] == patLen[j] && !memcmp(pat[i], pat[j], patLen[i]))
++					patTable[j] = i;
++
++	for (patterns = 0, i = 0; i < bars; ++i)	// renumber them sequentially
++	{
++		if (patTable[i] == i)
++			patTable[i] = patterns++;
++		else
++			patTable[i] = patTable[patTable[i]];
++	}
++
++	// Save XM header and patterns
++
++	// "path/Name.org" -> "path/Name.xm"
++	argv[1][strlen(argv[1]) - 3] = 'x';
++	argv[1][strlen(argv[1]) - 2] = 'm';
++	argv[1][strlen(argv[1]) - 1] = 0;
++	if (!(g = fopen(argv[1], "wb")))
++		goto Err2;
++
++	// "path/Name.xm" -> "Name"
++	for (i = strlen(argv[1]); i > 0 && argv[1][i - 1] != '\\' && argv[1][i - 1] != '/'; --i)
++		;
++
++	argv[1][strlen(argv[1]) - 3] = 0;
++	memcpy(xmh.moduleName, &argv[1][i], strlen(&argv[1][i]) > 20 ? 20 : strlen(&argv[1][i]));
++	xmh.songLength = bars;
++	xmh.restartPosition = header.loopStart / barLen;
++	xmh.channels = tracks;
++	xmh.patterns = patterns;
++	xmh.instruments = instruments;
++	xmh.flags = 1;
++	xmh.tempo = bestTempo;
++	xmh.bpm = bestBPM;
++	memcpy(xmh.patternOrder, patTable, bars);
++	write(&xmh, sizeof(struct XMHeader));
++
++	for (k = 0, i = 0; i < bars; ++i)
++		if (patTable[i] == k)
++		{
++			write(pat[i], patLen[i]);
++			++k;
++		}
++
++	// Save XM instruments and samples
++
++	for (k = 1, i = 0; i < tracks; ++i)
++		if (t[i].instrument == k)
++		{
++			int8_t *sbuf;
++
++			sprintf(smp.sampleName, "samples/%03d.wav", t[i].sample);
++
++			smp.loopStart = 0;
++			smp.finetune = t[i].finetune;
++
++			memset(smp.instrumentName, 0, 22);
++			if (t[i].drum)
++			{
++				uint8_t dsmp = t[i].sample - 100;
++
++				sbuf = &sbank.drums[sbank.tblOffDrum[dsmp]];
++
++				smp.type = 0;
++				smp.loopLength = 0;
++				smp.sampleLength = sbank.tblLenDrum[dsmp];
++				strcpy(smp.instrumentName, sbank.tblNameDrum[dsmp]);
++				smp.relativeKey = 12;
++			} else
++			{
++				sbuf = &sbank.melody[t[i].sample * sbank.lenMelo];
++
++				smp.type = 1;
++				smp.loopLength = sbank.lenMelo;
++				smp.sampleLength = sbank.lenMelo;
++				sprintf(smp.instrumentName,
++						t[i].freqShift == 1000 ? "Melody%02d" : "Melody%02d %+d Hz",
++						t[i].sample, t[i].freqShift - 1000);
++				//smp.relativeKey = 36;
++				smp.relativeKey = 48;
++			}
++
++			write(&smp, sizeof(struct XMInstrument));
++			write(sbuf, smp.sampleLength);
++
++			++k;
++		}
++
++
++
++	// Cleanup, error messages
++
++	fclose(g);
++	for (i = 0; i < tracks; ++i)
++		free(n[i]);
++	for (k = 0; k < bars; ++k)
++		free(pat[k]);
++	//TODO, dealocate soundbank stuff
++
++	return 0;
++
++	//errors
++  Err6:
++	printf("Bank version smaller than org version!\n");
++	return 6;
++  Err5:
++	printf("Speed out of XM range!\n");
++	return 5;
++  Err3:
++	printf("Invalid org header!\n");
++	return 3;
++  Err2:
++	printf("Couldn't open file \"%s\"!\n", argv[1]);
++	return 2;
++  Err1:
++	printf("Usage: \"org2xm infile.org ORGxxxyy.DAT\"\n"
++		   "    OR \"org2xm infile.org ORGxxxyy.DAT c\" (for compatible output)");
++	return 1;
++}
+diff -rupN -x debug.txt cavestory-1.0.0.6.orig/tsc.cpp cavestory-1.0.0.6.new/tsc.cpp
+--- cavestory-1.0.0.6.orig/tsc.cpp	2012-03-30 00:50:40.000000000 +0200
++++ cavestory-1.0.0.6.new/tsc.cpp	2023-12-13 11:18:34.824748858 +0100
+@@ -7,7 +7,7 @@
+ #include "tsc.h"
+ #include "tsc.fdh"
+ 
+-#define TRACE_SCRIPT
++//#define TRACE_SCRIPT
+ 
+ // which textbox options are enabled by the "<TUR" script command.
+ #define TUR_PARAMS		(TB_LINE_AT_ONCE | TB_VARIABLE_WIDTH_CHARS | TB_CURSOR_NEVER_SHOWN)
+@@ -494,7 +494,7 @@ ScriptInstance *s = &curscript;
+ 
+ void ExecScript(ScriptInstance *s)
+ {
+-char debugbuffer[256];
++char debugbuffer[256 * 2];
+ int cmd;
+ int val, parm[6];
+ int i;
+@@ -609,7 +609,7 @@ int cmdip;
+ 				val = ((int)s->program[s->ip++]) << 8;
+ 				val |= s->program[s->ip++];
+ 				parm[i] = val;
+-				snprintf(debugbuffer, sizeof(debugbuffer), "%s %04d", debugbuffer, val);
++				sprintf(debugbuffer + strlen(debugbuffer), " %04d", val);
+ 			}
+ 		}
+ 		#ifdef TRACE_SCRIPT

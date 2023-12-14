@@ -1,0 +1,1249 @@
+diff -rup -x Makefile -x Makefile.in -x .deps -x '*.gmo' -x aclocal.m4 -x compile -x config.sub -x config.guess -x depcomp -x install-sh -x configure -x config.h.in -x missing -x mkinstalldirs lgeneral-1.4.4.orig/Makefile.am lgeneral-1.4.4.new/Makefile.am
+--- lgeneral-1.4.4.orig/Makefile.am	2021-01-06 07:40:11.000000000 +0100
++++ lgeneral-1.4.4.new/Makefile.am	2023-12-12 16:19:34.359870842 +0100
+@@ -1,4 +1,4 @@
+-SUBDIRS = intl util lged lgc-pg src tools po
++SUBDIRS = util lged lgc-pg src tools po
+ 
+ EXTRA_DIST = AUTHORS COPYING ChangeLog README.lgeneral \
+ README.lgc-pg README.redit TODO \
+diff -rup -x Makefile -x Makefile.in -x .deps -x '*.gmo' -x aclocal.m4 -x compile -x config.sub -x config.guess -x depcomp -x install-sh -x configure -x config.h.in -x missing -x mkinstalldirs lgeneral-1.4.4.orig/README.lgc-pg lgeneral-1.4.4.new/README.lgc-pg
+--- lgeneral-1.4.4.orig/README.lgc-pg	2020-10-31 11:02:36.000000000 +0100
++++ lgeneral-1.4.4.new/README.lgc-pg	2023-12-12 17:10:10.995958422 +0100
+@@ -25,8 +25,8 @@ if you extracted the source to ~/sources
+ version number) then you have to run the following commands:
+ 
+    cd ~/sources/lgeneral-X.X.X/lgc-pg
+-   ./lgc-pg -s /mnt/cdrom/DAT -d ../src
+-   
++   ./lgc-pg -s /mnt/cdrom/DAT -d data
++
+ Thus, the src-directory of the package is the destination for converted data
+ in case installation is disabled.
+ 
+diff -rup -x Makefile -x Makefile.in -x .deps -x '*.gmo' -x aclocal.m4 -x compile -x config.sub -x config.guess -x depcomp -x install-sh -x configure -x config.h.in -x missing -x mkinstalldirs lgeneral-1.4.4.orig/configure.ac lgeneral-1.4.4.new/configure.ac
+--- lgeneral-1.4.4.orig/configure.ac	2021-01-06 07:41:20.000000000 +0100
++++ lgeneral-1.4.4.new/configure.ac	2023-12-12 18:27:02.493438881 +0100
+@@ -22,7 +22,6 @@ AM_PROG_CC_C_O
+ 
+ dnl various CFLAGS
+ CFLAGS="$CFLAGS -Wall -std=gnu89"
+-CFLAGS="$CFLAGS -O0 -g"
+ 
+ dnl Checks for libraries.
+ AC_CHECK_LIB(m, main,, AC_MSG_ERROR(maths library is needed))
+@@ -30,7 +29,7 @@ dnl AC_CHECK_LIB(dl, main,, AC_CHECK_LIB
+ dnl AC_CHECK_LIB(dl, main,, AC_MSG_ERROR(dl library is needed))
+ 
+ dnl Checks for functions.
+-AC_CHECK_FUNCS(strcasestr)
++AC_CHECK_FUNCS(strcasestr stpcpy putenv setenv)
+ 
+ dnl check for mkdir accepting permissions
+ AC_MSG_CHECKING(if mkdir rejects permissions)
+@@ -45,7 +44,7 @@ dnl L10n support
+ ALL_LINGUAS="en de"
+ 
+ AC_GNU_SOURCE
+-AM_GNU_GETTEXT
++AM_GNU_GETTEXT([external])
+ 
+ dnl win32 stuff
+ dnl USE_NLS=no
+@@ -58,7 +57,7 @@ dnl AC_SUBST(INTLLIBS)
+ XGETTEXTFLAGS=
+ MSGFMTFLAGS=-v
+ MSGMERGEFLAGS=
+-MSGCONVFLAGS=--to-code=iso-8859-1
++MSGCONVFLAGS=
+ INTLINCLUDES=
+ 
+ dnl check for msgconv
+@@ -66,30 +65,12 @@ AC_PATH_PROG(MSGCONV, msgconv, cat)
+ dnl reset flags if msgconv is "dummy"
+ test "x$MSGCONV" = xcat && MSGCONVFLAGS=
+ 
+-dnl FIXME: This does no logging whatsoever if anything goes wrong
+-if test x$USE_NLS = xyes -a x$XGETTEXT != "x:" ; then
+-  AC_MSG_CHECKING(whether xgettext needs --from-code)
+-  ac_xgettext_needs_from_code=error
+-  ac_xgettext_from_code=--from-code=iso-8859-1
+-  cat <<EOF >ac_tmp.c
+-int main() { _("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"); }
+-EOF
+-  $XGETTEXT -k_ $ac_xgettext_from_code ac_tmp.c >/dev/null 2>&1 && ac_xgettext_needs_from_code=yes
+-  $XGETTEXT -k_ ac_tmp.c >/dev/null 2>&1 && ac_xgettext_needs_from_code=no
+-  AC_MSG_RESULT($ac_xgettext_needs_from_code)
+-  if test $ac_xgettext_needs_from_code = yes ; then
+-    XGETTEXTFLAGS="$XGETTEXTFLAGS $ac_xgettext_from_code"
+-  elif test $ac_xgettext_needs_from_code = error ; then
+-    AC_MSG_ERROR(Both invocations of $XGETTEXT failed!)
+-  fi
+-  rm -f ac_tmp.c
+-fi
+-
+ dnl determining include paths for libintl.h
+ if test x$USE_INCLUDED_LIBINTL = xyes ; then
+   INTLINCLUDES="-I\$(top_srcdir)/intl -I\$(top_builddir)/intl"
+ fi
+ 
++CATOBJEXT=.gmo
+ dnl newer versions of gettext don't support CATALOGS -> create it here
+ if test "x$CATALOGS" = x ; then
+   AC_MSG_CHECKING(for catalogs to be installed);
+@@ -108,6 +89,7 @@ if test "x$POFILES" = x ; then
+   done
+   AC_SUBST(POFILES)
+ fi
++AC_SUBST([CATOBJEXT])
+ if test "x$GMOFILES" = x ; then
+   for l in $ALL_LINGUAS ; do
+     GMOFILES="$GMOFILES$l$CATOBJEXT "
+@@ -130,7 +112,7 @@ AC_MSG_RESULT(executable's path determin
+ AM_CONDITIONAL(compile_paths_linux, test x$ac_paths_determ = xlinux)
+ 
+ dnl check SDL version
+-AM_PATH_SDL(1.1.4,, AC_MSG_ERROR(lib SDL >=1.1.4 is needed))
++PKG_CHECK_MODULES([SDL], [sdl], :, AC_MSG_ERROR([lib SDL is needed]))
+ dnl win32 stuff: disable AM_PATH_SDL and use this
+ dnl SDL_CFLAGS="-I/usr/i686-w64-mingw32/sys-root/mingw/include/SDL -D_GNU_SOURCE=1 -Dmain=SDL_main"
+ dnl SDL_LIBS="-L/usr/i686-w64-mingw32/sys-root/mingw/lib -lmingw32 -lSDLmain -lSDL -mwindows -lintl"
+@@ -139,13 +121,14 @@ dnl AC_SUBST(SDL_LIBS)
+ 
+ dnl check sound
+ sound_flag="-DWITH_SOUND"
+-mixer_flag="-lSDL_mixer"
++mixer_flag=""
+ AC_ARG_ENABLE( sound,
+ [  --disable-sound         Disables sound], sound_flag=""; mixer_flag="")
+ 
+ dnl check if SDL_mixer is installed
+-AC_CHECK_LIB(SDL_mixer, main, , 
+-AC_MSG_RESULT("SDL_Mixer NOT found \(get it at http://libsdl.org\): Audio disabled"); sound_flag=""; mixer_flag="")
++PKG_CHECK_MODULES([SDL_MIXER], [SDL_mixer],
++[mixer_flag="$SDL_MIXER_LIBS"],
++AC_MSG_RESULT("SDL_Mixer NOT found \(http://libsdl.org\): Audio disabled"); sound_flag=""; mixer_flag="")
+ AC_SUBST(sound_flag)
+ AC_SUBST(mixer_flag)
+ 
+@@ -164,17 +147,21 @@ AC_SUBST(export_flag)
+ AC_SUBST(dl_lib_flag)
+ 
+ dnl installation path
+-inst_dir=$datadir/lgeneral
+-inst_flag="-DINSTALLDIR=\\\"$inst_dir\\\""
++inst_dir='${datadir}/lgeneral'
+ 
+ dis_flag=""
+ AC_ARG_ENABLE( install,
+ [  --disable-install       No installation. Played from the source directory.], 
+-inst_dir=.
+-inst_flag=)
++inst_dir=data)
+ 
+ AC_SUBST(inst_dir)
+-AC_SUBST(inst_flag)
++
++AH_BOTTOM([
++#ifdef HAVE_BROKEN_MKDIR
++#  include <direct.h>
++#  define mkdir(s,p) _mkdir(s)
++#endif
++])
+ 
+ # create Makefiles for Makefile.ins in po-subdirectories.
+ # FIXME! autoconf is simply too stupid to grok that for-loop
+@@ -190,4 +177,3 @@ AC_SUBST(inst_flag)
+ #done
+ 
+ AC_OUTPUT(Makefile lged/Makefile lgc-pg/Makefile lgc-pg/convdata/Makefile src/Makefile src/nations/Makefile src/scenarios/Makefile src/units/Makefile src/sounds/Makefile src/music/Makefile src/terrain/Makefile src/maps/Makefile src/gfx/Makefile  src/gfx/flags/Makefile src/gfx/terrain/Makefile src/gfx/units/Makefile src/ai_modules/Makefile src/campaigns/Makefile src/themes/Makefile src/themes/default/Makefile util/Makefile intl/Makefile po/Makefile po/lgeneral/Makefile.in po/pg/Makefile.in tools/Makefile tools/ltrextract/Makefile)
+-
+diff -rup -x Makefile -x Makefile.in -x .deps -x '*.gmo' -x aclocal.m4 -x compile -x config.sub -x config.guess -x depcomp -x install-sh -x configure -x config.h.in -x missing -x mkinstalldirs lgeneral-1.4.4.orig/lgc-pg/Makefile.am lgeneral-1.4.4.new/lgc-pg/Makefile.am
+--- lgeneral-1.4.4.orig/lgc-pg/Makefile.am	2020-10-31 11:02:28.000000000 +0100
++++ lgeneral-1.4.4.new/lgc-pg/Makefile.am	2023-12-12 16:07:40.307460022 +0100
+@@ -3,7 +3,7 @@ lgc_pg_SOURCES = main.c units.c shp.c na
+ list.c misc.c parser.c lgc-pg.1
+ lgc_pg_CFLAGS = @SDL_CFLAGS@
+ LIBS = $(top_builddir)/util/libutil.a @SDL_LIBS@
+-DEFS = @DEFS@ @inst_flag@
++DEFS = @DEFS@ -DINSTALLDIR=\"${inst_dir}\"
+ AM_CPPFLAGS = -I$(top_srcdir)
+ 
+ shptool_SOURCES = shptool.c misc.c shp.c
+diff -rup -x Makefile -x Makefile.in -x .deps -x '*.gmo' -x aclocal.m4 -x compile -x config.sub -x config.guess -x depcomp -x install-sh -x configure -x config.h.in -x missing -x mkinstalldirs lgeneral-1.4.4.orig/lgeneral-redit/src/main.c lgeneral-1.4.4.new/lgeneral-redit/src/main.c
+--- lgeneral-1.4.4.orig/lgeneral-redit/src/main.c	2020-10-31 11:02:35.000000000 +0100
++++ lgeneral-1.4.4.new/lgeneral-redit/src/main.c	2023-12-12 16:32:55.158840953 +0100
+@@ -25,7 +25,7 @@ main (int argc, char *argv[])
+   gtk_set_locale ();
+   gtk_init (&argc, &argv);
+ 
+-  add_pixmap_directory (PACKAGE_DATA_DIR "/pixmaps");
++  add_pixmap_directory (INSTALLDIR "/pixmaps");
+   add_pixmap_directory (PACKAGE_SOURCE_DIR "/pixmaps");
+ 
+   /*
+diff -rup -x Makefile -x Makefile.in -x .deps -x '*.gmo' -x aclocal.m4 -x compile -x config.sub -x config.guess -x depcomp -x install-sh -x configure -x config.h.in -x missing -x mkinstalldirs lgeneral-1.4.4.orig/po/lgeneral/de.po lgeneral-1.4.4.new/po/lgeneral/de.po
+--- lgeneral-1.4.4.orig/po/lgeneral/de.po	2021-01-08 16:00:04.000000000 +0100
++++ lgeneral-1.4.4.new/po/lgeneral/de.po	2023-12-12 18:28:58.093294226 +0100
+@@ -4,7 +4,7 @@
+ #
+ #
+ # Leo Savernik <l.savernik@aon.at>, 2005, 2006.
+-msgid ""
++msgid  ""
+ msgstr ""
+ "Project-Id-Version: de\n"
+ "Report-Msgid-Bugs-To: \n"
+@@ -18,686 +18,686 @@ msgstr ""
+ "Content-Transfer-Encoding: 8bit\n"
+ "X-Generator: KBabel 1.11\n"
+ 
+-#~ msgid "Out of memory\n"
++#~ msgid  "Out of memory\n"
+ #~ msgstr "Kein Speicher\n"
+ 
+-#~ msgid "This group has reached it's maximum number of buttons.\n"
++#~ msgid  "This group has reached it's maximum number of buttons.\n"
+ #~ msgstr "Diese Gruppe hat die Maximalanzahl an Knöpfen erreicht.\n"
+ 
+-#~ msgid "Up"
++#~ msgid  "Up"
+ #~ msgstr "Aufwärts"
+ 
+-#~ msgid "Down"
++#~ msgid  "Down"
+ #~ msgstr "Abwärts"
+ 
+-#~ msgid "Ok"
++#~ msgid  "Ok"
+ #~ msgstr "Annehmen"
+ 
+-#~ msgid "Cancel"
++#~ msgid  "Cancel"
+ #~ msgstr "Abbrechen"
+ 
+-#~ msgid "Switch Control"
++#~ msgid  "Switch Control"
+ #~ msgstr "Steuerung ändern"
+ 
+-#~ msgid "Select AI Module"
++#~ msgid  "Select AI Module"
+ #~ msgstr "KI-Modul auswählen"
+ 
+-#~ msgid "Fog Of War"
++#~ msgid  "Fog Of War"
+ #~ msgstr "Sichtbegrenzung"
+ 
+-#~ msgid "Unit Supply"
++#~ msgid  "Unit Supply"
+ #~ msgstr "Nachschub"
+ 
+-#~ msgid "Weather Influence"
++#~ msgid  "Weather Influence"
+ #~ msgstr "Wettereinfluss"
+ 
+-#~ msgid "Accept"
++#~ msgid  "Accept"
+ #~ msgstr "Annehmen"
+ 
+-#~ msgid "Undo Turn [u]"
++#~ msgid  "Undo Turn [u]"
+ #~ msgstr "Zug rückgängig [u]"
+ 
+-#~ msgid "Supply Unit [s]"
++#~ msgid  "Supply Unit [s]"
+ #~ msgstr "Nachschub [s]"
+ 
+-#~ msgid "Air Embark"
++#~ msgid  "Air Embark"
+ #~ msgstr "Lufttransport beladen"
+ 
+-#~ msgid "Merge Unit [j]"
++#~ msgid  "Merge Unit [j]"
+ #~ msgstr "Einheit zusammenführen [j]"
+ 
+-#~ msgid "Split Unit [x+1..9]"
++#~ msgid  "Split Unit [x+1..9]"
+ #~ msgstr "Einheit abspalten [x+1..9]"
+ 
+-#~ msgid "Rename Unit"
++#~ msgid  "Rename Unit"
+ #~ msgstr "Einheit umbenennen"
+ 
+-#~ msgid "Disband Unit"
++#~ msgid  "Disband Unit"
+ #~ msgstr "Einheit auflösen"
+ 
+-#~ msgid "Split Up %d Strength"
++#~ msgid  "Split Up %d Strength"
+ #~ msgstr "Stärke %d abspalten"
+ 
+-#~ msgid "Scroll Up"
++#~ msgid  "Scroll Up"
+ #~ msgstr "Aufwärts"
+ 
+-#~ msgid "Scroll Down"
++#~ msgid  "Scroll Down"
+ #~ msgstr "Abwärts"
+ 
+-#~ msgid "Apply Deployment"
++#~ msgid  "Apply Deployment"
+ #~ msgstr "Aufstellung annehmen"
+ 
+-#~ msgid "Cancel Deployment"
++#~ msgid  "Cancel Deployment"
+ #~ msgstr "Aufstellung abbrechen"
+ 
+-#~ msgid "Switch Air/Ground [t]"
++#~ msgid  "Switch Air/Ground [t]"
+ #~ msgstr "Luft/Boden umschalten [t]"
+ 
+-#~ msgid "Strategic Map [o]"
++#~ msgid  "Strategic Map [o]"
+ #~ msgstr "Strategische Karte [o]"
+ 
+-#~ msgid "Deploy Reinforcements [d]"
++#~ msgid  "Deploy Reinforcements [d]"
+ #~ msgstr "Verstärkung aufstellen [d]"
+ 
+-#~ msgid "Scenario Info [i]"
++#~ msgid  "Scenario Info [i]"
+ #~ msgstr "Szenarieninfo [i]"
+ 
+-#~ msgid "Victory Conditions"
++#~ msgid  "Victory Conditions"
+ #~ msgstr "Siegesbedingungen"
+ 
+-#~ msgid "End Turn [e]"
++#~ msgid  "End Turn [e]"
+ #~ msgstr "Zug beenden [e]"
+ 
+-#~ msgid "Main Menu"
++#~ msgid  "Main Menu"
+ #~ msgstr "Hauptmenü"
+ 
+-#~ msgid "Save Game"
++#~ msgid  "Save Game"
+ #~ msgstr "Spiel speichern"
+ 
+-#~ msgid "Load Game"
++#~ msgid  "Load Game"
+ #~ msgstr "Spiel laden"
+ 
+-#~ msgid "Restart Scenario"
++#~ msgid  "Restart Scenario"
+ #~ msgstr "Szenario neu starten"
+ 
+-#~ msgid "Load Campaign"
++#~ msgid  "Load Campaign"
+ #~ msgstr "Feldzug laden"
+ 
+-#~ msgid "Load Scenario"
++#~ msgid  "Load Scenario"
+ #~ msgstr "Szenario laden"
+ 
+-#~ msgid "Options"
++#~ msgid  "Options"
+ #~ msgstr "Optionen"
+ 
+-#~ msgid "Quit Game"
++#~ msgid  "Quit Game"
+ #~ msgstr "Spiel beenden"
+ 
+-#~ msgid "Load: %s"
++#~ msgid  "Load: %s"
+ #~ msgstr "Laden: %s"
+ 
+-#~ msgid "Save: %s"
++#~ msgid  "Save: %s"
+ #~ msgstr "Speichern: %s"
+ 
+-#~ msgid "Hex Grid [g]"
++#~ msgid  "Hex Grid [g]"
+ #~ msgstr "Hexgitter [g]"
+ 
+-#~ msgid "Show CPU Turn"
++#~ msgid  "Show CPU Turn"
+ #~ msgstr "Rechnerzug anzeigen"
+ 
+-#~ msgid "Show Unit Strength [.]"
++#~ msgid  "Show Unit Strength [.]"
+ #~ msgstr "Einheitenstärke anzeigen [.]"
+ 
+-#~ msgid "Sound"
++#~ msgid  "Sound"
+ #~ msgstr "Ton"
+ 
+-#~ msgid "Sound Volume Up"
++#~ msgid  "Sound Volume Up"
+ #~ msgstr "Ton lauter"
+ 
+-#~ msgid "Sound Volume Down"
++#~ msgid  "Sound Volume Down"
+ #~ msgstr "Ton leiser"
+ 
+-#~ msgid "Music"
++#~ msgid  "Music"
+ #~ msgstr "Musik"
+ 
+-#~ msgid "Video Mode [v]"
++#~ msgid  "Video Mode [v]"
+ #~ msgstr "Videomodus [v]"
+ 
+-#~ msgid "640x480"
++#~ msgid  "640x480"
+ #~ msgstr "640x480"
+ 
+-#~ msgid "800x600"
++#~ msgid  "800x600"
+ #~ msgstr "800x600"
+ 
+-#~ msgid "1024x768"
++#~ msgid  "1024x768"
+ #~ msgstr "1024x768"
+ 
+-#~ msgid "1280x1024"
++#~ msgid  "1280x1024"
+ #~ msgstr "1280x1024"
+ 
+-#~ msgid "1600x1200"
++#~ msgid  "1600x1200"
+ #~ msgstr "1600x1200"
+ 
+-#~ msgid "Fullscreen/Window"
++#~ msgid  "Fullscreen/Window"
+ #~ msgstr "Vollbild/Fenster"
+ 
+-#~ msgid "Apply Videmode"
++#~ msgid  "Apply Videmode"
+ #~ msgstr "Videomodus setzen"
+ 
+-#~ msgid "Player Setup"
++#~ msgid  "Player Setup"
+ #~ msgstr "Spielereinstellungen"
+ 
+-#~ msgid "%i   CASUALTIES   %i"
++#~ msgid  "%i   CASUALTIES   %i"
+ #~ msgstr "%i    VERLUSTE    %i"
+ 
+-#~ msgid "%i   SURPRESSED   %i"
++#~ msgid  "%i   SURPRESSED   %i"
+ #~ msgstr "%i  UNTERDRÜCKT   %i"
+ 
+-#~ msgid "%s Movement"
++#~ msgid  "%s Movement"
+ #~ msgstr "Bewg: %s"
+ 
+-#~ msgid "%s Target"
++#~ msgid  "%s Target"
+ #~ msgstr "Ziel: %s"
+ 
+-#~ msgid "Ammo:       N.A."
++#~ msgid  "Ammo:       N.A."
+ #~ msgstr "Muni:       n.v."
+ 
+-#~ msgid "Ammo:     %02i/%02i"
++#~ msgid  "Ammo:     %02i/%02i"
+ #~ msgstr "Muni:     %02i/%02i"
+ 
+-#~ msgid "Ammo:        %02i"
++#~ msgid  "Ammo:        %02i"
+ #~ msgstr "Ammo:        %02i"
+ 
+-#~ msgid "Fuel:       N.A."
++#~ msgid  "Fuel:       N.A."
+ #~ msgstr "Sprit:      n.v."
+ 
+-#~ msgid "Fuel:     %2i/%2i"
++#~ msgid  "Fuel:     %2i/%2i"
+ #~ msgstr "Sprit:    %2i/%2i"
+ 
+-#~ msgid "Fuel:        %2i"
++#~ msgid  "Fuel:        %2i"
+ #~ msgstr "Sprit:       %2i"
+ 
+-#~ msgid "Spotting:    %2i"
++#~ msgid  "Spotting:    %2i"
+ #~ msgstr "Sicht:       %2i"
+ 
+-#~ msgid "Movement:    %2i"
++#~ msgid  "Movement:    %2i"
+ #~ msgstr "Bewegung:    %2i"
+ 
+-#~ msgid "Initiative:  %2i"
++#~ msgid  "Initiative:  %2i"
+ #~ msgstr "Initiative:  %2i"
+ 
+-#~ msgid "Range:       %2i"
++#~ msgid  "Range:       %2i"
+ #~ msgstr "Reichweite:  %2i"
+ 
+-#~ msgid "Experience: %3i"
++#~ msgid  "Experience: %3i"
+ #~ msgstr "Erfahrung:  %3i"
+ 
+-#~ msgid "Entrenchment: %i"
++#~ msgid  "Entrenchment: %i"
+ #~ msgstr "Verschanzung: %i"
+ 
+-#~ msgid "%6s Attack:[%2i]"
++#~ msgid  "%6s Attack:[%2i]"
+ #~ msgstr "%6sangriff:[%2i]"
+ 
+-#~ msgid "%6s Attack:  %2i"
++#~ msgid  "%6s Attack:  %2i"
+ #~ msgstr "%6sangriff:  %2i"
+ 
+-#~ msgid "Ground Defense: %2i"
++#~ msgid  "Ground Defense: %2i"
+ #~ msgstr "Bodenabwehr:    %2i"
+ 
+-#~ msgid "Air Defense:    %2i"
++#~ msgid  "Air Defense:    %2i"
+ #~ msgstr "Luftabwehr:     %2i"
+ 
+-#~ msgid "Close Defense:  %2i"
++#~ msgid  "Close Defense:  %2i"
+ #~ msgstr "Nahabwehr:      %2i"
+ 
+-#~ msgid "Suppression:    %2i"
++#~ msgid  "Suppression:    %2i"
+ #~ msgstr "Unterdrückung:  %2i"
+ 
+-#~ msgid "Turns Left: %i"
++#~ msgid  "Turns Left: %i"
+ #~ msgstr "Züge übrig: %i"
+ 
+-#~ msgid "Turns Left: Last Turn"
++#~ msgid  "Turns Left: Last Turn"
+ #~ msgstr "Züge übrig: Letzter Zug"
+ 
+-#~ msgid "Result: "
++#~ msgid  "Result: "
+ #~ msgstr "Ergebnis: "
+ 
+-#~ msgid "Current Player:  %s"
++#~ msgid  "Current Player:  %s"
+ #~ msgstr "Aktueller Spieler: %s"
+ 
+-#~ msgid "Next Player:     %s"
++#~ msgid  "Next Player:     %s"
+ #~ msgstr "Nächster Spieler:  %s"
+ 
+-#~ msgid "Weather:  %s"
++#~ msgid  "Weather:  %s"
+ #~ msgstr "Wetter:     %s"
+ 
+-#~ msgid "n/a"
++#~ msgid  "n/a"
+ #~ msgstr "n. v."
+ 
+-#~ msgid "Forecast: %s"
++#~ msgid  "Forecast: %s"
+ #~ msgstr "Vorhersage: %s"
+ 
+-#~ msgid "%i turns remaining"
++#~ msgid  "%i turns remaining"
+ #~ msgstr "%d Züge übrig"
+ 
+-#~ msgid "control all victory hexes"
++#~ msgid  "control all victory hexes"
+ #~ msgstr "Alle Zielfelder beherrschen"
+ 
+-#~ msgid "control hex %i,%i"
++#~ msgid  "control hex %i,%i"
+ #~ msgstr "Hex %i,%i beherrschen"
+ 
+-#~ msgid "control at least %i vic hexes"
++#~ msgid  "control at least %i vic hexes"
+ #~ msgstr "Mindestens %i Zielfelder beherrschen"
+ 
+-#~ msgid "kill units with tag '%s'"
++#~ msgid  "kill units with tag '%s'"
+ #~ msgstr "Einheiten mit Kennung »%s« vernichten"
+ 
+-#~ msgid "save units with tag '%s'"
++#~ msgid  "save units with tag '%s'"
+ #~ msgstr "Einheiten mit Kennung »%s« retten"
+ 
+-#~ msgid "Explicit VicConds (%s)"
++#~ msgid  "Explicit VicConds (%s)"
+ #~ msgstr "Ausdrückliche Siegesbedingungen (%s)"
+ 
+-#~ msgid "every turn"
++#~ msgid  "every turn"
+ #~ msgstr "jeder Zug"
+ 
+-#~ msgid "last turn"
++#~ msgid  "last turn"
+ #~ msgstr "letzter Zug"
+ 
+-#~ msgid "AND %.2s "
++#~ msgid  "AND %.2s "
+ #~ msgstr "UND %.2s "
+ 
+-#~ msgid "AND -- "
++#~ msgid  "AND -- "
+ #~ msgstr "UND -- "
+ 
+-#~ msgid "OR %.2s "
++#~ msgid  "OR %.2s "
+ #~ msgstr "ODER %.2s "
+ 
+-#~ msgid "OR -- "
++#~ msgid  "OR -- "
+ #~ msgstr "ODER -- "
+ 
+-#~ msgid "else: '%s'"
++#~ msgid  "else: '%s'"
+ #~ msgstr "sonst: »%s«"
+ 
+-#~ msgid "Control: Human"
++#~ msgid  "Control: Human"
+ #~ msgstr "Steuerung: Mensch"
+ 
+-#~ msgid "Control: CPU"
++#~ msgid  "Control: CPU"
+ #~ msgstr "Steuerung: Rechner"
+ 
+-#~ msgid "AI Module: %s"
++#~ msgid  "AI Module: %s"
+ #~ msgstr "KI-Modul:  %s"
+ 
+-#~ msgid "Cannot load new glyphs surface: %s\n"
++#~ msgid  "Cannot load new glyphs surface: %s\n"
+ #~ msgstr "Kann Oberfläche mit neuen Grafemen nicht laden: %s\n"
+ 
+-#~ msgid "Invalid font file: %d, %d\n"
++#~ msgid  "Invalid font file: %d, %d\n"
+ #~ msgstr "Ungültige Schriftdatei: %d, %d\n"
+ 
+-#~ msgid "font '%s' contains too many glyphs\n"
++#~ msgid  "font '%s' contains too many glyphs\n"
+ #~ msgstr "Schrift '%s' enthält zu viele Grafeme\n"
+ 
+-#~ msgid "could not create font surface: %s\n"
++#~ msgid  "could not create font surface: %s\n"
+ #~ msgstr "Konnte Schriftoberfläche nicht erzeugen: %s\n"
+ 
+-#~ msgid "ERR: %s: not enough memory\n"
++#~ msgid  "ERR: %s: not enough memory\n"
+ #~ msgstr "FEHL: %s: nicht genug Speicher\n"
+ 
+-#~ msgid "Requested mode %ix%i, Fullscreen: %i unavailable\n"
++#~ msgid  "Requested mode %ix%i, Fullscreen: %i unavailable\n"
+ #~ msgstr "Geforderter Modus %ix%i, Vollbild: %i nicht verfügbar\n"
+ 
+-#~ msgid "%s: %d: warning: entry '%s' not found in '%s/%s'\n"
++#~ msgid  "%s: %d: warning: entry '%s' not found in '%s/%s'\n"
+ #~ msgstr "%s: %d: Warnung: Eintrag '%s' in '%s/%s' nicht gefunden\n"
+ 
+-#~ msgid "Campaign entry '%s' not found in campaign '%s'\n"
++#~ msgid  "Campaign entry '%s' not found in campaign '%s'\n"
+ #~ msgstr "Feldzugeintrag »%s« nicht in Feldzug »%s« gefunden\n"
+ 
+-#~ msgid ""
++#~ msgid  ""
+ #~ "%s: can't load as main unit library (which is already loaded): loading as "
+ #~ "'additional' instead\n"
+ #~ msgstr ""
+ #~ "%s: kann nicht als Einheitenhauptbibliothek geladen werden (nämlich "
+ #~ "bereitsgeladen):Lade stattdessen als Zusatz\n"
+ 
+-#~ msgid "  Parsing '%s'"
++#~ msgid  "  Parsing '%s'"
+ #~ msgstr "  »%s« analysieren"
+ 
+-#~ msgid "  Loading Main Definitions"
++#~ msgid  "  Loading Main Definitions"
+ #~ msgstr "  Hauptdefinitionen laden"
+ 
+-#~ msgid "%i target types is the limit!\n"
++#~ msgid  "%i target types is the limit!\n"
+ #~ msgstr "%i Zieltypen sind die Obergrenze!\n"
+ 
+-#~ msgid "  Loading Tactical Icons"
++#~ msgid  "  Loading Tactical Icons"
+ #~ msgstr "  Taktische Symbole laden"
+ 
+-#~ msgid "*** Loading scenario '%s' ***"
++#~ msgid  "*** Loading scenario '%s' ***"
+ #~ msgstr "*** Szenario »%s« laden ***"
+ 
+-#~ msgid "Loading Scenario Info"
++#~ msgid  "Loading Scenario Info"
+ #~ msgstr "Szenarieninfo laden"
+ 
+-#~ msgid "Loading Nations"
++#~ msgid  "Loading Nations"
+ #~ msgstr "Nationen laden"
+ 
+-#~ msgid "Loading Main Unit Library '%s'"
++#~ msgid  "Loading Main Unit Library '%s'"
+ #~ msgstr "Einheitenhauptbibliothek »%s« laden"
+ 
+-#~ msgid "Loading Additional Unit Library '%s'"
++#~ msgid  "Loading Additional Unit Library '%s'"
+ #~ msgstr "Einheitenzusatzbibliothek »%s« laden"
+ 
+-#~ msgid "Loading Map '%s'"
++#~ msgid  "Loading Map '%s'"
+ #~ msgstr "Karte »%s« laden"
+ 
+-#~ msgid "Loading Players"
++#~ msgid  "Loading Players"
+ #~ msgstr "Spieler laden"
+ 
+-#~ msgid "Loading Flags"
++#~ msgid  "Loading Flags"
+ #~ msgstr "Fahnen laden"
+ 
+-#~ msgid "Loading Victory Conditions"
++#~ msgid  "Loading Victory Conditions"
+ #~ msgstr "Siegesbedingungen laden"
+ 
+-#~ msgid "No subconditions specified!\n"
++#~ msgid  "No subconditions specified!\n"
+ #~ msgstr "Keine Unterbedingungen angegeben!\n"
+ 
+-#~ msgid "Defeat"
++#~ msgid  "Defeat"
+ #~ msgstr "Niederlage"
+ 
+-#~ msgid "Loading Units"
++#~ msgid  "Loading Units"
+ #~ msgstr "Einheiten laden"
+ 
+-#~ msgid "%s: unit entry not found\n"
++#~ msgid  "%s: unit entry not found\n"
+ #~ msgstr "%s: Einheiteneintrag nicht gefunden\n"
+ 
+-#~ msgid "%s: not a nation\n"
++#~ msgid  "%s: not a nation\n"
+ #~ msgstr "%s: keine Nation\n"
+ 
+-#~ msgid "%s: no player controls this nation\n"
++#~ msgid  "%s: no player controls this nation\n"
+ #~ msgstr "%s: kein Spieler steuert diese Nation\n"
+ 
+-#~ msgid "%s: out of map: ignored\n"
++#~ msgid  "%s: out of map: ignored\n"
+ #~ msgstr "%s: außerhalb der Karte: ignoriert\n"
+ 
+-#~ msgid "%s##%s##%s Turns#%s Players"
++#~ msgid  "%s##%s##%s Turns#%s Players"
+ #~ msgstr "%s##%s##%s Züge#%s Spieler"
+ 
+-#~ msgid "warning: %s\n"
++#~ msgid  "warning: %s\n"
+ #~ msgstr "Warnung: %s\n"
+ 
+-#~ msgid "<EndOfInput>"
++#~ msgid  "<EndOfInput>"
+ #~ msgstr "<EndeDerEingabe>"
+ 
+-#~ msgid "Unterminated string constant"
++#~ msgid  "Unterminated string constant"
+ #~ msgstr "Nichtterminierte Zeichenkettenkonstante"
+ 
+-#~ msgid "token exceeds limit"
++#~ msgid  "token exceeds limit"
+ #~ msgstr "Symbol überschreitet Grenze"
+ 
+-#~ msgid "Invalid character '%c'"
++#~ msgid  "Invalid character '%c'"
+ #~ msgstr "Ungültiges Zeichen '%c'"
+ 
+-#~ msgid "parse error before '%s'"
++#~ msgid  "parse error before '%s'"
+ #~ msgstr "Syntaxfehler vor »%s«"
+ 
+-#~ msgid "parse error: use '%c' for assignment or '<' for section"
++#~ msgid  "parse error: use '%c' for assignment or '<' for section"
+ #~ msgstr "Syntaxfehler: '%c' für Zuweisung oder '<' für Abschnitt benützen"
+ 
+-#~ msgid "%s: file not found"
++#~ msgid  "%s: file not found"
+ #~ msgstr "%s: Datei nicht gefunden"
+ 
+-#~ msgid "%s: file's too big to fit the compact buffer (%dKB)\n"
++#~ msgid  "%s: file's too big to fit the compact buffer (%dKB)\n"
+ #~ msgstr "%s: Datei für den Kompaktpuffer zu groß (%dKB)\n"
+ 
+-#~ msgid "%s: no subtrees"
++#~ msgid  "%s: no subtrees"
+ #~ msgstr "%s: keine Teilbäume"
+ 
+-#~ msgid "%s: subtree '%s' not found"
++#~ msgid  "%s: subtree '%s' not found"
+ #~ msgstr "%s: Teilbaum: »%s« nicht gefunden"
+ 
+-#~ msgid "parser_get_entries: %s/%s: no subtrees"
++#~ msgid  "parser_get_entries: %s/%s: no subtrees"
+ #~ msgstr "parser_get_entries: %s/%s: keine Teilbäume"
+ 
+-#~ msgid "parser_get_values: %s/%s: no values"
++#~ msgid  "parser_get_values: %s/%s: no values"
+ #~ msgstr "parser_get_values: %s/%s: keine Werte"
+ 
+-#~ msgid "parser_get_value: %s/%s: index %i out of range (%i elements)"
++#~ msgid  "parser_get_value: %s/%s: index %i out of range (%i elements)"
+ #~ msgstr "parser_get_value: %s/%s: Index %i außerhalb (%i Elemente)"
+ 
+-#~ msgid "Supply Unit [s] (Rate:%3i%%)"
++#~ msgid  "Supply Unit [s] (Rate:%3i%%)"
+ #~ msgstr "Nachschub [s] (Rate:%3i%%)"
+ 
+-#~ msgid "Next Player: %s"
++#~ msgid  "Next Player: %s"
+ #~ msgstr "Nächster Spieler: %s"
+ 
+-#~ msgid "Deploy your troops"
++#~ msgid  "Deploy your troops"
+ #~ msgstr "Truppenaufstellung"
+ 
+-#~ msgid "Remaining Turns: %i"
++#~ msgid  "Remaining Turns: %i"
+ #~ msgstr "Übrige Züge: %d"
+ 
+-#~ msgid "Weather: %s"
++#~ msgid  "Weather: %s"
+ #~ msgstr "Wetter: %s"
+ 
+-#~ msgid "Turn: %d"
++#~ msgid  "Turn: %d"
+ #~ msgstr "Zug: %d"
+ 
+-#~ msgid "Last Turn"
++#~ msgid  "Last Turn"
+ #~ msgstr "Letzter Zug"
+ 
+-#~ msgid "CPU thinks..."
++#~ msgid  "CPU thinks..."
+ #~ msgstr "Rechner überlegt..."
+ 
+-#~ msgid ""
++#~ msgid  ""
+ #~ "( Enable option 'Show Cpu Turn' if you want to see what it is doing. )"
+ #~ msgstr ""
+ #~ "(Option »Rechnerzug anzeigen« einschalten, wenn Sie den Rechner arbeiten "
+ #~ "sehen wollen.)"
+ 
+-#~ msgid "Select Drop Zone"
++#~ msgid  "Select Drop Zone"
+ #~ msgstr "Absprungzone auswählen"
+ 
+-#~ msgid "Load Game '%s'"
++#~ msgid  "Load Game '%s'"
+ #~ msgstr "Spiel »%s« laden"
+ 
+-#~ msgid "Overwrite saved game?"
++#~ msgid  "Overwrite saved game?"
+ #~ msgstr "Gespeichertes Spiel überschreiben?"
+ 
+-#~ msgid "Apply %ix%i, "
++#~ msgid  "Apply %ix%i, "
+ #~ msgstr "%dx%d anwenden"
+ 
+-#~ msgid "Fullscreen?"
++#~ msgid  "Fullscreen?"
+ #~ msgstr "Vollbild?"
+ 
+-#~ msgid "Window?"
++#~ msgid  "Window?"
+ #~ msgstr "Fenster?"
+ 
+-#~ msgid "Do you really want to restart this scenario?"
++#~ msgid  "Do you really want to restart this scenario?"
+ #~ msgstr "Wollen Sie das Szenario wirklich neu starten?"
+ 
+-#~ msgid "Do you really want to quit?"
++#~ msgid  "Do you really want to quit?"
+ #~ msgstr "Wollen Sie wirklich aussteigen?"
+ 
+-#~ msgid "Do you really want to end your turn?"
++#~ msgid  "Do you really want to end your turn?"
+ #~ msgstr "Wollen Sie wirklich den Zug beenden?"
+ 
+-#~ msgid "Abandon the ground transporter?"
++#~ msgid  "Abandon the ground transporter?"
+ #~ msgstr "Landtransporter aufgeben?"
+ 
+-#~ msgid "Do you really want to disband this unit?"
++#~ msgid  "Do you really want to disband this unit?"
+ #~ msgstr "Einheit wirklich auflösen?"
+ 
+-#~ msgid "End deployment?"
++#~ msgid  "End deployment?"
+ #~ msgstr "Aufstellung beenden?"
+ 
+-#~ msgid "Game saved to slot '%i' as '%s'.\n"
++#~ msgid  "Game saved to slot '%i' as '%s'.\n"
+ #~ msgstr "Spiel unter Fach »%d« als »%s« gespeichert.\n"
+ 
+-#~ msgid "Defensive Fire"
++#~ msgid  "Defensive Fire"
+ #~ msgstr "Feuerunterstützung"
+ 
+-#~ msgid "Air-Defense"
++#~ msgid  "Air-Defense"
+ #~ msgstr "Luftabwehr"
+ 
+-#~ msgid "Interceptors"
++#~ msgid  "Interceptors"
+ #~ msgstr "Abfangjäger"
+ 
+-#~ msgid "Video Mode: %ix%i, Fullscreen: %i not available\n"
++#~ msgid  "Video Mode: %ix%i, Fullscreen: %i not available\n"
+ #~ msgstr "Videomodus: %dx%d, Vollbild: %d nicht verfügbar\n"
+ 
+-#~ msgid "'%s' has no move points remaining\n"
++#~ msgid  "'%s' has no move points remaining\n"
+ #~ msgstr "%s: keine Bewegungspunkte übrig\n"
+ 
+-#~ msgid "'%s' (%i,%i) can not attack '%s' (%i,%i)\n"
++#~ msgid  "'%s' (%i,%i) can not attack '%s' (%i,%i)\n"
+ #~ msgstr "»%s« (%d,%d) kann »%s« (%d,%d) nicht angreifen\n"
+ 
+-#~ msgid "'%s' may not attack unit '%s' (not visible)\n"
++#~ msgid  "'%s' may not attack unit '%s' (not visible)\n"
+ #~ msgstr "»%s« kann Einheit »%s« nicht angreifen (nicht sichtbar)\n"
+ 
+-#~ msgid "%i,%i out of reach for '%s'\n"
++#~ msgid  "%i,%i out of reach for '%s'\n"
+ #~ msgstr "%d,%d nicht erreichbar für »%s«\n"
+ 
+-#~ msgid "%i,%i is blocked ('%s' wants to move there)\n"
++#~ msgid  "%i,%i is blocked ('%s' wants to move there)\n"
+ #~ msgstr "%d,%d ist blockiert (»%s« möchte hier her fahren)\n"
+ 
+-#~ msgid "There is no way for unit '%s' to move to %i,%i\n"
++#~ msgid  "There is no way for unit '%s' to move to %i,%i\n"
+ #~ msgstr "Keine Möglichkeit für Einheit »%s«, %d,%d zu erreichen\n"
+ 
+-#~ msgid "Out Of The Sun!"
++#~ msgid  "Out Of The Sun!"
+ #~ msgstr "Aus der Sonne!"
+ 
+-#~ msgid "Surprise Contact!"
++#~ msgid  "Surprise Contact!"
+ #~ msgstr "Hinterhalt!"
+ 
+-#~ msgid "Rugged Defense!"
++#~ msgid  "Rugged Defense!"
+ #~ msgstr "Zähe Abwehr!"
+ 
+-#~ msgid "Submarine evades!"
++#~ msgid  "Submarine evades!"
+ #~ msgstr "U-Boot weicht aus!"
+ 
+-#~ msgid ""
++#~ msgid  ""
+ #~ "Deadlock! No remaining combatants but supposed to continue fighting? How "
+ #~ "is this supposed to work????\n"
+ #~ msgstr ""
+ #~ "Verklemmung! Keine Kämpfer übrig trotz des Befehls zum Weiterkämpfen? Wie "
+ #~ "soll das gehen????\n"
+ 
+-#~ msgid "Attack Broken Up!"
++#~ msgid  "Attack Broken Up!"
+ #~ msgstr "Angriff abgebrochen!"
+ 
+-#~ msgid "Ship is scuttled!"
++#~ msgid  "Ship is scuttled!"
+ #~ msgstr "Selbstversenkung!"
+ 
+-#~ msgid "Surrenders!"
++#~ msgid  "Surrenders!"
+ #~ msgstr "Kapituliert!"
+ 
+-#~ msgid "%s: AI module '%s' invalid. Use built-in AI.\n"
++#~ msgid  "%s: AI module '%s' invalid. Use built-in AI.\n"
+ #~ msgstr "%s: KI-Modul »%s« ungültig. Verwende eingebaute KI.\n"
+ 
+-#~ msgid "January"
++#~ msgid  "January"
+ #~ msgstr "Jänner"
+ 
+-#~ msgid "February"
++#~ msgid  "February"
+ #~ msgstr "Februar"
+ 
+-#~ msgid "March"
++#~ msgid  "March"
+ #~ msgstr "März"
+ 
+-#~ msgid "April"
++#~ msgid  "April"
+ #~ msgstr "April"
+ 
+-#~ msgid "May_long"
++#~ msgid  "May_long"
+ #~ msgstr "Mai"
+ 
+-#~ msgid "June"
++#~ msgid  "June"
+ #~ msgstr "Juni"
+ 
+-#~ msgid "July"
++#~ msgid  "July"
+ #~ msgstr "Juli"
+ 
+-#~ msgid "August"
++#~ msgid  "August"
+ #~ msgstr "August"
+ 
+-#~ msgid "September"
++#~ msgid  "September"
+ #~ msgstr "September"
+ 
+-#~ msgid "October"
++#~ msgid  "October"
+ #~ msgstr "Oktober"
+ 
+-#~ msgid "November"
++#~ msgid  "November"
+ #~ msgstr "November"
+ 
+-#~ msgid "December"
++#~ msgid  "December"
+ #~ msgstr "Dezember"
+ 
+-#~ msgid "Jan"
++#~ msgid  "Jan"
+ #~ msgstr "Jan"
+ 
+-#~ msgid "Feb"
++#~ msgid  "Feb"
+ #~ msgstr "Feb"
+ 
+-#~ msgid "Mar"
++#~ msgid  "Mar"
+ #~ msgstr "Mär"
+ 
+-#~ msgid "Apr"
++#~ msgid  "Apr"
+ #~ msgstr "Apr"
+ 
+-#~ msgid "May"
++#~ msgid  "May"
+ #~ msgstr "Mai"
+ 
+-#~ msgid "Jun"
++#~ msgid  "Jun"
+ #~ msgstr "Jun"
+ 
+-#~ msgid "Jul"
++#~ msgid  "Jul"
+ #~ msgstr "Jul"
+ 
+-#~ msgid "Aug"
++#~ msgid  "Aug"
+ #~ msgstr "Aug"
+ 
+-#~ msgid "Sep"
++#~ msgid  "Sep"
+ #~ msgstr "Sep"
+ 
+-#~ msgid "Oct"
++#~ msgid  "Oct"
+ #~ msgstr "Okt"
+ 
+-#~ msgid "Nov"
++#~ msgid  "Nov"
+ #~ msgstr "Nov"
+ 
+-#~ msgid "Dec"
++#~ msgid  "Dec"
+ #~ msgstr "Dez"
+ 
+-#~ msgid ""
++#~ msgid  ""
+ #~ "Couldn't find/open config directory '%s'\n"
+ #~ "Attempting to create it... "
+ #~ msgstr ""
+ #~ "Konnte Verzeichnis »%s« nicht finden/öffnen\n"
+ #~ "Versuche es zu erzeugen... "
+ 
+-#~ msgid "failed\n"
++#~ msgid  "failed\n"
+ #~ msgstr "fehlgeschlagen\n"
+ 
+-#~ msgid "ok\n"
++#~ msgid  "ok\n"
+ #~ msgstr "ok\n"
+ 
+-#~ msgid "Cannot access config file '%s' to save settings\n"
++#~ msgid  "Cannot access config file '%s' to save settings\n"
+ #~ msgstr ""
+ #~ "Kein Zugriff auf Konfigurationdatei »%s« zum Speichern der Einstellungen\n"
+ 
+-#~ msgid "%s cannot be opened\n"
++#~ msgid  "%s cannot be opened\n"
+ #~ msgstr "%s kann nicht geöffnet werden\n"
+ 
+-#~ msgid "get_file_list: can't open parent directory '%s'\n"
++#~ msgid  "get_file_list: can't open parent directory '%s'\n"
+ #~ msgstr "get_file_list: kann Elternverzeichnis »%s« nicht öffnen\n"
+ 
+-#~ msgid "(C) 2001-2005 Michael Speck"
++#~ msgid  "(C) 2001-2005 Michael Speck"
+ #~ msgstr "©‚ 2001-2005 Michael Speck"
+ 
+-#~ msgid "http://lgames.sf.net"
++#~ msgid  "http://lgames.sf.net"
+ #~ msgstr "http://lgames.sf.net"
+ 
+-#~ msgid "Syntax: %s [options] [resource-file]\n"
++#~ msgid  "Syntax: %s [options] [resource-file]\n"
+ #~ msgstr "Syntax: %s [optionen] [resourcendatei]\n"
+ 
+-#~ msgid ""
++#~ msgid  ""
+ #~ "\n"
+ #~ "Options:\n"
+ #~ "    --campaign-start=<state>\n"
+@@ -735,7 +735,7 @@ msgstr ""
+ #~ "<szenariodatei>\tSzenariodatei relativ zum Szenarioverzeichnis\n"
+ #~ "\t\tunter %s\n"
+ 
+-#~ msgid ""
++#~ msgid  ""
+ #~ "LGeneral %s\n"
+ #~ "Copyright 2001-2005 Michael Speck\n"
+ #~ "Published under GNU GPL\n"
+@@ -746,49 +746,49 @@ msgstr ""
+ #~ "Veröffentlicht unter der GNU GPL\n"
+ #~ "---\n"
+ 
+-#~ msgid "Looking up data in: %s\n"
++#~ msgid  "Looking up data in: %s\n"
+ #~ msgstr "Daten suchen unter: %s\n"
+ 
+-#~ msgid "Compiled without sound and music\n"
++#~ msgid  "Compiled without sound and music\n"
+ #~ msgstr "Übersetzt ohne Ton und Musik\n"
+ 
+-#~ msgid "Invalid player control: %s\n"
++#~ msgid  "Invalid player control: %s\n"
+ #~ msgstr "Ungültige Spielersteuerung: %s\n"
+ 
+-#~ msgid "Animation speed up: x%d\n"
++#~ msgid  "Animation speed up: x%d\n"
+ #~ msgstr "Animationsgeschwindigkeit erhöht: x%d\n"
+ 
+-#~ msgid "Error loading scenario %s\n"
++#~ msgid  "Error loading scenario %s\n"
+ #~ msgstr "Fehler beim Laden von Szenario %s\n"
+ 
+-#~ msgid "LGeneral %s"
++#~ msgid  "LGeneral %s"
+ #~ msgstr "LGeneral %s"
+ 
+-#~ msgid "get_coord: no comma found in pair of coordinates '%s'\n"
++#~ msgid  "get_coord: no comma found in pair of coordinates '%s'\n"
+ #~ msgstr "get_coord: Beistrich fehlt in Koordinatenpaar »%s«\n"
+ 
+-#~ msgid ""
++#~ msgid  ""
+ #~ "get_coord: warning: y-coordinate is empty (maybe you left a space between "
+ #~ "x and comma?)\n"
+ #~ msgstr ""
+ #~ "get_coord: Warnung: Y-Koordinate ist leer (vielleicht haben Sie ein "
+ #~ "Leerzeichen zwischen x und dem Komma gelassen?)\n"
+ 
+-#~ msgid "%s: unknown flag\n"
++#~ msgid  "%s: unknown flag\n"
+ #~ msgstr "%s: Unbekanntes Bit\n"
+ 
+-#~ msgid "init_slots: can't open directory '%s' to read saved games\n"
++#~ msgid  "init_slots: can't open directory '%s' to read saved games\n"
+ #~ msgstr ""
+ #~ "init_slots: Öffnen von Verzeichnis »%s« zum Lesen der Spielstände "
+ #~ "fehlgeschlagen\n"
+ 
+-#~ msgid "'%s': file not found\n"
++#~ msgid  "'%s': file not found\n"
+ #~ msgstr "%s: Datei nicht gefunden\n"
+ 
+-#~ msgid "%s: not found\n"
++#~ msgid  "%s: not found\n"
+ #~ msgstr "%s: nicht gefunden\n"
+ 
+-#~ msgid "If data seems to be missing, please re-run the converter lgc-pg.\n"
++#~ msgid  "If data seems to be missing, please re-run the converter lgc-pg.\n"
+ #~ msgstr ""
+ #~ "Falls Daten fehlen, lassen Sie bitte den Konverter lgc-pg nochmal "
+ #~ "laufen.\n"
+diff -rup -x Makefile -x Makefile.in -x .deps -x '*.gmo' -x aclocal.m4 -x compile -x config.sub -x config.guess -x depcomp -x install-sh -x configure -x config.h.in -x missing -x mkinstalldirs lgeneral-1.4.4.orig/po/lgeneral/en.po lgeneral-1.4.4.new/po/lgeneral/en.po
+--- lgeneral-1.4.4.orig/po/lgeneral/en.po	2021-01-08 16:00:04.000000000 +0100
++++ lgeneral-1.4.4.new/po/lgeneral/en.po	2023-12-12 18:28:58.083294238 +0100
+@@ -3,7 +3,7 @@
+ # Leo Savernik <l.savernik@aon.at>, 2005.
+ #
+ #
+-msgid ""
++msgid  ""
+ msgstr ""
+ "Project-Id-Version: lgeneral\n"
+ "Report-Msgid-Bugs-To: \n"
+@@ -16,22 +16,22 @@ msgstr ""
+ "Content-Type: text/plain; charset=iso-8859-1\n"
+ "Content-Transfer-Encoding: 8-bit\n"
+ 
+-#~ msgid "This group has reached it's maximum number of buttons.\n"
++#~ msgid  "This group has reached it's maximum number of buttons.\n"
+ #~ msgstr "This group has reached its maximum number of buttons.\n"
+ 
+ #, fuzzy
+-#~ msgid "%i   CASUALTIES   %i"
++#~ msgid  "%i   CASUALTIES   %i"
+ #~ msgstr "%i   SUPPRESSED   %i"
+ 
+-#~ msgid "%i   SURPRESSED   %i"
++#~ msgid  "%i   SURPRESSED   %i"
+ #~ msgstr "%i   SUPPRESSED   %i"
+ 
+-#~ msgid "May_long"
++#~ msgid  "May_long"
+ #~ msgstr "May"
+ 
+ #, fuzzy
+-#~ msgid "Mar"
++#~ msgid  "Mar"
+ #~ msgstr "May"
+ 
+-#~ msgid "May"
++#~ msgid  "May"
+ #~ msgstr "May"
+diff -rup -x Makefile -x Makefile.in -x .deps -x '*.gmo' -x aclocal.m4 -x compile -x config.sub -x config.guess -x depcomp -x install-sh -x configure -x config.h.in -x missing -x mkinstalldirs lgeneral-1.4.4.orig/src/Makefile.am lgeneral-1.4.4.new/src/Makefile.am
+--- lgeneral-1.4.4.orig/src/Makefile.am	2020-10-31 11:02:28.000000000 +0100
++++ lgeneral-1.4.4.new/src/Makefile.am	2023-12-12 16:08:03.907429353 +0100
+@@ -1,4 +1,4 @@
+-DEFS = @DEFS@ @sound_flag@ @dl_flag@ @inst_flag@
++DEFS = @DEFS@ @sound_flag@ @dl_flag@ -DINSTALLDIR=\"${inst_dir}\"
+ 
+ bin_PROGRAMS = lgeneral
+ 
+diff -rup -x Makefile -x Makefile.in -x .deps -x '*.gmo' -x aclocal.m4 -x compile -x config.sub -x config.guess -x depcomp -x install-sh -x configure -x config.h.in -x missing -x mkinstalldirs lgeneral-1.4.4.orig/tools/ltrextract/Makefile.am lgeneral-1.4.4.new/tools/ltrextract/Makefile.am
+--- lgeneral-1.4.4.orig/tools/ltrextract/Makefile.am	2020-10-31 11:02:33.000000000 +0100
++++ lgeneral-1.4.4.new/tools/ltrextract/Makefile.am	2023-12-12 15:57:50.151560293 +0100
+@@ -9,6 +9,6 @@ ltrextract_LDADD = $(top_builddir)/util/
+ ltrextract_SOURCES = ltrextract.c util.c util.h \
+ 	terrain.c terrain.h map.c map.h nation.c nation.h \
+ 	unit_lib.c unit_lib.h scenario.c scenario.h campaign.c campaign.h \
+-	$(LGENERAL_PATH)/parser.c \
+-	$(LGENERAL_PATH)/list.c
++	../../src/parser.c \
++	../../src//list.c
+ 
+diff -rup -x Makefile -x Makefile.in -x .deps -x '*.gmo' -x aclocal.m4 -x compile -x config.sub -x config.guess -x depcomp -x install-sh -x configure -x config.h.in -x missing -x mkinstalldirs lgeneral-1.4.4.orig/util/Makefile.am lgeneral-1.4.4.new/util/Makefile.am
+--- lgeneral-1.4.4.orig/util/Makefile.am	2020-10-31 11:02:33.000000000 +0100
++++ lgeneral-1.4.4.new/util/Makefile.am	2023-12-12 16:23:35.606227247 +0100
+@@ -10,5 +10,5 @@ if compile_paths_linux
+ endif
+ 
+ AM_CPPFLAGS = $(INTLINCLUDES) -I$(top_srcdir)
+-DEFS = -DHAVE_CONFIG_H -DDATADIR=\"@datadir@\" -DPREFIX=\"@prefix@\"
++DEFS = -DHAVE_CONFIG_H -DDATADIR=\"$(datadir)\" -DPREFIX=\"$(prefix)\"
+ 

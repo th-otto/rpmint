@@ -8,10 +8,12 @@ for i in \
 	amphetamine \
 	blobwars \
 	breaker \
+	cavestory \
 	circuslinux \
 	deathris \
 	digger \
 	fillets-ng \
+	freecraft \
 	gemdropx \
 	gnuboy \
 	gnurobbo \
@@ -22,6 +24,7 @@ for i in \
 	jetpac \
 	kobo-deluxe \
 	lbreakout2 \
+	lgeneral \
 	lmarbles \
 	ltris \
 	megamario \

@@ -1,0 +1,1769 @@
+diff -rup -x data freecraft-1.18.orig/Makefile freecraft-1.18.new/Makefile
+--- freecraft-1.18.orig/Makefile	2003-03-12 05:03:34.000000000 +0100
++++ freecraft-1.18.new/Makefile	2023-12-14 05:53:13.751436133 +0100
+@@ -125,7 +125,7 @@ all-src: make-objdir $(OBJ)
+ 
+ # UNIX-TARGET
+ freecraft: $(OBJ) 
+-	$(CCLD) -o freecraft $^ $(CLONELIBS) -I. $(CFLAGS)
++	$(CCLD) $(CFLAGS) -o freecraft $^ $(CLONELIBS)
+ 
+ # WIN32-TARGET
+ freecraft.exe:	$(OBJ) etlib/$(OBJDIR)/getopt.$(OE) \
+diff -rup -x data freecraft-1.18.orig/src/action/action_minegold.c freecraft-1.18.new/src/action/action_minegold.c
+--- freecraft-1.18.orig/src/action/action_minegold.c	2003-03-10 07:29:54.000000000 +0100
++++ freecraft-1.18.new/src/action/action_minegold.c	2023-12-13 20:07:46.365803512 +0100
+@@ -272,7 +272,7 @@ local int MineInGoldmine(Unit* unit)
+ 	}
+ 
+ 	//	Store gold mine position
+-	unit->Orders[0].Arg1=(void*)((unit->X<<16)|unit->Y);
++	unit->Orders[0].Arg1=(void*)(long)((unit->X<<16)|unit->Y);
+ 
+ 	//
+ 	//	Find gold depot
+@@ -479,8 +479,8 @@ local int StoreGoldInDeposit(Unit* unit)
+ 	    x=unit->X;
+ 	    y=unit->Y;
+ 	} else {
+-	    x=(int)unit->Orders[0].Arg1>>16;
+-	    y=(int)unit->Orders[0].Arg1&0xFFFF;
++	    x=(int)(long)unit->Orders[0].Arg1>>16;
++	    y=(int)(long)unit->Orders[0].Arg1&0xFFFF;
+ 	}
+ 	if( !(destu=FindGoldMine(unit,x,y)) ) {
+ 	    DropOutOnSide(unit,LookingW
+diff -rup -x data freecraft-1.18.orig/src/action/action_patrol.c freecraft-1.18.new/src/action/action_patrol.c
+--- freecraft-1.18.orig/src/action/action_patrol.c	2002-12-17 07:40:37.000000000 +0100
++++ freecraft-1.18.new/src/action/action_patrol.c	2023-12-13 20:08:19.629095531 +0100
+@@ -69,8 +69,8 @@ global void HandleActionPatrol(Unit* uni
+ 	//
+ 	//	Swap the points.
+ 	//
+-	tmp=(int)unit->Orders[0].Arg1;
+-	unit->Orders[0].Arg1=(void*)((unit->Orders[0].X<<16)|unit->Orders[0].Y);
++	tmp=(int)(long)unit->Orders[0].Arg1;
++	unit->Orders[0].Arg1=(void*)(long)((unit->Orders[0].X<<16)|unit->Orders[0].Y);
+ 	unit->Orders[0].X=tmp>>16;
+ 	unit->Orders[0].Y=tmp&0xFFFF;
+ 
+diff -rup -x data freecraft-1.18.orig/src/action/action_resource.c freecraft-1.18.new/src/action/action_resource.c
+--- freecraft-1.18.orig/src/action/action_resource.c	2003-03-10 07:29:54.000000000 +0100
++++ freecraft-1.18.new/src/action/action_resource.c	2023-12-13 20:08:49.925724569 +0100
+@@ -274,7 +274,7 @@ local int WaitInResource(Unit* unit,cons
+ 	unit->Player->UnitTypesCount[unit->Type->Type]++;
+ 
+ 	//	Store gold mine position
+-	unit->Orders[0].Arg1=(void*)((unit->X<<16)|unit->Y);
++	unit->Orders[0].Arg1=(void*)(long)((unit->X<<16)|unit->Y);
+ 
+ 	//
+ 	//	Find and send to resource deposit.
+@@ -466,8 +466,8 @@ local int WaitInDepot(Unit* unit,const R
+ 	    x=unit->X;
+ 	    y=unit->Y;
+ 	} else {
+-	    x=(int)unit->Orders[0].Arg1>>16;
+-	    y=(int)unit->Orders[0].Arg1&0xFFFF;
++	    x=(int)(long)unit->Orders[0].Arg1>>16;
++	    y=(int)(long)unit->Orders[0].Arg1&0xFFFF;
+ 	}
+ 	if( !(goal=resource->FindResource(unit->Player,x,y)) ) {
+ 	    DropOutOnSide(unit,LookingW,
+diff -rup -x data freecraft-1.18.orig/src/action/command.c freecraft-1.18.new/src/action/command.c
+--- freecraft-1.18.orig/src/action/command.c	2003-02-24 01:40:23.000000000 +0100
++++ freecraft-1.18.new/src/action/command.c	2023-12-13 20:09:07.982368809 +0100
+@@ -540,7 +540,7 @@ global void CommandPatrolUnit(Unit* unit
+ 	order->Type=NULL;
+ 	DebugCheck( unit->X&~0xFFFF || unit->Y&~0xFFFF );
+ 	// BUG-ALERT: encode source into arg1 as two 16 bit values!
+-	order->Arg1=(void*)((unit->X<<16)|unit->Y);
++	order->Arg1=(void*)(long)((unit->X<<16)|unit->Y);
+     }
+     ClearSavedAction(unit);
+ }
+diff -rup -x data freecraft-1.18.orig/src/clone/groups.c freecraft-1.18.new/src/clone/groups.c
+--- freecraft-1.18.orig/src/clone/groups.c	2002-12-17 07:40:41.000000000 +0100
++++ freecraft-1.18.new/src/clone/groups.c	2023-12-13 20:10:01.005636286 +0100
+@@ -69,7 +69,7 @@ global void InitGroups(void)
+ 	if( (n=Groups[i].NumUnits) ) {		// Cleanup after load
+ 	    while( n-- ) {
+ 		DebugLevel0Fn("FIXME: old code!\n");
+-		Groups[i].Units[n]=UnitSlots[(int)Groups[i].Units[n]];
++		Groups[i].Units[n]=UnitSlots[(int)(long)Groups[i].Units[n]];
+ 	    }
+ 	}
+     }
+diff -rup -x data freecraft-1.18.orig/src/clone/mpq.c freecraft-1.18.new/src/clone/mpq.c
+--- freecraft-1.18.orig/src/clone/mpq.c	2002-12-17 07:40:41.000000000 +0100
++++ freecraft-1.18.new/src/clone/mpq.c	2023-12-13 18:38:02.369175446 +0100
+@@ -2101,7 +2101,7 @@ const unsigned char dcl_table[] =
+     0x00, 0x18, 0x00, 0x08, 0x00, 0x10, 0x00, 0x00
+ };
+ 
+-local const UInt8 wav_table[2512] =
++const UInt8 wav_table[2512] =
+ {
+     0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+@@ -2419,7 +2419,7 @@ local const UInt8 wav_table[2512] =
+     0xFA, 0x00, 0x00, 0x00, 0x06, 0x01, 0x00, 0x00
+ };
+ 
+-local const UInt32 small_tbl1[90] =
++const UInt32 small_tbl1[90] =
+ {
+     0x7,	0x8,	0x9,	0xA,	0xB,	0xC,	0xD,	0xE,	0x10,	0x11,
+     0x13,	0x15,	0x17,	0x19,	0x1C,	0x1F,	0x22,	0x25,	0x29,	0x2D,
+@@ -2432,7 +2432,7 @@ local const UInt32 small_tbl1[90] =
+     0x3BB9,	0x41B2,	0x4844,	0x4F7E,	0x5771,	0x602F,	0x69CE,	0x7462,	0x7FFF,	0x0
+ };
+ 
+-local const UInt32 small_tbl2[32] =
++const UInt32 small_tbl2[32] =
+ {
+     0xFFFFFFFF, 0x0, 0xFFFFFFFF, 0x4, 0xFFFFFFFF, 0x2, 0xFFFFFFFF, 0x6,
+     0xFFFFFFFF, 0x1, 0xFFFFFFFF, 0x5, 0xFFFFFFFF, 0x3, 0xFFFFFFFF, 0x7,
+diff -rup -x data freecraft-1.18.orig/src/clone/scm.c freecraft-1.18.new/src/clone/scm.c
+--- freecraft-1.18.orig/src/clone/scm.c	2003-01-14 21:34:10.000000000 +0100
++++ freecraft-1.18.new/src/clone/scm.c	2023-12-13 18:39:04.849098343 +0100
+@@ -165,7 +165,7 @@ local int ChkReadWord(void)
+ */
+ local inline int ChkReadByte(void)
+ {
+-    return *((unsigned char*)chk_ptr)++;
++    return (unsigned char) *(chk_ptr++);
+ }
+ 
+ /**
+diff -rup -x data freecraft-1.18.orig/src/clone/selection.c freecraft-1.18.new/src/clone/selection.c
+--- freecraft-1.18.orig/src/clone/selection.c	2003-01-20 08:51:15.000000000 +0100
++++ freecraft-1.18.new/src/clone/selection.c	2023-12-13 20:13:41.702028842 +0100
+@@ -954,7 +954,7 @@ global void InitSelections(void)
+ 
+     if( (i=NumSelected) ) {		// Cleanup after load
+ 	while( i-- ) {
+-	    Selected[i]=UnitSlots[(int)Selected[i]];
++	    Selected[i]=UnitSlots[(int)(long)Selected[i]];
+ 	}
+     }
+ }
+diff -rup -x data freecraft-1.18.orig/src/clone/unit.c freecraft-1.18.new/src/clone/unit.c
+--- freecraft-1.18.orig/src/clone/unit.c	2003-03-06 10:09:46.000000000 +0100
++++ freecraft-1.18.new/src/clone/unit.c	2023-12-13 20:14:18.515316452 +0100
+@@ -4189,7 +4189,7 @@ local void SaveOrder(const Order* order,
+ 	switch( order->Action ) {
+ 	    case UnitActionPatrol:
+ 		fprintf(file," patrol (%d %d)",
+-			(int)order->Arg1>>16,(int)order->Arg1&0xFFFF);
++			(int)(long)order->Arg1>>16,(int)(long)order->Arg1&0xFFFF);
+ 		break;
+ 	    case UnitActionSpellCast:
+ 		fprintf(file," spell %s",((SpellType*)order->Arg1)->Ident);
+@@ -4199,10 +4199,10 @@ local void SaveOrder(const Order* order,
+ 		break;
+ 	    case UnitActionMineGold:
+ 		fprintf(file," mine (%d %d)",
+-			(int)order->Arg1>>16,(int)order->Arg1&0xFFFF);
++			(int)(long)order->Arg1>>16,(int)(long)order->Arg1&0xFFFF);
+ 		break;
+ 	    default:
+-		fprintf(file," arg1 %d",(int)order->Arg1);
++		fprintf(file," arg1 %d",(int)(long)order->Arg1);
+ 		break;
+ 	}
+     }
+diff -rup -x data freecraft-1.18.orig/src/clone/unit_draw.c freecraft-1.18.new/src/clone/unit_draw.c
+--- freecraft-1.18.orig/src/clone/unit_draw.c	2003-03-06 01:49:13.000000000 +0100
++++ freecraft-1.18.new/src/clone/unit_draw.c	2023-12-13 20:19:00.164966637 +0100
+@@ -1449,9 +1449,9 @@ local void ShowSingleOrder(const Unit* u
+ 	    VideoDrawLineClip(ColorGreen, x1, y1, x2, y2);
+ 	    e_color = color = ColorBlue;
+ 	    x1 = Map2ViewportX(CurrentViewport,
+-		((int)order->Arg1) >> 16) + TileSizeX / 2;
++		((int)(long)order->Arg1) >> 16) + TileSizeX / 2;
+ 	    y1 = Map2ViewportY(CurrentViewport,
+-		((int)order->Arg1) & 0xFFFF) + TileSizeY / 2;
++		((int)(long)order->Arg1) & 0xFFFF) + TileSizeY / 2;
+ 	    dest = 1;
+ 	    break;
+ 
+diff -rup -x data freecraft-1.18.orig/src/include/iolib.h freecraft-1.18.new/src/include/iolib.h
+--- freecraft-1.18.orig/src/include/iolib.h	2002-12-17 07:40:44.000000000 +0100
++++ freecraft-1.18.new/src/include/iolib.h	2023-12-13 20:12:21.605461657 +0100
+@@ -83,7 +83,7 @@ typedef struct _CL_File_ {
+     int		cl_type;		/// type of CLFile
+     FILE	*cl_plain;		/// standard file pointer
+ #ifdef USE_ZLIB
+-    gzFile	*cl_gz;			/// gzip file pointer
++    gzFile	cl_gz;			/// gzip file pointer
+ #endif	// !USE_ZLIB
+ #ifdef USE_BZ2LIB
+     BZFILE	*cl_bz;			/// bzip2 file pointer
+diff -rup -x data freecraft-1.18.orig/src/include/myendian.h freecraft-1.18.new/src/include/myendian.h
+--- freecraft-1.18.orig/src/include/myendian.h	2003-01-22 19:32:42.000000000 +0100
++++ freecraft-1.18.new/src/include/myendian.h	2023-12-13 19:49:12.163858629 +0100
+@@ -97,7 +97,7 @@ extern unsigned short inline _FetchLE16(
+ 
+ #else
+ 
+-#define	FetchLE16(p)	SDL_SwapLE16(*((unsigned short*)(p))++)
++#define	FetchLE16(p)	SDL_SwapLE16(((Uint16*)(p += 2))[-1])
+ 
+ #endif
+ 
+@@ -117,7 +117,7 @@ extern unsigned inline _FetchLE32(unsign
+ 
+ #else
+ 
+-#define	FetchLE32(p)	SDL_SwapLE32(*((unsigned int*)(p))++)
++#define	FetchLE32(p)	SDL_SwapLE32(((Uint32*)(p += 4))[-1])
+ 
+ #endif
+ 
+@@ -204,13 +204,13 @@ extern unsigned inline _FetchLE32(unsign
+ **	Fetch a 16 bit value in little endian with incrementing pointer
+ **	and return it in native format.
+ */
+-#define	FetchLE16(p)	ConvertLE16(*((unsigned short*)(p))++)
++#define	FetchLE16(p)	ConvertLE16(((Uint16*)(p += 2))[-1])
+ 
+ /**
+ **	Fetch a 32 bit value in little endian with incrementing pointer
+ **	and return it in native format.
+ */
+-#define	FetchLE32(p)	ConvertLE32(*((unsigned int*)(p))++)
++#define	FetchLE32(p)	ConvertLE32(((Uint32*)(p += 4))[-1])
+ 
+ #endif		// } !SDL
+ // ============================================================================
+@@ -219,7 +219,7 @@ extern unsigned inline _FetchLE32(unsign
+ **	Fetch a 8 bit value with incrementing pointer
+ **	and return it in native format.
+ */
+-#define	FetchByte(p)	(*((unsigned char*)(p))++)
++#define	FetchByte(p)	(*((unsigned char*)(p)++))
+ 
+ //@}
+ 
+diff -rup -x data freecraft-1.18.orig/src/include/video.h freecraft-1.18.new/src/include/video.h
+--- freecraft-1.18.orig/src/include/video.h	2003-02-16 06:29:14.000000000 +0100
++++ freecraft-1.18.new/src/include/video.h	2023-12-13 19:59:40.839740352 +0100
+@@ -65,6 +65,7 @@
+ #undef EndMenu
+ #undef DrawIcon
+ #endif
++#include <stdint.h>
+ 
+ /*----------------------------------------------------------------------------
+ --	Declarations
+@@ -73,7 +74,7 @@
+ typedef unsigned char VMemType8;	///  8 bpp modes pointer
+ typedef unsigned short VMemType16;	/// 16 bpp modes pointer
+ typedef struct { char a,b,c;} VMemType24;/// 24 bpp modes pointer
+-typedef unsigned long VMemType32;	/// 32 bpp modes pointer
++typedef uint32_t VMemType32;	/// 32 bpp modes pointer
+ 
+ /**
+ **	General video mode pointer.
+diff -rup -x data freecraft-1.18.orig/src/libmodplug/stdafx.h freecraft-1.18.new/src/libmodplug/stdafx.h
+--- freecraft-1.18.orig/src/libmodplug/stdafx.h	2002-12-22 16:19:42.000000000 +0100
++++ freecraft-1.18.new/src/libmodplug/stdafx.h	2023-12-13 18:43:37.455427707 +0100
+@@ -86,7 +86,7 @@ inline void ProcessPlugins(int n) {}
+ 
+ #include <string.h>
+ 
+-extern inline long MulDiv (long a, long b, long c)
++static inline long MulDiv (long a, long b, long c)
+ {
+   // if (!c) return 0;
+   return ((unsigned long long) a * (unsigned long long) b ) / c;
+diff -rup -x data freecraft-1.18.orig/src/pathfinder/hierarchical.c freecraft-1.18.new/src/pathfinder/hierarchical.c
+--- freecraft-1.18.orig/src/pathfinder/hierarchical.c	2002-08-29 18:28:07.000000000 +0200
++++ freecraft-1.18.new/src/pathfinder/hierarchical.c	2023-12-13 19:10:46.496744372 +0100
+@@ -224,12 +224,12 @@ local void AreasFillRegionLists (void)
+ }
+ #endif
+ 
+-inline int AreaGetWidth (void)
++int AreaGetWidth (void)
+ {
+ 	return Config.Area.Width;
+ }
+ 
+-inline int AreaGetHeight (void)
++int AreaGetHeight (void)
+ {
+ 	return Config.Area.Height;
+ }
+diff -rup -x data freecraft-1.18.orig/src/pathfinder/hierarchical.h freecraft-1.18.new/src/pathfinder/hierarchical.h
+--- freecraft-1.18.orig/src/pathfinder/hierarchical.h	2002-12-17 07:40:48.000000000 +0100
++++ freecraft-1.18.new/src/pathfinder/hierarchical.h	2023-12-13 19:09:15.010191004 +0100
+@@ -48,8 +48,8 @@ typedef enum _area_neighborship_type_ {
+ extern int PfHierShowRegIds;
+ extern int PfHierShowGroupIds;
+ 
+-extern inline int AreaGetWidth (void);
+-extern inline int AreaGetHeight (void);
++extern int AreaGetWidth (void);
++extern int AreaGetHeight (void);
+ extern int AreaNeighborship (AreaCoords * , AreaCoords * );
+ extern void AreaSetNumRegions (int , int , int );
+ extern int AreaGetRegions (int , int , Region *** );
+diff -rup -x data freecraft-1.18.orig/src/pathfinder/region_set.c freecraft-1.18.new/src/pathfinder/region_set.c
+--- freecraft-1.18.orig/src/pathfinder/region_set.c	2002-08-02 17:52:46.000000000 +0200
++++ freecraft-1.18.new/src/pathfinder/region_set.c	2023-12-13 19:10:15.640115919 +0100
+@@ -139,7 +139,7 @@ Region *RegionSetFind (int regid)
+ 	return (Region * )AvlFind (&RegionSet.Regions, regid);
+ }
+ 
+-inline int RegionSetGetNumRegions (void)
++int RegionSetGetNumRegions (void)
+ {
+ 	return RegionSet.NumRegions;
+ }
+diff -rup -x data freecraft-1.18.orig/src/pathfinder/region_set.h freecraft-1.18.new/src/pathfinder/region_set.h
+--- freecraft-1.18.orig/src/pathfinder/region_set.h	2002-04-27 19:09:23.000000000 +0200
++++ freecraft-1.18.new/src/pathfinder/region_set.h	2023-12-13 19:10:15.640115919 +0100
+@@ -10,7 +10,7 @@ extern void RegionSetInitialize (void);
+ extern void RegionSetDestroy (void);
+ extern void RegionSetFindRegionsInArea (int , int );
+ extern void RegionSetCreateNeighborLists (int , int , int , int);
+-extern inline int RegionSetGetNumRegions (void);
++extern int RegionSetGetNumRegions (void);
+ extern Region *RegionSetFind (int );
+ extern void RegionSetDelete (Region * );
+ 
+diff -rup -x data freecraft-1.18.orig/src/sound/flac.c freecraft-1.18.new/src/sound/flac.c
+--- freecraft-1.18.orig/src/sound/flac.c	2002-12-17 07:40:48.000000000 +0100
++++ freecraft-1.18.new/src/sound/flac.c	2023-12-13 19:54:11.246817878 +0100
+@@ -110,7 +110,7 @@ local void FLAC_error_callback(
+ */
+ local FLAC__StreamDecoderReadStatus FLAC_read_callback(
+ 	const FLAC__StreamDecoder * stream __attribute__((unused)),
+-	FLAC__byte buffer[], unsigned int *bytes, void *user)
++	FLAC__byte buffer[], size_t *bytes, void *user)
+ {
+     unsigned i;
+     CLFile *f;
+@@ -196,14 +196,14 @@ local FLAC__StreamDecoderWriteStatus FLA
+ 	case 8:
+ 	    for (i = 0; i < frame->header.blocksize; i++) {
+ 		for (channel = 0; channel < frame->header.channels; channel++) {
+-		    *((unsigned char *)p)++ = buffer[channel][i] + 128;
++		    *((unsigned char *)(p)++) = buffer[channel][i] + 128;
+ 		}
+ 	    }
+ 	    break;
+ 	case 16:
+ 	    for (i = 0; i < frame->header.blocksize; i++) {
+ 		for (channel = 0; channel < frame->header.channels; channel++) {
+-		    *((short *)p)++ = buffer[channel][i];
++		    ((short*)(p += 2))[-1] = buffer[channel][i];
+ 		}
+ 	    }
+ 	    break;
+@@ -229,13 +229,13 @@ local int FlacRead(Sample* sample, void*
+ {
+     int pos;
+ 
+-    pos = (int)sample->User;
++    pos = (int)(long)sample->User;
+     if (pos + len > sample->Length) {		// Not enough data?
+ 	len = sample->Length - pos;
+     }
+     memcpy(buf, sample->Data + pos, len);
+ 
+-    sample->User = (void*)(pos + len);
++    sample->User = (void*)((long)pos + len);
+ 
+     return len;
+ }
+@@ -303,12 +303,7 @@ global Sample* LoadFlac(const char* name
+ 	return NULL;
+     }
+ 
+-    FLAC__stream_decoder_set_read_callback(stream, FLAC_read_callback);
+-    FLAC__stream_decoder_set_write_callback(stream, FLAC_write_callback);
+-    FLAC__stream_decoder_set_metadata_callback(stream, FLAC_metadata_callback);
+-    FLAC__stream_decoder_set_error_callback(stream, FLAC_error_callback);
+-    FLAC__stream_decoder_set_client_data(stream, &user);
+-    FLAC__stream_decoder_init(stream);
++    FLAC__stream_decoder_init_stream(stream, FLAC_read_callback, 0, 0, 0, 0, FLAC_write_callback, FLAC_metadata_callback, FLAC_error_callback, &user);
+ 
+     //
+     //  Read sample
+diff -rup -x data freecraft-1.18.orig/src/sound/ogg.c freecraft-1.18.new/src/sound/ogg.c
+--- freecraft-1.18.orig/src/sound/ogg.c	2002-12-17 07:40:48.000000000 +0100
++++ freecraft-1.18.new/src/sound/ogg.c	2023-12-13 20:17:32.765075189 +0100
+@@ -222,13 +222,13 @@ local int OggRead(Sample* sample, void*
+ {
+     int pos;
+ 
+-    pos = (int)sample->User;
++    pos = (int)(long)sample->User;
+     if (pos + len > sample->Length) {		// Not enough data?
+ 	len = sample->Length - pos;
+     }
+     memcpy(buf, sample->Data + pos, len);
+ 
+-    sample->User = (void*)(pos + len);
++    sample->User = (void*)(long)(pos + len);
+ 
+     return len;
+ }
+diff -rup -x data freecraft-1.18.orig/src/unit/ccl_unittype.c freecraft-1.18.new/src/unit/ccl_unittype.c
+--- freecraft-1.18.orig/src/unit/ccl_unittype.c	2003-01-22 07:32:54.000000000 +0100
++++ freecraft-1.18.new/src/unit/ccl_unittype.c	2023-12-13 20:16:53.115124436 +0100
+@@ -784,7 +784,7 @@ local SCM CclDefineAnimations(SCM list)
+     }
+ 
+     // I generate a scheme variable containing the pointer!
+-    gh_define(str,gh_int2scm((int)anims));
++    gh_define(str,gh_int2scm((int)(long)anims));
+     free(str);
+ 
+     return SCM_UNSPECIFIED;
+diff -rup -x data freecraft-1.18.orig/src/unit/unittype.c freecraft-1.18.new/src/unit/unittype.c
+--- freecraft-1.18.orig/src/unit/unittype.c	2002-12-22 16:19:42.000000000 +0100
++++ freecraft-1.18.new/src/unit/unittype.c	2023-12-13 19:54:47.510105856 +0100
+@@ -266,7 +266,7 @@ global void UpdateStats(int reset)
+ }
+ 
+     /// Macro to fetch an 8bit value, to have some looking 8/16/32 bit funcs.
+-#define Fetch8(p)   (*((unsigned char*)(p))++)
++#define Fetch8(p)   (*((unsigned char*)(p)++))
+ 
+ /**
+ **	Parse UDTA area from puds.
+diff -rup -x data freecraft-1.18.orig/src/video/linedraw.c freecraft-1.18.new/src/video/linedraw.c
+--- freecraft-1.18.orig/src/video/linedraw.c	2002-12-17 07:40:51.000000000 +0100
++++ freecraft-1.18.new/src/video/linedraw.c	2023-12-13 20:04:28.439382729 +0100
+@@ -31,6 +31,7 @@
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <stdint.h>
+ 
+ #include "freecraft.h"
+ #include "video.h"
+@@ -481,7 +482,7 @@ local void ScaleRGB(unsigned char alpha,
+ 		    unsigned char *g,
+ 		    unsigned char *b )
+ {
+-    unsigned long int f;
++    uint32_t f;
+ 
+     f = (*r * alpha * 3) >> 8; // could overflow with 0b10
+     if ( f & 0xFF00 )
+@@ -520,23 +521,23 @@ local unsigned char rgb2intensity(unsign
+ **
+ **	|IIRR|GGBB| --> |0000|0000|RRRR|0000|00GG|GG00|0000|BBBB|
+ */
+-local unsigned long irgb2rgb( unsigned char irgb )
++local uint32_t irgb2rgb( unsigned char irgb )
+ {
+-    unsigned long f;
++    uint32_t f;
+ 
+     f=(((irgb<<16)|(irgb<<8)|irgb)&0x00300C03)*(1+(irgb&0xC0));
+     return f;
+ }
+ 
+ /**
+-**	Convert unsigned long RGB to IRGB
++**	Convert uint32_t RGB to IRGB
+ **      FIXME: will not work, improve and move to video.c?
+ **
+ **	@param rbg	Color Red-value.
+ **
+ **	|0000|0000|RRRR|0000|00GG|GG00|0000|BBBB| --> |IIRR|GGBB|
+ */
+-local unsigned char rgb2irgb( unsigned long rgb )
++local unsigned char rgb2irgb( uint32_t rgb )
+ {
+     unsigned char i, r, g, b;
+ 
+@@ -656,8 +657,8 @@ local void Draw25TransPixel8(SysColors c
+ local void Draw25TransPixel15(SysColors color,int x,int y)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+ 
+     p=VideoMemory16+x+y*VideoWidth;
+     sp=Pixels16[color];
+@@ -679,8 +680,8 @@ local void Draw25TransPixel15(SysColors
+ local void Draw25TransPixel16(SysColors color,int x,int y)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+ 
+     p=VideoMemory16+x+y*VideoWidth;
+     sp=Pixels16[color];
+@@ -715,10 +716,10 @@ local void Draw25TransPixel24(SysColors
+ local void Draw25TransPixel32(SysColors color,int x,int y)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
+-    unsigned long dp1;
+-    unsigned long dp2;
++    uint32_t sp1;
++    uint32_t sp2;
++    uint32_t dp1;
++    uint32_t dp2;
+ 
+     sp1=Pixels32[color];
+     // FIXME: pre multiply?
+@@ -786,8 +787,8 @@ local void Draw50TransPixel8(SysColors c
+ local void Draw50TransPixel15(SysColors color,int x,int y)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+ 
+     p=VideoMemory16+x+y*VideoWidth;
+     sp=Pixels16[color];
+@@ -808,8 +809,8 @@ local void Draw50TransPixel15(SysColors
+ local void Draw50TransPixel16(SysColors color,int x,int y)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+ 
+     p=VideoMemory16+x+y*VideoWidth;
+     sp=Pixels16[color];
+@@ -843,10 +844,10 @@ local void Draw50TransPixel24(SysColors
+ local void Draw50TransPixel32(SysColors color,int x,int y)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
+-    unsigned long dp1;
+-    unsigned long dp2;
++    uint32_t sp1;
++    uint32_t sp2;
++    uint32_t dp1;
++    uint32_t dp2;
+ 
+     sp1=Pixels32[color];
+     sp2=(sp1&0xFF00FF00)>>8;
+@@ -913,8 +914,8 @@ local void Draw75TransPixel8(SysColors c
+ local void Draw75TransPixel15(SysColors color,int x,int y)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+ 
+     p=VideoMemory16+x+y*VideoWidth;
+     sp=Pixels16[color];
+@@ -935,8 +936,8 @@ local void Draw75TransPixel15(SysColors
+ local void Draw75TransPixel16(SysColors color,int x,int y)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+ 
+     p=VideoMemory16+x+y*VideoWidth;
+     sp=Pixels16[color];
+@@ -970,10 +971,10 @@ local void Draw75TransPixel24(SysColors
+ local void Draw75TransPixel32(SysColors color,int x,int y)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
+-    unsigned long dp1;
+-    unsigned long dp2;
++    uint32_t sp1;
++    uint32_t sp2;
++    uint32_t dp1;
++    uint32_t dp2;
+ 
+     sp1=Pixels32[color];
+     sp2=(sp1&0xFF00FF00)>>8;
+@@ -1083,8 +1084,8 @@ local void DrawTransPixel15(SysColors co
+         ,unsigned char alpha)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+ 
+     p=VideoMemory16+x+y*VideoWidth;
+     sp=Pixels16[color];
+@@ -1118,8 +1119,8 @@ local void DrawTransPixel16(SysColors co
+         ,unsigned char alpha)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+ 
+     p=VideoMemory16+x+y*VideoWidth;
+     sp=Pixels16[color];
+@@ -1174,10 +1175,10 @@ local void DrawTransPixel32(SysColors co
+         ,unsigned char alpha)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
+-    unsigned long dp1;
+-    unsigned long dp2;
++    uint32_t sp1;
++    uint32_t sp2;
++    uint32_t dp1;
++    uint32_t dp2;
+ 
+     sp1=Pixels32[color];
+     sp2=(sp1&0xFF00FF00)>>8;
+@@ -1424,15 +1425,15 @@ local void DrawHLine16(SysColors color,i
+     VMemType16* p;
+     VMemType16* e;
+     int w;
+-    unsigned long f;
++    uint32_t f;
+ 
+     w=VideoWidth;
+     p=VideoMemory16+y*w+x;
+     e=p+width-1;
+-    f=((unsigned long)Pixels16[color]<<16)|Pixels16[color];
++    f=((uint32_t)Pixels16[color]<<16)|Pixels16[color];
+ 
+     while( p<e ) {			// draw 2 pixels
+-	*((unsigned long*)p)++=f;
++	((uint32_t*)(p += 4))[-1]=f;
+     }
+ 
+     if( p<=e ) {
+@@ -1478,7 +1479,7 @@ local void DrawHLine32(SysColors color,i
+     VMemType32* p;
+     VMemType32* e;
+     int w;
+-    unsigned long f;
++    uint32_t f;
+ 
+     w=VideoWidth;
+     p=VideoMemory32+y*w+x;
+@@ -1554,7 +1555,7 @@ local void Draw25TransHLine15(SysColors
+     VMemType16* p;
+     VMemType16* e;
+     int w;
+-    unsigned long sp;
++    uint32_t sp;
+ 
+     w=VideoWidth;
+     p=VideoMemory16+y*w+x;
+@@ -1564,7 +1565,7 @@ local void Draw25TransHLine15(SysColors
+     sp=(((sp<<16)|sp)&0x03E07C1F)*3;
+ 
+     while( p<e ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x03E07C1F;
+@@ -1586,7 +1587,7 @@ local void Draw25TransHLine16(SysColors
+     VMemType16* p;
+     VMemType16* e;
+     int w;
+-    unsigned long sp;
++    uint32_t sp;
+ 
+     w=VideoWidth;
+     p=VideoMemory16+y*w+x;
+@@ -1596,7 +1597,7 @@ local void Draw25TransHLine16(SysColors
+     sp=(((sp<<16)|sp)&0x07E0F81F)*3;
+ 
+     while( p<e ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x07E0F81F;
+@@ -1630,7 +1631,7 @@ local void Draw25TransHLine24(SysColors
+ local void Draw25TransHLine32(SysColors color,int x,int y,int width)
+ {
+     VMemType32 *p, *e;
+-    unsigned long sp1, sp2;
++    uint32_t sp1, sp2;
+     int w;
+ 
+     w=VideoWidth;
+@@ -1642,7 +1643,7 @@ local void Draw25TransHLine32(SysColors
+     sp1=(sp1&0x00FF00FF)*3;
+ 
+     while( p<e ) {
+-        unsigned long dp1, dp2;
++        uint32_t dp1, dp2;
+ 
+         dp1=*p;
+         dp2=(dp1&0xFF00FF00)>>8;
+@@ -1718,7 +1719,7 @@ local void Draw50TransHLine15(SysColors
+     VMemType16* p;
+     VMemType16* e;
+     int w;
+-    unsigned long sp;
++    uint32_t sp;
+ 
+     w=VideoWidth;
+     p=VideoMemory16+y*w+x;
+@@ -1727,7 +1728,7 @@ local void Draw50TransHLine15(SysColors
+     sp=((sp<<16)|sp)&0x03E07C1F;
+ 
+     while( p<e ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x03E07C1F;
+@@ -1749,7 +1750,7 @@ local void Draw50TransHLine16(SysColors
+     VMemType16* p;
+     VMemType16* e;
+     int w;
+-    unsigned long sp;
++    uint32_t sp;
+ 
+     w=VideoWidth;
+     p=VideoMemory16+y*w+x;
+@@ -1758,7 +1759,7 @@ local void Draw50TransHLine16(SysColors
+     sp=((sp<<16)|sp)&0x07E0F81F;
+ 
+     while( p<e ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x07E0F81F;
+@@ -1792,7 +1793,7 @@ local void Draw50TransHLine24(SysColors
+ local void Draw50TransHLine32(SysColors color,int x,int y,int width)
+ {
+     VMemType32 *p, *e;
+-    unsigned long sp1, sp2;
++    uint32_t sp1, sp2;
+     int w;
+ 
+     w=VideoWidth;
+@@ -1803,7 +1804,7 @@ local void Draw50TransHLine32(SysColors
+     sp1&=0x00FF00FF;
+ 
+     while( p<e ) {
+-        unsigned long dp1, dp2;
++        uint32_t dp1, dp2;
+ 
+         dp1=*p;
+         dp2=(dp1&0xFF00FF00)>>8;
+@@ -1879,7 +1880,7 @@ local void Draw75TransHLine15(SysColors
+     VMemType16* p;
+     VMemType16* e;
+     int w;
+-    unsigned long sp;
++    uint32_t sp;
+ 
+     w=VideoWidth;
+     p=VideoMemory16+y*w+x;
+@@ -1888,7 +1889,7 @@ local void Draw75TransHLine15(SysColors
+     sp=((sp<<16)|sp)&0x03E07C1F;
+ 
+     while( p<e ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x03E07C1F;
+@@ -1910,7 +1911,7 @@ local void Draw75TransHLine16(SysColors
+     VMemType16* p;
+     VMemType16* e;
+     int w;
+-    unsigned long sp;
++    uint32_t sp;
+ 
+     w=VideoWidth;
+     p=VideoMemory16+y*w+x;
+@@ -1919,7 +1920,7 @@ local void Draw75TransHLine16(SysColors
+     sp=((sp<<16)|sp)&0x07E0F81F;
+ 
+     while( p<e ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x07E0F81F;
+@@ -1953,7 +1954,7 @@ local void Draw75TransHLine24(SysColors
+ local void Draw75TransHLine32(SysColors color,int x,int y,int width)
+ {
+     VMemType32 *p, *e;
+-    unsigned long sp1, sp2;
++    uint32_t sp1, sp2;
+     int w;
+ 
+     w=VideoWidth;
+@@ -1964,7 +1965,7 @@ local void Draw75TransHLine32(SysColors
+     sp1&=0x00FF00FF;
+ 
+     while( p<e ) {
+-        unsigned long dp1, dp2;
++        uint32_t dp1, dp2;
+ 
+         dp1=*p;
+         dp2=(dp1&0xFF00FF00)>>8;
+@@ -2085,7 +2086,7 @@ local void DrawTransHLine15(SysColors co
+ {
+     VMemType16 *p;
+     VMemType16 *e;
+-    unsigned long sp;
++    uint32_t sp;
+ 
+     p=VideoMemory16+y*VideoWidth+x;
+     e=p+width;
+@@ -2095,7 +2096,7 @@ local void DrawTransHLine15(SysColors co
+     alpha>>=3;				// FIXME: only 5bits
+ 
+     while( p<e ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x03E07C1F;
+@@ -2118,7 +2119,7 @@ local void DrawTransHLine16(SysColors co
+ {
+     VMemType16 *p;
+     VMemType16 *e;
+-    unsigned long sp;
++    uint32_t sp;
+ 
+     p=VideoMemory16+y*VideoWidth+x;
+     e=p+width;
+@@ -2128,7 +2129,7 @@ local void DrawTransHLine16(SysColors co
+     alpha>>=3;				// FIXME: only 5bits
+ 
+     while( p<e ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x07E0F81F;
+@@ -2200,8 +2201,8 @@ local void DrawTransHLine32(SysColors co
+ {
+     VMemType32 *p;
+     VMemType32 *e;
+-    unsigned long sp1;
+-    unsigned long sp2;
++    uint32_t sp1;
++    uint32_t sp2;
+ 
+     p=VideoMemory32+y*VideoWidth+x;
+     e=p+width;
+@@ -2212,8 +2213,8 @@ local void DrawTransHLine32(SysColors co
+     alpha>>=1;
+ 
+     while( p<e ) {
+-	unsigned long dp1;
+-	unsigned long dp2;
++	uint32_t dp1;
++	uint32_t dp2;
+ 
+ 	dp1=*p;
+ 	dp2=(dp1&0xFF00FF00)>>8;
+@@ -2513,7 +2514,7 @@ local void Draw25TransVLine8(SysColors c
+ local void Draw25TransVLine15(SysColors color,int x,int y,int height)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int w;
+ 
+     w=VideoWidth;
+@@ -2523,7 +2524,7 @@ local void Draw25TransVLine15(SysColors
+     sp=(((sp<<16)|sp)&0x03E07C1F)*3;
+ 
+     while( height-- ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x03E07C1F;
+@@ -2544,7 +2545,7 @@ local void Draw25TransVLine15(SysColors
+ local void Draw25TransVLine16(SysColors color,int x,int y,int height)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int w;
+ 
+     w=VideoWidth;
+@@ -2554,7 +2555,7 @@ local void Draw25TransVLine16(SysColors
+     sp=(((sp<<16)|sp)&0x07E0F81F)*3;
+ 
+     while( height-- ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x07E0F81F;
+@@ -2589,7 +2590,7 @@ local void Draw25TransVLine24(SysColors
+ local void Draw25TransVLine32(SysColors color,int x,int y,int height)
+ {
+     VMemType32 *p;
+-    unsigned long sp1,sp2;
++    uint32_t sp1,sp2;
+     int w;
+ 
+     w=VideoWidth;
+@@ -2600,7 +2601,7 @@ local void Draw25TransVLine32(SysColors
+     sp1=(sp1&0x00FF00FF)*3;
+ 
+     while( height-- ) {
+-	unsigned long dp1, dp2;
++	uint32_t dp1, dp2;
+ 
+ 	dp1=*p;
+         dp2=(dp1&0xFF00FF00)>>8;
+@@ -2676,7 +2677,7 @@ local void Draw50TransVLine8(SysColors c
+ local void Draw50TransVLine15(SysColors color,int x,int y,int height)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int w;
+ 
+     w=VideoWidth;
+@@ -2685,7 +2686,7 @@ local void Draw50TransVLine15(SysColors
+     sp=((sp<<16)|sp)&0x03E07C1F;
+ 
+     while( height-- ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x03E07C1F;
+@@ -2706,7 +2707,7 @@ local void Draw50TransVLine15(SysColors
+ local void Draw50TransVLine16(SysColors color,int x,int y,int height)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int w;
+ 
+     w=VideoWidth;
+@@ -2716,7 +2717,7 @@ local void Draw50TransVLine16(SysColors
+     sp=((sp<<16)|sp)&0x07E0F81F;
+ 
+     while( height-- ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x07E0F81F;
+@@ -2751,7 +2752,7 @@ local void Draw50TransVLine24(SysColors
+ local void Draw50TransVLine32(SysColors color,int x,int y,int height)
+ {
+     VMemType32 *p;
+-    unsigned long sp1,sp2;
++    uint32_t sp1,sp2;
+     int w;
+ 
+     w=VideoWidth;
+@@ -2761,7 +2762,7 @@ local void Draw50TransVLine32(SysColors
+     sp1&=0x00FF00FF;
+ 
+     while( height-- ) {
+-	unsigned long dp1, dp2;
++	uint32_t dp1, dp2;
+ 
+ 	dp1=*p;
+         dp2=(dp1&0xFF00FF00)>>8;
+@@ -2837,7 +2838,7 @@ local void Draw75TransVLine8(SysColors c
+ local void Draw75TransVLine15(SysColors color,int x,int y,int height)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int w;
+ 
+     w=VideoWidth;
+@@ -2847,7 +2848,7 @@ local void Draw75TransVLine15(SysColors
+     sp=((sp<<16)|sp)&0x03E07C1F;
+ 
+     while( height-- ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x03E07C1F;
+@@ -2868,7 +2869,7 @@ local void Draw75TransVLine15(SysColors
+ local void Draw75TransVLine16(SysColors color,int x,int y,int height)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int w;
+ 
+     w=VideoWidth;
+@@ -2878,7 +2879,7 @@ local void Draw75TransVLine16(SysColors
+     sp=((sp<<16)|sp)&0x07E0F81F;
+ 
+     while( height-- ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x07E0F81F;
+@@ -2913,7 +2914,7 @@ local void Draw75TransVLine24(SysColors
+ local void Draw75TransVLine32(SysColors color,int x,int y,int height)
+ {
+     VMemType32 *p;
+-    unsigned long sp1,sp2;
++    uint32_t sp1,sp2;
+     int w;
+ 
+     w=VideoWidth;
+@@ -2923,7 +2924,7 @@ local void Draw75TransVLine32(SysColors
+     sp1&=0x00FF00FF;
+ 
+     while( height-- ) {
+-	unsigned long dp1, dp2;
++	uint32_t dp1, dp2;
+ 
+ 	dp1=*p;
+         dp2=(dp1&0xFF00FF00)>>8;
+@@ -3046,7 +3047,7 @@ local void DrawTransVLine15(SysColors co
+ 	,unsigned char alpha)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int w;
+ 
+     w=VideoWidth;
+@@ -3057,7 +3058,7 @@ local void DrawTransVLine15(SysColors co
+     alpha>>=3;				// FIXME: only 5bits
+ 
+     while( height-- ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x03E07C1F;
+@@ -3080,7 +3081,7 @@ local void DrawTransVLine16(SysColors co
+ 	,unsigned char alpha)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int w;
+ 
+     w=VideoWidth;
+@@ -3091,7 +3092,7 @@ local void DrawTransVLine16(SysColors co
+     alpha>>=3;				// FIXME: only 5bits
+ 
+     while( height-- ) {
+-	unsigned long dp;
++	uint32_t dp;
+ 
+ 	dp=*p;
+ 	dp=((dp<<16)|dp)&0x07E0F81F;
+@@ -3130,7 +3131,7 @@ local void DrawTransVLine32(SysColors co
+ 	,unsigned char alpha)
+ {
+     VMemType32 *p;
+-    unsigned long sp1,sp2;
++    uint32_t sp1,sp2;
+     int w;
+ 
+     w=VideoWidth;
+@@ -3140,7 +3141,7 @@ local void DrawTransVLine32(SysColors co
+     sp1&=0x00FF00FF;
+ 
+     while( height-- ) {
+-	unsigned long dp1, dp2;
++	uint32_t dp1, dp2;
+ 
+ 	dp1=*p;
+         dp2=(dp1&0xFF00FF00)>>8;
+@@ -4070,8 +4071,8 @@ local void Draw25TransRectangle15(SysCol
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+     int swidth;
+     int ofs;
+ 
+@@ -4137,8 +4138,8 @@ local void Draw25TransRectangle16(SysCol
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+     int swidth;
+     int ofs;
+ 
+@@ -4220,10 +4221,10 @@ local void Draw25TransRectangle32(SysCol
+ 	,int w,int h)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
+-    unsigned long dp1;
+-    unsigned long dp2;
++    uint32_t sp1;
++    uint32_t sp2;
++    uint32_t dp1;
++    uint32_t dp2;
+     int swidth;
+     int ofs;
+ 
+@@ -4382,8 +4383,8 @@ local void Draw50TransRectangle15(SysCol
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+     int swidth;
+     int ofs;
+ 
+@@ -4448,8 +4449,8 @@ local void Draw50TransRectangle16(SysCol
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+     int swidth;
+     int ofs;
+ 
+@@ -4530,10 +4531,10 @@ local void Draw50TransRectangle32(SysCol
+ 	,int w,int h)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
+-    unsigned long dp1;
+-    unsigned long dp2;
++    uint32_t sp1;
++    uint32_t sp2;
++    uint32_t dp1;
++    uint32_t dp2;
+     int swidth;
+     int ofs;
+ 
+@@ -4692,8 +4693,8 @@ local void Draw75TransRectangle15(SysCol
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+     int swidth;
+     int ofs;
+ 
+@@ -4758,8 +4759,8 @@ local void Draw75TransRectangle16(SysCol
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+     int swidth;
+     int ofs;
+ 
+@@ -4840,10 +4841,10 @@ local void Draw75TransRectangle32(SysCol
+ 	,int w,int h)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
+-    unsigned long dp1;
+-    unsigned long dp2;
++    uint32_t sp1;
++    uint32_t sp2;
++    uint32_t dp1;
++    uint32_t dp2;
+     int swidth;
+     int ofs;
+ 
+@@ -5002,8 +5003,8 @@ local void DrawTransRectangle15(SysColor
+ 	,int w,int h,unsigned char alpha)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+     int swidth;
+     int ofs;
+ 
+@@ -5071,8 +5072,8 @@ local void DrawTransRectangle16(SysColor
+ 	,int w,int h,unsigned char alpha)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
+-    unsigned long dp;
++    uint32_t sp;
++    uint32_t dp;
+     int swidth;
+     int ofs;
+ 
+@@ -5157,10 +5158,10 @@ local void DrawTransRectangle32(SysColor
+ 	,int w,int h,unsigned char alpha)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
+-    unsigned long dp1;
+-    unsigned long dp2;
++    uint32_t sp1;
++    uint32_t sp2;
++    uint32_t dp1;
++    uint32_t dp2;
+     int swidth;
+     int ofs;
+ 
+@@ -5740,7 +5741,7 @@ local void DrawFill25TransRectangle15(Sy
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int i;
+     int swidth;
+ 
+@@ -5755,7 +5756,7 @@ local void DrawFill25TransRectangle15(Sy
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp;
++		uint32_t dp;
+ 		dp = *p;
+ 		dp=((dp<<16)|dp)&0x03E07C1F;
+ 		dp=((dp+sp)>>2)&0x03E07C1F;
+@@ -5779,7 +5780,7 @@ local void DrawFill25TransRectangle16(Sy
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int i;
+     int swidth;
+ 
+@@ -5794,7 +5795,7 @@ local void DrawFill25TransRectangle16(Sy
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp;
++		uint32_t dp;
+ 		dp = *p;
+ 		dp=((dp<<16)|dp)&0x07E0F81F;
+ 		dp=((dp+sp)>>2)&0x07E0F81F;
+@@ -5834,8 +5835,8 @@ local void DrawFill25TransRectangle32(Sy
+ 	,int w,int h)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
++    uint32_t sp1;
++    uint32_t sp2;
+     int i;
+     int swidth;
+ 
+@@ -5852,8 +5853,8 @@ local void DrawFill25TransRectangle32(Sy
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp1;
+-		unsigned long dp2;
++		uint32_t dp1;
++		uint32_t dp2;
+ 
+ 		dp1=*p;
+ 		dp2=(dp1&0xFF00FF00)>>8;
+@@ -5947,7 +5948,7 @@ local void DrawFill50TransRectangle15(Sy
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int i;
+     int swidth;
+ 
+@@ -5961,7 +5962,7 @@ local void DrawFill50TransRectangle15(Sy
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp;
++		uint32_t dp;
+ 		dp = *p;
+ 		dp=((dp<<16)|dp)&0x03E07C1F;
+ 		dp=((dp+sp)>>1)&0x03E07C1F;
+@@ -5985,7 +5986,7 @@ local void DrawFill50TransRectangle16(Sy
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int i;
+     int swidth;
+ 
+@@ -5999,7 +6000,7 @@ local void DrawFill50TransRectangle16(Sy
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp;
++		uint32_t dp;
+ 		dp = *p;
+ 		dp=((dp<<16)|dp)&0x07E0F81F;
+ 		dp=((dp+sp)>>1)&0x07E0F81F;
+@@ -6039,8 +6040,8 @@ local void DrawFill50TransRectangle32(Sy
+ 	,int w,int h)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
++    uint32_t sp1;
++    uint32_t sp2;
+     int i;
+     int swidth;
+ 
+@@ -6056,8 +6057,8 @@ local void DrawFill50TransRectangle32(Sy
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp1;
+-		unsigned long dp2;
++		uint32_t dp1;
++		uint32_t dp2;
+ 
+ 		dp1=*p;
+ 		dp2=(dp1&0xFF00FF00)>>8;
+@@ -6151,7 +6152,7 @@ local void DrawFill75TransRectangle15(Sy
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int i;
+     int swidth;
+ 
+@@ -6165,7 +6166,7 @@ local void DrawFill75TransRectangle15(Sy
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp;
++		uint32_t dp;
+ 		dp = *p;
+ 		dp=((dp<<16)|dp)&0x03E07C1F;
+ 		dp=(((dp<<1)+dp+sp)>>2)&0x03E07C1F;
+@@ -6189,7 +6190,7 @@ local void DrawFill75TransRectangle16(Sy
+ 	,int w,int h)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int i;
+     int swidth;
+ 
+@@ -6203,7 +6204,7 @@ local void DrawFill75TransRectangle16(Sy
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp;
++		uint32_t dp;
+ 		dp = *p;
+ 		dp=((dp<<16)|dp)&0x07E0F81F;
+ 		dp=(((dp<<1)+dp+sp)>>2)&0x07E0F81F;
+@@ -6243,8 +6244,8 @@ local void DrawFill75TransRectangle32(Sy
+ 	,int w,int h)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
++    uint32_t sp1;
++    uint32_t sp2;
+     int i;
+     int swidth;
+ 
+@@ -6260,8 +6261,8 @@ local void DrawFill75TransRectangle32(Sy
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp1;
+-		unsigned long dp2;
++		uint32_t dp1;
++		uint32_t dp2;
+ 
+ 		dp1=*p;
+ 		dp2=(dp1&0xFF00FF00)>>8;
+@@ -6412,7 +6413,7 @@ local void DrawFillTransRectangle15(SysC
+ 	,int w,int h,unsigned char alpha)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int i;
+     int swidth;
+ 
+@@ -6427,7 +6428,7 @@ local void DrawFillTransRectangle15(SysC
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp;
++		uint32_t dp;
+ 		dp = *p;
+ 		dp=((dp<<16)|dp)&0x07E0F81F;
+ 		dp=((((dp-sp)*alpha)>>5)+sp)&0x03E07C1F; //FIXME: alpha==256 unreached
+@@ -6452,7 +6453,7 @@ local void DrawFillTransRectangle16(SysC
+ 	,int w,int h,unsigned char alpha)
+ {
+     VMemType16 *p;
+-    unsigned long sp;
++    uint32_t sp;
+     int i;
+     int swidth;
+ 
+@@ -6467,7 +6468,7 @@ local void DrawFillTransRectangle16(SysC
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp;
++		uint32_t dp;
+ 		dp = *p;
+ 		dp=((dp<<16)|dp)&0x07E0F81F;
+ 		dp=((((dp-sp)*alpha)>>5)+sp)&0x07E0F81F; //FIXME: alpha==256 unreached
+@@ -6509,8 +6510,8 @@ local void DrawFillTransRectangle32(SysC
+ 	,int w,int h,unsigned char alpha)
+ {
+     VMemType32 *p;
+-    unsigned long sp1;
+-    unsigned long sp2;
++    uint32_t sp1;
++    uint32_t sp2;
+     int i;
+     int swidth;
+ 
+@@ -6526,8 +6527,8 @@ local void DrawFillTransRectangle32(SysC
+ 	while( h-- ) {
+ 	    i=w;
+ 	    do {
+-		unsigned long dp1;
+-		unsigned long dp2;
++		uint32_t dp1;
++		uint32_t dp2;
+ 
+ 		dp1=*p;
+ 		dp2=(dp1&0xFF00FF00)>>8;
+diff -rup -x data freecraft-1.18.orig/src/video/png.c freecraft-1.18.new/src/video/png.c
+--- freecraft-1.18.orig/src/video/png.c	2002-12-17 07:40:51.000000000 +0100
++++ freecraft-1.18.new/src/video/png.c	2023-12-13 20:16:10.645177184 +0100
+@@ -31,6 +31,7 @@
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <string.h>
+ #include <png.h>
+ 
+ #include "freecraft.h"
+@@ -104,7 +105,7 @@ global Graphic* LoadGraphicPNG(const cha
+ 	CLclose(fp);
+ 	return NULL;
+     }
+-    if( setjmp(png_ptr->jmpbuf) ) {
++    if (setjmp (png_jmpbuf(png_ptr))) {
+ 	png_destroy_read_struct(&png_ptr,&info_ptr,NULL);
+ 	CLclose(fp);
+ 	return NULL;
+@@ -129,28 +130,29 @@ global Graphic* LoadGraphicPNG(const cha
+ 
+     palette= (Palette *)calloc(256,sizeof(Palette));
+ 
+-    if( info_ptr->color_type==PNG_COLOR_TYPE_PALETTE ) {
++    if( png_get_color_type(png_ptr, info_ptr)==PNG_COLOR_TYPE_PALETTE ) {
+ 	DebugLevel3("Color palette\n");
+-	if( info_ptr->valid&PNG_INFO_PLTE ) {
+-	    DebugLevel3Fn(" palette %d\n" _C_ info_ptr->num_palette);
+-	    if( info_ptr->num_palette>256 ) {
++	if( png_get_valid(png_ptr, info_ptr, PNG_INFO_PLTE) ) {
++      png_colorp npalette;
++      int num_palette;
++
++      png_get_PLTE(png_ptr, info_ptr, &npalette, &num_palette);             
++	    DebugLevel3Fn(" palette %d\n" _C_ num_palette);
++	    if( num_palette>256 ) {
+ 		abort();
+ 	    }
+-	    for( i=0; i<info_ptr->num_palette; ++i ) {
+-		palette[i].r=info_ptr->palette[i].red;
+-		palette[i].g=info_ptr->palette[i].green;
+-		palette[i].b=info_ptr->palette[i].blue;
+-	    }
+-	    for( ; i<256; ++i ) {
+-		palette[i].r=palette[i].g=palette[i].b=0;
++	    for( i=0; i<num_palette; ++i ) {
++		palette[i].r=npalette[i].red;
++		palette[i].g=npalette[i].green;
++		palette[i].b=npalette[i].blue;
+ 	    }
+ 	}
+     }
+ 
+-    if( info_ptr->bit_depth==16 ) {
++    if( png_get_bit_depth( png_ptr,  info_ptr)==16 ) {
+ 	png_set_strip_16(png_ptr);
+     }
+-    if( info_ptr->bit_depth<8 ) {
++    if( png_get_bit_depth( png_ptr,  info_ptr)<8 ) {
+ 	png_set_packing(png_ptr);
+     }
+ 
+@@ -171,11 +173,11 @@ global Graphic* LoadGraphicPNG(const cha
+     png_read_update_info(png_ptr,info_ptr);
+ 
+     //	Allocate and reserve memory.
+-    w=info_ptr->width;
+-    h=info_ptr->height;
+-    if( info_ptr->width!=info_ptr->rowbytes ) {
++    w=png_get_image_width(png_ptr, info_ptr);
++    h=png_get_image_height(png_ptr, info_ptr);
++    if( w!=png_get_rowbytes(png_ptr, info_ptr) ) {
+ 	DebugLevel0("width(%ld)!=rowbytes(%ld) in file:%s\n"
+-	    _C_ info_ptr->width _C_ info_ptr->rowbytes _C_ name);
++	    _C_ w _C_ png_get_rowbytes(png_ptr, info_ptr) _C_ name);
+ 	abort();
+     }
+ 
+@@ -239,7 +241,7 @@ global void SaveScreenshotPNG(const char
+ 	return;
+     }
+ 
+-    if (setjmp(png_ptr->jmpbuf)) {
++    if (setjmp (png_jmpbuf(png_ptr))) {
+ 	/* If we get here, we had a problem reading the file */
+ 	fclose(fp);
+ 	png_destroy_write_struct(&png_ptr, &info_ptr);
+diff -rup -x data freecraft-1.18.orig/src/video/sdl.c freecraft-1.18.new/src/video/sdl.c
+--- freecraft-1.18.orig/src/video/sdl.c	2003-03-08 06:15:00.000000000 +0100
++++ freecraft-1.18.new/src/video/sdl.c	2023-12-13 18:54:06.367982870 +0100
+@@ -198,7 +198,7 @@ global void InitVideoSdl(void)
+ #ifdef USE_OPENGL
+     flags |= SDL_OPENGL;
+ #endif
+-    Screen = SDL_SetVideoMode(VideoWidth, VideoHeight, VideoDepth, flags);
++    Screen = SDL_SetVideoMode(VideoWidth, VideoHeight, VideoDepth, flags | SDL_HWSURFACE | SDL_HWPALETTE);
+ 
+     if ( Screen == NULL ) {
+ 	fprintf(stderr, "Couldn't set %dx%dx%d video mode: %s\n"
+@@ -1005,7 +1005,7 @@ global void ToggleFullScreen(void)
+ 
+     if ( Screen->format->palette ) {
+ 	// !!! FIXME : No idea if that flags param is right.
+-	SDL_SetPalette(Screen, SDL_LOGPAL, palette, 0, ncolors);
++	SDL_SetPalette(Screen, SDL_LOGPAL|SDL_PHYSPAL, palette, 0, ncolors);
+ 	free(palette);
+     }
+     SDL_UnlockSurface(Screen);
+diff -rup -x data freecraft-1.18.orig/tools/startool.c freecraft-1.18.new/tools/startool.c
+--- freecraft-1.18.orig/tools/startool.c	2003-02-24 00:40:01.000000000 +0100
++++ freecraft-1.18.new/tools/startool.c	2023-12-13 19:00:46.864153681 +0100
+@@ -37,6 +37,7 @@
+ #endif
+ #include <ctype.h>
+ #include <png.h>
++#include <zlib.h>
+ 
+ #include "freecraft.h"
+ #include "iocompat.h"
+@@ -2574,7 +2575,7 @@ int SavePNG(const char* name,unsigned ch
+ 	return 1;
+     }
+ 
+-    if( setjmp(png_ptr->jmpbuf) ) {
++    if( setjmp (png_jmpbuf(png_ptr)) ){
+ 	// FIXME: must free buffers!!
+ 	png_destroy_write_struct(&png_ptr,&info_ptr);
+ 	fclose(fp);
+@@ -2587,14 +2588,13 @@ int SavePNG(const char* name,unsigned ch
+ 
+     //	prepare the file information
+ 
+-    info_ptr->width=w;
+-    info_ptr->height=h;
+-    info_ptr->bit_depth=8;
+-    info_ptr->color_type=PNG_COLOR_TYPE_PALETTE;
+-    info_ptr->interlace_type=0;
+-    info_ptr->valid|=PNG_INFO_PLTE;
+-    info_ptr->palette=(void*)pal;
+-    info_ptr->num_palette=256;
++    png_set_IHDR(png_ptr, info_ptr,
++	       w, h,
++	       8, PNG_COLOR_TYPE_PALETTE,
++	       0, PNG_COMPRESSION_TYPE_BASE,
++	       PNG_FILTER_TYPE_BASE);
++
++    png_set_PLTE(png_ptr, info_ptr, (void *)pal, 256);
+ 
+     png_write_info(png_ptr,info_ptr);	// write the file header information
+ 
+diff -rup -x data freecraft-1.18.orig/tools/wartool.c freecraft-1.18.new/tools/wartool.c
+--- freecraft-1.18.orig/tools/wartool.c	2003-03-08 08:13:34.000000000 +0100
++++ freecraft-1.18.new/tools/wartool.c	2023-12-13 19:07:02.513688422 +0100
+@@ -37,6 +37,7 @@
+ #endif
+ #include <ctype.h>
+ #include <png.h>
++#include "zlib.h"
+ 
+ #include "freecraft.h"
+ #include "iocompat.h"
+@@ -1544,7 +1545,7 @@ int SavePNG(const char* name,unsigned ch
+ 	return 1;
+     }
+ 
+-    if( setjmp(png_ptr->jmpbuf) ) {
++    if( setjmp (png_jmpbuf(png_ptr)) ) {
+ 	// FIXME: must free buffers!!
+ 	png_destroy_write_struct(&png_ptr,&info_ptr);
+ 	fclose(fp);
+@@ -1557,14 +1558,13 @@ int SavePNG(const char* name,unsigned ch
+ 
+     //	prepare the file information
+ 
+-    info_ptr->width=w;
+-    info_ptr->height=h;
+-    info_ptr->bit_depth=8;
+-    info_ptr->color_type=PNG_COLOR_TYPE_PALETTE;
+-    info_ptr->interlace_type=0;
+-    info_ptr->valid|=PNG_INFO_PLTE;
+-    info_ptr->palette=(void*)pal;
+-    info_ptr->num_palette=256;
++    png_set_IHDR(png_ptr, info_ptr,
++	       w, h,
++	       8, PNG_COLOR_TYPE_PALETTE,
++	       0, PNG_COMPRESSION_TYPE_BASE,
++	       PNG_FILTER_TYPE_BASE);
++
++    png_set_PLTE(png_ptr, info_ptr, (void *)pal, 256);
+ 
+     png_write_info(png_ptr,info_ptr);	// write the file header information
+ 
+--- freecraft-1.18.orig/Rules.make	1970-01-01 01:00:00.000000000 +0100
++++ freecraft-1.18.new/Rules.make	2023-12-14 05:52:16.681520389 +0100
+@@ -0,0 +1,95 @@
++##   ___________		     _________		      _____  __
++##   \_	  _____/______   ____   ____ \_   ___ \____________ _/ ____\/  |_
++##    |    __) \_  __ \_/ __ \_/ __ \/    \  \/\_  __ \__  \   __\   __|
++##    |     \   |  | \/\  ___/\  ___/\     \____|  | \// __ \|  |   |  |
++##    \___  /   |__|    \___  >\___  >\______  /|__|  (____  /__|   |__|
++##	  \/		    \/	   \/	     \/		   \/
++##  ______________________                           ______________________
++##			  T H E   W A R   B E G I N S
++##	   FreeCraft - A free fantasy real time strategy game engine
++##
++
++# Compile commands
++CC=$(CROSS_PREFIX)gcc
++CCLD=$(CC)
++RM=rm -f
++MAKE=make
++
++# Prefix for 'make install'
++PREFIX=/usr/local
++
++# Use SIOD support
++CCL		= -DUSE_CCL
++CCLLIB		= -lm
++
++# Video support
++SDL		= -DUSE_SDL -DUSE_SDLA $(SDL_CFLAGS)
++SDL_CFLAGS	= $(shell pkg-config --cflags sdl)
++SDLLIB		= $(shell pkg-config --libs sdl)
++
++VIDEO             = $(SDL)
++VIDEOLIB	= $(SDLLIB)
++
++# Sound support
++DSOUND		= -DWITH_SOUND
++OGG		= -DUSE_OGG
++OGGLIB		= -lvorbisfile -lvorbis -logg
++#SDLCD          = -DUSE_SDLCD
++
++# Uncomment the next to enable Flac support.
++FLAC = -DUSE_FLAC
++FLACLIB		= -lFLAC
++FLACLIB		= -lFLAC
++
++MAD = -DUSE_MAD
++MP3LIB = -lmad
++
++# Compression support
++ZDEFS		= -DUSE_ZLIB -DUSE_BZ2LIB
++ZLIBS		= -lz -lbz2
++
++XLDFLAGS	= 
++XIFLAGS		= 
++
++#####################################################################
++# Don't change anything below here unless you know what you're doing!
++
++VERSION=	'-DVERSION="1.18"'
++PROFILE=
++
++TOOLLIBS=$(XLDFLAGS) -lpng -lz -lm $(THREADLIB)
++CLONELIBS= $(XLDFLAGS) -lpng -lz -lm \
++	$(THREADLIB) $(CCLLIB) $(VIDEOLIB) $(ZLIBS) \
++	$(ARTSCLIB) $(FLACLIB) $(OGGLIB) $(MP3LIB) -lz -lm
++DISTLIST=$(TOPDIR)/distlist
++TAGS=$(TOPDIR)/src/tags
++
++# Linux
++EXE=
++OUTFILE=$(TOPDIR)/freecraft
++ARCH=linux
++OE=o
++OBJDIR=obj
++
++#ARCHOBJS=stdmman.$(OE) svgalib.$(OE) unix_lib.$(OE) bitm_lnx.$(OE)
++IFLAGS=	-I$(TOPDIR)/src/include $(XIFLAGS) -I$(TOPDIR)/src/movie/vp31/include
++DFLAGS=	$(THREAD) $(CCL) $(VERSION) \
++	$(VIDEO) $(ZDEFS) $(DSOUND) \
++	$(DEBUG) $(SDLCD) $(LIBCDA) \
++	$(ARTSC) $(FLAC) $(OGG) $(MAD) 
++CFLAGS=$(CPU_CFLAGS) -O2 -fsigned-char -fomit-frame-pointer -fexpensive-optimizations -ffast-math  $(IFLAGS) $(DFLAGS)  -DUNIT_ON_MAP -DNEW_AI -DUSE_LIBMODPLUG -DUSE_HP_FOR_XP -DNEW_FOW
++#CFLAGS += -DBUILDING_DESTROYED
++CTAGSFLAGS=-i defptvS -a -f 
++
++# Locks versions with a symbolic name
++LOCKVER=	rcs -q -n$(NAME)
++
++# Source code documentation
++DOXYGEN=	doxygen
++DOCIFY=		docify
++DOCPP=		doc++
++
++%.doc: %.c
++	@$(TOPDIR)/tools/aledoc $< | $(DOCIFY) > $*-c.doc 2>/dev/null
++%.doc: %.h
++	@$(TOPDIR)/tools/aledoc $< | $(DOCIFY) > $*-h.doc 2>/dev/null

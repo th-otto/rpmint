@@ -726,6 +726,73 @@ The object of the game is to eliminate all of the blocks.
 <img src="' . $download_dir . 'pegs.png" width="320" height="240">
 '
 	),
+	'lgeneral' => array(
+		'name' => 'lgeneral',
+		'version' => '1.4.4',
+		'title' => 'LGeneral',
+		'upstream' => 'https://lgames.sourceforge.io/LGeneral/',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'LGeneral is a turn-based strategy engine heavily inspired by Panzer General',
+		'comment' => '
+LGeneral is a turn-based strategy engine heavily inspired by Panzer
+General. You play single scenarios or whole campaigns turn by turn
+against a human player or the AI. Entrenchment, rugged defense,
+defensive fire, surprise contacts, surrender, unit supply, weather
+influence, reinforcements and other implementations contribute to the
+tactical and strategic depth of the game.
+</br></br>
+Converted data of <a href="' . $download_dir . 'pg-data.tar.gz">pg-data.tar.gz</a> of the original DOS version of Panzer General
+is already included in the archive. The installation of the data is explained in the file README.lgc-pg.
+</br></br>
+Free stand-alone WWI scenario package by Steve McGuba, maintained by
+Markus Koschany at Debian. Does not require conversion of original PG
+Data: <a href="' . $download_dir . 'kukgen-data-1.1.1.zip">kukgen-data-1.1.1.zip</a>
+</br></br>
+<img src="' . $download_dir . 'lgeneral.jpg" width="320" height="240">
+'
+	),
+	'cavestory' => array(
+		'name' => 'cavestory',
+		'version' => '1.0.0.6',
+		'title' => 'Cave Story',
+		'upstream' => 'https://www.cavestory.org/',
+		'repo' => 'https://nxengine.sourceforge.io/',
+		'category' => 'Games',
+		'summary' => 'Cave Story is a Japanese freeware PC side-scrolling platformer game',
+		'comment' => '
+Cave Story, or Doukutsu Monogatari, is a Japanese freeware PC
+side-scrolling platformer game developed by Studio Pixel. It has
+been translated into English by Aeon Genesis Translations and has an
+official translation for commercial releases such as Cave Story+.
+</br></br>
+<img src="' . $download_dir . 'cavestory.png" width="320" height="240">
+</br>
+Original MiNT-Patch by medmed.
+'
+	),
+	'freecraft' => array(
+		'name' => 'freecraft',
+		'version' => '1.18',
+		'upstream' => 'https://www.mobygames.com/game/72336/freecraft/',
+		'category' => 'Games',
+		'summary' => 'Freecraft is a free clone of Blizzard&apos;s famous realtime strategy game, WarCraft II.',
+		'comment' => '
+Freecraft is an open source 2D real-time top-down strategy game and a
+clone of Warcraft II: Tides of Darkness. The engine allows users to
+import Warcraft II files. The basic gameplay is almost identical to the
+game that provided the inspiration. The player controls one of two
+armies (Alliance and Mythical - based on humans and orcs), collects
+resources (like gold and wood from mines and forests) with peasants,
+builds farms and other buildings, and produces military units to
+conquer enemies. The game has its own set of maps and new graphics.
+</br></br>
+<img src="' . $download_dir . 'freecraft.png" width="320" height="240">
+</br>
+Original MiNT-Patch by medmed.</br>
+Data was orginally taken from <a href="http://dasixk.free.fr/freecraft-1.18.lzx">http://dasixk.free.fr/freecraft-1.18.lzx</a>
+'
+	),
 );
 
 ?>

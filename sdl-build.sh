@@ -39,7 +39,7 @@ cp "$BUILD_DIR/patches/automake/mintelf-config.sub" build-scripts/config.sub
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O0 -g ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
 enable_pth=false
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
