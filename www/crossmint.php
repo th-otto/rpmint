@@ -1446,6 +1446,8 @@ This notably applies to Perl and Python.
 
 <li>2023/12/22 Update libxmp to 4.6.0</li>
 
+<li>2023/12/22 Update SDL to 1.2.16-git-cbe3ea9</li>
+
 </ul>
 
 <p></p>

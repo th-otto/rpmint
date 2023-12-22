@@ -2978,6 +2978,8 @@ Scream Tracker 3 (S3M), Fast Tracker II (XM), and Impulse Tracker (IT). </br>
  </br>
 Many compressed module formats are supported, including popular Unix, DOS,
 and Amiga file packers including gzip, bzip2, SQSH, Powerpack, etc.
+ </br>
+Contains small optimizations from mikrosk.
 '
 	),
 	'libxmp-lite' => array(
@@ -2997,12 +2999,7 @@ and Amiga file packers including gzip, bzip2, SQSH, Powerpack, etc.
 		'category' => 'Development/Libraries/C and C++',
 		'summary' => 'Module Player library for MOD, S3M, IT and others',
 		'comment' => '
-Libxmp is a library that renders module files to PCM data. It supports
-over 90 mainstream and obscure module formats including Protracker (MOD),
-Scream Tracker 3 (S3M), Fast Tracker II (XM), and Impulse Tracker (IT). </br>
- </br>
-Many compressed module formats are supported, including popular Unix, DOS,
-and Amiga file packers including gzip, bzip2, SQSH, Powerpack, etc.
+Lite version of Libxmp.
 '
 	),
 	'asap' => array(

@@ -10,6 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
+patches/libxmp/libxmp-lite.patch
 "
 EXTRA_DIST="
 patches/automake/mintelf-config.sub
