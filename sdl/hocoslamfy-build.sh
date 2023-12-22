@@ -31,7 +31,7 @@ for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	export CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS"
-	export LDFLAGS="${STACKSIZE} -s"
+	export LDFLAGS="${STACKSIZE} -s -Wl,--msuper-memory"
 	
 	${MAKE} $JOBS V=0 DEFS=-DDONT_USE_PWD || exit 1
 

@@ -32,7 +32,7 @@ for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	export CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS"
-	${MAKE} ${JOBS} LDFLAGS="${STACKSIZE} -s" || exit 1
+	${MAKE} ${JOBS} LDFLAGS="${STACKSIZE} -s -Wl,--msuper-memory" || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
 

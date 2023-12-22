@@ -48,7 +48,7 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s -Wl,--msuper-memory" \
 	./configure ${CONFIGURE_FLAGS} \
 	--localstatedir='${datarootdir}' \
 	--libdir='${exec_prefix}/lib'$multilibdir

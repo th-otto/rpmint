@@ -27,7 +27,7 @@ STACKSIZE="-Wl,-stack,512k"
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS"
-	LDFLAGS="${STACKSIZE} -s"
+	LDFLAGS="${STACKSIZE} -s -Wl,--msuper-memory"
 
 	echo "${TARGET}-g++ ${CXXFLAGS} ${LDFLAGS} -o deathris"
 	${TARGET}-g++ ${CXXFLAGS} ${LDFLAGS} -o deathris tetris.cpp `pkg-config --cflags --libs SDL_mixer SDL_image` || exit 1

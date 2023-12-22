@@ -35,7 +35,7 @@ STACKSIZE="-Wl,-stack,512k"
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS"
-	LDFLAGS="${STACKSIZE} -s"
+	LDFLAGS="${STACKSIZE} -s -Wl,--msuper-memory"
 
 	${MAKE} $JOBS -C src CPU_CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" || exit 1
 

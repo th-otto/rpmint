@@ -31,7 +31,7 @@ for CPU in ${ALL_CPUS}; do
 
 	cd "$MINT_BUILD_DIR"
 
-	${MAKE} ${JOBS} CPU_CFLAGS="$CPU_CFLAGS" LDFLAGS="${STACKSIZE} -s" || exit 1
+	${MAKE} ${JOBS} CPU_CFLAGS="$CPU_CFLAGS" LDFLAGS="${STACKSIZE} -s -Wl,--msuper-memory" || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
 

@@ -29,7 +29,7 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 
 	export CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS"
-	export LDFLAGS="${STACKSIZE} -s"
+	export LDFLAGS="${STACKSIZE} -s -Wl,--msuper-memory"
 	${MAKE} $JOBS
 
 	mkdir -p "${THISPKG_DIR}"

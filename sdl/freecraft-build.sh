@@ -33,7 +33,7 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	export CROSS_PREFIX=${TARGET}-
-	${MAKE} $JOBS CPU_CFLAGS="$CPU_CFLAGS" LDFLAGS="${STACKSIZE} -s"
+	${MAKE} $JOBS CPU_CFLAGS="$CPU_CFLAGS" LDFLAGS="${STACKSIZE} -s -Wl,--msuper-memory"
 	${MAKE} CPU_CFLAGS="$CPU_CFLAGS" LDFLAGS="${STACKSIZE} -s" || exit 1
 
 	mkdir -p "${THISPKG_DIR}/tools"
