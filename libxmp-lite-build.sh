@@ -3,14 +3,13 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=libxmp
+PACKAGENAME=libxmp-lite
 VERSION=-4.6.0
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
 PATCHES="
-patches/${PACKAGENAME}/libxmp-xmp_atari.patch
 "
 EXTRA_DIST="
 patches/automake/mintelf-config.sub

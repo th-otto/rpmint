@@ -1444,6 +1444,8 @@ This notably applies to Perl and Python.
 
 <li>2023/12/04 Add sqlite3 3.44.2</li>
 
+<li>2023/12/22 Update libxmp to 4.6.0</li>
+
 </ul>
 
 <p></p>

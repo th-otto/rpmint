@@ -1,11 +1,12 @@
---- a/src/load.c	2020-08-01 09:13:40.047267673 +0200
-+++ b/src/load.c	2020-08-01 09:14:41.067269486 +0200
-@@ -171,7 +171,7 @@
- 		return 0;
- 	}
+diff -rup libxmp-4.6.0.orig/src/depackers/depacker.c libxmp-4.6.0.new/src/depackers/depacker.c
+--- libxmp-4.6.0.orig/src/depackers/depacker.c	2023-06-15 22:11:10.000000000 +0200
++++ libxmp-4.6.0.new/src/depackers/depacker.c	2023-12-22 03:20:39.756012310 +0100
+@@ -201,7 +201,7 @@ static int execute_command(const char *
  
+ static int decrunch_command(HIO_HANDLE *h, const char * const cmd[], char **temp)
+ {
 -#if defined __ANDROID__ || defined __native_client__
 +#if defined __ANDROID__ || defined __native_client__ || defined(__MINT__)
  	/* Don't use external helpers in android */
- 	if (cmd) {
- 		return 0;
+ 	return 0;
+ #else

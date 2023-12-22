@@ -2958,9 +2958,35 @@ LS_COLORS environment variable is set and output is to tty.
 	'libxmp' => array(
 		'name' => 'libxmp',
 		'upstream' => 'http://xmp.sourceforge.net/',
+		'repo' => 'https://github.com/libxmp/libxmp',
 		'branch' => '',
 		'source' => $download_dir . '%{name}-%{version}.tar.gz',
-		'version' => '4.4.1',
+		'version' => '4.6.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'LGPL-2.1',
+		'category' => 'Development/Libraries/C and C++',
+		'summary' => 'Module Player library for MOD, S3M, IT and others',
+		'comment' => '
+Libxmp is a library that renders module files to PCM data. It supports
+over 90 mainstream and obscure module formats including Protracker (MOD),
+Scream Tracker 3 (S3M), Fast Tracker II (XM), and Impulse Tracker (IT). </br>
+ </br>
+Many compressed module formats are supported, including popular Unix, DOS,
+and Amiga file packers including gzip, bzip2, SQSH, Powerpack, etc.
+'
+	),
+	'libxmp-lite' => array(
+		'name' => 'libxmp-lite',
+		'upstream' => 'http://xmp.sourceforge.net/',
+		'repo' => 'https://github.com/libxmp/libxmp',
+		'branch' => '',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'version' => '4.6.0',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
