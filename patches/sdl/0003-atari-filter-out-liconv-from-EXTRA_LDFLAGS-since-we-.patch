@@ -1,0 +1,45 @@
+From 95ed0bdcf309c2203f7e32c9284baf2af96ce708 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Dec 2023 15:20:59 +0100
+Subject: [PATCH 3/7] atari: filter out -liconv from EXTRA_LDFLAGS, since we
+ don't really use it
+
+---
+ configure    | 59 +++++-----------------------------------------------
+ configure.ac | 13 +++++-------
+ 2 files changed, 10 insertions(+), 62 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index f40158c5..7d78d539 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -2200,14 +2200,9 @@ CheckAtariLdg()
+ [AS_HELP_STRING([--enable-atari-ldg], [use Atari LDG for shared object loading [default=yes]])],
+                   , enable_atari_ldg=yes)
+     if test x$video_gem = xyes -a x$enable_atari_ldg = xyes; then
+-        AC_CHECK_HEADER(ldg.h, have_ldg_hdr=yes)
+-        AC_CHECK_LIB(ldg, ldg_open, have_ldg_lib=yes, have_ldg_lib=no, -lgem)
+-        if test x$have_ldg_hdr = xyes -a x$have_ldg_lib = xyes; then
+-            AC_DEFINE(SDL_LOADSO_LDG)
+-            SOURCES="$SOURCES $srcdir/src/loadso/mint/*.c"
+-            SDL_LIBS="$SDL_LIBS -lldg"
+-            have_loadso=yes
+-        fi
++        AC_DEFINE(SDL_LOADSO_LDG)
++        SOURCES="$SOURCES $srcdir/src/loadso/mint/SDL_sysloadso.c $srcdir/src/loadso/mint/ldg/*.c"
++        have_loadso=yes
+     fi
+ }
+ 
+@@ -2876,6 +2871,8 @@ case "$host" in
+             fi
+             have_timers=yes
+         fi
++        # filter out -liconv from EXTRA_LDFLAGS, since we don't really use it
++        EXTRA_LDFLAGS="`echo $EXTRA_LDFLAGS | sed -e 's/-liconv //'`"
+         ;;
+     *-riscos)
+         ARCH=riscos
+-- 
+2.41.0
+

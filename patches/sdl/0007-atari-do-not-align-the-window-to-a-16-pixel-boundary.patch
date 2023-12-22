@@ -1,0 +1,161 @@
+From 2362b8bfb06e4c9cecca713e79df9eb31569e963 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 15 Dec 2023 18:58:41 +0100
+Subject: [PATCH 7/7] atari: do not align the window to a 16-pixel boundary
+ when not needed
+
+It can be forced again by setting the environment variable
+SDL_GEM_ALIGN_WINDOW
+---
+ README.MiNT                   |  4 ++++
+ src/video/gem/SDL_gemevents.c |  4 ++++
+ src/video/gem/SDL_gemvideo.c  | 39 ++++++++++++++++++++---------------
+ src/video/gem/SDL_gemvideo.h  |  2 ++
+ 4 files changed, 32 insertions(+), 17 deletions(-)
+
+diff --git a/README.MiNT b/README.MiNT
+index d5f3c0bc..3a24a252 100644
+--- a/README.MiNT
++++ b/README.MiNT
+@@ -157,6 +157,10 @@ SDL_JOYSTICK_ATARI:
+ 	- Lightpen, analog paddles: 2 axis, 2 buttons. The 2 buttons are those
+ 	  affected to 1 button joysticks on the same port.
+ 
++SDL_GEM_ALIGN_WINDOW:
++        - The gem video driver no longer aligns the window to a 16-pixel
++          boundary. If you want the old behaviour, set this environment variable.
++
+ ==============================================================================
+ VI.  More informations about drivers:
+ 
+diff --git a/src/video/gem/SDL_gemevents.c b/src/video/gem/SDL_gemevents.c
+index 51277101..a1b80bed 100644
+--- a/src/video/gem/SDL_gemevents.c
++++ b/src/video/gem/SDL_gemevents.c
+@@ -240,6 +240,10 @@ static int do_messages(_THIS, short *message, short latest_msg_id)
+ 			update_work_area = 1;
+ 			break;
+ 		case WM_SIZED:
++			/* width must be multiple of 16, for vro_cpyfm() and c2p_convert() */
++			if ((message[6] & 15) != 0) {
++				message[6] = (message[6] | 15) +1;
++			}
+ 			wind_set_grect (message[3], WF_CURRXYWH, (GRECT *)&message[4]);
+ 			update_work_area = sdl_resize = 1;
+ 			GEM_win_fulled = SDL_FALSE;		/* Cancel maximized flag */
+diff --git a/src/video/gem/SDL_gemvideo.c b/src/video/gem/SDL_gemvideo.c
+index 3a09e64b..f920ece7 100644
+--- a/src/video/gem/SDL_gemvideo.c
++++ b/src/video/gem/SDL_gemvideo.c
+@@ -464,6 +464,11 @@ int GEM_VideoInit(_THIS, SDL_PixelFormat *vformat)
+ 	VDI_ReadNOVAInfo(this, work_out);
+ 	VDI_ReadExtInfo(this, work_out);
+ 
++	if (VDI_format == VDI_FORMAT_INTER)
++		GEM_align_windows = SDL_getenv("SDL_GEM_ALIGN_WINDOW") != NULL;
++	else
++		GEM_align_windows = SDL_FALSE;
++
+ #ifdef DEBUG_VIDEO_GEM
+ 	printf("sdl:video:gem: screen: address=0x%08x, pitch=%d\n", VDI_screen, VDI_pitch);
+ 	printf("sdl:video:gem: format=%d\n", VDI_format);
+@@ -798,7 +803,7 @@ SDL_Surface *GEM_SetVideoMode(_THIS, SDL_Surface *current,
+ 			/* Calculate window size */
+ 			gr.g_x = 0;
+ 			gr.g_y = 0;
+-			gr.g_w = width + 16;
++			gr.g_w = width;
+ 			gr.g_h = height;
+ 			if (!wind_calc_grect(WC_BORDER, GEM_win_type, &gr, &gr)) {
+ 				GEM_FreeBuffers(this);
+@@ -820,8 +825,8 @@ SDL_Surface *GEM_SetVideoMode(_THIS, SDL_Surface *current,
+ 
+ 			/* Align work area on 16 pixels boundary (faster for bitplanes modes) */
+ 			wind_calc_grect(WC_WORK, GEM_win_type, &gr, &gr);
+-			gr.g_x &= ~15;
+-			gr.g_x -= 8;
++			if (GEM_align_windows)
++				gr.g_x &= ~15;
+ 			wind_calc_grect(WC_BORDER, GEM_win_type, &gr, &gr);
+ 
+ 			/* Destroy existing window */
+@@ -902,7 +907,7 @@ SDL_Surface *GEM_SetVideoMode(_THIS, SDL_Surface *current,
+ 
+ void GEM_align_work_area(_THIS, short windowid, SDL_bool clear_pads)
+ {
+-	int new_x, new_w, old_x, old_w;
++	int new_x;
+ 
+ 	wind_get_grect(windowid, WF_WORKXYWH, &GEM_work);
+ 	if (GEM_iconified) {
+@@ -910,20 +915,19 @@ void GEM_align_work_area(_THIS, short windowid, SDL_bool clear_pads)
+ 	}
+ 
+ 	/* Align work area on 16 pixels boundary (faster for bitplanes modes) */
+-	new_x = old_x = GEM_work.g_x;
+-	new_w = old_w = GEM_work.g_w;
+-	if (new_x & 15) {
+-		new_x = (new_x|15)+1;
+-	} else {
+-		new_w -= 16;
++	if (GEM_align_windows)
++	{
++		new_x = GEM_work.g_x;
++		if (new_x & 15) {
++			new_x = (new_x|15)+1;
++			GEM_work.g_x = new_x;
++			wind_set_grect(windowid, WF_WORKXYWH, &GEM_work);
++			wind_get_grect(windowid, WF_WORKXYWH, &GEM_work);
++		}
+ 	}
+-	new_w -= (new_x - GEM_work.g_x);
+-	new_w &= ~15;
+-
+-	GEM_work.g_x = new_x;
+-	GEM_work.g_w = new_w;
+ 
+ 	if (clear_pads) {
++#if 0 /* no longer needed */
+ 		GRECT rect;
+ 
+ 		rect.g_y = GEM_work.g_y;
+@@ -931,13 +935,14 @@ void GEM_align_work_area(_THIS, short windowid, SDL_bool clear_pads)
+ 
+ 		/* Left padding */
+ 		rect.g_x = old_x;
+-		rect.g_w = new_x-old_x+1;
++		rect.g_w = new_x-old_x;
+ 		GEM_wind_redraw(this, GEM_handle, &rect, SDL_TRUE);
+ 
+ 		/* Right padding */
+ 		rect.g_x = new_x + new_w;
+-		rect.g_w = (old_w-new_w)-(new_x-old_x)+1;
++		rect.g_w = (old_w-new_w)-(new_x-old_x);
+ 		GEM_wind_redraw(this, GEM_handle, &rect, SDL_TRUE);
++#endif
+ 	}
+ }
+ 
+diff --git a/src/video/gem/SDL_gemvideo.h b/src/video/gem/SDL_gemvideo.h
+index e769cab7..cebb4ffe 100644
+--- a/src/video/gem/SDL_gemvideo.h
++++ b/src/video/gem/SDL_gemvideo.h
+@@ -87,6 +87,7 @@ struct SDL_PrivateVideoData {
+ 	SDL_bool locked;			/* AES locked for fullscreen ? */
+ 	SDL_bool lock_redraw;		/* Prevent redraw till buffers are setup */
+ 	SDL_bool cursor_hidden;		/* Mouse cursor hidden flag */
++	SDL_bool align_windows;		/* align windows to 16-pixel boundary */
+ 	short message[8];			/* To self-send an AES message */
+ 	void *menubar;				/* Menu bar save buffer when going fullscreen */
+ 	SDL_bool use_dev_mouse;		/* Use /dev/mouse ? */
+@@ -134,6 +135,7 @@ struct SDL_PrivateVideoData {
+ #define GEM_locked			(this->hidden->locked)
+ #define GEM_lock_redraw		(this->hidden->lock_redraw)
+ #define GEM_cursor_hidden	(this->hidden->cursor_hidden)
++#define GEM_align_windows	(this->hidden->align_windows)
+ #define GEM_message			(this->hidden->message)
+ #define SDL_modelist		(this->hidden->SDL_modelist)
+ #define GEM_icon			(this->hidden->icon)
+-- 
+2.41.0
+

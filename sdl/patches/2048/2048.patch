@@ -1,30 +1,1297 @@
-diff -rup 2048-git/Makefile 2048-git.new/Makefile
---- 2048-git/Makefile	2023-12-02 16:15:36.305828287 +0100
-+++ 2048-git.new/Makefile	2023-12-02 13:54:13.218309881 +0100
-@@ -1,14 +1,16 @@
+diff -rupN 2048-git.orig/2048.c 2048-git.new/2048.c
+--- 2048-git.orig/2048.c	2023-12-02 16:15:36.305828287 +0100
++++ 2048-git.new/2048.c	2023-12-16 10:36:02.655285831 +0100
+@@ -5,8 +5,22 @@
+ #include <SDL/SDL.h>
+ #include <SDL/SDL_ttf.h>
+ 
++#define ENABLE_NLS 1
++
++#if ENABLE_NLS
++#include <locale.h>
++#include <libintl.h>
++#define DOMAINNAME "2048"
++#define _(x) dcgettext(DOMAINNAME, x, LC_MESSAGES)
++#define N_(x) x
++#else
++#define _(x) x
++#define N_(x) x
++#endif
++
++
+ #define HEIGHT 635
+-#define WIDTH 500
++#define WIDTH 512
+ 
+ typedef struct chronometre chronometre;
+ struct chronometre{
+@@ -532,7 +546,7 @@ int displaySDLWinWindow(SDL_Surface * ec
+     winWindowBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
+     SDL_SetAlpha(winWindowBackground,SDL_SRCALPHA, 120); // Définition de la valeur alpha de la surface. La valeur alpha gère la transparence de la surface.
+     if(winWindowBackground == NULL){
+-        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
++        fprintf(stderr,_("Error CreateRGBSurface %s\n"),SDL_GetError());
+         return -1;
+     }
+     SDL_FillRect(winWindowBackground,NULL,SDL_MapRGB(winWindowBackground->format,255,255,0));
+@@ -546,9 +560,9 @@ int displaySDLWinWindow(SDL_Surface * ec
+     SDL_Color colorTextWinWindow= {255, 255, 255};
+ 
+     // Ajout du texte "Partie gagnée!"
+-    SDL_Surface * winWindowText1 = TTF_RenderText_Blended(arialBold35, "Partie gagnee!", colorTextWinWindow);
++    SDL_Surface * winWindowText1 = TTF_RenderUTF8_Blended(arialBold35, _("Game won!"), colorTextWinWindow);
+     if(winWindowText1==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         return -1;
+     }
+     SDL_Rect posWinWindowText1;
+@@ -558,9 +572,9 @@ int displaySDLWinWindow(SDL_Surface * ec
+     SDL_FreeSurface(winWindowText1);
+ 
+     // Ajout du texte "Appuyez sur Q pour quitter le jeu"
+-    SDL_Surface * winWindowText2 = TTF_RenderText_Blended(arial20, "Appuyez sur Q pour quitter le jeu", colorTextWinWindow);
++    SDL_Surface * winWindowText2 = TTF_RenderUTF8_Blended(arial20, _("Press Q to exit the game"), colorTextWinWindow);
+     if(winWindowText2==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         return -1;
+     }
+     SDL_Rect posWinWindowText2;
+@@ -581,7 +595,7 @@ int displaySDLGameOverWindow(SDL_Surface
+     gameOverWindowBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
+     SDL_SetAlpha(gameOverWindowBackground,SDL_SRCALPHA, 120); // Définition de la valeur alpha de la surface. La valeur alpha gère la transparence de la surface.
+     if(gameOverWindowBackground == NULL){
+-        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
++        fprintf(stderr,_("Error CreateRGBSurface %s\n"),SDL_GetError());
+         return -1;
+     }
+     SDL_FillRect(gameOverWindowBackground,NULL,SDL_MapRGB(gameOverWindowBackground->format,255,0,0));
+@@ -595,9 +609,9 @@ int displaySDLGameOverWindow(SDL_Surface
+     SDL_Color colorTextGameOverWindow= {255, 255, 255};
+ 
+     // Ajout du texte "Partie perdue!"
+-    SDL_Surface * gameOverWindowText1 = TTF_RenderText_Blended(arialBold35, "Partie perdue!", colorTextGameOverWindow);
++    SDL_Surface * gameOverWindowText1 = TTF_RenderUTF8_Blended(arialBold35, _("Game lost!"), colorTextGameOverWindow);
+     if(gameOverWindowText1==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         return -1;
+     }
+     SDL_Rect posGameOverWindowText1;
+@@ -607,9 +621,9 @@ int displaySDLGameOverWindow(SDL_Surface
+     SDL_FreeSurface(gameOverWindowText1);
+ 
+     // Ajout du texte "Appuyez sur Q pour quitter le jeu"
+-    SDL_Surface * gameOverWindowText2 = TTF_RenderText_Blended(arial20, "Appuyez sur Q pour quitter le jeu", colorTextGameOverWindow);
++    SDL_Surface * gameOverWindowText2 = TTF_RenderUTF8_Blended(arial20, _("Press Q to exit the game"), colorTextGameOverWindow);
+     if(gameOverWindowText2==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         return -1;
+     }
+     SDL_Rect posGameOverWindowText2;
+@@ -626,8 +640,8 @@ int winGame(int * play, int score, SDL_S
+     // Cette fonction déclenche les évènements de victoire de la partie.
+ 
+     *play = 0;
+-    printf("Félicitation! Vous avez gagné la partie!\n");
+-    printf("Vous avez obtenu un score de %i points.\n", score);
++    printf(_("Congratulations! You have won the game!\n"));
++    printf(_("You obtained a score of %i points.\n"), score);
+ 
+     if(displaySDLWinWindow(ecran, arial20, arialBold35)==-1){
+         return -1;
+@@ -639,9 +653,10 @@ int winGame(int * play, int score, SDL_S
+     while(cont){
+         SDL_WaitEvent(&event);
+         switch(event.type){
+-            case SDL_KEYDOWN:
++            case SDL_KEYUP:
+                 switch(event.key.keysym.sym){
+                     case 'q':
++                    case 'e':
+                         cont = 0;
+                         break;
+                     default:
+@@ -663,8 +678,8 @@ int gameOver(int * play, int score, SDL_
+     // Cette fonction déclenche les évènements de defaite de la partie.
+ 
+     *play = 0;
+-    printf("Game over! Le jeu n'est plus possible.\n");
+-    printf("Vous avez obtenu un score de %i points.\n", score);
++    printf(_("Game over! The game is no longer possible.\n"));
++    printf(_("You have scored %i points.\n"), score);
+ 
+     if(displaySDLGameOverWindow(ecran, arial20, arialBold35)==-1){
+         return -1;
+@@ -676,9 +691,10 @@ int gameOver(int * play, int score, SDL_
+     while(cont){
+         SDL_WaitEvent(&event);
+         switch(event.type){
+-            case SDL_KEYDOWN:
++            case SDL_KEYUP:
+                 switch(event.key.keysym.sym){
+                     case 'q':
++                    case 'e':
+                         cont = 0;
+                         break;
+                     default:
+@@ -726,7 +742,7 @@ int initSDLScreenGame(SDL_Surface * ecra
+     SDL_Surface * scoreBackground = NULL;
+     scoreBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 125, 50, 32,0,0,0,0);
+     if(scoreBackground == NULL){
+-        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
++        fprintf(stderr,_("Error CreateRGBSurface %s\n"),SDL_GetError());
+         return -1;
+     }
+     SDL_FillRect(scoreBackground,NULL,SDL_MapRGB(scoreBackground->format,105,91,69));
+@@ -740,7 +756,7 @@ int initSDLScreenGame(SDL_Surface * ecra
+     SDL_Surface * chronoBackground = NULL;
+     chronoBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 125, 50, 32,0,0,0,0);
+     if(chronoBackground == NULL){
+-        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
++        fprintf(stderr,_("Error CreateRGBSurface %s\n"),SDL_GetError());
+         return -1;
+     }
+     SDL_FillRect(chronoBackground,NULL,SDL_MapRGB(chronoBackground->format,105,91,69));
+@@ -754,7 +770,7 @@ int initSDLScreenGame(SDL_Surface * ecra
+     SDL_Surface * gameBoardBackground = NULL;
+     gameBoardBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 450,450, 32,0,0,0,0);
+     if(gameBoardBackground == NULL){
+-        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
++        fprintf(stderr,_("Error CreateRGBSurface %s\n"),SDL_GetError());
+         return -1;
+     }
+     SDL_FillRect(gameBoardBackground,NULL,SDL_MapRGB(gameBoardBackground->format,105,91,69));
+@@ -769,9 +785,9 @@ int initSDLScreenGame(SDL_Surface * ecra
+     SDL_Color colorTextIndications= {50,50,50};
+ 
+     // Affichage du texte "Utilisez les flèches directionnelles pour déplacer les cases."
+-    SDL_Surface * textIndications1 = TTF_RenderText_Blended(arial14, "Utilisez les fleches directionnelles pour deplacer les cases.", colorTextIndications);
++    SDL_Surface * textIndications1 = TTF_RenderUTF8_Blended(arial14, _("Use the directional arrows to move the boxes."), colorTextIndications);
+     if(textIndications1==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr, _("error: %s"),TTF_GetError());
+         return -1;
+     }
+     SDL_Rect posTextIndications1;
+@@ -781,9 +797,9 @@ int initSDLScreenGame(SDL_Surface * ecra
+     SDL_FreeSurface(textIndications1);
+ 
+     // Affichage du texte "Appuyez sur S pour sauvegarder votre partie ou Q pour quitter."
+-    SDL_Surface * textIndications2 = TTF_RenderText_Blended(arial14, "Appuyez sur S pour sauvegarder votre partie ou Q pour quitter.", colorTextIndications);
++    SDL_Surface * textIndications2 = TTF_RenderUTF8_Blended(arial14, _("Press S to save your game or Q to exit."), colorTextIndications);
+     if(textIndications2==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         return -1;
+     }
+     SDL_Rect posTextIndications2;
+@@ -793,9 +809,9 @@ int initSDLScreenGame(SDL_Surface * ecra
+     SDL_FreeSurface(textIndications2);
+ 
+     // Affichage du texte "Pour la sauvagarde, saisissez le nom de la sauvegarde dans le terminal."
+-    SDL_Surface * textIndications3 = TTF_RenderText_Blended(arial12, "Pour la sauvagarde, saisissez le nom de la sauvegarde dans le terminal.", colorTextIndications);
++    SDL_Surface * textIndications3 = TTF_RenderUTF8_Blended(arial12, _("For backup, enter the backup name in the terminal."), colorTextIndications);
+     if(textIndications3==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         return -1;
+     }
+     SDL_Rect posTextIndications3;
+@@ -816,7 +832,7 @@ int refreshSDLScreenGame(SDL_Surface * e
+     SDL_Surface * scoreBackground = NULL;
+     scoreBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 125, 50, 32,0,0,0,0);
+     if(scoreBackground == NULL){
+-        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
++        fprintf(stderr,_("Error CreateRGBSurface %s\n"),SDL_GetError());
+         return -1;
+     }
+     SDL_FillRect(scoreBackground,NULL,SDL_MapRGB(scoreBackground->format,105,91,69));
+@@ -830,9 +846,9 @@ int refreshSDLScreenGame(SDL_Surface * e
+     SDL_Color colorTextScore= {255,255,255};
+     char string[6];
+     sprintf(string, "%d", score);
+-    SDL_Surface * textScore = TTF_RenderText_Blended(police, string, colorTextScore);
++    SDL_Surface * textScore = TTF_RenderUTF8_Blended(police, string, colorTextScore);
+     if(textScore==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         return -1;
+     }
+     SDL_Rect posTextScore;
+@@ -863,7 +879,7 @@ int refreshSDLScreenGame(SDL_Surface * e
+             SDL_Surface * caseGameBoard = NULL;
+             caseGameBoard = SDL_CreateRGBSurface(SDL_HWSURFACE, 100,100, 32,0,0,0,0);
+             if(caseGameBoard == NULL){
+-                fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
++                fprintf(stderr,_("Error CreateRGBSurface %s\n"),SDL_GetError());
+                 return -1;
+             }
+             SDL_Rect posCase;
+@@ -915,9 +931,9 @@ int refreshSDLScreenGame(SDL_Surface * e
+             if(gameBoard[caseY][caseX]!=0){
+                 char string[6];
+                 sprintf(string, "%d", gameBoard[caseY][caseX]);
+-                SDL_Surface * textCase = TTF_RenderText_Blended(police, string, colorTextCase);
++                SDL_Surface * textCase = TTF_RenderUTF8_Blended(police, string, colorTextCase);
+                 if(textCase==NULL){
+-                    fprintf(stderr,"erreur: %s",TTF_GetError());
++                    fprintf(stderr,_("error: %s"),TTF_GetError());
+                     return -1;
+                 }
+                 // Calcul de la position du nombre selon sa longueur.
+@@ -951,7 +967,7 @@ int refreshSDLChrono(SDL_Surface * ecran
+     SDL_Surface * chronoBackground = NULL;
+     chronoBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 125, 50, 32,0,0,0,0);
+     if(chronoBackground == NULL){
+-        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
++        fprintf(stderr,_("Error CreateRGBSurface %s\n"),SDL_GetError());
+         return -1;
+     }
+     SDL_FillRect(chronoBackground,NULL,SDL_MapRGB(chronoBackground->format,105,91,69));
+@@ -973,9 +989,9 @@ int refreshSDLChrono(SDL_Surface * ecran
+     sprintf(strTime, "%d", chrono->minutes);
+     strcat(strTime, ":");
+     strcat(strTime, strSecondes);
+-    SDL_Surface * textChrono = TTF_RenderText_Blended(police, strTime, colorTextChrono);
++    SDL_Surface * textChrono = TTF_RenderUTF8_Blended(police, strTime, colorTextChrono);
+     if(textChrono==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         return -1;
+     }
+     SDL_Rect posTextChrono;
+@@ -995,7 +1011,7 @@ int displaySDLQuitPopUp(SDL_Surface * ec
+     SDL_Surface * quitPopUpBackground = NULL;
+     quitPopUpBackground = SDL_CreateRGBSurface(SDL_HWSURFACE, 375,150, 32,0,0,0,0);
+     if(quitPopUpBackground == NULL){
+-        fprintf(stderr,"Erreur CreateRGBSurface %s\n",SDL_GetError());
++        fprintf(stderr,_("Error CreateRGBSurface %s\n"),SDL_GetError());
+         return -1;
+     }
+     SDL_FillRect(quitPopUpBackground,NULL,SDL_MapRGB(quitPopUpBackground->format,66,58,44));
+@@ -1009,25 +1025,25 @@ int displaySDLQuitPopUp(SDL_Surface * ec
+     SDL_Color colorTextQuitPopUp = {255, 255, 255};
+ 
+     // Ajout du texte "Voulez-vous vraiment quitter?"
+-    SDL_Surface * textQuitPopUp1 = TTF_RenderText_Blended(police, "Voulez-vous vraiment quitter?", colorTextQuitPopUp);
++    SDL_Surface * textQuitPopUp1 = TTF_RenderUTF8_Blended(police, _("Do you really want to leave?"), colorTextQuitPopUp);
+     if(textQuitPopUp1==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         return -1;
+     }
+     SDL_Rect posTextQuitPopUp1;
+-    posTextQuitPopUp1.x=117;
++    posTextQuitPopUp1.x = posQuitPopUpBackground.x + (375 - textQuitPopUp1->w) / 2;
+     posTextQuitPopUp1.y=280;
+     SDL_BlitSurface(textQuitPopUp1,NULL,ecran,&posTextQuitPopUp1);
+     SDL_FreeSurface(textQuitPopUp1);
+ 
+     // Ajout du texte "Appuyez sur Y pour oui ou N pour non."
+-    SDL_Surface * textQuitPopUp2 = TTF_RenderText_Blended(police, "Appuyez sur Y pour oui ou N pour non.", colorTextQuitPopUp);
++    SDL_Surface * textQuitPopUp2 = TTF_RenderUTF8_Blended(police, _("Press Y for yes or N for no."), colorTextQuitPopUp);
+     if(textQuitPopUp2==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         return -1;
+     }
+     SDL_Rect posTextQuitPopUp2;
+-    posTextQuitPopUp2.x=75;
++    posTextQuitPopUp2.x = posQuitPopUpBackground.x + (375 - textQuitPopUp2->w) / 2;
+     posTextQuitPopUp2.y=330;
+     SDL_BlitSurface(textQuitPopUp2,NULL,ecran,&posTextQuitPopUp2);
+     SDL_FreeSurface(textQuitPopUp2);
+@@ -1043,7 +1059,7 @@ int quitGame(int * play, SDL_Surface * e
+     if(displaySDLQuitPopUp(ecran, arial20)){
+         return -1;
+     }
+-    printf("Voulez-vous veaiment quitter la partie? Y/N\n");
++    printf(_("Are you sure you want to leave the game? Y/N\n"));
+     
+     // Si l'utilisateur appuis sur "Y" on quitte le jeu,
+     // S'il appuis sur "N" on enlève la pop up pour quitter le jeu et la partie reprend.
+@@ -1052,13 +1068,14 @@ int quitGame(int * play, SDL_Surface * e
+     while(cont){
+         SDL_WaitEvent(&event);
+         switch(event.type){
+-            case SDL_KEYDOWN:
++            case SDL_KEYUP:
+                 switch(event.key.keysym.sym){
+                     case 'n':
+-                        cont = 0;
++                    case '\033':
+                         return 1;
+-                        break;
+                     case 'y':
++                    case 'j':
++                    case 'o':
+                         cont = 0;
+                         *play = 0;
+                         break;
+@@ -1088,7 +1105,7 @@ int startGame(int ** gameBoard, int n, i
+     }
+ 
+     displayGameBoard(gameBoard, n);
+-    printf("Score: %i\n", *score);
++    printf(_("Score: %i\n"), *score);
+ 
+     if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+         return -1;
+@@ -1115,7 +1132,7 @@ int startGame(int ** gameBoard, int n, i
+                                 return -1;
+                             }
+                             displayGameBoard(gameBoard, n);
+-                            printf("Score: %i\n", *score);
++                            printf(_("Score: %i\n"), *score);
+                             if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                                 return -1;
+                             }
+@@ -1130,7 +1147,7 @@ int startGame(int ** gameBoard, int n, i
+                                 return -1;
+                             }
+                             displayGameBoard(gameBoard, n);
+-                            printf("Score: %i\n", *score);
++                            printf(_("Score: %i\n"), *score);
+                             if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                                 return -1;
+                             }
+@@ -1145,7 +1162,7 @@ int startGame(int ** gameBoard, int n, i
+                                 return -1;
+                             }
+                             displayGameBoard(gameBoard, n);
+-                            printf("Score: %i\n", *score);
++                            printf(_("Score: %i\n"), *score);
+                             if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                                 return -1;
+                             }
+@@ -1160,7 +1177,7 @@ int startGame(int ** gameBoard, int n, i
+                                 return -1;
+                             }
+                             displayGameBoard(gameBoard, n);
+-                            printf("Score: %i\n", *score);
++                            printf(_("Score: %i\n"), *score);
+                             if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                                 return -1;
+                             }
+@@ -1171,16 +1188,18 @@ int startGame(int ** gameBoard, int n, i
+                         case 's':
+                             stopChrono(chrono);
+                             // On demande le nom que l'utilisateur veut donner à la sauvegarde et on appelle la fonction saveGame pour sauvegarder la partie.
+-                            printf("Nom de la sauvegarde : ");
++                            printf(_("Backup name: "));
+                             scanf(" %19s", saveName);
+                             if(saveGame(saveName, gameBoard, n, score, chrono) == 0){
+-                                printf("\nPartie sauvegardée avec succès\n");
++                                printf(_("\nGame saved successfully\n"));
+                             }else{
+-                                printf("Erreur lors de la sauvagarde de la partie.\n");
++                                printf(_("Error saving the game.\n"));
+                             }
+                             startChrono(chrono);
+                             break;
+                         case 'q':
++                        case 'e':
++                        case '\033':
+                             stopChrono(chrono);
+                             if((q = quitGame(play, ecran, arial20))==1){
+                                 // Le joueur veut continuer la partie
+@@ -1188,7 +1207,7 @@ int startGame(int ** gameBoard, int n, i
+                                     return -1;
+                                 }
+                                 displayGameBoard(gameBoard, n);
+-                                printf("Score: %i\n", *score);
++                                printf(_("Score: %i\n"), *score);
+                                 if(refreshSDLScreenGame(ecran, gameBoard, n, *score, arial20)==-1){
+                                     return -1;
+                                 }
+@@ -1254,7 +1273,7 @@ SDL_Surface * initSDLWindow(){
+     // Création de la surface principale
+     SDL_Surface * ecran = NULL ;
+     if((ecran = SDL_SetVideoMode(WIDTH,HEIGHT,32, SDL_HWSURFACE))==NULL){
+-        fprintf(stderr,"Erreur VideoMode %s\n",SDL_GetError());
++        fprintf(stderr, _("Error VideoMode %s\n"),SDL_GetError());
+         return NULL;
+     }
+ 
+@@ -1271,15 +1290,21 @@ SDL_Surface * initSDLWindow(){
+ }
+ 
+ int main(int argc, char ** argv) {
++#if ENABLE_NLS
++	setlocale(LC_ALL, "");
++	bindtextdomain(DOMAINNAME, "locale");
++	bind_textdomain_codeset(DOMAINNAME, "UTF-8");
++	textdomain(DOMAINNAME);
++#endif
+     // Initialiation de la SDL
+     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) !=0){
+-        fprintf(stderr,"\nUnable to initialize SDL:  %s\n", SDL_GetError());
++        fprintf(stderr,_("\nUnable to initialize SDL:  %s\n"), SDL_GetError());
+         exit(EXIT_FAILURE);
+     }
+ 
+     // Initialisation de SDL_TTF
+     if(TTF_Init() == -1){
+-        fprintf(stderr,"\nUnable to initialize TTF: %s\n", TTF_GetError());
++        fprintf(stderr, _("\nUnable to initialize TTF: %s\n"), TTF_GetError());
+         SDL_Quit();
+         exit(EXIT_FAILURE);
+     }
+@@ -1288,7 +1313,7 @@ int main(int argc, char ** argv) {
+     TTF_Font * arial20 = NULL ;
+     arial20 = TTF_OpenFont("fonts/Arial.ttf",20);
+     if(arial20==NULL){
+-        fprintf(stderr,"\nUnable to load TTF:  %s\n",TTF_GetError());
++        fprintf(stderr,_("\nUnable to load TTF:  %s\n"),TTF_GetError());
+         TTF_Quit(); // On quitte SDL_TTF
+         SDL_Quit(); // On quitte SDL
+         exit(EXIT_FAILURE);
+@@ -1297,7 +1322,7 @@ int main(int argc, char ** argv) {
+     TTF_Font * arialBold35 = NULL ;
+     arialBold35 = TTF_OpenFont("fonts/Arial Bold.ttf",35);
+     if(arialBold35==NULL){
+-        fprintf(stderr,"\nUnable to load TTF:  %s\n",TTF_GetError());
++        fprintf(stderr,_("\nUnable to load TTF:  %s\n"),TTF_GetError());
+         TTF_Quit(); // On quitte SDL_TTF
+         SDL_Quit(); // On quitte SDL
+         exit(EXIT_FAILURE);
+@@ -1306,7 +1331,7 @@ int main(int argc, char ** argv) {
+     TTF_Font * arial14 = NULL ;
+     arial14 = TTF_OpenFont("fonts/Arial Bold.ttf",14);
+     if(arial14==NULL){
+-        fprintf(stderr,"\nUnable to load TTF:  %s\n",TTF_GetError());
++        fprintf(stderr,_("\nUnable to load TTF:  %s\n"),TTF_GetError());
+         TTF_Quit(); // On quitte SDL_TTF
+         SDL_Quit(); // On quitte SDL
+         exit(EXIT_FAILURE);
+@@ -1315,7 +1340,7 @@ int main(int argc, char ** argv) {
+     TTF_Font * arial12 = NULL ;
+     arial12 = TTF_OpenFont("fonts/Arial Bold.ttf",12);
+     if(arial12==NULL){
+-        fprintf(stderr,"\nUnable to load TTF:  %s\n",TTF_GetError());
++        fprintf(stderr,_("\nUnable to load TTF:  %s\n"),TTF_GetError());
+         TTF_Quit(); // On quitte SDL_TTF
+         SDL_Quit(); // On quitte SDL
+         exit(EXIT_FAILURE);
+@@ -1351,9 +1376,9 @@ int main(int argc, char ** argv) {
+     SDL_Color colorTextMenu = {135, 101, 0};
+ 
+     // Ajout des textes du menu sur la fenêtre
+-    SDL_Surface * menuText1 = TTF_RenderText_Blended(arial20, "Appuyez sur N pour demarrer une nouvelle partie!", colorTextMenu);
++    SDL_Surface * menuText1 = TTF_RenderUTF8_Blended(arial20, _("Press N to start a new game!"), colorTextMenu);
+     if(menuText1==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         free2DTab(gameBoard, n);
+         TTF_Quit();
+         SDL_Quit();
+@@ -1365,9 +1390,9 @@ int main(int argc, char ** argv) {
+     SDL_BlitSurface(menuText1,NULL,ecran,&posMenuText1);
+     SDL_FreeSurface(menuText1);
+ 
+-    SDL_Surface * menuText2 = TTF_RenderText_Blended(arial20, "OU", colorTextMenu);
++    SDL_Surface * menuText2 = TTF_RenderUTF8_Blended(arial20, _("OR"), colorTextMenu);
+     if(menuText2==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         free2DTab(gameBoard, n);
+         TTF_Quit();
+         SDL_Quit();
+@@ -1379,9 +1404,9 @@ int main(int argc, char ** argv) {
+     SDL_BlitSurface(menuText2,NULL,ecran,&posMenuText2);
+     SDL_FreeSurface(menuText2);
+ 
+-    SDL_Surface * menuText3 = TTF_RenderText_Blended(arial20, "Appuyez sur L pour charger une partie enregistree!", colorTextMenu);
++    SDL_Surface * menuText3 = TTF_RenderUTF8_Blended(arial20, _("Press L to load a saved game!"), colorTextMenu);
+     if(menuText3==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         free2DTab(gameBoard, n);
+         TTF_Quit();
+         SDL_Quit();
+@@ -1393,9 +1418,9 @@ int main(int argc, char ** argv) {
+     SDL_BlitSurface(menuText3,NULL,ecran,&posMenuText3);
+     SDL_FreeSurface(menuText3);
+ 
+-    SDL_Surface * menuText4 = TTF_RenderText_Blended(arial12, "puis saisissez le nom de la sauvegarde dans le terminal.", colorTextMenu);
++    SDL_Surface * menuText4 = TTF_RenderUTF8_Blended(arial12, _("then enter the name of the backup in the terminal."), colorTextMenu);
+     if(menuText4==NULL){
+-        fprintf(stderr,"erreur: %s",TTF_GetError());
++        fprintf(stderr,_("error: %s"),TTF_GetError());
+         free2DTab(gameBoard, n);
+         TTF_Quit();
+         SDL_Quit();
+@@ -1417,7 +1442,7 @@ int main(int argc, char ** argv) {
+     while(cont){
+         SDL_WaitEvent(&event);
+         switch(event.type){
+-            case SDL_KEYDOWN:
++            case SDL_KEYUP:
+                 switch(event.key.keysym.sym){
+                     case 'n':
+                         cont = 0;
+@@ -1429,10 +1454,15 @@ int main(int argc, char ** argv) {
+                         break;
+                     default:
+                         cont = 1;
++                        break;
++                    case 'q':
++                    case '\033':
++                        goto quit;
+                 }
+                 break;
+             case SDL_QUIT:
+                 cont = 0;
++            quit:
+                 free2DTab(gameBoard, n);
+                 TTF_Quit();
+                 SDL_Quit();
+@@ -1446,7 +1476,7 @@ int main(int argc, char ** argv) {
+     if(choice == 'n'){
+         // Si l'utilisateur a entré 'n', on appelle la fonction "initGameboard".
+         if(initGameboard(gameBoard, n) == -1){
+-            printf("Erreur lors de l'initialisation du plateau de jeu.\n");
++            printf(_("Error initializing the game board.\n"));
+             free2DTab(gameBoard, n);
+             TTF_Quit();
+             SDL_Quit();
+@@ -1457,7 +1487,7 @@ int main(int argc, char ** argv) {
+ 
+         // On demande à l'utilisateur le nom de la sauvegarde qu'il souhaite charger.
+         char saveName[24] = "";
+-        printf("Nom de la sauvegarde à charger : ");
++        printf(_("Name of the save to load: "));
+         scanf(" %19s", saveName);
+ 
+         strcat(saveName, ".txt"); // On ajoute l'xtension ".txt" à la fin du nom
+@@ -1466,14 +1496,14 @@ int main(int argc, char ** argv) {
+         int r;
+         if((r=(loadGame(saveName, gameBoard, n, &score, &chrono))) == 10){
+             // Si la valeur est 10 alors le nom saisie par l'utilisateur n'est pas correct. On libère l'espace alloué au programme et on quitte.
+-            printf("Aucune sauvegarde pour le nom saisi.\n");
++            printf(_("No save for the entered name.\n"));
+             free2DTab(gameBoard, n);
+             TTF_Quit();
+             SDL_Quit();
+             exit(EXIT_SUCCESS);
+         }else if(r == -1){
+             // Si la valeur est -1 alors une erreur s'est produite. On libère l'espace alloué au programme et on quitte.
+-            printf("Erreur lors du chargement de la partie.\n");
++            printf(_("Error loading the game.\n"));
+             free2DTab(gameBoard, n);
+             TTF_Quit();
+             SDL_Quit();
+@@ -1496,4 +1526,4 @@ int main(int argc, char ** argv) {
+     TTF_Quit();
+     SDL_Quit();
+     exit(EXIT_SUCCESS);
+-}
+\ No newline at end of file
++}
+diff -rupN 2048-git.orig/2048.pot 2048-git.new/2048.pot
+--- 2048-git.orig/2048.pot	1970-01-01 01:00:00.000000000 +0100
++++ 2048-git.new/2048.pot	2023-12-16 10:36:03.035285385 +0100
+@@ -0,0 +1,201 @@
++# SOME DESCRIPTIVE TITLE.
++# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
++# This file is distributed under the same license as the 2048 package.
++# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
++#
++#, fuzzy
++msgid  ""
++msgstr ""
++"Project-Id-Version: 2048\n"
++"Report-Msgid-Bugs-To: \n"
++"POT-Creation-Date: 2023-12-16 10:36+0100\n"
++"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
++"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
++"Language-Team: LANGUAGE <LL@li.org>\n"
++"Language: \n"
++"MIME-Version: 1.0\n"
++"Content-Type: text/plain; charset=CHARSET\n"
++"Content-Transfer-Encoding: 8bit\n"
++
++#: 2048.c:549
++#: 2048.c:598
++#: 2048.c:745
++#: 2048.c:759
++#: 2048.c:773
++#: 2048.c:835
++#: 2048.c:882
++#: 2048.c:970
++#: 2048.c:1014
++#, c-format
++msgid  "Error CreateRGBSurface %s\n"
++msgstr ""
++
++#: 2048.c:563
++msgid  "Game won!"
++msgstr ""
++
++#: 2048.c:565
++#: 2048.c:577
++#: 2048.c:614
++#: 2048.c:626
++#: 2048.c:790
++#: 2048.c:802
++#: 2048.c:814
++#: 2048.c:851
++#: 2048.c:936
++#: 2048.c:994
++#: 2048.c:1030
++#: 2048.c:1042
++#: 2048.c:1381
++#: 2048.c:1395
++#: 2048.c:1409
++#: 2048.c:1423
++#, c-format
++msgid  "error: %s"
++msgstr ""
++
++#: 2048.c:575
++#: 2048.c:624
++msgid  "Press Q to exit the game"
++msgstr ""
++
++#: 2048.c:612
++msgid  "Game lost!"
++msgstr ""
++
++#: 2048.c:643
++#, c-format
++msgid  "Congratulations! You have won the game!\n"
++msgstr ""
++
++#: 2048.c:644
++#, c-format
++msgid  "You obtained a score of %i points.\n"
++msgstr ""
++
++#: 2048.c:681
++#, c-format
++msgid  "Game over! The game is no longer possible.\n"
++msgstr ""
++
++#: 2048.c:682
++#, c-format
++msgid  "You have scored %i points.\n"
++msgstr ""
++
++#: 2048.c:788
++msgid  "Use the directional arrows to move the boxes."
++msgstr ""
++
++#: 2048.c:800
++msgid  "Press S to save your game or Q to exit."
++msgstr ""
++
++#: 2048.c:812
++msgid  "For backup, enter the backup name in the terminal."
++msgstr ""
++
++#: 2048.c:1028
++msgid  "Do you really want to leave?"
++msgstr ""
++
++#: 2048.c:1040
++msgid  "Press Y for yes or N for no."
++msgstr ""
++
++#: 2048.c:1062
++#, c-format
++msgid  "Are you sure you want to leave the game? Y/N\n"
++msgstr ""
++
++#: 2048.c:1108
++#: 2048.c:1135
++#: 2048.c:1150
++#: 2048.c:1165
++#: 2048.c:1180
++#: 2048.c:1210
++#, c-format
++msgid  "Score: %i\n"
++msgstr ""
++
++#: 2048.c:1191
++#, c-format
++msgid  "Backup name: "
++msgstr ""
++
++#: 2048.c:1194
++#, c-format
++msgid  ""
++"\n"
++"Game saved successfully\n"
++msgstr ""
++
++#: 2048.c:1196
++#, c-format
++msgid  "Error saving the game.\n"
++msgstr ""
++
++#: 2048.c:1276
++#, c-format
++msgid  "Error VideoMode %s\n"
++msgstr ""
++
++#: 2048.c:1301
++#, c-format
++msgid  ""
++"\n"
++"Unable to initialize SDL:  %s\n"
++msgstr ""
++
++#: 2048.c:1307
++#, c-format
++msgid  ""
++"\n"
++"Unable to initialize TTF: %s\n"
++msgstr ""
++
++#: 2048.c:1316
++#: 2048.c:1325
++#: 2048.c:1334
++#: 2048.c:1343
++#, c-format
++msgid  ""
++"\n"
++"Unable to load TTF:  %s\n"
++msgstr ""
++
++#: 2048.c:1379
++msgid  "Press N to start a new game!"
++msgstr ""
++
++#: 2048.c:1393
++msgid  "OR"
++msgstr ""
++
++#: 2048.c:1407
++msgid  "Press L to load a saved game!"
++msgstr ""
++
++#: 2048.c:1421
++msgid  "then enter the name of the backup in the terminal."
++msgstr ""
++
++#: 2048.c:1479
++#, c-format
++msgid  "Error initializing the game board.\n"
++msgstr ""
++
++#: 2048.c:1490
++#, c-format
++msgid  "Name of the save to load: "
++msgstr ""
++
++#: 2048.c:1499
++#, c-format
++msgid  "No save for the entered name.\n"
++msgstr ""
++
++#: 2048.c:1506
++#, c-format
++msgid  "Error loading the game.\n"
++msgstr ""
+diff -rupN 2048-git.orig/LINGUAS 2048-git.new/LINGUAS
+--- 2048-git.orig/LINGUAS	1970-01-01 01:00:00.000000000 +0100
++++ 2048-git.new/LINGUAS	2023-12-16 09:53:54.865010722 +0100
+@@ -0,0 +1 @@
++fr de
+diff -rupN 2048-git.orig/Makefile 2048-git.new/Makefile
+--- 2048-git.orig/Makefile	2023-12-02 16:15:36.305828287 +0100
++++ 2048-git.new/Makefile	2023-12-16 10:30:32.792338953 +0100
+@@ -1,14 +1,64 @@
 -CC = gcc
 -RM = rm -rf
--EXEC = 2048
 +CROSS_PREFIX=
 +CC = $(CROSS_PREFIX)gcc
 +RM = rm -f
-+EXEC = 2048.prg
+ EXEC = 2048
  SRC = 2048.c
 -LDFLAGS = `sdl-config --cflags --libs`
 -LIBS = SDL_ttf
-+CFLAGS = $(CPU_CFLAGS) `pkg-config --cflags sdl`
++CFLAGS = $(CPU_CFLAGS) -Wall `pkg-config --cflags sdl`
 +LDFLAGS = -s
-+LIBS= `pkg-config --libs SDL_ttf`
++LIBS= `pkg-config --libs SDL_ttf` -lintl -liconv
  
 -all: game
-+all: $(EXEC)
++LINGUAS := fr de
++CATOBJEXT = .gmo
++INSTOBJEXT = .mo
  
 -game:
 -	$(CC) $(SRC) -o $(EXEC) $(LDFLAGS) -l $(LIBS)
-+$(EXEC):
++GETTEXT_PACKAGE = 2048
++MSGFMT = msgfmt
++XGETTEXT = xgettext --from-code=UTF-8
++XGETTEXT_KEYWORDS = \
++	--keyword=_ \
++	--keyword=N_ \
++	--keyword=U_ \
++	--keyword=Q_ \
++	--keyword=P_:1,2 \
++	--keyword=C_:1c,2 \
++	--keyword=NC_:1c,2
++XGETTEXT_ARGS = --no-wrap --width=4 $(XGETTEXT_KEYWORDS)
++MSGMERGE = msgmerge --backup=none --no-fuzzy-matching --previous --update
++
++CATALOGS := $(addprefix locale/, $(addsuffix /LC_MESSAGES/$(GETTEXT_PACKAGE)$(INSTOBJEXT), $(LINGUAS)))
++
++all: $(EXEC) $(CATALOGS)
++
++define PO_template =
++$(1)$(CATOBJEXT): $(1).po $(GETTEXT_PACKAGE).pot
++	$(MSGFMT) -c -v --statistics -o "$$@" $$<
++
++locale/$(1)/LC_MESSAGES/$(GETTEXT_PACKAGE)$(INSTOBJEXT): $(1)$(CATOBJEXT)
++	@mkdir -p locale/$(1)/LC_MESSAGES
++	cp -p $$< $$@
++
++endef
++
++$(foreach lang,$(LINGUAS),$(eval $(call PO_template,$(lang))))
++
++update-po: Makefile $(GETTEXT_PACKAGE).pot
++	@for lang in $(LINGUAS); do \
++	  cp $$lang.po $$lang.old.po; \
++	  echo $(MSGMERGE) $$lang; \
++	  if   $(MSGMERGE) $$lang.po $(GETTEXT_PACKAGE).pot >/dev/null 2>&1; then \
++	    $(RM) $$lang.old.po; \
++	  else \
++	    echo "msgmerge for $$lang failed!"; \
++	    $(RM) $$lang.po; \
++	    mv $$lang.old.po $$lang.po; \
++	  fi; \
++	done
++
++$(EXEC): $(SRC)
 +	$(CC) $(SRC) -o $@ $(CFLAGS) $(LDFLAGS) $(LIBS)
  
  clean:
 -	$(RM) 2048
 \ No newline at end of file
-+	$(RM) $(EXEC)
++	$(RM) $(EXEC) *.gmo $(CATALOGS)
++
++$(GETTEXT_PACKAGE).pot: $(SRC) Makefile
++	$(XGETTEXT) --package-name $(GETTEXT_PACKAGE) $(XGETTEXT_ARGS) -o $@ $(SRC)
+diff -rupN 2048-git.orig/de.po 2048-git.new/de.po
+--- 2048-git.orig/de.po	1970-01-01 01:00:00.000000000 +0100
++++ 2048-git.new/de.po	2023-12-16 09:54:10.241658265 +0100
+@@ -0,0 +1,204 @@
++msgid  ""
++msgstr ""
++"Project-Id-Version: 2048 HEAD\n"
++"Report-Msgid-Bugs-To: \n"
++"POT-Creation-Date: 2023-12-16 09:45+0100\n"
++"PO-Revision-Date: 2004-12-22 12:51+0100\n"
++"Last-Translator: th-otto\n"
++"Language-Team: de <LL@li.org>\n"
++"Language: de\n"
++"MIME-Version: 1.0\n"
++"Content-Type: text/plain; charset=UTF-8\n"
++"Content-Transfer-Encoding: 8bit\n"
++"Plural-Forms: nplurals=2; plural=(n > 1);\n"
++
++#: 2048.c:549
++#: 2048.c:598
++#: 2048.c:745
++#: 2048.c:759
++#: 2048.c:773
++#: 2048.c:835
++#: 2048.c:882
++#: 2048.c:970
++#: 2048.c:1014
++#, c-format
++msgid  "Error CreateRGBSurface %s\n"
++msgstr "Fehler CreateRGBSurface %s\n"
++
++#: 2048.c:563
++msgid  "Game won!"
++msgstr "Spiel gewonnen!"
++
++#: 2048.c:565
++#: 2048.c:577
++#: 2048.c:614
++#: 2048.c:626
++#: 2048.c:790
++#: 2048.c:802
++#: 2048.c:814
++#: 2048.c:851
++#: 2048.c:936
++#: 2048.c:994
++#: 2048.c:1030
++#: 2048.c:1042
++#: 2048.c:1382
++#: 2048.c:1396
++#: 2048.c:1410
++#: 2048.c:1424
++#, c-format
++msgid  "error: %s"
++msgstr "Fehler: %s"
++
++#: 2048.c:575
++#: 2048.c:624
++msgid  "Press Q to exit the game"
++msgstr "Drücke Q um das Spiel zu verlassen"
++
++#: 2048.c:612
++msgid  "Game lost!"
++msgstr "Spiel verloren!"
++
++#: 2048.c:643
++#, c-format
++msgid  "Congratulations! You have won the game!\n"
++msgstr "Glückwunsch! Du hast das Spiel gewonnen!\n"
++
++#: 2048.c:644
++#, c-format
++msgid  "You obtained a score of %i points.\n"
++msgstr "Du hast einen Score von %i Punkten erzielt.\n"
++
++#: 2048.c:681
++#, c-format
++msgid  "Game over! The game is no longer possible.\n"
++msgstr "Game over! Das Spiel ist nocht mehr zu schaffen.\n"
++
++#: 2048.c:682
++#, c-format
++msgid  "You have scored %i points.\n"
++msgstr "Du hast %i Punkte erzielt..\n"
++
++#: 2048.c:788
++msgid  "Use the directional arrows to move the boxes."
++msgstr "Benutze die Cursor-Tasten um die Boxen zu bewegen."
++
++#: 2048.c:800
++msgid  "Press S to save your game or Q to exit."
++msgstr "Drücke S um das Spiel zu speichern, oder Q für Ende."
++
++#: 2048.c:812
++msgid  "For backup, enter the backup name in the terminal."
++msgstr "Für Sicherung, gib den Namen in der Konsole ein"
++
++#: 2048.c:1028
++msgid  "Do you really want to leave?"
++msgstr "Willst du wirklich das Spiel verlassen?"
++
++#: 2048.c:1040
++msgid  "Press Y for yes or N for no."
++msgstr "Drücke J für Ja oder N für Nein."
++
++#: 2048.c:1062
++#, c-format
++msgid  "Are you sure you want to leave the game? Y/N\n"
++msgstr "Bist du sicher dass du das Spiel verlassen willst? J/N\n"
++
++#: 2048.c:1109
++#: 2048.c:1136
++#: 2048.c:1151
++#: 2048.c:1166
++#: 2048.c:1181
++#: 2048.c:1211
++#, c-format
++msgid  "Score: %i\n"
++msgstr "Score: %i\n"
++
++#: 2048.c:1192
++#, c-format
++msgid  "Backup name: "
++msgstr "Sicherungsname : "
++
++#: 2048.c:1195
++#, c-format
++msgid  ""
++"\n"
++"Game saved successfully\n"
++msgstr ""
++"\n"
++"Spiel erfolgreich gespeichert\n"
++
++#: 2048.c:1197
++#, c-format
++msgid  "Error saving the game.\n"
++msgstr "Fehler beim speichen des Spiels.\n"
++
++#: 2048.c:1277
++#, c-format
++msgid  "Error VideoMode %s\n"
++msgstr "Fehler VideoMode %s\n"
++
++#: 2048.c:1302
++#, c-format
++msgid  ""
++"\n"
++"Unable to initialize SDL:  %s\n"
++msgstr ""
++"\n"
++"Fehler in Initialisierung SDL:  %s\n"
++
++#: 2048.c:1308
++#, c-format
++msgid  ""
++"\n"
++"Unable to initialize TTF: %s\n"
++msgstr ""
++"\n"
++"Fehler in Initialisierung TTF: %s\n"
++
++#: 2048.c:1317
++#: 2048.c:1326
++#: 2048.c:1335
++#: 2048.c:1344
++#, c-format
++msgid  ""
++"\n"
++"Unable to load TTF:  %s\n"
++msgstr ""
++"\n"
++"Kann TTF nicht laden:  %s\n"
++
++#: 2048.c:1380
++msgid  "Press N to start a new game!"
++msgstr "Drücke N um ein neues Spiel zu starten"
++
++#: 2048.c:1394
++msgid  "OR"
++msgstr "ODER"
++
++#: 2048.c:1408
++msgid  "Press L to load a saved game!"
++msgstr "Drücke L um ein gespeichertes Spiel zu laden!"
++
++#: 2048.c:1422
++msgid  "then enter the name of the backup in the terminal."
++msgstr "dann gib den Namen des Spiel in der Konsole ein."
++
++#: 2048.c:1480
++#, c-format
++msgid  "Error initializing the game board.\n"
++msgstr "Fehler beim initialisieren des Spielfelds.\n"
++
++#: 2048.c:1491
++#, c-format
++msgid  "Name of the save to load: "
++msgstr "Name der Sicherung : "
++
++#: 2048.c:1500
++#, c-format
++msgid  "No save for the entered name.\n"
++msgstr "Gespeichtertes Spiel nicht gefunden.\n"
++
++#: 2048.c:1507
++#, c-format
++msgid  "Error loading the game.\n"
++msgstr "Fehler beim laden des Spiels.\n"
+diff -rupN 2048-git.orig/fr.po 2048-git.new/fr.po
+--- 2048-git.orig/fr.po	1970-01-01 01:00:00.000000000 +0100
++++ 2048-git.new/fr.po	2023-12-16 09:54:10.234991606 +0100
+@@ -0,0 +1,205 @@
++msgid  ""
++msgstr ""
++"Project-Id-Version: 2048 HEAD\n"
++"Report-Msgid-Bugs-To: \n"
++"POT-Creation-Date: 2023-12-16 09:45+0100\n"
++"PO-Revision-Date: 2004-12-22 12:51+0100\n"
++"Last-Translator: th-otto\n"
++"Language-Team: fr <LL@li.org>\n"
++"Language: fr\n"
++"MIME-Version: 1.0\n"
++"Content-Type: text/plain; charset=UTF-8\n"
++"Content-Transfer-Encoding: 8bit\n"
++"Plural-Forms: nplurals=2; plural=(n > 1);\n"
++
++#: 2048.c:549
++#: 2048.c:598
++#: 2048.c:745
++#: 2048.c:759
++#: 2048.c:773
++#: 2048.c:835
++#: 2048.c:882
++#: 2048.c:970
++#: 2048.c:1014
++#, c-format
++msgid  "Error CreateRGBSurface %s\n"
++msgstr "Erreur CreateRGBSurface %s\n"
++
++#: 2048.c:563
++msgid  "Game won!"
++msgstr "Partie gagnee!"
++
++#: 2048.c:565
++#: 2048.c:577
++#: 2048.c:614
++#: 2048.c:626
++#: 2048.c:790
++#: 2048.c:802
++#: 2048.c:814
++#: 2048.c:851
++#: 2048.c:936
++#: 2048.c:994
++#: 2048.c:1030
++#: 2048.c:1042
++#: 2048.c:1382
++#: 2048.c:1396
++#: 2048.c:1410
++#: 2048.c:1424
++#, c-format
++msgid  "error: %s"
++msgstr "erreur: %s"
++
++#: 2048.c:575
++#: 2048.c:624
++msgid  "Press Q to exit the game"
++msgstr "Appuyez sur Q pour quitter le jeu"
++
++#: 2048.c:612
++msgid  "Game lost!"
++msgstr "Partie perdue!"
++
++#: 2048.c:643
++#, c-format
++msgid  "Congratulations! You have won the game!\n"
++msgstr "Félicitation! Vous avez gagné la partie!\n"
++
++#: 2048.c:644
++#, c-format
++msgid  "You obtained a score of %i points.\n"
++msgstr "Vous avez obtenu un score de %i points.\n"
++
++#: 2048.c:681
++#, c-format
++msgid  "Game over! The game is no longer possible.\n"
++msgstr "Game over! Le jeu n'est plus possible.\n"
++
++#: 2048.c:682
++#, c-format
++msgid  "You have scored %i points.\n"
++msgstr "Vous avez obtenu un score de %i points.\n"
++
++#: 2048.c:788
++msgid  "Use the directional arrows to move the boxes."
++msgstr "Utilisez les fleches directionnelles pour deplacer les cases."
++
++#: 2048.c:800
++msgid  "Press S to save your game or Q to exit."
++msgstr "Appuyez sur S pour sauvegarder votre partie ou Q pour quitter."
++
++#: 2048.c:812
++msgid  "For backup, enter the backup name in the terminal."
++msgstr ""
++"Pour la sauvagarde, saisissez le nom de la sauvegarde dans le terminal."
++
++#: 2048.c:1028
++msgid  "Do you really want to leave?"
++msgstr "Voulez-vous vraiment quitter?"
++
++#: 2048.c:1040
++msgid  "Press Y for yes or N for no."
++msgstr "Appuyez sur Y pour oui ou N pour non."
++
++#: 2048.c:1062
++#, c-format
++msgid  "Are you sure you want to leave the game? Y/N\n"
++msgstr "Voulez-vous veaiment quitter la partie? Y/N\n"
++
++#: 2048.c:1109
++#: 2048.c:1136
++#: 2048.c:1151
++#: 2048.c:1166
++#: 2048.c:1181
++#: 2048.c:1211
++#, c-format
++msgid  "Score: %i\n"
++msgstr "Score: %i\n"
++
++#: 2048.c:1192
++#, c-format
++msgid  "Backup name: "
++msgstr "Nom de la sauvegarde : "
++
++#: 2048.c:1195
++#, c-format
++msgid  ""
++"\n"
++"Game saved successfully\n"
++msgstr ""
++"\n"
++"Partie sauvegardée avec succès\n"
++
++#: 2048.c:1197
++#, c-format
++msgid  "Error saving the game.\n"
++msgstr "Erreur lors de la sauvagarde de la partie.\n"
++
++#: 2048.c:1277
++#, c-format
++msgid  "Error VideoMode %s\n"
++msgstr "Erreur VideoMode %s\n"
++
++#: 2048.c:1302
++#, c-format
++msgid  ""
++"\n"
++"Unable to initialize SDL:  %s\n"
++msgstr ""
++"\n"
++"Unable to initialize SDL:  %s\n"
++
++#: 2048.c:1308
++#, c-format
++msgid  ""
++"\n"
++"Unable to initialize TTF: %s\n"
++msgstr ""
++"\n"
++"Unable to initialize TTF: %s\n"
++
++#: 2048.c:1317
++#: 2048.c:1326
++#: 2048.c:1335
++#: 2048.c:1344
++#, c-format
++msgid  ""
++"\n"
++"Unable to load TTF:  %s\n"
++msgstr ""
++"\n"
++"Unable to load TTF:  %s\n"
++
++#: 2048.c:1380
++msgid  "Press N to start a new game!"
++msgstr "Appuyez sur N pour demarrer une nouvelle partie!"
++
++#: 2048.c:1394
++msgid  "OR"
++msgstr "OU"
++
++#: 2048.c:1408
++msgid  "Press L to load a saved game!"
++msgstr "Appuyez sur L pour charger une partie enregistree!"
++
++#: 2048.c:1422
++msgid  "then enter the name of the backup in the terminal."
++msgstr "puis saisissez le nom de la sauvegarde dans le terminal."
++
++#: 2048.c:1480
++#, c-format
++msgid  "Error initializing the game board.\n"
++msgstr "Erreur lors de l'initialisation du plateau de jeu.\n"
++
++#: 2048.c:1491
++#, c-format
++msgid  "Name of the save to load: "
++msgstr "Nom de la sauvegarde à charger : "
++
++#: 2048.c:1500
++#, c-format
++msgid  "No save for the entered name.\n"
++msgstr "Aucune sauvegarde pour le nom saisi.\n"
++
++#: 2048.c:1507
++#, c-format
++msgid  "Error loading the game.\n"
++msgstr "Erreur lors du chargement de la partie.\n"

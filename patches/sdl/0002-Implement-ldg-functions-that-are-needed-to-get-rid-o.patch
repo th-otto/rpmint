@@ -1,0 +1,809 @@
+From db61d6c971e604054578cde276e84b95e65df735 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Dec 2023 15:04:50 +0100
+Subject: [PATCH 2/7] Implement ldg functions that are needed, to get rid of
+ that dependency
+
+---
+ src/loadso/mint/SDL_sysloadso.c |   8 +-
+ src/loadso/mint/ldg/global.h    |  24 ++++
+ src/loadso/mint/ldg/ldg.h       | 184 ++++++++++++++++++++++++++
+ src/loadso/mint/ldg/ldgapp.c    | 132 +++++++++++++++++++
+ src/loadso/mint/ldg/ldgload.c   | 220 ++++++++++++++++++++++++++++++++
+ src/loadso/mint/ldg/ldgutil.c   | 157 +++++++++++++++++++++++
+ 6 files changed, 721 insertions(+), 4 deletions(-)
+ create mode 100644 src/loadso/mint/ldg/global.h
+ create mode 100644 src/loadso/mint/ldg/ldg.h
+ create mode 100644 src/loadso/mint/ldg/ldgapp.c
+ create mode 100644 src/loadso/mint/ldg/ldgload.c
+ create mode 100644 src/loadso/mint/ldg/ldgutil.c
+
+diff --git a/src/loadso/mint/SDL_sysloadso.c b/src/loadso/mint/SDL_sysloadso.c
+index d6dd732c..8e95a036 100644
+--- a/src/loadso/mint/SDL_sysloadso.c
++++ b/src/loadso/mint/SDL_sysloadso.c
+@@ -28,14 +28,14 @@
+ 
+ #include <stdio.h>
+ #include <gem.h>
+-#include <ldg.h>
++#include "ldg/ldg.h"
+ 
+ #include "SDL_loadso.h"
+ 
+ void *SDL_LoadObject(const char *sofile)
+ {
+ 	const char *loaderror = "Unknown error";
+-	void *handle = (void *)ldg_open((char *)sofile, ldg_global);
++	void *handle = (void *)ldg_open(sofile, aes_global);
+ 	if ( handle == NULL ) {
+ 		SDL_SetError("Failed loading %s: %s", sofile, loaderror);
+ 	}
+@@ -45,7 +45,7 @@ void *SDL_LoadObject(const char *sofile)
+ void *SDL_LoadFunction(void *handle, const char *name)
+ {
+ 	const char *loaderror = "Unknown error";
+-	void *symbol = (void *)ldg_find((char *)name, (LDG *)handle);
++	void *symbol = (void *)ldg_find(name, (LDG *)handle);
+ 	if ( symbol == NULL ) {
+ 		SDL_SetError("Failed loading %s: %s", name, loaderror);
+ 	}
+@@ -55,7 +55,7 @@ void *SDL_LoadFunction(void *handle, const char *name)
+ void SDL_UnloadObject(void *handle)
+ {
+ 	if ( handle != NULL ) {
+-		ldg_close((LDG *)handle, ldg_global);
++		ldg_close((LDG *)handle, aes_global);
+ 	}
+ }
+ 
+diff --git a/src/loadso/mint/ldg/global.h b/src/loadso/mint/ldg/global.h
+new file mode 100644
+index 00000000..1f480cff
+--- /dev/null
++++ b/src/loadso/mint/ldg/global.h
+@@ -0,0 +1,24 @@
++/*
++ * LDG : Gem Dynamical Libraries
++ * Copyright (c) 1997-2004 Olivier Landemarre, Dominique Bereziat & Arnaud Bercegeay
++ *
++ * Some global definitions
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
++ */
++
++void ldg_set_error	( int);
++LDG* ldg_load	( int apid, const char *path);
++int  ldg_unload	( int apid, LDG *ldg);
+diff --git a/src/loadso/mint/ldg/ldg.h b/src/loadso/mint/ldg/ldg.h
+new file mode 100644
+index 00000000..6962a908
+--- /dev/null
++++ b/src/loadso/mint/ldg/ldg.h
+@@ -0,0 +1,184 @@
++/*
++ * LDG : Gem Dynamical Libraries
++ * Copyright (c) 1997-2004 Olivier Landemarre, Dominique Bereziat & Arnaud Bercegeay
++ *
++ * Header file of LDG devel library, should be included after the AES header
++ *
++ * Current version is 2.34
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
++ */
++
++#ifndef __LDG__
++#define __LDG__
++
++
++#if defined(__PUREC__) || defined(__TURBOC__)
++#define CDECL cdecl
++#else
++#include <compiler.h>
++#define CDECL __CDECL
++#endif
++
++#ifdef __GEMLIB__
++#define ldg_global	aes_global
++#else
++#if defined(__PUREC__) || defined(__TURBOC__)	/* For Pure C users using PCGEMLIB */
++#define ldg_global	_GemParBlk.global
++#endif
++#endif
++
++#define LDG_QUIT       	0x4C4A 		/* ldg->client : a lib discharged */
++#define LDG_LOST_LIB	0x4C4D		/* ldg->client : a lib lost */
++#define LDG_COOKIE     	0x4C44474DL	/* 'LDGM' */
++#define PATHLEN			128
++
++/*
++ * Data structures
++ */
++
++typedef struct entrie {
++	const char *name;  	/* Function name */
++	const char *info;  	/* Describe the prototype of the function */
++	void *func;  	/* Function address */
++} PROC;
++
++/* 
++ * The LDG-library descriptor (private)
++ */
++
++typedef struct ldg {
++	long magic;				/* magic number ('LDGM')   */
++	short vers;				/* library version 	*/
++	short id;				/* AES-id of launcher */
++	short num;				/* count of avalaible functions */
++	const PROC *list;		/* pointer to the functions list */
++	const char *infos;		/* describe the library */
++	void *baspag;			/* basepage of library */
++/* from version 0.99 */
++	unsigned short flags;	/* library flags ( shared, resident, locked) */
++/* from version 0.99c */
++	void (*close)(void);	/* fonction launched by ldg_term() */
++/* from version 1.00 */
++	short vers_ldg;			/* LDG-protocol version */
++	char path[PATHLEN];		/* real path of the lib */
++	long user_ext;			/* own library extension */
++	long addr_ext;			/* for future extension */
++} LDG;
++
++/*
++ * The LDG cookie
++ */
++
++typedef struct {
++	short version;			/* The cookie number version */
++	char path[PATHLEN];		/* Path of LDG-libraries */
++	short garbage;			/* The garbage collector time */
++	short idle;				/* Obsolet : for backward compatibility */
++	
++	LDG*  CDECL (*ldg_open)	( const char *lib, short *gl); 
++							/* Open a library */
++	short CDECL (*ldg_close) ( LDG *ldg, short *gl);  
++							/* Close a library */
++	void* CDECL (*ldg_find)	( const char *fnc, LDG *ldg);
++							/* Find a function in a library */
++	LDG*  CDECL (*ldg_open_ev)( const char *lib, short *gl, void (*)(short*));
++							/* Obsolet : for backward compatibility */
++	short  error;			/* Last error occuring */
++	void  CDECL (*ldg_garbage)( short *gl);
++							/* Release unused libs */
++	void  CDECL	(*ldg_reset)( short *gl);
++							/* Release all libs */
++	void* internal;			/* Reserved */
++	short CDECL (*ldg_libpath)( const char *, short *global);
++							/* Find the path of a library */
++} LDG_INFOS;
++
++/*
++ * This structure is used by ldg_init() to initiate the
++ * the LDG-protocol inside a LDG-library.
++ */
++
++typedef struct ldglib {
++	short vers;   			/* library version */
++	short num;    			/* count of avalaible functions */
++	const PROC *list;		/* pointer to the functions list */
++	const char *infos; 		/* description of the lib */
++	unsigned short flags;	/* library flags (shared, locked, resident) */
++	void (*close)(void);	/* function executed by ldg_term()*/
++	long user_ext;			/* own library extension */
++} LDGLIB;
++
++/* value of the 'flag' field */
++#define LDG_NOT_SHARED	0x1		/* the library is unshareable */
++#define LDG_LOCKED		0x2		/* the library is locked */
++#define LDG_RESIDENT	0x4 	/* the library is memory resident */
++#define LDG_STDCALL		0x100	/* a2/d2 are not scratch register - private */
++
++/* Errors returned by ldg_error() */
++#define LDG_LIB_FULLED	-1
++#define LDG_APP_FULLED	-2
++#define LDG_ERR_EXEC	-3
++#define LDG_BAD_FORMAT	-4
++#define LDG_LIB_LOCKED	-6
++#define LDG_NO_MANAGER	-7
++#define LDG_NOT_FOUND	-8
++#define LDG_BAD_LIB		LDG_BAD_FORMAT
++#define LDG_NO_MEMORY	-9
++#define LDG_TIME_IDLE	-10
++#define LDG_NO_TSR		-11
++#define LDG_BAD_TSR		-12
++#define LDG_NO_FUNC		-13
++
++/* Client functions */
++LDG*	ldg_open	( const char *name, short *gl);
++short	ldg_close	( LDG *lib, short *gl);
++short	ldg_error	( void);
++void*	ldg_find	( const char *name, LDG *ldg);
++short 	ldg_libpath	( const char *path, short *gl);
++
++/* Server functions */
++int		ldg_init	( const LDGLIB *libldg);
++const char   *ldg_getpath	( void);
++
++/* Diverse functions */
++int 	ldg_cookie	( long, long *);
++void 	ldg_debug	( const char *, ...);
++void*	ldg_Malloc	( long size);
++void*	ldg_Calloc	( long count,long size);
++int 	ldg_Free	( void *memory);
++void*	ldg_Realloc	( void *oldblk, long oldsize, long newsize);
++#ifndef __mcoldfire__
++void	ldg_cpush 	( void);
++#endif
++long CDECL ldg_callback( void *f, ...);
++
++/* For backward compatibility */
++#define ldg_exec(a,b)	ldg_open( b, ldg_global)
++#define ldg_exec_evnt(a,b,c)	ldg_open( b, ldg_global)
++#define ldg_term(a,b)	ldg_close( b, ldg_global)
++#define ldg_libexec_evnt(a,b,c)	ldg_open( a, b)
++#define ldg_libexec(a,b)	ldg_open( a, b)
++#define ldg_libterm(a,b)	ldg_close( a,b)
++
++/* C-library version (currently 1.20) */
++struct _ldg_version {
++	const char *name;
++	short  num;
++};
++
++extern struct _ldg_version  ldg_version;
++
++#endif /* __LDG__ */
+diff --git a/src/loadso/mint/ldg/ldgapp.c b/src/loadso/mint/ldg/ldgapp.c
+new file mode 100644
+index 00000000..118d12c0
+--- /dev/null
++++ b/src/loadso/mint/ldg/ldgapp.c
+@@ -0,0 +1,132 @@
++/*
++ * LDG : Gem Dynamical Libraries
++ * Copyright (c) 1997-2004 Olivier Landemarre, Dominique Bereziat & Arnaud Bercegeay
++ *
++ * Binding of functions provided by LDGM cookies
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
++ */
++
++#include <stddef.h>
++#include <string.h>
++#include "ldg.h"
++#include "global.h"
++
++/* Binding des fonctions du cookies */
++
++LDG *ldg_open(const char *lib, short *gl)
++{
++	LDG_INFOS *cook;
++
++	if (ldg_cookie(LDG_COOKIE, (long *) &cook) && cook->version >= 0x0200 && cook->ldg_open)
++		return (*cook->ldg_open) (lib, gl);
++	/* Si pas TSR, chargement direct */
++	return ldg_load(gl[2], lib);
++}
++
++
++void *ldg_find(const char *name_fct, LDG *ldg)
++{
++	LDG_INFOS *cook;
++	static int lastpos = 0;
++	int i, j;
++
++	if (ldg_cookie(LDG_COOKIE, (long *) &cook))
++	{
++		if (cook->version >= 0x200 && cook->ldg_find)
++			return (*cook->ldg_find) (name_fct, ldg);
++	}
++	if (ldg == NULL)
++	{
++		ldg_set_error(LDG_NO_FUNC);
++		return NULL;
++	}
++	for (i = 0; i < ldg->num; i++)
++	{
++		j = (i + lastpos) % ldg->num;
++		if (!strcmp(ldg->list[j].name, name_fct))
++		{
++			lastpos = j + 1;
++			return ((void *) ldg->list[j].func);
++		}
++	}
++	return NULL;
++}
++
++
++short ldg_close(LDG *ldg, short *global)
++{
++	LDG_INFOS *cook;
++
++	if (ldg_cookie(LDG_COOKIE, (long *) &cook) && cook->version >= 0x210 && cook->ldg_close)
++		return (*cook->ldg_close) (ldg, global);
++	/* Si pas de cookie, d‚chargement direct */
++	return ldg_unload(global[2], ldg);
++}
++
++
++/* 
++ * Retourne l'erreur associ‚ … la fonction ldg_exec()
++ *			 0 	pas d'erreur
++ *			-1	plus de place pour d‚clarer une lib	
++ *			-2  plus de place pour d‚clarer un client
++ *			-3  lib non ‚xecutable (erreur Pexec)
++ *			-4  mauvais format de lib
++ *			-6  librairie v‚rouill‚e
++ *			-8  lib non trouv‚e
++ *			-9  erreur m‚moire
++ *		    -11	pas de cookie
++ *
++ *	valeurs obsolettes avec la version 2.00 des LDG:
++ *			-5  pas de r‚ponse du manager
++ *			-7  LDG manager non trouv‚e 
++ *			-10 Time Idle
++ */
++
++short ldg_error(void)
++{
++	LDG_INFOS *cook;
++
++	if (ldg_cookie(LDG_COOKIE, (long *) &cook))
++	{
++		if (cook->version >= 0x210)
++		{
++			short err = cook->error;
++
++			cook->error = 0;
++			return err;
++		} else
++			return LDG_BAD_TSR;
++	}
++	return LDG_NO_TSR;
++}
++
++/*
++ *	Cherche le chemin d'une librairie
++ */
++
++short ldg_libpath(const char *path, short *gl)
++{
++	LDG_INFOS *cook;
++
++	if (ldg_cookie(LDG_COOKIE, (long *) &cook))
++	{
++		if (cook->version >= 0x0301 && cook->ldg_libpath)
++			return (*cook->ldg_libpath) (path, gl);
++		else
++			return LDG_BAD_TSR;
++	}
++	return LDG_NO_TSR;
++}
+diff --git a/src/loadso/mint/ldg/ldgload.c b/src/loadso/mint/ldg/ldgload.c
+new file mode 100644
+index 00000000..e7366b7f
+--- /dev/null
++++ b/src/loadso/mint/ldg/ldgload.c
+@@ -0,0 +1,220 @@
++/*
++ * LDG : Gem Dynamical Libraries
++ * Copyright (c) 1997-2010 Olivier Landemarre, Dominique Bereziat & Arnaud Bercegeay
++ *
++ * Low-level functions to load and unload a LDG-library
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
++ */
++
++ /*   13 fev 2010 : Patch from Mikro  : Fix memory protection issue + some clean up       */
++
++#include <string.h>
++#include <stdlib.h>
++#include <stdio.h>
++#if defined(__PUREC__) || defined(__VBCC__)
++#include <tos.h>
++#ifndef BASEPAGE
++#define	BASEPAGE BASPAG
++#endif
++#endif
++#if defined(__GNUC__) || defined(__SOZOBONX__)
++# if (__GNUC__ > 2) || ( __GNUC_MINOR__ > 8 )
++#  include <mint/basepage.h>
++# else
++#  include <basepage.h>
++# endif
++# include <osbind.h>
++# include <mintbind.h>
++#endif
++
++#include "ldg.h"
++#include "global.h"
++
++/*
++ * Load a module and returns the address
++ * of the LDG structure of the module.
++ * Apid: id launcher.
++ */
++LDG *ldg_load(int apid, const char *path)
++{
++	LDG *ldg = NULL;
++	BASEPAGE *module = NULL;
++	char *offsetxt;
++	char smallbloc[24];
++	char *mbloc = NULL;
++	char *ldg_global_env = NULL;
++	long size_env;
++
++	/* 
++	 * The address of the descriptor of the lib (LDG)
++	 * Is provided by the library (can be a
++	 * Program memory protected) and is transmitted
++	 * Between lib and client via an environment variable!
++	 */
++
++	/* to recover the environment of the calling program create a bogus basepage */
++	module = (BASEPAGE *) Pexec(5, NULL, "", NULL);
++	if (module)
++	{
++		ldg_global_env = module->p_env;	/* recuperation de l'environnement */
++
++		if (ldg_global_env)
++		{
++			char *env;
++
++			size_env = 0L;
++			env = ldg_global_env;
++			while (*env)
++			{
++				while (*env)
++				{
++					size_env++;
++					env++;
++				}
++				env++;
++				size_env++;
++			}
++			if (size_env)
++			{
++				mbloc = (char *) Malloc(size_env + 24);
++			}
++		}
++	}
++
++	if (mbloc)
++	{
++		offsetxt = mbloc;
++	} else
++	{
++		offsetxt = smallbloc;
++	}
++#ifdef __GNUC__
++	sprintf(offsetxt, "OFFSETLDG=%ld%c%c", (long) &ldg, '\0', '\0');
++#else
++	strcpy(offsetxt, "OFFSETLDG=");
++	ltoa((long) &ldg, offsetxt + 10, 10);
++	offsetxt[strlen(offsetxt) + 1] = '\0';
++#endif
++	if (mbloc)
++	{									/* copy the environment */
++		char *pt, *env;
++
++		pt = offsetxt;
++		env = ldg_global_env;
++		while (*pt)
++			pt++;
++		pt++;
++		while (*env)
++		{
++			while (*env)
++			{
++				*pt++ = *env++;
++			}
++			*pt++ = *env++;
++		}
++		*pt = 0;
++	}
++	if (module)
++	{
++		Mfree(module->p_env);
++		Mfree(module);
++		module = NULL;
++	}
++
++	/* Load, don't go */
++	module = (BASEPAGE *) Pexec(3, (char *) path, NULL, offsetxt);
++	if (mbloc)
++		Mfree(mbloc);
++	if ((long) module < 0L)
++	{
++		ldg_set_error(LDG_ERR_EXEC);
++		return NULL;					/* echec de Pexec */
++	}
++
++	/* Empty the cache */
++#ifndef __mcoldfire__
++	/* Why is this necessary? Pexec(3) should flush the caches internally. */
++	/* Anyway, this is never necessary on modern ColdFire operating systems. */
++	ldg_cpush();
++#endif
++
++	/* Just go */
++	(void) Pexec(4, NULL, module, NULL);
++
++	/* Empty the cache */
++#ifndef __mcoldfire__
++	/* Why is this necessary? The caches were flushed before Pexec(4). */
++	ldg_cpush();
++#endif
++	Pwait();
++
++	if (ldg == NULL ||					/* Not a library */
++		ldg->magic != LDG_COOKIE)		/* wrong format library */
++	{
++		ldg_set_error(LDG_BAD_FORMAT);
++		Mfree(module->p_env);
++		Mfree(module);
++		return NULL;
++	}
++
++	ldg->id = (short) (apid & 0xFFFF);	/* now contains the id of the launcher */
++	ldg->baspag = module;
++
++	/* since version 1.00 */
++	if (ldg->vers_ldg >= 0x100)
++	{
++		if (strchr(path, '\\') == NULL &&
++			strchr(path, '/') == NULL)
++		{
++			char currpath[PATHLEN];
++
++			currpath[0] = Dgetdrv() + 'A';
++			currpath[1] = ':';
++			currpath[2] = '\\';
++			currpath[3] = '\0';
++			Dgetpath(currpath + 2, 0);
++			strncpy(ldg->path, currpath, PATHLEN - 1);
++			strcat(ldg->path, "\\");
++			strcat(ldg->path, path);
++		} else
++		{
++			strncpy(ldg->path, path, PATHLEN - 1);
++		}
++	}
++	return ldg;
++}
++
++
++/*
++ * Remove a module from Memory
++ */
++int ldg_unload(int apid, LDG *ldg)
++{
++	(void) apid;
++	if (ldg)
++	{
++		if (ldg->close)
++			(*ldg->close) ();
++		Mfree(((BASEPAGE *) ldg->baspag)->p_env);
++		Mfree(ldg->baspag);
++		/* At this point we can't use 'ldg' structure anymore.
++		 * Formally we've released only ldg->baspag but 'ldg' points
++		 * to static LDG struct in the module, i.e. it's part of
++		 * process TPA which was just released.
++		 */
++	}
++	return 0;
++}
+diff --git a/src/loadso/mint/ldg/ldgutil.c b/src/loadso/mint/ldg/ldgutil.c
+new file mode 100644
+index 00000000..b1db0862
+--- /dev/null
++++ b/src/loadso/mint/ldg/ldgutil.c
+@@ -0,0 +1,157 @@
++/*
++ * LDG : Gem Dynamical Libraries
++ * Copyright (c) 1997-2004 Olivier Landemarre, Dominique Bereziat & Arnaud Bercegeay
++ *
++ * Some usefull functions (for LDG kernel & client application)
++ *
++ * This library is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * This library is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with this library; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
++ *
++ * Patch Coldfire Vincent Riviere
++ */
++
++#include <string.h>
++#include <stdlib.h>
++#include <stdarg.h>
++#include <stdio.h>
++#include "ldg.h"
++#include "global.h"
++
++/*#include <gem.h>*/
++#if defined(__PUREC__) || defined(__VBCC__)
++#include <tos.h>
++#endif
++#if defined(__GNUC__) || defined(__SOZOBONX__)
++#include <osbind.h>
++#define BASPAG	BASEPAGE
++#endif
++
++#define MagX_COOKIE     0x4D616758L		/* 'MagX' */
++#define MiNT_COOKIE     0x4D694E54L		/* 'MiNT' */
++
++
++int ldg_cookie(long cookie, long *value)
++{
++	long *cookiejar = (long *) Setexc(0x5a0 / 4, (void (*)())-1);
++
++	if (cookiejar)
++	{
++		while (*cookiejar)
++		{
++			if (*cookiejar == cookie)
++			{
++				if (value)
++					*value = *++cookiejar;
++				return 1;
++			}
++			cookiejar += 2;
++		}
++	}
++	return 0;
++}
++
++
++
++/*
++ * Error handling: the error code is
++ * written to the field of the LDGM cookie dedicated to
++ * this purpose.
++ */
++void ldg_set_error(int code)
++{
++	LDG_INFOS *cook;
++
++	if (ldg_cookie(LDG_COOKIE, (long *) &cook) && cook->version >= 0x0210)
++		cook->error = (short) (code & 0xFFFF);
++}
++
++
++#if 0
++/*
++ * Debug function
++ * New version if the <format> string is
++ * the format of a GEM alert, use form_alert
++ */
++void ldg_debug(const char *format, ...)
++{
++	char *path = NULL;
++	char debug[255];
++	va_list arglist;
++	FILE *log;
++
++	/* Temporary, one could also use the cookie
++	 * because it would be more flexible
++	 */
++	shel_envrn(&path, "LDG_DEBUG=");
++	if (path == NULL)
++		return;
++
++	/* format */
++	if (format)
++	{
++		va_start(arglist, format);
++		vsprintf(debug, format, arglist);
++		va_end(arglist);
++		if (*format == '[')
++			form_alert(1, debug);
++		else
++		{
++			log = fopen(path, "a");
++			if (log)
++				fputs(debug, log);
++		}
++	} else
++	{
++		log = fopen(path, "w");
++		if (log)
++			fclose(log);
++	}
++}
++#endif
++
++
++#ifndef __mcoldfire__
++/*
++ *  ldg_cpush
++ *
++ * Empty caches and data processor instruction
++ * By calling the asm function "cpush".
++ * This code can be called from the 68040 and must be
++ * executed in supervisor mode (hence the use of Supexec).
++ *
++ * 1st version April 17, 2002 by Arnaud Bercegeay <bercegeay@atari.org>
++ */
++
++#define CPU_COOKIE 0x5F435055UL			/* _CPU */
++
++void ldg_cpush(void)
++{
++	static long _cpu = -1;
++
++	static unsigned short const do_cpush[] = {
++		0x4E71,							/* NOP         ; 1 nop useful for some 68040 */
++		0xF4F8,							/* CPUSHA BC   ; emptying caches data & instruction */
++		0x4E75							/* RTS         ; end of the procedure */
++	};
++
++	if (_cpu < 0)
++	{
++		ldg_cookie(CPU_COOKIE, &_cpu);
++		_cpu &= 0xFFFF;
++	}
++
++	if (_cpu > 30)
++		Supexec((long (*)()) do_cpush);
++}
++#endif
+-- 
+2.41.0
+

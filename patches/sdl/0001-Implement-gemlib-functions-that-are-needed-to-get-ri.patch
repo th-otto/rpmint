@@ -1,0 +1,1695 @@
+From 4e626bebefa6833ebcbc9199dc0eb368f051c16d Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Dec 2023 13:46:21 +0100
+Subject: [PATCH 1/7] Implement gemlib functions that are needed, to get rid of
+ that dependency
+
+---
+ configure                      | 10885 ++++++++++++++++++-------------
+ configure.ac                   |     3 +-
+ src/video/gem/SDL_gemevents.c  |    99 +-
+ src/video/gem/SDL_gemglobals.c |    29 +
+ src/video/gem/SDL_gemlib.c     |   610 ++
+ src/video/gem/SDL_gemvideo.c   |   239 +-
+ src/video/gem/SDL_gemvideo.h   |    18 +-
+ src/video/gem/SDL_gemwm.c      |     6 +-
+ src/video/gem/gem_aesP.h       |    67 +
+ src/video/gem/gem_vdiP.h       |   106 +
+ src/video/gem/vdi_dummy.c      |     7 +
+ 11 files changed, 7365 insertions(+), 4704 deletions(-)
+ create mode 100644 src/video/gem/SDL_gemglobals.c
+ create mode 100644 src/video/gem/SDL_gemlib.c
+ create mode 100644 src/video/gem/gem_aesP.h
+ create mode 100644 src/video/gem/gem_vdiP.h
+ create mode 100644 src/video/gem/vdi_dummy.c
+
+diff --git a/configure.ac b/configure.ac
+index 458ee6d2..f40158c5 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1657,7 +1657,6 @@ CheckAtariGemVideo()
+             video_gem=yes
+             AC_DEFINE(SDL_VIDEO_DRIVER_GEM)
+             SOURCES="$SOURCES $srcdir/src/video/gem/*.c"
+-            SDL_LIBS="$SDL_LIBS -lgem"
+             have_video=yes
+         fi
+     fi
+@@ -2206,7 +2205,7 @@ CheckAtariLdg()
+         if test x$have_ldg_hdr = xyes -a x$have_ldg_lib = xyes; then
+             AC_DEFINE(SDL_LOADSO_LDG)
+             SOURCES="$SOURCES $srcdir/src/loadso/mint/*.c"
+-            SDL_LIBS="$SDL_LIBS -lldg -lgem"
++            SDL_LIBS="$SDL_LIBS -lldg"
+             have_loadso=yes
+         fi
+     fi
+diff --git a/src/video/gem/SDL_gemevents.c b/src/video/gem/SDL_gemevents.c
+index f8a26765..51277101 100644
+--- a/src/video/gem/SDL_gemevents.c
++++ b/src/video/gem/SDL_gemevents.c
+@@ -84,12 +84,14 @@ void GEM_InitOSKeymap(_THIS)
+ 
+ void GEM_PumpEvents(_THIS)
+ {
+-	short prevkc=0, mousex, mousey, mouseb, kstate;
++	short prevkc=0, mousex, mousey, mouseb;
+ 	int i, quit = 0;
+ 	SDL_keysym keysym;
+ 	Uint32 cur_tick;
+ 	static Uint32 prev_now = 0, prev_msg = 0;
+ 	static short latest_msg_id = 0;
++	EVMULT_IN em_in;
++	EVMULT_OUT em_out;
+ 
+ 	cur_tick = SDL_GetTicks();
+ 	if (prev_now == cur_tick) {
+@@ -114,19 +116,14 @@ void GEM_PumpEvents(_THIS)
+ 		--latest_msg_id;
+ 	}
+ 
++	em_in.emi_flags = MU_MESAG|MU_TIMER|MU_KEYBD;
++	em_in.emi_tlow = 1000;
++	em_in.emi_thigh = 0;
+ 	while (!quit) {
+ 		int resultat;
+-		short buffer[8], kc, dummy;
+-
+-		resultat = evnt_multi(
+-			MU_MESAG|MU_TIMER|MU_KEYBD,
+-			0,0,0,
+-			0,0,0,0,0,
+-			0,0,0,0,0,
+-			buffer,
+-			1000,
+-			&dummy,&dummy,&dummy,&kstate,&kc,&dummy
+-		);
++		short buffer[8];
++
++		resultat = evnt_multi_fast(&em_in, buffer, &em_out);
+ 
+ 		/* Message event ? */
+ 		if (resultat & MU_MESAG)
+@@ -134,10 +131,10 @@ void GEM_PumpEvents(_THIS)
+ 
+ 		/* Keyboard event ? */
+ 		if (resultat & MU_KEYBD) {
+-			do_keyboard_special(kstate, cur_tick);
+-			if (prevkc != kc) {
+-				do_keyboard(kc, cur_tick);
+-				prevkc = kc;
++			do_keyboard_special(em_out.emo_kmeta, cur_tick);
++			if (prevkc != em_out.emo_kreturn) {
++				do_keyboard(em_out.emo_kreturn, cur_tick);
++				prevkc = em_out.emo_kreturn;
+ 			}
+ 		}
+ 
+@@ -150,8 +147,8 @@ void GEM_PumpEvents(_THIS)
+ 	GEM_CheckMouseMode(this);
+ 
+ 	/* Update mouse state */
+-	graf_mkstate(&mousex, &mousey, &mouseb, &kstate);
+-	do_keyboard_special(kstate, cur_tick);
++	graf_mkstate(&mousex, &mousey, &mouseb, &em_out.emo_kmeta);
++	do_keyboard_special(em_out.emo_kmeta, cur_tick);
+ 	do_mouse_motion(this, mousex, mousey);
+ 	do_mouse_buttons(this, mouseb);
+ 
+@@ -160,12 +157,12 @@ void GEM_PumpEvents(_THIS)
+ 		/* Key pressed ? */
+ 		if (gem_currentkeyboard[i] && !gem_previouskeyboard[i])
+ 			SDL_PrivateKeyboard(SDL_PRESSED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_TRUE, kstate));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_TRUE, em_out.emo_kmeta));
+ 
+ 		/* Key unpressed ? */
+ 		if (gem_previouskeyboard[i] && !gem_currentkeyboard[i])
+ 			SDL_PrivateKeyboard(SDL_RELEASED,
+-				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, kstate));
++				SDL_Atari_TranslateKey(i, &keysym, SDL_FALSE, em_out.emo_kmeta));
+ 	}
+ 
+ 	SDL_memcpy(gem_previouskeyboard,gem_currentkeyboard,sizeof(gem_previouskeyboard));
+@@ -176,10 +173,7 @@ void GEM_PumpEvents(_THIS)
+ 			(SDL_GetAppState() & SDL_APPACTIVE)
+ 			? GEM_title_name : GEM_icon_name;
+ 		if (window_name) {
+-			wind_set(GEM_handle,WF_NAME,
+-				(short)(((unsigned long)window_name)>>16),
+-				(short)(((unsigned long)window_name) & 0xffff),
+-				0,0);
++			wind_set_str(GEM_handle,WF_NAME,window_name);
+ 		}
+ 		GEM_refresh_name = SDL_FALSE;
+ 	}
+@@ -200,11 +194,11 @@ static int do_messages(_THIS, short *message, short latest_msg_id)
+ 			quit=1;
+ 			break;
+ 		case WM_MOVED:
+-			wind_set(message[3],WF_CURRXYWH,message[4],message[5],message[6],message[7]);
++			wind_set_grect(message[3],WF_CURRXYWH,(GRECT *)&message[4]);
+ 			update_work_area = 1;
+ 			break;
+ 		case WM_TOPPED:
+-			wind_set(message[3],WF_TOP,message[4],0,0,0);
++			wind_set_int(message[3],WF_TOP,message[4]);
+ 			/* Continue with TOP event processing */
+ 		case WM_ONTOP:
+ 			SDL_PrivateAppActive(1, SDL_APPINPUTFOCUS);
+@@ -212,12 +206,12 @@ static int do_messages(_THIS, short *message, short latest_msg_id)
+ 			break;
+ 		case WM_REDRAW:
+ 			if (!GEM_lock_redraw) {
+-				GEM_wind_redraw(this, message[3], &message[4], SDL_FALSE);
++				GEM_wind_redraw(this, message[3], (GRECT *)&message[4], SDL_FALSE);
+ 			}
+ 			break;
+ 		case WM_ICONIFY:
+ 		case WM_ALLICONIFY:
+-			wind_set (message[3],WF_ICONIFY,message[4],message[5],message[6],message[7]);
++			wind_set_grect (message[3],WF_ICONIFY,(GRECT *)&message[4]);
+ 			/* If we're active, make ourselves inactive */
+ 			if ( SDL_GetAppState() & SDL_APPACTIVE ) {
+ 				/* Send an internal deactivate event */
+@@ -225,59 +219,50 @@ static int do_messages(_THIS, short *message, short latest_msg_id)
+ 			}
+ 			/* Update window title */
+ 			if (GEM_refresh_name && GEM_icon_name) {
+-				wind_set(GEM_handle,WF_NAME,
+-					(short)(((unsigned long)GEM_icon_name)>>16),
+-					(short)(((unsigned long)GEM_icon_name) & 0xffff),
+-					0,0);
++				wind_set_str(GEM_handle,WF_NAME, GEM_icon_name);
+ 				GEM_refresh_name = SDL_FALSE;
+ 			}
+ 			GEM_iconified = SDL_TRUE;
+ 			update_work_area = 1;
+ 			break;
+ 		case WM_UNICONIFY:
+-			wind_set (message[3],WF_UNICONIFY,message[4],message[5],message[6],message[7]);
++			wind_set_grect (message[3],WF_UNICONIFY, (GRECT *)&message[4]);
+ 			/* If we're not active, make ourselves active */
+ 			if ( !(SDL_GetAppState() & SDL_APPACTIVE) ) {
+ 				/* Send an internal activate event */
+ 				SDL_PrivateAppActive(1, SDL_APPACTIVE);
+ 			}
+ 			if (GEM_refresh_name && GEM_title_name) {
+-				wind_set(GEM_handle,WF_NAME,
+-					(short)(((unsigned long)GEM_title_name)>>16),
+-					(short)(((unsigned long)GEM_title_name) & 0xffff),
+-					0,0);
++				wind_set_str(GEM_handle,WF_NAME, GEM_title_name);
+ 				GEM_refresh_name = SDL_FALSE;
+ 			}
+ 			GEM_iconified = SDL_FALSE;
+ 			update_work_area = 1;
+ 			break;
+ 		case WM_SIZED:
+-			wind_set (message[3], WF_CURRXYWH, message[4], message[5], message[6], message[7]);
++			wind_set_grect (message[3], WF_CURRXYWH, (GRECT *)&message[4]);
+ 			update_work_area = sdl_resize = 1;
+ 			GEM_win_fulled = SDL_FALSE;		/* Cancel maximized flag */
+ 			GEM_lock_redraw = SDL_TRUE;		/* Prevent redraw till buffers resized */
+ 			break;
+ 		case WM_FULLED:
+ 			{
+-				short x,y,w,h;
++				GRECT gr;
+ 
+ 				if (GEM_win_fulled) {
+-					wind_get (message[3], WF_PREVXYWH, &x, &y, &w, &h);
++					wind_get_grect (message[3], WF_PREVXYWH, &gr);
+ 					GEM_win_fulled = SDL_FALSE;
+ 				} else {
+-					x = GEM_desk_x;
+-					y = GEM_desk_y;
+-					w = GEM_desk_w;
+-					h = GEM_desk_h;
++					gr = GEM_desk;
+ 					GEM_win_fulled = SDL_TRUE;
+ 				}
+-				wind_set (message[3], WF_CURRXYWH, x, y, w, h);
++				wind_set_grect (message[3], WF_CURRXYWH, &gr);
+ 				update_work_area = sdl_resize = 1;
+ 				GEM_lock_redraw = SDL_TRUE;		/* Prevent redraw till buffers resized */
+ 			}
+ 			break;
+ 		case WM_BOTTOMED:
+-			wind_set(message[3],WF_BOTTOM,0,0,0,0);
++			wind_set_int(message[3],WF_BOTTOM,0);
+ 			/* Continue with BOTTOM event processing */
+ 		case WM_UNTOPPED:
+ 			SDL_PrivateAppActive(0, SDL_APPINPUTFOCUS);
+@@ -289,7 +274,7 @@ static int do_messages(_THIS, short *message, short latest_msg_id)
+ 		GEM_align_work_area(this, message[3], SDL_TRUE);
+ 
+ 		if (sdl_resize) {
+-			SDL_PrivateResize(GEM_work_w, GEM_work_h);
++			SDL_PrivateResize(GEM_work.g_w, GEM_work.g_h);
+ 		}
+ 	}
+ 
+@@ -361,10 +346,10 @@ static void do_mouse_motion(_THIS, short mx, short my)
+ 	w2 = VDI_w;
+ 	h2 = VDI_h;
+ 	if ((!GEM_fullscreen) && (GEM_handle>=0)) {
+-		x2 = GEM_work_x;
+-		y2 = GEM_work_y;
+-		w2 = GEM_work_w;
+-		h2 = GEM_work_h;
++		x2 = GEM_work.g_x;
++		y2 = GEM_work.g_y;
++		w2 = GEM_work.g_w;
++		h2 = GEM_work.g_h;
+ 	}
+ 
+ 	if ((prevmx!=mx) || (prevmy!=my)) {
+@@ -416,17 +401,17 @@ static void do_mouse_buttons(_THIS, short mb)
+ /* Check if mouse in visible area of the window */
+ static int mouse_in_work_area(int winhandle, short mx, short my)
+ {
+-	short todo[4];
+-	short inside[4] = {mx,my,1,1};
++	GRECT todo;
++	GRECT inside = {mx,my,1,1};
+ 
+ 	/* Browse the rectangle list */
+-	if (wind_get(winhandle, WF_FIRSTXYWH, &todo[0], &todo[1], &todo[2], &todo[3])!=0) {
+-		while (todo[2] && todo[3]) {
+-			if (rc_intersect((GRECT *)inside,(GRECT *)todo)) {
++	if (wind_get_grect(winhandle, WF_FIRSTXYWH, &todo)!=0) {
++		while (todo.g_w && todo.g_h) {
++			if (rc_intersect(&inside, &todo)) {
+ 				return 1;
+ 			}
+ 
+-			if (wind_get(winhandle, WF_NEXTXYWH, &todo[0], &todo[1], &todo[2], &todo[3])==0) {
++			if (wind_get_grect(winhandle, WF_NEXTXYWH, &todo)==0) {
+ 				break;
+ 			}
+ 		}
+diff --git a/src/video/gem/SDL_gemglobals.c b/src/video/gem/SDL_gemglobals.c
+new file mode 100644
+index 00000000..008cf150
+--- /dev/null
++++ b/src/video/gem/SDL_gemglobals.c
+@@ -0,0 +1,29 @@
++/*
++    SDL - Simple DirectMedia Layer
++    Copyright (C) 1997-2012 Sam Lantinga
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++
++    You should have received a copy of the GNU Lesser General Public
++    License along with this library; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++
++    Sam Lantinga
++    slouken@libsdl.org
++*/
++#include "SDL_config.h"
++
++#include <gem.h>
++
++/** global aes variable: aes global array, used by all 
++    "old style" aes functions (function without "mt_")
++ */
++short aes_global[AES_GLOBMAX];
+diff --git a/src/video/gem/SDL_gemlib.c b/src/video/gem/SDL_gemlib.c
+new file mode 100644
+index 00000000..27aefd87
+--- /dev/null
++++ b/src/video/gem/SDL_gemlib.c
+@@ -0,0 +1,610 @@
++/*
++    SDL - Simple DirectMedia Layer
++    Copyright (C) 1997-2012 Sam Lantinga
++
++    This library is free software; you can redistribute it and/or
++    modify it under the terms of the GNU Lesser General Public
++    License as published by the Free Software Foundation; either
++    version 2.1 of the License, or (at your option) any later version.
++
++    This library is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++    Lesser General Public License for more details.
++
++    You should have received a copy of the GNU Lesser General Public
++    License along with this library; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++
++    Sam Lantinga
++    slouken@libsdl.org
++*/
++#include "SDL_config.h"
++
++/*
++ * Replacement of some gemlib functions,
++ * so that SDL does not depend on it
++ *
++ * 2023 Thorsten Otto
++ */
++
++#include <gem.h>
++#include "gem_aesP.h"
++#include "gem_vdiP.h"
++
++
++/*
++ * only the ones used by SDL are implemented here,
++ * if that list ever changes, copy them from gemlib
++ */
++
++/*
++ * AES bindings
++ */
++
++short
++mt_appl_init(short *global_aes)
++{
++	AES_PARAMS(10,0,1,0,0);
++	
++	/* clear some variable that may be used to check if an AES is loaded */
++	global_aes[0] = 0;  /* AES version number */
++	global_aes[2] = -1;  /* AES application ID */
++	aes_intout[0] = -1;  /* AES application ID */
++
++	AES_TRAP(aes_params);
++
++	return aes_intout[0];
++}
++
++short
++mt_appl_exit(short *global_aes)
++{
++	AES_PARAMS(19,0,1,0,0);
++
++	AES_TRAP(aes_params);
++
++	return aes_intout[0];
++}
++
++short
++mt_appl_getinfo (short type, short *out1, short *out2, short *out3, short *out4, short *global_aes)
++{
++	static int has_agi = -1; /* do the check only once */
++
++	AES_PARAMS(130,1,5,0,0);
++
++	if (has_agi < 0) {
++		has_agi = global_aes[0] >= 0x400 ||
++		          mt_appl_find("?AGI\0\0\0\0",global_aes) >= 0;
++	}
++	if (!has_agi) {
++		return 0;
++	}
++
++	aes_intin[0] = type;
++
++	AES_TRAP(aes_params);
++
++#if CHECK_NULLPTR
++	if (out1)
++#endif
++	*out1 = aes_intout[1];
++#if CHECK_NULLPTR
++	if (out2)
++#endif
++	*out2 = aes_intout[2];
++#if CHECK_NULLPTR
++	if (out3)
++#endif
++	*out3 = aes_intout[3];
++#if CHECK_NULLPTR
++	if (out4)
++#endif
++	*out4 = aes_intout[4];
++
++	return (aes_intout[0]);
++}
++
++short
++mt_appl_write(short ap_id, short length, void *ap_pbuff, short *global_aes)
++{
++	AES_PARAMS(12,2,1,1,0);
++
++	aes_intin[0]  = ap_id;
++	aes_intin[1]  = length;
++	aes_addrin[0] = (long)ap_pbuff;
++
++	AES_TRAP(aes_params);
++
++	return aes_intout[0];
++}
++
++short
++mt_appl_find(const char *name, short *global_aes)
++{
++	AES_PARAMS(13,0,1,1,0);
++
++	aes_addrin[0] = (long)name;
++
++	AES_TRAP(aes_params);
++
++	return aes_intout[0];
++}
++
++short
++mt_evnt_multi_fast (const EVMULT_IN * em_in, short msg[], EVMULT_OUT * em_out, short *global_aes)
++{
++	AES_PARAMS(25,16,7,1,0);
++
++	aes_params.intin = (const short*)em_in;				/* input integer array */
++	aes_params.intout = (short*)em_out;					/* output integer array */
++
++	aes_addrin[0] = (long)msg;
++
++	AES_TRAP(aes_params);
++
++	return em_out->emo_events;
++}
++
++short
++mt_form_dial(short mode,
++			 short x1, short y1, short w1, short h1,
++			 short x2, short y2, short w2, short h2, short *global_aes)
++{
++	AES_PARAMS(51,9,1,0,0);
++
++	aes_intin[0] = mode;
++	aes_intin[1] = x1;
++	aes_intin[2] = y1;
++	aes_intin[3] = w1;
++	aes_intin[4] = h1;
++	aes_intin[5] = x2;
++	aes_intin[6] = y2;
++	aes_intin[7] = w2;
++	aes_intin[8] = h2;
++
++	AES_TRAP(aes_params);
++
++	return aes_intout[0];
++}
++
++short
++mt_graf_handle (short *wcell, short *hcell, short *wbox, short *hbox, short *global_aes)
++{
++#if !(CHECK_NULLPTR)
++	short *ptr;
++#endif
++
++	AES_PARAMS(77,0,5,0,0);
++
++	AES_TRAP(aes_params);
++
++#if CHECK_NULLPTR
++	if (wcell) *wcell = aes_intout[1];
++	if (hcell) *hcell = aes_intout[2];
++	if (wbox)  *wbox  = aes_intout[3];
++	if (hbox)  *hbox  = aes_intout[4];
++#else
++	ptr = &aes_intout[1];
++	*wcell = *(ptr ++);									/* [1] */
++	*hcell = *(ptr ++);									/* [2] */
++	*wbox  = *(ptr ++);									/* [3] */
++	*hbox  = *(ptr);									/* [4] */
++#endif
++
++	return aes_intout[0];
++}
++
++short
++mt_graf_mkstate (short *mx, short *my, short *mbutton, short *kmeta, short *global_aes)
++{
++#if !(CHECK_NULLPTR)
++	short *ptr;
++#endif
++
++	AES_PARAMS(79,0,5,0,0);
++
++	AES_TRAP(aes_params);
++
++#if CHECK_NULLPTR
++	if (mx) 	 *mx	  = aes_intout[1];
++	if (my) 	 *my	  = aes_intout[2];
++	if (mbutton) *mbutton = aes_intout[3];
++	if (kmeta)	 *kmeta   = aes_intout[4];
++#else
++	ptr = &aes_intout[1];
++	*mx = *(ptr ++);									/* [1] */
++	*my = *(ptr ++);									/* [2] */
++	*mbutton = *(ptr ++);							    /* [3] */
++	*kmeta = *(ptr);									/* [4] */
++#endif
++
++	return aes_intout[0];
++}
++
++short
++mt_graf_mouse (short shape, const MFORM *shape_addr, short *global_aes)
++{
++	AES_PARAMS(78,1,1,1,0);
++
++	aes_intin[0] = shape;
++	aes_addrin[0] = (long)shape_addr;
++
++	AES_TRAP(aes_params);
++
++	return aes_intout[0];
++}
++
++short 
++mt_wind_calc_grect(short Type, short Parts, const GRECT *In, GRECT *Out, short *global_aes)
++{
++	AES_PARAMS(108,6,5,0,0);
++                    
++	aes_intin[0]		    = Type;
++	aes_intin[1]		    = Parts;
++	*(GRECT*)(aes_intin +2) = *In;
++
++	AES_TRAP(aes_params);
++
++	*Out = *(GRECT*)(aes_intout +1);
++	
++	return aes_intout[0];
++}
++
++short 
++mt_wind_close (short WindowHandle, short *global_aes)
++{
++	AES_PARAMS(102,1,1,0,0);
++
++	aes_intin[0] = WindowHandle;
++
++	AES_TRAP(aes_params);
++
++	return (aes_intout[0]);
++}
++
++short 
++mt_wind_create_grect(short Parts, const GRECT *r, short *global_aes)
++{
++	AES_PARAMS(100,5,1,0,0);
++                    
++	aes_intin[0] = Parts;
++	*(GRECT*)(aes_intin +1) = *r;
++
++	AES_TRAP(aes_params);
++
++	return aes_intout[0];
++}
++
++short 
++mt_wind_delete (short WindowHandle, short *global_aes)
++{
++	AES_PARAMS(103,1,1,0,0);
++
++	aes_intin[0] = WindowHandle;
++
++	AES_TRAP(aes_params);
++
++	return (aes_intout[0]);
++}
++
++short 
++mt_wind_get_grect(short WindowHandle, short What, GRECT *r, short *global_aes)
++{
++	AES_PARAMS(104,2,5,0,0);
++                    
++	aes_intin[0] = WindowHandle;
++	aes_intin[1] = What;
++	
++	AES_TRAP(aes_params);
++
++	*r = *(GRECT*)(aes_intout +1);
++	
++	return (aes_intout[0]);
++}
++
++short 
++mt_wind_open_grect(short WindowHandle, const GRECT *r, short *global_aes)
++{
++	AES_PARAMS(101,5,1,0,0);
++                    
++	aes_intin[0] = WindowHandle;
++	*(GRECT*)(aes_intin +1) = *r;
++	
++	AES_TRAP(aes_params);
++
++	return aes_intout[0];
++}
++
++short 
++mt_wind_set_grect(short WindowHandle, short What, const GRECT *r, short *global_aes)
++{
++	AES_PARAMS(105,6,1,0,0);
++
++	aes_intin[0]			= WindowHandle;
++	aes_intin[1]			= What;
++	*(GRECT*)(aes_intin +2) = *r;
++	
++	AES_TRAP(aes_params);
++	
++	return (aes_intout[0]);
++
++}
++
++short 
++mt_wind_set_str (short WindowHandle, short What, const char *str, short *global_aes)
++{
++	AES_PARAMS(105,6,1,0,0);
++
++	aes_intin[0]                  = WindowHandle;
++	aes_intin[1]                  = What;
++	*(const char**)(aes_intin +2) = str;
++	*(const char**)(aes_intin +4) = 0;
++	
++	AES_TRAP(aes_params);
++
++	return (aes_intout[0]);
++}
++
++short 
++mt_wind_set_int (short WindowHandle, short What, short W1, short *global_aes)
++{
++	short *ptr;
++
++	AES_PARAMS(105,6,1,0,0);
++
++	ptr = aes_intin;
++	*(ptr ++) = WindowHandle;							/* aes_intin[0] */
++	*(ptr ++) = What;									/* aes_intin[1] */
++	*(ptr ++) = W1; 								    /* aes_intin[2] */
++	*(ptr ++) = 0; 									    /* aes_intin[3] */
++	*(ptr ++) = 0; 									    /* aes_intin[4] */
++	*(ptr ++) = 0; 									    /* aes_intin[5] */
++
++	AES_TRAP(aes_params);
++
++	return (aes_intout[0]);
++}
++
++short 
++mt_wind_update (short Code, short *global_aes)
++{
++	AES_PARAMS(107,1,1,0,0);
++
++	aes_intin[0] = Code;
++
++	AES_TRAP(aes_params);
++
++	return (aes_intout[0]);
++}
++
++/*
++ * VDI bindings
++ */
++
++void
++v_bar (short handle, short pxy[])
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++
++	VDI_PARAMS(vdi_control, 0L, pxy, vdi_dummy, vdi_dummy);
++	
++	VDI_TRAP_ESC (vdi_params, handle, 11,1, 2,0);
++}
++
++void
++v_clsvwk (short handle)
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++
++	VDI_PARAMS(vdi_control, 0L, 0L, vdi_dummy, vdi_dummy );
++	
++	VDI_TRAP_00 (vdi_params, handle, 101);
++}
++
++void
++v_hide_c (short handle)
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++
++	VDI_PARAMS(vdi_control, 0L, 0L, vdi_dummy, vdi_dummy );
++	
++	VDI_TRAP_00 (vdi_params, handle, 123);
++}
++
++void
++v_opnvwk (short work_in[], short *handle, short work_out[])
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++
++	VDI_PARAMS(vdi_control, work_in, 0L, &work_out[0], &work_out[45] );
++	
++	VDI_TRAP (vdi_params, *handle, 100, 0,11);
++
++	*handle = vdi_control[6];
++	
++	/* some VDI doesn't have the same default parameters.
++	   Here is a fix */	
++	
++	if (vdi_control[6]!=0)
++	{ 
++		vsf_perimeter(vdi_control[6],PERIMETER_ON);
++#if 0
++		/* no line/text drawing functions are used in SDL */
++		vsl_ends(vdi_control[6],0,0);
++		vsl_width(vdi_control[6],1);
++		vst_effects(vdi_control[6],0);
++		vsm_height(vdi_control[6],9);
++#endif
++	}
++}
++
++void
++v_show_c (short handle, short reset)
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++
++	VDI_PARAMS(vdi_control, &reset, 0L, vdi_dummy, vdi_dummy );
++		
++	VDI_TRAP (vdi_params, handle, 122, 0,1);
++}
++
++short
++vq_color (short handle, short index, short flag, short rgb[])
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++	short vdi_intin[2];   
++	short vdi_intout[4]; 
++
++	VDI_PARAMS(vdi_control, vdi_intin, 0L, vdi_intout, vdi_dummy );
++	
++	vdi_intin[0] = index;
++	vdi_intin[1] = flag;
++	
++	VDI_TRAP (vdi_params, handle, 26, 0,2);
++	
++	rgb[0] = vdi_intout[1];
++	rgb[1] = vdi_intout[2];
++	rgb[2] = vdi_intout[3];
++	
++	return vdi_intout[0];
++}
++
++void
++vq_extnd (short handle, short flag, short work_out[])
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++
++	VDI_PARAMS(vdi_control, &flag, 0L, &work_out[0], &work_out[45] );
++	
++	VDI_TRAP (vdi_params, handle, 102, 0,1);
++}
++
++void
++vq_scrninfo (short handle, short *work_out)
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++	static short vdi_intin[1] = {2};   
++
++	VDI_PARAMS(vdi_control, vdi_intin, 0L, work_out, vdi_dummy);
++	
++	VDI_TRAP_ESC (vdi_params, handle, 102,1, 0,1);
++}
++
++void
++vro_cpyfm (short handle, short mode, short pxy[], MFDB *src, MFDB *dst)
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++	
++	VDI_PARAMS(vdi_control, &mode, pxy, vdi_dummy, vdi_dummy);
++	
++	vdi_control_ptr(0, MFDB *) = src;
++	vdi_control_ptr(1, MFDB *) = dst;
++	
++	VDI_TRAP (vdi_params, handle, 109, 4,1);
++}
++
++void
++vs_clip (short handle, short clip_flag, short pxy[])
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++	
++	VDI_PARAMS(vdi_control, &clip_flag, pxy, vdi_dummy, vdi_dummy );
++	
++	VDI_TRAP (vdi_params, handle, 129, 2,1);
++}
++
++void
++vs_color (short handle, short index, const short rgb[])
++{
++	short *ptr;
++	short vdi_control[VDI_CNTRLMAX]; 
++	short vdi_intin[4];   
++	
++	VDI_PARAMS(vdi_control, vdi_intin, 0L, vdi_dummy, vdi_dummy );
++	
++	ptr = vdi_intin;
++	*(ptr ++) = index;		       /* vdi_intin[0] = index */
++	*(ptr ++) = *(rgb ++);	       /* vdi_intin[1] = rgb[0] */
++	*(ptr ++) = *(rgb ++);	       /* vdi_intin[2] = rgb[1] */
++	*(ptr   ) = *(rgb   );	       /* vdi_intin[3] = rgb[2] */
++
++	VDI_TRAP (vdi_params, handle, 14, 0,4);
++}
++
++short
++vsf_color (short handle, short index)
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++	short vdi_intout[1]; 
++	
++	VDI_PARAMS(vdi_control, &index, 0L, vdi_intout, vdi_dummy );
++	
++	VDI_TRAP (vdi_params, handle, 25, 0,1);
++
++	return vdi_intout[0];
++}
++
++short
++vsf_interior (short handle, short style)
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++	short vdi_intout[1]; 
++	
++	VDI_PARAMS(vdi_control, &style, 0L, vdi_intout, vdi_dummy );
++	
++	VDI_TRAP (vdi_params, handle, 23, 0,1);
++
++	return vdi_intout[0];
++}
++
++short
++vsf_perimeter (short handle, short vis)
++{
++	short vdi_control[VDI_CNTRLMAX]; 
++	short vdi_intout[1]; 
++	
++	VDI_PARAMS(vdi_control, &vis, 0L, vdi_intout, vdi_dummy );
++
++	VDI_TRAP (vdi_params, handle, 104, 0,1);
++
++	return vdi_intout[0];
++}
++ 
++/*
++ * Utilities
++ */
++
++#undef min
++#undef max
++#define max(x,y)   	(((x)>(y))?(x):(y))
++#define	min(x,y)   	(((x)<(y))?(x):(y))
++
++short
++rc_intersect (const GRECT * r1, GRECT * r2)
++{
++	short tx, ty, tw, th, ret;
++
++	tx = max (r2->g_x, r1->g_x);
++	tw = min (r2->g_x + r2->g_w, r1->g_x + r1->g_w) - tx;
++	
++	ret = (0 < tw);
++	if (ret)
++	{
++		ty = max (r2->g_y, r1->g_y);
++		th = min (r2->g_y + r2->g_h, r1->g_y + r1->g_h) - ty;
++		
++		ret = (0 < th);
++		if (ret)
++		{
++			r2->g_x = tx;
++			r2->g_y = ty;
++			r2->g_w = tw;
++			r2->g_h = th;
++		}
++	}
++	
++	return ret;
++}
++
+diff --git a/src/video/gem/SDL_gemvideo.c b/src/video/gem/SDL_gemvideo.c
+index c67a60ae..3a09e64b 100644
+--- a/src/video/gem/SDL_gemvideo.c
++++ b/src/video/gem/SDL_gemvideo.c
+@@ -96,11 +96,11 @@ static void GEM_UpdateRects(_THIS, int numrects, SDL_Rect *rects);
+ static void GEM_FreeBuffers(_THIS);
+ static void GEM_ClearScreen(_THIS);
+ static void GEM_ClearRect(_THIS, short *pxy);
+-static void GEM_ClearRectXYWH(_THIS, short *rect);
++static void GEM_ClearRectXYWH(_THIS, GRECT *rect);
+ static void GEM_SetNewPalette(_THIS, Uint16 newpal[256][3]);
+ static void GEM_LockScreen(_THIS);
+ static void GEM_UnlockScreen(_THIS);
+-static void refresh_window(_THIS, int winhandle, short *rect, SDL_bool pad_only);
++static void refresh_window(_THIS, int winhandle, GRECT *rect, SDL_bool pad_only);
+ 
+ #if SDL_VIDEO_OPENGL
+ /* OpenGL functions */
+@@ -112,7 +112,7 @@ static void GEM_GL_SwapBuffers(_THIS);
+ static int GEM_Available(void)
+ {
+ 	/* Test if AES available */
+-	internal_ap_id = appl_init();
++	internal_ap_id = mt_appl_init(aes_global);
+ 	if (internal_ap_id == -1)
+ 		return 0;
+ 
+@@ -338,7 +338,13 @@ static void VDI_ReadExtInfo(_THIS, short *work_out)
+ int GEM_VideoInit(_THIS, SDL_PixelFormat *vformat)
+ {
+ 	int i, menubar_size;
+-	short work_in[12], work_out[272], dummy;
++	short work_in[12];
++	/*
++	 * The standalone enhancer.prg has a bug
++	 * and copies 273 values here
++	 */
++	short work_out[273];
++	short dummy;
+ 
+ 	/* Open AES (Application Environment Services) */
+ 	GEM_ap_id = internal_ap_id;
+@@ -384,15 +390,12 @@ int GEM_VideoInit(_THIS, SDL_PixelFormat *vformat)
+ 	VDI_h = work_out[1] + 1;
+ 
+ 	/* Read desktop size and position */
+-	if (!wind_get(DESKTOP_HANDLE, WF_WORKXYWH, &GEM_desk_x, &GEM_desk_y, &GEM_desk_w, &GEM_desk_h)) {
++	if (!wind_get_grect(DESKTOP_HANDLE, WF_WORKXYWH, &GEM_desk)) {
+ 		fprintf(stderr,"Can not read desktop properties\n");
+ 		return 1;
+ 	}
+ 
+-	GEM_work_x = GEM_desk_x;
+-	GEM_work_y = GEM_desk_y;
+-	GEM_work_w = GEM_desk_w;
+-	GEM_work_h = GEM_desk_h;
++	GEM_work = GEM_desk;
+ 
+ 	/* Read bit depth */
+ 	vq_extnd(VDI_handle, 1, work_out);
+@@ -493,7 +496,7 @@ int GEM_VideoInit(_THIS, SDL_PixelFormat *vformat)
+ 	vsf_perimeter(VDI_handle,0);
+ 
+ 	/* Menu bar save buffer */
+-	menubar_size = GEM_desk_w * GEM_desk_y * VDI_pixelsize;
++	menubar_size = GEM_desk.g_w * GEM_desk.g_y * VDI_pixelsize;
+ 	GEM_menubar=Atari_SysMalloc(menubar_size,MX_PREFTTRAM);
+ 
+ 	/* Fill video modes list */
+@@ -564,14 +567,14 @@ void GEM_ClearRect(_THIS, short *pxy)
+ 	vs_color(VDI_handle, 0, oldrgb);
+ }
+ 
+-void GEM_ClearRectXYWH(_THIS, short *rect)
++void GEM_ClearRectXYWH(_THIS, GRECT *rect)
+ {
+ 	short pxy[4];
+ 
+-	pxy[0] = rect[0];
+-	pxy[1] = rect[1];
+-	pxy[2] = rect[0]+rect[2]-1;
+-	pxy[3] = rect[1]+rect[3]-1;
++	pxy[0] = rect->g_x;
++	pxy[1] = rect->g_y;
++	pxy[2] = rect->g_x+rect->g_w-1;
++	pxy[3] = rect->g_y+rect->g_h-1;
+ 
+ 	GEM_ClearRect(this, pxy);
+ }
+@@ -614,9 +617,9 @@ static void GEM_LockScreen(_THIS)
+ 			short blitcoords[8];
+ 
+ 			mfdb_src.fd_addr=GEM_menubar;
+-			mfdb_src.fd_w=GEM_desk_w;
+-			mfdb_src.fd_h=GEM_desk_y;
+-			mfdb_src.fd_wdwidth=GEM_desk_w>>4;
++			mfdb_src.fd_w=GEM_desk.g_w;
++			mfdb_src.fd_h=GEM_desk.g_y;
++			mfdb_src.fd_wdwidth=GEM_desk.g_w>>4;
+ 			mfdb_src.fd_nplanes=VDI_bpp;
+ 			mfdb_src.fd_stand=
+ 				mfdb_src.fd_r1=
+@@ -625,8 +628,8 @@ static void GEM_LockScreen(_THIS)
+ 
+ 			blitcoords[0] = blitcoords[4] = 0;
+ 			blitcoords[1] = blitcoords[5] = 0;
+-			blitcoords[2] = blitcoords[6] = GEM_desk_w-1;
+-			blitcoords[3] = blitcoords[7] = GEM_desk_y-1;
++			blitcoords[2] = blitcoords[6] = GEM_desk.g_w-1;
++			blitcoords[3] = blitcoords[7] = GEM_desk.g_y-1;
+ 
+ 			vro_cpyfm(VDI_handle, S_ONLY, blitcoords, &VDI_dst_mfdb, &mfdb_src);
+ 		}
+@@ -644,9 +647,9 @@ static void GEM_UnlockScreen(_THIS)
+ 			short blitcoords[8];
+ 
+ 			mfdb_src.fd_addr=GEM_menubar;
+-			mfdb_src.fd_w=GEM_desk_w;
+-			mfdb_src.fd_h=GEM_desk_y;
+-			mfdb_src.fd_wdwidth=GEM_desk_w>>4;
++			mfdb_src.fd_w=GEM_desk.g_w;
++			mfdb_src.fd_h=GEM_desk.g_y;
++			mfdb_src.fd_wdwidth=GEM_desk.g_w>>4;
+ 			mfdb_src.fd_nplanes=VDI_bpp;
+ 			mfdb_src.fd_stand=
+ 				mfdb_src.fd_r1=
+@@ -655,8 +658,8 @@ static void GEM_UnlockScreen(_THIS)
+ 
+ 			blitcoords[0] = blitcoords[4] = 0;
+ 			blitcoords[1] = blitcoords[5] = 0;
+-			blitcoords[2] = blitcoords[6] = GEM_desk_w-1;
+-			blitcoords[3] = blitcoords[7] = GEM_desk_y-1;
++			blitcoords[2] = blitcoords[6] = GEM_desk.g_w-1;
++			blitcoords[3] = blitcoords[7] = GEM_desk.g_y-1;
+ 
+ 			vro_cpyfm(VDI_handle, S_ONLY, blitcoords, &mfdb_src, &VDI_dst_mfdb);
+ 		}
+@@ -772,7 +775,7 @@ SDL_Surface *GEM_SetVideoMode(_THIS, SDL_Surface *current,
+ 		GEM_fullscreen = SDL_TRUE;
+ 	} else {
+ 		int old_win_type;
+-		short x2,y2,w2,h2;
++		GRECT gr;
+ 
+ 		GEM_UnlockScreen(this);
+ 
+@@ -793,29 +796,33 @@ SDL_Surface *GEM_SetVideoMode(_THIS, SDL_Surface *current,
+ 		/* Recreate window ? only for different widget or non-created window */
+ 		if ((old_win_type != GEM_win_type) || (GEM_handle < 0)) {
+ 			/* Calculate window size */
+-			if (!wind_calc(WC_BORDER, GEM_win_type, 0,0,width+16,height, &x2,&y2,&w2,&h2)) {
++			gr.g_x = 0;
++			gr.g_y = 0;
++			gr.g_w = width + 16;
++			gr.g_h = height;
++			if (!wind_calc_grect(WC_BORDER, GEM_win_type, &gr, &gr)) {
+ 				GEM_FreeBuffers(this);
+ 				SDL_SetError("Can not calculate window attributes");
+ 				return NULL;
+ 			}
+ 
+ 			/* Center window */
+-			x2 = (GEM_desk_w-w2)>>1;
+-			y2 = (GEM_desk_h-h2)>>1;
+-			if (x2<0) {
+-				x2 = 0;
++			gr.g_x = (GEM_desk.g_w-gr.g_w)>>1;
++			gr.g_y = (GEM_desk.g_h-gr.g_h)>>1;
++			if (gr.g_x<0) {
++				gr.g_x = 0;
+ 			}
+-			if (y2<0) {
+-				y2 = 0;
++			if (gr.g_y<0) {
++				gr.g_y = 0;
+ 			}
+-			x2 += GEM_desk_x;
+-			y2 += GEM_desk_y;
++			gr.g_x += GEM_desk.g_x;
++			gr.g_y += GEM_desk.g_y;
+ 
+ 			/* Align work area on 16 pixels boundary (faster for bitplanes modes) */
+-			wind_calc(WC_WORK, GEM_win_type, x2,y2,w2,h2, &x2,&y2,&w2,&h2);
+-			x2 &= ~15;
+-			x2 -= 8;
+-			wind_calc(WC_BORDER, GEM_win_type, x2,y2,w2,h2, &x2,&y2,&w2,&h2);
++			wind_calc_grect(WC_WORK, GEM_win_type, &gr, &gr);
++			gr.g_x &= ~15;
++			gr.g_x -= 8;
++			wind_calc_grect(WC_BORDER, GEM_win_type, &gr, &gr);
+ 
+ 			/* Destroy existing window */
+ 			if (GEM_handle >= 0) {
+@@ -824,7 +831,7 @@ SDL_Surface *GEM_SetVideoMode(_THIS, SDL_Surface *current,
+ 			}
+ 
+ 			/* Create window */
+-			GEM_handle=wind_create(GEM_win_type, x2,y2,w2,h2);
++			GEM_handle=wind_create_grect(GEM_win_type, &gr);
+ 			if (GEM_handle<0) {
+ 				GEM_FreeBuffers(this);
+ 				SDL_SetError("Can not create window");
+@@ -836,21 +843,20 @@ SDL_Surface *GEM_SetVideoMode(_THIS, SDL_Surface *current,
+ #endif
+ 
+ 			/* Setup window name */
+-			wind_set(GEM_handle,WF_NAME,
+-				(short)(((unsigned long)GEM_title_name)>>16),
+-				(short)(((unsigned long)GEM_title_name) & 0xffff),
+-				0,0);
++			wind_set_str(GEM_handle,WF_NAME,GEM_title_name);
+ 			GEM_refresh_name = SDL_FALSE;
+ 
+ 			/* Open the window */
+-			wind_open(GEM_handle,x2,y2,w2,h2);
++			wind_open_grect(GEM_handle,&gr);
+ 
+ 			GEM_iconified = SDL_FALSE;
+ 		} else {
+ 			/* Resize window to fit asked video mode */
+-			wind_get (GEM_handle, WF_WORKXYWH, &x2,&y2,&w2,&h2);
+-			if (wind_calc(WC_BORDER, GEM_win_type, x2,y2,width+16,height, &x2,&y2,&w2,&h2)) {
+-				wind_set (GEM_handle, WF_CURRXYWH, x2,y2,w2,h2);
++			wind_get_grect (GEM_handle, WF_WORKXYWH, &gr);
++			gr.g_w = width;
++			gr.g_h = height;
++			if (wind_calc_grect(WC_BORDER, GEM_win_type, &gr, &gr)) {
++				wind_set_grect (GEM_handle, WF_CURRXYWH, &gr);
+ 			}
+ 		}
+ 
+@@ -898,40 +904,40 @@ void GEM_align_work_area(_THIS, short windowid, SDL_bool clear_pads)
+ {
+ 	int new_x, new_w, old_x, old_w;
+ 
+-	wind_get(windowid, WF_WORKXYWH, &GEM_work_x,&GEM_work_y,&GEM_work_w,&GEM_work_h);
++	wind_get_grect(windowid, WF_WORKXYWH, &GEM_work);
+ 	if (GEM_iconified) {
+ 		return;
+ 	}
+ 
+ 	/* Align work area on 16 pixels boundary (faster for bitplanes modes) */
+-	new_x = old_x = GEM_work_x;
+-	new_w = old_w = GEM_work_w;
++	new_x = old_x = GEM_work.g_x;
++	new_w = old_w = GEM_work.g_w;
+ 	if (new_x & 15) {
+ 		new_x = (new_x|15)+1;
+ 	} else {
+ 		new_w -= 16;
+ 	}
+-	new_w -= (new_x - GEM_work_x);
++	new_w -= (new_x - GEM_work.g_x);
+ 	new_w &= ~15;
+ 
+-	GEM_work_x = new_x;
+-	GEM_work_w = new_w;
++	GEM_work.g_x = new_x;
++	GEM_work.g_w = new_w;
+ 
+ 	if (clear_pads) {
+-		short rect[4];
++		GRECT rect;
+ 
+-		rect[1] = GEM_work_y;
+-		rect[3] = GEM_work_h;
++		rect.g_y = GEM_work.g_y;
++		rect.g_h = GEM_work.g_h;
+ 
+ 		/* Left padding */
+-		rect[0] = old_x;
+-		rect[2] = new_x-old_x+1;
+-		GEM_wind_redraw(this, GEM_handle, rect, SDL_TRUE);
++		rect.g_x = old_x;
++		rect.g_w = new_x-old_x+1;
++		GEM_wind_redraw(this, GEM_handle, &rect, SDL_TRUE);
+ 
+ 		/* Right padding */
+-		rect[0] = new_x + new_w;
+-		rect[2] = (old_w-new_w)-(new_x-old_x)+1;
+-		GEM_wind_redraw(this, GEM_handle, rect, SDL_TRUE);
++		rect.g_x = new_x + new_w;
++		rect.g_w = (old_w-new_w)-(new_x-old_x)+1;
++		GEM_wind_redraw(this, GEM_handle, &rect, SDL_TRUE);
+ 	}
+ }
+ 
+@@ -1036,16 +1042,16 @@ static void GEM_UpdateRectsFullscreen(_THIS, int numrects, SDL_Rect *rects)
+ 
+ static void GEM_UpdateRectsWindowed(_THIS, int numrects, SDL_Rect *rects)
+ {
+-	short rect[4];
++	GRECT rect;
+ 	int i;
+ 
+ 	for ( i=0; i<numrects; ++i ) {
+-		rect[0] = GEM_work_x + rects[i].x;
+-		rect[1] = GEM_work_y + rects[i].y;
+-		rect[2] = rects[i].w;
+-		rect[3] = rects[i].h;
++		rect.g_x = GEM_work.g_x + rects[i].x;
++		rect.g_y = GEM_work.g_y + rects[i].y;
++		rect.g_w = rects[i].w;
++		rect.g_h = rects[i].h;
+ 
+-		GEM_wind_redraw(this, GEM_handle, rect, SDL_FALSE);
++		GEM_wind_redraw(this, GEM_handle, &rect, SDL_FALSE);
+ 	}
+ }
+ 
+@@ -1127,15 +1133,8 @@ static int GEM_FlipHWSurfaceFullscreen(_THIS, SDL_Surface *surface)
+ 
+ static int GEM_FlipHWSurfaceWindowed(_THIS, SDL_Surface *surface)
+ {
+-	short rect[4];
+-
+ 	/* Update the whole window */
+-	rect[0] = GEM_work_x;
+-	rect[1] = GEM_work_y;
+-	rect[2] = GEM_work_w;
+-	rect[3] = GEM_work_h;
+-
+-	GEM_wind_redraw(this, GEM_handle, rect, SDL_FALSE);
++	GEM_wind_redraw(this, GEM_handle, &GEM_work, SDL_FALSE);
+ 
+ 	return(0);
+ }
+@@ -1242,9 +1241,9 @@ void GEM_VideoQuit(_THIS)
+ 	this->screen->pixels = NULL;
+ }
+ 
+-void GEM_wind_redraw(_THIS, int winhandle, short *inside, SDL_bool pad_only)
++void GEM_wind_redraw(_THIS, int winhandle, const GRECT *inside, SDL_bool pad_only)
+ {
+-	short todo[4];
++	GRECT todo;
+ 
+ 	/* Tell AES we are going to update */
+ 	wind_update(BEG_UPDATE);
+@@ -1252,15 +1251,15 @@ void GEM_wind_redraw(_THIS, int winhandle, short *inside, SDL_bool pad_only)
+ 	v_hide_c(VDI_handle);
+ 
+ 	/* Browse the rectangle list to redraw */
+-	if (wind_get(winhandle, WF_FIRSTXYWH, &todo[0], &todo[1], &todo[2], &todo[3])!=0) {
++	if (wind_get_grect(winhandle, WF_FIRSTXYWH, &todo)!=0) {
+ 
+-		while (todo[2] && todo[3]) {
++		while (todo.g_w && todo.g_h) {
+ 
+-			if (rc_intersect((GRECT *)inside,(GRECT *)todo)) {
+-				refresh_window(this, winhandle, todo, pad_only);
++			if (rc_intersect(inside, &todo)) {
++				refresh_window(this, winhandle, &todo, pad_only);
+ 			}
+ 
+-			if (wind_get(winhandle, WF_NEXTXYWH, &todo[0], &todo[1], &todo[2], &todo[3])==0) {
++			if (wind_get_grect(winhandle, WF_NEXTXYWH, &todo)==0) {
+ 				break;
+ 			}
+ 		}
+@@ -1273,32 +1272,30 @@ void GEM_wind_redraw(_THIS, int winhandle, short *inside, SDL_bool pad_only)
+ 	v_show_c(VDI_handle,1);
+ }
+ 
+-static void refresh_window(_THIS, int winhandle, short *rect, SDL_bool pad_only)
++static void refresh_window(_THIS, int winhandle, GRECT *rect, SDL_bool pad_only)
+ {
+ 	MFDB mfdb_src;
+-	short pxy[8], work_rect[4];
++	short pxy[8];
++	GRECT work_rect;
+ 	SDL_Surface *surface;
+ 	int max_width, max_height;
+ 
+-	work_rect[0] = GEM_work_x;
+-	work_rect[1] = GEM_work_y;
+-	work_rect[2] = GEM_work_w;
+-	work_rect[3] = GEM_work_h;
++	work_rect = GEM_work;
+ 
+ 	/* Clip against screen */
+-	if (work_rect[0]<0) {
+-		work_rect[2] += work_rect[0];
+-		work_rect[0] = 0;
++	if (work_rect.g_x<0) {
++		work_rect.g_w += work_rect.g_x;
++		work_rect.g_x = 0;
+ 	}
+-	if (work_rect[0]+work_rect[2]>=VDI_w) {
+-		work_rect[2] = VDI_w-work_rect[0];
++	if (work_rect.g_x+work_rect.g_w>=VDI_w) {
++		work_rect.g_w = VDI_w-work_rect.g_x;
+ 	}
+-	if (work_rect[1]<0) {
+-		work_rect[3] += work_rect[1];
+-		work_rect[1] = 0;
++	if (work_rect.g_y<0) {
++		work_rect.g_h += work_rect.g_y;
++		work_rect.g_y = 0;
+ 	}
+-	if (work_rect[1]+work_rect[3]>=VDI_h) {
+-		work_rect[3] = VDI_h-work_rect[1];
++	if (work_rect.g_y+work_rect.g_h>=VDI_h) {
++		work_rect.g_h = VDI_h-work_rect.g_y;
+ 	}
+ 
+ 	surface = this->screen;
+@@ -1312,53 +1309,53 @@ static void refresh_window(_THIS, int winhandle, short *rect, SDL_bool pad_only)
+ 		}
+ 
+ 		/* Center icon inside window if it is smaller */
+-		if (GEM_work_w>surface->w) {
+-			work_rect[0] += (GEM_work_w-surface->w)>>1;
+-			work_rect[2] = surface->w;
++		if (GEM_work.g_w>surface->w) {
++			work_rect.g_x += (GEM_work.g_w-surface->w)>>1;
++			work_rect.g_w = surface->w;
+ 		}
+-		if (GEM_work_h>surface->h) {
+-			work_rect[1] += (GEM_work_h-surface->h)>>1;
+-			work_rect[3] = surface->h;
++		if (GEM_work.g_h>surface->h) {
++			work_rect.g_y += (GEM_work.g_h-surface->h)>>1;
++			work_rect.g_h = surface->h;
+ 		}
+ 	} else {
+ 		/* Y1,Y2 for padding zones */
+-		pxy[1] = rect[1];
+-		pxy[3] = rect[1]+rect[3]-1;
++		pxy[1] = rect->g_y;
++		pxy[3] = rect->g_y+rect->g_h-1;
+ 
+ 		/* Clear left padding zone ? */
+-		pxy[0] = rect[0];
+-		pxy[2] = MIN(rect[0]+rect[2]-1, GEM_work_x-1);
++		pxy[0] = rect->g_x;
++		pxy[2] = MIN(rect->g_x+rect->g_w-1, GEM_work.g_x-1);
+ 		if (pxy[0]<=pxy[2]) {
+ 			GEM_ClearRect(this, pxy);
+ 		}
+ 
+ 		/* Clear right padding zone ? */
+-		pxy[0] = MAX(rect[0], GEM_work_x+GEM_work_w);
+-		pxy[2] = rect[0]+rect[2]-1;
++		pxy[0] = MAX(rect->g_x, GEM_work.g_x+GEM_work.g_w);
++		pxy[2] = rect->g_x+rect->g_w-1;
+ 		if (pxy[0]<=pxy[2]) {
+ 			GEM_ClearRect(this, pxy);
+ 		}
+ 	}
+ 
+ 	/* Do we intersect zone to redraw ? */
+-	if (pad_only || !rc_intersect((GRECT *)work_rect, (GRECT *)rect)) {
++	if (pad_only || !rc_intersect(&work_rect, rect)) {
+ 		return;
+ 	}
+ 
+ 	/* Calculate intersection rectangle to redraw */
+-	max_width = MIN(work_rect[2], rect[2]);
+-	max_height = MIN(work_rect[3], rect[3]);
++	max_width = MIN(work_rect.g_w, rect->g_w);
++	max_height = MIN(work_rect.g_h, rect->g_h);
+ 
+-	pxy[4]=pxy[0]=MAX(work_rect[0],rect[0]);
+-	pxy[5]=pxy[1]=MAX(work_rect[1],rect[1]);
++	pxy[4]=pxy[0]=MAX(work_rect.g_x,rect->g_x);
++	pxy[5]=pxy[1]=MAX(work_rect.g_y,rect->g_y);
+ 	pxy[6]=pxy[2]=pxy[0]+max_width-1;
+ 	pxy[7]=pxy[3]=pxy[1]+max_height-1;
+ 
+ 	/* Calculate source image pos relative to window */
+-	pxy[0] -= GEM_work_x;
+-	pxy[1] -= GEM_work_y;
+-	pxy[2] -= GEM_work_x;
+-	pxy[3] -= GEM_work_y;
++	pxy[0] -= GEM_work.g_x;
++	pxy[1] -= GEM_work.g_y;
++	pxy[2] -= GEM_work.g_x;
++	pxy[3] -= GEM_work.g_y;
+ 
+ #if DEBUG_VIDEO_GEM
+ 	printf("sdl:video:gem: redraw %dx%d: (%d,%d,%d,%d) to (%d,%d,%d,%d)\n",
+diff --git a/src/video/gem/SDL_gemvideo.h b/src/video/gem/SDL_gemvideo.h
+index d5f6fcbf..e769cab7 100644
+--- a/src/video/gem/SDL_gemvideo.h
++++ b/src/video/gem/SDL_gemvideo.h
+@@ -36,7 +36,7 @@ struct WMcursor {
+ #define _THIS	SDL_VideoDevice *this
+ 
+ /* Functions prototypes */
+-void GEM_wind_redraw(_THIS, int winhandle, short *inside, SDL_bool pad_only);
++void GEM_wind_redraw(_THIS, int winhandle, const GRECT *inside, SDL_bool pad_only);
+ void GEM_align_work_area(_THIS, short windowid, SDL_bool clear_pads);
+ 
+ /* Private display data */
+@@ -72,12 +72,10 @@ struct SDL_PrivateVideoData {
+ 
+ 	/* GEM infos */
+ 	short ap_id;
+-	short desk_x, desk_y;		/* Desktop properties */
+-	short desk_w, desk_h;
++	GRECT desk;					/* Desktop properties */
+ 	short win_handle;			/* Our window handle */
+ 	int window_type;			/* Window type */
+-	short work_x, work_y;		/* Window work area x,y,w,h */
+-	short work_w, work_h;
++	GRECT work;					/* Window work area x,y,w,h */
+ 	const char *title_name;		/* Window title */
+ 	const char *icon_name;		/* Icon title */
+ 	short version;				/* AES version */
+@@ -121,16 +119,10 @@ struct SDL_PrivateVideoData {
+ #define VDI_dst_mfdb		(this->hidden->dst_mfdb)
+ 
+ #define GEM_ap_id			(this->hidden->ap_id)
+-#define GEM_desk_x			(this->hidden->desk_x)
+-#define GEM_desk_y			(this->hidden->desk_y)
+-#define GEM_desk_w			(this->hidden->desk_w)
+-#define GEM_desk_h			(this->hidden->desk_h)
++#define GEM_desk			(this->hidden->desk)
+ #define GEM_handle			(this->hidden->win_handle)
+ #define GEM_win_type		(this->hidden->window_type)
+-#define GEM_work_x			(this->hidden->work_x)
+-#define GEM_work_y			(this->hidden->work_y)
+-#define GEM_work_w			(this->hidden->work_w)
+-#define GEM_work_h			(this->hidden->work_h)
++#define GEM_work			(this->hidden->work)
+ #define GEM_title_name		(this->hidden->title_name)
+ #define GEM_icon_name		(this->hidden->icon_name)
+ #define GEM_refresh_name	(this->hidden->refresh_name)
+diff --git a/src/video/gem/SDL_gemwm.c b/src/video/gem/SDL_gemwm.c
+index 10776fd2..335e140b 100644
+--- a/src/video/gem/SDL_gemwm.c
++++ b/src/video/gem/SDL_gemwm.c
+@@ -93,15 +93,15 @@ int GEM_IconifyWindow(_THIS)
+ 		return 0;
+ 
+ 	GEM_message[0] = WM_ICONIFY;
+-	GEM_message[1] = gl_apid;
++	GEM_message[1] = GEM_ap_id;
+ 	GEM_message[2] = 0;
+ 	GEM_message[3] = GEM_handle;
+ 	GEM_message[4] = 0;
+-	GEM_message[5] = GEM_desk_h-ICONHEIGHT;
++	GEM_message[5] = GEM_desk.g_h-ICONHEIGHT;
+ 	GEM_message[6] = ICONWIDTH;
+ 	GEM_message[7] = ICONHEIGHT;
+ 
+-	appl_write(gl_apid, sizeof(GEM_message), GEM_message);
++	appl_write(GEM_ap_id, sizeof(GEM_message), GEM_message);
+ 
+ 	return 1;
+ }
+diff --git a/src/video/gem/gem_aesP.h b/src/video/gem/gem_aesP.h
+new file mode 100644
+index 00000000..15bcd068
+--- /dev/null
++++ b/src/video/gem/gem_aesP.h
+@@ -0,0 +1,67 @@
++#ifndef __GNUC__
++ #error "you loose"
++#endif
++
++/*
++ * Macros to set up the AES parameter block
++ */
++static inline void _aes_trap (AESPB * aespb)
++{
++	__asm__ volatile (
++		"move.l	%0,%%d1\n\t"	/* &aespb */
++		"move.w	#200,%%d0\n\t"
++		"trap	#2"
++		:
++		: "g"(aespb)
++		: "d0","d1","d2","a0","a1","a2","memory","cc"
++	);
++}
++#define AES_TRAP(aespb) _aes_trap(&aespb)
++
++#define AES_PARAMS(opcode,num_intin,num_intout,num_addrin,num_addrout) \
++	static short	aes_control[AES_CTRLMAX]={opcode,num_intin,num_intout,num_addrin,num_addrout}; \
++	short			aes_intin[__builtin_constant_p(num_intin) ? num_intin : -1];			  \
++	/* some bindings use #num_intout == 0, but AES writes to the array anyway */ \
++	short			aes_intout[__builtin_constant_p(num_intout) ? (num_intout == 0 ? 1 : num_intout) : -1]; 		  \
++	long			aes_addrin[__builtin_constant_p(num_addrin) ? num_addrin : -1]; 		  \
++	long			aes_addrout[__builtin_constant_p(num_addrout) ? num_addrout : -1];		  \
++														  \
++	AESPB aes_params;									  \
++	aes_params.control = &aes_control[0];				  \
++	aes_params.global  = &global_aes[0];				  \
++	aes_params.intin   = aes_intin; 				  \
++	aes_params.intout  = aes_intout;				  \
++	aes_params.addrin  = aes_addrin;				  \
++	aes_params.addrout = aes_addrout
++
++/* to avoid "dereferencing type-punned pointer" */
++static __inline long *__aes_intout_long(short n, short *aes_intout)
++{
++	return ((long *)(aes_intout   +n));
++}
++#define aes_intout_long(n)  *__aes_intout_long(n, aes_intout)
++
++static __inline long *__aes_intin_long(short n, short *aes_intin)
++{
++	return ((long *)(aes_intin   +n));
++}
++#define aes_intin_long(n)  *__aes_intin_long(n, aes_intin)
++
++static __inline void **__aes_intout_ptr(short n, short *aes_intout)
++{
++	return ((void **)(aes_intout   +n));
++}
++#define aes_intout_ptr(n, t)  *((t *)__aes_intout_ptr(n, aes_intout))
++
++static __inline void **__aes_intin_ptr(short n, short *aes_intin)
++{
++	return ((void **)(aes_intin   +n));
++}
++#define aes_intin_ptr(n, t)  *((t *)__aes_intin_ptr(n, aes_intin))
++
++/* special feature for AES bindings: pointer in parameters (for return values)
++ * could be NULL (nice idea by Martin Elsasser against dummy variables) 
++ */
++#define CHECK_NULLPTR 0
++
++
+diff --git a/src/video/gem/gem_vdiP.h b/src/video/gem/gem_vdiP.h
+new file mode 100644
+index 00000000..5d048d48
+--- /dev/null
++++ b/src/video/gem/gem_vdiP.h
+@@ -0,0 +1,106 @@
++/*
++ * Macros to set up the VDI parameter block
++ */
++
++static inline void
++_vdi_trap_esc (VDIPB * vdipb,
++               long cntrl_0_1, long cntrl_3, long cntrl_5, short handle)
++{
++	__asm__ volatile (
++		"movea.l	%0,%%a0\n\t"	/* &vdipb */
++		"move.l	%%a0,%%d1\n\t"
++		"move.l	(%%a0),%%a0\n\t"	/* vdipb->control */
++		"move.l	%1,(%%a0)+\n\t"	/* cntrl_0, cntrl_1 */
++		"move.l	%2,(%%a0)+\n\t"	/* cntrl_2, cntrl_3 */
++		"move.l	%3,(%%a0)+\n\t"	/* cntrl_4, cntrl_5 */
++		"move.w	%4,(%%a0)\n\t"	/* handle */
++		"move.w	#115,%%d0\n\t"	/* 0x0073 */
++		"trap	#2"
++		:
++		: "g"(vdipb), "g"(cntrl_0_1), "g"(cntrl_3), "g"(cntrl_5), "g"(handle)
++		: "d0", "d1", "d2", "a0", "a1", "a2", "memory", "cc"
++	);
++}
++#define VDI_TRAP_ESC(vdipb, handle, opcode, subop, cntrl_1, cntrl_3) \
++	_vdi_trap_esc (&vdipb, (opcode##uL<<16)|cntrl_1, cntrl_3, subop, handle)
++
++static inline void
++_vdi_trap_00 (VDIPB * vdipb, long cntrl_0_1, short handle)
++{
++	__asm__ volatile (
++		"movea.l %0,%%a0\n\t"	/* &vdipb */
++		"move.l  %%a0,%%d1\n\t"
++		"move.l  (%%a0),%%a0\n\t"	/* vdipb->control */
++		"move.l  %1,(%%a0)+\n\t"	/* cntrl_0, cntrl_1 */
++		"moveq   #0,%%d0\n\t"
++		"move.l  %%d0,(%%a0)+\n\t"	/* cntrl_2, cntrl_3 */
++		"move.l  %%d0,(%%a0)+\n\t"	/* cntrl_4, cntrl_5 */
++		"move.w  %2,(%%a0)\n\t"	/* handle */
++		"move.w  #115,%%d0\n\t"	/* 0x0073 */
++		"trap    #2"
++		:
++		: "g"(vdipb), "g"(cntrl_0_1), "g"(handle)
++		: "d0", "d1", "d2", "a0", "a1", "a2", "memory", "cc"
++	);
++}
++#define VDI_TRAP_00(vdipb, handle, opcode) \
++	_vdi_trap_00 (&vdipb, (opcode##uL<<16), handle)
++
++#define VDI_TRAP(vdipb, handle, opcode, cntrl_1, cntrl_3) \
++	VDI_TRAP_ESC(vdipb, handle, opcode, 0, cntrl_1, cntrl_3)
++
++#define VDI_PARAMS(a,b,c,d,e) \
++	VDIPB vdi_params;         \
++	vdi_params.control = a;   \
++	vdi_params.intin   = b;   \
++	vdi_params.ptsin   = c;   \
++	vdi_params.intout  = d;   \
++	vdi_params.ptsout  = e;
++
++/* special feature for VDI bindings: set VDIPB::intout and VDIPB::ptsout to
++ * vdi_dummy array intead of NULL against crashes if some crazy VDI drivers
++ * tries to write something in ptsout/intout.
++ */ 
++#define USE_VDI_DUMMY 1
++
++#if USE_VDI_DUMMY
++	/* use dummy array vdi_dummy[] from vdi_dummy.c */
++extern short vdi_dummy[];
++#else
++	/* replace vdi_dummy in VDIPB by NULL pointer */
++	#define vdi_dummy 0L
++#endif
++
++#define N_PTRINTS (sizeof(void *) / sizeof(short))
++
++#ifdef __GNUC__
++
++/* to avoid "dereferencing type-punned pointer" */
++static __inline long *__vdi_array_long(short n, short *array)
++{
++	return ((long *)(array   +n));
++}
++
++static __inline void **__vdi_array_ptr(short n, short *array)
++{
++	return ((void**)(array + n));
++}
++
++#else
++
++#define __vdi_array_ptr(n, array)   ((void **)(array + (n)))
++#define __vdi_array_long(n, array)   ((long *)(array + (n)))
++
++#endif
++
++#define vdi_intin_long(n)  *__vdi_array_long(n, vdi_intin)
++#define vdi_intout_long(n)  *__vdi_array_long(n, vdi_intout)
++#define vdi_ptsin_long(n)  *__vdi_array_long(n, vdi_ptsin)
++#define vdi_ptsout_long(n)  *__vdi_array_long(n, vdi_ptsout)
++
++#define vdi_control_ptr(n, t)  *((t *)__vdi_array_ptr(7 + (n) * N_PTRINTS, vdi_control))
++#define vdi_intin_ptr(n, t)  *((t *)__vdi_array_ptr(n, vdi_intin))
++#define vdi_intout_ptr(n, t)  *((t *)__vdi_array_ptr(n, vdi_intout))
++#define vdi_ptsin_ptr(n, t)  *((t *)__vdi_array_ptr(n, vdi_ptsin))
++#define vdi_ptsout_ptr(n, t)  *((t *)__vdi_array_ptr(n, vdi_ptsout))
++
+diff --git a/src/video/gem/vdi_dummy.c b/src/video/gem/vdi_dummy.c
+new file mode 100644
+index 00000000..1f0062d3
+--- /dev/null
++++ b/src/video/gem/vdi_dummy.c
+@@ -0,0 +1,7 @@
++#include <gem.h>
++#include "gem_vdiP.h"
++
++#if USE_VDI_DUMMY
++short vdi_dummy[1024];
++#endif
++
+-- 
+2.41.0
+

@@ -14,7 +14,14 @@ PATCHES="
 patches/sdl/sdl-1.2.16-keyboard.patch
 patches/sdl/sdl-1.2.16-keyboard2.patch
 patches/sdl/sdl-pth.patch
+patches/sdl/0001-Implement-gemlib-functions-that-are-needed-to-get-ri.patch
+patches/sdl/0002-Implement-ldg-functions-that-are-needed-to-get-rid-o.patch
+patches/sdl/0003-atari-filter-out-liconv-from-EXTRA_LDFLAGS-since-we-.patch
+patches/sdl/0004-atari-Metaioctl-is-a-direct-Xbios-call-and-does-not-.patch
+patches/sdl/0005-Fix-some-warnings-for-Wstrict-prototypes.patch
+patches/sdl/0007-atari-do-not-align-the-window-to-a-16-pixel-boundary.patch
 "
+# those are already in upstream repo
 DISABLED_PATCHES="
 patches/sdl/sdl-1.2.16-asm.patch
 patches/sdl/sdl-1.2.15-c99.patch

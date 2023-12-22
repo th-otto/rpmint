@@ -33,11 +33,14 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} $JOBS CROSS_PREFIX=${TARGET}- CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="${STACKSIZE} -s" || exit 1
 
 	mkdir -p "${THISPKG_DIR}"
-	cp -p 2048.prg "${THISPKG_DIR}/2048-${CPU}.prg"
-	cp -pr ${BUILD_DIR}/patches/${PACKAGENAME}/fonts "${THISPKG_DIR}/"
+	cp -p 2048 "${THISPKG_DIR}/2048-${CPU}.prg"
+	cp -pr locale "${THISPKG_DIR}/"
 	
 	${MAKE} clean >/dev/null
 done
+
+cd "$MINT_BUILD_DIR"
+cp -pr ${BUILD_DIR}/patches/${PACKAGENAME}/fonts "${THISPKG_DIR}/"
 
 make_bin_archive
 make_archives
