@@ -18,6 +18,28 @@ Subject: [PATCH 2/7] Implement ldg functions that are needed, to get rid of
  create mode 100644 src/loadso/mint/ldg/ldgload.c
  create mode 100644 src/loadso/mint/ldg/ldgutil.c
 
+diff --git a/configure.ac b/configure.ac
+index f40158c5..7d78d539 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -2200,14 +2200,9 @@ CheckAtariLdg()
+ [AS_HELP_STRING([--enable-atari-ldg], [use Atari LDG for shared object loading [default=yes]])],
+                   , enable_atari_ldg=yes)
+     if test x$video_gem = xyes -a x$enable_atari_ldg = xyes; then
+-        AC_CHECK_HEADER(ldg.h, have_ldg_hdr=yes)
+-        AC_CHECK_LIB(ldg, ldg_open, have_ldg_lib=yes, have_ldg_lib=no, -lgem)
+-        if test x$have_ldg_hdr = xyes -a x$have_ldg_lib = xyes; then
+-            AC_DEFINE(SDL_LOADSO_LDG)
+-            SOURCES="$SOURCES $srcdir/src/loadso/mint/*.c"
+-            SDL_LIBS="$SDL_LIBS -lldg"
+-            have_loadso=yes
+-        fi
++        AC_DEFINE(SDL_LOADSO_LDG)
++        SOURCES="$SOURCES $srcdir/src/loadso/mint/SDL_sysloadso.c $srcdir/src/loadso/mint/ldg/*.c"
++        have_loadso=yes
+     fi
+ }
+ 
 diff --git a/src/loadso/mint/SDL_sysloadso.c b/src/loadso/mint/SDL_sysloadso.c
 index d6dd732c..8e95a036 100644
 --- a/src/loadso/mint/SDL_sysloadso.c
@@ -692,7 +714,7 @@ index 00000000..b1db0862
 +
 +int ldg_cookie(long cookie, long *value)
 +{
-+	long *cookiejar = (long *) Setexc(0x5a0 / 4, (void (*)())-1);
++	long *cookiejar = (long *) Setexc(0x5a0 / 4, (void (*)(void))-1);
 +
 +	if (cookiejar)
 +	{
@@ -801,7 +823,7 @@ index 00000000..b1db0862
 +	}
 +
 +	if (_cpu > 30)
-+		Supexec((long (*)()) do_cpush);
++		Supexec((long (*)(void)) do_cpush);
 +}
 +#endif
 -- 
