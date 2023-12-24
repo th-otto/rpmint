@@ -3,12 +3,8 @@
 %rpmint_header
 
 Summary:        Module Player library for MOD, S3M, IT and others
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
-Version:        4.4.1
+Name:           %{crossmint}%{pkgname}
+Version:        4.6.0
 Release:        1
 License:        LGPL-2.1
 Group:          Development/Libraries/C and C++
@@ -22,16 +18,12 @@ BuildRoot:      %{_tmppath}/%{name}-root
 
 Source0: %{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0:  patches/%{pkgname}/libxmp-xmp_atari.patch
+Patch0:  patches/%{pkgname}/libxmp.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  make
-%if "%{buildtype}" == "cross"
-Provides:       cross-mint-libxmp-devel
-%else
-Provides:       libxmp-devel
-%endif
+Provides:       %{crossmint}libxmp-devel
 
 %rpmint_build_arch
 
@@ -121,5 +113,8 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Fri Dec 22 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to version 4.6.0
+
 * Sat Apr 01 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

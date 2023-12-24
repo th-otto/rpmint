@@ -1,7 +1,7 @@
 <?php
 
-$target = ' target="_blank"';
-$target = '';
+$href_target = ' target="_blank"';
+$href_target = '';
 $linkcount = 0;
 $linkstats = array();
 $targets = array(
@@ -114,7 +114,7 @@ function gen_link($filename, $text, $must_exist = true)
 			$ext_ok = function_exists('xzopen') || $stat;
 		if ($ext_ok)
 		{
-			echo '&nbsp;<a class="listtar" href="listtar.php?filename=' . urlencode($filename) . '&local=' . ($stat ? "1" : "0") . '">&lt;file&nbsp;list&gt;</a>';
+			echo '&nbsp;<a class="listtar" href="listtar.php?filename=' . urlencode($filename) . '&amp;local=' . ($stat ? "1" : "0") . '">&lt;file&nbsp;list&gt;</a>';
 		} else if ($stat && !is_null($rpm_dir) && fnmatch('*.rpm', $filename))
 		{
 			/* Note: $rpm_dir is only set in download area, not in the rpmdetails page,
@@ -146,7 +146,7 @@ function gen_linktitles($timeformat='YYYY/MM/DD HH:mm:ss')
 	
 	foreach ($linkstats as $stat)
 	{
-		echo '<!-- ' . $stat['filename'] . ': ' . $stat['size'] . " --!>\n";
+		echo '<!-- ' . $stat['filename'] . ': ' . $stat['size'] . " -->\n";
 		/* FIXME: do not report size > 0 but < 1K as zero */
 		echo "document.getElementById('" . $stat['id'] . "').setAttribute('title',
 			'size: " . intdiv($stat['size'], 1024) . "K\\n" .

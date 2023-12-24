@@ -61,7 +61,7 @@ $gccver = 'gcc950';
 <h1>m68k-atari-mint cross-tools</h1>
 
 <div><p>
-(Some of the text on this page was copied/pasted from Vincent Rivi&#xe8re's website, 
+(Some of the text on this page was copied/pasted from Vincent Rivi&#xe8;re's website, 
 with his permission.)
 </p><br />
 
@@ -94,7 +94,7 @@ libraries. They also now produce dwarf-2 debug information by default.
 
 <h1>Quickstart for Windows</h1>
 <ol>
-<li>Install <a href="http://www.cygwin.com/" <?php echo $target ?>>Cygwin 32-bit</a>.
+<li>Install <a href="http://www.cygwin.com/" <?php echo $href_target ?>>Cygwin 32-bit</a>.
 This will provide you a full UNIX-like environment necessary for running the GNU tools.</li>
 <li>Install the following packages, using the Cygwin setup program: <b>libmpc3</b>.</li>
 <li>Download and install <?php gen_link($download_dir . 'm68k-atari-mint-base-20200501-cygwin32.tar.xz', 'm68k-atari-mint-base-20200501-cygwin32.tar.xz') ?> (~71 MB).</li>
@@ -106,7 +106,7 @@ and even read the man pages.</li>
 <p>Alternatively, you can also use MinGW:</p>
 
 <ol>
-<li>Install <a href="http://www.msys2.org/"<?php echo $target ?>>MSYS2/MinGW</a>.</li>
+<li>Install <a href="http://www.msys2.org/"<?php echo $href_target ?>>MSYS2/MinGW</a>.</li>
 <li>From the list below, install the mingw packages for at least
 <ol>
 <li>binutils</li>
@@ -118,7 +118,7 @@ and even read the man pages.</li>
 </ol>
 
 <p>Note: the binutils and gcc packages were built with a prefix of /mingw32. If you are
-using an older installation using MSYS from <a href="http://www.mingw.org/"<?php echo $target ?>>mingw.org</a>
+using an older installation using MSYS from <a href="http://www.mingw.org/"<?php echo $href_target ?>>mingw.org</a>
 you should extract them by using <br />
 <code>tar -C /mingw --strip-components=1 -xf &lt;archive&gt;</code>
 </p>
@@ -159,7 +159,7 @@ The macOS packages were built on macOS 10.13 (High Sierra), with a deployment ta
 Some of the packages (binutils, gcc &amp; mintbin) are now also available as universal x86_64/arm64 binaries.
 Those are build using the same scripts as provided here, but are run in a github runner. The whole repo for these
 script is available <a href="https://github.com/th-otto/crossmint/" title="crossmint">here</a>. The resulting binaries
-are available <a href="snapshots/crossmint/macos" title="macos">here<a>.
+are available <a href="snapshots/crossmint/macos" title="macos">here</a>.
 </p>
 
 <p>
@@ -213,7 +213,7 @@ foreach ($platforms as $k => $t)
 }
 ?>
 </select>
-<input type ="hidden" name="submitted" value="true"></br>
+<input type ="hidden" name="submitted" value="true"><br />
 </p></form>
 -->
 
@@ -222,6 +222,7 @@ foreach ($platforms as $k => $t)
 <p>
 Some of the build scripts use a script with common functions,
 which is available <a href="<?php echo $download_dir ?>functions.sh">here</a>.
+</p>
 
 <p>&nbsp;</p>
 
@@ -374,7 +375,7 @@ foreach ($basepackages as $key => $package)
 	if (substr($name, 0, 3) === "gcc")
 		$name = "gcc";
 	$title = isset($package['title']) ? $package['title'] : $name;
-	echo '<a href="' . $package['upstream'] . '"' . $target . '>' . $title . "</a>\n";
+	echo '<a href="' . $package['upstream'] . '"' . $href_target . '>' . $title . "</a>\n";
 	echo '<br />';
 	echo last_changetime($name);
 	echo "</td>\n";
@@ -396,7 +397,7 @@ foreach ($basepackages as $key => $package)
 		echo '<a href="' . $package['repo'];
 		if (isset($package['branch']))
 			echo '/tree/' . $package['branch'];
-		echo '"' . $target . '>';
+		echo '"' . $href_target . '>';
 		$repo = str_replace('https://github.com/', '', $package['repo']);
 		echo $repo;
 		echo '</a>';
@@ -657,10 +658,12 @@ compiled for 68k.</p>
 <p>For native installation, there will also be *-bin
 packages for other machines. <span class="important">Do not install these on
 a cross-development environment</span>(at least not to your usual installation
-directory), as this may overwrite your system binaries.</p> They are meant
+directory), as this may overwrite your system binaries.</p>
+<p>They are meant
 to be installed in a MiNT environment, and therefore were packaged with paths
 like <code>/usr/bin</code>. In general, the binaries won't be of much use
 in a cross-development installation.
+</p>
 
 <p>&nbsp;</p>
 
@@ -688,7 +691,7 @@ foreach ($libpackages as $package)
 	echo '<tr id="' . $package['name'] . '">' . "\n";
 	echo '<td>';
 	$title = isset($package['title']) ? $package['title'] : $package['name'];
-	echo '<a href="' . $package['upstream'] . '"' . $target . '>' . $title . "</a>";
+	echo '<a href="' . $package['upstream'] . '"' . $href_target . '>' . $title . "</a>";
 	echo '<br />';
 	echo last_changetime($package['name']);
 	echo "</td>\n";
@@ -709,7 +712,7 @@ foreach ($libpackages as $package)
 		echo '<a href="' . $package['repo'];
 		if (isset($package['branch']))
 			echo '/tree/' . $package['branch'];
-		echo '"' . $target . '>';
+		echo '"' . $href_target . '>';
 		$repo = str_replace('https://github.com/', '', $package['repo']);
 		echo $repo;
 		echo '</a>';
@@ -792,27 +795,30 @@ foreach ($libpackages as $package)
 	
 	if (isset($package['dev']) && $package['dev'])
 	{
-		echo '<tr>' . "\n";
-		echo '<td class="linkdesc">Devel Package:</td>' . "\n";
-		echo '<td class="sourcelink">';
-		echo '<table><tr><td>';
-		if (isset($package['atari']) && $package['atari'])
+		if (1)
 		{
-			echo '<img class="smallicon" src="images/' . $platforms['atari']['image'] . '" width="16" height="16" alt="Atari"></img>' . "\n";
+			echo '<tr>' . "\n";
+			echo '<td class="linkdesc">Devel Package:</td>' . "\n";
+			echo '<td class="sourcelink">';
+			echo '<table><tr><td>';
+			if (isset($package['atari']) && $package['atari'])
+			{
+				echo '<img class="smallicon" src="images/' . $platforms['atari']['image'] . '" width="16" height="16" alt="Atari"></img>';
+			}
+			echo '</td><td>' . "\n";
+			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
+			if (isset($package['date']))
+				$filename .= '-' . $package['date'];
+			$filename .= '-dev.tar.xz';
+			$text = $package['name'] . '-' . $package['version'] . '-mint.tar.xz';
+			gen_link($filename, $text);
+			echo '</td></tr></table>';
+			echo '</td></tr>' . "\n";
 		}
-		echo '</td><td>';
-		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
-		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-dev.tar.xz';
-		$text = $package['name'] . '-' . $package['version'] . '-mint.tar.xz';
-		gen_link($filename, $text);
-		echo '</td></tr></table>';
-		echo '</td></tr>' . "\n";
-		echo '<tr><td></td>';
-		echo '<td class="sourcelink">';
 		if (!isset($package['noelf']))
 		{
+			echo '<tr><td></td>';
+			echo '<td class="sourcelink">';
 			echo '<table><tr><td>';
 			if (isset($package['atari']) && $package['atari'])
 			{
@@ -826,6 +832,7 @@ foreach ($libpackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-mintelf.tar.xz';
 			gen_link($filename, $text);
 			echo '</td></tr></table>';
+			echo '</td></tr>' . "\n";
 		}
 		if (isset($package['amiga']) && $package['amiga'])
 		{
@@ -841,8 +848,7 @@ foreach ($libpackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '-amigaos.tar.xz';
 			gen_link($filename, $text);
 			echo '</td></tr></table>';
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
+			echo '</td></tr>' . "\n";
 		}
 		if (isset($package['rpm']) && $package['rpm'] !== '')
 		{
@@ -855,52 +861,60 @@ foreach ($libpackages as $package)
 			$text = $package['name'] . '-' . $package['version'] . '.rpm';
 			gen_link($filename, $text);
 			echo '</td></tr></table>';
-			echo '</td>' . "\n";
-			echo '</tr>' . "\n";
+			echo '</td></tr>' . "\n";
 		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
 	}
 	
 	if (isset($package['bin']) && $package['bin'])
 	{
-		echo '<tr>' . "\n";
-		echo '<td class="linkdesc">Binary Package:</td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
-		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-000.tar.xz';
-		$text = $package['name'] . '-' . $package['version'] . '-000.tar.xz';
-		gen_link($filename, $text);
-		echo '</td>' . "\n";
-		echo '<td class="sourcelink">';
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr>' . "\n";
-		echo '<td class="linkdesc"></td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
-		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-020.tar.xz';
-		$text = $package['name'] . '-' . $package['version'] . '-020.tar.xz';
-		gen_link($filename, $text);
-		echo '</td>' . "\n";
-		echo '<td class="sourcelink">';
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
-		echo '<tr>' . "\n";
-		echo '<td class="linkdesc"></td>' . "\n";
-		echo '<td class="sourcelink">';
-		$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
-		if (isset($package['date']))
-			$filename .= '-' . $package['date'];
-		$filename .= '-v4e.tar.xz';
-		$text = $package['name'] . '-' . $package['version'] . '-v4e.tar.xz';
-		gen_link($filename, $text);
-		echo '</td>' . "\n";
-		echo '<td class="sourcelink">';
+		if (1)
+		{
+			echo '<tr>' . "\n";
+			echo '<td class="linkdesc">Binary Package:</td>' . "\n";
+			echo '<td class="sourcelink">';
+			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
+			if (isset($package['date']))
+				$filename .= '-' . $package['date'];
+			$filename .= '-000.tar.xz';
+			$text = $package['name'] . '-' . $package['version'] . '-000.tar.xz';
+			gen_link($filename, $text);
+			echo '</td>' . "\n";
+			echo '<td class="sourcelink">';
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+		}
+		if (1)
+		{
+			echo '<tr>' . "\n";
+			echo '<td class="linkdesc"></td>' . "\n";
+			echo '<td class="sourcelink">';
+			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
+			if (isset($package['date']))
+				$filename .= '-' . $package['date'];
+			$filename .= '-020.tar.xz';
+			$text = $package['name'] . '-' . $package['version'] . '-020.tar.xz';
+			gen_link($filename, $text);
+			echo '</td>' . "\n";
+			echo '<td class="sourcelink">';
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+		}
+		if (1)
+		{
+			echo '<tr>' . "\n";
+			echo '<td class="linkdesc"></td>' . "\n";
+			echo '<td class="sourcelink">';
+			$filename = $download_dir . $package['name'] . '-' . $package['version'] . '-mint';
+			if (isset($package['date']))
+				$filename .= '-' . $package['date'];
+			$filename .= '-v4e.tar.xz';
+			$text = $package['name'] . '-' . $package['version'] . '-v4e.tar.xz';
+			gen_link($filename, $text);
+			echo '</td>' . "\n";
+			echo '<td class="sourcelink">';
+			echo '</td>' . "\n";
+			echo '</tr>' . "\n";
+		}
 		if (isset($package['rpm']) && $package['rpm'] !== '')
 		{
 			echo '<tr><td></td>';
@@ -913,10 +927,10 @@ foreach ($libpackages as $package)
 			gen_link($filename, $text);
 			echo '</td></tr></table>';
 			echo '</td>' . "\n";
+			echo '<td class="sourcelink">';
+			echo '</td>' . "\n";
 			echo '</tr>' . "\n";
 		}
-		echo '</td>' . "\n";
-		echo '</tr>' . "\n";
 	}
 	
 	if (isset($package['noarch']) && $package['noarch'])
@@ -1448,6 +1462,8 @@ This notably applies to Perl and Python.
 
 <li>2023/12/22 Update SDL to 1.2.16-git-cbe3ea9</li>
 
+<li>2023/12/23 Add FLTK 1.3.9</li>
+
 </ul>
 
 <p></p>
@@ -1465,81 +1481,82 @@ Feel free to <a href="mailto:admin@tho-otto.de">send me your comments</a>!<br />
 <h1>Links</h1>
 <p>
 <b>Vincent Rivi&#xe8;re</b> has made similar scripts available for several years.
-His work is available <a href="http://vincent.riviere.free.fr/soft/m68k-atari-mint/"<?php echo $target ?>>here</a>.</p>
+His work is available <a href="http://vincent.riviere.free.fr/soft/m68k-atari-mint/"<?php echo $href_target ?>>here</a>.</p>
 
 <p>
 <b>Patrice Mandin</b> has done a lot of work for porting GCC and the binutils
 to the MiNT platform. His work is available
-<a href="http://patrice.mandin.pagesperso-orange.fr/v3/en/patch-utils.html"<?php echo $target ?>>here</a>.</p>
+<a href="http://patrice.mandin.pagesperso-orange.fr/v3/en/patch-utils.html"<?php echo $href_target ?>>here</a>.</p>
 
 <p>
 <b>Olivier Landemarre</b> has made his own port of GCC 4.2 to the MiNT platform.
-He also has <a href="http://gem.lutece.net/discussion/archives/cat_listedeliens.html"<?php echo $target ?>>
+He also has <a href="http://gem.lutece.net/discussion/archives/cat_listedeliens.html"<?php echo $href_target ?>>
 a great list of Atari-related stuff</a>.</p>
 
 <p>
 <b>Fran&#xe7;ois Le Coat</b> is the author of the
-<a href="http://eureka2.12.pagesperso-orange.fr/atari.html"<?php echo $target ?>>ATARI Search Engine</a>.</p>
+<a href="http://eureka2.12.pagesperso-orange.fr/atari.html"<?php echo $href_target ?>>ATARI Search Engine</a>.</p>
 
 <p>
-<b>Thomas Huth</b> is the author of the <a href="http://hatari.tuxfamily.org/"<?php echo $target ?>>Hatari</a> ST emulator.
+<b>Thomas Huth</b> is the author of the <a href="http://hatari.tuxfamily.org/"<?php echo $href_target ?>>Hatari</a> ST emulator.
 <!--
 He has sucessfully recompiled this GCC port on Linux, on his PowerMac G4,
-and has successfully compiled <a href="http://emutos.sourceforge.net/"<?php echo $target ?>>EmuTOS</a> with it!
+and has successfully compiled <a href="http://emutos.sourceforge.net/"<?php echo $href_target ?>>EmuTOS</a> with it!
 -->
 </p>
 <!--
 <p>
 <b>Bohdan Milar</b> has (not yet ?) put a link to this page
-on <a href="http://cs.atari.org/"<?php echo $target ?>>the Czech and Slovak Atari portal</a>.</p>
+on <a href="http://cs.atari.org/"<?php echo $href_target ?>>the Czech and Slovak Atari portal</a>.</p>
 -->
 <p>
-<b>Keith Scroggins</b> has ported <a href="http://www.scummvm.org/"<?php echo $target ?>>ScummVM</a> to MiNT.
-Build instructions are available <a href="http://wiki.scummvm.org/index.php/Compiling_ScummVM/Atari/FreeMiNT"<?php echo $target ?>>here</a>.
-He also made his own native port of GCC 4.0.1 several years before me; his work is available <a href="http://www.radix.net/~kws/mint/old/"<?php echo $target ?>>here</a>.</p>
+<b>Keith Scroggins</b> has ported <a href="http://www.scummvm.org/"<?php echo $href_target ?>>ScummVM</a> to MiNT.
+Build instructions are available <a href="http://wiki.scummvm.org/index.php/Compiling_ScummVM/Atari/FreeMiNT"<?php echo $href_target ?>>here</a>.
+He also made his own native port of GCC 4.0.1 several years before me; his work is available <a href="http://www.radix.net/~kws/mint/old/"<?php echo $href_target ?>>here</a>.</p>
 
 <p>
 <b>Miro Krop&#xe1;&#x010d;ek</b> has compiled the GCC 4.6.4 port for the MiNT host.
 That means you can run the latest GCC natively on your Atari/MiNT computer, without cross-compilation!
 He also made a nice Makefile for building all the toolchain.
-His work is available <a href="http://mikro.atari.org/download.htm"<?php echo $target ?>>here</a>.</p>
+His work is available <a href="http://mikro.atari.org/download.htm"<?php echo $href_target ?>>here</a>.</p>
 
 <p>
-<b>Pawe&#x0142; G&#xf3;ralski</b> has ported <a href="http://nokturnal.pl/home/atari/porty_reminiscence"<?php echo $target ?>>REminiscence</a>
+<b>Pawe&#x0142; G&#xf3;ralski</b> has ported <a href="http://nokturnal.pl/home/atari/porty_reminiscence"<?php echo $href_target ?>>REminiscence</a>
 to Falcon using this compiler. It is an interpreter for Delphine Software games, enabling to play Flashback on Falcon.
-He also maintains the <a href="http://bus-error.nokturnal.pl/tiki-list_articles.php"<?php echo $target ?>>Bus Error Wiki</a> with a lot of programming tricks using these cross-tools.</p>
+He also maintains the <a href="http://bus-error.nokturnal.pl/tiki-list_articles.php"<?php echo $href_target ?>>Bus Error Wiki</a> with a lot of programming tricks using these cross-tools.</p>
 
 <p>
 <b>Mark Duckworth</b> has built an RPM package for native MiNT binutils, using the patch available on this page.
-He has compiled natively a lot of other RPM packages, his work is available <a href="http://storage.atari-source.org/atari/personal/package_staging/"<?php echo $target ?>>here</a>.</p>
+He has compiled natively a lot of other RPM packages, his work is available <a href="http://storage.atari-source.org/atari/personal/package_staging/"<?php echo $href_target ?>>here</a>.</p>
 
 <p>
-<b>Dominique B&#xe9;r&#xe9;ziat</b> has written <a href="http://pequan.lip6.fr/~bereziat/softs/tos/cross-compilation/"<?php echo $target ?>>a tutorial for cross-compiling GEM applications</a>.</p>
+<b>Dominique B&#xe9;r&#xe9;ziat</b> has written <a href="http://pequan.lip6.fr/~bereziat/softs/tos/cross-compilation/"<?php echo $href_target ?>>a tutorial for cross-compiling GEM applications</a>.</p>
 
 <p>
 <b>Philipp Donz&#xe9;</b> has built the binaries of an older version of these cross-tools for MacOS X (Intel and PowerPC supported).
-His binaries as well as installation instructions are available <a href="http://www.xn--donz-epa.ch/atari/articles/cross-compiler/"<?php echo $target ?>>here</a>.</p>
+His binaries as well as installation instructions are available <a href="http://www.xn--donz-epa.ch/atari/articles/cross-compiler/"<?php echo $href_target ?>>here</a>.</p>
 
 <p>
-<b>Rolf Hemmerling</b> has <a href="http://hemmerling.free.fr/doku.php/en/atarist.html"<?php echo $target ?>>a nice page about the current Atari resources on the web</a>.</p>
+<b>Rolf Hemmerling</b> has <a href="http://hemmerling.free.fr/doku.php/en/atarist.html"<?php echo $href_target ?>>a nice page about the current Atari resources on the web</a>.</p>
 
 <p>
-<b>DML</b> has <a href="http://www.leonik.net/dml/sec_atari.py"<?php echo $target ?>>a nice page about Atari and engineering</a>.</p>
+<b>DML</b> has <a href="http://www.leonik.net/dml/sec_atari.py"<?php echo $href_target ?>>a nice page about Atari and engineering</a>.</p>
 
 <p>
-<b>Peter Dassow</b> has <a href="http://www.z80.eu/stsoft.html"<?php echo $target ?>>a nice page with a lot of links to ST software</a>.</p>
+<b>Peter Dassow</b> has <a href="http://www.z80.eu/stsoft.html"<?php echo $href_target ?>>a nice page with a lot of links to ST software</a>.</p>
 
 <p>
-<b>George Nakos</b> used the cross-tools for his <a href="http://reboot.atari.org/downloads.html"<?php echo $target ?>>raptorBASIC+</a>.</p>
+<b>George Nakos</b> used the cross-tools for his <a href="http://reboot.atari.org/downloads.html"<?php echo $href_target ?>>raptorBASIC+</a>.</p>
 
 <p>
-<b>Jookie</b> uses the cross-tools for developing <a href="http://joo.kie.sk/?page_id=384"<?php echo $target ?>>CosmosEx</a> software.
+<b>Jookie</b> uses the cross-tools for developing <a href="http://joo.kie.sk/?page_id=384"<?php echo $href_target ?>>CosmosEx</a> software.
 CosmosEx is a hardware extension as small as a floppy drive which brings SD-Card, USB, Ethernet and much more to Atari computers.</p>
 
 <hr />
 <div style="text-align:center">Last updated: <?php echo usertime(filemtime($_SERVER['SCRIPT_FILENAME']));?>
 <p>
 </p>
+</div>
 <hr />
 <div style="text-align:center">
 <p>
@@ -1550,7 +1567,7 @@ CosmosEx is a hardware extension as small as a floppy drive which brings SD-Card
 <script type="text/javascript" charset="UTF-8" src="tippy/tippy.min.js"></script>
 <script type="text/javascript" charset="UTF-8">
 <?php gen_linktitles(); ?>
-<!-- tippy('.tippybtn'); --!>
+<!-- tippy('.tippybtn'); -->
 </script>
 
 <!--

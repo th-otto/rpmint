@@ -1,0 +1,111 @@
+diff -rup libxmp-4.6.0.orig/include/xmp.h libxmp-4.6.0/include/xmp.h
+--- libxmp-4.6.0.orig/include/xmp.h	2023-06-15 22:11:10.000000000 +0200
++++ libxmp-4.6.0/include/xmp.h	2023-12-22 11:40:17.951837033 +0100
+@@ -66,6 +66,7 @@ extern "C" {
+ #define XMP_FORMAT_8BIT		(1 << 0) /* Mix to 8-bit instead of 16 */
+ #define XMP_FORMAT_UNSIGNED	(1 << 1) /* Mix to unsigned samples */
+ #define XMP_FORMAT_MONO		(1 << 2) /* Mix to mono instead of stereo */
++#define XMP_FORMAT_BYTESWAP	(1 << 3) /* Mix to byte-swapped samples (only applicable for 16-bit mixing) */
+ 
+ /* player parameters */
+ #define XMP_PLAYER_AMP		0	/* Amplification factor */
+diff -rup libxmp-4.6.0.orig/src/depackers/depacker.c libxmp-4.6.0/src/depackers/depacker.c
+--- libxmp-4.6.0.orig/src/depackers/depacker.c	2023-06-15 22:11:10.000000000 +0200
++++ libxmp-4.6.0/src/depackers/depacker.c	2023-12-22 11:39:18.715249848 +0100
+@@ -201,7 +201,7 @@ static int execute_command(const char *
+ 
+ static int decrunch_command(HIO_HANDLE *h, const char * const cmd[], char **temp)
+ {
+-#if defined __ANDROID__ || defined __native_client__
++#if defined __ANDROID__ || defined __native_client__ || defined(__MINT__)
+ 	/* Don't use external helpers in android */
+ 	return 0;
+ #else
+diff -rup libxmp-4.6.0.orig/src/mixer.c libxmp-4.6.0/src/mixer.c
+--- libxmp-4.6.0.orig/src/mixer.c	2023-06-15 22:11:10.000000000 +0200
++++ libxmp-4.6.0/src/mixer.c	2023-12-22 11:47:36.404584132 +0100
+@@ -177,17 +177,17 @@ static void downmix_int_8bit(char *dest,
+ 	int smp;
+ 	int shift = DOWNMIX_SHIFT + 8 - amp;
+ 
+-	for (; num--; src++, dest++) {
+-		smp = *src >> shift;
++	while (num--) {
++		smp = *src++ >> shift;
+ 		if (smp > LIM8_HI) {
+-			*dest = LIM8_HI;
++			smp = LIM8_HI;
+ 		} else if (smp < LIM8_LO) {
+-			*dest = LIM8_LO;
+-		} else {
+-			*dest = smp;
++			smp = LIM8_LO;
+ 		}
+ 
+-		if (offs) *dest += offs;
++		if (offs) smp += offs;
++
++		*dest++ = smp;
+ 	}
+ }
+ 
+@@ -198,17 +198,36 @@ static void downmix_int_16bit(int16 *des
+ 	int smp;
+ 	int shift = DOWNMIX_SHIFT - amp;
+ 
+-	for (; num--; src++, dest++) {
+-		smp = *src >> shift;
++	while (num--) {
++		smp = *src++ >> shift;
+ 		if (smp > LIM16_HI) {
+-			*dest = LIM16_HI;
++			smp = LIM16_HI;
+ 		} else if (smp < LIM16_LO) {
+-			*dest = LIM16_LO;
+-		} else {
+-			*dest = smp;
++			smp = LIM16_LO;
++		}
++
++		if (offs) smp += offs;
++
++		*dest++ = smp;
++	}
++}
++
++static void downmix_int_16bit_swapped(int16 *dest, int32 *src, int num, int amp, int offs)
++{
++	int smp;
++	int shift = DOWNMIX_SHIFT - amp;
++
++	while (num--) {
++		smp = *src++ >> shift;
++		if (smp > LIM16_HI) {
++			smp = LIM16_HI;
++		} else if (smp < LIM16_LO) {
++			smp = LIM16_LO;
+ 		}
+ 
+-		if (offs) *dest += offs;
++		if (offs) smp += offs;
++
++		*dest++ = __builtin_bswap16(smp);
+ 	}
+ }
+ 
+@@ -754,10 +773,13 @@ void libxmp_mixer_softmixer(struct conte
+ 
+ 	if (s->format & XMP_FORMAT_8BIT) {
+ 		downmix_int_8bit(s->buffer, s->buf32, size, s->amplify,
+-				s->format & XMP_FORMAT_UNSIGNED ? 0x80 : 0);
++				(s->format & XMP_FORMAT_UNSIGNED) ? 0x80 : 0);
++	} else if (s->format & XMP_FORMAT_BYTESWAP) {
++		downmix_int_16bit_swapped((int16 *)s->buffer, s->buf32, size, s->amplify,
++				(s->format & XMP_FORMAT_UNSIGNED) ? 0x8000 : 0);
+ 	} else {
+ 		downmix_int_16bit((int16 *)s->buffer, s->buf32, size, s->amplify,
+-				s->format & XMP_FORMAT_UNSIGNED ? 0x8000 : 0);
++				(s->format & XMP_FORMAT_UNSIGNED) ? 0x8000 : 0);
+ 	}
+ 
+ 	s->dtright = s->dtleft = 0;

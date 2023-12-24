@@ -1,0 +1,98 @@
+diff --git a/Makefile b/Makefile
+index d70bfcd45..feffd8293 100644
+--- a/Makefile
++++ b/Makefile
+@@ -16,7 +16,7 @@
+ 
+ include makeinclude
+ 
+-DIRS = $(IMAGEDIRS) src $(CAIRODIR) fluid test documentation
++DIRS = $(IMAGEDIRS) src $(CAIRODIR) $(FLUIDDIR) $(TESTDIR) documentation examples
+ 
+ all: makeinclude fltk-config
+ 	for dir in $(DIRS); do\
+diff --git a/configure.ac b/configure.ac
+index 0a4e2c10a..f015533ae 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -698,6 +698,7 @@ AS_IF([test x$enable_localzlib != xyes], [
+         AC_CHECK_HEADER([zlib.h], [syszinc_ok=yes])
+         AS_IF([test x$syszinc_ok = xyes], [
+             syszlib_ok=yes
++            LIBS="$LIBS -lz"
+         ])
+     ])
+ ])
+@@ -862,6 +863,11 @@ HLINKS=
+ OSX_ONLY=:
+ THREADS=
+ 
++TESTDIR=""
++AC_ARG_ENABLE([test], AS_HELP_STRING([--disable-test], [turn off test building]))
++AS_IF([test x$enable_test != xno], [TESTDIR="test"])
++AC_SUBST([TESTDIR])
++
+ AC_ARG_WITH(links, [  --with-links            make header links for common misspellings [[default=no]]])
+ 
+ INSTALL_DESKTOP=""
+@@ -1352,7 +1358,7 @@ dnl Make sure that shared libraries don't have undefined references
+     OLDLDFLAGS="$LDFLAGS"
+     OLDCFLAGS="$CFLAGS"
+     LDFLAGS="$LDFLAGS -Wl,-gc-sections"
+-    CFLAGS="$CFLAGS -ffunction-sections -fdata-sections"
++    CFLAGS="$CFLAGS -ffunction-sections -fdata-sections -Werror"
+     AC_LINK_IFELSE(
+ 	[AC_LANG_PROGRAM([[]], [[]])],
+ 	[DSOFLAGS="$DSOFLAGS -Wl,-gc-sections"
+diff --git a/examples/Makefile b/examples/Makefile
+index 0e2c52f43..0a75babd6 100644
+--- a/examples/Makefile
++++ b/examples/Makefile
+@@ -34,6 +34,9 @@ ALL = clipboard$(EXEEXT) \
+ # default target -- build everything
+ default all: $(ALL)
+ 
++install:
++	@:
++
+ # clean everything
+ clean:
+ 	$(RM) $(ALL)
+diff --git a/fltk-config.in b/fltk-config.in
+index a33de790c..f965fc967 100644
+--- a/fltk-config.in
++++ b/fltk-config.in
+@@ -226,7 +226,7 @@ if test "$BINARY_DIR" != ""; then
+     includes="-I$BINARY_DIR $includes"
+ fi
+ 
+-if test "$libdir" != /usr/lib -a "$libdir" != /usr/lib32; then
++if test "$libdir" != /usr/lib -a "$libdir" != /usr/lib32 -a "$libdir" != /usr/lib64; then
+     libs=-L$libdir
+ else
+     libs=
+diff --git a/makeinclude.in b/makeinclude.in
+index 52cfb213a..e952503fc 100644
+--- a/makeinclude.in
++++ b/makeinclude.in
+@@ -116,6 +116,7 @@ THREADS		= @THREADS@
+ 
+ # Name of FLUID executable we install
+ FLUID		= @FLUID@$(EXEEXT)
++TESTDIR  = @TESTDIR@
+ 
+ # Name and/or path of FLUID executable we use for building:
+ # depends on the build type (native or cross-compiler)
+diff --git a/src/Fl_Native_File_Chooser_GTK.cxx b/src/Fl_Native_File_Chooser_GTK.cxx
+index 27d744586..c17b4437d 100644
+--- a/src/Fl_Native_File_Chooser_GTK.cxx
++++ b/src/Fl_Native_File_Chooser_GTK.cxx
+@@ -17,6 +17,8 @@
+ //
+ 
+ #include <FL/x.H>
++#include <FL/platform.H>
++#include <stdlib.h>
+ #if HAVE_DLSYM && HAVE_DLFCN_H
+ #include <dlfcn.h>   // for dlopen et al
+ #endif

@@ -33,7 +33,7 @@ $basepackages = array(
 		'comment' => '
 The binutils are a collection of low-level language tools.<br />
 The full documentation can be found
-<a href="https://sourceware.org/binutils/docs-2.40/" ' . $target . '>here</a>.<br />
+<a href="https://sourceware.org/binutils/docs-2.40/" ' . $href_target . '>here</a>.<br />
 <br />
 Note that official support for m68k-aout has been removed since binutils-2.31.<br />
 This is a version where that support has been added back in.
@@ -74,7 +74,7 @@ For the mintelf toolchains, <a href="#gdb" alt="GDB">GDB</a> is now also availab
 		'comment' => '
 The binutils are a collection of low-level language tools.<br />
 The full documentation can be found
-<a href="https://sourceware.org/binutils/docs-2.30/" ' . $target . '>here</a>.<br />
+<a href="https://sourceware.org/binutils/docs-2.30/" ' . $href_target . '>here</a>.<br />
 <br />
 Note that official support for m68k-aout has been removed in binutils-2.31.<br />
 This is the last official version with support for it.
@@ -124,7 +124,7 @@ with the same option! You can also generate code for the 68020 and higher and fo
 by using the <code>-m68020-60</code> option. And you can generate code for ColdFire V4e processors
 by using the <code>-mcpu=5475</code> option.<br />
 The full documentation can be found
-<a href="http://gcc.gnu.org/onlinedocs/gcc-4.6.4/gcc/" ' . $target . '>here</a>.<br />
+<a href="http://gcc.gnu.org/onlinedocs/gcc-4.6.4/gcc/" ' . $href_target . '>here</a>.<br />
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
@@ -238,7 +238,7 @@ Slightly older version of GCC.
 		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The system GNU C Compiler',
 		'comment' => '
-Slightly older version of GCC. </br>
+Slightly older version of GCC. <br />
 <span style="color:red">Warning:</span>
 This compiler was not able to compile itself for m68k, so it might be broken.
 '
@@ -620,7 +620,7 @@ zlib is a general-purpose lossless data-compression library,
 implementing an API for the DEFLATE algorithm, the latter of
 which is being used by, for example, gzip and the ZIP archive
 format.
-</br></br>
+<br /><br />
 This library is also available as a <a href="../sharedlibs.php#zlib">shared library.</a>
 '
 	),
@@ -641,7 +641,7 @@ This library is also available as a <a href="../sharedlibs.php#zlib">shared libr
 Portable Network Graphics
 <br />
 An Open, Extensible Image Format with Lossless Compression 
-</br></br>
+<br /><br />
 This library is also available as a <a href="../sharedlibs.php#libpng">shared library.</a>
 '
 	),
@@ -666,7 +666,7 @@ compressor. It typically compresses files to within 10% to 15% of the
 best available techniques (the PPM family of statistical compressors),
 whilst being around twice as fast at compression and six times faster
 at decompression.
-</br></br>
+<br /><br />
 This library is also available as a <a href="../sharedlibs.php#bzip2">shared library.</a>
 '
 	),
@@ -924,7 +924,7 @@ XZ Utils is free general-purpose data compression software with a high
 compression ratio. XZ Utils were written for POSIX-like systems, but
 also work on some not-so-POSIX systems. XZ Utils are the successor to
 LZMA Utils. 
-</br></br>
+<br /><br />
 This library is also available as a <a href="../sharedlibs.php#lzma">shared library.</a>
 '
 	),
@@ -1088,7 +1088,7 @@ it is also able to access remote devices or files.
 		'comment' => '
 The libiconv library provides an iconv() implementation, for use on
 systems which don&apos;t have one, or whose implementation cannot convert
-from/to Unicode.</br></br>
+from/to Unicode.<br /><br />
 This library is also available as a <a href="../sharedlibs.php#libiconv">shared library.</a>
 '
 	),
@@ -1381,7 +1381,7 @@ without user interaction or any kind of interactivity.
 		'comment' => '
 This library features TrueType fonts for open source projects. This
 version also contains an autohinter for producing improved output.
-</br></br>
+<br /><br />
 This library is also available as a <a href="../sharedlibs.php#freetype">shared library.</a>
 '
 	),
@@ -1423,7 +1423,7 @@ by Greg Hudson at MIT.
 		'comment' => '
 This package is a library of functions that manipulate jpeg images, along
 with simple clients for manipulating jpeg images.
-</br></br>
+<br /><br />
 This library is also available as a <a href="../sharedlibs.php#jpeg">shared library.</a>
 '
 	),
@@ -1445,10 +1445,10 @@ This library is also available as a <a href="../sharedlibs.php#jpeg">shared libr
 HERMES is a library designed to convert a source buffer with a specified pixel
 format to a destination buffer with possibly a different format at the maximum
 possible speed.
-</br>
+<br />
 On x86 and MMX architectures, handwritten assembler routines are taking over
 the job and doing it lightning fast.
-</br>
+<br />
 On top of that, HERMES provides fast surface clearing, stretching and some
 dithering. Supported platforms are basically all that have an ANSI C compiler
 as there is no platform specific code but those are supported: DOS, Win32
@@ -2416,7 +2416,7 @@ have expired, giflib can again be used instead of libungif.
 		'comment' => '
 This library is used to parse EXIF information from JPEGs created by
 digital cameras.
-</br></br>
+<br /><br />
 This library is also available as a <a href="../sharedlibs.php#exif">shared library.</a>
 '
 	),
@@ -2438,7 +2438,7 @@ This library is also available as a <a href="../sharedlibs.php#exif">shared libr
 		'comment' => '
 This package contains the library and support programs for the TIFF
 image format.
-</br></br>
+<br /><br />
 This library is also available as a <a href="../sharedlibs.php#tiff">shared library.</a>
 '
 	),
@@ -2501,7 +2501,7 @@ mtm, xm, and it.
 		'comment' => '
 Libogg is a library for manipulating Ogg bitstreams.  It handles both
 making Ogg bitstreams and getting packets from Ogg bitstreams.
-</br>
+<br />
 Ogg is the native bitstream format of libvorbis (Ogg Vorbis audio
 codec) and libtheora (Theora video codec).
 '
@@ -2547,7 +2547,7 @@ original audio data.
 Vorbis is a fully open, nonproprietary, patent-and-royalty-free, and
 general-purpose compressed audio format for audio and music at fixed
 and variable bit rates from 16 to 128 kbps/channel.
-</br>
+<br />
 The native bitstream format of Vorbis is libogg (Ogg). Alternatively,
 libmatroska (matroska) can also be used.
 '
@@ -2568,7 +2568,7 @@ libmatroska (matroska) can also be used.
 		'summary' => 'Ogg Vorbis Tools',
 		'comment' => '
 This package contains some tools for Ogg Vorbis:
-</br>
+<br />
 oggenc (an encoder) and ogg123 (a playback tool). It also has vorbiscomment (to
 add comments to Vorbis files), ogginfo (to give all useful information about an
 Ogg file, including streams in it), oggdec (a simple command line decoder), and
@@ -2700,7 +2700,7 @@ view point of a camera also described in the text file. Ray tracing is
 not a fast process by any means, (the generation of a complex image can
 take several hours) but it produces very high quality images with
 realistic reflections, shading, perspective, and other effects.
-</br></br>
+<br /><br />
 <span style="color:red">Note:</span> for testing purposes, povray 3.6 comes in 2 flavours. This
 version was compiled with the pml math library.
 '
@@ -2732,7 +2732,7 @@ take several hours) but it produces very high quality images with
 realistic reflections, shading, perspective, and other effects.
 '
 /*
-</br></br>
+<br /><br />
 <span style="color:red">Note:</span> for testing purposes, povray 3.6 comes in 2 flavours. This
 version was compiled with the fdlibm math library.
 */
@@ -2813,7 +2813,7 @@ the licensing and royalty fees or vendor lock-in associated with other formats.
 		'category' => 'System/Base',
 		'summary' => 'The ping command',
 		'comment' => '
-The ping command. </br>
+The ping command. <br />
 Ported from BSD sources.
 '
 	),
@@ -2836,7 +2836,7 @@ MAD is a MPEG audio decoder. It currently supports MPEG-1 and the
 MPEG-2 extension to Lower Sampling Frequencies, as well as the
 so-called MPEG 2.5 format. All three audio layers (Layer I, Layer II,
 and Layer III a.k.a. MP3) are implemented.
-</br>
+<br />
 MAD supports 24-bit PCM output. MAD computes using 100% fixed-point
 (integer) computation, so you can run it without a floating point
 unit.
@@ -2859,7 +2859,7 @@ unit.
 		'comment' => '
 GnuCOBOL (formerly OpenCOBOL) is a COBOL compiler.
 cobc translates COBOL to executable using intermediate C sources,
-providing full access to nearly all C libraries. </br>
+providing full access to nearly all C libraries. <br />
 <span class="important">Note: this is not a cross-compiler. Do not install these on
 a cross-development environment.</span>
 '
@@ -2884,8 +2884,8 @@ Zstd, short for Zstandard, is a lossless compression algorithm. Speed
 vs. compression trade-off is configurable in small increments.
 Decompression speed is preserved and remains roughly the same at all
 settings, a property shared by most LZ compression algorithms, such
-as zlib or lzma. </br>
- </br>
+as zlib or lzma. <br />
+ <br />
 At roughly the same ratio, zstd (v1.4.0) achieves ~870% faster
 compression than gzip. For roughly the same time, zstd achives a
 ~12% better ratio than gzip. LZMA outperforms zstd by ~10% faster
@@ -2974,11 +2974,11 @@ LS_COLORS environment variable is set and output is to tty.
 		'comment' => '
 Libxmp is a library that renders module files to PCM data. It supports
 over 90 mainstream and obscure module formats including Protracker (MOD),
-Scream Tracker 3 (S3M), Fast Tracker II (XM), and Impulse Tracker (IT). </br>
- </br>
+Scream Tracker 3 (S3M), Fast Tracker II (XM), and Impulse Tracker (IT). <br />
+ <br />
 Many compressed module formats are supported, including popular Unix, DOS,
 and Amiga file packers including gzip, bzip2, SQSH, Powerpack, etc.
- </br>
+ <br />
 Contains small optimizations from mikrosk.
 '
 	),
@@ -3044,10 +3044,10 @@ core.
 p7zip is a quick port of 7z.exe and 7za.exe (command line version of
 7zip, see www.7-zip.org) for Unix. 7-Zip is a file archiver with
 highest compression ratio. Since 4.10, p7zip (like 7-zip) supports
-little-endian and big-endian machines. </br>
- </br>
-This package provides: </br>
- * 7za - a stand-alone executable (handles less archive formats than 7z) </br>
+little-endian and big-endian machines. <br />
+ <br />
+This package provides: <br />
+ * 7za - a stand-alone executable (handles less archive formats than 7z) <br />
  * p7zip - a gzip-like wrapper around 7zr/7za
 '
 	),
@@ -3067,8 +3067,8 @@ This package provides: </br>
 		'category' => 'Productivity/Graphics/Convertors',
 		'summary' => 'A Graphics Conversion Package',
 		'comment' => '
-These are the Portable Bitmap Plus Utilities. </br>
- </br>
+These are the Portable Bitmap Plus Utilities. <br />
+ <br />
 This package provides tools for graphics conversion. Using these
 tools, images can be converted from virtually any format into any
 other format. A few of the supported formats include: GIF,
@@ -3142,8 +3142,8 @@ the disk, a magnetic tape, or a pipe.
 WebP codec is a library to encode and decode images in WebP format.
 This package contains the library that can be used in other programs to
 add WebP support, as well as the command line tools &apos;cwebp&apos; and &apos;dwebp&apos;
-to compress and decompress images respectively.</br>
-</br>
+to compress and decompress images respectively.<br />
+<br />
 Original MiNT-Patch by medmed.
 '
 	),
@@ -3167,8 +3167,8 @@ priority-based scheduling for multiple threads of execution (aka
 ``multithreading&apos;&apos;) inside event-driven applications. All threads run
 in the same address space of the server application, but each thread
 has it&apos;s own individual program-counter, run-time stack, signal mask
-and errno variable. </br>
-</br>
+and errno variable. <br />
+<br />
 The thread scheduling itself is done in a cooperative way, i.e., the
 threads are managed by a priority- and event-based non-preemptive
 scheduler. The intention is that this way one can achieve better
@@ -3176,9 +3176,9 @@ portability and run-time performance than with preemptive scheduling.
 The event facility allows threads to wait until various types of events
 occur, including pending I/O on filedescriptors, asynchronous signals,
 elapsed timers, pending I/O on message ports, thread and process
-termination, and even customized callback functions.</br>
-</br>
-Original MiNT-Patch by Patrice Mandin & medmed.
+termination, and even customized callback functions.<br />
+<br />
+Original MiNT-Patch by Patrice Mandin &amp; medmed.
 '
 	),
 	'libyuv' => array(
@@ -3197,7 +3197,7 @@ Original MiNT-Patch by Patrice Mandin & medmed.
 		'summary' => 'Open source project that includes YUV scaling and conversion functionality',
 		'comment' => '
 libyuv is an open source project that includes YUV scaling and conversion functionality.
-</br></br>
+<br /><br />
 You need to use g++ to link against this library.
 '
 	),
@@ -3219,11 +3219,11 @@ You need to use g++ to link against this library.
 OpenH264 is a codec library which supports H.264 encoding and decoding.
 It is suitable for use in real time applications such as WebRTC. See
 <a href="http://www.openh264.org/">http://www.openh264.org/</a> for more details.
-</br></br>
-Needs the pth library from above.</br>
+<br /><br />
+Needs the pth library from above.<br />
 You need to use g++ to link against this library.
-</br>
-Original MiNT-Patch by medmed.</br>
+<br />
+Original MiNT-Patch by medmed.<br />
 A simple GEM example can be found in <a href="https://www.atari-forum.com/viewtopic.php?p=436559#p436559">this thread</a>
 '
 	),
@@ -3304,16 +3304,16 @@ libsndfile is a C library for reading and writing files containing sampled audio
 Libzita-resampler is a C++ library for resampling audio signals. It is
 designed to be used within a real-time processing context, to be fast,
 and to provide high-quality sample rate conversion.
-</br></br>
+<br /><br />
 The library operates on signals represented in single-precision
 floating point format. For multichannel operation both the input and
 output signals are assumed to be stored as interleaved samples.
-</br></br>
+<br /><br />
 The API allows a trade-off between quality and CPU load. For the latter
 a range of approximately 1:6 is available. Even at the highest quality
 setting libzita-resampler will be faster than most similar libraries,
 e.g. libsamplerate.
-</br></br>
+<br /><br />
 The source distribution includes the resample application. Input format
 is any file readable by libsndfile, output is either WAV (WAVEX for
 more than 2 channels) or CAF. Apart from resampling you can change the
@@ -3368,12 +3368,12 @@ robust wolfCrypt cryptography library, and much more.
 libde265 is an open source implementation of the h.265 video codec. It
 is written from scratch and has a plain C API to enable a simple
 integration into other software.
-</br>
-</br></br>
-Needs the pth library from above.</br>
-You need to use g++ to link against this library.</br>
-</br>
-Original MiNT-Patch contributed by medmed.</br>
+<br />
+<br /><br />
+Needs the pth library from above.<br />
+You need to use g++ to link against this library.<br />
+<br />
+Original MiNT-Patch contributed by medmed.<br />
 '
 	),
 	'x265' => array(
@@ -3414,11 +3414,11 @@ streams.
 		'comment' => '
 libheif is an ISO/IEC 23008-12:2017 HEIF and AVIF (AV1 Image File
 Format) file format decoder and encoder.
-</br>
+<br />
 HEIF and AVIF are new image file formats employing HEVC (h.265) or AV1
 image coding, respectively, for the best compression ratios currently
 possible.
-</br>
+<br />
 libheif makes use of libde265 for HEIF image decoding and x265 for
 encoding. For AVIF, libaom, dav1d, svt-av1, or rav1e are used as
 codecs.
@@ -3440,8 +3440,8 @@ codecs.
 		'category' => 'System/Console',
 		'summary' => 'mtm is the Micro Terminal Multiplexer, a terminal multiplexer',
 		'comment' => '
-mtm is the Micro Terminal Multiplexer, a terminal multiplexer.</br>
-</br>
+mtm is the Micro Terminal Multiplexer, a terminal multiplexer.<br />
+<br />
 Original MiNT-Patch contributed by medmed.
 '
 	),
@@ -3724,7 +3724,7 @@ files.
 		'comment' => '
 3GPP released reference implementation of 3GPP AAC Advanced Audio -
 (HE-AAC+) Encoder (3GPP TS 26.410 V8.0.0).
-</br>
+<br />
 Original MiNT-Patch by medmed.
 '
 	),
@@ -3863,7 +3863,7 @@ a patent free audio compression codec for the GNU project.
 		'summary' => 'VP8/VP9 codec library',
 		'comment' => '
 WebM is an open, royalty-free, media file format designed for the web.
-< /br>
+<br />
 WebM defines the file container structure, video and audio formats.
 WebM files consist of video streams compressed with the VP8 video codec
 and audio streams compressed with the Vorbis audio codec.
@@ -3886,8 +3886,8 @@ The WebM file structure is based on the Matroska container.
 		'summary' => 'H.264/MPEG-4 AVC format encoder',
 		'comment' => '
 x264 package provides a library for encoding video streams into the H.264/MPEG-4 AVC format. 
-</br></br>
-Needs the pth library from above.</br>
+<br /><br />
+Needs the pth library from above.<br />
 '
 	),
  	'fribidi' => array(
@@ -3910,7 +3910,7 @@ Standard Annex #9, the Bidirectional Algorithm,
 http://www.unicode.org/unicode/reports/tr9/". FriBidi is
 tested against the Bidi Reference Code and, to the best of the
 developers&apos; knowledge, does not contain any conformance bugs.
-< /br>
+<br />
 The API was inspired by the document "Bi-Di languages support - BiDi
 API proposal" by Franck Portaneri, which he wrote as a proposal for
 adding BiDi support to Mozilla.
@@ -4079,13 +4079,41 @@ desires.
 SQLite is a C library that implements an embeddable SQL database
 engine. Programs that link with the SQLite library can have SQL
 database access without running a separate RDBMS process.
-</br>
+<br />
 SQLite is not a client library used to connect to a big database
 server. SQLite is a server and the SQLite library reads and writes
 directly to and from the database files on disk.
-</br>
+<br />
 SQLite can be used via the sqlite command line tool or via any
 application that supports the Qt database plug-ins.
+'
+	),
+ 	'fltk' => array(
+		'name' => 'fltk',
+		'repo' => 'https://github.com/fltk/fltk',
+		'upstream' => 'https://www.fltk.org/',
+		'version' => '1.3.9',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 0,
+		'noelf' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'LGPL-2.1-or-later',
+		'category' => 'Development/Libraries/X11',
+		'summary' => 'C++ GUI Toolkit for the X Window System, OpenGL, and WIN32',
+		'comment' => '
+The Fast Light Tool Kit ("FLTK", pronounced "fulltick") is a cross-platform C++ GUI toolkit for
+for the X Window System), Microsoft&#x00AE; Windows&#x00AE;, and macOS&#x00AE;.
+FLTK provides modern GUI functionality without the bloat and
+supports 3D graphics via OpenGL&#x00AE; and its built-in GLUT
+emulation. It was originally developed by Mr. Bill Spitzak
+and is currently maintained by a small group of developers
+across the world with a central repository on GitHub.
+<br/><br/>
+<span style="color:red">Note:</span> You&apos;ll need the <a href="/download/rpm/RPMS/noarch/index.php">X11-Libaries</a> to
+compile FLTK applications for Atari, and a X-Server to run them.
 '
 	),
 /*
