@@ -3,32 +3,27 @@
 %rpmint_header
 
 Summary       : The basic fonts, programs and docs for an X workstation.
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
-Version       : 4.0
+Name          : %{crossmint}%{pkgname}
+Version       : 4.0.2
 Release       : 1
 License       : MIT
 Group         : System/X11
 
-Packager      : Thorsten Otto <admin@tho-otto.de>
-URL           : ftp://ftp.xfree86.org/%{version}/source/
+Packager      : %{packager}
+URL           : http://ftp.xfree86.org/pub/XFree86/%{version}/source/
 
 %rpmint_essential
 BuildRequires : groff
+BuildRequires : bison
+BuildRequires : flex
+BuildRequires : %{crossmint}gdbm >= 1.8.0
+BuildRequires : %{crossmint}zlib-devel
+BuildRequires : %{crossmint}ncurses-devel
 %if "%{buildtype}" == "cross"
-BuildRequires : cross-mint-gdbm-devel >= 1.8.0
-BuildRequires : cross-mint-zlib-devel
-BuildRequires : cross-mint-ncurses-devel
 BuildRequires : gdbm-devel-32bit
 BuildRequires : ncurses-devel-32bit
 BuildRequires : zlib-devel-32bit
-%else
-BuildRequires : gdbm >= 1.8.0
-BuildRequires : zlib-devel
-BuildRequires : ncurses-devel
+BuildRequires : gcc-32bit
 %endif
 
 Prefix:         %{_rpmint_target_prefix}
@@ -317,6 +312,7 @@ cp config/util/makestrs host-tools
 cp config/pswrap/pswrap host-tools
 cp config/util/lndir host-tools
 cp config/imake/imake host-tools
+cp config/util/rman host-tools
 if test -f programs/rgb/rgb; then cp programs/rgb/rgb host-tools; fi
 if test -f fonts/PEX/to_wfont; then cp fonts/PEX/to_wfont host-tools; fi
 
@@ -332,9 +328,11 @@ for CPU in ${ALL_CPUS}; do
 
 	rm -f config/cf/host.def
 	cp ../host.def config/cf/host.def
-
+	case %{_rpmint_target} in
+		*-*-mintelf*) echo "#define UseElfFormat YES" >> config/cf/host.def ;;
+	esac
 	echo "CPUOPTION = -DCpuOption=${CPU_CFLAGS}" > cpuoption.mk
-	make World BOOTSTRAPCFLAGS="-D__MINT__"
+	make %{?_smp_mflags} World BOOTSTRAPCFLAGS="-D__MINT__"
 	
 	# Now recompile some tools that were build for the host
 	echo Recompile target tools
@@ -351,12 +349,13 @@ for CPU in ${ALL_CPUS}; do
 	# revpath was already compiled for target
 	# mkfontdir was already compiled for target
 	# xkbcomp was already compiled for target
+	# rman was already compiled for target
 	# makeg is a script and does not need any changes
 	# makedepend
 	cd ../makedepend
 	../../host-tools/imake -I../../config/cf  -DTOPDIR=../.. -DCURDIR=config/makedepend -D__MINT__
 	make clean
-	make
+	make RMAN='$(TOP)/host-tools/rman'
 	cd ../..
 	
 	# do not install our temporary host.def
@@ -383,7 +382,11 @@ for CPU in ${ALL_CPUS}; do
 	    ln -s ../${subdir}X11R6/lib${multilibdir}/$i ../../${subdir}lib${multilibdir}/$i;
 	  done
 	cd "$build_dir"
-	
+
+	# pswrap is no longer needed after build
+	rm -f %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/pswrap
+	rm -f %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/pswrap.1
+
 	rm -f %{buildroot}%{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/xkb/xkbcomp
 	%if "%{buildtype}" != "cross"
 	if test "%{buildtype}" != "$CPU"; then
@@ -566,12 +569,15 @@ cd ../makedepend
 ../../host-tools/imake -I../../config/cf -DTOPDIR=../.. -DCURDIR=config/makedepend \
 	-DStdIncDir=\"%{_rpmint_sysroot}%{_rpmint_target_prefix}/include\"
 make clean
-make
+make RMAN='$(TOP)/host-tools/rman'
 cp makedepend %{buildroot}%{_prefix}/bin/%{_rpmint_target}-makedepend
+
+# rman
+cp ../../host-tools/rman  %{buildroot}%{_prefix}/bin/%{_rpmint_target}-rman
 
 %else
 
-for tool in imake makedepend xmkmf gccmakedep; do
+for tool in imake makedepend xmkmf gccmakedep rman; do
 	ln -s $tool %{buildroot}/%{_rpmint_target_prefix}/X11R6/bin/%{_rpmint_target}-$tool
 done
 
@@ -661,6 +667,10 @@ fi
 %config %{_isysroot}%{_isysconfdir}/X11/proxymngr/pmconfig
 %config %{_isysroot}%{_isysconfdir}/X11/rstart/*
 %config %{_isysroot}%{_isysconfdir}/X11/xsm/system.xsm
+%{_isysroot}%{_rpmint_target_prefix}/share/X11/app-defaults
+%{_isysroot}%{_rpmint_target_prefix}/share/X11/config
+%{_isysroot}%{_rpmint_target_prefix}/share/X11/locale
+%{_isysroot}%{_rpmint_target_prefix}/share/X11/xkb
 
 #%dir %%{_isysroot}%%{_rpmint_target_prefix}/X11R6/lib/X11
 #%dir %%{_isysroot}%%{_rpmint_target_prefix}/X11R6/lib/X11/etc
@@ -743,6 +753,7 @@ fi
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xwud
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/XErrorDB
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/XKeysymDB
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/XftConfig
 #%%{_isysroot}%%{_rpmint_target_prefix}/X11R6/lib/X11/etc/*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/fonts/CID/*
 #%%{_isysroot}%%{_rpmint_target_prefix}/X11R6/lib/X11/fonts/PEX/*
@@ -758,9 +769,11 @@ fi
 #%%{_isysroot}%%{_rpmint_target_prefix}/X11R6/lib/X11/fonts/local/*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/fonts/misc/*gz
 %config(noreplace) %{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/fonts/misc/fonts.*
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/fonts/util/*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/xkb/*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/locale/*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/x11perfcomp/*
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/Xmark.1*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/appres.1*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/atobm.1*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/bdftopcf.1*
@@ -907,6 +920,7 @@ fi
 %dir %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/PM
 %dir %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/SM
 %dir %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/Xaw
+%dir %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/Xft
 %dir %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/Xmu
 %dir %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/bitmaps
 %dir %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/extensions
@@ -917,20 +931,25 @@ fi
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/imake
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/makedepend
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/makeg
-%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/pswrap
-#%%{_isysroot}%%{_rpmint_target_prefix}/X11R6/bin/rman
+#%%{_isysroot}%%{_rpmint_target_prefix}/X11R6/bin/pswrap
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/rman
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/sxpm
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/xmkmf
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/mkhtmlindex
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/bdftruncate.pl
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/ucs2any.pl
 %if "%{buildtype}" == "cross"
 %{_prefix}/bin/%{_rpmint_target}-imake
 %{_prefix}/bin/%{_rpmint_target}-makedepend
 %{_prefix}/bin/%{_rpmint_target}-xmkmf
 %{_prefix}/bin/%{_rpmint_target}-gccmakedep
+%{_prefix}/bin/%{_rpmint_target}-rman
 %else
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/%{_rpmint_target}-imake
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/%{_rpmint_target}-makedepend
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/%{_rpmint_target}-xmkmf
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/%{_rpmint_target}-gccmakedep
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/bin/%{_rpmint_target}-rman
 %endif
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/*.h
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/ICE/*.h
@@ -939,6 +958,7 @@ fi
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/SM/*.h
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/Xaw/*.h
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/Xaw/*.c
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/Xft/*.h
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/Xmu/*.h
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/bitmaps/*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/include/X11/extensions/*.h
@@ -949,9 +969,9 @@ fi
 %{_isysroot}%{_rpmint_target_prefix}/lib/*/*.a
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/config/*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/makeg.1*
-%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/pswrap.1*
+#%%{_isysroot}%%{_rpmint_target_prefix}/X11R6/man/man1/pswrap.1*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/imake.1*
-#%%{_isysroot}%%{_rpmint_target_prefix}/X11R6/man/man1/rman.1*
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man1/rman.1*
 %{_isysroot}%{_rpmint_target_prefix}/X11R6/man/man3/*
 %{_isysroot}%{_rpmint_target_prefix}/include/DPS
 %{_isysroot}%{_rpmint_target_prefix}/include/X11
@@ -959,7 +979,7 @@ fi
 %files doc
 %defattr(-,root,root)
 %docdir %{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/doc
-#%%{_isysroot}%%{_rpmint_target_prefix}/X11R6/lib/X11/doc/*
+%{_isysroot}%{_rpmint_target_prefix}/X11R6/lib/X11/doc/*
 %doc xc/doc/hardcopy/*
 
 %files xdm
@@ -1022,6 +1042,12 @@ fi
 
 
 %changelog
+* Tue Dec 26 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to XFree 4.0.2
+
+* Mon Dec 25 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to XFree 4.0.1
+
 * Sun Mar 19 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
 

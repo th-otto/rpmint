@@ -16,7 +16,7 @@ Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: %{pkgname}-%{version}.tar.gz
+Source0: %{pkgname}-%{version}.tar.xz
 Source1: patches/automake/mintelf-config.sub
 
 Patch0: patches/lha/lha-1.14i-ext.patch

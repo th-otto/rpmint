@@ -169,10 +169,10 @@ done
 - RPMint spec file
 
 * Mon May 31 2010 Keith Scroggins <kws@radix.net>
-- Incorporated Vincent Rivière's patch and removed ar.h which conflicts with
+- Incorporated Vincent RiviÃ¨re's patch and removed ar.h which conflicts with
 - current MiNTLib
 
-* Sun Apr 06 2000 Frank Naumann <fnaumann@freemint.de>
+* Thu Apr 06 2000 Frank Naumann <fnaumann@freemint.de>
 - rebuild against new MiNTLib 0.55
 - removed stab.h, stab.def; conflict with new MiNTLib
 
