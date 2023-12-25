@@ -1,0 +1,221 @@
+diff --git a/configure.ac b/configure.ac
+index 93747056..25ea5f65 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -148,10 +148,12 @@ dnl Check whether to add /usr/local or not
+ dnl (this is somewhat a religious problem)
+ dnl --------------------------------------
+ dnl
++if test "$GCC" = no; then
+ if test "`$CPP -v < /dev/null 2>&1 | grep '/usr/local/include' 2>&1`" = ""; then
+   CPPFLAGS="$CPPFLAGS -I/usr/local/include"
+   LDFLAGS="$LDFLAGS -L/usr/local/lib"
+ fi
++fi
+ 
+ dnl ------------------------------------
+ dnl Check for socket libs (AIX, Solaris)
+@@ -198,6 +200,7 @@ dnl Test for FLTK 1.3 library
+ dnl -------------------------
+ dnl
+ dnl For debugging and to be user friendly
++if test "$cross_compiling" = no; then
+ AC_PATH_PROG(FLTK_CONFIG,fltk-config)
+ AC_MSG_CHECKING([FLTK 1.3])
+ fltk_version="`$FLTK_CONFIG --version 2>/dev/null`"
+@@ -211,6 +214,10 @@ case $fltk_version in
+   *)     AC_MSG_RESULT(no)
+          AC_MSG_ERROR(FLTK 1.3 required; fltk-config not found)
+ esac
++else
++         AC_MSG_RESULT(assume yes)
++         LIBFLTK_LIBS="-lfltk"
++fi
+ 
+ dnl -----------------------------------
+ dnl Test for X11 (only on some systems)
+@@ -221,20 +228,18 @@ old_libs=$LIBS
+ old_cxxflags=$CXXFLAGS
+ LIBS=$LIBFLTK_LIBS
+ CXXFLAGS=$LIBFLTK_CXXFLAGS
+-AC_RUN_IFELSE([AC_LANG_PROGRAM([[
++AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+ #define FL_INTERNALS
+ #include <FL/x.H>
+ ]],[[
+ #ifdef X_PROTOCOL
+    return 0;
+ #else
+-   return 1;
++   nope
+ #endif
+ ]])], [AC_MSG_RESULT(yes)
+-       LIBX11_LIBS="-lX11"],
+-      [AC_MSG_RESULT(no)],
+-      [AC_MSG_RESULT(no)
+-       AC_MSG_WARN([*** Test for X11 not possible when cross-compiling. ***])])
++       LIBX11_LIBS="-lXext -lX11"],
++      [AC_MSG_RESULT(no)])
+ CXXFLAGS=$old_cxxflags
+ LIBS=$old_libs
+ AC_LANG_POP([C++])
+@@ -292,68 +297,33 @@ dnl ---------------
+ dnl Test for libpng
+ dnl ---------------
+ dnl
++PKG_PROG_PKG_CONFIG
+ png_ok="no"
+ if test "x$enable_png" = "xyes"; then
+-  AC_MSG_CHECKING([for libpng-config])
+-
+-dnl Check if the user hasn't set the variable $PNG_CONFIG
+-  if test -z "$PNG_CONFIG"; then
+-    PNG_CONFIG=`which libpng16-config`
+-    if test -z "$PNG_CONFIG"; then
+-      PNG_CONFIG=`which libpng14-config`
+-    fi
+-    if test -z "$PNG_CONFIG"; then
+-      PNG_CONFIG=`which libpng12-config`
+-    fi
+-    if test -z "$PNG_CONFIG"; then
+-      PNG_CONFIG=`which libpng-config`
++  AC_MSG_CHECKING([for libpng])
++  for libpng in libpng libpng16 libpng14 libpng12 libpng10; do
++    if test "$png_ok" = "no"; then
++      PKG_CHECK_MODULES([LIBPNG], $libpng, [png_ok="yes"; png_version=`$PKG_CONFIG --modversion $libpng`])
+     fi
+-    if test -z "$PNG_CONFIG"; then
+-      PNG_CONFIG=`which libpng10-config`
+-    fi
+-  fi
+-
+-dnl Check if the libpng-config script was found and is executable
+-  if test -n "$PNG_CONFIG" && test -x "$PNG_CONFIG"; then
+-    AC_MSG_RESULT([$PNG_CONFIG])
+-    png_ok="yes"
+-  else
+-    AC_MSG_RESULT([missing])
+-    png_ok="no"
+-  fi
++  done
+ 
+   if test "x$png_ok" = "xyes"; then
+ dnl For debugging and to be user friendly
+     AC_MSG_CHECKING([for libpng version])
+-    png_version=`$PNG_CONFIG --version`
+     case $png_version in
+       1.[[0246]].*) AC_MSG_RESULT([$png_version]) ;;
+                 *) AC_MSG_RESULT([$png_version (unrecognised version)]) ;;
+     esac
+ 
+-dnl Try to use options that are supported by all libpng-config versions...
+-    LIBPNG_CFLAGS=`$PNG_CONFIG --cflags`
+-    LIBPNG_LIBS=`$PNG_CONFIG --ldflags`
+-    case $png_version in
+-      1.2.4*) LIBPNG_LIBS="$LIBPNG_LIBS `$PNG_CONFIG --libs`" ;;
+-    esac
+-  else
+-dnl Try to find libpng even though libpng-config wasn't found
+-    AC_CHECK_HEADERS(png.h libpng/png.h, png_ok=yes && break, png_ok=no)
+-
+     if test "x$png_ok" = "xyes"; then
+       old_libs="$LIBS"
+-      AC_CHECK_LIB(png, png_sig_cmp, png_ok=yes, png_ok=no, $LIBZ_LIBS -lm)
++      AC_CHECK_LIB(png, png_sig_cmp, :, png_ok=no, $LIBPNG_LIBS $LIBZ_LIBS -lm)
+       LIBS="$old_libs"
+-
+-      if test "x$png_ok" = "xyes"; then
+-        LIBPNG_LIBS="-lpng -lm"
+-      fi
+     fi
+ 
+-    if test "x$png_ok" = "xno"; then
+-      AC_MSG_WARN([*** No libpng found. Disabling PNG images ***])
+-    fi
++  fi
++  if test "x$png_ok" = "xno"; then
++    AC_MSG_WARN([*** No libpng found. Disabling PNG images ***])
+   fi
+ fi
+ 
+@@ -375,13 +345,13 @@ tls_ok="no"
+ tls_impl="none"
+ if test "x$enable_tls" = "xyes"; then
+   if test "x$enable_openssl" = "xyes"; then
+-    dnl Search for OpenSSL headers first
+-    AC_CHECK_HEADER(openssl/ssl.h, openssl_ok=yes, openssl_ok=no)
++    dnl Search for OpenSSL
++    PKG_CHECK_MODULES([LIBSSL], [openssl], openssl_ok=yes, openssl_ok=no)
+ 
+     dnl If the headers are found, try to link with -lssl and -lcrypto
+     if test "x$openssl_ok" = "xyes"; then
+       old_libs="$LIBS"
+-      AC_CHECK_LIB(ssl, SSL_write, openssl_ok=yes, openssl_ok=no, -lcrypto)
++      AC_CHECK_LIB(ssl, SSL_write, openssl_ok=yes, openssl_ok=no, $LIBSSL_LIBS)
+       LIBS="$old_libs"
+     fi
+ 
+@@ -390,7 +360,6 @@ if test "x$enable_tls" = "xyes"; then
+       AC_MSG_NOTICE([Using OpenSSL as TLS library.])
+       tls_impl="OpenSSL"
+       AC_DEFINE([HAVE_OPENSSL], [1], [OpenSSL works])
+-      LIBSSL_LIBS="-lcrypto -lssl"
+     else
+       AC_MSG_NOTICE([Cannot find OpenSSL, trying mbedTLS...])
+     fi
+@@ -519,6 +488,10 @@ case $target in
+     AC_MSG_NOTICE([Minix detected, skipping pthread detection])
+     ;;
+ 
++  *-*-mint*)
++    AC_MSG_NOTICE([MiNT detected, skipping pthread detection])
++    ;;
++
+   *)
+     AC_MSG_CHECKING(whether threads work with -pthread)
+     LDSAVEFLAGS=$LDFLAGS
+diff --git a/dpi/Makefile.am b/dpi/Makefile.am
+index 62b82e1b..4781c75f 100644
+--- a/dpi/Makefile.am
++++ b/dpi/Makefile.am
+@@ -1,6 +1,8 @@
+ AM_CPPFLAGS = \
+ 	-I$(top_srcdir)
+ 
++LIBS = $(LIBX11_LIBS)
++
+ bookmarksdir = $(libdir)/dillo/dpi/bookmarks
+ downloadsdir = $(libdir)/dillo/dpi/downloads
+ ftpdir = $(libdir)/dillo/dpi/ftp
+diff --git a/src/IO/tls_openssl.c b/src/IO/tls_openssl.c
+index d2a454e7..9d153a8f 100644
+--- a/src/IO/tls_openssl.c
++++ b/src/IO/tls_openssl.c
+@@ -491,7 +491,11 @@ static bool_t Tls_check_cert_strength(SSL *ssl, Server_t *srv, int *choice)
+          if (print_chain)
+             MSG("%s ", buf);
+ 
++#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+          key_type = EVP_PKEY_type(EVP_PKEY_get_id(public_key));
++#else
++         key_type = EVP_PKEY_type(EVP_PKEY_id(public_key));
++#endif
+          type_str = key_type == EVP_PKEY_RSA ? "RSA" :
+                     key_type == EVP_PKEY_DSA ? "DSA" :
+                     key_type == EVP_PKEY_DH ? "DH" :
+@@ -830,6 +834,7 @@ static int Tls_examine_certificate(SSL *ssl, Server_t *srv)
+          ret = 0;
+          break;
+       case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
++         { /* Case follows declaration */
+          /* Either self signed and untrusted */
+          /* Extract CN from certificate name information */
+          X509_NAME *subject_name = X509_get_subject_name(remote_cert);
+@@ -868,6 +873,7 @@ static int Tls_examine_certificate(SSL *ssl, Server_t *srv)
+             default:
+                break;
+          }
++         }
+          break;
+       case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
+       case X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY:

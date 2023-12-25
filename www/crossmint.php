@@ -1464,6 +1464,8 @@ This notably applies to Perl and Python.
 
 <li>2023/12/23 Add FLTK 1.3.9</li>
 
+<li>2023/12/23 Add dillo 3.1-dev</li>
+
 </ul>
 
 <p></p>

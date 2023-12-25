@@ -4113,7 +4113,33 @@ and is currently maintained by a small group of developers
 across the world with a central repository on GitHub.
 <br/><br/>
 <span style="color:red">Note:</span> You&apos;ll need the <a href="/download/rpm/RPMS/noarch/index.php">X11-Libaries</a> to
-compile FLTK applications for Atari, and a X-Server to run them.
+compile FLTK applications for Atari, and a <a href="/download/rpm/RPMS/m68020/index.php#XServer">X-Server</a> to run them.
+'
+	),
+ 	'dillo' => array(
+		'name' => 'dillo',
+		'repo' => 'https://github.com/dillo-browser/dillo',
+		'upstream' => 'https://web.archive.org/web/20220518060405/https://www.dillo.org/',
+		'version' => '3.1-dev',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'noelf' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'X11/Applications',
+		'summary' => 'Dillo is a multi-platform graphical web browser',
+		'comment' => '
+Dillo is a minimalistic web browser particularly intended for older or
+slower computers and embedded systems. It supports only plain
+HTML/XHTML (with CSS rendering) and images over HTTP; scripting is
+ignored entirely. Current versions of Dillo can run on Linux,
+BSD, OS X, IRIX and Cygwin. Due to its small size, it is the browser
+of choice in several space-conscious Linux distributions.
+<br/><br/>
+<span style="color:red">Note:</span> You&apos;ll need a <a href="/download/rpm/RPMS/m68020/index.php#XServer">X-Server</a> to run it.
 '
 	),
 /*
