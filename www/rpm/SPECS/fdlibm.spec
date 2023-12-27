@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        Freely Distributable C math library
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        20230210
 Release:        1
 License:        Public Domain
@@ -22,16 +18,11 @@ BuildRoot:      %{_tmppath}/%{name}-root
 
 Source:         %{pkgname}-%{version}.tar.xz
 
-%if "%{buildtype}" == "cross"
-Provides:       cross-mint-%{pkgname}-headers = %{version}
-Conflicts:      cross-mint-pml
-%else
-Provides:       %{pkgname}-headers = %{version}
-Conflicts:      pml
-%endif
+Provides:       %{crossmint}%{pkgname}-headers = %{version}
+Conflicts:      %{crossmint}pml
 
 # cannot use rpmint_essential() here, because fdlibm is part of the essential package
-BuildRequires:  cross-mint-gcc
+BuildRequires:  %{crossmint}gcc
 
 %rpmint_build_arch
 
@@ -91,7 +82,7 @@ make DESTDIR=${RPM_BUILD_ROOT} install
 
 
 %changelog
-* Mon Mar 13 Thorsten Otto <admin@tho-otto.de>
+* Mon Aug 31 2020 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
 
 * Fri Jun 04 2010 Keith Scroggins <kws@radix.net>

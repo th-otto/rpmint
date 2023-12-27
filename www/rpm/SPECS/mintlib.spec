@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        Standard C Libraries for MiNT
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        0.60.1
 Release:        3
 License:        LGPL-2.1-or-later AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND GPL-2.0-or-later
@@ -19,13 +15,9 @@ Source:         %{pkgname}-%{version}.tar.xz
 
 Prefix:         %{_prefix}
 
-%if "%{buildtype}" == "cross"
-Provides:       cross-mint-%{pkgname}-headers = %{version}
-%else
-Provides:       %{pkgname}-headers = %{version}
-%endif
+Provides:       %{crossmint}%{pkgname}-headers = %{version}
 
-BuildRequires:  cross-mint-gcc
+BuildRequires:  %{crossmint}gcc
 
 %rpmint_build_arch
 

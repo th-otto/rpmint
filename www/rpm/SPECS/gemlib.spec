@@ -1,3 +1,4 @@
+
 %rpmint_header
 
 %define gcc_version %(%{_rpmint_target}-gcc -dumpversion)
@@ -10,11 +11,7 @@
 %endif
 
 Summary:        GEM libraries and header files
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        0.44.0
 Release:        20230212
 License:        Public Domain
@@ -29,14 +26,10 @@ BuildRoot:      %{_tmppath}/%{name}-root
 
 Source:         gemlib-%{version}.tar.xz
 
-%if "%{buildtype}" == "cross"
-Provides:       cross-mint-%{pkgname}-headers = %{version}
-%else
-Provides:       %{pkgname}-headers = %{version}
-%endif
+Provides:       %{crossmint}%{pkgname}-headers = %{version}
 
 # cannot use rpmint_essential() here, because gemlib is part of the essential package
-BuildRequires:  cross-mint-gcc
+BuildRequires:  %{crossmint}gcc
 
 %rpmint_build_arch
 

@@ -3,31 +3,39 @@
 %rpmint_header
 
 Summary:        Atari MiNT cross-compiler tools
+if "%{_rpmint_target}" == "m68k-atari-mintelf" \
+%if "%{buildtype}" == "cross"
+Name:           cross-mintelf-%{pkgname}
+%else
+Name:           mintelf-devel-%{pkgname}
+%endif
+%else
 %if "%{buildtype}" == "cross"
 Name:           cross-mint-%{pkgname}
 %else
 Name:           mint-devel-%{pkgname}
+%endif
 %endif
 Version:        1.0
 Release:        1
 License:        GFDL-1.3-only AND GPL-3.0-or-later AND GPL-3.0+
 Packager:       Thorsten Otto <admin@tho-otto.de>
 
-BuildRequires:  cross-mint-binutils
-BuildRequires:  cross-mint-gcc
-BuildRequires:  cross-mint-mintlib
-BuildRequires:  cross-mint-fdlibm
-BuildRequires:  cross-mint-mintbin
-BuildRequires:  cross-mint-gemlib
+BuildRequires:  %{crossmint}binutils
+BuildRequires:  %{crossmint}gcc
+BuildRequires:  %{crossmint}mintlib
+BuildRequires:  %{crossmint}fdlibm
+BuildRequires:  %{crossmint}mintbin
+BuildRequires:  %{crossmint}gemlib
 
 %if "%{buildtype}" == "cross"
 BuildArch:      noarch
-Requires:       cross-mint-binutils
-Requires:       cross-mint-gcc
-Requires:       cross-mint-mintlib
-Requires:       cross-mint-fdlibm
-Requires:       cross-mint-mintbin
-Requires:       cross-mint-gemlib
+Requires:       %{crossmint}binutils
+Requires:       %{crossmint}gcc
+Requires:       %{crossmint}mintlib
+Requires:       %{crossmint}fdlibm
+Requires:       %{crossmint}mintbin
+Requires:       %{crossmint}gemlib
 
 %else
 Requires:       binutils

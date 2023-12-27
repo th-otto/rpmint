@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        Supplementary tools to the GNU binutils for MiNT
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        0.4
 Release:        20230911
 License:        GPL-2.0-or-later
@@ -28,10 +24,10 @@ BuildRequires:  binutils
 BuildRequires:  gcc
 %else
 
-BuildRequires:  cross-mint-binutils
-BuildRequires:  cross-mint-gcc
-BuildRequires:  cross-mint-mintlib
-BuildRequires:  cross-mint-fdlibm
+BuildRequires:  %{crossmint}binutils
+BuildRequires:  %{crossmint}gcc
+BuildRequires:  %{crossmint}mintlib
+BuildRequires:  %{crossmint}fdlibm
 %define _target_platform %{_rpmint_target_platform}
 %if "%{buildtype}" == "v4e"
 %define _arch m5475
