@@ -4,7 +4,7 @@
 
 Summary       : The basic fonts, programs and docs for an X workstation.
 Name          : %{crossmint}%{pkgname}
-Version       : 4.0.2
+Version       : 4.0.3
 Release       : 1
 License       : MIT
 Group         : System/X11
@@ -30,7 +30,7 @@ Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc
 BuildRoot     : %{_tmppath}/%{name}-root
 
-%define baseversion 400
+%define baseversion 403
 
 #
 # Patches are already applied in the source archive.
@@ -553,6 +553,7 @@ gcc -m32 -O2 -fomit-frame-pointer \
 	-D__MINT__ \
 	-DDependCmd=\"%{_rpmint_target}-makedepend\" \
 	-DImakeCmd=\"%{_rpmint_target}-imake\" \
+	-DRmanCmd=\"%{_rpmint_target}-rman\" \
 	-DProjectRoot=\"%{_rpmint_sysroot}%{_rpmint_target_prefix}/X11R6\" \
 	-s -o imake imake.c
 cp imake %{buildroot}%{_prefix}/bin/%{_rpmint_target}-imake
@@ -571,9 +572,12 @@ cd ../makedepend
 make clean
 make RMAN='$(TOP)/host-tools/rman'
 cp makedepend %{buildroot}%{_prefix}/bin/%{_rpmint_target}-makedepend
+strip %{buildroot}%{_prefix}/bin/%{_rpmint_target}-makedepend
 
 # rman
-cp ../../host-tools/rman  %{buildroot}%{_prefix}/bin/%{_rpmint_target}-rman
+cp ../../host-tools/rman %{buildroot}%{_prefix}/bin/%{_rpmint_target}-rman
+strip %{buildroot}%{_prefix}/bin/%{_rpmint_target}-rman
+
 
 %else
 
@@ -1042,6 +1046,9 @@ fi
 
 
 %changelog
+* Wed Dec 27 2023 Thorsten Otto <admin@tho-otto.de>
+- Update to XFree 4.0.3
+
 * Tue Dec 26 2023 Thorsten Otto <admin@tho-otto.de>
 - Update to XFree 4.0.2
 
