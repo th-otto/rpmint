@@ -40,8 +40,7 @@ for i in \
 	tetris \
 	xgalaga \
 	xpired \
-	zelda3t_fr \
-	zelda3t_us \
+	zelda3t \
 	zeldansq \
 	zeldaolb_fr \
 	zeldaolb_us \

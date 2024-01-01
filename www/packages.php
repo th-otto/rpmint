@@ -2321,7 +2321,7 @@ Libassuan is the IPC library used by gpg2 (GnuPG version 2)
 		'name' => 'gettext',
 		'upstream' => 'http://www.gnu.org/software/gettext/',
 		'source' => $download_dir . '%{name}-%{version}.tar.xz',
-		'version' => '0.19.8.1-1',
+		'version' => '0.19.8.1-2',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,

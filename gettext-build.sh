@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=gettext
-VERSION=-0.19.8.1-1
+VERSION=-0.19.8.1-2
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
