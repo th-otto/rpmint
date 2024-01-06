@@ -38,10 +38,20 @@ COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	 --disable-shared
+	 --config-cache
 "
+
+create_config_cache()
+{
+cat <<EOF >config.cache
+ac_cv_func_memcmp_working=yes
+EOF
+}
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
+
+	create_config_cache
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
