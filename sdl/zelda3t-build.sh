@@ -37,9 +37,11 @@ for CPU in ${ALL_CPUS}; do
 	
 	${MAKE} ${JOBS} || exit 1
 
-	mkdir -p "${THISPKG_DIR}"
+	mkdir -p "${THISPKG_DIR}/data/locale"
 
 	mv Zelda3T "${THISPKG_DIR}/Zelda3T-${CPU}.prg" || exit 1
+	cp -pr data/locale/* "${THISPKG_DIR}/data/locale"
+
 	${MAKE} clean
 done
 

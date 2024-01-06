@@ -3,14 +3,14 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=zeldaroth_fr
+PACKAGENAME=zeldaroth
 VERSION=
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 THISPKG_DIR="${DIST_DIR}/zeldaroth"
 
-PATCHES="patches/zeldaroth/${PACKAGENAME}.patch"
+PATCHES=""
 EXTRA_DIST=patches/timidity.tar.xz
 
 BINFILES="
@@ -35,20 +35,21 @@ for CPU in ${ALL_CPUS}; do
 	export CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS"
 	export LDFLAGS="${STACKSIZE} -s -Wl,--msuper-memory"
 	
-	cd src
 	${MAKE} ${JOBS} || exit 1
 
-	mkdir -p "${THISPKG_DIR}"
+	mkdir -p "${THISPKG_DIR}/data/locale"
 
 	mv ZeldaROTH "${THISPKG_DIR}/ZeldaROTH-${CPU}.prg" || exit 1
+	cp -pr data/locale/* "${THISPKG_DIR}/data/locale"
+
 	${MAKE} clean
 done
 
 cd "$MINT_BUILD_DIR"
 
-cp -pr src/data "${THISPKG_DIR}"
+cp -pr data UserGuide.pdf "${THISPKG_DIR}"
 tar -C "${THISPKG_DIR}" -xf "${here}/patches/timidity.tar.xz"
+mkdir -p "${THISPKG_DIR}/save"
 
-PACKAGENAME="zeldaroth"
 make_bin_archive
 make_archives

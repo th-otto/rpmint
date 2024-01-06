@@ -261,36 +261,28 @@ Tips: Tab to pass the intro, space to swap between fishes
 <img src="' . $download_dir . 'gemdropx.gif" width="240" height="300">
 '
 	),
-	'zeldaroth_fr' => array(
-		'name' => 'zeldaroth_fr',
-		'title' => 'Zelda ROTH',
-		'version' => '',
-		'upstream' => 'http://www.zeldaroth.fr/zroth.php',
-		'category' => 'Games',
-		'summary' => 'Zelda Return Of The Hylian',
-		'comment' => '
-Story : After Link&apos;s victory over Ganon (in "A Link to the Past"), no
-one knows what Link?s wish to the Triforce was. But this wish reunified
-the Light World and the Dark World and brought the 7 wise men?s
-descendants back to life. Peace was back in Hyrule. But unfortunately,
-this wish also ressurected Ganon and his henchmen. He was preparing his
-revenge, but he couldn?t do anything without the Triforce. One night, a
-familiar voice speaks to Link in his sleep?
-</br></br>
-This is the french version.</br>
-The patch makes it start in windowed mode; press CTRL+Return to toggle fullscreen.
-</br></br>
-<img src="' . $download_dir . 'zeldaroth.png" width="320" height="240">
-'
-	),
-	'zeldaroth_us' => array(
-		'name' => 'zeldaroth_us',
+	'zeldaroth' => array(
+		'name' => 'zeldaroth',
 		'title' => 'Zelda ROTH',
 		'version' => '',
 		'upstream' => 'http://www.zeldaroth.fr/us/zroth.php',
 		'category' => 'Games',
 		'summary' => 'Zelda Return Of The Hylian',
-		'comment' => 'English version of Zelda ROTH'
+		'comment' => '
+Story : After Link&apos;s victory over Ganon (in "A Link to the Past"), no
+one knows what Link&apos;s wish to the Triforce was. But this wish reunified
+the Light World and the Dark World and brought the 7 wise men&apos;s
+descendants back to life. Peace was back in Hyrule. But unfortunately,
+this wish also ressurected Ganon and his henchmen. He was preparing his
+revenge, but he couldn&apos;t do anything without the Triforce. One night, a
+familiar voice speaks to Link in his sleep?
+</br></br>
+This version includes some rework to select english/french texts
+at runtime.
+The patch makes it start in windowed mode; press CTRL+Return to toggle fullscreen.
+</br></br>
+<img src="' . $download_dir . 'zeldaroth.png" width="320" height="240">
+'
 	),
 	'zeldansq' => array(
 		'name' => 'zeldansq',
@@ -308,11 +300,11 @@ The patch makes it start in windowed mode; press CTRL+Return to toggle fullscree
 <img src="' . $download_dir . 'zeldansq.png" width="400" height="300">
 '
 	),
-	'zelda3t_fr' => array(
-		'name' => 'zelda3t_fr',
+	'zelda3t' => array(
+		'name' => 'zelda3t',
 		'title' => 'Zelda 3T',
 		'version' => '',
-		'upstream' => 'http://www.zeldaroth.fr/z3t.php',
+		'upstream' => 'http://www.zeldaroth.us/z3t.php',
 		'category' => 'Games',
 		'summary' => 'Zelda Time To Triumph',
 		'comment' => '
@@ -323,20 +315,13 @@ Triforce, and rounded up his army with a view to invade Hyrule. Until
 the day when, after months spent watching out for an attack, an event
 came up and put an end to this endless waiting...
 </br></br>
-This is the french version.</br>
+This version includes some rework to select english/french texts
+at runtime.
+</br></br>
 The patch makes it start in windowed mode; press CTRL+Return to toggle fullscreen.
 </br></br>
 <img src="' . $download_dir . 'zelda3t.png" width="320" height="240">
 '
-	),
-	'zelda3t_us' => array(
-		'name' => 'zelda3t_us',
-		'title' => 'Zelda 3T',
-		'version' => '',
-		'upstream' => 'http://www.zeldaroth.fr/us/z3t.php',
-		'category' => 'Games',
-		'summary' => 'Zelda Time To Triumph',
-		'comment' => 'English version of Zelda 3T'
 	),
 	'zeldapicross_fr' => array(
 		'name' => 'zeldapicross_fr',
