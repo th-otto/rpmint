@@ -1,0 +1,100 @@
+--- a/configure.in.orig	2024-01-07 08:12:13.711826669 +0100
++++ b/configure.in	2024-01-07 08:52:16.257884530 +0100
+@@ -116,7 +116,7 @@
+         #VERSION_SOURCES="$srcdir/version.rc"
+         EXE=".exe"
+ 	;;
+-    *-*-cygwin* | *-*-mingw32*)
++    *-*-cygwin* | *-*-mingw*)
+         VERSION_SOURCES="$srcdir/version.rc"
+         EXE=".exe"
+         if test "$build" != "$host"; then # cross-compiling
+@@ -265,7 +265,7 @@
+             *-*-darwin*)
+                 mikmod_lib=[`find_lib libmikmod.dylib`]
+                 ;;
+-            *-*-cygwin* | *-*-mingw32*)
++            *-*-cygwin* | *-*-mingw*)
+                 mikmod_lib=[`find_lib "libmikmod*.dll"`]
+                 ;;
+             *)
+@@ -337,7 +337,7 @@
+             *mingw32ce*)
+                 use_music_native_midi=no
+                 ;;
+-            *-*-cygwin* | *-*-mingw32*)
++            *-*-cygwin* | *-*-mingw*)
+                 use_music_native_midi=yes
+                 EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lwinmm"
+                 ;;
+@@ -373,8 +373,11 @@
+                 *-*-darwin*)
+                     fluidsynth_lib=[`find_lib libfluidsynth.dylib`]
+                     ;;
+-                *-*-cygwin* | *-*-mingw32*)
++                *-*-cygwin* | *-*-mingw*)
+                     fluidsynth_lib=[`find_lib "fluidsynth*.dll"`]
++                    if test x$fluidsynth_lib = x; then
++                        fluidsynth_lib=`find_lib "libfluidsynth*.dll"`
++                    fi
+                     ;;
+                 *)
+                     fluidsynth_lib=[`find_lib "libfluidsynth[0-9]*.so.*"`]
+@@ -417,8 +420,11 @@
+                 *-*-darwin*)
+                     ogg_lib=[`find_lib libvorbisidec.dylib`]
+                     ;;
+-                *-*-cygwin* | *-*-mingw32*)
++                *-*-cygwin* | *-*-mingw*)
+                     ogg_lib=[`find_lib "vorbisidec*.dll"`]
++                    if test x$ogg_lib = x; then
++                        ogg_lib=`find_lib "libvorbisidec*.dll"`
++                    fi
+                     ;;
+                 *)
+                     ogg_lib=[`find_lib "libvorbisidec[0-9]*.so.*"`]
+@@ -447,8 +453,11 @@
+                 *-*-darwin*)
+                     ogg_lib=[`find_lib libvorbisfile.dylib`]
+                     ;;
+-                *-*-cygwin* | *-*-mingw32*)
++                *-*-cygwin* | *-*-mingw*)
+                     ogg_lib=[`find_lib "libvorbisfile*.dll"`]
++                    if test x$ogg_lib = x; then
++                        ogg_lib=`find_lib "libvorbisfile*.dll"`
++                    fi
+                     ;;
+                 *)
+                     ogg_lib=[`find_lib "libvorbisfile[0-9]*.so.*"`]
+@@ -508,7 +517,7 @@
+                 *-*-darwin*)
+                     flac_lib=[`find_lib libFLAC.dylib`]
+                     ;;
+-                *-*-cygwin* | *-*-mingw32*)
++                *-*-cygwin* | *-*-mingw*)
+                     flac_lib=[`find_lib "libFLAC-*.dll"`]
+                     ;;
+                 *)
+@@ -551,7 +560,7 @@
+             *-*-darwin*)
+                 mpg123_lib=[`find_lib libmpg123.dylib`]
+                 ;;
+-            *-*-cygwin* | *-*-mingw32*)
++            *-*-cygwin* | *-*-mingw*)
+                 mpg123_lib=[`find_lib "libmpg123*.dll"`]
+                 ;;
+             *)
+@@ -618,10 +627,10 @@
+ 
+ VERSION_OBJECTS=`echo $VERSION_SOURCES`
+ VERSION_DEPENDS=`echo $VERSION_SOURCES`
+-VERSION_OBJECTS=`echo "$VERSION_OBJECTS" | sed 's,[[^ ]]*/\([[^ ]]*\)\.rc,$(objects)/\1.o,g'`
++VERSION_OBJECTS=`echo "$VERSION_OBJECTS" | sed 's,[[^ ]]*/\([[^ ]]*\)\.rc,$(objects)/\1.lo,g'`
+ VERSION_DEPENDS=`echo "$VERSION_DEPENDS" | sed 's,\([[^ ]]*\)/\([[^ ]]*\)\.rc,\\
+-$(objects)/\2.o: \1/\2.rc\\
+-	\$(WINDRES) \$< \$@,g'`
++$(objects)/\2.lo: \1/\2.rc\\
++	\$(LIBTOOL) --mode=compile \$(WINDRES) \$< -o \$@,g'`
+ VERSION_DEPENDS=`echo "$VERSION_DEPENDS" | sed 's,\\$,\\\\$,g'`
+ 
+ PLAYWAVE_SOURCES="$srcdir/playwave.c"

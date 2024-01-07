@@ -12,7 +12,9 @@ VERSIONPATCH=
 PATCHES="
 patches/sdl_mixer/sdl_mixer-config.patch
 patches/sdl_mixer/sdl_mixer-amigaos.patch
+patches/sdl_mixer/sdl_mixer-find_lib.mingw.patch
 "
+# already applied in newer versions
 DISABLED_PATCHES="
 patches/sdl_mixer/sdl_mixer-double-free-crash.patch
 patches/sdl_mixer/sdl_mixer-mikmod1.patch
