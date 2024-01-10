@@ -8,7 +8,6 @@ VERSION=
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
-THISPKG_DIR="${DIST_DIR}/zelda3t"
 
 PATCHES=""
 EXTRA_DIST=patches/timidity.tar.xz
@@ -49,7 +48,7 @@ cd "$MINT_BUILD_DIR"
 
 cp -pr data UserGuide.pdf "${THISPKG_DIR}"
 tar -C "${THISPKG_DIR}" -xf "${here}/patches/timidity.tar.xz"
-mkdir -p "${THISPKG_DIR}/save"
+mkdir -p "${THISPKG_DIR}/saves"
 
 make_bin_archive
 make_archives
