@@ -44,10 +44,8 @@ for i in \
 	zeldansq \
 	zeldaolb_fr \
 	zeldaolb_us \
-	zeldapicross_fr \
-	zeldapicross_us \
-	zeldaroth_fr \
-	zeldaroth_us \
+	zeldapicross \
+	zeldaroth \
 	;
 do
 	echo "build $i"

@@ -323,11 +323,11 @@ The patch makes it start in windowed mode; press CTRL+Return to toggle fullscree
 <img src="' . $download_dir . 'zelda3t.png" width="320" height="240">
 '
 	),
-	'zeldapicross_fr' => array(
-		'name' => 'zeldapicross_fr',
+	'zeldapicross' => array(
+		'name' => 'zeldapicross',
 		'title' => 'Zelda Picross',
 		'version' => '',
-		'upstream' => 'http://www.zeldaroth.fr/dlpicross.php',
+		'upstream' => 'http://www.zeldaroth.fr/us/dlpicross.php',
 		'category' => 'Games',
 		'summary' => 'Zelda Picross',
 		'comment' => '
@@ -335,20 +335,13 @@ Scenario: Following a wish to the Triforce made by Ganon on a sad rainy
 day, the kingdom of Hyrule changed into Picross grids. Gathering his
 courage and his pencil, Link set off to try this new challenge.
 </br></br>
-This is the french version.</br>
+This version includes some rework to select english/french texts
+at runtime.
+</br></br>
 The patch makes it start in windowed mode; press CTRL+Return to toggle fullscreen.
 </br></br>
 <img src="' . $download_dir . 'zeldapicross.png" width="320" height="240">
 '
-	),
-	'zeldapicross_us' => array(
-		'name' => 'zeldapicross_us',
-		'title' => 'Zelda Picross',
-		'version' => '',
-		'upstream' => 'http://www.zeldaroth.fr/us/dlpicross.php',
-		'category' => 'Games',
-		'summary' => 'Zelda Picross',
-		'comment' => 'English version of Zelda Picross'
 	),
 	'zeldaolb_fr' => array(
 		'name' => 'zeldaolb_fr',
