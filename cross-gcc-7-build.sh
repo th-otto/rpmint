@@ -23,6 +23,9 @@ REVISION="MiNT ${VERSIONPATCH#-}"
 # should be either m68k-atari-mint or m68k-atari-mintelf
 #
 TARGET=${1:-m68k-atari-mint}
+if test "$TARGET" = m68k-atari-mintelf; then
+REVISION="MiNT ELF ${VERSIONPATCH#-}"
+fi
 
 #
 # The prefix where the executables should
