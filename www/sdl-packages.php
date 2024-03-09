@@ -343,11 +343,11 @@ The patch makes it start in windowed mode; press CTRL+Return to toggle fullscree
 <img src="' . $download_dir . 'zeldapicross.png" width="320" height="240">
 '
 	),
-	'zeldaolb_fr' => array(
-		'name' => 'zeldaolb_fr',
-		'title' => 'Zelda olb',
+	'zeldaolb' => array(
+		'name' => 'zeldaolb',
+		'title' => 'Zelda OLB',
 		'version' => '',
-		'upstream' => 'http://www.zeldaroth.fr/dlolb.php',
+		'upstream' => 'http://www.zeldaroth.fr/us/dlolb.php',
 		'category' => 'Games',
 		'summary' => 'Zelda Oni Link Begins',
 		'comment' => '
@@ -357,20 +357,13 @@ with a destructive nature named Oni-Link. Bannished from Hyrule, the
 young hylian asks the princess Zelda some help. She shows him his last
 hope: a portal to a secret world.
 </br></br>
-This is the french version.</br>
+This version includes some rework to select english/french texts
+at runtime.
+</br></br>
 The patch makes it start in windowed mode; press CTRL+Return to toggle fullscreen.
 </br></br>
 <img src="' . $download_dir . 'zeldaolb.jpg" width="320" height="240">
 '
-	),
-	'zeldaolb_us' => array(
-		'name' => 'zeldaolb_us',
-		'title' => 'Zelda Oni Link Begins',
-		'version' => '',
-		'upstream' => 'http://www.zeldaroth.fr/us/dlolb.php',
-		'category' => 'Games',
-		'summary' => 'Zelda olb',
-		'comment' => 'English version of Zelda Oni Link Begins'
 	),
 	'gnurobbo' => array(
 		'name' => 'gnurobbo',

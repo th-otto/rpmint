@@ -3,14 +3,13 @@
 me="$0"
 scriptdir=${0%/*}
 
-PACKAGENAME=zeldaolb_fr
+PACKAGENAME=zeldaolb
 VERSION=
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
-THISPKG_DIR="${DIST_DIR}/zeldaolb"
 
-PATCHES="patches/zeldaroth/${PACKAGENAME}.patch"
+PATCHES=""
 EXTRA_DIST=patches/timidity.tar.xz
 
 BINFILES="
@@ -37,17 +36,19 @@ for CPU in ${ALL_CPUS}; do
 	
 	${MAKE} ${JOBS} || exit 1
 
-	mkdir -p "${THISPKG_DIR}"
+	mkdir -p "${THISPKG_DIR}/data/locale"
 
 	mv ZeldaOLB "${THISPKG_DIR}/ZeldaOLB-${CPU}.prg" || exit 1
+	cp -pr data/locale/* "${THISPKG_DIR}/data/locale"
+
 	${MAKE} clean
 done
 
 cd "$MINT_BUILD_DIR"
 
-cp -pr data "${THISPKG_DIR}"
+cp -pr data solution "${THISPKG_DIR}"
 tar -C "${THISPKG_DIR}" -xf "${here}/patches/timidity.tar.xz"
+mkdir -p "${THISPKG_DIR}/saves"
 
-PACKAGENAME="zeldaolb"
 make_bin_archive
 make_archives
