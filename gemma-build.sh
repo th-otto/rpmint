@@ -5,7 +5,7 @@ scriptdir=${0%/*}
 
 PACKAGENAME=gemma
 VERSION=-git
-VERSIONPATCH=-20181123
+VERSIONPATCH=-20240311
 
 . ${scriptdir}/functions.sh
 

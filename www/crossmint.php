@@ -163,7 +163,7 @@ are available <a href="snapshots/crossmint/macos" title="macos">here</a>.
 </p>
 
 <p>
-Everything is installed in <code>/opt/crossmint</code>.<br />
+Everything is installed in <code>/opt/cross-mint</code>.<br />
 If you want to completely uninstall the tools, you just have
 to remove this directory.</p>
 
@@ -320,7 +320,7 @@ function gen_baselinks($package, string $os, string $cpu)
 		echo '<tr><td></td><td></td><td class="sourcelink">';
 	}
 
-	if ($package['elf'] && $basepackages[$gccver][$os])
+	if ($package['elf'] && $basepackages['binutils'][$os])
 	{
 		$filename = $download_dir . $name . '-' . $package['version'] . '-mintelf' . $fdate . $fbin . $fos . '.tar.xz';
 		$text = $name . '-' . $package['version'] . '-mintelf' . $fbin . $fos . '.tar.xz';
@@ -1414,7 +1414,7 @@ This notably applies to Perl and Python.
 
 <li>2023/09/18 Add x265 3.5</li>
 
-<li>2023/10/04 Add libedit 3.1 & dash 0.5.12</li>
+<li>2023/10/04 Add libedit 3.1 &amp; dash 0.5.12</li>
 
 <li>2023/10/14 Update libwebp to 1.3.2</li>
 
@@ -1465,6 +1465,8 @@ This notably applies to Perl and Python.
 <li>2023/12/23 Add FLTK 1.3.9</li>
 
 <li>2023/12/23 Add dillo 3.1-dev</li>
+
+<li>2024/03/09 Update binutils to 2.42</li>
 
 </ul>
 

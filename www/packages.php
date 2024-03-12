@@ -4,10 +4,10 @@ $basepackages = array(
 	'binutils' => array(
 		'name' => 'binutils',
 		'upstream' => 'http://www.gnu.org/software/binutils/',
-		'version' => '2.41',
-		'date' => '20230911',
+		'version' => '2.42',
+		'date' => '20240309',
 		'repo' => 'https://github.com/th-otto/binutils',
-		'branch' => 'binutils-2_41-mint',
+		'branch' => 'binutils-2_42-mint',
 		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.xz',
 		'patch' => 1,
 		'script' => 1,
@@ -21,7 +21,7 @@ $basepackages = array(
 		'cygwin32' => 1,
 		'cygwin64' => 1,
 		'mingw32' => 1,
-		'mingw64' => 0,
+		'mingw64' => 1,
 		'linux32' => 1,
 		'linux64' => 1,
 		'macos32' => 0,
@@ -33,7 +33,7 @@ $basepackages = array(
 		'comment' => '
 The binutils are a collection of low-level language tools.<br />
 The full documentation can be found
-<a href="https://sourceware.org/binutils/docs-2.40/" ' . $href_target . '>here</a>.<br />
+<a href="https://sourceware.org/binutils/docs-2.42/" ' . $href_target . '>here</a>.<br />
 <br />
 Note that official support for m68k-aout has been removed since binutils-2.31.<br />
 This is a version where that support has been added back in.
@@ -423,10 +423,10 @@ of an executable, and <code>flags</code> for setting the header flags.
 		'name' => 'gdb',
 		'title' => 'GDB',
 		'upstream' => 'http://www.gnu.org/software/binutils/',
-		'version' => '14.0',
-		'date' => '20230911',
+		'version' => '15.0',
+		'date' => '20240309',
 		'repo' => 'https://github.com/th-otto/binutils',
-		'source' => 'https://ftp.gnu.org/gnu/binutils/binutils-2.41.tar.xz',
+		'source' => 'https://ftp.gnu.org/gnu/binutils/binutils-2.42.tar.xz',
 		'patch' => 0,
 		'script' => 0,
 		'crossscript' => 0,
@@ -438,12 +438,12 @@ of an executable, and <code>flags</code> for setting the header flags.
 		'm2' => 0,
 		'cygwin32' => 1,
 		'cygwin64' => 1,
-		'mingw32' => 1,
+		'mingw32' => 0,
 		'mingw64' => 0,
 		'linux32' => 1,
 		'linux64' => 1,
 		'macos32' => 0,
-		'macos64' => 1,
+		'macos64' => 0,
 		'atari' => 1,
 		'license' => 'GPL-3.0-only WITH GCC-exception-3.1 AND GPL-3.0-or-later AND LGPL-2.1-or-later AND LGPL-3.0-or-later',
 		'category' => 'Development/Tools/Debuggers',

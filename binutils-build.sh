@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # This script is for building the binutils
@@ -14,8 +14,8 @@ scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=binutils
-VERSION=-2.41
-VERSIONPATCH=-20230926
+VERSION=-2.42
+VERSIONPATCH=-20240309
 REVISION="GNU Binutils for MiNT ${VERSIONPATCH#-}"
 
 TARGET=${1:-m68k-atari-mint}
@@ -54,7 +54,7 @@ srcdir="${PACKAGENAME}${VERSION}"
 # BINUTILS_SUPPORT_DIRS is from src-release.sh
 #
 # The mint patch can be recreated by running
-# git diff binutils-2_41-branch binutils-2_41-mint
+# git diff binutils-2_42-branch binutils-2_42-mint
 # in my fork (https://github.com/th-otto/binutils/)
 #
 PATCHES="\
@@ -176,10 +176,12 @@ test "$host" = "macos" && bfd_targets=""
 # and also host target
 case "${TARGET}" in
     x86_64-*-mingw*)
-	    bfd_targets="${bfd_targets},i686-pc-mingw32"
+    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
+	    bfd_targets="${bfd_targets}i686-pc-mingw32"
     	;;
     i686-*-mingw*)
-    	bfd_targets="${bfd_targets},x86_64-w64-mingw64"
+    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
+    	bfd_targets="${bfd_targets}x86_64-w64-mingw64"
 		;;
     *-*-*elf* | *-*-linux* | *-*-darwin*)
     	enable_lto=--enable-lto
@@ -189,13 +191,16 @@ case "${TARGET}" in
 esac
 case "${TARGET}" in
     m68k-atari-mintelf*)
-    	bfd_targets="${bfd_targets},m68k-atari-mint"
+    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
+    	bfd_targets="${bfd_targets}m68k-atari-mint"
 		;;
     m68k-atari-mint*)
-    	bfd_targets="${bfd_targets},m68k-atari-mintelf"
+    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
+    	bfd_targets="${bfd_targets}m68k-atari-mintelf"
 		;;
     *-*-darwin*)
-        bfd_targets="${bfd_targets},aarch64-apple-darwin"
+    	if test -n "${bfd_targets}"; then bfd_targets="${bfd_targets},"; else bfd_targets="--enable-targets="; fi
+        bfd_targets="${bfd_targets}aarch64-apple-darwin"
 		;;
 esac
 
@@ -304,6 +309,7 @@ $srcdir/configure \
 	--with-gcc --with-gnu-as --with-gnu-ld \
 	--disable-werror \
 	--disable-threads \
+	--disable-threading \
 	--enable-new-dtags \
 	--enable-relro \
 	--enable-default-hash-style=both \
@@ -397,7 +403,7 @@ if test -f ${PREFIX#/}/bin/${TARGET}-gdb; then
 	gdb_version=`cat $srcdir/gdb/version.in`
 	gdb_version=${gdb_version//.DATE-git/}
 	gdb_version=$(echo ${gdb_version} | cut -d '.' -f 1-2)
-	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/gdb-${gdb_version}-${TARGET##*-}${VERSIONPATCH}-${host}.tar.xz $gdb || exit 1
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/gdb-${gdb_version}-${TARGET##*-}${VERSIONPATCH}-bin-${host}.tar.xz $gdb || exit 1
 	rm -rf $gdb
 fi
 

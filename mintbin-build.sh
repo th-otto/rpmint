@@ -56,7 +56,7 @@ ${STRIP} *
 cd "${THISPKG_DIR}/${prefix}/${TARGET}/bin" || exit 1
 ${STRIP} *
 
-for i in arconv cnm csize cstrip flags mintbin stack symex; do
+for i in arconv cnm csize cstrip flags mintbin stack symex stripex; do
 	if test -x ../../bin/${TARGET}-$i && test -x $i && test ! -h $i && cmp -s $i ../../bin/${TARGET}-$i; then
 		rm -f ${i} ${i}${BUILD_EXEEXT}
 		$LN_S ../../bin/${TARGET}-$i${BUILD_EXEEXT} $i

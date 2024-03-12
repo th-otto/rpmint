@@ -7,7 +7,10 @@ TARGET=${1:-m68k-atari-mint}
 export KEEP_PKGDIR=no
 export KEEP_SRCDIR=no
 
+failed=""
+
 for pkg in \
+	a52dec \
 	arc \
 	arj \
 	asap \
@@ -19,6 +22,7 @@ for pkg in \
 	bzip2 \
 	c-ares \
 	ca-certificates \
+	cairo \
 	cflib \
 	cmake \
 	coreutils \
@@ -38,6 +42,7 @@ for pkg in \
 	flac \
 	flex \
 	freetype2 \
+	fribidi \
 	gawk \
 	gdbm \
 	gemlib \
@@ -55,10 +60,14 @@ for pkg in \
 	krb5 \
 	ldg \
 	lha \
+	libaacplus \
+	libaom \
 	libarchive \
+	libass \
 	libassuan \
 	libbeecrypt \
 	libde265 \
+	libedit \
 	libexif \
 	libffi \
 	libgcrypt \
@@ -73,15 +82,18 @@ for pkg in \
 	libogg \
 	libpng \
 	libpsl \
+	libsndfile \
 	libsolv \
 	libssh2 \
 	libtheora \
 	libunistring \
 	libuv \
+	libvorbis \
 	libwebp \
 	libxml2 \
 	libxmp \
 	libyuv \
+	lua51 \
 	lua53 \
 	m4 \
 	make \
@@ -99,25 +111,32 @@ for pkg in \
 	nghttp2 \
 	openh264 \
 	openssl \
+	opus \
 	p7zip \
 	patch \
 	perl \
 	physfs \
+	ping \
+	pixman \
 	pml \
 	pngtools \
 	popt \
+	pth \
 	python2 \
 	python3 \
 	readline \
 	rhash \
 	rpm \
 	sdl \
+	sdl_gfx \
 	sdl_image \
 	sdl_mixer \
 	sdl_net \
+	sdl_sound \
 	sdl_ttf \
 	sed \
 	smpeg \
+	sqlite3 \
 	tar \
 	tiff \
 	traceroute \
@@ -129,7 +148,8 @@ for pkg in \
 	windom \
 	windom1 \
 	wolfssl \
-	libx265 \
+	x264 \
+	x265 \
 	xz \
 	zip \
 	zita-resampler \
@@ -140,10 +160,18 @@ for pkg in \
 	script=${pkg}-build.sh
 	ls -l $script
 	echo -ne "\033]2;$pkg\007"
-	: time ./$script ${TARGET}
+	time ./$script ${TARGET}
+	if test $? != 0; then
+		failed="$failed $pkg"
+	fi
 done
 
 echo -ne "\033]2;\007"
+
+if test "$failed" != ""; then
+	echo "failed: $failed" >&2
+	exit 1
+fi
 
 exit 0
 
