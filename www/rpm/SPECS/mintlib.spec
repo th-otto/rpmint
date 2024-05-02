@@ -5,7 +5,7 @@
 Summary:        Standard C Libraries for MiNT
 Name:           %{crossmint}%{pkgname}
 Version:        0.60.1
-Release:        3
+Release:        4
 License:        LGPL-2.1-or-later AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND GPL-2.0-or-later
 Group:          System/Libraries
 
@@ -38,7 +38,7 @@ Summary:        Time Zone Descriptions
 License:        BSD-3-Clause
 Group:          System/Base
 # FIXME: needs rpm patch
-# Version:        2018e
+# Version:        2022g
 
 %description -n timezone
 These are configuration files that describe available time zones. You
@@ -55,48 +55,34 @@ can select an appropriate time zone for your system running tzselect.
 [ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 export CROSS_TOOL=%{_rpmint_target}
 
-#
-# ugly hack until makefiles have been ajusted
-#
-sed -i "\@^# This is where include@i prefix := ${RPM_BUILD_ROOT}%{_rpmint_prefix}" configvars
-
 make %{?_smp_mflags}
 
 %install
 
 export CROSS_TOOL=%{_rpmint_target}
 
-%if "%{buildtype}" == "cross"
-prefix=%{_rpmint_prefix}
-%else
-prefix=%{_rpmint_target_prefix}
-%endif
-make prefix=${RPM_BUILD_ROOT}${prefix} install
+make DESTDIR=${RPM_BUILD_ROOT}%{_isysroot} install
 
 %if "%{buildtype}" == "cross"
-rm -rf ${RPM_BUILD_ROOT}${prefix}/sbin
-rm -rf ${RPM_BUILD_ROOT}${prefix}/share/zoneinfo
-rm -rf ${RPM_BUILD_ROOT}${prefix}/share/man
+rm -rf ${RPM_BUILD_ROOT}%{_isysroot}/sbin
+rm -rf ${RPM_BUILD_ROOT}%{_isysroot}%{_rpmint_target_prefix}/sbin
+rm -rf ${RPM_BUILD_ROOT}%{_isysroot}%{_rpmint_target_prefix}/share/zoneinfo
+rm -rf ${RPM_BUILD_ROOT}%{_isysroot}%{_rpmint_target_prefix}/share/man
 %else
+case %{buildtype} in
+  000)
+    ;;
+  020)
+    rm -f tz/*.o
+    make type=m68020 -C tz DESTDIR=${RPM_BUILD_ROOT}%{_isysroot} install
+    ;;
+  v4e)
+    rm -f tz/*.o
+    make type=coldfire -C tz DESTDIR=${RPM_BUILD_ROOT}%{_isysroot} install
+    ;;
+esac
 %rpmint_gzip_docs
 %endif
-
-#
-# The Makefile in the include directory
-# installs these files to /usr/include, but they don't belonge there
-#
-pushd ${RPM_BUILD_ROOT}
-find . \( -name 00README \
-	-o -name COPYING \
-	-o -name COPYING.LIB \
-	-o -name COPYMINT \
-	-o -name BINFILES \
-	-o -name MISCFILES \
-	-o -name SRCFILES \
-	-o -name EXTRAFILES \
-	-o -name Makefile \
-	-o -name clean-include \) -delete -printf "rm %%p\n"
-popd
 
 %files
 %defattr(-,root,root)
@@ -114,12 +100,16 @@ popd
 # %config(missingok,noreplace) /etc/localtime
 %{_rpmint_target_prefix}/share/zoneinfo
 %{_rpmint_target_prefix}/sbin/*
+/sbin/*
 %endif
 
 %clean
 [ "${RPM_BUILD_ROOT}" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
 %changelog
+* Sun Apr 28 2024 Thorsten Otto <admin@tho-otto.de>
+- Use new build that supports -mfastcall libraries
+
 * Sun Mar 5 2023 Thorsten Otto <admin@tho-otto.de>
 - timezone update 2022g
 - Install leapseconds data to %%{_datadir}/zoneinfo/; this is now

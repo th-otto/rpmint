@@ -1478,6 +1478,8 @@ This notably applies to Perl and Python.
 
 <li>2024/04/25 Update fdlibm & gemlib to include -mfastcall libraries</li>
 
+<li>2024/04/29 Update mintlib to include -mfastcall libraries</li>
+
 </ul>
 
 <p></p>

@@ -369,7 +369,7 @@ mkdir -p "${PKG_DIR}"
 if test ! -f "${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
 		echo "fetching binutils"
-		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.41-${TARGET##*-}-20230926-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
+		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.42-${TARGET##*-}-20240309-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
 		export PATH="${PKG_DIR}${PREFIX}/bin:$PATH"
 	fi
 fi

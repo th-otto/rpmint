@@ -5,11 +5,18 @@ scriptdir=${0%/*}
 
 PACKAGENAME=mintlib
 VERSION=-0.60.1
-VERSIONPATCH=-20230212
+VERSIONPATCH=-20240428
 
 . ${scriptdir}/functions.sh
 
 PATCHES=""
+BINFILES="
+sbin/tzinit
+${TARGET_PREFIX#/}/sbin/tzselect
+${TARGET_PREFIX#/}/sbin/zic
+${TARGET_PREFIX#/}/sbin/zdump
+${TARGET_PREFIX#/}/share/zoneinfo
+"
 
 unpack_archive
 
@@ -19,15 +26,27 @@ export CROSS_TOOL=${TARGET}
 # currently disabled; does not work
 LTO_CFLAGS=""
 
-#
-# ugly hack until makefiles have been ajusted
-#
-sed -i "\@^# This is where include@i prefix := ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" configvars
 ${MAKE} $JOBS || exit 1
 
-${MAKE} prefix=${THISPKG_DIR}${sysroot}${TARGET_PREFIX} install || exit 1
+${MAKE} DESTDIR=${THISPKG_DIR}${sysroot} install || exit 1
+
+cd "$MINT_BUILD_DIR"
+rm -f tz/*.o
+make type=m68020 -C tz DESTDIR=${THISPKG_DIR}${sysroot} install
+make_bin_archive 020
+
+cd "$MINT_BUILD_DIR"
+rm -f tz/*.o
+make type=coldfire -C tz DESTDIR=${THISPKG_DIR}${sysroot} install
+make_bin_archive v4e
+
+cd "$MINT_BUILD_DIR"
+rm -f tz/*.o
+make type=m68000 -C tz DESTDIR=${THISPKG_DIR}${sysroot} install
+make_bin_archive 000
 
 cd "${THISPKG_DIR}${sysroot}${TARGET_PREFIX}" || exit 1
+
 
 find . \( -name 00README \
 	-o -name COPYING \
@@ -39,9 +58,6 @@ find . \( -name 00README \
 	-o -name EXTRAFILES \
 	-o -name Makefile \
 	-o -name clean-include \) -delete -printf "rm %%p\n"
-
-# strip non-locals, but not debug informations
-find . -name "*.a" ! -type l -exec "${strip}" -X -w -N '.L[0-9]*' '{}' \;
 
 NO_STRIP=yes
 make_archives

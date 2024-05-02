@@ -4,8 +4,8 @@
 
 Summary:        Freely Distributable C math library
 Name:           %{crossmint}%{pkgname}
-Version:        20230210
-Release:        1
+Version:        20240425
+Release:        2
 License:        Public Domain
 Group:          System/Libraries
 
@@ -70,18 +70,17 @@ make DESTDIR=${RPM_BUILD_ROOT} install
 %defattr(-,root,root)
 %if "%{buildtype}" == "cross"
 %{_rpmint_includedir}/*
-%{_rpmint_libdir}/*.a
-%{_rpmint_libdir}/*/*.a
-%{_rpmint_libdir}/*/*/*.a
+%{_rpmint_libdir}
 %else
 %{_rpmint_target_prefix}/include/*
-%{_rpmint_target_prefix}/lib/*.a
-%{_rpmint_target_prefix}/lib/*/*.a
-%{_rpmint_target_prefix}/lib/*/*/*.a
+%{_rpmint_target_prefix}/lib
 %endif
 
 
 %changelog
+* Sun Apr 28 2024 Thorsten Otto <admin@tho-otto.de>
+- Use new build that supports -mfastcall libraries
+
 * Mon Aug 31 2020 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
 

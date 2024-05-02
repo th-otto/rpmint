@@ -249,9 +249,9 @@ if ! test -f ${PREFIX}/${TARGET}/sys-root/usr/include/compiler.h; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
 		sudo mkdir -p ${PREFIX}/${TARGET}/sys-root/usr
 		echo "fetching mintlib"
-		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-${TARGET##*-}-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+		wget -q -O - "https://tho-otto.de/snapshots/mintlib/mintlib-${TARGET##*-}-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root" -xjf -
 		echo "fetching fdlibm"
-		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-${TARGET##*-}-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root/usr" -xjf -
+		wget -q -O - "https://tho-otto.de/snapshots/fdlibm/fdlibm-${TARGET##*-}-latest.tar.bz2" | sudo $TAR -C "${PREFIX}/${TARGET}/sys-root" -xjf -
 	fi
 fi
 
@@ -368,7 +368,7 @@ mkdir -p "${PKG_DIR}"
 if test ! -f "${PKG_DIR}/${PREFIX}/bin/${TARGET}-${ranlib}"; then
 	if test "${GITHUB_REPOSITORY}" != ""; then
 		echo "fetching binutils"
-		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.41-${TARGET##*-}-20230926-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
+		wget -q -O - "https://tho-otto.de/snapshots/crossmint/$host/binutils/binutils-2.42-${TARGET##*-}-20240309-bin-${host}.tar.xz" | $TAR -C "${PKG_DIR}" -xJf -
 		export PATH="${PKG_DIR}${PREFIX}/bin:$PATH"
 	fi
 fi
@@ -822,7 +822,7 @@ if test $glibc_hack = false -a \( $host = linux32 -o $host = linux64 \); then
 	release=`lsb_release -r -s`
 	# gcc-x.y.z-ubuntu-20.04-mint.tar.xz
 	TARNAME=${PACKAGENAME}${VERSION}-${id}-${release}-${TARGET##*-}
-	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}.tar.xz ${PREFIX#/}
+	${TAR} ${TAR_OPTS} -jcf ${DIST_DIR}/${TARNAME}.tar.bz2 ${PREFIX#/}
 else
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
 fi

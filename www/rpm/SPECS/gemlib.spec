@@ -13,7 +13,7 @@
 Summary:        GEM libraries and header files
 Name:           %{crossmint}%{pkgname}
 Version:        0.44.0
-Release:        20230212
+Release:        20240425
 License:        Public Domain
 Group:          System/Libraries
 
@@ -67,8 +67,7 @@ fi
 
 export CROSS_TOOL=${TARGET}
 
-# this Makefiles are not yet ready for parallel makes
-make -j1
+make %{?_smp_mflags}
 
 %install
 
@@ -117,6 +116,9 @@ make PREFIX=${RPM_BUILD_ROOT}%{_rpmint_target_prefix} install
 
 
 %changelog
+* Sun Apr 28 2024 Thorsten Otto <admin@tho-otto.de>
+- Use new build that supports -mfastcall libraries
+
 * Sat Aug 29 2020 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
 
