@@ -1,0 +1,14 @@
+--- a/playwave.c	2024-03-28 16:41:10.313279385 +0100
++++ b/playwave.c	2024-03-28 16:41:13.986609090 +0100
+@@ -417,9 +417,11 @@
+ 		return(255);
+ 	}
+ #ifdef HAVE_SIGNAL_H
++#ifndef __MINT__
+ 	signal(SIGINT, CleanUp);
+ 	signal(SIGTERM, CleanUp);
+ #endif
++#endif
+ 
+ 	/* Open the audio device */
+ 	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, 4096) < 0) {

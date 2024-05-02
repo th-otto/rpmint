@@ -1,0 +1,29 @@
+From 0ff5d576b4bf6fa54bc1b5d300d522fbcf65b30d Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Mar 2024 14:38:40 +0100
+Subject: [PATCH 03/40] Make OPENAL optional also on non-windows platforms
+
+There are some system where OPENAL is not available
+---
+ CMakeLists.txt | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 77ae270..8104b45 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -43,9 +43,10 @@ if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Windows")
+     add_feature_info(SDL2 SDL2 "SDL2 video backend")
+     add_feature_info(OpenAL OPENAL "OpenAL audio backend")
+ else()
++    option(OPENAL "Enable OpenAL audio backend." ON)
+     add_feature_info(SDL1 SDL1 "SDL1 video backend")
+     add_feature_info(SDL2 SDL2 "SDL2 video backend")
+-    set(OPENAL TRUE)
++    add_feature_info(OpenAL OPENAL "OpenAL audio backend")
+ endif()
+ 
+ if(APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+-- 
+2.41.0
+

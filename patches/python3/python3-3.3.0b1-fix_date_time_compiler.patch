@@ -1,9 +1,18 @@
-Index: Python-3.6.1/Makefile.pre.in
-===================================================================
---- Python-3.6.1.orig/Makefile.pre.in
-+++ Python-3.6.1/Makefile.pre.in
-@@ -743,11 +743,18 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
- 		$(MODOBJS) \
+From 6b05db04eeed04d184b09b0dceaf4b1973d3b6f7 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 15 Apr 2024 09:31:41 +0200
+Subject: [PATCH 04/22] python-3.3.0b1-fix_date_time_compiler.patch
+
+---
+ Makefile.pre.in | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/Makefile.pre.in b/Makefile.pre.in
+index 4d1921b..b0e5183 100644
+--- a/Makefile.pre.in
++++ b/Makefile.pre.in
+@@ -1240,11 +1240,18 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
+ 		$(DTRACE_OBJS) \
  		$(srcdir)/Modules/getbuildinfo.c
  	$(CC) -c $(PY_CORE_CFLAGS) \
 +	      -DDATE="\"`date -u -r Makefile.pre.in +"%b %d %Y"`\"" \
@@ -18,6 +27,9 @@ Index: Python-3.6.1/Makefile.pre.in
 +		-DCOMPILER='"[GCC]"' \
 +		-o $@ $(srcdir)/Python/getcompiler.c
 +
- Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
+ Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
  	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
  		-DPREFIX='"$(prefix)"' \
+-- 
+2.41.0
+

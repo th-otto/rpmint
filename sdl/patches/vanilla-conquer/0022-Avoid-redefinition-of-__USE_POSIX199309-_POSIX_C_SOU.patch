@@ -1,0 +1,33 @@
+From 5b23e8378fc4e90f3e636aebb913e8155effc25d Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Wed, 20 Mar 2024 10:28:35 +0100
+Subject: [PATCH 22/40] Avoid redefinition of __USE_POSIX199309/_POSIX_C_SOURCE
+
+On glibc systems, they are already defined in <features.h> which is
+pulled in by any system header. Defining such macros in header files is
+too late.
+---
+ common/mssleep.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/common/mssleep.h b/common/mssleep.h
+index 9f7c8a6..eb1f8eb 100644
+--- a/common/mssleep.h
++++ b/common/mssleep.h
+@@ -11,8 +11,12 @@
+ #elif defined(_WIN32)
+ #include <synchapi.h>
+ #else /* Assuming recent posix*/
+-#define __USE_POSIX199309
++#ifndef __USE_POSIX199309
++#define __USE_POSIX199309 1
++#endif
++#ifndef _POSIX_C_SOURCE
+ #define _POSIX_C_SOURCE 199309L
++#endif
+ #include <time.h>
+ #endif
+ 
+-- 
+2.41.0
+

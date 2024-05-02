@@ -1,29 +1,43 @@
---- a/Makefile.pre.in	2018-03-25 03:02:22.194348255 +0200
-+++ b/Makefile.pre.in	2018-03-25 03:05:31.490344136 +0200
-@@ -443,7 +443,7 @@
+From 19c6e034ac2806cd6df2e17b2e3af459d4b1945f Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 15 Apr 2024 10:34:50 +0200
+Subject: [PATCH 20/22] mintnosharedmod
+
+---
+ Makefile.pre.in | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile.pre.in b/Makefile.pre.in
+index 73d2eff..91bae74 100644
+--- a/Makefile.pre.in
++++ b/Makefile.pre.in
+@@ -585,7 +585,7 @@ LIBEXPAT_HEADERS= \
  
  # Default target
  all:		@DEF_MAKE_ALL_RULE@
--build_all:	check-clean-src $(BUILDPYTHON) oldsharedmods sharedmods gdbhooks \
-+build_all:	check-clean-src $(BUILDPYTHON) gdbhooks \
- 		Programs/_testembed python-config
+-build_all:	check-clean-src $(BUILDPYTHON) platform oldsharedmods sharedmods \
++build_all:	check-clean-src $(BUILDPYTHON) platform \
+ 		gdbhooks Programs/_testembed python-config
+ build_wasm: check-clean-src $(BUILDPYTHON) platform oldsharedmods python-config
  
- # Check that the source is clean when building out of source.
-@@ -1114,7 +1114,7 @@
+@@ -1776,7 +1776,7 @@ altinstall: commoninstall
  
  commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
  		altbininstall libinstall inclinstall libainstall \
--		sharedinstall oldsharedinstall altmaninstall \
-+		altmaninstall \
- 		@FRAMEWORKALTINSTALLLAST@
+-		sharedinstall oldsharedinstall altmaninstall @FRAMEWORKALTINSTALLLAST@
++		altmaninstall @FRAMEWORKALTINSTALLLAST@
  
  # Install shared libraries enabled by Setup
-@@ -1294,7 +1294,7 @@
- 		unittest unittest/test unittest/test/testmock \
- 		venv venv/scripts venv/scripts/common venv/scripts/posix \
- 		curses pydoc_data
--libinstall:	build_all $(srcdir)/Modules/xxmodule.c
-+libinstall:	build_all $(srcdir)/Modules/xxmodule.c pybuilddir.txt
+ DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
+@@ -2074,7 +2074,7 @@ TESTSUBDIRS=	ctypes/test \
+ 		unittest/test/testmock
+ 
+ TEST_MODULES=@TEST_MODULES@
+-libinstall:	all $(srcdir)/Modules/xxmodule.c
++libinstall:	all $(srcdir)/Modules/xxmodule.c pybuilddir.txt
  	@for i in $(SCRIPTDIR) $(LIBDEST); \
  	do \
  		if test ! -d $(DESTDIR)$$i; then \
+-- 
+2.41.0
+

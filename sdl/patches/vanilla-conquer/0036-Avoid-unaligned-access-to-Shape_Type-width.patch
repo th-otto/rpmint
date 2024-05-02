@@ -1,0 +1,35 @@
+From eb14d2b41bb5e44f9ae38b66627ad1272ff1129a Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 22 Mar 2024 12:38:46 +0100
+Subject: [PATCH 36/40] Avoid unaligned access to Shape_Type->width
+
+---
+ common/getshape.cpp | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/common/getshape.cpp b/common/getshape.cpp
+index 6d82992..5943e00 100644
+--- a/common/getshape.cpp
++++ b/common/getshape.cpp
+@@ -194,7 +194,6 @@ int Extract_Shape_Count(void const* buffer)
+  *=========================================================================*/
+ void* Extract_Shape(void const* buffer, int shape)
+ {
+-    ShapeBlock_Type* block = (ShapeBlock_Type*)buffer;
+     // PG	int numshapes;		// Number of shapes
+     uint32_t offset; // Offset of shape data, from start of block
+     char* bytebuf = (char*)buffer;
+@@ -242,7 +241,9 @@ int Get_Shape_Width(void const* shape)
+ {
+     Shape_Type* shp = (Shape_Type*)shape;
+ 
+-    return le16toh(shp->Width);
++    uint16_t width;
++    memcpy(&width, &shp->Width, sizeof(width));
++    return le16toh(width);
+ 
+ } /* end of Get_Shape_Width */
+ 
+-- 
+2.41.0
+

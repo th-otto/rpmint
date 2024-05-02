@@ -1,0 +1,28 @@
+From 4bdb3a04d44d903152b97c34fe36f9ce186538a7 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Mar 2024 14:52:17 +0100
+Subject: [PATCH 06/40] Use windowed mode by default on MiNT
+
+---
+ common/settings.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/common/settings.cpp b/common/settings.cpp
+index bff02b6..55fb782 100644
+--- a/common/settings.cpp
++++ b/common/settings.cpp
+@@ -20,7 +20,11 @@ SettingsClass::SettingsClass()
+     */
+     Video.WindowWidth = 640;
+     Video.WindowHeight = 400;
++#ifdef __MINT__
++    Video.Windowed = true;
++#else
+     Video.Windowed = false;
++#endif
+     Video.Width = 0;
+     Video.Height = 0;
+     Video.Boxing = true;
+-- 
+2.41.0
+

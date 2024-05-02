@@ -1,0 +1,72 @@
+From 6493b306658d657164f4b6f6ef92ed8dd95686ac Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Mar 2024 14:40:17 +0100
+Subject: [PATCH 04/40] Fix compliation of some test programs
+
+They refer to stderr etc. but fail to include <stdio.h>
+---
+ tests/face.cpp     | 1 +
+ tests/fading.cpp   | 1 +
+ tests/lcw.cpp      | 1 +
+ tests/rect.cpp     | 1 +
+ tests/xordelta.cpp | 1 +
+ 5 files changed, 5 insertions(+)
+
+diff --git a/tests/face.cpp b/tests/face.cpp
+index 1b723d7..9da4e6d 100644
+--- a/tests/face.cpp
++++ b/tests/face.cpp
+@@ -1,5 +1,6 @@
+ #include "common/face.h"
+ 
++#include <stdio.h>
+ #include <stdint.h>
+ #include <iostream>
+ 
+diff --git a/tests/fading.cpp b/tests/fading.cpp
+index e47035b..bb46d45 100644
+--- a/tests/fading.cpp
++++ b/tests/fading.cpp
+@@ -1,5 +1,6 @@
+ #include "common/fading.h"
+ 
++#include <stdio.h>
+ #include <stdint.h>
+ #include <string.h>
+ #include <iostream>
+diff --git a/tests/lcw.cpp b/tests/lcw.cpp
+index 410db3d..e5cb7e2 100644
+--- a/tests/lcw.cpp
++++ b/tests/lcw.cpp
+@@ -1,5 +1,6 @@
+ #include "common/lcw.h"
+ 
++#include <stdio.h>
+ #include <stdint.h>
+ #include <string.h>
+ #include <iostream>
+diff --git a/tests/rect.cpp b/tests/rect.cpp
+index fc91a73..349644b 100644
+--- a/tests/rect.cpp
++++ b/tests/rect.cpp
+@@ -1,5 +1,6 @@
+ #include "common/rect.h"
+ 
++#include <stdio.h>
+ #include <cstdint>
+ #include <iostream>
+ 
+diff --git a/tests/xordelta.cpp b/tests/xordelta.cpp
+index 2e961d9..a3af9f7 100644
+--- a/tests/xordelta.cpp
++++ b/tests/xordelta.cpp
+@@ -1,5 +1,6 @@
+ #include "common/xordelta.h"
+ 
++#include <stdio.h>
+ #include <stdint.h>
+ #include <string.h>
+ #include <iostream>
+-- 
+2.41.0
+

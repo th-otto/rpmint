@@ -170,6 +170,7 @@ if test "$BUILD" = ""; then
 fi
 
 ELF_CFLAGS=
+ELF_LDFLAGS=
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -179,6 +180,7 @@ case "${TARGET}" in
 		# we cannot add this to CFLAGS, because then autoconf tests
 		# for missing c library functions will always succeed
 		ELF_CFLAGS="-ffunction-sections -fdata-sections"
+		ELF_LDFLAGS="-Wl,--gc-sections"
 		;;
 esac
 

@@ -3,11 +3,7 @@
 %rpmint_header
 
 Summary:        The GNU MP Library
-%if "%{buildtype}" == "cross"
-Name:           cross-mint-%{pkgname}
-%else
-Name:           %{pkgname}
-%endif
+Name:           %{crossmint}%{pkgname}
 Version:        6.2.1
 Release:        1
 License:        GPL-3.0-or-later and LGPL-3.0-or-later
@@ -25,17 +21,14 @@ Source1: patches/automake/mintelf-config.sub
 Patch0: gmp-coldfire.patch
 
 %rpmint_essential
-%if "%{buildtype}" == "cross"
-BuildRequires:  cross-mint-gcc-c++
-%else
-BuildRequires:  gcc-c++
-%endif
+BuildRequires:  %{crossmint}gcc-c++
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libtool
 BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  xz
+Provides:       %{crossmint}gmp-devel
 
 %rpmint_build_arch
 

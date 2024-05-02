@@ -1,0 +1,262 @@
+diff -rup ntp-4.2.8p17.orig/include/ntp.h ntp-4.2.8p17/include/ntp.h
+--- ntp-4.2.8p17.orig/include/ntp.h	2023-06-06 13:33:42.000000000 +0200
++++ ntp-4.2.8p17/include/ntp.h	2024-04-13 16:52:20.649459507 +0200
+@@ -699,6 +699,8 @@ struct pkt {
+  * min, min3 and max.  Makes it easier to transliterate the spec without
+  * thinking about it.
+  */
++#undef min
++#undef max
+ #define	min(a,b)	(((a) < (b)) ? (a) : (b))
+ #define	max(a,b)	(((a) > (b)) ? (a) : (b))
+ #define	min3(a,b,c)	min(min((a),(b)), (c))
+diff -rup ntp-4.2.8p17.orig/libntp/lib/isc/netscope.c ntp-4.2.8p17/libntp/lib/isc/netscope.c
+--- ntp-4.2.8p17.orig/libntp/lib/isc/netscope.c	2023-05-31 12:31:39.000000000 +0200
++++ ntp-4.2.8p17/libntp/lib/isc/netscope.c	2024-04-13 17:01:00.068902105 +0200
+@@ -35,7 +35,9 @@ isc_netscope_pton(int af, char *scopenam
+ #ifdef ISC_PLATFORM_HAVEIFNAMETOINDEX
+ 	unsigned int ifid;
+ #endif
++#ifdef ISC_PLATFORM_HAVEIFNAMETOINDEX
+ 	struct in6_addr *in6;
++#endif
+ 	isc_uint32_t zone;
+ 	isc_uint64_t llz;
+ 
+@@ -43,8 +45,6 @@ isc_netscope_pton(int af, char *scopenam
+ 	if (af != AF_INET6)
+ 		return (ISC_R_FAILURE);
+ 
+-	in6 = (struct in6_addr *)addr;
+-
+ 	/*
+ 	 * Basically, "names" are more stable than numeric IDs in terms of
+ 	 * renumbering, and are more preferred.  However, since there is no
+@@ -54,6 +54,8 @@ isc_netscope_pton(int af, char *scopenam
+ 	 * interfaces and links.
+ 	 */
+ #ifdef ISC_PLATFORM_HAVEIFNAMETOINDEX
++	in6 = (struct in6_addr *)addr;
++
+ 	if (IN6_IS_ADDR_LINKLOCAL(in6) &&
+ 	    (ifid = if_nametoindex((const char *)scopename)) != 0)
+ 		zone = (isc_uint32_t)ifid;
+diff -rup ntp-4.2.8p17.orig/libntp/machines.c ntp-4.2.8p17/libntp/machines.c
+--- ntp-4.2.8p17.orig/libntp/machines.c	2015-08-20 00:23:24.000000000 +0200
++++ ntp-4.2.8p17/libntp/machines.c	2024-04-13 16:55:32.305920491 +0200
+@@ -478,7 +478,7 @@ ntp_set_tod(
+ #endif /* HAVE_SETTIMEOFDAY */
+ #ifdef HAVE_STIME
+ 	if (rc && (SET_TOD_STIME == tod || !tod)) {
+-		long tp = tvp->tv_sec;
++		time_t tp = tvp->tv_sec;
+ 
+ 		errno = 0;
+ 		rc = stime(&tp); /* lie as bad as SysVR4 */
+diff -rup ntp-4.2.8p17.orig/libntp/socktohost.c ntp-4.2.8p17/libntp/socktohost.c
+--- ntp-4.2.8p17.orig/libntp/socktohost.c	2015-11-28 22:59:38.000000000 +0100
++++ ntp-4.2.8p17/libntp/socktohost.c	2024-04-13 18:44:58.822695258 +0200
+@@ -21,6 +21,14 @@
+ #include "ntp_debug.h"
+ 
+ 
++#ifdef __MINT__
++/* flags are defined, but not supported at runtime */
++#undef AI_ADDRCONFIG
++#undef AI_ALL
++#undef AI_V4MAPPED
++#undef AI_NUMERICSERV
++#endif
++
+ const char *
+ socktohost(
+ 	const sockaddr_u *sock
+diff -rup ntp-4.2.8p17.orig/ntpdc/ntpdc.c ntp-4.2.8p17/ntpdc/ntpdc.c
+--- ntp-4.2.8p17.orig/ntpdc/ntpdc.c	2023-06-06 13:33:44.000000000 +0200
++++ ntp-4.2.8p17/ntpdc/ntpdc.c	2024-04-13 18:47:17.749252581 +0200
+@@ -45,6 +45,14 @@
+ # undef COMMAND
+ #endif
+ 
++#ifdef __MINT__
++/* flags are defined, but not supported at runtime */
++#undef AI_ADDRCONFIG
++#undef AI_ALL
++#undef AI_V4MAPPED
++#undef AI_NUMERICSERV
++#endif
++
+ /*
+  * Because we now potentially understand a lot of commands (and
+  * it requires a lot of commands to talk to ntpd) we will run
+diff -rup ntp-4.2.8p17.orig/ntpq/ntpq.c ntp-4.2.8p17/ntpq/ntpq.c
+--- ntp-4.2.8p17.orig/ntpq/ntpq.c	2023-06-06 13:33:44.000000000 +0200
++++ ntp-4.2.8p17/ntpq/ntpq.c	2024-04-13 18:46:53.279266770 +0200
+@@ -65,6 +65,14 @@
+ # undef COMMAND
+ #endif
+ 
++#ifdef __MINT__
++/* flags are defined, but not supported at runtime */
++#undef AI_ADDRCONFIG
++#undef AI_ALL
++#undef AI_V4MAPPED
++#undef AI_NUMERICSERV
++#endif
++
+ /*
+  * Because we potentially understand a lot of commands we will run
+  * interactive if connected to a terminal.
+diff -rup ntp-4.2.8p17.orig/sntp/kod_management.c ntp-4.2.8p17/sntp/kod_management.c
+--- ntp-4.2.8p17.orig/sntp/kod_management.c	2017-03-21 14:04:22.000000000 +0100
++++ ntp-4.2.8p17/sntp/kod_management.c	2024-04-13 17:05:25.365283824 +0200
+@@ -30,7 +30,7 @@ search_entry(
+ 		if (!strcmp(kod_db[a]->hostname, hostname))
+ 			resc++;
+ 
+-	if (!resc) {
++	if (resc == 0) {
+ 		*dst = NULL;
+ 		return 0;
+ 	}
+diff -rup ntp-4.2.8p17.orig/sntp/libevent/buffer.c ntp-4.2.8p17/sntp/libevent/buffer.c
+--- ntp-4.2.8p17.orig/sntp/libevent/buffer.c	2023-05-31 12:31:39.000000000 +0200
++++ ntp-4.2.8p17/sntp/libevent/buffer.c	2024-04-13 16:24:18.854578652 +0200
+@@ -3039,7 +3039,6 @@ get_page_size(void)
+ static int
+ evbuffer_file_segment_materialize(struct evbuffer_file_segment *seg)
+ {
+-	const unsigned flags = seg->flags;
+ 	const int fd = seg->fd;
+ 	const ev_off_t length = seg->length;
+ 	const ev_off_t offset = seg->file_offset;
+@@ -3048,7 +3047,7 @@ evbuffer_file_segment_materialize(struct
+ 		return 0; /* already materialized */
+ 
+ #if defined(EVENT__HAVE_MMAP)
+-	if (!(flags & EVBUF_FS_DISABLE_MMAP)) {
++	if (!(seg->flags & EVBUF_FS_DISABLE_MMAP)) {
+ 		off_t offset_rounded = 0, offset_leftover = 0;
+ 		void *mapped;
+ 		if (offset) {
+@@ -3078,12 +3077,12 @@ evbuffer_file_segment_materialize(struct
+ 			seg->contents = (char*)mapped+offset_leftover;
+ 			seg->mmap_offset = 0;
+ 			seg->is_mapping = 1;
+-			goto done;
++			return 0;
+ 		}
+ 	}
+ #endif
+ #ifdef _WIN32
+-	if (!(flags & EVBUF_FS_DISABLE_MMAP)) {
++	if (!(seg->flags & EVBUF_FS_DISABLE_MMAP)) {
+ 		intptr_t h = _get_osfhandle(fd);
+ 		HANDLE m;
+ 		ev_uint64_t total_size = length+offset;
+@@ -3096,7 +3095,7 @@ evbuffer_file_segment_materialize(struct
+ 			seg->mapping_handle = m;
+ 			seg->mmap_offset = offset;
+ 			seg->is_mapping = 1;
+-			goto done;
++			return 0;
+ 		}
+ 	}
+ #endif
+@@ -3137,7 +3136,6 @@ evbuffer_file_segment_materialize(struct
+ 		seg->contents = mem;
+ 	}
+ 
+-done:
+ 	return 0;
+ err:
+ 	return -1;
+diff -rup ntp-4.2.8p17.orig/sntp/libevent/evutil.c ntp-4.2.8p17/sntp/libevent/evutil.c
+--- ntp-4.2.8p17.orig/sntp/libevent/evutil.c	2023-05-31 12:31:38.000000000 +0200
++++ ntp-4.2.8p17/sntp/libevent/evutil.c	2024-04-13 18:46:00.189306367 +0200
+@@ -106,6 +106,14 @@
+ #define mode_t int
+ #endif
+ 
++#ifdef __MINT__
++/* flags are defined, but not supported at runtime */
++#undef AI_ADDRCONFIG
++#undef AI_ALL
++#undef AI_V4MAPPED
++#undef AI_NUMERICSERV
++#endif
++
+ int
+ evutil_open_closeonexec_(const char *pathname, int flags, unsigned mode)
+ {
+@@ -1993,7 +2000,7 @@ evutil_inet_pton_scope(int af, const cha
+ {
+ 	int r;
+ 	unsigned if_index;
+-	char *check, *cp, *tmp_src;
++	char *cp, *tmp_src;
+ 
+ 	*indexp = 0; /* Reasonable default */
+ 
+@@ -2007,13 +2014,18 @@ evutil_inet_pton_scope(int af, const cha
+ 	if (cp == NULL)
+ 		return evutil_inet_pton(af, src, dst);
+ 
++#ifdef __MINT__ /* lacks if_nametoindex() */
++	if_index = 0;
++#else
+ 	if_index = if_nametoindex(cp + 1);
+ 	if (if_index == 0) {
++		char *check;
+ 		/* Could be numeric */
+ 		if_index = strtoul(cp + 1, &check, 10);
+ 		if (check[0] != '\0')
+ 			return 0;
+ 	}
++#endif
+ 	*indexp = if_index;
+ 	tmp_src = mm_strdup(src);
+ 	cp = strchr(tmp_src, '%');
+diff -rup ntp-4.2.8p17.orig/sntp/libevent/include/event2/util.h ntp-4.2.8p17/sntp/libevent/include/event2/util.h
+--- ntp-4.2.8p17.orig/sntp/libevent/include/event2/util.h	2023-05-31 12:31:38.000000000 +0200
++++ ntp-4.2.8p17/sntp/libevent/include/event2/util.h	2024-04-13 18:42:34.932825522 +0200
+@@ -755,6 +755,14 @@ struct evutil_addrinfo {
+ 
+ #define EVUTIL_EAI_CANCEL -90001
+ 
++#ifdef __MINT__
++/* flags are defined, but not supported at runtime */
++#undef AI_ADDRCONFIG
++#undef AI_ALL
++#undef AI_V4MAPPED
++#undef AI_NUMERICSERV
++#endif
++
+ #if defined(AI_PASSIVE) && defined(EVENT__HAVE_GETADDRINFO)
+ #define EVUTIL_AI_PASSIVE AI_PASSIVE
+ #else
+diff -rup ntp-4.2.8p17.orig/sntp/libevent/signal.c ntp-4.2.8p17/sntp/libevent/signal.c
+--- ntp-4.2.8p17.orig/sntp/libevent/signal.c	2023-05-31 12:31:39.000000000 +0200
++++ ntp-4.2.8p17/sntp/libevent/signal.c	2024-04-13 16:26:20.364450737 +0200
+@@ -254,7 +254,9 @@ evsig_set_handler_(struct event_base *ba
+ #ifdef EVENT__HAVE_SIGACTION
+ 	memset(&sa, 0, sizeof(sa));
+ 	sa.sa_handler = handler;
++#ifdef SA_RESTART
+ 	sa.sa_flags |= SA_RESTART;
++#endif
+ 	sigfillset(&sa.sa_mask);
+ 
+ 	if (sigaction(evsignal, &sa, sig->sh_old[evsignal]) == -1) {
+diff -rup ntp-4.2.8p17.orig/sntp/unity/unity_internals.h ntp-4.2.8p17/sntp/unity/unity_internals.h
+--- ntp-4.2.8p17.orig/sntp/unity/unity_internals.h	2023-05-31 12:31:38.000000000 +0200
++++ ntp-4.2.8p17/sntp/unity/unity_internals.h	2024-04-13 17:03:29.092075442 +0200
+@@ -477,7 +477,7 @@ void UnityAssertNumbersWithin(const _U_S
+                               const UNITY_LINE_TYPE lineNumber,
+                               const UNITY_DISPLAY_STYLE_T style);
+ 
+-void UnityFail(const char* message, const UNITY_LINE_TYPE line) UNITY_NORETURN_ATTRIBUTE;
++void UnityFail(const char* message, const UNITY_LINE_TYPE line);
+ 
+ void UnityIgnore(const char* message, const UNITY_LINE_TYPE line);
+ 

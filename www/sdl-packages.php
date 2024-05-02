@@ -104,6 +104,10 @@ series. You take on the role of a fearless Blob agent, Bob, who&apos;s
 mission is to infiltrate various enemy bases and rescue as many MIAs as
 possible, while battling many vicious aliens.
 </br></br>
+For further instruction just use the included Docs and/or visit the
+original website at
+<a href="https://www.parallelrealities.co.uk/projects/blobWars.php">https://www.parallelrealities.co.uk/</a>
+</br></br>
 <img src="' . $download_dir . 'blobwars.png" width="320" height="240">
 '
 	),
@@ -762,6 +766,28 @@ conquer enemies. The game has its own set of maps and new graphics.
 </br>
 Original MiNT-Patch by medmed.</br>
 Data was orginally taken from <a href="http://dasixk.free.fr/freecraft-1.18.lzx">http://dasixk.free.fr/freecraft-1.18.lzx</a>
+'
+	),
+	'vanilla-conquer' => array(
+		'name' => 'vanilla-conquer',
+		'version' => '',
+		'repo' => 'https://github.com/TheAssemblyArmada/Vanilla-Conquer',
+		'category' => 'Games',
+		'summary' => 'Vanilla Conquer is a fully portable version of the first generation C&C engine ',
+		'comment' => '
+Vanilla Conquer is a fully portable version of the first generation C&amp;C
+engine and is capable of running both Tiberian Dawn and Red Alert on
+multiple platforms. It can also be used for mod development for the
+Remastered Collection.
+</br></br>
+The main focus of Vanilla Conquer is to keep the default out-of-box
+experience faithful to what the games were back when they were released
+and work as a drop-in replacement for the original executables while
+also providing bug fixes, compatiblity and quality of life
+improvements.
+</br></br>
+<a href="' . $download_dir . 'tiberian-dawn-data.tar.xz">data needed for Tiberian Dawn</a> (GDI, NOD &amp; COVERTOPS discs) (~857MB).</br>
+<a href="' . $download_dir . 'red-alert-data.tar.xz">data needed for Red Alert</a> (Allied, Soviet, Counterstrike &amp; Aftermath expansions) (~1033MB).</br>
 '
 	),
 );

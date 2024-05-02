@@ -11,11 +11,16 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
+"
+# already applied in the source archive
+DISABLED_PATCHES="
 patches/sdl/0001-Implement-gemlib-functions-that-are-needed-to-get-ri.patch
 patches/sdl/0002-Implement-ldg-functions-that-are-needed-to-get-rid-o.patch
 patches/sdl/0003-atari-filter-out-liconv-from-EXTRA_LDFLAGS-since-we-.patch
-"
-DISABLED_PATCHES="
+patches/sdl/0004-atari-map-mouse-buttons-to-correct-SDL_BUTTON_-in-ge.patch
+patches/sdl/0005-Simplify-makedep.sh.patch
+patches/sdl/0006-atari-optimize-access-to-200-HZ-timer.patch
+patches/sdl/0007-atari-Fix-null-pointer-access-in-SDL_AtariMint_Updat.patch
 "
 EXTRA_DIST="
 patches/automake/mintelf-config.sub
@@ -40,6 +45,7 @@ COMMON_CFLAGS="-O2 -fomit-frame-pointer ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 
 enable_pth=false
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
+	--disable-dependency-tracking
 	--disable-video-opengl
 "
 if $enable_pth; then

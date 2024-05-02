@@ -1,0 +1,72 @@
+From 31e84eee617f84aaca03b3e830d1c13ceb8505f8 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sun, 17 Mar 2024 08:01:22 +0100
+Subject: [PATCH] atari: map mouse buttons to correct SDL_BUTTON_* in gem
+ driver
+
+---
+ src/video/gem/SDL_gemevents.c | 21 +++++++++++++++++++--
+ test/checkkeys.c              |  6 +++++-
+ 2 files changed, 24 insertions(+), 3 deletions(-)
+
+diff --git a/src/video/gem/SDL_gemevents.c b/src/video/gem/SDL_gemevents.c
+index a1b80bed..e0018f4a 100644
+--- a/src/video/gem/SDL_gemevents.c
++++ b/src/video/gem/SDL_gemevents.c
+@@ -374,6 +374,23 @@ static void do_mouse_motion(_THIS, short mx, short my)
+ 	prevmy = my;
+ }
+ 
++static int atari_GetButton(int button)
++{
++	switch(button)
++	{
++		case 0:
++		default:
++			return SDL_BUTTON_LEFT;
++			break;
++		case 1:
++			return SDL_BUTTON_RIGHT;
++			break;
++		case 2:
++			return SDL_BUTTON_MIDDLE;
++			break;
++	}
++}
++
+ static void do_mouse_buttons(_THIS, short mb)
+ {
+ 	int i;
+@@ -392,10 +409,10 @@ static void do_mouse_buttons(_THIS, short mb)
+ 		prevbutton = prevmb & (1<<i);
+ 
+ 		if (curbutton && !prevbutton) {
+-			SDL_PrivateMouseButton(SDL_PRESSED, i+1, 0, 0);
++			SDL_PrivateMouseButton(SDL_PRESSED, atari_GetButton(i), 0, 0);
+ 		}
+ 		if (!curbutton && prevbutton) {
+-			SDL_PrivateMouseButton(SDL_RELEASED, i+1, 0, 0);
++			SDL_PrivateMouseButton(SDL_RELEASED, atari_GetButton(i), 0, 0);
+ 		}
+ 	}
+ 
+diff --git a/test/checkkeys.c b/test/checkkeys.c
+index 33c581bb..ad81d521 100644
+--- a/test/checkkeys.c
++++ b/test/checkkeys.c
+@@ -152,7 +152,11 @@ int main(int argc, char *argv[])
+ 				PrintKey(&event.key.keysym, 0);
+ 				break;
+ 			case SDL_MOUSEBUTTONDOWN:
+-				/* Any button press quits the app... */
++				printf("mouse button down %d\n", event.button.button);
++				break;
++			case SDL_MOUSEBUTTONUP:
++				printf("mouse button up %d\n", event.button.button);
++				break;
+ 			case SDL_QUIT:
+ 				done = 1;
+ 				break;
+-- 
+2.41.0
+

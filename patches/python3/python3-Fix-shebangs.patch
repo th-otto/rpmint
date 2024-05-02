@@ -1,0 +1,1532 @@
+From aafed99c187015c8126ef9c136c57cf5a630df1e Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 15 Apr 2024 10:06:18 +0200
+Subject: [PATCH 18/22] Fix shebangs
+
+created by running
+
+for dir in Lib Tools; do
+	find $dir -name '*.py' -type f -print0 |
+        xargs -0 grep -lE '^#! *(/''usr/.*bin/(env +)?)?python' |
+        xargs sed -r -i -e '1s@^#![[:space:]]*(/''usr/(local/)?bin/(env +)?)?python([0-9]+(\.[0-9]+)?)?@#!/usr/bin/python3@'
+done
+---
+ Lib/base64.py                                         | 2 +-
+ Lib/cProfile.py                                       | 2 +-
+ Lib/cgi.py                                            | 2 +-
+ Lib/encodings/rot_13.py                               | 2 +-
+ Lib/idlelib/pyshell.py                                | 2 +-
+ Lib/lib2to3/pgen2/token.py                            | 2 +-
+ Lib/lib2to3/tests/data/different_encoding.py          | 2 +-
+ Lib/lib2to3/tests/data/false_encoding.py              | 2 +-
+ Lib/lib2to3/tests/pytree_idempotency.py               | 2 +-
+ Lib/pdb.py                                            | 2 +-
+ Lib/platform.py                                       | 2 +-
+ Lib/profile.py                                        | 2 +-
+ Lib/pydoc.py                                          | 2 +-
+ Lib/quopri.py                                         | 2 +-
+ Lib/smtpd.py                                          | 2 +-
+ Lib/smtplib.py                                        | 2 +-
+ Lib/tabnanny.py                                       | 2 +-
+ Lib/tarfile.py                                        | 2 +-
+ Lib/test/bisect_cmd.py                                | 2 +-
+ Lib/test/crashers/recursive_call.py                   | 2 +-
+ Lib/test/curses_tests.py                              | 2 +-
+ Lib/test/re_tests.py                                  | 2 +-
+ Lib/test/regrtest.py                                  | 2 +-
+ Lib/timeit.py                                         | 2 +-
+ Lib/trace.py                                          | 2 +-
+ Lib/turtledemo/__main__.py                            | 2 +-
+ Lib/turtledemo/bytedesign.py                          | 2 +-
+ Lib/turtledemo/clock.py                               | 2 +-
+ Lib/turtledemo/forest.py                              | 2 +-
+ Lib/turtledemo/fractalcurves.py                       | 2 +-
+ Lib/turtledemo/lindenmayer.py                         | 2 +-
+ Lib/turtledemo/minimal_hanoi.py                       | 2 +-
+ Lib/turtledemo/paint.py                               | 2 +-
+ Lib/turtledemo/peace.py                               | 2 +-
+ Lib/turtledemo/penrose.py                             | 2 +-
+ Lib/turtledemo/planet_and_moon.py                     | 2 +-
+ Lib/turtledemo/sorting_animate.py                     | 2 +-
+ Lib/turtledemo/tree.py                                | 2 +-
+ Lib/turtledemo/yinyang.py                             | 2 +-
+ Lib/uu.py                                             | 2 +-
+ Lib/webbrowser.py                                     | 2 +-
+ Tools/clinic/clinic.py                                | 2 +-
+ Tools/demo/beer.py                                    | 2 +-
+ Tools/demo/eiffel.py                                  | 2 +-
+ Tools/demo/hanoi.py                                   | 2 +-
+ Tools/demo/life.py                                    | 2 +-
+ Tools/demo/markov.py                                  | 2 +-
+ Tools/demo/mcast.py                                   | 2 +-
+ Tools/demo/queens.py                                  | 2 +-
+ Tools/demo/redemo.py                                  | 2 +-
+ Tools/demo/rpython.py                                 | 2 +-
+ Tools/demo/rpythond.py                                | 2 +-
+ Tools/demo/sortvisu.py                                | 2 +-
+ Tools/demo/spreadsheet.py                             | 2 +-
+ Tools/demo/vector.py                                  | 2 +-
+ Tools/freeze/freeze.py                                | 2 +-
+ Tools/freeze/regen_frozen.py                          | 2 +-
+ Tools/gdb/libpython.py                                | 2 +-
+ Tools/i18n/makelocalealias.py                         | 2 +-
+ Tools/i18n/msgfmt.py                                  | 2 +-
+ Tools/i18n/pygettext.py                               | 2 +-
+ Tools/peg_generator/pegen/__main__.py                 | 2 +-
+ Tools/peg_generator/pegen/first_sets.py               | 2 +-
+ Tools/peg_generator/pegen/grammar_parser.py           | 2 +-
+ Tools/peg_generator/scripts/benchmark.py              | 2 +-
+ Tools/peg_generator/scripts/download_pypi_packages.py | 2 +-
+ Tools/peg_generator/scripts/find_max_nesting.py       | 2 +-
+ Tools/peg_generator/scripts/grammar_grapher.py        | 2 +-
+ Tools/peg_generator/scripts/joinstats.py              | 2 +-
+ Tools/peg_generator/scripts/test_parse_directory.py   | 2 +-
+ Tools/peg_generator/scripts/test_pypi_packages.py     | 2 +-
+ Tools/scripts/abitype.py                              | 2 +-
+ Tools/scripts/byext.py                                | 2 +-
+ Tools/scripts/byteyears.py                            | 2 +-
+ Tools/scripts/checkpip.py                             | 2 +-
+ Tools/scripts/cleanfuture.py                          | 2 +-
+ Tools/scripts/combinerefs.py                          | 2 +-
+ Tools/scripts/copytime.py                             | 2 +-
+ Tools/scripts/crlf.py                                 | 2 +-
+ Tools/scripts/db2pickle.py                            | 2 +-
+ Tools/scripts/diff.py                                 | 2 +-
+ Tools/scripts/dutree.py                               | 2 +-
+ Tools/scripts/eptags.py                               | 2 +-
+ Tools/scripts/find-uname.py                           | 2 +-
+ Tools/scripts/find_recursionlimit.py                  | 2 +-
+ Tools/scripts/finddiv.py                              | 2 +-
+ Tools/scripts/findlinksto.py                          | 2 +-
+ Tools/scripts/findnocoding.py                         | 2 +-
+ Tools/scripts/fixcid.py                               | 2 +-
+ Tools/scripts/fixdiv.py                               | 2 +-
+ Tools/scripts/fixheader.py                            | 2 +-
+ Tools/scripts/fixnotice.py                            | 2 +-
+ Tools/scripts/fixps.py                                | 2 +-
+ Tools/scripts/generate_re_casefix.py                  | 2 +-
+ Tools/scripts/generate_sre_constants.py               | 2 +-
+ Tools/scripts/generate_token.py                       | 2 +-
+ Tools/scripts/get-remote-certificate.py               | 2 +-
+ Tools/scripts/google.py                               | 2 +-
+ Tools/scripts/gprof2html.py                           | 2 +-
+ Tools/scripts/highlight.py                            | 2 +-
+ Tools/scripts/ifdef.py                                | 2 +-
+ Tools/scripts/import_diagnostics.py                   | 2 +-
+ Tools/scripts/lfcr.py                                 | 2 +-
+ Tools/scripts/linktree.py                             | 2 +-
+ Tools/scripts/lll.py                                  | 2 +-
+ Tools/scripts/mailerdaemon.py                         | 2 +-
+ Tools/scripts/make_ctype.py                           | 2 +-
+ Tools/scripts/md5sum.py                               | 2 +-
+ Tools/scripts/mkreal.py                               | 2 +-
+ Tools/scripts/ndiff.py                                | 2 +-
+ Tools/scripts/nm2def.py                               | 2 +-
+ Tools/scripts/objgraph.py                             | 2 +-
+ Tools/scripts/parse_html5_entities.py                 | 2 +-
+ Tools/scripts/parseentities.py                        | 2 +-
+ Tools/scripts/patchcheck.py                           | 2 +-
+ Tools/scripts/pathfix.py                              | 2 +-
+ Tools/scripts/pdeps.py                                | 2 +-
+ Tools/scripts/pickle2db.py                            | 2 +-
+ Tools/scripts/pindent.py                              | 2 +-
+ Tools/scripts/ptags.py                                | 2 +-
+ Tools/scripts/pysource.py                             | 2 +-
+ Tools/scripts/reindent-rst.py                         | 2 +-
+ Tools/scripts/reindent.py                             | 2 +-
+ Tools/scripts/rgrep.py                                | 2 +-
+ Tools/scripts/smelly.py                               | 2 +-
+ Tools/scripts/suff.py                                 | 2 +-
+ Tools/scripts/texi2html.py                            | 2 +-
+ Tools/scripts/untabify.py                             | 2 +-
+ Tools/scripts/verify_ensurepip_wheels.py              | 2 +-
+ Tools/scripts/which.py                                | 2 +-
+ Tools/ssl/make_ssl_data.py                            | 2 +-
+ Tools/unicode/comparecodecs.py                        | 2 +-
+ Tools/unittestgui/unittestgui.py                      | 2 +-
+ Tools/wasm/wasm_assets.py                             | 2 +-
+ Tools/wasm/wasm_build.py                              | 2 +-
+ Tools/wasm/wasm_webserver.py                          | 2 +-
+ 136 files changed, 136 insertions(+), 136 deletions(-)
+
+diff --git a/Lib/base64.py b/Lib/base64.py
+index 7e9c2a2..500e32a 100755
+--- a/Lib/base64.py
++++ b/Lib/base64.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Base16, Base32, Base64 (RFC 3548), Base85 and Ascii85 data encodings"""
+ 
+diff --git a/Lib/cProfile.py b/Lib/cProfile.py
+index 44c028f..1ccf7f5 100755
+--- a/Lib/cProfile.py
++++ b/Lib/cProfile.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Python interface for the 'lsprof' profiler.
+    Compatible with the 'profile' module.
+diff --git a/Lib/cgi.py b/Lib/cgi.py
+index 8787567..8eb676b 100755
+--- a/Lib/cgi.py
++++ b/Lib/cgi.py
+@@ -1,4 +1,4 @@
+-#! /usr/local/bin/python
++#!/usr/bin/python3
+ 
+ # NOTE: the above "/usr/local/bin/python" is NOT a mistake.  It is
+ # intentionally NOT "/usr/bin/env python".  On many systems
+diff --git a/Lib/encodings/rot_13.py b/Lib/encodings/rot_13.py
+index 5627bfb..2a86e52 100755
+--- a/Lib/encodings/rot_13.py
++++ b/Lib/encodings/rot_13.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ """ Python Character Mapping Codec for ROT13.
+ 
+ This codec de/encodes from str to str.
+diff --git a/Lib/idlelib/pyshell.py b/Lib/idlelib/pyshell.py
+index 037d6a3..38e47fd 100755
+--- a/Lib/idlelib/pyshell.py
++++ b/Lib/idlelib/pyshell.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ import sys
+ if __name__ == "__main__":
+diff --git a/Lib/lib2to3/pgen2/token.py b/Lib/lib2to3/pgen2/token.py
+index 5f6612f..5fdac92 100755
+--- a/Lib/lib2to3/pgen2/token.py
++++ b/Lib/lib2to3/pgen2/token.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Token constants (from "token.h")."""
+ 
+diff --git a/Lib/lib2to3/tests/data/different_encoding.py b/Lib/lib2to3/tests/data/different_encoding.py
+index 9f32bd0..e9a8c1d 100755
+--- a/Lib/lib2to3/tests/data/different_encoding.py
++++ b/Lib/lib2to3/tests/data/different_encoding.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ # -*- coding: utf-8 -*-
+ print u'ßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ'
+ 
+diff --git a/Lib/lib2to3/tests/data/false_encoding.py b/Lib/lib2to3/tests/data/false_encoding.py
+index f4e59e7..f2575a4 100755
+--- a/Lib/lib2to3/tests/data/false_encoding.py
++++ b/Lib/lib2to3/tests/data/false_encoding.py
+@@ -1,2 +1,2 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ print '#coding=0'
+diff --git a/Lib/lib2to3/tests/pytree_idempotency.py b/Lib/lib2to3/tests/pytree_idempotency.py
+index 2e7e978..b05ad50 100755
+--- a/Lib/lib2to3/tests/pytree_idempotency.py
++++ b/Lib/lib2to3/tests/pytree_idempotency.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # Copyright 2006 Google, Inc. All Rights Reserved.
+ # Licensed to PSF under a Contributor Agreement.
+ 
+diff --git a/Lib/pdb.py b/Lib/pdb.py
+index 4a4a0b9..fc3c891 100755
+--- a/Lib/pdb.py
++++ b/Lib/pdb.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ The Python Debugger Pdb
+diff --git a/Lib/platform.py b/Lib/platform.py
+index 9b9d88b..ff0558b 100755
+--- a/Lib/platform.py
++++ b/Lib/platform.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """ This module tries to retrieve as much platform-identifying data as
+     possible. It makes this information available via function APIs.
+diff --git a/Lib/profile.py b/Lib/profile.py
+index 90c4e4c..f2c0a0d 100755
+--- a/Lib/profile.py
++++ b/Lib/profile.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ #
+ # Class for profiling python code. rev 1.0  6/2/94
+ #
+diff --git a/Lib/pydoc.py b/Lib/pydoc.py
+index 14b9903..ad0da47 100755
+--- a/Lib/pydoc.py
++++ b/Lib/pydoc.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """Generate Python documentation in HTML or text for interactive use.
+ 
+ At the Python interactive prompt, calling help(thing) on a Python object
+diff --git a/Lib/quopri.py b/Lib/quopri.py
+index 08899c5..c9959b6 100755
+--- a/Lib/quopri.py
++++ b/Lib/quopri.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Conversions to/from quoted-printable transport encoding as per RFC 1521."""
+ 
+diff --git a/Lib/smtpd.py b/Lib/smtpd.py
+index b23579f..a257e46 100755
+--- a/Lib/smtpd.py
++++ b/Lib/smtpd.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ """An RFC 5321 smtp proxy with optional RFC 1870 and RFC 6531 extensions.
+ 
+ Usage: %(program)s [options] [localhost:localport [remotehost:remoteport]]
+diff --git a/Lib/smtplib.py b/Lib/smtplib.py
+index 324a1c1..be535f9 100755
+--- a/Lib/smtplib.py
++++ b/Lib/smtplib.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ '''SMTP/ESMTP client class.
+ 
+diff --git a/Lib/tabnanny.py b/Lib/tabnanny.py
+index a47f5a9..95163e3 100755
+--- a/Lib/tabnanny.py
++++ b/Lib/tabnanny.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """The Tab Nanny despises ambiguous indentation.  She knows no mercy.
+ 
+diff --git a/Lib/tarfile.py b/Lib/tarfile.py
+index 612217b..8fb054e 100755
+--- a/Lib/tarfile.py
++++ b/Lib/tarfile.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ #-------------------------------------------------------------------
+ # tarfile.py
+ #-------------------------------------------------------------------
+diff --git a/Lib/test/bisect_cmd.py b/Lib/test/bisect_cmd.py
+index 0bdd7a4..e07eadd 100755
+--- a/Lib/test/bisect_cmd.py
++++ b/Lib/test/bisect_cmd.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """
+ Command line tool to bisect failing CPython tests.
+ 
+diff --git a/Lib/test/crashers/recursive_call.py b/Lib/test/crashers/recursive_call.py
+index 2d160a7..764195d 100755
+--- a/Lib/test/crashers/recursive_call.py
++++ b/Lib/test/crashers/recursive_call.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # No bug report AFAIK, mail on python-dev on 2006-01-10
+ 
+diff --git a/Lib/test/curses_tests.py b/Lib/test/curses_tests.py
+index 40e832d..26c75d4 100755
+--- a/Lib/test/curses_tests.py
++++ b/Lib/test/curses_tests.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ #
+ # $Id: ncurses.py 36559 2004-07-18 05:56:09Z tim_one $
+ #
+diff --git a/Lib/test/re_tests.py b/Lib/test/re_tests.py
+index 85b0267..9880af0 100755
+--- a/Lib/test/re_tests.py
++++ b/Lib/test/re_tests.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # -*- mode: python -*-
+ 
+ # Re test suite and benchmark suite v1.5
+diff --git a/Lib/test/regrtest.py b/Lib/test/regrtest.py
+index 46a74fe..cbc17db 100755
+--- a/Lib/test/regrtest.py
++++ b/Lib/test/regrtest.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ Script to run Python regression tests.
+diff --git a/Lib/timeit.py b/Lib/timeit.py
+index 3250563..c36e9c7 100755
+--- a/Lib/timeit.py
++++ b/Lib/timeit.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Tool for measuring execution time of small code snippets.
+ 
+diff --git a/Lib/trace.py b/Lib/trace.py
+index 761916b..d9d1876 100755
+--- a/Lib/trace.py
++++ b/Lib/trace.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # portions copyright 2001, Autonomous Zones Industries, Inc., all rights...
+ # err...  reserved and offered to the public under the terms of the
+diff --git a/Lib/turtledemo/__main__.py b/Lib/turtledemo/__main__.py
+index 2ab6c15..c76c564 100755
+--- a/Lib/turtledemo/__main__.py
++++ b/Lib/turtledemo/__main__.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+   ----------------------------------------------
+diff --git a/Lib/turtledemo/bytedesign.py b/Lib/turtledemo/bytedesign.py
+index 1b7452b..8735468 100755
+--- a/Lib/turtledemo/bytedesign.py
++++ b/Lib/turtledemo/bytedesign.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """      turtle-example-suite:
+ 
+         tdemo_bytedesign.py
+diff --git a/Lib/turtledemo/clock.py b/Lib/turtledemo/clock.py
+index 9f8585b..4ec4a65 100755
+--- a/Lib/turtledemo/clock.py
++++ b/Lib/turtledemo/clock.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # -*- coding: cp1252 -*-
+ """       turtle-example-suite:
+ 
+diff --git a/Lib/turtledemo/forest.py b/Lib/turtledemo/forest.py
+index 55b7da9..9f3c9c7 100755
+--- a/Lib/turtledemo/forest.py
++++ b/Lib/turtledemo/forest.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """     turtlegraphics-example-suite:
+ 
+              tdemo_forest.py
+diff --git a/Lib/turtledemo/fractalcurves.py b/Lib/turtledemo/fractalcurves.py
+index 54ade96..da6a129 100755
+--- a/Lib/turtledemo/fractalcurves.py
++++ b/Lib/turtledemo/fractalcurves.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """      turtle-example-suite:
+ 
+         tdemo_fractalCurves.py
+diff --git a/Lib/turtledemo/lindenmayer.py b/Lib/turtledemo/lindenmayer.py
+index 3925f25..45f3622 100755
+--- a/Lib/turtledemo/lindenmayer.py
++++ b/Lib/turtledemo/lindenmayer.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """       turtle-example-suite:
+ 
+         xtx_lindenmayer_indian.py
+diff --git a/Lib/turtledemo/minimal_hanoi.py b/Lib/turtledemo/minimal_hanoi.py
+index 4a432f2..b7a27d7 100755
+--- a/Lib/turtledemo/minimal_hanoi.py
++++ b/Lib/turtledemo/minimal_hanoi.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """       turtle-example-suite:
+ 
+          tdemo_minimal_hanoi.py
+diff --git a/Lib/turtledemo/paint.py b/Lib/turtledemo/paint.py
+index fc6852a..3f60982 100755
+--- a/Lib/turtledemo/paint.py
++++ b/Lib/turtledemo/paint.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """       turtle-example-suite:
+ 
+             tdemo_paint.py
+diff --git a/Lib/turtledemo/peace.py b/Lib/turtledemo/peace.py
+index e2ba928..79f4dbe 100755
+--- a/Lib/turtledemo/peace.py
++++ b/Lib/turtledemo/peace.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """       turtle-example-suite:
+ 
+               tdemo_peace.py
+diff --git a/Lib/turtledemo/penrose.py b/Lib/turtledemo/penrose.py
+index 045722a..f939170 100755
+--- a/Lib/turtledemo/penrose.py
++++ b/Lib/turtledemo/penrose.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """       xturtle-example-suite:
+ 
+           xtx_kites_and_darts.py
+diff --git a/Lib/turtledemo/planet_and_moon.py b/Lib/turtledemo/planet_and_moon.py
+index 021ff99..efc1009 100755
+--- a/Lib/turtledemo/planet_and_moon.py
++++ b/Lib/turtledemo/planet_and_moon.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """       turtle-example-suite:
+ 
+         tdemo_planets_and_moon.py
+diff --git a/Lib/turtledemo/sorting_animate.py b/Lib/turtledemo/sorting_animate.py
+index d25a0ab..76b7e7d 100755
+--- a/Lib/turtledemo/sorting_animate.py
++++ b/Lib/turtledemo/sorting_animate.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """
+ 
+          sorting_animation.py
+diff --git a/Lib/turtledemo/tree.py b/Lib/turtledemo/tree.py
+index 98a20da..b35c0b3 100755
+--- a/Lib/turtledemo/tree.py
++++ b/Lib/turtledemo/tree.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """      turtle-example-suite:
+ 
+              tdemo_tree.py
+diff --git a/Lib/turtledemo/yinyang.py b/Lib/turtledemo/yinyang.py
+index 11d1f47..c55b4b9 100755
+--- a/Lib/turtledemo/yinyang.py
++++ b/Lib/turtledemo/yinyang.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """       turtle-example-suite:
+ 
+             tdemo_yinyang.py
+diff --git a/Lib/uu.py b/Lib/uu.py
+index 26bb59a..3bbe28c 100644
+--- a/Lib/uu.py
++++ b/Lib/uu.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Copyright 1994 by Lance Ellinghouse
+ # Cathedral City, California Republic, United States of America.
+diff --git a/Lib/webbrowser.py b/Lib/webbrowser.py
+index 5d72524..753e861 100755
+--- a/Lib/webbrowser.py
++++ b/Lib/webbrowser.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ """Interfaces for launching and remotely controlling web browsers."""
+ # Maintained by Georg Brandl.
+ 
+diff --git a/Tools/clinic/clinic.py b/Tools/clinic/clinic.py
+index 337ab88..667835b 100755
+--- a/Tools/clinic/clinic.py
++++ b/Tools/clinic/clinic.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ #
+ # Argument Clinic
+ # Copyright 2012-2013 by Larry Hastings.
+diff --git a/Tools/demo/beer.py b/Tools/demo/beer.py
+index af58380..ffaac38 100755
+--- a/Tools/demo/beer.py
++++ b/Tools/demo/beer.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ A Python version of the classic "bottles of beer on the wall" programming
+diff --git a/Tools/demo/eiffel.py b/Tools/demo/eiffel.py
+index a76c232..559eed9 100755
+--- a/Tools/demo/eiffel.py
++++ b/Tools/demo/eiffel.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ Support Eiffel-style preconditions and postconditions for functions.
+diff --git a/Tools/demo/hanoi.py b/Tools/demo/hanoi.py
+index 8db895c..32915f5 100755
+--- a/Tools/demo/hanoi.py
++++ b/Tools/demo/hanoi.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ Animated Towers of Hanoi using Tk with optional bitmap file in background.
+diff --git a/Tools/demo/life.py b/Tools/demo/life.py
+index fc4cb49..bd7bb3c 100755
+--- a/Tools/demo/life.py
++++ b/Tools/demo/life.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ A curses-based version of Conway's Game of Life.
+diff --git a/Tools/demo/markov.py b/Tools/demo/markov.py
+index 9729f38..adbbc0c 100755
+--- a/Tools/demo/markov.py
++++ b/Tools/demo/markov.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ Markov chain simulation of words or characters.
+diff --git a/Tools/demo/mcast.py b/Tools/demo/mcast.py
+index 924c7c3..2cc0700 100755
+--- a/Tools/demo/mcast.py
++++ b/Tools/demo/mcast.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ Send/receive UDP multicast packets.
+diff --git a/Tools/demo/queens.py b/Tools/demo/queens.py
+index dcc1bae..04db9f6 100755
+--- a/Tools/demo/queens.py
++++ b/Tools/demo/queens.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ N queens problem.
+diff --git a/Tools/demo/redemo.py b/Tools/demo/redemo.py
+index f801dfc..7c72e9f 100755
+--- a/Tools/demo/redemo.py
++++ b/Tools/demo/redemo.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Basic regular expression demonstration facility (Perl style syntax)."""
+ 
+diff --git a/Tools/demo/rpython.py b/Tools/demo/rpython.py
+index 11f72cb..73591eb 100755
+--- a/Tools/demo/rpython.py
++++ b/Tools/demo/rpython.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ Remote python client.
+diff --git a/Tools/demo/rpythond.py b/Tools/demo/rpythond.py
+index 4e47fb9..d225e36 100755
+--- a/Tools/demo/rpythond.py
++++ b/Tools/demo/rpythond.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ Remote python server.
+diff --git a/Tools/demo/sortvisu.py b/Tools/demo/sortvisu.py
+index 056a0e0..f5c69b8 100755
+--- a/Tools/demo/sortvisu.py
++++ b/Tools/demo/sortvisu.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ Sorting algorithms visualizer using Tkinter.
+diff --git a/Tools/demo/spreadsheet.py b/Tools/demo/spreadsheet.py
+index bf88820..df367dd 100755
+--- a/Tools/demo/spreadsheet.py
++++ b/Tools/demo/spreadsheet.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ SS1 -- a spreadsheet-like application.
+diff --git a/Tools/demo/vector.py b/Tools/demo/vector.py
+index 6df1f50..46bffa8 100755
+--- a/Tools/demo/vector.py
++++ b/Tools/demo/vector.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ A demonstration of classes and their special methods in Python.
+diff --git a/Tools/freeze/freeze.py b/Tools/freeze/freeze.py
+index de97727..aedc2f9 100755
+--- a/Tools/freeze/freeze.py
++++ b/Tools/freeze/freeze.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Freeze a Python script into a binary.
+ 
+diff --git a/Tools/freeze/regen_frozen.py b/Tools/freeze/regen_frozen.py
+index 391182a..1110f82 100644
+--- a/Tools/freeze/regen_frozen.py
++++ b/Tools/freeze/regen_frozen.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ import sys
+ import os
+ import marshal
+diff --git a/Tools/gdb/libpython.py b/Tools/gdb/libpython.py
+index a99ce94..6e16ebc 100755
+--- a/Tools/gdb/libpython.py
++++ b/Tools/gdb/libpython.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/python3
+ '''
+ From gdb 7 onwards, gdb's build can be configured --with-python, allowing gdb
+ to be extended with Python code e.g. for library-specific data visualizations,
+diff --git a/Tools/i18n/makelocalealias.py b/Tools/i18n/makelocalealias.py
+index b407a8a..bc2ac83 100755
+--- a/Tools/i18n/makelocalealias.py
++++ b/Tools/i18n/makelocalealias.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """
+     Convert the X11 locale.alias file into a mapping dictionary suitable
+     for locale.py.
+diff --git a/Tools/i18n/msgfmt.py b/Tools/i18n/msgfmt.py
+index 3f731e9..b2868fc 100755
+--- a/Tools/i18n/msgfmt.py
++++ b/Tools/i18n/msgfmt.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ # Written by Martin v. Löwis <loewis@informatik.hu-berlin.de>
+ 
+ """Generate binary message catalog from textual translation description.
+diff --git a/Tools/i18n/pygettext.py b/Tools/i18n/pygettext.py
+index 3a0b27b..fa0ba3b 100755
+--- a/Tools/i18n/pygettext.py
++++ b/Tools/i18n/pygettext.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ # -*- coding: iso-8859-1 -*-
+ # Originally written by Barry Warsaw <barry@python.org>
+ #
+diff --git a/Tools/peg_generator/pegen/__main__.py b/Tools/peg_generator/pegen/__main__.py
+index 2910d6c..6b216e5 100755
+--- a/Tools/peg_generator/pegen/__main__.py
++++ b/Tools/peg_generator/pegen/__main__.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3.8
++#!/usr/bin/python3
+ 
+ """pegen -- PEG Generator.
+ 
+diff --git a/Tools/peg_generator/pegen/first_sets.py b/Tools/peg_generator/pegen/first_sets.py
+index 6d794ff..0f6e263 100755
+--- a/Tools/peg_generator/pegen/first_sets.py
++++ b/Tools/peg_generator/pegen/first_sets.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3.8
++#!/usr/bin/python3
+ 
+ import argparse
+ import pprint
+diff --git a/Tools/peg_generator/pegen/grammar_parser.py b/Tools/peg_generator/pegen/grammar_parser.py
+index bf31fe5..0869d23 100644
+--- a/Tools/peg_generator/pegen/grammar_parser.py
++++ b/Tools/peg_generator/pegen/grammar_parser.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3.8
++#!/usr/bin/python3
+ # @generated by pegen from metagrammar.gram
+ 
+ import ast
+diff --git a/Tools/peg_generator/scripts/benchmark.py b/Tools/peg_generator/scripts/benchmark.py
+index 4a063bf..b7671c2 100644
+--- a/Tools/peg_generator/scripts/benchmark.py
++++ b/Tools/peg_generator/scripts/benchmark.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ import argparse
+ import ast
+diff --git a/Tools/peg_generator/scripts/download_pypi_packages.py b/Tools/peg_generator/scripts/download_pypi_packages.py
+index 180309d..a38d99f 100755
+--- a/Tools/peg_generator/scripts/download_pypi_packages.py
++++ b/Tools/peg_generator/scripts/download_pypi_packages.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3.8
++#!/usr/bin/python3
+ 
+ import argparse
+ import os
+diff --git a/Tools/peg_generator/scripts/find_max_nesting.py b/Tools/peg_generator/scripts/find_max_nesting.py
+index 92045c9..701f08a 100755
+--- a/Tools/peg_generator/scripts/find_max_nesting.py
++++ b/Tools/peg_generator/scripts/find_max_nesting.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3.8
++#!/usr/bin/python3
+ """Find the maximum amount of nesting for an expression that can be parsed
+ without causing a parse error.
+ 
+diff --git a/Tools/peg_generator/scripts/grammar_grapher.py b/Tools/peg_generator/scripts/grammar_grapher.py
+index 4a41dfa..05b2091 100755
+--- a/Tools/peg_generator/scripts/grammar_grapher.py
++++ b/Tools/peg_generator/scripts/grammar_grapher.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3.8
++#!/usr/bin/python3
+ 
+ """ Convert a grammar into a dot-file suitable for use with GraphViz
+ 
+diff --git a/Tools/peg_generator/scripts/joinstats.py b/Tools/peg_generator/scripts/joinstats.py
+index b2d762b..c1a3880 100644
+--- a/Tools/peg_generator/scripts/joinstats.py
++++ b/Tools/peg_generator/scripts/joinstats.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3.8
++#!/usr/bin/python3
+ 
+ """Produce a report about the most-memoable types.
+ 
+diff --git a/Tools/peg_generator/scripts/test_parse_directory.py b/Tools/peg_generator/scripts/test_parse_directory.py
+index a5e26f0..a3a3ece 100755
+--- a/Tools/peg_generator/scripts/test_parse_directory.py
++++ b/Tools/peg_generator/scripts/test_parse_directory.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3.8
++#!/usr/bin/python3
+ 
+ import argparse
+ import ast
+diff --git a/Tools/peg_generator/scripts/test_pypi_packages.py b/Tools/peg_generator/scripts/test_pypi_packages.py
+index e2eaef9..2c7350b 100755
+--- a/Tools/peg_generator/scripts/test_pypi_packages.py
++++ b/Tools/peg_generator/scripts/test_pypi_packages.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3.8
++#!/usr/bin/python3
+ 
+ import argparse
+ import os
+diff --git a/Tools/scripts/abitype.py b/Tools/scripts/abitype.py
+index d6a74a1..854d5c6 100755
+--- a/Tools/scripts/abitype.py
++++ b/Tools/scripts/abitype.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ # This script converts a C file to use the PEP 384 type definition API
+ # Usage: abitype.py < old_code > new_code
+ import re, sys
+diff --git a/Tools/scripts/byext.py b/Tools/scripts/byext.py
+index a4b2f7f..a182595 100755
+--- a/Tools/scripts/byext.py
++++ b/Tools/scripts/byext.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Show file statistics by extension."""
+ 
+diff --git a/Tools/scripts/byteyears.py b/Tools/scripts/byteyears.py
+index f58c346..de12d30 100755
+--- a/Tools/scripts/byteyears.py
++++ b/Tools/scripts/byteyears.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Print the product of age and size of each file, in suitable units.
+ #
+diff --git a/Tools/scripts/checkpip.py b/Tools/scripts/checkpip.py
+index a4a9ddf..f40e1ef 100755
+--- a/Tools/scripts/checkpip.py
++++ b/Tools/scripts/checkpip.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """
+ Checks that the version of the projects bundled in ensurepip are the latest
+ versions available.
+diff --git a/Tools/scripts/cleanfuture.py b/Tools/scripts/cleanfuture.py
+index 94f6912..13484d5 100755
+--- a/Tools/scripts/cleanfuture.py
++++ b/Tools/scripts/cleanfuture.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """cleanfuture [-d][-r][-v] path ...
+ 
+diff --git a/Tools/scripts/combinerefs.py b/Tools/scripts/combinerefs.py
+index 848bae5..62cca19 100755
+--- a/Tools/scripts/combinerefs.py
++++ b/Tools/scripts/combinerefs.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ combinerefs path
+diff --git a/Tools/scripts/copytime.py b/Tools/scripts/copytime.py
+index 715683f..c3f0e33 100755
+--- a/Tools/scripts/copytime.py
++++ b/Tools/scripts/copytime.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Copy one file's atime and mtime to another
+ 
+diff --git a/Tools/scripts/crlf.py b/Tools/scripts/crlf.py
+index f231d29..931b4f9 100755
+--- a/Tools/scripts/crlf.py
++++ b/Tools/scripts/crlf.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ "Replace CRLF with LF in argument files.  Print names of changed files."
+ 
+ import sys, os
+diff --git a/Tools/scripts/db2pickle.py b/Tools/scripts/db2pickle.py
+index a5532a8..f2df54d 100755
+--- a/Tools/scripts/db2pickle.py
++++ b/Tools/scripts/db2pickle.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ Synopsis: %(prog)s [-h|-g|-b|-r|-a] dbfile [ picklefile ]
+diff --git a/Tools/scripts/diff.py b/Tools/scripts/diff.py
+index 96199b8..abc0f85 100755
+--- a/Tools/scripts/diff.py
++++ b/Tools/scripts/diff.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """ Command line interface to difflib.py providing diffs in four formats:
+ 
+ * ndiff:    lists every line and highlights interline changes.
+diff --git a/Tools/scripts/dutree.py b/Tools/scripts/dutree.py
+index d25cf72..0312870 100755
+--- a/Tools/scripts/dutree.py
++++ b/Tools/scripts/dutree.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ # Format du output in a tree shape
+ 
+ import os, sys, errno
+diff --git a/Tools/scripts/eptags.py b/Tools/scripts/eptags.py
+index 7f8059b..135002c 100755
+--- a/Tools/scripts/eptags.py
++++ b/Tools/scripts/eptags.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ """Create a TAGS file for Python programs, usable with GNU Emacs.
+ 
+ usage: eptags pyfiles...
+diff --git a/Tools/scripts/find-uname.py b/Tools/scripts/find-uname.py
+index b6ec1b6..3c99019 100755
+--- a/Tools/scripts/find-uname.py
++++ b/Tools/scripts/find-uname.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ For each argument on the command line, look for it in the set of all Unicode
+diff --git a/Tools/scripts/find_recursionlimit.py b/Tools/scripts/find_recursionlimit.py
+index b2842a6..1c5b193 100755
+--- a/Tools/scripts/find_recursionlimit.py
++++ b/Tools/scripts/find_recursionlimit.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ """Find the maximum recursion limit that prevents interpreter termination.
+ 
+ This script finds the maximum safe recursion limit on a particular
+diff --git a/Tools/scripts/finddiv.py b/Tools/scripts/finddiv.py
+index d21253c..3615868 100755
+--- a/Tools/scripts/finddiv.py
++++ b/Tools/scripts/finddiv.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """finddiv - a grep-like tool that looks for division operators.
+ 
+diff --git a/Tools/scripts/findlinksto.py b/Tools/scripts/findlinksto.py
+index b924f27..76923dd 100755
+--- a/Tools/scripts/findlinksto.py
++++ b/Tools/scripts/findlinksto.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # findlinksto
+ #
+diff --git a/Tools/scripts/findnocoding.py b/Tools/scripts/findnocoding.py
+index 6c16b1c..9b05e63 100755
+--- a/Tools/scripts/findnocoding.py
++++ b/Tools/scripts/findnocoding.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """List all those Python files that require a coding directive
+ 
+diff --git a/Tools/scripts/fixcid.py b/Tools/scripts/fixcid.py
+index 8f35eae..9d32610 100755
+--- a/Tools/scripts/fixcid.py
++++ b/Tools/scripts/fixcid.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Perform massive identifier substitution on C source files.
+ # This actually tokenizes the files (to some extent) so it can
+diff --git a/Tools/scripts/fixdiv.py b/Tools/scripts/fixdiv.py
+index df7c481..de20441 100755
+--- a/Tools/scripts/fixdiv.py
++++ b/Tools/scripts/fixdiv.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """fixdiv - tool to fix division operators.
+ 
+diff --git a/Tools/scripts/fixheader.py b/Tools/scripts/fixheader.py
+index c834eec..0dc9713 100755
+--- a/Tools/scripts/fixheader.py
++++ b/Tools/scripts/fixheader.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Add some standard cpp magic to a header file
+ 
+diff --git a/Tools/scripts/fixnotice.py b/Tools/scripts/fixnotice.py
+index 317051d..867fa41 100755
+--- a/Tools/scripts/fixnotice.py
++++ b/Tools/scripts/fixnotice.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """(Ostensibly) fix copyright notices in files.
+ 
+diff --git a/Tools/scripts/fixps.py b/Tools/scripts/fixps.py
+index 725300e..6ffb6b9 100755
+--- a/Tools/scripts/fixps.py
++++ b/Tools/scripts/fixps.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Fix Python script(s) to reference the interpreter via /usr/bin/env python.
+ # Warning: this overwrites the file without making a backup.
+diff --git a/Tools/scripts/generate_re_casefix.py b/Tools/scripts/generate_re_casefix.py
+index 00b048b..8dbe1c8 100755
+--- a/Tools/scripts/generate_re_casefix.py
++++ b/Tools/scripts/generate_re_casefix.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ # This script generates Lib/re/_casefix.py.
+ 
+ import collections
+diff --git a/Tools/scripts/generate_sre_constants.py b/Tools/scripts/generate_sre_constants.py
+index 7271507..e2a6635 100755
+--- a/Tools/scripts/generate_sre_constants.py
++++ b/Tools/scripts/generate_sre_constants.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ # This script generates Modules/_sre/sre_constants.h from Lib/re/_constants.py.
+ 
+ 
+diff --git a/Tools/scripts/generate_token.py b/Tools/scripts/generate_token.py
+index 77bb5bd..94ecb38 100755
+--- a/Tools/scripts/generate_token.py
++++ b/Tools/scripts/generate_token.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ # This script generates token related files from Grammar/Tokens:
+ #
+ #   Doc/library/token-list.inc
+diff --git a/Tools/scripts/get-remote-certificate.py b/Tools/scripts/get-remote-certificate.py
+index 68272fc..56ed509 100755
+--- a/Tools/scripts/get-remote-certificate.py
++++ b/Tools/scripts/get-remote-certificate.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ #
+ # fetch the certificate that the server(s) are providing in PEM form
+ #
+diff --git a/Tools/scripts/google.py b/Tools/scripts/google.py
+index 82fb287..dda0ab0 100755
+--- a/Tools/scripts/google.py
++++ b/Tools/scripts/google.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Script to search with Google
+ 
+diff --git a/Tools/scripts/gprof2html.py b/Tools/scripts/gprof2html.py
+index bf0530e..4abb24a 100755
+--- a/Tools/scripts/gprof2html.py
++++ b/Tools/scripts/gprof2html.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Transform gprof(1) output into useful HTML."""
+ 
+diff --git a/Tools/scripts/highlight.py b/Tools/scripts/highlight.py
+index 9272fee..80912a2 100755
+--- a/Tools/scripts/highlight.py
++++ b/Tools/scripts/highlight.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ '''Add syntax highlighting to Python source code'''
+ 
+ __author__ = 'Raymond Hettinger'
+diff --git a/Tools/scripts/ifdef.py b/Tools/scripts/ifdef.py
+index 22249b2..75f0fe1 100755
+--- a/Tools/scripts/ifdef.py
++++ b/Tools/scripts/ifdef.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Selectively preprocess #ifdef / #ifndef statements.
+ # Usage:
+diff --git a/Tools/scripts/import_diagnostics.py b/Tools/scripts/import_diagnostics.py
+index c907221..d4443e5 100755
+--- a/Tools/scripts/import_diagnostics.py
++++ b/Tools/scripts/import_diagnostics.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """Miscellaneous diagnostics for the import system"""
+ 
+ import sys
+diff --git a/Tools/scripts/lfcr.py b/Tools/scripts/lfcr.py
+index bf8fe1c..a32692b 100755
+--- a/Tools/scripts/lfcr.py
++++ b/Tools/scripts/lfcr.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ "Replace LF with CRLF in argument files.  Print names of changed files."
+ 
+diff --git a/Tools/scripts/linktree.py b/Tools/scripts/linktree.py
+index e83f198..e16c8bd 100755
+--- a/Tools/scripts/linktree.py
++++ b/Tools/scripts/linktree.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # linktree
+ #
+diff --git a/Tools/scripts/lll.py b/Tools/scripts/lll.py
+index 1b48eac..cbf9e7e 100755
+--- a/Tools/scripts/lll.py
++++ b/Tools/scripts/lll.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Find symbolic links and show where they point to.
+ # Arguments are directories to search; default is current directory.
+diff --git a/Tools/scripts/mailerdaemon.py b/Tools/scripts/mailerdaemon.py
+index 635e548..671e1a1 100755
+--- a/Tools/scripts/mailerdaemon.py
++++ b/Tools/scripts/mailerdaemon.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """Classes to parse mailer-daemon messages."""
+ 
+ import calendar
+diff --git a/Tools/scripts/make_ctype.py b/Tools/scripts/make_ctype.py
+index afee1c5..b34889d 100755
+--- a/Tools/scripts/make_ctype.py
++++ b/Tools/scripts/make_ctype.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """Script that generates the ctype.h-replacement in stringobject.c."""
+ 
+ NAMES = ("LOWER", "UPPER", "ALPHA", "DIGIT", "XDIGIT", "ALNUM", "SPACE")
+diff --git a/Tools/scripts/md5sum.py b/Tools/scripts/md5sum.py
+index f910576..a4462c1 100755
+--- a/Tools/scripts/md5sum.py
++++ b/Tools/scripts/md5sum.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Python utility to print MD5 checksums of argument files.
+ """
+diff --git a/Tools/scripts/mkreal.py b/Tools/scripts/mkreal.py
+index f169da4..d3b852b 100755
+--- a/Tools/scripts/mkreal.py
++++ b/Tools/scripts/mkreal.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # mkreal
+ #
+diff --git a/Tools/scripts/ndiff.py b/Tools/scripts/ndiff.py
+index c6d09b8..2a842d6 100755
+--- a/Tools/scripts/ndiff.py
++++ b/Tools/scripts/ndiff.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Module ndiff version 1.7.0
+ # Released to the public domain 08-Dec-2000,
+diff --git a/Tools/scripts/nm2def.py b/Tools/scripts/nm2def.py
+index a885ebd..7de0726 100755
+--- a/Tools/scripts/nm2def.py
++++ b/Tools/scripts/nm2def.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ """nm2def.py
+ 
+ Helpers to extract symbols from Unix libs and auto-generate
+diff --git a/Tools/scripts/objgraph.py b/Tools/scripts/objgraph.py
+index add41e6..44f3f25 100755
+--- a/Tools/scripts/objgraph.py
++++ b/Tools/scripts/objgraph.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # objgraph
+ #
+diff --git a/Tools/scripts/parse_html5_entities.py b/Tools/scripts/parse_html5_entities.py
+index c011328..86b460d 100755
+--- a/Tools/scripts/parse_html5_entities.py
++++ b/Tools/scripts/parse_html5_entities.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """
+ Utility for parsing HTML5 entity definitions available from:
+ 
+diff --git a/Tools/scripts/parseentities.py b/Tools/scripts/parseentities.py
+index 0229d3a..8f787e8 100755
+--- a/Tools/scripts/parseentities.py
++++ b/Tools/scripts/parseentities.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """ Utility for parsing HTML entity definitions available from:
+ 
+       http://www.w3.org/ as e.g.
+diff --git a/Tools/scripts/patchcheck.py b/Tools/scripts/patchcheck.py
+index c53dd45..553b8a6 100755
+--- a/Tools/scripts/patchcheck.py
++++ b/Tools/scripts/patchcheck.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """Check proposed changes for common issues."""
+ import re
+ import sys
+diff --git a/Tools/scripts/pathfix.py b/Tools/scripts/pathfix.py
+index d252321..f029a59 100755
+--- a/Tools/scripts/pathfix.py
++++ b/Tools/scripts/pathfix.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Change the #! line (shebang) occurring in Python scripts.  The new interpreter
+ # pathname must be given with a -i option.
+diff --git a/Tools/scripts/pdeps.py b/Tools/scripts/pdeps.py
+index ab0040f..6527f97 100755
+--- a/Tools/scripts/pdeps.py
++++ b/Tools/scripts/pdeps.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # pdeps
+ #
+diff --git a/Tools/scripts/pickle2db.py b/Tools/scripts/pickle2db.py
+index b5b6571..6dd3e82 100755
+--- a/Tools/scripts/pickle2db.py
++++ b/Tools/scripts/pickle2db.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ Synopsis: %(prog)s [-h|-b|-g|-r|-a|-d] [ picklefile ] dbfile
+diff --git a/Tools/scripts/pindent.py b/Tools/scripts/pindent.py
+index 3333420..b15deff 100755
+--- a/Tools/scripts/pindent.py
++++ b/Tools/scripts/pindent.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # This file contains a class and a main program that perform three
+ # related (though complimentary) formatting operations on Python
+diff --git a/Tools/scripts/ptags.py b/Tools/scripts/ptags.py
+index eedd411..dc29ca7 100755
+--- a/Tools/scripts/ptags.py
++++ b/Tools/scripts/ptags.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # ptags
+ #
+diff --git a/Tools/scripts/pysource.py b/Tools/scripts/pysource.py
+index 69e8e0d..b839892 100755
+--- a/Tools/scripts/pysource.py
++++ b/Tools/scripts/pysource.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """\
+ List python source files.
+diff --git a/Tools/scripts/reindent-rst.py b/Tools/scripts/reindent-rst.py
+index 25608af..08d0f52 100755
+--- a/Tools/scripts/reindent-rst.py
++++ b/Tools/scripts/reindent-rst.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Make a reST file compliant to our pre-commit hook.
+ # Currently just remove trailing whitespace.
+diff --git a/Tools/scripts/reindent.py b/Tools/scripts/reindent.py
+index f6dadaa..45b67ec 100755
+--- a/Tools/scripts/reindent.py
++++ b/Tools/scripts/reindent.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Released to the public domain, by Tim Peters, 03 October 2000.
+ 
+diff --git a/Tools/scripts/rgrep.py b/Tools/scripts/rgrep.py
+index c39bf93..775280f 100755
+--- a/Tools/scripts/rgrep.py
++++ b/Tools/scripts/rgrep.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """Reverse grep.
+ 
+diff --git a/Tools/scripts/smelly.py b/Tools/scripts/smelly.py
+index 276a5ab..5ecf884 100755
+--- a/Tools/scripts/smelly.py
++++ b/Tools/scripts/smelly.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ # Script checking that all symbols exported by libpython start with Py or _Py
+ 
+ import os.path
+diff --git a/Tools/scripts/suff.py b/Tools/scripts/suff.py
+index 0eea0d7..d199839 100755
+--- a/Tools/scripts/suff.py
++++ b/Tools/scripts/suff.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # suff
+ #
+diff --git a/Tools/scripts/texi2html.py b/Tools/scripts/texi2html.py
+index c06d812..970cd8c 100755
+--- a/Tools/scripts/texi2html.py
++++ b/Tools/scripts/texi2html.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Convert GNU texinfo files into HTML, one file per node.
+ # Based on Texinfo 2.14.
+diff --git a/Tools/scripts/untabify.py b/Tools/scripts/untabify.py
+index 861c83c..c01130a 100755
+--- a/Tools/scripts/untabify.py
++++ b/Tools/scripts/untabify.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ "Replace tabs with spaces in argument files.  Print names of changed files."
+ 
+diff --git a/Tools/scripts/verify_ensurepip_wheels.py b/Tools/scripts/verify_ensurepip_wheels.py
+index 434a0b4..f585aaf 100755
+--- a/Tools/scripts/verify_ensurepip_wheels.py
++++ b/Tools/scripts/verify_ensurepip_wheels.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ Compare checksums for wheels in :mod:`ensurepip` against the Cheeseshop.
+diff --git a/Tools/scripts/which.py b/Tools/scripts/which.py
+index b42e07c..b08b802 100755
+--- a/Tools/scripts/which.py
++++ b/Tools/scripts/which.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ # Variant of "which".
+ # On stderr, near and total misses are reported.
+diff --git a/Tools/ssl/make_ssl_data.py b/Tools/ssl/make_ssl_data.py
+index ab1134e..bb6a477 100755
+--- a/Tools/ssl/make_ssl_data.py
++++ b/Tools/ssl/make_ssl_data.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """
+ This script should be called *manually* when we want to upgrade SSLError
+diff --git a/Tools/unicode/comparecodecs.py b/Tools/unicode/comparecodecs.py
+index 6525ddf..6e194d2 100755
+--- a/Tools/unicode/comparecodecs.py
++++ b/Tools/unicode/comparecodecs.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ """ Compare the output of two codecs.
+ 
+diff --git a/Tools/unittestgui/unittestgui.py b/Tools/unittestgui/unittestgui.py
+index 4fc5930..dc6f19a 100755
+--- a/Tools/unittestgui/unittestgui.py
++++ b/Tools/unittestgui/unittestgui.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """
+ GUI framework and application for use with Python unit testing framework.
+ Execute tests written using the framework provided by the 'unittest' module.
+diff --git a/Tools/wasm/wasm_assets.py b/Tools/wasm/wasm_assets.py
+index 6557e3f..1dfe2f2 100755
+--- a/Tools/wasm/wasm_assets.py
++++ b/Tools/wasm/wasm_assets.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ """Create a WASM asset bundle directory structure.
+ 
+ The WASM asset bundles are pre-loaded by the final WASM build. The bundle
+diff --git a/Tools/wasm/wasm_build.py b/Tools/wasm/wasm_build.py
+index 63812c6..f1e13b9 100755
+--- a/Tools/wasm/wasm_build.py
++++ b/Tools/wasm/wasm_build.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ """Build script for Python on WebAssembly platforms.
+ 
+   $ ./Tools/wasm/wasm_builder.py emscripten-browser build repl
+diff --git a/Tools/wasm/wasm_webserver.py b/Tools/wasm/wasm_webserver.py
+index 186bd57..fd29b31 100755
+--- a/Tools/wasm/wasm_webserver.py
++++ b/Tools/wasm/wasm_webserver.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ import argparse
+ from http import server
+ 
+-- 
+2.41.0
+
+diff --git a/Tools/scripts/2to3 b/Tools/scripts/2to3
+index fbd4aa6..c882ca8 100755
+--- a/Tools/scripts/2to3
++++ b/Tools/scripts/2to3
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/python3
+ import sys
+ from lib2to3.main import main
+ 
+diff --git a/Tools/scripts/pydoc3 b/Tools/scripts/pydoc3
+index c9b83bb..7ee3c0d 100755
+--- a/Tools/scripts/pydoc3
++++ b/Tools/scripts/pydoc3
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++#!/usr/bin/python3
+ 
+ import pydoc
+ if __name__ == '__main__':

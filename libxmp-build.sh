@@ -14,6 +14,11 @@ patches/${PACKAGENAME}/libxmp.patch
 "
 EXTRA_DIST="
 patches/automake/mintelf-config.sub
+patches/libxmp/xmpinfo.c
+patches/libxmp/xmpplay.c
+"
+BINFILES="
+${TARGET_BINDIR#/}/*
 "
 
 unpack_archive
@@ -39,7 +44,10 @@ for CPU in ${ALL_CPUS}; do
 	${MAKE} || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
-	
+
+	${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS -Iinclude ${ELF_LDFLAGS} -o ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/xmpinfo "${BUILD_DIR}/patches/libxmp/xmpinfo.c" lib/libxmp.a -lm || exit 1
+	${TARGET}-gcc $CPU_CFLAGS $COMMON_CFLAGS -Iinclude ${ELF_LDFLAGS} -o ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/xmpplay "${BUILD_DIR}/patches/libxmp/xmpplay.c" lib/libxmp.a -lSDL -lvorbis -lm || exit 1
+
 	${MAKE} clean >/dev/null
 
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/charset.alias

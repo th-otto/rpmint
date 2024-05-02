@@ -27,7 +27,7 @@ BuildRequires:  pkgconfig
 BuildRequires:  m4
 BuildRequires:  make
 Provides:       %{crossmint}liblzma5 = %{version}
-Provides:       %{crossmint}xz-devel = %{version}
+Provides:       %{crossmint}lzma-devel = %{version}
 
 %rpmint_build_arch
 

@@ -1,11 +1,12 @@
 %define pkgname python3
-%global python_version 3.6
+%global python_version 3.11
+%define         python_pkg_name python311
 
 %rpmint_header
 
 Summary:        Python Interpreter
 Name:           %{crossmint}%{pkgname}
-Version:        3.6.4
+Version:        3.11.8
 Release:        1
 License:        Python-2.0
 Group:          Development/Languages/Python
@@ -21,27 +22,53 @@ Source0:        http://www.python.org/ftp/python/%{version}/Python-%{version}.ta
 Source1:        patches/automake/mintelf-config.sub
 Source2:        patches/python3/python3-macros.python3
 
-Patch0:         patches/python3/python3-3.0b1-record-rpm.patch
-Patch1:         patches/python3/python3-3.6.0-multilib-new.patch
+Patch0:         patches/python3/python3-F00251-change-user-install-location.patch
+Patch1:         patches/python3/python3-distutils-reproducible-compile.patch
 Patch2:         patches/python3/python3-3.3.0b1-localpath.patch
 Patch3:         patches/python3/python3-3.3.0b1-fix_date_time_compiler.patch
-Patch4:         patches/python3/python3-3.3.0b1-curses-panel.patch
-Patch5:         patches/python3/python3-3.3.0b1-test-posix_fadvise.patch
-Patch6:         patches/python3/python3-3.3.3-skip-distutils-test_sysconfig_module.patch
-Patch7:         patches/python3/python3-subprocess-raise-timeout.patch
-Patch8:         patches/python3/python3-0001-allow-for-reproducible-builds-of-python-packages.patch
-Patch9:         patches/python3/python3-distutils-reproducible-compile.patch
-Patch10:        patches/python3/python3-skip_random_failing_tests.patch
-Patch11:        patches/python3/python3-fix-localeconv-encoding-for-LC_NUMERIC.patch
-Patch12:        patches/python3/python3-sorted_tar.patch
-Patch13:        patches/python3/python3-mint.patch
-Patch14:        patches/python3/python3-mintnosharedmod.patch
-Patch15:        patches/python3/python3-cross-config.patch
+Patch4:         patches/python3/python3-3.3.0b1-test-posix_fadvise.patch
+Patch5:         patches/python3/python3-subprocess-raise-timeout.patch
+Patch6:         patches/python3/python3-bpo-31046_ensurepip_honours_prefix.patch
+Patch7:         patches/python3/python3-no-skipif-doctests.patch
+Patch8:         patches/python3/python3-skip-test_pyobject_freed_is_freed.patch
+Patch9:         patches/python3/python3-fix_configure_rst.patch
+Patch10:        patches/python3/python3-support-expat-CVE-2022-25236-patched.patch
+Patch11:        patches/python3/python3-skip_if_buildbot-extend.patch
+Patch12:        patches/python3/python3-CVE-2023-27043-email-parsing-errors.patch
+Patch13:        patches/python3/python3-libexpat260.patch
+Patch14:        patches/python3/python3-CVE-2023-6597-TempDir-cleaning-symlink.patch
+Patch15:        patches/python3/python3-bsc1221260-test_asyncio-ResourceWarning.patch
+Patch16:        patches/python3/python3-bluez-devel.patch
+Patch17:        patches/python3/python3-Fix-shebangs.patch
+Patch18:        patches/python3/python3-cross-config.patch
+Patch19:        patches/python3/python3-mintnosharedmod.patch
+Patch20:        patches/python3/python3-mintsetupdist.patch
+Patch21:        patches/python3/python3-mint.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  python3
+BuildRequires:  pkgconfig
+BuildRequires:  %{crossmint}gcc-c++
+BuildRequires:  %{crossmint}gmp-devel
+BuildRequires:  %{crossmint}lzma-devel
+BuildRequires:  %{crossmint}bzip2
+BuildRequires:  %{crossmint}expat
+BuildRequires:  %{crossmint}zlib
+BuildRequires:  %{crossmint}ncurses
+BuildRequires:  %{crossmint}readline
+Provides:       %{crossmint}%{python_pkg_name}-base = %{version}
+Provides:       %{crossmint}%{python_pkg_name}-readline
+Provides:       %{crossmint}%{python_pkg_name}-sqlite3
+Provides:       %{crossmint}%{python_pkg_name}-curses
+Provides:       %{crossmint}%{python_pkg_name}-dbm
+Provides:       %{crossmint}%{python_pkg_name}-pip
+Provides:       %{crossmint}%{python_pkg_name}-tools
+Provides:       %{crossmint}python3 = %{python_version}
+Provides:       %{crossmint}python3-base = %{python_version}
+Provides:       %{crossmint}python3-readline = %{python_version}
+Provides:       %{crossmint}python3-sqlite3 = %{python_version}
 
 %rpmint_build_arch
 
@@ -87,6 +114,7 @@ in ASCII text files and in LaTeX source files.
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
 %patch9 -p1
 %patch10 -p1
 %patch11 -p1
@@ -94,6 +122,12 @@ in ASCII text files and in LaTeX source files.
 %patch13 -p1
 %patch14 -p1
 %patch15 -p1
+%patch16 -p1
+%patch17 -p1
+%patch18 -p1
+%patch19 -p1
+%patch20 -p1
+%patch21 -p1
 
 # drop Autoconf version requirement
 sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
@@ -106,6 +140,17 @@ cp %{S:1} config.sub
 # python installation
 touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
 
+# drop in-tree libffi and expat
+rm -rf Modules/_ctypes/libffi* Modules/_ctypes/darwin
+# Cannot remove it because of gh#python/cpython#92875
+# rm -rf Modules/expat
+
+# drop duplicate README from site-packages
+rm -f Lib/site-packages/README.txt
+
+# Don't fail on warnings when building documentation
+sed -i -e '/^SPHINXERRORHANDLING/s/-W//' Doc/Makefile
+
 %build
 
 %rpmint_cflags
@@ -114,14 +159,15 @@ touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	--build=`./config.guess`
+	--with-platlibdir=lib
 	--docdir=%{_rpmint_target_prefix}/share/doc/packages/python
 	--disable-ipv6
-	--with-fpectl
 	--disable-shared --enable-static
 	--enable-unicode=ucs4
 	--with-system-expat
 	--without-thread
 	--without-ensurepip
+	--with-build-python=python3
 	--config-cache
 "
 COMMON_CFLAGS+=" -fwrapv -DOPENSSL_LOAD_CONF"
@@ -146,6 +192,11 @@ cat << EOF > config.cache
 ac_cv_file__dev_ptmx=no
 ac_cv_file__dev_ptc=no
 ac_cv_lib_intl_textdomain=yes
+ac_cv_func_pthread_condattr_setclock=no
+ac_cv_have_pthread_t=no
+ac_cv_func_pthread_kill=no
+ac_cv_func_pthread_sigmask=no
+ac_cv_header_pthread_h=no
 EOF
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
@@ -166,10 +217,12 @@ EOF
 	install -m 644 %{S:2} ${buildroot}/etc/rpm/macros.python3
 
 	# scripts
-	install -m 755 Tools/scripts/pydoc3 ${buildroot}%{_rpmint_target_prefix}/bin/pydoc3-%{python_version}
+	rm -f ${buildroot}%{_rpmint_target_prefix}/bin/pydoc3*
+	install -m 755 Tools/scripts/pydoc3 ${buildroot}%{_rpmint_target_prefix}/bin/pydoc%{python_version}
+	ln -s pydoc%{python_version} ${buildroot}%{_rpmint_target_prefix}/bin/pydoc3
 	install -m 755 Tools/scripts/2to3 ${buildroot}%{_rpmint_target_prefix}/bin/2to3-%{python_version}
-	install -m 755 Tools/scripts/pyvenv ${buildroot}%{_rpmint_target_prefix}/bin/pyvenv-%{python_version}
-	
+	install -m 755 Tools/scripts/pyvenv ${buildroot}%{_rpmint_target_prefix}/bin/pyvenv-%{python_version} || :
+
 	make clean > /dev/null
 
 	rm -f %{buildroot}%{_rpmint_libdir}$multilibdir/charset.alias	
@@ -232,7 +285,7 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files devel
 %defattr(-,root,root)
-%{_isysroot}%{_rpmint_target_prefix}/include/python%{python_version}m
+%{_isysroot}%{_rpmint_target_prefix}/include/python%{python_version}
 %{_isysroot}%{_rpmint_target_prefix}/lib/*.a
 %{_isysroot}%{_rpmint_target_prefix}/lib/*/*.a
 %{_isysroot}%{_rpmint_target_prefix}/lib/pkgconfig/*.pc
@@ -247,6 +300,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Mon Apr 15 2024 Thorsten Otto <admin@tho-otto.de>
+- Update to version 3.11.8
+
 * Mon Apr 10 2023 Thorsten Otto <admin@tho-otto.de>
 - Rewritten as RPMint spec file
 - Update to version 3.6.4

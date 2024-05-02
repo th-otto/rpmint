@@ -1,0 +1,72 @@
+From 3e51d9859261cf60ae4610de352d4a01df9e7bda Mon Sep 17 00:00:00 2001
+From: Cameron Cawley <ccawley2011@gmail.com>
+Date: Sat, 17 Jun 2023 17:01:58 +0100
+Subject: [PATCH 02/40] Implement Toggle_Video_Fullscreen with SDL 1.2
+
+---
+ common/video_sdl1.cpp | 18 ++++++++++++++++++
+ common/wwkeyboard.cpp | 12 ++++++++++--
+ 2 files changed, 28 insertions(+), 2 deletions(-)
+
+diff --git a/common/video_sdl1.cpp b/common/video_sdl1.cpp
+index c5bbf52..28e1a01 100644
+--- a/common/video_sdl1.cpp
++++ b/common/video_sdl1.cpp
+@@ -157,6 +157,24 @@ bool Set_Video_Mode(int w, int h, int bits_per_pixel)
+ void Toggle_Video_Fullscreen()
+ {
+     Settings.Video.Windowed = !Settings.Video.Windowed;
++
++    if (window) {
++        int win_flags = SDL_HWSURFACE | SDL_HWPALETTE;
++        SDL_Surface* new_window;
++
++        if (!Settings.Video.Windowed) {
++            win_flags |= SDL_FULLSCREEN;
++        }
++
++        new_window = SDL_SetVideoMode(window->w, window->h, 8, win_flags);
++        if (new_window) {
++            window = new_window;
++
++            /* The palette needs to be restored when switching to a new video mode */
++            SDL_SetPalette(window, SDL_LOGPAL, logpal, 0, 256);
++            SDL_SetPalette(window, SDL_PHYSPAL, physpal, 0, 256);
++        }
++    }
+ }
+ 
+ void Get_Video_Scale(float& x, float& y)
+diff --git a/common/wwkeyboard.cpp b/common/wwkeyboard.cpp
+index f14be63..8b29991 100644
+--- a/common/wwkeyboard.cpp
++++ b/common/wwkeyboard.cpp
+@@ -554,7 +554,11 @@ void WWKeyboardClass::Fill_Buffer_From_System(void)
+ #ifdef SDL2_BUILD
+             Put_Key_Message(event.key.keysym.scancode, false);
+ #else
+-            Put_Key_Message(event.key.keysym.sym, false);
++            if (event.key.keysym.sym == SDLK_RETURN && (event.key.keysym.mod & KMOD_ALT)) {
++                /* Switching to full screen is handled in the key up event */
++            } else {
++                Put_Key_Message(event.key.keysym.sym, false);
++            }
+ #endif
+             break;
+         case SDL_KEYUP:
+@@ -565,7 +569,11 @@ void WWKeyboardClass::Fill_Buffer_From_System(void)
+                 Put_Key_Message(event.key.keysym.scancode, true);
+             }
+ #else
+-            Put_Key_Message(event.key.keysym.sym, true);
++            if (event.key.keysym.sym == SDLK_RETURN && (event.key.keysym.mod & KMOD_ALT)) {
++                Toggle_Video_Fullscreen();
++            } else {
++                Put_Key_Message(event.key.keysym.sym, true);
++            }
+ #endif
+             break;
+         case SDL_MOUSEMOTION:
+-- 
+2.41.0
+

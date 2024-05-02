@@ -1,0 +1,476 @@
+From 649239926b5b51884096f15124dc492fe7a5765f Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 21 Mar 2024 15:00:28 +0100
+Subject: [PATCH 30/40] Fix some potential buffer overflows
+
+---
+ redalert/aadata.cpp       |  2 +-
+ redalert/aircraft.cpp     |  2 +-
+ redalert/base.cpp         |  4 ++--
+ redalert/bdata.cpp        |  2 +-
+ redalert/building.cpp     |  2 +-
+ redalert/expand.cpp       |  2 +-
+ redalert/infantry.cpp     |  2 +-
+ redalert/mapeddlg.cpp     |  2 +-
+ redalert/mapsel.cpp       |  4 ++--
+ redalert/scenario.cpp     |  4 ++--
+ redalert/sendfile.cpp     |  4 ++--
+ redalert/udata.cpp        |  2 +-
+ redalert/unit.cpp         |  2 +-
+ redalert/vdata.cpp        |  2 +-
+ redalert/vessel.cpp       |  2 +-
+ tiberiandawn/aircraft.cpp |  4 ++--
+ tiberiandawn/base.cpp     |  4 ++--
+ tiberiandawn/building.cpp |  2 +-
+ tiberiandawn/goptions.cpp |  2 +-
+ tiberiandawn/infantry.cpp |  2 +-
+ tiberiandawn/mapeddlg.cpp | 12 ++++++------
+ tiberiandawn/mapedtm.cpp  |  2 +-
+ tiberiandawn/mplayer.cpp  |  4 ++--
+ tiberiandawn/scenario.cpp |  8 ++++----
+ tiberiandawn/stats.cpp    |  2 +-
+ tiberiandawn/unit.cpp     |  2 +-
+ 26 files changed, 41 insertions(+), 41 deletions(-)
+
+diff --git a/redalert/aadata.cpp b/redalert/aadata.cpp
+index 52d553a..ad543e4 100644
+--- a/redalert/aadata.cpp
++++ b/redalert/aadata.cpp
+@@ -399,7 +399,7 @@ void AircraftTypeClass::One_Time(void)
+         /*
+         **	Fetch the supporting data files for the unit.
+         */
+-        char buffer[_MAX_FNAME];
++        char buffer[_MAX_FNAME + 4];
+         sprintf(buffer, "%sICON", uclass.Graphic_Name());
+         _makepath(fullname, NULL, NULL, buffer, ".SHP");
+         ((void const*&)uclass.CameoData) = MFCD::Retrieve(fullname);
+diff --git a/redalert/aircraft.cpp b/redalert/aircraft.cpp
+index 9d3cdb1..36c0099 100644
+--- a/redalert/aircraft.cpp
++++ b/redalert/aircraft.cpp
+@@ -4348,7 +4348,7 @@ void AircraftClass::Movement_AI(void)
+             Mark(MARK_DOWN);
+         } else {
+             Mark(MARK_CHANGE_REDRAW);
+-            if (Physics(Coord, PrimaryFacing) != RESULT_NONE) {
++            if (Physics(Coord, PrimaryFacing) != IMPACT_NONE) {
+                 Mark(MARK_CHANGE_REDRAW);
+             }
+         }
+diff --git a/redalert/base.cpp b/redalert/base.cpp
+index fae1ad9..7ed6679 100644
+--- a/redalert/base.cpp
++++ b/redalert/base.cpp
+@@ -432,7 +432,7 @@ BaseNodeClass* BaseClass::Next_Buildable(StructType type)
+ void BaseClass::Read_INI(CCINIClass& ini)
+ {
+     char buf[128];
+-    char uname[10];
++    char uname[12];
+     BaseNodeClass node; // node to add to list
+ 
+     Mono_Clear_Screen();
+@@ -516,7 +516,7 @@ void BaseClass::Write_INI(CCINIClass& ini)
+         */
+         for (int i = 0; i < Nodes.Count(); i++) {
+             char buf[128];
+-            char uname[10];
++            char uname[12];
+ 
+             sprintf(uname, "%03d", i);
+             sprintf(buf, "%s,%d", BuildingTypeClass::As_Reference(Nodes[i].Type).IniName, Nodes[i].Cell);
+diff --git a/redalert/bdata.cpp b/redalert/bdata.cpp
+index ac4d45f..909c1e6 100644
+--- a/redalert/bdata.cpp
++++ b/redalert/bdata.cpp
+@@ -3008,7 +3008,7 @@ void BuildingTypeClass::One_Time(void)
+ 
+     for (int sindex = STRUCT_FIRST; sindex < STRUCT_COUNT; sindex++) {
+         char fullname[_MAX_FNAME + _MAX_EXT];
+-        char buffer[_MAX_FNAME];
++        char buffer[_MAX_FNAME + 4];
+         BuildingTypeClass const& building = As_Reference((StructType)sindex);
+         /*
+         **	Fetch the sidebar cameo image for this building.
+diff --git a/redalert/building.cpp b/redalert/building.cpp
+index c78958f..0d42667 100644
+--- a/redalert/building.cpp
++++ b/redalert/building.cpp
+@@ -5536,7 +5536,7 @@ void BuildingClass::Write_INI(CCINIClass& ini)
+     for (int index = 0; index < Buildings.Count(); index++) {
+         BuildingClass* building = Buildings.Ptr(index);
+         if (!building->IsInLimbo) {
+-            char uname[10];
++            char uname[12];
+             char buf[127];
+ 
+             sprintf(uname, "%d", index);
+diff --git a/redalert/expand.cpp b/redalert/expand.cpp
+index 2386f92..37a6859 100644
+--- a/redalert/expand.cpp
++++ b/redalert/expand.cpp
+@@ -311,7 +311,7 @@ private:
+  *=============================================================================================*/
+ void EListClass::Draw_Entry(int index, int x, int y, int width, int selected)
+ {
+-    char buffer[128];
++    char buffer[256];
+     RemapControlType* scheme = GadgetClass::Get_Color_Scheme();
+ 
+     int text = TXT_NONE;
+diff --git a/redalert/infantry.cpp b/redalert/infantry.cpp
+index f18e2d9..6b3518a 100644
+--- a/redalert/infantry.cpp
++++ b/redalert/infantry.cpp
+@@ -3617,7 +3617,7 @@ void InfantryClass::Write_INI(CCINIClass& ini)
+     for (int index = 0; index < Infantry.Count(); index++) {
+         InfantryClass* infantry = Infantry.Ptr(index);
+         if (!infantry->IsInLimbo) {
+-            char uname[10];
++            char uname[12];
+             char buf[128];
+ 
+             sprintf(uname, "%d", index);
+diff --git a/redalert/mapeddlg.cpp b/redalert/mapeddlg.cpp
+index cd0cb9f..fa99ce9 100644
+--- a/redalert/mapeddlg.cpp
++++ b/redalert/mapeddlg.cpp
+@@ -553,7 +553,7 @@ int MapEditClass::Load_Scenario(void)
+         /*
+         **	Other Variables
+         */
+-        char scen_buf[10] = {0}; // buffer for editing scenario #
++        char scen_buf[14] = {0}; // buffer for editing scenario #
+ 
+         /*
+         **	Buttons
+diff --git a/redalert/mapsel.cpp b/redalert/mapsel.cpp
+index 7d5d25e..6431fc2 100644
+--- a/redalert/mapsel.cpp
++++ b/redalert/mapsel.cpp
+@@ -106,7 +106,7 @@ char const* Map_Selection(void)
+ #ifdef FIXIT_ANTS
+     if (AntsEnabled) {
+         strcpy(scenarioname, Scen.ScenarioName);
+-        char buf[10];
++        char buf[12];
+         sprintf(buf, "%02d", Scen.Scenario + 1);
+         memcpy(&scenarioname[3], buf, 2);
+         return (scenarioname);
+@@ -259,7 +259,7 @@ char const* Map_Selection(void)
+         strcpy(scenarioname, antmission[antnum]);
+     } else {
+         strcpy(scenarioname, Scen.ScenarioName);
+-        char buf[10];
++        char buf[12];
+         sprintf(buf, "%02d", Scen.Scenario + 1);
+         memcpy(&scenarioname[3], buf, 2);
+         scenarioname[6] = 'A' + selection;
+diff --git a/redalert/scenario.cpp b/redalert/scenario.cpp
+index a677b1f..8e9e181 100644
+--- a/redalert/scenario.cpp
++++ b/redalert/scenario.cpp
+@@ -993,7 +993,7 @@ void Do_Win(void)
+             if (AntsEnabled) {
+                 char scenarioname[24];
+                 strcpy(scenarioname, Scen.ScenarioName);
+-                char buf[10];
++                char buf[12];
+                 Scen.Scenario++;
+                 sprintf(buf, "%02d", Scen.Scenario);
+                 memcpy(&scenarioname[3], buf, 2);
+@@ -3780,4 +3780,4 @@ void Disect_Scenario_Name(char const* name,
+     */
+     var = SCEN_VAR_A;
+     var = ScenarioVarType((name[6] - 'A') + SCEN_VAR_A);
+-}
+\ No newline at end of file
++}
+diff --git a/redalert/sendfile.cpp b/redalert/sendfile.cpp
+index e948af6..c8b8650 100644
+--- a/redalert/sendfile.cpp
++++ b/redalert/sendfile.cpp
+@@ -367,9 +367,9 @@ bool Receive_Remote_File(char* file_name, unsigned int file_length, int gametype
+         if (Ipx.Get_Global_Message(&receive_packet, &receive_packet_len, &sender_address, &product_id)) {
+ 
+ #ifdef WINSOCK_IPX
+-            if (receive_packet.Command == NET_FILE_CHUNK && sender_address == Session.HostAddress) {
++            if (NetCommandType(receive_packet.Command) == NET_FILE_CHUNK && sender_address == Session.HostAddress) {
+ #else  // WINSOCK_IPX
+-            if (receive_packet.Command == NET_FILE_CHUNK
++            if (NetCommandType(receive_packet.Command) == NET_FILE_CHUNK
+                 && (Winsock.Get_Connected() || sender_address == Session.HostAddress)) {
+ #endif // WINSOCK_IPX
+ 
+diff --git a/redalert/udata.cpp b/redalert/udata.cpp
+index f0c6c4c..9fb981f 100644
+--- a/redalert/udata.cpp
++++ b/redalert/udata.cpp
+@@ -1038,7 +1038,7 @@ void UnitTypeClass::One_Time(void)
+ {
+     for (UnitType index = UNIT_FIRST; index < UNIT_COUNT; index++) {
+         char fullname[_MAX_FNAME + _MAX_EXT];
+-        char buffer[_MAX_FNAME];
++        char buffer[_MAX_FNAME + 4];
+         UnitTypeClass const& uclass = As_Reference(index);
+         CCFileClass file;
+ 
+diff --git a/redalert/unit.cpp b/redalert/unit.cpp
+index 1e38758..7af29f8 100644
+--- a/redalert/unit.cpp
++++ b/redalert/unit.cpp
+@@ -4965,7 +4965,7 @@ void UnitClass::Write_INI(CCINIClass& ini)
+     for (int index = 0; index < Units.Count(); index++) {
+         UnitClass* unit = Units.Ptr(index);
+         if (unit != NULL && !unit->IsInLimbo && unit->IsActive) {
+-            char uname[10];
++            char uname[12];
+             char buf[128];
+ 
+             sprintf(uname, "%d", index);
+diff --git a/redalert/vdata.cpp b/redalert/vdata.cpp
+index 1c00170..901ad5e 100644
+--- a/redalert/vdata.cpp
++++ b/redalert/vdata.cpp
+@@ -529,7 +529,7 @@ void VesselTypeClass::One_Time(void)
+ {
+     for (VesselType index = VESSEL_FIRST; index < VESSEL_COUNT; index++) {
+         char fullname[_MAX_FNAME + _MAX_EXT];
+-        char buffer[_MAX_FNAME];
++        char buffer[_MAX_FNAME + 4];
+         VesselTypeClass const& uclass = As_Reference(index);
+ #ifdef FIXIT_CARRIER //	checked - ajw 9/28/98
+         if (uclass.Level != -1 || index == VESSEL_CARRIER) {
+diff --git a/redalert/vessel.cpp b/redalert/vessel.cpp
+index 5c3c1d7..85df50e 100644
+--- a/redalert/vessel.cpp
++++ b/redalert/vessel.cpp
+@@ -2162,7 +2162,7 @@ void VesselClass::Write_INI(CCINIClass& ini)
+     for (int index = 0; index < Vessels.Count(); index++) {
+         VesselClass* vessel = Vessels.Ptr(index);
+         if (vessel != NULL && !vessel->IsInLimbo && vessel->IsActive) {
+-            char uname[10];
++            char uname[12];
+             char buf[128];
+ 
+             sprintf(uname, "%d", index);
+diff --git a/tiberiandawn/aircraft.cpp b/tiberiandawn/aircraft.cpp
+index 17ebfad..7bd3130 100644
+--- a/tiberiandawn/aircraft.cpp
++++ b/tiberiandawn/aircraft.cpp
+@@ -579,7 +579,7 @@ void AircraftClass::Write_INI(CCINIClass& ini)
+ 
+         unit = Aircraft.Ptr(index);
+         if (!unit->IsInLimbo) {
+-            char uname[10];
++            char uname[12];
+             char buf[128];
+ 
+             sprintf(uname, "%03d", index);
+@@ -762,7 +762,7 @@ void AircraftClass::AI(void)
+             do_physics = false;
+         }
+     }
+-    if (do_physics && Physics(Coord, PrimaryFacing) != RESULT_NONE) {
++    if (do_physics && Physics(Coord, PrimaryFacing) != IMPACT_NONE) {
+         Mark();
+     }
+ 
+diff --git a/tiberiandawn/base.cpp b/tiberiandawn/base.cpp
+index 568c20e..f44de57 100644
+--- a/tiberiandawn/base.cpp
++++ b/tiberiandawn/base.cpp
+@@ -130,7 +130,7 @@ int BaseNodeClass::operator>(BaseNodeClass const&)
+ void BaseClass::Read_INI(CCINIClass& ini)
+ {
+     char buf[128];
+-    char uname[10];
++    char uname[12];
+     BaseNodeClass node; // node to add to list
+ 
+     /*
+@@ -200,7 +200,7 @@ void BaseClass::Read_INI(CCINIClass& ini)
+ void BaseClass::Write_INI(CCINIClass& ini)
+ {
+     char buf[128];
+-    char uname[10];
++    char uname[12];
+ 
+     /*
+     **	Clear out all existing teamtype data from the INI file.
+diff --git a/tiberiandawn/building.cpp b/tiberiandawn/building.cpp
+index b98dc2d..91f1bec 100644
+--- a/tiberiandawn/building.cpp
++++ b/tiberiandawn/building.cpp
+@@ -3368,7 +3368,7 @@ void BuildingClass::Write_INI(CCINIClass& ini)
+ 
+         building = Buildings.Ptr(index);
+         if (!building->IsInLimbo) {
+-            char uname[10];
++            char uname[12];
+             char buf[127];
+ 
+             sprintf(uname, "%03d", index);
+diff --git a/tiberiandawn/goptions.cpp b/tiberiandawn/goptions.cpp
+index 5cafd03..447943e 100644
+--- a/tiberiandawn/goptions.cpp
++++ b/tiberiandawn/goptions.cpp
+@@ -375,7 +375,7 @@ void GameOptionsClass::Process(void)
+                 if (!Restate_Mission(Scen.ScenarioName, TXT_VIDEO, TXT_OPTIONS)) {
+ #endif
+                     BreakoutAllowed = true;
+-                    char buffer[25];
++                    char buffer[_MAX_FNAME + _MAX_EXT + 4];
+                     sprintf(buffer, "%s.VQA", BriefMovie);
+                     if (CCFileClass(buffer).Is_Available()) {
+                         Play_Movie(BriefMovie);
+diff --git a/tiberiandawn/infantry.cpp b/tiberiandawn/infantry.cpp
+index c857359..9b527ac 100644
+--- a/tiberiandawn/infantry.cpp
++++ b/tiberiandawn/infantry.cpp
+@@ -3083,7 +3083,7 @@ void InfantryClass::Write_INI(CCINIClass& ini)
+ 
+         infantry = Infantry.Ptr(index);
+         if (!infantry->IsInLimbo) {
+-            char uname[10];
++            char uname[12];
+             char buf[128];
+ 
+             sprintf(uname, "%03d", index);
+diff --git a/tiberiandawn/mapeddlg.cpp b/tiberiandawn/mapeddlg.cpp
+index cdc0b21..f697ef4 100644
+--- a/tiberiandawn/mapeddlg.cpp
++++ b/tiberiandawn/mapeddlg.cpp
+@@ -1955,16 +1955,16 @@ int MapEditClass::Scenario_Dialog(void)
+     /*
+     .......................... Init credits buffers ..........................
+     */
+-    sprintf(level_buf, "%ld", BuildLevel);
++    sprintf(level_buf, "%d", BuildLevel);
+     leveledt.Set_Text(level_buf, 4);
+ 
+-    sprintf(gdicred_buf, "%ld", gdi_credits);
++    sprintf(gdicred_buf, "%d", gdi_credits);
+     gdicred.Set_Text(gdicred_buf, 8);
+ 
+-    sprintf(nodcred_buf, "%ld", nod_credits);
++    sprintf(nodcred_buf, "%d", nod_credits);
+     nodcred.Set_Text(nodcred_buf, 8);
+ 
+-    sprintf(neutcred_buf, "%ld", neut_credits);
++    sprintf(neutcred_buf, "%d", neut_credits);
+     neutcred.Set_Text(neutcred_buf, 8);
+ 
+     theaterbtn.Set_Selected_Index(orig_theater - THEATER_NONE - 1);
+@@ -3110,7 +3110,7 @@ int MapEditClass::Edit_Trigger(void)
+     name_edt.Set_Text(namebuf, 5);
+ 
+     if (TriggerClass::Event_Need_Data(event_idx)) {
+-        sprintf(databuf, "%ld", CurTrigger->Data); // Credits/Time
++        sprintf(databuf, "%d", CurTrigger->Data); // Credits/Time
+         data_edt.Set_Text(databuf, 8);
+     }
+ 
+@@ -3280,7 +3280,7 @@ int MapEditClass::Edit_Trigger(void)
+             semipersistbtn.Add_Tail(*commands);
+             if (TriggerClass::Event_Need_Data(event_idx)) {
+                 data_edt.Add_Tail(*commands);
+-                sprintf(databuf, "%ld", CurTrigger->Data);
++                sprintf(databuf, "%d", CurTrigger->Data);
+                 data_edt.Set_Text(databuf, 8);
+             }
+             if (TriggerClass::Event_Need_House(event_idx)) {
+diff --git a/tiberiandawn/mapedtm.cpp b/tiberiandawn/mapedtm.cpp
+index 0ec7125..da07166 100644
+--- a/tiberiandawn/mapedtm.cpp
++++ b/tiberiandawn/mapedtm.cpp
+@@ -252,7 +252,7 @@ int MapEditClass::Select_Team(char const* caption)
+     int j;
+     int def_idx;                    // default list index
+     static int tabs[] = {120, 180}; // list box tab stops
+-    char txt[10];
++    char txt[14];
+     //	int housetxt;
+ 
+     /*........................................................................
+diff --git a/tiberiandawn/mplayer.cpp b/tiberiandawn/mplayer.cpp
+index 01d370f..693f63f 100644
+--- a/tiberiandawn/mplayer.cpp
++++ b/tiberiandawn/mplayer.cpp
+@@ -625,7 +625,7 @@ void Read_Scenario_Descriptions(void)
+     INIClass ini;
+     CCFileClass file;
+     int i;
+-    char fname[20];
++    char fname[_MAX_FNAME + _MAX_EXT + 4];
+ 
+     /*------------------------------------------------------------------------
+     Clear the scenario description lists
+@@ -1056,4 +1056,4 @@ int Surrender_Dialog(void)
+     Map.Render();
+ 
+     return (retcode);
+-}
+\ No newline at end of file
++}
+diff --git a/tiberiandawn/scenario.cpp b/tiberiandawn/scenario.cpp
+index cab6bea..13e5177 100644
+--- a/tiberiandawn/scenario.cpp
++++ b/tiberiandawn/scenario.cpp
+@@ -148,7 +148,7 @@ bool Start_Scenario(char* root, bool briefing)
+ 
+ #ifdef NEWMENU
+ 
+-            char buffer[25];
++            char buffer[_MAX_FNAME + _MAX_EXT + 4];
+             sprintf(buffer, "%s.VQA", BriefMovie);
+             CCFileClass file(buffer);
+ 
+@@ -769,8 +769,8 @@ bool Restate_Mission(char const* name, int button1, int button2)
+         */
+         bool brief = true;
+ #ifdef NEWMENU
+-        char buffer[25];
+-        char buffer1[25];
++        char buffer[_MAX_FNAME + _MAX_EXT + 4];
++        char buffer1[_MAX_FNAME + _MAX_EXT + 4];
+         sprintf(buffer, "%s.VQA", BriefMovie);
+         sprintf(buffer1, "%s.VQA", ActionMovie);
+         CCFileClass file1(buffer);
+@@ -851,4 +851,4 @@ void Fixup_Scenario(void)
+         ((BuildingTypeClass&)BuildingTypeClass::As_Reference(STRUCT_WEAP)).MaxStrength = 400;
+         ((UnitTypeClass&)UnitTypeClass::As_Reference(UNIT_APC)).Pre &= ~STRUCTF_REPAIR;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/tiberiandawn/stats.cpp b/tiberiandawn/stats.cpp
+index 57c0482..9eff6b2 100644
+--- a/tiberiandawn/stats.cpp
++++ b/tiberiandawn/stats.cpp
+@@ -241,7 +241,7 @@ void Send_Statistics_Packet(void)
+         /*
+         ** Scenario
+         */
+-        char fname[128];
++        char fname[_MAX_FNAME + _MAX_EXT + 4];
+         char namebuffer[40];
+         sprintf(fname, "%s.INI", Scen.ScenarioName);
+         CCFileClass fileo;
+diff --git a/tiberiandawn/unit.cpp b/tiberiandawn/unit.cpp
+index a4608e8..0441431 100644
+--- a/tiberiandawn/unit.cpp
++++ b/tiberiandawn/unit.cpp
+@@ -3880,7 +3880,7 @@ void UnitClass::Write_INI(CCINIClass& ini)
+     for (int index = 0; index < Units.Count(); index++) {
+         UnitClass* unit = Units.Ptr(index);
+         if (unit != NULL && !unit->IsInLimbo && unit->IsActive) {
+-            char uname[10];
++            char uname[12];
+             char buf[128];
+ 
+             sprintf(uname, "%d", index);
+-- 
+2.41.0
+

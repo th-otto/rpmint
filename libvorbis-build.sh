@@ -16,6 +16,7 @@ patches/libvorbis/libvorbis-CVE-2017-14160.patch
 patches/libvorbis/libvorbis-CVE-2018-10393.patch
 patches/libvorbis/libvorbis-CVE-2018-10392.patch
 patches/libvorbis/libvorbis-staticlibs.patch
+patches/libvorbis/libvorbis-pkgconfig.patch
 "
 EXTRA_DIST="
 patches/automake/mintelf-config.sub

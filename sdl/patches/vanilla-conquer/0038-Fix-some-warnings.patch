@@ -1,0 +1,768 @@
+From 0809b2507c65da547d1a8a025cfd6b4d3810a1a3 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 22 Mar 2024 16:02:07 +0100
+Subject: [PATCH 38/40] Fix some warnings
+
+---
+ CMakeLists.txt               |  2 +-
+ common/blowpipe.cpp          |  2 +-
+ common/cdfile.cpp            |  1 -
+ common/fading.cpp            |  6 ++----
+ common/file.cpp              |  2 +-
+ common/filepcx.cpp           | 11 ++++++++---
+ common/keyframe.cpp          |  1 -
+ common/linear.cpp            |  2 +-
+ common/listnode.h            |  2 +-
+ common/mixfile.h             |  8 ++++----
+ common/mp.cpp                |  4 ++--
+ common/mp.h                  |  2 +-
+ common/packet.cpp            |  8 ++++++--
+ common/palettec.cpp          |  5 +++--
+ common/pk.cpp                |  2 --
+ common/rawfile.cpp           |  2 +-
+ common/rawfile.h             |  2 +-
+ common/rndstraw.cpp          | 10 ++++++----
+ common/video_sdl1.cpp        |  6 +++---
+ common/vqaloader.h           | 17 +++++------------
+ common/wwstd.h               |  2 +-
+ redalert/CMakeLists.txt      |  2 +-
+ redalert/cell.cpp            |  6 ++++++
+ redalert/debug.cpp           |  4 ++--
+ redalert/defines.h           | 20 ++++++++++----------
+ redalert/ioobj.cpp           |  4 ++--
+ redalert/trigtype.cpp        |  4 ++--
+ tiberiandawn/CMakeLists.txt  |  2 +-
+ tiberiandawn/netdlg.cpp      | 24 +++++++++++-------------
+ tools/mixtool/CMakeLists.txt |  2 +-
+ 30 files changed, 84 insertions(+), 81 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 331fbab..fe3f0e2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -109,7 +109,7 @@ if(NOT MSVC)
+       message(STATUS "no")
+     endif()
+ 
+-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -Wwrite-strings -Werror=write-strings -fcheck-new -fsigned-char -fdata-sections -ffunction-sections -DNOMINMAX")
++    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat -Wwrite-strings -Werror=write-strings -fcheck-new -fsigned-char -DNOMINMAX")
+ else()
+     set(CMAKE_CXX_FLAGS "/Zc:strictStrings")
+ endif()
+diff --git a/common/blowpipe.cpp b/common/blowpipe.cpp
+index 0c9131d..0bec33e 100644
+--- a/common/blowpipe.cpp
++++ b/common/blowpipe.cpp
+@@ -129,7 +129,7 @@ int BlowPipe::Put(void const* source, int slen)
+     **	Process the input data in blocks until there is not enough
+     **	source data to fill a full block of data.
+     */
+-    while (slen >= sizeof(Buffer)) {
++    while (slen >= (int)sizeof(Buffer)) {
+         if (Control == DECRYPT) {
+             BF->Decrypt(source, sizeof(Buffer), Buffer);
+         } else {
+diff --git a/common/cdfile.cpp b/common/cdfile.cpp
+index 314e2aa..61e70b7 100644
+--- a/common/cdfile.cpp
++++ b/common/cdfile.cpp
+@@ -93,7 +93,6 @@ extern int Get_CD_Index(int cd_drive, int timeout);
+  *=============================================================================================*/
+ int Is_Disk_Inserted(int disk)
+ {
+-    disk;
+     return true;
+ }
+ 
+diff --git a/common/fading.cpp b/common/fading.cpp
+index 690e0d1..241b703 100644
+--- a/common/fading.cpp
++++ b/common/fading.cpp
+@@ -13,8 +13,8 @@
+ 
+ void* Build_Fading_Table(void const* palette, void* dest, int color, int frac)
+ {
+-    const int ALLOWED_COUNT = 16;
+-    const int ALLOWED_START = 256 - ALLOWED_COUNT;
++    // const int ALLOWED_COUNT = 16;
++    // const int ALLOWED_START = 256 - ALLOWED_COUNT;
+ 
+     if (!palette || !dest) {
+         return 0;
+@@ -32,7 +32,6 @@ void* Build_Fading_Table(void const* palette, void* dest, int color, int frac)
+     unsigned char targetred = pal[palindex++];
+     unsigned char targetgreen = pal[palindex++];
+     unsigned char targetblue = pal[palindex];
+-    unsigned tableindex = 0;
+     dst[0] = 0;
+ 
+     // Remap most pal entries to the last 16 entries that are the most faded colours.
+@@ -107,7 +106,6 @@ void* Conquer_Build_Fading_Table(const void* palette, void* dest, int color, int
+     unsigned char targetred = pal[palindex++];
+     unsigned char targetgreen = pal[palindex++];
+     unsigned char targetblue = pal[palindex];
+-    unsigned tableindex = 0;
+     dst[0] = 0;
+ 
+     // Remap most pal entries to the last 16 entries that are the most faded colours.
+diff --git a/common/file.cpp b/common/file.cpp
+index 55779b9..253439c 100644
+--- a/common/file.cpp
++++ b/common/file.cpp
+@@ -25,7 +25,7 @@ void Resolve_File(char* fname)
+ #ifndef _WIN32
+     // step through each sub-directory before going for the win
+     char* next = fname;
+-    while (next = strchr(next, '/')) {
++    while ((next = strchr(next, '/')) != NULL) {
+         *next = '\0';
+         Resolve_File_Single(fname);
+         *next++ = '/';
+diff --git a/common/filepcx.cpp b/common/filepcx.cpp
+index 8bb9a40..9d23993 100644
+--- a/common/filepcx.cpp
++++ b/common/filepcx.cpp
+@@ -137,7 +137,10 @@ GraphicBufferClass* Read_PCX_File(const char* name, char* palette, void* Buff, i
+                 if (rle > 192) {
+                     rle -= 192;
+                     color = READ_CHAR();
+-                    ;
++#ifdef __GNUC__
++// FIXME: same code below does not give warning???
++#pragma GCC diagnostic ignored "-Wstringop-overflow"
++#endif
+                     memset(buffer + scan_pos + i, color, rle);
+                     i += rle;
+                 } else {
+@@ -146,10 +149,12 @@ GraphicBufferClass* Read_PCX_File(const char* name, char* palette, void* Buff, i
+             }
+         }
+ 
+-        if (i == width)
++        if (i == (unsigned)width) {
+             rle = READ_CHAR();
+-        if (rle > 192)
++        }
++        if (rle > 192) {
+             rle = READ_CHAR();
++        }
+ 
+     } else {
+ 
+diff --git a/common/keyframe.cpp b/common/keyframe.cpp
+index c57f26e..2bdef4e 100644
+--- a/common/keyframe.cpp
++++ b/common/keyframe.cpp
+@@ -250,7 +250,6 @@ uintptr_t Build_Frame(void const* dataptr, unsigned short framenumber, void* buf
+     char frameflags;
+     uintptr_t return_value;
+     char* temp_shape_ptr;
+-    unsigned short keyfr_frames;
+     int i;
+ 
+     //
+diff --git a/common/linear.cpp b/common/linear.cpp
+index 19b4208..26802b3 100644
+--- a/common/linear.cpp
++++ b/common/linear.cpp
+@@ -226,7 +226,7 @@ bool Linear_Scale_To_Linear(void* thisptr,
+                 int xrat = 0;
+ 
+                 for (int j = 0; j < dst_x1; ++j) {
+-                    *d++ = (remap)[s[xrat >> 16]];
++                    *d++ = (remap)[(unsigned char)s[xrat >> 16]];
+                     xrat += x_ratio;
+                 }
+             }
+diff --git a/common/listnode.h b/common/listnode.h
+index 901cf96..7b48b34 100644
+--- a/common/listnode.h
++++ b/common/listnode.h
+@@ -107,7 +107,7 @@ public:
+     }
+     bool Is_Valid(void) const
+     {
+-        return (this != NULL && NextNode != NULL && PrevNode != NULL);
++        return (NextNode != NULL && PrevNode != NULL);
+     }
+ 
+ protected:
+diff --git a/common/mixfile.h b/common/mixfile.h
+index 3a4f360..e02c558 100644
+--- a/common/mixfile.h
++++ b/common/mixfile.h
+@@ -247,10 +247,10 @@ template <class T, class TCRC> MixFileClass<T, TCRC>::~MixFileClass(void)
+  *=============================================================================================*/
+ template <class T, class TCRC>
+ MixFileClass<T, TCRC>::MixFileClass(char const* filename)
+-    : IsDigest(false)
++    : Filename(0)
++    , IsDigest(false)
+     , IsEncrypted(false)
+     , IsAllocated(false)
+-    , Filename(0)
+     , Count(0)
+     , DataSize(0)
+     , DataStart(0)
+@@ -297,7 +297,7 @@ MixFileClass<T, TCRC>::MixFileClass(char const* filename)
+     **	whether this is an extended mixfile format or the plain format. An
+     **	extended format may have extra options or data layout.
+     */
+-    int got = straw->Get(&alternate, sizeof(alternate));
++    straw->Get(&alternate, sizeof(alternate));
+     int16_t alternate_first = le16toh(alternate.First);
+     int16_t alternate_second = le16toh(alternate.Second);
+ 
+@@ -422,7 +422,7 @@ MixFileClass<T, TCRC>::MixFileClass(char const* filename, PKey const* key)
+     **	whether this is an extended mixfile format or the plain format. An
+     **	extended format may have extra options or data layout.
+     */
+-    int got = straw->Get(&alternate, sizeof(alternate));
++    straw->Get(&alternate, sizeof(alternate));
+     int16_t alternate_first = le16toh(alternate.First);
+     int16_t alternate_second = le16toh(alternate.Second);
+ 
+diff --git a/common/mp.cpp b/common/mp.cpp
+index fdeef76..347a400 100644
+--- a/common/mp.cpp
++++ b/common/mp.cpp
+@@ -1130,7 +1130,7 @@ bool XMP_Sub(uint16_t* result,
+ #ifdef __BIG_ENDIAN__
+     uint16_t temp_left_number[precision * 2];
+     uint16_t temp_result[precision * 2];
+-    size_t i;
++    int i;
+ 
+     for (i = 0; i < precision * 2; i++) {
+         Set_HalfWord(temp_left_number, i, Get_HalfWord(left_number, left_number_offset + i));
+@@ -2420,7 +2420,7 @@ bool XMP_Rabin_Miller_Test(Straw& rng, digit const* w, int rounds, int precision
+                 return false;
+             }
+         }
+-        if (j == a) {
++        if (j == (int)a) {
+             return false;
+         }
+     }
+diff --git a/common/mp.h b/common/mp.h
+index 64fd07c..9eac402 100644
+--- a/common/mp.h
++++ b/common/mp.h
+@@ -124,7 +124,7 @@ inline bool XMP_Is_Negative(const digit* r, int precision)
+     return ((signeddigit) * (r + (precision - 1)) < 0);
+ }
+ 
+-inline bool XMP_Test_Eq_Int(digit const* r, int i, int p)
++inline bool XMP_Test_Eq_Int(digit const* r, digit i, int p)
+ {
+     return ((*r == i) && XMP_Significance(r, p) <= 1);
+ }
+diff --git a/common/packet.cpp b/common/packet.cpp
+index 00c05d0..b6b6156 100644
+--- a/common/packet.cpp
++++ b/common/packet.cpp
+@@ -131,8 +131,12 @@ PacketClass::PacketClass(char* curbuf)
+         //
+         // Copy the adjusted header into the buffer and then advance the buffer
+         //
+-        memcpy(field, curbuf, FIELD_HEADER_SIZE);
+-        curbuf += FIELD_HEADER_SIZE;
++        memcpy(field->ID, curbuf, 4);
++        curbuf += 4;
++        memcpy(&field->DataType, curbuf, 2);
++        curbuf += 2;
++        memcpy(&field->Size, curbuf, 2);
++        curbuf += 2;
+         remaining_size -= FIELD_HEADER_SIZE;
+ 
+         //
+diff --git a/common/palettec.cpp b/common/palettec.cpp
+index c3ceca0..8003238 100644
+--- a/common/palettec.cpp
++++ b/common/palettec.cpp
+@@ -118,7 +118,8 @@ PaletteClass& PaletteClass::operator=(PaletteClass const& palette)
+     if (this == &palette)
+         return (*this);
+ 
+-    memcpy(&Palette[0], &palette.Palette[0], sizeof(Palette));
++    for (int i = 0; i < PaletteClass::COLOR_COUNT; i++)
++        Palette[i] = palette.Palette[i];
+     return (*this);
+ }
+ 
+@@ -319,7 +320,7 @@ void PaletteClass::Set(int time, void (*callback)(void)) const
+         **	code, at the time of this writing, delays at least one game tick in the process
+         **	of setting the palette.
+         */
+-        int holdtime = timer;
++        unsigned int holdtime = timer;
+ 
+         /*
+         **	Set the palette to this intermediate palette and then loop back
+diff --git a/common/pk.cpp b/common/pk.cpp
+index 281d9d9..04e9ea8 100644
+--- a/common/pk.cpp
++++ b/common/pk.cpp
+@@ -187,8 +187,6 @@ void PKey::Decode_Exponent(void* buffer)
+ void PKey::Generate(Straw& random, int bits, PKey& fastkey, PKey& slowkey)
+ {
+     // PG_TO_FIX
+-    fastkey;
+-    slowkey;
+ #if (0)
+     /*
+     **	Key generation consists of create a key pair and then testing the key
+diff --git a/common/rawfile.cpp b/common/rawfile.cpp
+index b0e0525..d7ff086 100644
+--- a/common/rawfile.cpp
++++ b/common/rawfile.cpp
+@@ -123,8 +123,8 @@ RawFileClass::RawFileClass(char const* filename)
+     : Rights(0)
+     , BiasStart(0)
+     , BiasLength(-1)
+-    , Handle(nullptr)
+     , Filename(nullptr)
++    , Handle(nullptr)
+ {
+     Set_Name(filename);
+ }
+diff --git a/common/rawfile.h b/common/rawfile.h
+index 5899343..573bfa2 100644
+--- a/common/rawfile.h
++++ b/common/rawfile.h
+@@ -172,8 +172,8 @@ inline RawFileClass::RawFileClass(void)
+     : Rights(READ)
+     , BiasStart(0)
+     , BiasLength(-1)
+-    , Handle(nullptr)
+     , Filename(0)
++    , Handle(nullptr)
+ {
+ }
+ 
+diff --git a/common/rndstraw.cpp b/common/rndstraw.cpp
+index b3c6c4e..a5430dd 100644
+--- a/common/rndstraw.cpp
++++ b/common/rndstraw.cpp
+@@ -108,7 +108,9 @@ void RandomStraw::Reset(void)
+ {
+     SeedBits = 0;
+     Current = 0;
+-    memset(Random, '\0', sizeof(Random));
++    for (size_t i = 0; i < sizeof(Random) / sizeof(Random[0]); i++) {
++        Random[i] = RandomClass();
++    }
+ }
+ 
+ /***********************************************************************************************
+@@ -210,7 +212,7 @@ void RandomStraw::Seed_Byte(char seed)
+  *=============================================================================================*/
+ void RandomStraw::Seed_Short(short seed)
+ {
+-    for (int index = 0; index < (sizeof(seed) * CHAR_BIT); index++) {
++    for (int index = 0; index < ((int)sizeof(seed) * CHAR_BIT); index++) {
+         Seed_Bit(seed);
+         seed >>= 1;
+     }
+@@ -232,7 +234,7 @@ void RandomStraw::Seed_Short(short seed)
+  *=============================================================================================*/
+ void RandomStraw::Seed_Long(int seed)
+ {
+-    for (int index = 0; index < (sizeof(seed) * CHAR_BIT); index++) {
++    for (int index = 0; index < ((int)sizeof(seed) * CHAR_BIT); index++) {
+         Seed_Bit(seed);
+         seed >>= 1;
+     }
+@@ -260,7 +262,7 @@ void RandomStraw::Scramble_Seed(void)
+ {
+     SHAEngine sha;
+ 
+-    for (int index = 0; index < sizeof(Random); index++) {
++    for (int index = 0; index < (int)sizeof(Random); index++) {
+         char digest[20];
+ 
+         sha.Hash(&Random[0], sizeof(Random));
+diff --git a/common/video_sdl1.cpp b/common/video_sdl1.cpp
+index 312d304..b3d783b 100644
+--- a/common/video_sdl1.cpp
++++ b/common/video_sdl1.cpp
+@@ -471,14 +471,14 @@ public:
+ 
+     virtual void Blt(const Rect& destRect, VideoSurface* src, const Rect& srcRect, bool mask)
+     {
+-        SDL_Rect srcRectSDL = {srcRect.X, srcRect.Y, srcRect.Width, srcRect.Height};
+-        SDL_Rect destRectSDL = {destRect.X, destRect.Y, destRect.Width, destRect.Height};
++        SDL_Rect srcRectSDL = {Sint16(srcRect.X), Sint16(srcRect.Y), Uint16(srcRect.Width), Uint16(srcRect.Height)};
++        SDL_Rect destRectSDL = {Sint16(destRect.X), Sint16(destRect.Y), Uint16(destRect.Width), Uint16(destRect.Height)};
+         SDL_BlitSurface(((VideoSurfaceSDL1*)src)->surface, &srcRectSDL, surface, &destRectSDL);
+     }
+ 
+     virtual void FillRect(const Rect& rect, unsigned char color)
+     {
+-        SDL_Rect rectSDL = {rect.X, rect.Y, rect.Width, rect.Height};
++        SDL_Rect rectSDL = {Sint16(rect.X), Sint16(rect.Y), Uint16(rect.Width), Uint16(rect.Height)};
+         SDL_FillRect(surface, &rectSDL, color);
+     }
+ 
+diff --git a/common/vqaloader.h b/common/vqaloader.h
+index 4fc285d..74abd61 100644
+--- a/common/vqaloader.h
++++ b/common/vqaloader.h
+@@ -45,12 +45,9 @@ typedef void (*UnVQFuncPtr)(uint8_t*, uint8_t*, uint8_t*, unsigned, unsigned, un
+ #define CHUNK_WVQA MAKE_CHUNK('W', 'V', 'Q', 'A')
+ 
+ // name (vqa encoder name and date string) chunk.
+-#define CHUNK_NAME                                                                                                     \
+-    MAKE_CHUNK('N',                                                                                                    \
+-               'A',                                                                                                    \
+-               'M',                                                                                                    \
+-               'E') // Standard IFF Name chunk used in Poly,BR and LOL game VQA's, poly contains the string    \
+-                            // "Generated by BuildVQA 3.9 (03/03/95)"
++// Standard IFF Name chunk used in Poly,BR and LOL game VQA's, poly contains the string
++// "Generated by BuildVQA 3.9 (03/03/95)"
++#define CHUNK_NAME MAKE_CHUNK('N', 'A', 'M', 'E')
+ 
+ // sound chunks.
+ #define CHUNK_SND0 MAKE_CHUNK('S', 'N', 'D', '0') // PCM Audio
+@@ -117,12 +114,8 @@ typedef void (*UnVQFuncPtr)(uint8_t*, uint8_t*, uint8_t*, unsigned, unsigned, un
+ #define CHUNK_VQFL MAKE_CHUNK('V', 'Q', 'F', 'L') // Vector Quantized Frame Loop used in LOL3 and BR
+ #define CHUNK_CBFZ MAKE_CHUNK('C', 'B', 'F', 'Z')
+ 
+-#define CHUNK_CAP0                                                                                                     \
+-    MAKE_CHUNK(                                                                                                        \
+-        'C',                                                                                                           \
+-        'A',                                                                                                           \
+-        'P',                                                                                                           \
+-        '0') // Isn't in any VQA's, present in early TD code, captions(subtitles) where in there compressed with LCW
++// Isn't in any VQA's, present in early TD code, captions(subtitles) where in there compressed with LCW
++#define CHUNK_CAP0 MAKE_CHUNK('C', 'A', 'P', '0')
+ #define CHUNK_EVA0 MAKE_CHUNK('E', 'V', 'A', '0') // Present in early TD code, purpose unknown
+ 
+ // Not found in any VQAs
+diff --git a/common/wwstd.h b/common/wwstd.h
+index c78362e..2869bf9 100644
+--- a/common/wwstd.h
++++ b/common/wwstd.h
+@@ -250,7 +250,7 @@ inline static void _splitpath(const char* path, char* drive, char* dir, char* fn
+         return;
+     }
+ 
+-    for (int i = 0; i < strlen(path); i++) {
++    for (int i = 0; i < (int)strlen(path); i++) {
+         if (path[i] == '.') {
+             strcpy(ext, path + i + 1);
+             break;
+diff --git a/redalert/CMakeLists.txt b/redalert/CMakeLists.txt
+index b81f06c..664831d 100644
+--- a/redalert/CMakeLists.txt
++++ b/redalert/CMakeLists.txt
+@@ -266,7 +266,7 @@ if(BUILD_VANILLARA)
+         target_link_options(VanillaRA PRIVATE /subsystem:windows /ENTRY:mainCRTStartup)
+     endif()
+     if(${CMAKE_SYSTEM_NAME} MATCHES "m68k-atari-mint")
+-        target_link_options(VanillaRA PRIVATE -Wl,-stack,512k -Wl,--msuper-memory -Wl,-Map,../vanillara.map)
++        target_link_options(VanillaRA PRIVATE -liio -Wl,-stack,512k -Wl,--msuper-memory -Wl,-Map,../vanillara.map)
+     endif()
+     if(WIN32 AND NOT MSVC)
+         set_target_properties(VanillaRA PROPERTIES LINK_FLAGS "-mwindows")
+diff --git a/redalert/cell.cpp b/redalert/cell.cpp
+index e3067af..cd62cba 100644
+--- a/redalert/cell.cpp
++++ b/redalert/cell.cpp
+@@ -2363,9 +2363,15 @@ bool CellClass::Goodie_Check(FootClass* object)
+                                     ucount += hptr->QuantityV(j);
+                                 }
+                                 int bcount = 0;
++#ifdef FIXIT_ANTS
++                                for (j = 0; j < STRUCT_COUNT - 3; j++) {
++                                    bcount += hptr->QuantityB(j);
++                                }
++#else
+                                 for (j = 0; j < STRUCT_COUNT; j++) {
+                                     bcount += hptr->QuantityB(j);
+                                 }
++#endif
+                                 ucount += bcount / 2; // weight buildings less
+                                 minunits = min(minunits, ucount);
+                             }
+diff --git a/redalert/debug.cpp b/redalert/debug.cpp
+index 4f1557a..a979b76 100644
+--- a/redalert/debug.cpp
++++ b/redalert/debug.cpp
+@@ -347,9 +347,9 @@ void Debug_Key(unsigned input)
+  * HISTORY:                                                                                    *
+  *   07/18/1996 JLB : Created.                                                                 *
+  *=============================================================================================*/
++#if 0
+ static char const* Bench_Time(BenchType btype)
+ {
+-#if 0
+     static char buffer[32];
+ 
+     int rootcount = Benches[BENCH_GAME_FRAME].Count();
+@@ -368,8 +368,8 @@ static char const* Bench_Time(BenchType btype)
+         percent = 99;
+     sprintf(buffer, "%-2d%% %7d", percent, time);
+     return (buffer);
+-#endif
+ }
++#endif
+ 
+ /***********************************************************************************************
+  * Benchmarks -- Display the performance tracking benchmarks.                                  *
+diff --git a/redalert/defines.h b/redalert/defines.h
+index d89dda7..ebdf855 100644
+--- a/redalert/defines.h
++++ b/redalert/defines.h
+@@ -844,7 +844,7 @@ typedef enum ThemeType : char
+     THEME_UNDER3,
+     THEME_VR2,
+ 
+-#ifdef FIXIT_CSII //	checked - ajw 9/28/98
++#ifdef FIXIT_CSII /*	checked - ajw 9/28/98 */
+     THEME_BOG,
+     THEME_FLOAT_V2,
+     THEME_GLOOM,
+@@ -1565,7 +1565,7 @@ typedef enum InfantryType : char
+     INFANTRY_DELPHI,   // Agent "Delphi"
+     INFANTRY_CHAN,     // Dr. Chan
+ 
+-#ifdef FIXIT_CSII   //	checked - ajw 9/28/98                                                                           \
++#ifdef FIXIT_CSII   /* checked - ajw 9/28/98 */
+                     // CounterStrike II only!
+     INFANTRY_SHOCK, // Shock Trooper
+     INFANTRY_MECHANIC,
+@@ -1611,13 +1611,13 @@ typedef enum UnitType : char
+     UNIT_ANT3, // Warrior ant.
+ #endif
+ 
+-#ifdef FIXIT_CSII           //	checked - ajw 9/28/98                                                                   \
++#ifdef FIXIT_CSII           /* checked - ajw 9/28/98 */
+                             // CS II ONLY!
+     UNIT_CHRONOTANK,        // Chrono-shifting tank
+     UNIT_TESLATANK,         // Tesla-equipped tank
+     UNIT_MAD,               // Timequake tank
+     UNIT_DEMOTRUCK,         // Jihad truck
+-#ifdef FIXIT_PHASETRANSPORT //	checked - ajw 9/28/98
++#ifdef FIXIT_PHASETRANSPORT /*	checked - ajw 9/28/98 */
+     UNIT_PHASE,             // cloaking APC for special missions
+ #endif
+ #endif
+@@ -1656,11 +1656,11 @@ typedef enum VesselType : char
+     VESSEL_CA,         // Heavy weapon patrol craft
+     VESSEL_TRANSPORT,  // Unit transporter
+     VESSEL_PT,         // Light weapon patrol craft
+-#ifdef FIXIT_CSII      //	checked - ajw 9/28/98                                                                        \
++#ifdef FIXIT_CSII      /*	checked - ajw 9/28/98 */
+                        // CS II ONLY
+     VESSEL_MISSILESUB, // Missile-equipped submarine
+ #endif
+-#ifdef FIXIT_CARRIER //	checked - ajw 9/28/98
++#ifdef FIXIT_CARRIER /*	checked - ajw 9/28/98 */
+     VESSEL_CARRIER,
+ #endif
+ 
+@@ -2664,7 +2664,7 @@ typedef enum WarheadType : char
+     WARHEAD_TESLA,        // Electrocution warhead for infantrymen
+     WARHEAD_DOG,          // Slavering attack beast mauling infantryman
+     WARHEAD_NUKE,         // Nuclear missile
+-#ifdef FIXIT_CSII         //	checked - ajw 9/28/98
++#ifdef FIXIT_CSII         /*	checked - ajw 9/28/98 */
+     WARHEAD_MECHANICAL,   // repair weapon for vehicles
+ #endif
+     WARHEAD_COUNT,
+@@ -2720,7 +2720,7 @@ typedef enum WeaponType : char
+     WEAPON_MANDIBLE,
+ #endif
+ 
+-#ifdef FIXIT_CSII //	checked - ajw 9/28/98
++#ifdef FIXIT_CSII /*	checked - ajw 9/28/98 */
+     WEAPON_PORTATESLA,
+     WEAPON_GOODWRENCH,
+     WEAPON_SUBSCUD,
+@@ -2728,7 +2728,7 @@ typedef enum WeaponType : char
+     WEAPON_APTUSK,
+     WEAPON_DEMOCHARGE,
+ #endif
+-#ifdef FIXIT_CARRIER //	checked - ajw 9/28/98
++#ifdef FIXIT_CARRIER /*	checked - ajw 9/28/98 */
+     WEAPON_CARRIER,
+ #endif
+ 
+@@ -3305,7 +3305,7 @@ typedef enum VocType : short
+     VOC_RAMBO2,
+     VOC_RAMBO3,
+ 
+-#ifdef FIXIT_CSII //	checked - ajw 9/28/98
++#ifdef FIXIT_CSII /*	checked - ajw 9/28/98 */
+     VOC_MECHYES1,
+     VOC_MECHHOWDY1,
+     VOC_MECHRISE1,
+diff --git a/redalert/ioobj.cpp b/redalert/ioobj.cpp
+index 66c5fdb..a41446e 100644
+--- a/redalert/ioobj.cpp
++++ b/redalert/ioobj.cpp
+@@ -182,7 +182,7 @@ void TeamClass::Decode_Pointers(void)
+     */
+     if (Member) {
+         Member = (FootClass*)As_Techno(TARGET_SAFE_CAST(Member), false);
+-        assert(Member != NULL);
++        assert(Member != nullptr);
+     }
+ }
+ 
+@@ -867,6 +867,6 @@ void ObjectClass::Decode_Pointers(void)
+ {
+     if (Next) {
+         Next = As_Object(TARGET_SAFE_CAST(Next), false);
+-        assert(Next != NULL);
++        assert(Next != nullptr);
+     }
+ }
+diff --git a/redalert/trigtype.cpp b/redalert/trigtype.cpp
+index f54c9a4..d44c39a 100644
+--- a/redalert/trigtype.cpp
++++ b/redalert/trigtype.cpp
+@@ -408,10 +408,10 @@ bool TriggerTypeClass::Edit(void)
+     PBubble_Sort(&action1list[0], action1list.Count());
+     PBubble_Sort(&action2list[0], action2list.Count());
+ 
+-    if (Action1.Action == ACTION_NONE)
++    if (Action1.Action == TACTION_NONE)
+         Action1.Action = TACTION_FIRST;
+     action1list.Set_Selected_Index(&ActionChoices[Action1.Action]);
+-    if (Action2.Action == ACTION_NONE)
++    if (Action2.Action == TACTION_NONE)
+         Action2.Action = TACTION_FIRST;
+     action2list.Set_Selected_Index(&ActionChoices[Action2.Action]);
+ 
+diff --git a/tiberiandawn/CMakeLists.txt b/tiberiandawn/CMakeLists.txt
+index 3c2e32f..6ea2a0e 100644
+--- a/tiberiandawn/CMakeLists.txt
++++ b/tiberiandawn/CMakeLists.txt
+@@ -242,7 +242,7 @@ if(BUILD_VANILLATD)
+         target_link_options(VanillaTD PRIVATE /subsystem:windows /ENTRY:mainCRTStartup)
+     endif()
+     if(${CMAKE_SYSTEM_NAME} MATCHES "m68k-atari-mint")
+-        target_link_options(VanillaTD PRIVATE -Wl,-stack,512k -Wl,--msuper-memory -Wl,-Map,../vanillatd.map)
++        target_link_options(VanillaTD PRIVATE -liio -Wl,-stack,512k -Wl,--msuper-memory -Wl,-Map,../vanillatd.map)
+     endif()
+     if(WIN32 AND NOT MSVC)
+         set_target_properties(VanillaTD PROPERTIES LINK_FLAGS "-mwindows")
+diff --git a/tiberiandawn/netdlg.cpp b/tiberiandawn/netdlg.cpp
+index 9462e0c..516f166 100644
+--- a/tiberiandawn/netdlg.cpp
++++ b/tiberiandawn/netdlg.cpp
+@@ -160,9 +160,6 @@ static int Net_Fake_Join_Dialog(void);
+  *=============================================================================================*/
+ bool Init_Network(void)
+ {
+-    NetNumType net;
+-    NetNodeType node;
+-
+     /*------------------------------------------------------------------------
+     This call allocates all necessary queue buffers, allocates Real-mode
+     memory, and commands IPX to start listening on the Global Channel.
+@@ -1339,7 +1336,7 @@ static int Net_Join_Dialog(void)
+         /*
+         ---------------------------- Process input ----------------------------
+         */
+-        switch (input) {
++        switch ((unsigned int)input) {
+         /*------------------------------------------------------------------
+         User clicks on a color button:
+         - If we've joined a game, don't allow a new color selection
+@@ -3222,7 +3219,7 @@ static int Net_New_Dialog(void)
+         /*
+         ---------------------------- Process input ----------------------------
+         */
+-        switch (input) {
++        switch ((unsigned int)input) {
+         /*------------------------------------------------------------------
+         New Scenario selected.
+         ------------------------------------------------------------------*/
+@@ -4275,7 +4272,7 @@ static int Net_Fake_New_Dialog(void)
+     KeyNumType input;
+ 
+     char credbuf[CREDITSBUF_MAX]; // for credit edit box
+-    int old_cred;                 // old value in credits buffer
++    // int old_cred;                 // old value in credits buffer
+     int transmit;                 // 1 = re-transmit new game options
+ 
+     int ok_timer = 0; // for timing OK button
+@@ -4343,7 +4340,7 @@ static int Net_Fake_New_Dialog(void)
+     */
+ 
+     sprintf(credbuf, "%d", MPlayerCredits);
+-    old_cred = MPlayerCredits;
++    // old_cred = MPlayerCredits;
+ 
+     /*........................................................................
+     Init other scenario parameters
+@@ -4477,7 +4474,7 @@ static int Net_Fake_New_Dialog(void)
+         /*
+         ---------------------------- Process input ----------------------------
+         */
+-        switch (input) {
++        switch ((unsigned int)input) {
+ 
+         /*------------------------------------------------------------------
+         CANCEL: send a SIGN_OFF, bail out with error code
+@@ -4804,8 +4801,8 @@ static int Net_Fake_Join_Dialog(void)
+     int d_dialog_y = ((200 * factor - d_dialog_h) / 2); // centered y-coord
+     int d_dialog_cx = d_dialog_x + (d_dialog_w / 2);    // center x-coord
+ 
+-    int d_margin1 = 10;
+-    int d_txt6_h = 15;
++    // int d_margin1 = 10;
++    // int d_txt6_h = 15;
+ 
+     int d_gamelist_w = 160 * factor;
+     int d_gamelist_h = 27 * factor;
+@@ -4878,7 +4875,7 @@ static int Net_Fake_Join_Dialog(void)
+     KeyNumType input;
+ 
+     JoinStateType joinstate = JOIN_NOTHING; // current "state" of this dialog
+-    char namebuf[MPLAYER_NAME_MAX] = {0};   // buffer for player's name
++    // char namebuf[MPLAYER_NAME_MAX] = {0};   // buffer for player's name
+     int game_index = -1;                    // index of currently-selected game
+     int join_index = -1;                    // index of game we're joining
+     int rc = 0;                             // -1 = user cancelled, 1 = New
+@@ -5053,7 +5050,7 @@ static int Net_Fake_Join_Dialog(void)
+         /*
+         ---------------------------- Process input ----------------------------
+         */
+-        switch (input) {
++        switch ((unsigned int)input) {
+ 
+         /*------------------------------------------------------------------
+         CANCEL: send a SIGN_OFF
+@@ -5127,6 +5124,7 @@ static int Net_Fake_Join_Dialog(void)
+                 gamelist.Set_Selected_Index(0);
+                 join_index = gamelist.Current_Index();
+                 parms_received = 0;
++                (void)parms_received;
+                 if (Request_To_Join(MPlayerName, join_index, &playerlist, MPlayerHouse, MPlayerColorIdx)) {
+                     joinstate = JOIN_WAIT_CONFIRM;
+                 } else {
+@@ -5465,4 +5463,4 @@ static int Net_Fake_Join_Dialog(void)
+     return (rc);
+ }
+ 
+-#endif
+\ No newline at end of file
++#endif
+diff --git a/tools/mixtool/CMakeLists.txt b/tools/mixtool/CMakeLists.txt
+index 76f2d4d..7ab2938 100644
+--- a/tools/mixtool/CMakeLists.txt
++++ b/tools/mixtool/CMakeLists.txt
+@@ -5,5 +5,5 @@ if (WIN32)
+     target_compile_definitions(vanillamix PRIVATE -DNOMINMAX)
+ endif()
+ if(${CMAKE_SYSTEM_NAME} MATCHES "m68k-atari-mint")
+-    target_link_options(vanillamix PRIVATE -Wl,-stack,512k)
++    target_link_options(vanillamix PRIVATE -liio -Wl,-stack,512k)
+ endif()
+-- 
+2.41.0
+

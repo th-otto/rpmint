@@ -1,14 +1,26 @@
-Index: Python-3.6.0/Lib/test/test_subprocess.py
-===================================================================
---- Python-3.6.0.orig/Lib/test/test_subprocess.py
-+++ Python-3.6.0/Lib/test/test_subprocess.py
-@@ -1013,7 +1013,8 @@ class ProcessTestCase(BaseTestCase):
-         self.assertIn("0.0001", str(c.exception))  # For coverage of __str__.
-         # Some heavily loaded buildbots (sparc Debian 3.x) require this much
-         # time to start.
--        self.assertEqual(p.wait(timeout=3), 0)
-+        # OBS might require even more
-+        self.assertEqual(p.wait(timeout=10), 0)
+From 8d5bb266f64e50257f57827663e2e35fd97a16ed Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 15 Apr 2024 09:41:56 +0200
+Subject: [PATCH 06/22] python3-subprocess-raise-timeout.patch
+
+---
+ Lib/test/test_subprocess.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/Lib/test/test_subprocess.py b/Lib/test/test_subprocess.py
+index 7f7d842..f2ca4f6 100644
+--- a/Lib/test/test_subprocess.py
++++ b/Lib/test/test_subprocess.py
+@@ -280,7 +280,8 @@ class ProcessTestCase(BaseTestCase):
+                      "time.sleep(3600)"],
+                     # Some heavily loaded buildbots (sparc Debian 3.x) require
+                     # this much time to start and print.
+-                    timeout=3)
++                    # OBS might require even more
++                    timeout=10)
+             self.fail("Expected TimeoutExpired.")
+         self.assertEqual(c.exception.output, b'BDFL')
  
-     def test_wait_endtime(self):
-         """Confirm that the deprecated endtime parameter warns."""
+-- 
+2.41.0
+

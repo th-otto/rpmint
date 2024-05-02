@@ -13,6 +13,7 @@ PATCHES="
 patches/sdl_mixer/sdl_mixer-config.patch
 patches/sdl_mixer/sdl_mixer-amigaos.patch
 patches/sdl_mixer/sdl_mixer-find_lib.mingw.patch
+patches/sdl_mixer/sdl_mixer_no-sigint.patch
 "
 # already applied in newer versions
 DISABLED_PATCHES="
@@ -64,7 +65,7 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -Wl,--msuper-memory" \
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 
 	: hack_lto_cflags

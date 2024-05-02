@@ -1,0 +1,262 @@
+From 429fa9a2ef66a68a28adadc0affe83f696a985ea Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 21 Mar 2024 14:04:36 +0100
+Subject: [PATCH 29/40] Fix warnings "arithmetic on NULL"
+
+---
+ redalert/cell.cpp         |  6 +++---
+ redalert/mapedplc.cpp     |  4 ++--
+ redalert/mapedsel.cpp     |  6 +++---
+ redalert/object.cpp       |  4 ++--
+ redalert/team.cpp         | 20 ++++++++++----------
+ redalert/vessel.cpp       |  2 +-
+ tiberiandawn/mapedplc.cpp |  4 ++--
+ tiberiandawn/mapedsel.cpp |  6 +++---
+ 8 files changed, 26 insertions(+), 26 deletions(-)
+
+diff --git a/redalert/cell.cpp b/redalert/cell.cpp
+index 744ace5..e3067af 100644
+--- a/redalert/cell.cpp
++++ b/redalert/cell.cpp
+@@ -396,8 +396,8 @@ void CellClass::Redraw_Objects(bool forced)
+ #else
+                 optr->Mark(MARK_CHANGE);
+ #endif
+-                if (optr->Next != NULL && !optr->Next->IsActive) {
+-                    optr->Next = NULL;
++                if (optr->Next != nullptr && !optr->Next->IsActive) {
++                    optr->Next = nullptr;
+                 }
+                 optr = optr->Next;
+             }
+@@ -604,7 +604,7 @@ void CellClass::Occupy_Down(ObjectClass* object)
+     */
+     if (object->What_Am_I() == RTTI_BUILDING && Cell_Occupier()) {
+         optr = Cell_Occupier();
+-        while (optr->Next != NULL) {
++        while (optr->Next != nullptr) {
+             assert(optr != object);
+             assert(optr->What_Am_I() != RTTI_BUILDING);
+             optr = optr->Next;
+diff --git a/redalert/mapedplc.cpp b/redalert/mapedplc.cpp
+index a9781c4..776ad8f 100644
+--- a/redalert/mapedplc.cpp
++++ b/redalert/mapedplc.cpp
+@@ -942,13 +942,13 @@ int MapEditClass::Place_Object(void)
+         if (Is_Spot_Free(Pixel_To_Coord(Get_Mouse_X(), Get_Mouse_Y()))) {
+             obj_coord = Closest_Free_Spot(Pixel_To_Coord(Get_Mouse_X(), Get_Mouse_Y()));
+         } else {
+-            obj_coord = NULL;
++            obj_coord = 0;
+         }
+ 
+         /*
+         **	No free spots; don't place the object
+         */
+-        if (obj_coord == NULL) {
++        if (obj_coord == 0) {
+             // ScenarioInit--;
+             return (-1);
+         }
+diff --git a/redalert/mapedsel.cpp b/redalert/mapedsel.cpp
+index cb555aa..64935c2 100644
+--- a/redalert/mapedsel.cpp
++++ b/redalert/mapedsel.cpp
+@@ -464,7 +464,7 @@ int MapEditClass::Move_Grabbed_Object(void)
+             */
+             ((InfantryClass*)GrabbedObject)->Clear_Occupy_Bit(GrabbedObject->Coord);
+         } else {
+-            new_coord = NULL;
++            new_coord = 0;
+         }
+ 
+     } else {
+@@ -483,10 +483,10 @@ int MapEditClass::Move_Grabbed_Object(void)
+         **	Try to place object at new coordinate
+         */
+         if (GrabbedObject->Can_Enter_Cell(Coord_Cell(new_coord)) != MOVE_OK) {
+-            new_coord = NULL;
++            new_coord = 0;
+         }
+     }
+-    if (new_coord != NULL) {
++    if (new_coord != 0) {
+ 
+         /*
+         ** If this object is part of the AI's Base list, change the coordinate
+diff --git a/redalert/object.cpp b/redalert/object.cpp
+index bc08208..529044c 100644
+--- a/redalert/object.cpp
++++ b/redalert/object.cpp
+@@ -1335,7 +1335,7 @@ void ObjectClass::Debug_Dump(MonoClass* mono) const
+ {
+     mono->Set_Cursor(1, 1);
+     mono->Printf("%-18.18s", Text_String(Full_Name()));
+-    if (Next != NULL) {
++    if (Next != nullptr) {
+         mono->Set_Cursor(20, 5);
+         mono->Printf("%08X", Next->As_Target());
+     }
+@@ -2451,4 +2451,4 @@ BuildingClass* ObjectTypeClass::Who_Can_Build_Me(bool intheory, bool legal, Hous
+         }
+     }
+     return (anybuilding);
+-}
+\ No newline at end of file
++}
+diff --git a/redalert/team.cpp b/redalert/team.cpp
+index 287c0ef..a4b902b 100644
+--- a/redalert/team.cpp
++++ b/redalert/team.cpp
+@@ -98,7 +98,7 @@ static inline bool _Is_It_Breathing(FootClass const* object)
+     **	If the object is not present or appears to be dead, then it
+     **	certainly isn't an active member of the team.
+     */
+-    if (object == NULL || !object->IsActive || object->Strength == 0)
++    if (object == nullptr || !object->IsActive || object->Strength == 0)
+         return (false);
+ 
+     /*
+@@ -292,7 +292,7 @@ void TeamClass::operator delete(void* ptr)
+ TeamClass::~TeamClass(void)
+ {
+     if (GameActive && Class.Is_Valid()) {
+-        while (Member != NULL) {
++        while (Member != nullptr) {
+             Remove(Member);
+         }
+         Class->Number--;
+@@ -306,7 +306,7 @@ TeamClass::~TeamClass(void)
+             if (Trigger->AttachCount == 0) {
+                 delete (TriggerClass*)Trigger;
+             }
+-            Trigger = NULL;
++            Trigger = nullptr;
+         }
+     }
+ }
+@@ -677,7 +677,7 @@ void TeamClass::AI(void)
+     **	If there are no members of the team and the team has reached
+     **	full strength at one time, then delete the team.
+     */
+-    if (Member == NULL && IsHasBeen) {
++    if (Member == nullptr && IsHasBeen) {
+ 
+         /*
+         **	If this team had no members (i.e., the team object wasn't terminated by some
+@@ -718,7 +718,7 @@ void TeamClass::AI(void)
+                 break;
+ 
+             case TMISSION_MOVE:
+-                if ((unsigned)mission->Data.Value < WAYPT_COUNT && Member != NULL) {
++                if ((unsigned)mission->Data.Value < WAYPT_COUNT && Member != nullptr) {
+                     FootClass* leader = Fetch_A_Leader();
+                     CELL movecell = Scen.Waypoint[mission->Data.Value];
+                     if (!Is_Leaving_Map()) {
+@@ -757,7 +757,7 @@ void TeamClass::AI(void)
+     /*
+     **	Perform mission of the team. This depends on the mission list.
+     */
+-    if (Member != NULL && IsMoving && !IsReforming && !IsUnderStrength) {
++    if (Member != nullptr && IsMoving && !IsReforming && !IsUnderStrength) {
+ 
+         /*
+         ** If the current Target has been dealt with but the mission target
+@@ -912,7 +912,7 @@ bool TeamClass::Add(FootClass* obj)
+     **	Actually add the object to the team.
+     */
+     Quantity[typeindex]++;
+-    obj->IsInitiated = (Member == NULL);
++    obj->IsInitiated = (Member == nullptr);
+     obj->Member = Member;
+     Member = obj;
+     obj->Team = this;
+@@ -1144,7 +1144,7 @@ bool TeamClass::Remove(FootClass* obj, int typeindex)
+     **	team captain. Mark the center location of the team as invalid so that
+     **	it will be centered around the captain.
+     */
+-    if (!initiated && Member != NULL) {
++    if (!initiated && Member != nullptr) {
+         Member->IsInitiated = true;
+         Zone = TARGET_NONE;
+     }
+@@ -1639,7 +1639,7 @@ void TeamClass::Coordinate_Attack(void)
+     **	can "attack" an empty cell and this is perfectly ok (paratrooper drop and parabombs
+     **	are prime examples).
+     */
+-    if (Is_Target_Cell(Target) && Member != NULL && Fetch_A_Leader()->What_Am_I() != RTTI_AIRCRAFT) {
++    if (Is_Target_Cell(Target) && Member != nullptr && Fetch_A_Leader()->What_Am_I() != RTTI_AIRCRAFT) {
+         CellClass* cellptr = &Map[As_Cell(Target)];
+         TemplateType tt = cellptr->TType;
+         if (cellptr->Cell_Object()) {
+@@ -2671,7 +2671,7 @@ int TeamClass::TMission_Formation(void)
+  *=============================================================================================*/
+ int TeamClass::TMission_Attack(void)
+ {
+-    if (!Target_Legal(MissionTarget) && Member != NULL) {
++    if (!Target_Legal(MissionTarget) && Member != nullptr) {
+         TeamMissionClass const* mission = &Class->MissionList[CurrentMission];
+ 
+         /*
+diff --git a/redalert/vessel.cpp b/redalert/vessel.cpp
+index 3414f74..5c3c1d7 100644
+--- a/redalert/vessel.cpp
++++ b/redalert/vessel.cpp
+@@ -718,7 +718,7 @@ void VesselClass::Per_Cell_Process(PCPType why)
+                 CELL cell = Coord_Cell(Adjacent_Cell(Center_Coord(), face));
+                 SmartPtr<BuildingClass> whom;
+                 whom = Map[cell].Cell_Building();
+-                if (whom != NULL && ((*whom == STRUCT_SHIP_YARD) || (*whom == STRUCT_SUB_PEN))) {
++                if (whom != nullptr && ((*whom == STRUCT_SHIP_YARD) || (*whom == STRUCT_SUB_PEN))) {
+ 
+                     // MBL 04.27.2020: Make only audible to the correct player
+                     // if (IsOwnedByPlayer) Speak(VOX_REPAIRING);
+diff --git a/tiberiandawn/mapedplc.cpp b/tiberiandawn/mapedplc.cpp
+index c32f7ff..4743621 100644
+--- a/tiberiandawn/mapedplc.cpp
++++ b/tiberiandawn/mapedplc.cpp
+@@ -1171,13 +1171,13 @@ int MapEditClass::Place_Object(void)
+         if (Is_Spot_Free(Pixel_To_Coord(Get_Mouse_X(), Get_Mouse_Y()))) {
+             obj_coord = Closest_Free_Spot(Pixel_To_Coord(Get_Mouse_X(), Get_Mouse_Y()));
+         } else {
+-            obj_coord = NULL;
++            obj_coord = 0;
+         }
+ 
+         /*
+         ................ No free spots; don't place the object ................
+         */
+-        if (obj_coord == NULL) {
++        if (obj_coord == 0) {
+             // ScenarioInit--;
+             return (-1);
+         }
+diff --git a/tiberiandawn/mapedsel.cpp b/tiberiandawn/mapedsel.cpp
+index 1212f2c..8812de4 100644
+--- a/tiberiandawn/mapedsel.cpp
++++ b/tiberiandawn/mapedsel.cpp
+@@ -481,7 +481,7 @@ int MapEditClass::Move_Grabbed_Object(void)
+             //			Map[Coord_Cell(GrabbedObject->Coord)].Flag.Composite &=
+             //				~(1 << CellClass::Spot_Index(GrabbedObject->Coord));
+         } else {
+-            new_coord = NULL;
++            new_coord = 0;
+         }
+ 
+     } else {
+@@ -500,10 +500,10 @@ int MapEditClass::Move_Grabbed_Object(void)
+         ................ Try to place object at new coordinate ................
+         */
+         if (GrabbedObject->Can_Enter_Cell(Coord_Cell(new_coord)) != MOVE_OK) {
+-            new_coord = NULL;
++            new_coord = 0;
+         }
+     }
+-    if (new_coord != NULL) {
++    if (new_coord != 0) {
+         /*
+         ** If this object is part of the AI's Base list, change the coordinate
+         ** in the Base's Node list.
+-- 
+2.41.0
+

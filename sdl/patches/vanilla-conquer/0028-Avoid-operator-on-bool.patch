@@ -1,0 +1,62 @@
+From d14c544b9f59c9a9c0f0f3de8c9a2189c5a61d87 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 21 Mar 2024 13:56:38 +0100
+Subject: [PATCH 28/40] Avoid operator ++ on bool
+
+---
+ common/vqatask.cpp      | 2 +-
+ redalert/ending.cpp     | 2 +-
+ tiberiandawn/ending.cpp | 4 ++--
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/common/vqatask.cpp b/common/vqatask.cpp
+index 390558f..28f9dc5 100644
+--- a/common/vqatask.cpp
++++ b/common/vqatask.cpp
+@@ -117,7 +117,7 @@ VQAErrorType VQA_Play(VQAHandle* handle, VQAPlayMode mode)
+             }
+ 
+             if (data->Flags & VQA_DATA_FLAG_VIDEO_MEMORY_SET) {
+-                ++VQAMovieDone;
++                VQAMovieDone = true;
+             } else {
+                 rc = (VQAErrorType)VQA_LoadFrame(handle);
+ 
+diff --git a/redalert/ending.cpp b/redalert/ending.cpp
+index 8eef57c..81255a0 100644
+--- a/redalert/ending.cpp
++++ b/redalert/ending.cpp
+@@ -105,7 +105,7 @@ void Nod_Ending(void)
+     bool printedtext = false;
+     while (!done) {
+         if (!printedtext && !Is_Sample_Playing(kanefinl)) {
+-            printedtext++;
++            printedtext = true;
+             Alloc_Object(new ScorePrintClass(Text_String(TXT_SEL_TARGET), 0, 180, _tanpal));
+             mouseshown = true;
+             Show_Mouse();
+diff --git a/tiberiandawn/ending.cpp b/tiberiandawn/ending.cpp
+index 8c7a036..f622399 100644
+--- a/tiberiandawn/ending.cpp
++++ b/tiberiandawn/ending.cpp
+@@ -159,7 +159,7 @@ void Nod_Ending(void)
+     bool printedtext = false;
+     while (!done) {
+         if (!printedtext && !Is_Sample_Playing(kanefinl)) {
+-            printedtext++;
++            printedtext = true;
+             Alloc_Object(new ScorePrintClass(Text_String(TXT_SEL_TARGET), 0, 180, _tanpal));
+             mouseshown = true;
+             Show_Mouse();
+@@ -177,7 +177,7 @@ void Nod_Ending(void)
+                     int mousex = Keyboard->MouseQX;
+                     int mousey = Keyboard->MouseQY;
+                     if (mousey >= 22 * factor && mousey <= 177 * factor) {
+-                        done++;
++                        done = true;
+                         if (mousex < 160 * factor && mousey < 100 * factor)
+                             selection = 2;
+                         if (mousex < 160 * factor && mousey >= 100 * factor)
+-- 
+2.41.0
+

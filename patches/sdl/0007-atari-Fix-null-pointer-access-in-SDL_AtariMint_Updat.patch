@@ -1,0 +1,69 @@
+From 1ebd1a18db6245edcbfeade471a00fc57fa7b4e5 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 28 Mar 2024 11:08:40 +0100
+Subject: [PATCH 2/3] atari: Fix null pointer access in
+ SDL_AtariMint_UpdateAudio
+
+That function is unconditionally called from the timer, but
+SDL_MintAudio_device is not set if audio has not been initialized, or
+the null device is used.
+---
+ src/audio/dummy/SDL_dummyaudio.c | 7 ++++++-
+ src/audio/mint/SDL_mintaudio.c   | 9 +++++++++
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/src/audio/dummy/SDL_dummyaudio.c b/src/audio/dummy/SDL_dummyaudio.c
+index 484b50d4..6c99017a 100644
+--- a/src/audio/dummy/SDL_dummyaudio.c
++++ b/src/audio/dummy/SDL_dummyaudio.c
+@@ -150,7 +150,12 @@ static int DUMMYAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
+ 	this->hidden->write_delay =
+ 	               (Uint32) ((((float) spec->size) / bytes_per_sec) * 1000.0f);
+ 
++#ifdef SDL_THREADS_DISABLED
++	/* We don't use threaded audio */
++	return 1;
++#else
+ 	/* We're ready to rock and roll. :-) */
+-	return(0);
++	return 0;
++#endif
+ }
+ 
+diff --git a/src/audio/mint/SDL_mintaudio.c b/src/audio/mint/SDL_mintaudio.c
+index 61ab2676..c274328a 100644
+--- a/src/audio/mint/SDL_mintaudio.c
++++ b/src/audio/mint/SDL_mintaudio.c
+@@ -78,6 +78,9 @@ int SDL_MintAudio_InitBuffers(SDL_AudioSpec *spec)
+ 	int dmabuflen;
+ 	SDL_AudioDevice *this = SDL_MintAudio_device;
+ 
++	if (!this)
++		return 0;
++
+ 	SDL_CalculateAudioSpec(spec);
+ 	MINTAUDIO_audiosize = spec->size * MAX_DMA_BUF;
+ 
+@@ -118,6 +121,9 @@ void SDL_MintAudio_FreeBuffers(void)
+ {
+ 	SDL_AudioDevice *this = SDL_MintAudio_device;
+ 
++	if (!this)
++		return;
++
+ 	if (MINTAUDIO_fastrambuf) {
+ 		Mfree(MINTAUDIO_fastrambuf);
+ 		MINTAUDIO_fastrambuf = NULL;
+@@ -134,6 +140,9 @@ void SDL_AtariMint_UpdateAudio(void)
+ {
+ 	SDL_AudioDevice *this = SDL_MintAudio_device;
+ 
++	if (!this)
++		return;
++
+ 	++SDL_MintAudio_num_upd;
+ 
+ 	/* No interrupt triggered? still playing current buffer */
+-- 
+2.41.0
+

@@ -1,0 +1,25 @@
+From e6ac94203d39039bc65c32d847c255bace0ed702 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Wed, 20 Mar 2024 10:38:30 +0100
+Subject: [PATCH 23/40] Fix TFixedHeapClass::Free not returning a value
+
+---
+ tiberiandawn/heap.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tiberiandawn/heap.h b/tiberiandawn/heap.h
+index 130eac8..6f1441f 100644
+--- a/tiberiandawn/heap.h
++++ b/tiberiandawn/heap.h
+@@ -139,7 +139,7 @@ public:
+     };
+     virtual int Free(T* pointer)
+     {
+-        FixedHeapClass::Free(pointer);
++        return FixedHeapClass::Free(pointer);
+     };
+ 
+ protected:
+-- 
+2.41.0
+

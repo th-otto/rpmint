@@ -1,0 +1,24 @@
+From be83a6a20511bdfd230b26a1b1f2505c76962108 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Mar 2024 14:53:00 +0100
+Subject: [PATCH 07/40] Avoid use of ftime() and fix overflow of unsigned int
+
+ftime() is an obsolete interface, and <sys/timeb.h> may not be present on all platforms.
+Also, multiplying a time_t by 1000 will overflow the range of an unsigned 32-bit int.
+---
+ common/connect.cpp | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
+
+diff --git a/common/connect.cpp b/common/connect.cpp
+index 191336b..3a3f5c4 100644
+--- a/common/connect.cpp
++++ b/common/connect.cpp
+@@ -227,8 +227,6 @@ int ConnectionClass::Send_Packet(void* buf, int buflen, int ack_req)
+ 
+     SwapCommHeaderType((CommHeaderType*)PacketBuf);
+ 
+-    SwapCommHeaderType((CommHeaderType*)PacketBuf);
+-
+     /*------------------------------------------------------------------------
+     Now build the packet
+     ------------------------------------------------------------------------*/

@@ -4,12 +4,12 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=blobwars
-VERSION=-1.14
+VERSION=-2.00
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
 
-PATCHES="patches/${PACKAGENAME}/${PACKAGENAME}.patch"
+PATCHES=""
 
 BINFILES="
 ${PACKAGENAME}
@@ -26,7 +26,7 @@ export CROSS_PREFIX=${TARGET}-
 STACKSIZE="-Wl,-stack,512k"
 
 for CPU in ${ALL_CPUS}; do
-	cd "$MINT_BUILD_DIR/src"
+	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
@@ -37,12 +37,18 @@ for CPU in ${ALL_CPUS}; do
 
 	${MAKE} clean >/dev/null
 
-	cd ..
-	
-	cp -pr Readme_MorphOS "${THISPKG_DIR}/README"
-	cp -pr blobwars.pak doc locale "${THISPKG_DIR}"
-
 done
 
+${MAKE} buildpak || exit 1
+
+: cp -pr Readme_MorphOS "${THISPKG_DIR}/README"
+cp -pr blobwars.pak doc locale "${THISPKG_DIR}"
+mkdir "${THISPKG_DIR}"/config
+mkdir "${THISPKG_DIR}"/save
+mkdir "${THISPKG_DIR}"/snapshot
+
+# 
+
 make_bin_archive
+${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${BINTARNAME}-data.tar.xz locale data gfx music sound
 make_archives

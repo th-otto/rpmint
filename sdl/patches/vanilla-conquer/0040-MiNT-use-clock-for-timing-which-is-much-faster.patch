@@ -1,0 +1,168 @@
+From d6a4c17e7b51537e09fada92c17021e4545b50fb Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sun, 24 Mar 2024 06:27:38 +0100
+Subject: [PATCH 1/2] MiNT: use clock() for timing which is much faster
+
+---
+ common/connect.cpp         |  4 ++++
+ common/framelimit.cpp      | 27 +++++++++++++++++++++++++++
+ common/mssleep.h           |  9 +++++++++
+ common/timer.cpp           |  4 ++++
+ common/vqaaudio_openal.cpp |  4 ++++
+ 5 files changed, 48 insertions(+)
+
+diff --git a/common/connect.cpp b/common/connect.cpp
+index 191336b..646c14c 100644
+--- a/common/connect.cpp
++++ b/common/connect.cpp
+@@ -773,9 +773,13 @@ unsigned int ConnectionClass::Time(void)
+     ------------------------------------------------------------------------*/
+ #endif
+ 
++#ifdef __MINT__
++    msec = unsigned(clock() * (1000 / 200));
++#else
+     static auto epoch = std::chrono::steady_clock::now().time_since_epoch();
+     auto now = std::chrono::steady_clock::now().time_since_epoch();
+     msec = unsigned(std::chrono::duration_cast<std::chrono::milliseconds>(now - epoch).count());
++#endif
+ 
+     return ((msec / 100) * 6);
+ } /* end of Time */
+diff --git a/common/framelimit.cpp b/common/framelimit.cpp
+index 64105dc..f7595a1 100644
+--- a/common/framelimit.cpp
++++ b/common/framelimit.cpp
+@@ -17,12 +17,23 @@ void Video_Render_Frame();
+ 
+ void Frame_Limiter(FrameLimitFlags flags)
+ {
++#ifdef __MINT__
++    static long frame_start = clock() * (1000 / 200);
++#else
+     static auto frame_start = std::chrono::steady_clock::now();
++#endif
+ #ifdef SDL_BUILD
++#ifdef __MINT__
++    static long render_avg = 0;
++
++    long render_start = clock() * (1000 / 200);
++    long render_remaining = frame_start - render_start;
++#else
+     static auto render_avg = 0;
+ 
+     auto render_start = std::chrono::steady_clock::now();
+     auto render_remaining = std::chrono::duration_cast<std::chrono::milliseconds>(frame_start - render_start).count();
++#endif
+ 
+     if (!(flags & FrameLimitFlags::FL_FORCE_RENDER) && render_remaining > render_avg) {
+         if (!(flags & FrameLimitFlags::FL_NO_BLOCK)) {
+@@ -35,8 +46,13 @@ void Frame_Limiter(FrameLimitFlags flags)
+ 
+     Video_Render_Frame();
+ 
++#ifdef __MINT__
++    clock_t render_end = clock() * (1000 / 200);
++    clock_t render_time = render_end - render_start;
++#else
+     auto render_end = std::chrono::steady_clock::now();
+     auto render_time = std::chrono::duration_cast<std::chrono::milliseconds>(render_end - render_start).count();
++#endif
+ 
+     // keep up some average so we have an idea if we need to skip a frame or not
+     render_avg = (render_avg + render_time) / 2;
+@@ -48,6 +64,16 @@ void Frame_Limiter(FrameLimitFlags flags)
+ #else
+         auto frame_end = std::chrono::steady_clock::now();
+ #endif
++#ifdef __MINT__
++        unsigned int min_frame_time = 1000 / Settings.Video.FrameLimit;
++        clock_t cur_frame_time = frame_end - frame_start;
++        if (cur_frame_time < min_frame_time) {
++            frame_start += min_frame_time;
++            ms_sleep(min_frame_time - cur_frame_time);
++        } else {
++            frame_start = frame_end;
++        }
++#else
+         unsigned int min_frame_time = 1000000 / Settings.Video.FrameLimit;
+         auto cur_frame_time = std::chrono::duration_cast<std::chrono::microseconds>(frame_end - frame_start).count();
+         if (cur_frame_time < min_frame_time) {
+@@ -56,5 +82,6 @@ void Frame_Limiter(FrameLimitFlags flags)
+         } else {
+             frame_start = frame_end;
+         }
++#endif
+     }
+ }
+diff --git a/common/mssleep.h b/common/mssleep.h
+index eb1f8eb..5fa6bc2 100644
+--- a/common/mssleep.h
++++ b/common/mssleep.h
+@@ -19,6 +19,9 @@
+ #endif
+ #include <time.h>
+ #endif
++#if defined(__MINT__) && defined(SDL1_BUILD)
++#include <SDL/SDL.h>
++#endif
+ 
+ /**
+  * Yield the current thread for at least us microseconds.
+@@ -27,6 +30,9 @@ static inline void us_sleep(unsigned us)
+ {
+ #ifdef _WIN32
+     Sleep((us + 999) / 1000);
++#elif defined(__MINT__) && defined(SDL_BUILD)
++    /* using SDL_Delay is needed to get audio working */
++    SDL_Delay((us + 999) / 1000);
+ #else
+     struct timespec ts;
+     ts.tv_sec = us / 1000000;
+@@ -42,6 +48,9 @@ static inline void ms_sleep(unsigned ms)
+ {
+ #ifdef _WIN32
+     Sleep(ms);
++#elif defined(__MINT__) && defined(SDL_BUILD)
++    /* using SDL_Delay is needed to get audio working */
++    SDL_Delay(ms);
+ #else
+     struct timespec ts;
+     ts.tv_sec = ms / 1000;
+diff --git a/common/timer.cpp b/common/timer.cpp
+index ea6a5c0..b0c3ec2 100644
+--- a/common/timer.cpp
++++ b/common/timer.cpp
+@@ -299,7 +299,11 @@ unsigned int WinTimerClass::Get_User_Tick_Count()
+ 
+ unsigned long long WinTimerClass::Now()
+ {
++#ifdef __MINT__
++    return clock() * (1000 / 200);
++#else
+     return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
++#endif
+ }
+ 
+ int SystemTimerClass::operator()() const
+diff --git a/common/vqaaudio_openal.cpp b/common/vqaaudio_openal.cpp
+index d1cfabf..03416fe 100644
+--- a/common/vqaaudio_openal.cpp
++++ b/common/vqaaudio_openal.cpp
+@@ -435,9 +435,13 @@ void VQA_SetTimer(VQAHandle* handle, int time, int method)
+ 
+ unsigned VQA_GetTime(VQAHandle* handle)
+ {
++#ifdef __MINT__
++    unsigned result_time = unsigned(TickOffset + 60 * (clock() / 200));
++#else
+     auto now = std::chrono::steady_clock::now().time_since_epoch();
+     unsigned result_time =
+         unsigned(TickOffset + 60 * (std::chrono::duration_cast<std::chrono::milliseconds>(now).count()) / 1000);
++#endif
+ 
+     return result_time;
+ }
+-- 
+2.41.0
+

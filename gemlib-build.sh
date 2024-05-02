@@ -5,7 +5,7 @@ scriptdir=${0%/*}
 
 PACKAGENAME=gemlib
 VERSION=-0.44.0
-VERSIONPATCH=-20230212
+VERSIONPATCH=-20240425
 
 . ${scriptdir}/functions.sh
 
@@ -16,7 +16,7 @@ PATCHES=""
 unpack_archive
 
 # this Makefiles are not yet ready for parallel makes
-JOBS=-j1
+#JOBS=-j1
 
 cd "$srcdir"
 if test "$LTO_CFLAGS" != ""; then

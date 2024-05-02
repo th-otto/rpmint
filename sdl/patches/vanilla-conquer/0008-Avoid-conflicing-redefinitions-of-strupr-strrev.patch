@@ -1,0 +1,41 @@
+From 2a2cd1370f7086b2988ecf55211ae0d9c559260c Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Mar 2024 15:14:22 +0100
+Subject: [PATCH 08/40] Avoid conflicing redefinitions of strupr() & strrev()
+
+---
+ common/wwstd.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/common/wwstd.h b/common/wwstd.h
+index ab99bcc..c78362e 100644
+--- a/common/wwstd.h
++++ b/common/wwstd.h
+@@ -258,13 +258,16 @@ inline static void _splitpath(const char* path, char* drive, char* dir, char* fn
+     }
+ }
+ 
++#ifndef __MINT__
+ inline static char* strupr(char* str)
+ {
+     for (int i = 0; i < strlen(str); i++)
+         str[i] = toupper(str[i]);
+     return str;
+ }
++#endif
+ 
++#ifndef __MINT__
+ inline static void strrev(char* str)
+ {
+     int len = strlen(str);
+@@ -275,6 +278,7 @@ inline static void strrev(char* str)
+         str[len - i - 1] = c;
+     }
+ }
++#endif
+ 
+ inline static void _strlwr(char* str)
+ {
+-- 
+2.41.0
+

@@ -1,0 +1,39 @@
+From ad3f406acfb399e5b5ca07d81b48c184217d3b9c Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Wed, 20 Mar 2024 13:17:59 +0100
+Subject: [PATCH 25/40] Include <endianness.h> in files that need it
+
+Without this, operations on fixed values are miscompiled on big-endian
+machines
+---
+ common/fixed.h         | 1 +
+ tiberiandawn/defines.h | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/common/fixed.h b/common/fixed.h
+index e79a99d..b8da0b4 100644
+--- a/common/fixed.h
++++ b/common/fixed.h
+@@ -36,6 +36,7 @@
+ #define FIXED_H
+ 
+ #include <stdint.h>
++#include "endianness.h"
+ 
+ /*
+ **	This is a very simple fixed point class that functions like a regular integral type. However
+diff --git a/tiberiandawn/defines.h b/tiberiandawn/defines.h
+index ee9f875..f2d3411 100644
+--- a/tiberiandawn/defines.h
++++ b/tiberiandawn/defines.h
+@@ -35,6 +35,7 @@
+ #define DEFINES_H
+ 
+ #include "common/bitfields.h"
++#include "common/endianness.h"
+ 
+ /**********************************************************************
+ **	If defined, then the advanced balancing features will be enabled
+-- 
+2.41.0
+

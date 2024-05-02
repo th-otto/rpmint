@@ -1,4 +1,7 @@
 #!/bin/sh
+
+TARGET=${1:-m68k-atari-mint}
+
 fails=
 for i in \
 	2048 \
@@ -38,6 +41,7 @@ for i in \
 	stargun \
 	symphyla \
 	tetris \
+	vanilla-conquer \
 	xgalaga \
 	xpired \
 	zelda3t \
@@ -49,7 +53,7 @@ for i in \
 	;
 do
 	echo "build $i"
-	if time ./${i}-build.sh > /dev/null 2>&1; then 
+	if time ./${i}-build.sh ${TARGET} > /dev/null 2>&1; then 
 		echo "ok"
 	else
 		echo "failed"

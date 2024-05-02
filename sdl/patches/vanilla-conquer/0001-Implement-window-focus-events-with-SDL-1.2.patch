@@ -1,0 +1,34 @@
+From 2dbc38403c312ed7254500b4e3d7bcbfdd642c60 Mon Sep 17 00:00:00 2001
+From: Cameron Cawley <ccawley2011@gmail.com>
+Date: Sat, 17 Jun 2023 17:31:11 +0100
+Subject: [PATCH 01/40] Implement window focus events with SDL 1.2
+
+---
+ common/wwkeyboard.cpp | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/common/wwkeyboard.cpp b/common/wwkeyboard.cpp
+index 8020d1f..f14be63 100644
+--- a/common/wwkeyboard.cpp
++++ b/common/wwkeyboard.cpp
+@@ -607,6 +607,17 @@ void WWKeyboardClass::Fill_Buffer_From_System(void)
+ 
+             Put_Mouse_Message(key, x, y, event.type == SDL_MOUSEBUTTONDOWN ? false : true);
+         } break;
++#ifdef SDL1_BUILD
++        case SDL_ACTIVEEVENT:
++            if (event.active.state & SDL_APPINPUTFOCUS) {
++                if (event.active.gain) {
++                    Focus_Restore();
++                } else {
++                    Focus_Loss();
++                }
++            }
++            break;
++#endif
+ #ifdef SDL2_BUILD
+         case SDL_WINDOWEVENT:
+             switch (event.window.event) {
+-- 
+2.41.0
+

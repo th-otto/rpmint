@@ -1,0 +1,206 @@
+diff --git a/configure.py b/configure.py
+index cc8ee5b..d7275b7 100755
+--- a/configure.py
++++ b/configure.py
+@@ -69,7 +69,7 @@ class Platform(object):
+     def known_platforms():
+       return ['linux', 'darwin', 'freebsd', 'openbsd', 'solaris', 'sunos5',
+               'mingw', 'msvc', 'gnukfreebsd', 'bitrig', 'netbsd', 'aix',
+-              'dragonfly']
++              'dragonfly', 'mint']
+ 
+     def platform(self):
+         return self._platform
+@@ -80,6 +80,9 @@ class Platform(object):
+     def is_mingw(self):
+         return self._platform == 'mingw'
+ 
++    def is_mint(self):
++        return self._platform == 'mint'
++
+     def is_msvc(self):
+         return self._platform == 'msvc'
+ 
+@@ -369,12 +372,14 @@ else:
+ 
+ libs = []
+ 
+-if platform.is_mingw():
++if host.is_mingw():
+     cflags.remove('-fvisibility=hidden');
+     ldflags.append('-static')
+-elif platform.is_solaris():
++elif host.is_solaris():
++    cflags.remove('-fvisibility=hidden')
++elif host.is_aix():
+     cflags.remove('-fvisibility=hidden')
+-elif platform.is_aix():
++elif host.is_mint():
+     cflags.remove('-fvisibility=hidden')
+ elif platform.is_msvc():
+     pass
+@@ -386,9 +391,9 @@ else:
+         cflags.append('-fno-omit-frame-pointer')
+         libs.extend(['-Wl,--no-as-needed', '-lprofiler'])
+ 
+-if platform.supports_ppoll() and not options.force_pselect:
++if host.supports_ppoll() and not options.force_pselect:
+     cflags.append('-DUSE_PPOLL')
+-if platform.supports_ninja_browse():
++if host.supports_ninja_browse():
+     cflags.append('-DNINJA_HAVE_BROWSE')
+ 
+ # Search for generated headers relative to build dir.
+diff --git a/src/disk_interface.cc b/src/disk_interface.cc
+index e73d901..dbec70d 100644
+--- a/src/disk_interface.cc
++++ b/src/disk_interface.cc
+@@ -212,6 +212,8 @@ TimeStamp RealDiskInterface::Stat(const string& path, string* err) const {
+ #elif defined(__APPLE__)
+   return ((int64_t)st.st_mtimespec.tv_sec * 1000000000LL +
+           st.st_mtimespec.tv_nsec);
++#elif defined(__MINT__)
++  return (int64_t)st.st_mtime * 1000000000LL;
+ #elif defined(st_mtime) // A macro, so we're likely on modern POSIX.
+   return (int64_t)st.st_mtim.tv_sec * 1000000000LL + st.st_mtim.tv_nsec;
+ #else
+diff --git a/src/ninja.cc b/src/ninja.cc
+index 2b71eb1..834e284 100644
+--- a/src/ninja.cc
++++ b/src/ninja.cc
+@@ -1400,7 +1400,7 @@ class DeferGuessParallelism {
+   BuildConfig* config;
+ 
+   DeferGuessParallelism(BuildConfig* config)
+-      : config(config), needGuess(true) {}
++      : needGuess(true), config(config) {}
+ 
+   void Refresh() {
+     if (needGuess) {
+diff --git a/src/subprocess-posix.cc b/src/subprocess-posix.cc
+index 8e78540..f583289 100644
+--- a/src/subprocess-posix.cc
++++ b/src/subprocess-posix.cc
+@@ -22,7 +22,10 @@
+ #include <stdio.h>
+ #include <string.h>
+ #include <sys/wait.h>
++
++#ifdef HAVE_POSIX_SPAWN
+ #include <spawn.h>
++#endif
+ 
+ #if defined(USE_PPOLL)
+ #include <poll.h>
+@@ -61,6 +64,7 @@ bool Subprocess::Start(SubprocessSet* set, const string& command) {
+ #endif  // !USE_PPOLL
+   SetCloseOnExec(fd_);
+ 
++#ifdef HAVE_POSIX_SPAWN
+   posix_spawn_file_actions_t action;
+   int err = posix_spawn_file_actions_init(&action);
+   if (err != 0)
+@@ -130,6 +134,52 @@ bool Subprocess::Start(SubprocessSet* set, const string& command) {
+   if (err != 0)
+     Fatal("posix_spawn_file_actions_destroy: %s", strerror(err));
+ 
++#else
++  int err;
++
++  pid_ = vfork();
++  if (pid_ < (pid_t) 0)
++     Fatal("posix_spawn: %s", strerror(errno));
++
++  if (pid_ == (pid_t) 0) {
++    const char* spawned_args[] = { "/bin/sh", "-c", command.c_str(), NULL };
++
++    if (!use_console_) {
++      // Put the child in its own process group, so ctrl-c won't reach it.
++      setpgid(0, 0);
++
++      // Open /dev/null over stdin.
++      close(0);
++      err = open("/dev/null", O_RDONLY);
++      if (err < 0) {
++        Fatal("open: %s", strerror(errno));
++      }
++
++      err = dup2(output_pipe[1], 1);
++      if (err < 0)
++        Fatal("dup2: %s", strerror(errno));
++      err = dup2(output_pipe[1], 2);
++      if (err < 0)
++        Fatal("dup2: %s", strerror(errno));
++      err = close(output_pipe[1]);
++      if (err < 0)
++        Fatal("close: %s", strerror(errno));
++      // In the console case, output_pipe is still inherited by the child and
++      // closed when the subprocess finishes, which then notifies ninja.
++    }
++    /* Restore the signals.  */
++    (void) sigaction (SIGINT, &set->old_int_act_, NULL);
++    (void) sigaction (SIGTERM, &set->old_term_act_, NULL);
++    (void) sigaction (SIGHUP, &set->old_hup_act_, NULL);
++    (void) sigprocmask (SIG_SETMASK, &set->old_mask_, NULL);
++
++    /* Exec the shell.  */
++    (void) execve (spawned_args[0], const_cast<char**>(spawned_args), environ);
++    _exit (127);
++  }
++
++#endif
++
+   close(output_pipe[1]);
+   return true;
+ }
+@@ -315,7 +365,11 @@ bool SubprocessSet::DoWork() {
+   }
+ 
+   interrupted_ = 0;
++#ifdef __MINT__
++  int ret = select(nfds, &set, 0, 0, 0);
++#else
+   int ret = pselect(nfds, &set, 0, 0, 0, &old_mask_);
++#endif
+   if (ret == -1) {
+     if (errno != EINTR) {
+       perror("ninja: pselect");
+diff --git a/src/subprocess.h b/src/subprocess.h
+index 9e3d2ee..c4dfa80 100644
+--- a/src/subprocess.h
++++ b/src/subprocess.h
+@@ -35,6 +35,10 @@
+ 
+ #include "exit_status.h"
+ 
++#ifndef __MINT__
++#define HAVE_POSIX_SPAWN
++#endif
++
+ /// Subprocess wraps a single async subprocess.  It is entirely
+ /// passive: it expects the caller to notify it when its fds are ready
+ /// for reading, as well as call Finish() to reap the child once done()
+@@ -70,6 +74,10 @@ struct Subprocess {
+ #else
+   int fd_;
+   pid_t pid_;
++#ifndef HAVE_POSIX_SPAWN
++  struct sigaction intr_, quit_;
++  sigset_t omask_;
++#endif
+ #endif
+   bool use_console_;
+ 
+diff --git a/src/util.cc b/src/util.cc
+index ef5f103..d2357ae 100644
+--- a/src/util.cc
++++ b/src/util.cc
+@@ -699,6 +699,8 @@ int GetProcessorCount() {
+     }
+   }
+   return cpuCount;
++#elif defined(__MINT__)
++  return 1;
+ #else
+   int cgroupCount = -1;
+   int schedCount = -1;

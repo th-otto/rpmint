@@ -1,0 +1,45 @@
+From e13eed2b79da5864fc7a450154907f57d2135e1f Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sat, 16 Mar 2024 14:55:45 +0100
+Subject: [PATCH 15/40] broadcast addr can be NULL
+
+---
+ common/wspudp.cpp | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
+
+diff --git a/common/wspudp.cpp b/common/wspudp.cpp
+index 1f0c8d8..99f271a 100644
+--- a/common/wspudp.cpp
++++ b/common/wspudp.cpp
+@@ -258,19 +258,20 @@ bool UDPInterfaceClass::Open_Socket(SOCKET)
+             struct in_addr* tmp_addr = &((struct sockaddr_in*)ifa->ifa_addr)->sin_addr;
+             char buf[INET_ADDRSTRLEN];
+             inet_ntop(AF_INET, tmp_addr, buf, INET_ADDRSTRLEN);
+-            char temp[128];
+-            sprintf(temp, "RA95: Found local address: %s\n", buf);
+-            fprintf(stderr, temp);
++            fprintf(stderr, "RA95: Found local address: %s\n", buf);
+ 
+             unsigned char* a = new unsigned char[4];
+             *((uint32_t*)a) = tmp_addr->s_addr;
+             LocalAddresses.Add(a);
+ 
+-            tmp_addr = &((struct sockaddr_in*)ifa->ifa_broadaddr)->sin_addr;
+-            inet_ntop(AF_INET, tmp_addr, buf, INET_ADDRSTRLEN);
+-            sprintf(temp, "RA95: Using broadcast address of: %s\n", buf);
+-            fprintf(stderr, temp);
+-            Set_Broadcast_Address(buf);
++            if ((struct sockaddr_in*)ifa->ifa_broadaddr == 0) {
++                fprintf(stderr, "RA95: No broadcast address\n");
++            } else {
++                tmp_addr = &((struct sockaddr_in*)ifa->ifa_broadaddr)->sin_addr;
++                inet_ntop(AF_INET, tmp_addr, buf, INET_ADDRSTRLEN);
++                fprintf(stderr, "RA95: Using broadcast address of: %s\n", buf);
++                Set_Broadcast_Address(buf);
++            }
+         }
+     }
+ 
+-- 
+2.41.0
+

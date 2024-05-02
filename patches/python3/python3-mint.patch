@@ -1,102 +1,85 @@
-diff -rupN Python-3.6.4.orig/Include/object.h Python-3.6.4/Include/object.h
---- Python-3.6.4.orig/Include/object.h	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Include/object.h	2018-03-25 01:13:09.888364584 +0100
-@@ -786,7 +786,7 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *)
+From 88d365cf4f80cd593bfca0efd1ea1d13190ba1e6 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Tue, 16 Apr 2024 09:45:05 +0200
+Subject: [PATCH] python3-mint
+
+---
+ Include/cpython/pytime.h              |  2 +-
+ Include/pymem.h                       |  6 ++---
+ Lib/compileall.py                     | 24 ++++++++---------
+ Misc/python-embed.pc.in               |  4 +--
+ Misc/python.pc.in                     |  4 +--
+ Modules/_ctypes/_ctypes.c             |  2 ++
+ Modules/_ctypes/callproc.c            |  3 ++-
+ Modules/_ctypes/ctypes.h              |  2 ++
+ Modules/_ctypes/ctypes_dlfcn.h        | 11 ++++++++
+ Modules/_curses_panel.c               |  2 +-
+ Modules/_decimal/libmpdec/mpdecimal.c |  2 ++
+ Modules/faulthandler.c                | 14 +++++++---
+ Modules/fcntlmodule.c                 | 12 +++++++++
+ Modules/grpmodule.c                   |  6 +++--
+ Modules/mathmodule.c                  | 17 +++++++-----
+ Modules/mmapmodule.c                  | 18 +++++++++++++
+ Modules/posixmodule.c                 | 25 ++++++++++++++++--
+ Modules/signalmodule.c                |  7 ++++-
+ Modules/socketmodule.c                |  2 +-
+ Objects/codeobject.c                  |  2 +-
+ Objects/exceptions.c                  | 20 +++++++-------
+ Objects/floatobject.c                 | 12 ++++-----
+ Objects/stringlib/fastsearch.h        |  2 +-
+ Programs/_testembed.c                 |  4 +++
+ Python/fileutils.c                    |  6 +++++
+ Python/initconfig.c                   |  4 +--
+ Python/pyfpe.c                        |  2 +-
+ Python/pylifecycle.c                  |  5 +++-
+ Python/pytime.c                       | 24 +++++++++++++++--
+ Python/thread_pthread.h               |  1 +
+ Python/thread_pthread_stubs.h         |  6 ++---
+ configure.ac                          | 38 ++++++++++++++++++++++++---
+ 32 files changed, 221 insertions(+), 68 deletions(-)
+
+diff --git a/Include/cpython/pytime.h b/Include/cpython/pytime.h
+index 23d4f16..6149443 100644
+--- a/Include/cpython/pytime.h
++++ b/Include/cpython/pytime.h
+@@ -202,7 +202,7 @@ PyAPI_FUNC(int) _PyTime_AsTimevalTime_t(
+     int *us,
+     _PyTime_round_t round);
  
- #define Py_DECREF(op)                                   \
-     do {                                                \
--        PyObject *_py_decref_tmp = (PyObject *)(op);    \
-+        PyObject *volatile _py_decref_tmp = (PyObject *)(op);    \
-         if (_Py_DEC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
-         --(_py_decref_tmp)->ob_refcnt != 0)             \
-             _Py_CHECK_REFCNT(_py_decref_tmp)            \
-diff -rupN Python-3.6.4.orig/Include/pyfpe.h Python-3.6.4/Include/pyfpe.h
---- Python-3.6.4.orig/Include/pyfpe.h	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Include/pyfpe.h	2018-03-25 00:02:24.032910778 +0100
-@@ -131,7 +131,7 @@ extern "C" {
- #include <math.h>
- extern jmp_buf PyFPE_jbuf;
- extern int PyFPE_counter;
--extern double PyFPE_dummy(void *);
-+extern double PyFPE_dummy(volatile void *);
- 
- #define PyFPE_START_PROTECT(err_string, leave_stmt) \
- if (!PyFPE_counter++ && setjmp(PyFPE_jbuf)) { \
-diff -rupN Python-3.6.4.orig/Include/pymath.h Python-3.6.4/Include/pymath.h
---- Python-3.6.4.orig/Include/pymath.h	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Include/pymath.h	2018-03-25 00:08:50.704902364 +0100
-@@ -14,15 +14,15 @@ functions and constants
-  *
-  *Note: PC/pyconfig.h defines copysign as _copysign
-  */
--#ifndef HAVE_COPYSIGN
-+#if !HAVE_DECL_COPYSIGN
- extern double copysign(double, double);
- #endif
- 
--#ifndef HAVE_ROUND
-+#if !HAVE_DECL_ROUND
- extern double round(double);
- #endif
- 
--#ifndef HAVE_HYPOT
-+#if !HAVE_DECL_HYPOT
- extern double hypot(double, double);
- #endif
- 
-diff -rupN Python-3.6.4.orig/Include/pymem.h Python-3.6.4/Include/pymem.h
---- Python-3.6.4.orig/Include/pymem.h	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Include/pymem.h	2018-03-25 00:02:24.032910778 +0100
-@@ -135,11 +135,9 @@ PyAPI_FUNC(char *) _PyMem_Strdup(const c
+-#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE)
++#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE) || !defined(HAVE_CLOCK_NANOSLEEP)
+ /* Create a timestamp from a timespec structure.
+    Raise an exception and return -1 on overflow, return 0 on success. */
+ PyAPI_FUNC(int) _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts);
+diff --git a/Include/pymem.h b/Include/pymem.h
+index c15ad10..9b73822 100644
+--- a/Include/pymem.h
++++ b/Include/pymem.h
+@@ -65,8 +65,7 @@ PyAPI_FUNC(void) PyMem_Free(void *ptr);
   */
  
  #define PyMem_New(type, n) \
--  ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
--	( (type *) PyMem_Malloc((n) * sizeof(type)) ) )
-+	( (type *) PyMem_Malloc((n) * sizeof(type)) )
- #define PyMem_NEW(type, n) \
--  ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
--	( (type *) PyMem_MALLOC((n) * sizeof(type)) ) )
-+	( (type *) PyMem_MALLOC((n) * sizeof(type)) )
+-  ( ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :      \
+-        ( (type *) PyMem_Malloc((n) * sizeof(type)) ) )
++        ( (type *) PyMem_Malloc((n) * sizeof(type)) )
  
  /*
   * The value of (p) is always clobbered by this macro regardless of success.
-@@ -148,11 +146,9 @@ PyAPI_FUNC(char *) _PyMem_Strdup(const c
+@@ -75,8 +74,7 @@ PyAPI_FUNC(void) PyMem_Free(void *ptr);
   * caller's memory error handler to not lose track of it.
   */
  #define PyMem_Resize(p, type, n) \
--  ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
--	(type *) PyMem_Realloc((p), (n) * sizeof(type)) )
+-  ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :        \
+-        (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
 +  ( (p) = (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
- #define PyMem_RESIZE(p, type, n) \
--  ( (p) = ((size_t)(n) > PY_SSIZE_T_MAX / sizeof(type)) ? NULL :	\
--	(type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
-+  ( (p) = (type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
  
- /* PyMem{Del,DEL} are left over from ancient days, and shouldn't be used
-  * anymore.  They're just confusing aliases for PyMem_{Free,FREE} now.
-diff -rupN Python-3.6.4.orig/Include/pyport.h Python-3.6.4/Include/pyport.h
---- Python-3.6.4.orig/Include/pyport.h	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Include/pyport.h	2018-03-25 00:02:24.032910778 +0100
-@@ -81,7 +81,14 @@ typedef intptr_t        Py_intptr_t;
-  * unsigned integral type).  See PEP 353 for details.
-  */
- #ifdef HAVE_SSIZE_T
-+#ifdef __MINT__
-+/* declared as int32_t in <sys/types.h>,
-+   which is the same size but does
-+   not match the "z" format specifier */
-+typedef long int        Py_ssize_t;
-+#else
- typedef ssize_t         Py_ssize_t;
-+#endif
- #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
- typedef Py_intptr_t     Py_ssize_t;
- #else
-diff -rupN Python-3.6.4.orig/Lib/compileall.py Python-3.6.4/Lib/compileall.py
---- Python-3.6.4.orig/Lib/compileall.py	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Lib/compileall.py	2018-03-25 00:02:24.032910778 +0100
-@@ -28,12 +28,12 @@ def _walk_dir(dir, ddir=None, maxlevels=
+ 
+ // Deprecated aliases only kept for backward compatibility.
+diff --git a/Lib/compileall.py b/Lib/compileall.py
+index a388931..e01c473 100644
+--- a/Lib/compileall.py
++++ b/Lib/compileall.py
+@@ -26,12 +26,12 @@ def _walk_dir(dir, maxlevels, quiet=0):
      if quiet < 2 and isinstance(dir, os.PathLike):
          dir = os.fspath(dir)
      if not quiet:
@@ -111,7 +94,7 @@ diff -rupN Python-3.6.4.orig/Lib/compileall.py Python-3.6.4/Lib/compileall.py
          names = []
      names.sort()
      for name in names:
-@@ -152,23 +152,23 @@ def compile_file(fullname, ddir=None, fo
+@@ -250,22 +250,22 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                  if quiet >= 2:
                      return success
                  elif quiet:
@@ -121,12 +104,10 @@ diff -rupN Python-3.6.4.orig/Lib/compileall.py Python-3.6.4/Lib/compileall.py
 -                    print('*** ', end='')
 +                    sys.stderr.write('*** ')
                  # escape non-printable characters in msg
--                msg = err.msg.encode(sys.stdout.encoding,
-+                msg = err.msg.encode(sys.stderr.encoding,
-                                      errors='backslashreplace')
--                msg = msg.decode(sys.stdout.encoding)
+-                encoding = sys.stdout.encoding or sys.getdefaultencoding()
++                encoding = sys.stderr.encoding or sys.getdefaultencoding()
+                 msg = err.msg.encode(encoding, errors='backslashreplace').decode(encoding)
 -                print(msg)
-+                msg = msg.decode(sys.stderr.encoding)
 +                sys.stderr.write('{!r}...\n'.format(msg))
              except (SyntaxError, UnicodeError, OSError) as e:
                  success = False
@@ -143,16 +124,16 @@ diff -rupN Python-3.6.4.orig/Lib/compileall.py Python-3.6.4/Lib/compileall.py
              else:
                  if ok == 0:
                      success = False
-@@ -191,7 +191,7 @@ def compile_path(skip_curdir=1, maxlevel
+@@ -290,7 +290,7 @@ def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=0,
      for dir in sys.path:
          if (not dir or dir == os.curdir) and skip_curdir:
              if quiet < 2:
 -                print('Skipping current directory')
 +                sys.stderr.write('Skipping current directory\n')
          else:
-             success = success and compile_dir(dir, maxlevels, None,
-                                               force, quiet=quiet,
-@@ -260,7 +260,7 @@ def main():
+             success = success and compile_dir(
+                 dir,
+@@ -412,7 +412,7 @@ def main():
                      compile_dests.append(line.strip())
          except OSError:
              if args.quiet < 2:
@@ -160,9 +141,9 @@ diff -rupN Python-3.6.4.orig/Lib/compileall.py Python-3.6.4/Lib/compileall.py
 +                sys.stderr.write("Error reading file list {}\n".format(args.flist))
              return False
  
-     if args.workers is not None:
-@@ -285,7 +285,7 @@ def main():
-                                 quiet=args.quiet)
+     if args.invalidation_mode:
+@@ -453,7 +453,7 @@ def main():
+                                 invalidation_mode=invalidation_mode)
      except KeyboardInterrupt:
          if args.quiet < 2:
 -            print("\n[interrupted]")
@@ -170,17 +151,37 @@ diff -rupN Python-3.6.4.orig/Lib/compileall.py Python-3.6.4/Lib/compileall.py
          return False
      return True
  
-diff -rupN Python-3.6.4.orig/Lib/plat-mint/regen Python-3.6.4/Lib/plat-mint/regen
---- Python-3.6.4.orig/Lib/plat-mint/regen	1970-01-01 01:00:00.000000000 +0100
-+++ Python-3.6.4/Lib/plat-mint/regen	2018-03-25 00:02:24.032910778 +0100
-@@ -0,0 +1,3 @@
-+#! /bin/sh
-+set -v
-+eval $PYTHON_FOR_BUILD ../../Tools/scripts/h2py.py -i "'(u_long)'" ${SYSROOT}/usr/include/netinet/in.h
-diff -rupN Python-3.6.4.orig/Modules/_ctypes/_ctypes.c Python-3.6.4/Modules/_ctypes/_ctypes.c
---- Python-3.6.4.orig/Modules/_ctypes/_ctypes.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/_ctypes/_ctypes.c	2018-03-25 01:53:11.840312316 +0100
-@@ -672,6 +672,7 @@ CDataType_in_dll(PyObject *type, PyObjec
+diff --git a/Misc/python-embed.pc.in b/Misc/python-embed.pc.in
+index 2be9df8..a626bb1 100644
+--- a/Misc/python-embed.pc.in
++++ b/Misc/python-embed.pc.in
+@@ -8,6 +8,6 @@ Name: Python
+ Description: Embed Python into an application
+ Requires:
+ Version: @VERSION@
+-Libs.private: @LIBS@
+-Libs: -L${libdir} -lpython@VERSION@@ABIFLAGS@
++Libs.private:
++Libs: -L${libdir} -lpython@VERSION@@ABIFLAGS@ @LIBS@
+ Cflags: -I${includedir}/python@VERSION@@ABIFLAGS@
+diff --git a/Misc/python.pc.in b/Misc/python.pc.in
+index 87e04de..2333603 100644
+--- a/Misc/python.pc.in
++++ b/Misc/python.pc.in
+@@ -8,6 +8,6 @@ Name: Python
+ Description: Build a C extension for Python
+ Requires:
+ Version: @VERSION@
+-Libs.private: @LIBS@
+-Libs:
++Libs.private:
++Libs: -lpython@VERSION@@ABIFLAGS@ @LIBS@
+ Cflags: -I${includedir}/python@VERSION@@ABIFLAGS@
+diff --git a/Modules/_ctypes/_ctypes.c b/Modules/_ctypes/_ctypes.c
+index 50cad30..e59f874 100644
+--- a/Modules/_ctypes/_ctypes.c
++++ b/Modules/_ctypes/_ctypes.c
+@@ -778,6 +778,7 @@ CDataType_in_dll(PyObject *type, PyObject *args)
          return NULL;
      }
  #else
@@ -188,7 +189,7 @@ diff -rupN Python-3.6.4.orig/Modules/_ctypes/_ctypes.c Python-3.6.4/Modules/_cty
      address = (void *)ctypes_dlsym(handle, name);
      if (!address) {
  #ifdef __CYGWIN__
-@@ -3388,6 +3389,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, P
+@@ -3617,6 +3618,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
          return NULL;
      }
  #else
@@ -196,18 +197,19 @@ diff -rupN Python-3.6.4.orig/Modules/_ctypes/_ctypes.c Python-3.6.4/Modules/_cty
      address = (PPROC)ctypes_dlsym(handle, name);
      if (!address) {
  #ifdef __CYGWIN__
-diff -rupN Python-3.6.4.orig/Modules/_ctypes/callproc.c Python-3.6.4/Modules/_ctypes/callproc.c
---- Python-3.6.4.orig/Modules/_ctypes/callproc.c	2018-03-24 23:10:10.028057154 +0100
-+++ Python-3.6.4/Modules/_ctypes/callproc.c	2018-03-25 01:53:57.008311333 +0100
-@@ -1347,6 +1347,7 @@ static PyObject *py_dl_open(PyObject *se
+diff --git a/Modules/_ctypes/callproc.c b/Modules/_ctypes/callproc.c
+index f42ff08..0b82f59 100644
+--- a/Modules/_ctypes/callproc.c
++++ b/Modules/_ctypes/callproc.c
+@@ -1537,6 +1537,7 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
      }
      handle = ctypes_dlopen(name_str, mode);
      Py_XDECREF(name2);
 +	(void)name_str;
      if (!handle) {
-         char *errmsg = ctypes_dlerror();
+         const char *errmsg = ctypes_dlerror();
          if (!errmsg)
-@@ -1364,7 +1365,7 @@ static PyObject *py_dl_close(PyObject *s
+@@ -1554,7 +1555,7 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
  
      if (!PyArg_ParseTuple(args, "O&:dlclose", &_parse_voidp, &handle))
          return NULL;
@@ -216,9 +218,10 @@ diff -rupN Python-3.6.4.orig/Modules/_ctypes/callproc.c Python-3.6.4/Modules/_ct
          PyErr_SetString(PyExc_OSError,
                                 ctypes_dlerror());
          return NULL;
-diff -rupN Python-3.6.4.orig/Modules/_ctypes/ctypes.h Python-3.6.4/Modules/_ctypes/ctypes.h
---- Python-3.6.4.orig/Modules/_ctypes/ctypes.h	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/_ctypes/ctypes.h	2018-03-25 00:02:24.036910778 +0100
+diff --git a/Modules/_ctypes/ctypes.h b/Modules/_ctypes/ctypes.h
+index a7029b6..e58e7d4 100644
+--- a/Modules/_ctypes/ctypes.h
++++ b/Modules/_ctypes/ctypes.h
 @@ -3,6 +3,8 @@
  #endif
  
@@ -228,9 +231,10 @@ diff -rupN Python-3.6.4.orig/Modules/_ctypes/ctypes.h Python-3.6.4/Modules/_ctyp
  #define max(a, b) ((a) > (b) ? (a) : (b))
  #define min(a, b) ((a) < (b) ? (a) : (b))
  
-diff -rupN Python-3.6.4.orig/Modules/_ctypes/ctypes_dlfcn.h Python-3.6.4/Modules/_ctypes/ctypes_dlfcn.h
---- Python-3.6.4.orig/Modules/_ctypes/ctypes_dlfcn.h	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/_ctypes/ctypes_dlfcn.h	2018-03-25 00:02:24.036910778 +0100
+diff --git a/Modules/_ctypes/ctypes_dlfcn.h b/Modules/_ctypes/ctypes_dlfcn.h
+index 54cdde9..fde4e4b 100644
+--- a/Modules/_ctypes/ctypes_dlfcn.h
++++ b/Modules/_ctypes/ctypes_dlfcn.h
 @@ -7,15 +7,26 @@ extern "C" {
  
  #ifndef MS_WIN32
@@ -258,31 +262,24 @@ diff -rupN Python-3.6.4.orig/Modules/_ctypes/ctypes_dlfcn.h Python-3.6.4/Modules
  
  #endif /* !CTYPES_DARWIN_DLFCN */
  
-diff -rupN Python-3.6.4.orig/Modules/_ctypes/libffi/src/m68k/ffi.c Python-3.6.4/Modules/_ctypes/libffi/src/m68k/ffi.c
---- Python-3.6.4.orig/Modules/_ctypes/libffi/src/m68k/ffi.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/_ctypes/libffi/src/m68k/ffi.c	2018-03-25 00:02:24.036910778 +0100
-@@ -23,7 +23,7 @@ void rtems_cache_flush_multiple_data_lin
+diff --git a/Modules/_curses_panel.c b/Modules/_curses_panel.c
+index c4be9ae..99921a1 100644
+--- a/Modules/_curses_panel.c
++++ b/Modules/_curses_panel.c
+@@ -14,7 +14,7 @@ static const char PyCursesVersion[] = "2.1";
  
- void ffi_call_SYSV (extended_cif *,
- 		    unsigned, unsigned,
--		    void *, void (*fn) ());
-+		    void *, void (*fn) (void));
- void *ffi_prep_args (void *stack, extended_cif *ecif);
- void ffi_closure_SYSV (ffi_closure *);
- void ffi_closure_struct_SYSV (ffi_closure *);
-@@ -219,7 +219,7 @@ ffi_prep_cif_machdep (ffi_cif *cif)
- }
+ #include "py_curses.h"
  
- void
--ffi_call (ffi_cif *cif, void (*fn) (), void *rvalue, void **avalue)
-+ffi_call (ffi_cif *cif, void (*fn) (void), void *rvalue, void **avalue)
- {
-   extended_cif ecif;
+-#include <panel.h>
++#include <ncurses/panel.h>
  
-diff -rupN Python-3.6.4.orig/Modules/_decimal/libmpdec/mpdecimal.c Python-3.6.4/Modules/_decimal/libmpdec/mpdecimal.c
---- Python-3.6.4.orig/Modules/_decimal/libmpdec/mpdecimal.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/_decimal/libmpdec/mpdecimal.c	2018-03-25 01:49:51.864316668 +0100
-@@ -1408,8 +1408,10 @@ _c32_qget_u64(int use_sign, const mpd_t
+ typedef struct {
+     PyObject *PyCursesError;
+diff --git a/Modules/_decimal/libmpdec/mpdecimal.c b/Modules/_decimal/libmpdec/mpdecimal.c
+index f1626df..ab27034 100644
+--- a/Modules/_decimal/libmpdec/mpdecimal.c
++++ b/Modules/_decimal/libmpdec/mpdecimal.c
+@@ -1481,8 +1481,10 @@ _c32_qget_u64(int use_sign, const mpd_t *a, uint32_t *status)
      switch (tmp.len) {
      case 3:
          ret += (uint64_t)tmp_data[2] * 1000000000000000000ULL;
@@ -293,65 +290,11 @@ diff -rupN Python-3.6.4.orig/Modules/_decimal/libmpdec/mpdecimal.c Python-3.6.4/
      case 1:
          ret += tmp_data[0];
          break;
-diff -rupN Python-3.6.4.orig/Modules/expat/xmlparse.c Python-3.6.4/Modules/expat/xmlparse.c
---- Python-3.6.4.orig/Modules/expat/xmlparse.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/expat/xmlparse.c	2018-03-25 00:02:24.036910778 +0100
-@@ -30,6 +30,12 @@
-    USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
- 
-+#ifdef _WIN32
-+#include "winconfig.h"
-+#elif defined(HAVE_EXPAT_CONFIG_H)
-+#include <expat_config.h>
-+#endif /* ndef _WIN32 */
-+
- #if !defined(_GNU_SOURCE)
- # define _GNU_SOURCE 1                  /* syscall prototype */
- #endif
-@@ -53,12 +59,6 @@
- 
- #define XML_BUILDING_EXPAT 1
- 
--#ifdef _WIN32
--#include "winconfig.h"
--#elif defined(HAVE_EXPAT_CONFIG_H)
--#include <expat_config.h>
--#endif /* ndef _WIN32 */
--
- #include "ascii.h"
- #include "expat.h"
- #include "siphash.h"
-diff -rupN Python-3.6.4.orig/Modules/expat/xmltok.c Python-3.6.4/Modules/expat/xmltok.c
---- Python-3.6.4.orig/Modules/expat/xmltok.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/expat/xmltok.c	2018-03-25 00:02:24.036910778 +0100
-@@ -30,10 +30,6 @@
-    USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
- 
--#include <stddef.h>
--#include <stdbool.h>
--#include <string.h>  // memcpy
--
- #ifdef _WIN32
- #include "winconfig.h"
- #else
-@@ -42,6 +38,11 @@
- #endif
- #endif /* ndef _WIN32 */
- 
-+#include <stddef.h>
-+#include <stdbool.h>
-+#include <string.h>  // memcpy
-+
-+
- #include "expat_external.h"
- #include "internal.h"
- #include "xmltok.h"
-diff -rupN Python-3.6.4.orig/Modules/faulthandler.c Python-3.6.4/Modules/faulthandler.c
---- Python-3.6.4.orig/Modules/faulthandler.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/faulthandler.c	2018-03-25 01:40:09.328329344 +0100
-@@ -458,7 +458,10 @@ faulthandler_enable(void)
+diff --git a/Modules/faulthandler.c b/Modules/faulthandler.c
+index 520b7b6..49c4141 100644
+--- a/Modules/faulthandler.c
++++ b/Modules/faulthandler.c
+@@ -507,7 +507,10 @@ faulthandler_enable(void)
          sigemptyset(&action.sa_mask);
          /* Do not prevent the signal from being received from within
             its own signal handler */
@@ -360,10 +303,10 @@ diff -rupN Python-3.6.4.orig/Modules/faulthandler.c Python-3.6.4/Modules/faultha
 +#ifdef SA_NODEFER
 +        action.sa_flags |= SA_NODEFER;
 +#endif
- #ifdef HAVE_SIGALTSTACK
-         if (stack.ss_sp != NULL) {
-             /* Call the signal handler on an alternate signal stack
-@@ -738,11 +741,16 @@ faulthandler_register(int signum, int ch
+ #ifdef FAULTHANDLER_USE_ALT_STACK
+         assert(stack.ss_sp != NULL);
+         /* Call the signal handler on an alternate signal stack
+@@ -817,11 +820,16 @@ faulthandler_register(int signum, int chain, _Py_sighandler_t *previous_p)
      /* if the signal is received while the kernel is executing a system
         call, try to restart the system call instead of interrupting it and
         return EINTR. */
@@ -380,12 +323,13 @@ diff -rupN Python-3.6.4.orig/Modules/faulthandler.c Python-3.6.4/Modules/faultha
 +        action.sa_flags |= SA_NODEFER;
 +#endif
      }
- #ifdef HAVE_SIGALTSTACK
-     if (stack.ss_sp != NULL) {
-diff -rupN Python-3.6.4.orig/Modules/fcntlmodule.c Python-3.6.4/Modules/fcntlmodule.c
---- Python-3.6.4.orig/Modules/fcntlmodule.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/fcntlmodule.c	2018-03-25 01:48:49.208318031 +0100
-@@ -199,11 +199,19 @@ fcntl_ioctl_impl(PyObject *module, int f
+ #ifdef FAULTHANDLER_USE_ALT_STACK
+     assert(stack.ss_sp != NULL);
+diff --git a/Modules/fcntlmodule.c b/Modules/fcntlmodule.c
+index e4bdd3a..1fd322e 100644
+--- a/Modules/fcntlmodule.c
++++ b/Modules/fcntlmodule.c
+@@ -199,11 +199,19 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
              }
              if (buf == arg) {
                  Py_BEGIN_ALLOW_THREADS /* think array.resize() */
@@ -405,7 +349,7 @@ diff -rupN Python-3.6.4.orig/Modules/fcntlmodule.c Python-3.6.4/Modules/fcntlmod
              }
              if (mutate_arg && (len <= IOCTL_BUFSZ)) {
                  memcpy(str, buf, len);
-@@ -255,7 +263,11 @@ fcntl_ioctl_impl(PyObject *module, int f
+@@ -256,7 +264,11 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
          // Fall-through to outside the 'if' statement.
      }
      Py_BEGIN_ALLOW_THREADS
@@ -416,11 +360,50 @@ diff -rupN Python-3.6.4.orig/Modules/fcntlmodule.c Python-3.6.4/Modules/fcntlmod
 +#endif
      Py_END_ALLOW_THREADS
      if (ret < 0) {
-         PyErr_SetFromErrno(PyExc_IOError);
-diff -rupN Python-3.6.4.orig/Modules/mathmodule.c Python-3.6.4/Modules/mathmodule.c
---- Python-3.6.4.orig/Modules/mathmodule.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/mathmodule.c	2018-03-25 01:48:15.560318764 +0100
-@@ -1058,8 +1058,8 @@ FUNC1(tanh, tanh, 0,
+         PyErr_SetFromErrno(PyExc_OSError);
+diff --git a/Modules/grpmodule.c b/Modules/grpmodule.c
+index 738076c..8d59efe 100644
+--- a/Modules/grpmodule.c
++++ b/Modules/grpmodule.c
+@@ -118,7 +118,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
+ {
+     PyObject *retval = NULL;
+     int nomem = 0;
+-    char *buf = NULL, *buf2 = NULL;
++    char *buf = NULL;
+     gid_t gid;
+     struct group *p;
+ 
+@@ -126,6 +126,7 @@ grp_getgrgid_impl(PyObject *module, PyObject *id)
+         return NULL;
+     }
+ #ifdef HAVE_GETGRGID_R
++    char *buf2 = NULL;
+     int status;
+     Py_ssize_t bufsize;
+     /* Note: 'grp' will be used via pointer 'p' on getgrgid_r success. */
+@@ -196,7 +197,7 @@ static PyObject *
+ grp_getgrnam_impl(PyObject *module, PyObject *name)
+ /*[clinic end generated code: output=67905086f403c21c input=08ded29affa3c863]*/
+ {
+-    char *buf = NULL, *buf2 = NULL, *name_chars;
++    char *buf = NULL, *name_chars;
+     int nomem = 0;
+     struct group *p;
+     PyObject *bytes, *retval = NULL;
+@@ -207,6 +208,7 @@ grp_getgrnam_impl(PyObject *module, PyObject *name)
+     if (PyBytes_AsStringAndSize(bytes, &name_chars, NULL) == -1)
+         goto out;
+ #ifdef HAVE_GETGRNAM_R
++    char *buf2 = NULL;
+     int status;
+     Py_ssize_t bufsize;
+     /* Note: 'grp' will be used via pointer 'p' on getgrnam_r success. */
+diff --git a/Modules/mathmodule.c b/Modules/mathmodule.c
+index 5f5b71c..d183b4a 100644
+--- a/Modules/mathmodule.c
++++ b/Modules/mathmodule.c
+@@ -1377,8 +1377,8 @@ FUNC1(tanh, tanh, 0,
  
  /* Extend the partials array p[] by doubling its size. */
  static int                          /* non-zero on error */
@@ -431,9 +414,9 @@ diff -rupN Python-3.6.4.orig/Modules/mathmodule.c Python-3.6.4/Modules/mathmodul
  {
      void *v = NULL;
      Py_ssize_t m = *m_ptr;
-@@ -1117,10 +1117,15 @@ _fsum_realloc(double **p_ptr, Py_ssize_t
- static PyObject*
- math_fsum(PyObject *self, PyObject *seq)
+@@ -1448,10 +1448,15 @@ static PyObject *
+ math_fsum(PyObject *module, PyObject *seq)
+ /*[clinic end generated code: output=ba5c672b87fe34fc input=c51b7d8caf6f6e82]*/
  {
 -    PyObject *item, *iter, *sum = NULL;
 -    Py_ssize_t i, j, n = 0, m = NUM_PARTIALS;
@@ -451,10 +434,11 @@ diff -rupN Python-3.6.4.orig/Modules/mathmodule.c Python-3.6.4/Modules/mathmodul
      volatile double hi, yr, lo;
  
      iter = PyObject_GetIter(seq);
-diff -rupN Python-3.6.4.orig/Modules/mmapmodule.c Python-3.6.4/Modules/mmapmodule.c
---- Python-3.6.4.orig/Modules/mmapmodule.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/mmapmodule.c	2018-03-25 00:02:24.036910778 +0100
-@@ -51,7 +51,14 @@ my_getallocationgranularity (void)
+diff --git a/Modules/mmapmodule.c b/Modules/mmapmodule.c
+index b315bec..4f29359 100644
+--- a/Modules/mmapmodule.c
++++ b/Modules/mmapmodule.c
+@@ -58,7 +58,14 @@ my_getallocationgranularity (void)
  #endif
  
  #ifdef UNIX
@@ -469,7 +453,7 @@ diff -rupN Python-3.6.4.orig/Modules/mmapmodule.c Python-3.6.4/Modules/mmapmodul
  #include <sys/stat.h>
  
  #if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
-@@ -132,7 +139,9 @@ mmap_object_dealloc(mmap_object *m_obj)
+@@ -163,7 +170,9 @@ mmap_object_dealloc(mmap_object *m_obj)
      if (m_obj->fd >= 0)
          (void) close(m_obj->fd);
      if (m_obj->data!=NULL) {
@@ -477,21 +461,11 @@ diff -rupN Python-3.6.4.orig/Modules/mmapmodule.c Python-3.6.4/Modules/mmapmodul
          munmap(m_obj->data, m_obj->size);
 +#endif
      }
+     Py_END_ALLOW_THREADS
  #endif /* UNIX */
- 
-@@ -176,7 +185,9 @@ mmap_close_method(mmap_object *self, PyO
-         (void) close(self->fd);
-     self->fd = -1;
-     if (self->data != NULL) {
-+#if defined(HAVE_SYS_MMAP_H)
-         munmap(self->data, self->size);
-+#endif
-         self->data = NULL;
-     }
- #endif
-@@ -602,10 +613,12 @@ mmap_flush_method(mmap_object *self, PyO
+@@ -692,10 +701,12 @@ mmap_flush_method(mmap_object *self, PyObject *args)
+     Py_RETURN_NONE;
  #elif defined(UNIX)
-     /* XXX semantics of return value? */
      /* XXX flags for msync? */
 +#if defined(HAVE_SYS_MMAP_H)
      if (-1 == msync(self->data + offset, size, MS_SYNC)) {
@@ -499,10 +473,10 @@ diff -rupN Python-3.6.4.orig/Modules/mmapmodule.c Python-3.6.4/Modules/mmapmodul
          return NULL;
      }
 +#endif
-     return PyLong_FromLong(0);
+     Py_RETURN_NONE;
  #else
      PyErr_SetString(PyExc_ValueError, "flush not supported on this system");
-@@ -1082,7 +1095,9 @@ new_mmap_object(PyTypeObject *type, PyOb
+@@ -1223,7 +1234,9 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
      Py_ssize_t map_size;
      off_t offset = 0;
      int fd, flags = MAP_SHARED, prot = PROT_WRITE | PROT_READ;
@@ -512,7 +486,7 @@ diff -rupN Python-3.6.4.orig/Modules/mmapmodule.c Python-3.6.4/Modules/mmapmodul
      int access = (int)ACCESS_DEFAULT;
      static char *keywords[] = {"fileno", "length",
                                 "flags", "prot",
-@@ -1176,6 +1191,7 @@ new_mmap_object(PyTypeObject *type, PyOb
+@@ -1328,6 +1341,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
      m_obj->weakreflist = NULL;
      m_obj->exports = 0;
      m_obj->offset = offset;
@@ -520,7 +494,7 @@ diff -rupN Python-3.6.4.orig/Modules/mmapmodule.c Python-3.6.4/Modules/mmapmodul
      if (fd == -1) {
          m_obj->fd = -1;
          /* Assume the caller wants to map anonymous memory.
-@@ -1209,6 +1225,10 @@ new_mmap_object(PyTypeObject *type, PyOb
+@@ -1369,6 +1383,10 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
      if (devzero != -1) {
          close(devzero);
      }
@@ -531,21 +505,55 @@ diff -rupN Python-3.6.4.orig/Modules/mmapmodule.c Python-3.6.4/Modules/mmapmodul
  
      if (m_obj->data == (char *)-1) {
          m_obj->data = NULL;
-diff -rupN Python-3.6.4.orig/Modules/posixmodule.c Python-3.6.4/Modules/posixmodule.c
---- Python-3.6.4.orig/Modules/posixmodule.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/posixmodule.c	2018-03-25 01:28:23.576344702 +0100
-@@ -5580,8 +5580,10 @@ static PyObject *
+diff --git a/Modules/posixmodule.c b/Modules/posixmodule.c
+index e70fef5..266c76a 100644
+--- a/Modules/posixmodule.c
++++ b/Modules/posixmodule.c
+@@ -3114,7 +3114,13 @@ os_ttyname_impl(PyObject *module, int fd)
+ /*[clinic end generated code: output=c424d2e9d1cd636a input=9ff5a58b08115c55]*/
+ {
+ 
++#ifdef _SC_TTY_NAME_MAX
+     long size = sysconf(_SC_TTY_NAME_MAX);
++#elif defined(_POSIX_TTY_NAME_MAX)
++    long size = _POSIX_TTY_NAME_MAX;
++#else
++    long size = -1;
++#endif
+     if (size == -1) {
+         return posix_error();
+     }
+@@ -5206,6 +5212,13 @@ os_uname_impl(PyObject *module)
+     PyStructSequence_SET_ITEM(value, i, o); \
+     } \
+ 
++#ifdef __MINT__
++    /*
++     * mintlib (correctly) returns values like "ataritt", "falcon" etc.
++     * for u.machine, but python code actually expects the architectur here
++     */
++    strcpy(u.machine, "m68k");
++#endif
+     SET(0, u.sysname);
+     SET(1, u.nodename);
+     SET(2, u.release);
+@@ -7154,6 +7167,7 @@ static PyObject *
  os_sched_yield_impl(PyObject *module)
  /*[clinic end generated code: output=902323500f222cac input=e54d6f98189391d4]*/
  {
 +#ifdef HAVE_SCHED_YIELD
-     if (sched_yield())
+     int result;
+     Py_BEGIN_ALLOW_THREADS
+     result = sched_yield();
+@@ -7161,6 +7175,7 @@ os_sched_yield_impl(PyObject *module)
+     if (result < 0) {
          return posix_error();
+     }
 +#endif
      Py_RETURN_NONE;
  }
  
-@@ -6858,6 +6860,11 @@ Returns either waitid_result or None if
+@@ -8518,6 +8533,11 @@ Returns either waitid_result or None if WNOHANG is specified and there are
  no children in a waitable state.
  [clinic start generated code]*/
  
@@ -557,7 +565,7 @@ diff -rupN Python-3.6.4.orig/Modules/posixmodule.c Python-3.6.4/Modules/posixmod
  static PyObject *
  os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options)
  /*[clinic end generated code: output=5d2e1c0bde61f4d8 input=d8e7f76e052b7920]*/
-@@ -9189,7 +9196,7 @@ os_WSTOPSIG_impl(PyObject *module, int s
+@@ -11435,7 +11455,7 @@ os_WSTOPSIG_impl(PyObject *module, int status)
  #endif /* HAVE_SYS_WAIT_H */
  
  
@@ -566,7 +574,7 @@ diff -rupN Python-3.6.4.orig/Modules/posixmodule.c Python-3.6.4/Modules/posixmod
  #ifdef _SCO_DS
  /* SCO OpenServer 5.0 and later requires _SVID3 before it reveals the
     needed definitions in sys/statvfs.h */
-@@ -9239,8 +9246,10 @@ _pystatvfs_fromstructstatvfs(struct stat
+@@ -11493,8 +11513,10 @@ _pystatvfs_fromstructstatvfs(PyObject *module, struct statvfs st) {
  
      return v;
  }
@@ -577,7 +585,7 @@ diff -rupN Python-3.6.4.orig/Modules/posixmodule.c Python-3.6.4/Modules/posixmod
  /*[clinic input]
  os.fstatvfs
      fd: int
-@@ -9274,7 +9283,6 @@ os_fstatvfs_impl(PyObject *module, int f
+@@ -11528,7 +11550,6 @@ os_fstatvfs_impl(PyObject *module, int fd)
  
  
  #if defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H)
@@ -585,38 +593,64 @@ diff -rupN Python-3.6.4.orig/Modules/posixmodule.c Python-3.6.4/Modules/posixmod
  /*[clinic input]
  os.statvfs
  
-diff -rupN Python-3.6.4.orig/Modules/signalmodule.c Python-3.6.4/Modules/signalmodule.c
---- Python-3.6.4.orig/Modules/signalmodule.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/signalmodule.c	2018-03-25 01:34:42.248336462 +0100
-@@ -925,9 +925,13 @@ signal_sigwait(PyObject *module, PyObjec
-     if (iterable_to_sigset(sigset, &set))
+diff --git a/Modules/signalmodule.c b/Modules/signalmodule.c
+index 8305f64..f172f68 100644
+--- a/Modules/signalmodule.c
++++ b/Modules/signalmodule.c
+@@ -725,7 +725,7 @@ signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
+                         "signal number out of range");
          return NULL;
+     }
+-#ifdef HAVE_SIGACTION
++#if defined(HAVE_SIGACTION) && defined(SA_RESTART)
+     struct sigaction act;
+     (void) sigaction(signalnum, NULL, &act);
+     if (flag) {
+@@ -1080,9 +1080,14 @@ signal_sigwait_impl(PyObject *module, sigset_t sigset)
+ {
+     int err, signum;
  
 +#ifdef HAVE_SIGWAIT
      Py_BEGIN_ALLOW_THREADS
-     err = sigwait(&set, &signum);
+     err = sigwait(&sigset, &signum);
      Py_END_ALLOW_THREADS
 +#else
-+	err = ENOSYS;
++    err = ENOSYS;
++    signum = 0;
 +#endif
      if (err) {
          errno = err;
          return PyErr_SetFromErrno(PyExc_OSError);
-diff -rupN Python-3.6.4.orig/Objects/codeobject.c Python-3.6.4/Objects/codeobject.c
---- Python-3.6.4.orig/Objects/codeobject.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Objects/codeobject.c	2018-03-25 00:20:55.240886598 +0100
+diff --git a/Modules/socketmodule.c b/Modules/socketmodule.c
+index f0c9b46..86e44d2 100644
+--- a/Modules/socketmodule.c
++++ b/Modules/socketmodule.c
+@@ -3868,7 +3868,7 @@ sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
+                   PyObject *(*makeval)(ssize_t, void *), void *makeval_data)
+ {
+     sock_addr_t addrbuf;
+-    socklen_t addrbuflen;
++    socklen_t addrbuflen = 0;
+     struct msghdr msg = {0};
+     PyObject *cmsg_list = NULL, *retval = NULL;
+     void *controlbuf = NULL;
+diff --git a/Objects/codeobject.c b/Objects/codeobject.c
+index c4a0d9a..f931a89 100644
+--- a/Objects/codeobject.c
++++ b/Objects/codeobject.c
 @@ -1,6 +1,6 @@
 +#include "Python.h"
  #include <stdbool.h>
  
 -#include "Python.h"
- #include "code.h"
- #include "structmember.h"
- 
-diff -rupN Python-3.6.4.orig/Objects/exceptions.c Python-3.6.4/Objects/exceptions.c
---- Python-3.6.4.orig/Objects/exceptions.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Objects/exceptions.c	2018-03-25 00:02:24.036910778 +0100
-@@ -1922,11 +1922,11 @@ UnicodeEncodeError_str(PyObject *self)
+ #include "opcode.h"
+ #include "structmember.h"         // PyMemberDef
+ #include "pycore_code.h"          // _PyCodeConstructor
+diff --git a/Objects/exceptions.c b/Objects/exceptions.c
+index 86cabbf..d2108c8 100644
+--- a/Objects/exceptions.c
++++ b/Objects/exceptions.c
+@@ -2923,11 +2923,11 @@ UnicodeEncodeError_str(PyObject *self)
          Py_UCS4 badchar = PyUnicode_ReadChar(uself->object, uself->start);
          const char *fmt;
          if (badchar <= 0xff)
@@ -631,7 +665,7 @@ diff -rupN Python-3.6.4.orig/Objects/exceptions.c Python-3.6.4/Objects/exception
          result = PyUnicode_FromFormat(
              fmt,
              encoding_str,
-@@ -1936,7 +1936,7 @@ UnicodeEncodeError_str(PyObject *self)
+@@ -2937,7 +2937,7 @@ UnicodeEncodeError_str(PyObject *self)
      }
      else {
          result = PyUnicode_FromFormat(
@@ -640,7 +674,7 @@ diff -rupN Python-3.6.4.orig/Objects/exceptions.c Python-3.6.4/Objects/exception
              encoding_str,
              uself->start,
              uself->end-1,
-@@ -2046,7 +2046,7 @@ UnicodeDecodeError_str(PyObject *self)
+@@ -3035,7 +3035,7 @@ UnicodeDecodeError_str(PyObject *self)
      if (uself->start < PyBytes_GET_SIZE(uself->object) && uself->end == uself->start+1) {
          int byte = (int)(PyBytes_AS_STRING(((PyUnicodeErrorObject *)self)->object)[uself->start]&0xff);
          result = PyUnicode_FromFormat(
@@ -649,7 +683,7 @@ diff -rupN Python-3.6.4.orig/Objects/exceptions.c Python-3.6.4/Objects/exception
              encoding_str,
              byte,
              uself->start,
-@@ -2054,7 +2054,7 @@ UnicodeDecodeError_str(PyObject *self)
+@@ -3043,7 +3043,7 @@ UnicodeDecodeError_str(PyObject *self)
      }
      else {
          result = PyUnicode_FromFormat(
@@ -658,7 +692,7 @@ diff -rupN Python-3.6.4.orig/Objects/exceptions.c Python-3.6.4/Objects/exception
              encoding_str,
              uself->start,
              uself->end-1,
-@@ -2142,11 +2142,11 @@ UnicodeTranslateError_str(PyObject *self
+@@ -3129,11 +3129,11 @@ UnicodeTranslateError_str(PyObject *self)
          Py_UCS4 badchar = PyUnicode_ReadChar(uself->object, uself->start);
          const char *fmt;
          if (badchar <= 0xff)
@@ -673,7 +707,7 @@ diff -rupN Python-3.6.4.orig/Objects/exceptions.c Python-3.6.4/Objects/exception
          result = PyUnicode_FromFormat(
              fmt,
              (int)badchar,
-@@ -2155,7 +2155,7 @@ UnicodeTranslateError_str(PyObject *self
+@@ -3142,7 +3142,7 @@ UnicodeTranslateError_str(PyObject *self)
          );
      } else {
          result = PyUnicode_FromFormat(
@@ -682,10 +716,11 @@ diff -rupN Python-3.6.4.orig/Objects/exceptions.c Python-3.6.4/Objects/exception
              uself->start,
              uself->end-1,
              reason_str
-diff -rupN Python-3.6.4.orig/Objects/floatobject.c Python-3.6.4/Objects/floatobject.c
---- Python-3.6.4.orig/Objects/floatobject.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Objects/floatobject.c	2018-03-25 01:11:41.208366514 +0100
-@@ -341,9 +341,9 @@ float_repr(PyFloatObject *v)
+diff --git a/Objects/floatobject.c b/Objects/floatobject.c
+index be60246..7a4318f 100644
+--- a/Objects/floatobject.c
++++ b/Objects/floatobject.c
+@@ -411,9 +411,9 @@ float_repr(PyFloatObject *v)
   */
  
  static PyObject*
@@ -697,7 +732,7 @@ diff -rupN Python-3.6.4.orig/Objects/floatobject.c Python-3.6.4/Objects/floatobj
      int r = 0;
  
      assert(PyFloat_Check(v));
-@@ -1477,10 +1477,10 @@ float_as_integer_ratio(PyObject *v, PyOb
+@@ -1574,10 +1574,10 @@ float_as_integer_ratio_impl(PyObject *self)
      int exponent;
      int i;
  
@@ -711,140 +746,169 @@ diff -rupN Python-3.6.4.orig/Objects/floatobject.c Python-3.6.4/Objects/floatobj
 +    PyObject *volatile result_pair = NULL;
      PyNumberMethods *long_methods = PyLong_Type.tp_as_number;
  
-     CONVERT_TO_DOUBLE(v, self);
-diff -rupN Python-3.6.4.orig/Programs/_testembed.c Python-3.6.4/Programs/_testembed.c
---- Python-3.6.4.orig/Programs/_testembed.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Programs/_testembed.c	2018-03-25 01:57:48.736306291 +0100
-@@ -149,6 +149,7 @@ static int test_pre_initialization_api(v
-     return 0;
+     CONVERT_TO_DOUBLE(self, self_double);
+diff --git a/Objects/stringlib/fastsearch.h b/Objects/stringlib/fastsearch.h
+index 7403d8a..8cf1db8 100644
+--- a/Objects/stringlib/fastsearch.h
++++ b/Objects/stringlib/fastsearch.h
+@@ -344,7 +344,7 @@ STRINGLIB(_preprocess)(const STRINGLIB_CHAR *needle, Py_ssize_t len_needle,
+         }
+     }
+     // Fill up a compressed Boyer-Moore "Bad Character" table
+-    Py_ssize_t not_found_shift = Py_MIN(len_needle, MAX_SHIFT);
++    Py_ssize_t not_found_shift = Py_MIN((size_t)len_needle, MAX_SHIFT);
+     for (Py_ssize_t i = 0; i < (Py_ssize_t)TABLE_SIZE; i++) {
+         p->table[i] = Py_SAFE_DOWNCAST(not_found_shift,
+                                        Py_ssize_t, SHIFT_TYPE);
+diff --git a/Programs/_testembed.c b/Programs/_testembed.c
+index 13eae17..e7e0b39 100644
+--- a/Programs/_testembed.c
++++ b/Programs/_testembed.c
+@@ -346,6 +346,7 @@ static int test_pre_initialization_sys_options(void)
  }
  
+ 
 +#ifdef WITH_THREAD
+ /* bpo-20891: Avoid race condition when initialising the GIL */
  static void bpo20891_thread(void *lockp)
  {
-     PyThread_type_lock lock = *((PyThread_type_lock*)lockp);
-@@ -165,12 +166,14 @@ static void bpo20891_thread(void *lockp)
+@@ -361,6 +362,7 @@ static void bpo20891_thread(void *lockp)
  
-     PyThread_exit_thread();
+     PyThread_release_lock(lock);
  }
 +#endif
  
  static int test_bpo20891(void)
  {
-     /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread before
-        calling PyEval_InitThreads() must not crash. PyGILState_Ensure() must
-        call PyEval_InitThreads() for us in this case. */
+@@ -369,6 +371,7 @@ static int test_bpo20891(void)
+ 
+     /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread must not
+        crash. */
 +#ifdef WITH_THREAD
      PyThread_type_lock lock = PyThread_allocate_lock();
      if (!lock) {
-         fprintf(stderr, "PyThread_allocate_lock failed!");
-@@ -192,6 +195,7 @@ static int test_bpo20891(void)
+         error("PyThread_allocate_lock failed!");
+@@ -390,6 +393,7 @@ static int test_bpo20891(void)
      Py_END_ALLOW_THREADS
  
      PyThread_free_lock(lock);
 +#endif
  
-     return 0;
- }
-diff -rupN Python-3.6.4.orig/Python/bltinmodule.c Python-3.6.4/Python/bltinmodule.c
---- Python-3.6.4.orig/Python/bltinmodule.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Python/bltinmodule.c	2018-03-25 01:14:11.968363234 +0100
-@@ -2224,7 +2224,7 @@ reject non-numeric types.
- [clinic start generated code]*/
+     Py_Finalize();
  
- static PyObject *
--builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
-+builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *volatile start)
- /*[clinic end generated code: output=df758cec7d1d302f input=3b5b7a9d7611c73a]*/
- {
-     PyObject *result = start;
-@@ -2331,7 +2331,7 @@ builtin_sum_impl(PyObject *module, PyObj
-                 continue;
-             }
-             if (PyLong_CheckExact(item)) {
--                long value;
-+                long volatile value;
-                 int overflow;
-                 value = PyLong_AsLongAndOverflow(item, &overflow);
-                 if (!overflow) {
-diff -rupN Python-3.6.4.orig/Python/compile.c Python-3.6.4/Python/compile.c
---- Python-3.6.4.orig/Python/compile.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Python/compile.c	2018-03-25 01:14:40.040362623 +0100
-@@ -5170,7 +5170,6 @@ compute_code_flags(struct compiler *c)
- {
-     PySTEntryObject *ste = c->u->u_ste;
-     int flags = 0;
--    Py_ssize_t n;
-     if (ste->ste_type == FunctionBlock) {
-         flags |= CO_NEWLOCALS | CO_OPTIMIZED;
-         if (ste->ste_nested)
-diff -rupN Python-3.6.4.orig/Python/import.c Python-3.6.4/Python/import.c
---- Python-3.6.4.orig/Python/import.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Python/import.c	2018-03-25 01:15:16.376361832 +0100
-@@ -1786,8 +1786,10 @@ _imp_extension_suffixes_impl(PyObject *m
- /*[clinic end generated code: output=0bf346e25a8f0cd3 input=ecdeeecfcb6f839e]*/
- {
-     PyObject *list;
-+#ifdef HAVE_DYNAMIC_LOADING
-     const char *suffix;
-     unsigned int index = 0;
+diff --git a/Python/fileutils.c b/Python/fileutils.c
+index 24341dd..6135b9f 100644
+--- a/Python/fileutils.c
++++ b/Python/fileutils.c
+@@ -115,6 +115,7 @@ is_valid_wide_char(wchar_t ch)
+         // Reject lone surrogate characters
+         return 0;
+     }
++#if __SIZEOF_WCHAR_T__ > 2
+     if (ch > MAX_UNICODE) {
+         // bpo-35883: Reject characters outside [U+0000; U+10ffff] range.
+         // The glibc mbstowcs() UTF-8 decoder does not respect the RFC 3629,
+@@ -122,6 +123,7 @@ is_valid_wide_char(wchar_t ch)
+         // https://sourceware.org/bugzilla/show_bug.cgi?id=2373
+         return 0;
+     }
 +#endif
+     return 1;
+ }
  
-     list = PyList_New(0);
-     if (list == NULL)
-diff -rupN Python-3.6.4.orig/Python/pyfpe.c Python-3.6.4/Python/pyfpe.c
---- Python-3.6.4.orig/Python/pyfpe.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Python/pyfpe.c	2018-03-25 00:02:24.036910778 +0100
-@@ -17,7 +17,7 @@ int PyFPE_counter = 0;
-    warning when compiling an empty file. */
+@@ -902,6 +904,7 @@ _Py_GetLocaleEncoding(void)
+     encoding[Py_ARRAY_LENGTH(encoding) - 1] = 0;
+     return _PyMem_RawWcsdup(encoding);
+ #else
++#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+     const char *encoding = nl_langinfo(CODESET);
+     if (!encoding || encoding[0] == '\0') {
+         // Use UTF-8 if nl_langinfo() returns an empty string. It can happen on
+@@ -916,6 +919,9 @@ _Py_GetLocaleEncoding(void)
+         return NULL;
+     }
+     return wstr;
++#else
++    return _PyMem_RawWcsdup(L"utf-8");
++#endif
+ #endif  // !MS_WINDOWS
+ 
+ #endif  // !_Py_FORCE_UTF8_LOCALE
+diff --git a/Python/initconfig.c b/Python/initconfig.c
+index 50d2498..ee8e643 100644
+--- a/Python/initconfig.c
++++ b/Python/initconfig.c
+@@ -2280,13 +2280,13 @@ config_usage(int error, const wchar_t* program)
+ }
+ 
+ static void
+-config_envvars_usage()
++config_envvars_usage(void)
+ {
+     printf(usage_envvars, (wint_t)DELIM, (wint_t)DELIM, PYTHONHOMEHELP);
+ }
+ 
+ static void
+-config_xoptions_usage()
++config_xoptions_usage(void)
+ {
+     puts(usage_xoptions);
+ }
+diff --git a/Python/pyfpe.c b/Python/pyfpe.c
+index 9b1260f..0cbfb6e 100644
+--- a/Python/pyfpe.c
++++ b/Python/pyfpe.c
+@@ -12,7 +12,7 @@ jmp_buf PyFPE_jbuf;
+ int PyFPE_counter;
  
  double
 -PyFPE_dummy(void *dummy)
 +PyFPE_dummy(volatile void *dummy)
  {
- 	return 1.0;
+     return 1.0;
  }
-diff -rupN Python-3.6.4.orig/Python/pyhash.c Python-3.6.4/Python/pyhash.c
---- Python-3.6.4.orig/Python/pyhash.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Python/pyhash.c	2018-03-25 01:15:44.664361216 +0100
-@@ -272,7 +272,7 @@ fnv(const void *src, Py_ssize_t len)
-         x = (_PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *p++;
-     x ^= (Py_uhash_t) len;
-     x ^= (Py_uhash_t) _Py_HashSecret.fnv.suffix;
--    if (x == -1) {
-+    if (x == (Py_uhash_t)-1) {
-         x = -2;
-     }
-     return x;
-diff -rupN Python-3.6.4.orig/Python/pylifecycle.c Python-3.6.4/Python/pylifecycle.c
---- Python-3.6.4.orig/Python/pylifecycle.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Python/pylifecycle.c	2018-03-25 01:16:24.712360345 +0100
-@@ -239,8 +239,7 @@
- #elif defined(__ANDROID__)
-     return get_codec_name("UTF-8");
- #else
--    PyErr_SetNone(PyExc_NotImplementedError);
--    return NULL;
-+    return get_codec_name("UTF-8");
- #endif
+diff --git a/Python/pylifecycle.c b/Python/pylifecycle.c
+index 9248e97..d4534d8 100644
+--- a/Python/pylifecycle.c
++++ b/Python/pylifecycle.c
+@@ -3034,7 +3034,10 @@ PyOS_setsig(int sig, PyOS_sighandler_t handler)
+     /* Using SA_ONSTACK is friendlier to other C/C++/Golang-VM code that
+      * extension module or embedding code may use where tiny thread stacks
+      * are used.  https://bugs.python.org/issue43390 */
+-    context.sa_flags = SA_ONSTACK;
++    context.sa_flags = 0;
++#ifdef SA_ONSTACK
++    context.sa_flags |= SA_ONSTACK;
++#endif
+     if (sigaction(sig, &context, &ocontext) == -1)
+         return SIG_ERR;
+     return ocontext.sa_handler;
+diff --git a/Python/pytime.c b/Python/pytime.c
+index f4f112f..87d2526 100644
+--- a/Python/pytime.c
++++ b/Python/pytime.c
+@@ -824,7 +824,7 @@ _PyTime_AsTimevalTime_t(_PyTime_t t, time_t *p_secs, int *us,
  }
  
-diff -rupN Python-3.6.4.orig/Python/pytime.c Python-3.6.4/Python/pytime.c
---- Python-3.6.4.orig/Python/pytime.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Python/pytime.c	2018-03-25 01:22:03.944352963 +0100
-@@ -727,7 +727,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_inf
+ 
+-#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE)
++#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE) || !defined(HAVE_CLOCK_NANOSLEEP)
+ static int
+ pytime_as_timespec(_PyTime_t t, struct timespec *ts, int raise_exc)
+ {
+@@ -1128,7 +1128,7 @@ py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
          info->adjustable = 0;
      }
  
 -#else
 +#elif defined(HAVE_CLOCK_GETTIME)
-     struct timespec ts;
+ 
  #ifdef CLOCK_HIGHRES
      const clockid_t clk_id = CLOCK_HIGHRES;
-@@ -760,6 +760,26 @@ pymonotonic(_PyTime_t *tp, _Py_clock_inf
+@@ -1162,6 +1162,26 @@ py_get_monotonic_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
+         }
+         info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
      }
-     if (_PyTime_FromTimespec(tp, &ts, raise) < 0)
-         return -1;
 +#else
 +	/*
 +	 * must do something here, or the time()
@@ -853,11 +917,11 @@ diff -rupN Python-3.6.4.orig/Python/pytime.c Python-3.6.4/Python/pytime.c
 +	struct timeval tv;
 +	if (gettimeofday(&tv, NULL) < 0)
 +	{
-+        if (raise)
++        if (raise_exc)
 +            PyErr_SetFromErrno(PyExc_OSError);
 +        return -1;
 +	}
-+    if (_PyTime_FromTimeval(tp, &tv, raise) < 0)
++    if (pytime_fromtimeval(tp, &tv, raise_exc) < 0)
 +        return -1;
 +    if (info) {
 +        info->implementation = "gettimeofday()";
@@ -868,55 +932,100 @@ diff -rupN Python-3.6.4.orig/Python/pytime.c Python-3.6.4/Python/pytime.c
  #endif
      return 0;
  }
-diff -rupN Python-3.6.4.orig/configure.ac Python-3.6.4/configure.ac
---- Python-3.6.4.orig/configure.ac	2018-03-24 23:10:10.008057154 +0100
-+++ Python-3.6.4/configure.ac	2018-03-25 01:25:37.184348323 +0100
-@@ -376,6 +376,9 @@ then
+diff --git a/Python/thread_pthread.h b/Python/thread_pthread.h
+index ddc28c4..e77243a 100644
+--- a/Python/thread_pthread.h
++++ b/Python/thread_pthread.h
+@@ -364,6 +364,7 @@ PyThread_exit_thread(void)
+     if (!initialized)
+         exit(0);
+     pthread_exit(0);
++    __builtin_unreachable();
+ }
+ 
+ #ifdef USE_SEMAPHORES
+diff --git a/Python/thread_pthread_stubs.h b/Python/thread_pthread_stubs.h
+index 8b80c0f..159bf64 100644
+--- a/Python/thread_pthread_stubs.h
++++ b/Python/thread_pthread_stubs.h
+@@ -154,7 +154,7 @@ pthread_key_create(pthread_key_t *key, void (*destr_function)(void *))
+ int
+ pthread_key_delete(pthread_key_t key)
+ {
+-    if (key < 0 || key >= PTHREAD_KEYS_MAX || !py_tls_entries[key].in_use) {
++    if (key >= PTHREAD_KEYS_MAX || !py_tls_entries[key].in_use) {
+         return EINVAL;
+     }
+     py_tls_entries[key].in_use = false;
+@@ -165,7 +165,7 @@ pthread_key_delete(pthread_key_t key)
+ 
+ void *
+ pthread_getspecific(pthread_key_t key) {
+-    if (key < 0 || key >= PTHREAD_KEYS_MAX || !py_tls_entries[key].in_use) {
++    if (key >= PTHREAD_KEYS_MAX || !py_tls_entries[key].in_use) {
+         return NULL;
+     }
+     return py_tls_entries[key].value;
+@@ -174,7 +174,7 @@ pthread_getspecific(pthread_key_t key) {
+ int
+ pthread_setspecific(pthread_key_t key, const void *value)
+ {
+-    if (key < 0 || key >= PTHREAD_KEYS_MAX || !py_tls_entries[key].in_use) {
++    if (key >= PTHREAD_KEYS_MAX || !py_tls_entries[key].in_use) {
+         return EINVAL;
+     }
+     py_tls_entries[key].value = (void *)value;
+diff --git a/configure.ac b/configure.ac
+index bbe7f89..43b967d 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -542,6 +542,10 @@ then
  	*-*-linux*)
  		ac_sys_system=Linux
  		;;
 +	*-*-mint*)
 +		ac_sys_system=MiNT
++		ac_cv_enable_visibility=no
 +		;;
  	*-*-cygwin*)
  		ac_sys_system=Cygwin
  		;;
-@@ -405,6 +408,7 @@ then
+@@ -580,6 +584,7 @@ then
+ 	linux*) MACHDEP="linux";;
  	cygwin*) MACHDEP="cygwin";;
  	darwin*) MACHDEP="darwin";;
- 	irix646) MACHDEP="irix6";;
 +	mint*) MACHDEP="mint";;
  	'')	MACHDEP="unknown";;
      esac
- fi
-@@ -424,6 +428,8 @@ if test "$cross_compiling" = yes; then
- 	*-*-cygwin*)
- 		_host_cpu=
+ 
+@@ -614,6 +619,8 @@ if test "$cross_compiling" = yes; then
+ 	wasm32-*-* | wasm64-*-*)
+ 		_host_cpu=$host_cpu
  		;;
 +	*-*-mint*)
 +		;;
  	*)
  		# for now, limit cross builds to known configurations
  		MACHDEP="unknown"
-@@ -802,7 +808,7 @@ cat >> conftest.c <<EOF
+@@ -976,7 +983,7 @@ cat > conftest.c <<EOF
          hppa-linux-gnu
  # elif defined(__ia64__)
          ia64-linux-gnu
 -# elif defined(__m68k__) && !defined(__mcoldfire__)
 +# elif defined(__m68k__)
          m68k-linux-gnu
- # elif defined(__mips_hard_float) && defined(_MIPSEL)
+ # elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
  #  if _MIPS_SIM == _ABIO32
-@@ -861,6 +867,8 @@ cat >> conftest.c <<EOF
+@@ -1063,6 +1070,8 @@ cat > conftest.c <<EOF
          i386-gnu
  #elif defined(__APPLE__)
          darwin
 +#elif defined(__MINT__) && defined(__m68k__)
 +        /* m68k-atari-mint */
- #else
- # error unknown platform triplet
- #endif
-@@ -1187,6 +1195,10 @@ else # shared is disabled
+ #elif defined(__VXWORKS__)
+         vxworks
+ #elif defined(__wasm32__)
+@@ -1533,6 +1542,10 @@ else # shared is disabled
            BLDLIBRARY='$(LIBRARY)'
            LDLIBRARY='libpython$(LDVERSION).dll.a'
            ;;
@@ -927,20 +1036,29 @@ diff -rupN Python-3.6.4.orig/configure.ac Python-3.6.4/configure.ac
    esac
  fi
  
-@@ -2064,7 +2076,7 @@ poll.h sys/devpoll.h sys/epoll.h sys/pol
- sys/audioio.h sys/xattr.h sys/bsdtty.h sys/event.h sys/file.h sys/ioctl.h \
- sys/kern_control.h sys/loadavg.h sys/lock.h sys/mkdev.h sys/modem.h \
- sys/param.h sys/random.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
--sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
-+sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h sys/mman.h \
- sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
- libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
- linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-@@ -2557,6 +2569,16 @@ then
+@@ -1928,7 +1941,7 @@ if test "$Py_LTO" = 'true' ; then
+   then
+       # bpo-30345: Add -g to LDFLAGS when compiling with LTO
+       # to get debug symbols.
+-      LTOFLAGS="$LTOFLAGS -g"
++      : LTOFLAGS="$LTOFLAGS -g"
+   fi
+ 
+   CFLAGS_NODIST="$CFLAGS_NODIST ${LTOCFLAGS-$LTOFLAGS}"
+@@ -2086,7 +2099,7 @@ then
+ 	    if test "$Py_DEBUG" = 'true' ; then
+ 		OPT="-g $PYDEBUG_CFLAGS -Wall"
+ 	    else
+-		OPT="-g $WRAP -O3 -Wall"
++		OPT="$WRAP -O3 -Wall"
+ 	    fi
+ 	    ;;
+ 	*)
+@@ -3230,6 +3243,16 @@ then
  	CYGWIN*)
  		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
  		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
-+ 	MiNT*)
++	MiNT*)
 +		if test "$host_os" = mintelf; then
 +			LDSHARED='$(CC) -r -Wl,--oformat,elf32-m68k'
 +			LDCXXSHARED='$(CXX) -r -Wl,--oformat,elf32-m68k'
@@ -953,47 +1071,36 @@ diff -rupN Python-3.6.4.orig/configure.ac Python-3.6.4/configure.ac
  	*)	LDSHARED="ld";;
  	esac
  fi
-@@ -3762,6 +3784,8 @@ AC_CHECK_FUNCS(clock_settime, [], [
+@@ -4122,6 +4145,12 @@ void * start_routine (void *arg) { exit (0); }]], [[
+ pthread_create (NULL, NULL, start_routine, NULL)]])],[
+     AC_MSG_RESULT(yes)
+     posix_threads=yes
++case "$ac_sys_system" in
++   MiNT)
++     posix_threads=stub
++     LIBS=$_libs
++     ;;
++esac
+     ],[
+     LIBS=$_libs
+     AC_CHECK_FUNC(pthread_detach, [
+@@ -4145,6 +4174,7 @@ pthread_create (NULL, NULL, start_routine, NULL)]])],[
+     ],[
+     AS_CASE([$ac_sys_system],
+       [WASI], [posix_threads=stub],
++      [MiNT], [posix_threads=stub; LIBS=$_libs],
+       [AC_MSG_ERROR([could not find pthreads on your system])]
+     )
+     ])])])])])])
+@@ -4990,6 +5020,8 @@ AC_CHECK_FUNCS(nanosleep, [], [
      ])
  ])
  
 +AC_CHECK_FUNCS(sched_yield)
 +
- AC_MSG_CHECKING(for major, minor, and makedev)
+ AC_CACHE_CHECK([for major, minor, and makedev], [ac_cv_device_macros], [
  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
  #if defined(MAJOR_IN_MKDEV)
-@@ -4405,7 +4429,7 @@ LIBS="$LIBS $LIBM"
- 
- AC_CHECK_FUNCS([acosh asinh atanh copysign erf erfc expm1 finite gamma])
- AC_CHECK_FUNCS([hypot lgamma log1p log2 round tgamma])
--AC_CHECK_DECLS([isinf, isnan, isfinite], [], [], [[#include <math.h>]])
-+AC_CHECK_DECLS([isinf, isnan, isfinite, round, hypot, copysign], [], [], [[#include <math.h>]])
- 
- # On FreeBSD 6.2, it appears that tanh(-0.) returns 0. instead of
- # -0. on some architectures.
-diff -rupN Python-3.6.4.orig/setup.py Python-3.6.4/setup.py
---- Python-3.6.4.orig/setup.py	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/setup.py	2018-03-25 00:02:24.036910778 +0100
-@@ -1670,8 +1670,8 @@ class PyBuildExt(build_ext):
-         # Call the method for detecting whether _tkinter can be compiled
-         self.detect_tkinter(inc_dirs, lib_dirs)
- 
--        if '_tkinter' not in [e.name for e in self.extensions]:
--            missing.append('_tkinter')
-+##      if '_tkinter' not in [e.name for e in self.extensions]:
-+##          missing.append('_tkinter')
- 
- ##         # Uncomment these lines if you want to play with xxmodule.c
- ##         ext = Extension('xx', ['xxmodule.c'])
-diff -rupN Python-3.6.4.orig/Modules/socketmodule.c Python-3.6.4/Modules/socketmodule.c
---- Python-3.6.4.orig/Modules/socketmodule.c	2017-12-19 05:53:56.000000000 +0100
-+++ Python-3.6.4/Modules/socketmodule.c	2018-03-25 01:49:19.656317369 +0100
-@@ -3365,7 +3365,7 @@ sock_recvmsg_guts(PySocketSockObject *s,
-                   PyObject *(*makeval)(ssize_t, void *), void *makeval_data)
- {
-     sock_addr_t addrbuf;
--    socklen_t addrbuflen;
-+    socklen_t addrbuflen = 0;
-     struct msghdr msg = {0};
-     PyObject *cmsg_list = NULL, *retval = NULL;
-     void *controlbuf = NULL;
+-- 
+2.41.0
+

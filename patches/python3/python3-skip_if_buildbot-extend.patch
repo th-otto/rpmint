@@ -1,0 +1,25 @@
+From 28f7c39d35dfae211d20c155794739014af9d5a6 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 15 Apr 2024 09:50:32 +0200
+Subject: [PATCH 12/22] skip_if_buildbot-extend.patch
+
+---
+ Lib/test/support/__init__.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Lib/test/support/__init__.py b/Lib/test/support/__init__.py
+index dc7a6e6..d93bb2f 100644
+--- a/Lib/test/support/__init__.py
++++ b/Lib/test/support/__init__.py
+@@ -383,7 +383,7 @@ def skip_if_buildbot(reason=None):
+     if not reason:
+         reason = 'not suitable for buildbots'
+     try:
+-        isbuildbot = getpass.getuser().lower() == 'buildbot'
++        isbuildbot = getpass.getuser().lower() in ['buildbot', 'abuild']
+     except (KeyError, EnvironmentError) as err:
+         warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
+         isbuildbot = False
+-- 
+2.41.0
+

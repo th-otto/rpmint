@@ -21,7 +21,7 @@ cd "$srcdir"
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing ${ELF_CFLAGS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing -fno-exceptions ${ELF_CFLAGS}"
 export CROSS_PREFIX=${TARGET}-
 STACKSIZE="-Wl,-stack,512k"
 
@@ -30,8 +30,7 @@ for CPU in ${ALL_CPUS}; do
 
 	cd "$MINT_BUILD_DIR"
 
-	export CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS"
-	export LDFLAGS="${STACKSIZE} -s -Wl,--msuper-memory"
+	export CPU_CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE} -s -Wl,--msuper-memory"
 	
 	${MAKE} ${JOBS} release || exit 1
 

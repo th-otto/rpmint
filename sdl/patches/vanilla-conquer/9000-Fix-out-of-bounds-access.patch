@@ -1,0 +1,170 @@
+From 7d6d5aaf2db3fa1a1dd01df915949662c91351c3 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 22 Mar 2024 06:47:00 +0100
+Subject: [PATCH] Fix out-of-bounds access
+
+---
+ redalert/cell.cpp  |  8 ++++----
+ redalert/defines.h | 19 +++++++------------
+ redalert/house.cpp |  4 ++--
+ redalert/house.h   | 22 ++--------------------
+ 4 files changed, 15 insertions(+), 38 deletions(-)
+
+diff --git a/redalert/cell.cpp b/redalert/cell.cpp
+index e3067af..9af3f3d 100644
+--- a/redalert/cell.cpp
++++ b/redalert/cell.cpp
+@@ -2350,20 +2350,20 @@ bool CellClass::Goodie_Check(FootClass* object)
+                             HouseClass* hptr = Houses.Ptr(i + HOUSE_MULTI1);
+                             if (hptr != NULL && !hptr->IsDefeated) {
+                                 int j;
+-                                for (j = 0; j < UNIT_COUNT; j++) {
++                                for (j = 0; j < UNIT_RA_COUNT; j++) {
+                                     ucount += hptr->QuantityU(j);
+                                 }
+-                                for (j = 0; j < INFANTRY_COUNT; j++) {
++                                for (j = 0; j < INFANTRY_RA_COUNT; j++) {
+                                     ucount += hptr->QuantityI(j);
+                                 }
+                                 for (j = 0; j < AIRCRAFT_COUNT; j++) {
+                                     ucount += hptr->QuantityA(j);
+                                 }
+-                                for (j = 0; j < VESSEL_COUNT; j++) {
++                                for (j = 0; j < VESSEL_RA_COUNT; j++) {
+                                     ucount += hptr->QuantityV(j);
+                                 }
+                                 int bcount = 0;
+-                                for (j = 0; j < STRUCT_COUNT; j++) {
++                                for (j = 0; j < STRUCT_RA_COUNT; j++) {
+                                     bcount += hptr->QuantityB(j);
+                                 }
+                                 ucount += bcount / 2; // weight buildings less
+diff --git a/redalert/defines.h b/redalert/defines.h
+index 9863a5c..e02a662 100644
+--- a/redalert/defines.h
++++ b/redalert/defines.h
+@@ -1442,6 +1442,7 @@ typedef enum StructType : char
+     STRUCT_V37,
+     STRUCT_BARREL,
+     STRUCT_BARREL3,
++    STRUCT_RA_COUNT = STRUCT_BARREL3 + 1,
+ 
+ #ifdef FIXIT_ANTS
+     STRUCT_QUEEN,
+@@ -1566,6 +1567,7 @@ typedef enum InfantryType : char
+     INFANTRY_EINSTEIN, // Einstein
+     INFANTRY_DELPHI,   // Agent "Delphi"
+     INFANTRY_CHAN,     // Dr. Chan
++    INFANTRY_RA_COUNT = INFANTRY_CHAN + 1,
+ 
+ #ifdef FIXIT_CSII   //	checked - ajw 9/28/98                                                                           \
+                     // CounterStrike II only!
+@@ -1575,10 +1577,6 @@ typedef enum InfantryType : char
+ 
+     INFANTRY_COUNT,
+     INFANTRY_FIRST = 0
+-#ifdef FIXIT_CSII //	checked - ajw 9/28/98
+-    ,
+-    INFANTRY_RA_COUNT = INFANTRY_SHOCK
+-#endif
+ } InfantryType;
+ 
+ #define INFANTRYF_DOG (1L << INFANTRY_DOG)
+@@ -1611,6 +1609,9 @@ typedef enum UnitType : char
+     UNIT_ANT1, // Warrior ant.
+     UNIT_ANT2, // Warrior ant.
+     UNIT_ANT3, // Warrior ant.
++    UNIT_RA_COUNT = UNIT_ANT3 + 1,
++#else
++    UNIT_RA_COUNT = UNIT_TRUCK + 1,
+ #endif
+ 
+ #ifdef FIXIT_CSII           //	checked - ajw 9/28/98                                                                   \
+@@ -1626,10 +1627,6 @@ typedef enum UnitType : char
+ 
+     UNIT_COUNT,
+     UNIT_FIRST = 0
+-#ifdef FIXIT_CSII //	checked - ajw 9/28/98
+-    ,
+-    UNIT_RA_COUNT = UNIT_CHRONOTANK
+-#endif
+ } UnitType;
+ 
+ // PG inline UnitType operator++(UnitType &, int);
+@@ -1658,6 +1655,8 @@ typedef enum VesselType : char
+     VESSEL_CA,         // Heavy weapon patrol craft
+     VESSEL_TRANSPORT,  // Unit transporter
+     VESSEL_PT,         // Light weapon patrol craft
++    VESSEL_RA_COUNT = VESSEL_PT + 1,
++
+ #ifdef FIXIT_CSII      //	checked - ajw 9/28/98                                                                        \
+                        // CS II ONLY
+     VESSEL_MISSILESUB, // Missile-equipped submarine
+@@ -1668,10 +1667,6 @@ typedef enum VesselType : char
+ 
+     VESSEL_COUNT,
+     VESSEL_FIRST = 0
+-#ifdef FIXIT_CSII //	checked - ajw 9/28/98
+-    ,
+-    VESSEL_RA_COUNT = VESSEL_MISSILESUB
+-#endif
+ } VesselType;
+ 
+ // inline VesselType operator++(VesselType &, int);
+diff --git a/redalert/house.cpp b/redalert/house.cpp
+index f1fd2c8..8216e37 100644
+--- a/redalert/house.cpp
++++ b/redalert/house.cpp
+@@ -1236,11 +1236,11 @@ void HouseClass::AI(void)
+         {
+             int iCount = 0;
+             int i;
+-            for (i = 0; i != STRUCT_COUNT - 3; ++i) {
++            for (i = 0; i != STRUCT_RA_COUNT; ++i) {
+                 iCount += BQuantity[i];
+             }
+             if (!iCount) {
+-                for (i = 0; i != UNIT_RA_COUNT - 3; ++i) {
++                for (i = 0; i != UNIT_RA_COUNT; ++i) {
+                     iCount += UQuantity[i];
+                 }
+                 if (!iCount) {
+diff --git a/redalert/house.h b/redalert/house.h
+index 708451b..c93a532 100644
+--- a/redalert/house.h
++++ b/redalert/house.h
+@@ -584,29 +584,11 @@ private:
+     **	Tracks number of each building type owned by this house. Even if the
+     **	building is in construction, it will be reflected in this total.
+     */
+-#ifdef FIXIT_ANTS
+-    int BQuantity[STRUCT_COUNT - 3];
+-#ifdef FIXIT_CSII //	checked - ajw 9/28/98
+-    int UQuantity[UNIT_RA_COUNT - 3];
+-#else
+-    int UQuantity[UNIT_COUNT - 3];
+-#endif
+-#else
+-    int BQuantity[STRUCT_COUNT];
+-    int UQuantity[UNIT_COUNT];
+-#endif
+-
+-#ifdef FIXIT_CSII //	checked - ajw 9/28/98
++    int BQuantity[STRUCT_RA_COUNT];
++    int UQuantity[UNIT_RA_COUNT];
+     int IQuantity[INFANTRY_RA_COUNT];
+-#else
+-    int IQuantity[INFANTRY_COUNT];
+-#endif
+     int AQuantity[AIRCRAFT_COUNT];
+-#ifdef FIXIT_CSII //	checked - ajw 9/28/98
+     int VQuantity[VESSEL_RA_COUNT];
+-#else
+-    int VQuantity[VESSEL_COUNT];
+-#endif
+ 
+     /*
+     **	This timer keeps track of when an all out attack should be performed.
+-- 
+2.41.0
+

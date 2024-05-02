@@ -508,7 +508,7 @@ For a comparison to fdlibm, see <a href="math.php">Math libraries for Atari</a>
 	'fdlibm' => array(
 		'name' => 'fdlibm',
 		'upstream' => 'https://www.netlib.org/fdlibm/',
-		'version' => '20230210',
+		'version' => '20240425',
 		'repo' => 'https://github.com/freemint/fdlibm/',
 		'branch' => 'master',
 		'patch' => 0,
@@ -2241,7 +2241,7 @@ of Python in the documentation and tutorials included in the python-doc
 		'name' => 'python3',
 		'upstream' => 'http://www.python.org/',
 		'source' => 'http://www.python.org/ftp/python/%{version}/Python-%{version}.tar.xz',
-		'version' => '3.6.4',
+		'version' => '3.11.8',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
@@ -2965,7 +2965,7 @@ LS_COLORS environment variable is set and output is to tty.
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
-		'bin' => 0,
+		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
 		'license' => 'LGPL-2.1',
@@ -4140,6 +4140,80 @@ BSD, OS X, IRIX and Cygwin. Due to its small size, it is the browser
 of choice in several space-conscious Linux distributions.
 <br/><br/>
 <span style="color:red">Note:</span> You&apos;ll need a <a href="/download/rpm/RPMS/m68020/index.php#XServer">X-Server</a> to run it.
+'
+	),
+ 	'ntp' => array(
+		'name' => 'ntp',
+		'upstream' => 'http://www.ntp.org/',
+		'version' => '4.2.8p17',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'noelf' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'BSD-3-Clause AND MIT AND BSD-4-Clause AND GPL-2.0-only',
+		'category' => 'Productivity/Networking/Other',
+		'summary' => 'Network Time Protocol daemon (version 4)',
+		'comment' => '
+The Network Time Protocol (NTP) is used to synchronize the time of a
+computer client or server to another server or reference time source,
+such as a radio, satellite receiver, or modem.
+<br/><br/>
+Ntpd is an operating system daemon that sets and maintains the system
+time-of-day synchronized with Internet standard time servers.
+'
+	),
+ 	'meson' => array(
+		'name' => 'meson',
+		'upstream' => 'https://mesonbuild.com/',
+		'version' => '1.4.0',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'noelf' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'Apache-2.0',
+		'category' => 'Development/Tools/Building',
+		'summary' => 'Python-based build system',
+		'comment' => '
+Meson is a build system designed to optimise programmer productivity.
+It aims to do this by providing support for software development
+tools and practices, such as unit tests, coverage reports, Valgrind,
+CCache and the like. Supported languages include C, C++, Fortran,
+Java, Rust. Build definitions are written in a non-turing complete
+Domain Specific Language.
+<br/><br/>
+Requires python3 >= 3.7
+<br/><br/>
+Note: the meson-dev package just contains the cross configuration files.
+Use them with `meson setup --crossfile m68k-atari-mint.ini`
+'
+	),
+ 	'ninja' => array(
+		'name' => 'ninja',
+		'upstream' => 'https://ninja-build.org/',
+		'version' => '1.11.1',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'noelf' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'Apache-2.0',
+		'category' => 'Development/Tools/Building',
+		'summary' => 'A small build system closest in spirit to Make',
+		'comment' => '
+Ninja is yet another build system. It takes as input the interdependencies
+of files (typically source code and output executables) and orchestrates
+building them, quickly.
 '
 	),
 /*

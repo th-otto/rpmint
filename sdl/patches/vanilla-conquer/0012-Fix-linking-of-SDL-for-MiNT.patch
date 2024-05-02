@@ -1,0 +1,33 @@
+From fdfa151253402c5d330a176ead438dd36af9e337 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Mar 2024 15:46:30 +0100
+Subject: [PATCH 12/40] Fix linking of SDL for MiNT
+
+Brain-damaged cmake's find_package macro was always linking to
+lib/libSDL.a regardless of cpu
+---
+ CMakeLists.txt | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8104b45..913658e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -137,9 +137,14 @@ if(NETWORKING)
+ endif()
+ 
+ if(SDL1)
++if(${CMAKE_SYSTEM_NAME} MATCHES "m68k-atari-mint")
++    list(APPEND VANILLA_LIBS "-lSDL")
++    include_directories(${CMAKE_INCLUDE_PATH}/SDL)
++else()
+     find_package(SDL REQUIRED)
+     list(APPEND VANILLA_LIBS ${SDL_LIBRARY})
+     include_directories(${SDL_INCLUDE_DIR})
++endif()
+ 
+     # winuser.h defines VK_ macros but it can be prevented
+     if(WIN32)
+-- 
+2.41.0
+

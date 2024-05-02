@@ -1,0 +1,63 @@
+From 1d9d81ca6fea6159755304cafc05f1d73617e82b Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 22 Mar 2024 15:59:49 +0100
+Subject: [PATCH 37/40] Add needed linker options for MiNT
+
+---
+ redalert/CMakeLists.txt      | 5 ++++-
+ tiberiandawn/CMakeLists.txt  | 3 +++
+ tools/mixtool/CMakeLists.txt | 5 ++++-
+ 3 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/redalert/CMakeLists.txt b/redalert/CMakeLists.txt
+index 60a3e85..b81f06c 100644
+--- a/redalert/CMakeLists.txt
++++ b/redalert/CMakeLists.txt
+@@ -265,6 +265,9 @@ if(BUILD_VANILLARA)
+     if(MSVC)
+         target_link_options(VanillaRA PRIVATE /subsystem:windows /ENTRY:mainCRTStartup)
+     endif()
++    if(${CMAKE_SYSTEM_NAME} MATCHES "m68k-atari-mint")
++        target_link_options(VanillaRA PRIVATE -Wl,-stack,512k -Wl,--msuper-memory -Wl,-Map,../vanillara.map)
++    endif()
+     if(WIN32 AND NOT MSVC)
+         set_target_properties(VanillaRA PROPERTIES LINK_FLAGS "-mwindows")
+     endif()
+@@ -280,4 +283,4 @@ if(BUILD_VANILLARA)
+                     -g3 -fno-omit-frame-pointer)
+             target_link_options(VanillaRA PUBLIC -fsanitize=address)
+     endif()
+-endif()
+\ No newline at end of file
++endif()
+diff --git a/tiberiandawn/CMakeLists.txt b/tiberiandawn/CMakeLists.txt
+index a26cf46..3c2e32f 100644
+--- a/tiberiandawn/CMakeLists.txt
++++ b/tiberiandawn/CMakeLists.txt
+@@ -241,6 +241,9 @@ if(BUILD_VANILLATD)
+     if(MSVC)
+         target_link_options(VanillaTD PRIVATE /subsystem:windows /ENTRY:mainCRTStartup)
+     endif()
++    if(${CMAKE_SYSTEM_NAME} MATCHES "m68k-atari-mint")
++        target_link_options(VanillaTD PRIVATE -Wl,-stack,512k -Wl,--msuper-memory -Wl,-Map,../vanillatd.map)
++    endif()
+     if(WIN32 AND NOT MSVC)
+         set_target_properties(VanillaTD PROPERTIES LINK_FLAGS "-mwindows")
+     endif()
+diff --git a/tools/mixtool/CMakeLists.txt b/tools/mixtool/CMakeLists.txt
+index e9b02d4..76f2d4d 100644
+--- a/tools/mixtool/CMakeLists.txt
++++ b/tools/mixtool/CMakeLists.txt
+@@ -3,4 +3,7 @@ target_link_libraries(vanillamix PUBLIC common miniposix ${STATIC_LIBS})
+ 
+ if (WIN32)
+     target_compile_definitions(vanillamix PRIVATE -DNOMINMAX)
+-endif()
+\ No newline at end of file
++endif()
++if(${CMAKE_SYSTEM_NAME} MATCHES "m68k-atari-mint")
++    target_link_options(vanillamix PRIVATE -Wl,-stack,512k)
++endif()
+-- 
+2.41.0
+

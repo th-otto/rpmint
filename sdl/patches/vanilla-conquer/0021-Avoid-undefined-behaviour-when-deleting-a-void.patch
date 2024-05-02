@@ -1,0 +1,211 @@
+From eae4656a3cd38b5985090acc2db98cbcc5c6970d Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Wed, 20 Mar 2024 10:20:14 +0100
+Subject: [PATCH 21/40] Avoid undefined behaviour when deleting a void *
+
+---
+ common/bfiofile.cpp     | 2 +-
+ common/mixfile.h        | 6 +++---
+ redalert/event.cpp      | 2 +-
+ redalert/init.cpp       | 2 +-
+ redalert/msgbox.cpp     | 2 +-
+ redalert/queue.cpp      | 6 +++---
+ redalert/stats.cpp      | 2 +-
+ tiberiandawn/ending.cpp | 4 ++--
+ tiberiandawn/init.cpp   | 4 ++--
+ tiberiandawn/msgbox.cpp | 2 +-
+ tiberiandawn/stats.cpp  | 2 +-
+ 11 files changed, 17 insertions(+), 17 deletions(-)
+
+diff --git a/common/bfiofile.cpp b/common/bfiofile.cpp
+index ff68898..8b80ec7 100644
+--- a/common/bfiofile.cpp
++++ b/common/bfiofile.cpp
+@@ -320,7 +320,7 @@ void BufferIOFileClass::Free(void)
+ {
+     if (Buffer) {
+         if (IsAllocated) {
+-            delete[] Buffer;
++            delete[] static_cast<char*>(Buffer);
+             IsAllocated = false;
+         }
+ 
+diff --git a/common/mixfile.h b/common/mixfile.h
+index 61d8ccc..3a4f360 100644
+--- a/common/mixfile.h
++++ b/common/mixfile.h
+@@ -653,7 +653,7 @@ template <class T, class TCRC> bool MixFileClass<T, TCRC>::Cache(Buffer const* b
+         */
+         int actual = straw->Get(Data, DataSize);
+         if (actual != DataSize) {
+-            delete[] Data;
++            delete[] static_cast<char*>(Data);
+             Data = NULL;
+             file.Error(EIO);
+             return (false);
+@@ -670,7 +670,7 @@ template <class T, class TCRC> bool MixFileClass<T, TCRC>::Cache(Buffer const* b
+             sha.Result(digest2);
+             fstraw.Get(digest1, sizeof(digest1));
+             if (memcmp(digest1, digest2, sizeof(digest1)) != 0) {
+-                delete[] Data;
++                delete[] static_cast<char*>(Data);
+                 Data = NULL;
+                 return (false);
+             }
+@@ -702,7 +702,7 @@ template <class T, class TCRC> bool MixFileClass<T, TCRC>::Cache(Buffer const* b
+ template <class T, class TCRC> void MixFileClass<T, TCRC>::Free(void)
+ {
+     if (Data != NULL && IsAllocated) {
+-        delete[] Data;
++        delete[] static_cast<char*>(Data);
+     }
+     Data = NULL;
+     IsAllocated = false;
+diff --git a/redalert/event.cpp b/redalert/event.cpp
+index 3013943..ab298b0 100644
+--- a/redalert/event.cpp
++++ b/redalert/event.cpp
+@@ -901,7 +901,7 @@ void EventClass::Execute(void)
+             printf("%d\n", ((char*)Data.Variable.Pointer)[i]);
+         }
+         if (ID != PlayerPtr->ID) {
+-            delete[] Data.Variable.Pointer;
++            delete[] static_cast<char*>(Data.Variable.Pointer);
+         }
+         break;
+ 
+diff --git a/redalert/init.cpp b/redalert/init.cpp
+index f3acf28..ab68314 100644
+--- a/redalert/init.cpp
++++ b/redalert/init.cpp
+@@ -2910,7 +2910,7 @@ void Free_Heaps(void)
+     */
+     for (int index = 0; index < ARRAY_SIZE(SpeechBuffer); index++) {
+         if (SpeechBuffer[index]) {
+-            delete[] SpeechBuffer[index];
++            delete[] static_cast<char*>(SpeechBuffer[index]);
+             SpeechBuffer[index] = NULL;
+         }
+     }
+diff --git a/redalert/msgbox.cpp b/redalert/msgbox.cpp
+index 64b811f..98fa248 100644
+--- a/redalert/msgbox.cpp
++++ b/redalert/msgbox.cpp
+@@ -442,7 +442,7 @@ int WWMessageBox::Process(const char* msg, const char* b1txt, const char* b2txt,
+         }
+         SeenBuff.Unlock();
+ 
+-        delete[] back;
++        delete[] static_cast<char*>(back);
+         back = NULL;
+         Show_Mouse();
+     }
+diff --git a/redalert/queue.cpp b/redalert/queue.cpp
+index 5db08d2..ed429d8 100644
+--- a/redalert/queue.cpp
++++ b/redalert/queue.cpp
+@@ -2870,7 +2870,7 @@ static int Extract_Uncompressed_Events(void* buf, int bufsize)
+ 
+             if (!DoList.Add(*event)) {
+                 if (event->Type == EventClass::ADDPLAYER) {
+-                    delete[] event->Data.Variable.Pointer;
++                    delete[] static_cast<char*>(event->Data.Variable.Pointer);
+                 }
+                 return (-1);
+             }
+@@ -3035,7 +3035,7 @@ static int Extract_Compressed_Events(void* buf, int bufsize)
+ 
+             if (!DoList.Add(eventdata)) {
+                 if (eventdata.Type == EventClass::ADDPLAYER) {
+-                    delete[] eventdata.Data.Variable.Pointer;
++                    delete[] static_cast<char*>(eventdata.Data.Variable.Pointer);
+                 }
+                 return (-1);
+             }
+@@ -4399,4 +4399,4 @@ void Check_Mirror(void)
+ #endif
+ } // end of Check_Mirror
+ 
+-/*************************** end of queue.cpp ******************************/
+\ No newline at end of file
++/*************************** end of queue.cpp ******************************/
+diff --git a/redalert/stats.cpp b/redalert/stats.cpp
+index b90ec5d..f1fef53 100644
+--- a/redalert/stats.cpp
++++ b/redalert/stats.cpp
+@@ -829,7 +829,7 @@ void Send_Statistics_Packet(void)
+     /*
+     ** Tidy up
+     */
+-    delete[] packet;
++    delete[] static_cast<char*>(packet);
+ 
+     GameStatisticsPacketSent = true;
+ #endif // INTERNET_OFF
+diff --git a/tiberiandawn/ending.cpp b/tiberiandawn/ending.cpp
+index a907c15..8c7a036 100644
+--- a/tiberiandawn/ending.cpp
++++ b/tiberiandawn/ending.cpp
+@@ -246,8 +246,8 @@ void Nod_Ending(void)
+ 
+     Play_Movie("CC2TEASE");
+ 
+-    delete[] localpal;
++    delete[] static_cast<char*>(localpal);
+     delete TextPrintBuffer;
+     BlitList.Clear();
+ }
+-#endif
+\ No newline at end of file
++#endif
+diff --git a/tiberiandawn/init.cpp b/tiberiandawn/init.cpp
+index 5ae4fd5..bd970fe 100644
+--- a/tiberiandawn/init.cpp
++++ b/tiberiandawn/init.cpp
+@@ -635,7 +635,7 @@ void Uninit_Game(void)
+ {
+     Map.Free_Cells();
+ 
+-    delete[] SpeechBuffer;
++    delete[] static_cast<char*>(SpeechBuffer);
+ 
+     CCFileClass::Clear_Search_Drives();
+     MFCD::Free_All();
+@@ -2075,7 +2075,7 @@ void Parse_INI_File(void)
+     Fetch working pointer to the INI staging buffer. Make sure that the buffer
+     is cleared out before proceeding.
+     ------------------------------------------------------------------------*/
+-    buffer = (char*)_ShapeBuffer;
++    buffer = _ShapeBuffer;
+     memset(buffer, '\0', _ShapeBufferSize);
+ 
+     /*------------------------------------------------------------------------
+diff --git a/tiberiandawn/msgbox.cpp b/tiberiandawn/msgbox.cpp
+index 4f7ff2d..fb74f87 100644
+--- a/tiberiandawn/msgbox.cpp
++++ b/tiberiandawn/msgbox.cpp
+@@ -447,7 +447,7 @@ int WWMessageBox::Process(const char* msg, const char* b1txt, const char* b2txt,
+         }
+         SeenBuff.Unlock();
+ 
+-        delete[] back;
++        delete[] static_cast<char*>(back);
+         back = NULL;
+         Show_Mouse();
+     }
+diff --git a/tiberiandawn/stats.cpp b/tiberiandawn/stats.cpp
+index 53f0f69..57c0482 100644
+--- a/tiberiandawn/stats.cpp
++++ b/tiberiandawn/stats.cpp
+@@ -593,7 +593,7 @@ void Send_Statistics_Packet(void)
+     ** Tidy up
+     */
+     CCDebugString("C&C95 - About to delete packet memory.\n");
+-    delete[] packet;
++    delete[] static_cast<char*>(packet);
+ 
+     GameStatisticsPacketSent = true;
+     CCDebugString("C&C95 - Returning from Send_Statistics_Packet.\n");
+-- 
+2.41.0
+

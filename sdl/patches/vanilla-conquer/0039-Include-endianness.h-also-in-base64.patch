@@ -1,0 +1,81 @@
+From f2ab517d65e9eab8ccd0eb0fbfe47d20a4c6b678 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sat, 23 Mar 2024 15:18:39 +0100
+Subject: [PATCH 39/40] Include <endianness.h> also in base64
+
+Without this, base64 decoder (used to encode/decrypt the PKeys)
+does not work, resulting in division by zero
+---
+ common/base64.cpp | 3 ++-
+ common/mp.cpp     | 8 +++++++-
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/common/base64.cpp b/common/base64.cpp
+index e14f1e8..6694782 100644
+--- a/common/base64.cpp
++++ b/common/base64.cpp
+@@ -36,6 +36,7 @@
+ 
+ #include "base64.h"
+ #include <stddef.h>
++#include "endianness.h"
+ 
+ /*
+ **	This is the magic padding character used to fill out the encoded data to a multiple of
+@@ -425,4 +426,4 @@ NOTE:
+     within base64-encoded parts of multipart entities because no hyphen
+     characters are used in the base64 encoding.
+ 
+-*/
+\ No newline at end of file
++*/
+diff --git a/common/mp.cpp b/common/mp.cpp
+index 347a400..88c9409 100644
+--- a/common/mp.cpp
++++ b/common/mp.cpp
+@@ -265,6 +265,8 @@ void XMP_DER_Decode(digit* result, unsigned char const* input, int precision)
+     }
+ }
+ 
++#ifndef __BIG_ENDIAN__
++// FIXME: does not for work big-endian
+ /***********************************************************************************************
+  * XMP_Encode -- Encode MP number into buffer.                                                 *
+  *                                                                                             *
+@@ -308,6 +310,7 @@ unsigned XMP_Encode(unsigned char* to, unsigned tobytes, digit const* from, int
+ 
+     return (tobytes);
+ }
++#endif
+ 
+ /***********************************************************************************************
+  * XMP_Encode -- Encode MP number into buffer as compactly as possible.                        *
+@@ -358,7 +361,7 @@ unsigned XMP_Encode(unsigned char* to, digit const* from, int precision)
+     unsigned char* number_ptr;
+ 
+     unsigned char* const end = (unsigned char*)from;
+-    for (number_ptr = (unsigned char*)end + precision - 1; number_ptr > (unsigned char*)end; number_ptr--) {
++    for (number_ptr = (unsigned char*)end + precision * sizeof(digit) - 1; number_ptr > (unsigned char*)end; number_ptr--) {
+         if (*number_ptr != filler)
+             break;
+     }
+@@ -922,6 +925,8 @@ unsigned XMP_Count_Bits(const digit* number, int precision)
+     return (total_bit_count);
+ }
+ 
++#ifndef __BIG_ENDIAN__
++// FIXME: does not work for big-endian
+ /***********************************************************************************************
+  * XMP_Count_Bytes -- Counts the number of precision bytes in MP number.                       *
+  *                                                                                             *
+@@ -951,6 +956,7 @@ int XMP_Count_Bytes(const digit* number, int precision)
+     }
+     return (count);
+ }
++#endif
+ 
+ /***********************************************************************************************
+  * XMP_Move -- Assign one MP number to another.                                                *
+-- 
+2.41.0
+

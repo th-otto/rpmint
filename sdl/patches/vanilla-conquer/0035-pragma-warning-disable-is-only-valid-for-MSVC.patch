@@ -1,0 +1,195 @@
+From 016b2d921a8468cedbb4f0c65efd2001d2e7f665 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 22 Mar 2024 11:07:02 +0100
+Subject: [PATCH 35/40] pragma warning(disable) is only valid for MSVC
+
+---
+ common/field.cpp              | 2 ++
+ common/graphicsviewport.cpp   | 2 ++
+ common/packet.cpp             | 2 ++
+ common/shape.h                | 2 ++
+ redalert/dllinterface.cpp     | 6 +++++-
+ tiberiandawn/conquer.cpp      | 2 ++
+ tiberiandawn/defines.h        | 4 ++++
+ tiberiandawn/dllinterface.cpp | 4 +++-
+ tiberiandawn/iomap.cpp        | 2 ++
+ tiberiandawn/ioobj.cpp        | 2 ++
+ 10 files changed, 26 insertions(+), 2 deletions(-)
+
+diff --git a/common/field.cpp b/common/field.cpp
+index fc387fb..56826ac 100644
+--- a/common/field.cpp
++++ b/common/field.cpp
+@@ -34,7 +34,9 @@
+ #include "endianness.h"
+ 
+ // ST - 12/18/2018 10:14AM
++#ifdef _MSC_VER
+ #pragma warning(disable : 4996)
++#endif
+ 
+ FieldClass::FieldClass(const char* id, char data)
+ {
+diff --git a/common/graphicsviewport.cpp b/common/graphicsviewport.cpp
+index 987affe..18f5498 100644
+--- a/common/graphicsviewport.cpp
++++ b/common/graphicsviewport.cpp
+@@ -779,7 +779,9 @@ unsigned int GraphicViewPortClass::Print(char const* str, int x, int y, int fcol
+     return (return_code);
+ }
+ 
++#ifdef _MSC_VER
+ #pragma warning(disable : 4996)
++#endif
+ 
+ /***************************************************************************
+  * GVPC::PRINT -- Stub function to print an integer                        *
+diff --git a/common/packet.cpp b/common/packet.cpp
+index 010ae72..00c05d0 100644
+--- a/common/packet.cpp
++++ b/common/packet.cpp
+@@ -402,7 +402,9 @@ bool PacketClass::Get_Field(const char* id, int& data)
+  * HISTORY:                                                               *
+  *   04/23/1996 PWG : Created.                                            *
+  *========================================================================*/
++#ifdef _MSC_VER
+ #pragma warning(disable : 4996)
++#endif
+ bool PacketClass::Get_Field(const char* id, char* data)
+ {
+     FieldClass* field = Find_Field(id);
+diff --git a/common/shape.h b/common/shape.h
+index a822416..7d61ae3 100644
+--- a/common/shape.h
++++ b/common/shape.h
+@@ -129,7 +129,9 @@ typedef struct
+ /*
+ ------------------------------- Shape block ---------------------------------
+ */
++#ifdef _MSC_VER
+ #pragma warning(disable : 4200)
++#endif
+ #pragma pack(push, 2)
+ typedef struct
+ {
+diff --git a/redalert/dllinterface.cpp b/redalert/dllinterface.cpp
+index 1ec7194..3fa6423 100644
+--- a/redalert/dllinterface.cpp
++++ b/redalert/dllinterface.cpp
+@@ -25,7 +25,9 @@
+ */
+ 
+ // Exception handling isn't enabled
++#ifdef _MSC_VER
+ #pragma warning(disable : 4530) // warning C4530: C++ exception handler used, but unwind semantics are not enabled.
++#endif
+ 
+ #include <string>
+ #include <vector>
+@@ -73,7 +75,9 @@ typedef __int64 int64;
+ **
+ */
+ // For compatibility with Watcom in audio enums
++#ifdef _MSC_VER
+ #pragma warning(disable : 4091)
++#endif
+ 
+ // From RedAlert\Audio.cpp
+ typedef enum
+@@ -8749,4 +8753,4 @@ void DLL_Code_Pointers(void)
+ void DLL_Decode_Pointers(void)
+ {
+     DLLExportClass::Decode_Pointers();
+-}
+\ No newline at end of file
++}
+diff --git a/tiberiandawn/conquer.cpp b/tiberiandawn/conquer.cpp
+index cf74406..d02d98a 100644
+--- a/tiberiandawn/conquer.cpp
++++ b/tiberiandawn/conquer.cpp
+@@ -3613,7 +3613,9 @@ static bool Change_Local_Dir(int cd)
+  *   07/11/1995 JLB : Created.                                                                 *
+  *   05/22/1996  ST : Handles multiple CD drives / CD changers                                 *
+  *=============================================================================================*/
++#ifdef _MSC_VER
+ #pragma warning(disable : 4101)
++#endif
+ bool Force_CD_Available(int cd)
+ {
+ 
+diff --git a/tiberiandawn/defines.h b/tiberiandawn/defines.h
+index e21b3a8..cde4681 100644
+--- a/tiberiandawn/defines.h
++++ b/tiberiandawn/defines.h
+@@ -177,8 +177,10 @@
+ // typedef enums with -1 will show this warning, even when the type of the enum is signed. It's a compiler bug,
+ // apparently ST - 1/8/2019 9:23AM
+ //
++#ifdef _MSC_VER
+ #pragma warning(push)
+ #pragma warning(disable : 4341)
++#endif
+ 
+ /**********************************************************************
+ **	These enumerations are used to implement RTTI.
+@@ -3085,6 +3087,8 @@ typedef enum StrategyType : unsigned char
+ 
+ #endif // USE_RA_AI
+ 
++#ifdef _MSC_VER
+ #pragma warning(pop)
++#endif
+ 
+ #endif
+diff --git a/tiberiandawn/dllinterface.cpp b/tiberiandawn/dllinterface.cpp
+index 7ccce4b..7b7f59f 100644
+--- a/tiberiandawn/dllinterface.cpp
++++ b/tiberiandawn/dllinterface.cpp
+@@ -66,7 +66,9 @@ typedef __int64 int64;
+ **
+ */
+ // For compatibility with Watcom in audio enums
++#ifdef _MSC_VER
+ #pragma warning(disable : 4091)
++#endif
+ 
+ // From TiberianDawn\Audio.cpp
+ typedef enum
+@@ -7721,4 +7723,4 @@ void DLL_Code_Pointers(void)
+ void DLL_Decode_Pointers(void)
+ {
+     DLLExportClass::Decode_Pointers();
+-}
+\ No newline at end of file
++}
+diff --git a/tiberiandawn/iomap.cpp b/tiberiandawn/iomap.cpp
+index 2dcee7e..b94796d 100644
+--- a/tiberiandawn/iomap.cpp
++++ b/tiberiandawn/iomap.cpp
+@@ -65,7 +65,9 @@
+ 
+ #include "function.h"
+ 
++#ifdef _MSC_VER
+ #pragma warning(disable : 4302) // Truncation from pointer to TARGET
++#endif
+ 
+ /***********************************************************************************************
+  * CellClass::Should_Save -- Should the cell be written to disk?                               *
+diff --git a/tiberiandawn/ioobj.cpp b/tiberiandawn/ioobj.cpp
+index e4f1f91..98b3335 100644
+--- a/tiberiandawn/ioobj.cpp
++++ b/tiberiandawn/ioobj.cpp
+@@ -130,7 +130,9 @@
+ 
+ #include "function.h"
+ 
++#ifdef _MSC_VER
+ #pragma warning(disable : 4302) // Truncation from pointer to TARGET
++#endif
+ 
+ /***********************************************************************************************
+  * TeamTypeClass::Load -- Loads from a save game file.                                         *
+-- 
+2.41.0
+

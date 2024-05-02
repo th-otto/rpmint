@@ -1,0 +1,52 @@
+From 3c4d360d0259c37a324f68747a0d9b4245cbdaed Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Mar 2024 14:43:36 +0100
+Subject: [PATCH 05/40] Fix compilation of the editors when using SDL1
+
+SHIFT-HOME and HOME have the same values for SDL1; use CTRL-HOME instead
+---
+ redalert/mapedit.cpp     | 4 ++++
+ tiberiandawn/mapedit.cpp | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/redalert/mapedit.cpp b/redalert/mapedit.cpp
+index 4a12e09..59fa8d9 100644
+--- a/redalert/mapedit.cpp
++++ b/redalert/mapedit.cpp
+@@ -772,10 +772,14 @@ void MapEditClass::AI(KeyNumType& input, int x, int y)
+         input = KN_NONE;
+         break;
+ 
++#if (KN_HOME | KN_SHIFT_BIT) != KN_HOME
+     /*
+     **	SHIFT-HOME: set new Home Cell position
+     */
+     case ((int)KN_HOME | (int)KN_SHIFT_BIT):
++#else
++    case ((int)KN_HOME | (int)KN_CTRL_BIT):
++#endif
+         if (CurrentCell != 0) {
+ 
+             /*
+diff --git a/tiberiandawn/mapedit.cpp b/tiberiandawn/mapedit.cpp
+index a46334f..04708fb 100644
+--- a/tiberiandawn/mapedit.cpp
++++ b/tiberiandawn/mapedit.cpp
+@@ -858,10 +858,14 @@ void MapEditClass::AI(KeyNumType& input, int x, int y)
+         input = KN_NONE;
+         break;
+ 
++#if (KN_HOME | KN_SHIFT_BIT) != KN_HOME
+     /*---------------------------------------------------------------------
+     SHIFT-HOME: set new Home Cell position
+     ---------------------------------------------------------------------*/
+     case ((int)KN_HOME | (int)KN_SHIFT_BIT):
++#else
++    case ((int)KN_HOME | (int)KN_CTRL_BIT):
++#endif
+         /*
+         ** Unflag the old Home Cell, if there are no other waypoints
+         ** pointing to it
+-- 
+2.41.0
+

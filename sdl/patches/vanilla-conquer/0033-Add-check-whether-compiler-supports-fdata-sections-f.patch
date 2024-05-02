@@ -1,0 +1,50 @@
+From ce08b7a2102433ac30301691d0bb168c141d8524 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Fri, 22 Mar 2024 09:55:59 +0100
+Subject: [PATCH 33/40] Add check whether compiler supports
+ -fdata-sections/-ffunction-sections
+
+---
+ CMakeLists.txt | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 913658e..331fbab 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
+ 
+ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+ include(FeatureSummary)
++include(CheckCXXCompilerFlag)
+ 
+ if(NOT DEFINED CMAKE_BUILD_TYPE)
+     set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo" FORCE)
+@@ -90,6 +91,24 @@ if(NOT MSVC)
+         set(CMAKE_FIND_FRAMEWORK "LAST")
+     endif()
+ 
++    message(STATUS "Checking whether compiler supports -fdata-sections")
++    check_cxx_compiler_flag("-Werror -fdata-sections" HAVE_DATA_SECTIONS)
++    if(HAVE_DATA_SECTIONS)
++      message(STATUS "yes")
++      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdata-sections")
++    else()
++      message(STATUS "no")
++    endif()
++
++    message(STATUS "Checking whether compiler supports -ffunction-sections")
++    check_cxx_compiler_flag("-Werror -ffunction-sections" HAVE_FUNCTION_SECTIONS)
++    if(HAVE_FUNCTION_SECTIONS)
++      message(STATUS "yes")
++      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffunction-sections")
++    else()
++      message(STATUS "no")
++    endif()
++
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -Wwrite-strings -Werror=write-strings -fcheck-new -fsigned-char -fdata-sections -ffunction-sections -DNOMINMAX")
+ else()
+     set(CMAKE_CXX_FLAGS "/Zc:strictStrings")
+-- 
+2.41.0
+

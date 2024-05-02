@@ -1,0 +1,37 @@
+From 52f56c8e626514c9c91ec6b99b2e9b505def2b1e Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Wed, 20 Dec 2023 12:54:29 +0100
+Subject: [PATCH] atari: don't use .comm directive in SDL_mintaudio_it.S
+
+---
+ src/audio/mint/SDL_mintaudio_it.S | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
+
+diff --git a/src/audio/mint/SDL_mintaudio_it.S b/src/audio/mint/SDL_mintaudio_it.S
+index ee7775f2..3ae8f101 100644
+--- a/src/audio/mint/SDL_mintaudio_it.S
++++ b/src/audio/mint/SDL_mintaudio_it.S
+@@ -123,9 +123,14 @@ nosilence:
+ 	.bss
+ 
+ 	.even
+-	.comm	SYM(SDL_MintAudio_clocktics),4
+-	.comm	SYM(SDL_MintAudio_num_its),4
+-
+-	.comm	SYM(SDL_MintAudio_itbuffer),4	/* Audio DMA buffer */
+-	.comm	SYM(SDL_MintAudio_itbuflen),4	/* Length in longword */
+-	.comm	SYM(SDL_MintAudio_itsilence),4	/* Silence value */
++SYM(SDL_MintAudio_clocktics):
++	.ds.l 1
++SYM(SDL_MintAudio_num_its):
++	.ds.l 1
++
++SYM(SDL_MintAudio_itbuffer):	/* Audio DMA buffer */
++	.ds.l 1
++SYM(SDL_MintAudio_itbuflen):	/* Length in longword */
++	.ds.l 1
++SYM(SDL_MintAudio_itsilence):	/* Silence value */
++	.ds.l 1
+-- 
+2.41.0
+

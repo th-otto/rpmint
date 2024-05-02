@@ -1,0 +1,23 @@
+From 3c20130b022afec8bfd84fcc5e4c2ffe88031610 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Mar 2024 15:34:28 +0100
+Subject: [PATCH 11/40] Define _GNU_SOURCE to get a definition of FNM_CASEFOLD
+
+---
+ common/file_posix.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/common/file_posix.cpp b/common/file_posix.cpp
+index 534f576..233ba0f 100644
+--- a/common/file_posix.cpp
++++ b/common/file_posix.cpp
+@@ -1,3 +1,6 @@
++#ifndef _GNU_SOURCE
++#define _GNU_SOURCE
++#endif
+ #include "file.h"
+ 
+ #include <string.h>
+-- 
+2.41.0
+

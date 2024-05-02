@@ -1,0 +1,28 @@
+From 40ad6ab2ecba8611191175721db89c17e649c586 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Wed, 20 Mar 2024 09:41:21 +0100
+Subject: [PATCH 19/40] Fix "friend declarations declares a non-template
+ function"
+
+---
+ common/int.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/common/int.h b/common/int.h
+index 7e0a99b..53258cc 100644
+--- a/common/int.h
++++ b/common/int.h
+@@ -403,8 +403,8 @@ public:
+     }
+ 
+     // Friend helper functions.
+-    friend Int<PRECISION> Generate_Prime(Straw& rng, int pbits);
+-    friend Int<PRECISION> Gcd(const Int<PRECISION>& a, const Int<PRECISION>& b);
++    template <int P> friend Int<P> Generate_Prime(Straw& rng, int pbits);
++    template <int P> friend Int<P> Gcd(const Int<P>& a, const Int<P>& b);
+     //		friend bool NextPrime(Int<PRECISION> & p, const Int<PRECISION> & max, bool blumInt=false);
+     //		friend Int<PRECISION> a_exp_b_mod_pq(const Int<PRECISION> & a, const Int<PRECISION> & ep, const Int<PRECISION>
+     //& eq, const Int<PRECISION> & p, const Int<PRECISION> & q, const Int<PRECISION> & u);
+-- 
+2.41.0
+

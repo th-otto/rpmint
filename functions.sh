@@ -180,6 +180,7 @@ fi
 
 LTO_CFLAGS=
 ELF_CFLAGS=
+ELF_LDFLAGS=
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -190,6 +191,7 @@ case "${TARGET}" in
 		# for missing c library functions will always succeed
 		LTO_CFLAGS="-flto -ffat-lto-objects"
 		ELF_CFLAGS="-ffunction-sections -fdata-sections"
+		ELF_LDFLAGS="-Wl,--gc-sections"
 		;;
 esac
 

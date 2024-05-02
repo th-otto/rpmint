@@ -1,0 +1,52 @@
+From 2e36d223e944ba223a47e91b5b61a5a79b035d79 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 15 Apr 2024 09:47:47 +0200
+Subject: [PATCH 10/22] fix_configure_rst.patch
+
+---
+ Doc/using/configure.rst | 3 ---
+ Misc/NEWS               | 2 +-
+ 2 files changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/Doc/using/configure.rst b/Doc/using/configure.rst
+index 2d9a374..ec8c2b2 100644
+--- a/Doc/using/configure.rst
++++ b/Doc/using/configure.rst
+@@ -41,7 +41,6 @@ General Options
+ 
+    See :data:`sys.int_info.bits_per_digit <sys.int_info>`.
+ 
+-.. option:: --with-cxx-main
+ .. option:: --with-cxx-main=COMPILER
+ 
+    Compile the Python ``main()`` function and link Python executable with C++
+@@ -527,13 +526,11 @@ macOS Options
+ 
+ See ``Mac/README.rst``.
+ 
+-.. option:: --enable-universalsdk
+ .. option:: --enable-universalsdk=SDKDIR
+ 
+    Create a universal binary build. *SDKDIR* specifies which macOS SDK should
+    be used to perform the build (default is no).
+ 
+-.. option:: --enable-framework
+ .. option:: --enable-framework=INSTALLDIR
+ 
+    Create a Python.framework rather than a traditional Unix install. Optional
+diff --git a/Misc/NEWS b/Misc/NEWS
+index 204fc60..f1d9f93 100644
+--- a/Misc/NEWS
++++ b/Misc/NEWS
+@@ -9411,7 +9411,7 @@ C API
+ - bpo-40939: Removed documentation for the removed ``PyParser_*`` C API.
+ 
+ - bpo-43795: The list in :ref:`limited-api-list` now shows the public name
+-  :c:struct:`PyFrameObject` rather than ``_frame``. The non-existing entry
++  :c:type:`PyFrameObject` rather than ``_frame``. The non-existing entry
+   ``_node`` no longer appears in the list.
+ 
+ - bpo-44378: :c:func:`Py_IS_TYPE` no longer uses :c:func:`Py_TYPE` to avoid
+-- 
+2.41.0
+

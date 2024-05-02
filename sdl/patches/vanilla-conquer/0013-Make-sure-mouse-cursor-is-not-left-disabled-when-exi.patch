@@ -1,0 +1,27 @@
+From 1a6de807acad97e55f8cfd740ea9b117c2a891ef Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Thu, 14 Mar 2024 16:52:10 +0100
+Subject: [PATCH 13/40] Make sure mouse cursor is not left disabled when
+ exiting
+
+---
+ common/video_sdl1.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/common/video_sdl1.cpp b/common/video_sdl1.cpp
+index 28e1a01..8c3e9c4 100644
+--- a/common/video_sdl1.cpp
++++ b/common/video_sdl1.cpp
+@@ -108,6 +108,9 @@ bool Set_Video_Mode(int w, int h, int bits_per_pixel)
+ {
+     SDL_Init(SDL_INIT_VIDEO);
+     SDL_ShowCursor(SDL_DISABLE);
++#ifdef __MINT__
++    atexit(SDL_Quit);
++#endif
+ 
+     int win_w = w;
+     int win_h = h;
+-- 
+2.41.0
+

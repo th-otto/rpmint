@@ -1,125 +1,150 @@
---- a/Modules/Setup.dist	2017-12-19 05:53:56.000000000 +0100
-+++ b/Modules/Setup.dist	2018-03-25 03:43:17.994294815 +0200
-@@ -164,45 +164,45 @@
- # it, depending on your system -- see the GNU readline instructions.
- # It's okay for this to be a shared library, too.
+From ce77434bcfdea7c294ed15cf6e6b93aacd6e5430 Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Mon, 15 Apr 2024 13:42:46 +0200
+Subject: [PATCH 1/2] python3-mintsetupdist
+
+---
+ Modules/Setup             | 93 ++++++++++++++++++++-------------------
+ Modules/_hashopenssl.c    |  2 +
+ Modules/_ssl.c            |  2 +
+ Modules/_testcapimodule.c |  4 ++
+ 4 files changed, 56 insertions(+), 45 deletions(-)
+
+diff --git a/Modules/Setup b/Modules/Setup
+index d3647ec..241aa35 100644
+--- a/Modules/Setup
++++ b/Modules/Setup
+@@ -127,47 +127,48 @@ PYTHONPATH=$(COREPYTHONPATH)
+ # detail; also note that *static* or *disabled* cancels this effect):
  
--#readline readline.c -lreadline -ltermcap
-+readline readline.c -lreadline -lncurses
+ #*shared*
++*static*
  
+ # Modules that should always be present (POSIX and Windows):
  
- # Modules that should always be present (non UNIX dependent):
- 
--#array arraymodule.c	# array objects
-+array arraymodule.c	# array objects
- #cmath cmathmodule.c _math.c # -lm # complex math library functions
--#math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
--#_struct _struct.c	# binary structure packing/unpacking
--#_weakref _weakref.c	# basic weak reference support
--#_testcapi _testcapimodule.c    # Python C API test module
--#_random _randommodule.c	# Random number generator
--#_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
-+math mathmodule.c _math.o # -lm # math library functions, e.g. sin()
-+_struct _struct.c	# binary structure packing/unpacking
-+_weakref _weakref.c	# basic weak reference support
-+_testcapi _testcapimodule.c    # Python C API test module
-+_random _randommodule.c	# Random number generator
-+_elementtree -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI _elementtree.c	# elementtree accelerator
- #_pickle _pickle.c	# pickle accelerator
--#_datetime _datetimemodule.c	# datetime accelerator
--#_bisect _bisectmodule.c	# Bisection algorithms
-+_datetime _datetimemodule.c	# datetime accelerator
-+_bisect _bisectmodule.c	# Bisection algorithms
- #_heapq _heapqmodule.c	# Heap queue algorithm
- #_asyncio _asynciomodule.c  # Fast asyncio Future
- 
--#unicodedata unicodedata.c    # static Unicode character database
-+unicodedata unicodedata.c    # static Unicode character database
- 
- 
- # Modules with some UNIX dependencies -- on by default:
- # (If you have a really backward UNIX, select and socket may not be
- # supported...)
- 
--#fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
--#spwd spwdmodule.c		# spwd(3)
--#grp grpmodule.c		# grp(3)
--#select selectmodule.c	# select(2); not on ancient System V
-+fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
-+spwd spwdmodule.c		# spwd(3)
-+grp grpmodule.c		# grp(3)
-+select selectmodule.c	# select(2); not on ancient System V
- 
- # Memory-mapped files (also works on Win32).
- #mmap mmapmodule.c
- 
- # CSV file helper
+ #_asyncio _asynciomodule.c
+-#_bisect _bisectmodule.c
+-#_contextvars _contextvarsmodule.c
 -#_csv _csv.c
+-#_datetime _datetimemodule.c
++_bisect _bisectmodule.c
++_contextvars _contextvarsmodule.c
 +_csv _csv.c
- 
- # Socket module helper for socket(2)
++_datetime _datetimemodule.c
+ #_decimal _decimal/_decimal.c
+-#_heapq _heapqmodule.c
+-#_json _json.c
+-#_lsprof _lsprof.c rotatingtree.c
++_heapq _heapqmodule.c
++_json _json.c
++_lsprof _lsprof.c rotatingtree.c
+ #_multiprocessing -I$(srcdir)/Modules/_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
+-#_opcode _opcode.c
+-#_pickle _pickle.c
+-#_queue _queuemodule.c
+-#_random _randommodule.c
 -#_socket socketmodule.c
+-#_statistics _statisticsmodule.c
+-#_struct _struct.c
+-#_typing _typingmodule.c
+-#_zoneinfo _zoneinfo.c
+-#array arraymodule.c
+-#audioop audioop.c
+-#binascii binascii.c
++_opcode _opcode.c
++_pickle _pickle.c
++_queue _queuemodule.c
++_random _randommodule.c
 +_socket socketmodule.c
++_statistics _statisticsmodule.c
++_struct _struct.c
++_typing _typingmodule.c
++_zoneinfo _zoneinfo.c
++array arraymodule.c
++audioop audioop.c
++binascii binascii.c
+ #cmath cmathmodule.c
+-#math mathmodule.c
++math mathmodule.c
+ #mmap mmapmodule.c
+-#select selectmodule.c
++select selectmodule.c
  
- # Socket module helper for SSL support; you must comment out the other
- # socket line above, and possibly edit the SSL variable:
-@@ -216,14 +216,14 @@
- #
- # First, look at Setup.config; configure may have set this for you.
+ # XML
+-#_elementtree _elementtree.c
+-#pyexpat pyexpat.c
++_elementtree _elementtree.c
++pyexpat pyexpat.c
  
--#_crypt _cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
-+_crypt _cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
- 
- 
- # Some more UNIX dependent modules -- off by default, since these
- # are not supported by all UNIX systems:
- 
- #nis nismodule.c -lnsl	# Sun yellow pages -- not everywhere
--#termios termios.c	# Steen Lumholt's termios module
-+termios termios.c	# Steen Lumholt's termios module
- #resource resource.c	# Jeremy Hylton's rlimit interface
- 
- #_posixsubprocess _posixsubprocess.c  # POSIX subprocess module helper
-@@ -233,7 +233,7 @@
- # #993173 says audioop works on 64-bit platforms, though.
- # These represent audio samples or images as strings:
- 
--#audioop audioop.c	# Operations on audio samples
-+audioop audioop.c	# Operations on audio samples
- 
- 
- # Note that the _md5 and _sha modules are normally only built if the
-@@ -242,15 +242,15 @@
- # The _md5 module implements the RSA Data Security, Inc. MD5
- # Message-Digest Algorithm, described in RFC 1321.
- 
+ # hashing builtins
+-#_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
 -#_md5 md5module.c
-+_md5 md5module.c
- 
- 
- # The _sha module implements the SHA checksum algorithms.
- # (NIST's Secure Hash Algorithms.)
 -#_sha1 sha1module.c
 -#_sha256 sha256module.c
 -#_sha512 sha512module.c
 -#_sha3 _sha3/sha3module.c
++_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
++_md5 md5module.c
 +_sha1 sha1module.c
 +_sha256 sha256module.c
 +_sha512 sha512module.c
 +_sha3 _sha3/sha3module.c
  
- # _blake module
- #_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
-@@ -267,7 +267,7 @@
- # every system.
+ # text encodings and unicode
+ #_codecs_cn cjkcodecs/_codecs_cn.c
+@@ -177,39 +178,39 @@ PYTHONPATH=$(COREPYTHONPATH)
+ #_codecs_kr cjkcodecs/_codecs_kr.c
+ #_codecs_tw cjkcodecs/_codecs_tw.c
+ #_multibytecodec cjkcodecs/multibytecodec.c
+-#unicodedata unicodedata.c
++unicodedata unicodedata.c
  
- # *** Always uncomment this (leave the leading underscore in!):
--# _tkinter _tkinter.c tkappinit.c -DWITH_APPINIT \
-+#_tkinter _tkinter.c tkappinit.c -DWITH_APPINIT \
- # *** Uncomment and edit to reflect where your Tcl/Tk libraries are:
- #	-L/usr/local/lib \
- # *** Uncomment and edit to reflect where your Tcl/Tk headers are:
-@@ -277,7 +277,7 @@
+ # Modules with some UNIX dependencies
+ 
+-#_posixsubprocess _posixsubprocess.c
++_posixsubprocess _posixsubprocess.c
+ #_posixshmem -I$(srcdir)/Modules/_multiprocessing _multiprocessing/posixshmem.c -lrt
+-#fcntl fcntlmodule.c
+-#grp grpmodule.c
++fcntl fcntlmodule.c
++grp grpmodule.c
+ #ossaudiodev ossaudiodev.c
+-#resource resource.c
+-#spwd spwdmodule.c
+-#syslog syslogmodule.c
+-#termios termios.c
++resource resource.c
++spwd spwdmodule.c
++syslog syslogmodule.c
++termios termios.c
+ 
+ # Modules with UNIX dependencies that require external libraries
+ 
+-#_crypt _cryptmodule.c -lcrypt
++_crypt _cryptmodule.c
+ #nis nismodule.c -I/usr/include/tirpc -lnsl -ltirpc
+ 
+ # Modules that require external libraries.
+ 
+-#_bz2 _bz2module.c -lbz2
++_bz2 _bz2module.c -lbz2
+ #_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/stgdict.c _ctypes/cfield.c -ldl -lffi -DHAVE_FFI_PREP_CIF_VAR -DHAVE_FFI_PREP_CLOSURE_LOC -DHAVE_FFI_CLOSURE_ALLOC
+ # The _dbm module supports NDBM, GDBM with compat module, and Berkeley DB.
+ #_dbm _dbmmodule.c -lgdbm_compat -DUSE_GDBM_COMPAT
+ #_gdbm _gdbmmodule.c -lgdbm
+ #_lzma _lzmamodule.c -llzma
+ #_uuid _uuidmodule.c -luuid
+-#zlib  zlibmodule.c -lz
++zlib  zlibmodule.c -lz
+ 
+ # The readline module also supports libeditline (-leditline).
+ # Some systems may require -ltermcap or -ltermlib.
+-#readline readline.c -lreadline -ltermcap
++readline readline.c -lreadline -lncurses
+ 
+ # OpenSSL bindings
+ #_ssl _ssl.c $(OPENSSL_INCLUDES) $(OPENSSL_LDFLAGS) $(OPENSSL_LIBS)
+@@ -244,7 +245,7 @@ PYTHONPATH=$(COREPYTHONPATH)
  # *** Or uncomment this for Solaris:
  #	-I/usr/openwin/include \
  # *** Uncomment and edit for Tix extension only:
@@ -128,61 +153,65 @@
  # *** Uncomment and edit for BLT extension only:
  #	-DWITH_BLT -I/usr/local/blt/blt8.0-unoff/include -lBLT8.0 \
  # *** Uncomment and edit for PIL (TkImaging) extension only:
-@@ -286,7 +286,7 @@
- # *** Uncomment and edit for TOGL extension only:
- #	-DWITH_TOGL togl.c \
- # *** Uncomment and edit to reflect your Tcl/Tk versions:
--#	-ltk8.2 -ltcl8.2 \
-+#	-ltk8.0 -ltcl8.0 \
- # *** Uncomment and edit to reflect where your X11 libraries are:
- #	-L/usr/X11R6/lib \
- # *** Or uncomment this for Solaris:
-@@ -299,7 +299,7 @@
+@@ -264,8 +265,8 @@ PYTHONPATH=$(COREPYTHONPATH)
  #	-lX11
  
- # Lance Ellinghaus's syslog module
--#syslog syslogmodule.c		# syslog daemon interface
-+syslog syslogmodule.c		# syslog daemon interface
- 
- 
- # Curses support, requiring the System V version of curses, often
-@@ -308,9 +308,9 @@
- #
- # First, look at Setup.config; configure may have set this for you.
- 
--#_curses _cursesmodule.c -lcurses -ltermcap
-+_curses _cursesmodule.c -lncurses
- # Wrapper for the panel library that's part of ncurses and SYSV curses.
--#_curses_panel _curses_panel.c -lpanel -lncurses
+ # Some system have -lcurses 
+-#_curses -lncurses -lncursesw -ltermcap _cursesmodule.c
+-#_curses_panel -lpanel -lncurses _curses_panel.c
++_curses _cursesmodule.c -lncurses -lncursesw
 +_curses_panel _curses_panel.c -lpanel -lncurses
  
- 
- # Modules that provide persistent dictionary-like semantics.  You will
-@@ -337,10 +337,10 @@
- 
- 
- # Helper module for various ascii-encoders
--#binascii binascii.c
-+binascii binascii.c
- 
- # Fred Drake's interface to the Python parser
--#parser parsermodule.c
-+parser parsermodule.c
- 
- 
- # Lee Busby's SIGFPE modules.
-@@ -363,7 +363,7 @@
- # Andrew Kuchling's zlib module.
- # This require zlib 1.1.3 (or later).
- # See http://www.gzip.org/zlib/
--#zlib zlibmodule.c -I$(prefix)/include -L$(exec_prefix)/lib -lz
-+zlib zlibmodule.c -lz
- 
- # Interface to the Expat XML parser
+ # macOS specific module, needs SystemConfiguration and CoreFoundation framework
+ # _scproxy _scproxy.c
+@@ -296,7 +297,9 @@ xxsubtype xxsubtype.c  # Required for the test suite to pass!
+ # Uncommenting the following line tells makesetup that all following modules
+ # are not built (see above for more detail).
  #
---- a/Modules/_testcapimodule.c	2017-12-19 05:53:56.000000000 +0100
-+++ b/Modules/_testcapimodule.c	2018-03-25 03:54:40.290279968 +0200
-@@ -2205,6 +2205,9 @@
+-#*disabled*
++*disabled*
+ #
+ # _sqlite3 _tkinter _curses pyexpat
+ # _codecs_jp _codecs_kr _codecs_tw unicodedata
++_codecs_cn _codecs_hk _codecs_jp _codecs_kr _codecs_tw _codecs_iso2022
++_tkinter
+diff --git a/Modules/_hashopenssl.c b/Modules/_hashopenssl.c
+index 57d64bd..a0c62fe 100644
+--- a/Modules/_hashopenssl.c
++++ b/Modules/_hashopenssl.c
+@@ -39,9 +39,11 @@
+ 
+ #include <openssl/crypto.h>       // FIPS_mode()
+ 
++#ifndef __MINT__
+ #ifndef OPENSSL_THREADS
+ #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
+ #endif
++#endif
+ 
+ #define MUNCH_SIZE INT_MAX
+ 
+diff --git a/Modules/_ssl.c b/Modules/_ssl.c
+index 67ce6e9..40d2151 100644
+--- a/Modules/_ssl.c
++++ b/Modules/_ssl.c
+@@ -61,9 +61,11 @@
+ #include "openssl/bio.h"
+ #include "openssl/dh.h"
+ 
++#ifndef __MINT__
+ #ifndef OPENSSL_THREADS
+ #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
+ #endif
++#endif
+ 
+ 
+ 
+diff --git a/Modules/_testcapimodule.c b/Modules/_testcapimodule.c
+index a4411d1..21c0aa7 100644
+--- a/Modules/_testcapimodule.c
++++ b/Modules/_testcapimodule.c
+@@ -2658,6 +2658,9 @@ static int test_run_counter = 0;
  
  static PyObject *
  test_datetime_capi(PyObject *self, PyObject *args) {
@@ -192,11 +221,14 @@
      if (PyDateTimeAPI) {
          if (test_run_counter) {
              /* Probably regrtest.py -R */
-@@ -2222,6 +2225,7 @@
+@@ -2676,6 +2679,7 @@ test_datetime_capi(PyObject *self, PyObject *args) {
          Py_RETURN_NONE;
      else
          return NULL;
 +#endif
  }
  
- 
+ /* Functions exposing the C API type checking for testing */
+-- 
+2.41.0
+

@@ -1,0 +1,80 @@
+From a48d76567069ecfbe29ea62c8353a4fd829a479b Mon Sep 17 00:00:00 2001
+From: Thorsten Otto <admin@tho-otto.de>
+Date: Sun, 17 Mar 2024 09:28:13 +0100
+Subject: [PATCH 16/40] Ready_To_Quit is only handled in WIN32 message handler
+
+---
+ redalert/startup.cpp     | 4 ++++
+ redalert/winstub.cpp     | 2 ++
+ tiberiandawn/startup.cpp | 4 +++-
+ 3 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/redalert/startup.cpp b/redalert/startup.cpp
+index d6b1a12..caaa22f 100644
+--- a/redalert/startup.cpp
++++ b/redalert/startup.cpp
+@@ -503,7 +503,9 @@ int main(int argc, char* argv[])
+         */
+ #if defined(_WIN32) && !defined(SDL_BUILD)
+         PostMessage(MainWindow, WM_DESTROY, 0, 0);
++#endif
+ 
++#if !defined(REMASTER_BUILD) && defined(_WIN32) && !defined(SDL_BUILD)
+         /*
+         ** Wait until the message handler has dealt with the message
+         */
+@@ -701,12 +703,14 @@ void Emergency_Exit(int code)
+     PostMessage(MainWindow, WM_DESTROY, 0, 0);
+ #endif
+ 
++#if !defined(REMASTER_BUILD) && defined(_WIN32) && !defined(SDL_BUILD)
+     /*
+     ** Wait until the message handler has dealt with the message
+     */
+     do {
+         Keyboard->Check();
+     } while (ReadyToQuit == 3);
++#endif
+ 
+     exit(code);
+ }
+diff --git a/redalert/winstub.cpp b/redalert/winstub.cpp
+index ef7a5bb..11fb773 100644
+--- a/redalert/winstub.cpp
++++ b/redalert/winstub.cpp
+@@ -626,9 +626,11 @@ void Memory_Error_Handler(void)
+ #ifdef _WIN32
+     PostMessage(MainWindow, WM_DESTROY, 0, 0);
+ #endif
++#if !defined(REMASTER_BUILD) && defined(_WIN32) && !defined(SDL_BUILD)
+     do {
+         Keyboard->Check();
+     } while (ReadyToQuit == 1);
++#endif
+ 
+     exit(1);
+ }
+diff --git a/tiberiandawn/startup.cpp b/tiberiandawn/startup.cpp
+index 9412287..2964e49 100644
+--- a/tiberiandawn/startup.cpp
++++ b/tiberiandawn/startup.cpp
+@@ -484,7 +484,9 @@ int main(int argc, char** argv)
+         */
+ #if defined(_WIN32) && !defined(SDL_BUILD)
+         PostMessage(MainWindow, WM_DESTROY, 0, 0);
++#endif
+ 
++#if !defined(REMASTER_BUILD) && defined(_WIN32) && !defined(SDL_BUILD)
+         /*
+         ** Wait until the message handler has dealt with the message
+         */
+@@ -609,4 +611,4 @@ void Read_Setup_Options(RawFileClass* config_file)
+     */
+     VideoBackBufferAllowed = ini.Get_Bool("Options", "VideoBackBuffer", true);
+     AllowHardwareBlitFills = ini.Get_Bool("Options", "HardwareFills", true);
+-}
+\ No newline at end of file
++}
+-- 
+2.41.0
+

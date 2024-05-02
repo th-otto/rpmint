@@ -1468,6 +1468,16 @@ This notably applies to Perl and Python.
 
 <li>2024/03/09 Update binutils to 2.42</li>
 
+<li>2024/04/13 Add ntp 4.2.8p17</li>
+
+<li>2024/04/14 Update python to 3.11.8</li>
+
+<li>2024/04/19 Add meson 1.4.0</li>
+
+<li>2024/04/19 Add ninja 1.11.1</li>
+
+<li>2024/04/25 Update fdlibm & gemlib to include -mfastcall libraries</li>
+
 </ul>
 
 <p></p>
