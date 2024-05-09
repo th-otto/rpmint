@@ -1480,6 +1480,8 @@ This notably applies to Perl and Python.
 
 <li>2024/04/29 Update mintlib to include -mfastcall libraries</li>
 
+<li>2024/05/07 Add gcc 14.1.0</li>
+
 </ul>
 
 <p></p>
@@ -1589,98 +1591,106 @@ CosmosEx is a hardware extension as small as a floppy drive which brings SD-Card
 <!--
 Build times:
 binutils:
-	mingw32: 10min
-	mingw64: 10min
-	cygwin32:  8min
-	cygwin64:  6min
-	macos:   3min (ld does not have support for the native platform)
-	linux:   39sec
+	mingw32:  10min
+	mingw64:  10min
+	cygwin32: 8min
+	cygwin64: 6min
+	macos:    3min (ld does not have support for the native platform)
+	linux:    39sec
 
 gcc 2.95.3:
-	linux:   1min15sec
+	linux:    1min15sec
 
 gcc 4.6.4:
-	mingw32: 15min
-	mingw64: 38min
-	cygwin:  19min
-	macos:   15min
-	linux:   2min30sec
+	mingw32:  15min
+	mingw64:  38min
+	cygwin:   19min
+	macos:    15min
+	linux:    2min30sec
 	
 gcc 7.2:
-	mingw32: 32min
-	cygwin:  28min
-	macos:   23min
-	linux:   3min
+	mingw32:  32min
+	cygwin:   28min
+	macos:    23min
+	linux:    3min
 	
 gcc 7.5:
-	mingw32: 68min
-	mingw64: 60min
+	mingw32:  68min
+	mingw64:  60min
 	cygwin32: 36min
 	cygwin64: 28min
-	macos:   25min
-	linux:   3min
+	macos:    25min
+	linux:    3min
 
 gcc 8.1:
-	mingw32: 32min
+	mingw32:  32min
 	cygwin32: 38min
 	cygwin64: 31min
-	macos:   33min
-	linux:   3min47sec
+	macos:    33min
+	linux:    3min47sec
 
 gcc 8.2:
 	mingw32: 32min
 	cygwin32: 39min
 	cygwin64: 35min
-	macos:   33min
-	linux:   3min54sec
+	macos:    33min
+	linux:    3min54sec
 
 gcc 8.5:
-	mingw32: 33min
-	mingw64: 63min
+	mingw32:  33min
+	mingw64:  63min
 	cygwin32: 39min
 	cygwin64: 35min
-	macos:   29min
-	linux:   4min12sec
+	macos:    29min
+	linux:    4min12sec
 
 gcc 9.5.0:
-	mingw32: 38min
-	mingw64: 69min
+	mingw32:  38min
+	mingw64:  69min
 	cygwin32: 45min
 	cygwin64: 42min
-	macos:   31min
-	linux:   4min12sec
+	macos:    31min
+	linux:    4min12sec
 
 gcc 10.5.0:
-	mingw32: 50min
-	mingw64: 70min
+	mingw32:  50min
+	mingw64:  70min
 	cygwin32: 85min
 	cygwin64: 88min
-	macos:   32min
-	linux:   7min48sec
+	macos:    32min
+	linux:    7min48sec
 
 gcc 11.3.0:
-	mingw32: 73min
-	mingw64: 85min
+	mingw32:  73min
+	mingw64:  85min
 	cygwin32: 126min
 	cygwin64: 116min
-	macos:   52min
-	linux:   7min28sec
+	macos:    52min
+	linux:    7min28sec
 
 gcc 12.2.0:
-	mingw32: 76min
-	mingw64: 89min
+	mingw32:  76min
+	mingw64:  89min
 	cygwin32: 129min
 	cygwin64: 129min
-	macos:   57min
-	linux:   11min8sec
+	macos:    57min
+	linux:    11min8sec
 
 gcc 13.1.0:
-	mingw32: 80min
-	mingw64: 111min
+	mingw32:  80min
+	mingw64:  111min
 	cygwin32: 134min
 	cygwin64: 143min
-	macos:   54min
-	linux:   12min40sec
+	macos:    54min
+	linux:    12min40sec
+
+gcc 14.1.0:
+	mingw32:  98m16sec
+	mingw64:  102m26sec
+	cygwin32: 187m
+	cygwin64: 198m
+	macos:    91min29sec
+	linux:    12min06sec
 
 -->
 </body>

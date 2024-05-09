@@ -128,6 +128,49 @@ The full documentation can be found
 GCC contains everything to compile C programs, except a standard library and a math library.
 '
 	),
+	'gcc1410' => array(
+		'name' => 'gcc14',
+		'title' => 'GCC',
+		'upstream' => 'http://gcc.gnu.org/',
+		'version' => '14.1.0',
+		'date' => '20240507',
+		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
+		'branch' => 'mint/gcc-14',
+		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
+		'patch' => 1,
+		'patchcomment' => 'The patches include necessary support for an elf toolchain, and support for -mfastcall',
+		'script' => 1,
+		'crossscript' => 1,
+		'doc' => 1,
+		'elf' => 1,
+		'fortran' => 1,
+		'D' => 1,
+		'ada' => 1,
+		'm2' => 1,
+		'cygwin32' => 1,
+		'cygwin64' => 1,
+		'mingw32' => 1,
+		'mingw64' => 1,
+		'linux32' => 0,
+		'linux64' => 1,
+		'macos32' => 0,
+		'macos64' => 1,
+		'atari' => 1,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Development/Languages/C and C++',
+		'summary' => 'The system GNU C Compiler',
+		'comment' => '
+This is the currently most recent official version of GCC. It comes in two
+flavours: one for an a.out toolchain (as with the previously used version
+4.6.4), and one for an elf toolchain. Elf toolchain here means that it
+will still produce the same executable format, but works with elf object
+files. To support this better, all libraries offered here were also recompiled
+using this format.<br />
+<br />
+<span style="color:red">Note:</span> This version now was compiled against fdlibm; it is strongly recommended to
+use fdlibm instead of the ancient pml math library.
+'
+	),
 	'gcc1320' => array(
 		'name' => 'gcc13',
 		'title' => 'GCC',
@@ -138,7 +181,7 @@ GCC contains everything to compile C programs, except a standard library and a m
 		'branch' => 'mint/gcc-13',
 		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
 		'patch' => 1,
-		'patchcomment' => 'The patches include necessary support for an elf toolchain.',
+		'patchcomment' => 'The patches include necessary support for an elf toolchain, and support for -mfastcall.',
 		'script' => 1,
 		'crossscript' => 1,
 		'doc' => 1,
@@ -160,15 +203,7 @@ GCC contains everything to compile C programs, except a standard library and a m
 		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The system GNU C Compiler',
 		'comment' => '
-This is the currently most recent official version of GCC. It comes in two
-flavours: one for an a.out toolchain (as with the previously used version
-4.6.4), and one for an elf toolchain. Elf toolchain here means that it
-will still produce the same executable format, but works with elf object
-files. To support this better, all libraries offered here were also recompiled
-using this format (although theoretically it should be possible to mix them).<br />
-<br />
-<span style="color:red">Note:</span> This version now was compiled against fdlibm; it is strongly recommended to
-use fdlibm instead of the ancient pml math library.
+Slightly older version of GCC.
 '
 	),
 	'gcc1230' => array(
@@ -233,14 +268,12 @@ Slightly older version of GCC.
 		'linux64' => 1,
 		'macos32' => 0,
 		'macos64' => 1,
-		'atari' => 0,
+		'atari' => 1,
 		'license' => 'GPL-3.0-or-later',
 		'category' => 'Development/Languages/C and C++',
 		'summary' => 'The system GNU C Compiler',
 		'comment' => '
 Slightly older version of GCC. <br />
-<span style="color:red">Warning:</span>
-This compiler was not able to compile itself for m68k, so it might be broken.
 '
 	),
 	'gcc1050' => array(

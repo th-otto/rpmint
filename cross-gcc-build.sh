@@ -14,8 +14,8 @@ scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
-VERSION=-13.2.0
-VERSIONPATCH=-20240214
+VERSION=-14.1.0
+VERSIONPATCH=-20240507
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -67,7 +67,7 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-build"
+MINT_BUILD_DIR="$BUILD_DIR/gcc-cross-build"
 
 #
 # Where to put the binary packages
@@ -668,8 +668,7 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 	# create a separate archive for the modula-2 backend
 	#
 	if $with_m2; then
-		m2=
-		test -d ${gccsubdir#/}/m2 && m2="$m2 "${gccsubdir#/}/m2
+		m2=`find ${gccsubdir#/} -type d -name m2`
 		m2="$m2 "`find ${gccsubdir#/} -name "libm2*"`
 		m2="$m2 "`find ${gccsubdir#/} -name "cc1gm2*"`
 		m2="$m2 "${TARGET_PREFIX#/}/bin/${TARGET}-gm2*

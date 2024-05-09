@@ -13,8 +13,8 @@ scriptdir=${0%/*}
 scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
-VERSION=-10.5.0
-VERSIONPATCH=-20230908
+VERSION=-14.1.0
+VERSIONPATCH=-20240507
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -136,12 +136,12 @@ with_D=true
 #
 # whether to include the modula-2 backend
 #
-with_m2=false
+with_m2=true
 
 #
 # whether to include the ada backend
 #
-with_ada=false
+with_ada=true
 case $host in
 	linux64 | linux32)
 		;;
@@ -157,12 +157,21 @@ esac
 
 
 #
+# whether to include the go backend
+#
+with_go=false
+
+#
 # whether to use dwarf2 exceptions instead of sjlj.
 # Only works for elf toolchains.
 #
 case $TARGET in
 *-*-*elf)
 	with_dw2_exceptions=--disable-sjlj-exceptions
+	;;
+*)
+	# go needs named sections and only works with elf
+	with_go=false
 	;;
 esac
 
@@ -335,6 +344,7 @@ $with_fortran && languages="$languages,fortran"
 $with_ada && languages="$languages,ada"
 $with_D && { languages="$languages,d"; enable_libphobos=; } # --enable-libphobos does not work because of missing swapcontext() in mintlib
 $with_m2 && languages="$languages,m2"
+$with_go && languages="$languages,go"
 ranlib=ranlib
 STRIP=${STRIP-strip -p}
 
@@ -393,10 +403,10 @@ fi
 if test "$TARGET" = m68k-atari-mintelf; then
   # new PRG+ELF format requires binutils >= 2.41
   asversion=`$as --version | head -1 | sed -e 's/^.* \([.0-9]*\)$/\1/'`
-  asversion=${asversion%.0}
-  asversion=${asversion//./}
-  if test "$asversion" -lt 241; then
-	echo "cross-binutils >= 2.41 required" >&2
+  version=${asversion%.0}
+  version=${asversion//./}
+  if test "$version" -lt 241; then
+	echo "cross-binutils >= 2.41 required (found $asversion as $as)" >&2
 	exit 1
   fi
 fi
@@ -444,27 +454,29 @@ case $host in
 esac
 
 
+if $with_ada; then
 #
 # Note: for ADA, you have to use the same major of gcc as the one we are compiling here.
 # If your hosts compiler is a newer one, set
 # GCC=gcc-${gcc_major} GXX=g++-${gcc_major} before running this script
 #
-case $GCC in
-	*-[0-9]*-m32)
-		adahostsuffix=-"${GCC%-*}"
-		adahostsuffix=-"${adahostsuffix##*-}"
-		m32=" -m32"
-		;;
-	*-[0-9]*)
-		adahostsuffix=-"${GCC##*-}"
-		m32=""
-		;;
-	*)
-		adahostsuffix=
-		m32=""
-		;;
-esac
-if $with_ada; then
+	case $GCC in
+		*-[0-9]*-m32)
+			adahostsuffix=-"${GCC%-*}"
+			adahostsuffix=-"${adahostsuffix##*-}"
+			m32=" -m32"
+			;;
+		*-[0-9]*)
+			adahostsuffix=-"${GCC##*-}"
+			m32=""
+			;;
+		*)
+			adahostsuffix=-${gcc_major_version}
+			m32=""
+			GCC=${GCC}-${gcc_major_version}
+			GXX=${GXX}-${gcc_major_version}
+			;;
+	esac
 # Using the host gnatmake like
 #   CC="gcc%%{hostsuffix}" GNATBIND="gnatbind%%{hostsuffix}"
 #   GNATMAKE="gnatmake%%{hostsuffix}"
@@ -520,6 +532,15 @@ if test $gcc_major_version -lt 13; then
 	gcc4_compat=--with-default-libstdcxx-abi=gcc4-compatible
 fi
 
+#
+# gcc 13 and above need support for a zoneinfo database
+# in std::chrono
+#
+zoneinfo=
+if test $gcc_major_version -ge 13; then
+	zoneinfo=--with-libstdcxx-zoneinfo=/usr/share/zoneinfo
+fi
+
 $srcdir/configure \
 	--target="${TARGET}" --build="$BUILD" \
 	--prefix="${PREFIX}" \
@@ -543,6 +564,7 @@ $srcdir/configure \
 	--disable-werror \
 	--with-gxx-include-dir=${PREFIX}/${TARGET}/sys-root${gxxinclude} \
 	$gcc4_compat \
+	$zoneinfo \
 	--with-gcc-major-version-only \
 	--with-gcc --with-gnu-as --with-gnu-ld \
 	--with-system-zlib \
@@ -814,6 +836,19 @@ if $with_m2; then
 fi
 
 #
+# create a separate archive for the go backend
+#
+if $with_go; then
+	go=`find ${gccsubdir#/} -name "libgo*.a"`
+	go=`find ${gccsubdir#/} -name "libffi*.a"`
+	go=`find ${gccsubdir#/} -name "libatomic*.a"`
+	go="$go "`find ${gccsubdir#/} -name "go1*"`
+	go="$go "${PREFIX#/}/bin/${TARGET}-go* ${PREFIX#/}/bin/${TARGET}-gccgo*
+	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-go-${host}.tar.xz $go || exit 1
+	rm -rf $go
+fi
+
+#
 # create archive for all others
 #
 if test $glibc_hack = false -a \( $host = linux32 -o $host = linux64 \); then
@@ -821,7 +856,7 @@ if test $glibc_hack = false -a \( $host = linux32 -o $host = linux64 \); then
 	release=`lsb_release -r -s`
 	# gcc-x.y.z-ubuntu-20.04-mint.tar.xz
 	TARNAME=${PACKAGENAME}${VERSION}-${id}-${release}-${TARGET##*-}
-	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}.tar.xz ${PREFIX#/}
+	${TAR} ${TAR_OPTS} -jcf ${DIST_DIR}/${TARNAME}.tar.bz2 ${PREFIX#/}
 else
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-bin-${host}.tar.xz ${PREFIX#/}
 fi

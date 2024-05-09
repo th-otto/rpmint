@@ -814,8 +814,7 @@ fi
 # create a separate archive for the modula-2 backend
 #
 if $with_m2; then
-	m2=
-	test -d ${gccsubdir#/}/m2 && m2="$m2 "${gccsubdir#/}/m2
+	m2=`find ${gccsubdir#/} -type d -name m2`
 	m2="$m2 "`find ${gccsubdir#/} -name "libm2*"`
 	m2="$m2 "`find ${gccsubdir#/} -name "cc1gm2*"`
 	test -f ${gccsubdir#/}/plugin/m2rte${soext} && m2="$m2 ${gccsubdir#/}/plugin/m2rte${soext}"
