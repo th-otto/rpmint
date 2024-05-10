@@ -10,6 +10,7 @@ VERSIONPATCH=
 . ${scriptdir}/functions.sh
 
 PATCHES="
+patches/${PACKAGENAME}/fribidi.patch
 "
 EXTRA_DIST="
 patches/automake/mintelf-config.sub

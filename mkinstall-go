@@ -1,0 +1,98 @@
+set -u
+set -e
+TARGET=m68k-atari-mintelf
+PREFIX=/usr
+MAKE=make
+TAR=tar
+INSTALL_DIR=$HOME/binary7-package
+BUILD_EXEEXT=
+BASE_VER=14.1.0
+gcc_major_version=14
+gcc_dir_version=$gcc_major_version
+gccsubdir=${PREFIX}/lib64/gcc/${TARGET}/${gcc_dir_version}
+
+
+${MAKE} DESTDIR="${INSTALL_DIR}" install >/dev/null || exit 1
+
+mkdir -p "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
+
+cd "${INSTALL_DIR}/${PREFIX}/${TARGET}/bin"
+
+for tool in c++ cpp g++ gcc gcov gfortran gdc; do
+	if test -x ../../bin/${TARGET}-${tool}; then
+		rm -f ${tool} ${tool}${BUILD_EXEEXT}
+		$LN_S ../../bin/${TARGET}-${tool}${BUILD_EXEEXT} ${tool}
+	fi
+done
+
+cd "${INSTALL_DIR}/${PREFIX}/bin"
+
+if test -x ${TARGET}-g++ && test ! -h ${TARGET}-g++; then
+	rm -f ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}
+	rm -f ${TARGET}-g++-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_major_version}
+	mv ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT}
+	$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++${BUILD_EXEEXT}
+	$LN_S ${TARGET}-g++-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-g++-${gcc_major_version}${BUILD_EXEEXT}
+fi
+if test -x ${TARGET}-c++ && test ! -h ${TARGET}-c++; then
+	rm -f ${TARGET}-c++${BUILD_EXEEXT} ${TARGET}-c++
+	$LN_S ${TARGET}-g++${BUILD_EXEEXT} ${TARGET}-c++${BUILD_EXEEXT}
+fi
+for tool in gcc gfortran gdc gccgo go gofmt gm2 \
+            gnat gnatbind gnatchop gnatclean gnatkr gnatlink gnatls gnatmake gnatname gnatprep gnatxref; do
+	if test -x ${TARGET}-${tool} && test ! -h ${TARGET}-${tool}; then
+		rm -f ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}
+		rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
+		mv ${TARGET}-${tool}${BUILD_EXEEXT} ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT}
+		$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}${BUILD_EXEEXT}
+		if test ${BASE_VER} != ${gcc_major_version}; then
+			rm -f ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}
+			rm -f ${tool}-${gcc_major_version}${BUILD_EXEEXT} ${tool}-${gcc_major_version}${BUILD_EXEEXT}
+			$LN_S ${TARGET}-${tool}-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-${tool}-${gcc_major_version}${BUILD_EXEEXT}
+		fi
+	fi
+done
+if test -x ${TARGET}-cpp && test ! -h ${TARGET}-cpp; then
+	rm -f ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}
+	mv ${TARGET}-cpp${BUILD_EXEEXT} ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT}
+	$LN_S ${TARGET}-cpp-${BASE_VER}${BUILD_EXEEXT} ${TARGET}-cpp${BUILD_EXEEXT}
+fi
+
+cd "${INSTALL_DIR}"
+
+# that directory only contains the gdb pretty printers;
+# on the host we don't want them because they would conflict
+# with the system ones; on the target we don't need them
+# because gdb does not work
+rm -rf ${PREFIX#/}/share/gcc-${gcc_dir_version}
+if test -d ${PREFIX#/}/${TARGET}/lib; then find ${PREFIX#/}/${TARGET}/lib -name "libstdc++*.py" -delete; fi
+if test -d ${PREFIX#/}/lib; then find ${PREFIX#/}/lib -name "libstdc++*.py" -delete; fi
+
+rm -f ${PREFIX#/}/share/info/dir
+for f in ${PREFIX#/}/share/man/*/* ${PREFIX#/}/share/info/*; do
+	case $f in
+	*.gz) ;;
+	*) rm -f ${f}.gz; gzip -9 $f ;;
+	esac
+done
+
+rm -f */*/libiberty.a
+find . -type f -name "*.la" -delete -printf "rm %p\n"
+
+#
+# move compiler dependant libraries to the gcc subdirectory
+#
+cd ${INSTALL_DIR}${PREFIX}/${TARGET}/lib || exit 1
+libs=`find . -name "lib*.a" ! -path "*/gcc/*"`
+$TAR -c $libs | $TAR -x -C ${INSTALL_DIR}${gccsubdir}
+rm -f $libs
+for i in libgfortran.spec libgomp.spec libitm.spec libsanitizer.spec libmpx.spec libgphobos.spec; do
+	test -f $i && mv $i ${INSTALL_DIR}${gccsubdir}
+	find . -name "$i" -delete
+done
+rmdir m*/*/*/* || :
+rmdir m*/*/* || :
+rmdir m*/* || :
+rmdir m* || :
+
+rm -rf ${INSTALL_DIR}${PREFIX}/${TARGET}/sys-root

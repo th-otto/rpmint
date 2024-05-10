@@ -1,0 +1,12 @@
+diff -ur --strip-trailing-cr --exclude=.git --exclude=.vscode libwebm/mkvmuxer/mkvmuxerutil.cc libwebm-mint/mkvmuxer/mkvmuxerutil.cc
+--- a/mkvmuxer/mkvmuxerutil.cc	2023-05-23 10:56:25
++++ b/mkvmuxer/mkvmuxerutil.cc	2023-05-23 11:13:28
+@@ -634,7 +634,7 @@
+       close(fd);
+     }
+     const int32 nn = temp_num;
+-#elif defined __MINGW32__
++#elif defined(__MINGW32__) || defined(__MINT__)
+     const int32 nn = rand();
+ #else
+     const int32 nn = rand_r(seed);

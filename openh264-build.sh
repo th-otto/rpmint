@@ -33,7 +33,7 @@ for CPU in ${ALL_CPUS}; do
 	OS=freemint \
 	ARCH=m68k \
 	CC="${TARGET}-gcc" \
-	CXX="${TARGET}-g++" \
+	CXX="${TARGET}-g++ $CPU_CFLAGS" \
 	AR="${ar}" \
 	ARFLAGS=rcs \
 	RANLIB=${ranlib} \

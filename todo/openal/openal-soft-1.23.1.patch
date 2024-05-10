@@ -1,0 +1,2521 @@
+diff -rup openal-soft-1.23.1.orig/CMakeLists.txt openal-soft-1.23.1/CMakeLists.txt
+--- openal-soft-1.23.1.orig/CMakeLists.txt	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/CMakeLists.txt	2024-03-24 17:58:25.306222132 +0100
+@@ -268,11 +268,11 @@ else()
+         -Wpedantic
+         $<$<COMPILE_LANGUAGE:CXX>:-Wold-style-cast -Wnon-virtual-dtor -Woverloaded-virtual>)
+ 
+-    check_cxx_compiler_flag(-Wno-c++20-attribute-extensions HAVE_WNO_CXX20_ATTR_EXT)
++    check_cxx_compiler_flag(-Werror -Wno-c++20-attribute-extensions HAVE_WNO_CXX20_ATTR_EXT)
+     if(HAVE_WNO_CXX20_ATTR_EXT)
+         set(C_FLAGS ${C_FLAGS} $<$<COMPILE_LANGUAGE:CXX>:-Wno-c++20-attribute-extensions>)
+     else()
+-        check_cxx_compiler_flag(-Wno-c++20-extensions HAVE_WNO_CXX20_EXT)
++        check_cxx_compiler_flag(-Werror -Wno-c++20-extensions HAVE_WNO_CXX20_EXT)
+         if(HAVE_WNO_CXX20_EXT)
+             set(C_FLAGS ${C_FLAGS} $<$<COMPILE_LANGUAGE:CXX>:-Wno-c++20-extensions>)
+         endif()
+@@ -862,6 +862,7 @@ set(HAVE_OPENSL     0)
+ set(HAVE_OBOE       0)
+ set(HAVE_WAVE       0)
+ set(HAVE_SDL2       0)
++set(HAVE_SDL1       0)
+ 
+ if(WIN32 OR HAVE_DLFCN_H)
+     set(IS_LINKED "")
+@@ -1184,6 +1185,30 @@ if(ALSOFT_REQUIRE_SDL2 AND NOT SDL2_FOUN
+     message(FATAL_ERROR "Failed to enabled required SDL2 backend")
+ endif()
+ 
++# Check for SDL1 backend
++option(ALSOFT_BACKEND_SDL1 "Enable SDL1 backend" OFF)
++option(ALSOFT_REQUIRE_SDL1 "Require SDL1 backend" OFF)
++if(ALSOFT_BACKEND_SDL1)
++    if(${CMAKE_SYSTEM_NAME} MATCHES "m68k-atari-mint")
++       include_directories(${CMAKE_INCLUDE_PATH}/SDL)
++       list(APPEND VANILLA_LIBS "-lSDL")
++       set(SDL_FOUND 1)
++    else()
++       find_package(SDL QUIET)
++    endif()
++    if(SDL_FOUND)
++        set(HAVE_SDL1 1)
++        set(ALC_OBJS  ${ALC_OBJS} alc/backends/sdl1.cpp alc/backends/sdl1.h)
++        set(BACKENDS  "${BACKENDS} SDL1,")
++        set(EXTRA_LIBS ${EXTRA_LIBS} -lSDL)
++    else()
++        message(STATUS "Could NOT find SDL 1.x")
++    endif()
++endif()
++if(ALSOFT_REQUIRE_SDL1 AND NOT SDL_FOUND)
++    message(FATAL_ERROR "Failed to enabled required SDL1 backend")
++endif()
++
+ # Optionally enable the Wave Writer backend
+ option(ALSOFT_BACKEND_WAVE "Enable Wave Writer backend" ON)
+ if(ALSOFT_BACKEND_WAVE)
+diff -rup openal-soft-1.23.1.orig/al/auxeffectslot.cpp openal-soft-1.23.1/al/auxeffectslot.cpp
+--- openal-soft-1.23.1.orig/al/auxeffectslot.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/al/auxeffectslot.cpp	2024-03-24 18:58:34.818124664 +0100
+@@ -319,7 +319,9 @@ START_API_FUNC
+         context->setError(AL_INVALID_VALUE, "Generating %d effect slots", n);
+     if(n <= 0) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     ALCdevice *device{context->mALDevice.get()};
+     if(static_cast<ALuint>(n) > device->AuxiliaryEffectSlotMax-context->mNumEffectSlots)
+     {
+@@ -363,7 +365,9 @@ START_API_FUNC
+         context->setError(AL_INVALID_VALUE, "Deleting %d effect slots", n);
+     if(n <= 0) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     if(n == 1)
+     {
+         ALeffectslot *slot{LookupEffectSlot(context.get(), effectslots[0])};
+@@ -423,7 +427,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(context) LIKELY
+     {
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+         if(LookupEffectSlot(context.get(), effectslot) != nullptr)
+             return AL_TRUE;
+     }
+@@ -438,7 +444,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     ALeffectslot *slot{LookupEffectSlot(context.get(), slotid)};
+     if(!slot) UNLIKELY
+     {
+@@ -467,7 +475,9 @@ START_API_FUNC
+     if(n <= 0) UNLIKELY return;
+ 
+     auto slots = al::vector<ALeffectslot*>(static_cast<ALuint>(n));
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     for(size_t i{0};i < slots.size();++i)
+     {
+         ALeffectslot *slot{LookupEffectSlot(context.get(), slotids[i])};
+@@ -497,7 +507,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     ALeffectslot *slot{LookupEffectSlot(context.get(), slotid)};
+     if(!slot) UNLIKELY
+     {
+@@ -521,7 +533,9 @@ START_API_FUNC
+     if(n <= 0) UNLIKELY return;
+ 
+     auto slots = al::vector<ALeffectslot*>(static_cast<ALuint>(n));
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     for(size_t i{0};i < slots.size();++i)
+     {
+         ALeffectslot *slot{LookupEffectSlot(context.get(), slotids[i])};
+@@ -547,8 +561,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mEffectSlotLock};
++#endif
+     ALeffectslot *slot = LookupEffectSlot(context.get(), effectslot);
+     if(!slot) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid effect slot ID %u", effectslot);
+@@ -562,7 +578,9 @@ START_API_FUNC
+         device = context->mALDevice.get();
+ 
+         {
++#ifndef __MINT__
+             std::lock_guard<std::mutex> ___{device->EffectLock};
++#endif
+             ALeffect *effect{value ? LookupEffect(device, static_cast<ALuint>(value)) : nullptr};
+             if(effect)
+                 err = slot->initEffect(effect->type, effect->Props, context.get());
+@@ -647,7 +665,9 @@ START_API_FUNC
+             return;
+ 
+         {
++#ifndef __MINT__
+             std::lock_guard<std::mutex> ___{device->BufferLock};
++#endif
+             ALbuffer *buffer{};
+             if(value)
+             {
+@@ -698,7 +718,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     ALeffectslot *slot = LookupEffectSlot(context.get(), effectslot);
+     if(!slot) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid effect slot ID %u", effectslot);
+@@ -718,8 +740,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mEffectSlotLock};
++#endif
+     ALeffectslot *slot = LookupEffectSlot(context.get(), effectslot);
+     if(!slot) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid effect slot ID %u", effectslot);
+@@ -755,7 +779,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     ALeffectslot *slot = LookupEffectSlot(context.get(), effectslot);
+     if(!slot) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid effect slot ID %u", effectslot);
+@@ -776,7 +802,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     ALeffectslot *slot = LookupEffectSlot(context.get(), effectslot);
+     if(!slot) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid effect slot ID %u", effectslot);
+@@ -828,7 +856,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     ALeffectslot *slot = LookupEffectSlot(context.get(), effectslot);
+     if(!slot) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid effect slot ID %u", effectslot);
+@@ -848,7 +878,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     ALeffectslot *slot = LookupEffectSlot(context.get(), effectslot);
+     if(!slot) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid effect slot ID %u", effectslot);
+@@ -878,7 +910,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     ALeffectslot *slot = LookupEffectSlot(context.get(), effectslot);
+     if(!slot) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid effect slot ID %u", effectslot);
+@@ -941,7 +975,9 @@ ALenum ALeffectslot::initEffect(ALenum e
+         al::intrusive_ptr<EffectState> state{factory->create()};
+ 
+         ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+         std::unique_lock<std::mutex> statelock{device->StateLock};
++#endif
+         state->mOutTarget = device->Dry.Buffer;
+         {
+             FPUCtl mixer_mode{};
+@@ -1005,7 +1041,9 @@ void ALeffectslot::updateProps(ALCcontex
+ 
+ void UpdateAllEffectSlotProps(ALCcontext *context)
+ {
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mEffectSlotLock};
++#endif
+     for(auto &sublist : context->mEffectSlotList)
+     {
+         uint64_t usemask{~sublist.FreeMask};
+@@ -1525,7 +1563,9 @@ EaxAlEffectSlotUPtr eax_create_al_effect
+ {
+ #define EAX_PREFIX "[EAX_MAKE_EFFECT_SLOT] "
+ 
++#ifndef __MINT__
+     std::unique_lock<std::mutex> effect_slot_lock{context.mEffectSlotLock};
++#endif
+     auto& device = *context.mALDevice;
+ 
+     if(context.mNumEffectSlots == device.AuxiliaryEffectSlotMax) {
+@@ -1547,7 +1587,9 @@ void eax_delete_al_effect_slot(ALCcontex
+ {
+ #define EAX_PREFIX "[EAX_DELETE_EFFECT_SLOT] "
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> effect_slot_lock{context.mEffectSlotLock};
++#endif
+ 
+     if(ReadRef(effect_slot.ref) != 0) {
+         ERR(EAX_PREFIX "Deleting in-use effect slot %u.\n", effect_slot.id);
+diff -rup openal-soft-1.23.1.orig/al/buffer.cpp openal-soft-1.23.1/al/buffer.cpp
+--- openal-soft-1.23.1.orig/al/buffer.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/al/buffer.cpp	2024-03-24 19:01:30.954555022 +0100
+@@ -643,7 +643,9 @@ START_API_FUNC
+     if(n <= 0) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+     if(!EnsureBuffers(device, static_cast<ALuint>(n)))
+     {
+         context->setError(AL_OUT_OF_MEMORY, "Failed to allocate %d buffer%s", n, (n==1)?"":"s");
+@@ -683,7 +685,9 @@ START_API_FUNC
+     if(n <= 0) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     /* First try to find any buffers that are invalid or in-use. */
+     auto validate_buffer = [device, &context](const ALuint bid) -> bool
+@@ -723,7 +727,9 @@ START_API_FUNC
+     if(context) LIKELY
+     {
+         ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+         if(!buffer || LookupBuffer(device, buffer))
+             return AL_TRUE;
+     }
+@@ -744,7 +750,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+@@ -781,7 +789,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+@@ -807,7 +817,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return nullptr;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+@@ -861,7 +873,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+@@ -884,7 +898,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+@@ -916,7 +932,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+@@ -1022,7 +1040,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     if(LookupBuffer(device, buffer) == nullptr) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+@@ -1042,7 +1062,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     if(LookupBuffer(device, buffer) == nullptr) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+@@ -1061,7 +1083,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     if(LookupBuffer(device, buffer) == nullptr) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+@@ -1083,7 +1107,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+@@ -1145,7 +1171,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     if(LookupBuffer(device, buffer) == nullptr) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+@@ -1178,7 +1206,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+@@ -1216,7 +1246,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+@@ -1243,7 +1275,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     if(LookupBuffer(device, buffer) == nullptr) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+@@ -1271,7 +1305,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     if(LookupBuffer(device, buffer) == nullptr) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+@@ -1293,7 +1329,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+@@ -1360,7 +1398,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+     if(LookupBuffer(device, buffer) == nullptr) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+     else if(!value1 || !value2 || !value3) UNLIKELY
+@@ -1398,7 +1438,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+@@ -1426,7 +1468,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+ 
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+@@ -1454,7 +1498,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+     ALbuffer *albuf = LookupBuffer(device, buffer);
+     if(!albuf) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+@@ -1482,7 +1528,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+     if(LookupBuffer(device, buffer) == nullptr) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+     else if(!value1 || !value2 || !value3) UNLIKELY
+@@ -1510,7 +1558,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+     if(LookupBuffer(device, buffer) == nullptr) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid buffer ID %u", buffer);
+     else if(!values) UNLIKELY
+@@ -1581,7 +1631,9 @@ START_API_FUNC
+     }
+ 
+     auto device = context->mALDevice.get();
++#ifndef __MINT__
+     std::lock_guard<std::mutex> device_lock{device->BufferLock};
++#endif
+     size_t total_needed{0};
+ 
+     // Validate the buffers.
+@@ -1674,7 +1726,9 @@ START_API_FUNC
+     }
+ 
+     auto device = context->mALDevice.get();
++#ifndef __MINT__
+     std::lock_guard<std::mutex> device_lock{device->BufferLock};
++#endif
+ 
+     const auto al_buffer = LookupBuffer(device, buffer);
+     if(!al_buffer)
+diff -rup openal-soft-1.23.1.orig/al/effect.cpp openal-soft-1.23.1/al/effect.cpp
+--- openal-soft-1.23.1.orig/al/effect.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/al/effect.cpp	2024-03-24 19:02:53.051110895 +0100
+@@ -241,7 +241,9 @@ START_API_FUNC
+     if(n <= 0) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->EffectLock};
++#endif
+     if(!EnsureEffects(device, static_cast<ALuint>(n)))
+     {
+         context->setError(AL_OUT_OF_MEMORY, "Failed to allocate %d effect%s", n, (n==1)?"":"s");
+@@ -281,7 +283,9 @@ START_API_FUNC
+     if(n <= 0) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->EffectLock};
++#endif
+ 
+     /* First try to find any effects that are invalid. */
+     auto validate_effect = [device](const ALuint eid) -> bool
+@@ -312,7 +316,9 @@ START_API_FUNC
+     if(context) LIKELY
+     {
+         ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{device->EffectLock};
++#endif
+         if(!effect || LookupEffect(device, effect))
+             return AL_TRUE;
+     }
+@@ -327,7 +333,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->EffectLock};
++#endif
+ 
+     ALeffect *aleffect{LookupEffect(device, effect)};
+     if(!aleffect) UNLIKELY
+@@ -377,7 +385,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->EffectLock};
++#endif
+ 
+     ALeffect *aleffect{LookupEffect(device, effect)};
+     if(!aleffect) UNLIKELY
+@@ -400,7 +410,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->EffectLock};
++#endif
+ 
+     ALeffect *aleffect{LookupEffect(device, effect)};
+     if(!aleffect) UNLIKELY
+@@ -423,7 +435,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->EffectLock};
++#endif
+ 
+     ALeffect *aleffect{LookupEffect(device, effect)};
+     if(!aleffect) UNLIKELY
+@@ -446,7 +460,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->EffectLock};
++#endif
+ 
+     const ALeffect *aleffect{LookupEffect(device, effect)};
+     if(!aleffect) UNLIKELY
+@@ -478,7 +494,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->EffectLock};
++#endif
+ 
+     const ALeffect *aleffect{LookupEffect(device, effect)};
+     if(!aleffect) UNLIKELY
+@@ -501,7 +519,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->EffectLock};
++#endif
+ 
+     const ALeffect *aleffect{LookupEffect(device, effect)};
+     if(!aleffect) UNLIKELY
+@@ -524,7 +544,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->EffectLock};
++#endif
+ 
+     const ALeffect *aleffect{LookupEffect(device, effect)};
+     if(!aleffect) UNLIKELY
+diff -rup openal-soft-1.23.1.orig/al/event.cpp openal-soft-1.23.1/al/event.cpp
+--- openal-soft-1.23.1.orig/al/event.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/al/event.cpp	2024-03-25 08:13:50.951681794 +0100
+@@ -44,9 +44,11 @@ static int EventThread(ALCcontext *conte
+             continue;
+         }
+ 
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{context->mEventCbLock};
++#endif
+         do {
+-            auto *evt_ptr = reinterpret_cast<AsyncEvent*>(evt_data.buf);
++            auto *evt_ptr = reinterpret_cast<AsyncEvent*>(static_cast<void *>(evt_data.buf));
+             evt_data.buf += sizeof(AsyncEvent);
+             evt_data.len -= 1;
+ 
+@@ -116,6 +118,7 @@ static int EventThread(ALCcontext *conte
+ 
+ void StartEventThrd(ALCcontext *ctx)
+ {
++#ifndef __MINT__
+     try {
+         ctx->mEventThread = std::thread{EventThread, ctx};
+     }
+@@ -125,6 +128,7 @@ void StartEventThrd(ALCcontext *ctx)
+     catch(...) {
+         ERR("Failed to start event thread! Expect problems.\n");
+     }
++#endif
+ }
+ 
+ void StopEventThrd(ALCcontext *ctx)
+@@ -138,7 +142,7 @@ void StopEventThrd(ALCcontext *ctx)
+             evt_data = ring->getWriteVector().first;
+         } while(evt_data.len == 0);
+     }
+-    al::construct_at(reinterpret_cast<AsyncEvent*>(evt_data.buf), AsyncEvent::KillThread);
++    al::construct_at(reinterpret_cast<AsyncEvent*>(static_cast<void *>(evt_data.buf)), AsyncEvent::KillThread);
+     ring->writeAdvance(1);
+ 
+     ctx->mEventSem.post();
+@@ -196,7 +200,9 @@ START_API_FUNC
+         /* Wait to ensure the event handler sees the changed flags before
+          * returning.
+          */
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{context->mEventCbLock};
++#endif
+     }
+ }
+ END_API_FUNC
+@@ -207,8 +213,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mEventCbLock};
++#endif
+     context->mEventCb = callback;
+     context->mEventParam = userParam;
+ }
+diff -rup openal-soft-1.23.1.orig/al/filter.cpp openal-soft-1.23.1/al/filter.cpp
+--- openal-soft-1.23.1.orig/al/filter.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/al/filter.cpp	2024-03-25 08:15:55.711512494 +0100
+@@ -412,7 +412,9 @@ START_API_FUNC
+     if(n <= 0) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+     if(!EnsureFilters(device, static_cast<ALuint>(n)))
+     {
+         context->setError(AL_OUT_OF_MEMORY, "Failed to allocate %d filter%s", n, (n==1)?"":"s");
+@@ -452,7 +454,9 @@ START_API_FUNC
+     if(n <= 0) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+ 
+     /* First try to find any filters that are invalid. */
+     auto validate_filter = [device](const ALuint fid) -> bool
+@@ -483,7 +487,9 @@ START_API_FUNC
+     if(context) LIKELY
+     {
+         ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+         if(!filter || LookupFilter(device, filter))
+             return AL_TRUE;
+     }
+@@ -499,7 +505,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+ 
+     ALfilter *alfilt{LookupFilter(device, filter)};
+     if(!alfilt) UNLIKELY
+@@ -540,7 +548,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+ 
+     ALfilter *alfilt{LookupFilter(device, filter)};
+     if(!alfilt) UNLIKELY
+@@ -563,7 +573,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+ 
+     ALfilter *alfilt{LookupFilter(device, filter)};
+     if(!alfilt) UNLIKELY
+@@ -586,7 +598,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+ 
+     ALfilter *alfilt{LookupFilter(device, filter)};
+     if(!alfilt) UNLIKELY
+@@ -609,7 +623,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+ 
+     const ALfilter *alfilt{LookupFilter(device, filter)};
+     if(!alfilt) UNLIKELY
+@@ -644,7 +660,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+ 
+     const ALfilter *alfilt{LookupFilter(device, filter)};
+     if(!alfilt) UNLIKELY
+@@ -667,7 +685,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+ 
+     const ALfilter *alfilt{LookupFilter(device, filter)};
+     if(!alfilt) UNLIKELY
+@@ -690,7 +710,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALCdevice *device{context->mALDevice.get()};
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+ 
+     const ALfilter *alfilt{LookupFilter(device, filter)};
+     if(!alfilt) UNLIKELY
+diff -rup openal-soft-1.23.1.orig/al/listener.cpp openal-soft-1.23.1/al/listener.cpp
+--- openal-soft-1.23.1.orig/al/listener.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/al/listener.cpp	2024-03-25 08:17:31.534714205 +0100
+@@ -75,7 +75,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALlistener &listener = context->mListener;
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     switch(param)
+     {
+     case AL_GAIN:
+@@ -105,7 +107,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALlistener &listener = context->mListener;
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     switch(param)
+     {
+     case AL_POSITION:
+@@ -158,7 +162,9 @@ START_API_FUNC
+         return context->setError(AL_INVALID_VALUE, "NULL pointer");
+ 
+     ALlistener &listener = context->mListener;
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     switch(param)
+     {
+     case AL_ORIENTATION:
+@@ -188,7 +194,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     switch(param)
+     {
+     default:
+@@ -212,7 +220,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     switch(param)
+     {
+     default:
+@@ -250,7 +260,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     if(!values) UNLIKELY
+         context->setError(AL_INVALID_VALUE, "NULL pointer");
+     else switch(param)
+@@ -269,7 +281,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALlistener &listener = context->mListener;
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     if(!value)
+         context->setError(AL_INVALID_VALUE, "NULL pointer");
+     else switch(param)
+@@ -295,7 +309,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALlistener &listener = context->mListener;
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     if(!value1 || !value2 || !value3)
+         context->setError(AL_INVALID_VALUE, "NULL pointer");
+     else switch(param)
+@@ -338,7 +354,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALlistener &listener = context->mListener;
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     if(!values)
+         context->setError(AL_INVALID_VALUE, "NULL pointer");
+     else switch(param)
+@@ -366,7 +384,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     if(!value)
+         context->setError(AL_INVALID_VALUE, "NULL pointer");
+     else switch(param)
+@@ -384,7 +404,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALlistener &listener = context->mListener;
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     if(!value1 || !value2 || !value3)
+         context->setError(AL_INVALID_VALUE, "NULL pointer");
+     else switch(param)
+@@ -422,7 +444,9 @@ START_API_FUNC
+     if(!context) UNLIKELY return;
+ 
+     ALlistener &listener = context->mListener;
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     if(!values)
+         context->setError(AL_INVALID_VALUE, "NULL pointer");
+     else switch(param)
+diff -rup openal-soft-1.23.1.orig/al/source.cpp openal-soft-1.23.1/al/source.cpp
+--- openal-soft-1.23.1.orig/al/source.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/al/source.cpp	2024-03-25 08:26:10.294001636 +0100
+@@ -1607,7 +1607,9 @@ try {
+     ALCdevice *device{Context->mALDevice.get()};
+     ALeffectslot *slot{nullptr};
+     al::deque<ALbufferQueueItem> oldlist;
++#ifndef __MINT__
+     std::unique_lock<std::mutex> slotlock;
++#endif
+     float fvals[6];
+ 
+     switch(prop)
+@@ -1658,7 +1660,9 @@ try {
+         }
+         if(values[0])
+         {
++#ifndef __MINT__
+             std::lock_guard<std::mutex> _{device->BufferLock};
++#endif
+             ALbuffer *buffer{LookupBuffer(device, static_cast<ALuint>(values[0]))};
+             if(!buffer)
+                 return Context->setError(AL_INVALID_VALUE, "Invalid buffer ID %u",
+@@ -1724,7 +1728,9 @@ try {
+         CheckSize(1);
+         if(values[0])
+         {
++#ifndef __MINT__
+             std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+             ALfilter *filter{LookupFilter(device, static_cast<ALuint>(values[0]))};
+             if(!filter)
+                 return Context->setError(AL_INVALID_VALUE, "Invalid filter ID %u",
+@@ -1826,7 +1832,9 @@ try {
+ 
+     case AL_AUXILIARY_SEND_FILTER:
+         CheckSize(3);
++#ifndef __MINT__
+         slotlock = std::unique_lock<std::mutex>{Context->mEffectSlotLock};
++#endif
+         if(values[0] && (slot=LookupEffectSlot(Context, static_cast<ALuint>(values[0]))) == nullptr)
+             return Context->setError(AL_INVALID_VALUE, "Invalid effect ID %u", values[0]);
+         if(static_cast<ALuint>(values[1]) >= device->NumAuxSends)
+@@ -1834,7 +1842,9 @@ try {
+ 
+         if(values[2])
+         {
++#ifndef __MINT__
+             std::lock_guard<std::mutex> _{device->FilterLock};
++#endif
+             ALfilter *filter{LookupFilter(device, static_cast<ALuint>(values[2]))};
+             if(!filter)
+                 return Context->setError(AL_INVALID_VALUE, "Invalid filter ID %u", values[2]);
+@@ -2228,7 +2238,9 @@ try {
+          */
+         values[0] = GetSourceSecOffset(Source, Context, &srcclock);
+         {
++#ifndef __MINT__
+             std::lock_guard<std::mutex> _{device->StateLock};
++#endif
+             clocktime = GetClockLatency(device, device->Backend.get());
+         }
+         if(srcclock == clocktime.ClockTime)
+@@ -2580,7 +2592,9 @@ try {
+          */
+         values[0] = GetSourceSampleOffset(Source, Context, &srcclock);
+         {
++#ifndef __MINT__
+             std::lock_guard<std::mutex> _{device->StateLock};
++#endif
+             clocktime = GetClockLatency(device, device->Backend.get());
+         }
+         if(srcclock == clocktime.ClockTime)
+@@ -2915,7 +2929,9 @@ START_API_FUNC
+         context->setError(AL_INVALID_VALUE, "Generating %d sources", n);
+     if(n <= 0) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::unique_lock<std::mutex> srclock{context->mSourceLock};
++#endif
+     ALCdevice *device{context->mALDevice.get()};
+     if(static_cast<ALuint>(n) > device->SourcesMax-context->mNumSources)
+     {
+@@ -2965,7 +2981,9 @@ START_API_FUNC
+         context->setError(AL_INVALID_VALUE, "Deleting %d sources", n);
+     if(n <= 0) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+ 
+     /* Check that all Sources are valid */
+     auto validate_source = [&context](const ALuint sid) -> bool
+@@ -2992,7 +3010,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(context) LIKELY
+     {
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+         if(LookupSource(context.get(), source) != nullptr)
+             return AL_TRUE;
+     }
+@@ -3007,8 +3027,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source = LookupSource(context.get(), source);
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3023,8 +3045,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source = LookupSource(context.get(), source);
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3042,8 +3066,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source = LookupSource(context.get(), source);
+     if(!Source) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3062,8 +3088,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source = LookupSource(context.get(), source);
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3081,8 +3109,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source = LookupSource(context.get(), source);
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3101,8 +3131,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source = LookupSource(context.get(), source);
+     if(!Source) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3123,8 +3155,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source = LookupSource(context.get(), source);
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3139,8 +3173,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source = LookupSource(context.get(), source);
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3158,8 +3194,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source = LookupSource(context.get(), source);
+     if(!Source) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3178,8 +3216,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3194,8 +3234,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3213,8 +3255,10 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
+     std::lock_guard<std::mutex> __{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3233,7 +3277,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3254,7 +3300,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3279,7 +3327,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3300,7 +3350,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3317,7 +3369,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3342,7 +3396,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3361,7 +3417,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3378,7 +3436,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3403,7 +3463,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3422,7 +3484,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3439,7 +3503,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3464,7 +3530,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *Source{LookupSource(context.get(), source)};
+     if(!Source) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3483,7 +3551,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *srchandle{LookupSource(context.get(), source)};
+     if(!srchandle)
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3501,7 +3571,9 @@ START_API_FUNC
+     if(start_time < 0) UNLIKELY
+         return context->setError(AL_INVALID_VALUE, "Invalid time point %" PRId64, start_time);
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *srchandle{LookupSource(context.get(), source)};
+     if(!srchandle)
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", source);
+@@ -3531,7 +3603,9 @@ START_API_FUNC
+         srchandles = {extra_sources.data(), extra_sources.size()};
+     }
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     for(auto &srchdl : srchandles)
+     {
+         srchdl = LookupSource(context.get(), *sources);
+@@ -3568,7 +3642,9 @@ START_API_FUNC
+         srchandles = {extra_sources.data(), extra_sources.size()};
+     }
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     for(auto &srchdl : srchandles)
+     {
+         srchdl = LookupSource(context.get(), *sources);
+@@ -3608,7 +3684,9 @@ START_API_FUNC
+         srchandles = {extra_sources.data(), extra_sources.size()};
+     }
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     for(auto &srchdl : srchandles)
+     {
+         srchdl = LookupSource(context.get(), *sources);
+@@ -3684,7 +3762,9 @@ START_API_FUNC
+         srchandles = {extra_sources.data(), extra_sources.size()};
+     }
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     for(auto &srchdl : srchandles)
+     {
+         srchdl = LookupSource(context.get(), *sources);
+@@ -3747,7 +3827,9 @@ START_API_FUNC
+         srchandles = {extra_sources.data(), extra_sources.size()};
+     }
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     for(auto &srchdl : srchandles)
+     {
+         srchdl = LookupSource(context.get(), *sources);
+@@ -3796,7 +3878,9 @@ START_API_FUNC
+         context->setError(AL_INVALID_VALUE, "Queueing %d buffers", nb);
+     if(nb <= 0) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *source{LookupSource(context.get(),src)};
+     if(!source) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", src);
+@@ -3814,7 +3898,9 @@ START_API_FUNC
+         if(BufferFmt) break;
+     }
+ 
++#ifndef __MINT__
+     std::unique_lock<std::mutex> buflock{device->BufferLock};
++#endif
+     const size_t NewListStart{source->mQueue.size()};
+     ALbufferQueueItem *BufferList{nullptr};
+     for(ALsizei i{0};i < nb;i++)
+@@ -3901,7 +3987,9 @@ START_API_FUNC
+         }
+     }
+     /* All buffers good. */
++#ifndef __MINT__
+     buflock.unlock();
++#endif
+ 
+     /* Source is now streaming */
+     source->SourceType = AL_STREAMING;
+@@ -3924,7 +4012,9 @@ START_API_FUNC
+         context->setError(AL_INVALID_VALUE, "Unqueueing %d buffers", nb);
+     if(nb <= 0) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     ALsource *source{LookupSource(context.get(),src)};
+     if(!source) UNLIKELY
+         return context->setError(AL_INVALID_NAME, "Invalid source ID %u", src);
+@@ -4012,7 +4102,9 @@ ALsource::~ALsource()
+ 
+ void UpdateAllSourceProps(ALCcontext *context)
+ {
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mSourceLock};
++#endif
+     auto voicelist = context->getVoicesSpan();
+     ALuint vidx{0u};
+     for(Voice *voice : voicelist)
+diff -rup openal-soft-1.23.1.orig/al/state.cpp openal-soft-1.23.1/al/state.cpp
+--- openal-soft-1.23.1.orig/al/state.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/al/state.cpp	2024-03-25 08:27:46.933868891 +0100
+@@ -164,7 +164,9 @@ START_API_FUNC
+     {
+     case AL_SOURCE_DISTANCE_MODEL:
+         {
++#ifndef __MINT__
+             std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+             context->mSourceDistanceModel = true;
+             DO_UPDATEPROPS();
+         }
+@@ -190,7 +192,9 @@ START_API_FUNC
+     {
+     case AL_SOURCE_DISTANCE_MODEL:
+         {
++#ifndef __MINT__
+             std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+             context->mSourceDistanceModel = false;
+             DO_UPDATEPROPS();
+         }
+@@ -212,7 +216,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return AL_FALSE;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     ALboolean value{AL_FALSE};
+     switch(capability)
+     {
+@@ -238,7 +244,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return AL_FALSE;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     ALboolean value{AL_FALSE};
+     switch(pname)
+     {
+@@ -295,7 +303,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return 0.0;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     ALdouble value{0.0};
+     switch(pname)
+     {
+@@ -346,7 +356,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return 0.0f;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     ALfloat value{0.0f};
+     switch(pname)
+     {
+@@ -397,7 +409,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return 0;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     ALint value{0};
+     switch(pname)
+     {
+@@ -454,7 +468,9 @@ START_API_FUNC
+         if (eax_g_is_enabled)
+         {
+             auto device = context->mALDevice.get();
++#ifndef __MINT__
+             std::lock_guard<std::mutex> device_lock{device->BufferLock};
++#endif
+ 
+             value = static_cast<ALint>(device->eax_x_ram_free_size);
+         }
+@@ -483,7 +499,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return 0_i64;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     ALint64SOFT value{0};
+     switch(pname)
+     {
+@@ -534,7 +552,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return nullptr;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     void *value{nullptr};
+     switch(pname)
+     {
+@@ -812,7 +832,9 @@ START_API_FUNC
+         context->setError(AL_INVALID_VALUE, "Doppler factor %f out of range", value);
+     else
+     {
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+         context->mDopplerFactor = value;
+         DO_UPDATEPROPS();
+     }
+@@ -829,7 +851,9 @@ START_API_FUNC
+         context->setError(AL_INVALID_VALUE, "Doppler velocity %f out of range", value);
+     else
+     {
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+         context->mDopplerVelocity = value;
+         DO_UPDATEPROPS();
+     }
+@@ -846,7 +870,9 @@ START_API_FUNC
+         context->setError(AL_INVALID_VALUE, "Speed of sound %f out of range", value);
+     else
+     {
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+         context->mSpeedOfSound = value;
+         DO_UPDATEPROPS();
+     }
+@@ -861,7 +887,9 @@ START_API_FUNC
+ 
+     if(auto model = DistanceModelFromALenum(value))
+     {
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+         context->mDistanceModel = *model;
+         if(!context->mSourceDistanceModel)
+             DO_UPDATEPROPS();
+@@ -878,7 +906,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     context->deferUpdates();
+ }
+ END_API_FUNC
+@@ -889,7 +919,9 @@ START_API_FUNC
+     ContextRef context{GetContextRef()};
+     if(!context) UNLIKELY return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{context->mPropLock};
++#endif
+     context->processUpdates();
+ }
+ END_API_FUNC
+diff -rup openal-soft-1.23.1.orig/alc/alc.cpp openal-soft-1.23.1/alc/alc.cpp
+--- openal-soft-1.23.1.orig/alc/alc.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/alc/alc.cpp	2024-03-25 08:34:20.583335984 +0100
+@@ -151,6 +151,9 @@
+ #ifdef HAVE_SDL2
+ #include "backends/sdl2.h"
+ #endif
++#ifdef HAVE_SDL1
++#include "backends/sdl1.h"
++#endif
+ #ifdef HAVE_WAVE
+ #include "backends/wave.h"
+ #endif
+@@ -250,6 +253,9 @@ BackendInfo BackendList[] = {
+ #ifdef HAVE_SDL2
+     { "sdl2", SDL2BackendFactory::getFactory },
+ #endif
++#ifdef HAVE_SDL1
++    { "sdl1", SDL1BackendFactory::getFactory },
++#endif
+ 
+     { "null", NullBackendFactory::getFactory },
+ #ifdef HAVE_WAVE
+@@ -1011,7 +1017,9 @@ using DeviceRef = al::intrusive_ptr<ALCd
+ al::vector<ALCdevice*> DeviceList;
+ al::vector<ALCcontext*> ContextList;
+ 
++#ifndef __MINT__
+ std::recursive_mutex ListLock;
++#endif
+ 
+ 
+ void alc_initconfig(void)
+@@ -1380,7 +1388,9 @@ void ProbeAllDevicesList()
+ {
+     InitConfig();
+ 
++#ifndef __MINT__
+     std::lock_guard<std::recursive_mutex> _{ListLock};
++#endif
+     if(!PlaybackFactory)
+         decltype(alcAllDevicesList){}.swap(alcAllDevicesList);
+     else
+@@ -1394,7 +1404,9 @@ void ProbeCaptureDeviceList()
+ {
+     InitConfig();
+ 
++#ifndef __MINT__
+     std::lock_guard<std::recursive_mutex> _{ListLock};
++#endif
+     if(!CaptureFactory)
+         decltype(alcCaptureDeviceList){}.swap(alcCaptureDeviceList);
+     else
+@@ -2252,7 +2264,7 @@ ALCenum UpdateDeviceParams(ALCdevice *de
+     if(!(device->DitherDepth > 0.0f))
+         TRACE("Dithering disabled\n");
+     else
+-        TRACE("Dithering enabled (%d-bit, %g)\n", float2int(std::log2(device->DitherDepth)+0.5f)+1,
++        TRACE("Dithering enabled (%d-bit, %g)\n", float2int(static_cast<float>(log2(device->DitherDepth))+0.5f)+1,
+               device->DitherDepth);
+ 
+     if(!optlimit)
+@@ -2318,8 +2330,10 @@ ALCenum UpdateDeviceParams(ALCdevice *de
+     {
+         auto *context = static_cast<ALCcontext*>(ctxbase);
+ 
++#ifndef __MINT__
+         std::unique_lock<std::mutex> proplock{context->mPropLock};
+         std::unique_lock<std::mutex> slotlock{context->mEffectSlotLock};
++#endif
+ 
+         /* Clear out unused effect slot clusters. */
+         auto slot_cluster_not_in_use = [](ContextBase::EffectSlotCluster &cluster)
+@@ -2377,10 +2391,14 @@ ALCenum UpdateDeviceParams(ALCdevice *de
+                 slot->updateProps(context);
+             }
+         }
++#ifndef __MINT__
+         slotlock.unlock();
++#endif
+ 
+         const uint num_sends{device->NumAuxSends};
++#ifndef __MINT__
+         std::unique_lock<std::mutex> srclock{context->mSourceLock};
++#endif
+         for(auto &sublist : context->mSourceList)
+         {
+             uint64_t usemask{~sublist.FreeMask};
+@@ -2437,7 +2455,9 @@ ALCenum UpdateDeviceParams(ALCdevice *de
+         /* Clear all voice props to let them get allocated again. */
+         context->mVoicePropClusters.clear();
+         context->mFreeVoiceProps.store(nullptr, std::memory_order_relaxed);
++#ifndef __MINT__
+         srclock.unlock();
++#endif
+ 
+         context->mPropsDirty = false;
+         UpdateContextProps(context);
+@@ -2486,7 +2506,9 @@ bool ResetDeviceParams(ALCdevice *device
+             /* Clear any pending voice changes and reallocate voices to get a
+              * clean restart.
+              */
++#ifndef __MINT__
+             std::lock_guard<std::mutex> __{ctx->mSourceLock};
++#endif
+             auto *vchg = ctx->mCurrentVoiceChange.load(std::memory_order_acquire);
+             while(auto *next = vchg->mNext.load(std::memory_order_acquire))
+                 vchg = next;
+@@ -2514,7 +2536,9 @@ bool ResetDeviceParams(ALCdevice *device
+ /** Checks if the device handle is valid, and returns a new reference if so. */
+ DeviceRef VerifyDevice(ALCdevice *device)
+ {
++#ifndef __MINT__
+     std::lock_guard<std::recursive_mutex> _{ListLock};
++#endif
+     auto iter = std::lower_bound(DeviceList.begin(), DeviceList.end(), device);
+     if(iter != DeviceList.end() && *iter == device)
+     {
+@@ -2530,7 +2554,9 @@ DeviceRef VerifyDevice(ALCdevice *device
+  */
+ ContextRef VerifyContext(ALCcontext *context)
+ {
++#ifndef __MINT__
+     std::lock_guard<std::recursive_mutex> _{ListLock};
++#endif
+     auto iter = std::lower_bound(ContextList.begin(), ContextList.end(), context);
+     if(iter != ContextList.end() && *iter == context)
+     {
+@@ -2588,7 +2614,9 @@ START_API_FUNC
+         alcSetError(nullptr, ALC_INVALID_CONTEXT);
+     else
+     {
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{ctx->mPropLock};
++#endif
+         ctx->deferUpdates();
+     }
+ }
+@@ -2605,7 +2633,9 @@ START_API_FUNC
+         alcSetError(nullptr, ALC_INVALID_CONTEXT);
+     else
+     {
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{ctx->mPropLock};
++#endif
+         ctx->processUpdates();
+     }
+ }
+@@ -2656,7 +2686,9 @@ START_API_FUNC
+                 value = alcDefaultName;
+             else
+             {
++#ifndef __MINT__
+                 std::lock_guard<std::mutex> _{dev->StateLock};
++#endif
+                 value = dev->DeviceName.c_str();
+             }
+         }
+@@ -2674,7 +2706,9 @@ START_API_FUNC
+                 alcSetError(dev.get(), ALC_INVALID_ENUM);
+             else
+             {
++#ifndef __MINT__
+                 std::lock_guard<std::mutex> _{dev->StateLock};
++#endif
+                 value = dev->DeviceName.c_str();
+             }
+         }
+@@ -2718,7 +2752,9 @@ START_API_FUNC
+     case ALC_HRTF_SPECIFIER_SOFT:
+         if(DeviceRef dev{VerifyDevice(Device)})
+         {
++#ifndef __MINT__
+             std::lock_guard<std::mutex> _{dev->StateLock};
++#endif
+             value = (dev->mHrtf ? dev->mHrtfName.c_str() : "");
+         }
+         else
+@@ -2789,7 +2825,9 @@ static size_t GetIntegerv(ALCdevice *dev
+         return 0;
+     }
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{device->StateLock};
++#endif
+     if(device->Type == DeviceType::Capture)
+     {
+         static constexpr int MaxCaptureAttributes{9};
+@@ -3090,7 +3128,9 @@ START_API_FUNC
+             return 41;
+         return 35;
+     };
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{dev->StateLock};
++#endif
+     switch(pname)
+     {
+     case ALC_ATTRIBUTES_SIZE:
+@@ -3300,16 +3340,22 @@ START_API_FUNC
+      * device is asynchronously destroyed, to ensure this new context is
+      * properly cleaned up after being made.
+      */
++#ifndef __MINT__
+     std::unique_lock<std::recursive_mutex> listlock{ListLock};
++#endif
+     DeviceRef dev{VerifyDevice(device)};
+     if(!dev || dev->Type == DeviceType::Capture || !dev->Connected.load(std::memory_order_relaxed))
+     {
++#ifndef __MINT__
+         listlock.unlock();
++#endif
+         alcSetError(dev.get(), ALC_INVALID_DEVICE);
+         return nullptr;
+     }
++#ifndef __MINT__
+     std::unique_lock<std::mutex> statelock{dev->StateLock};
+     listlock.unlock();
++#endif
+ 
+     dev->LastError.store(ALC_NO_ERROR);
+ 
+@@ -3364,10 +3410,14 @@ START_API_FUNC
+             delete oldarray;
+         }
+     }
++#ifndef __MINT__
+     statelock.unlock();
++#endif
+ 
+     {
++#ifndef __MINT__
+         std::lock_guard<std::recursive_mutex> _{ListLock};
++#endif
+         auto iter = std::lower_bound(ContextList.cbegin(), ContextList.cend(), context.get());
+         ContextList.emplace(iter, context.get());
+     }
+@@ -3390,11 +3440,15 @@ END_API_FUNC
+ ALC_API void ALC_APIENTRY alcDestroyContext(ALCcontext *context)
+ START_API_FUNC
+ {
++#ifndef __MINT__
+     std::unique_lock<std::recursive_mutex> listlock{ListLock};
++#endif
+     auto iter = std::lower_bound(ContextList.begin(), ContextList.end(), context);
+     if(iter == ContextList.end() || *iter != context)
+     {
++#ifndef __MINT__
+         listlock.unlock();
++#endif
+         alcSetError(nullptr, ALC_INVALID_CONTEXT);
+         return;
+     }
+@@ -3407,7 +3461,9 @@ START_API_FUNC
+ 
+     ALCdevice *Device{ctx->mALDevice.get()};
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{Device->StateLock};
++#endif
+     if(!ctx->deinit() && Device->Flags.test(DeviceRunning))
+     {
+         Device->Backend->stop();
+@@ -3566,7 +3622,9 @@ START_API_FUNC
+ 
+     try {
+         auto backend = PlaybackFactory->createBackend(device.get(), BackendType::Playback);
++#ifndef __MINT__
+         std::lock_guard<std::recursive_mutex> _{ListLock};
++#endif
+         backend->open(deviceName);
+         device->Backend = std::move(backend);
+     }
+@@ -3578,7 +3636,9 @@ START_API_FUNC
+     }
+ 
+     {
++#ifndef __MINT__
+         std::lock_guard<std::recursive_mutex> _{ListLock};
++#endif
+         auto iter = std::lower_bound(DeviceList.cbegin(), DeviceList.cend(), device.get());
+         DeviceList.emplace(iter, device.get());
+     }
+@@ -3591,7 +3651,9 @@ END_API_FUNC
+ ALC_API ALCboolean ALC_APIENTRY alcCloseDevice(ALCdevice *device)
+ START_API_FUNC
+ {
++#ifndef __MINT__
+     std::unique_lock<std::recursive_mutex> listlock{ListLock};
++#endif
+     auto iter = std::lower_bound(DeviceList.begin(), DeviceList.end(), device);
+     if(iter == DeviceList.end() || *iter != device)
+     {
+@@ -3610,7 +3672,9 @@ START_API_FUNC
+     DeviceRef dev{*iter};
+     DeviceList.erase(iter);
+ 
++#ifndef __MINT__
+     std::unique_lock<std::mutex> statelock{dev->StateLock};
++#endif
+     al::vector<ContextRef> orphanctxs;
+     for(ContextBase *ctx : *dev->mContexts.load())
+     {
+@@ -3621,7 +3685,9 @@ START_API_FUNC
+             ContextList.erase(ctxiter);
+         }
+     }
++#ifndef __MINT__
+     listlock.unlock();
++#endif
+ 
+     for(ContextRef &context : orphanctxs)
+     {
+@@ -3694,7 +3760,9 @@ START_API_FUNC
+             device->Frequency, device->UpdateSize, device->BufferSize);
+ 
+         auto backend = CaptureFactory->createBackend(device.get(), BackendType::Capture);
++#ifndef __MINT__
+         std::lock_guard<std::recursive_mutex> _{ListLock};
++#endif
+         backend->open(deviceName);
+         device->Backend = std::move(backend);
+     }
+@@ -3706,7 +3774,9 @@ START_API_FUNC
+     }
+ 
+     {
++#ifndef __MINT__
+         std::lock_guard<std::recursive_mutex> _{ListLock};
++#endif
+         auto iter = std::lower_bound(DeviceList.cbegin(), DeviceList.cend(), device.get());
+         DeviceList.emplace(iter, device.get());
+     }
+@@ -3719,7 +3789,9 @@ END_API_FUNC
+ ALC_API ALCboolean ALC_APIENTRY alcCaptureCloseDevice(ALCdevice *device)
+ START_API_FUNC
+ {
++#ifndef __MINT__
+     std::unique_lock<std::recursive_mutex> listlock{ListLock};
++#endif
+     auto iter = std::lower_bound(DeviceList.begin(), DeviceList.end(), device);
+     if(iter == DeviceList.end() || *iter != device)
+     {
+@@ -3734,9 +3806,11 @@ START_API_FUNC
+ 
+     DeviceRef dev{*iter};
+     DeviceList.erase(iter);
++#ifndef __MINT__
+     listlock.unlock();
+ 
+     std::lock_guard<std::mutex> _{dev->StateLock};
++#endif
+     if(dev->Flags.test(DeviceRunning))
+         dev->Backend->stop();
+     dev->Flags.reset(DeviceRunning);
+@@ -3755,7 +3829,9 @@ START_API_FUNC
+         return;
+     }
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{dev->StateLock};
++#endif
+     if(!dev->Connected.load(std::memory_order_acquire))
+         alcSetError(dev.get(), ALC_INVALID_DEVICE);
+     else if(!dev->Flags.test(DeviceRunning))
+@@ -3782,7 +3858,9 @@ START_API_FUNC
+         alcSetError(dev.get(), ALC_INVALID_DEVICE);
+     else
+     {
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{dev->StateLock};
++#endif
+         if(dev->Flags.test(DeviceRunning))
+             dev->Backend->stop();
+         dev->Flags.reset(DeviceRunning);
+@@ -3808,7 +3886,9 @@ START_API_FUNC
+     if(samples < 1)
+         return;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{dev->StateLock};
++#endif
+     BackendBase *backend{dev->Backend.get()};
+ 
+     const auto usamples = static_cast<uint>(samples);
+@@ -3878,7 +3958,9 @@ START_API_FUNC
+     }
+ 
+     {
++#ifndef __MINT__
+         std::lock_guard<std::recursive_mutex> _{ListLock};
++#endif
+         auto iter = std::lower_bound(DeviceList.cbegin(), DeviceList.cend(), device.get());
+         DeviceList.emplace(iter, device.get());
+     }
+@@ -3940,7 +4022,9 @@ START_API_FUNC
+         alcSetError(dev.get(), ALC_INVALID_DEVICE);
+     else
+     {
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{dev->StateLock};
++#endif
+         if(dev->Flags.test(DeviceRunning))
+             dev->Backend->stop();
+         dev->Flags.reset(DeviceRunning);
+@@ -3960,7 +4044,9 @@ START_API_FUNC
+         return;
+     }
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{dev->StateLock};
++#endif
+     if(!dev->Flags.test(DevicePaused))
+         return;
+     dev->Flags.reset(DevicePaused);
+@@ -4017,16 +4103,22 @@ END_API_FUNC
+ ALC_API ALCboolean ALC_APIENTRY alcResetDeviceSOFT(ALCdevice *device, const ALCint *attribs)
+ START_API_FUNC
+ {
++#ifndef __MINT__
+     std::unique_lock<std::recursive_mutex> listlock{ListLock};
++#endif
+     DeviceRef dev{VerifyDevice(device)};
+     if(!dev || dev->Type == DeviceType::Capture)
+     {
++#ifndef __MINT__
+         listlock.unlock();
++#endif
+         alcSetError(dev.get(), ALC_INVALID_DEVICE);
+         return ALC_FALSE;
+     }
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{dev->StateLock};
+     listlock.unlock();
++#endif
+ 
+     /* Force the backend to stop mixing first since we're resetting. Also reset
+      * the connected state so lost devices can attempt recover.
+@@ -4055,15 +4147,21 @@ START_API_FUNC
+             deviceName = nullptr;
+     }
+ 
++#ifndef __MINT__
+     std::unique_lock<std::recursive_mutex> listlock{ListLock};
++#endif
+     DeviceRef dev{VerifyDevice(device)};
+     if(!dev || dev->Type != DeviceType::Playback)
+     {
++#ifndef __MINT__
+         listlock.unlock();
++#endif
+         alcSetError(dev.get(), ALC_INVALID_DEVICE);
+         return ALC_FALSE;
+     }
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{dev->StateLock};
++#endif
+ 
+     /* Force the backend to stop mixing first since we're reopening. */
+     if(dev->Flags.test(DeviceRunning))
+@@ -4079,7 +4177,9 @@ START_API_FUNC
+         newbackend->open(deviceName);
+     }
+     catch(al::backend_exception &e) {
++#ifndef __MINT__
+         listlock.unlock();
++#endif
+         newbackend = nullptr;
+ 
+         WARN("Failed to reopen playback device: %s\n", e.what());
+@@ -4104,7 +4204,9 @@ START_API_FUNC
+         }
+         return ALC_FALSE;
+     }
++#ifndef __MINT__
+     listlock.unlock();
++#endif
+     dev->Backend = std::move(newbackend);
+     TRACE("Reopened device %p, \"%s\"\n", voidp{dev.get()}, dev->DeviceName.c_str());
+ 
+diff -rup openal-soft-1.23.1.orig/alc/alu.cpp openal-soft-1.23.1/alc/alu.cpp
+--- openal-soft-1.23.1.orig/alc/alu.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/alc/alu.cpp	2024-03-25 08:37:10.499777747 +0100
+@@ -490,7 +490,7 @@ bool CalcEffectSlotParams(EffectSlot *sl
+         auto evt_vec = ring->getWriteVector();
+         if(evt_vec.first.len > 0) LIKELY
+         {
+-            AsyncEvent *evt{al::construct_at(reinterpret_cast<AsyncEvent*>(evt_vec.first.buf),
++            AsyncEvent *evt{al::construct_at(reinterpret_cast<AsyncEvent*>(static_cast<void *>(evt_vec.first.buf)),
+                 AsyncEvent::ReleaseEffectState)};
+             evt->u.mEffectState = oldstate;
+             ring->writeAdvance(1);
+@@ -528,7 +528,7 @@ inline float ScaleAzimuthFront(float azi
+ {
+     const float abs_azi{std::fabs(azimuth)};
+     if(!(abs_azi >= al::numbers::pi_v<float>*0.5f))
+-        return std::copysign(minf(abs_azi*scale, al::numbers::pi_v<float>*0.5f), azimuth);
++        return copysignf(minf(abs_azi*scale, al::numbers::pi_v<float>*0.5f), azimuth);
+     return azimuth;
+ }
+ 
+@@ -1700,7 +1700,7 @@ void SendSourceStateEvent(ContextBase *c
+     auto evt_vec = ring->getWriteVector();
+     if(evt_vec.first.len < 1) return;
+ 
+-    AsyncEvent *evt{al::construct_at(reinterpret_cast<AsyncEvent*>(evt_vec.first.buf),
++    AsyncEvent *evt{al::construct_at(reinterpret_cast<AsyncEvent*>(static_cast<void *>(evt_vec.first.buf)),
+         AsyncEvent::SourceStateChange)};
+     evt->u.srcstate.id = id;
+     switch(state)
+@@ -2183,7 +2183,7 @@ void DeviceBase::handleDisconnect(const
+                 auto evt_data = ring->getWriteVector().first;
+                 if(evt_data.len > 0)
+                 {
+-                    al::construct_at(reinterpret_cast<AsyncEvent*>(evt_data.buf), evt);
++                    al::construct_at(reinterpret_cast<AsyncEvent*>(static_cast<void *>(evt_data.buf)), evt);
+                     ring->writeAdvance(1);
+                     ctx->mEventSem.post();
+                 }
+diff -rup openal-soft-1.23.1.orig/alc/backends/null.cpp openal-soft-1.23.1/alc/backends/null.cpp
+--- openal-soft-1.23.1.orig/alc/backends/null.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/alc/backends/null.cpp	2024-03-25 08:51:07.565347590 +0100
+@@ -126,7 +126,9 @@ void NullBackend::start()
+ {
+     try {
+         mKillNow.store(false, std::memory_order_release);
++#ifndef __MINT__
+         mThread = std::thread{std::mem_fn(&NullBackend::mixerProc), this};
++#endif
+     }
+     catch(std::exception& e) {
+         throw al::backend_exception{al::backend_error::DeviceError,
+Only in openal-soft-1.23.1/alc/backends: sdl1.cpp
+Only in openal-soft-1.23.1/alc/backends: sdl1.h
+diff -rup openal-soft-1.23.1.orig/alc/backends/wave.cpp openal-soft-1.23.1/alc/backends/wave.cpp
+--- openal-soft-1.23.1.orig/alc/backends/wave.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/alc/backends/wave.cpp	2024-03-25 10:17:30.125253049 +0100
+@@ -107,8 +107,10 @@ struct WaveBackend final : public Backen
+ 
+     al::vector<al::byte> mBuffer;
+ 
++#ifndef __MINT__
+     std::atomic<bool> mKillNow{true};
+     std::thread mThread;
++#endif
+ 
+     DEF_NEWDEL(WaveBackend)
+ };
+@@ -120,6 +122,7 @@ WaveBackend::~WaveBackend()
+     mFile = nullptr;
+ }
+ 
++#ifndef __MINT__
+ int WaveBackend::mixerProc()
+ {
+     const milliseconds restTime{mDevice->UpdateSize*1000/mDevice->Frequency / 2};
+@@ -194,6 +197,7 @@ int WaveBackend::mixerProc()
+ 
+     return 0;
+ }
++#endif
+ 
+ void WaveBackend::open(const char *name)
+ {
+@@ -340,8 +344,10 @@ void WaveBackend::start()
+     if(mDataStart > 0 && fseek(mFile, 0, SEEK_END) != 0)
+         WARN("Failed to seek on output file\n");
+     try {
++#ifndef __MINT__
+         mKillNow.store(false, std::memory_order_release);
+         mThread = std::thread{std::mem_fn(&WaveBackend::mixerProc), this};
++#endif
+     }
+     catch(std::exception& e) {
+         throw al::backend_exception{al::backend_error::DeviceError,
+@@ -351,9 +357,11 @@ void WaveBackend::start()
+ 
+ void WaveBackend::stop()
+ {
++#ifndef __MINT__
+     if(mKillNow.exchange(true, std::memory_order_acq_rel) || !mThread.joinable())
+         return;
+     mThread.join();
++#endif
+ 
+     if(mDataStart > 0)
+     {
+diff -rup openal-soft-1.23.1.orig/alc/context.h openal-soft-1.23.1/alc/context.h
+--- openal-soft-1.23.1.orig/alc/context.h	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/alc/context.h	2024-03-24 18:59:36.291375523 +0100
+@@ -72,7 +72,9 @@ struct ALCcontext : public al::intrusive
+     bool mPropsDirty{true};
+     bool mDeferUpdates{false};
+ 
++#ifndef __MINT__
+     std::mutex mPropLock;
++#endif
+ 
+     std::atomic<ALenum> mLastError{AL_NO_ERROR};
+ 
+@@ -84,7 +86,9 @@ struct ALCcontext : public al::intrusive
+     float mSpeedOfSound{SpeedOfSoundMetersPerSec};
+     float mAirAbsorptionGainHF{AirAbsorbGainHF};
+ 
++#ifndef __MINT__
+     std::mutex mEventCbLock;
++#endif
+     ALEVENTPROCSOFT mEventCb{};
+     void *mEventParam{nullptr};
+ 
+@@ -92,11 +96,15 @@ struct ALCcontext : public al::intrusive
+ 
+     al::vector<SourceSubList> mSourceList;
+     ALuint mNumSources{0};
++#ifndef __MINT__
+     std::mutex mSourceLock;
++#endif
+ 
+     al::vector<EffectSlotSubList> mEffectSlotList;
+     ALuint mNumEffectSlots{0u};
++#ifndef __MINT__
+     std::mutex mEffectSlotLock;
++#endif
+ 
+     /* Default effect slot */
+     std::unique_ptr<ALeffectslot> mDefaultSlot;
+diff -rup openal-soft-1.23.1.orig/alc/device.h openal-soft-1.23.1/alc/device.h
+--- openal-soft-1.23.1.orig/alc/device.h	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/alc/device.h	2024-03-24 18:59:11.268075762 +0100
+@@ -82,7 +82,9 @@ struct ALCdevice : public al::intrusive_
+      * being from being changed in multiple threads, or being accessed while
+      * being changed. It's also used to serialize calls to the backend.
+      */
++#ifndef __MINT__
+     std::mutex StateLock;
++#endif
+     std::unique_ptr<BackendBase> Backend;
+ 
+     ALCuint NumMonoSources{};
+@@ -116,15 +118,21 @@ struct ALCdevice : public al::intrusive_
+     std::atomic<ALCenum> LastError{ALC_NO_ERROR};
+ 
+     // Map of Buffers for this device
++#ifndef __MINT__
+     std::mutex BufferLock;
++#endif
+     al::vector<BufferSubList> BufferList;
+ 
+     // Map of Effects for this device
++#ifndef __MINT__
+     std::mutex EffectLock;
++#endif
+     al::vector<EffectSubList> EffectList;
+ 
+     // Map of Filters for this device
++#ifndef __MINT__
+     std::mutex FilterLock;
++#endif
+     al::vector<FilterSubList> FilterList;
+ 
+ #ifdef ALSOFT_EAX
+diff -rup openal-soft-1.23.1.orig/alc/effects/convolution.cpp openal-soft-1.23.1/alc/effects/convolution.cpp
+--- openal-soft-1.23.1.orig/alc/effects/convolution.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/alc/effects/convolution.cpp	2024-03-25 08:39:07.546289490 +0100
+@@ -498,7 +498,7 @@ void ConvolutionState::update(const Cont
+                 constexpr float half_pi{al::numbers::pi_v<float>*0.5f};
+                 const float abs_azi{std::fabs(azimuth)};
+                 if(!(abs_azi >= half_pi))
+-                    return std::copysign(minf(abs_azi*scale, half_pi), azimuth);
++                    return copysignf(minf(abs_azi*scale, half_pi), azimuth);
+                 return azimuth;
+             };
+ 
+diff -rup openal-soft-1.23.1.orig/alc/effects/reverb.cpp openal-soft-1.23.1/alc/effects/reverb.cpp
+--- openal-soft-1.23.1.orig/alc/effects/reverb.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/alc/effects/reverb.cpp	2024-03-25 08:50:18.342074952 +0100
+@@ -636,7 +636,7 @@ struct ReverbState final : public Effect
+  **************************************/
+ 
+ inline float CalcDelayLengthMult(float density)
+-{ return maxf(5.0f, std::cbrt(density*DENSITY_SCALE)); }
++{ return maxf(5.0f, cbrtf(density*DENSITY_SCALE)); }
+ 
+ /* Calculates the delay line metrics and allocates the shared sample buffer
+  * for all lines given the sample rate (frequency).
+diff -rup openal-soft-1.23.1.orig/config.h.in openal-soft-1.23.1/config.h.in
+--- openal-soft-1.23.1.orig/config.h.in	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/config.h.in	2024-03-24 18:45:18.799192618 +0100
+@@ -76,6 +76,9 @@
+ /* Define if we have the SDL2 backend */
+ #cmakedefine HAVE_SDL2
+ 
++/* Define if we have the SDL1 backend */
++#cmakedefine HAVE_SDL1
++
+ /* Define if we have dlfcn.h */
+ #cmakedefine HAVE_DLFCN_H
+ 
+diff -rup openal-soft-1.23.1.orig/core/fmt_traits.h openal-soft-1.23.1/core/fmt_traits.h
+--- openal-soft-1.23.1.orig/core/fmt_traits.h	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/core/fmt_traits.h	2024-03-25 10:29:19.734330720 +0100
+@@ -71,7 +71,7 @@ inline void LoadSampleArray(DstT *RESTRI
+     using TypeTraits = FmtTypeTraits<SrcType>;
+     using SampleType = typename TypeTraits::Type;
+ 
+-    const SampleType *RESTRICT ssrc{reinterpret_cast<const SampleType*>(src)};
++    const SampleType *RESTRICT ssrc{reinterpret_cast<const SampleType*>(static_cast<const void *>(src))};
+     for(size_t i{0u};i < samples;i++)
+         dst[i] = TypeTraits::template to<DstT>(ssrc[i*srcstep]);
+ }
+diff -rup openal-soft-1.23.1.orig/core/helpers.cpp openal-soft-1.23.1/core/helpers.cpp
+--- openal-soft-1.23.1.orig/core/helpers.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/core/helpers.cpp	2024-03-25 10:18:44.261823353 +0100
+@@ -110,8 +110,10 @@ al::vector<std::string> SearchDataFiles(
+ {
+     auto is_slash = [](int c) noexcept -> int { return (c == '\\' || c == '/'); };
+ 
++#ifndef __MINT__
+     static std::mutex search_lock;
+     std::lock_guard<std::mutex> _{search_lock};
++#endif
+ 
+     /* If the path is absolute, use it directly. */
+     al::vector<std::string> results;
+@@ -333,8 +335,10 @@ void DirectorySearch(const char *path, c
+ 
+ al::vector<std::string> SearchDataFiles(const char *ext, const char *subdir)
+ {
++#ifndef __MINT__
+     static std::mutex search_lock;
+     std::lock_guard<std::mutex> _{search_lock};
++#endif
+ 
+     al::vector<std::string> results;
+     if(subdir[0] == '/')
+@@ -497,7 +501,7 @@ bool SetRTPriorityRTKit(int prio)
+ 
+         TRACE("RTTime max: %llu (hard: %llu, soft: %llu)\n", umaxtime,
+             static_cast<ulonglong>(rlim.rlim_max), static_cast<ulonglong>(rlim.rlim_cur));
+-        if(rlim.rlim_max > umaxtime)
++        if(ulonglong(rlim.rlim_max) > umaxtime)
+         {
+             rlim.rlim_max = static_cast<rlim_t>(std::min<ulonglong>(umaxtime,
+                 std::numeric_limits<rlim_t>::max()));
+diff -rup openal-soft-1.23.1.orig/core/hrtf.cpp openal-soft-1.23.1/core/hrtf.cpp
+--- openal-soft-1.23.1.orig/core/hrtf.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/core/hrtf.cpp	2024-03-25 10:27:03.857840663 +0100
+@@ -97,10 +97,14 @@ constexpr char magicMarker03[8]{'M','i',
+  * directional sounds. */
+ constexpr auto PassthruCoeff = static_cast<float>(1.0/al::numbers::sqrt2);
+ 
++#ifndef __MINT__
+ std::mutex LoadedHrtfLock;
++#endif
+ al::vector<LoadedHrtf> LoadedHrtfs;
+ 
++#ifndef __MINT__
+ std::mutex EnumeratedHrtfLock;
++#endif
+ al::vector<HrtfEntry> EnumeratedHrtfs;
+ 
+ 
+@@ -393,7 +397,7 @@ std::unique_ptr<HrtfStore> CreateHrtfSto
+     {
+         Hrtf.reset(al::construct_at(static_cast<HrtfStore*>(ptr)));
+         InitRef(Hrtf->mRef, 1u);
+-        Hrtf->mSampleRate = rate;
++        Hrtf->mSampleRate = rate & 0xffffff;
+         Hrtf->mIrSize = irSize;
+ 
+         /* Set up pointers to storage following the main HRTF struct. */
+@@ -401,18 +405,18 @@ std::unique_ptr<HrtfStore> CreateHrtfSto
+         size_t offset{sizeof(HrtfStore)};
+ 
+         offset = RoundUp(offset, alignof(HrtfStore::Field)); /* Align for field infos */
+-        auto field_ = reinterpret_cast<HrtfStore::Field*>(base + offset);
++        auto field_ = reinterpret_cast<HrtfStore::Field*>(static_cast<void *>(base + offset));
+         offset += sizeof(field_[0])*fields.size();
+ 
+         offset = RoundUp(offset, alignof(HrtfStore::Elevation)); /* Align for elevation infos */
+-        auto elev_ = reinterpret_cast<HrtfStore::Elevation*>(base + offset);
++        auto elev_ = reinterpret_cast<HrtfStore::Elevation*>(static_cast<void *>(base + offset));
+         offset += sizeof(elev_[0])*elevs.size();
+ 
+         offset = RoundUp(offset, 16); /* Align for coefficients using SIMD */
+-        auto coeffs_ = reinterpret_cast<HrirArray*>(base + offset);
++        auto coeffs_ = reinterpret_cast<HrirArray*>(static_cast<void *>(base + offset));
+         offset += sizeof(coeffs_[0])*irCount;
+ 
+-        auto delays_ = reinterpret_cast<ubyte2*>(base + offset);
++        auto delays_ = reinterpret_cast<ubyte2*>(static_cast<void *>(base + offset));
+         offset += sizeof(delays_[0])*irCount;
+ 
+         if(offset != total)
+@@ -1223,7 +1227,9 @@ al::span<const char> GetResource(int nam
+ 
+ al::vector<std::string> EnumerateHrtf(al::optional<std::string> pathopt)
+ {
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{EnumeratedHrtfLock};
++#endif
+     EnumeratedHrtfs.clear();
+ 
+     bool usedefaults{true};
+@@ -1280,14 +1286,18 @@ al::vector<std::string> EnumerateHrtf(al
+ 
+ HrtfStorePtr GetLoadedHrtf(const std::string &name, const uint devrate)
+ {
++#ifndef __MINT__
+     std::lock_guard<std::mutex> _{EnumeratedHrtfLock};
++#endif
+     auto entry_iter = std::find_if(EnumeratedHrtfs.cbegin(), EnumeratedHrtfs.cend(),
+         [&name](const HrtfEntry &entry) -> bool { return entry.mDispName == name; });
+     if(entry_iter == EnumeratedHrtfs.cend())
+         return nullptr;
+     const std::string &fname = entry_iter->mFilename;
+ 
++#ifndef __MINT__
+     std::lock_guard<std::mutex> __{LoadedHrtfLock};
++#endif
+     auto hrtf_lt_fname = [](LoadedHrtf &hrtf, const std::string &filename) -> bool
+     { return hrtf.mFilename < filename; };
+     auto handle = std::lower_bound(LoadedHrtfs.begin(), LoadedHrtfs.end(), fname, hrtf_lt_fname);
+@@ -1400,7 +1410,7 @@ HrtfStorePtr GetLoadedHrtf(const std::st
+         {
+             for(size_t j{0};j < 2;++j)
+             {
+-                const float new_delay{std::round(hrtf->mDelays[i][j] * rate_scale) /
++                const float new_delay{float(round(hrtf->mDelays[i][j] * rate_scale)) /
+                     float{HrirDelayFracOne}};
+                 max_delay = maxf(max_delay, new_delay);
+                 new_delays[i][j] = new_delay;
+@@ -1428,9 +1438,9 @@ HrtfStorePtr GetLoadedHrtf(const std::st
+         /* Scale the IR size for the new sample rate and update the stored
+          * sample rate.
+          */
+-        const float newIrSize{std::round(static_cast<float>(hrtf->mIrSize) * rate_scale)};
++        const float newIrSize{roundf(static_cast<float>(hrtf->mIrSize) * rate_scale)};
+         hrtf->mIrSize = static_cast<uint8_t>(minf(HrirLength, newIrSize));
+-        hrtf->mSampleRate = devrate;
++        hrtf->mSampleRate = devrate & 0xffffff;
+     }
+ 
+     TRACE("Loaded HRTF %s for sample rate %uhz, %u-sample filter\n", name.c_str(),
+@@ -1453,7 +1463,9 @@ void HrtfStore::dec_ref()
+     TRACE("HrtfStore %p decreasing refcount to %u\n", decltype(std::declval<void*>()){this}, ref);
+     if(ref == 0)
+     {
++#ifndef __MINT__
+         std::lock_guard<std::mutex> _{LoadedHrtfLock};
++#endif
+ 
+         /* Go through and remove all unused HRTFs. */
+         auto remove_unused = [](LoadedHrtf &hrtf) -> bool
+diff -rup openal-soft-1.23.1.orig/core/mastering.cpp openal-soft-1.23.1/core/mastering.cpp
+--- openal-soft-1.23.1.orig/core/mastering.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/core/mastering.cpp	2024-03-25 10:27:32.201137155 +0100
+@@ -318,9 +318,9 @@ std::unique_ptr<Compressor> Compressor::
+     const float AttackTime, const float ReleaseTime)
+ {
+     const auto lookAhead = static_cast<uint>(
+-        clampf(std::round(LookAheadTime*SampleRate), 0.0f, BufferLineSize-1));
++        clampf(roundf(LookAheadTime*SampleRate), 0.0f, BufferLineSize-1));
+     const auto hold = static_cast<uint>(
+-        clampf(std::round(HoldTime*SampleRate), 0.0f, BufferLineSize-1));
++        clampf(roundf(HoldTime*SampleRate), 0.0f, BufferLineSize-1));
+ 
+     size_t size{sizeof(Compressor)};
+     if(lookAhead > 0)
+diff -rup openal-soft-1.23.1.orig/core/voice.cpp openal-soft-1.23.1/core/voice.cpp
+--- openal-soft-1.23.1.orig/core/voice.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/core/voice.cpp	2024-03-25 10:30:12.710928529 +0100
+@@ -227,7 +227,7 @@ void SendSourceStoppedEvent(ContextBase
+     auto evt_vec = ring->getWriteVector();
+     if(evt_vec.first.len < 1) return;
+ 
+-    AsyncEvent *evt{al::construct_at(reinterpret_cast<AsyncEvent*>(evt_vec.first.buf),
++    AsyncEvent *evt{al::construct_at(reinterpret_cast<AsyncEvent*>(static_cast<void *>(evt_vec.first.buf)),
+         AsyncEvent::SourceStateChange)};
+     evt->u.srcstate.id = id;
+     evt->u.srcstate.state = AsyncEvent::SrcState::Stop;
+@@ -1151,7 +1151,7 @@ void Voice::mix(const State vstate, Cont
+         auto evt_vec = ring->getWriteVector();
+         if(evt_vec.first.len > 0)
+         {
+-            AsyncEvent *evt{al::construct_at(reinterpret_cast<AsyncEvent*>(evt_vec.first.buf),
++            AsyncEvent *evt{al::construct_at(reinterpret_cast<AsyncEvent*>(static_cast<void *>(evt_vec.first.buf)),
+                 AsyncEvent::BufferCompleted)};
+             evt->u.bufcomp.id = SourceID;
+             evt->u.bufcomp.count = buffers_done;
+diff -rup openal-soft-1.23.1.orig/examples/alstreamcb.cpp openal-soft-1.23.1/examples/alstreamcb.cpp
+--- openal-soft-1.23.1.orig/examples/alstreamcb.cpp	2023-04-11 21:46:23.000000000 +0200
++++ openal-soft-1.23.1/examples/alstreamcb.cpp	2024-03-25 10:35:17.710526057 +0100
+@@ -385,7 +385,7 @@ struct StreamPlayer {
+                 if(mSampleFormat == SampleType::Int16)
+                 {
+                     sf_count_t num_frames{sf_readf_short(mSndfile,
+-                        reinterpret_cast<short*>(&mBufferData[woffset]),
++                        reinterpret_cast<short*>(static_cast<void *>(&mBufferData[woffset])),
+                         static_cast<sf_count_t>(writable*mSamplesPerBlock))};
+                     if(num_frames < 1) break;
+                     read_bytes = static_cast<size_t>(num_frames) * mBytesPerBlock;
+@@ -393,7 +393,7 @@ struct StreamPlayer {
+                 else if(mSampleFormat == SampleType::Float)
+                 {
+                     sf_count_t num_frames{sf_readf_float(mSndfile,
+-                        reinterpret_cast<float*>(&mBufferData[woffset]),
++                        reinterpret_cast<float*>(static_cast<void *>(&mBufferData[woffset])),
+                         static_cast<sf_count_t>(writable*mSamplesPerBlock))};
+                     if(num_frames < 1) break;
+                     read_bytes = static_cast<size_t>(num_frames) * mBytesPerBlock;
+@@ -422,7 +422,7 @@ struct StreamPlayer {
+                 if(mSampleFormat == SampleType::Int16)
+                 {
+                     sf_count_t num_frames{sf_readf_short(mSndfile,
+-                        reinterpret_cast<short*>(&mBufferData[woffset]),
++                        reinterpret_cast<short*>(static_cast<void *>(&mBufferData[woffset])),
+                         static_cast<sf_count_t>(writable*mSamplesPerBlock))};
+                     if(num_frames < 1) break;
+                     read_bytes = static_cast<size_t>(num_frames) * mBytesPerBlock;
+@@ -430,7 +430,7 @@ struct StreamPlayer {
+                 else if(mSampleFormat == SampleType::Float)
+                 {
+                     sf_count_t num_frames{sf_readf_float(mSndfile,
+-                        reinterpret_cast<float*>(&mBufferData[woffset]),
++                        reinterpret_cast<float*>(static_cast<void *>(&mBufferData[woffset])),
+                         static_cast<sf_count_t>(writable*mSamplesPerBlock))};
+                     if(num_frames < 1) break;
+                     read_bytes = static_cast<size_t>(num_frames) * mBytesPerBlock;

@@ -15,8 +15,8 @@ patches/cairo/cairo-xlib-endianness.patch
 patches/cairo/cairo-mint.patch
 " 
 EXTRA_DIST="
-patches/meson/m68k-atari-mint.txt
-patches/meson/m68k-atari-mintelf.txt
+patches/meson/meson-m68k-atari-mint.ini
+patches/meson/meson-m68k-atari-mintelf.ini
 "
 
 BINFILES="
@@ -26,15 +26,15 @@ unpack_archive
 
 cd "$srcdir"
 
-cp ${BUILD_DIR}/patches/meson/m68k-atari-mint.txt .
-cp ${BUILD_DIR}/patches/meson/m68k-atari-mintelf.txt .
+cp ${BUILD_DIR}/patches/meson/meson-m68k-atari-mint.ini m68k-atari-mint.ini
+cp ${BUILD_DIR}/patches/meson/meson-m68k-atari-mintelf.ini m68k-atari-mintelf.ini
 
 cd "$MINT_BUILD_DIR"
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer -fno-strict-aliasing ${CFLAGS_AMIGAOS} ${ELF_CFLAGS}"
 export PKG_CONFIG=${TARGET}-pkg-config
 
-CONFIGURE_FLAGS="--cross-file ${TARGET}.txt --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
+CONFIGURE_FLAGS="--cross-file ${TARGET}.ini --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS}
 	-D xcb=disabled
 	-D freetype=enabled
 	-D fontconfig=disabled
@@ -58,7 +58,9 @@ for CPU in ${ALL_CPUS}; do
 	rm -rf build
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
-	"meson" setup ${CONFIGURE_FLAGS} --libdir="${prefix}/lib$multilibdir" build || exit 1
+	"meson" setup ${CONFIGURE_FLAGS} \
+		-D cpu_cflags="$CPU_CFLAGS" \
+		--libdir="${prefix}/lib$multilibdir" build || exit 1
 	sed -i 's/-fPIC//g' build/meson-info/intro-targets.json build/build.ninja build/compile_commands.json
 	echo "#undef CAIRO_HAS_PTHREAD" >> build/config.h
 	echo "#undef CAIRO_HAS_REAL_PTHREAD" >> build/config.h

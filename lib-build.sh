@@ -11,56 +11,30 @@ failed=""
 
 for pkg in \
 	a52dec \
-	arc \
-	arj \
 	asap \
-	autoconf \
-	autoconf-archive \
-	automake \
-	bash \
-	bison \
 	bzip2 \
 	c-ares \
-	ca-certificates \
 	cairo \
 	cflib \
-	cmake \
-	coreutils \
-	cpio \
-	ctris \
 	curl \
 	db \
-	dhcp \
-	diffutils \
-	dosfstools \
-	elfutils \
 	expat \
 	faad2 \
 	fdk-aac \
 	fdlibm \
 	file \
-	findutils \
 	flac \
-	flex \
 	freetype2 \
 	fribidi \
-	gawk \
 	gdbm \
 	gemlib \
 	gemma \
-	gettext \
 	giflib \
-	git \
 	gmp \
 	graphite2 \
-	grep \
-	groff \
-	gzip \
-	help2man \
 	hermes \
 	jpeg \
 	ldg \
-	lha \
 	libaacplus \
 	libaom \
 	libarchive \
@@ -96,38 +70,23 @@ for pkg in \
 	libyuv \
 	lua51 \
 	lua53 \
-	m4 \
-	make \
-	man \
-	mintbin \
 	mintlib \
-	mksh \
 	mp4v2 \
 	mpc \
 	mpfr \
 	mpg123 \
-	mtm \
 	ncurses \
 	netpbm \
 	nghttp2 \
 	openh264 \
 	openssl \
 	opus \
-	p7zip \
-	patch \
-	perl \
 	physfs \
-	ping \
 	pixman \
-	pml \
-	pngtools \
 	popt \
 	pth \
-	python2 \
-	python3 \
 	readline \
 	rhash \
-	rpm \
 	sdl \
 	sdl_gfx \
 	sdl_image \
@@ -135,17 +94,9 @@ for pkg in \
 	sdl_net \
 	sdl_sound \
 	sdl_ttf \
-	sed \
 	smpeg \
 	sqlite3 \
-	tar \
 	tiff \
-	traceroute \
-	tree \
-	unrar \
-	unzip \
-	vorbis-tools \
-	wget \
 	windom \
 	windom1 \
 	wolfssl \
@@ -153,10 +104,8 @@ for pkg in \
 	x265 \
 	xz \
 	yaml-cpp \
-	zip \
 	zita-resampler \
 	zlib \
-	zoo \
 	zstd \
 ; do
 	script=${pkg}-build.sh

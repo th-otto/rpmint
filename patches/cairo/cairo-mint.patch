@@ -14,3 +14,22 @@ diff -rup cairo-1.18.0.orig/src/cairo-ft-private.h cairo-1.18.0/src/cairo-ft-pri
  cairo_private cairo_status_t
  _cairo_render_svg_glyph (const char           *svg_document,
                           unsigned long         first_glyph,
+--- a/meson_options.txt	2024-05-10 08:58:11.307493927 +0200
++++ b/meson_options.txt	2024-05-10 08:59:39.830430997 +0200
+@@ -27,3 +27,5 @@
+ # Documentation
+ option('gtk_doc', type : 'boolean', value : false,
+        description: 'Build the Cairo API reference (depends on gtk-doc)')
++
++option('cpu_cflags', type : 'string', value : '')
+--- a/meson.build	2024-05-10 08:57:32.021003105 +0200
++++ b/meson.build	2024-05-10 09:00:21.230245647 +0200
+@@ -68,6 +68,8 @@
+     '-fno-common'
+   ]
+ 
++  cflags += get_option('cpu_cflags')
++
+   if get_option('optimization') in ['1', '2', '3']
+     cflags += '-Wp,-D_FORTIFY_SOURCE=2'
+   endif

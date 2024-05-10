@@ -48,3 +48,14 @@
          }
      }
  }
+--- netpbm-10.91.1/converter/other/Makefile.orig	2024-05-10 08:21:02.694155799 +0200
++++ netpbm-10.91.1/converter/other/Makefile	2024-05-10 08:21:05.257477645 +0200
+@@ -101,7 +101,7 @@
+   ifeq ($(JPEGLIB),NONE)
+     TIFF_PREREQ_MISSING = Y
+   else
+-    TIFFLIB_EXTRALIBS += $(JPEGLIB)
++    TIFFLIB_EXTRALIBS += $(JPEGLIB) -lwebp
+   endif
+ endif
+ ifeq ($(TIFFLIB_NEEDS_Z),Y)

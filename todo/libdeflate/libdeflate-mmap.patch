@@ -1,0 +1,130 @@
+diff --git a/programs/CMakeLists.txt b/programs/CMakeLists.txt
+index e707a25..b33ad5b 100644
+--- a/programs/CMakeLists.txt
++++ b/programs/CMakeLists.txt
+@@ -18,6 +18,9 @@ check_c_source_compiles("#include <sys/types.h>
+                          #include <sys/stat.h>
+                          int main() { struct stat st; (void)st.st_atim; }"
+                          HAVE_STAT_NANOSECOND_PRECISION)
++check_c_source_compiles("#include <sys/mman.h>
++                         int main() { mmap(0, 0, 0, 0, 0, 0); }"
++                         HAVE_MMAP)
+ configure_file(config.h.in config.h)
+ 
+ # Build a utility library for the programs.  This library is not installed.
+diff --git a/programs/config.h.in b/programs/config.h.in
+index 2f516b0..f9cfcc5 100644
+--- a/programs/config.h.in
++++ b/programs/config.h.in
+@@ -16,4 +16,7 @@
+ /* Does stat() provide nanosecond-precision timestamps? */
+ #cmakedefine HAVE_STAT_NANOSECOND_PRECISION
+ 
++/* Is the mmap() function available? */
++#cmakedefine HAVE_MMAP
++
+ #endif /* CONFIG_H */
+diff --git a/programs/prog_util.c b/programs/prog_util.c
+index 9ab14dc..1430ee5 100644
+--- a/programs/prog_util.c
++++ b/programs/prog_util.c
+@@ -34,7 +34,9 @@
+ #  include <windows.h>
+ #else
+ #  include <unistd.h>
+-#  include <sys/mman.h>
++#  if defined(HAVE_MMAP) || (!defined(HAVE_CONFIG_H) && defined(__unix__))
++#    include <sys/mman.h>
++#  endif
+ #endif
+ 
+ #ifndef O_BINARY
+@@ -351,6 +353,7 @@ map_file_contents(struct file_stream *strm, u64 size)
+ 		return -1;
+ 	}
+ #else /* _WIN32 */
++#if defined(HAVE_MMAP) || (!defined(HAVE_CONFIG_H) && defined(__unix__))
+ 	strm->mmap_mem = mmap(NULL, size, PROT_READ, MAP_SHARED, strm->fd, 0);
+ 	if (strm->mmap_mem == MAP_FAILED) {
+ 		strm->mmap_mem = NULL;
+@@ -376,6 +379,9 @@ map_file_contents(struct file_stream *strm, u64 size)
+ #endif
+ 	strm->mmap_token = strm; /* anything that's not NULL */
+ 
++#else /* !HAVE_MMAP */
++	return read_full_contents(strm);
++#endif
+ #endif /* !_WIN32 */
+ 	strm->mmap_size = size;
+ 	return 0;
+@@ -439,6 +445,7 @@ xclose(struct file_stream *strm)
+ 		free(strm->name);
+ 	}
+ 
++#if defined(HAVE_MMAP) || (!defined(HAVE_CONFIG_H) && defined(__unix__))
+ 	if (strm->mmap_token != NULL) {
+ #ifdef _WIN32
+ 		UnmapViewOfFile(strm->mmap_mem);
+@@ -447,7 +454,9 @@ xclose(struct file_stream *strm)
+ 		munmap(strm->mmap_mem, strm->mmap_size);
+ #endif
+ 		strm->mmap_token = NULL;
+-	} else {
++	} else
++#endif
++	{
+ 		free(strm->mmap_mem);
+ 	}
+ 	strm->mmap_mem = NULL;
+diff --git a/programs/test_util.c b/programs/test_util.c
+index 77517e1..db0c6a8 100644
+--- a/programs/test_util.c
++++ b/programs/test_util.c
+@@ -33,7 +33,9 @@
+ #  include <windows.h>
+ #else
+ #  include <unistd.h>
+-#  include <sys/mman.h>
++#  if defined(HAVE_MMAP) || (!defined(HAVE_CONFIG_H) && defined(__unix__))
++#    include <sys/mman.h>
++#  endif
+ #  include <sys/time.h>
+ #endif
+ 
+@@ -105,6 +107,7 @@ alloc_guarded_buffer(size_t size, u8 **start_ret, u8 **end_ret)
+ 		ASSERT(0);
+ 	}
+ #else
++#if defined(HAVE_MMAP) || (!defined(HAVE_CONFIG_H) && defined(__unix__))
+ 	/* Allocate buffer and guard pages. */
+ 	base_addr = mmap(NULL, (nr_pages + 2) * pagesize, PROT_READ|PROT_WRITE,
+ 			 MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+@@ -118,6 +121,15 @@ alloc_guarded_buffer(size_t size, u8 **start_ret, u8 **end_ret)
+ 	/* Unmap the guard pages. */
+ 	munmap(base_addr, pagesize);
+ 	munmap(end, pagesize);
++#else
++    base_addr = malloc(nr_pages * pagesize);
++	if (base_addr == (u8 *)NULL) {
++		msg_errno("Unable to allocate memory (anonymous mmap)");
++		ASSERT(0);
++	}
++	start = base_addr;
++	end = start + (nr_pages * pagesize);
++#endif
+ #endif
+ 	*start_ret = start;
+ 	*end_ret = end;
+@@ -132,7 +144,12 @@ free_guarded_buffer(u8 *start, u8 *end)
+ #ifdef _WIN32
+ 	VirtualFree(start - get_page_size(), 0, MEM_RELEASE);
+ #else
++#if defined(HAVE_MMAP) || (!defined(HAVE_CONFIG_H) && defined(__unix__))
+ 	munmap(start, end - start);
++#else
++	(void) end;
++	free(start);
++#endif
+ #endif
+ }
+ 

@@ -29,7 +29,7 @@ cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" build-aux/config.sub || ex
 
 COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
-CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared ${ELF_CFLAGS}"
+CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared"
 
 export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"

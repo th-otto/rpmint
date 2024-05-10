@@ -1,0 +1,57 @@
+diff -urp fribidi-1.0.13.orig/bin/Makefile.in fribidi-1.0.13/bin/Makefile.in
+--- fribidi-1.0.13.orig/bin/Makefile.in	2023-05-16 20:57:30.000000000 +0200
++++ fribidi-1.0.13/bin/Makefile.in	2024-05-10 08:05:55.888224073 +0200
+@@ -107,7 +107,6 @@ CONFIG_CLEAN_FILES =
+ CONFIG_CLEAN_VPATH_FILES =
+ am__installdirs = "$(DESTDIR)$(bindir)"
+ PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
+-am__objects_1 = getopt.$(OBJEXT) getopt1.$(OBJEXT)
+ am_fribidi_OBJECTS = fribidi-main.$(OBJEXT) $(am__objects_1)
+ fribidi_OBJECTS = $(am_fribidi_OBJECTS)
+ fribidi_LDADD = $(LDADD)
+@@ -146,8 +145,7 @@ depcomp = $(SHELL) $(top_srcdir)/depcomp
+ am__maybe_remake_depfiles = depfiles
+ am__depfiles_remade = ./$(DEPDIR)/fribidi-benchmark.Po \
+ 	./$(DEPDIR)/fribidi-bidi-types.Po \
+-	./$(DEPDIR)/fribidi-caprtl2utf8.Po ./$(DEPDIR)/fribidi-main.Po \
+-	./$(DEPDIR)/getopt.Po ./$(DEPDIR)/getopt1.Po
++	./$(DEPDIR)/fribidi-caprtl2utf8.Po ./$(DEPDIR)/fribidi-main.Po
+ am__mv = mv -f
+ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+ 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+@@ -340,7 +338,7 @@ target_alias = @target_alias@
+ top_build_prefix = @top_build_prefix@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+-getopt_SOURCES = getopt.c getopt1.c getopt_int.h getopt.h gettext.h
++#getopt_SOURCES = getopt.c getopt1.c getopt_int.h getopt.h gettext.h
+ fribidi_SOURCES = fribidi-main.c $(getopt_SOURCES)
+ fribidi_benchmark_SOURCES = fribidi-benchmark.c $(getopt_SOURCES)
+ AM_CPPFLAGS = \
+@@ -483,8 +481,6 @@ distclean-compile:
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fribidi-bidi-types.Po@am__quote@ # am--include-marker
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fribidi-caprtl2utf8.Po@am__quote@ # am--include-marker
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fribidi-main.Po@am__quote@ # am--include-marker
+-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getopt.Po@am__quote@ # am--include-marker
+-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getopt1.Po@am__quote@ # am--include-marker
+ 
+ $(am__depfiles_remade):
+ 	@$(MKDIR_P) $(@D)
+@@ -650,8 +646,6 @@ distclean: distclean-am
+ 	-rm -f ./$(DEPDIR)/fribidi-bidi-types.Po
+ 	-rm -f ./$(DEPDIR)/fribidi-caprtl2utf8.Po
+ 	-rm -f ./$(DEPDIR)/fribidi-main.Po
+-	-rm -f ./$(DEPDIR)/getopt.Po
+-	-rm -f ./$(DEPDIR)/getopt1.Po
+ 	-rm -f Makefile
+ distclean-am: clean-am distclean-compile distclean-generic \
+ 	distclean-tags
+@@ -701,8 +695,6 @@ maintainer-clean: maintainer-clean-am
+ 	-rm -f ./$(DEPDIR)/fribidi-bidi-types.Po
+ 	-rm -f ./$(DEPDIR)/fribidi-caprtl2utf8.Po
+ 	-rm -f ./$(DEPDIR)/fribidi-main.Po
+-	-rm -f ./$(DEPDIR)/getopt.Po
+-	-rm -f ./$(DEPDIR)/getopt1.Po
+ 	-rm -f Makefile
+ maintainer-clean-am: distclean-am maintainer-clean-generic
+ 

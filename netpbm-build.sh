@@ -59,7 +59,7 @@ for CPU in ${ALL_CPUS}; do
 	sed -i 's:PNGLIB = NONE:PNGLIB = -lpng -lz:' config.mk
 	sed -i 's:STRIPFLAG = -s:STRIPFLAG =:' config.mk
 
-	sed -i "s:CC = cc:CC = ${TARGET}-${GCC}:" config.mk
+	sed -i "s:CC = cc:CC = ${TARGET}-${GCC} $CPU_CFLAGS:" config.mk
 	sed -i "s:AR = ar:AR = ${ar}:" config.mk
 	sed -i "s:RANLIB = ranlib:RANLIB = ${ranlib}:" config.mk
 	sed -i "s:\#CFLAGS= -O2 -std1:CFLAGS = $CFLAGS:" config.mk

@@ -48,7 +48,7 @@ for CPU in ${ALL_CPUS}; do
 
 	${MAKE} clean
 	${MAKE} \
-	   CXX=${TARGET}-g++ \
+	   CXX="${TARGET}-g++ $CPU_CFLAGS" \
 	   CC=${TARGET}-gcc \
 	   AR=${TARGET}-ar \
 	   RANLIB=${TARGET}-ranlib \
