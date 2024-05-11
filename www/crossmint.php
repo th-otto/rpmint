@@ -1482,6 +1482,8 @@ This notably applies to Perl and Python.
 
 <li>2024/05/07 Add gcc 14.1.0</li>
 
+<li>2024/05/11 Update zlib to 1.3.1</li>
+
 </ul>
 
 <p></p>
