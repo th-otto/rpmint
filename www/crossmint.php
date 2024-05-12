@@ -1486,6 +1486,8 @@ This notably applies to Perl and Python.
 
 <li>2024/05/12 Rebuild ffmpeg without a wrong assertion</li>
 
+<li>2024/05/12 Add ffmpeg 7.0</li>
+
 </ul>
 
 <p></p>

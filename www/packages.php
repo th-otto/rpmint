@@ -4035,6 +4035,26 @@ transcode, mux, demux, stream, filter and play several formats
 that humans and machines have created.
 '
 	),
+ 	'ffmpeg7' => array(
+		'name' => 'ffmpeg',
+		'upstream' => 'https://ffmpeg.org/',
+		'source' => 'https://github.com/silnrsi/graphite/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz',
+		'version' => '7.0',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-3.0-or-later',
+		'category' => 'Productivity/Multimedia/Video/Editors and Convertors',
+		'summary' => 'Set of libraries for working with various multimedia formats',
+		'comment' => '
+FFmpeg is a multimedia framework, able to decode, encode,
+transcode, mux, demux, stream, filter and play several formats
+that humans and machines have created.
+'
+	),
  	'sdl_gfx' => array(
 		'name' => 'SDL_gfx',
 		'upstream' => 'http://www.ferzkopp.net/wordpress/2016/01/02/sdl_gfx-sdl2_gfx/',
