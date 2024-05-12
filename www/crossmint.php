@@ -1484,6 +1484,8 @@ This notably applies to Perl and Python.
 
 <li>2024/05/11 Update zlib to 1.3.1</li>
 
+<li>2024/05/12 Rebuild ffmpeg without a wrong assertion</li>
+
 </ul>
 
 <p></p>

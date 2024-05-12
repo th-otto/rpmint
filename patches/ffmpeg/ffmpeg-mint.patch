@@ -1,7 +1,7 @@
-diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/configure ffmpeg-6.0/configure
---- ffmpeg-6.0-orig/configure	2023-02-27 21:43:45
-+++ ffmpeg-6.0/configure	2023-11-02 20:05:14
-@@ -5538,6 +5538,8 @@
+diff -rup -x '*.o' -x '*.d' ffmpeg-6.0.orig/configure ffmpeg-6.0/configure
+--- ffmpeg-6.0.orig/configure	2023-02-27 21:43:45.000000000 +0100
++++ ffmpeg-6.0/configure	2024-05-12 06:14:29.953392981 +0200
+@@ -5538,6 +5538,8 @@ case $target_os in
          ;;
      freebsd)
          ;;
@@ -10,10 +10,21 @@ diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/configure ffmpeg-6.0/c
      bsd/os)
          add_extralibs -lpoll -lgnugetopt
          strip="strip -d"
-diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/fftools/ffmpeg.c ffmpeg-6.0/fftools/ffmpeg.c
---- ffmpeg-6.0-orig/fftools/ffmpeg.c	2023-02-27 21:43:45
-+++ ffmpeg-6.0/fftools/ffmpeg.c	2023-11-02 19:34:42
-@@ -1547,7 +1547,7 @@
+@@ -7371,6 +7373,10 @@ check_deps $CONFIG_LIST       \
+ enabled threads && ! enabled pthreads && ! enabled atomics_native && die "non pthread threading without atomics not supported, try adding --enable-pthreads or --cpu=i486 or higher if you are on x86"
+ 
+ case $target_os in
++freemint)
++    disable memalign
++    disable posix_memalign
++    ;;
+ haiku)
+     disable memalign
+     disable posix_memalign
+diff -rup -x '*.o' -x '*.d' ffmpeg-6.0.orig/fftools/ffmpeg.c ffmpeg-6.0/fftools/ffmpeg.c
+--- ffmpeg-6.0.orig/fftools/ffmpeg.c	2024-05-12 06:17:36.215909887 +0200
++++ ffmpeg-6.0/fftools/ffmpeg.c	2024-05-12 06:14:29.953392981 +0200
+@@ -1547,7 +1547,7 @@ static void print_final_stats(int64_t to
                  av_log(NULL, AV_LOG_VERBOSE, "; ");
              }
  
@@ -22,10 +33,10 @@ diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/fftools/ffmpeg.c ffmpe
                     atomic_load(&ost->packets_written), ost->data_size_mux);
  
              av_log(NULL, AV_LOG_VERBOSE, "\n");
-diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/fftools/ffmpeg.h ffmpeg-6.0/fftools/ffmpeg.h
---- ffmpeg-6.0-orig/fftools/ffmpeg.h	2023-02-27 21:43:45
-+++ ffmpeg-6.0/fftools/ffmpeg.h	2023-11-02 19:32:19
-@@ -660,7 +660,11 @@
+diff -rup -x '*.o' -x '*.d' ffmpeg-6.0.orig/fftools/ffmpeg.h ffmpeg-6.0/fftools/ffmpeg.h
+--- ffmpeg-6.0.orig/fftools/ffmpeg.h	2023-02-27 21:43:45.000000000 +0100
++++ ffmpeg-6.0/fftools/ffmpeg.h	2024-05-12 06:14:29.960059619 +0200
+@@ -660,7 +660,11 @@ typedef struct OutputStream {
      // combined size of all the packets received from the encoder
      uint64_t data_size_enc;
      // number of packets send to the muxer
@@ -37,10 +48,10 @@ diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/fftools/ffmpeg.h ffmpe
      // number of frames/samples sent to the encoder
      uint64_t frames_encoded;
      uint64_t samples_encoded;
-diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/fftools/ffmpeg_mux.h ffmpeg-6.0/fftools/ffmpeg_mux.h
---- ffmpeg-6.0-orig/fftools/ffmpeg_mux.h	2023-02-27 21:43:45
-+++ ffmpeg-6.0/fftools/ffmpeg_mux.h	2023-11-02 19:31:26
-@@ -82,7 +82,11 @@
+diff -rup -x '*.o' -x '*.d' ffmpeg-6.0.orig/fftools/ffmpeg_mux.h ffmpeg-6.0/fftools/ffmpeg_mux.h
+--- ffmpeg-6.0.orig/fftools/ffmpeg_mux.h	2023-02-27 21:43:45.000000000 +0100
++++ ffmpeg-6.0/fftools/ffmpeg_mux.h	2024-05-12 06:14:29.960059619 +0200
+@@ -82,7 +82,11 @@ typedef struct Muxer {
  
      /* filesize limit expressed in bytes */
      int64_t limit_filesize;
@@ -52,10 +63,28 @@ diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/fftools/ffmpeg_mux.h f
      int header_written;
  
      SyncQueue *sq_mux;
-diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavformat/fifo.c ffmpeg-6.0/libavformat/fifo.c
---- ffmpeg-6.0-orig/libavformat/fifo.c	2023-02-27 21:43:45
-+++ ffmpeg-6.0/libavformat/fifo.c	2023-11-02 19:01:10
-@@ -79,8 +79,11 @@
+diff -rup -x '*.o' -x '*.d' ffmpeg-6.0.orig/libavcodec/wmaenc.c ffmpeg-6.0/libavcodec/wmaenc.c
+--- ffmpeg-6.0.orig/libavcodec/wmaenc.c	2023-02-27 21:43:45.000000000 +0100
++++ ffmpeg-6.0/libavcodec/wmaenc.c	2024-05-12 06:14:29.953392981 +0200
+@@ -363,10 +363,11 @@ static int encode_frame(WMACodecContext
+ {
+     init_put_bits(&s->pb, buf, buf_size);
+ 
+-    if (s->use_bit_reservoir)
++    if (s->use_bit_reservoir){
+         av_assert0(0); // FIXME not implemented
+-    else if (encode_block(s, src_coefs, total_gain) < 0)
+-        return INT_MAX;
++        }
++    else if (encode_block(s, src_coefs, total_gain) < 0){
++        return INT_MAX;}
+ 
+     align_put_bits(&s->pb);
+ 
+diff -rup -x '*.o' -x '*.d' ffmpeg-6.0.orig/libavformat/fifo.c ffmpeg-6.0/libavformat/fifo.c
+--- ffmpeg-6.0.orig/libavformat/fifo.c	2023-02-27 21:43:45.000000000 +0100
++++ ffmpeg-6.0/libavformat/fifo.c	2024-05-12 06:14:29.960059619 +0200
+@@ -79,8 +79,11 @@ typedef struct FifoContext {
      int overflow_flag_lock_initialized;
      /* Value > 0 signals queue overflow */
      volatile uint8_t overflow_flag;
@@ -68,7 +97,7 @@ diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavformat/fifo.c ffm
      int64_t last_sent_dts;
      int64_t timeshift;
  } FifoContext;
-@@ -642,7 +645,11 @@
+@@ -642,7 +645,11 @@ static int fifo_write_trailer(AVFormatCo
              av_usleep(10000);
              ret = av_thread_message_queue_send(fifo->queue, &msg, AV_THREAD_MESSAGE_NONBLOCK);
          } while (ret >= 0 || ret == AVERROR(EAGAIN));
@@ -80,9 +109,9 @@ diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavformat/fifo.c ffm
      }
  
      ret = pthread_join(fifo->writer_thread, NULL);
-diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavformat/os_support.c ffmpeg-6.0/libavformat/os_support.c
---- ffmpeg-6.0-orig/libavformat/os_support.c	2022-11-04 21:16:28
-+++ ffmpeg-6.0/libavformat/os_support.c	2023-11-02 16:34:37
+diff -rup -x '*.o' -x '*.d' ffmpeg-6.0.orig/libavformat/os_support.c ffmpeg-6.0/libavformat/os_support.c
+--- ffmpeg-6.0.orig/libavformat/os_support.c	2022-11-04 21:16:28.000000000 +0100
++++ ffmpeg-6.0/libavformat/os_support.c	2024-05-12 06:14:29.963392937 +0200
 @@ -23,6 +23,9 @@
  /* needed by inet_aton() */
  #define _DEFAULT_SOURCE
@@ -93,9 +122,22 @@ diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavformat/os_support
  
  #include "config.h"
  #include "avformat.h"
-diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavutil/cpu.c ffmpeg-6.0/libavutil/cpu.c
---- ffmpeg-6.0-orig/libavutil/cpu.c	2023-02-27 21:43:45
-+++ ffmpeg-6.0/libavutil/cpu.c	2023-11-02 16:42:47
+diff -rup -x '*.o' -x '*.d' ffmpeg-6.0.orig/libavutil/avassert.h ffmpeg-6.0/libavutil/avassert.h
+--- ffmpeg-6.0.orig/libavutil/avassert.h	2023-02-27 21:43:45.000000000 +0100
++++ ffmpeg-6.0/libavutil/avassert.h	2024-05-12 06:32:03.582107238 +0200
+@@ -42,6 +42,9 @@
+     }                                                                   \
+ } while (0)
+ 
++#define _ASSERT_GENSYM(prefix) prefix ## __LINE__
++#define static_assert(R) struct _ASSERT_GENSYM(_assert_verify_type) { unsigned int _assert_verify_error_if_negative: (R) ? 1 : -1; }
++
+ 
+ /**
+  * assert() equivalent, that does not lie in speed critical code.
+diff -rup -x '*.o' -x '*.d' ffmpeg-6.0.orig/libavutil/cpu.c ffmpeg-6.0/libavutil/cpu.c
+--- ffmpeg-6.0.orig/libavutil/cpu.c	2023-02-27 21:43:45.000000000 +0100
++++ ffmpeg-6.0/libavutil/cpu.c	2024-05-12 06:14:29.963392937 +0200
 @@ -43,7 +43,11 @@
  #include <sys/param.h>
  #endif
@@ -108,9 +150,9 @@ diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavutil/cpu.c ffmpeg
  #endif
  #if HAVE_UNISTD_H
  #include <unistd.h>
-diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavutil/mem_internal.h ffmpeg-6.0/libavutil/mem_internal.h
---- ffmpeg-6.0-orig/libavutil/mem_internal.h	2023-02-27 21:43:45
-+++ ffmpeg-6.0/libavutil/mem_internal.h	2023-11-02 16:29:31
+diff -rup -x '*.o' -x '*.d' ffmpeg-6.0.orig/libavutil/mem_internal.h ffmpeg-6.0/libavutil/mem_internal.h
+--- ffmpeg-6.0.orig/libavutil/mem_internal.h	2023-02-27 21:43:45.000000000 +0100
++++ ffmpeg-6.0/libavutil/mem_internal.h	2024-05-12 06:14:29.963392937 +0200
 @@ -75,6 +75,7 @@
   * @param v Name of the variable
   */
@@ -132,3 +174,31 @@ diff -ur --exclude=.git --exclude=.vscode ffmpeg-6.0-orig/libavutil/mem_internal
  // Some broken preprocessors need a second expansion
  // to be forced to tokenize __VA_ARGS__
  #define E1(x) x
+diff -rup -x '*.o' -x '*.d' ffmpeg-6.0.orig/libswscale/utils.c ffmpeg-6.0/libswscale/utils.c
+--- ffmpeg-6.0.orig/libswscale/utils.c	2023-02-27 21:43:45.000000000 +0100
++++ ffmpeg-6.0/libswscale/utils.c	2024-05-12 06:49:00.300983208 +0200
+@@ -1177,7 +1177,9 @@ SwsContext *sws_alloc_context(void)
+ {
+     SwsContext *c = av_mallocz(sizeof(SwsContext));
+ 
+-    av_assert0(offsetof(SwsContext, redDither) + DITHER32_INT == offsetof(SwsContext, dither32));
++#ifndef __MINT__
++    static_assert(offsetof(SwsContext, redDither) + DITHER32_INT == offsetof(SwsContext, dither32));
++#endif
+ 
+     if (c) {
+         c->av_class = &ff_sws_context_class;
+--- ffmpeg-6.0/libavcodec/dxva2_h264.c.orig	2024-05-12 07:17:26.833518094 +0200
++++ ffmpeg-6.0/libavcodec/dxva2_h264.c	2024-05-12 07:17:32.566826462 +0200
+@@ -345,9 +345,9 @@ static int commit_bitstream_and_slice_bu
+         static const unsigned start_code_size = sizeof(start_code);
+         unsigned position, size;
+ 
+-        assert(offsetof(DXVA_Slice_H264_Short, BSNALunitDataLocation) ==
++        static_assert(offsetof(DXVA_Slice_H264_Short, BSNALunitDataLocation) ==
+                offsetof(DXVA_Slice_H264_Long,  BSNALunitDataLocation));
+-        assert(offsetof(DXVA_Slice_H264_Short, SliceBytesInBuffer) ==
++        static_assert(offsetof(DXVA_Slice_H264_Short, SliceBytesInBuffer) ==
+                offsetof(DXVA_Slice_H264_Long,  SliceBytesInBuffer));
+ 
+         if (is_slice_short(avctx, ctx))
