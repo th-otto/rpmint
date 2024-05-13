@@ -790,6 +790,32 @@ improvements.
 <a href="' . $download_dir . 'red-alert-data.tar.xz">data needed for Red Alert</a> (Allied, Soviet, Counterstrike &amp; Aftermath expansions) (~1033MB).</br>
 '
 	),
+	'fanwor' => array(
+		'name' => 'fanwor',
+		'version' => '1.16',
+		'upstream' => 'https://fanwor.tuxfamily.org/',
+		'repo' => 'https://git.tuxfamily.org/fanwor/fanwor.git',
+		'category' => 'Games',
+		'summary' => 'Fanwor is an action-adventures in the style of the game "The Legend of Zelda"',
+		'comment' => '
+Fanwor is an action-adventures in the style of the game "The Legend of
+Zelda" (&copy; by Nintendo). The source code of this game is available under
+the terms of the GNU PUBLIC LICENSE version 2. A copy of this license
+is included in the source code tarball.
+</br></br>
+Fanwor has originally been written for the "Magic Game Contest", a
+programming contest held in 1999 for the now ancient Atari TOS
+computers. Some years later, I&apos;ve adapted the source code to Linux,
+using the SDL library as the graphical interface. Please note that the
+game has been written very long ago, and there haven&apos;t been any more
+real changes during the last years, so there are certainly better
+Zelda-style action adventures available nowadays. This game is mainly
+provided here for historical reasons. 
+</br></br>
+<img src="' . $download_dir . 'fanwor.png" width="320" height="240">
+</br>
+'
+	),
 );
 
 ?>

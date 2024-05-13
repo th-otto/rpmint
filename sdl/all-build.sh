@@ -15,6 +15,7 @@ for i in \
 	circuslinux \
 	deathris \
 	digger \
+	fanwor \
 	fillets-ng \
 	freecraft \
 	gemdropx \
