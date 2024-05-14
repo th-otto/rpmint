@@ -22,6 +22,7 @@ for pkg in \
 	faad2 \
 	fdk-aac \
 	fdlibm \
+	ffmpeg \
 	file \
 	flac \
 	freetype2 \

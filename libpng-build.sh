@@ -38,17 +38,28 @@ cat <<EOF >config.cache
 EOF
 }
 
+WITH_FASTCALL=`if $gcc -mfastcall -E - < /dev/null >/dev/null 2>&1; then echo true; else echo false; fi`
+
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
+
+	if $WITH_FASTCALL; then
+		create_config_cache
+		CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir/mfastcall ${CONFIGURE_FLAGS_AMIGAOS}
+		${MAKE} $JOBS || exit 1
+		${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+		${MAKE} distclean
+	fi
+
 	create_config_cache
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
-	: hack_lto_cflags
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 	${MAKE} distclean
+
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_BINDIR}/libpng*-config
 	make_bin_archive $CPU
 done

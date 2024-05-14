@@ -39,21 +39,29 @@ COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} --disable-shared \
 "
 
-export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
-export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
+WITH_FASTCALL=`if $gcc -mfastcall -E - < /dev/null >/dev/null 2>&1; then echo true; else echo false; fi`
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
+
+	if $WITH_FASTCALL; then
+		CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir/mfastcall ${CONFIGURE_FLAGS_AMIGAOS}
+		${MAKE} $JOBS || exit 1
+		${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+		${MAKE} distclean >/dev/null
+	fi
+
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" "$srcdir/configure" ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir || exit 1
 	: hack_lto_cflags
 
-	${MAKE} || exit 1
+	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
+
 	mkdir -p ${THISPKG_DIR}${sysroot}${prefix}/bin
-	${MAKE} clean >/dev/null
+	${MAKE} distclean >/dev/null
 	cd ${THISPKG_DIR}${sysroot}
 	rm -f ${TARGET_LIBDIR#/}$multilibdir/charset.alias
 	make_bin_archive $CPU

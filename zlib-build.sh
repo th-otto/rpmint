@@ -23,6 +23,9 @@ unpack_archive
 
 export CHOST=$TARGET
 COMMON_CFLAGS="-O3 -fomit-frame-pointer ${ELF_CFLAGS} ${CFLAGS_AMIGAOS}"
+CONFIGURE_FLAGS="--prefix=${prefix}"
+
+WITH_FASTCALL=`if $gcc -mfastcall -E - < /dev/null >/dev/null 2>&1; then echo true; else echo false; fi`
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
@@ -30,9 +33,17 @@ for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure --prefix=${prefix} --libdir='${exec_prefix}/lib'$multilibdir ${CONFIGURE_FLAGS_AMIGAOS}
+	if $WITH_FASTCALL; then
+		CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir/mfastcall ${CONFIGURE_FLAGS_AMIGAOS}
+		${MAKE} $JOBS || exit 1
+		${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+		${MAKE} distclean
+	fi
+
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir ${CONFIGURE_FLAGS_AMIGAOS}
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+
 	${MAKE} distclean
 done
 

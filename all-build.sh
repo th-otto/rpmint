@@ -38,6 +38,7 @@ for pkg in \
 	faad2 \
 	fdk-aac \
 	fdlibm \
+	ffmpeg \
 	file \
 	findutils \
 	flac \

@@ -593,12 +593,14 @@ make_archives()
 		# with mcrt=nix*, the config files end up in a subdirectory; move them up
 		if test -d ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/pkgconfig; then
 			rm -rf ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/*/pkgconfig
+			rm -rf ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/*/mfastcall/pkgconfig
 			mkdir -p ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/
 			mv ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/libnix/lib/pkgconfig ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/pkgconfig
 		fi
 		;;
 	*)
 		rm -rf ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/*/pkgconfig
+		rm -rf ${THISPKG_DIR}${sysroot}${TARGET_PREFIX}/lib/*/mfastcall/pkgconfig
 		;;
 	esac
 
