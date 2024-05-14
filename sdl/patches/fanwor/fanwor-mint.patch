@@ -1,0 +1,74 @@
+diff --git a/src/fwfight.c b/src/fwfight.c
+index b33943d..994b28d 100644
+--- a/src/fwfight.c
++++ b/src/fwfight.c
+@@ -10,6 +10,7 @@
+ /*************************************************************/
+ 
+ #include <stdlib.h>
++#include <stdio.h>
+ 
+ #include "fwmain.h"
+ #include "fwgui.h"
+@@ -19,10 +20,6 @@
+ #include "fwmusic.h"
+ #include "fwfight.h"
+ 
+-#ifdef SOZOBON
+-#pragma -CUS
+-#endif
+-
+ /* ***Move enemies*** */
+ void setenmys(void)
+ {
+diff --git a/src/Makefile b/src/Makefile
+index 42a1b9f..5fc56a8 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -1,5 +1,7 @@
+ # ***Makefile for Fanwor***
+ 
++CC=$(CROSS_PREFIX)gcc
++
+ # Select your architecture:
+ # - sdl   : Linux/Unix SDL Library
+ # - atari : Atari GEM
+@@ -7,22 +10,23 @@ ARCH=sdl
+ 
+ # If you don't need/want music on Linux with the SDL-Mixer lib,
+ # you can comment out the following two lines:
+-SOUNDLIB = -lSDL_mixer
++SOUNDLIB = $(shell $(CROSS_PREFIX)pkg-config --libs SDL_mixer)
+ SOUNDCFL = -DWITH_SOUND
+ 
+ # What io library do we need? Perhaps you also have to edit this:
+-LIBS_sdl = -lpng $(shell sdl-config --libs) -lz $(SOUNDLIB)
+-LIBS_atari = -laes -lvdi
++LIBS_sdl = $(shell $(CROSS_PREFIX)pkg-config --libs sdl) -lpng -lz $(SOUNDLIB)
++LIBS_atari = -lgem
+ 
+ # System specific CFLAGS:
+-CFL_sdl = $(shell sdl-config --cflags) $(SOUNDCFL) -g -O2 \
+-	  -Wall -Wmissing-prototypes -Wstrict-prototypes
++CFL_sdl = $(shell $(CROSS_PREFIX)pkg-config --cflags sdl) $(SOUNDCFL)
+ CFL_atari = 
+ 
+ 
+ ARCHDIR=./arch/$(ARCH)
+ 
+-CFLAGS=-I. -I./arch/$(ARCH) $(CFL_$(ARCH))
++CFLAGS=$(CPU_CFLAGS)
++CFLAGS+=-O2 -Wall -Wmissing-prototypes -Wstrict-prototypes -fomit-frame-pointer -fno-strict-aliasing
++CFLAGS+=-I. -I./arch/$(ARCH) $(CFL_$(ARCH))
+ 
+ LIBS = $(LIBS_$(ARCH))
+ 
+@@ -35,7 +39,7 @@ OBS_XTRA = $(OBS_$(ARCH))
+ 
+ 
+ fanwor: $(OBS_MAIN) $(OBS_ARCH) $(OBS_XTRA)
+-	$(CC) $(OBS_MAIN) $(OBS_ARCH) $(OBS_XTRA) $(LIBS) -o../fanwor
++	$(CC) $(CFLAGS) $(OBS_MAIN) $(OBS_ARCH) $(OBS_XTRA) $(LIBS) -o../fanwor $(LDFLAGS)
+ 
+ 
+ 

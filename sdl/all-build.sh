@@ -5,13 +5,16 @@ TARGET=${1:-m68k-atari-mint}
 fails=
 for i in \
 	2048 \
+	afternoonstalker \
 	airball \
 	airstrike \
 	alienblaster \
 	amphetamine \
+	batrachians \
 	blobwars \
 	breaker \
 	cavestory \
+	ceferino \
 	circuslinux \
 	deathris \
 	digger \

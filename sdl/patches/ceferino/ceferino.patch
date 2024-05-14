@@ -1,0 +1,197 @@
+diff -rup ceferino-0.97.8.orig/src/actor.cc ceferino-0.97.8/src/actor.cc
+--- ceferino-0.97.8.orig/src/actor.cc	2005-03-16 02:49:19.000000000 +0100
++++ ceferino-0.97.8/src/actor.cc	2024-05-14 06:30:59.705471649 +0200
+@@ -36,7 +36,7 @@ actor :: ~actor(void)
+  * \param vec vector del estado
+  * \param cuadros cadena con el formato "1,2,3" (cuadros 1 -> 2 -> 3)
+  */
+-void actor :: cargar_animacion(int *vec, char *cuadros)
++void actor :: cargar_animacion(int *vec, const char *cuadros)
+ {
+ 	char *p=NULL;
+ 	char buffer[100];
+diff -rup ceferino-0.97.8.orig/src/actor.h ceferino-0.97.8/src/actor.h
+--- ceferino-0.97.8.orig/src/actor.h	2005-03-16 03:32:51.000000000 +0100
++++ ceferino-0.97.8/src/actor.h	2024-05-14 06:30:59.705471649 +0200
+@@ -50,7 +50,7 @@ class actor
+ 		SDL_Rect rect;
+ 		
+ 		class juego *pjuego;
+-		void cargar_animacion(int *vec, char *cuadros);
++		void cargar_animacion(int *vec, const char *cuadros);
+ };
+ 
+ #endif
+diff -rup ceferino-0.97.8.orig/src/audio.h ceferino-0.97.8/src/audio.h
+--- ceferino-0.97.8.orig/src/audio.h	2005-03-16 02:51:25.000000000 +0100
++++ ceferino-0.97.8/src/audio.h	2024-05-14 06:21:51.274443555 +0200
+@@ -49,7 +49,7 @@ class audio
+ 		void descargar_musicas(void);
+ 		int canal_musica;
+ 
+-		Mix_Chunk *sonidos[11];
++		Mix_Chunk *sonidos[12];
+ 		Mix_Music *musicas[2];
+ 		
+ };
+diff -rup ceferino-0.97.8.orig/src/fuente2.cc ceferino-0.97.8/src/fuente2.cc
+--- ceferino-0.97.8.orig/src/fuente2.cc	2007-07-14 23:14:23.000000000 +0200
++++ ceferino-0.97.8/src/fuente2.cc	2024-05-14 06:45:20.321858187 +0200
+@@ -214,7 +214,7 @@ SDL_Rect fuente2 :: obtener_referencia (
+ 
+ int fuente2 :: imprimir_letra (SDL_Surface * destino, char letra, int x, int y, SDL_Rect * rect, bool transparente)
+ {
+-	SDL_Rect dst = {x, y, 0, 0};
++	SDL_Rect dst = {Sint16(x), Sint16(y), 0, 0};
+ 	SDL_Rect src;
+ 
+ 	if (modo_reducido)
+@@ -432,6 +432,7 @@ char * fuente2 :: saltar_palabra (char *
+ 
+ 	if (cadena [i] == '\0')
+ 		return NULL;
++	return cadena + i;
+ }
+ 
+ void fuente2 :: imprimir (SDL_Surface * dst, char * cadena, int x, \
+diff -rup ceferino-0.97.8.orig/src/grafico.cc ceferino-0.97.8/src/grafico.cc
+--- ceferino-0.97.8.orig/src/grafico.cc	2005-12-16 18:14:32.000000000 +0100
++++ ceferino-0.97.8/src/grafico.cc	2024-05-14 06:26:19.329983530 +0200
+@@ -48,7 +48,7 @@ grafico :: ~grafico()
+  *
+  * \return 1 en caso de error
+  */
+-int grafico ::  iniciar (char * ruta, int f, int c, int punto_x, int punto_y, int conf)
++int grafico ::  iniciar (const char * ruta, int f, int c, int punto_x, int punto_y, int conf)
+ {
+ 	char ruta_completa[150] = DATADIR "/ima/";
+ 
+diff -rup ceferino-0.97.8.orig/src/grafico.h ceferino-0.97.8/src/grafico.h
+--- ceferino-0.97.8.orig/src/grafico.h	2005-03-16 02:52:05.000000000 +0100
++++ ceferino-0.97.8/src/grafico.h	2024-05-14 06:25:02.666972447 +0200
+@@ -33,7 +33,7 @@ class grafico
+ {
+ 	public:
+ 		~grafico();
+-		int iniciar(char *ruta, int f, int c, int punto_x, int punto_y, int conf);
++		int iniciar(const char *ruta, int f, int c, int punto_x, int punto_y, int conf);
+ 		void imprimir(int i, SDL_Surface *destino, SDL_Rect *rect, int x, int y, int flip);
+ 		void imprimir_parte(int i, SDL_Surface *dest, SDL_Rect *rect, int x, int y, int h);
+ 		int get_h(void) {return h;};
+diff -rup ceferino-0.97.8.orig/src/juego.cc ceferino-0.97.8/src/juego.cc
+--- ceferino-0.97.8.orig/src/juego.cc	2007-07-15 00:19:34.000000000 +0200
++++ ceferino-0.97.8/src/juego.cc	2024-05-14 06:29:01.855967025 +0200
+@@ -116,7 +116,7 @@ void juego :: cambiar_estado(int _estado
+  */
+ int juego :: avanzar_nivel(void)
+ {
+-	SDL_Rect rect = {0,0, screen->w, screen->h - screen->h/15};
++	SDL_Rect rect = {0,0, Uint16(screen->w), Uint16(screen->h - screen->h/15)};
+ 	SDL_Rect tmp[400];
+ 	int tmp_contador = 0;
+ 	char mensaje[50];
+@@ -506,7 +506,7 @@ void juego :: restar_vidas(void)
+  */
+ void juego :: reiniciar_nivel(void)
+ {
+-	SDL_Rect rect = {0,0, screen->w, screen->h - screen->h/15};
++	SDL_Rect rect = {0,0, Uint16(screen->w), Uint16(screen->h - screen->h/15)};
+ 	SDL_Rect tmp[400];
+ 	int tmp_contador = 0;
+ 	char mensaje[9];
+@@ -576,7 +576,7 @@ void juego :: efecto_bomba(void)
+ {
+ 	SDL_Rect tmp[400];
+ 	int tmp_contador = 0;
+-	SDL_Rect rect = {0, 0, screen->w, screen->h - screen->h/15};
++	SDL_Rect rect = {0, 0, Uint16(screen->w), Uint16(screen->h - screen->h/15)};
+ 
+ 	SDL_FillRect(screen, &rect, SDL_MapRGB(screen->format,255,255,255));
+ 	SDL_UpdateRect(screen, rect.x, rect.y, rect.w, rect.h);
+diff -rup ceferino-0.97.8.orig/src/main_op.cc ceferino-0.97.8/src/main_op.cc
+--- ceferino-0.97.8.orig/src/main_op.cc	2006-01-14 21:09:20.000000000 +0100
++++ ceferino-0.97.8/src/main_op.cc	2024-05-14 06:42:54.082471068 +0200
+@@ -271,7 +271,7 @@ void imprimir(SDL_Surface *screen, SDL_S
+  * \param ruta archivo que contiene los datos iniciales
+  * \param opciones estructura destino
+  */
+-int cargar_opciones(char *ruta, struct opciones *opciones)
++int cargar_opciones(const char *ruta, struct opciones *opciones)
+ {
+ 	FILE *arch;
+ 	char buffer[200];
+diff -rup ceferino-0.97.8.orig/src/main_op.h ceferino-0.97.8/src/main_op.h
+--- ceferino-0.97.8.orig/src/main_op.h	2005-03-16 02:52:24.000000000 +0100
++++ ceferino-0.97.8/src/main_op.h	2024-05-14 06:42:23.232600357 +0200
+@@ -39,7 +39,7 @@ struct opciones
+ int iniciar(SDL_Surface **screen, SDL_Surface **fondo, SDL_Surface **items);
+ int actualizar(struct opciones *opciones, int *salir);
+ void imprimir(SDL_Surface *screen, SDL_Surface *fondo, SDL_Surface *items, struct opciones *opciones);
+-int cargar_opciones(char *ruta, struct opciones *opciones);
++int cargar_opciones(const char *ruta, struct opciones *opciones);
+ void pintar_imagen(SDL_Surface *screen, SDL_Surface *items, int indice, int x, int y);
+ int procesar_eventos(void);
+ void cambiar_opcion(int *pnumero, int maximo_valor);
+diff -rup ceferino-0.97.8.orig/src/mundo.cc ceferino-0.97.8/src/mundo.cc
+--- ceferino-0.97.8.orig/src/mundo.cc	2007-07-14 22:57:12.000000000 +0200
++++ ceferino-0.97.8/src/mundo.cc	2024-05-14 06:27:51.536262611 +0200
+@@ -253,7 +253,7 @@ void mundo :: eliminar(void)
+  *
+  * \return 1 en caso de error
+  */
+-int mundo :: cargar_opciones(char *ruta)
++int mundo :: cargar_opciones(const char *ruta)
+ {
+ 	FILE *arch;
+ 	char buffer[200];
+diff -rup ceferino-0.97.8.orig/src/mundo.h ceferino-0.97.8/src/mundo.h
+--- ceferino-0.97.8.orig/src/mundo.h	2006-01-14 05:42:04.000000000 +0100
++++ ceferino-0.97.8/src/mundo.h	2024-05-14 06:27:51.536262611 +0200
+@@ -60,7 +60,7 @@ class mundo
+ 		int iniciar(void);
+ 		void correr(void);
+ 		void terminar(void);
+-		int cargar_opciones(char *ruta);
++		int cargar_opciones(const char *ruta);
+ 		void cambiar_escena(int nueva_escena);
+ 		void reiniciar_reloj(void);
+ 		void eliminar(void);
+diff -rup ceferino-0.97.8.orig/src/nivel.h ceferino-0.97.8/src/nivel.h
+--- ceferino-0.97.8.orig/src/nivel.h	2005-06-24 20:00:26.000000000 +0200
++++ ceferino-0.97.8/src/nivel.h	2024-05-14 06:23:22.274061113 +0200
+@@ -34,7 +34,7 @@
+ class nivel
+ {
+ 	public:
+-		void iniciar(juego *_pjuego, grafico *grafico, grafico *pfondos, SDL_Surface *fondo);
++		void iniciar(juego *_pjuego, grafico *grafic, grafico *pfondos, SDL_Surface *fondo);
+ 		int avanzar_nivel(int salto = 1);
+ 		int reiniciar_nivel(void);
+ 		int get_dist_suelo(int x, int y, int max);
+--- ceferino-0.97.8.orig/configure.ac	2007-07-15 00:28:35.000000000 +0200
++++ ceferino-0.97.8/configure.ac	2024-05-14 07:06:50.496456365 +0200
+@@ -7,7 +7,7 @@ AC_PROG_CXX
+ 
+ 
+ dnl gettext, soporte para idiomas
+-AM_GNU_GETTEXT
++AM_GNU_GETTEXT([external])
+ AC_SUBST(localedir)
+ ALL_LINGUAS="es fr ca"
+ 
+@@ -34,14 +34,7 @@ dnl AC_DEFINE_UNQUOTED (GETTEXT_PACKAGE,
+ 
+ 
+ dnl Busca las bibliotecas SDL
+-AC_CHECK_LIB(SDL, SDL_Init, , \
+-	AC_MSG_ERROR([* Can't find SDL library: http://www.libsdl.org]))
+-
+-AC_CHECK_LIB(SDL_image, IMG_Load, , \
+-	AC_MSG_ERROR([* Can't find SDL_image library: http://www.libsdl.org]))
+-
+-AC_CHECK_LIB(SDL_mixer, Mix_OpenAudio, , \
+-	AC_MSG_ERROR([* Can't find SDL_mixer library: http://www.libsdl.org]))
++LIBS="$LIBS "`pkg-config --libs sdl SDL_image SDL_mixer`" -lintl -liconv"
+ 
+ 
+ AC_SUBST(DEPS_CFLAGS)

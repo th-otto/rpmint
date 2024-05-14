@@ -1,0 +1,884 @@
+diff --git a/src/arch/atari/fwgraf.c b/src/arch/atari/fwgraf.c
+index fa69ff1..98477c9 100644
+--- a/src/arch/atari/fwgraf.c
++++ b/src/arch/atari/fwgraf.c
+@@ -9,10 +9,8 @@
+ /* Please read the file "gpl.txt" for details.               */
+ /*************************************************************/
+ 
+-#pragma -CUS
+-
+-#include <aes.h>
+-#include <vdi.h>
++#define __GEMLIB_OLDNAMES
++#include <gem.h>
+ 
+ #include <stdlib.h>
+ #include <macros.h>     /* For min() und max() */
+@@ -23,6 +21,7 @@
+ #include "fanwor.h"
+ #include "fwguiini.h"
+ #include "fwgui.h"
++#include "fwgraf.h"
+ 
+ 
+ /* **Variables:** */
+@@ -33,15 +32,15 @@ MFDB groundfdb;                         /* For the ground graphics */
+ MFDB fontfdb;                           /* For the font graphics */
+ MFDB spritefdb;
+ MFDB spritemask;
+-unsigned int new_pal[256][3];           /* Die Palette */
++short new_pal[256][3];           /* Die Palette */
+ 
+ 
+ 
+ /* ***Palette setzen*** */
+-void setpal(unsigned short palette[][3])
++void setpal(short palette[][3])
+ {
+ 	register int i;
+-	int work_out[57];
++	short work_out[57];
+ 
+ 	vq_extnd(vhndl, 0, work_out);
+ 
+@@ -56,7 +55,7 @@ void setpal(unsigned short palette[][3])
+ void drwindow(GRECT *xywh)
+ {
+ 	GRECT clip;
+-	int xy[10];
++	short xy[10];
+ 
+ 	wind_update(BEG_UPDATE);
+ 	graf_mouse(M_OFF, 0L);
+@@ -102,7 +101,7 @@ void offscr2win(short xpos, short ypos, short width, short height)
+ /* *** Draw a ground block into the offscreen *** */
+ void drawblock(short xpos, short ypos, short num)
+ {
+-	int xy[8];
++	short xy[8];
+ 	if(xpos<rwx || xpos>=rwx+rww || ypos<rwy || ypos>=rwy+rwh) return;
+ 	xy[0]=0;
+ 	xy[1]=num*32;
+@@ -118,9 +117,9 @@ void drawblock(short xpos, short ypos, short num)
+ 
+ 
+ /* ***Hitpoints (und Goldstand) ausgeben*** */
+-void write_hp_gold()
++void write_hp_gold(void)
+ {
+-	int xy[8];
++	short xy[8];
+ 	GRECT rdrect;
+ 
+ 	xy[0]=0;
+@@ -149,9 +148,9 @@ void write_hp_gold()
+ /* ***Clear a sprite from the screen*** */
+ void clearsprite(short nr)
+ {
+-	int dxy[8];
++	short dxy[8];
+ 	GRECT oclip, clip, sprct;
+-	int rwxkoor, rwykoor;
++	short rwxkoor, rwykoor;
+ 	register SPRT *aktsprt;
+ 	int mausflag=FALSE;
+ 	short maus_x, maus_y;
+@@ -260,9 +259,9 @@ void clearsprite(short nr)
+ void drawsprites(void)
+ {
+ 	register int i;
+-	int dxy[8];
++	short dxy[8];
+ 	GRECT oclip, clip, sprct;
+-	int rwxkoor, rwykoor;
++	short rwxkoor, rwykoor;
+ 	register SPRT *aktsprt;
+ 	int mausflag=FALSE;
+ 	short maus_x, maus_y;
+@@ -398,9 +397,9 @@ void drawsprites(void)
+ int showpicture(char *name)
+ {
+ 	char fullname[128];
+-	int wichevnt, i;
+-	int ppal[256][3];
+-	int xy[8];
++	short wichevnt, i;
++	short ppal[256][3];
++	short xy[8];
+ 	GRECT rdrct;
+ 
+ 	strcpy(fullname, "graphics\\");
+@@ -431,14 +430,14 @@ int showpicture(char *name)
+ 	do
+ 	{
+ 		wichevnt=evnt_multi(MU_TIMER|MU_KEYBD, 0, 0, 0, 0,0,0,0,0,0,0,0,0,0,
+-		                    msgbuf, 800, 0, &mausx, &mausy, &mausk, &kstate, &key, &klicks);
++		                    msgbuf, 800, &mausx, &mausy, &mausk, &kstate, &key, &klicks);
+ 	}
+ 	while(!(wichevnt&MU_TIMER));
+ 
+ 	do
+ 	{
+ 		wichevnt=evnt_multi(MU_MESAG|MU_KEYBD, 0, 0, 0, 0,0,0,0,0,0,0,0,0,0,
+-		                    msgbuf, 0, 0, &mausx, &mausy, &mausk, &kstate, &key, &klicks);
++		                    msgbuf, 0, &mausx, &mausy, &mausk, &kstate, &key, &klicks);
+ 
+ 		if(wichevnt & MU_MESAG)
+ 			mesages();
+@@ -449,7 +448,7 @@ int showpicture(char *name)
+ 	do
+ 	{
+ 		wichevnt=evnt_multi(MU_TIMER|MU_KEYBD, 0, 0, 0, 0,0,0,0,0,0,0,0,0,0,
+-		                    msgbuf, 400, 0, &mausx, &mausy, &mausk, &kstate, &key, &klicks);
++		                    msgbuf, 400, &mausx, &mausy, &mausk, &kstate, &key, &klicks);
+ 	}
+ 	while(!(wichevnt&MU_TIMER));
+ 
+diff --git a/src/arch/atari/fwgraf.h b/src/arch/atari/fwgraf.h
+index 45fdf70..0e23ebd 100644
+--- a/src/arch/atari/fwgraf.h
++++ b/src/arch/atari/fwgraf.h
+@@ -4,16 +4,15 @@
+ #ifndef _FWGRAF_H
+ #define _FWGRAF_H
+ 
+-#include <aes.h>
+-#include <vdi.h>
++#include <gem.h>
+ 
+-void drawsprites();
++void drawsprites(void);
+ void clearsprite(short nr);
+ void drawblock(short xpos, short ypos, short num);
+ void offscr2win(short xpos, short ypos, short width, short height);
+ void drwindow(GRECT *xywh);
+-void write_hp_gold();
+-void setpal(unsigned short palette[][3]);
++void write_hp_gold(void);
++void setpal(short palette[][3]);
+ int showpicture(char *name);
+ 
+ extern int bipp;
+@@ -23,6 +22,6 @@ extern MFDB fontfdb;
+ extern MFDB groundfdb;
+ extern MFDB spritefdb;
+ extern MFDB spritemask;
+-extern unsigned int new_pal[256][3];
++extern short new_pal[256][3];
+ 
+ #endif
+diff --git a/src/arch/atari/fwgui.c b/src/arch/atari/fwgui.c
+index d386f4a..df962e3 100644
+--- a/src/arch/atari/fwgui.c
++++ b/src/arch/atari/fwgui.c
+@@ -9,11 +9,9 @@
+ /* Please read the file "gpl.txt" for details.               */
+ /*************************************************************/
+ 
+-#pragma -CUS
+-
++#define __GEMLIB_OLDNAMES
+ #include <osbind.h>
+-#include <aes.h>
+-#include <vdi.h>
++#include <gem.h>
+ 
+ #include <stdlib.h>
+ #include <string.h>
+@@ -29,18 +27,18 @@
+ 
+ 
+ /* *Variables:* */
+-int ap_id;                              /* AES-Handle */
+-int vhndl;                              /* VDI-Handle */
+-int deskx, desky, deskw, deskh;         /* Deskto size */
+-int wihndl;                             /* Fenster-Handle */
++short ap_id;                              /* AES-Handle */
++short vhndl;                              /* VDI-Handle */
++short deskx, desky, deskw, deskh;         /* Deskto size */
++short wihndl;                             /* Fenster-Handle */
+ GRECT wi;                               /* Fenster-Koordinaten */
+ OBJECT *menudlg;
+-int mausx, mausy, mausk, klicks;        /* Zur Mausabfrage */
+-int kstate, key;                        /* Zur Tastaturabfrage */
++short mausx, mausy, mausk, klicks;        /* Zur Mausabfrage */
++short kstate, key;                        /* Zur Tastaturabfrage */
+ short mb_pressed;                       /* Has the mouse button been pressed? */
+-int msgbuf[8];                          /* Der Nachrichtenbuffer */
++short msgbuf[8];                          /* Der Nachrichtenbuffer */
+ short wichevnt;                         /* Aufgetretene Evnt-Multi-Ereignisse */
+-int deskclip[4];                        /* To clip to the desktop rectangle */
++short deskclip[4];                        /* To clip to the desktop rectangle */
+ int gamespeed=0;
+ 
+ short flag_key=1;
+@@ -50,9 +48,9 @@ unsigned char joystate;                  /* Joystickstatus */
+ 
+ 
+ /* ***Tastenbuffer loeschen*** */
+-void clearkeybuf()
++void clearkeybuf(void)
+ {
+-	static IOREC *keybufp=0L;
++	static _IOREC *keybufp=0L;
+ 	if(!keybufp) keybufp=Iorec(1);
+ 	keybufp->ibuftl=keybufp->ibufhd;
+ }
+@@ -62,7 +60,7 @@ void clearkeybuf()
+ /* ***Wait some milliseconds*** */
+ void waitms(short ms)
+ {
+-	evnt_timer(ms, 0);
++	evnt_timer(ms);
+ }
+ 
+ 
+@@ -112,7 +110,7 @@ void errfatldlg(char *errstr)
+ 
+ 
+ /* *** Message handler for the window dialogs *** */
+-void wdmsgs(int msgbf[])
++static void wdmsgs(short msgbf[])
+ {
+ 	if( msgbf[0]==WM_REDRAW )  drwindow((GRECT *)&msgbf[4]);
+ 	if( msgbf[0]==WM_MOVED )
+@@ -125,9 +123,9 @@ void wdmsgs(int msgbf[])
+ 
+ 
+ /* ***User has selected a menu entry*** */
+-void reactmenu()
++static void reactmenu(void)
+ {
+-	int wdh, exitbut, menuindex;
++	short wdh, exitbut, menuindex;
+ 	OBJECT *dlgptr;
+ 
+ 	menuindex=msgbuf[3];
+@@ -288,7 +286,7 @@ void keyklicks(void)
+ /* ***Nachrichten*** */
+ void mesages(void)
+ {
+-	int xy[8];
++	short xy[8];
+ 	short omx, omy;
+ 
+ 	switch(msgbuf[0])
+@@ -321,22 +319,22 @@ void mesages(void)
+ 
+ 
+ /* ***Get the joypad state*** */
+-void getjoypad()
++static void getjoypad(void)
+ {
+-	*(unsigned short *)0xFFFF9202=0xFFEE;
+-	joystate=~(*(unsigned char *)0xFFFF9202);
+-	*(unsigned short *)0xFFFF9202=0xEEEE;
+-	if((~(*(unsigned short *)0xFFFF9200)) & 2) joystate|=128;
++	*(volatile unsigned short *)0xFFFF9202=0xFFEE;
++	joystate=~(*(volatile unsigned char *)0xFFFF9202);
++	*(volatile unsigned short *)0xFFFF9202=0xEEEE;
++	if((~(*(volatile unsigned short *)0xFFFF9200)) & 2) joystate|=128;
+ }
+ 
+ 
+ /* ***Event function*** */
+-void event_handler()
++void event_handler(void)
+ {
+ 	wichevnt=evnt_multi(MU_TIMER|MU_MESAG|MU_KEYBD|MU_BUTTON,
+ 	                    /*(alrdyhit?0:1)*/1, 2, 2,
+ 	                    0,0,0,0,0,0,0,0,0,0,
+-	                    msgbuf, 0, 0, &mausx, &mausy, &mausk, &kstate, &key, &klicks);
++	                    msgbuf, 0L, &mausx, &mausy, &mausk, &kstate, &key, &klicks);
+ 
+ 	if(wichevnt & MU_MESAG)
+ 		mesages();
+@@ -371,5 +369,5 @@ void event_handler()
+ 	if( kstate || ((wichevnt&MU_BUTTON) && mausk) )
+ 		tdirectn|=128;
+ 
+-	if(gamespeed)  evnt_timer(gamespeed, 0);
++	if(gamespeed)  evnt_timer(gamespeed);
+ }
+diff --git a/src/arch/atari/fwgui.h b/src/arch/atari/fwgui.h
+index defbe18..b2c7e12 100644
+--- a/src/arch/atari/fwgui.h
++++ b/src/arch/atari/fwgui.h
+@@ -2,28 +2,28 @@
+ #ifndef _FWGUI_H
+ #define _FWGUI_H
+ 
+-#include <aes.h>
+-#include <vdi.h>
++#include <gem.h>
+ 
+-void event_handler();
++void event_handler(void);
+ int choicedlg(char *txt, char *buts, int defb);
+ void alertdlg(char *alstr);
+ void errfatldlg(char *errstr);
+ void waitms(short ms);
+ void mesages(void);
++void clearkeybuf(void);
+ 
+ #define WINDOWGADGETS (CLOSER|MOVER|NAME)
+ 
+-extern int ap_id;
+-extern int vhndl;
+-extern int deskx, desky, deskw, deskh;
+-extern int wihndl;
++extern short ap_id;
++extern short vhndl;
++extern short deskx, desky, deskw, deskh;
++extern short wihndl;
+ extern GRECT wi;
+ extern OBJECT *menudlg;
+-extern int mausx, mausy, mausk, klicks;
+-extern int kstate, key;
++extern short mausx, mausy, mausk, klicks;
++extern short kstate, key;
+ extern short mb_pressed;
+-extern int msgbuf[8];
+-extern int deskclip[4];
++extern short msgbuf[8];
++extern short deskclip[4];
+ 
+ #endif
+diff --git a/src/arch/atari/fwguiini.c b/src/arch/atari/fwguiini.c
+index 9068b19..ba09155 100644
+--- a/src/arch/atari/fwguiini.c
++++ b/src/arch/atari/fwguiini.c
+@@ -13,8 +13,7 @@
+ 
+ #define ATARIGEM
+ 
+-#include <aes.h>
+-#include <vdi.h>
++#include <gem.h>
+ 
+ #ifdef ATARIGEM
+ #include <osbind.h>
+@@ -66,7 +65,7 @@ long *huntc_value;
+ #ifdef ATARIGEM
+ 
+ /* *** Search a cookie in the cookie jar *** */
+-int huntcookie()
++static int huntcookie(void)
+ {
+ 	long *actptr;
+ 	long actcookie, actvalue;
+@@ -114,32 +113,6 @@ int xgetcookie(long cookie, long *value)
+ #endif /* ATARIGEM */
+ 
+ 
+-/* *** Try to use appl_getinfo  *** */
+-int appl_xgetinfo(int type, int *out1, int *out2, int *out3, int *out4)
+-{
+-	static int axgi_init=FALSE, has_agi;
+-
+-	if(!axgi_init)      /* Already initialized? */
+-	{
+-		/* Check if agi is possible */
+-		axgi_init=TRUE;
+-		if (appl_find("?AGI\0\0\0\0") >= 0
+-		    || aesversion>0x0400
+-		    || xgetcookie(0x4D616758L, 0L)                        /* 'MagX' */
+-		    || (aesversion==0x400 && xgetcookie(0x4D694E54L, 0L)) /* 'MiNT' */
+-		   )
+-			has_agi=TRUE;
+-		else
+-			has_agi=FALSE;
+-	}
+-
+-	if(has_agi)
+-		return( appl_getinfo(type, out1, out2, out3, out4) );
+-	else
+-		return(0);
+-}
+-
+-
+ /* *** Beim GEM anmelden + Keyboard/Joystick initialisieren *** */
+ int initGUI(void)
+ {
+@@ -192,7 +165,7 @@ int initGUI(void)
+ 	menu_bar(menudlg, 1);        /* Display the menu */
+ 
+ 	/* Try to tell the AES that we understand AP_TERM */
+-	if( (appl_xgetinfo(10, &agi1, &agi2, &agi3, &agi4) && agi1&0x0FF>=9)
++	if( (appl_getinfo(10, &agi1, &agi2, &agi3, &agi4) && agi1&0x0FF>=9)
+ 	                || aesversion>=0x0400)
+ 		shel_write(9, 1, 0, 0L, 0L);
+ 
+@@ -260,7 +233,7 @@ int open_window(void)
+ 		if(wi.g_y<desky) wi.g_y=desky;
+ 	}
+ 
+-	wind_set(wihndl, WF_NAME, "Fanwor", 0L);
++	wind_set_str(wihndl, WF_NAME, "Fanwor");
+ 
+ 	wind_open(wihndl, wi.g_x, wi.g_y, wi.g_w, wi.g_h);
+ 	wind_get(wihndl, WF_WORKXYWH, &wi.g_x, &wi.g_y, &wi.g_w, &wi.g_h);
+@@ -537,7 +510,7 @@ long initgraf(void)
+ }
+ 
+ /* *** De-init the graphics *** */
+-void deinitgraf()
++void deinitgraf(void)
+ {
+ 	Mfree( offscr.fd_addr );
+ 	Mfree( groundfdb.fd_addr );
+diff --git a/src/arch/atari/fwguiini.h b/src/arch/atari/fwguiini.h
+index 19f51ad..f87fa49 100644
+--- a/src/arch/atari/fwguiini.h
++++ b/src/arch/atari/fwguiini.h
+@@ -2,7 +2,7 @@
+ #ifndef _FWGUIINI_H
+ #define _FWGUIINI_H
+ 
+-#include <vdi.h>
++#include <gem.h>
+ 
+ extern unsigned short oldkbrate;
+ extern unsigned char oldconterm;
+@@ -15,5 +15,6 @@ long initgraf(void);
+ int loadpic(char *pname, MFDB *destfdb, short newfdb);
+ int loadpic2true(char *pname, MFDB *destfdb, short newmem);
+ int xgetcookie(long cookie, long *value);
++void deinitgraf(void);
+ 
+ #endif
+diff --git a/src/arch/atari/fwmusic.c b/src/arch/atari/fwmusic.c
+index 205e651..14662f0 100644
+--- a/src/arch/atari/fwmusic.c
++++ b/src/arch/atari/fwmusic.c
+@@ -11,11 +11,17 @@
+ 
+ #include <string.h>
+ #include <osbind.h>
+-#include <falcon.h>
+-#include <aes.h>
++#include <mint/falcon.h>
++#include <gem.h>
+ 
+ #include "fwgui.h"
+ #include "fwguiini.h"  /* For xgetcookie() */
++#include "fwmusic.h"
++
++#ifndef FALSE
++#define FALSE 0
++#define TRUE  1
++#endif
+ 
+ 
+ /* ########### MOD Definitionen und Strukturen ############ */
+@@ -83,19 +89,19 @@ typedef struct
+ 	char *frqstr2;
+ 	char *frqstr3;
+ 	int (*modplay)(void *modaddr);		/* Play routine */
+-	int (*modstop)();		/* Stop routine */
++	int (*modstop)(void);		/* Stop routine */
+ 	int (*modsetup)(short opcode, long subcode);	/* Configuration routine */
+-	int (*modpause)();		/* Pause */
+-	int (*modforward)();	/* Fast forward*/
+-	int (*modbackward)();	/* Fast backward */
+-	int (*samplay)();
++	int (*modpause)(void);		/* Pause */
++	int (*modforward)(void);	/* Fast forward*/
++	int (*modbackward)(void);	/* Fast backward */
++	int (*samplay)(void *start, void *end, short aktchan);
+ } SPI;
+ 
+ typedef struct
+ {
+ 	char		*p_lowtpa;
+ 	char		*p_hitpa;
+-	SPI		*(*p_tbase)();
++	SPI		*(*p_tbase)(void);
+ 	long		p_tlen;
+ 	char		*p_dbase;
+ 	long		p_dlen;
+@@ -156,9 +162,9 @@ typedef struct
+ 
+ THSAMPLE samples[SAM_ANZAHL]=
+ {
+-	"sword.raw",0L,0L,swordsnd,
+-	"takeitem.raw",0L,0L,takeitemsnd,
+-	"success.raw",0L,0L,takeitemsnd
++	{ "sword.raw",0L,0L,swordsnd },
++	{ "takeitem.raw",0L,0L,takeitemsnd },
++	{ "success.raw",0L,0L,takeitemsnd }
+ };
+ 
+ 
+@@ -172,9 +178,9 @@ int mod_init(void)
+ 	SPI_BP *spibp;
+ 	int i;
+ 	char *sname;
+-	unsigned long scookie;
++	long scookie;
+ 
+-	if( !xgetcookie('_SND', &scookie) ) scookie=0;
++	if( !xgetcookie(0x5f534e44L, &scookie) ) scookie=0; /* '_SND' */
+ 
+ 	for(i=0; i<=2; i++)
+ 	{
+@@ -250,7 +256,7 @@ int mod_init(void)
+ }
+ 
+ /* ***Auf das Okay des Players warten*** */
+-int wait4plok()
++static int wait4plok(void)
+ {
+ 	int i, mok, mnak;
+ 
+@@ -281,7 +287,6 @@ int wait4plok()
+ /* ***MOD spielen*** */
+ int mod_play(const char *mname)
+ {
+-	int i;
+ 	char fullname[255];
+ 
+ 	fullname[0]='A'+Dgetdrv();
+@@ -310,7 +315,7 @@ int mod_play(const char *mname)
+ 			Fseek(0L, fhndl, 0);
+ 			mod_addr=(char *)Mxalloc(flength, 0);  /* Speicher reservieren */
+ 			if( ((signed long)mod_addr)==-32L )  mod_addr=(char *)Malloc(flength);
+-			if( ((signed long)mod_addr)<=0L )  return(mod_addr);
++			if( ((signed long)mod_addr)<=0L )  return((int)(long)mod_addr);
+ 			Fread(fhndl, flength, mod_addr);
+ 			Fclose(fhndl);
+ 			tspi->modplay(mod_addr);	/* Start playing */
+@@ -412,7 +417,7 @@ long sound_init(void)
+ 
+ 		samadr=(char *)Mxalloc(flength, 0);  /* Speicher reservieren */
+ 		if( ((signed long)samadr)==-32L )  samadr=(char *)Malloc(flength);
+-		if( ((signed long)samadr)<=0L )  return(samadr);
++		if( ((signed long)samadr)<=0L )  return((long)samadr);
+ 		Fread(fhndl, flength, samadr);
+ 		Fclose(fhndl);
+ 		samples[i].start=samadr;
+@@ -432,8 +437,6 @@ void sound_deinit(void)
+ /* ***Neues Sample in Abspielliste aufnehmen oder direkt spielen*** */
+ void sound_play(short snr)
+ {
+-	int i=0;
+-
+ 	if( sndpsgflag && samples[snr].dosnd )
+ 		Dosound(samples[snr].dosnd);
+ 	else if( samples[snr].start )        /* Ignore invalid samples */
+diff --git a/src/arch/atari/loadimg.c b/src/arch/atari/loadimg.c
+index 0e37998..ed99503 100644
+--- a/src/arch/atari/loadimg.c
++++ b/src/arch/atari/loadimg.c
+@@ -3,10 +3,12 @@
+ /* **** und an Dan Ackerman fuer den TrueColor-Wandler.        **** */
+ 
+ #include <osbind.h>
+-#include <vdi.h>
++#include <gem.h>
+ 
+ #include <string.h>
+ 
++#include "loadimg.h"
++
+ #ifndef NULL
+ #define NULL 0L
+ #endif
+@@ -67,7 +69,7 @@ typedef struct
+ 
+ 
+ /* *** IMG entpacken *** */
+-void Decompress(IMGHEAD *img, char *dest)
++static void Decompress(IMGHEAD *img, char *dest)
+ {
+ 	short repetitions, count, k, l, p, z, LineBytes, LineB2;
+ 	unsigned char *source;
+@@ -178,7 +180,7 @@ long LoadImg(char *Filename, MFDB *raster)
+ 	if( (signed long)img<=0L)
+ 	{
+ 		Fclose(fhndl);
+-		return(img);
++		return((long)img);
+ 	}
+ 	Fread(fhndl, Length, img);		/* IMG einlesen */
+ 	Fclose(fhndl);
+@@ -193,7 +195,7 @@ long LoadImg(char *Filename, MFDB *raster)
+ 	raster->fd_addr=(void *)Mxalloc(Length, 0);
+ 	if( ((signed long)raster->fd_addr)==-32L )
+ 		raster->fd_addr=(void *)Malloc(Length);
+-	if( (signed long)raster->fd_addr<=0L ) return(raster->fd_addr);
++	if( (signed long)raster->fd_addr<=0L ) return((long)raster->fd_addr);
+ 
+ 	Decompress(img, raster->fd_addr);
+ 
+@@ -213,7 +215,7 @@ int getximgpal(char *filename, short pal[][3])
+ 	if(fhndl<0) return(fhndl);
+ 	Fread(fhndl, sizeof(XIMGHEAD), &ximg);		/* IMG einlesen */
+ 
+-	if(ximg.palmagic!='XIMG' || ximg.color_model!=0)
++	if(ximg.palmagic!= 0x58494d47L || ximg.color_model!=0) /* 'XIMG' */
+ 	{
+ 		Fclose(fhndl);
+ 		return(1);
+@@ -280,7 +282,7 @@ int getximgpal(char *filename, short pal[][3])
+ 
+ int transform_truecolor( MFDB *image, long size, int planes, int img_handle)
+ {
+-	int i, bit, color, mask;
++	short i, bit, color, mask;
+ 	short first_plane[32], *plane, *idx, *new_addr;
+ 	short *color_table, *bit_location, *temp_addr;
+ 	int tot_colors = (1 << image->fd_nplanes);
+@@ -288,7 +290,7 @@ int transform_truecolor( MFDB *image, long size, int planes, int img_handle)
+ 	int x, y;
+ 	MFDB tempscreen;
+ 	MFDB temp;
+-	int pxy[8], colors[2];
++	short pxy[8], colors[2];
+ 	long temp_size, j;
+ 	int oldplanes;
+ 
+@@ -448,8 +450,8 @@ int transform_truecolor(MFDB *image, long size, int planes, int img_handle)
+ 	MFDB tempscreen;
+ 	MFDB temp;
+ 	MFDB monotemp;
+-	int pxy[8];
+-	int colors[2];
++	short pxy[8];
++	short colors[2];
+ 	register int i,ccount;
+ 	int tot_colors = (1 << image->fd_nplanes);
+ 	int oldplanes;
+diff --git a/src/arch/atari/loadimg.h b/src/arch/atari/loadimg.h
+index 3d09be8..9de3ed1 100644
+--- a/src/arch/atari/loadimg.h
++++ b/src/arch/atari/loadimg.h
+@@ -1,6 +1,6 @@
+ /* *** Prototypes for loadimg.c *** */
+ 
+-#include <vdi.h>
++#include <gem.h>
+ 
+ long LoadImg(char *Filename, MFDB *raster);
+ int getximgpal(char *filename, short pal[][3]);
+diff --git a/src/arch/atari/windial.c b/src/arch/atari/windial.c
+index 9305436..6dafe3a 100644
+--- a/src/arch/atari/windial.c
++++ b/src/arch/atari/windial.c
+@@ -1,20 +1,22 @@
+ /* ***** GEM Window dialogs             ***** */
+ /* ***** Written and (c) by Thomas Huth ***** */
+ 
+-#include <aes.h>
++#define __GEMLIB_OLDNAMES
++#include <gem.h>
+ #include <stdlib.h>
++#include "windial.h"
+ 
+ /* ***Fenster anmelden + Dialog zeichnen*** */
+ int wdial_init(OBJECT *tree, char *title)
+ {
+ 	short wx, wy, ww, wh;
+-	int dwhndl;
++	short dwhndl;
+ 
+ 	form_center(tree, &wx, &wy, &ww, &wh);           /* Groesse holen */
+ 	wind_calc(WC_BORDER, NAME|MOVER, wx, wy, ww, wh, &wx, &wy, &ww, &wh);
+ 	dwhndl=wind_create(NAME|MOVER, wx, wy, ww, wh);  /* Fenster anmelden */
+-	if(dwhndl<0)  return(NULL);
+-	wind_set(dwhndl, WF_NAME, title);                /* Name setzen */
++	if(dwhndl<0)  return(0);
++	wind_set_str(dwhndl, WF_NAME, title);                /* Name setzen */
+ 	wind_open(dwhndl, wx, wy, ww, wh);               /* Fenster oeffnen */
+ 	objc_draw(tree, ROOT, MAX_DEPTH, wx, wy, ww, wh);  /* Dialog zeichnen */
+ 
+@@ -22,14 +24,14 @@ int wdial_init(OBJECT *tree, char *title)
+ }
+ 
+ /* ***Fenster schliessen + loeschen*** */
+-void wdial_close(int dwhndl)
++void wdial_close(short dwhndl)
+ {
+ 	wind_close(dwhndl);                       /* Fenster schliessen */
+ 	wind_delete(dwhndl);                      /* Fenster abmelden */
+ }
+ 
+ /* ***Dialog neu zeichnen, Rechteckliste beachten*** */
+-void wdial_redraw(int dwhndl, OBJECT *tree, GRECT *redrwrect)
++void wdial_redraw(short dwhndl, OBJECT *tree, GRECT *redrwrect)
+ {
+ 	GRECT clip;               /* For the rectangual list */
+ 
+@@ -70,9 +72,9 @@ void wdial_redraw(int dwhndl, OBJECT *tree, GRECT *redrwrect)
+ #endif
+ 
+ /* **Find the first editable object in the tree** */
+-int find_obj(OBJECT *tree, int start_obj, int which)
++static int find_obj(OBJECT *tree, int start_obj, int which)
+ {
+-	register int  obj, flag, theflag, inc;
++	register short  obj, flag, theflag, inc;
+ 
+ 	obj=0;
+ 	flag=EDITABLE;
+@@ -103,7 +105,7 @@ int find_obj(OBJECT *tree, int start_obj, int which)
+ }
+ 
+ /* **Find the first edit-object** */
+-int fm_inifld(OBJECT *tree, int start_fld)
++static int fm_inifld(OBJECT *tree, int start_fld)
+ {
+ 	if(start_fld==0)
+ 		start_fld=find_obj(tree, 0, FMD_FORWARD);
+@@ -113,18 +115,18 @@ int fm_inifld(OBJECT *tree, int start_fld)
+ 
+ 
+ /* ***enhanced form-do main function*** */
+-short wdial_formdo(int dwhndl, OBJECT *tree, short strt_fld, void (*msghndlr)(int msgbf[]), unsigned long msec, void (*tmrhndlr)())
++short wdial_formdo(short dwhndl, OBJECT *tree, short strt_fld, void (*msghndlr)(short msgbf[]), unsigned long msec, void (*tmrhndlr)(void))
+ {
+-	int  edit_obj;
+-	int next_obj;
+-	register int  which;
+-	int events=MU_KEYBD|MU_BUTTON|MU_MESAG;
++	short  edit_obj;
++	short next_obj;
++	register short  which;
++	short events=MU_KEYBD|MU_BUTTON|MU_MESAG;
+ 	int  cont;
+-	int  idx;
++	short  idx;
+ 	short kshift, kcode;
+-	int  mx, my, mb, br;
+-	int  obx, oby, obw, obh;           /* Koordinaten des Dialogs */
+-	int msgbuf[8];
++	short  mx, my, mb, br;
++	short  obx, oby, obw, obh;           /* Koordinaten des Dialogs */
++	short msgbuf[8];
+ 
+ 	if(msec>=0)  events|=MU_TIMER;
+ 
+@@ -139,11 +141,11 @@ short wdial_formdo(int dwhndl, OBJECT *tree, short strt_fld, void (*msghndlr)(in
+ 		{
+ 			edit_obj=next_obj;
+ 			next_obj=0;
+-			objc_edit(tree, edit_obj, 0, idx, ED_INIT, &idx);
++			objc_edit(tree, edit_obj, 0, &idx, ED_INIT);
+ 		}
+ 
+ 		which=evnt_multi(events, 2, 1, 1,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+-		                 msgbuf, (short)msec,(short)(msec>>16), &mx, &my, &mb,
++		                 msgbuf, msec, &mx, &my, &mb,
+ 		                 &kshift, &kcode, &br);
+ 
+ 		if(which & MU_MESAG)
+@@ -154,10 +156,10 @@ short wdial_formdo(int dwhndl, OBJECT *tree, short strt_fld, void (*msghndlr)(in
+ 				{
+ 				case WM_REDRAW:
+ 					wdial_redraw(dwhndl, tree, (GRECT *)(&msgbuf[4]));
+-					if(edit_obj) objc_edit(tree, edit_obj, 0, idx, ED_INIT, &idx);
++					if(edit_obj) objc_edit(tree, edit_obj, 0, &idx, ED_INIT);
+ 					break;
+ 				case WM_TOPPED:
+-					wind_set(dwhndl, WF_TOP, 0L, 0L);
++					wind_set(dwhndl, WF_TOP, 0, 0, 0, 0);
+ 					break;
+ 				case WM_MOVED:
+ 					wind_set(dwhndl, WF_CURRXYWH, msgbuf[4], msgbuf[5],
+@@ -178,7 +180,7 @@ short wdial_formdo(int dwhndl, OBJECT *tree, short strt_fld, void (*msghndlr)(in
+ 		{
+ 			cont=form_keybd(tree, edit_obj, next_obj, kcode, &next_obj, &kcode);
+ 			if(kcode)
+-				objc_edit(tree, edit_obj, kcode, idx, ED_CHAR, &idx);
++				objc_edit(tree, edit_obj, kcode, &idx, ED_CHAR);
+ 		}
+ 
+ 		if(which & MU_BUTTON)
+@@ -193,7 +195,7 @@ short wdial_formdo(int dwhndl, OBJECT *tree, short strt_fld, void (*msghndlr)(in
+ 		if( /*(which & (MU_BUTTON|MU_KEYBD)) &&*/ edit_obj!=0 &&
+ 		                ((!cont) || (next_obj!=0 && next_obj!=edit_obj)) )
+ 		{
+-			objc_edit(tree, edit_obj, 0, idx, ED_END, &idx);
++			objc_edit(tree, edit_obj, 0, &idx, ED_END);
+ 		}
+ 
+ 	}
+@@ -205,14 +207,14 @@ short wdial_formdo(int dwhndl, OBJECT *tree, short strt_fld, void (*msghndlr)(in
+ 
+ #if 0
+ /* ***PopUp darstellen*** */
+-short wdial_popup(OBJECT *ptree, short *pitem, short popupx, short popupy, void (*msghndlr)(int msgbf[]), unsigned long msec, void (*tmrhndlr)())
++short wdial_popup(OBJECT *ptree, short *pitem, short popupx, short popupy, void (*msghndlr)(short msgbf[]), unsigned long msec, void (*tmrhndlr)(void))
+ {
+-	int mpopupret, pwhndl;
+-	int dx, dy, dw, dh;
+-	int newitem=-1, olditem=-1;
+-	int msgbuf[8];
+-	int which;
+-	int mx, my, mb, br;
++	short mpopupret, pwhndl;
++	short dx, dy, dw, dh;
++	short newitem=-1, olditem=-1;
++	short msgbuf[8];
++	short which;
++	short mx, my, mb, br;
+ 
+ 	wind_get(0, WF_WORKXYWH, &dx, &dy, &dw, &dh); /* Desktopgroesse */
+ 
+@@ -239,7 +241,7 @@ short wdial_popup(OBJECT *ptree, short *pitem, short popupx, short popupy, void
+ 	do
+ 	{
+ 		which=evnt_multi(MU_MESAG|MU_BUTTON|MU_TIMER, 1,1,1,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+-		                 msgbuf, (short)msec,(short)(msec>>16), &mx, &my, &mb,
++		                 msgbuf, msec, &mx, &my, &mb,
+ 		                 &dx, &dx, &br);
+ 
+ 		if(which&MU_MESAG)
+@@ -252,7 +254,7 @@ short wdial_popup(OBJECT *ptree, short *pitem, short popupx, short popupy, void
+ 					wdial_redraw(pwhndl, ptree, (GRECT *)(&msgbuf[4]));
+ 					break;
+ 				case WM_TOPPED:
+-					wind_set(pwhndl, WF_TOP, 0L, 0L);
++					wind_set(pwhndl, WF_TOP, 0, 0, 0, 0);
+ 					break;
+ 				}
+ 			}
+@@ -314,11 +316,11 @@ short wdial_popup(OBJECT *ptree, short *pitem, short popupx, short popupy, void
+ 
+ #if 0
+ /* ***PopUp-Knopf behandeln*** */
+-int wdial_popupbutn(OBJECT *buttree, int butnr, OBJECT *ptree, int *pitem)
++int wdial_popupbutn(OBJECT *buttree, int butnr, OBJECT *ptree, short *pitem)
+ {
+-	int oldchoice=*pitem;
+-	int butnx, butny;
+-	int mpopret;
++	short oldchoice=*pitem;
++	short butnx, butny;
++	short mpopret;
+ 
+ 	objc_offset(buttree, butnr, &butnx, &butny);
+ 
+diff --git a/src/arch/atari/windial.h b/src/arch/atari/windial.h
+index 4d7db1b..f9f0406 100644
+--- a/src/arch/atari/windial.h
++++ b/src/arch/atari/windial.h
+@@ -1,12 +1,12 @@
+ /* *** Prototypen der Window-Dialog-Library *** */
+ 
+ #ifndef __AES__
+-#include <aes.h>
++#include <gem.h>
+ #endif
+ 
+ /* Prototypen: */
+ int wdial_init(OBJECT *tree, char *title);
+-void wdial_close(int dwhndl);
+-void wdial_redraw(int dwhndl, OBJECT *tree, GRECT *redrwrect);
+-short wdial_formdo(int dwhndl, OBJECT *tree, short strt_fld, void (*msghndl)(int msgbf[]), unsigned long msec, void (*tmrhndlr)());
+-int wdial_popup(OBJECT *ptree, short *pitem, short popupx, short popupy, void (*msghndlr)(int msgbf[]), unsigned long msec, void (*tmrhndlr)());
++void wdial_close(short dwhndl);
++void wdial_redraw(short dwhndl, OBJECT *tree, GRECT *redrwrect);
++short wdial_formdo(short dwhndl, OBJECT *tree, short strt_fld, void (*msghndl)(short msgbf[]), unsigned long msec, void (*tmrhndlr)(void));
++int wdial_popup(OBJECT *ptree, short *pitem, short popupx, short popupy, void (*msghndlr)(short msgbf[]), unsigned long msec, void (*tmrhndlr)(void));

@@ -816,6 +816,48 @@ provided here for historical reasons.
 </br>
 '
 	),
+	'ceferino' => array(
+		'name' => 'ceferino',
+		'version' => '0.97.8',
+		'upstream' => 'https://web.archive.org/web/20160201062400/http://www.losersjuegos.com.ar/juegos/ceferino',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'Ceferino is fun game similar to "super pang"',
+		'comment' => '
+Ceferino is fun game similar to "super pang"
+</br></br>
+<img src="' . $download_dir . 'ceferino.jpg" width="320" height="240">
+</br>
+'
+	),
+	'afternoonstalker' => array(
+		'name' => 'afternoonstalker',
+		'version' => '1.1.6',
+		'upstream' => 'http://perso.b2b2c.ca/~sarrazip/dev/afternoonstalker.html',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'Afternoon Stalker is a robot-killing video game.',
+		'comment' => '
+Afternoon Stalker is a robot-killing video game.  It is a clone of the 1982 Night Stalker video game for the Intellivision, from Mattel Electronics. 
+</br></br>
+<img src="' . $download_dir . 'afternoonstalker.png" width="320" height="240">
+</br>
+'
+	),
+	'batrachians' => array(
+		'name' => 'batrachians',
+		'version' => '0.1.7',
+		'upstream' => 'http://perso.b2b2c.ca/~sarrazip/dev/batrachians.html',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'category' => 'Games',
+		'summary' => 'Batrachians, a fly-eating frog video game',
+		'comment' => '
+Batrachians is a fly-eating frog video game. It is a clone of the 1982 Frog Bog video game for the Intellivision, from Mattel. 
+</br></br>
+<img src="' . $download_dir . 'batrachians.png" width="320" height="240">
+</br>
+'
+	),
 );
 
 ?>
