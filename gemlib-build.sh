@@ -9,7 +9,7 @@ VERSIONPATCH=-20240425
 
 . ${scriptdir}/functions.sh
 
-MINT_BUILD_DIR="$srcdir/gemlib"
+MINT_BUILD_DIR="$srcdir"
 
 PATCHES=""
 

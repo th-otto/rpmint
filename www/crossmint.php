@@ -955,6 +955,8 @@ foreach ($libpackages as $package)
 	echo '<td>';
 	if (isset($package['comment']))
 		echo $package['comment'];
+	if (isset($package['fastcall']) && $package['fastcall'])
+		echo '<br /><br />Libraries include -mfastcall variants' . "\n";
 	echo '</td>' . "\n";
 	
 	echo '</tr>' . "\n";

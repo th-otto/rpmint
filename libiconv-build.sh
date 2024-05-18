@@ -36,19 +36,30 @@ CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} \
 	--docdir=${TARGET_PREFIX}/share/doc/${PACKAGENAME} \
 	--enable-extra-encodings"
 
-export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
-export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
+WITH_FASTCALL=`if $gcc -mfastcall -E - < /dev/null >/dev/null 2>&1; then echo true; else echo false; fi`
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	: hack_lto_cflags
-	${MAKE} || exit 1
+
+	if $WITH_FASTCALL; then
+		CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall" \
+		LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall" \
+		./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir/mfastcall
+		${MAKE} $JOBS || exit 1
+		${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
+		${MAKE} distclean >/dev/null
+	fi
+
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
+	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
-	${MAKE} clean >/dev/null
+	${MAKE} distclean >/dev/null
+
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}$multilibdir/charset.alias
 	make_bin_archive $CPU
 done

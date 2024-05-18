@@ -49,13 +49,30 @@ ac_cv_func_makecontext=no
 EOF
 }
 
+WITH_FASTCALL=`if $gcc -mfastcall -E - < /dev/null >/dev/null 2>&1; then echo true; else echo false; fi`
+
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	create_config_cache
 
+	if $WITH_FASTCALL; then
+		create_config_cache
+		CC="${TARGET}-gcc" \
+		AR="${ar}" \
+		RANLIB=${ranlib} \
+		NM=${TARGET}-nm \
+		CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall" \
+		LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall" \
+		"$srcdir/configure" ${CONFIGURE_FLAGS} \
+		--libdir='${exec_prefix}/lib'$multilibdir/mfastcall || exit 1
+		${MAKE} V=1 $JOBS || exit 1
+		${MAKE} prefix="${THISPKG_DIR}${sysroot}/usr" install || exit 1
+		${MAKE} distclean
+	fi
+
+	create_config_cache
 	CC="${TARGET}-gcc" \
 	AR="${ar}" \
 	RANLIB=${ranlib} \
@@ -64,11 +81,10 @@ for CPU in ${ALL_CPUS}; do
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	"$srcdir/configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir || exit 1
-
-	# hack_lto_cflags
 	${MAKE} V=1 $JOBS || exit 1
 	${MAKE} prefix="${THISPKG_DIR}${sysroot}/usr" install || exit 1
 	${MAKE} distclean
+
 	make_bin_archive $CPU
 done
 

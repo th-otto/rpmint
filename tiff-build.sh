@@ -58,23 +58,33 @@ CONFIGURE_FLAGS="--host=${TARGET}
 	--disable-shared
 "
 
-export PKG_CONFIG_LIBDIR="$prefix/$TARGET/lib/pkgconfig"
-export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
+STACKSIZE="-Wl,-stack,128k"
+
+WITH_FASTCALL=`if $gcc -mfastcall -E - < /dev/null >/dev/null 2>&1; then echo true; else echo false; fi`
 
 for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR"
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
+
+	if $WITH_FASTCALL; then
+		create_config_cache
+		CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall ${STACKSIZE}" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir/mfastcall
+		${MAKE} $JOBS || exit 1
+	
+		${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
+		
+		${MAKE} distclean >/dev/null
+	fi
+
 	create_config_cache
-	STACKSIZE="-Wl,-stack,128k"
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	: hack_lto_cflags
-	${MAKE} || exit 1
+	${MAKE} $JOBS || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
 	
-	${MAKE} clean >/dev/null
+	${MAKE} distclean >/dev/null
 	rm -f ${THISPKG_DIR}${sysroot}${TARGET_LIBDIR}/charset.alias
 	make_bin_archive $CPU
 done

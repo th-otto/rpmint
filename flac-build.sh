@@ -64,7 +64,7 @@ for CPU in ${ALL_CPUS}; do
 		LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall ${STACKSIZE}" \
 		./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir/mfastcall
 	
-		${MAKE} || exit 1
+		${MAKE} $JOBS || exit 1
 
 		${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME} install
 		
@@ -77,7 +77,7 @@ for CPU in ${ALL_CPUS}; do
 	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
 	: hack_lto_cflags
 
-	${MAKE} || exit 1
+	${MAKE} $JOBS || exit 1
 
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" docdir=${TARGET_PREFIX}/share/doc/packages/${PACKAGENAME} install
 	

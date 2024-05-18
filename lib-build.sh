@@ -66,8 +66,10 @@ for pkg in \
 	libuv \
 	libvorbis \
 	libwebp \
+	libvpx \
 	libxml2 \
 	libxmp \
+	libxmp-lite \
 	libyuv \
 	lua51 \
 	lua53 \

@@ -40,14 +40,27 @@ m68k-amigaos*)
 	;;
 esac
 
+WITH_FASTCALL=`if $gcc -mfastcall -E - < /dev/null >/dev/null 2>&1; then echo true; else echo false; fi`
+
 export prefix=${prefix}
 
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
+
 	export CC=${TARGET}-gcc
 	export AR=${TARGET}-ar
+
+	if $WITH_FASTCALL; then
+		export CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall"
+		export LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall ${STACKSIZE}"
+		export libdir="${prefix}/lib$multilibdir/mfastcall"
+		${MAKE} $JOBS -C lib libzstd.a libzstd.pc || exit 1
+		${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" -C lib install-static || exit 1
+		${MAKE} clean
+	fi
+
 	export CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS"
 	export LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}"
 	export libdir="${prefix}/lib$multilibdir"

@@ -53,18 +53,31 @@ esac
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=${prefix} ${CONFIGURE_FLAGS_AMIGAOS} --disable-shared"
 
+WITH_FASTCALL=`if $gcc -mfastcall -E - < /dev/null >/dev/null 2>&1; then echo true; else echo false; fi`
+
 for CPU in ${ALL_CPUS}; do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
+
+	if $WITH_FASTCALL; then
+		CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall" \
+		LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS -mfastcall ${STACKSIZE}" \
+		"$srcdir/configure" ${CONFIGURE_FLAGS} \
+		--libdir='${exec_prefix}/lib'$multilibdir/mfastcall || exit 1
+		${MAKE} $JOBS || exit 1
+		${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
+		${MAKE} distclean
+	fi
+
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"$srcdir/configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir || exit 1
-
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 	${MAKE} distclean
+
 	make_bin_archive $CPU
 done
 
