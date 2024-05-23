@@ -364,23 +364,36 @@ index b824e0a0ca1..feea638d721
  	for flag in $(EXTRA_HOST_FLAGS) AM_CFLAGS="-DNO_ASM"; do \
  	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
 diff --git a/config-ml.in b/config-ml.in
-index 47f153350e4..a61d1f41b3d 100644
+index 47f153350e4..410f3848e3c 100644
 --- a/config-ml.in
 +++ b/config-ml.in
-@@ -346,6 +346,23 @@ m68*-*-*)
+@@ -346,6 +346,36 @@ m68*-*-*)
  	    esac
  	  done
  	fi
 +	case "${host}" in
 +	  *-*-mint*)
++            # mshort variants are only generated for libgcc
++            # mfastcall variants are only generated for libgcc & libstdc++
 +	    case "${srcdir}" in
 +	      */libgcc ) : ;;
++	      */libstdc++-v3)
++	        old_multidirs="${multidirs}"
++	        multidirs=""
++	        for x in ${old_multidirs}; do
++		  case "$x" in
++		    *mshort* ) : ;;
++		    *) multidirs="${multidirs} ${x}" ;;
++		  esac
++		done
++		;;
 +	      *)
 +	        old_multidirs="${multidirs}"
 +	        multidirs=""
 +	        for x in ${old_multidirs}; do
 +		  case "$x" in
-+		    *mshort ) : ;;
++		    *mshort* ) : ;;
++		    *mfastcall* ) : ;;
 +		    *) multidirs="${multidirs} ${x}" ;;
 +		  esac
 +		done
@@ -579,13 +592,15 @@ index 12377499295..27962da2ef1 100644
    *-mingw*)
    # MinGW can't be handled as Cygwin above since it does not use newlib.
 diff --git a/fixincludes/configure b/fixincludes/configure
-index e4b03fd588c..d2136281b33 100755
+index e4b03fd588c..6c7149b4d83 100755
 --- a/fixincludes/configure
 +++ b/fixincludes/configure
-@@ -4755,6 +4755,7 @@ else
+@@ -4754,7 +4754,8 @@ else
+   case $host in
  	i?86-*-msdosdjgpp* | \
  	i?86-*-mingw32* | \
- 	x86_64-*-mingw32* | \
+-	x86_64-*-mingw32* | \
++	x86_64-*-mingw* | \
 +	*-*-msys* | \
  	*-*-beos* | \
          *-*-*vms*)
@@ -609,17 +624,32 @@ index e4b03fd588c..d2136281b33 100755
       *)
          gcc_cv_func_mmap_anon=yes;;
 diff --git a/fixincludes/configure.ac b/fixincludes/configure.ac
-index 190f5382874..76f1d0d6a62 100644
+index 190f5382874..4bcea1aee43 100644
 --- a/fixincludes/configure.ac
 +++ b/fixincludes/configure.ac
-@@ -53,6 +53,7 @@ fi],
+@@ -52,7 +52,8 @@ fi],
+ [case $host in
  	i?86-*-msdosdjgpp* | \
  	i?86-*-mingw32* | \
- 	x86_64-*-mingw32* | \
+-	x86_64-*-mingw32* | \
++	x86_64-*-mingw* | \
 +	*-*-msys* | \
  	*-*-beos* | \
          *-*-*vms*)
  		TARGET=twoprocess
+diff --git a/fixincludes/mkfixinc.sh b/fixincludes/mkfixinc.sh
+index 0f9648608e9..58604ca1c6d 100755
+--- a/fixincludes/mkfixinc.sh
++++ b/fixincludes/mkfixinc.sh
+@@ -13,7 +13,7 @@ target=fixinc.sh
+ case $machine in
+     i?86-*-cygwin* | \
+     i?86-*-mingw32* | \
+-    x86_64-*-mingw32* | \
++    x86_64-*-mingw* | \
+     powerpc-*-eabisim* | \
+     powerpc-*-eabi*    | \
+     powerpc-*-rtems*   | \
 diff --git a/gcc/Makefile.in b/gcc/Makefile.in
 index f675e073ecc..7307e8f3ffc 100644
 --- a/gcc/Makefile.in
@@ -1089,7 +1119,7 @@ index eb0489b4a50..f18c1bfde24 100644
  	  then \
  	    $(RM) $(DESTDIR)$(bindir)/vxaddr2line$(exeext); \
 diff --git a/gcc/ada/gcc-interface/Makefile.in b/gcc/ada/gcc-interface/Makefile.in
-index 8110261b6dd..6911f2ae091 100644
+index 8110261b6dd..1de639360b7 100644
 --- a/gcc/ada/gcc-interface/Makefile.in
 +++ b/gcc/ada/gcc-interface/Makefile.in
 @@ -118,7 +118,7 @@ GNATLIBCFLAGS = -g -O2
@@ -1138,6 +1168,15 @@ index 8110261b6dd..6911f2ae091 100644
  
  # ???: handle more multilib targets
  
+@@ -1767,7 +1776,7 @@ ifeq ($(strip $(filter-out %djgpp,$(target_os))),)
+ endif
+ 
+ # Cygwin/Mingw32
+-ifeq ($(strip $(filter-out cygwin% mingw32% pe,$(target_os))),)
++ifeq ($(strip $(filter-out cygwin% mingw% pe,$(target_os))),)
+   # Cygwin provides a full Posix environment, and so we use the default
+   # versions of s-memory and g-socthi rather than the Windows-specific
+   # MinGW versions.  Ideally we would use all the default versions for
 @@ -2091,6 +2100,33 @@ ifeq ($(strip $(filter-out m68k% linux%,$(target_cpu) $(target_os))),)
    LIBRARY_VERSION := $(LIB_VERSION)
  endif
@@ -2432,19 +2471,6 @@ index 35cd7430bb8..574990d25d7 100644
  
  #define ATTRIBUTE_UNUSED __attribute__((unused))
  
-diff --git a/gcc/c-family/c-cppbuiltin.c b/gcc/c-family/c-cppbuiltin.c
-index 041cc64699f..c5968120e50 100644
---- a/gcc/c-family/c-cppbuiltin.c
-+++ b/gcc/c-family/c-cppbuiltin.c
-@@ -1362,6 +1362,8 @@ c_cpp_builtins (cpp_reader *pfile)
-     cpp_define (pfile, "__GCC_HAVE_DWARF2_CFI_ASM");
- #endif
- 
-+  builtin_define_with_int_value("__GCC_TARGET_STRICT_ALIGNMENT__", TARGET_STRICT_ALIGNMENT);
-+
-   /* Make the choice of ObjC runtime visible to source code.  */
-   if (c_dialect_objc () && flag_next_runtime)
-     cpp_define (pfile, "__NEXT_RUNTIME__");
 diff --git a/gcc/c/Make-lang.in b/gcc/c/Make-lang.in
 index cfd8cd2b169..8a302cfb731 100644
 --- a/gcc/c/Make-lang.in
@@ -2856,9 +2882,18 @@ index 5f58d24430c..de1a832c79a 100644
  # include <emmintrin.h>
  
 diff --git a/gcc/config/m68k/linux.h b/gcc/config/m68k/linux.h
-index c6e005604d4..a0d375de1dd 100644
+index c6e005604d4..d855aeb6971 100644
 --- a/gcc/config/m68k/linux.h
 +++ b/gcc/config/m68k/linux.h
+@@ -171,7 +171,7 @@ along with GCC; see the file COPYING3.  If not see
+ 
+ #undef FUNCTION_VALUE
+ #define FUNCTION_VALUE(VALTYPE, FUNC)					\
+-  m68k_function_value (VALTYPE, FUNC)
++  m68k_function_value (VALTYPE, FUNC, true)
+ 
+ /* Define how to find the value returned by a library function
+    assuming the value has mode MODE.
 @@ -223,8 +223,6 @@ along with GCC; see the file COPYING3.  If not see
       : "%d0", "%d2", "%d3");						\
  }
@@ -2874,11 +2909,46 @@ index c6e005604d4..a0d375de1dd 100644
  #undef TARGET_INIT_LIBFUNCS
 -#define TARGET_INIT_LIBFUNCS  m68k_init_sync_libfuncs
 +#define TARGET_INIT_LIBFUNCS  m68k_init_libfuncs
+diff --git a/gcc/config/m68k/m68k-protos.h b/gcc/config/m68k/m68k-protos.h
+index 106518423a2..474578c99dc 100644
+--- a/gcc/config/m68k/m68k-protos.h
++++ b/gcc/config/m68k/m68k-protos.h
+@@ -63,7 +63,7 @@ extern rtx m68k_legitimize_tls_address (rtx);
+ extern bool m68k_tls_reference_p (rtx, bool);
+ extern int valid_dbcc_comparison_p_2 (rtx, machine_mode);
+ extern rtx m68k_libcall_value (machine_mode);
+-extern rtx m68k_function_value (const_tree, const_tree);
++extern rtx m68k_function_value (const_tree, const_tree, bool);
+ extern int emit_move_sequence (rtx *, machine_mode, rtx);
+ extern bool m68k_movem_pattern_p (rtx, rtx, HOST_WIDE_INT, bool);
+ extern const char *m68k_output_movem (rtx *, rtx, HOST_WIDE_INT, bool);
+@@ -100,3 +100,13 @@ extern void init_68881_table (void);
+ extern rtx m68k_legitimize_call_address (rtx);
+ extern rtx m68k_legitimize_sibcall_address (rtx);
+ extern int m68k_hard_regno_rename_ok(unsigned int, unsigned int);
++
++#ifdef RTX_CODE
++#ifdef TREE_CODE
++void m68k_init_cumulative_args (CUMULATIVE_ARGS *, tree, rtx, tree, int);
++#endif
++#endif
++void m68k_order_regs_for_local_alloc(void);
++void m68k_call_abi_override (const_tree);
++enum calling_abi m68k_function_type_abi (const_tree);
++enum calling_abi m68k_cfun_abi (void);
 diff --git a/gcc/config/m68k/m68k.c b/gcc/config/m68k/m68k.c
-index 68504b84abb..163ef6a83b3 100644
+index 68504b84abb..1cb950553b8 100644
 --- a/gcc/config/m68k/m68k.c
 +++ b/gcc/config/m68k/m68k.c
-@@ -61,6 +61,7 @@ along with GCC; see the file COPYING3.  If not see
+@@ -45,6 +45,7 @@ along with GCC; see the file COPYING3.  If not see
+ #include "emit-rtl.h"
+ #include "stmt.h"
+ #include "expr.h"
++#include "toplev.h"
+ #include "reload.h"
+ #include "tm_p.h"
+ #include "target.h"
+@@ -61,6 +62,7 @@ along with GCC; see the file COPYING3.  If not see
  #include "optabs.h"
  #include "builtins.h"
  #include "rtl-iter.h"
@@ -2886,7 +2956,7 @@ index 68504b84abb..163ef6a83b3 100644
  
  /* This file should be included last.  */
  #include "target-def.h"
-@@ -77,6 +78,11 @@ enum reg_class regno_reg_class[] =
+@@ -77,6 +79,11 @@ enum reg_class regno_reg_class[] =
  };
  
  
@@ -2898,8 +2968,32 @@ index 68504b84abb..163ef6a83b3 100644
  /* The minimum number of integer registers that we want to save with the
     movem instruction.  Using two movel instructions instead of a single
     moveml is about 15% faster for the 68020 and 68030 at no expense in
-@@ -182,11 +188,12 @@ static rtx m68k_function_arg (cumulative_args_t, machine_mode,
- 			      const_tree, bool);
+@@ -151,6 +158,7 @@ static void m68k_sched_dfa_post_advance_cycle (void);
+ static int m68k_sched_first_cycle_multipass_dfa_lookahead (void);
+ 
+ static bool m68k_can_eliminate (const int, const int);
++static void m68k_set_current_function (tree);
+ static void m68k_conditional_register_usage (void);
+ static bool m68k_legitimate_address_p (machine_mode, rtx, bool);
+ static void m68k_option_override (void);
+@@ -163,6 +171,8 @@ static rtx m68k_struct_value_rtx (tree, int);
+ static tree m68k_handle_fndecl_attribute (tree *node, tree name,
+ 					  tree args, int flags,
+ 					  bool *no_add_attrs);
++static tree m68k_handle_type_attribute (tree *, tree, tree, int, bool *);
++static int m68k_comp_type_attributes (const_tree, const_tree);
+ static void m68k_compute_frame_layout (void);
+ static bool m68k_save_reg (unsigned int regno, bool interrupt_handler);
+ static bool m68k_ok_for_sibcall_p (tree, tree);
+@@ -176,17 +186,15 @@ static void m68k_output_dwarf_dtprel (FILE *, int, rtx) ATTRIBUTE_UNUSED;
+ static void m68k_trampoline_init (rtx, tree, rtx);
+ static int m68k_return_pops_args (tree, tree, int);
+ static rtx m68k_delegitimize_address (rtx);
+-static void m68k_function_arg_advance (cumulative_args_t, machine_mode,
+-				       const_tree, bool);
+-static rtx m68k_function_arg (cumulative_args_t, machine_mode,
+-			      const_tree, bool);
++static void m68k_maybe_switch_abi (void);
  static bool m68k_cannot_force_const_mem (machine_mode mode, rtx x);
  static bool m68k_output_addr_const_extra (FILE *, rtx);
 -static void m68k_init_sync_libfuncs (void) ATTRIBUTE_UNUSED;
@@ -2912,7 +3006,12 @@ index 68504b84abb..163ef6a83b3 100644
  
  /* Initialize the GCC target structure.  */
  
-@@ -225,6 +232,8 @@ static machine_mode m68k_promote_function_mode (const_tree, machine_mode,
+@@ -221,10 +229,12 @@ static machine_mode m68k_promote_function_mode (const_tree, machine_mode,
+ #undef TARGET_ASM_OUTPUT_MI_THUNK
+ #define TARGET_ASM_OUTPUT_MI_THUNK m68k_output_mi_thunk
+ #undef TARGET_ASM_CAN_OUTPUT_MI_THUNK
+-#define TARGET_ASM_CAN_OUTPUT_MI_THUNK hook_bool_const_tree_hwi_hwi_const_tree_true
++#define TARGET_ASM_CAN_OUTPUT_MI_THUNK m68k_can_output_mi_thunk
  
  #undef TARGET_ASM_FILE_START_APP_OFF
  #define TARGET_ASM_FILE_START_APP_OFF true
@@ -2921,7 +3020,101 @@ index 68504b84abb..163ef6a83b3 100644
  
  #undef TARGET_LEGITIMIZE_ADDRESS
  #define TARGET_LEGITIMIZE_ADDRESS m68k_legitimize_address
-@@ -635,6 +644,27 @@ m68k_option_override (void)
+@@ -303,6 +313,12 @@ static machine_mode m68k_promote_function_mode (const_tree, machine_mode,
+ #undef TARGET_CAN_ELIMINATE
+ #define TARGET_CAN_ELIMINATE m68k_can_eliminate
+ 
++#undef TARGET_SET_CURRENT_FUNCTION
++#define TARGET_SET_CURRENT_FUNCTION m68k_set_current_function
++
++#undef TARGET_EXPAND_TO_RTL_HOOK
++#define TARGET_EXPAND_TO_RTL_HOOK m68k_maybe_switch_abi
++
+ #undef TARGET_CONDITIONAL_REGISTER_USAGE
+ #define TARGET_CONDITIONAL_REGISTER_USAGE m68k_conditional_register_usage
+ 
+@@ -337,6 +353,9 @@ static machine_mode m68k_promote_function_mode (const_tree, machine_mode,
+ #undef TARGET_PROMOTE_FUNCTION_MODE
+ #define TARGET_PROMOTE_FUNCTION_MODE m68k_promote_function_mode
+ 
++#undef TARGET_STATIC_CHAIN
++#define TARGET_STATIC_CHAIN m68k_static_chain
++
+ static const struct attribute_spec m68k_attribute_table[] =
+ {
+   /* { name, min_len, max_len, decl_req, type_req, fn_type_req, handler,
+@@ -347,10 +366,20 @@ static const struct attribute_spec m68k_attribute_table[] =
+     m68k_handle_fndecl_attribute, false },
+   { "interrupt_thread", 0, 0, true,  false, false,
+     m68k_handle_fndecl_attribute, false },
++
++ /* cdecl attribute specifies to pass arguments on the stack */
++  { "cdecl",             0, 0, false, true,  true,  m68k_handle_type_attribute, false },
++  /* Regparm attribute specifies how many integer arguments are to be
++     passed in registers.  */
++  { "regparm",           0, 1, false, true,  true,  m68k_handle_type_attribute, false },
++  /* Fastcall attribute says callee is responsible for popping arguments
++   if they are not variable.  */
++  { "fastcall",          0, 0, false, true,  true,  m68k_handle_type_attribute, false },
+   { NULL,                0, 0, false, false, false, NULL, false }
+ };
+ 
+-struct gcc_target targetm = TARGET_INITIALIZER;
++#undef TARGET_COMP_TYPE_ATTRIBUTES
++#define TARGET_COMP_TYPE_ATTRIBUTES m68k_comp_type_attributes
+ 
+ /* Base flags for 68k ISAs.  */
+ #define FL_FOR_isa_00    FL_ISA_68000
+@@ -459,6 +488,9 @@ unsigned int m68k_cpu_flags;
+ /* The set of FL_* flags that apply to the processor to be tuned for.  */
+ unsigned int m68k_tune_flags;
+ 
++/* The abi used by target.  */
++enum calling_abi m68k_abi;
++
+ /* Asm templates for calling or jumping to an arbitrary symbolic address,
+    or NULL if such calls or jumps are not supported.  The address is held
+    in operand 0.  */
+@@ -469,10 +501,27 @@ const char *m68k_symbolic_jump;
+ enum M68K_SYMBOLIC_CALL m68k_symbolic_call_var;
+ 
+ 
+-/* Implement TARGET_OPTION_OVERRIDE.  */
++/* Clear stack slot assignments remembered from previous functions.
++   This is called from INIT_EXPANDERS once before RTL is emitted for each
++   function.  */
++
++static struct machine_function *
++m68k_init_machine_status (void)
++{
++  struct machine_function *machine;
++
++  machine = ggc_cleared_alloc<machine_function> ();
++  machine->call_abi = m68k_abi;
++
++  return machine;
++}
++
++/* Override various settings based on options.  If MAIN_ARGS_P, the
++   options are from the command line, otherwise they are from
++   attributes.  */
+ 
+ static void
+-m68k_option_override (void)
++m68k_option_override_internal (bool main_args_p)
+ {
+   const struct m68k_target_selection *entry;
+   unsigned long target_mask;
+@@ -518,6 +567,8 @@ m68k_option_override (void)
+ 
+   m68k_cpu_flags = entry->flags;
+ 
++  m68k_abi = TARGET_FASTCALL ? FASTCALL_ABI : STD_ABI;
++
+   /* Use the architecture setting to derive default values for
+      certain flags.  */
+   target_mask = 0;
+@@ -635,6 +686,27 @@ m68k_option_override (void)
        gcc_unreachable ();
      }
  
@@ -2949,10 +3142,17 @@ index 68504b84abb..163ef6a83b3 100644
  #ifndef ASM_OUTPUT_ALIGN_WITH_NOP
    if (align_labels > 2)
      {
-@@ -685,6 +715,14 @@ m68k_option_override (void)
+@@ -685,8 +757,32 @@ m68k_option_override (void)
        else
  	m68k_sched_mac = MAC_NO;
      }
++
++  init_machine_status = m68k_init_machine_status;
++
++  /* Save the initial options in case the user does function specific options */
++  if (main_args_p)
++    target_option_default_node = target_option_current_node
++      = build_target_option_node (&global_options);
 +
 +  /*
 +   * disable -fcombine-stack-adjustments for coldfire/mshort combination,
@@ -2961,10 +3161,304 @@ index 68504b84abb..163ef6a83b3 100644
 +   */
 +  if (PREFERRED_STACK_BOUNDARY > 16 && INT_TYPE_SIZE <= 16 && (write_symbols & DWARF2_DEBUG))
 +    flag_combine_stack_adjustments = 0;
++}
++
++/* Implement the TARGET_OPTION_OVERRIDE hook.  */
++
++static void
++m68k_option_override (void)
++{
++  m68k_option_override_internal (true);
  }
  
++
  /* Implement TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE.  */
-@@ -995,6 +1033,8 @@ m68k_set_frame_related (rtx_insn *insn)
+ 
+ static void
+@@ -783,6 +879,282 @@ m68k_handle_fndecl_attribute (tree *node, tree name,
+   return NULL_TREE;
+ }
+ 
++/* Handle a "regparm" or "cdecl" attribute;
++   arguments as in struct attribute_spec.handler.  */
++
++static void
++m68k_validate_mutually_exclusive_attribute (const char *attr1, const char *attr2, tree *node, tree name ATTRIBUTE_UNUSED)
++{
++  if (lookup_attribute (attr2, TYPE_ATTRIBUTES(*node)))
++    error ("%s and %s attributes are mutually exclusive", attr1, attr2);
++}
++
++static tree
++m68k_handle_type_attribute (tree *node, tree name, tree args ATTRIBUTE_UNUSED,
++        		    int flags ATTRIBUTE_UNUSED, bool *no_add_attrs)
++{
++  if (TREE_CODE (*node) == FUNCTION_TYPE ||
++      TREE_CODE (*node) == METHOD_TYPE ||
++      TREE_CODE (*node) == FIELD_DECL ||
++      TREE_CODE (*node) == TYPE_DECL)
++    {
++      if (is_attribute_p ("cdecl", name))
++        {
++          m68k_validate_mutually_exclusive_attribute ("cdecl", "fastcall", node, name);
++          m68k_validate_mutually_exclusive_attribute ("cdecl", "regparm", node, name);
++        }
++      else if (is_attribute_p ("fastcall", name))
++        {
++          m68k_validate_mutually_exclusive_attribute ("fastcall", "cdecl", node, name);
++          m68k_validate_mutually_exclusive_attribute ("fastcall", "regparm", node, name);
++        }
++      else if (is_attribute_p ("regparm", name))
++        {
++          m68k_validate_mutually_exclusive_attribute ("regparm", "cdecl", node, name);
++          m68k_validate_mutually_exclusive_attribute ("regparm", "fastcall", node, name);
++        }
++    }
++  else
++    {
++      warning (OPT_Wattributes, "%qE attribute only applies to functions",
++               name);
++      *no_add_attrs = true;
++    }
++
++  return NULL_TREE;
++}
++
++/* Return zero if the attributes on TYPE1 and TYPE2 are incompatible,
++   one if they are compatible, and two if they are nearly compatible
++   (which causes a warning to be generated). */
++
++static int
++m68k_comp_exclusive_type_attributes(const char *name1, const char *name2, const_tree type1, const_tree type2)
++{
++	return (!! lookup_attribute (name1, TYPE_ATTRIBUTES (type1)) !=
++            !! lookup_attribute (name1, TYPE_ATTRIBUTES (type2))
++         || !! lookup_attribute (name2, TYPE_ATTRIBUTES (type1)) !=
++            !! lookup_attribute (name2, TYPE_ATTRIBUTES (type2)));
++}
++
++static int
++m68k_comp_type_attributes (const_tree type1, const_tree type2)
++{
++  /* Functions or methods are incompatible if they specify mutually
++     exclusive ways of passing arguments.  */
++  if (TREE_CODE (type1) == FUNCTION_TYPE || TREE_CODE (type1) == METHOD_TYPE)
++    {
++      tree arg1, arg2;
++      if (m68k_comp_exclusive_type_attributes ("cdecl", "regparm", type1, type2)
++	   || m68k_comp_exclusive_type_attributes ("cdecl", "fastcall", type1, type2)
++	   || m68k_comp_exclusive_type_attributes ("regparm", "fastcall", type1, type2))
++        return 0; /* 'regparm' and 'cdecl' are mutually exclusive.  */
++
++      arg1 = lookup_attribute ("regparm", TYPE_ATTRIBUTES (type1));
++      arg2 = lookup_attribute ("regparm", TYPE_ATTRIBUTES (type2));
++      if (arg1 && arg2)
++        {
++          int num1 = 0, num2 = 0;
++          if (TREE_VALUE (arg1) && TREE_CODE (TREE_VALUE (arg1)) == TREE_LIST)
++            {
++              tree numofregs = TREE_VALUE (TREE_VALUE (arg1));
++              if (numofregs)
++        	num1 = TREE_INT_CST_LOW (numofregs);
++            }
++          if (TREE_VALUE (arg2) && TREE_CODE (TREE_VALUE (arg2)) == TREE_LIST)
++            {
++              tree numofregs = TREE_VALUE (TREE_VALUE (arg2));
++              if (numofregs)
++        	num2 = TREE_INT_CST_LOW (numofregs);
++            }
++          if (num1 != num2)
++            return 0; /* Different numbers, or no number in one type.  */
++        }
++    }
++  return 1;
++}
++
++
++/* Implementation of call abi switching target hook. Specific to FNDECL
++   the specific call register sets are set.  See also
++   ix86_conditional_register_usage for more details.  */
++void
++m68k_call_abi_override (const_tree fndecl)
++{
++  if (fndecl == NULL_TREE)
++    cfun->machine->call_abi = m68k_abi;
++  else
++    cfun->machine->call_abi = m68k_function_type_abi (TREE_TYPE (fndecl));
++}
++
++static enum calling_abi
++m68k_function_abi (const_tree fndecl)
++{
++  if (! fndecl)
++    return m68k_abi;
++  return m68k_function_type_abi (TREE_TYPE (fndecl));
++}
++
++/* Returns value STD_ABI, FASTCALL_ABI dependent on cfun, specifying the
++   call abi used.  */
++enum calling_abi
++m68k_cfun_abi (void)
++{
++  if (! cfun)
++    return m68k_abi;
++  return cfun->machine->call_abi;
++}
++
++/* Returns value STD_ABI, FASTCALL_ABI dependent on fntype, specifying the
++   call abi used.  */
++enum calling_abi
++m68k_function_type_abi (const_tree fntype)
++{
++  if (fntype != NULL)
++    {
++      enum calling_abi abi = m68k_abi;
++      if (abi == STD_ABI)
++	{
++	  if (lookup_attribute ("fastcall", TYPE_ATTRIBUTES (fntype)))
++	    abi = FASTCALL_ABI;
++	}
++      else if (lookup_attribute ("cdecl", TYPE_ATTRIBUTES (fntype)))
++	abi = STD_ABI;
++      return abi;
++    }
++  return m68k_abi;
++}
++
++/* STD and FASTCALL ABI have different set of call used registers.  Avoid expensive
++   re-initialization of init_regs each time we switch function context since
++   this is needed only during RTL expansion.  */
++static void
++m68k_maybe_switch_abi (void)
++{
++  if (call_used_regs[D2_REG] == (cfun->machine->call_abi == STD_ABI))
++    reinit_regs ();
++}
++
++/* Initialize a variable CUM of type CUMULATIVE_ARGS
++   for a call to a function whose data type is FNTYPE.
++   For a library call, FNTYPE is 0.  */
++
++void
++m68k_init_cumulative_args (CUMULATIVE_ARGS *cum,  /* Argument info to initialize */
++		      tree fntype,	/* tree ptr for function decl */
++		      rtx libname,	/* SYMBOL_REF of library name or 0 */
++		      tree fndecl,
++		      int caller ATTRIBUTE_UNUSED)
++{
++  cum->last_arg_reg = -1;
++  cum->last_arg_len = 0;
++  CLEAR_HARD_REG_SET(cum->regs_already_used);
++  
++  if (libname)
++    {
++      cum->call_abi = m68k_abi;
++    }
++  else if (fndecl)
++    {
++      cum->call_abi = m68k_function_abi (fndecl);
++    }
++  else
++    {
++      cum->call_abi = m68k_function_type_abi (fntype);
++    }
++
++#if ! defined (PCC_STATIC_STRUCT_RETURN) && defined (M68K_STRUCT_VALUE_REGNUM)
++  /* If return value is a structure, and we pass the buffer address in a
++     register, we can't use this register for our own purposes.
++     FIXME: Something similar would be useful for static chain.  */
++  if (fntype && aggregate_value_p (TREE_TYPE (fntype), fntype))
++    SET_HARD_REG_BIT(cum->regs_already_used, M68K_STRUCT_VALUE_REGNUM);
++#endif
++}
++
++/* Define where to put the arguments to a function.
++   Value is zero to push the argument on the stack,
++   or a hard register in which to store the argument.
++
++   MODE is the argument's machine mode.
++   TYPE is the data type of the argument (as a tree).
++    This is null for libcalls where that information may
++    not be available.
++   CUM is a variable of type CUMULATIVE_ARGS which gives info about
++    the preceding args and about the function being called.  */
++
++static rtx m68k_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
++                              const_tree type, bool named)
++{
++  CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
++
++  if (cum->call_abi == FASTCALL_ABI)
++    {
++      int regbegin = -1, regend, len;
++
++      /* FIXME: The last condition below is a workaround for a bug.  */
++      if (!TARGET_68881 && FLOAT_MODE_P (mode) && GET_MODE_UNIT_SIZE (mode) <= 4 &&
++          (GET_MODE_CLASS (mode) != MODE_COMPLEX_FLOAT || mode == SCmode))
++        {
++            regbegin = D0_REG; /* Dx */
++            regend = regbegin + M68K_FASTCALL_DATA_PARM;
++            len = (GET_MODE_SIZE (mode) + (UNITS_PER_WORD - 1)) / UNITS_PER_WORD;
++        }
++      else if (TARGET_68881 && FLOAT_MODE_P (mode) &&
++          GET_MODE_UNIT_SIZE (mode) <= 12 &&
++          (GET_MODE_CLASS (mode) != MODE_COMPLEX_FLOAT || mode == SCmode))
++        {
++          regbegin = FP0_REG; /* FPx */
++          regend = regbegin + M68K_FASTCALL_DATA_PARM;
++          len = GET_MODE_NUNITS (mode);
++        }
++      /* FIXME: Two last conditions below are workarounds for bugs.  */
++      else if (INTEGRAL_MODE_P (mode) && mode != CQImode && mode != CHImode)
++        {
++          len = (GET_MODE_SIZE (mode) + (UNITS_PER_WORD - 1)) / UNITS_PER_WORD;
++          if (len == 1)
++            {
++              if (type && POINTER_TYPE_P (type))  /* THIS */
++                {
++                  regbegin = A0_REG; /* Ax */
++                  regend = regbegin + M68K_FASTCALL_ADDR_PARM;
++                }
++              else
++                {
++                  regbegin = D0_REG; /* Dx */
++                  regend = regbegin + M68K_FASTCALL_DATA_PARM;
++                }
++            }
++        }
++
++      if (regbegin != -1)
++        {
++          int reg;
++          for (reg = regbegin; reg < regend; reg++)
++            {
++              if (!TEST_HARD_REG_BIT(cum->regs_already_used, reg) &&
++                  (reg + len <= regend))
++                {
++                  cum->last_arg_reg = reg;
++                  cum->last_arg_len = len;
++                  break;
++                }
++             }
++         }
++        
++      if (!named)
++        SET_HARD_REG_SET(cum->regs_already_used);
++
++      if (cum->last_arg_reg != -1)
++        {
++          return gen_rtx_REG (mode, cum->last_arg_reg);
++        }
++    }
++  return NULL_RTX;
++}
++
++
++
+ static void
+ m68k_compute_frame_layout (void)
+ {
+@@ -995,6 +1367,8 @@ m68k_set_frame_related (rtx_insn *insn)
  
  /* Emit RTL for the "prologue" define_expand.  */
  
@@ -2973,7 +3467,7 @@ index 68504b84abb..163ef6a83b3 100644
  void
  m68k_expand_prologue (void)
  {
-@@ -1009,7 +1049,7 @@ m68k_expand_prologue (void)
+@@ -1009,7 +1383,7 @@ m68k_expand_prologue (void)
  
    /* If the stack limit is a symbol, we can check it here,
       before actually allocating the space.  */
@@ -2982,7 +3476,7 @@ index 68504b84abb..163ef6a83b3 100644
        && GET_CODE (stack_limit_rtx) == SYMBOL_REF)
      {
        limit = plus_constant (Pmode, stack_limit_rtx, current_frame.size + 4);
-@@ -1099,9 +1139,40 @@ m68k_expand_prologue (void)
+@@ -1099,9 +1473,40 @@ m68k_expand_prologue (void)
  	}
      }
  
@@ -3024,7 +3518,147 @@ index 68504b84abb..163ef6a83b3 100644
      {
        if (REG_P (stack_limit_rtx))
          emit_insn (gen_ctrapsi4 (gen_rtx_LTU (VOIDmode, stack_pointer_rtx,
-@@ -1781,7 +1852,7 @@ output_btst (rtx *operands, rtx countop, rtx dataop, rtx_insn *insn, int signpos
+@@ -1398,12 +1803,25 @@ static bool
+ m68k_ok_for_sibcall_p (tree decl, tree exp)
+ {
+   enum m68k_function_kind kind;
++  tree type;
+   
+   /* We cannot use sibcalls for nested functions because we use the
+      static chain register for indirect calls.  */
+   if (CALL_EXPR_STATIC_CHAIN (exp))
+     return false;
+ 
++  if (decl)
++    {
++      type = TREE_TYPE (decl);
++    }
++  else
++    {
++      /* We're looking at the CALL_EXPR, we need the type of the function.  */
++      type = CALL_EXPR_FN (exp);		/* pointer expression */
++      type = TREE_TYPE (type);			/* pointer type */
++      type = TREE_TYPE (type);			/* function type */
++    }
++
+   if (!VOID_TYPE_P (TREE_TYPE (DECL_RESULT (cfun->decl))))
+     {
+       /* Check that the return value locations are the same.  For
+@@ -1424,6 +1842,18 @@ m68k_ok_for_sibcall_p (tree decl, tree exp)
+ 	return false;
+     }
+ 
++  /* The FASTCALL ABI has more call-clobbered registers;
++      disallow sibcalls from STD to FASTCALL.  */
++  if (cfun->machine->call_abi == STD_ABI
++      && m68k_function_type_abi (type) == FASTCALL_ABI)
++      return false;
++
++  /* FIXME: currently does not work at all for FASTCALL, because the
++     A2 register for the call will be restored in the epilogue
++     before being used */
++  if (cfun->machine->call_abi == FASTCALL_ABI || m68k_function_type_abi (type) != cfun->machine->call_abi)
++      return false;
++
+   kind = m68k_get_function_kind (current_function_decl);
+   if (kind == m68k_fk_normal_function)
+     /* We can always sibcall from a normal function, because it's
+@@ -1438,26 +1868,19 @@ m68k_ok_for_sibcall_p (tree decl, tree exp)
+   return false;
+ }
+ 
+-/* On the m68k all args are always pushed.  */
+-
+-static rtx
+-m68k_function_arg (cumulative_args_t cum ATTRIBUTE_UNUSED,
+-		   machine_mode mode ATTRIBUTE_UNUSED,
+-		   const_tree type ATTRIBUTE_UNUSED,
+-		   bool named ATTRIBUTE_UNUSED)
+-{
+-  return NULL_RTX;
+-}
+-
+ static void
+-m68k_function_arg_advance (cumulative_args_t cum_v, machine_mode mode,
+-			   const_tree type, bool named ATTRIBUTE_UNUSED)
++m68k_function_arg_advance (cumulative_args_t cum_v, machine_mode mode ATTRIBUTE_UNUSED,
++			   const_tree type ATTRIBUTE_UNUSED, bool named ATTRIBUTE_UNUSED)
+ {
+   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
+ 
+-  *cum += (mode != BLKmode
+-	   ? (GET_MODE_SIZE (mode) + 3) & ~3
+-	   : (int_size_in_bytes (type) + 3) & ~3);
++  if (cum->last_arg_reg != -1)
++    {
++      int count;
++      for (count = 0; count < cum->last_arg_len; count++)
++	SET_HARD_REG_BIT(cum->regs_already_used, cum->last_arg_reg + count);
++      cum->last_arg_reg = -1;
++    }
+ }
+ 
+ /* Convert X to a legitimate function call memory reference and return the
+@@ -1481,10 +1904,58 @@ m68k_legitimize_sibcall_address (rtx x)
+   if (sibcall_operand (XEXP (x, 0), VOIDmode))
+     return x;
+ 
++  if (m68k_abi == FASTCALL_ABI)
++  {
++    static bool issued_error;
++    if (!issued_error)
++      {
++	issued_error = true;
++	error ("m68k_legitimize_sibcall_address not supported with -mfastcall");
++      }
++  }
+   emit_move_insn (gen_rtx_REG (Pmode, STATIC_CHAIN_REGNUM), XEXP (x, 0));
+   return replace_equiv_address (x, gen_rtx_REG (Pmode, STATIC_CHAIN_REGNUM));
+ }
+ 
++/* Return an rtx for the static chain for FNDECL.  If INCOMING_P is true,
++       then it should be for the callee; otherwise for the caller.  */
++static rtx
++m68k_static_chain (const_tree fndecl_or_type, bool incoming_p)
++{
++  const_tree fntype, fndecl;
++
++  if (DECL_P (fndecl_or_type) && !DECL_STATIC_CHAIN (fndecl_or_type))
++    return NULL;
++
++  if (incoming_p)
++    {
++    }
++
++  if (TREE_CODE (fndecl_or_type) == FUNCTION_DECL)
++   {
++      fntype = TREE_TYPE (fndecl_or_type);
++      fndecl = fndecl_or_type;
++   }
++ else
++   {
++     fntype = fndecl_or_type;
++     fndecl = NULL;
++   }
++
++  if (m68k_function_type_abi(fntype) == FASTCALL_ABI)
++  {
++    static bool issued_error;
++    if (!issued_error)
++      {
++	issued_error = true;
++	error ("nested functions not supported with -mfastcall in %qD", fndecl);
++      }
++    return gen_rtx_MEM (Pmode, stack_pointer_rtx);
++  }
++  
++  return gen_rtx_REG (Pmode, STATIC_CHAIN_REGNUM);
++}
++
+ /* Convert X to a legitimate address and return it if successful.  Otherwise
+    return X.
+ 
+@@ -1781,7 +2252,7 @@ output_btst (rtx *operands, rtx countop, rtx dataop, rtx_insn *insn, int signpos
  
    if (GET_CODE (countop) == CONST_INT)
      {
@@ -3033,7 +3667,7 @@ index 68504b84abb..163ef6a83b3 100644
        /* If COUNT is bigger than size of storage unit in use,
  	 advance to the containing unit of same size.  */
        if (count > signpos)
-@@ -3668,9 +3739,9 @@ fp_reg_operand (rtx op, machine_mode mode ATTRIBUTE_UNUSED)
+@@ -3668,9 +4139,9 @@ fp_reg_operand (rtx op, machine_mode mode ATTRIBUTE_UNUSED)
  int
  emit_move_sequence (rtx *operands, machine_mode mode, rtx scratch_reg)
  {
@@ -3046,7 +3680,189 @@ index 68504b84abb..163ef6a83b3 100644
  
    if (scratch_reg
        && reload_in_progress && GET_CODE (operand0) == REG
-@@ -4962,7 +5033,7 @@ output_andsi3 (rtx *operands)
+@@ -3984,6 +4455,135 @@ m68k_movem_pattern_p (rtx pattern, rtx automod_base,
+    AUTOMOD_OFFSET is the total adjustment, otherwise it is 0.  STORE_P
+    is true if this is a store instruction.  */
+ 
++static void
++reglist(char *buf, int regmask)
++{
++  int regnum;
++  int liststart;
++  int lastreg;
++  int status;
++
++  if (regmask == 0)
++    {
++      strcpy(buf, "#0");
++      return;
++    }
++#define oad(reg) \
++  *buf++ = '%'; \
++  *buf++ = REGISTER_PREFIX[0]; \
++  *buf++ = reg >= 8 ? 'a' : 'd'; \
++  *buf++ = '0' + (reg & 7)
++
++  liststart = status = 0;
++  lastreg = 20;
++  for (regnum = 0; regnum < 16; regnum++)
++    {
++      if ((1 << regnum) & regmask)
++	{
++	  if (regnum == (lastreg + 1) && regnum != 8)
++	    {
++	      if (liststart != 0)
++		*buf++ = '-';
++	      liststart = 0;
++	      status = 1;
++	      lastreg = regnum;
++	    }
++	  else
++	    {
++	      if (status != 0)
++		{
++		  oad(lastreg);
++		  status = 0;
++		  liststart = 1;
++		}
++	      if (liststart != 0)
++		*buf++ = '/';
++	      oad(regnum);
++	      lastreg = regnum;
++	      liststart = 1;
++	    }
++	}
++    }
++  if (status != 0)
++    {
++      oad(lastreg);
++    }
++  *buf = '\0';
++#undef oad
++}
++
++static void
++freglist(char *buf, int regmask)
++{
++  int regnum;
++  int liststart;
++  int lastreg;
++  int status;
++
++  if (regmask == 0)
++    {
++      strcpy(buf, "#0");
++      return;
++    }
++#define ofpreg(reg) \
++  *buf++ = '%'; \
++  *buf++ = REGISTER_PREFIX[0]; \
++  *buf++ = 'f'; \
++  *buf++ = 'p'; \
++  *buf++ = '0' + reg
++
++  liststart = status = 0;
++  lastreg = 20;
++  for (regnum = 0; regnum < 8; regnum++)
++    {
++      if ((1 << regnum) & regmask)
++	{
++	  if (regnum == (lastreg + 1) && regnum != 8)
++	    {
++	      if (liststart != 0)
++		*buf++ = '-';
++	      liststart = 0;
++	      status = 1;
++	      lastreg = regnum;
++	    }
++	  else
++	    {
++	      if (status != 0)
++		{
++		  ofpreg(lastreg);
++		  status = 0;
++		  liststart = 1;
++		}
++	      if (liststart != 0)
++		*buf++ = '/';
++	      ofpreg(regnum);
++	      lastreg = regnum;
++	      liststart = 1;
++	    }
++	}
++    }
++  if (status != 0)
++    {
++      ofpreg(lastreg);
++    }
++  *buf = '\0';
++#undef ofpreg
++}
++
++static int
++revbits(int mask, int n)
++{
++  int i;
++  int newmask;
++
++  for (newmask = 0, i = n; i > 0; i--)
++    {
++      newmask = (newmask << 1) | (mask & 1);
++      mask >>= 1;
++    }
++  return newmask;
++}
++
+ const char *
+ m68k_output_movem (rtx *operands, rtx pattern,
+ 		   HOST_WIDE_INT automod_offset, bool store_p)
+@@ -4032,17 +4632,41 @@ m68k_output_movem (rtx *operands, rtx pattern,
+   operands[1] = GEN_INT (mask);
+   if (FP_REGNO_P (REGNO (XEXP (XVECEXP (pattern, 0, first), store_p))))
+     {
++      char buf[8 * 6 + 1];
++
++      if (automod_offset >= 0)
++	 mask = revbits(mask, 8);
+       if (store_p)
+-	return "fmovem %1,%a0";
++	{
++	  strcpy(buf, "fmovem ");
++	  freglist(buf + 7, mask);
++	  strcat(buf, ",%a0");
++	}
+       else
+-	return "fmovem %a0,%1";
++	{
++	  strcpy(buf, "fmovem %a0,");
++	  freglist(buf + 11, mask);
++	}
++      return xstrdup(buf);
+     }
+   else
+     {
++      char buf[16 * 5 + 1];
++
++      if (automod_offset < 0)
++	 mask = revbits(mask, 16);
+       if (store_p)
+-	return "movem%.l %1,%a0";
++	{
++	  strcpy(buf, "movem%.l ");
++	  reglist(buf + 9, mask);
++	  strcat(buf, ",%a0");
++	}
+       else
+-	return "movem%.l %a0,%1";
++	{
++	  strcpy(buf, "movem%.l %a0,");
++	  reglist(buf + 13, mask);
++	}
++      return xstrdup(buf);
+     }
+ }
+ 
+@@ -4962,7 +5586,7 @@ output_andsi3 (rtx *operands)
  const char *
  output_iorsi3 (rtx *operands)
  {
@@ -3055,7 +3871,7 @@ index 68504b84abb..163ef6a83b3 100644
    if (GET_CODE (operands[2]) == CONST_INT
        && INTVAL (operands[2]) >> 16 == 0
        && (DATA_REG_P (operands[0])
-@@ -4998,7 +5069,7 @@ output_iorsi3 (rtx *operands)
+@@ -4998,7 +5622,7 @@ output_iorsi3 (rtx *operands)
  const char *
  output_xorsi3 (rtx *operands)
  {
@@ -3064,7 +3880,318 @@ index 68504b84abb..163ef6a83b3 100644
    if (GET_CODE (operands[2]) == CONST_INT
        && INTVAL (operands[2]) >> 16 == 0
        && (offsettable_memref_p (operands[0]) || DATA_REG_P (operands[0]))
-@@ -6529,7 +6600,7 @@ m68k_conditional_register_usage (void)
+@@ -5039,7 +5663,7 @@ output_call (rtx x)
+   if (symbolic_operand (x, VOIDmode))
+     return m68k_symbolic_call;
+   else
+-    return "jsr %a0";
++    return "jsr %a0"; /* note: will be replaced by STATIC_CHAIN_REGNUM in m68k_legitimize_sibcall_address */
+ }
+ 
+ /* Likewise sibling calls.  */
+@@ -5050,47 +5674,116 @@ output_sibcall (rtx x)
+   if (symbolic_operand (x, VOIDmode))
+     return m68k_symbolic_jump;
+   else
+-    return "jmp %a0";
++    return "jmp %a0"; /* note: will be replaced by STATIC_CHAIN_REGNUM in m68k_legitimize_sibcall_address */
++}
++
++/* Determine whether m68k_output_mi_thunk can succeed.  */
++
++static bool
++m68k_can_output_mi_thunk (const_tree, HOST_WIDE_INT delta, HOST_WIDE_INT vcall_offset,
++			 const_tree function)
++{
++  /* without fastcall we can handle anything.  */
++  if (m68k_function_abi(function) != FASTCALL_ABI)
++    return true;
++
++  return true;
+ }
+ 
++static void
++emit_push_reg (unsigned regno)
++{
++  rtx mem, reg;
++
++  mem = gen_rtx_PRE_DEC (Pmode, stack_pointer_rtx);
++  mem = gen_frame_mem (SImode, mem);
++  reg = gen_rtx_REG (Pmode, regno);
++
++  emit_insn (gen_movsi (mem, reg));
++}
++
++static void
++emit_pop_reg (unsigned regno)
++{
++  rtx mem, reg;
++
++  mem = gen_rtx_POST_INC (Pmode, stack_pointer_rtx);
++  mem = gen_frame_mem (Pmode, mem);
++  reg = gen_rtx_REG (SImode, regno);
++
++  emit_move_insn (reg, mem);
++}
++
++
++/* Output the assembler code for a thunk function.  THUNK_DECL is the
++   declaration for the thunk function itself, FUNCTION is the decl for
++   the target function.  DELTA is an immediate constant offset to be
++   added to THIS.  If VCALL_OFFSET is nonzero, the word at
++   *(*this + vcall_offset) should be added to THIS.  */
++
+ static void
+ m68k_output_mi_thunk (FILE *file, tree thunk ATTRIBUTE_UNUSED,
+ 		      HOST_WIDE_INT delta, HOST_WIDE_INT vcall_offset,
+ 		      tree function)
+ {
+   rtx this_slot, offset, addr, mem, tmp;
++  int tmp_regno;
++  int preserve_a2 = 0;
+   rtx_insn *insn;
+ 
+-  /* Avoid clobbering the struct value reg by using the
+-     static chain reg as a temporary.  */
+-  tmp = gen_rtx_REG (Pmode, STATIC_CHAIN_REGNUM);
+-
+   /* Pretend to be a post-reload pass while generating rtl.  */
+   reload_completed = 1;
+ 
+-  /* The "this" pointer is stored at 4(%sp).  */
+-  this_slot = gen_rtx_MEM (Pmode, plus_constant (Pmode,
++  if (m68k_function_abi(function) == FASTCALL_ABI)
++    {
++      tmp_regno = A2_REG;
++      tmp = gen_rtx_REG (Pmode, tmp_regno);
++      /* The "this" pointer is stored in %a0.  */
++      this_slot = gen_rtx_REG (Pmode, A0_REG);
++    }
++  else
++    {
++      /* Avoid clobbering the M68K_STRUCT_VALUE_REGNUM by using the
++	 STATIC_CHAIN_REGNUM as a temporary.  */
++      tmp_regno = STATIC_CHAIN_REGNUM;
++      tmp = gen_rtx_REG (Pmode, tmp_regno);
++      /* The "this" pointer is stored at 4(%sp).  */
++      this_slot = gen_rtx_MEM (Pmode, plus_constant (Pmode,
+ 						 stack_pointer_rtx, 4));
++    }
+ 
+   /* Add DELTA to THIS.  */
+   if (delta != 0)
+     {
+       /* Make the offset a legitimate operand for memory addition.  */
+       offset = GEN_INT (delta);
+-      if ((delta < -8 || delta > 8)
+-	  && (TARGET_COLDFIRE || USE_MOVQ (delta)))
++      if (m68k_function_abi(function) != FASTCALL_ABI)
+ 	{
+-	  emit_move_insn (gen_rtx_REG (Pmode, D0_REG), offset);
+-	  offset = gen_rtx_REG (Pmode, D0_REG);
+-	}
+-      emit_insn (gen_add3_insn (copy_rtx (this_slot),
++	  if ((delta < -8 || delta > 8)
++		  && (TARGET_COLDFIRE || USE_MOVQ (delta)))
++	    {
++	       int offset_regno = D0_REG;
++	       emit_move_insn (gen_rtx_REG (Pmode, offset_regno), offset);
++	       offset = gen_rtx_REG (Pmode, offset_regno);
++	    }
++	  emit_insn (gen_add3_insn (copy_rtx (this_slot),
+ 				copy_rtx (this_slot), offset));
++	}
++      else
++	{
++	  emit_insn(gen_addsi3(this_slot, this_slot, offset));
++	}
+     }
+ 
+   /* If needed, add *(*THIS + VCALL_OFFSET) to THIS.  */
+   if (vcall_offset != 0)
+     {
+       /* Set the static chain register to *THIS.  */
++      if (tmp_regno == A2_REG)
++      {
++	emit_push_reg(A2_REG);
++	preserve_a2 = 1;
++      }
+       emit_move_insn (tmp, this_slot);
+       emit_move_insn (tmp, gen_rtx_MEM (Pmode, tmp));
+ 
+@@ -5102,12 +5795,22 @@ m68k_output_mi_thunk (FILE *file, tree thunk ATTRIBUTE_UNUSED,
+ 	  addr = tmp;
+ 	}
+ 
+-      /* Load the offset into %d0 and add it to THIS.  */
+-      emit_move_insn (gen_rtx_REG (Pmode, D0_REG),
++      if (m68k_function_abi(function) != FASTCALL_ABI)
++	{
++	  /* Load the offset into %d0 and add it to THIS.  */
++	  int offset_regno = D0_REG;
++	  emit_move_insn (gen_rtx_REG (Pmode, offset_regno),
+ 		      gen_rtx_MEM (Pmode, addr));
+-      emit_insn (gen_add3_insn (copy_rtx (this_slot),
++	  emit_insn (gen_add3_insn (copy_rtx (this_slot),
+ 				copy_rtx (this_slot),
+-				gen_rtx_REG (Pmode, D0_REG)));
++				gen_rtx_REG (Pmode, offset_regno)));
++	}
++      else
++	{
++	  emit_insn (gen_add3_insn (copy_rtx (this_slot),
++				copy_rtx (this_slot),
++				gen_rtx_MEM (Pmode, addr)));
++	}
+     }
+ 
+   /* Jump to the target function.  Use a sibcall if direct jumps are
+@@ -5122,12 +5825,14 @@ m68k_output_mi_thunk (FILE *file, tree thunk ATTRIBUTE_UNUSED,
+ 	  /* Use the static chain register as a temporary (call-clobbered)
+ 	     GOT pointer for this function.  We can use the static chain
+ 	     register because it isn't live on entry to the thunk.  */
+-	  SET_REGNO (pic_offset_table_rtx, STATIC_CHAIN_REGNUM);
++	  SET_REGNO (pic_offset_table_rtx, M68K_STRUCT_VALUE_REGNUM == A0_REG ? A1_REG : A0_REG);
+ 	  emit_insn (gen_load_got (pic_offset_table_rtx));
+ 	}
+       legitimize_pic_address (XEXP (mem, 0), Pmode, tmp);
+       mem = replace_equiv_address (mem, tmp);
+     }
++  if (preserve_a2)
++    emit_pop_reg(A2_REG);
+   insn = emit_call_insn (gen_sibcall (mem, const0_rtx));
+   SIBLING_CALL_P (insn) = 1;
+ 
+@@ -5290,11 +5995,22 @@ m68k_libcall_value (machine_mode mode)
+    NOTE: Due to differences in ABIs, don't call this function directly,
+    use FUNCTION_VALUE instead.  */
+ rtx
+-m68k_function_value (const_tree valtype, const_tree func ATTRIBUTE_UNUSED)
++m68k_function_value (const_tree valtype, const_tree func, bool regs)
+ {
+-  machine_mode mode;
++  enum machine_mode mode = TYPE_MODE (valtype);
++  const_tree fn, fntype;
++  bool func_fastcall;
++  
++  fn = NULL_TREE;
++  if (func && DECL_P (func))
++    fn = func;
++  fntype = fn ? TREE_TYPE (fn) : func;
++
++  func_fastcall = m68k_function_type_abi(fntype) == FASTCALL_ABI;
++
++  if (! regs && !func_fastcall)
++    return gen_rtx_REG (mode, D0_REG);
+ 
+-  mode = TYPE_MODE (valtype);
+   switch (mode) {
+   case SFmode:
+   case DFmode:
+@@ -5307,7 +6023,7 @@ m68k_function_value (const_tree valtype, const_tree func ATTRIBUTE_UNUSED)
+   }
+ 
+   /* If the function returns a pointer, push that into %a0.  */
+-  if (func && POINTER_TYPE_P (TREE_TYPE (TREE_TYPE (func))))
++  if (regs && fntype && POINTER_TYPE_P (TREE_TYPE (fntype)) && !func_fastcall)
+     /* For compatibility with the large body of existing code which
+        does not always properly declare external functions returning
+        pointer types, the m68k/SVR4 convention is to copy the value
+@@ -6507,6 +7223,66 @@ m68k_return_pops_args (tree fundecl, tree funtype, int size)
+ 	  ? size : 0);
+ }
+ 
++/* Remember the last target of m68k_set_current_function.  */
++static GTY(()) tree m68k_previous_fndecl;
++
++/* Establish appropriate back-end context for processing the function
++   FNDECL.  The argument might be NULL to indicate processing at top
++   level, outside of any function scope.  */
++static void
++m68k_set_current_function (tree fndecl)
++{
++  /* Only change the context if the function changes.  This hook is called
++     several times in the course of compiling a function, and we don't want to
++     slow things down too much or call target_reinit when it isn't safe.  */
++  if (fndecl && fndecl != m68k_previous_fndecl)
++    {
++      tree old_tree = (m68k_previous_fndecl
++		       ? DECL_FUNCTION_SPECIFIC_TARGET (m68k_previous_fndecl)
++		       : NULL_TREE);
++
++      tree new_tree = (fndecl
++		       ? DECL_FUNCTION_SPECIFIC_TARGET (fndecl)
++		       : NULL_TREE);
++
++      m68k_previous_fndecl = fndecl;
++      if (old_tree == new_tree)
++	;
++
++      else if (new_tree)
++	{
++	  cl_target_option_restore (&global_options,
++				    TREE_TARGET_OPTION (new_tree));
++	  target_reinit ();
++	}
++
++      else if (old_tree)
++	{
++	  struct cl_target_option *def
++	    = TREE_TARGET_OPTION (target_option_current_node);
++
++	  cl_target_option_restore (&global_options, def);
++	  target_reinit ();
++	}
++    }
++}
++
++void
++m68k_order_regs_for_local_alloc (void)
++{
++  int i;
++  int pos = 0;
++  for (i = 0; i < 16; i ++)
++    if (call_used_regs [i] && !fixed_regs[i])
++      reg_alloc_order[pos++] = i;
++  for (i = 0; i < 16; i ++)
++    if (!(call_used_regs [i] && !fixed_regs[i]))
++      reg_alloc_order[pos++] = i;
++  reg_alloc_order[pos++] = 24;
++  for (i = 16; i < 24; i++)
++    reg_alloc_order[pos++] = i;
++}
++
+ /* Make sure everything's fine if we *don't* have a given processor.
+    This assumes that putting a register in fixed_regs will keep the
+    compiler's mitts completely off it.  We don't bother to zero it out
+@@ -6517,6 +7293,21 @@ m68k_conditional_register_usage (void)
+ {
+   int i;
+   HARD_REG_SET x;
++  
++  int num_of_dregs = (TARGET_FASTCALL) ? M68K_FASTCALL_USED_DATA_REGS : M68K_STD_USED_REGS;
++  int num_of_aregs = (TARGET_FASTCALL) ? M68K_FASTCALL_USED_ADDR_REGS : M68K_STD_USED_REGS;
++  for (i = 0; i < 8; i++)
++    {
++      call_used_regs[i] = (i < num_of_dregs) | fixed_regs[i];
++      call_used_regs[i + 8] = (i < num_of_aregs) | fixed_regs[i + 8];
++      call_used_regs[i + 16] = (i < num_of_dregs) | fixed_regs[i + 16];
++    }
++  if (flag_pic)
++    fixed_regs[PIC_REG] = 1;
++  for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
++    {
++       call_used_regs[i] |= fixed_regs[i];
++    }
+   if (!TARGET_HARD_FLOAT)
+     {
+       COPY_HARD_REG_SET (x, reg_class_contents[(int)FP_REGS]);
+@@ -6524,12 +7315,10 @@ m68k_conditional_register_usage (void)
+         if (TEST_HARD_REG_BIT (x, i))
+ 	  fixed_regs[i] = call_used_regs[i] = 1;
+     }
+-  if (flag_pic)
+-    fixed_regs[PIC_REG] = call_used_regs[PIC_REG] = 1;
  }
  
  static void
@@ -3073,7 +4200,7 @@ index 68504b84abb..163ef6a83b3 100644
  {
    init_sync_libfuncs (UNITS_PER_WORD);
  }
-@@ -6592,4 +6663,26 @@ m68k_promote_function_mode (const_tree type, machine_mode mode,
+@@ -6592,4 +7381,35 @@ m68k_promote_function_mode (const_tree type, machine_mode mode,
    return mode;
  }
  
@@ -3088,10 +4215,17 @@ index 68504b84abb..163ef6a83b3 100644
 +static void
 +m68k_file_end (void)
 +{
-+#if defined(HAVE_AS_GNU_ATTRIBUTE) && 0
++#if defined(HAVE_AS_GNU_ATTRIBUTE)
++#if 0
 +  /* Emit .gnu_attribute directive for Tag_GNU_M68K_ABI_FP.  */
 +  int fp_abi = TARGET_68881 ? (FUNCTION_VALUE_REGNO_P(FP0_REG) ? 1 : 2) : 0;
-+  fprintf (asm_out_file, "\t.gnu_attribute 4, %d\n", fp_abi);
++  fprintf (asm_out_file, "\t.gnu_attribute 4,%d\n", fp_abi);
++#endif
++#endif
++#ifdef USING_ELFOS_H
++  /* Emit .gnu_attribute directive for Tag_GNU_M68K_ABI.  */
++  int abi = 1 + (TARGET_SHORT ? 2 : 0) + (TARGET_FASTCALL ? 4 : 0);
++  fprintf (asm_out_file, "\t.gnu_attribute 8,%d\n", abi);
 +#endif
 +
 +  if (NEED_INDICATE_EXEC_STACK)
@@ -3099,12 +4233,34 @@ index 68504b84abb..163ef6a83b3 100644
 +    file_end_indicate_exec_stack ();
 +}
 +
++struct gcc_target targetm = TARGET_INITIALIZER;
++
  #include "gt-m68k.h"
 diff --git a/gcc/config/m68k/m68k.h b/gcc/config/m68k/m68k.h
-index ba7feb07cbd..bbfda5e9cd6 100644
+index ba7feb07cbd..d2c35dd50c2 100644
 --- a/gcc/config/m68k/m68k.h
 +++ b/gcc/config/m68k/m68k.h
-@@ -131,7 +131,10 @@ along with GCC; see the file COPYING3.  If not see
+@@ -26,6 +26,19 @@ along with GCC; see the file COPYING3.  If not see
+ # define MOTOROLA 0  /* Use the MIT assembly syntax.  */
+ #endif
+ 
++/* Available call abi.  */
++enum calling_abi
++{
++  STD_ABI = 0,
++  FASTCALL_ABI = 1
++};
++
++/* The abi used by target.  */
++extern enum calling_abi m68k_abi;
++
++/* The default abi used by target.  */
++#define DEFAULT_ABI STD_ABI
++
+ /* Handle --with-cpu default option from configure script.  */
+ #define OPTION_DEFAULT_SPECS						\
+   { "cpu",   "%{!m68020-40:%{!m68020-60:\
+@@ -131,8 +144,16 @@ along with GCC; see the file COPYING3.  If not see
  	}								\
  									\
        if (TARGET_68881)							\
@@ -3114,9 +4270,135 @@ index ba7feb07cbd..bbfda5e9cd6 100644
 +	  builtin_define ("__M68881__"); /* Non-standard */		\
 +	}								\
  									\
++      if (TARGET_FASTCALL)                                              \
++        {                                                               \
++      	  builtin_define ("__FASTCALL__"); /* Non-standard */		\
++        }                                                               \
++                                                                        \
        if (TARGET_COLDFIRE)						\
  	{								\
-@@ -725,16 +728,24 @@ do { if (cc_prev_status.flags & CC_IN_68881)			\
+ 	  const char *tmp;						\
+@@ -287,7 +308,7 @@ along with GCC; see the file COPYING3.  If not see
+ 
+ #define UNITS_PER_WORD 4
+ 
+-#define PARM_BOUNDARY (TARGET_SHORT ? 16 : 32)
++#define PARM_BOUNDARY ((TARGET_SHORT || (TARGET_FASTCALL && TUNE_68000_10)) ? 16 : 32)
+ #define STACK_BOUNDARY 16
+ #define FUNCTION_BOUNDARY 16
+ #define EMPTY_FIELD_BOUNDARY 16
+@@ -423,7 +444,7 @@ along with GCC; see the file COPYING3.  If not see
+  */
+ #define ARG_POINTER_REGNUM 24
+ 
+-#define STATIC_CHAIN_REGNUM A0_REG
++#define STATIC_CHAIN_REGNUM (M68K_STRUCT_VALUE_REGNUM == A0_REG ? A1_REG : A0_REG)
+ #define M68K_STATIC_CHAIN_REG_NAME REGISTER_PREFIX "a0"
+ 
+ /* Register in which address to store a structure value
+@@ -472,7 +493,7 @@ extern enum reg_class regno_reg_class[];
+ /* On the m68k, this is the size of MODE in words,
+    except in the FP regs, where a single reg is always enough.  */
+ #define CLASS_MAX_NREGS(CLASS, MODE)	\
+- ((CLASS) == FP_REGS ? 1 \
++ ((CLASS) == FP_REGS ? GET_MODE_NUNITS (MODE) \
+   : ((GET_MODE_SIZE (MODE) + UNITS_PER_WORD - 1) / UNITS_PER_WORD))
+ 
+ /* Moves between fp regs and other regs are two insns.  */
+@@ -493,11 +514,12 @@ extern enum reg_class regno_reg_class[];
+ #define FIRST_PARM_OFFSET(FNDECL) 8
+ 
+ /* On the m68k the return value defaults to D0.  */
++#undef FUNCTION_VALUE
+ #define FUNCTION_VALUE(VALTYPE, FUNC)  \
+-  gen_rtx_REG (TYPE_MODE (VALTYPE), D0_REG)
++  m68k_function_value (VALTYPE, FUNC, false)
+ 
+ /* On the m68k the return value defaults to D0.  */
+-#define LIBCALL_VALUE(MODE)  gen_rtx_REG (MODE, D0_REG)
++#define LIBCALL_VALUE(MODE)  m68k_libcall_value (MODE)
+ 
+ /* On the m68k, D0 is usually the only register used.  */
+ #define FUNCTION_VALUE_REGNO_P(N) ((N) == D0_REG)
+@@ -508,15 +530,61 @@ extern enum reg_class regno_reg_class[];
+ #define NEEDS_UNTYPED_CALL 0
+ 
+ /* On the m68k, all arguments are usually pushed on the stack.  */
+-#define FUNCTION_ARG_REGNO_P(N) 0
++/* 1 if N is a possible register number for function argument passing.  */
++#define FUNCTION_ARG_REGNO_P(N)			\
++  ((((int)N) >= 0 && (N) < M68K_FASTCALL_DATA_PARM)		\
++   || ((N) >= 8 && (N) < 8 + M68K_FASTCALL_ADDR_PARM)	\
++   || (TARGET_68881 && (N) >= 16 && (N) < 16 + M68K_FASTCALL_DATA_PARM))
+ 
+-/* On the m68k, this is a single integer, which is a number of bytes
+-   of arguments scanned so far.  */
+-#define CUMULATIVE_ARGS int
++   
++/* The number of data/float registers and address registers to use for
++   fast calls. */
++#define M68K_FASTCALL_DATA_PARM 3
++#define M68K_FASTCALL_ADDR_PARM 2
++
++/* Call clobbered regs. */
++#define M68K_STD_USED_REGS 2
++#define M68K_FASTCALL_USED_DATA_REGS 3
++#define M68K_FASTCALL_USED_ADDR_REGS 2
++
++/* On the m68k, this is a structure:
++   regs_already_used: bitmask of the already used registers.
++   last_arg_reg - register number of the most recently passed argument.
++     -1 if passed on stack.
++   last_arg_len - number of registers used by the most recently passed
++     argument.
++*/
++
++struct m68k_args
++{
++  unsigned long /* HARD_REG_SET */ regs_already_used;
++  int last_arg_reg;
++  int last_arg_len;
++  enum calling_abi call_abi;
++};
++
++#define CUMULATIVE_ARGS struct m68k_args
+ 
+-/* On the m68k, the offset starts at 0.  */
+-#define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, INDIRECT, N_NAMED_ARGS) \
+- ((CUM) = 0)
++/* The default number of data, address and float registers to use when
++   user specified '-mregparm' switch, not '-mregparm=<value>' option.  */
++
++#define ADJUST_REG_ALLOC_ORDER m68k_order_regs_for_local_alloc ()
++
++#define OVERRIDE_ABI_FORMAT(FNDECL) m68k_call_abi_override (FNDECL)
++
++#define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS) \
++  m68k_init_cumulative_args (&(CUM), (FNTYPE), (LIBNAME), (FNDECL), (N_NAMED_ARGS) != -1)
++
++#undef TARGET_FUNCTION_ARG_ADVANCE
++#define TARGET_FUNCTION_ARG_ADVANCE m68k_function_arg_advance
++
++/* On m68k all args are pushed, except if -mfastcall then d0-2, a0-1 and
++   fp0-2 are used for passing the first arguments.
++   Note: by default, the static-chain is passed in a0. Targets that want
++   to make full use of '-mfastcall' are advised to pass the static-chain
++   somewhere else.  */
++#undef TARGET_FUNCTION_ARG
++#define TARGET_FUNCTION_ARG m68k_function_arg
+ 
+ #define FUNCTION_PROFILER(FILE, LABELNO)  \
+   asm_fprintf (FILE, "\tlea %LLP%d,%Ra0\n\tjsr mcount\n", (LABELNO))
+@@ -565,7 +633,7 @@ extern enum reg_class regno_reg_class[];
+    (though the operand list is empty).  */
+ #define TRANSFER_FROM_TRAMPOLINE				\
+ void								\
+-__transfer_from_trampoline ()					\
++__transfer_from_trampoline (void)					\
+ {								\
+   register char *a0 asm (M68K_STATIC_CHAIN_REG_NAME);		\
+   asm (GLOBAL_ASM_OP "___trampoline");				\
+@@ -725,16 +793,24 @@ do { if (cc_prev_status.flags & CC_IN_68881)			\
  
  /* Control the assembler format that we output.  */
  
@@ -3143,11 +4425,61 @@ index ba7feb07cbd..bbfda5e9cd6 100644
  #define REGISTER_NAMES \
  {REGISTER_PREFIX"d0", REGISTER_PREFIX"d1", REGISTER_PREFIX"d2",	\
   REGISTER_PREFIX"d3", REGISTER_PREFIX"d4", REGISTER_PREFIX"d5",	\
+@@ -970,3 +1046,11 @@ extern int m68k_sched_address_bypass_p (rtx_insn *, rtx_insn *);
+ extern int m68k_sched_indexed_address_bypass_p (rtx_insn *, rtx_insn *);
+ 
+ #define CPU_UNITS_QUERY 1
++
++#ifndef USED_FOR_TARGET
++struct GTY(()) machine_function {
++  /* This value is used for amd64 targets and specifies the current abi
++     to be used. STD_ABI means cdecl abi. Otherwise FASTCALL_ABI means fastcall abi.  */
++  ENUM_BITFIELD(calling_abi) call_abi : 8;
++};
++#endif
+diff --git a/gcc/config/m68k/m68k.md b/gcc/config/m68k/m68k.md
+index 7933f8eb253..182746addaa 100644
+--- a/gcc/config/m68k/m68k.md
++++ b/gcc/config/m68k/m68k.md
+@@ -131,8 +131,11 @@
+ ;; Registers by name.
+ (define_constants
+   [(D0_REG		0)
++   (D1_REG		1)
++   (D2_REG		2)
+    (A0_REG		8)
+    (A1_REG		9)
++   (A2_REG		10)
+    (PIC_REG		13)
+    (A6_REG		14)
+    (SP_REG		15)
 diff --git a/gcc/config/m68k/m68k.opt b/gcc/config/m68k/m68k.opt
-index b9835f5e42f..010899e573a 100644
+index b9835f5e42f..1c25af3896e 100644
 --- a/gcc/config/m68k/m68k.opt
 +++ b/gcc/config/m68k/m68k.opt
-@@ -197,3 +197,15 @@ Support more than 8192 GOT entries on ColdFire.
+@@ -158,6 +158,10 @@ mnoshort
+ Target RejectNegative InverseMask(SHORT)
+ Consider type 'int' to be 32 bits wide.
+ 
++mnofastcall
++Target RejectNegative InverseMask(FASTCALL)
++Use standard calling conventions. 
++
+ mpcrel
+ Target Report Mask(PCREL)
+ Generate pc-relative code.
+@@ -178,6 +182,10 @@ mshort
+ Target Report Mask(SHORT)
+ Consider type 'int' to be 16 bits wide.
+ 
++mfastcall
++Target Report Mask(FASTCALL)
++Use calling convention passing arguments in registers.
++
+ msoft-float
+ Target RejectNegative InverseMask(HARD_FLOAT)
+ Generate code with library calls for floating point.
+@@ -197,3 +205,15 @@ Support more than 8192 GOT entries on ColdFire.
  mxtls
  Target Report Mask(XTLS)
  Support TLS segment larger than 64K.
@@ -3163,6 +4495,22 @@ index b9835f5e42f..010899e573a 100644
 +mrodata=
 +Target RejectNegative Joined Var(m68k_rodata_string) Init(0)
 +Put read-only data in SECTION
+diff --git a/gcc/config/m68k/m68kelf.h b/gcc/config/m68k/m68kelf.h
+index fb1a0a4d917..81320b09061 100644
+--- a/gcc/config/m68k/m68kelf.h
++++ b/gcc/config/m68k/m68kelf.h
+@@ -89,9 +89,9 @@ do {								\
+    structure return, so have to use a1 for the static chain.  */
+ 
+ #undef STATIC_CHAIN_REGNUM
+-#define STATIC_CHAIN_REGNUM A1_REG
++#define STATIC_CHAIN_REGNUM (M68K_STRUCT_VALUE_REGNUM == A0_REG ? A1_REG : A0_REG)
+ #undef M68K_STATIC_CHAIN_REG_NAME
+-#define M68K_STATIC_CHAIN_REG_NAME REGISTER_PREFIX "a1"
++#define M68K_STATIC_CHAIN_REG_NAME REGISTER_PREFIX "a0"
+ 
+ #define ASM_COMMENT_START "|"
+ 
 diff --git a/gcc/config/m68k/math-68881.h b/gcc/config/m68k/math-68881.h
 index 6d9f8b2d4a1..9fad2950508 100644
 --- a/gcc/config/m68k/math-68881.h
@@ -3517,10 +4865,10 @@ index 00000000000..89538ccf0d6
 +#define UINTPTR_TYPE "long unsigned int"
 diff --git a/gcc/config/m68k/mint.h b/gcc/config/m68k/mint.h
 new file mode 100644
-index 00000000000..96f41b6e609
+index 00000000000..6ed891aa560
 --- /dev/null
 +++ b/gcc/config/m68k/mint.h
-@@ -0,0 +1,324 @@
+@@ -0,0 +1,336 @@
 +/* Definitions of target machine for GCC for Atari ST TOS/MiNT.
 +   Copyright (C) 1994-2023 Free Software Foundation, Inc.
 +
@@ -3558,6 +4906,8 @@ index 00000000000..96f41b6e609
 +#undef LOCAL_LABEL_PREFIX
 +#define LOCAL_LABEL_PREFIX "."
 +
++/* How to start an assembler comment.  */
++
 +#undef ASM_COMMENT_START
 +#define ASM_COMMENT_START "|"
 +
@@ -3582,6 +4932,9 @@ index 00000000000..96f41b6e609
 +    {						\
 +      builtin_define ("__MINT__");		\
 +      GCC_HAVE_INITFINI_ARRAY_SUPPORT \
++      /* The GNU C++ standard library requires this.  */ \
++      if (c_dialect_cxx ()) \
++       builtin_define ("_GNU_SOURCE"); \
 +      builtin_define_std ("atarist");		\
 +      builtin_assert ("machine=atari");		\
 +      builtin_assert ("system=mint");		\
@@ -3606,9 +4959,6 @@ index 00000000000..96f41b6e609
 +
 +#undef  LIB_SPEC
 +#define LIB_SPEC	"-lc"
-+
-+/* Every structure or union's size must be a multiple of 2 bytes.  */
-+#define STRUCTURE_SIZE_BOUNDARY 16
 +
 +/* The -g option generates stabs debug information.  */
 +#define DBX_DEBUGGING_INFO 1
@@ -3791,6 +5141,12 @@ index 00000000000..96f41b6e609
 +#undef  ENDFILE_SPEC
 +#define ENDFILE_SPEC "crtend.o%s"
 +
++/* In order for bitfields to work on a 68000, or with -mnobitfield, we must
++   define either PCC_BITFIELD_TYPE_MATTERS or STRUCTURE_SIZE_BOUNDARY.
++   Defining STRUCTURE_SIZE_BOUNDARY results in structure packing problems,
++   so we define PCC_BITFIELD_TYPE_MATTERS.  */
++#define PCC_BITFIELD_TYPE_MATTERS 1
++
 +#else
 +/* We can only do STABS.  */
 +#undef PREFERRED_DEBUGGING_TYPE
@@ -3805,6 +5161,10 @@ index 00000000000..96f41b6e609
 +
 +#undef  ENDFILE_SPEC
 +#define ENDFILE_SPEC ""
++
++/* Every structure or union's size must be a multiple of 2 bytes.  */
++#define STRUCTURE_SIZE_BOUNDARY 16
++
 +#endif
 +
 +/* A C statement (sans semicolon) to output to the stdio stream
@@ -3845,9 +5205,31 @@ index 00000000000..96f41b6e609
 +
 +#define STACK_CHECK_ATARI
 +#define STACK_CHECK_BUILTIN 1
+diff --git a/gcc/config/m68k/netbsd-elf.h b/gcc/config/m68k/netbsd-elf.h
+index 5e2be216140..2bf82ac8c4c 100644
+--- a/gcc/config/m68k/netbsd-elf.h
++++ b/gcc/config/m68k/netbsd-elf.h
+@@ -210,7 +210,7 @@ while (0)
+    regnum.  Make it a1 instead.  */
+ 
+ #undef STATIC_CHAIN_REGNUM
+-#define STATIC_CHAIN_REGNUM A1_REG
++#define STATIC_CHAIN_REGNUM (M68K_STRUCT_VALUE_REGNUM == A0_REG ? A1_REG : A0_REG)
+ #undef M68K_STATIC_CHAIN_REG_NAME
+ #define M68K_STATIC_CHAIN_REG_NAME REGISTER_PREFIX "a1"
+ 
+@@ -250,7 +250,7 @@ while (0)
+ 
+ #undef FUNCTION_VALUE
+ #define FUNCTION_VALUE(VALTYPE, FUNC)					\
+-  m68k_function_value (VALTYPE, FUNC)
++  m68k_function_value (VALTYPE, FUNC, true)
+ 
+ 
+ /* Define how to find the value returned by a library function
 diff --git a/gcc/config/m68k/t-mint b/gcc/config/m68k/t-mint
 new file mode 100644
-index 00000000000..24f3278f508
+index 00000000000..347bf1a2331
 --- /dev/null
 +++ b/gcc/config/m68k/t-mint
 @@ -0,0 +1,59 @@
@@ -3874,9 +5256,9 @@ index 00000000000..24f3278f508
 +$(error Error default cpu '$(target_cpu_default)' is not in multilib set '$(M68K_MLIB_CPUS)')
 +endif
 +
-+MULTILIB_OPTIONS = m68020-60/mcpu=5475 mshort
++MULTILIB_OPTIONS = m68020-60/mcpu=5475 mshort mfastcall
 +
-+MULTILIB_DIRNAMES = m68020-60 m5475 mshort
++MULTILIB_DIRNAMES = m68020-60 m5475 mshort mfastcall
 +
 +MULTILIB_MATCHES = \
 +	m68020-60=m68881 \
@@ -9462,8 +10844,233 @@ index fe41edf26aa..d4889a52a93 100644
  
  #endif /* !__mcoldfire__ */
 -#endif /* EXTFLOAT */
+diff --git a/libgcc/config/m68k/lb1sf68-fast.S b/libgcc/config/m68k/lb1sf68-fast.S
+new file mode 100644
+index 00000000000..7e36c376c7e
+--- /dev/null
++++ b/libgcc/config/m68k/lb1sf68-fast.S
+@@ -0,0 +1,219 @@
++/* libgcc routines for 68000 w/o floating-point hardware.
++   Copyright (C) 1994, 1996, 1997, 1998, 2008, 2009 Free Software Foundation, Inc.
++
++This file is part of GCC.
++
++GCC is free software; you can redistribute it and/or modify it
++under the terms of the GNU General Public License as published by the
++Free Software Foundation; either version 3, or (at your option) any
++later version.
++
++This file is distributed in the hope that it will be useful, but
++WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++General Public License for more details.
++
++Under Section 7 of GPL version 3, you are granted additional
++permissions described in the GCC Runtime Library Exception, version
++3.1, as published by the Free Software Foundation.
++
++You should have received a copy of the GNU General Public License and
++a copy of the GCC Runtime Library Exception along with this program;
++see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
++<http://www.gnu.org/licenses/>.  */
++
++#ifdef  L_mulsi3
++	.text
++	FUNC(__mulsi3)
++	.globl	SYM (__mulsi3)
++	.globl	SYM (__mulsi3_internal)
++#ifdef __ELF__
++	.hidden	SYM (__mulsi3_internal)
++#endif
++SYM (__mulsi3):
++SYM (__mulsi3_internal):
++	move.l  d2,-(sp)
++	movel   d0, a0          | d0a0 = x0:x1
++	movel   d1, a1		| d1a1 = y0:y1
++	swap	d0              | d0   = x1:x0 
++	muluw   d1, d0          | d0 = y1*x0 
++	swap	d1		| d1 = y1:y0
++	movel   a0, d2		| d2 = x0:x1
++	muluw   d2, d1          | d1 = x1*y0	
++#ifndef __mcoldfire__
++	addw	d1, d0
++#else
++	addl	d1, d0
++#endif
++	swap	d0
++	clrw	d0
++	movel	a1,d1		| d1 = y0:y1
++	muluw	d2, d1		| d1 = x1*y1
++
++	move.l  (sp)+,d2
++	addl	d1, d0
++
++	rts
++#endif /* L_mulsi3 */
++
++#ifdef  L_udivsi3
++	.text
++	FUNC(__udivsi3)
++	.globl	SYM (__udivsi3)
++	.globl	SYM (__udivsi3_internal)
++#ifdef __ELF__
++	.hidden	SYM (__udivsi3_internal)
++#endif
++SYM (__udivsi3):
++SYM (__udivsi3_internal):
++#ifndef __mcoldfire__
++	move.l  d2,-(sp)
++	movel	d0, a0
++
++	cmpl	IMM (0x10000), d1 /* divisor >= 2 ^ 16 ?   */
++	jcc	udivsi3_fast_L3		/* then try next algorithm */
++	movel	d0, d2
++	clrw	d2
++	swap	d2
++	divu	d1, d2          /* high quotient in lower word */
++	movew	d2, d0		/* save high quotient */
++	swap	d0
++	movew	a0, d2		/* get low dividend + high rest */
++	divu	d1, d2		/* low quotient */
++	movew	d2, d0
++	jra	udivsi3_fast_L6
++
++udivsi3_fast_L3:	movel	d1, d2		/* use d2 as divisor backup */
++udivsi3_fast_L4:	lsrl	IMM (1), d1	/* shift divisor */
++	lsrl	IMM (1), d0	/* shift dividend */
++	cmpl	IMM (0x10000), d1 /* still divisor >= 2 ^ 16 ?  */
++	jcc	udivsi3_fast_L4
++	divu	d1, d0		/* now we have 16-bit divisor */
++	andl	IMM (0xffff), d0 /* mask out divisor, ignore remainder */
++
++/* Multiply the 16-bit tentative quotient with the 32-bit divisor.  Because of
++   the operand ranges, this might give a 33-bit product.  If this product is
++   greater than the dividend, the tentative quotient was too large. */
++	movel	d2, d1
++	mulu	d0, d1		/* low part, 32 bits */
++	swap	d2
++	mulu	d0, d2		/* high part, at most 17 bits */
++	swap	d2		/* align high part with low part */
++	tstw	d2		/* high part 17 bits? */
++	jne	udivsi3_fast_L5		/* if 17 bits, quotient was too large */
++	addl	d2, d1		/* add parts */
++	jcs	udivsi3_fast_L5		/* if sum is 33 bits, quotient was too large */
++	cmpl	a0, d1		/* compare the sum with the dividend */
++	jls	udivsi3_fast_L6		/* if sum > dividend, quotient was too large */
++udivsi3_fast_L5:	subql	IMM (1), d0	/* adjust quotient */
++
++udivsi3_fast_L6:
++	move.l  (sp)+,d2
++	rts
++
++#else /* __mcoldfire__ */
++
++/* ColdFire implementation of non-restoring division algorithm from
++   Hennessy & Patterson, Appendix A. */
++	moveml	d2-d4,sp@
++	clrl	d2		| clear p
++	moveq	IMM (31),d4
++udivsi3_fast_L1:	addl	d0,d0		| shift reg pair (p,a) one bit left
++	addxl	d2,d2
++	movl	d2,d3		| subtract b from p, store in tmp.
++	subl	d1,d3
++	jcs	udivsi3_fast_L2		| if no carry,
++	bset	IMM (0),d0	| set the low order bit of a to 1,
++	movl	d3,d2		| and store tmp in p.
++udivsi3_fast_L2:	subql	IMM (1),d4
++	jcc	udivsi3_fast_L1
++	moveml	sp@,d2-d4	| restore data registers
++	rts
++#endif /* __mcoldfire__ */
++
++#endif /* L_udivsi3 */
++
++#ifdef  L_divsi3
++	.text
++	FUNC(__divsi3)
++	.globl	SYM (__divsi3)
++	.globl	SYM (__divsi3_internal)
++#ifdef __ELF__
++	.hidden	SYM (__divsi3_internal)
++#endif
++SYM (__divsi3):
++SYM (__divsi3_internal):
++	move.l  d2,-(sp)
++	moveq	IMM (1), d2	/* sign of result stored in d2 (=1 or =-1) */
++	tstl	d1
++	jpl	divsi3_fast_L1
++	negl	d1
++#ifndef __mcoldfire__
++	negw	d2		/* change sign because divisor <0  */
++#else
++	negl	d2		/* change sign because divisor <0  */
++#endif
++divsi3_fast_L1:	tstl	d0		/* d0 = dividend */
++	jpl	divsi3_fast_L2
++	negl	d0
++#ifndef __mcoldfire__
++	negw	d2
++#else
++	negl	d2
++#endif
++
++divsi3_fast_L2:	movew	d2,a1		/* Called function MUST NOT clobber a1 */
++	PICCALL	SYM (__udivsi3_internal)	/* divide abs(dividend) by abs(divisor) */
++
++	movew	a1,d2
++	jpl	divsi3_fast_L3
++	negl	d0
++
++divsi3_fast_L3:
++	move.l  (sp)+,d2
++	rts
++#endif /* L_divsi3 */
++
++#ifdef  L_umodsi3
++	.text
++	FUNC(__umodsi3)
++	.globl	SYM (__umodsi3)
++SYM (__umodsi3):
++	move.l  d2,-(sp)
++	movel	d0, d2
++	movel	d1, a1		/* a1 MUST NOT be clobbered by calls*/
++	PICCALL	SYM (__udivsi3_internal)
++	movel	a1, d1		/* d1 = divisor */
++#ifndef __mcoldfire__
++	PICCALL	SYM (__mulsi3_internal)	/* d0 = (a/b)*b */
++#else
++	mulsl	d1,d0
++#endif
++	movel	d2, d1		/* d1 = dividend */
++	subl	d0, d1		/* d1 = a - (a/b)*b */
++	movel	d1, d0
++	move.l  (sp)+,d2
++	rts
++#endif /* L_umodsi3 */
++
++#ifdef  L_modsi3
++	.text
++	FUNC(__modsi3)
++	.globl	SYM (__modsi3)
++SYM (__modsi3):
++	move.l  d2,-(sp)
++	movel	d0, sp@-
++	movel	d1, sp@-
++	PICCALL	SYM (__divsi3_internal)
++	movel	sp@+, d1	/* d1 = divisor */
++#ifndef __mcoldfire__
++	PICCALL	SYM (__mulsi3_internal)	/* d0 = (a/b)*b */
++#else
++	mulsl	d1,d0
++#endif
++	movel	sp@+, d1	/* d1 = dividend */
++	subl	d0, d1		/* d1 = a - (a/b)*b */
++	movel	d1, d0
++	move.l  (sp)+,d2
++	rts
++#endif /* L_modsi3 */
 diff --git a/libgcc/config/m68k/lb1sf68.S b/libgcc/config/m68k/lb1sf68.S
-index 9f649f636dd..b49b67caaf1 100644
+index 9f649f636dd..93faa8ed35d 100644
 --- a/libgcc/config/m68k/lb1sf68.S
 +++ b/libgcc/config/m68k/lb1sf68.S
 @@ -51,18 +51,20 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
@@ -9747,7 +11354,7 @@ index 9f649f636dd..b49b67caaf1 100644
  
 +#ifdef __FASTCALL__
 +
-+#include "lb1sf68-fast.asm"
++#include "lb1sf68-fast.S"
 +
 +#else
 +
@@ -16257,221 +17864,45 @@ index f61e32403e0..25a1ccb9058 100644
  }
 -
 +ELF_ALIAS(__umodsi3)
-diff --git a/libgcc/unwind-dw2.c b/libgcc/unwind-dw2.c
-index 3f26eaf73de..8dad237b037 100644
---- a/libgcc/unwind-dw2.c
-+++ b/libgcc/unwind-dw2.c
-@@ -150,49 +150,10 @@ struct _Unwind_Context
- static unsigned char dwarf_reg_size_table[__LIBGCC_DWARF_FRAME_REGISTERS__+1];
- 
- 
--/* Read unaligned data from the instruction buffer.  */
--
--union unaligned
--{
--  void *p;
--  unsigned u2 __attribute__ ((mode (HI)));
--  unsigned u4 __attribute__ ((mode (SI)));
--  unsigned u8 __attribute__ ((mode (DI)));
--  signed s2 __attribute__ ((mode (HI)));
--  signed s4 __attribute__ ((mode (SI)));
--  signed s8 __attribute__ ((mode (DI)));
--} __attribute__ ((packed));
--
- static void uw_update_context (struct _Unwind_Context *, _Unwind_FrameState *);
- static _Unwind_Reason_Code uw_frame_state_for (struct _Unwind_Context *,
- 					       _Unwind_FrameState *);
- 
--static inline void *
--read_pointer (const void *p) { const union unaligned *up = p; return up->p; }
--
--static inline int
--read_1u (const void *p) { return *(const unsigned char *) p; }
--
--static inline int
--read_1s (const void *p) { return *(const signed char *) p; }
--
--static inline int
--read_2u (const void *p) { const union unaligned *up = p; return up->u2; }
--
--static inline int
--read_2s (const void *p) { const union unaligned *up = p; return up->s2; }
--
--static inline unsigned int
--read_4u (const void *p) { const union unaligned *up = p; return up->u4; }
--
--static inline int
--read_4s (const void *p) { const union unaligned *up = p; return up->s4; }
--
--static inline unsigned long
--read_8u (const void *p) { const union unaligned *up = p; return up->u8; }
--
--static inline unsigned long
--read_8s (const void *p) { const union unaligned *up = p; return up->s8; }
- 
- static inline _Unwind_Word
- _Unwind_IsSignalFrame (struct _Unwind_Context *context)
+diff --git a/libgcc/unwind-c.c b/libgcc/unwind-c.c
+index e80b078472f..2fe6d961682 100644
+--- a/libgcc/unwind-c.c
++++ b/libgcc/unwind-c.c
+@@ -243,3 +243,11 @@ __gcc_personality_seh0 (PEXCEPTION_RECORD ms_exc, void *this_frame,
+ 				ms_disp, __gcc_personality_imp);
+ }
+ #endif /* SEH */
++
++#if defined(__MINT__)
++void *__DW_EH_PE_aligned_var
++#ifdef __ELF__
++	__attribute__((__aligned__(sizeof(void *))))
++#endif
++;
++#endif
 diff --git a/libgcc/unwind-pe.h b/libgcc/unwind-pe.h
-index 194ca0aa6d0..5dc6f729173 100644
+index 194ca0aa6d0..6dedcf8aa9d 100644
 --- a/libgcc/unwind-pe.h
 +++ b/libgcc/unwind-pe.h
-@@ -173,6 +173,92 @@ read_sleb128 (const unsigned char *p, _sleb128_t *val)
-   return p;
- }
- 
-+/* Read unaligned data from the instruction buffer.  */
-+
-+typedef unsigned __attribute__ ((mode (HI))) __uw16;
-+typedef unsigned __attribute__ ((mode (SI))) __uw32;
-+typedef unsigned __attribute__ ((mode (DI))) __uw64;
-+typedef signed __attribute__ ((mode (HI))) __sw16;
-+typedef signed __attribute__ ((mode (SI))) __sw32;
-+typedef signed __attribute__ ((mode (DI))) __sw64;
-+
-+union unaligned
-+{
-+  void *p;
-+  __uw16 u2;
-+  __uw32 u4;
-+  __uw64 u8;
-+  __sw16 s2;
-+  __sw32 s4;
-+  __sw64 s8;
-+  unsigned char c[8];
-+} __attribute__ ((packed));
-+
-+static inline int
-+read_1u (const void *p) { return *(const unsigned char *) p; }
-+
-+static inline int
-+read_1s (const void *p) { return *(const signed char *) p; }
-+
-+#if __GCC_TARGET_STRICT_ALIGNMENT__
-+
-+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-+static inline int
-+read_2u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw16)up->c[0] << 8) | ((__uw16)up->c[1]); }
-+static inline __uw32
-+read_4u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw32)up->c[0] << 24) | ((__uw32)up->c[1] << 16) | ((__uw32)up->c[2] << 8) | ((__uw32)up->c[3]); }
-+static inline __uw64
-+read_8u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw64)read_4u(&up->c[0]) << 32) | ((__uw64)read_4u(&up->c[4])); }
-+#else
-+static inline int
-+read_2u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw16)up->c[1] << 8) | ((__uw16)up->c[0]); }
-+static inline __uw32
-+read_4u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw32)up->c[3] << 24) | ((__uw32)up->c[2] << 16) | ((__uw32)up->c[1] << 8) | ((__uw32)up->c[0]); }
-+static inline __uw64
-+read_8u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw64)read_4u(&up->c[4]) << 32) | ((__uw64)read_4u(&up->c[0])); }
-+#endif
-+
-+static inline int
-+read_2s (const void *p) { __sw16 x = read_2u(p); return x; }
-+static inline __sw32
-+read_4s (const void *p) { __sw32 x = read_4u(p); return x; }
-+static inline __sw64
-+read_8s (const void *p) { __sw64 x = read_8u(p); return x; }
-+
-+#else /* !__GCC_TARGET_STRICT_ALIGNMENT__ */
-+
-+static inline int
-+read_2u (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->u2; }
-+
-+static inline int
-+read_2s (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->s2; }
-+
-+static inline __uw32
-+read_4u (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->u4; }
-+
-+static inline __sw32
-+read_4s (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->s4; }
-+
-+static inline __uw64
-+read_8u (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->u8; }
-+
-+static inline __sw64
-+read_8s (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->s8; }
-+#endif
-+
-+static inline void *
-+read_pointer (const void *p) {
-+#if __SIZEOF_POINTER__ == 8
-+  return (void *)read_8u(p);
-+#elif __SIZEOF_POINTER__ == 4
-+  return (void *)read_4u(p);
-+#elif __SIZEOF_POINTER__ == 2
-+  return (void *)read_2u(p);
-+#else
-+  #error "unsupported pointer size"
-+#endif
-+}
-+
- /* Load an encoded value from memory at P.  The value is returned in VAL;
-    The function returns P incremented past the value.  BASE is as given
-    by base_of_encoded_value for this encoding in the appropriate context.  */
-@@ -181,18 +267,7 @@ static const unsigned char *
- read_encoded_value_with_base (unsigned char encoding, _Unwind_Ptr base,
- 			      const unsigned char *p, _Unwind_Ptr *val)
- {
--  union unaligned
--    {
--      void *ptr;
--      unsigned u2 __attribute__ ((mode (HI)));
--      unsigned u4 __attribute__ ((mode (SI)));
--      unsigned u8 __attribute__ ((mode (DI)));
--      signed s2 __attribute__ ((mode (HI)));
--      signed s4 __attribute__ ((mode (SI)));
--      signed s8 __attribute__ ((mode (DI)));
--    } __attribute__((__packed__));
--
--  const union unaligned *u = (const union unaligned *) p;
-+  const unsigned char *u = p;
-   _Unwind_Internal_Ptr result;
- 
+@@ -198,7 +198,18 @@ read_encoded_value_with_base (unsigned char encoding, _Unwind_Ptr base,
    if (encoding == DW_EH_PE_aligned)
-@@ -207,7 +282,7 @@ read_encoded_value_with_base (unsigned char encoding, _Unwind_Ptr base,
-       switch (encoding & 0x0f)
- 	{
- 	case DW_EH_PE_absptr:
--	  result = (_Unwind_Internal_Ptr) u->ptr;
-+	  result = (_Unwind_Internal_Ptr) read_pointer(p);
- 	  p += sizeof (void *);
- 	  break;
- 
-@@ -228,28 +303,28 @@ read_encoded_value_with_base (unsigned char encoding, _Unwind_Ptr base,
- 	  break;
- 
- 	case DW_EH_PE_udata2:
--	  result = u->u2;
-+	  result = read_2u (p);
- 	  p += 2;
- 	  break;
- 	case DW_EH_PE_udata4:
--	  result = u->u4;
-+	  result = read_4u (p);
- 	  p += 4;
- 	  break;
- 	case DW_EH_PE_udata8:
--	  result = u->u8;
-+	  result = read_8u (p);
- 	  p += 8;
- 	  break;
- 
- 	case DW_EH_PE_sdata2:
--	  result = u->s2;
-+	  result = read_2s (p);
- 	  p += 2;
- 	  break;
- 	case DW_EH_PE_sdata4:
--	  result = u->s4;
-+	  result = read_4s (p);
- 	  p += 4;
- 	  break;
- 	case DW_EH_PE_sdata8:
--	  result = u->s8;
-+	  result = read_8s (p);
- 	  p += 8;
- 	  break;
- 
+     {
+       _Unwind_Internal_Ptr a = (_Unwind_Internal_Ptr) p;
++#ifdef __MINT__
++      /*
++       * alignment to pointer size cannot be guaranteed by TOS at runtime
++       */
++      extern void *__DW_EH_PE_aligned_var;
++      _Unwind_Internal_Ptr base_offset = ((_Unwind_Internal_Ptr)&__DW_EH_PE_aligned_var) & 3;
++      a += base_offset; /* Where it should have been located */
++#endif
+       a = (a + sizeof (void *) - 1) & - sizeof(void *);
++#ifdef __MINT__
++      a -= base_offset; /* Where it is actually aligned */
++#endif
+       result = *(_Unwind_Internal_Ptr *) a;
+       p = (const unsigned char *) (_Unwind_Internal_Ptr) (a + sizeof (void *));
+     }
 diff --git a/libgfortran/Makefile.am b/libgfortran/Makefile.am
 index 2857af5943f..9eb6d904d3a 100644
 --- a/libgfortran/Makefile.am
@@ -18075,6 +19506,19 @@ index 536fb917a49..1545f99d181 100644
  }
  
  void
+diff --git a/libstdc++-v3/acinclude.m4 b/libstdc++-v3/acinclude.m4
+index 08319dc5549..22850b2f45b 100644
+--- a/libstdc++-v3/acinclude.m4
++++ b/libstdc++-v3/acinclude.m4
+@@ -2761,7 +2761,7 @@ AC_DEFUN([GLIBCXX_ENABLE_VTABLE_VERIFY], [
+   vtv_cygmin=no
+   if test $enable_vtable_verify = yes; then
+     case ${target_os} in
+-      cygwin*|mingw32*)
++      cygwin*|mingw*)
+         VTV_CXXFLAGS="-fvtable-verify=std -Wl,-lvtv,-u_vtable_map_vars_start,-u_vtable_map_vars_end"
+         VTV_CXXLINKFLAGS="-L${toplevel_builddir}/libvtv/.libs -Wl,--rpath -Wl,${toplevel_builddir}/libvtv/.libs"
+         vtv_cygmin=yes
 diff --git a/libstdc++-v3/config/abi/pre/gnu.ver b/libstdc++-v3/config/abi/pre/gnu.ver
 index f365da116f0..5a0c88dfcae 100644
 --- a/libstdc++-v3/config/abi/pre/gnu.ver
@@ -18621,7 +20065,7 @@ index 00000000000..cf72499370a
 +
 +#endif
 diff --git a/libstdc++-v3/configure b/libstdc++-v3/configure
-index de8390703e2..afe881d3b23 100755
+index de8390703e2..a21590fb647 100755
 --- a/libstdc++-v3/configure
 +++ b/libstdc++-v3/configure
 @@ -5657,7 +5657,7 @@ if test "$GCC" = yes; then
@@ -18752,6 +20196,15 @@ index de8390703e2..afe881d3b23 100755
      # 'host' will be top-level target in the case of a target lib,
      # we must compare to with_cross_host to decide if this is a native
      # or cross-compiler and select where to install dlls appropriately.
+@@ -18134,7 +18140,7 @@ $as_echo "$enable_vtable_verify" >&6; }
+   vtv_cygmin=no
+   if test $enable_vtable_verify = yes; then
+     case ${target_os} in
+-      cygwin*|mingw32*)
++      cygwin*|mingw*)
+         VTV_CXXFLAGS="-fvtable-verify=std -Wl,-lvtv,-u_vtable_map_vars_start,-u_vtable_map_vars_end"
+         VTV_CXXLINKFLAGS="-L${toplevel_builddir}/libvtv/.libs -Wl,--rpath -Wl,${toplevel_builddir}/libvtv/.libs"
+         vtv_cygmin=yes
 @@ -21834,7 +21840,7 @@ if test "$GCC" = yes; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
  $as_echo_n "checking for ld used by $CC... " >&6; }
@@ -18779,6 +20232,15 @@ index de8390703e2..afe881d3b23 100755
  
    # All these tests are for C++; save the language and the compiler flags.
    # The CXXFLAGS thing is suspicious, but based on similar bits previously
+@@ -60180,7 +60186,7 @@ _ACEOF
+   fi
+ 
+     ;;
+-  *-mingw32*)
++  *-mingw*)
+ 
+   # If we're not using GNU ld, then there's no point in even trying these
+   # tests.  Check for that first.  We should have already tested for gld
 diff --git a/libstdc++-v3/configure.host b/libstdc++-v3/configure.host
 index 155a3cdea1b..28369401ccd 100644
 --- a/libstdc++-v3/configure.host
@@ -18795,7 +20257,7 @@ index 155a3cdea1b..28369401ccd 100644
      os_include_dir="os/bsd/netbsd"
      ;;
 diff --git a/libstdc++-v3/crossconfig.m4 b/libstdc++-v3/crossconfig.m4
-index 830a00b5d2a..e30981639a3 100644
+index 830a00b5d2a..f7219123ba8 100644
 --- a/libstdc++-v3/crossconfig.m4
 +++ b/libstdc++-v3/crossconfig.m4
 @@ -183,7 +183,7 @@ case "${host}" in
@@ -18807,6 +20269,15 @@ index 830a00b5d2a..e30981639a3 100644
      GLIBCXX_CHECK_COMPILER_FEATURES
      GLIBCXX_CHECK_LINKER_FEATURES
      GLIBCXX_CHECK_MATH_SUPPORT
+@@ -194,7 +194,7 @@ case "${host}" in
+     AC_CHECK_FUNCS(aligned_alloc posix_memalign memalign _aligned_malloc)
+     AM_ICONV
+     ;;
+-  *-mingw32*)
++  *-mingw*)
+     GLIBCXX_CHECK_LINKER_FEATURES
+     GLIBCXX_CHECK_MATH_SUPPORT
+     GLIBCXX_CHECK_STDLIB_SUPPORT
 diff --git a/libstdc++-v3/include/bits/basic_string.h b/libstdc++-v3/include/bits/basic_string.h
 index 6443ba9192a..5ac3bb8fcc1 100644
 --- a/libstdc++-v3/include/bits/basic_string.h
@@ -22427,7 +23898,7 @@ index 24d13f34409..e905d58ca24 100644
          # as there is no search path for DLLs.
          _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='-L$libdir'
 diff --git a/libvtv/configure b/libvtv/configure
-index dfb9162c79f..b65e8148211 100755
+index dfb9162c79f..f6f65a82b1f 100755
 --- a/libvtv/configure
 +++ b/libvtv/configure
 @@ -6269,7 +6269,7 @@ if test "$GCC" = yes; then
@@ -22545,6 +24016,28 @@ index dfb9162c79f..b65e8148211 100755
      # 'host' will be top-level target in the case of a target lib,
      # we must compare to with_cross_host to decide if this is a native
      # or cross-compiler and select where to install dlls appropriately.
+@@ -15472,7 +15472,7 @@ if test "x$VTV_SUPPORTED" = "xyes"; then
+ fi
+ 
+ case "$target_os" in
+-  cygwin*|mingw32*)
++  cygwin*|mingw*)
+     vtv_cygmin="yes"
+     ;;
+   *)
+diff --git a/libvtv/configure.ac b/libvtv/configure.ac
+index 33b1e7913c6..095925d5b15 100644
+--- a/libvtv/configure.ac
++++ b/libvtv/configure.ac
+@@ -177,7 +177,7 @@ _EOF
+ fi
+ 
+ case "$target_os" in
+-  cygwin*|mingw32*)
++  cygwin*|mingw*)
+     vtv_cygmin="yes"
+     ;;
+   *)
 diff --git a/lto-plugin/configure b/lto-plugin/configure
 index cdea9eac3ee..437bad465b9 100755
 --- a/lto-plugin/configure

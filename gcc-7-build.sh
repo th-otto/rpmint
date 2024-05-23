@@ -14,7 +14,7 @@ scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
 VERSION=-7.5.0
-VERSIONPATCH=-20230908
+VERSIONPATCH=-20230719
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -676,10 +676,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		test -f $i && mv $i ${INSTALL_DIR}${gccsubdir}
 		find . -name "$i" -delete
 	done
-	rmdir m*/*/*/* || :
-	rmdir m*/*/* || :
-	rmdir m*/* || :
-	rmdir m* || :
+	find . -depth -type d -empty | xargs rmdir -v
 	cd "${INSTALL_DIR}"
 
 	case $host in

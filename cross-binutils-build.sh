@@ -206,6 +206,7 @@ ac_cv_func_pthread_setname_np=no
 ac_cv_func_pthread_sigmask=no
 ax_cv_PTHREAD_PRIO_INHERIT=no
 gl_pthread_in_glibc=yes
+ac_cv_func_libiconvlist=yes
 EOF
 }
 

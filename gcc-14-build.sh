@@ -698,10 +698,7 @@ for INSTALL_DIR in "${PKG_DIR}" "${THISPKG_DIR}"; do
 		test -f $i && mv $i ${INSTALL_DIR}${gccsubdir}
 		find . -name "$i" -delete
 	done
-	rmdir m*/*/*/* || :
-	rmdir m*/*/* || :
-	rmdir m*/* || :
-	rmdir m* || :
+	find . -depth -type d -empty | xargs rmdir -v
 	cd "${INSTALL_DIR}"
 
 	case $host in
@@ -839,11 +836,13 @@ fi
 # create a separate archive for the go backend
 #
 if $with_go; then
-	go=`find ${gccsubdir#/} -name "libgo*.a"`
-	go=`find ${gccsubdir#/} -name "libffi*.a"`
-	go=`find ${gccsubdir#/} -name "libatomic*.a"`
+	go=
+	go="$go "`find ${gccsubdir#/} -name "libgo*.a"`
+	go="$go "`find ${gccsubdir#/} -name "libffi*.a"`
+	go="$go "`find ${gccsubdir#/} -name "libatomic*.a"`
 	go="$go "`find ${gccsubdir#/} -name "go1*"`
-	go="$go "${PREFIX#/}/bin/${TARGET}-go* ${PREFIX#/}/bin/${TARGET}-gccgo*
+	go="$go "${PREFIX#/}/bin/${TARGET}-go*
+	go="$go "${PREFIX#/}/bin/${TARGET}-gccgo*
 	${TAR} ${TAR_OPTS} -Jcf ${DIST_DIR}/${TARNAME}-go-${host}.tar.xz $go || exit 1
 	rm -rf $go
 fi
