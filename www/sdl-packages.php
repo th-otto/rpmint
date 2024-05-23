@@ -858,6 +858,30 @@ Batrachians is a fly-eating frog video game. It is a clone of the 1982 Frog Bog 
 </br>
 '
 	),
+	'xrick' => array(
+		'name' => 'xrick',
+		'version' => '021212',
+		'upstream' => 'http://www.bigorno.net/xrick/',
+		'source' => $download_dir . '%{name}-%{version}.tgz',
+		'category' => 'Games',
+		'summary' => 'xrick is a clone of Rick Dangerous,',
+		'comment' => '
+Way before Lara Croft, back in the 1980&apos;s and early 1990&apos;s, Rick
+Dangerous was the Indiana Jones of computer games, running away from
+rolling rocks, avoiding traps, from South America to a futuristic
+missile base via Egypt and the Schwarzendumpf castle.
+</br>
+xrick is an exact clone of Rick Dangerous, produced by carefully
+cracking and reverse-engineering the orignal IBM PC (x86 CPU) and Atari
+ST (68k CPU) versions of the game, and then porting to C. Thanks to its
+structure, and the use of the SDL library, it has been reported to run
+on Linux, Windows, BeOs, Amiga, QNX, etc. and all sorts of gaming
+consoles, phones and devices.
+</br></br>
+<img src="' . $download_dir . 'xrick.gif" width="320" height="240">
+</br>
+'
+	),
 );
 
 ?>

@@ -1,0 +1,879 @@
+diff -rup xrick-021212.orig/Makefile xrick-021212/Makefile
+--- xrick-021212.orig/Makefile	2002-12-24 17:58:26.000000000 +0100
++++ xrick-021212/Makefile	2024-05-21 18:03:01.073192476 +0200
+@@ -15,9 +15,9 @@
+ # Vars
+ #
+ 
+-SDLVERSION=$(shell sdl-config --version 2>/dev/null)
++SDLVERSION=$(shell pkg-config --modversion sdl)
+ ROOTDIR=$(shell pwd)
+-TARGET=$(shell uname -s | tr [a-z] [A-Z])
++TARGET=
+ 
+ #
+ # Config
+@@ -29,59 +29,28 @@ else
+ $(warning Detected SDL version $(SDLVERSION)) 
+ endif
+ 
+-ifeq ($(strip $(SDLVERSION)),)
+-$(error SDL is missing)
+-endif
+-
+-SDL_MAJ=$(word 1,$(subst ., ,$(SDLVERSION)))
+-SDL_MIN=$(word 2,$(subst ., ,$(SDLVERSION)))
+-SDL_MIC=$(word 3,$(subst ., ,$(SDLVERSION)))
+-
+ SDL_MAJ_REQ=1
+ SDL_MIN_REQ=2
+ SDL_MIC_REQ=1
+ 
+-SDL_CHKVER=$(shell if [ $(SDL_MAJ) -lt $(SDL_MAJ_REQ) ]; then echo "BAD"; fi)
+-ifeq ($(SDL_CHKVER),BAD)
+-$(error SDL version $(SDL_MAJ_REQ).$(SDL_MIN_REQ).$(SDL_MIC_REQ) is required)
+-endif
+-
+-SDL_CHKVER=$(shell if [ $(SDL_MAJ) -eq $(SDL_MAJ_REQ) -a $(SDL_MIN) -lt $(SDL_MIN_REQ) ]; then echo "BAD"; fi)
+-ifeq ($(SDL_CHKVER),BAD)
+-$(error SDL version $(SDL_MAJ_REQ).$(SDL_MIN_REQ).$(SDL_MIC_REQ) is required)
+-endif
+-
+-SDL_CHKVER=$(shell if [ $(SDL_MAJ) -eq $(SDL_MAJ_REQ) -a $(SDL_MIN) -eq $(SDL_MIN_REQ) -a $(SDL_MIC) -lt $(SDL_MIC_REQ) ]; then echo "BAD"; fi)
++SDL_CHKVER=$(shell if pkg-config --atleast-version $(SDL_MAJ_REQ).$(SDL_MIN_REQ).$(SDL_MIC_REQ) sdl; then :; else echo "BAD"; fi)
+ ifeq ($(SDL_CHKVER),BAD)
+ $(error SDL version $(SDL_MAJ_REQ).$(SDL_MIN_REQ).$(SDL_MIC_REQ) is required)
+ endif
+ 
+-ifneq (,$(findstring CYGWIN,$(TARGET)))
+-XOBJ=xrick.res
+-endif
+-
+-ifneq (,$(findstring MINGW,$(TARGET)))
+-XOBJ=xrick.res
+-endif
+-
+ #
+-# Rules
++
++# Rules
+ #
+ 
+ all:
+-	@echo "ROOTDIR=$(ROOTDIR)" > Makefile.global
+-	@echo "XOBJ=$(XOBJ)" >> Makefile.global
+-	@echo "CFLAGS=-g -ansi -pedantic -Wall -W -O2 -I $(ROOTDIR)/include $(shell sdl-config --cflags)" >> Makefile.global
+-	@echo "LDFLAGS=-lz $(shell sdl-config --libs)" >> Makefile.global
+-	@echo "CC=gcc" >> Makefile.global
+-	@echo "CPP=gcc -E" >> Makefile.global
+ 	$(MAKE) -C src all
+ 
+ clean:
+ 	for i in src include; do \
+ 	  $(MAKE) -C $$i clean; \
+ 	done
+-	rm -f *~ log.txt Makefile.global
++	rm -f *~ log.txt
+ 
+ depend:
+ 	$(MAKE) -C src depend
+diff -rup xrick-021212.orig/include/img.h xrick-021212/include/img.h
+--- xrick-021212.orig/include/img.h	2002-12-24 14:32:56.000000000 +0100
++++ xrick-021212/include/img.h	2024-05-21 18:03:01.073192476 +0200
+@@ -27,7 +27,7 @@ typedef struct {
+   U8 *pixels;
+ } img_t;
+ 
+-img_t *IMG_SPLASH;
++extern img_t *IMG_SPLASH;
+ 
+ #endif
+ 
+diff -rup xrick-021212.orig/src/Makefile xrick-021212/src/Makefile
+--- xrick-021212.orig/src/Makefile	2002-12-24 14:33:43.000000000 +0100
++++ xrick-021212/src/Makefile	2024-05-21 18:48:16.295168955 +0200
+@@ -15,20 +15,24 @@
+ # Includes
+ #
+ #
+-ifeq (.depend, $(wildcard .depend))
+-include .depend
++ifneq (,$(findstring CYGWIN,$(TARGET)))
++XOBJ=xrick.res
+ endif
+ 
+-ifeq (../Makefile.global, $(wildcard ../Makefile.global))
+-include ../Makefile.global
+-else
+-$(error Oops)
++ifneq (,$(findstring MINGW,$(TARGET)))
++XOBJ=xrick.res
+ endif
+ 
+ #
+ # Defs
+ #
+ #
++CC = $(CROSS_PREFIX)gcc
++SDL_CFLAGS := $(shell pkg-config --cflags sdl)
++SDL_LIBS := $(shell pkg-config --libs sdl) -lz
++CFLAGS=$(CPU_CFLAGS) -Wall -W -O2 -fomit-frame-pointer -fno-strict-aliasing -fstack-check -I../include $(SDL_CFLAGS)
++LDFLAGS=-s
++
+ TARGET = ../xrick
+ OBJECTS = unzip.o data.o scr_xrick.o scr_pause.o scr_imain.o scr_imap.o scr_gameover.o scr_getname.o dat_picsPC.o dat_picsST.o dat_screens.o dat_tilesPC.o dat_tilesST.o dat_maps.o dat_ents.o dat_spritesST.o dat_spritesPC.o ents.o e_bullet.o e_bomb.o e_rick.o e_sbonus.o e_them.o e_bonus.o e_box.o rects.o util.o game.o xrick.o draw.o maps.o sysvid.o syskbd.o control.o system.o scroller.o sysevt.o sysarg.o syssnd.o sysjoy.o dat_snd.o
+ 
+@@ -37,10 +41,10 @@ OBJECTS = unzip.o data.o scr_xrick.o scr
+ #
+ #
+ 
+-all: $(TARGET)
++all: ../xrick
+ 
+-$(TARGET): $(OBJECTS) $(XOBJ)
+-	$(CC) $(OBJECTS) $(XOBJ) $(LDFLAGS) -o $(TARGET)
++../xrick: $(OBJECTS) $(XOBJ)
++	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJECTS) $(XOBJ) $(SDL_LIBS) -o $@
+ 
+ %.o: %.c
+ 	$(CC) $(CFLAGS) -c $< -o $@
+@@ -49,12 +53,15 @@ xrick.res: xrick.rc
+ 	windres $< -O coff -o $@
+ 
+ clean:
+-	rm -f *~ *.o core .depend $(TARGET)
++	rm -f *~ *.o core .depend ../xrick
+ 	rm -f *.exe *.core *.res
+-	rm -f $(LINKS)
++
++ifeq (.depend, $(wildcard .depend))
++include .depend
++endif
+ 
+ depend:
+-	for i in *.c; do $(CPP) $(CFLAGS) -I$(ROOTDIR)/include -MM $$i; done > .depend
++	for i in *.c; do $(CC) -E $(CFLAGS) -I../include -MM $$i; done > .depend
+ 
+ # eof
+ 
+diff -rup xrick-021212.orig/src/data.c xrick-021212/src/data.c
+--- xrick-021212.orig/src/data.c	2002-12-24 14:33:43.000000000 +0100
++++ xrick-021212/src/data.c	2024-05-21 18:14:09.113746211 +0200
+@@ -111,6 +111,7 @@ data_file_open(char *name)
+ 		sprintf(n, "%s/%s", path.name, name);
+ 		str_slash(n);
+ 		fh = fopen(n, "rb");
++		free(n);
+ 		return (data_file_t *)fh;
+ 	}
+ }
+@@ -121,6 +122,7 @@ data_file_size(data_file_t *file)
+ 	int s;
+ 	if (path.zip) {
+ 		/* not implemented */
++		s = 0;
+ 	} else {
+ 		fseek((FILE *)file, 0, SEEK_END);
+ 		s = ftell((FILE *)file);
+@@ -195,15 +197,20 @@ str_zipext(char *name)
+ 	int i;
+ 
+ 	i = strlen(name) - 1;
+-	if (i < 0 || name[i] != 'p' && name[i] != 'P') return 0;
++	if (i < 0 || (name[i] != 'p' && name[i] != 'P'))
++		return 0;
+ 	i--;
+-	if (i < 0 || name[i] != 'i' && name[i] != 'I') return 0;
++	if (i < 0 || (name[i] != 'i' && name[i] != 'I'))
++		return 0;
+ 	i--;
+-	if (i < 0 || name[i] != 'z' && name[i] != 'Z') return 0;
++	if (i < 0 || (name[i] != 'z' && name[i] != 'Z'))
++		return 0;
+ 	i--;
+-	if (i < 0 || name[i] != '.') return 0;
++	if (i < 0 || name[i] != '.')
++		return 0;
+ 	i--;
+-	if (i < 0) return 0;
++	if (i < 0)
++		return 0;
+ 	return 1;
+ }
+ 
+diff -rup xrick-021212.orig/src/e_them.c xrick-021212/src/e_them.c
+--- xrick-021212.orig/src/e_them.c	2002-12-24 14:33:43.000000000 +0100
++++ xrick-021212/src/e_them.c	2024-05-21 18:03:01.076525795 +0200
+@@ -341,7 +341,7 @@ e_them_t2_action2(U8 e)
+   static U8 *cl = (U8 *)&cx;
+   static U8 *ch = (U8 *)&cx + 1;
+   static U16 *sl = (U16 *)&e_them_rndseed;
+-  static U16 *sh = (U16 *)&e_them_rndseed + 2;
++  static U16 *sh = (U16 *)&e_them_rndseed + 1;
+ 
+   /*sys_printf("e_them_t2 ------------------------------\n");*/
+ 
+diff -rup xrick-021212.orig/src/game.c xrick-021212/src/game.c
+--- xrick-021212.orig/src/game.c	2002-12-24 14:33:43.000000000 +0100
++++ xrick-021212/src/game.c	2024-05-21 18:03:01.076525795 +0200
+@@ -101,16 +101,10 @@ hscore_t game_hscores[8] = {
+ #ifdef ENABLE_SOUND
+ sound_t *WAV_GAMEOVER;
+ sound_t *WAV_SBONUS2;
+-sound_t *WAV_BULLET;
+-sound_t *WAV_BOMBSHHT;
+ sound_t *WAV_EXPLODE;
+ sound_t *WAV_STICK;
+-sound_t *WAV_WALK;
+ sound_t *WAV_CRAWL;
+-sound_t *WAV_JUMP;
+ sound_t *WAV_PAD;
+-sound_t *WAV_BOX;
+-sound_t *WAV_BONUS;
+ sound_t *WAV_SBONUS1;
+ sound_t *WAV_DIE;
+ sound_t *WAV_ENTITY[10];
+@@ -183,15 +177,13 @@ game_toggleCheat(U8 nbr)
+ void
+ game_setmusic(char *name, U8 loop)
+ {
+-	U8 channel;
+-
+ 	if (music_snd)
+ 		game_stopmusic();
+ 	music_snd = syssnd_load(name);
+ 	if (music_snd)
+ 	{
+ 		music_snd->dispose = TRUE; /* music is always "fire and forget" */
+-		channel = syssnd_play(music_snd, loop);
++		syssnd_play(music_snd, loop);
+ 	}
+ }
+ 
+@@ -569,7 +561,7 @@ init(void)
+ {
+   U8 i;
+ 
+-  E_RICK_STRST(0xff);
++  E_RICK_STRST(0xffu);
+ 
+   game_lives = 6;
+   game_bombs = 6;
+diff -rup xrick-021212.orig/src/scr_gameover.c xrick-021212/src/scr_gameover.c
+--- xrick-021212.orig/src/scr_gameover.c	2002-12-24 14:33:43.000000000 +0100
++++ xrick-021212/src/scr_gameover.c	2024-05-21 18:03:01.076525795 +0200
+@@ -33,10 +33,6 @@ screen_gameover(void)
+ #ifdef GFXST
+ 	static U32 tm = 0;
+ #endif
+-#ifdef ENABLE_SOUND
+-	static sound_t *snd;
+-	static U8 chan;
+-#endif
+ 
+ 	if (seq == 0) {
+ 		draw_tilesBank = 0;
+diff -rup xrick-021212.orig/src/sysarg.c xrick-021212/src/sysarg.c
+--- xrick-021212.orig/src/sysarg.c	2002-12-24 14:33:43.000000000 +0100
++++ xrick-021212/src/sysarg.c	2024-05-21 18:03:01.076525795 +0200
+@@ -48,7 +48,7 @@ int sysarg_args_fullscreen = 0;
+ int sysarg_args_zoom = 0;
+ int sysarg_args_nosound = 0;
+ int sysarg_args_vol = 0;
+-char *sysarg_args_data = NULL;
++char *sysarg_args_data = "data";
+ 
+ /*
+  * Fail
+@@ -98,35 +98,35 @@ sysarg_scankeys(char *keys)
+   i = 0;
+ 
+   j = 0;
+-  while (keys[i] != '\0' && keys[i] != '-' && j + 1 < sizeof k) k[j++] = keys[i++];
++  while (keys[i] != '\0' && keys[i] != '-' && j + 1 < (int)(sizeof k)) k[j++] = keys[i++];
+   if (keys[i++] == '\0') return -1;
+   k[j] = '\0';
+   syskbd_left = sysarg_sdlcode(k);
+   if (!syskbd_left) return -1;
+ 
+   j = 0;
+-  while (keys[i] != '\0' && keys[i] != '-' && j + 1 < sizeof k) k[j++] = keys[i++];
++  while (keys[i] != '\0' && keys[i] != '-' && j + 1 < (int)(sizeof k)) k[j++] = keys[i++];
+   if (keys[i++] == '\0') return -1;
+   k[j] = '\0';
+   syskbd_right = sysarg_sdlcode(k);
+   if (!syskbd_right) return -1;
+ 
+   j = 0;
+-  while (keys[i] != '\0' && keys[i] != '-' && j + 1 < sizeof k) k[j++] = keys[i++];
++  while (keys[i] != '\0' && keys[i] != '-' && j + 1 < (int)(sizeof k)) k[j++] = keys[i++];
+   if (keys[i++] == '\0') return -1;
+   k[j] = '\0';
+   syskbd_up = sysarg_sdlcode(k);
+   if (!syskbd_up) return -1;
+ 
+   j = 0;
+-  while (keys[i] != '\0' && keys[i] != '-' && j + 1 < sizeof k) k[j++] = keys[i++];
++  while (keys[i] != '\0' && keys[i] != '-' && j + 1 < (int)(sizeof k)) k[j++] = keys[i++];
+   if (keys[i++] == '\0') return -1;
+   k[j] = '\0';
+   syskbd_down = sysarg_sdlcode(k);
+   if (!syskbd_down) return -1;
+ 
+   j = 0;
+-  while (keys[i] != '\0' && keys[i] != '-' && j + 1 < sizeof k) k[j++] = keys[i++];
++  while (keys[i] != '\0' && keys[i] != '-' && j + 1 < (int)(sizeof k)) k[j++] = keys[i++];
+   if (keys[i] != '\0') return -1;
+   k[j] = '\0';
+   syskbd_fire = sysarg_sdlcode(k);
+diff -rup xrick-021212.orig/src/syssnd.c xrick-021212/src/syssnd.c
+--- xrick-021212.orig/src/syssnd.c	2002-12-24 14:33:43.000000000 +0100
++++ xrick-021212/src/syssnd.c	2024-05-21 18:39:16.190766284 +0200
+@@ -34,7 +34,12 @@ static U8 sndVol = SDL_MIX_MAXVOLUME;  /
+ static U8 sndUVol = SYSSND_MAXVOL;  /* user-selected volume */
+ static U8 sndMute = FALSE;  /* mute flag */
+ 
++#ifndef SDL_THREADS_DISABLED
+ static SDL_mutex *sndlock;
++#else
++#define SDL_mutexV(x)
++#define SDL_mutexP(x)
++#endif
+ 
+ /*
+  * prototypes
+@@ -97,8 +102,6 @@ void syssnd_callback(UNUSED(void *userda
+     }
+   }
+ 
+-  memcpy(stream, stream, len);
+-
+   SDL_mutexV(sndlock);
+ }
+ 
+@@ -114,7 +117,7 @@ end_channel(U8 c)
+ void
+ syssnd_init(void)
+ {
+-  SDL_AudioSpec desired, obtained;
++  SDL_AudioSpec desired;
+   U16 c;
+ 
+   if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
+@@ -131,19 +134,21 @@ syssnd_init(void)
+   desired.callback = syssnd_callback;
+   desired.userdata = NULL;
+ 
+-  if (SDL_OpenAudio(&desired, &obtained) < 0) {
++  if (SDL_OpenAudio(&desired, NULL) < 0) {
+     IFDEBUG_AUDIO(
+       sys_printf("xrick/audio: can not open audio (%s)\n", SDL_GetError());
+       );
+     return;
+   }
+ 
++#ifndef SDL_THREADS_DISABLED
+   sndlock = SDL_CreateMutex();
+   if (sndlock == NULL) {
+     IFDEBUG_AUDIO(sys_printf("xrick/audio: can not create lock\n"););
+     SDL_CloseAudio();
+     return;
+   }
++#endif
+ 
+   if (sysarg_args_vol != 0) {
+     sndUVol = sysarg_args_vol;
+@@ -166,7 +171,9 @@ syssnd_shutdown(void)
+   if (!isAudioActive) return;
+ 
+   SDL_CloseAudio();
++#ifndef SDL_THREADS_DISABLED
+   SDL_DestroyMutex(sndlock);
++#endif
+   isAudioActive = FALSE;
+ }
+ 
+@@ -413,6 +420,10 @@ static int
+ sdlRWops_write(SDL_RWops *context, const void *ptr, int size, int num)
+ {
+ 	/* not implemented */
++	(void)context;
++	(void)ptr;
++	(void)size;
++	(void)num;
+ 	return -1;
+ }
+ 
+diff -rup xrick-021212.orig/src/sysvid.c xrick-021212/src/sysvid.c
+--- xrick-021212.orig/src/sysvid.c	2002-12-24 14:33:43.000000000 +0100
++++ xrick-021212/src/sysvid.c	2024-05-21 18:03:01.076525795 +0200
+@@ -173,8 +173,7 @@ void
+ sysvid_init(void)
+ {
+   SDL_Surface *s;
+-  U8 *mask, tpix;
+-  U32 len, i;
++  U8 tpix;
+ 
+   IFDEBUG_VIDEO(printf("xrick/video: start\n"););
+ 
+diff -rup xrick-021212.orig/src/unzip.c xrick-021212/src/unzip.c
+--- xrick-021212.orig/src/unzip.c	2002-12-24 14:33:43.000000000 +0100
++++ xrick-021212/src/unzip.c	2024-05-21 18:03:01.076525795 +0200
+@@ -123,7 +123,7 @@ typedef struct
+ 	unz_file_info_internal cur_file_info_internal; /* private info about it*/
+     file_in_zip_read_info_s* pfile_in_zip_read; /* structure about the current
+ 	                                    file if we are decompressing it */
+-	char *filename;
++	const char *filename;
+ } unz_s;
+ 
+ 
+@@ -186,7 +186,7 @@ local int unzlocal_getShort (fin,pX)
+     uLong *pX;
+ {
+     uLong x ;
+-    int i;
++    int i = 0;
+     int err;
+ 
+     err = unzlocal_getByte(fin,&i);
+@@ -208,7 +208,7 @@ local int unzlocal_getLong (fin,pX)
+     uLong *pX;
+ {
+     uLong x ;
+-    int i;
++    int i = 0;
+     int err;
+ 
+     err = unzlocal_getByte(fin,&i);
+@@ -467,17 +467,17 @@ extern unzFile ZEXPORT unzOpen (path)
+ extern int ZEXPORT unzClose (file)
+ 	unzFile file;
+ {
+-	unz_s* s;
+-	if (file==NULL)
+-		return UNZ_PARAMERROR;
+-	s=(unz_s*)file;
++    unz_s* s;
++    if (file==NULL)
++        return UNZ_PARAMERROR;
++    s=(unz_s*)file;
+ 
+     if (s->pfile_in_zip_read!=NULL)
+         unzCloseCurrentFile(file);
+ 
+-	fclose(s->file);
+-	TRYFREE(s);
+-	return UNZ_OK;
++    fclose(s->file);
++    TRYFREE(s);
++    return UNZ_OK;
+ }
+ 
+ 
+@@ -562,10 +562,12 @@ local int unzlocal_GetCurrentFileInfoInt
+ 
+ 	/* we check the magic */
+ 	if (err==UNZ_OK)
++	{
+ 		if (unzlocal_getLong(s->file,&uMagic) != UNZ_OK)
+ 			err=UNZ_ERRNO;
+ 		else if (uMagic!=0x02014b50)
+ 			err=UNZ_BADZIPFILE;
++	}
+ 
+ 	if (unzlocal_getShort(s->file,&file_info.version) != UNZ_OK)
+ 		err=UNZ_ERRNO;
+@@ -642,10 +644,12 @@ local int unzlocal_GetCurrentFileInfoInt
+ 			uSizeRead = extraFieldBufferSize;
+ 
+ 		if (lSeek!=0)
++		{
+ 			if (fseek(s->file,lSeek,SEEK_CUR)==0)
+ 				lSeek=0;
+ 			else
+ 				err=UNZ_ERRNO;
++		}
+ 		if ((file_info.size_file_extra>0) && (extraFieldBufferSize>0))
+ 			if (fread(extraField,(uInt)uSizeRead,1,s->file)!=1)
+ 				err=UNZ_ERRNO;
+@@ -667,10 +671,12 @@ local int unzlocal_GetCurrentFileInfoInt
+ 			uSizeRead = commentBufferSize;
+ 
+ 		if (lSeek!=0)
++		{
+ 			if (fseek(s->file,lSeek,SEEK_CUR)==0)
+ 				lSeek=0;
+ 			else
+ 				err=UNZ_ERRNO;
++		}
+ 		if ((file_info.size_file_comment>0) && (commentBufferSize>0))
+ 			if (fread(szComment,(uInt)uSizeRead,1,s->file)!=1)
+ 				err=UNZ_ERRNO;
+@@ -780,44 +786,44 @@ extern int ZEXPORT unzLocateFile (file,
+ 	const char *szFileName;
+ 	int iCaseSensitivity;
+ {
+-	unz_s* s;
+-	int err;
++    unz_s* s;
++    int err;
+ 
+ 
+-	uLong num_fileSaved;
+-	uLong pos_in_central_dirSaved;
++    uLong num_fileSaved;
++    uLong pos_in_central_dirSaved;
+ 
+ 
+-	if (file==NULL)
+-		return UNZ_PARAMERROR;
++    if (file==NULL)
++        return UNZ_PARAMERROR;
+ 
+     if (strlen(szFileName)>=UNZ_MAXFILENAMEINZIP)
+         return UNZ_PARAMERROR;
+ 
+-	s=(unz_s*)file;
+-	if (!s->current_file_ok)
+-		return UNZ_END_OF_LIST_OF_FILE;
++    s=(unz_s*)file;
++    if (!s->current_file_ok)
++        return UNZ_END_OF_LIST_OF_FILE;
+ 
+-	num_fileSaved = s->num_file;
+-	pos_in_central_dirSaved = s->pos_in_central_dir;
++    num_fileSaved = s->num_file;
++    pos_in_central_dirSaved = s->pos_in_central_dir;
+ 
+-	err = unzGoToFirstFile(file);
++    err = unzGoToFirstFile(file);
+ 
+-	while (err == UNZ_OK)
+-	{
+-		char szCurrentFileName[UNZ_MAXFILENAMEINZIP+1];
+-		unzGetCurrentFileInfo(file,NULL,
+-								szCurrentFileName,sizeof(szCurrentFileName)-1,
+-								NULL,0,NULL,0);
+-		if (unzStringFileNameCompare(szCurrentFileName,
+-										szFileName,iCaseSensitivity)==0)
+-			return UNZ_OK;
+-		err = unzGoToNextFile(file);
+-	}
++    while (err == UNZ_OK)
++    {
++        char szCurrentFileName[UNZ_MAXFILENAMEINZIP+1];
++        unzGetCurrentFileInfo(file,NULL,
++                                szCurrentFileName,sizeof(szCurrentFileName)-1,
++                                NULL,0,NULL,0);
++        if (unzStringFileNameCompare(szCurrentFileName,
++                                        szFileName,iCaseSensitivity)==0)
++            return UNZ_OK;
++        err = unzGoToNextFile(file);
++    }
+ 
+-	s->num_file = num_fileSaved ;
+-	s->pos_in_central_dir = pos_in_central_dirSaved ;
+-	return err;
++    s->num_file = num_fileSaved ;
++    s->pos_in_central_dir = pos_in_central_dirSaved ;
++    return err;
+ }
+ 
+ 
+@@ -836,82 +842,84 @@ local int unzlocal_CheckCurrentFileCoher
+ 	uLong *poffset_local_extrafield;
+ 	uInt  *psize_local_extrafield;
+ {
+-	uLong uMagic,uData,uFlags;
+-	uLong size_filename;
+-	uLong size_extra_field;
+-	int err=UNZ_OK;
+-
+-	*piSizeVar = 0;
+-	*poffset_local_extrafield = 0;
+-	*psize_local_extrafield = 0;
++    uLong uMagic,uData,uFlags;
++    uLong size_filename;
++    uLong size_extra_field;
++    int err=UNZ_OK;
++
++    *piSizeVar = 0;
++    *poffset_local_extrafield = 0;
++    *psize_local_extrafield = 0;
++
++    if (fseek(s->file,s->cur_file_info_internal.offset_curfile +
++                                s->byte_before_the_zipfile,SEEK_SET)!=0)
++        return UNZ_ERRNO;
+ 
+-	if (fseek(s->file,s->cur_file_info_internal.offset_curfile +
+-								s->byte_before_the_zipfile,SEEK_SET)!=0)
+-		return UNZ_ERRNO;
+ 
++    if (err==UNZ_OK)
++    {
++        if (unzlocal_getLong(s->file,&uMagic) != UNZ_OK)
++            err=UNZ_ERRNO;
++        else if (uMagic!=0x04034b50)
++            err=UNZ_BADZIPFILE;
++    }
+ 
+-	if (err==UNZ_OK)
+-		if (unzlocal_getLong(s->file,&uMagic) != UNZ_OK)
+-			err=UNZ_ERRNO;
+-		else if (uMagic!=0x04034b50)
+-			err=UNZ_BADZIPFILE;
+-
+-	if (unzlocal_getShort(s->file,&uData) != UNZ_OK)
+-		err=UNZ_ERRNO;
++    if (unzlocal_getShort(s->file,&uData) != UNZ_OK)
++        err=UNZ_ERRNO;
+ /*
+-	else if ((err==UNZ_OK) && (uData!=s->cur_file_info.wVersion))
+-		err=UNZ_BADZIPFILE;
++    else if ((err==UNZ_OK) && (uData!=s->cur_file_info.wVersion))
++        err=UNZ_BADZIPFILE;
+ */
+-	if (unzlocal_getShort(s->file,&uFlags) != UNZ_OK)
+-		err=UNZ_ERRNO;
++    if (unzlocal_getShort(s->file,&uFlags) != UNZ_OK)
++        err=UNZ_ERRNO;
+ 
+-	if (unzlocal_getShort(s->file,&uData) != UNZ_OK)
+-		err=UNZ_ERRNO;
+-	else if ((err==UNZ_OK) && (uData!=s->cur_file_info.compression_method))
+-		err=UNZ_BADZIPFILE;
++    if (unzlocal_getShort(s->file,&uData) != UNZ_OK)
++        err=UNZ_ERRNO;
++    else if ((err==UNZ_OK) && (uData!=s->cur_file_info.compression_method))
++        err=UNZ_BADZIPFILE;
+ 
+     if ((err==UNZ_OK) && (s->cur_file_info.compression_method!=0) &&
+                          (s->cur_file_info.compression_method!=Z_DEFLATED))
+         err=UNZ_BADZIPFILE;
+ 
+-	if (unzlocal_getLong(s->file,&uData) != UNZ_OK) /* date/time */
+-		err=UNZ_ERRNO;
++    if (unzlocal_getLong(s->file,&uData) != UNZ_OK) /* date/time */
++        err=UNZ_ERRNO;
+ 
+-	if (unzlocal_getLong(s->file,&uData) != UNZ_OK) /* crc */
+-		err=UNZ_ERRNO;
+-	else if ((err==UNZ_OK) && (uData!=s->cur_file_info.crc) &&
+-		                      ((uFlags & 8)==0))
+-		err=UNZ_BADZIPFILE;
++    if (unzlocal_getLong(s->file,&uData) != UNZ_OK) /* crc */
++        err=UNZ_ERRNO;
++    else if ((err==UNZ_OK) && (uData!=s->cur_file_info.crc) &&
++                              ((uFlags & 8)==0))
++        err=UNZ_BADZIPFILE;
+ 
+-	if (unzlocal_getLong(s->file,&uData) != UNZ_OK) /* size compr */
+-		err=UNZ_ERRNO;
+-	else if ((err==UNZ_OK) && (uData!=s->cur_file_info.compressed_size) &&
+-							  ((uFlags & 8)==0))
+-		err=UNZ_BADZIPFILE;
++    if (unzlocal_getLong(s->file,&uData) != UNZ_OK) /* size compr */
++        err=UNZ_ERRNO;
++    else if ((err==UNZ_OK) && (uData!=s->cur_file_info.compressed_size) &&
++                              ((uFlags & 8)==0))
++        err=UNZ_BADZIPFILE;
+ 
+-	if (unzlocal_getLong(s->file,&uData) != UNZ_OK) /* size uncompr */
+-		err=UNZ_ERRNO;
+-	else if ((err==UNZ_OK) && (uData!=s->cur_file_info.uncompressed_size) &&
+-							  ((uFlags & 8)==0))
+-		err=UNZ_BADZIPFILE;
++    if (unzlocal_getLong(s->file,&uData) != UNZ_OK) /* size uncompr */
++        err=UNZ_ERRNO;
++    else if ((err==UNZ_OK) && (uData!=s->cur_file_info.uncompressed_size) &&
++                              ((uFlags & 8)==0))
++        err=UNZ_BADZIPFILE;
+ 
+ 
+-	if (unzlocal_getShort(s->file,&size_filename) != UNZ_OK)
+-		err=UNZ_ERRNO;
+-	else if ((err==UNZ_OK) && (size_filename!=s->cur_file_info.size_filename))
+-		err=UNZ_BADZIPFILE;
++    if (unzlocal_getShort(s->file,&size_filename) != UNZ_OK)
++        err=UNZ_ERRNO;
++    else if ((err==UNZ_OK) && (size_filename!=s->cur_file_info.size_filename))
++        err=UNZ_BADZIPFILE;
+ 
+-	*piSizeVar += (uInt)size_filename;
++    *piSizeVar += (uInt)size_filename;
+ 
+-	if (unzlocal_getShort(s->file,&size_extra_field) != UNZ_OK)
+-		err=UNZ_ERRNO;
+-	*poffset_local_extrafield= s->cur_file_info_internal.offset_curfile +
+-									SIZEZIPLOCALHEADER + size_filename;
+-	*psize_local_extrafield = (uInt)size_extra_field;
++    if (unzlocal_getShort(s->file,&size_extra_field) != UNZ_OK)
++        err=UNZ_ERRNO;
++    *poffset_local_extrafield= s->cur_file_info_internal.offset_curfile +
++                                    SIZEZIPLOCALHEADER + size_filename;
++    *psize_local_extrafield = (uInt)size_extra_field;
+ 
+-	*piSizeVar += (uInt)size_extra_field;
++    *piSizeVar += (uInt)size_extra_field;
+ 
+-	return err;
++    return err;
+ }
+ 
+ /*
+@@ -921,68 +929,68 @@ local int unzlocal_CheckCurrentFileCoher
+ extern int ZEXPORT unzOpenCurrentFile (file)
+ 	unzFile file;
+ {
+-	int err=UNZ_OK;
+-	int Store;
+-	uInt iSizeVar;
+-	unz_s* s;
+-	file_in_zip_read_info_s* pfile_in_zip_read_info;
+-	uLong offset_local_extrafield;  /* offset of the local extra field */
+-	uInt  size_local_extrafield;    /* size of the local extra field */
++    int err=UNZ_OK;
++    int Store;
++    uInt iSizeVar;
++    unz_s* s;
++    file_in_zip_read_info_s* pfile_in_zip_read_info;
++    uLong offset_local_extrafield;  /* offset of the local extra field */
++    uInt  size_local_extrafield;    /* size of the local extra field */
+ 
+-	if (file==NULL)
+-		return UNZ_PARAMERROR;
+-	s=(unz_s*)file;
+-	if (!s->current_file_ok)
+-		return UNZ_PARAMERROR;
++    if (file==NULL)
++        return UNZ_PARAMERROR;
++    s=(unz_s*)file;
++    if (!s->current_file_ok)
++        return UNZ_PARAMERROR;
+ 
+     if (s->pfile_in_zip_read != NULL)
+         unzCloseCurrentFile(file);
+ 
+-	if (unzlocal_CheckCurrentFileCoherencyHeader(s,&iSizeVar,
+-				&offset_local_extrafield,&size_local_extrafield)!=UNZ_OK)
+-		return UNZ_BADZIPFILE;
+-
+-	pfile_in_zip_read_info = (file_in_zip_read_info_s*)
+-									    ALLOC(sizeof(file_in_zip_read_info_s));
+-	if (pfile_in_zip_read_info==NULL)
+-		return UNZ_INTERNALERROR;
++    if (unzlocal_CheckCurrentFileCoherencyHeader(s,&iSizeVar,
++                &offset_local_extrafield,&size_local_extrafield)!=UNZ_OK)
++        return UNZ_BADZIPFILE;
++
++    pfile_in_zip_read_info = (file_in_zip_read_info_s*)
++                                        ALLOC(sizeof(file_in_zip_read_info_s));
++    if (pfile_in_zip_read_info==NULL)
++        return UNZ_INTERNALERROR;
++
++    pfile_in_zip_read_info->read_buffer=(char*)ALLOC(UNZ_BUFSIZE);
++    pfile_in_zip_read_info->offset_local_extrafield = offset_local_extrafield;
++    pfile_in_zip_read_info->size_local_extrafield = size_local_extrafield;
++    pfile_in_zip_read_info->pos_local_extrafield=0;
+ 
+-	pfile_in_zip_read_info->read_buffer=(char*)ALLOC(UNZ_BUFSIZE);
+-	pfile_in_zip_read_info->offset_local_extrafield = offset_local_extrafield;
+-	pfile_in_zip_read_info->size_local_extrafield = size_local_extrafield;
+-	pfile_in_zip_read_info->pos_local_extrafield=0;
+-
+-	if (pfile_in_zip_read_info->read_buffer==NULL)
+-	{
+-		TRYFREE(pfile_in_zip_read_info);
+-		return UNZ_INTERNALERROR;
+-	}
++    if (pfile_in_zip_read_info->read_buffer==NULL)
++    {
++        TRYFREE(pfile_in_zip_read_info);
++        return UNZ_INTERNALERROR;
++    }
+ 
+-	pfile_in_zip_read_info->stream_initialised=0;
++    pfile_in_zip_read_info->stream_initialised=0;
+ 
+-	if ((s->cur_file_info.compression_method!=0) &&
++    if ((s->cur_file_info.compression_method!=0) &&
+         (s->cur_file_info.compression_method!=Z_DEFLATED))
+-		err=UNZ_BADZIPFILE;
+-	Store = s->cur_file_info.compression_method==0;
++        err=UNZ_BADZIPFILE;
++    Store = s->cur_file_info.compression_method==0;
+ 
+-	pfile_in_zip_read_info->crc32_wait=s->cur_file_info.crc;
+-	pfile_in_zip_read_info->crc32=0;
+-	pfile_in_zip_read_info->compression_method =
++    pfile_in_zip_read_info->crc32_wait=s->cur_file_info.crc;
++    pfile_in_zip_read_info->crc32=0;
++    pfile_in_zip_read_info->compression_method =
+             s->cur_file_info.compression_method;
+-	pfile_in_zip_read_info->file=s->file;
+-	pfile_in_zip_read_info->byte_before_the_zipfile=s->byte_before_the_zipfile;
++    pfile_in_zip_read_info->file=s->file;
++    pfile_in_zip_read_info->byte_before_the_zipfile=s->byte_before_the_zipfile;
+ 
+     pfile_in_zip_read_info->stream.total_out = 0;
+ 
+-	if (!Store)
+-	{
+-	  pfile_in_zip_read_info->stream.zalloc = (alloc_func)0;
+-	  pfile_in_zip_read_info->stream.zfree = (free_func)0;
+-	  pfile_in_zip_read_info->stream.opaque = (voidpf)0;
+-
+-	  err=inflateInit2(&pfile_in_zip_read_info->stream, -MAX_WBITS);
+-	  if (err == Z_OK)
+-	    pfile_in_zip_read_info->stream_initialised=1;
++    if (!Store)
++    {
++      pfile_in_zip_read_info->stream.zalloc = (alloc_func)0;
++      pfile_in_zip_read_info->stream.zfree = (free_func)0;
++      pfile_in_zip_read_info->stream.opaque = (voidpf)0;
++
++      err=inflateInit2(&pfile_in_zip_read_info->stream, -MAX_WBITS);
++      if (err == Z_OK)
++        pfile_in_zip_read_info->stream_initialised=1;
+         /* windowBits is passed < 0 to tell that there is no zlib header.
+          * Note that in this case inflate *requires* an extra "dummy" byte
+          * after the compressed stream in order to complete decompression and
+@@ -990,21 +998,21 @@ extern int ZEXPORT unzOpenCurrentFile (f
+          * In unzip, i don't wait absolutely Z_STREAM_END because I known the
+          * size of both compressed and uncompressed data
+          */
+-	}
+-	pfile_in_zip_read_info->rest_read_compressed =
++    }
++    pfile_in_zip_read_info->rest_read_compressed =
+             s->cur_file_info.compressed_size ;
+-	pfile_in_zip_read_info->rest_read_uncompressed =
++    pfile_in_zip_read_info->rest_read_uncompressed =
+             s->cur_file_info.uncompressed_size ;
+ 
+ 
+-	pfile_in_zip_read_info->pos_in_zipfile =
++    pfile_in_zip_read_info->pos_in_zipfile =
+             s->cur_file_info_internal.offset_curfile + SIZEZIPLOCALHEADER +
+-			  iSizeVar;
++              iSizeVar;
+ 
+-	pfile_in_zip_read_info->stream.avail_in = (uInt)0;
++    pfile_in_zip_read_info->stream.avail_in = (uInt)0;
+ 
+ 
+-	s->pfile_in_zip_read = pfile_in_zip_read_info;
++    s->pfile_in_zip_read = pfile_in_zip_read_info;
+     return UNZ_OK;
+ }
+ 
+@@ -1293,7 +1301,6 @@ extern int ZEXPORT unzGetGlobalComment (
+ 	char *szComment;
+ 	uLong uSizeBuf;
+ {
+-	int err=UNZ_OK;
+ 	unz_s* s;
+ 	uLong uReadThis ;
+ 	if (file==NULL)
