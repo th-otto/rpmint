@@ -1,0 +1,54 @@
+diff -rup brotli-1.1.0.orig/c/tools/brotli.c brotli-1.1.0/c/tools/brotli.c
+--- brotli-1.1.0.orig/c/tools/brotli.c	2023-08-29 13:00:29.000000000 +0200
++++ brotli-1.1.0/c/tools/brotli.c	2024-05-23 07:54:17.052297288 +0200
+@@ -75,9 +75,9 @@ static int ms_open(const char* filename,
+ #define MAKE_BINARY(FILENO) (FILENO)
+ #endif  /* defined(_WIN32) */
+ 
+-#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 200809L)
++#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 200809L) && defined(AT_FDCWD)
+ #define HAVE_UTIMENSAT 1
+-#elif defined(_ATFILE_SOURCE)
++#elif defined(_ATFILE_SOURCE) && defined(AT_FDCWD)
+ #define HAVE_UTIMENSAT 1
+ #else
+ #define HAVE_UTIMENSAT 0
+diff -rup brotli-1.1.0.orig/c/include/brotli/port.h brotli-1.1.0/c/include/brotli/port.h
+--- brotli-1.1.0.orig/c/include/brotli/port.h	2023-08-29 13:00:29.000000000 +0200
++++ brotli-1.1.0/c/include/brotli/port.h	2024-05-23 07:59:33.314256432 +0200
+@@ -226,14 +226,15 @@
+ 
+ #if defined(_WIN32) || defined(__CYGWIN__)
+ #define BROTLI_PUBLIC
+-#elif BROTLI_GNUC_VERSION_CHECK(3, 3, 0) ||                         \
++#elif (BROTLI_GNUC_VERSION_CHECK(3, 3, 0) ||                         \
+     BROTLI_TI_VERSION_CHECK(8, 0, 0) ||                             \
+     BROTLI_INTEL_VERSION_CHECK(16, 0, 0) ||                         \
+     BROTLI_ARM_VERSION_CHECK(4, 1, 0) ||                            \
+     BROTLI_IBM_VERSION_CHECK(13, 1, 0) ||                           \
+     BROTLI_SUNPRO_VERSION_CHECK(5, 11, 0) ||                        \
+     (BROTLI_TI_VERSION_CHECK(7, 3, 0) &&                            \
+-     defined(__TI_GNU_ATTRIBUTE_SUPPORT__) && defined(__TI_EABI__))
++     defined(__TI_GNU_ATTRIBUTE_SUPPORT__) && defined(__TI_EABI__))) \
++    && defined(__ELF__)
+ #define BROTLI_PUBLIC __attribute__ ((visibility ("default")))
+ #else
+ #define BROTLI_PUBLIC
+@@ -243,14 +244,15 @@
+ #if !defined(BROTLI_INTERNAL)
+ #if defined(_WIN32) || defined(__CYGWIN__)
+ #define BROTLI_INTERNAL
+-#elif BROTLI_GNUC_VERSION_CHECK(3, 3, 0) ||                         \
++#elif (BROTLI_GNUC_VERSION_CHECK(3, 3, 0) ||                         \
+     BROTLI_TI_VERSION_CHECK(8, 0, 0) ||                             \
+     BROTLI_INTEL_VERSION_CHECK(16, 0, 0) ||                         \
+     BROTLI_ARM_VERSION_CHECK(4, 1, 0) ||                            \
+     BROTLI_IBM_VERSION_CHECK(13, 1, 0) ||                           \
+     BROTLI_SUNPRO_VERSION_CHECK(5, 11, 0) ||                        \
+     (BROTLI_TI_VERSION_CHECK(7, 3, 0) &&                            \
+-     defined(__TI_GNU_ATTRIBUTE_SUPPORT__) && defined(__TI_EABI__))
++     defined(__TI_GNU_ATTRIBUTE_SUPPORT__) && defined(__TI_EABI__))) \
++    && defined(__ELF__)
+ #define BROTLI_INTERNAL __attribute__ ((visibility ("hidden")))
+ #else
+ #define BROTLI_INTERNAL

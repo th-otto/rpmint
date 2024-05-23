@@ -1,0 +1,54 @@
+--- lynx2.9.1.orig/configure	2024-04-15 22:53:51.000000000 +0200
++++ lynx2.9.1/configure	2024-05-23 10:14:12.459321751 +0200
+@@ -11759,7 +11759,7 @@ else
+   echo "$as_me: failed program was:" >&5
+ cat "conftest.$ac_ext" >&5
+ 
+-LIBS="-lintl  $cf_save_LIBS"
++LIBS="-lintl -liconv  $cf_save_LIBS"
+ 
+ cat >"conftest.$ac_ext" <<_ACEOF
+ #line 11765 "configure"
+@@ -11799,7 +11799,7 @@ if { (eval echo "$as_me:11787: \"$ac_lin
+ 	cf_cv_find_linkage_intl=yes
+ 	cf_cv_header_path_intl=/usr/include
+ 	cf_cv_library_path_intl=/usr/lib
+-	cf_cv_library_file_intl="-lintl"
++	cf_cv_library_file_intl="-lintl -liconv"
+ 
+ else
+   echo "$as_me: failed program was:" >&5
+@@ -12043,7 +12043,7 @@ cf_search="$cf_library_path_list $cf_sea
+ echo "${as_me:-configure}:12043: testing ... testing $cf_cv_library_path_intl ..." 1>&5
+ 
+ 					CPPFLAGS="$cf_test_CPPFLAGS"
+-					LIBS="-lintl  $cf_save_LIBS"
++					LIBS="-lintl -liconv  $cf_save_LIBS"
+ 					LDFLAGS="$cf_save_LDFLAGS -L$cf_cv_library_path_intl"
+ 					cat >"conftest.$ac_ext" <<_ACEOF
+ #line 12049 "configure"
+@@ -12085,7 +12085,7 @@ if { (eval echo "$as_me:12071: \"$ac_lin
+ echo "${as_me:-configure}:12085: testing ... found intl library in $cf_cv_library_path_intl ..." 1>&5
+ 
+ 					cf_cv_find_linkage_intl=yes
+-					cf_cv_library_file_intl="-lintl"
++					cf_cv_library_file_intl="-lintl -liconv"
+ 					break
+ else
+   echo "$as_me: failed program was:" >&5
+--- lynx2.9.1.orig/makefile.in	2024-01-15 17:06:06.000000000 +0100
++++ lynx2.9.1/makefile.in	2024-05-23 10:33:11.124393010 +0200
+@@ -75,11 +75,11 @@ SYSCONFDIR= $(DESTDIR)$(sysconfdir)
+ 
+ ## Where you want the doc-files installed
+ datarootdir= @datarootdir@
+-docdir    = @datadir@/lynx_doc
++docdir    = @datadir@/doc/packages/lynx
+ DOCDIR    = $(DESTDIR)$(docdir)
+ 
+ ## Where you want the help-files installed
+-helpdir   = @datadir@/lynx_help
++helpdir   = $(docdir)/lynx_help
+ HELPDIR   = $(DESTDIR)$(helpdir)
+ 
+ ##set the relative location of the WWW library Implementation directory,

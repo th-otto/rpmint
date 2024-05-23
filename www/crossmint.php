@@ -1490,6 +1490,12 @@ This notably applies to Perl and Python.
 
 <li>2024/05/12 Add ffmpeg 7.0</li>
 
+<li>2024/05/23 Add brotli 1.1.0</li>
+
+<li>2024/05/23 Add ncompress 5.0</li>
+
+<li>2024/05/23 Add lynx 2.9.1</li>
+
 </ul>
 
 <p></p>

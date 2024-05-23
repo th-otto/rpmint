@@ -4305,6 +4305,88 @@ of files (typically source code and output executables) and orchestrates
 building them, quickly.
 '
 	),
+ 	'brotli' => array(
+		'name' => 'brotli',
+		'upstream' => 'https://www.brotli.org/',
+		'repo' => 'https://github.com/google/brotli',
+		'version' => '1.1.0',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'noelf' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'MIT',
+		'category' => 'Productivity/Archiving/Compression',
+		'summary' => 'Brotli is a generic-purpose lossless compression algorithm',
+		'comment' => '
+Brotli is a generic-purpose lossless compression algorithm that
+compresses data using a combination of a modern variant of the LZ77
+algorithm, Huffman coding and 2nd order context modeling, with a
+compression ratio comparable to the best currently available
+general-purpose compression methods. It is similar in speed with
+deflate but offers more dense compression.
+'
+	),
+ 	'ncompress' => array(
+		'name' => 'ncompress',
+		'upstream' => 'https://vapier.github.io/ncompress/',
+		'repo' => 'https://github.com/vapier/ncompress',
+		'version' => '5.0',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'patch' => 0,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'noelf' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'UNLICENSE',
+		'category' => 'Productivity/Archiving/Compression',
+		'summary' => '(N)compress is an improved version of compress 4.1',
+		'comment' => '
+Compress is a fast, simple LZW file compressor. Compress does not have
+the highest compression rate, but it is one of the fastest programs to
+compress data. Compress is the defacto standard in the UNIX community
+for compressing files.
+<br/>
+(N)compress 4.2 introduced a special, fast compression hash algorithm.
+This algorithm uses more memory than the old hash table. If you don&apos;t
+want the faster hash table algorithm set &apos;Memory free for compress&apos;
+below 800000.
+'
+	),
+ 	'lynx' => array(
+		'name' => 'lynx',
+		'upstream' => 'https://lynx.invisible-island.net/',
+		'repo' => '',
+		'version' => '2.9.1',
+		'source' => $download_dir . '%{name}%{version}.tar.bz2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'noelf' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'GPL-2.0-or-later',
+		'category' => 'Productivity/Archiving/Compression',
+		'summary' => 'Lynx is the text web browser.',
+		'comment' => '
+Lynx is a fully-featured World Wide Web (WWW) client for users running
+cursor-addressable, character-cell display devices (e.g., vt100
+terminals, vt100 emulators running on PCs or Macs, or any other
+character-cell display). It will display Hypertext Markup Language
+(HTML) documents containing links to files on the local system, as well
+as files on remote systems running http, gopher, ftp, wais, nntp,
+finger, or cso/ph/qi servers, and services accessible via logins to
+telnet, tn3270 or rlogin accounts (see URL Schemes Supported by Lynx).
+Current versions of Lynx run on Unix, VMS, Windows3.x/9x/NT and later,
+386DOS and OS/2 EMX.
+'
+	),
 /*
 	'vttest' => array(
 		'name' => 'vttest',
