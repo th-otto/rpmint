@@ -22,7 +22,7 @@ patches/zlib/zlib-shared.patch
 unpack_archive
 
 export CHOST=$TARGET
-COMMON_CFLAGS="-O3 -fomit-frame-pointer ${ELF_CFLAGS} ${CFLAGS_AMIGAOS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS} ${CFLAGS_AMIGAOS}"
 CONFIGURE_FLAGS="--prefix=${prefix}"
 
 WITH_FASTCALL=`if $gcc -mfastcall -E - < /dev/null >/dev/null 2>&1; then echo true; else echo false; fi`

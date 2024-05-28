@@ -3782,7 +3782,7 @@ files.
 		'bin' => 1,
 		'atari' => 1,
 		'amiga' => 0,
-		'license' => '-',
+		'license' => 'LGPL-2.1-or-later',
 		'category' => 'Development/Libraries/C and C++',
 		'summary' => '3GPP AAC+ High Efficiency Advanced Audio Codec v2 (HE-AAC+) Encoder Library',
 		'comment' => '
@@ -4343,7 +4343,7 @@ deflate but offers more dense compression.
 		'noelf' => 0,
 		'atari' => 1,
 		'amiga' => 0,
-		'license' => 'UNLICENSE',
+		'license' => 'Unlicense',
 		'category' => 'Productivity/Archiving/Compression',
 		'summary' => '(N)compress is an improved version of compress 4.1',
 		'comment' => '

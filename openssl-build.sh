@@ -35,7 +35,6 @@ ${TARGET_MANDIR#/}/man7/*
 #
 # CFLAGS have been patched in the Configure script
 #
-COMMON_CFLAGS="-O3 -fomit-frame-pointer"
 
 CONFIGURE_FLAGS="--prefix=${prefix} --cross-compile-prefix=${TARGET}- --openssldir=${SSLETCDIR} ${ELF_CFLAGS} zlib"
 
@@ -49,7 +48,7 @@ targetconf_v4e=mintv4e
 for CPU in ${ALL_CPUS}; do
 	eval targetconf=\${targetconf_$CPU}
 	"$srcdir/Configure" ${CONFIGURE_FLAGS} $targetconf
-	${MAKE} $JOBS || exit 1
+	${MAKE} $JOBS V=1 || exit 1
 	${MAKE} MANDIR=${TARGET_MANDIR} DESTDIR="${THISPKG_DIR}${sysroot}" install || exit 1
 	# if the library for coldfire/m68020 ended up in the toplevel directory, something went wrong
 	if test "${CPU}" != 000 -a -f "${THISPKG_DIR}${sysroot}/${TARGET_LIBDIR}/libssl.a"; then

@@ -3,6 +3,8 @@
 $target = "all";
 $download_dir = ".";
 
+$href_target = '';
+
 include(dirname($_SERVER['PHP_SELF']) . '/../../packages.php');
 include(dirname($_SERVER['PHP_SELF']) . '/../../licenses.php');
 

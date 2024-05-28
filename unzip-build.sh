@@ -44,7 +44,7 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O3 -fomit-frame-pointer \
+COMMON_CFLAGS="-O2 -fomit-frame-pointer \
 -D_GNU_SOURCE -DRCC_LAZY -DWILD_STOP_AT_DIR \
 -DUNICODE_WCHAR -DNO_LCHMOD \
 -DDATE_FORMAT=DF_YMD -I. -fno-strict-aliasing \

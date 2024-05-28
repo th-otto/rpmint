@@ -24,7 +24,7 @@ cp "${BUILD_DIR}/patches/automake/mintelf-config.sub" config.sub
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O3 -fomit-frame-pointer ${ELF_CFLAGS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer ${ELF_CFLAGS}"
 
 CONFIGURE_FLAGS="--prefix=${prefix} --host=${TARGET}"
 

@@ -6,7 +6,7 @@ Summary:        3GPP AAC+ High Efficiency Advanced Audio Codec v2 (HE-AAC+) Enco
 Name:           %{crossmint}%{pkgname}
 Version:        2.0.2
 Release:        1
-License:        -
+License:        LGPL-2.1-or-later
 Group:          Development/Libraries/C and C++
 
 Packager:       %{packager}

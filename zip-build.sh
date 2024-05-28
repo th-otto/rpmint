@@ -35,7 +35,7 @@ unpack_archive
 
 cd "$MINT_BUILD_DIR"
 
-COMMON_CFLAGS="-O3 -fomit-frame-pointer $LTO_CFLAGS ${ELF_CFLAGS}"
+COMMON_CFLAGS="-O2 -fomit-frame-pointer $LTO_CFLAGS ${ELF_CFLAGS}"
 
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 

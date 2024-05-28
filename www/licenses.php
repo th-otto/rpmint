@@ -512,6 +512,7 @@ class License {
 	
 		/* deprecated identifiers */
 		'Public Domain' => [ 'id' => 'Public Domain', 'fullname' => 'Public Domain', 'href' => 'PD.html', 'free' => false, 'osi' => false ],
+		'Public-Domain' => [ 'id' => 'Public Domain', 'fullname' => 'Public Domain', 'href' => 'PD.html', 'free' => false, 'osi' => false ],
 		'Shareware' => [ 'id' => 'Shareware', 'fullname' => 'Shareware', 'href' => 'Shareware.html', 'free' => false, 'osi' => false ],
 		'AGPL-1.0' => [ 'id' => 'AGPL-1.0', 'fullname' => 'Affero General Public License v1.0', 'href' => 'AGPL-1.0.html', 'free' => false, 'osi' => false ],
 		'AGPL-3.0' => [ 'id' => 'AGPL-3.0', 'fullname' => 'GNU Affero General Public License v3.0', 'href' => 'AGPL-3.0.html', 'free' => true, 'osi' => true ],
