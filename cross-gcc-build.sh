@@ -298,15 +298,9 @@ TARNAME=${PACKAGENAME}${VERSION}-${TARGET##*-}
 #
 # this could eventually be extracted from gcc -print-multi-lib
 #
-if grep -q 'MULTILIB_DIRNAMES = m68000' "$srcdir/gcc/config/m68k/t-mint"; then
-CPU_CFLAGS_000="-m68000"    ; CPU_LIBDIR_000=/m68000    ; WITH_CPU_000=m68000
-CPU_CFLAGS_020="-m68020-60" ; CPU_LIBDIR_020=/m68020-60 ; WITH_CPU_020=m68020-60
-CPU_CFLAGS_v4e="-mcpu=5475" ; CPU_LIBDIR_v4e=/m5475     ; WITH_CPU_v4e=5475
-else
-CPU_CFLAGS_000="-m68000"    ; CPU_LIBDIR_000=           ; WITH_CPU_000=m68000
-CPU_CFLAGS_020="-m68020-60" ; CPU_LIBDIR_020=           ; WITH_CPU_020=m68020-60
-CPU_CFLAGS_v4e="-mcpu=5475" ; CPU_LIBDIR_v4e=           ; WITH_CPU_v4e=5475
-fi
+CPU_CFLAGS_000="-m68000"    ; WITH_CPU_000=m68000
+CPU_CFLAGS_020="-m68020-60" ; WITH_CPU_020=m68020-60
+CPU_CFLAGS_v4e="-mcpu=5475" ; WITH_CPU_v4e=5475
 
 #
 # This should list the default target cpu last,
@@ -341,7 +335,6 @@ for CPU in ${ALL_CPUS}; do
 	cd "$MINT_BUILD_DIR" || exit 1
 	
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
-	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval with_cpu=\${WITH_CPU_$CPU}
 	STACKSIZE="-Wl,-stack,512k"
 
@@ -539,7 +532,7 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 #
 # move compiler dependant libraries to the gcc subdirectory
 #
-	pushd ${THISPKG_DIR}${TARGET_PREFIX}/lib || exit 1
+	cd ${THISPKG_DIR}${TARGET_PREFIX}/lib || exit 1
 	libs=`find . -name "lib*.a" ! -path "*/gcc/*"`
 	tar -c $libs | tar -x -C ${THISPKG_DIR}${gccsubdir}
 	rm -f $libs
@@ -547,11 +540,8 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 		test -f $i && mv $i ${THISPKG_DIR}${gccsubdir}
 		find . -name "$i" -delete
 	done
-	rmdir m*/*/*/* || :
-	rmdir m*/*/* || :
-	rmdir m*/* || :
-	rmdir m* || :
-	popd
+	find . -depth -type d -empty | xargs rmdir -v
+	cd "${THISPKG_DIR}" || exit 1
 
 	for f in ${gccsubdir#/}/{cc1,cc1plus,cc1obj,cc1objplus,f951,d21,collect2,lto-wrapper,lto1,gnat1,gnat1why,gnat1sciln,go1,brig1,cc1gm2,g++-mapper-server}${TARGET_EXEEXT} \
 		${gccsubdir#/}/${LTO_PLUGIN} \
@@ -562,7 +552,7 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 
 	find ${TARGET_PREFIX#/} -name "*.a" -exec "${strip}" -S -x '{}' \;
 	find ${TARGET_PREFIX#/} -name "*.a" -exec "${ranlib}" '{}' \;
-	
+
 	cd ${TARGET_LIBDIR#/}/gcc/${TARGET}/${gcc_dir_version}/include-fixed && {
 		for i in `find . -type f`; do
 			case $i in
@@ -574,54 +564,6 @@ sed -i -e 's/-Wno-error=format-diag//' gcc/config.status
 			test "$i" = "." || rmdir "$i"
 		done
 	}
-	
-	cd "${THISPKG_DIR}" || exit 1
-	
-	# these are currently identically compiled 2 times; FIXME
-	if test "$CPU_LIBDIR_000" != ""; then
-		for dir in . mshort mfastcall mfastcall/mshort; do
-			for f in libgcov.a libgcc.a libcaf_single.a; do
-				rm -f ${TARGET_LIBDIR#/}/gcc/${TARGET}/$dir/$f
-			done
-		done
-		for dir in mfastcall/mshort mfastcall mshort; do
-			rmdir ${TARGET_LIBDIR#/}/gcc/${TARGET}/$dir 2>/dev/null
-		done
-	fi
-	
-	# these get still wrong, if the host cross-compiler
-	# has a different configuration than the target
-	if test "${CPU_LIBDIR_000}" != ""; then
-		cd ${THISPKG_DIR}${TARGET_LIBDIR}/gcc/${TARGET}/${gcc_dir_version} || exit 1
-		for dir in . mshort mfastcall mfastcall/mshort; do
-			for f in libgcov.a libgcc.a libcaf_single.a; do
-				if test -f $dir/$f -a -f ${CPU_LIBDIR_000#/}/$dir/$f; then
-					rm -f $dir/$f
-				elif test -f $dir/$f; then
-					mkdir -p ${CPU_LIBDIR_000#/}/$dir
-					mv $dir/$f ${CPU_LIBDIR_000#/}/$dir/$f
-				fi
-			done
-		done
-		for dir in mfastcall/mshort mfastcall mshort; do
-			rmdir $dir 2>/dev/null
-		done
-
-		cd ${THISPKG_DIR}${TARGET_LIBDIR} || exit 1
-		for dir in . mshort mfastcall mfastcall/mshort; do
-			for f in libssp.a libssp_nonshared.a libsupc++.a libstdc++.a libstdc++.a-gdb.py libgfortran.a libgfortran.spec; do
-				if test -f $dir/$f -a -f ${CPU_LIBDIR_000#/}/$dir/$f; then
-					rm -f $dir/$f
-				elif test -f $dir/$f; then
-					mkdir -p ${CPU_LIBDIR_000#/}/$dir
-					mv $dir/$f ${CPU_LIBDIR_000#/}/$dir/$f
-				fi
-			done
-		done
-		for dir in mfastcall/mshort mfastcall mshort; do
-			rmdir $dir 2>/dev/null
-		done
-	fi
 	
 	cd "${THISPKG_DIR}" || exit 1
 	

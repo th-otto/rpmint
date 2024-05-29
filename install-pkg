@@ -24,7 +24,10 @@ cd "$TMPDIR" || exit 1
 
 tar xf "$f" || exit 1
 
-if test -d usr/m68k-atari-mint/sys-root || test -d usr/m68k-atari-mintelf/sys-root || test -d usr/lib/gcc-lib/m68k-atari-mint || test -d usr/m68k-atari-mint/lib/ldscripts || test -d usr/m68k-atari-mintelf/lib/ldscripts; then
+if test -f usr/bin/gcc || test -f usr/bin/ld.bfd; then
+	prefix="$WINDIR/"
+	cp -pvr . "$prefix"
+elif test -d usr/m68k-atari-mint*/sys-root || test -d usr/lib/gcc-lib/m68k-atari-mint* || test -d usr/m68k-atari-mint*/lib/ldscripts; then
 	if test "$towin" = "win"; then
 		prefix="$WINDIR/"
 		if test -d usr/lib/gcc-lib/m68k-atari-mint; then
