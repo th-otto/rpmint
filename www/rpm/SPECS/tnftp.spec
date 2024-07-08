@@ -1,27 +1,24 @@
-%define pkgname libedit
+%define pkgname tnftp
 
 %rpmint_header
 
-Summary:        Command Line Editing and History Library
+Summary:        Enhanced FTP Client
 Name:           %{crossmint}%{pkgname}
-Version:        20230828
-%define version 20230828-3.1
-Release:        2
+Version:        20230507
+Release:        1.5
 License:        BSD-3-Clause
-Group:          Development/Libraries/C and C++
+Group:          Productivity/Networking/Ftp/Clients
 
 Packager:       %{packager}
-URL:            https://www.thrysoee.dk/editline/
+URL:            https://ftp.netbsd.org/pub/NetBSD/misc/tnftp/
 
 Prefix:         %{_rpmint_target_prefix}
 Docdir:         %{_isysroot}%{_rpmint_target_prefix}/share/doc/packages
 BuildRoot:      %{_tmppath}/%{name}-root
 
-Source0: https://www.thrysoee.dk/editline/libedit-%{version}.tar.gz
+Source0: https://ftp.netbsd.org/pub/NetBSD/misc/tnftp/%{pkgname}-%{version}.tar.gz
 Source1: patches/automake/mintelf-config.sub
-Patch0:  patches/libedit/libedit-20180525-manpage-conflicts.patch
-Patch1:  patches/libedit/libedit-hidden-symbols.patch
-Patch2:  patches/libedit/libedit-mint.patch
+Patch0:  patches/tnftp/tnftp-mint.patch
 
 %rpmint_essential
 BuildRequires:  autoconf
@@ -34,19 +31,19 @@ Provides:       %{crossmint}libedit-devel
 %rpmint_build_arch
 
 %description
-libedit is a command line editing and history library. It is designed
-to be used by interactive programs that allow the user to type commands
-at a terminal prompt.
+%{pkgname} is the FTP (File Transfer Protocol) client from NetBSD.  FTP is a widely
+used protocol for transferring files over the Internet and for archiving files.
+%{pkgname} provides some advanced features beyond the Linux netkit ftp client, but
+maintains a similar user interface to the traditional ftp client.  It was
+formerly called lukemftp.
 
 %prep
 [ "%{buildroot}" == "/" -o "%{buildroot}" == "" ] && exit 1
 %setup -q -n %{pkgname}-%{version}
 %patch0 -p1
-%patch1 -p1
-%patch2 -p1
 
 autoreconf -fiv
-cp %{S:1} config.sub
+cp %{S:1} buildaux/config.sub
 
 %build
 
@@ -55,10 +52,20 @@ cp %{S:1} config.sub
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 CONFIGURE_FLAGS="--host=${TARGET} --prefix=%{_rpmint_target_prefix} ${CONFIGURE_FLAGS_AMIGAOS}
-	--disable-shared
+	--enable-editcomplete
+	--disable-ipv6
 "
 
-for CPU in ${ALL_CPUS}; do
+#
+# there are no libraries in this package, so we
+# have to build for the target CPU only
+#
+%if "%{buildtype}" == "cross"
+for CPU in 000
+%else
+for CPU in %{buildtype}
+%endif
+do
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
@@ -70,6 +77,7 @@ for CPU in ${ALL_CPUS}; do
 
 	make %{?_smp_mflags}
 	make DESTDIR=%{buildroot}%{_rpmint_sysroot} install
+	ln -sf tnftp %{buildroot}%{_rpmint_bindir}/ftp
 
 	# remove obsolete pkg config files for multilibs
 	%rpmint_remove_pkg_configs
@@ -85,7 +93,7 @@ for CPU in ${ALL_CPUS}; do
 	%rpmint_make_bin_archive $CPU
 	%endif
 
-	make clean
+	make distclean
 done
 
 
@@ -110,18 +118,13 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 %files
 %defattr(-,root,root)
-%{_isysroot}%{_rpmint_target_prefix}/include
-%{_isysroot}%{_rpmint_target_prefix}/lib
+%license COPYING
+%doc ChangeLog NEWS README THANKS
+%{_isysroot}%{_rpmint_target_prefix}/bin
 %{_isysroot}%{_rpmint_target_prefix}/share/man
-%if "%{buildtype}" == "cross"
-%{_rpmint_cross_pkgconfigdir}
-%endif
 
 
 
 %changelog
 * Mon Jul 08 2024 Thorsten Otto <admin@tho-otto.de>
-- wchar_t type fix
-
-* Thu Oct 05 2023 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

@@ -1,0 +1,14 @@
+diff -ru ldg-20171014.orig/src/devel/ldgload.c ldg-20171014/src/devel/ldgload.c
+--- ldg-20171014.orig/src/devel/ldgload.c	2015-08-27 23:42:48.000000000 +0200
++++ ldg-20171014/src/devel/ldgload.c	2024-06-20 17:59:19.409791352 +0200
+@@ -155,7 +155,10 @@
+ 	/* Why is this necessary? The caches were flushed before Pexec(4). */
+ 	ldg_cpush();  
+ #endif
++#if 0
++	/* this is wrong: Pexec(4) already waits for the process to terminate */
+ 	Pwait();
++#endif
+ 
+ 	if(ldg==NULL)  {
+     	set_error( LDG_BAD_FORMAT);

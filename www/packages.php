@@ -3392,7 +3392,7 @@ can be seen <a href="https://kokkinizita.linuxaudio.org/linuxaudio/dithering.htm
 		'upstream' => 'https://www.wolfssl.com/',
 		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
 		'repo' => 'https://github.com/wolfssl/wolfssl',
-		'version' => '5.5.1',
+		'version' => '5.7.0',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
@@ -4410,6 +4410,30 @@ code footprint makes it suitable for embedded systems.
 <br/>
 Mbed TLS includes a reference implementation of the PSA Cryptography
 API. This is currently a preview for evaluation purposes only.
+'
+	),
+	'tnftp' => array(
+		'name' => 'tnftp',
+		'upstream' => 'https://github.com/Mbed-TLS/mbedtls/',
+		'repo' => 'https://github.com/Mbed-TLS/mbedtls/',
+		'version' => '20230507',
+		'source' => $download_dir . '%{name}-%{version}.tar.gz',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 0,
+		'bin' => 1,
+		'noelf' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'BSD-3-Clause',
+		'category' => 'Productivity/Networking/Ftp/Clients',
+		'summary' => 'Enhanced FTP Client',
+		'comment' => '
+tnftp is the FTP (File Transfer Protocol) client from NetBSD.  FTP is a widely
+used protocol for transferring files over the Internet and for archiving files.
+tnftp provides some advanced features beyond the Linux netkit ftp client, but
+maintains a similar user interface to the traditional ftp client.  It was
+formerly called lukemftp.
 '
 	),
 /*

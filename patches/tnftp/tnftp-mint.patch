@@ -1,0 +1,116 @@
+diff -rup tnftp-20230507.orig/configure.ac tnftp-20230507/configure.ac
+--- tnftp-20230507.orig/configure.ac	2023-05-07 20:32:11.000000000 +0200
++++ tnftp-20230507/configure.ac	2024-07-08 07:39:28.216516925 +0200
+@@ -261,7 +261,7 @@ accheck_includes='
+ 
+ AC_CHECK_HEADERS([sys/types.h sys/ioctl.h sys/param.h sys/stat.h \
+                   sys/socket.h sys/syslimits.h sys/time.h sys/uio.h \
+-                  sys/wait.h],
++                  sys/wait.h langinfo.h],
+                  [], [], [$accheck_includes])
+ AC_HEADER_DIRENT()
+ AC_HEADER_RESOLV()
+diff -rup tnftp-20230507.orig/libedit/chartype.h tnftp-20230507/libedit/chartype.h
+--- tnftp-20230507.orig/libedit/chartype.h	2020-07-04 15:44:45.000000000 +0200
++++ tnftp-20230507/libedit/chartype.h	2024-07-08 07:48:32.464197640 +0200
+@@ -39,6 +39,7 @@
+ 	!(defined(__APPLE__) && defined(__MACH__)) && \
+ 	!defined(__OpenBSD__) && \
+ 	!defined(__FreeBSD__) && \
++	!defined(__MINT__) && \
+ 	!defined(__DragonFly__)
+ #ifndef __STDC_ISO_10646__
+ /* In many places it is assumed that the first 127 code points are ASCII
+@@ -52,8 +53,10 @@
+  * ref: ISO/IEC DTR 19769
+  */
+ #if WCHAR_MAX < INT32_MAX
++#ifndef __MINT__
+ #warning Build environment does not support non-BMP characters
+ #endif
++#endif
+ 
+ /*
+  * Conversion buffer
+@@ -88,7 +91,7 @@ libedit_private size_t ct_enc_width(wcha
+ /* The terminal is thought of in terms of X columns by Y lines. In the cases
+  * where a wide character takes up more than one column, the adjacent
+  * occupied column entries will contain this faux character. */
+-#define MB_FILL_CHAR ((wint_t)-1)
++#define MB_FILL_CHAR ((wchar_t)-1)
+ 
+ /* Visual width of character c, taking into account ^? , \0177 and \U+nnnnn
+  * style visual expansions. */
+diff -rup tnftp-20230507.orig/libedit/el.h tnftp-20230507/libedit/el.h
+--- tnftp-20230507.orig/libedit/el.h	2020-07-04 15:44:45.000000000 +0200
++++ tnftp-20230507/libedit/el.h	2024-07-08 07:42:04.792514537 +0200
+@@ -106,6 +106,13 @@ typedef struct el_state_t {
+ #include "map.h"
+ #include "sig.h"
+ 
++#ifdef __MINT__
++#undef MB_LEN_MAX
++#define MB_LEN_MAX 4
++#undef MB_CUR_MAX
++#define MB_CUR_MAX 4
++#endif
++
+ struct el_read_t;
+ 
+ struct editline {
+@@ -118,8 +125,8 @@ struct editline {
+ 	int		  el_errfd;	/* Error file descriptor	*/
+ 	int		  el_flags;	/* Various flags.		*/
+ 	coord_t		  el_cursor;	/* Cursor location		*/
+-	wint_t		**el_display;	/* Real screen image = what is there */
+-	wint_t		**el_vdisplay;	/* Virtual screen image = what we see */
++	wchar_t		**el_display;	/* Real screen image = what is there */
++	wchar_t		**el_vdisplay;	/* Virtual screen image = what we see */
+ 	void		 *el_data;	/* Client data			*/
+ 	el_line_t	  el_line;	/* The current line information	*/
+ 	el_state_t	  el_state;	/* Current editor state		*/
+diff -rup tnftp-20230507.orig/libedit/sys.h tnftp-20230507/libedit/sys.h
+--- tnftp-20230507.orig/libedit/sys.h	2020-07-04 15:44:46.000000000 +0200
++++ tnftp-20230507/libedit/sys.h	2024-07-08 07:39:28.219850243 +0200
+@@ -64,7 +64,11 @@
+ #endif /* tnftp */
+ 
+ /* If your compiler does not support this, define it to be empty. */
++#ifdef __ELF__
+ #define libedit_private __attribute__((__visibility__("hidden")))
++#else
++#define libedit_private
++#endif
+ 
+ #ifndef __arraycount
+ # define __arraycount(a) (sizeof(a) / sizeof(*(a)))
+diff -rup tnftp-20230507.orig/libedit/terminal.c tnftp-20230507/libedit/terminal.c
+--- tnftp-20230507.orig/libedit/terminal.c	2020-07-04 15:44:46.000000000 +0200
++++ tnftp-20230507/libedit/terminal.c	2024-07-08 07:45:11.848384832 +0200
+@@ -421,10 +421,10 @@ terminal_rebuffer_display(EditLine *el)
+ 	return 0;
+ }
+ 
+-static wint_t **
++static wchar_t **
+ terminal_alloc_buffer(EditLine *el)
+ {
+-	wint_t **b;
++	wchar_t **b;
+ 	coord_t *c = &el->el_terminal.t_size;
+ 	int i;
+ 
+@@ -445,10 +445,10 @@ terminal_alloc_buffer(EditLine *el)
+ }
+ 
+ static void
+-terminal_free_buffer(wint_t ***bp)
++terminal_free_buffer(wchar_t ***bp)
+ {
+-	wint_t **b;
+-	wint_t **bufp;
++	wchar_t **b;
++	wchar_t **bufp;
+ 
+ 	if (*bp == NULL)
+ 		return;

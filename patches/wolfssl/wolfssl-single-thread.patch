@@ -1,76 +1,26 @@
-diff --git a/examples/echoserver/echoserver.c b/examples/echoserver/echoserver.c
-index 7b8adb822..48f602c98 100644
---- a/examples/echoserver/echoserver.c
-+++ b/examples/echoserver/echoserver.c
+diff -rup wolfssl-5.7.0.orig/examples/echoserver/echoserver.c wolfssl-5.7.0/examples/echoserver/echoserver.c
+--- wolfssl-5.7.0.orig/examples/echoserver/echoserver.c	2024-03-20 22:39:57.000000000 +0100
++++ wolfssl-5.7.0/examples/echoserver/echoserver.c	2024-06-09 15:24:36.910274170 +0200
 @@ -67,7 +67,7 @@
  
  static void SignalReady(void* args, word16 port)
  {
--#if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__)
-+#if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
+-#if defined(NO_MAIN_DRIVER) && defined(WOLFSSL_COND)
++#if defined(NO_MAIN_DRIVER) && defined(WOLFSSL_COND) && !defined(SINGLE_THREADED)
      /* signal ready to tcp_accept */
      func_args* server_args = (func_args*)args;
      tcp_ready* ready = server_args->signal;
-diff --git a/testsuite/testsuite.c b/testsuite/testsuite.c
-index ee6190831..0e83af8b8 100644
---- a/testsuite/testsuite.c
-+++ b/testsuite/testsuite.c
-@@ -431,7 +431,7 @@ static void simple_test(func_args* args)
-  */
- void wait_tcp_ready(func_args* args)
- {
--#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-+#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
-     PTHREAD_CHECK_RET(pthread_mutex_lock(&args->signal->mutex));
- 
-     if (!args->signal->ready)
-@@ -466,7 +466,7 @@ void wait_tcp_ready(func_args* args)
-  */
- void start_thread(THREAD_FUNC fun, func_args* args, THREAD_TYPE* thread)
- {
--#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-+#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
-     PTHREAD_CHECK_RET(pthread_create(thread, 0, fun, args));
-     return;
- #elif defined(WOLFSSL_TIRTOS)
-diff --git a/wolfssl/test.h b/wolfssl/test.h
-index ec4569973..5a97bf8cb 100644
---- a/wolfssl/test.h
-+++ b/wolfssl/test.h
-@@ -157,7 +157,9 @@
-     #include <sys/ioctl.h>
+diff -rup wolfssl-5.7.0.orig/wolfssl/test.h wolfssl-5.7.0/wolfssl/test.h
+--- wolfssl-5.7.0.orig/wolfssl/test.h	2024-03-20 22:39:57.000000000 +0100
++++ wolfssl-5.7.0/wolfssl/test.h	2024-06-09 15:29:05.092398079 +0200
+@@ -190,8 +190,10 @@
      #include <sys/time.h>
      #include <sys/socket.h>
-+#ifndef SINGLE_THREADED
-     #include <pthread.h>
-+#endif
+     #ifdef HAVE_PTHREAD
++    #ifndef SINGLE_THREADED
+         #include <pthread.h>
+     #endif
++    #endif
      #include <fcntl.h>
      #ifdef TEST_IPV6
          #include <netdb.h>
-@@ -552,7 +554,7 @@
-     word16 ready;              /* predicate */
-     word16 port;
-     char*  srfName;     /* server ready file name */
--#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-+#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
-     pthread_mutex_t mutex;
-     pthread_cond_t  cond;
- #endif
-@@ -2098,7 +2100,7 @@
-     #endif
- 
-     if (args != NULL && args->signal != NULL) {
--#if defined(_POSIX_THREADS) && !defined(__MINGW32__)
-+#if defined(_POSIX_THREADS) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
-         /* signal ready to accept data */
-         tcp_ready* ready = args->signal;
-         PTHREAD_CHECK_RET(pthread_mutex_lock(&ready->mutex));
-@@ -2145,7 +2147,7 @@
-     if(do_listen) {
-         tcp_listen(sockfd, &port, useAnyAddr, udp, sctp);
- 
--    #if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__)
-+    #if defined(_POSIX_THREADS) && defined(NO_MAIN_DRIVER) && !defined(__MINGW32__) && !defined(SINGLE_THREADED)
-         /* signal ready to tcp_accept */
-         if (args)
-             ready = args->signal;

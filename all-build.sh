@@ -141,6 +141,7 @@ for pkg in \
 	sqlite3 \
 	tar \
 	tiff \
+	tnftp \
 	traceroute \
 	tree \
 	unrar \

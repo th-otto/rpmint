@@ -1,6 +1,6 @@
 diff -rup libedit-20230828-3.1.orig/configure.ac libedit-20230828-3.1/configure.ac
 --- libedit-20230828-3.1.orig/configure.ac	2023-08-27 20:19:09.000000000 +0200
-+++ libedit-20230828-3.1/configure.ac	2023-10-05 11:33:20.351393863 +0200
++++ libedit-20230828-3.1/configure.ac	2024-07-08 08:01:56.494109307 +0200
 @@ -73,7 +73,7 @@ AC_CHECK_INCLUDES_DEFAULT
  AC_PROG_EGREP
  
@@ -12,7 +12,7 @@ diff -rup libedit-20230828-3.1.orig/configure.ac libedit-20230828-3.1/configure.
    [AC_CHECK_HEADER([curses.h], [],
 diff -rup libedit-20230828-3.1.orig/src/chartype.h libedit-20230828-3.1/src/chartype.h
 --- libedit-20230828-3.1.orig/src/chartype.h	2022-06-11 09:57:59.000000000 +0200
-+++ libedit-20230828-3.1/src/chartype.h	2023-10-05 11:33:20.354727192 +0200
++++ libedit-20230828-3.1/src/chartype.h	2024-07-08 08:04:40.076746936 +0200
 @@ -39,6 +39,7 @@
  	!(defined(__APPLE__) && defined(__MACH__)) && \
  	!defined(__OpenBSD__) && \
@@ -32,9 +32,18 @@ diff -rup libedit-20230828-3.1.orig/src/chartype.h libedit-20230828-3.1/src/char
  
  /*
   * Conversion buffer
+@@ -88,7 +91,7 @@ libedit_private size_t ct_enc_width(wcha
+ /* The terminal is thought of in terms of X columns by Y lines. In the cases
+  * where a wide character takes up more than one column, the adjacent
+  * occupied column entries will contain this faux character. */
+-#define MB_FILL_CHAR ((wint_t)-1)
++#define MB_FILL_CHAR ((wchar_t)-1)
+ 
+ /* Visual width of character c, taking into account ^? , \0177 and \U+nnnnn
+  * style visual expansions. */
 diff -rup libedit-20230828-3.1.orig/src/el.c libedit-20230828-3.1/src/el.c
 --- libedit-20230828-3.1.orig/src/el.c	2023-08-27 09:25:53.000000000 +0200
-+++ libedit-20230828-3.1/src/el.c	2023-10-05 11:33:20.354727192 +0200
++++ libedit-20230828-3.1/src/el.c	2024-07-08 08:01:56.494109307 +0200
 @@ -51,7 +51,9 @@ __RCSID("$NetBSD: el.c,v 1.101 2022/10/3
  #include <sys/types.h>
  #include <sys/param.h>
@@ -45,9 +54,37 @@ diff -rup libedit-20230828-3.1.orig/src/el.c libedit-20230828-3.1/src/el.c
  #include <locale.h>
  #include <stdarg.h>
  #include <stdlib.h>
+diff -rup libedit-20230828-3.1.orig/src/el.h libedit-20230828-3.1/src/el.h
+--- libedit-20230828-3.1.orig/src/el.h	2021-09-10 18:39:30.000000000 +0200
++++ libedit-20230828-3.1/src/el.h	2024-07-08 08:06:38.982907905 +0200
+@@ -106,6 +106,13 @@ typedef struct el_state_t {
+ #include "map.h"
+ #include "sig.h"
+ 
++#ifdef __MINT__
++#undef MB_LEN_MAX
++#define MB_LEN_MAX 4
++#undef MB_CUR_MAX
++#define MB_CUR_MAX 4
++#endif
++
+ struct el_read_t;
+ 
+ struct editline {
+@@ -118,8 +125,8 @@ struct editline {
+ 	int		  el_errfd;	/* Error file descriptor	*/
+ 	int		  el_flags;	/* Various flags.		*/
+ 	coord_t		  el_cursor;	/* Cursor location		*/
+-	wint_t		**el_display;	/* Real screen image = what is there */
+-	wint_t		**el_vdisplay;	/* Virtual screen image = what we see */
++	wchar_t		**el_display;	/* Real screen image = what is there */
++	wchar_t		**el_vdisplay;	/* Virtual screen image = what we see */
+ 	void		 *el_data;	/* Client data			*/
+ 	el_line_t	  el_line;	/* The current line information	*/
+ 	el_state_t	  el_state;	/* Current editor state		*/
 diff -rup libedit-20230828-3.1.orig/src/sys.h libedit-20230828-3.1/src/sys.h
---- libedit-20230828-3.1.orig/src/sys.h	2023-10-05 11:32:18.521462194 +0200
-+++ libedit-20230828-3.1/src/sys.h	2023-10-05 11:33:20.354727192 +0200
+--- libedit-20230828-3.1.orig/src/sys.h	2024-07-08 08:01:00.414347809 +0200
++++ libedit-20230828-3.1/src/sys.h	2024-07-08 08:01:56.494109307 +0200
 @@ -67,7 +67,11 @@
  #endif
  
@@ -60,9 +97,39 @@ diff -rup libedit-20230828-3.1.orig/src/sys.h libedit-20230828-3.1/src/sys.h
  
  #ifndef __arraycount
  # define __arraycount(a) (sizeof(a) / sizeof(*(a)))
+diff -rup libedit-20230828-3.1.orig/src/terminal.c libedit-20230828-3.1/src/terminal.c
+--- libedit-20230828-3.1.orig/src/terminal.c	2023-08-27 09:25:53.000000000 +0200
++++ libedit-20230828-3.1/src/terminal.c	2024-07-08 08:07:51.962597518 +0200
+@@ -413,10 +413,10 @@ terminal_rebuffer_display(EditLine *el)
+ 	return 0;
+ }
+ 
+-static wint_t **
++static wchar_t **
+ terminal_alloc_buffer(EditLine *el)
+ {
+-	wint_t **b;
++	wchar_t **b;
+ 	coord_t *c = &el->el_terminal.t_size;
+ 	int i;
+ 
+@@ -437,10 +437,10 @@ terminal_alloc_buffer(EditLine *el)
+ }
+ 
+ static void
+-terminal_free_buffer(wint_t ***bp)
++terminal_free_buffer(wchar_t ***bp)
+ {
+-	wint_t **b;
+-	wint_t **bufp;
++	wchar_t **b;
++	wchar_t **bufp;
+ 
+ 	if (*bp == NULL)
+ 		return;
 diff -rup libedit-20230828-3.1.orig/src/vis.c libedit-20230828-3.1/src/vis.c
 --- libedit-20230828-3.1.orig/src/vis.c	2023-08-27 20:12:40.000000000 +0200
-+++ libedit-20230828-3.1/src/vis.c	2023-10-05 11:35:21.491257434 +0200
++++ libedit-20230828-3.1/src/vis.c	2024-07-08 08:01:56.494109307 +0200
 @@ -307,7 +307,7 @@ static wchar_t *
  do_svis(wchar_t *dst, wint_t c, int flags, wint_t nextc, const wchar_t *extra)
  {
@@ -117,3 +184,23 @@ diff -rup libedit-20230828-3.1.orig/src/vis.c libedit-20230828-3.1/src/vis.c
  					    shft);
  				}
  			}
+--- libedit-20230828-3.1.orig/src/refresh.c	2024-07-08 08:16:27.630404424 +0200
++++ libedit-20230828-3.1src/refresh.c	2024-07-08 08:17:01.486927068 +0200
+@@ -105,7 +105,7 @@
+ 	 */
+ 	if (el->el_refresh.r_cursor.v + 1 >= el->el_terminal.t_size.v) {
+ 		int i, lins = el->el_terminal.t_size.v;
+-		wint_t *firstline = el->el_vdisplay[0];
++		wchar_t *firstline = el->el_vdisplay[0];
+ 
+ 		for(i = 1; i < lins; i++)
+ 			el->el_vdisplay[i - 1] = el->el_vdisplay[i];
+@@ -1094,7 +1094,7 @@
+ static void
+ re_fastputc(EditLine *el, wint_t c)
+ {
+-	wint_t *lastline;
++	wchar_t *lastline;
+ 	int w;
+ 
+ 	w = wcwidth(c);

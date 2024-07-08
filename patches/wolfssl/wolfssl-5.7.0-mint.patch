@@ -1,0 +1,205 @@
+diff -rup wolfssl-5.7.0.orig/wolfcrypt/test/test.c wolfssl-5.7.0/wolfcrypt/test/test.c
+--- wolfssl-5.7.0.orig/wolfcrypt/test/test.c	2024-03-20 22:39:57.000000000 +0100
++++ wolfssl-5.7.0/wolfcrypt/test/test.c	2024-06-09 15:16:20.235832277 +0200
+@@ -2111,6 +2111,7 @@ static wc_test_ret_t _SaveDerAndPem(cons
+ 
+     derFile = XFOPEN(fileDer, "wb");
+     if (!derFile) {
++        fprintf(stderr, "%s: %s\n", fileDer, strerror(errno));
+         return WC_TEST_RET_ENC(calling_line, 0, WC_TEST_RET_TAG_I);
+     }
+     ret = (int)XFWRITE(der, 1, derSz, derFile);
+@@ -2146,6 +2147,7 @@ static wc_test_ret_t _SaveDerAndPem(cons
+     #if !defined(NO_FILESYSTEM) && !defined(NO_WRITE_TEMP_FILES)
+         pemFile = XFOPEN(filePem, "wb");
+         if (!pemFile) {
++            fprintf(stderr, "%s: %s\n", filePem, strerror(errno));
+             XFREE(pem, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+             return WC_TEST_RET_ENC(calling_line, 5, WC_TEST_RET_TAG_I);
+         }
+@@ -16104,6 +16106,8 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t me
+     #define CERT_PATH_SEP "\\"
+ #endif
+ 
++#undef CERT_PREFIX
++#undef CERT_WRITE_TEMP_DIR
+ #ifndef CERT_PREFIX
+     #define CERT_PREFIX "./"
+ #endif
+@@ -16487,6 +16491,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t ce
+     /* Certificate with Name Constraints extension. */
+     file = XFOPEN(certExtNc, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", certExtNc, strerror(errno));
+         ERROR_OUT(WC_TEST_RET_ENC_ERRNO, done);
+     }
+     bytes = XFREAD(tmp, 1, FOURK_BUF, file);
+@@ -16502,6 +16507,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t ce
+     /* Certificate with Inhibit Any Policy extension. */
+     file = XFOPEN(certExtIa, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", certExtIa, strerror(errno));
+         ERROR_OUT(WC_TEST_RET_ENC_ERRNO, done);
+     }
+     bytes = XFREAD(tmp, 1, FOURK_BUF, file);
+@@ -16517,6 +16523,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t ce
+     /* Certificate with Netscape Certificate Type extension. */
+     file = XFOPEN(certExtNct, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", certExtNct, strerror(errno));
+         ERROR_OUT(WC_TEST_RET_ENC_ERRNO, done);
+     }
+     bytes = XFREAD(tmp, 1, FOURK_BUF, file);
+@@ -18011,6 +18018,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t rs
+ #elif !defined(NO_FILESYSTEM)
+     file = XFOPEN(clientKey, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+         err_sys("can't open clientKey, Please run from wolfSSL home dir",
+                 WC_TEST_RET_ENC_ERRNO);
+         ERROR_OUT(WC_TEST_RET_ENC_ERRNO, exit_rsa_nopadding);
+@@ -18243,6 +18251,7 @@ static wc_test_ret_t rsa_even_mod_test(W
+ #elif !defined(NO_FILESYSTEM)
+     file = XFOPEN(clientKey, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+         err_sys("can't open ./certs/client-key.der, "
+                 "Please run from wolfSSL home dir", WC_TEST_RET_ENC_ERRNO);
+         ERROR_OUT(WC_TEST_RET_ENC_ERRNO, exit_rsa_even_mod);
+@@ -19463,6 +19472,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t rs
+ #elif !defined(NO_FILESYSTEM)
+     file = XFOPEN(clientKey, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+         err_sys("can't open ./certs/client-key.der, "
+                 "Please run from wolfSSL home dir", WC_TEST_RET_ENC_ERRNO);
+         ERROR_OUT(WC_TEST_RET_ENC_ERRNO, exit_rsa);
+@@ -19792,6 +19802,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t rs
+ #else
+     file = XFOPEN(clientKeyPub, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", clientKeyPub, strerror(errno));
+         err_sys("can't open ./certs/client-keyPub.der, "
+                 "Please run from wolfSSL home dir", WC_TEST_RET_ENC_ERRNO);
+         ERROR_OUT(WC_TEST_RET_ENC_ERRNO, exit_rsa);
+@@ -24003,6 +24014,7 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t op
+         f = XFOPEN(clientKey, "rb");
+ 
+         if (!f) {
++            fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+             err_sys("can't open ./certs/client-key.der, "
+                     "Please run from wolfSSL home dir", WC_TEST_RET_ENC_ERRNO);
+             ret = WC_TEST_RET_ENC_ERRNO;
+@@ -41507,7 +41519,10 @@ static wc_test_ret_t pkcs7_load_certs_ke
+ #else
+     keyFile = XFOPEN(clientKey, "rb");
+     if (!keyFile)
++    {
++        fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+         return WC_TEST_RET_ENC_ERRNO;
++	}
+ 
+     *rsaClientPrivKeyBufSz = (word32)XFREAD(rsaClientPrivKeyBuf, 1,
+                                            *rsaClientPrivKeyBufSz, keyFile);
+@@ -41554,7 +41569,10 @@ static wc_test_ret_t pkcs7_load_certs_ke
+ #else
+     certFile = XFOPEN(eccClientCert, "rb");
+     if (!certFile)
++    {
++        fprintf(stderr, "%s: %s\n", eccClientKey, strerror(errno));
+         return WC_TEST_RET_ENC_ERRNO;
++	}
+ 
+     *eccClientCertBufSz = (word32)XFREAD(eccClientCertBuf, 1,
+                                         *eccClientCertBufSz, certFile);
+@@ -49099,6 +49117,7 @@ static wc_test_ret_t rsa_onlycb_test(myC
+ #elif !defined(NO_FILESYSTEM)
+     file = XFOPEN(clientKey, "rb");
+     if (!file) {
++        fprintf(stderr, "%s: %s\n", clientKey, strerror(errno));
+         ret = WC_TEST_RET_ENC_ERRNO;
+         err_sys("can't open ./certs/client-key.der, "
+                 "Please run from wolfSSL home dir", ret);
+diff -rup wolfssl-5.7.0.orig/wolfssl/wolfcrypt/settings.h wolfssl-5.7.0/wolfssl/wolfcrypt/settings.h
+--- wolfssl-5.7.0.orig/wolfssl/wolfcrypt/settings.h	2024-03-20 22:39:57.000000000 +0100
++++ wolfssl-5.7.0/wolfssl/wolfcrypt/settings.h	2024-06-09 15:10:13.550802695 +0200
+@@ -2220,7 +2220,9 @@ extern void uITRON4_free(void *p) ;
+    requirement here.  The record header of SSL/TLS will prevent easy alignment.
+    This hint tries to help as much as possible.  */
+ #ifndef WOLFSSL_GENERAL_ALIGNMENT
+-    #ifdef WOLFSSL_AESNI
++    #if defined(__MINT__)
++        #define WOLFSSL_GENERAL_ALIGNMENT 0
++    #elif defined(WOLFSSL_AESNI)
+         #define WOLFSSL_GENERAL_ALIGNMENT 16
+     #elif defined(XSTREAM_ALIGN)
+         #define WOLFSSL_GENERAL_ALIGNMENT  4
+diff -rup wolfssl-5.7.0.orig/wolfssl/wolfcrypt/types.h wolfssl-5.7.0/wolfssl/wolfcrypt/types.h
+--- wolfssl-5.7.0.orig/wolfssl/wolfcrypt/types.h	2024-03-20 22:39:57.000000000 +0100
++++ wolfssl-5.7.0/wolfssl/wolfcrypt/types.h	2024-06-09 15:20:07.948148973 +0200
+@@ -390,7 +390,7 @@ typedef struct w64wrapper {
+         #if defined(_MSC_VER)
+             #define THREAD_LS_T __declspec(thread)
+         /* Thread local storage only in FreeRTOS v8.2.1 and higher */
+-        #elif defined(FREERTOS) || defined(FREERTOS_TCP) || \
++        #elif defined(FREERTOS) || defined(FREERTOS_TCP) || defined(__MINT__) || \
+                                                          defined(WOLFSSL_ZEPHYR)
+             #define THREAD_LS_T
+         #else
+@@ -930,13 +930,13 @@ typedef struct w64wrapper {
+             #define XTOUPPER(c)     toupper((c))
+         #endif
+         #if defined(OPENSSL_ALL) || defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
+-        #define XISALNUM(c)     isalnum((c))
++        #define XISALNUM(c)     isalnum((unsigned char)(c))
+         #ifdef NO_STDLIB_ISASCII
+             #define XISASCII(c) (((c) >= 0 && (c) <= 127) ? 1 : 0)
+         #else
+-            #define XISASCII(c) isascii((c))
++            #define XISASCII(c) isascii((unsigned char)(c))
+         #endif
+-        #define XISSPACE(c)     isspace((c))
++        #define XISSPACE(c)     isspace((unsigned char)(c))
+         #endif
+         /* needed by wolfSSL_check_domain_name() */
+         #define XTOLOWER(c)      tolower((c))
+@@ -1326,7 +1326,9 @@ typedef struct w64wrapper {
+ 
+     /* Helpers for memory alignment */
+     #ifndef XALIGNED
+-        #if defined(__GNUC__) || defined(__llvm__) || \
++        #if defined(__MINT__)
++            #define XALIGNED(x)
++        #elif defined(__GNUC__) || defined(__llvm__) || \
+               defined(__IAR_SYSTEMS_ICC__)
+             #define XALIGNED(x) __attribute__ ( (aligned (x)))
+         #elif defined(__KEIL__)
+diff -rup wolfssl-5.7.0.orig/wolfcrypt/benchmark/benchmark.c wolfssl-5.7.0/wolfcrypt/benchmark/benchmark.c
+--- wolfssl-5.7.0.orig/wolfcrypt/benchmark/benchmark.c	2024-03-20 22:39:57.000000000 +0100
++++ wolfssl-5.7.0/wolfcrypt/benchmark/benchmark.c	2024-06-09 15:38:32.856504295 +0200
+@@ -13107,6 +13107,25 @@ void bench_sphincsKeySign(byte level, by
+         return (double)ns / 1000000000.0;
+     }
+ 
++#elif defined(__MINT__)
++
++    #include <sys/time.h>
++
++    double current_time(int reset)
++    {
++        struct timeval tv;
++
++        (void)reset;
++
++        LIBCALL_CHECK_RET(gettimeofday(&tv, NULL));
++
++    #ifdef BENCH_MICROSECOND
++        return (double)tv.tv_sec * 1000000 + (double)tv.tv_usec;
++    #else
++        return (double)tv.tv_sec + (double)tv.tv_usec / 1000000;
++    #endif
++    }
++
+ #else
+ 
+     #include <sys/time.h>

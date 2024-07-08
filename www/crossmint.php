@@ -1502,6 +1502,8 @@ This notably applies to Perl and Python.
 
 <li>2024/05/31 Add Mbed TLS 3.6.0</li>
 
+<li>2024/07/08 Add tnftp 20230507</li>
+
 </ul>
 
 <p></p>
