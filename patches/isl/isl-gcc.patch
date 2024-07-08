@@ -1,0 +1,56 @@
+diff -rup isl-0.26.orig/isl_test2.cc isl-0.26/isl_test2.cc
+--- isl-0.26.orig/isl_test2.cc	2023-04-02 21:49:32.000000000 +0200
++++ isl-0.26/isl_test2.cc	2024-05-30 08:23:34.139258639 +0200
+@@ -30,6 +30,10 @@
+ 
+ #include <isl/cpp.h>
+ 
++#ifdef __LINUX_GLIBC_WRAP_H
++char __libc_single_threaded;
++#endif
++
+ /* A binary isl function that appears in the C++ bindings
+  * as a unary method in a class T, taking an extra argument
+  * of type A1 and returning an object of type R.
+diff -rup isl-0.26.orig/isl_test_cpp.cc isl-0.26/isl_test_cpp.cc
+--- isl-0.26.orig/isl_test_cpp.cc	2022-07-26 12:28:52.000000000 +0200
++++ isl-0.26/isl_test_cpp.cc	2024-05-30 08:23:34.932588428 +0200
+@@ -17,6 +17,10 @@
+ #include <isl/options.h>
+ #include <isl/typed_cpp.h>
+ 
++#ifdef __LINUX_GLIBC_WRAP_H
++char __libc_single_threaded;
++#endif
++
+ static void die_impl(const char *file, int line, const char *message)
+ {
+ 	fprintf(stderr, "Assertion failed in %s:%d %s\n", file, line, message);
+diff -rup isl-0.26.orig/isl_test_cpp17-checked.cc isl-0.26/isl_test_cpp17-checked.cc
+--- isl-0.26.orig/isl_test_cpp17-checked.cc	2022-12-30 16:42:19.000000000 +0100
++++ isl-0.26/isl_test_cpp17-checked.cc	2024-05-30 08:25:14.355477620 +0200
+@@ -6,6 +6,10 @@
+ #include <isl/options.h>
+ #include <isl/cpp-checked.h>
+ 
++#ifdef __LINUX_GLIBC_WRAP_H
++char __libc_single_threaded;
++#endif
++
+ /* Select the "checked" interface.
+  */
+ namespace isl { using namespace checked; }
+diff -rup isl-0.26.orig/isl_test_cpp17.cc isl-0.26/isl_test_cpp17.cc
+--- isl-0.26.orig/isl_test_cpp17.cc	2022-12-30 16:42:19.000000000 +0100
++++ isl-0.26/isl_test_cpp17.cc	2024-05-30 08:24:44.362278273 +0200
+@@ -6,6 +6,10 @@
+ #include <isl/options.h>
+ #include <isl/cpp.h>
+ 
++#ifdef __LINUX_GLIBC_WRAP_H
++char __libc_single_threaded;
++#endif
++
+ /* Throw a runtime exception.
+  */
+ static void die_impl(const char *file, int line, const char *message)

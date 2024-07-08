@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=gmp
-VERSION=-6.2.1
+VERSION=-6.3.0
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh

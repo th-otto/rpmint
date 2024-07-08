@@ -1,0 +1,44 @@
+Only in mbedtls-3.6.0: build
+Only in mbedtls-3.6.0/framework: .gitignore
+Only in mbedtls-3.6.0/framework: CMakeLists.txt
+Only in mbedtls-3.6.0/framework: LICENSE
+Only in mbedtls-3.6.0/framework: README.md
+Only in mbedtls-3.6.0/framework: exported.make
+diff -rup mbedtls-3.6.0.orig/library/platform_util.c mbedtls-3.6.0/library/platform_util.c
+--- mbedtls-3.6.0.orig/library/platform_util.c	2024-03-26 15:58:02.000000000 +0100
++++ mbedtls-3.6.0/library/platform_util.c	2024-06-01 09:18:49.646520877 +0200
+@@ -218,6 +218,7 @@ void (*mbedtls_test_hook_test_fail)(cons
+ #if defined(MBEDTLS_HAVE_TIME) && !defined(MBEDTLS_PLATFORM_MS_TIME_ALT)
+ 
+ #include <time.h>
++#include <sys/time.h>
+ #if !defined(_WIN32) && \
+     (defined(unix) || defined(__unix) || defined(__unix__) || \
+     (defined(__APPLE__) && defined(__MACH__)) || defined(__HAIKU__) || defined(__midipix__))
+@@ -227,6 +228,16 @@ void (*mbedtls_test_hook_test_fail)(cons
+ #if (defined(_POSIX_VERSION) && _POSIX_VERSION >= 199309L) || defined(__HAIKU__)
+ mbedtls_ms_time_t mbedtls_ms_time(void)
+ {
++#ifndef CLOCK_MONOTONIC
++    struct timeval tv;
++    mbedtls_ms_time_t current_ms;
++
++    if (gettimeofday(&tv, NULL))
++        return time(NULL) * 1000;
++    current_ms = tv.tv_sec;
++
++    return current_ms*1000 + tv.tv_usec / 1000;
++#else
+     int ret;
+     struct timespec tv;
+     mbedtls_ms_time_t current_ms;
+@@ -243,6 +254,7 @@ mbedtls_ms_time_t mbedtls_ms_time(void)
+     current_ms = tv.tv_sec;
+ 
+     return current_ms*1000 + tv.tv_nsec / 1000000;
++#endif
+ }
+ #elif defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || \
+     defined(__MINGW32__) || defined(_WIN64)
+Only in mbedtls-3.6.0/scripts/mbedtls_dev: __pycache__
+Only in mbedtls-3.6.0/tests/scripts: __pycache__

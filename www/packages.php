@@ -133,7 +133,7 @@ GCC contains everything to compile C programs, except a standard library and a m
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
 		'version' => '14.1.0',
-		'date' => '20240507',
+		'date' => '20240531',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-14',
 		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
@@ -171,12 +171,12 @@ using this format.<br />
 use fdlibm instead of the ancient pml math library.
 '
 	),
-	'gcc1320' => array(
+	'gcc1330' => array(
 		'name' => 'gcc13',
 		'title' => 'GCC',
 		'upstream' => 'http://gcc.gnu.org/',
-		'version' => '13.2.0',
-		'date' => '20230801',
+		'version' => '13.3.0',
+		'date' => '20240530',
 		'repo' => 'https://github.com/th-otto/m68k-atari-mint-gcc',
 		'branch' => 'mint/gcc-13',
 		'source' => 'https://ftp.gnu.org/gnu/gcc/gcc-%{version}/gcc-%{version}.tar.xz',
@@ -193,7 +193,7 @@ use fdlibm instead of the ancient pml math library.
 		'cygwin32' => 1,
 		'cygwin64' => 1,
 		'mingw32' => 1,
-		'mingw64' => 0,
+		'mingw64' => 1,
 		'linux32' => 0,
 		'linux64' => 1,
 		'macos32' => 0,
@@ -1037,7 +1037,7 @@ for decompressing old archives.
 		'name' => 'gmp',
 		'upstream' => 'https://gmplib.org/',
 		'source' => 'https://gmplib.org/download/%{name}/%{name}-%{version}.tar.xz',
-		'version' => '6.2.1',
+		'version' => '6.3.0',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
@@ -1054,8 +1054,8 @@ A library for calculating huge numbers (integer and floating point).
 	'mpfr' => array(
 		'name' => 'mpfr',
 		'upstream' => 'http://www.mpfr.org/',
-		'source' => 'http://www.mpfr.org/mpfr-current/%{name}-%{version}.tar.xz',
-		'version' => '4.0.2',
+		'source' => 'https://ftp.gnu.org/gnu/mpfr/%{name}-%{version}.tar.xz',
+		'version' => '4.2.1',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
@@ -1074,8 +1074,8 @@ based on the GMP multiple-precision library.
 	'mpc' => array(
 		'name' => 'mpc',
 		'upstream' => 'http://www.multiprecision.org/mpc/',
-		'source' => 'ftp://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.gz',
-		'version' => '1.1.0',
+		'source' => 'https://ftp.gnu.org/gnu/%{name}/%{name}-%{version}.tar.gz',
+		'version' => '1.3.1',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
@@ -2493,9 +2493,9 @@ This library is also available as a <a href="../sharedlibs.php#tiff">shared libr
 	),
 	'isl' => array(
 		'name' => 'isl',
-		'upstream' => 'http://isl.gforge.inria.fr/',
-		'source' => 'http://isl.gforge.inria.fr/isl-%{version}.tar.xz',
-		'version' => '0.20',
+		'upstream' => 'https://libisl.sourceforge.io/',
+		'source' => 'https://libisl.sourceforge.io/isl-%{version}.tar.xz',
+		'version' => '0.26',
 		'patch' => 1,
 		'script' => 1,
 		'dev' => 1,
@@ -3851,7 +3851,7 @@ identical output on all output media while taking advantage of display
 hardware acceleration when available.
 '
 	),
- 	'libaom' => array(
+	'libaom' => array(
 		'name' => 'libaom',
 		'upstream' => 'https://aomedia.googlesource.com/aom/',
 		'source' => $download_dir . '%{name}-%{version}.tar.xz',
@@ -3870,7 +3870,7 @@ This is a library for AOMedia Video 1 (AV1), an open, royalty-free
 video coding format designed for video transmissions over the Internet.
 '
 	),
- 	'opus' => array(
+	'opus' => array(
 		'name' => 'opus',
 		'upstream' => 'https://opus-codec.org/',
 		'source' => 'https://github.com/xiph/opus/releases/download/v%{version}/%{name}-%{version}.tar.gz',
@@ -3890,7 +3890,7 @@ the Internet. It is designed by the IETF Codec Working Group and incorporates
 technology from Skype&apos;s SILK codec and Xiph.Org&apos;s CELT codec.
 '
 	),
- 	'lame' => array(
+	'lame' => array(
 		'name' => 'lame',
 		'upstream' => 'https://lame.sourceforge.net/',
 		'source' => 'http://prdownloads.sourceforge.net/lame/lame-%{version}.tar.gz',
@@ -3912,7 +3912,7 @@ Another goal of the LAME project is to use these improvements for the basis of
 a patent free audio compression codec for the GNU project.
 '
 	),
- 	'libvpx' => array(
+	'libvpx' => array(
 		'name' => 'libvpx',
 		'upstream' => 'https://www.webmproject.org/',
 		'source' => $download_dir . '%{name}-%{version}.tar.xz',
@@ -3936,7 +3936,7 @@ and audio streams compressed with the Vorbis audio codec.
 The WebM file structure is based on the Matroska container.
 '
 	),
- 	'x264' => array(
+	'x264' => array(
 		'name' => 'x264',
 		'upstream' => 'https://code.videolan.org/videolan/x264',
 		'source' => $download_dir . '%{name}-%{version}.tar.xz',
@@ -3956,7 +3956,7 @@ x264 package provides a library for encoding video streams into the H.264/MPEG-4
 Needs the pth library from above.<br />
 '
 	),
- 	'fribidi' => array(
+	'fribidi' => array(
 		'name' => 'fribidi',
 		'upstream' => 'https://github.com/fribidi/fribidi',
 		'source' => $download_dir . '%{name}-%{version}.tar.xz',
@@ -3983,7 +3983,7 @@ API proposal" by Franck Portaneri, which he wrote as a proposal for
 adding BiDi support to Mozilla.
 '
 	),
- 	'graphite2' => array(
+	'graphite2' => array(
 		'name' => 'graphite2',
 		'upstream' => 'http://graphite.sil.org/',
 		'source' => 'https://github.com/silnrsi/graphite/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz',
@@ -4006,7 +4006,7 @@ the Text Encoding Model, Graphite handles the "Rendering" aspect of writing
 system implementation.
 '
 	),
- 	'lcms2' => array(
+	'lcms2' => array(
 		'name' => 'lcms2',
 		'upstream' => 'https://www.littlecms.com/',
 		'source' => 'https://github.com/mm2/Little-CMS/releases/download/lcms%{version}/lcms2-%{version}.tar.gz',
@@ -4029,7 +4029,7 @@ regarding to color management. The ICC specification is widely used and is
 referred to in many International and other de-facto standards.
 '
 	),
- 	'faad2' => array(
+	'faad2' => array(
 		'name' => 'faad2',
 		'upstream' => 'https://github.com/knik0/faad2',
 		'source' => 'https://github.com/knik0/faad2/archive/refs/tags/%{version}.tar.gz',
@@ -4049,7 +4049,7 @@ FAAD2 includes code for SBR (HE AAC) decoding.
 FAAD2 is licensed under the GPL.
 '
 	),
- 	'ffmpeg' => array(
+	'ffmpeg' => array(
 		'name' => 'ffmpeg',
 		'upstream' => 'https://ffmpeg.org/',
 		'source' => 'https://github.com/silnrsi/graphite/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz',
@@ -4069,7 +4069,7 @@ transcode, mux, demux, stream, filter and play several formats
 that humans and machines have created.
 '
 	),
- 	'ffmpeg7' => array(
+	'ffmpeg7' => array(
 		'name' => 'ffmpeg',
 		'upstream' => 'https://ffmpeg.org/',
 		'source' => 'https://github.com/silnrsi/graphite/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz',
@@ -4089,7 +4089,7 @@ transcode, mux, demux, stream, filter and play several formats
 that humans and machines have created.
 '
 	),
- 	'sdl_gfx' => array(
+	'sdl_gfx' => array(
 		'name' => 'SDL_gfx',
 		'upstream' => 'http://www.ferzkopp.net/wordpress/2016/01/02/sdl_gfx-sdl2_gfx/',
 		'source' => 'http://www.ferzkopp.net/Software/SDL_gfx-2.0/%{name}-%{version}.tar.gz',
@@ -4119,7 +4119,7 @@ The library is backwards compatible to the above mentioned code. It is
 written in plain C and can be used in C++ code.
 '
 	),
- 	'sdl_sound' => array(
+	'sdl_sound' => array(
 		'name' => 'SDL_sound',
 		'repo' => 'https://github.com/icculus/SDL_sound',
 		'branch' => 'stable-1.0',
@@ -4149,7 +4149,7 @@ channel conversion on-the-fly and behind-the-scenes, if the programmer
 desires.
 '
 	),
- 	'sqlite3' => array(
+	'sqlite3' => array(
 		'name' => 'sqlite3',
 		'repo' => 'https://github.com/sqlite/sqlite',
 		'upstream' => 'https://www.sqlite.org/',
@@ -4177,7 +4177,7 @@ SQLite can be used via the sqlite command line tool or via any
 application that supports the Qt database plug-ins.
 '
 	),
- 	'fltk' => array(
+	'fltk' => array(
 		'name' => 'fltk',
 		'repo' => 'https://github.com/fltk/fltk',
 		'upstream' => 'https://www.fltk.org/',
@@ -4205,7 +4205,7 @@ across the world with a central repository on GitHub.
 compile FLTK applications for Atari, and a <a href="/download/rpm/RPMS/m68020/index.php#XServer">X-Server</a> to run them.
 '
 	),
- 	'dillo' => array(
+	'dillo' => array(
 		'name' => 'dillo',
 		'repo' => 'https://github.com/dillo-browser/dillo',
 		'upstream' => 'https://web.archive.org/web/20220518060405/https://www.dillo.org/',
@@ -4231,7 +4231,7 @@ of choice in several space-conscious Linux distributions.
 <span style="color:red">Note:</span> You&apos;ll need a <a href="/download/rpm/RPMS/m68020/index.php#XServer">X-Server</a> to run it.
 '
 	),
- 	'ntp' => array(
+	'ntp' => array(
 		'name' => 'ntp',
 		'upstream' => 'http://www.ntp.org/',
 		'version' => '4.2.8p17',
@@ -4255,7 +4255,7 @@ Ntpd is an operating system daemon that sets and maintains the system
 time-of-day synchronized with Internet standard time servers.
 '
 	),
- 	'meson' => array(
+	'meson' => array(
 		'name' => 'meson',
 		'upstream' => 'https://mesonbuild.com/',
 		'version' => '1.4.0',
@@ -4284,7 +4284,7 @@ Note: the meson-dev package just contains the cross configuration files.
 Use them with `meson setup --crossfile m68k-atari-mint.ini`
 '
 	),
- 	'ninja' => array(
+	'ninja' => array(
 		'name' => 'ninja',
 		'upstream' => 'https://ninja-build.org/',
 		'version' => '1.11.1',
@@ -4305,7 +4305,7 @@ of files (typically source code and output executables) and orchestrates
 building them, quickly.
 '
 	),
- 	'brotli' => array(
+	'brotli' => array(
 		'name' => 'brotli',
 		'upstream' => 'https://www.brotli.org/',
 		'repo' => 'https://github.com/google/brotli',
@@ -4330,7 +4330,7 @@ general-purpose compression methods. It is similar in speed with
 deflate but offers more dense compression.
 '
 	),
- 	'ncompress' => array(
+	'ncompress' => array(
 		'name' => 'ncompress',
 		'upstream' => 'https://vapier.github.io/ncompress/',
 		'repo' => 'https://github.com/vapier/ncompress',
@@ -4358,7 +4358,7 @@ want the faster hash table algorithm set &apos;Memory free for compress&apos;
 below 800000.
 '
 	),
- 	'lynx' => array(
+	'lynx' => array(
 		'name' => 'lynx',
 		'upstream' => 'https://lynx.invisible-island.net/',
 		'repo' => '',
@@ -4385,6 +4385,31 @@ finger, or cso/ph/qi servers, and services accessible via logins to
 telnet, tn3270 or rlogin accounts (see URL Schemes Supported by Lynx).
 Current versions of Lynx run on Unix, VMS, Windows3.x/9x/NT and later,
 386DOS and OS/2 EMX.
+'
+	),
+	'mbedtls' => array(
+		'name' => 'mbedtls',
+		'upstream' => 'https://github.com/Mbed-TLS/mbedtls/',
+		'repo' => 'https://github.com/Mbed-TLS/mbedtls/',
+		'version' => '3.6.0',
+		'source' => $download_dir . '%{name}-%{version}.tar.bz2',
+		'patch' => 1,
+		'script' => 1,
+		'dev' => 1,
+		'bin' => 1,
+		'noelf' => 0,
+		'atari' => 1,
+		'amiga' => 0,
+		'license' => 'Apache-2.0 OR GPL-2.0-or-later',
+		'category' => 'Productivity/Networking/Security',
+		'summary' => 'Mbed TLS is a C library that implements cryptographic primitives',
+		'comment' => '
+Mbed TLS is a C library that implements cryptographic primitives, X.509
+certificate manipulation and the SSL/TLS and DTLS protocols. Its small
+code footprint makes it suitable for embedded systems.
+<br/>
+Mbed TLS includes a reference implementation of the PSA Cryptography
+API. This is currently a preview for evaluation purposes only.
 '
 	),
 /*

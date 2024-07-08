@@ -1496,6 +1496,12 @@ This notably applies to Perl and Python.
 
 <li>2024/05/23 Add lynx 2.9.1</li>
 
+<li>2023/05/30 Update gcc 13.x to 13.3.0</li>
+
+<li>2024/05/31 Fix 2 bugs in gcc-14</li>
+
+<li>2024/05/31 Add Mbed TLS 3.6.0</li>
+
 </ul>
 
 <p></p>
@@ -1690,13 +1696,13 @@ gcc 12.2.0:
 	macos:    57min
 	linux:    11min8sec
 
-gcc 13.1.0:
+gcc 13.3.0:
 	mingw32:  80min
 	mingw64:  111min
 	cygwin32: 134min
 	cygwin64: 143min
 	macos:    54min
-	linux:    12min40sec
+	linux:    16min54sec
 
 gcc 14.1.0:
 	mingw32:  98m16sec

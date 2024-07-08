@@ -33,7 +33,7 @@ elif test -d usr/m68k-atari-mint*/sys-root || test -d usr/lib/gcc-lib/m68k-atari
 		if test -d usr/lib/gcc-lib/m68k-atari-mint; then
 			cp -pvr usr/lib/gcc-lib/m68k-atari-mint/. "$prefix/usr/lib/gcc-lib/m68k-atari-mint/"
 		else
-			cp -pvr usr/m68k-atari-mint*/sys-root/. "$prefix"
+			cp -pr usr/m68k-atari-mint*/sys-root/. "$prefix"
 		fi
 	else
 		prefix="/"
@@ -51,7 +51,7 @@ elif test -d usr/m68k-atari-mint*/sys-root || test -d usr/lib/gcc-lib/m68k-atari
 	fi
 else
 	prefix="$WINDIR/"
-	cp -pvr . "$prefix"
+	cp -pr . "$prefix"
 fi
 
 rm -rf "$TMPDIR/"*

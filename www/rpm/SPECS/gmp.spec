@@ -4,7 +4,7 @@
 
 Summary:        The GNU MP Library
 Name:           %{crossmint}%{pkgname}
-Version:        6.2.1
+Version:        6.3.0
 Release:        1
 License:        GPL-3.0-or-later and LGPL-3.0-or-later
 Group:          System/Libraries
@@ -159,6 +159,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Thu May 30 2024 Thorsten Otto <admin@tho-otto.de>
+- Update to version 6.3.0
+
 * Tue Feb 28 2023 Thorsten Otto <admin@tho-otto.de>
 - Update to version 6.2.1
 

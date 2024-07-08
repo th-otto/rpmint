@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=isl
-VERSION=-0.20
+VERSION=-0.26
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh
@@ -35,11 +35,14 @@ for CPU in ${ALL_CPUS}; do
 
 	eval CPU_CFLAGS=\${CPU_CFLAGS_$CPU}
 	eval multilibdir=\${CPU_LIBDIR_$CPU}
-	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" ./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
-	# hack_lto_cflags
+	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	./configure ${CONFIGURE_FLAGS} --libdir='${exec_prefix}/lib'$multilibdir
+
 	${MAKE} $JOBS || exit 1
 	${MAKE} DESTDIR="${THISPKG_DIR}${sysroot}" install
-	${MAKE} clean
+	${MAKE} distclean
 done
 
 move_prefix

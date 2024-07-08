@@ -8,7 +8,7 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        3.1.4
+Version:        4.2.1
 Release:        1
 License:        LGPL-3.0+
 Group:          Development/Libraries/C and C++
@@ -141,6 +141,9 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Thu May 30 2024 Thorsten Otto <admin@tho-otto.de>
+- Update to version 4.2.1
+
 * Thu Aug 27 2020 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file
 

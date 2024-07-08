@@ -66,6 +66,7 @@ for CPU in ${ALL_CPUS}; do
 	eval multilibexecdir=\${CPU_LIBEXECDIR_$CPU}
 
 	CFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
+	CXXFLAGS="$CPU_CFLAGS $COMMON_CFLAGS" \
 	LDFLAGS="$CPU_CFLAGS $COMMON_CFLAGS ${STACKSIZE}" \
 	"./configure" ${CONFIGURE_FLAGS} \
 	--libdir='${exec_prefix}/lib'$multilibdir
@@ -85,7 +86,7 @@ for CPU in ${ALL_CPUS}; do
 	%rpmint_make_bin_archive $CPU
 	%endif
 
-	make clean
+	make distclean
 done
 
 
@@ -128,5 +129,8 @@ rmdir %{buildroot}%{_prefix} 2>/dev/null || :
 
 
 %changelog
+* Thu May 30 2024 Thorsten Otto <admin@tho-otto.de>
+- Update to version 0.26
+
 * Thu Aug 27 2020 Thorsten Otto <admin@tho-otto.de>
 - RPMint spec file

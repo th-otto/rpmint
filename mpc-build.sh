@@ -4,7 +4,7 @@ me="$0"
 scriptdir=${0%/*}
 
 PACKAGENAME=mpc
-VERSION=-1.1.0
+VERSION=-1.3.1
 VERSIONPATCH=
 
 . ${scriptdir}/functions.sh

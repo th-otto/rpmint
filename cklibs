@@ -1,19 +1,28 @@
 TARGET=${1:-m68k-atari-mint}
 
+failed=" "
 for i in cpp g++ gcc gcc-ar gcc-nm gcc-ranlib gconv gconv-dump gcov-tool gdc gfortran gnat gnatbind gnatlink gnatls addr2line ar as gcov ld nm objcopy objdump ranlib readelf size strings strip elfedit; do
 	f=$HOME/mintstd/binary7-package/usr/bin/${TARGET}-$i
 	if test -f $f; then
 		ls -l $f
 		glibc-check $f
+		test $? != 0 && failed+="$f "
 		echo ""
 	fi
 done
 
 for i in cc1 cc1plus collect2 d21 f951 gnat1 lto-wrapper liblto_plugin.so.0.0.0; do
-	f=$HOME/mintstd/binary7-package/usr/lib64/gcc/${TARGET}/12/$i
+	f=$HOME/mintstd/binary7-package/usr/lib64/gcc/${TARGET}/{12,13,14}/$i
 	if test -f $f; then
 		ls -l $f
-		glibc-check $f
+		if test "$i" = "d21"; then
+			MAX_VER=2.34 glibc-check $f
+		else
+			glibc-check $f
+		fi
+		test $? != 0 && failed+="$f "
 		echo ""
 	fi
 done
+
+test "$failed" != " " && echo "failed: $failed"

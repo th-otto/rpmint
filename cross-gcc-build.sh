@@ -15,7 +15,7 @@ scriptdir=`cd "${scriptdir}"; pwd`
 
 PACKAGENAME=gcc
 VERSION=-14.1.0
-VERSIONPATCH=-20240507
+VERSIONPATCH=-20240531
 REVISION="MiNT ${VERSIONPATCH#-}"
 
 #
@@ -67,7 +67,7 @@ BUILD_DIR="$here"
 # be outside the gcc source directory, ie. it must
 # not even be a subdirectory of it
 #
-MINT_BUILD_DIR="$BUILD_DIR/gcc-cross-build"
+MINT_BUILD_DIR="$BUILD_DIR/gcc-cross-${TARGET##*-}-build"
 
 #
 # Where to put the binary packages
@@ -276,8 +276,6 @@ if test "$ranlib" = "" -o ! -x "$ranlib" -o ! -x "$as" -o ! -x "$strip"; then
 	exit 1
 fi
 
-mpfr_config=
-
 gcc4_compat=
 if test $gcc_major_version -lt 13; then
 	# with gcc 13 and above, do not longer use the compatible interface
@@ -415,7 +413,6 @@ chmod 755 "${GXX_WRAPPER}"
 		--disable-decimal-float \
 		--disable-nls \
 		$with_dw2_exceptions \
-		$mpfr_config \
 		--with-cpu=$with_cpu \
 		--with-build-sysroot="${prefix}/${TARGET}/sys-root" \
 		--enable-languages="$languages" || fail "gcc"
