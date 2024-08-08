@@ -1,6 +1,6 @@
 diff -rup tnftp-20230507.orig/configure.ac tnftp-20230507/configure.ac
 --- tnftp-20230507.orig/configure.ac	2023-05-07 20:32:11.000000000 +0200
-+++ tnftp-20230507/configure.ac	2024-07-08 07:39:28.216516925 +0200
++++ tnftp-20230507/configure.ac	2024-07-20 18:04:08.623907871 +0200
 @@ -261,7 +261,7 @@ accheck_includes='
  
  AC_CHECK_HEADERS([sys/types.h sys/ioctl.h sys/param.h sys/stat.h \
@@ -12,7 +12,7 @@ diff -rup tnftp-20230507.orig/configure.ac tnftp-20230507/configure.ac
  AC_HEADER_RESOLV()
 diff -rup tnftp-20230507.orig/libedit/chartype.h tnftp-20230507/libedit/chartype.h
 --- tnftp-20230507.orig/libedit/chartype.h	2020-07-04 15:44:45.000000000 +0200
-+++ tnftp-20230507/libedit/chartype.h	2024-07-08 07:48:32.464197640 +0200
++++ tnftp-20230507/libedit/chartype.h	2024-07-20 18:04:08.623907871 +0200
 @@ -39,6 +39,7 @@
  	!(defined(__APPLE__) && defined(__MACH__)) && \
  	!defined(__OpenBSD__) && \
@@ -43,7 +43,7 @@ diff -rup tnftp-20230507.orig/libedit/chartype.h tnftp-20230507/libedit/chartype
   * style visual expansions. */
 diff -rup tnftp-20230507.orig/libedit/el.h tnftp-20230507/libedit/el.h
 --- tnftp-20230507.orig/libedit/el.h	2020-07-04 15:44:45.000000000 +0200
-+++ tnftp-20230507/libedit/el.h	2024-07-08 07:42:04.792514537 +0200
++++ tnftp-20230507/libedit/el.h	2024-07-20 18:04:08.627241191 +0200
 @@ -106,6 +106,13 @@ typedef struct el_state_t {
  #include "map.h"
  #include "sig.h"
@@ -71,7 +71,7 @@ diff -rup tnftp-20230507.orig/libedit/el.h tnftp-20230507/libedit/el.h
  	el_state_t	  el_state;	/* Current editor state		*/
 diff -rup tnftp-20230507.orig/libedit/sys.h tnftp-20230507/libedit/sys.h
 --- tnftp-20230507.orig/libedit/sys.h	2020-07-04 15:44:46.000000000 +0200
-+++ tnftp-20230507/libedit/sys.h	2024-07-08 07:39:28.219850243 +0200
++++ tnftp-20230507/libedit/sys.h	2024-07-20 18:04:08.627241191 +0200
 @@ -64,7 +64,11 @@
  #endif /* tnftp */
  
@@ -86,7 +86,7 @@ diff -rup tnftp-20230507.orig/libedit/sys.h tnftp-20230507/libedit/sys.h
  # define __arraycount(a) (sizeof(a) / sizeof(*(a)))
 diff -rup tnftp-20230507.orig/libedit/terminal.c tnftp-20230507/libedit/terminal.c
 --- tnftp-20230507.orig/libedit/terminal.c	2020-07-04 15:44:46.000000000 +0200
-+++ tnftp-20230507/libedit/terminal.c	2024-07-08 07:45:11.848384832 +0200
++++ tnftp-20230507/libedit/terminal.c	2024-07-20 18:04:08.627241191 +0200
 @@ -421,10 +421,10 @@ terminal_rebuffer_display(EditLine *el)
  	return 0;
  }
@@ -114,3 +114,20 @@ diff -rup tnftp-20230507.orig/libedit/terminal.c tnftp-20230507/libedit/terminal
  
  	if (*bp == NULL)
  		return;
+diff -rup tnftp-20230507.orig/src/util.c tnftp-20230507/src/util.c
+--- tnftp-20230507.orig/src/util.c	2023-05-06 11:33:23.000000000 +0200
++++ tnftp-20230507/src/util.c	2024-07-20 18:05:24.336941869 +0200
+@@ -1467,6 +1467,13 @@ ftp_connect(int sock, const struct socka
+ 						/* Solaris pending error */
+ 				goto connecterror;
+ 			} else if (error != 0) {
++#ifdef __MINT__
++				/* socket layer sometimes reports negativ error codes */
++				if (error < 0)
++					error = -error;
++				if (error == EINTERNAL) /* EINTERNAL reported by tcp_error */
++					error = EHOSTUNREACH;
++#endif
+ 				errno = error;	/* BSD pending error */
+ 				goto connecterror;
+ 			}

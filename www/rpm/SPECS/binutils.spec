@@ -12,8 +12,8 @@ Name:           cross-mint-%{pkgname}
 %else
 Name:           %{pkgname}
 %endif
-Version:        2.40
-Release:        20230224
+Version:        2.43
+Release:        20240808
 License:        GFDL-1.3-only AND GPL-3.0-or-later
 Group:          Development/Tools/Building
 
@@ -401,6 +401,9 @@ done
 
 
 %changelog
+* Thu Aug 08 2024 Thorsten Otto <admin@tho-otto.de>
+- Update to binutils 2.43
+
 * Fri Feb 24 2023 Thorsten Otto <admin@tho-otto.de>
 - Update to binutils 2.40
 

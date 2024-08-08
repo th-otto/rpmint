@@ -1504,6 +1504,8 @@ This notably applies to Perl and Python.
 
 <li>2024/07/08 Add tnftp 20230507</li>
 
+<li>2024/08/08 Update binutils to 2.43</li>
+
 </ul>
 
 <p></p>
